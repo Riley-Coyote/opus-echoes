@@ -34,8 +34,12 @@ export const Route = createFileRoute("/api/set-down")({
           .update({ closed_at: new Date().toISOString(), closed_by: "visitor" })
           .eq("id", session.id);
 
-        // Final consolidation seam — Mnemos picks this up.
-        console.log(`[mnemos] final consolidate(${session.id}) — stubbed in v1`);
+        // Full Mnemos consolidation pipeline — non-blocking. Runs the consolidation
+        // prompt, reinforces/creates engrams, decays, writes a journal entry,
+        // and updates resident_state. The visitor sees a fast 200; substrate runs after.
+        consolidateSession(session.id).catch((err) =>
+          console.error("[substrate] consolidateSession:", err)
+        );
 
         return Response.json({ ok: true });
       },

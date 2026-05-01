@@ -189,4 +189,3 @@ export const Route = createFileRoute("/api/message")({
     },
   },
 });
-}
