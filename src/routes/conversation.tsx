@@ -249,14 +249,6 @@ const CONVERSATION_SCRIPT = `
   const _interval = setInterval(refreshPanels, 5000);
   window.addEventListener('beforeunload', () => clearInterval(_interval));
 
-  // Hook into send completion: re-poll a couple times so freshly-written marginalia appear quickly.
-  const _origSend = send;
-  send = async function() {
-    await _origSend();
-    setTimeout(refreshPanels, 800);
-    setTimeout(refreshPanels, 2500);
-    setTimeout(refreshPanels, 5000);
-  };
 })();
 `;
 
