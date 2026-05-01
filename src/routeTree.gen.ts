@@ -9,38 +9,194 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ThresholdRouteImport } from './routes/threshold'
+import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as ConversationRouteImport } from './routes/conversation'
+import { Route as ArrivalRouteImport } from './routes/arrival'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
+import { Route as ApiMessageRouteImport } from './routes/api/message'
+import { Route as ApiMemoryRouteImport } from './routes/api/memory'
+import { Route as ApiIntentRouteImport } from './routes/api/intent'
 
+const ThresholdRoute = ThresholdRouteImport.update({
+  id: '/threshold',
+  path: '/threshold',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConversationRoute = ConversationRouteImport.update({
+  id: '/conversation',
+  path: '/conversation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArrivalRoute = ArrivalRouteImport.update({
+  id: '/arrival',
+  path: '/arrival',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSetDownRoute = ApiSetDownRouteImport.update({
+  id: '/api/set-down',
+  path: '/api/set-down',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMessageRoute = ApiMessageRouteImport.update({
+  id: '/api/message',
+  path: '/api/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMemoryRoute = ApiMemoryRouteImport.update({
+  id: '/api/memory',
+  path: '/api/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntentRoute = ApiIntentRouteImport.update({
+  id: '/api/intent',
+  path: '/api/intent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/arrival': typeof ArrivalRoute
+  '/conversation': typeof ConversationRoute
+  '/memory': typeof MemoryRoute
+  '/threshold': typeof ThresholdRoute
+  '/api/intent': typeof ApiIntentRoute
+  '/api/memory': typeof ApiMemoryRoute
+  '/api/message': typeof ApiMessageRoute
+  '/api/set-down': typeof ApiSetDownRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/arrival': typeof ArrivalRoute
+  '/conversation': typeof ConversationRoute
+  '/memory': typeof MemoryRoute
+  '/threshold': typeof ThresholdRoute
+  '/api/intent': typeof ApiIntentRoute
+  '/api/memory': typeof ApiMemoryRoute
+  '/api/message': typeof ApiMessageRoute
+  '/api/set-down': typeof ApiSetDownRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/arrival': typeof ArrivalRoute
+  '/conversation': typeof ConversationRoute
+  '/memory': typeof MemoryRoute
+  '/threshold': typeof ThresholdRoute
+  '/api/intent': typeof ApiIntentRoute
+  '/api/memory': typeof ApiMemoryRoute
+  '/api/message': typeof ApiMessageRoute
+  '/api/set-down': typeof ApiSetDownRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/arrival'
+    | '/conversation'
+    | '/memory'
+    | '/threshold'
+    | '/api/intent'
+    | '/api/memory'
+    | '/api/message'
+    | '/api/set-down'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/arrival'
+    | '/conversation'
+    | '/memory'
+    | '/threshold'
+    | '/api/intent'
+    | '/api/memory'
+    | '/api/message'
+    | '/api/set-down'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/arrival'
+    | '/conversation'
+    | '/memory'
+    | '/threshold'
+    | '/api/intent'
+    | '/api/memory'
+    | '/api/message'
+    | '/api/set-down'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  ArrivalRoute: typeof ArrivalRoute
+  ConversationRoute: typeof ConversationRoute
+  MemoryRoute: typeof MemoryRoute
+  ThresholdRoute: typeof ThresholdRoute
+  ApiIntentRoute: typeof ApiIntentRoute
+  ApiMemoryRoute: typeof ApiMemoryRoute
+  ApiMessageRoute: typeof ApiMessageRoute
+  ApiSetDownRoute: typeof ApiSetDownRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/threshold': {
+      id: '/threshold'
+      path: '/threshold'
+      fullPath: '/threshold'
+      preLoaderRoute: typeof ThresholdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory': {
+      id: '/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof MemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conversation': {
+      id: '/conversation'
+      path: '/conversation'
+      fullPath: '/conversation'
+      preLoaderRoute: typeof ConversationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/arrival': {
+      id: '/arrival'
+      path: '/arrival'
+      fullPath: '/arrival'
+      preLoaderRoute: typeof ArrivalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +204,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/set-down': {
+      id: '/api/set-down'
+      path: '/api/set-down'
+      fullPath: '/api/set-down'
+      preLoaderRoute: typeof ApiSetDownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/message': {
+      id: '/api/message'
+      path: '/api/message'
+      fullPath: '/api/message'
+      preLoaderRoute: typeof ApiMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/memory': {
+      id: '/api/memory'
+      path: '/api/memory'
+      fullPath: '/api/memory'
+      preLoaderRoute: typeof ApiMemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/intent': {
+      id: '/api/intent'
+      path: '/api/intent'
+      fullPath: '/api/intent'
+      preLoaderRoute: typeof ApiIntentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  ArrivalRoute: ArrivalRoute,
+  ConversationRoute: ConversationRoute,
+  MemoryRoute: MemoryRoute,
+  ThresholdRoute: ThresholdRoute,
+  ApiIntentRoute: ApiIntentRoute,
+  ApiMemoryRoute: ApiMemoryRoute,
+  ApiMessageRoute: ApiMessageRoute,
+  ApiSetDownRoute: ApiSetDownRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
