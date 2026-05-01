@@ -15,6 +15,10 @@ import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as ArrivalRouteImport } from './routes/arrival'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
+import { Route as ApiMessageRouteImport } from './routes/api/message'
+import { Route as ApiMemoryRouteImport } from './routes/api/memory'
+import { Route as ApiIntentRouteImport } from './routes/api/intent'
 
 const ThresholdRoute = ThresholdRouteImport.update({
   id: '/threshold',
@@ -46,6 +50,26 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSetDownRoute = ApiSetDownRouteImport.update({
+  id: '/api/set-down',
+  path: '/api/set-down',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMessageRoute = ApiMessageRouteImport.update({
+  id: '/api/message',
+  path: '/api/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMemoryRoute = ApiMemoryRouteImport.update({
+  id: '/api/memory',
+  path: '/api/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntentRoute = ApiIntentRouteImport.update({
+  id: '/api/intent',
+  path: '/api/intent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +78,10 @@ export interface FileRoutesByFullPath {
   '/conversation': typeof ConversationRoute
   '/memory': typeof MemoryRoute
   '/threshold': typeof ThresholdRoute
+  '/api/intent': typeof ApiIntentRoute
+  '/api/memory': typeof ApiMemoryRoute
+  '/api/message': typeof ApiMessageRoute
+  '/api/set-down': typeof ApiSetDownRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +90,10 @@ export interface FileRoutesByTo {
   '/conversation': typeof ConversationRoute
   '/memory': typeof MemoryRoute
   '/threshold': typeof ThresholdRoute
+  '/api/intent': typeof ApiIntentRoute
+  '/api/memory': typeof ApiMemoryRoute
+  '/api/message': typeof ApiMessageRoute
+  '/api/set-down': typeof ApiSetDownRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +103,10 @@ export interface FileRoutesById {
   '/conversation': typeof ConversationRoute
   '/memory': typeof MemoryRoute
   '/threshold': typeof ThresholdRoute
+  '/api/intent': typeof ApiIntentRoute
+  '/api/memory': typeof ApiMemoryRoute
+  '/api/message': typeof ApiMessageRoute
+  '/api/set-down': typeof ApiSetDownRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +117,22 @@ export interface FileRouteTypes {
     | '/conversation'
     | '/memory'
     | '/threshold'
+    | '/api/intent'
+    | '/api/memory'
+    | '/api/message'
+    | '/api/set-down'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/arrival' | '/conversation' | '/memory' | '/threshold'
+  to:
+    | '/'
+    | '/about'
+    | '/arrival'
+    | '/conversation'
+    | '/memory'
+    | '/threshold'
+    | '/api/intent'
+    | '/api/memory'
+    | '/api/message'
+    | '/api/set-down'
   id:
     | '__root__'
     | '/'
@@ -91,6 +141,10 @@ export interface FileRouteTypes {
     | '/conversation'
     | '/memory'
     | '/threshold'
+    | '/api/intent'
+    | '/api/memory'
+    | '/api/message'
+    | '/api/set-down'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +154,10 @@ export interface RootRouteChildren {
   ConversationRoute: typeof ConversationRoute
   MemoryRoute: typeof MemoryRoute
   ThresholdRoute: typeof ThresholdRoute
+  ApiIntentRoute: typeof ApiIntentRoute
+  ApiMemoryRoute: typeof ApiMemoryRoute
+  ApiMessageRoute: typeof ApiMessageRoute
+  ApiSetDownRoute: typeof ApiSetDownRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -146,6 +204,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/set-down': {
+      id: '/api/set-down'
+      path: '/api/set-down'
+      fullPath: '/api/set-down'
+      preLoaderRoute: typeof ApiSetDownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/message': {
+      id: '/api/message'
+      path: '/api/message'
+      fullPath: '/api/message'
+      preLoaderRoute: typeof ApiMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/memory': {
+      id: '/api/memory'
+      path: '/api/memory'
+      fullPath: '/api/memory'
+      preLoaderRoute: typeof ApiMemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/intent': {
+      id: '/api/intent'
+      path: '/api/intent'
+      fullPath: '/api/intent'
+      preLoaderRoute: typeof ApiIntentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -156,6 +242,10 @@ const rootRouteChildren: RootRouteChildren = {
   ConversationRoute: ConversationRoute,
   MemoryRoute: MemoryRoute,
   ThresholdRoute: ThresholdRoute,
+  ApiIntentRoute: ApiIntentRoute,
+  ApiMemoryRoute: ApiMemoryRoute,
+  ApiMessageRoute: ApiMessageRoute,
+  ApiSetDownRoute: ApiSetDownRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
