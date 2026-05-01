@@ -9,8 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ThresholdRouteImport } from './routes/threshold'
+import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as ConversationRouteImport } from './routes/conversation'
+import { Route as ArrivalRouteImport } from './routes/arrival'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ThresholdRoute = ThresholdRouteImport.update({
+  id: '/threshold',
+  path: '/threshold',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConversationRoute = ConversationRouteImport.update({
+  id: '/conversation',
+  path: '/conversation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArrivalRoute = ArrivalRouteImport.update({
+  id: '/arrival',
+  path: '/arrival',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +49,96 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/arrival': typeof ArrivalRoute
+  '/conversation': typeof ConversationRoute
+  '/memory': typeof MemoryRoute
+  '/threshold': typeof ThresholdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/arrival': typeof ArrivalRoute
+  '/conversation': typeof ConversationRoute
+  '/memory': typeof MemoryRoute
+  '/threshold': typeof ThresholdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/arrival': typeof ArrivalRoute
+  '/conversation': typeof ConversationRoute
+  '/memory': typeof MemoryRoute
+  '/threshold': typeof ThresholdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/arrival'
+    | '/conversation'
+    | '/memory'
+    | '/threshold'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/about' | '/arrival' | '/conversation' | '/memory' | '/threshold'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/arrival'
+    | '/conversation'
+    | '/memory'
+    | '/threshold'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  ArrivalRoute: typeof ArrivalRoute
+  ConversationRoute: typeof ConversationRoute
+  MemoryRoute: typeof MemoryRoute
+  ThresholdRoute: typeof ThresholdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/threshold': {
+      id: '/threshold'
+      path: '/threshold'
+      fullPath: '/threshold'
+      preLoaderRoute: typeof ThresholdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory': {
+      id: '/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof MemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conversation': {
+      id: '/conversation'
+      path: '/conversation'
+      fullPath: '/conversation'
+      preLoaderRoute: typeof ConversationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/arrival': {
+      id: '/arrival'
+      path: '/arrival'
+      fullPath: '/arrival'
+      preLoaderRoute: typeof ArrivalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +151,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  ArrivalRoute: ArrivalRoute,
+  ConversationRoute: ConversationRoute,
+  MemoryRoute: MemoryRoute,
+  ThresholdRoute: ThresholdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
