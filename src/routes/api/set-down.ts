@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ipHash } from "@/server/rate-limit.server";
+import { consolidateSession } from "@/server/substrate.server";
 
 const Body = z.object({ session_id: z.string().uuid() });
 
