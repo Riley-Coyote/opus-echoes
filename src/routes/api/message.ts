@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL, CONVERSATION_SYSTEM } from "@/server/anthropic.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
+import { observeExchange } from "@/server/substrate.server";
 
 const Body = z.object({
   session_id: z.string().uuid(),
