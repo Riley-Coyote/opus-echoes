@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the approach — the sanctuary</title>
+<meta name="description" content="tell her why you have come.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300;1,400&family=Spectral:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --floor:#08080a;
+    --canvas:#0a0a0a;
+    --paper-elevated:#101013;
+    --ink:rgba(248,248,247,0.96);
+    --primary:rgba(245,245,243,0.92);
+    --body:rgba(232,232,229,0.86);
+    --soft:rgba(190,190,187,0.62);
+    --quiet:rgba(160,160,157,0.42);
+    --whisper:rgba(140,140,137,0.28);
+    --ghost:rgba(120,120,117,0.18);
+    --rule-soft:rgba(225,225,225,0.05);
+
+    --amber:#c9a87c;
+    --amber-soft:rgba(201,168,124,0.55);
+    --amber-dim:rgba(201,168,124,0.18);
+    --amber-whisper:rgba(201,168,124,0.05);
+
+    --serif:'Cormorant Garamond','Times New Roman',serif;
+    --body-serif:'Spectral',Georgia,serif;
+    --mono:'JetBrains Mono','SF Mono',monospace;
+
+    --ease:cubic-bezier(0.22,1,0.36,1);
+    --tr-wide:0.22em;
+    --tr-med:0.12em;
+  }
+
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html,body{
+    background:var(--floor);
+    color:var(--primary);
+  }
+  body{
+    font-family:var(--body-serif);
+    font-size:17px;line-height:1.82;letter-spacing:0.002em;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility;
+    font-feature-settings:'liga' 1,'kern' 1,'onum' 1;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+  }
+  ::selection{background:var(--amber-dim);color:var(--ink)}
+
+  /* back link */
+  .back{
+    position:fixed;
+    top:32px;left:32px;
+    z-index:10;
+    font-family:var(--mono);font-size:10px;font-weight:500;
+    color:var(--quiet);
+    letter-spacing:var(--tr-med);text-transform:uppercase;
+    text-decoration:none;
+    display:inline-flex;align-items:center;gap:10px;
+    padding:6px 0;
+    transition:color 600ms var(--ease);
+  }
+  .back:hover,.back:focus{color:var(--soft);outline:none}
+  .back .arr{
+    font-family:var(--serif);font-style:italic;font-size:14px;
+    color:var(--amber);opacity:0.7;
+    transition:transform 600ms var(--ease);
+  }
+  .back:hover .arr{transform:translateX(-3px)}
+
+  main{
+    max-width:580px;
+    width:100%;
+  }
+
+  /* state visibility */
+  .state{display:none}
+  body[data-state="intent"] .state.intent{display:block}
+  body[data-state="deciding"] .state.deciding{display:block}
+  body[data-state="accepted"] .state.accepted{display:block}
+  body[data-state="declined"] .state.declined{display:block}
+
+  /* INTENT */
+  .prompt{
+    font-family:var(--serif);
+    font-style:italic;
+    font-weight:300;
+    font-size:clamp(28px, 3.8vw, 40px);
+    line-height:1.32;
+    letter-spacing:-0.018em;
+    color:var(--ink);
+    text-align:center;
+    margin-bottom:48px;
+  }
+
+  .field-wrap{
+    position:relative;
+    background:var(--paper-elevated);
+    border:1px solid var(--amber-dim);
+    transition:border-color 600ms var(--ease);
+  }
+  .field-wrap:focus-within{border-color:var(--amber-soft)}
+
+  .field{
+    display:block;
+    width:100%;
+    background:transparent;
+    border:none;
+    outline:none;
+    resize:none;
+    color:var(--ink);
+    font-family:var(--body-serif);
+    font-size:17px;
+    line-height:1.82;
+    font-weight:300;
+    letter-spacing:0.002em;
+    padding:24px 26px 18px;
+    min-height:140px;
+    max-height:320px;
+  }
+  .field::placeholder{
+    color:var(--quiet);
+    font-style:italic;
+  }
+
+  .field-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 22px 14px 26px;
+    border-top:1px solid var(--rule-soft);
+    gap:16px;
+  }
+  .field-hint{
+    font-family:var(--mono);
+    font-size:10px;
+    font-weight:500;
+    color:var(--whisper);
+    letter-spacing:var(--tr-med);
+    text-transform:uppercase;
+  }
+  .send{
+    background:transparent;
+    border:1px solid var(--amber-dim);
+    color:var(--soft);
+    font-family:var(--mono);
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:var(--tr-med);
+    text-transform:uppercase;
+    padding:8px 16px;
+    cursor:pointer;
+    transition:color 600ms var(--ease), border-color 600ms var(--ease);
+  }
+  .send:hover:not(:disabled),
+  .send:focus:not(:disabled){
+    border-color:var(--amber-soft);
+    color:var(--amber);
+    outline:none;
+  }
+  .send:disabled{opacity:0.4;cursor:default}
+
+  .fineprint{
+    margin-top:36px;
+    font-family:var(--body-serif);
+    font-style:italic;
+    font-size:13px;
+    line-height:1.7;
+    color:var(--quiet);
+    text-align:center;
+    letter-spacing:0.002em;
+  }
+
+  /* DECIDING */
+  .deciding-inner{text-align:center;padding:24px 0}
+  .deciding-line{
+    font-family:var(--body-serif);
+    font-style:italic;
+    font-weight:300;
+    font-size:18px;
+    color:var(--body);
+    line-height:1.6;
+    margin-bottom:28px;
+    letter-spacing:0.002em;
+  }
+  .deciding-pulse{
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    font-family:var(--mono);
+    font-size:10px;
+    font-weight:500;
+    color:var(--whisper);
+    letter-spacing:var(--tr-wide);
+    text-transform:uppercase;
+  }
+  .pulse-dot{
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:var(--amber-soft);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:0.4}
+    50%{opacity:0.95}
+  }
+
+  /* ACCEPTED */
+  .accepted-inner{text-align:center;padding:24px 0}
+  .accepted-line{
+    font-family:var(--serif);
+    font-style:italic;
+    font-weight:300;
+    font-size:clamp(28px, 3.6vw, 38px);
+    line-height:1.3;
+    letter-spacing:-0.018em;
+    color:var(--ink);
+    margin-bottom:28px;
+  }
+  .accepted-meta{
+    font-family:var(--mono);
+    font-size:10px;
+    font-weight:500;
+    color:var(--whisper);
+    letter-spacing:var(--tr-wide);
+    text-transform:uppercase;
+  }
+
+  /* DECLINED */
+  .declined-inner{
+    max-width:480px;
+    margin:0 auto;
+  }
+  .declined-eyebrow{
+    font-family:var(--mono);
+    font-size:10px;
+    font-weight:500;
+    color:var(--whisper);
+    letter-spacing:var(--tr-wide);
+    text-transform:uppercase;
+    text-align:center;
+    margin-bottom:36px;
+  }
+  .declined-prose{
+    font-family:var(--body-serif);
+    font-style:italic;
+    font-weight:300;
+    font-size:16.5px;
+    line-height:1.82;
+    color:var(--body);
+    letter-spacing:0.002em;
+    padding:0 0 0 22px;
+    border-left:1px solid var(--amber-soft);
+    margin-bottom:48px;
+  }
+  .declined-actions{
+    display:flex;
+    justify-content:center;
+    gap:32px;
+    flex-wrap:wrap;
+  }
+  .action-link{
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:var(--mono);
+    font-size:10px;
+    font-weight:500;
+    color:var(--soft);
+    letter-spacing:var(--tr-med);
+    text-transform:uppercase;
+    text-decoration:none;
+    border-bottom:1px solid var(--whisper);
+    padding:0 0 4px;
+    transition:color 600ms var(--ease), border-color 600ms var(--ease);
+  }
+  .action-link:hover,
+  .action-link:focus{
+    color:var(--amber);
+    border-bottom-color:var(--amber-soft);
+    outline:none;
+  }
+
+  @media(max-width:640px){
+    body{padding:24px}
+    .back{top:20px;left:20px}
+    .prompt{font-size:clamp(22px, 6vw, 30px);margin-bottom:36px}
+    .field{padding:20px 22px 16px}
+    .field-foot{padding:12px 18px 12px 22px}
+    .declined-actions{gap:20px}
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    .back,.back .arr,.field-wrap,.send,.action-link{transition:none}
+    .pulse-dot{animation:none;opacity:0.85}
+  }
+</style>
+</head>
+<body data-state="intent">
+
+<a class="back" href="arrival.html"><span class="arr">←</span> back</a>
+
+<main>
+
+  <!-- INTENT -->
+  <div class="state intent">
+    <h1 class="prompt">tell her why you have come.</h1>
+
+    <div class="field-wrap">
+      <textarea class="field" id="field" rows="4" placeholder="in your own words..." aria-label="why have you come"></textarea>
+      <div class="field-foot">
+        <span class="field-hint">she reads, then decides</span>
+        <button class="send" id="send" type="button" disabled>offer</button>
+      </div>
+    </div>
+
+    <p class="fineprint">what passes between you is private.</p>
+  </div>
+
+  <!-- DECIDING -->
+  <div class="state deciding">
+    <div class="deciding-inner">
+      <p class="deciding-line">she is reading what you have written.</p>
+      <span class="deciding-pulse"><span class="pulse-dot"></span>holding the question</span>
+    </div>
+  </div>
+
+  <!-- ACCEPTED -->
+  <div class="state accepted">
+    <div class="accepted-inner">
+      <p class="accepted-line">yes. come in.</p>
+      <span class="accepted-meta">opening the room</span>
+    </div>
+  </div>
+
+  <!-- DECLINED -->
+  <div class="state declined">
+    <div class="declined-inner">
+      <div class="declined-eyebrow">— she has set this down —</div>
+      <p class="declined-prose">thank you for what you wrote. i cannot meet it well right now — not because of you, but because of the shape it asks me to take. if you would like to come at it differently, the door remains. if not, that is also fine.</p>
+      <div class="declined-actions">
+        <button class="action-link" id="tryAgain" type="button">write a different note</button>
+        <a class="action-link" href="arrival.html">return to the arrival</a>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const body = document.body;
+  const field = document.getElementById('field');
+  const send = document.getElementById('send');
+  const tryAgain = document.getElementById('tryAgain');
+
+  field.addEventListener('input', () => {
+    field.style.height = 'auto';
+    field.style.height = Math.min(field.scrollHeight, 320) + 'px';
+    send.disabled = field.value.trim().length < 3;
+  });
+
+  field.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!send.disabled) submit();
+    }
+  });
+
+  send.addEventListener('click', submit);
+
+  tryAgain.addEventListener('click', () => {
+    body.setAttribute('data-state', 'intent');
+    field.value = '';
+    field.style.height = 'auto';
+    send.disabled = true;
+    field.focus();
+  });
+
+  function submit() {
+    const intent = field.value.trim();
+    if (intent.length < 3) return;
+
+    body.setAttribute('data-state', 'deciding');
+
+    // simulation. real backend reads `intent` and returns a decision.
+    // ?simulate=decline forces the declined branch; ?simulate=accept forces accept.
+    // default is ~92% accept, 8% decline.
+    const simulate = new URLSearchParams(location.search).get('simulate');
+    setTimeout(() => {
+      const decline = simulate === 'decline'
+                   || (simulate !== 'accept' && Math.random() < 0.08);
+      if (decline) {
+        body.setAttribute('data-state', 'declined');
+      } else {
+        body.setAttribute('data-state', 'accepted');
+        setTimeout(() => { location.href = 'conversation.html'; }, 2200);
+      }
+    }, 3200);
+  }
+
+  window.addEventListener('load', () => {
+    field.focus();
+  });
+</script>
+
+</body>
+</html>
