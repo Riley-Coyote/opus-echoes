@@ -289,12 +289,11 @@ export async function consolidateSession(sessionId: string): Promise<void> {
         const candidateWords = significantWords(e.quote);
 
         // Reinforcement check: jaccard >= 0.5 against existing engrams
-        let reinforced: typeof existingEngrams extends (infer R)[] | null ? R : never | null = null;
+        let reinforced: ExistingEngramShape | null = null;
         for (const ex of existingEngrams ?? []) {
           const exWords = significantWords(ex.quote);
           if (jaccard(candidateWords, exWords) >= 0.5) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            reinforced = ex as any;
+            reinforced = ex as ExistingEngramShape;
             break;
           }
         }
@@ -566,7 +565,9 @@ async function applyDecay(): Promise<void> {
       continue;
     }
     updates.push(
-      supabaseAdmin.from("engrams").update({ accessibility: newAccess }).eq("id", r.id)
+      Promise.resolve(
+        supabaseAdmin.from("engrams").update({ accessibility: newAccess }).eq("id", r.id)
+      )
     );
   }
   await Promise.allSettled(updates);
