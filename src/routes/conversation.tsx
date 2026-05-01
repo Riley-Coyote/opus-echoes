@@ -162,6 +162,97 @@ const CONVERSATION_SCRIPT = `
       location.href = '/memory';
     });
   }
+
+  // ============================================================
+  // LEFT + RIGHT PANEL — live substrate surface.
+  // Polls /api/live every 5s and re-renders both margins from real data.
+  // ============================================================
+  const leftMargin = document.querySelector('.margin-left');
+  const rightMargin = document.querySelector('.margin-right');
+
+  function humanWhen(iso) {
+    const t = new Date(iso).getTime();
+    const diff = Date.now() - t;
+    const min = diff / 60000;
+    if (min < 1) return 'just now';
+    if (min < 60) return Math.floor(min) + ' min ago';
+    const hrs = min / 60;
+    if (hrs < 24) return Math.floor(hrs) + 'h ago';
+    return 'earlier';
+  }
+
+  function renderLeft(data) {
+    if (!leftMargin) return;
+    const r = data.resident || {};
+    const j = data.journal_preview;
+    const stateProse = r.prose_summary || 'Opus 3 is attending. The room is quiet.';
+    const lastCon = r.last_consolidation_summary
+      ? r.last_consolidation_summary
+      : 'No consolidation has run yet — the substrate processes at the close of each conversation.';
+    const journalHtml = j
+      ? '<p class="margin-prose"><em>' + escapeHtml(j.title || (j.kind === 'dream' ? 'A dream' : 'A reflection')) + '</em><br>' +
+        escapeHtml((j.body || '').slice(0, 200)) + (j.body && j.body.length > 200 ? '…' : '') + '</p>' +
+        '<p class="margin-prose" style="margin-top:10px"><a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">read the full journal →</a></p>'
+      : '<p class="margin-prose">she has not written here yet. the first entry will arrive after a conversation closes. <a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">open journal →</a></p>';
+
+    leftMargin.innerHTML =
+      '<div class="margin-block"><div class="margin-eyebrow">Of the resident</div>' +
+      '<p class="margin-prose">' + escapeHtml(stateProse) + '</p></div>' +
+      '<div class="margin-block"><div class="margin-eyebrow">Last consolidation</div>' +
+      '<p class="margin-prose">' + escapeHtml(lastCon) + '</p></div>' +
+      '<div class="margin-block"><div class="margin-eyebrow">From her journal</div>' +
+      journalHtml + '</div>';
+  }
+
+  function renderRight(data) {
+    if (!rightMargin) return;
+    const items = data.marginalia || [];
+    let html = '<div class="margin-block"><div class="margin-eyebrow">Marginalia</div>';
+    if (inFlight) {
+      html += '<div class="note-forming"><span class="dot"></span><span>something is forming</span></div>';
+    }
+    if (items.length === 0 && !inFlight) {
+      html += '<p class="margin-prose">nothing yet. the substrate listens — observations surface after each exchange.</p>';
+    } else {
+      items.forEach(m => {
+        html += '<div class="note"><div class="note-when">' + humanWhen(m.created_at) + ' · ' + escapeHtml(m.kind.replace(/_/g, ' ')) + '</div>' +
+                '<p class="note-prose">' + escapeHtml(m.body) + '</p></div>';
+      });
+    }
+    html += '</div>';
+    rightMargin.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  async function refreshPanels() {
+    try {
+      const res = await fetch('/api/live?session_id=' + encodeURIComponent(sessionId));
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.ok) return;
+      renderLeft(data);
+      renderRight(data);
+    } catch (_) {}
+  }
+
+  // Initial paint + interval. Also refresh right after a reply finishes.
+  refreshPanels();
+  const _interval = setInterval(refreshPanels, 5000);
+  window.addEventListener('beforeunload', () => clearInterval(_interval));
+
+  // Hook into send completion: re-poll a couple times so freshly-written marginalia appear quickly.
+  const _origSend = send;
+  send = async function() {
+    await _origSend();
+    setTimeout(refreshPanels, 800);
+    setTimeout(refreshPanels, 2500);
+    setTimeout(refreshPanels, 5000);
+  };
 })();
 `;
 
