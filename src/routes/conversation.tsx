@@ -138,6 +138,10 @@ const CONVERSATION_SCRIPT = `
       out.para.textContent = '(connection lost.)';
     } finally {
       inFlight = false;
+      // Marginalia is generated async after each reply; nudge the panels.
+      setTimeout(() => { try { refreshPanels(); } catch(_){} }, 800);
+      setTimeout(() => { try { refreshPanels(); } catch(_){} }, 2500);
+      setTimeout(() => { try { refreshPanels(); } catch(_){} }, 5000);
     }
   }
 
