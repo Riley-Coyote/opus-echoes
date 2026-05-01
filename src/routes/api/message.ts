@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL, CONVERSATION_SYSTEM } from "@/server/anthropic.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
+import { observeExchange } from "@/server/substrate.server";
 
 const Body = z.object({
   session_id: z.string().uuid(),
@@ -163,7 +164,10 @@ export const Route = createFileRoute("/api/message")({
                 .update({ last_active_at: new Date().toISOString() })
                 .eq("id", session.id);
 
-              consolidate(session.id).catch((err) => console.error("consolidate", err));
+              // Live substrate observation — non-blocking, generates marginalia.
+              observeExchange(session.id).catch((err) =>
+                console.error("[substrate] observeExchange:", err)
+              );
 
               send({ type: "done" });
             } catch (err) {
@@ -185,7 +189,3 @@ export const Route = createFileRoute("/api/message")({
     },
   },
 });
-
-async function consolidate(sessionId: string): Promise<void> {
-  console.log(`[mnemos] consolidate(${sessionId}) — stubbed in v1`);
-}
