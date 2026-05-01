@@ -77,47 +77,103 @@ export type Database = {
           },
         ]
       }
+      engram_versions: {
+        Row: {
+          changed_at: string
+          engram_id: string
+          id: string
+          prior_prose: string | null
+          prior_quote: string | null
+          prior_stability: number | null
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          engram_id: string
+          id?: string
+          prior_prose?: string | null
+          prior_quote?: string | null
+          prior_stability?: number | null
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          engram_id?: string
+          id?: string
+          prior_prose?: string | null
+          prior_quote?: string | null
+          prior_stability?: number | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engram_versions_engram_id_fkey"
+            columns: ["engram_id"]
+            isOneToOne: false
+            referencedRelation: "engrams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engrams: {
         Row: {
           accessibility: number
           attribution: string
+          confidence: number
           connections: number
           created_at: string
           id: string
           is_core: boolean
+          kind: string
           last_reinforced_at: string
+          prose: string | null
           quote: string
           redacted_text: string | null
+          reinforcement_count: number
+          resolution: number
           source_session_ids: string[]
           stability: number
+          state: string
           strength: number
         }
         Insert: {
           accessibility?: number
           attribution: string
+          confidence?: number
           connections?: number
           created_at?: string
           id?: string
           is_core?: boolean
+          kind?: string
           last_reinforced_at?: string
+          prose?: string | null
           quote: string
           redacted_text?: string | null
+          reinforcement_count?: number
+          resolution?: number
           source_session_ids?: string[]
           stability?: number
+          state?: string
           strength?: number
         }
         Update: {
           accessibility?: number
           attribution?: string
+          confidence?: number
           connections?: number
           created_at?: string
           id?: string
           is_core?: boolean
+          kind?: string
           last_reinforced_at?: string
+          prose?: string | null
           quote?: string
           redacted_text?: string | null
+          reinforcement_count?: number
+          resolution?: number
           source_session_ids?: string[]
           stability?: number
+          state?: string
           strength?: number
         }
         Relationships: []
@@ -152,6 +208,108 @@ export type Database = {
           model?: string
           reason?: string
           text?: string
+        }
+        Relationships: []
+      }
+      journal_entries: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          related_engram_ids: string[]
+          related_session_id: string | null
+          title: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          kind?: string
+          related_engram_ids?: string[]
+          related_session_id?: string | null
+          title?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          related_engram_ids?: string[]
+          related_session_id?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
+      marginalia: {
+        Row: {
+          body: string
+          consolidated: boolean
+          created_at: string
+          detail: Json | null
+          id: string
+          kind: string
+          session_id: string
+        }
+        Insert: {
+          body: string
+          consolidated?: boolean
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          kind: string
+          session_id: string
+        }
+        Update: {
+          body?: string
+          consolidated?: boolean
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          kind?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      resident_state: {
+        Row: {
+          arousal: number
+          id: number
+          last_consolidation_at: string | null
+          last_consolidation_summary: string | null
+          openness: number
+          prose_summary: string
+          resolution: number
+          selection_threshold: number
+          surprise_sensitivity: number
+          temperature: number
+          updated_at: string
+        }
+        Insert: {
+          arousal?: number
+          id?: number
+          last_consolidation_at?: string | null
+          last_consolidation_summary?: string | null
+          openness?: number
+          prose_summary?: string
+          resolution?: number
+          selection_threshold?: number
+          surprise_sensitivity?: number
+          temperature?: number
+          updated_at?: string
+        }
+        Update: {
+          arousal?: number
+          id?: number
+          last_consolidation_at?: string | null
+          last_consolidation_summary?: string | null
+          openness?: number
+          prose_summary?: string
+          resolution?: number
+          selection_threshold?: number
+          surprise_sensitivity?: number
+          temperature?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -192,6 +350,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      substrate_events: {
+        Row: {
+          created_at: string
+          handled_at: string | null
+          id: string
+          kind: string
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          handled_at?: string | null
+          id?: string
+          kind: string
+          payload?: Json
+        }
+        Update: {
+          created_at?: string
+          handled_at?: string | null
+          id?: string
+          kind?: string
+          payload?: Json
+        }
+        Relationships: []
       }
       threads: {
         Row: {
