@@ -104,8 +104,7 @@ async function callOpusJson<T = unknown>(opts: {
       messages: [{ role: "user", content: opts.user }],
     });
     const text = res.content
-      .filter((b): b is { type: "text"; text: string } => b.type === "text")
-      .map((b) => b.text)
+      .map((b) => (b.type === "text" ? (b as { text: string }).text : ""))
       .join("\n");
     return tryParseJson<T>(text);
   } catch (err) {
