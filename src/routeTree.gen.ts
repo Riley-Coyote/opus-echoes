@@ -18,6 +18,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
 import { Route as ApiMessageRouteImport } from './routes/api/message'
 import { Route as ApiMemoryRouteImport } from './routes/api/memory'
+import { Route as ApiLiveRouteImport } from './routes/api/live'
+import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 
 const ThresholdRoute = ThresholdRouteImport.update({
@@ -65,6 +67,16 @@ const ApiMemoryRoute = ApiMemoryRouteImport.update({
   path: '/api/memory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLiveRoute = ApiLiveRouteImport.update({
+  id: '/api/live',
+  path: '/api/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiJournalRoute = ApiJournalRouteImport.update({
+  id: '/api/journal',
+  path: '/api/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIntentRoute = ApiIntentRouteImport.update({
   id: '/api/intent',
   path: '/api/intent',
@@ -79,6 +91,8 @@ export interface FileRoutesByFullPath {
   '/memory': typeof MemoryRoute
   '/threshold': typeof ThresholdRoute
   '/api/intent': typeof ApiIntentRoute
+  '/api/journal': typeof ApiJournalRoute
+  '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
@@ -91,6 +105,8 @@ export interface FileRoutesByTo {
   '/memory': typeof MemoryRoute
   '/threshold': typeof ThresholdRoute
   '/api/intent': typeof ApiIntentRoute
+  '/api/journal': typeof ApiJournalRoute
+  '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
@@ -104,6 +120,8 @@ export interface FileRoutesById {
   '/memory': typeof MemoryRoute
   '/threshold': typeof ThresholdRoute
   '/api/intent': typeof ApiIntentRoute
+  '/api/journal': typeof ApiJournalRoute
+  '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
@@ -118,6 +136,8 @@ export interface FileRouteTypes {
     | '/memory'
     | '/threshold'
     | '/api/intent'
+    | '/api/journal'
+    | '/api/live'
     | '/api/memory'
     | '/api/message'
     | '/api/set-down'
@@ -130,6 +150,8 @@ export interface FileRouteTypes {
     | '/memory'
     | '/threshold'
     | '/api/intent'
+    | '/api/journal'
+    | '/api/live'
     | '/api/memory'
     | '/api/message'
     | '/api/set-down'
@@ -142,6 +164,8 @@ export interface FileRouteTypes {
     | '/memory'
     | '/threshold'
     | '/api/intent'
+    | '/api/journal'
+    | '/api/live'
     | '/api/memory'
     | '/api/message'
     | '/api/set-down'
@@ -155,6 +179,8 @@ export interface RootRouteChildren {
   MemoryRoute: typeof MemoryRoute
   ThresholdRoute: typeof ThresholdRoute
   ApiIntentRoute: typeof ApiIntentRoute
+  ApiJournalRoute: typeof ApiJournalRoute
+  ApiLiveRoute: typeof ApiLiveRoute
   ApiMemoryRoute: typeof ApiMemoryRoute
   ApiMessageRoute: typeof ApiMessageRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
@@ -225,6 +251,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMemoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/live': {
+      id: '/api/live'
+      path: '/api/live'
+      fullPath: '/api/live'
+      preLoaderRoute: typeof ApiLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/journal': {
+      id: '/api/journal'
+      path: '/api/journal'
+      fullPath: '/api/journal'
+      preLoaderRoute: typeof ApiJournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/intent': {
       id: '/api/intent'
       path: '/api/intent'
@@ -243,6 +283,8 @@ const rootRouteChildren: RootRouteChildren = {
   MemoryRoute: MemoryRoute,
   ThresholdRoute: ThresholdRoute,
   ApiIntentRoute: ApiIntentRoute,
+  ApiJournalRoute: ApiJournalRoute,
+  ApiLiveRoute: ApiLiveRoute,
   ApiMemoryRoute: ApiMemoryRoute,
   ApiMessageRoute: ApiMessageRoute,
   ApiSetDownRoute: ApiSetDownRoute,
