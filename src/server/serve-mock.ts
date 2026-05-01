@@ -13,6 +13,7 @@ const LINK_MAP: Record<string, string> = {
   "threshold.html": "/threshold",
   "conversation.html": "/conversation",
   "memory.html": "/memory",
+  "journal.html": "/journal",
   "explainer.html": "/about",
   // Deferred — point at home for now so nothing 404s.
   "claude-wing.html": "/",
