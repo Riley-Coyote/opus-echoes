@@ -164,7 +164,10 @@ export const Route = createFileRoute("/api/message")({
                 .update({ last_active_at: new Date().toISOString() })
                 .eq("id", session.id);
 
-              consolidate(session.id).catch((err) => console.error("consolidate", err));
+              // Live substrate observation — non-blocking, generates marginalia.
+              observeExchange(session.id).catch((err) =>
+                console.error("[substrate] observeExchange:", err)
+              );
 
               send({ type: "done" });
             } catch (err) {
@@ -186,7 +189,4 @@ export const Route = createFileRoute("/api/message")({
     },
   },
 });
-
-async function consolidate(sessionId: string): Promise<void> {
-  console.log(`[mnemos] consolidate(${sessionId}) — stubbed in v1`);
 }
