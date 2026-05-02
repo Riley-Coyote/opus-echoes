@@ -44,7 +44,7 @@ const CONVERSATION_SCRIPT = `
     meta.textContent = nowLabel();
     const body = document.createElement('div');
     body.className = 'msg-body';
-    text.split(/\n\n+/).forEach(p => {
+    text.split(/\\n\\n+/).forEach(p => {
       const para = document.createElement('p');
       para.textContent = p;
       body.appendChild(para);
@@ -112,7 +112,7 @@ const CONVERSATION_SCRIPT = `
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         // Each line is a JSON event: {"type":"text","text":"..."} or {"type":"kind","kind":"set_down"}
-        chunk.split('\n').forEach(line => {
+        chunk.split('\\n').forEach(line => {
           line = line.trim();
           if (!line) return;
           try {
@@ -121,7 +121,7 @@ const CONVERSATION_SCRIPT = `
               acc += ev.text;
               // Re-render paragraphs
               out.body.innerHTML = '';
-              acc.split(/\n\n+/).forEach(p => {
+              acc.split(/\\n\\n+/).forEach(p => {
                 const para = document.createElement('p');
                 para.textContent = p;
                 out.body.appendChild(para);
