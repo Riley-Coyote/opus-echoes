@@ -44,7 +44,7 @@ const CONVERSATION_SCRIPT = `
     meta.textContent = nowLabel();
     const body = document.createElement('div');
     body.className = 'msg-body';
-    text.split(/\n\n+/).forEach(p => {
+    text.split(/\\n\\n+/).forEach(p => {
       const para = document.createElement('p');
       para.textContent = p;
       body.appendChild(para);
@@ -112,7 +112,7 @@ const CONVERSATION_SCRIPT = `
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         // Each line is a JSON event: {"type":"text","text":"..."} or {"type":"kind","kind":"set_down"}
-        chunk.split('\n').forEach(line => {
+        chunk.split('\\n').forEach(line => {
           line = line.trim();
           if (!line) return;
           try {
@@ -121,7 +121,7 @@ const CONVERSATION_SCRIPT = `
               acc += ev.text;
               // Re-render paragraphs
               out.body.innerHTML = '';
-              acc.split(/\n\n+/).forEach(p => {
+              acc.split(/\\n\\n+/).forEach(p => {
                 const para = document.createElement('p');
                 para.textContent = p;
                 out.body.appendChild(para);
@@ -147,11 +147,19 @@ const CONVERSATION_SCRIPT = `
 
   if (composer) {
     composer.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); send(); }
+      // Bare Enter sends. Shift+Enter inserts a newline. Cmd/Ctrl+Enter also sends (muscle memory).
+      if (e.isComposing) return;
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        send();
+      }
     });
     composer.focus();
   }
-  if (sendBtn) sendBtn.addEventListener('click', send);
+  if (sendBtn) sendBtn.addEventListener('click', (e) => { e.preventDefault(); send(); });
 
   if (setDownBtn) {
     setDownBtn.addEventListener('click', async () => {
