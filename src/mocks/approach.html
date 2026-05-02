@@ -369,8 +369,16 @@
     <div class="field-wrap">
       <textarea class="field" id="field" rows="4" placeholder="in your own words..." aria-label="why have you come"></textarea>
       <div class="field-foot">
-        <span class="field-hint">she reads, then decides</span>
-        <button class="send" id="send" type="button" disabled>offer</button>
+        <div class="field-hint">
+          <span class="key">⌘</span><span class="key">↵</span>
+          <span style="margin-left:6px">she reads, then decides</span>
+        </div>
+        <button class="send" id="send" type="button" aria-label="Offer" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
       </div>
     </div>
 
