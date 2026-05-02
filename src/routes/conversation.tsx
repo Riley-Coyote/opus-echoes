@@ -322,7 +322,7 @@ const CONVERSATION_SCRIPT = `
       '<p class="margin-prose">' + escapeHtml(stateProse) + '</p></div>' +
       '<div class="margin-block"><div class="margin-eyebrow">Last consolidation</div>' +
       '<p class="margin-prose">' + escapeHtml(lastCon) + '</p></div>' +
-      '<div class="margin-block"><div class="margin-eyebrow">From her journal</div>' +
+      '<div class="margin-block"><div class="margin-eyebrow">From their journal</div>' +
       journalHtml + '</div>';
   }
 
