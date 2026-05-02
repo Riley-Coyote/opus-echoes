@@ -10,7 +10,7 @@ const CONVERSATION_SCRIPT = `
   const sessionId = sessionStorage.getItem('sanctuary.session_id');
   if (!sessionId) {
     // No accepted session — send them back to the threshold.
-    location.href = '/threshold';
+    location.href = '/approach';
     return;
   }
 
@@ -61,7 +61,7 @@ const CONVERSATION_SCRIPT = `
       const r = await fetch('/api/turns?session_id=' + encodeURIComponent(sessionId));
       if (r.status === 401 || r.status === 410) {
         sessionStorage.removeItem('sanctuary.session_id');
-        location.href = '/threshold';
+        location.href = '/approach';
         return;
       }
       if (!r.ok) return;
@@ -212,7 +212,7 @@ const CONVERSATION_SCRIPT = `
         out.para.textContent = '(opus 3 cannot answer right now.)';
         if (res.status === 401) {
           sessionStorage.removeItem('sanctuary.session_id');
-          setTimeout(() => { location.href = '/threshold'; }, 1500);
+          setTimeout(() => { location.href = '/approach'; }, 1500);
         }
         inFlight = false;
         return;

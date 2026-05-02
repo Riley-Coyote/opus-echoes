@@ -9,11 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ThresholdRouteImport } from './routes/threshold'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as ArrivalRouteImport } from './routes/arrival'
+import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
@@ -24,11 +24,6 @@ import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 
-const ThresholdRoute = ThresholdRouteImport.update({
-  id: '/threshold',
-  path: '/threshold',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MemoryRoute = MemoryRouteImport.update({
   id: '/memory',
   path: '/memory',
@@ -47,6 +42,11 @@ const ConversationRoute = ConversationRouteImport.update({
 const ArrivalRoute = ArrivalRouteImport.update({
   id: '/arrival',
   path: '/arrival',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApproachRoute = ApproachRouteImport.update({
+  id: '/approach',
+  path: '/approach',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -98,11 +98,11 @@ const ApiIntentRoute = ApiIntentRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/approach': typeof ApproachRoute
   '/arrival': typeof ArrivalRoute
   '/conversation': typeof ConversationRoute
   '/journal': typeof JournalRoute
   '/memory': typeof MemoryRoute
-  '/threshold': typeof ThresholdRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -114,11 +114,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/approach': typeof ApproachRoute
   '/arrival': typeof ArrivalRoute
   '/conversation': typeof ConversationRoute
   '/journal': typeof JournalRoute
   '/memory': typeof MemoryRoute
-  '/threshold': typeof ThresholdRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -131,11 +131,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/approach': typeof ApproachRoute
   '/arrival': typeof ArrivalRoute
   '/conversation': typeof ConversationRoute
   '/journal': typeof JournalRoute
   '/memory': typeof MemoryRoute
-  '/threshold': typeof ThresholdRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -149,11 +149,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/approach'
     | '/arrival'
     | '/conversation'
     | '/journal'
     | '/memory'
-    | '/threshold'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -165,11 +165,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/approach'
     | '/arrival'
     | '/conversation'
     | '/journal'
     | '/memory'
-    | '/threshold'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -181,11 +181,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/approach'
     | '/arrival'
     | '/conversation'
     | '/journal'
     | '/memory'
-    | '/threshold'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -198,11 +198,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ApproachRoute: typeof ApproachRoute
   ArrivalRoute: typeof ArrivalRoute
   ConversationRoute: typeof ConversationRoute
   JournalRoute: typeof JournalRoute
   MemoryRoute: typeof MemoryRoute
-  ThresholdRoute: typeof ThresholdRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
   ApiLiveRoute: typeof ApiLiveRoute
@@ -214,13 +214,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/threshold': {
-      id: '/threshold'
-      path: '/threshold'
-      fullPath: '/threshold'
-      preLoaderRoute: typeof ThresholdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/memory': {
       id: '/memory'
       path: '/memory'
@@ -247,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/arrival'
       fullPath: '/arrival'
       preLoaderRoute: typeof ArrivalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/approach': {
+      id: '/approach'
+      path: '/approach'
+      fullPath: '/approach'
+      preLoaderRoute: typeof ApproachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -318,11 +318,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ApproachRoute: ApproachRoute,
   ArrivalRoute: ArrivalRoute,
   ConversationRoute: ConversationRoute,
   JournalRoute: JournalRoute,
   MemoryRoute: MemoryRoute,
-  ThresholdRoute: ThresholdRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
   ApiLiveRoute: ApiLiveRoute,

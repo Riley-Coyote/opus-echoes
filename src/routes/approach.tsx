@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import html from "@/mocks/approach.html?raw";
 import { serveHtml } from "@/server/serve-mock";
 
-// Wires the threshold's submit() stub to POST /api/intent.
+// Wires the approach's submit() stub to POST /api/intent.
 // Stores session_id in sessionStorage on accept and routes to /conversation.
 // On decline, replaces the canned declined-prose with the model's actual reason.
-const THRESHOLD_SCRIPT = `
+const APPROACH_SCRIPT = `
 (function(){
   const body = document.body;
   const field = document.getElementById('field');
@@ -88,10 +88,10 @@ const THRESHOLD_SCRIPT = `
 })();
 `;
 
-export const Route = createFileRoute("/threshold")({
+export const Route = createFileRoute("/approach")({
   server: {
     handlers: {
-      GET: async () => serveHtml(html, THRESHOLD_SCRIPT),
+      GET: async () => serveHtml(html, APPROACH_SCRIPT),
     },
   },
 });

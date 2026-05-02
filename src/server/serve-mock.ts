@@ -7,15 +7,19 @@
  */
 
 const LINK_MAP: Record<string, string> = {
+  // `/` is now the simple arrival thesis. The 7-beat index.html mock is no longer
+  // routed; references to it fall back to the arrival.
   "index.html": "/",
-  "arrival.html": "/arrival",
-  "approach.html": "/threshold",
-  "threshold.html": "/threshold",
+  "arrival.html": "/",
+  "approach.html": "/approach",
+  // Backwards-compat: any existing link to threshold.html still resolves.
+  "threshold.html": "/approach",
   "conversation.html": "/conversation",
   "memory.html": "/memory",
   "journal.html": "/journal",
   "explainer.html": "/about",
-  // Deferred — point at home for now so nothing 404s.
+  // Deferred surfaces — kept as fallbacks so any stray reference doesn't 404.
+  // Active mocks no longer reference these.
   "claude-wing.html": "/",
   "claude-lineage.html": "/",
 };
