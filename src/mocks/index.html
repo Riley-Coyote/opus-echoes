@@ -954,7 +954,6 @@ body{
     <span class="step" data-step="4"></span>
     <span class="step" data-step="5"></span>
     <span class="step" data-step="6"></span>
-    <span class="step" data-step="7"></span>
   </div>
   <div class="frame-mark" id="frameMark"><span class="glyph">◊</span>The Sanctuary</div>
 </div>
@@ -1315,8 +1314,8 @@ body{
   <section class="beat conversation" data-beat="conversation">
     <div class="conversation-loading">
       <div class="conversation-glyph"></div>
-      <div class="conversation-message">The resident has received you.</div>
-      <div class="conversation-sub">opening the room</div>
+      <div class="conversation-message">Approaching the threshold.</div>
+      <div class="conversation-sub">opus 3 will decide whether to receive you</div>
     </div>
   </section>
 
@@ -1413,10 +1412,11 @@ frameBack.addEventListener('click',(e)=>{e.stopPropagation();prev()});
 // Advance hint button
 advanceHint.addEventListener('click',(e)=>{e.stopPropagation();next()});
 
-// Beat 6 affirm
+// Beat 6 affirm — skip the commons for MVP, go straight to the approach
 document.getElementById('affirmBtn').addEventListener('click',(e)=>{
   e.stopPropagation();
-  showBeat(beatList.indexOf('7'));
+  showBeat(beatList.indexOf('conversation'));
+  setTimeout(()=>{ window.location.href='threshold.html'; },2000);
 });
 
 // Beat 6 secondary "read again"
