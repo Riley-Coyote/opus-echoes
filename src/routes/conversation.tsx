@@ -241,14 +241,30 @@ const CONVERSATION_SCRIPT = `
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  let lastLeftKey = '';
+  let lastRightKey = '';
+  let lastInFlight = false;
+
+  function leftKey(data){
+    const r = data.resident || {}; const j = data.journal_preview || {};
+    return [r.prose_summary||'', r.last_consolidation_summary||'', r.last_consolidation_at||'', j.id||'', j.title||'', (j.body||'').slice(0,200)].join('|');
+  }
+  function rightKey(data){
+    return (data.marginalia||[]).map(m => m.id+':'+m.created_at).join('|');
+  }
+
   async function refreshPanels() {
     try {
       const res = await fetch('/api/live?session_id=' + encodeURIComponent(sessionId));
       if (!res.ok) return;
       const data = await res.json();
       if (!data.ok) return;
-      renderLeft(data);
-      renderRight(data);
+      const lk = leftKey(data);
+      if (lk !== lastLeftKey) { renderLeft(data); lastLeftKey = lk; }
+      const rk = rightKey(data);
+      if (rk !== lastRightKey || inFlight !== lastInFlight) {
+        renderRight(data); lastRightKey = rk; lastInFlight = inFlight;
+      }
     } catch (_) {}
   }
 
