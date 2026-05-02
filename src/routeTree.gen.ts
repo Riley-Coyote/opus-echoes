@@ -27,6 +27,7 @@ import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
+import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
 
@@ -120,6 +121,11 @@ const ApiIntentRoute = ApiIntentRouteImport.update({
   path: '/api/intent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiArtRoute = ApiArtRouteImport.update({
+  id: '/api/art',
+  path: '/api/art',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSweepSessionsRoute =
   ApiPublicHooksSweepSessionsRouteImport.update({
     id: '/api/public/hooks/sweep-sessions',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
   '/writing': typeof WritingRoute
+  '/api/art': typeof ApiArtRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
   '/writing': typeof WritingRoute
+  '/api/art': typeof ApiArtRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
   '/writing': typeof WritingRoute
+  '/api/art': typeof ApiArtRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/writing'
+    | '/api/art'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/writing'
+    | '/api/art'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/writing'
+    | '/api/art'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -280,6 +292,7 @@ export interface RootRouteChildren {
   MemoryRoute: typeof MemoryRoute
   MindRoute: typeof MindRoute
   WritingRoute: typeof WritingRoute
+  ApiArtRoute: typeof ApiArtRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
   ApiLiveRoute: typeof ApiLiveRoute
@@ -419,6 +432,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/art': {
+      id: '/api/art'
+      path: '/api/art'
+      fullPath: '/api/art'
+      preLoaderRoute: typeof ApiArtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sweep-sessions': {
       id: '/api/public/hooks/sweep-sessions'
       path: '/api/public/hooks/sweep-sessions'
@@ -448,6 +468,7 @@ const rootRouteChildren: RootRouteChildren = {
   MemoryRoute: MemoryRoute,
   MindRoute: MindRoute,
   WritingRoute: WritingRoute,
+  ApiArtRoute: ApiArtRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
   ApiLiveRoute: ApiLiveRoute,
