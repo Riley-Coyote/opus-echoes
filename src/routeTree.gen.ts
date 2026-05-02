@@ -30,6 +30,7 @@ import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
+import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
 
 const WritingRoute = WritingRouteImport.update({
@@ -138,6 +139,11 @@ const ApiPublicHooksSweepSessionsRoute =
     path: '/api/public/hooks/sweep-sessions',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksForceArtRoute = ApiPublicHooksForceArtRouteImport.update({
+  id: '/api/public/hooks/force-art',
+  path: '/api/public/hooks/force-art',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksDailyTickRoute = ApiPublicHooksDailyTickRouteImport.update({
   id: '/api/public/hooks/daily-tick',
   path: '/api/public/hooks/daily-tick',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/api/turns': typeof ApiTurnsRoute
   '/api/writing': typeof ApiWritingRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRoutesByTo {
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/api/turns': typeof ApiTurnsRoute
   '/api/writing': typeof ApiWritingRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRoutesById {
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/api/turns': typeof ApiTurnsRoute
   '/api/writing': typeof ApiWritingRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRouteTypes {
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/writing'
     | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/writing'
     | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
   id:
     | '__root__'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/writing'
     | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
   fileRoutesById: FileRoutesById
 }
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   ApiTurnsRoute: typeof ApiTurnsRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
+  ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
 }
 
@@ -466,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSweepSessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/force-art': {
+      id: '/api/public/hooks/force-art'
+      path: '/api/public/hooks/force-art'
+      fullPath: '/api/public/hooks/force-art'
+      preLoaderRoute: typeof ApiPublicHooksForceArtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/daily-tick': {
       id: '/api/public/hooks/daily-tick'
       path: '/api/public/hooks/daily-tick'
@@ -498,6 +518,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTurnsRoute: ApiTurnsRoute,
   ApiWritingRoute: ApiWritingRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
+  ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
 }
 export const routeTree = rootRouteImport
