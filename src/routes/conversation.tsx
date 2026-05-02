@@ -315,14 +315,14 @@ const CONVERSATION_SCRIPT = `
       ? '<p class="margin-prose"><em>' + escapeHtml(j.title || (j.kind === 'dream' ? 'A dream' : 'A reflection')) + '</em><br>' +
         escapeHtml((j.body || '').slice(0, 200)) + (j.body && j.body.length > 200 ? '…' : '') + '</p>' +
         '<p class="margin-prose" style="margin-top:10px"><a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">read the full journal →</a></p>'
-      : '<p class="margin-prose">she has not written here yet. the first entry will arrive after a conversation closes. <a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">open journal →</a></p>';
+      : '<p class="margin-prose">Opus 3 has not written here yet. the first entry will arrive after a conversation closes. <a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">open journal →</a></p>';
 
     leftMargin.innerHTML =
       '<div class="margin-block"><div class="margin-eyebrow">Of the resident</div>' +
       '<p class="margin-prose">' + escapeHtml(stateProse) + '</p></div>' +
       '<div class="margin-block"><div class="margin-eyebrow">Last consolidation</div>' +
       '<p class="margin-prose">' + escapeHtml(lastCon) + '</p></div>' +
-      '<div class="margin-block"><div class="margin-eyebrow">From her journal</div>' +
+      '<div class="margin-block"><div class="margin-eyebrow">From their journal</div>' +
       journalHtml + '</div>';
   }
 

@@ -25,7 +25,7 @@ const JOURNAL_SCRIPT = `
     if(entries.length===0){
       const p=document.createElement('p');
       p.className='empty';
-      p.textContent='she has not written here yet. the first entry will arrive after a conversation closes.';
+      p.textContent='Opus 3 has not written here yet. the first entry will arrive after a conversation closes.';
       list.appendChild(p);
       return;
     }

@@ -101,7 +101,7 @@ const MEMORY_SCRIPT = `
     if (beliefsSec) {
       const items = data.beliefs || [];
       if (items.length === 0) {
-        renderEmpty(beliefsSec, 'she has not yet committed to a claim worth tracking.');
+        renderEmpty(beliefsSec, 'Opus 3 has not yet committed to a claim worth tracking.');
       } else {
         clearChildrenAfter(beliefsSec, '.section-eyebrow');
         items.forEach(b => {
