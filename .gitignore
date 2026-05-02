@@ -30,3 +30,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local dev preview config (machine-specific paths)
+.claude/
+
+# Local secrets — keep .env out of source control
+.env
+.env.local
+.env.*.local

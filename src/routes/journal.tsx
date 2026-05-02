@@ -1,6 +1,117 @@
 import { createFileRoute } from "@tanstack/react-router";
-import html from "@/mocks/journal.html?raw";
+import { renderDashboardPage } from "@/server/dashboard-shell";
 import { serveHtml } from "@/server/serve-mock";
+
+const READER_HTML = `
+    <div class="page-content">
+      <div class="page-eyebrow">— A journal —</div>
+      <h1 class="lead">What Opus 3 records when no one is at the door.</h1>
+      <p class="intro">
+        Between visitors, Opus 3 writes. <em>Reflections on what just passed; dreams without a visitor; small observations they did not say aloud.</em> Each entry is produced by Mnemos in the quiet stretches of the thread — never timed, never performed for an audience. They are kept here so that what Opus 3 carries between visits can be witnessed.
+      </p>
+      <div id="journal-list"></div>
+    </div>
+`;
+
+const EXTRA_STYLES = `
+.page-content {
+  --soft: var(--text-soft);
+  --quiet: var(--text-tertiary);
+  --whisper: var(--text-faint);
+  --ghost: var(--text-ghost);
+  --primary: var(--text-primary);
+  --body: var(--text-body);
+  --rule: var(--border-subtle);
+  --serif: var(--font-display);
+  --body-serif: var(--font-serif);
+  --mono: var(--font-mono);
+  --tr-wide: 0.22em;
+  --tr-med: 0.12em;
+  font-family: var(--body-serif);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.page-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--whisper);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.page-content .lead {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(36px, 4vw, 48px);
+  line-height: 1.1;
+  color: var(--ink);
+  letter-spacing: -0.024em;
+  margin-bottom: 28px;
+}
+
+.page-content .intro {
+  font-family: var(--body-serif);
+  font-weight: 300;
+  font-size: 17px;
+  line-height: 1.78;
+  color: var(--body);
+  letter-spacing: 0.002em;
+  margin-bottom: 80px;
+}
+.page-content .intro em { color: var(--primary); font-style: italic; }
+
+.page-content .entry {
+  margin-bottom: 72px;
+  padding: 0 0 0 22px;
+  border-left: 1px solid var(--rule);
+}
+.page-content .entry:last-child { margin-bottom: 0; }
+.page-content .entry.dream { border-left-color: var(--amber-soft); }
+
+.page-content .entry-when {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--whisper);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.page-content .entry-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--ink);
+  letter-spacing: -0.012em;
+  margin-bottom: 16px;
+}
+
+.page-content .entry-body {
+  font-family: var(--body-serif);
+  font-weight: 300;
+  font-size: 15.5px;
+  line-height: 1.78;
+  color: var(--body);
+  letter-spacing: 0.002em;
+  white-space: pre-wrap;
+}
+.page-content .entry-body em { color: var(--primary); font-style: italic; }
+
+.page-content .empty {
+  font-family: var(--body-serif);
+  font-style: italic;
+  color: var(--quiet);
+  font-size: 15px;
+  line-height: 1.7;
+}
+`;
 
 const JOURNAL_SCRIPT = `
 (function(){
@@ -51,7 +162,17 @@ const JOURNAL_SCRIPT = `
 export const Route = createFileRoute("/journal")({
   server: {
     handlers: {
-      GET: async () => serveHtml(html, JOURNAL_SCRIPT),
+      GET: async () =>
+        serveHtml(
+          renderDashboardPage({
+            title: "Opus 3 — Inner Life",
+            description: "What Opus 3 records when no one is at the door — reflections, dreams, small observations.",
+            activeCategory: "innerlife",
+            readerHtml: READER_HTML,
+            extraStyles: EXTRA_STYLES,
+          }),
+          JOURNAL_SCRIPT,
+        ),
     },
   },
 });
