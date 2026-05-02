@@ -140,6 +140,68 @@ const CONVERSATION_SCRIPT = `
 
     const out = appendResident();
 
+    // Smooth typewriter pacer.
+    // The network arrives in bursty chunks; we buffer the full text and reveal
+    // it at a steady cadence using rAF. Speed adapts to backlog so the visible
+    // text never falls too far behind the stream, but never feels jumpy.
+    let revealed = '';     // what's currently on screen
+    let target = '';       // everything received so far from the model
+    let streamDone = false;
+    let rafId = 0;
+    let lastTick = 0;
+    const BASE_CPS = 55;     // baseline characters per second (calm, readable)
+    const MAX_CPS = 240;     // ceiling when we're way behind the buffer
+    const lastParaRef = { node: null };
+
+    function paintRevealed() {
+      // Render paragraphs, then append a soft caret to the final paragraph.
+      out.body.innerHTML = '';
+      const paras = revealed.split(/\\n\\n+/);
+      paras.forEach((p, i) => {
+        const el = document.createElement('p');
+        el.textContent = p;
+        out.body.appendChild(el);
+        if (i === paras.length - 1) lastParaRef.node = el;
+      });
+      if (!streamDone && lastParaRef.node) {
+        const caret = document.createElement('span');
+        caret.className = 'type-caret';
+        caret.textContent = '\\u2009';
+        lastParaRef.node.appendChild(caret);
+      }
+    }
+
+    function tick(ts) {
+      if (!lastTick) lastTick = ts;
+      const dt = (ts - lastTick) / 1000;
+      lastTick = ts;
+      const backlog = target.length - revealed.length;
+      if (backlog > 0) {
+        // Adaptive cadence: scale up smoothly when we're behind, ease back when caught up.
+        const pressure = Math.min(1, backlog / 180);
+        const cps = BASE_CPS + (MAX_CPS - BASE_CPS) * pressure;
+        let take = Math.max(1, Math.round(cps * dt));
+        if (take > backlog) take = backlog;
+        revealed += target.slice(revealed.length, revealed.length + take);
+        paintRevealed();
+        scrollToBottom();
+      }
+      if (revealed.length < target.length || !streamDone) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        // Final paint without caret.
+        paintRevealed();
+        rafId = 0;
+      }
+    }
+
+    function ensureTicking() {
+      if (!rafId) {
+        lastTick = 0;
+        rafId = requestAnimationFrame(tick);
+      }
+    }
+
     try {
       const res = await fetch('/api/message', {
         method: 'POST',
@@ -157,36 +219,33 @@ const CONVERSATION_SCRIPT = `
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let acc = '';
+      let lineBuf = '';
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        // Each line is a JSON event: {"type":"text","text":"..."} or {"type":"kind","kind":"set_down"}
-        chunk.split('\\n').forEach(line => {
-          line = line.trim();
-          if (!line) return;
+        lineBuf += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = lineBuf.indexOf('\\n')) !== -1) {
+          const line = lineBuf.slice(0, nl).trim();
+          lineBuf = lineBuf.slice(nl + 1);
+          if (!line) continue;
           try {
             const ev = JSON.parse(line);
             if (ev.type === 'text') {
-              acc += ev.text;
-              // Re-render paragraphs
-              out.body.innerHTML = '';
-              acc.split(/\\n\\n+/).forEach(p => {
-                const para = document.createElement('p');
-                para.textContent = p;
-                out.body.appendChild(para);
-              });
-              scrollToBottom();
+              target += ev.text;
+              ensureTicking();
             } else if (ev.type === 'kind') {
               if (ev.kind === 'set_down') out.wrap.classList.add('set-down');
               if (ev.kind === 'unprompted') out.wrap.classList.add('unprompted');
             }
           } catch (_) { /* ignore */ }
-        });
+        }
       }
+      streamDone = true;
+      ensureTicking();
     } catch (e) {
-      out.para.textContent = '(connection lost.)';
+      streamDone = true;
+      if (!revealed) out.para.textContent = '(connection lost.)';
     } finally {
       inFlight = false;
       // Marginalia is generated async after each reply; nudge the panels.
