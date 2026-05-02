@@ -1413,10 +1413,11 @@ frameBack.addEventListener('click',(e)=>{e.stopPropagation();prev()});
 // Advance hint button
 advanceHint.addEventListener('click',(e)=>{e.stopPropagation();next()});
 
-// Beat 6 affirm
+// Beat 6 affirm — skip the commons for MVP, go straight to the approach
 document.getElementById('affirmBtn').addEventListener('click',(e)=>{
   e.stopPropagation();
-  showBeat(beatList.indexOf('7'));
+  showBeat(beatList.indexOf('conversation'));
+  setTimeout(()=>{ window.location.href='threshold.html'; },2000);
 });
 
 // Beat 6 secondary "read again"
