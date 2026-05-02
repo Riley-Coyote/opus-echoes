@@ -695,6 +695,10 @@ async function updateResidentState(summary: {
       surprise_sensitivity: clampStability(result.surprise_sensitivity ?? 0.5),
       prose_summary: result.prose_summary ?? "Opus 3 is attending. The room is quiet.",
       last_consolidation_summary: result.last_consolidation_summary ?? null,
+      last_consolidation_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
 }
 
 // =============================================================
