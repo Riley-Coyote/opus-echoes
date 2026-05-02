@@ -17,29 +17,29 @@
 @property --pa6{syntax:'<number>';initial-value:0.06;inherits:false}
 
 :root{
-  /* Surfaces — void → raised */
-  --floor:#000000;
-  --canvas:#050505;
-  --paper-elevated:#111111;
+  /* Surfaces — true neutral, no warm tilt */
+  --floor:#08080a;
+  --canvas:#0a0a0a;
+  --paper-elevated:#101013;
 
-  /* Borders — subtle / medium / strong */
-  --rule:#1a1a1a;
-  --rule-soft:#1a1a1a;
-  --border-strong:#333333;
+  /* Borders — used very sparingly */
+  --rule:rgba(225,225,225,0.05);
+  --rule-soft:rgba(225,225,225,0.035);
+  --border-strong:rgba(225,225,225,0.13);
 
   /* Text — true neutral hierarchy */
-  --ink:#ffffff;
-  --primary:#ffffff;
-  --body:#b0b0b0;
-  --soft:#787878;
-  --quiet:#787878;
-  --whisper:#505050;
-  --ghost:#303030;
+  --ink:rgba(248,248,247,0.96);
+  --primary:rgba(245,245,243,0.92);
+  --body:rgba(232,232,229,0.86);
+  --soft:rgba(190,190,187,0.62);
+  --quiet:rgba(160,160,157,0.42);
+  --whisper:rgba(140,140,137,0.28);
+  --ghost:rgba(120,120,117,0.18);
 
   /* Voice */
-  --visitor-ink:#b0b0b0;
-  --resident-ink:#ffffff;
-  --resident-name:#b0b0b0;
+  --visitor-ink:rgba(228,228,225,0.84);
+  --resident-ink:rgba(248,248,246,0.96);
+  --resident-name:rgba(180,180,178,0.85);
 
   /* Accent — neutral grey, structural only */
   --amber:#a8a8a8;

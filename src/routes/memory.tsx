@@ -389,7 +389,7 @@ const EXTRA_STYLES = `
   transition: background 320ms ease, border-color 320ms ease;
 }
 .page-content .journal-preview:hover {
-  background: rgba(180, 180, 178, 0.08);
+  background: rgba(201, 168, 124, 0.08);
   border-color: var(--amber-dim);
   border-left-color: var(--amber);
 }
