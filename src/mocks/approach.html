@@ -105,10 +105,46 @@
   .field-wrap{
     position:relative;
     background:var(--paper-elevated);
-    border:1px solid var(--amber-dim);
-    transition:border-color 600ms var(--ease);
+    border:1px solid rgba(225,225,225,0.07);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.025) inset,
+      0 24px 60px -20px rgba(0,0,0,0.7),
+      0 4px 16px -8px rgba(0,0,0,0.6);
+    transition:border-color 400ms var(--ease);
   }
-  .field-wrap:focus-within{border-color:var(--amber-soft)}
+
+  /* Breathing pool border — same alive element as the chat composer */
+  .field-wrap::before{
+    content:'';
+    position:absolute;inset:0;
+    border-radius:inherit;
+    padding:1px;
+    background:
+      radial-gradient(ellipse 55% 160% at 12% 0%,rgba(220,218,214,var(--pa1)) 0%,transparent 65%),
+      radial-gradient(ellipse 50% 160% at 50% 0%,rgba(220,218,214,var(--pa2)) 0%,transparent 65%),
+      radial-gradient(ellipse 55% 160% at 88% 0%,rgba(220,218,214,var(--pa3)) 0%,transparent 65%),
+      radial-gradient(ellipse 55% 160% at 85% 100%,rgba(220,218,214,var(--pa4)) 0%,transparent 65%),
+      radial-gradient(ellipse 50% 160% at 48% 100%,rgba(220,218,214,var(--pa5)) 0%,transparent 65%),
+      radial-gradient(ellipse 55% 160% at 15% 100%,rgba(220,218,214,var(--pa6)) 0%,transparent 65%);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+    animation:
+      pool-1 7s ease-in-out infinite,
+      pool-2 9s ease-in-out infinite,
+      pool-3 11s ease-in-out infinite,
+      pool-4 13s ease-in-out infinite,
+      pool-5 17s ease-in-out infinite,
+      pool-6 19s ease-in-out infinite;
+  }
+  @keyframes pool-1{0%,100%{--pa1:0.06}50%{--pa1:0.32}}
+  @keyframes pool-2{0%,100%{--pa2:0.26}50%{--pa2:0.05}}
+  @keyframes pool-3{0%,100%{--pa3:0.04}50%{--pa3:0.30}}
+  @keyframes pool-4{0%,100%{--pa4:0.24}50%{--pa4:0.05}}
+  @keyframes pool-5{0%,100%{--pa5:0.05}50%{--pa5:0.28}}
+  @keyframes pool-6{0%,100%{--pa6:0.22}50%{--pa6:0.04}}
 
   .field{
     display:block;
@@ -123,9 +159,11 @@
     line-height:1.82;
     font-weight:300;
     letter-spacing:0.002em;
-    padding:24px 26px 18px;
+    padding:24px 26px 14px;
     min-height:140px;
     max-height:320px;
+    position:relative;
+    z-index:1;
   }
   .field::placeholder{
     color:var(--quiet);
@@ -133,41 +171,53 @@
   }
 
   .field-foot{
+    position:relative;
+    z-index:1;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:14px 22px 14px 26px;
-    border-top:1px solid var(--rule-soft);
+    padding:10px 16px 12px 26px;
+    border-top:1px solid rgba(225,225,225,0.035);
     gap:16px;
   }
   .field-hint{
     font-family:var(--mono);
     font-size:10px;
-    font-weight:500;
+    font-weight:450;
     color:var(--whisper);
     letter-spacing:var(--tr-med);
     text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;
   }
+  .field-hint .key{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:18px;height:18px;padding:0 4px;
+    border:1px solid rgba(225,225,225,0.10);border-radius:3px;
+    color:var(--soft);font-size:10px;letter-spacing:0;
+    font-family:var(--mono);font-weight:450;
+  }
+  .field-hint .key+.key{margin-left:3px}
+
   .send{
+    width:30px;height:30px;
     background:transparent;
-    border:1px solid var(--amber-dim);
-    color:var(--soft);
-    font-family:var(--mono);
-    font-size:10px;
-    font-weight:500;
-    letter-spacing:var(--tr-med);
-    text-transform:uppercase;
-    padding:8px 16px;
+    border:1px solid rgba(225,225,225,0.10);
+    border-radius:6px;
     cursor:pointer;
-    transition:color 600ms var(--ease), border-color 600ms var(--ease);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--soft);
+    transition:all 320ms var(--ease);
+    padding:0;
   }
   .send:hover:not(:disabled),
   .send:focus:not(:disabled){
-    border-color:var(--amber-soft);
+    border-color:var(--amber-dim);
     color:var(--amber);
+    background:var(--amber-whisper);
     outline:none;
   }
-  .send:disabled{opacity:0.4;cursor:default}
+  .send:disabled{opacity:0.35;cursor:default}
+  .send svg{width:13px;height:13px}
 
   .fineprint{
     margin-top:36px;
