@@ -539,11 +539,28 @@ async function discoverEdges(
   }
   if (edges.length > 0) {
     await supabaseAdmin.from("engram_edges").insert(edges);
-    // Bump connection counters
+    // Bump the new engram's connection count.
     await supabaseAdmin
       .from("engrams")
       .update({ connections: connectionsBumped })
       .eq("id", newEngramId);
+    // Bump the matched engrams' connection counts (read-modify-write
+    // because supabase-js doesn't expose atomic increment).
+    const matchedIds = Array.from(new Set(edges.map((e) => e.to_id).filter((id) => id !== newEngramId)));
+    if (matchedIds.length > 0) {
+      const { data: matched } = await supabaseAdmin
+        .from("engrams")
+        .select("id, connections")
+        .in("id", matchedIds);
+      await Promise.allSettled(
+        (matched ?? []).map((m) =>
+          supabaseAdmin
+            .from("engrams")
+            .update({ connections: (m.connections ?? 0) + 1 })
+            .eq("id", m.id)
+        )
+      );
+    }
     await supabaseAdmin.from("substrate_events").insert({
       kind: "CONNECTION_DISCOVERED",
       payload: { engram_id: newEngramId, count: connectionsBumped },
