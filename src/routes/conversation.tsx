@@ -147,11 +147,19 @@ const CONVERSATION_SCRIPT = `
 
   if (composer) {
     composer.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); send(); }
+      // Bare Enter sends. Shift+Enter inserts a newline. Cmd/Ctrl+Enter also sends (muscle memory).
+      if (e.isComposing) return;
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        send();
+      }
     });
     composer.focus();
   }
-  if (sendBtn) sendBtn.addEventListener('click', send);
+  if (sendBtn) sendBtn.addEventListener('click', (e) => { e.preventDefault(); send(); });
 
   if (setDownBtn) {
     setDownBtn.addEventListener('click', async () => {
