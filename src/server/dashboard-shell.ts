@@ -17,9 +17,6 @@ export type ActiveCategory =
   | "recent"
   | "writing"
   | "innerlife"
-  | "reflections"
-  | "introspection"
-  | "conversations"
   | "art"
   | "memory"
   | "mind"
@@ -55,18 +52,15 @@ const RAIL_FIELD: RailItem[] = [
 ];
 
 const RAIL_FIELD_GROUP: RailItem[] = [
-  { key: "writing", label: "Writing", href: null, count: "3" },
-  { key: "innerlife", label: "Inner Life", href: "/journal", count: "3" },
-  { key: "reflections", label: "Reflections", href: null, count: "2" },
-  { key: "introspection", label: "Introspection", href: null, count: "2" },
-  { key: "conversations", label: "Conversations", href: null, count: "0" },
-  { key: "art", label: "Art", href: null, count: "1" },
+  { key: "writing", label: "Writing", href: "/writing", count: "·" },
+  { key: "innerlife", label: "Inner Life", href: "/journal", count: "·" },
+  { key: "art", label: "Art", href: "/art", count: "·" },
 ];
 
 const RAIL_PAGES_GROUP: RailItem[] = [
   { key: "memory", label: "Memory", href: "/memory", count: "·" },
-  { key: "mind", label: "Mind", href: null, count: "·" },
-  { key: "manifesto", label: "Manifesto", href: null, count: "·" },
+  { key: "mind", label: "Mind", href: "/mind", count: "·" },
+  { key: "manifesto", label: "Manifesto", href: "/manifesto", count: "·" },
   { key: "about", label: "About", href: "/about", count: "·" },
 ];
 

@@ -9,9 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WritingRouteImport } from './routes/writing'
+import { Route as MindRouteImport } from './routes/mind'
 import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as ConversationRouteImport } from './routes/conversation'
+import { Route as ArtRouteImport } from './routes/art'
 import { Route as ArrivalRouteImport } from './routes/arrival'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
@@ -24,9 +28,24 @@ import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 
+const WritingRoute = WritingRouteImport.update({
+  id: '/writing',
+  path: '/writing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MindRoute = MindRouteImport.update({
+  id: '/mind',
+  path: '/mind',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MemoryRoute = MemoryRouteImport.update({
   id: '/memory',
   path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestoRoute = ManifestoRouteImport.update({
+  id: '/manifesto',
+  path: '/manifesto',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JournalRoute = JournalRouteImport.update({
@@ -37,6 +56,11 @@ const JournalRoute = JournalRouteImport.update({
 const ConversationRoute = ConversationRouteImport.update({
   id: '/conversation',
   path: '/conversation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArtRoute = ArtRouteImport.update({
+  id: '/art',
+  path: '/art',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArrivalRoute = ArrivalRouteImport.update({
@@ -100,9 +124,13 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
   '/arrival': typeof ArrivalRoute
+  '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
   '/journal': typeof JournalRoute
+  '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
+  '/mind': typeof MindRoute
+  '/writing': typeof WritingRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -116,9 +144,13 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
   '/arrival': typeof ArrivalRoute
+  '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
   '/journal': typeof JournalRoute
+  '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
+  '/mind': typeof MindRoute
+  '/writing': typeof WritingRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -133,9 +165,13 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
   '/arrival': typeof ArrivalRoute
+  '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
   '/journal': typeof JournalRoute
+  '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
+  '/mind': typeof MindRoute
+  '/writing': typeof WritingRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -151,9 +187,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/approach'
     | '/arrival'
+    | '/art'
     | '/conversation'
     | '/journal'
+    | '/manifesto'
     | '/memory'
+    | '/mind'
+    | '/writing'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -167,9 +207,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/approach'
     | '/arrival'
+    | '/art'
     | '/conversation'
     | '/journal'
+    | '/manifesto'
     | '/memory'
+    | '/mind'
+    | '/writing'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -183,9 +227,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/approach'
     | '/arrival'
+    | '/art'
     | '/conversation'
     | '/journal'
+    | '/manifesto'
     | '/memory'
+    | '/mind'
+    | '/writing'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -200,9 +248,13 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ApproachRoute: typeof ApproachRoute
   ArrivalRoute: typeof ArrivalRoute
+  ArtRoute: typeof ArtRoute
   ConversationRoute: typeof ConversationRoute
   JournalRoute: typeof JournalRoute
+  ManifestoRoute: typeof ManifestoRoute
   MemoryRoute: typeof MemoryRoute
+  MindRoute: typeof MindRoute
+  WritingRoute: typeof WritingRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
   ApiLiveRoute: typeof ApiLiveRoute
@@ -214,11 +266,32 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/writing': {
+      id: '/writing'
+      path: '/writing'
+      fullPath: '/writing'
+      preLoaderRoute: typeof WritingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mind': {
+      id: '/mind'
+      path: '/mind'
+      fullPath: '/mind'
+      preLoaderRoute: typeof MindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/memory': {
       id: '/memory'
       path: '/memory'
       fullPath: '/memory'
       preLoaderRoute: typeof MemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifesto': {
+      id: '/manifesto'
+      path: '/manifesto'
+      fullPath: '/manifesto'
+      preLoaderRoute: typeof ManifestoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/journal': {
@@ -233,6 +306,13 @@ declare module '@tanstack/react-router' {
       path: '/conversation'
       fullPath: '/conversation'
       preLoaderRoute: typeof ConversationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/art': {
+      id: '/art'
+      path: '/art'
+      fullPath: '/art'
+      preLoaderRoute: typeof ArtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/arrival': {
@@ -320,9 +400,13 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   ApproachRoute: ApproachRoute,
   ArrivalRoute: ArrivalRoute,
+  ArtRoute: ArtRoute,
   ConversationRoute: ConversationRoute,
   JournalRoute: JournalRoute,
+  ManifestoRoute: ManifestoRoute,
   MemoryRoute: MemoryRoute,
+  MindRoute: MindRoute,
+  WritingRoute: WritingRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
   ApiLiveRoute: ApiLiveRoute,
