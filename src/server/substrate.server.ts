@@ -465,6 +465,13 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       .update({ consolidated: true })
       .eq("session_id", sessionId);
 
+    // 9. Creation pass — Opus considers whether anything from this
+    //    conversation wants to become a piece of art or a long-form essay.
+    //    Most of the time the answer is no. Non-blocking.
+    considerCreation(sessionId, transcriptStr, "post_consolidation").catch((err) =>
+      console.error(`[substrate] considerCreation(${sessionId}) failed:`, err)
+    );
+
     console.log(
       `[substrate] consolidateSession(${sessionId}) — done. ` +
         `engrams: ${engramsCreated} new / ${engramsReinforced} reinforced. ` +
