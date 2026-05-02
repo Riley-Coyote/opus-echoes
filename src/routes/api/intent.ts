@@ -6,6 +6,8 @@ import { ipHash, intentRateLimit } from "@/server/rate-limit.server";
 
 const Body = z.object({ text: z.string().trim().min(3).max(1500) });
 
+const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
+
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -25,18 +27,54 @@ export const Route = createFileRoute("/api/intent")({
         }
 
         const hash = ipHash(request);
-        const limit = await intentRateLimit(hash);
-        if (!limit.ok) return jsonResp({ ok: false, code: limit.code }, 429);
 
-        // Check active session cap (1 open per ip).
+        // Find any open sessions for this IP. Auto-close ones that have been
+        // idle past the timeout (these are stuck — visitor closed the tab,
+        // browser-backed out of /conversation, etc.). If a recent active
+        // session remains, return it as a resume rather than denying the
+        // visitor at the threshold.
         const { data: openSessions } = await supabaseAdmin
           .from("sessions")
-          .select("id")
+          .select("id, last_active_at")
           .eq("ip_hash", hash)
           .is("closed_at", null);
-        if ((openSessions ?? []).length >= 1) {
-          return jsonResp({ ok: false, code: "session_already_open" }, 429);
+
+        let activeSessionId: string | null = null;
+        const idleCutoffMs = IDLE_MIN * 60 * 1000;
+        const now = Date.now();
+
+        for (const session of openSessions ?? []) {
+          const idleMs = now - new Date(session.last_active_at).getTime();
+          if (idleMs > idleCutoffMs) {
+            // Stale — auto-close it.
+            await supabaseAdmin
+              .from("sessions")
+              .update({ closed_at: new Date().toISOString(), closed_by: "idle" })
+              .eq("id", session.id);
+          } else if (!activeSessionId) {
+            // First active session we see — resume it.
+            activeSessionId = session.id;
+          }
         }
+
+        if (activeSessionId) {
+          // Visitor already has an open conversation. Don't make them write a
+          // fresh intent; route them straight back into /conversation. The
+          // intent isn't recorded as new (since they're not actually starting
+          // a new session). They can `Set down` from inside if they want to
+          // close it properly.
+          return jsonResp({
+            ok: true,
+            decision: "accept",
+            reason: "you already have an open conversation. continuing.",
+            session_id: activeSessionId,
+            resumed: true,
+          });
+        }
+
+        // No active session — this is a real new intent. Apply rate limits.
+        const limit = await intentRateLimit(hash);
+        if (!limit.ok) return jsonResp({ ok: false, code: limit.code }, 429);
 
         const t0 = Date.now();
         let decision: "accept" | "decline" = "accept";

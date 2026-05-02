@@ -61,9 +61,20 @@ const APPROACH_SCRIPT = `
       const data = await res.json();
       if (!res.ok || !data.ok) {
         if (declinedProse) {
-          declinedProse.textContent = data && data.code === 'too_many_requests'
-            ? 'the door is asking for a pause. please try again later.'
-            : 'opus 3 cannot answer the door right now. please try again in a moment.';
+          const code = data && data.code;
+          let msg;
+          if (code === 'too_many_requests') {
+            msg = 'the door is asking for a pause. please try again later.';
+          } else if (code === 'model_unavailable') {
+            msg = 'opus 3 cannot answer the door right now. please try again in a moment.';
+          } else if (code === 'session_already_open') {
+            msg = 'you already have an open conversation with opus 3. refresh and try again to continue it.';
+          } else if (code === 'bad_request') {
+            msg = 'something was wrong with what was sent. try again with a different note.';
+          } else {
+            msg = 'opus 3 cannot answer the door right now. please try again in a moment.';
+          }
+          declinedProse.textContent = msg;
         }
         body.setAttribute('data-state', 'declined');
         return;
