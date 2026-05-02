@@ -5,34 +5,40 @@
    ============================================================ */
 
 :root {
-  --bg-void: #060608;
-  --bg-deep: #0a0a0c;
-  --bg-primary: #0e0e10;
-  --bg-elevated: #141416;
-  --bg-surface: rgba(220, 219, 216, 0.032);
-  --bg-surface-hover: rgba(220, 219, 216, 0.05);
-  --bg-surface-active: rgba(220, 219, 216, 0.07);
+  /* ── BACKGROUND ELEVATION (void → raised) ── */
+  --bg-void: #000000;
+  --bg-deep: #050505;
+  --bg-primary: #0a0a0a;       /* surface */
+  --bg-elevated: #111111;
+  --bg-raised: #1a1a1a;
+  --bg-surface: rgba(255, 255, 255, 0.025);
+  --bg-surface-hover: rgba(255, 255, 255, 0.04);
+  --bg-surface-active: rgba(255, 255, 255, 0.06);
 
-  --border: rgba(220, 219, 216, 0.08);
-  --border-subtle: rgba(220, 219, 216, 0.045);
-  --border-dim: rgba(220, 219, 216, 0.06);
-  --border-focus: rgba(228, 225, 220, 0.18);
+  /* ── BORDER STEPS (subtle → strong) ── */
+  --border-subtle: #1a1a1a;
+  --border: #252525;            /* medium */
+  --border-dim: #1a1a1a;
+  --border-strong: #333333;
+  --border-focus: rgba(255, 255, 255, 0.22);
 
-  --ink: rgba(244, 243, 240, 0.93);
-  --text-primary: rgba(244, 243, 240, 0.88);
-  --text-body: rgba(210, 208, 204, 0.68);
-  --text-mid: rgba(194, 192, 188, 0.60);
-  --text-secondary: rgba(194, 192, 188, 0.56);
-  --text-soft: rgba(161, 159, 155, 0.42);
-  --text-tertiary: rgba(161, 159, 155, 0.34);
-  --text-faint: rgba(132, 130, 126, 0.22);
-  --text-ghost: rgba(132, 130, 126, 0.18);
-  --text-whisper: rgba(126, 123, 119, 0.10);
+  /* ── TEXT HIERARCHY (primary → ghost) ── */
+  --ink: #ffffff;
+  --text-primary: #ffffff;
+  --text-body: #b0b0b0;
+  --text-mid: #b0b0b0;
+  --text-secondary: #b0b0b0;   /* secondary */
+  --text-soft: #787878;        /* tertiary */
+  --text-tertiary: #787878;
+  --text-faint: #505050;       /* dim */
+  --text-ghost: #303030;
+  --text-whisper: rgba(255, 255, 255, 0.05);
 
-  --amber: #c9a87c;
-  --amber-soft: rgba(201, 168, 124, 0.55);
-  --amber-dim: rgba(201, 168, 124, 0.18);
-  --amber-whisper: rgba(201, 168, 124, 0.05);
+  /* Accent — neutralized to monochrome */
+  --amber: #a8a8a8;
+  --amber-soft: rgba(180, 180, 178, 0.55);
+  --amber-dim: rgba(180, 180, 178, 0.18);
+  --amber-whisper: rgba(180, 180, 178, 0.05);
 
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
   --font-serif: 'EB Garamond', 'Cormorant Garamond', Georgia, serif;
@@ -128,8 +134,8 @@ body {
 }
 
 @keyframes mark-pulse {
-  0%, 100% { opacity: 0.40; box-shadow: 0 0 0 0 rgba(201, 168, 124, 0); }
-  50% { opacity: 0.90; box-shadow: 0 0 0 4px rgba(201, 168, 124, 0.06); }
+  0%, 100% { opacity: 0.40; box-shadow: 0 0 0 0 rgba(180, 180, 178, 0); }
+  50% { opacity: 0.90; box-shadow: 0 0 0 4px rgba(180, 180, 178, 0.06); }
 }
 
 .rail-subtitle {
