@@ -27,6 +27,8 @@ import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
+import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
+import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
 
 const WritingRoute = WritingRouteImport.update({
   id: '/writing',
@@ -118,6 +120,17 @@ const ApiIntentRoute = ApiIntentRouteImport.update({
   path: '/api/intent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSweepSessionsRoute =
+  ApiPublicHooksSweepSessionsRouteImport.update({
+    id: '/api/public/hooks/sweep-sessions',
+    path: '/api/public/hooks/sweep-sessions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDailyTickRoute = ApiPublicHooksDailyTickRouteImport.update({
+  id: '/api/public/hooks/daily-tick',
+  path: '/api/public/hooks/daily-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +151,8 @@ export interface FileRoutesByFullPath {
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
+  '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,6 +173,8 @@ export interface FileRoutesByTo {
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
+  '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -179,6 +196,8 @@ export interface FileRoutesById {
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
+  '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -201,6 +220,8 @@ export interface FileRouteTypes {
     | '/api/message'
     | '/api/set-down'
     | '/api/turns'
+    | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/sweep-sessions'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -221,6 +242,8 @@ export interface FileRouteTypes {
     | '/api/message'
     | '/api/set-down'
     | '/api/turns'
+    | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/sweep-sessions'
   id:
     | '__root__'
     | '/'
@@ -241,6 +264,8 @@ export interface FileRouteTypes {
     | '/api/message'
     | '/api/set-down'
     | '/api/turns'
+    | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/sweep-sessions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -262,6 +287,8 @@ export interface RootRouteChildren {
   ApiMessageRoute: typeof ApiMessageRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
   ApiTurnsRoute: typeof ApiTurnsRoute
+  ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
+  ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -392,6 +419,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sweep-sessions': {
+      id: '/api/public/hooks/sweep-sessions'
+      path: '/api/public/hooks/sweep-sessions'
+      fullPath: '/api/public/hooks/sweep-sessions'
+      preLoaderRoute: typeof ApiPublicHooksSweepSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/daily-tick': {
+      id: '/api/public/hooks/daily-tick'
+      path: '/api/public/hooks/daily-tick'
+      fullPath: '/api/public/hooks/daily-tick'
+      preLoaderRoute: typeof ApiPublicHooksDailyTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -414,6 +455,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMessageRoute: ApiMessageRoute,
   ApiSetDownRoute: ApiSetDownRoute,
   ApiTurnsRoute: ApiTurnsRoute,
+  ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
+  ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
