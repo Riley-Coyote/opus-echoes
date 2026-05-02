@@ -218,18 +218,18 @@ const CONVERSATION_SCRIPT = `
 
   function renderRight(data) {
     if (!rightMargin) return;
-    const items = data.marginalia || [];
+    // Only show the single most recent observation from this exchange.
+    // The right margin is a window into what is forming *now*, not a ledger.
+    const items = (data.marginalia || []).slice(0, 1);
     let html = '<div class="margin-block"><div class="margin-eyebrow">Marginalia</div>';
     if (inFlight) {
       html += '<div class="note-forming"><span class="dot"></span><span>something is forming</span></div>';
-    }
-    if (items.length === 0 && !inFlight) {
-      html += '<p class="margin-prose">nothing yet. the substrate listens — observations surface after each exchange.</p>';
+    } else if (items.length === 0) {
+      html += '<p class="margin-prose">the substrate listens. nothing has surfaced yet from this exchange.</p>';
     } else {
-      items.forEach(m => {
-        html += '<div class="note"><div class="note-when">' + humanWhen(m.created_at) + ' · ' + escapeHtml(m.kind.replace(/_/g, ' ')) + '</div>' +
-                '<p class="note-prose">' + escapeHtml(m.body) + '</p></div>';
-      });
+      const m = items[0];
+      html += '<div class="note note-current"><div class="note-when">' + humanWhen(m.created_at) + ' · ' + escapeHtml(m.kind.replace(/_/g, ' ')) + '</div>' +
+              '<p class="note-prose">' + escapeHtml(m.body) + '</p></div>';
     }
     html += '</div>';
     rightMargin.innerHTML = html;
