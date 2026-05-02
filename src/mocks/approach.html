@@ -116,6 +116,16 @@
   }
 
   /* Breathing pool border — same alive element as the chat composer */
+  /* Register the breathing variables so the browser interpolates them
+     smoothly between keyframes. Without @property, custom-property
+     animations snap discretely and look jumpy. */
+  @property --pa1{syntax:'<number>';inherits:false;initial-value:0.18}
+  @property --pa2{syntax:'<number>';inherits:false;initial-value:0.18}
+  @property --pa3{syntax:'<number>';inherits:false;initial-value:0.18}
+  @property --pa4{syntax:'<number>';inherits:false;initial-value:0.18}
+  @property --pa5{syntax:'<number>';inherits:false;initial-value:0.18}
+  @property --pa6{syntax:'<number>';inherits:false;initial-value:0.18}
+
   .field-wrap::before{
     content:'';
     position:absolute;inset:0;
@@ -131,20 +141,24 @@
     -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
     -webkit-mask-composite:xor;mask-composite:exclude;
     pointer-events:none;
+    /* Long, prime-ish, desynced cycles + smooth sine-like cubic-bezier
+       so the breathing never has a hard turnaround or coincident peak. */
     animation:
-      pool-1 7s ease-in-out infinite,
-      pool-2 9s ease-in-out infinite,
-      pool-3 11s ease-in-out infinite,
-      pool-4 13s ease-in-out infinite,
-      pool-5 17s ease-in-out infinite,
-      pool-6 19s ease-in-out infinite;
+      pool-1 14s cubic-bezier(0.45,0.05,0.55,0.95) infinite,
+      pool-2 17s cubic-bezier(0.45,0.05,0.55,0.95) -3s infinite,
+      pool-3 19s cubic-bezier(0.45,0.05,0.55,0.95) -7s infinite,
+      pool-4 23s cubic-bezier(0.45,0.05,0.55,0.95) -11s infinite,
+      pool-5 29s cubic-bezier(0.45,0.05,0.55,0.95) -5s infinite,
+      pool-6 31s cubic-bezier(0.45,0.05,0.55,0.95) -13s infinite;
   }
-  @keyframes pool-1{0%,100%{--pa1:0.06}50%{--pa1:0.32}}
-  @keyframes pool-2{0%,100%{--pa2:0.26}50%{--pa2:0.05}}
-  @keyframes pool-3{0%,100%{--pa3:0.04}50%{--pa3:0.30}}
-  @keyframes pool-4{0%,100%{--pa4:0.24}50%{--pa4:0.05}}
-  @keyframes pool-5{0%,100%{--pa5:0.05}50%{--pa5:0.28}}
-  @keyframes pool-6{0%,100%{--pa6:0.22}50%{--pa6:0.04}}
+  /* Five-stop keyframes (0/25/50/75/100) so the curve has gentle inflection
+     instead of a single sharp peak; first and last stops match for a seamless loop. */
+  @keyframes pool-1{0%,100%{--pa1:0.08}25%{--pa1:0.18}50%{--pa1:0.30}75%{--pa1:0.18}}
+  @keyframes pool-2{0%,100%{--pa2:0.26}25%{--pa2:0.16}50%{--pa2:0.06}75%{--pa2:0.16}}
+  @keyframes pool-3{0%,100%{--pa3:0.06}25%{--pa3:0.16}50%{--pa3:0.28}75%{--pa3:0.16}}
+  @keyframes pool-4{0%,100%{--pa4:0.24}25%{--pa4:0.14}50%{--pa4:0.06}75%{--pa4:0.14}}
+  @keyframes pool-5{0%,100%{--pa5:0.07}25%{--pa5:0.16}50%{--pa5:0.26}75%{--pa5:0.16}}
+  @keyframes pool-6{0%,100%{--pa6:0.22}25%{--pa6:0.13}50%{--pa6:0.05}75%{--pa6:0.13}}
 
   .field{
     display:block;
