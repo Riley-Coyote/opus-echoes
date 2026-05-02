@@ -27,7 +27,10 @@ const THRESHOLD_SCRIPT = `
     newSend.disabled = newField.value.trim().length < 3;
   });
   newField.addEventListener('keydown', (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    if (e.isComposing) return;
+    const bareEnter = e.key === 'Enter' && !e.shiftKey;
+    const modEnter = (e.metaKey || e.ctrlKey) && e.key === 'Enter';
+    if (bareEnter || modEnter) {
       e.preventDefault();
       if (!newSend.disabled) submit();
     }
