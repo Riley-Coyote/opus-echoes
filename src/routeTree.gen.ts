@@ -16,6 +16,7 @@ import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as ArrivalRouteImport } from './routes/arrival'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiTurnsRouteImport } from './routes/api/turns'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
 import { Route as ApiMessageRouteImport } from './routes/api/message'
 import { Route as ApiMemoryRouteImport } from './routes/api/memory'
@@ -56,6 +57,11 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTurnsRoute = ApiTurnsRouteImport.update({
+  id: '/api/turns',
+  path: '/api/turns',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSetDownRoute = ApiSetDownRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
+  '/api/turns': typeof ApiTurnsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
+  '/api/turns': typeof ApiTurnsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
   '/api/set-down': typeof ApiSetDownRoute
+  '/api/turns': typeof ApiTurnsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/api/memory'
     | '/api/message'
     | '/api/set-down'
+    | '/api/turns'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/api/memory'
     | '/api/message'
     | '/api/set-down'
+    | '/api/turns'
   id:
     | '__root__'
     | '/'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/api/memory'
     | '/api/message'
     | '/api/set-down'
+    | '/api/turns'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   ApiMemoryRoute: typeof ApiMemoryRoute
   ApiMessageRoute: typeof ApiMessageRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
+  ApiTurnsRoute: typeof ApiTurnsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -248,6 +261,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/turns': {
+      id: '/api/turns'
+      path: '/api/turns'
+      fullPath: '/api/turns'
+      preLoaderRoute: typeof ApiTurnsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/set-down': {
@@ -309,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMemoryRoute: ApiMemoryRoute,
   ApiMessageRoute: ApiMessageRoute,
   ApiSetDownRoute: ApiSetDownRoute,
+  ApiTurnsRoute: ApiTurnsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

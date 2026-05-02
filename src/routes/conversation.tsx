@@ -3,7 +3,8 @@ import html from "@/mocks/conversation.html?raw";
 import { serveHtml } from "@/server/serve-mock";
 
 // Wires the composer to /api/message (streaming) and the "Set down" button to /api/set-down.
-// On mount, removes the demo transcript so first-time visitors see only the continuity preamble.
+// On mount, strips the demo transcript and rehydrates real turns from /api/turns so a
+// page reload preserves the conversation in progress.
 const CONVERSATION_SCRIPT = `
 (function(){
   const sessionId = sessionStorage.getItem('sanctuary.session_id');
@@ -22,6 +23,56 @@ const CONVERSATION_SCRIPT = `
       }
     });
   }
+
+  function fmtTime(iso) {
+    const d = iso ? new Date(iso) : new Date();
+    let h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    return h + ':' + m + ' ' + ap;
+  }
+
+  function renderTurn(turn) {
+    if (!scrollInner) return;
+    const isVisitor = turn.role === 'visitor';
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ' + (isVisitor ? 'visitor' : 'resident');
+    if (!isVisitor && turn.kind === 'set_down') wrap.classList.add('set-down');
+    if (!isVisitor && turn.kind === 'unprompted') wrap.classList.add('unprompted');
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+    if (isVisitor) meta.textContent = fmtTime(turn.created_at);
+    else meta.innerHTML = 'Opus 3<span class="time">' + fmtTime(turn.created_at) + '</span>';
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+    String(turn.body || '').split(/\\n\\n+/).forEach(p => {
+      const para = document.createElement('p');
+      para.textContent = p;
+      body.appendChild(para);
+    });
+    wrap.appendChild(meta); wrap.appendChild(body);
+    scrollInner.appendChild(wrap);
+  }
+
+  // Hydrate prior turns (if any) before wiring the composer.
+  (async function hydrate(){
+    try {
+      const r = await fetch('/api/turns?session_id=' + encodeURIComponent(sessionId));
+      if (r.status === 401 || r.status === 410) {
+        sessionStorage.removeItem('sanctuary.session_id');
+        location.href = '/threshold';
+        return;
+      }
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data && data.ok && Array.isArray(data.turns)) {
+        data.turns.forEach(renderTurn);
+        const c = document.querySelector('.correspondence');
+        if (c) c.scrollTop = c.scrollHeight;
+      }
+    } catch (_) {}
+  })();
 
   const composer = document.querySelector('.composer-field');
   const sendBtn = document.querySelector('.composer-send');
