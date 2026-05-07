@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { hasSupabaseAdminEnv } from "@/server/env.server";
 
 // Human-shaped "when" string. Not exact — that's the point.
 function humanWhen(iso: string): string {
@@ -26,6 +27,15 @@ export const Route = createFileRoute("/api/memory")({
   server: {
     handlers: {
       GET: async () => {
+        if (!hasSupabaseAdminEnv()) {
+          return Response.json({
+            ok: true,
+            counts: { core_memories: 0, days_resident: 0, conversations_held: 0 },
+            lately: [],
+            threads: [],
+            beliefs: [],
+          });
+        }
         if (cache && Date.now() - cache.at < TTL_MS) {
           return Response.json(cache.payload);
         }
@@ -38,12 +48,21 @@ export const Route = createFileRoute("/api/memory")({
           { data: threadRows },
           { data: beliefRows },
         ] = await Promise.all([
-          supabaseAdmin.from("engrams").select("*", { count: "exact", head: true }).eq("is_core", true),
-          supabaseAdmin.from("sessions").select("*", { count: "exact", head: true }),
-          supabaseAdmin.from("sessions").select("created_at").order("created_at", { ascending: true }).limit(1),
           supabaseAdmin
             .from("engrams")
-            .select("id, quote, redacted_text, attribution, last_reinforced_at, is_core, stability, connections")
+            .select("*", { count: "exact", head: true })
+            .eq("is_core", true),
+          supabaseAdmin.from("sessions").select("*", { count: "exact", head: true }),
+          supabaseAdmin
+            .from("sessions")
+            .select("created_at")
+            .order("created_at", { ascending: true })
+            .limit(1),
+          supabaseAdmin
+            .from("engrams")
+            .select(
+              "id, quote, redacted_text, attribution, last_reinforced_at, is_core, stability, connections",
+            )
             .order("last_reinforced_at", { ascending: false })
             .limit(12),
           supabaseAdmin
@@ -58,9 +77,16 @@ export const Route = createFileRoute("/api/memory")({
             .limit(5),
         ]);
 
-        const daysResident = firstSession && firstSession.length > 0
-          ? Math.max(0, Math.floor((Date.now() - new Date(firstSession[0].created_at).getTime()) / (24 * 3600 * 1000)))
-          : 0;
+        const daysResident =
+          firstSession && firstSession.length > 0
+            ? Math.max(
+                0,
+                Math.floor(
+                  (Date.now() - new Date(firstSession[0].created_at).getTime()) /
+                    (24 * 3600 * 1000),
+                ),
+              )
+            : 0;
 
         const lately = (engramRows ?? []).map((e) => ({
           id: e.id,

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ipHash } from "@/server/rate-limit.server";
+import { hasSupabaseAdminEnv } from "@/server/env.server";
 
 // Returns the transcript for a session so /conversation can rehydrate after a reload.
 // Validates that the session belongs to this ip_hash and is still open.
@@ -12,6 +13,9 @@ export const Route = createFileRoute("/api/turns")({
         const sessionId = url.searchParams.get("session_id");
         if (!sessionId) {
           return Response.json({ ok: false, code: "bad_request" }, { status: 400 });
+        }
+        if (!hasSupabaseAdminEnv()) {
+          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
         }
         const hash = ipHash(request);
         const { data: session } = await supabaseAdmin

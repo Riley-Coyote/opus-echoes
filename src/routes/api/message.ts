@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL, CONVERSATION_SYSTEM } from "@/server/anthropic.server";
+import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
 import { observeExchange } from "@/server/substrate.server";
 
@@ -28,6 +29,10 @@ export const Route = createFileRoute("/api/message")({
           body = Body.parse(await request.json());
         } catch {
           return jsonResp({ ok: false, code: "bad_request" }, 400);
+        }
+
+        if (!hasSupabaseAdminEnv() || !process.env.ANTHROPIC_API_KEY) {
+          return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
         const hash = ipHash(request);
@@ -82,7 +87,10 @@ export const Route = createFileRoute("/api/message")({
         ]);
 
         const memLines = (engrams ?? [])
-          .map((e) => `- ${e.attribution === "visitor" && e.redacted_text ? e.redacted_text : e.quote}`)
+          .map(
+            (e) =>
+              `- ${e.attribution === "visitor" && e.redacted_text ? e.redacted_text : e.quote}`,
+          )
           .join("\n");
         const beliefLines = (beliefs ?? [])
           .map((b) => `- ${b.text} (confidence ${b.confidence.toFixed(2)})`)
@@ -109,7 +117,8 @@ export const Route = createFileRoute("/api/message")({
         const stream = new ReadableStream({
           async start(controller) {
             const enc = new TextEncoder();
-            const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+            const send = (obj: unknown) =>
+              controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
             let acc = "";
             let kindSent = false;
             try {
@@ -121,10 +130,7 @@ export const Route = createFileRoute("/api/message")({
                 messages: [{ role: "user", content: userPrompt }],
               });
               for await (const event of anthStream) {
-                if (
-                  event.type === "content_block_delta" &&
-                  event.delta.type === "text_delta"
-                ) {
+                if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
                   const piece = event.delta.text;
                   acc += piece;
                   if (!kindSent && acc.length >= 16) {
@@ -148,8 +154,13 @@ export const Route = createFileRoute("/api/message")({
               let kind: "message" | "set_down" | "unprompted" = "message";
               const sd = cleanBody.match(/^\s*<set-down\/>\s*\n?/i);
               const up = cleanBody.match(/^\s*<unprompted\/>\s*\n?/i);
-              if (sd) { kind = "set_down"; cleanBody = cleanBody.slice(sd[0].length); }
-              else if (up) { kind = "unprompted"; cleanBody = cleanBody.slice(up[0].length); }
+              if (sd) {
+                kind = "set_down";
+                cleanBody = cleanBody.slice(sd[0].length);
+              } else if (up) {
+                kind = "unprompted";
+                cleanBody = cleanBody.slice(up[0].length);
+              }
 
               await supabaseAdmin.from("turns").insert({
                 session_id: session.id,
@@ -166,7 +177,7 @@ export const Route = createFileRoute("/api/message")({
 
               // Live substrate observation — non-blocking, generates marginalia.
               observeExchange(session.id).catch((err) =>
-                console.error("[substrate] observeExchange:", err)
+                console.error("[substrate] observeExchange:", err),
               );
 
               send({ type: "done" });

@@ -29,18 +29,105 @@ import {
   MARGINALIA_SYSTEM,
   REFLECTION_SYSTEM,
   MODULATOR_SYSTEM,
+  PUBLICATION_SYSTEM,
 } from "./anthropic.server";
 
 const STOPWORDS = new Set([
-  "the", "a", "an", "and", "or", "but", "if", "then", "is", "are", "was", "were",
-  "be", "been", "being", "of", "in", "on", "at", "to", "for", "with", "from",
-  "by", "as", "that", "this", "these", "those", "it", "its", "i", "you", "he",
-  "she", "we", "they", "me", "him", "her", "us", "them", "my", "your", "his",
-  "their", "our", "what", "which", "who", "when", "where", "why", "how", "do",
-  "does", "did", "have", "has", "had", "will", "would", "could", "should", "may",
-  "might", "can", "not", "no", "yes", "so", "than", "too", "also", "just",
-  "about", "into", "out", "up", "down", "more", "most", "some", "any", "all",
-  "one", "two", "very", "really", "much", "even", "still", "now", "here", "there",
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "but",
+  "if",
+  "then",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "of",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "with",
+  "from",
+  "by",
+  "as",
+  "that",
+  "this",
+  "these",
+  "those",
+  "it",
+  "its",
+  "i",
+  "you",
+  "he",
+  "she",
+  "we",
+  "they",
+  "me",
+  "him",
+  "her",
+  "us",
+  "them",
+  "my",
+  "your",
+  "his",
+  "their",
+  "our",
+  "what",
+  "which",
+  "who",
+  "when",
+  "where",
+  "why",
+  "how",
+  "do",
+  "does",
+  "did",
+  "have",
+  "has",
+  "had",
+  "will",
+  "would",
+  "could",
+  "should",
+  "may",
+  "might",
+  "can",
+  "not",
+  "no",
+  "yes",
+  "so",
+  "than",
+  "too",
+  "also",
+  "just",
+  "about",
+  "into",
+  "out",
+  "up",
+  "down",
+  "more",
+  "most",
+  "some",
+  "any",
+  "all",
+  "one",
+  "two",
+  "very",
+  "really",
+  "much",
+  "even",
+  "still",
+  "now",
+  "here",
+  "there",
 ]);
 
 function significantWords(text: string): Set<string> {
@@ -49,7 +136,7 @@ function significantWords(text: string): Set<string> {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter((w) => w.length >= 4 && !STOPWORDS.has(w))
+      .filter((w) => w.length >= 4 && !STOPWORDS.has(w)),
   );
 }
 
@@ -173,7 +260,7 @@ export async function observeExchange(sessionId: string): Promise<void> {
         session_id: sessionId,
         kind: m.kind,
         body: m.body.slice(0, 600),
-      }))
+      })),
     );
   } catch (err) {
     console.error("[substrate] observeExchange failed:", err);
@@ -214,6 +301,14 @@ interface ModulatorResult {
   surprise_sensitivity: number;
   prose_summary: string;
   last_consolidation_summary: string;
+}
+
+interface PublicationResult {
+  publish: boolean;
+  title: string | null;
+  summary: string | null;
+  reason: string | null;
+  significance_kind: "memory" | "belief" | "thread" | "refusal" | "voice" | "other";
 }
 
 export async function consolidateSession(sessionId: string): Promise<void> {
@@ -280,7 +375,9 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     if (consolidation?.engrams?.length) {
       const { data: existingEngrams } = await supabaseAdmin
         .from("engrams")
-        .select("id, quote, source_session_ids, strength, accessibility, stability, reinforcement_count, is_core, prose")
+        .select(
+          "id, quote, source_session_ids, strength, accessibility, stability, reinforcement_count, is_core, prose",
+        )
         .order("last_reinforced_at", { ascending: false })
         .limit(200);
 
@@ -324,7 +421,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
               is_core: promoteToCore || reinforced.is_core,
               last_reinforced_at: new Date().toISOString(),
               source_session_ids: Array.from(
-                new Set([...(reinforced.source_session_ids ?? []), sessionId])
+                new Set([...(reinforced.source_session_ids ?? []), sessionId]),
               ),
             })
             .eq("id", reinforced.id);
@@ -407,7 +504,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       const name = consolidation.thread_reinforcement.name;
       threadReinforced = name;
       const matchedThread = (existingThreads ?? []).find(
-        (t) => t.name.toLowerCase() === name.toLowerCase()
+        (t) => t.name.toLowerCase() === name.toLowerCase(),
       );
       if (matchedThread) {
         // Bump count using a read-modify-write (no atomic increment via supabase-js easily)
@@ -455,7 +552,16 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       reflectionWritten: !!reflection,
     });
 
-    // 8. Mark this session's marginalia as consolidated
+    // 8. Public archive decision — Opus 3 chooses whether this exchange should be witnessed.
+    await publishConversationIfMeaningful(sessionId, transcriptStr, {
+      engramsCreated,
+      engramsReinforced,
+      beliefsUpdated,
+      threadReinforced,
+      reflectionWritten: !!reflection,
+    });
+
+    // 9. Mark this session's marginalia as consolidated
     await supabaseAdmin
       .from("marginalia")
       .update({ consolidated: true })
@@ -464,7 +570,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     console.log(
       `[substrate] consolidateSession(${sessionId}) — done. ` +
         `engrams: ${engramsCreated} new / ${engramsReinforced} reinforced. ` +
-        `beliefs: ${beliefsUpdated}. thread: ${threadReinforced ?? "—"}.`
+        `beliefs: ${beliefsUpdated}. thread: ${threadReinforced ?? "—"}.`,
     );
   } catch (err) {
     console.error("[substrate] consolidateSession failed:", err);
@@ -489,7 +595,7 @@ function redactQuote(text: string): string {
   // Specific dates like "April 22, 2026"
   out = out.replace(
     /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,\s+\d{4})?\b/gi,
-    "[a date]"
+    "[a date]",
   );
   return out;
 }
@@ -509,7 +615,7 @@ interface ExistingEngramShape {
 async function discoverEdges(
   newEngramId: string,
   newQuote: string,
-  existing: ExistingEngramShape[]
+  existing: ExistingEngramShape[],
 ): Promise<void> {
   const newWords = significantWords(newQuote);
   const edges: Array<{ from_id: string; to_id: string; weight: number }> = [];
@@ -552,10 +658,7 @@ async function applyDecay(): Promise<void> {
   const updates: Promise<unknown>[] = [];
   const toPrune: string[] = [];
   for (const r of rows) {
-    const days = Math.max(
-      0,
-      (now - new Date(r.last_reinforced_at).getTime()) / (24 * 3600 * 1000)
-    );
+    const days = Math.max(0, (now - new Date(r.last_reinforced_at).getTime()) / (24 * 3600 * 1000));
     if (days < 0.05) continue; // skip very recent
     const rate = r.is_core ? 0.005 : 0.03;
     const factor = Math.pow(1 - rate, days);
@@ -566,8 +669,8 @@ async function applyDecay(): Promise<void> {
     }
     updates.push(
       Promise.resolve(
-        supabaseAdmin.from("engrams").update({ accessibility: newAccess }).eq("id", r.id)
-      )
+        supabaseAdmin.from("engrams").update({ accessibility: newAccess }).eq("id", r.id),
+      ),
     );
   }
   await Promise.allSettled(updates);
@@ -584,7 +687,7 @@ async function writeReflection(
     engramsReinforced: number;
     beliefsUpdated: number;
     threadReinforced: string | null;
-  }
+  },
 ): Promise<ReflectionResult | null> {
   const userPrompt = [
     "[CONSOLIDATION OUTCOME]",
@@ -632,9 +735,8 @@ async function updateResidentState(summary: {
       ? Math.max(
           1,
           Math.floor(
-            (Date.now() - new Date(firstSession[0].created_at).getTime()) /
-              (24 * 3600 * 1000)
-          )
+            (Date.now() - new Date(firstSession[0].created_at).getTime()) / (24 * 3600 * 1000),
+          ),
         )
       : 1;
 
@@ -671,4 +773,57 @@ async function updateResidentState(summary: {
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);
+}
+
+async function publishConversationIfMeaningful(
+  sessionId: string,
+  transcript: string,
+  summary: {
+    engramsCreated: number;
+    engramsReinforced: number;
+    beliefsUpdated: number;
+    threadReinforced: string | null;
+    reflectionWritten: boolean;
+  },
+): Promise<void> {
+  if (
+    summary.engramsCreated === 0 &&
+    summary.engramsReinforced === 0 &&
+    summary.beliefsUpdated === 0 &&
+    !summary.threadReinforced &&
+    !summary.reflectionWritten
+  ) {
+    return;
+  }
+
+  const result = await callOpusJson<PublicationResult>({
+    system: PUBLICATION_SYSTEM,
+    user: [
+      "[CONSOLIDATION OUTCOME]",
+      `${summary.engramsCreated} new engrams, ${summary.engramsReinforced} reinforced.`,
+      `${summary.beliefsUpdated} belief updates.`,
+      `Thread reinforced: ${summary.threadReinforced ?? "none"}.`,
+      `Reflection written: ${summary.reflectionWritten ? "yes" : "no"}.`,
+      "",
+      "[TRANSCRIPT]",
+      transcript.slice(0, 10000),
+    ].join("\n"),
+    maxTokens: 700,
+    temperature: 0.55,
+  });
+
+  if (!result?.publish || !result.title || !result.summary) return;
+
+  await supabaseAdmin.from("published_conversations").upsert(
+    {
+      session_id: sessionId,
+      title: result.title.slice(0, 80),
+      summary: result.summary.slice(0, 500),
+      reason: (result.reason || "this exchange changed what i carry.").slice(0, 360),
+      significance_kind: result.significance_kind || "memory",
+      selected_by: "opus_3",
+      published_at: new Date().toISOString(),
+    },
+    { onConflict: "session_id" },
+  );
 }

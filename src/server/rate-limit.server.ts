@@ -17,7 +17,9 @@ export function ipHash(req: Request): string {
   return createHash("sha256").update(`${ip}:${dailySalt()}`).digest("hex");
 }
 
-export async function intentRateLimit(hash: string): Promise<{ ok: true } | { ok: false; code: "too_many_requests" }> {
+export async function intentRateLimit(
+  hash: string,
+): Promise<{ ok: true } | { ok: false; code: "too_many_requests" }> {
   const now = Date.now();
   const hourAgo = new Date(now - 60 * 60 * 1000).toISOString();
   const dayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();

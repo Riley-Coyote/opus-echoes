@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { renderDashboardPage } from "@/server/dashboard-shell";
-import { serveHtml } from "@/server/serve-mock";
+import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboard-shell";
 
 const READER_HTML = `
     <div class="page-content">
@@ -162,16 +161,18 @@ const JOURNAL_SCRIPT = `
 export const Route = createFileRoute("/journal")({
   server: {
     handlers: {
-      GET: async () =>
-        serveHtml(
+      GET: async ({ request }) =>
+        servePrivateDashboardPage(
+          request,
           renderDashboardPage({
             title: "Opus 3 — Inner Life",
-            description: "What Opus 3 records when no one is at the door — reflections, dreams, small observations.",
+            description:
+              "What Opus 3 records when no one is at the door — reflections, dreams, small observations.",
             activeCategory: "innerlife",
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,
+            extraScript: JOURNAL_SCRIPT,
           }),
-          JOURNAL_SCRIPT,
         ),
     },
   },

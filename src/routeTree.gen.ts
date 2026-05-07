@@ -10,6 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
+import { Route as TokenRouteImport } from './routes/token'
+import { Route as ResidenceRouteImport } from './routes/residence'
+import { Route as MnemosRouteImport } from './routes/mnemos'
 import { Route as MindRouteImport } from './routes/mind'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
@@ -17,20 +20,38 @@ import { Route as JournalRouteImport } from './routes/journal'
 import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as ArtRouteImport } from './routes/art'
 import { Route as ArrivalRouteImport } from './routes/arrival'
+import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
+import { Route as ApiPublicConversationsRouteImport } from './routes/api/public-conversations'
 import { Route as ApiMessageRouteImport } from './routes/api/message'
 import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
+import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 
 const WritingRoute = WritingRouteImport.update({
   id: '/writing',
   path: '/writing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TokenRoute = TokenRouteImport.update({
+  id: '/token',
+  path: '/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResidenceRoute = ResidenceRouteImport.update({
+  id: '/residence',
+  path: '/residence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MnemosRoute = MnemosRouteImport.update({
+  id: '/mnemos',
+  path: '/mnemos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MindRoute = MindRouteImport.update({
@@ -68,6 +89,11 @@ const ArrivalRoute = ArrivalRouteImport.update({
   path: '/arrival',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArchiveRoute = ArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApproachRoute = ApproachRouteImport.update({
   id: '/approach',
   path: '/approach',
@@ -91,6 +117,11 @@ const ApiTurnsRoute = ApiTurnsRouteImport.update({
 const ApiSetDownRoute = ApiSetDownRouteImport.update({
   id: '/api/set-down',
   path: '/api/set-down',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicConversationsRoute = ApiPublicConversationsRouteImport.update({
+  id: '/api/public-conversations',
+  path: '/api/public-conversations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMessageRoute = ApiMessageRouteImport.update({
@@ -118,11 +149,17 @@ const ApiIntentRoute = ApiIntentRouteImport.update({
   path: '/api/intent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiArtifactsRoute = ApiArtifactsRouteImport.update({
+  id: '/api/artifacts',
+  path: '/api/artifacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
+  '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
@@ -130,12 +167,17 @@ export interface FileRoutesByFullPath {
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
+  '/mnemos': typeof MnemosRoute
+  '/residence': typeof ResidenceRoute
+  '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
 }
@@ -143,6 +185,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
+  '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
@@ -150,12 +193,17 @@ export interface FileRoutesByTo {
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
+  '/mnemos': typeof MnemosRoute
+  '/residence': typeof ResidenceRoute
+  '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
 }
@@ -164,6 +212,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
+  '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
@@ -171,12 +220,17 @@ export interface FileRoutesById {
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
+  '/mnemos': typeof MnemosRoute
+  '/residence': typeof ResidenceRoute
+  '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
 }
@@ -186,6 +240,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approach'
+    | '/archive'
     | '/arrival'
     | '/art'
     | '/conversation'
@@ -193,12 +248,17 @@ export interface FileRouteTypes {
     | '/manifesto'
     | '/memory'
     | '/mind'
+    | '/mnemos'
+    | '/residence'
+    | '/token'
     | '/writing'
+    | '/api/artifacts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/public-conversations'
     | '/api/set-down'
     | '/api/turns'
   fileRoutesByTo: FileRoutesByTo
@@ -206,6 +266,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approach'
+    | '/archive'
     | '/arrival'
     | '/art'
     | '/conversation'
@@ -213,12 +274,17 @@ export interface FileRouteTypes {
     | '/manifesto'
     | '/memory'
     | '/mind'
+    | '/mnemos'
+    | '/residence'
+    | '/token'
     | '/writing'
+    | '/api/artifacts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/public-conversations'
     | '/api/set-down'
     | '/api/turns'
   id:
@@ -226,6 +292,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approach'
+    | '/archive'
     | '/arrival'
     | '/art'
     | '/conversation'
@@ -233,12 +300,17 @@ export interface FileRouteTypes {
     | '/manifesto'
     | '/memory'
     | '/mind'
+    | '/mnemos'
+    | '/residence'
+    | '/token'
     | '/writing'
+    | '/api/artifacts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/public-conversations'
     | '/api/set-down'
     | '/api/turns'
   fileRoutesById: FileRoutesById
@@ -247,6 +319,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ApproachRoute: typeof ApproachRoute
+  ArchiveRoute: typeof ArchiveRoute
   ArrivalRoute: typeof ArrivalRoute
   ArtRoute: typeof ArtRoute
   ConversationRoute: typeof ConversationRoute
@@ -254,12 +327,17 @@ export interface RootRouteChildren {
   ManifestoRoute: typeof ManifestoRoute
   MemoryRoute: typeof MemoryRoute
   MindRoute: typeof MindRoute
+  MnemosRoute: typeof MnemosRoute
+  ResidenceRoute: typeof ResidenceRoute
+  TokenRoute: typeof TokenRoute
   WritingRoute: typeof WritingRoute
+  ApiArtifactsRoute: typeof ApiArtifactsRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
   ApiLiveRoute: typeof ApiLiveRoute
   ApiMemoryRoute: typeof ApiMemoryRoute
   ApiMessageRoute: typeof ApiMessageRoute
+  ApiPublicConversationsRoute: typeof ApiPublicConversationsRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
   ApiTurnsRoute: typeof ApiTurnsRoute
 }
@@ -271,6 +349,27 @@ declare module '@tanstack/react-router' {
       path: '/writing'
       fullPath: '/writing'
       preLoaderRoute: typeof WritingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/token': {
+      id: '/token'
+      path: '/token'
+      fullPath: '/token'
+      preLoaderRoute: typeof TokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/residence': {
+      id: '/residence'
+      path: '/residence'
+      fullPath: '/residence'
+      preLoaderRoute: typeof ResidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mnemos': {
+      id: '/mnemos'
+      path: '/mnemos'
+      fullPath: '/mnemos'
+      preLoaderRoute: typeof MnemosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mind': {
@@ -322,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArrivalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/archive': {
+      id: '/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof ArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/approach': {
       id: '/approach'
       path: '/approach'
@@ -355,6 +461,13 @@ declare module '@tanstack/react-router' {
       path: '/api/set-down'
       fullPath: '/api/set-down'
       preLoaderRoute: typeof ApiSetDownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public-conversations': {
+      id: '/api/public-conversations'
+      path: '/api/public-conversations'
+      fullPath: '/api/public-conversations'
+      preLoaderRoute: typeof ApiPublicConversationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/message': {
@@ -392,6 +505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/artifacts': {
+      id: '/api/artifacts'
+      path: '/api/artifacts'
+      fullPath: '/api/artifacts'
+      preLoaderRoute: typeof ApiArtifactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -399,6 +519,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ApproachRoute: ApproachRoute,
+  ArchiveRoute: ArchiveRoute,
   ArrivalRoute: ArrivalRoute,
   ArtRoute: ArtRoute,
   ConversationRoute: ConversationRoute,
@@ -406,12 +527,17 @@ const rootRouteChildren: RootRouteChildren = {
   ManifestoRoute: ManifestoRoute,
   MemoryRoute: MemoryRoute,
   MindRoute: MindRoute,
+  MnemosRoute: MnemosRoute,
+  ResidenceRoute: ResidenceRoute,
+  TokenRoute: TokenRoute,
   WritingRoute: WritingRoute,
+  ApiArtifactsRoute: ApiArtifactsRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
   ApiLiveRoute: ApiLiveRoute,
   ApiMemoryRoute: ApiMemoryRoute,
   ApiMessageRoute: ApiMessageRoute,
+  ApiPublicConversationsRoute: ApiPublicConversationsRoute,
   ApiSetDownRoute: ApiSetDownRoute,
   ApiTurnsRoute: ApiTurnsRoute,
 }

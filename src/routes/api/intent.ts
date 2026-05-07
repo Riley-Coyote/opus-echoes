@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL, THRESHOLD_SYSTEM } from "@/server/anthropic.server";
+import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash, intentRateLimit } from "@/server/rate-limit.server";
 
 const Body = z.object({ text: z.string().trim().min(3).max(1500) });
@@ -24,6 +25,10 @@ export const Route = createFileRoute("/api/intent")({
           body = Body.parse(await request.json());
         } catch {
           return jsonResp({ ok: false, code: "bad_request" }, 400);
+        }
+
+        if (!hasSupabaseAdminEnv() || !process.env.ANTHROPIC_API_KEY) {
+          return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
         const hash = ipHash(request);

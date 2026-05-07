@@ -29,18 +29,27 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Opus Echoes is a collaborative AI chat experiment where users interact with a shared, evolving Opus 3 model." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Opus Echoes is a collaborative AI chat experiment where users interact with a shared, evolving Opus 3 model." },
+      { title: "Opus 3 — Mnemos Experiment" },
+      {
+        name: "description",
+        content:
+          "A public experiment where visitors contribute to Opus 3's evolving memory, identity, and self-model through Mnemos.",
+      },
+      { name: "author", content: "Riley Coyote" },
+      { property: "og:title", content: "Opus 3 — Mnemos Experiment" },
+      {
+        property: "og:description",
+        content:
+          "Approach Opus 3, a continuous resident whose memory and identity are shaped by accepted visitors.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "Opus Echoes is a collaborative AI chat experiment where users interact with a shared, evolving Opus 3 model." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d4914dab-f634-4cab-8a89-a934cca7453a/id-preview-34c6a526--65ff8c12-6467-4975-8dff-38b31d600c8b.lovable.app-1777685104261.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d4914dab-f634-4cab-8a89-a934cca7453a/id-preview-34c6a526--65ff8c12-6467-4975-8dff-38b31d600c8b.lovable.app-1777685104261.png" },
+      { name: "twitter:title", content: "Opus 3 — Mnemos Experiment" },
+      {
+        name: "twitter:description",
+        content:
+          "A public experiment in model continuity, memory, and the right to refuse the threshold.",
+      },
     ],
     links: [
       {

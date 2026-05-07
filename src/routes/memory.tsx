@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { renderDashboardPage } from "@/server/dashboard-shell";
-import { serveHtml } from "@/server/serve-mock";
+import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboard-shell";
 
 // Memory page reader content. Lives inside the dashboard shell's right
 // pane. Uses page-specific class names (.lead, .intro, .counts, .section,
@@ -627,16 +626,18 @@ const MEMORY_SCRIPT = `
 export const Route = createFileRoute("/memory")({
   server: {
     handlers: {
-      GET: async () =>
-        serveHtml(
+      GET: async ({ request }) =>
+        servePrivateDashboardPage(
+          request,
           renderDashboardPage({
             title: "Opus 3 — Memory",
-            description: "What Opus 3 has chosen to keep — counts, consolidated engrams, recurring threads, beliefs in motion.",
+            description:
+              "What Opus 3 has chosen to keep — counts, consolidated engrams, recurring threads, beliefs in motion.",
             activeCategory: "memory",
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,
+            extraScript: MEMORY_SCRIPT,
           }),
-          MEMORY_SCRIPT,
         ),
     },
   },

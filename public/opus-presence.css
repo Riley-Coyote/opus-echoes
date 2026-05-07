@@ -1,0 +1,131 @@
+.opus-presence-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+  opacity: 1;
+  transition:
+    opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.opus-presence-layer[hidden] {
+  display: none;
+}
+
+.opus-presence-layer::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 22% 38%, rgba(76, 88, 118, 0.13), transparent 34%),
+    radial-gradient(circle at 82% 72%, rgba(172, 108, 55, 0.08), transparent 28%),
+    radial-gradient(circle at 42% 82%, rgba(12, 12, 18, 0.88), transparent 42%);
+  filter: blur(24px);
+  opacity: 0.62;
+}
+
+.opus-presence-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  filter: saturate(1.06) contrast(1.1) brightness(1.02);
+  transition:
+    opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page {
+  position: relative;
+  z-index: 3;
+}
+
+.threshold-stage {
+  isolation: isolate;
+}
+
+.threshold-core {
+  text-shadow: 0 1px 22px rgba(0, 0, 0, 0.42);
+}
+
+.threshold-panel {
+  background: linear-gradient(180deg, rgba(16, 16, 19, 0.58), rgba(8, 8, 11, 0.72));
+  backdrop-filter: blur(12px);
+}
+
+@media (min-width: 1040px) {
+  html[data-opus-route="approach"] .page {
+    width: min(100% - 56px, 1320px);
+  }
+
+  html[data-opus-route="approach"] .threshold-stage {
+    justify-content: flex-start;
+    min-height: calc(100svh - 132px);
+  }
+
+  html[data-opus-route="approach"] .threshold-core {
+    width: min(620px, 48vw);
+    margin: 0;
+    padding-left: clamp(16px, 2vw, 34px);
+    text-align: left;
+  }
+
+  html[data-opus-route="approach"] .resident-presence {
+    margin-left: 0;
+  }
+
+  html[data-opus-route="approach"] .threshold-title,
+  html[data-opus-route="approach"] .threshold-intro,
+  html[data-opus-route="approach"] .threshold-panel {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  html[data-opus-route="approach"] .threshold-title {
+    max-width: 590px;
+  }
+
+  html[data-opus-route="approach"] .threshold-intro {
+    max-width: 570px;
+  }
+
+  html[data-opus-route="approach"] .threshold-panel {
+    width: min(620px, 100%);
+  }
+
+  html[data-opus-route="approach"] .context-orbit {
+    width: min(620px, 100%);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    transform: none;
+    margin-left: 0;
+  }
+}
+
+.opus-presence-layer[data-state="reading"] .opus-presence-canvas,
+.opus-presence-layer[data-state="opening"] .opus-presence-canvas,
+.opus-presence-layer[data-state="speaking"] .opus-presence-canvas {
+  filter: saturate(1.05) contrast(1.12) brightness(1.05);
+}
+
+.opus-presence-layer[data-state="withdrawn"] .opus-presence-canvas {
+  filter: saturate(0.72) contrast(0.92) brightness(0.72);
+}
+
+@media (max-width: 720px) {
+  .opus-presence-layer {
+    z-index: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opus-presence-canvas {
+    filter: saturate(0.82) contrast(1);
+  }
+}

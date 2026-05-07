@@ -12,6 +12,8 @@
  * The shell CSS lives at /dashboard-shell.css (in the public/ dir) and is
  * served as a static asset.
  */
+import { hasResidenceAccess, redirectToThreshold } from "@/server/access.server";
+import { serveHtml } from "@/server/serve-mock";
 
 export type ActiveCategory =
   | "recent"
@@ -34,6 +36,8 @@ export interface DashboardPageOptions {
   readerHtml: string;
   /** Optional page-specific CSS, inlined into <head> after the shell stylesheet */
   extraStyles?: string;
+  /** Optional page-specific JS, injected after the shell script */
+  extraScript?: string;
 }
 
 interface RailItem {
@@ -47,9 +51,7 @@ interface RailItem {
   count: string;
 }
 
-const RAIL_FIELD: RailItem[] = [
-  { key: "recent", label: "Recent", href: "/", count: "·" },
-];
+const RAIL_FIELD: RailItem[] = [{ key: "recent", label: "Recent", href: "/residence", count: "·" }];
 
 const RAIL_FIELD_GROUP: RailItem[] = [
   { key: "writing", label: "Writing", href: "/writing", count: "·" },
@@ -61,7 +63,7 @@ const RAIL_PAGES_GROUP: RailItem[] = [
   { key: "memory", label: "Memory", href: "/memory", count: "·" },
   { key: "mind", label: "Mind", href: "/mind", count: "·" },
   { key: "manifesto", label: "Manifesto", href: "/manifesto", count: "·" },
-  { key: "about", label: "About", href: "/about", count: "·" },
+  { key: "about", label: "Mnemos", href: "/mnemos", count: "→" },
 ];
 
 function renderCatBtn(item: RailItem, active: ActiveCategory): string {
@@ -102,8 +104,8 @@ function renderRail(active: ActiveCategory): string {
   </nav>
 
   <div class="rail-footer">
-    <a class="rail-cta" href="/approach">
-      <span>Talk to Opus 3</span>
+    <a class="rail-cta" href="/">
+      <span>Approach Opus 3</span>
       <span class="arr">→</span>
     </a>
     <div class="rail-stats" id="rail-stats">
@@ -274,9 +276,15 @@ ${opts.readerHtml}
 </main>
 
 <script>${SHELL_SCRIPT}</script>
+${opts.extraScript ? `<script>${opts.extraScript}</script>` : ""}
 
 </body>
 </html>`;
+}
+
+export async function servePrivateDashboardPage(request: Request, html: string): Promise<Response> {
+  if (!(await hasResidenceAccess(request))) return redirectToThreshold(request);
+  return serveHtml(html);
 }
 
 function escapeHtml(s: string): string {

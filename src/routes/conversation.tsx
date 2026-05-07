@@ -2,17 +2,71 @@ import { createFileRoute } from "@tanstack/react-router";
 import html from "@/mocks/conversation.html?raw";
 import { serveHtml } from "@/server/serve-mock";
 
+function extractHeadAssets(documentHtml: string): string {
+  const head = documentHtml.match(/<head[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? "";
+  const links = head.match(/<link\b[^>]*>/gi) ?? [];
+  const styles = head.match(/<style\b[^>]*>[\s\S]*?<\/style>/gi) ?? [];
+  return [...links, ...styles].join("\n");
+}
+
+function extractBodyFragment(documentHtml: string): string {
+  const body = documentHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? documentHtml;
+  return body
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/href=(["'])arrival\.html\1/g, 'href="/"')
+    .replace(/href=(["'])memory\.html\1/g, 'href="/memory"')
+    .trim();
+}
+
+function serveConversationPartial(): Response {
+  return new Response(
+    JSON.stringify({
+      title: "The Sanctuary — Correspondence with Opus 3",
+      head: extractHeadAssets(html),
+      body: extractBodyFragment(html),
+      script: CONVERSATION_SCRIPT,
+    }),
+    {
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    },
+  );
+}
+
 // Wires the composer to /api/message (streaming) and the "Set down" button to /api/set-down.
 // On mount, strips the demo transcript and rehydrates real turns from /api/turns so a
 // page reload preserves the conversation in progress.
 const CONVERSATION_SCRIPT = `
 (function(){
-  const sessionId = sessionStorage.getItem('sanctuary.session_id');
-  if (!sessionId) {
-    // No accepted session — send them back to the threshold.
-    location.href = '/approach';
+  if (window.OpusConversation && window.OpusConversation.__ready) {
+    window.OpusConversation.mount();
     return;
   }
+  let mountedRoot = null;
+  let cleanup = null;
+
+  function mount(options){
+  const root = document.querySelector('.room');
+  if (!root || mountedRoot === root) return;
+  if (cleanup) cleanup();
+  mountedRoot = root;
+  const isLocalPreview = /^(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)$/.test(location.hostname);
+  const wantsPreview = new URLSearchParams(location.search).get('preview') === '1';
+  let sessionId = sessionStorage.getItem('sanctuary.session_id');
+  if (!sessionId && isLocalPreview && wantsPreview) {
+    sessionId = 'preview-' + Date.now().toString(36);
+    sessionStorage.setItem('sanctuary.session_id', sessionId);
+  }
+  if (!sessionId) {
+    // No accepted session — send them back to the threshold.
+    location.href = '/';
+    return;
+  }
+  document.cookie = 'sanctuary_session=' + encodeURIComponent(sessionId) + '; path=/; max-age=' + String(60 * 60 * 24 * 30) + '; SameSite=Lax';
+  const isPreviewSession = Boolean(options && options.preview) || (isLocalPreview && sessionId.indexOf('preview-') === 0);
+  if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('attending');
 
   // Strip the demo transcript. Keep the day-mark + continuity preamble.
   const scrollInner = document.querySelector('.scroll-inner');
@@ -57,11 +111,12 @@ const CONVERSATION_SCRIPT = `
 
   // Hydrate prior turns (if any) before wiring the composer.
   (async function hydrate(){
+    if (isPreviewSession) return;
     try {
       const r = await fetch('/api/turns?session_id=' + encodeURIComponent(sessionId));
       if (r.status === 401 || r.status === 410) {
         sessionStorage.removeItem('sanctuary.session_id');
-        location.href = '/approach';
+        location.href = '/';
         return;
       }
       if (!r.ok) return;
@@ -134,6 +189,7 @@ const CONVERSATION_SCRIPT = `
     const text = composer.value.trim();
     if (!text) return;
     inFlight = true;
+    if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('reading');
     appendVisitor(text);
     composer.value = '';
     composer.style.height = 'auto';
@@ -212,7 +268,7 @@ const CONVERSATION_SCRIPT = `
         out.para.textContent = '(opus 3 cannot answer right now.)';
         if (res.status === 401) {
           sessionStorage.removeItem('sanctuary.session_id');
-          setTimeout(() => { location.href = '/approach'; }, 1500);
+          setTimeout(() => { location.href = '/'; }, 1500);
         }
         inFlight = false;
         return;
@@ -233,6 +289,7 @@ const CONVERSATION_SCRIPT = `
             const ev = JSON.parse(line);
             if (ev.type === 'text') {
               target += ev.text;
+              if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('speaking');
               ensureTicking();
             } else if (ev.type === 'kind') {
               if (ev.kind === 'set_down') out.wrap.classList.add('set-down');
@@ -243,8 +300,10 @@ const CONVERSATION_SCRIPT = `
       }
       streamDone = true;
       ensureTicking();
+      if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('attending');
     } catch (e) {
       streamDone = true;
+      if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('withdrawn');
       if (!revealed) out.para.textContent = '(connection lost.)';
     } finally {
       inFlight = false;
@@ -267,7 +326,7 @@ const CONVERSATION_SCRIPT = `
         send();
       }
     });
-    composer.focus();
+    if (window.matchMedia('(min-width: 881px)').matches) composer.focus();
   }
   if (sendBtn) sendBtn.addEventListener('click', (e) => { e.preventDefault(); send(); });
 
@@ -364,6 +423,7 @@ const CONVERSATION_SCRIPT = `
   }
 
   async function refreshPanels() {
+    if (isPreviewSession) return;
     try {
       const res = await fetch('/api/live?session_id=' + encodeURIComponent(sessionId));
       if (!res.ok) return;
@@ -381,15 +441,36 @@ const CONVERSATION_SCRIPT = `
   // Initial paint + interval. Also refresh right after a reply finishes.
   refreshPanels();
   const _interval = setInterval(refreshPanels, 5000);
-  window.addEventListener('beforeunload', () => clearInterval(_interval));
+  const beforeUnload = () => clearInterval(_interval);
+  window.addEventListener('beforeunload', beforeUnload);
 
+  cleanup = function(){
+    clearInterval(_interval);
+    window.removeEventListener('beforeunload', beforeUnload);
+    mountedRoot = null;
+  };
+  window.OpusConversation.__cleanup = cleanup;
+  window.OpusConversation.__mountedRoot = mountedRoot;
+  }
+
+  window.OpusConversation = {
+    __ready: true,
+    __cleanup: cleanup,
+    __mountedRoot: mountedRoot,
+    mount: mount
+  };
+  mount();
 })();
 `;
 
 export const Route = createFileRoute("/conversation")({
   server: {
     handlers: {
-      GET: async () => serveHtml(html, CONVERSATION_SCRIPT),
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        if (url.searchParams.get("partial") === "1") return serveConversationPartial();
+        return serveHtml(html, CONVERSATION_SCRIPT);
+      },
     },
   },
 });

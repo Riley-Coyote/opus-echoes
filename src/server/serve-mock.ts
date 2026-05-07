@@ -11,13 +11,13 @@ const LINK_MAP: Record<string, string> = {
   // routed; references to it fall back to the arrival.
   "index.html": "/",
   "arrival.html": "/",
-  "approach.html": "/approach",
+  "approach.html": "/",
   // Backwards-compat: any existing link to threshold.html still resolves.
   "threshold.html": "/approach",
   "conversation.html": "/conversation",
   "memory.html": "/memory",
   "journal.html": "/journal",
-  "explainer.html": "/about",
+  "explainer.html": "/mnemos",
   // Deferred surfaces — kept as fallbacks so any stray reference doesn't 404.
   // Active mocks no longer reference these.
   "claude-wing.html": "/",
@@ -28,7 +28,10 @@ function rewriteLinks(html: string): string {
   let out = html;
   for (const [from, to] of Object.entries(LINK_MAP)) {
     // href="file.html" or href='file.html' (with optional ?query / #hash)
-    const re = new RegExp(`(href\\s*=\\s*["'])${from.replace(".", "\\.")}((?:[?#][^"']*)?)(["'])`, "g");
+    const re = new RegExp(
+      `(href\\s*=\\s*["'])${from.replace(".", "\\.")}((?:[?#][^"']*)?)(["'])`,
+      "g",
+    );
     out = out.replace(re, (_m, p1, suffix, p3) => `${p1}${to}${suffix}${p3}`);
     // Also rewrite location.href = '...' references inside inline scripts.
     const reJs = new RegExp(`(['"\`])${from.replace(".", "\\.")}((?:[?#][^'"\`]*)?)(['"\`])`, "g");
@@ -49,8 +52,18 @@ function injectScript(html: string, script: string): string {
   return html + tag;
 }
 
+function injectPresenceAssets(html: string): string {
+  if (html.includes("/opus-presence.js")) return html;
+  const headAssets = `<link rel="stylesheet" href="/opus-presence.css">
+<script type="module" src="/opus-presence.js"></script>`;
+  if (html.includes("</head>")) {
+    return html.replace("</head>", `${headAssets}</head>`);
+  }
+  return `${headAssets}${html}`;
+}
+
 export function serveHtml(html: string, extraScript?: string): Response {
-  let out = rewriteLinks(html);
+  let out = injectPresenceAssets(rewriteLinks(html));
   if (extraScript) out = injectScript(out, extraScript);
   return new Response(out, {
     headers: {

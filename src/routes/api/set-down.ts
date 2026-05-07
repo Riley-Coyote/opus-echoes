@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ipHash } from "@/server/rate-limit.server";
 import { consolidateSession } from "@/server/substrate.server";
+import { hasSupabaseAdminEnv } from "@/server/env.server";
 
 const Body = z.object({ session_id: z.string().uuid() });
 
@@ -15,6 +16,9 @@ export const Route = createFileRoute("/api/set-down")({
           body = Body.parse(await request.json());
         } catch {
           return Response.json({ ok: false, code: "bad_request" }, { status: 400 });
+        }
+        if (!hasSupabaseAdminEnv()) {
+          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
         }
         const hash = ipHash(request);
 
@@ -38,7 +42,7 @@ export const Route = createFileRoute("/api/set-down")({
         // prompt, reinforces/creates engrams, decays, writes a journal entry,
         // and updates resident_state. The visitor sees a fast 200; substrate runs after.
         consolidateSession(session.id).catch((err) =>
-          console.error("[substrate] consolidateSession:", err)
+          console.error("[substrate] consolidateSession:", err),
         );
 
         return Response.json({ ok: true });
