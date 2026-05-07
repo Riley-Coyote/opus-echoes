@@ -8,6 +8,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      art_pieces: {
+        Row: {
+          body: string | null;
+          created_at: string;
+          id: string;
+          image_path: string | null;
+          kind: string;
+          meaning: string | null;
+          prompt: string | null;
+          related_engram_ids: string[];
+          related_session_id: string | null;
+          title: string | null;
+        };
+        Insert: {
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          image_path?: string | null;
+          kind: string;
+          meaning?: string | null;
+          prompt?: string | null;
+          related_engram_ids?: string[];
+          related_session_id?: string | null;
+          title?: string | null;
+        };
+        Update: {
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          image_path?: string | null;
+          kind?: string;
+          meaning?: string | null;
+          prompt?: string | null;
+          related_engram_ids?: string[];
+          related_session_id?: string | null;
+          title?: string | null;
+        };
+        Relationships: [];
+      };
       beliefs: {
         Row: {
           cited_engram_ids: string[];
@@ -32,6 +71,39 @@ export type Database = {
           prior_confidence?: number | null;
           text?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      creation_events: {
+        Row: {
+          art_piece_id: string | null;
+          created_at: string;
+          detail: Json;
+          essay_id: string | null;
+          id: string;
+          kind: string;
+          related_session_id: string | null;
+          trigger: string;
+        };
+        Insert: {
+          art_piece_id?: string | null;
+          created_at?: string;
+          detail?: Json;
+          essay_id?: string | null;
+          id?: string;
+          kind: string;
+          related_session_id?: string | null;
+          trigger: string;
+        };
+        Update: {
+          art_piece_id?: string | null;
+          created_at?: string;
+          detail?: Json;
+          essay_id?: string | null;
+          id?: string;
+          kind?: string;
+          related_session_id?: string | null;
+          trigger?: string;
         };
         Relationships: [];
       };
@@ -169,6 +241,42 @@ export type Database = {
           stability?: number;
           state?: string;
           strength?: number;
+        };
+        Relationships: [];
+      };
+      essays: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          related_engram_ids: string[];
+          related_session_id: string | null;
+          related_thread_ids: string[];
+          title: string | null;
+          word_count: number;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          related_engram_ids?: string[];
+          related_session_id?: string | null;
+          related_thread_ids?: string[];
+          title?: string | null;
+          word_count?: number;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          related_engram_ids?: string[];
+          related_session_id?: string | null;
+          related_thread_ids?: string[];
+          title?: string | null;
+          word_count?: number;
         };
         Relationships: [];
       };

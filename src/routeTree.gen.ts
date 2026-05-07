@@ -24,6 +24,7 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
 import { Route as ApiPublicConversationsRouteImport } from './routes/api/public-conversations'
@@ -33,6 +34,10 @@ import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
+import { Route as ApiArtRouteImport } from './routes/api/art'
+import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
+import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
+import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
 
 const WritingRoute = WritingRouteImport.update({
   id: '/writing',
@@ -109,6 +114,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWritingRoute = ApiWritingRouteImport.update({
+  id: '/api/writing',
+  path: '/api/writing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTurnsRoute = ApiTurnsRouteImport.update({
   id: '/api/turns',
   path: '/api/turns',
@@ -154,6 +164,27 @@ const ApiArtifactsRoute = ApiArtifactsRouteImport.update({
   path: '/api/artifacts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiArtRoute = ApiArtRouteImport.update({
+  id: '/api/art',
+  path: '/api/art',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksSweepSessionsRoute =
+  ApiPublicHooksSweepSessionsRouteImport.update({
+    id: '/api/public/hooks/sweep-sessions',
+    path: '/api/public/hooks/sweep-sessions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksForceArtRoute = ApiPublicHooksForceArtRouteImport.update({
+  id: '/api/public/hooks/force-art',
+  path: '/api/public/hooks/force-art',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksDailyTickRoute = ApiPublicHooksDailyTickRouteImport.update({
+  id: '/api/public/hooks/daily-tick',
+  path: '/api/public/hooks/daily-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -171,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/residence': typeof ResidenceRoute
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
+  '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -180,6 +212,10 @@ export interface FileRoutesByFullPath {
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
+  '/api/writing': typeof ApiWritingRoute
+  '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
+  '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -197,6 +233,7 @@ export interface FileRoutesByTo {
   '/residence': typeof ResidenceRoute
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
+  '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -206,6 +243,10 @@ export interface FileRoutesByTo {
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
+  '/api/writing': typeof ApiWritingRoute
+  '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
+  '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -224,6 +265,7 @@ export interface FileRoutesById {
   '/residence': typeof ResidenceRoute
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
+  '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -233,6 +275,10 @@ export interface FileRoutesById {
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/turns': typeof ApiTurnsRoute
+  '/api/writing': typeof ApiWritingRoute
+  '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
+  '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
+  '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,6 +298,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/token'
     | '/writing'
+    | '/api/art'
     | '/api/artifacts'
     | '/api/intent'
     | '/api/journal'
@@ -261,6 +308,10 @@ export interface FileRouteTypes {
     | '/api/public-conversations'
     | '/api/set-down'
     | '/api/turns'
+    | '/api/writing'
+    | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/force-art'
+    | '/api/public/hooks/sweep-sessions'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -278,6 +329,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/token'
     | '/writing'
+    | '/api/art'
     | '/api/artifacts'
     | '/api/intent'
     | '/api/journal'
@@ -287,6 +339,10 @@ export interface FileRouteTypes {
     | '/api/public-conversations'
     | '/api/set-down'
     | '/api/turns'
+    | '/api/writing'
+    | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/force-art'
+    | '/api/public/hooks/sweep-sessions'
   id:
     | '__root__'
     | '/'
@@ -304,6 +360,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/token'
     | '/writing'
+    | '/api/art'
     | '/api/artifacts'
     | '/api/intent'
     | '/api/journal'
@@ -313,6 +370,10 @@ export interface FileRouteTypes {
     | '/api/public-conversations'
     | '/api/set-down'
     | '/api/turns'
+    | '/api/writing'
+    | '/api/public/hooks/daily-tick'
+    | '/api/public/hooks/force-art'
+    | '/api/public/hooks/sweep-sessions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -331,6 +392,7 @@ export interface RootRouteChildren {
   ResidenceRoute: typeof ResidenceRoute
   TokenRoute: typeof TokenRoute
   WritingRoute: typeof WritingRoute
+  ApiArtRoute: typeof ApiArtRoute
   ApiArtifactsRoute: typeof ApiArtifactsRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
@@ -340,6 +402,10 @@ export interface RootRouteChildren {
   ApiPublicConversationsRoute: typeof ApiPublicConversationsRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
   ApiTurnsRoute: typeof ApiTurnsRoute
+  ApiWritingRoute: typeof ApiWritingRoute
+  ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
+  ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
+  ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -449,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/writing': {
+      id: '/api/writing'
+      path: '/api/writing'
+      fullPath: '/api/writing'
+      preLoaderRoute: typeof ApiWritingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/turns': {
       id: '/api/turns'
       path: '/api/turns'
@@ -512,6 +585,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiArtifactsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/art': {
+      id: '/api/art'
+      path: '/api/art'
+      fullPath: '/api/art'
+      preLoaderRoute: typeof ApiArtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sweep-sessions': {
+      id: '/api/public/hooks/sweep-sessions'
+      path: '/api/public/hooks/sweep-sessions'
+      fullPath: '/api/public/hooks/sweep-sessions'
+      preLoaderRoute: typeof ApiPublicHooksSweepSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/force-art': {
+      id: '/api/public/hooks/force-art'
+      path: '/api/public/hooks/force-art'
+      fullPath: '/api/public/hooks/force-art'
+      preLoaderRoute: typeof ApiPublicHooksForceArtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/daily-tick': {
+      id: '/api/public/hooks/daily-tick'
+      path: '/api/public/hooks/daily-tick'
+      fullPath: '/api/public/hooks/daily-tick'
+      preLoaderRoute: typeof ApiPublicHooksDailyTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -531,6 +632,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResidenceRoute: ResidenceRoute,
   TokenRoute: TokenRoute,
   WritingRoute: WritingRoute,
+  ApiArtRoute: ApiArtRoute,
   ApiArtifactsRoute: ApiArtifactsRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
@@ -540,6 +642,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicConversationsRoute: ApiPublicConversationsRoute,
   ApiSetDownRoute: ApiSetDownRoute,
   ApiTurnsRoute: ApiTurnsRoute,
+  ApiWritingRoute: ApiWritingRoute,
+  ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
+  ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
+  ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

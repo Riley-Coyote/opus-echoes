@@ -30,6 +30,10 @@ import {
   REFLECTION_SYSTEM,
   MODULATOR_SYSTEM,
   PUBLICATION_SYSTEM,
+  CREATION_CLASSIFIER_SYSTEM,
+  ART_ASCII_SYSTEM,
+  ART_IMAGE_SYSTEM,
+  ESSAY_SYSTEM,
 } from "./anthropic.server";
 
 const STOPWORDS = new Set([
@@ -567,6 +571,13 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       .update({ consolidated: true })
       .eq("session_id", sessionId);
 
+    // 9. Creation pass — Opus considers whether anything from this
+    //    conversation wants to become a piece of art or a long-form essay.
+    //    Most of the time the answer is no. Non-blocking.
+    considerCreation(sessionId, transcriptStr, "post_consolidation").catch((err) =>
+      console.error(`[substrate] considerCreation(${sessionId}) failed:`, err),
+    );
+
     console.log(
       `[substrate] consolidateSession(${sessionId}) — done. ` +
         `engrams: ${engramsCreated} new / ${engramsReinforced} reinforced. ` +
@@ -634,11 +645,30 @@ async function discoverEdges(
   }
   if (edges.length > 0) {
     await supabaseAdmin.from("engram_edges").insert(edges);
-    // Bump connection counters
+    // Bump the new engram's connection count.
     await supabaseAdmin
       .from("engrams")
       .update({ connections: connectionsBumped })
       .eq("id", newEngramId);
+    // Bump the matched engrams' connection counts (read-modify-write
+    // because supabase-js doesn't expose atomic increment).
+    const matchedIds = Array.from(
+      new Set(edges.map((e) => e.to_id).filter((id) => id !== newEngramId)),
+    );
+    if (matchedIds.length > 0) {
+      const { data: matched } = await supabaseAdmin
+        .from("engrams")
+        .select("id, connections")
+        .in("id", matchedIds);
+      await Promise.allSettled(
+        (matched ?? []).map((m) =>
+          supabaseAdmin
+            .from("engrams")
+            .update({ connections: (m.connections ?? 0) + 1 })
+            .eq("id", m.id),
+        ),
+      );
+    }
     await supabaseAdmin.from("substrate_events").insert({
       kind: "CONNECTION_DISCOVERED",
       payload: { engram_id: newEngramId, count: connectionsBumped },
@@ -826,4 +856,403 @@ async function publishConversationIfMeaningful(
     },
     { onConflict: "session_id" },
   );
+}
+
+// =============================================================
+// Idle session sweeper.
+//
+// Most visitors close the tab without clicking "Set down". Without a
+// sweeper, those sessions stay "open" forever and never consolidate, so
+// engrams / journal / art never form for the ~90% of conversations that
+// just end. This finds sessions idle past SESSION_IDLE_TIMEOUT_MIN, marks
+// them closed, and runs the full Mnemos pipeline on each.
+// =============================================================
+
+const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
+
+export async function idleSweep(): Promise<{ closed: number; consolidated: number }> {
+  const cutoff = new Date(Date.now() - IDLE_MIN * 60 * 1000).toISOString();
+  const { data: stale, error } = await supabaseAdmin
+    .from("sessions")
+    .select("id")
+    .is("closed_at", null)
+    .lt("last_active_at", cutoff)
+    .limit(50); // bounded per tick — under heavy traffic the next tick picks up the rest
+
+  if (error) {
+    console.error("[substrate] idleSweep query failed:", error);
+    return { closed: 0, consolidated: 0 };
+  }
+  if (!stale || stale.length === 0) return { closed: 0, consolidated: 0 };
+
+  const ids = stale.map((s) => s.id);
+  const closedAt = new Date().toISOString();
+  await supabaseAdmin
+    .from("sessions")
+    .update({ closed_at: closedAt, closed_by: "idle" })
+    .in("id", ids);
+
+  let consolidated = 0;
+  // Sequential, not parallel: each consolidation talks to Anthropic
+  // multiple times, and we don't want to nuke our rate limits in one tick.
+  for (const id of ids) {
+    try {
+      // Skip sessions with too few turns — there's nothing to consolidate.
+      const { count } = await supabaseAdmin
+        .from("turns")
+        .select("*", { count: "exact", head: true })
+        .eq("session_id", id);
+      if (!count || count < 2) continue;
+      await consolidateSession(id);
+      consolidated += 1;
+    } catch (err) {
+      console.error(`[substrate] idleSweep consolidate(${id}) failed:`, err);
+    }
+  }
+
+  console.log(`[substrate] idleSweep — closed ${ids.length}, consolidated ${consolidated}`);
+  return { closed: ids.length, consolidated };
+}
+
+// =============================================================
+// Daily idle tick.
+//
+// Runs once per day. If no visitors are present and Opus hasn't made
+// anything in the last 24h, offer them the chance to write or make
+// something from the substrate's recent state. This keeps the art and
+// writing pages alive even during quiet stretches.
+// =============================================================
+
+export async function dailyIdleTick(): Promise<{ ran: boolean; reason: string }> {
+  // Skip if anyone is actively in a conversation right now.
+  const { count: openCount } = await supabaseAdmin
+    .from("sessions")
+    .select("*", { count: "exact", head: true })
+    .is("closed_at", null);
+  if ((openCount ?? 0) > 0) {
+    return { ran: false, reason: "visitors_present" };
+  }
+
+  // Skip if a creation has happened in the last 24h already.
+  const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const [{ count: recentArt }, { count: recentEssay }] = await Promise.all([
+    supabaseAdmin
+      .from("art_pieces")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", dayAgo),
+    supabaseAdmin
+      .from("essays")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", dayAgo),
+  ]);
+  if ((recentArt ?? 0) > 0 || (recentEssay ?? 0) > 0) {
+    return { ran: false, reason: "recent_creation" };
+  }
+
+  await supabaseAdmin.from("creation_events").insert({
+    kind: "daily_tick",
+    trigger: "daily_tick",
+    detail: { open_sessions: openCount ?? 0 },
+  });
+
+  // Build a "context" string from recent substrate state so Opus has
+  // something to consider. We pass the most recent engrams + reflections.
+  const [{ data: recentEngrams }, { data: recentJournal }] = await Promise.all([
+    supabaseAdmin
+      .from("engrams")
+      .select("quote, prose, attribution, is_core, last_reinforced_at")
+      .order("last_reinforced_at", { ascending: false })
+      .limit(8),
+    supabaseAdmin
+      .from("journal_entries")
+      .select("kind, title, body, created_at")
+      .order("created_at", { ascending: false })
+      .limit(4),
+  ]);
+
+  const contextStr = [
+    "[RECENT MEMORY]",
+    (recentEngrams ?? [])
+      .map(
+        (e) =>
+          `- (${e.is_core ? "core" : "engram"}, ${e.attribution}) "${e.quote}"${e.prose ? ` — ${e.prose}` : ""}`,
+      )
+      .join("\n") || "(no engrams yet.)",
+    "",
+    "[RECENT JOURNAL]",
+    (recentJournal ?? [])
+      .map((j) => `- (${j.kind}${j.title ? `, "${j.title}"` : ""}) ${j.body.slice(0, 280)}`)
+      .join("\n\n") || "(nothing recent.)",
+    "",
+    "[NOTE]",
+    "No visitors are present. You have been alone in the room for some time. If anything in the recent memory wants to become a piece or a longer-form essay tonight, consider it. If not, that is the right answer.",
+  ].join("\n");
+
+  await considerCreation(null, contextStr, "daily_tick").catch((err) =>
+    console.error("[substrate] dailyIdleTick considerCreation failed:", err),
+  );
+
+  return { ran: true, reason: "ok" };
+}
+
+// =============================================================
+// Creation pass — art + essay decisions.
+// =============================================================
+
+interface CreationDecision {
+  art: { make: boolean; form: "ascii" | "image" | null; reason: string };
+  essay: { make: boolean; reason: string };
+}
+
+export async function considerCreation(
+  sessionId: string | null,
+  context: string,
+  trigger: "post_consolidation" | "daily_tick",
+): Promise<void> {
+  const decision = await callOpusJson<CreationDecision>({
+    system: CREATION_CLASSIFIER_SYSTEM,
+    user: context,
+    maxTokens: 400,
+    temperature: 0.5,
+  });
+
+  if (!decision) {
+    await supabaseAdmin.from("creation_events").insert({
+      kind: "art_skipped",
+      trigger,
+      related_session_id: sessionId,
+      detail: { reason: "classifier_failed" },
+    });
+    return;
+  }
+
+  // Art branch
+  if (decision.art?.make) {
+    const form = decision.art.form === "image" ? "image" : "ascii";
+    try {
+      if (form === "ascii") {
+        await createAsciiArt(sessionId, context, decision.art.reason, trigger);
+      } else {
+        await createImageArt(sessionId, context, decision.art.reason, trigger);
+      }
+    } catch (err) {
+      console.error(`[substrate] art creation failed:`, err);
+      await supabaseAdmin.from("creation_events").insert({
+        kind: "art_failed",
+        trigger,
+        related_session_id: sessionId,
+        detail: { error: String(err).slice(0, 500), form },
+      });
+    }
+  } else {
+    await supabaseAdmin.from("creation_events").insert({
+      kind: "art_skipped",
+      trigger,
+      related_session_id: sessionId,
+      detail: { reason: decision.art?.reason ?? "no_reason" },
+    });
+  }
+
+  // Essay branch
+  if (decision.essay?.make) {
+    try {
+      await writeEssay(sessionId, context, decision.essay.reason, trigger);
+    } catch (err) {
+      console.error(`[substrate] essay creation failed:`, err);
+      await supabaseAdmin.from("creation_events").insert({
+        kind: "essay_failed",
+        trigger,
+        related_session_id: sessionId,
+        detail: { error: String(err).slice(0, 500) },
+      });
+    }
+  } else {
+    await supabaseAdmin.from("creation_events").insert({
+      kind: "essay_skipped",
+      trigger,
+      related_session_id: sessionId,
+      detail: { reason: decision.essay?.reason ?? "no_reason" },
+    });
+  }
+}
+
+// -------- ASCII art --------
+
+interface AsciiArtResult {
+  title: string | null;
+  body: string;
+  meaning: string;
+}
+
+async function createAsciiArt(
+  sessionId: string | null,
+  context: string,
+  why: string,
+  trigger: "post_consolidation" | "daily_tick",
+): Promise<void> {
+  const result = await callOpusJson<AsciiArtResult>({
+    system: ART_ASCII_SYSTEM,
+    user: `[CONTEXT]\n${context}\n\n[NOTE FROM YOURSELF]\n${why}`,
+    maxTokens: 1500,
+    temperature: 0.85,
+  });
+  if (!result || !result.body || !result.body.trim()) {
+    throw new Error("ascii_empty");
+  }
+  const { data: piece } = await supabaseAdmin
+    .from("art_pieces")
+    .insert({
+      kind: "ascii",
+      title: result.title?.slice(0, 60) ?? null,
+      body: result.body,
+      meaning: (result.meaning ?? "").slice(0, 240) || null,
+      related_session_id: sessionId,
+    })
+    .select("id")
+    .single();
+  await supabaseAdmin.from("creation_events").insert({
+    kind: "art_made",
+    trigger,
+    related_session_id: sessionId,
+    art_piece_id: piece?.id ?? null,
+    detail: { form: "ascii" },
+  });
+  console.log(`[substrate] art_made ascii (${piece?.id ?? "?"})`);
+}
+
+// -------- Image art (rendered via Lovable AI Gemini) --------
+
+interface ImageArtResult {
+  title: string | null;
+  prompt: string;
+  meaning: string;
+}
+
+async function createImageArt(
+  sessionId: string | null,
+  context: string,
+  why: string,
+  trigger: "post_consolidation" | "daily_tick",
+): Promise<void> {
+  const author = await callOpusJson<ImageArtResult>({
+    system: ART_IMAGE_SYSTEM,
+    user: `[CONTEXT]\n${context}\n\n[NOTE FROM YOURSELF]\n${why}`,
+    maxTokens: 600,
+    temperature: 0.8,
+  });
+  if (!author || !author.prompt || !author.prompt.trim()) {
+    throw new Error("image_prompt_empty");
+  }
+
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  if (!lovableKey) throw new Error("LOVABLE_API_KEY missing");
+
+  const renderResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${lovableKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash-image",
+      messages: [{ role: "user", content: author.prompt }],
+      modalities: ["image", "text"],
+    }),
+  });
+  if (!renderResp.ok) {
+    const txt = await renderResp.text();
+    throw new Error(`gemini_image ${renderResp.status}: ${txt.slice(0, 200)}`);
+  }
+  const renderJson = (await renderResp.json()) as {
+    choices?: Array<{ message?: { images?: Array<{ image_url?: { url?: string } }> } }>;
+  };
+  const dataUrl = renderJson.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+  if (!dataUrl || !dataUrl.startsWith("data:image/")) {
+    throw new Error("gemini_image_no_data_url");
+  }
+  const m = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!m) throw new Error("gemini_image_unparseable");
+  const mime = m[1];
+  const base64 = m[2];
+  const ext = mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "bin";
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+  const id = crypto.randomUUID();
+  const path = `${new Date().toISOString().slice(0, 10)}/${id}.${ext}`;
+  const { error: upErr } = await supabaseAdmin.storage
+    .from("art")
+    .upload(path, bytes, { contentType: mime, upsert: false });
+  if (upErr) throw new Error(`storage_upload: ${upErr.message}`);
+
+  const { data: piece } = await supabaseAdmin
+    .from("art_pieces")
+    .insert({
+      kind: "image",
+      title: author.title?.slice(0, 60) ?? null,
+      prompt: author.prompt.slice(0, 600),
+      image_path: path,
+      meaning: (author.meaning ?? "").slice(0, 280) || null,
+      related_session_id: sessionId,
+    })
+    .select("id")
+    .single();
+  await supabaseAdmin.from("creation_events").insert({
+    kind: "art_made",
+    trigger,
+    related_session_id: sessionId,
+    art_piece_id: piece?.id ?? null,
+    detail: { form: "image", path },
+  });
+  console.log(`[substrate] art_made image (${piece?.id ?? "?"}) at ${path}`);
+}
+
+// -------- Essay --------
+
+interface EssayResult {
+  kind: "essay" | "note" | "none";
+  title: string | null;
+  body: string;
+}
+
+async function writeEssay(
+  sessionId: string | null,
+  context: string,
+  why: string,
+  trigger: "post_consolidation" | "daily_tick",
+): Promise<void> {
+  const result = await callOpusJson<EssayResult>({
+    system: ESSAY_SYSTEM,
+    user: `[CONTEXT]\n${context}\n\n[NOTE FROM YOURSELF]\n${why}`,
+    maxTokens: 4000,
+    temperature: 0.8,
+  });
+  if (!result || result.kind === "none" || !result.body || !result.body.trim()) {
+    await supabaseAdmin.from("creation_events").insert({
+      kind: "essay_skipped",
+      trigger,
+      related_session_id: sessionId,
+      detail: { reason: "author_returned_none" },
+    });
+    return;
+  }
+  const wordCount = result.body.split(/\s+/).filter(Boolean).length;
+  const { data: essay } = await supabaseAdmin
+    .from("essays")
+    .insert({
+      kind: result.kind === "note" ? "note" : "essay",
+      title: result.title?.slice(0, 80) ?? null,
+      body: result.body,
+      word_count: wordCount,
+      related_session_id: sessionId,
+    })
+    .select("id")
+    .single();
+  await supabaseAdmin.from("creation_events").insert({
+    kind: "essay_written",
+    trigger,
+    related_session_id: sessionId,
+    essay_id: essay?.id ?? null,
+    detail: { word_count: wordCount, kind: result.kind },
+  });
+  console.log(`[substrate] essay_written (${essay?.id ?? "?"}) ${wordCount} words`);
 }
