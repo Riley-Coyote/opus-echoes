@@ -53,6 +53,51 @@ export type Database = {
         }
         Relationships: []
       }
+      autonomy_runs: {
+        Row: {
+          action: string
+          artifact_id: string | null
+          created_at: string
+          id: string
+          journal_entry_id: string | null
+          kind: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          artifact_id?: string | null
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          kind: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          artifact_id?: string | null
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          kind?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autonomy_runs_artifact_id_fkey"
+            columns: ["artifact_id"]
+            isOneToOne: false
+            referencedRelation: "resident_artifacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "autonomy_runs_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beliefs: {
         Row: {
           cited_engram_ids: string[]
@@ -376,6 +421,86 @@ export type Database = {
           id?: string
           kind?: string
           session_id?: string
+        }
+        Relationships: []
+      }
+      published_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          published_at: string
+          reason: string
+          selected_by: string
+          session_id: string
+          significance_kind: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          published_at?: string
+          reason: string
+          selected_by?: string
+          session_id: string
+          significance_kind?: string
+          summary: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          published_at?: string
+          reason?: string
+          selected_by?: string
+          session_id?: string
+          significance_kind?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_conversations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_artifacts: {
+        Row: {
+          body: string
+          choice_reason: string | null
+          created_at: string
+          id: string
+          kind: string
+          medium: string
+          related_engram_ids: string[]
+          title: string
+          visibility: string
+        }
+        Insert: {
+          body: string
+          choice_reason?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          medium?: string
+          related_engram_ids?: string[]
+          title: string
+          visibility?: string
+        }
+        Update: {
+          body?: string
+          choice_reason?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          medium?: string
+          related_engram_ids?: string[]
+          title?: string
+          visibility?: string
         }
         Relationships: []
       }
