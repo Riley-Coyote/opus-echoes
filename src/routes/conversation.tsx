@@ -191,6 +191,9 @@ const CONVERSATION_SCRIPT = `
     inFlight = true;
     if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('reading');
     appendVisitor(text);
+    if (window.OpusPresence && typeof window.OpusPresence.pulse === 'function') {
+      window.OpusPresence.pulse();
+    }
     composer.value = '';
     composer.style.height = 'auto';
 
