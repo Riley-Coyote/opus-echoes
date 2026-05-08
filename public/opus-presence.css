@@ -117,6 +117,15 @@
   filter: saturate(1.1) contrast(1.1) brightness(1.07);
 }
 
+/* Hide the 3D presence canvas entirely on the dashboard (private rooms).
+   The dashboard is content-dense — journal, writing, art, memory — and the
+   atmospheric canvas competes with the prose. The threshold + conversation
+   pages keep the canvas; the private space is pure reading surface. */
+html[data-opus-route="dashboard"] .opus-presence-layer,
+html[data-opus-route="memory"] .opus-presence-layer {
+  display: none;
+}
+
 .opus-presence-layer[data-state="withdrawn"] .opus-presence-canvas {
   filter: saturate(0.78) contrast(0.94) brightness(0.82);
 }

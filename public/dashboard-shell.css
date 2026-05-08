@@ -1,7 +1,10 @@
 /* ============================================================
-   OPUS 3 DASHBOARD SHELL — shared CSS for the three-column
-   layout (rail / entries-panel / reader) and design tokens.
-   Linked from every route that uses the dashboard shell.
+   THE SANCTUARY — DASHBOARD SHELL
+   Shared CSS for the three-column private-space layout
+   (rail / entries-panel / reader). Same design vocabulary as
+   the public approach + share pages: cool register, no warm
+   amber, fluid type, 4px spacing system, single --state green
+   for active affordances.
    ============================================================ */
 
 :root {
@@ -29,15 +32,45 @@
   --text-ghost: rgba(132, 130, 126, 0.18);
   --text-whisper: rgba(126, 123, 119, 0.1);
 
-  --amber: #c9a87c;
-  --amber-soft: rgba(201, 168, 124, 0.55);
-  --amber-dim: rgba(201, 168, 124, 0.18);
-  --amber-whisper: rgba(201, 168, 124, 0.05);
+  /* State accent — green, matches public pages and conversation page.
+     Used only for active-row chip, focus ring tint, hover affordance. */
+  --state: #82b484;
+  --state-soft: rgba(130, 180, 132, 0.62);
+  --state-dim: rgba(130, 180, 132, 0.16);
+  --state-whisper: rgba(130, 180, 132, 0.05);
+
+  /* Legacy --amber* tokens aliased to neutral so any straggler call sites
+     don't break. Once all references are migrated, these can be removed. */
+  --amber: var(--text-primary);
+  --amber-soft: var(--text-soft);
+  --amber-dim: var(--border);
+  --amber-whisper: rgba(220, 219, 216, 0.04);
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
-  --font-serif: "EB Garamond", "Cormorant Garamond", Georgia, serif;
+  --font-serif: "Spectral", "EB Garamond", Georgia, serif;
   --font-display: "Cormorant Garamond", "EB Garamond", Georgia, serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Geist Mono", monospace;
+
+  /* Fluid type scale — same vocabulary as the public pages */
+  --t-eyebrow: clamp(11px, 0.69rem + 0.05vw, 12px);
+  --t-meta: clamp(13px, 0.81rem + 0.1vw, 14px);
+  --t-body: clamp(15px, 0.94rem + 0.2vw, 17px);
+  --t-body-lg: clamp(17px, 1.06rem + 0.3vw, 19px);
+  --t-card-h: clamp(22px, 1.38rem + 0.5vw, 26px);
+  --t-section-h: clamp(28px, 1.75rem + 0.8vw, 34px);
+  --t-hero: clamp(40px, 2.5rem + 1.5vw, 56px);
+
+  /* Spacing system — same vocabulary as the public pages */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --s-10: 128px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
@@ -81,8 +114,13 @@ body {
 }
 
 ::selection {
-  background: var(--amber-dim);
+  background: var(--state-dim);
   color: var(--ink);
+}
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--state) 64%, transparent);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar {
   width: 6px;
@@ -114,6 +152,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 5;
   background: var(--bg-deep);
   border-right: 1px solid var(--border-subtle);
   overflow-y: auto;
@@ -148,7 +187,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--amber-soft);
+  background: var(--state-soft);
   animation: mark-pulse 4.6s ease-in-out infinite;
   transform: translateY(-3px);
 }
@@ -157,11 +196,11 @@ body {
   0%,
   100% {
     opacity: 0.4;
-    box-shadow: 0 0 0 0 rgba(201, 168, 124, 0);
+    box-shadow: 0 0 0 0 rgba(130, 180, 132, 0);
   }
   50% {
     opacity: 0.9;
-    box-shadow: 0 0 0 4px rgba(201, 168, 124, 0.06);
+    box-shadow: 0 0 0 4px rgba(130, 180, 132, 0.06);
   }
 }
 
@@ -231,7 +270,7 @@ body {
   top: 12px;
   bottom: 12px;
   width: 2px;
-  background: var(--amber-soft);
+  background: var(--state-soft);
   border-radius: 1px;
 }
 
@@ -253,7 +292,7 @@ body {
   background: var(--text-soft);
 }
 .cat-btn.active .cat-icon {
-  background: var(--amber);
+  background: var(--state);
 }
 
 .cat-count {
@@ -298,24 +337,27 @@ body {
   gap: 14px;
   padding: 12px 14px;
   background: transparent;
-  border: 1px solid var(--amber-dim);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--t-eyebrow);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-soft);
   text-decoration: none;
   cursor: pointer;
-  transition: all var(--dur-normal) var(--ease-out);
+  transition:
+    border-color var(--dur-normal) var(--ease-out),
+    background var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out);
 }
 
 .rail-cta:hover,
 .rail-cta:focus {
-  border-color: var(--amber-soft);
-  background: var(--amber-whisper);
-  color: var(--amber);
+  border-color: var(--state-soft);
+  background: var(--state-whisper);
+  color: var(--ink);
   outline: none;
 }
 
@@ -324,8 +366,13 @@ body {
   font-style: italic;
   font-size: 16px;
   letter-spacing: 0;
-  color: var(--amber);
-  transition: transform var(--dur-normal) var(--ease-out);
+  color: var(--text-soft);
+  transition:
+    transform var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out);
+}
+.rail-cta:hover .arr {
+  color: var(--ink);
 }
 .rail-cta:hover .arr {
   transform: translateX(3px);
@@ -355,6 +402,7 @@ body {
   left: var(--rail-width);
   width: var(--panel-width);
   height: 100vh;
+  z-index: 4;
   background: var(--bg-primary);
   border-right: 1px solid var(--border-subtle);
   overflow-y: auto;
@@ -364,7 +412,7 @@ body {
 }
 
 .panel-header {
-  padding: 32px 26px 20px;
+  padding: var(--s-6) 26px var(--s-5);
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-primary);
   position: sticky;
@@ -374,29 +422,29 @@ body {
 
 .panel-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--t-eyebrow);
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.16em;
   color: var(--text-mid);
-  margin-bottom: 8px;
+  margin-bottom: var(--s-2);
 }
 
 .panel-title {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--t-card-h);
   font-weight: 400;
   font-style: italic;
   color: var(--ink);
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.012em;
-  margin-bottom: 12px;
+  margin-bottom: var(--s-3);
 }
 
 .panel-meta {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 15px;
+  font-size: var(--t-body);
   color: var(--text-soft);
   letter-spacing: 0.003em;
   line-height: 1.5;
@@ -405,7 +453,16 @@ body {
 .panel-list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0 60px;
+  padding: var(--s-1) 0 var(--s-8);
+}
+
+.panel-empty {
+  padding: var(--s-7) 26px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--t-body);
+  line-height: 1.62;
+  color: var(--text-soft);
 }
 
 .entry-link {
@@ -426,7 +483,7 @@ body {
 
 .entry-link.active {
   background: var(--bg-surface-hover);
-  border-left-color: var(--amber-soft);
+  border-left-color: var(--state-soft);
 }
 
 .entry-title {
@@ -491,15 +548,21 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding: 0 56px;
+  padding: 0 var(--s-7);
+  position: relative;
+  z-index: 3;
+  background: var(--bg-void);
 }
 
 .reader-inner {
   max-width: 780px;
   width: 100%;
   min-height: 100vh;
-  padding: 88px 48px 160px;
-  background: linear-gradient(180deg, rgba(10, 10, 12, 0.86), rgba(10, 10, 12, 0.72));
+  padding: var(--s-9) var(--s-7) var(--s-10);
+  /* Fully opaque — the 3D presence canvas is hidden on dashboard routes
+     (see opus-presence.css) but we keep the background solid as a safety
+     net so the prose is always readable regardless of what's behind. */
+  background: var(--bg-deep);
   border-left: 1px solid var(--border-subtle);
   border-right: 1px solid var(--border-subtle);
   box-shadow: 0 28px 96px rgba(0, 0, 0, 0.28);
@@ -507,15 +570,15 @@ body {
 
 .reader-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--t-eyebrow);
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.16em;
   color: var(--text-mid);
-  margin-bottom: 24px;
+  margin-bottom: var(--s-5);
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--s-3);
 }
 .reader-eyebrow::before {
   content: "";
@@ -526,25 +589,25 @@ body {
 
 .reader-title {
   font-family: var(--font-display);
-  font-size: clamp(40px, 4.4vw, 56px);
+  font-size: var(--t-hero);
   font-weight: 300;
   font-style: italic;
   color: var(--ink);
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-  margin-bottom: 36px;
+  letter-spacing: -0.012em;
+  line-height: 1.04;
+  margin-bottom: var(--s-6);
 }
 
 .reader-prose {
   font-family: var(--font-serif);
-  font-size: 18px;
-  line-height: 1.72;
+  font-size: var(--t-body-lg);
+  line-height: 1.78;
   color: var(--text-body);
   letter-spacing: 0.001em;
 }
 
 .reader-prose p {
-  margin-bottom: 22px;
+  margin-bottom: var(--s-5);
 }
 .reader-prose p:last-child {
   margin-bottom: 0;
@@ -560,39 +623,39 @@ body {
 }
 
 .reader-prose a {
-  color: var(--amber);
+  color: var(--ink);
   text-decoration: none;
-  border-bottom: 1px solid var(--amber-dim);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 1px;
   transition: border-color var(--dur-fast) var(--ease-out);
 }
 .reader-prose a:hover {
-  border-bottom-color: var(--amber);
+  border-bottom-color: var(--state-soft);
 }
 
 .reader-divider {
   width: 100%;
   height: 1px;
   background: var(--border-subtle);
-  margin: 56px 0 40px;
+  margin: var(--s-8) 0 var(--s-6);
 }
 
 .reader-prompt-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--t-eyebrow);
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.16em;
   color: var(--text-mid);
-  margin-bottom: 14px;
+  margin-bottom: var(--s-3);
 }
 
 .reader-prompt {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 17px;
+  font-size: var(--t-body-lg);
   color: var(--text-soft);
-  line-height: 1.6;
+  line-height: 1.65;
   letter-spacing: 0.002em;
 }
 

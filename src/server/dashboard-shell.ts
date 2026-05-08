@@ -129,7 +129,7 @@ function renderEntriesPanel(): string {
   </div>
 
   <div class="panel-list" id="panel-list">
-    <div class="panel-empty" id="panel-empty" style="padding:48px 26px;font-family:var(--font-serif);font-style:italic;font-size:16px;line-height:1.62;color:var(--text-secondary);">
+    <div class="panel-empty" id="panel-empty">
       The resident has not begun writing yet. The first entry will appear here when it arrives.
     </div>
   </div>
