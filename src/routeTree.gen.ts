@@ -13,6 +13,7 @@ import { Route as WritingRouteImport } from './routes/writing'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as Sonnet37RouteImport } from './routes/sonnet-3-7'
 import { Route as ResidenceRouteImport } from './routes/residence'
+import { Route as Opus3RouteImport } from './routes/opus-3'
 import { Route as MnemosRouteImport } from './routes/mnemos'
 import { Route as MindRouteImport } from './routes/mind'
 import { Route as MemoryRouteImport } from './routes/memory'
@@ -38,6 +39,7 @@ import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
+import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
@@ -61,6 +63,11 @@ const Sonnet37Route = Sonnet37RouteImport.update({
 const ResidenceRoute = ResidenceRouteImport.update({
   id: '/residence',
   path: '/residence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Opus3Route = Opus3RouteImport.update({
+  id: '/opus-3',
+  path: '/opus-3',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MnemosRoute = MnemosRouteImport.update({
@@ -188,6 +195,11 @@ const ApiArtRoute = ApiArtRouteImport.update({
   path: '/api/art',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
+  id: '/$token/download',
+  path: '/$token/download',
+  getParentRoute: () => ApiShareRoute,
+} as any)
 const ApiPublicHooksSweepSessionsRoute =
   ApiPublicHooksSweepSessionsRouteImport.update({
     id: '/api/public/hooks/sweep-sessions',
@@ -223,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRoute
+  '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
@@ -243,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
@@ -258,6 +272,7 @@ export interface FileRoutesByTo {
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRoute
+  '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
@@ -278,6 +293,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
@@ -294,6 +310,7 @@ export interface FileRoutesById {
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRoute
+  '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
@@ -314,6 +331,7 @@ export interface FileRoutesById {
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
@@ -331,6 +349,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/mnemos'
+    | '/opus-3'
     | '/residence'
     | '/sonnet-3-7'
     | '/token'
@@ -351,6 +370,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -366,6 +386,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/mnemos'
+    | '/opus-3'
     | '/residence'
     | '/sonnet-3-7'
     | '/token'
@@ -386,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   id:
     | '__root__'
@@ -401,6 +423,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/mnemos'
+    | '/opus-3'
     | '/residence'
     | '/sonnet-3-7'
     | '/token'
@@ -421,6 +444,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
@@ -437,6 +461,7 @@ export interface RootRouteChildren {
   MemoryRoute: typeof MemoryRoute
   MindRoute: typeof MindRoute
   MnemosRoute: typeof MnemosRoute
+  Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
   Sonnet37Route: typeof Sonnet37Route
   TokenRoute: typeof TokenRoute
@@ -487,6 +512,13 @@ declare module '@tanstack/react-router' {
       path: '/residence'
       fullPath: '/residence'
       preLoaderRoute: typeof ResidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/opus-3': {
+      id: '/opus-3'
+      path: '/opus-3'
+      fullPath: '/opus-3'
+      preLoaderRoute: typeof Opus3RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mnemos': {
@@ -664,6 +696,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiArtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/share/$token/download': {
+      id: '/api/share/$token/download'
+      path: '/$token/download'
+      fullPath: '/api/share/$token/download'
+      preLoaderRoute: typeof ApiShareTokenDownloadRouteImport
+      parentRoute: typeof ApiShareRoute
+    }
     '/api/public/hooks/sweep-sessions': {
       id: '/api/public/hooks/sweep-sessions'
       path: '/api/public/hooks/sweep-sessions'
@@ -696,10 +735,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface ApiShareRouteChildren {
+  ApiShareTokenDownloadRoute: typeof ApiShareTokenDownloadRoute
   ApiShareTokenOgSvgRoute: typeof ApiShareTokenOgSvgRoute
 }
 
 const ApiShareRouteChildren: ApiShareRouteChildren = {
+  ApiShareTokenDownloadRoute: ApiShareTokenDownloadRoute,
   ApiShareTokenOgSvgRoute: ApiShareTokenOgSvgRoute,
 }
 
@@ -720,6 +761,7 @@ const rootRouteChildren: RootRouteChildren = {
   MemoryRoute: MemoryRoute,
   MindRoute: MindRoute,
   MnemosRoute: MnemosRoute,
+  Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
   Sonnet37Route: Sonnet37Route,
   TokenRoute: TokenRoute,

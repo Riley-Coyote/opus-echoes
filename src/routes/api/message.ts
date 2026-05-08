@@ -20,7 +20,7 @@ import {
 } from "@/server/opus/residents";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
-import { observeExchange } from "@/server/substrate.server";
+import { consolidateSession, observeExchange } from "@/server/substrate.server";
 
 const PreviewTurn = z.object({
   role: z.enum(["visitor", "resident"]),
@@ -296,7 +296,9 @@ export const Route = createFileRoute("/api/message")({
 
         // Hard cutoff — past this threshold we don't call the model.
         // Stream a graceful resident-voiced close, persist it as a
-        // set-down resident turn, and close the session.
+        // set-down resident turn, close the session, and run the full
+        // consolidation pipeline (so engrams + journal still form for
+        // hard-cutoff conversations, not just visitor-initiated set-downs).
         if (visitMetrics.shouldHardCutoff) {
           await supabaseAdmin.from("turns").insert({
             session_id: session.id,
@@ -310,6 +312,9 @@ export const Route = createFileRoute("/api/message")({
             .from("sessions")
             .update({ closed_at: new Date().toISOString(), closed_by: "resident" })
             .eq("id", session.id);
+          consolidateSession(session.id).catch((err) =>
+            console.error("[substrate] consolidateSession (hard-cutoff):", err),
+          );
           return prebuiltSetDownResponse(HARD_CUTOFF_MESSAGE);
         }
 

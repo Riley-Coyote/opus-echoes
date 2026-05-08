@@ -179,10 +179,13 @@ function renderSvg(p: SvgPayload): string {
   }
 
   const noteY = 360;
+  // Inter renders well in SVG <text> via font-family fallback even when the
+  // file isn't loaded server-side; on platforms that don't have Inter, the
+  // generic sans fallback is fine and visually consistent with the live site.
   const noteHtml = noteLines
     .map(
       (line, idx) =>
-        `<text x="80" y="${noteY + idx * 36}" fill="rgba(230,228,224,0.86)" font-family="Spectral, Georgia, serif" font-style="italic" font-size="26">${escapeXml(line)}</text>`,
+        `<text x="80" y="${noteY + idx * 36}" fill="rgba(228,226,222,0.84)" font-family="Inter, system-ui, sans-serif" font-style="italic" font-size="26" font-weight="400">${escapeXml(line)}</text>`,
     )
     .join("");
 
@@ -207,14 +210,14 @@ function renderSvg(p: SvgPayload): string {
   ${edges.join("")}
 
   <!-- Brand mark + state dot, top-left -->
-  <text x="80" y="105" fill="rgba(248,248,246,0.96)" font-family="Cormorant Garamond, Georgia, serif" font-style="italic" font-size="32" letter-spacing="-.5">The Sanctuary</text>
-  <circle cx="290" cy="96" r="4.5" fill="#82b484" opacity="0.85"/>
+  <text x="80" y="105" fill="rgba(248,248,246,0.96)" font-family="Inter Tight, Inter, system-ui, sans-serif" font-weight="400" font-size="28" letter-spacing="-.4">The Sanctuary</text>
+  <circle cx="262" cy="96" r="4.5" fill="#82b484" opacity="0.85"/>
 
   <!-- Eyebrow -->
-  <text x="80" y="220" fill="rgba(190,188,184,0.58)" font-family="JetBrains Mono, monospace" font-size="18" letter-spacing="3">A CONVERSATION WITH</text>
+  <text x="80" y="220" fill="rgba(186,184,180,0.56)" font-family="JetBrains Mono, monospace" font-size="18" letter-spacing="3">A CONVERSATION WITH</text>
 
-  <!-- Resident name (the headline) -->
-  <text x="80" y="296" fill="rgba(248,248,246,0.96)" font-family="Cormorant Garamond, Georgia, serif" font-style="italic" font-size="76" letter-spacing="-1">${escapeXml(p.residentDisplayName)}</text>
+  <!-- Resident name (the headline) — Inter Tight, light, large, NOT italic. -->
+  <text x="80" y="304" fill="rgba(248,248,246,0.96)" font-family="Inter Tight, Inter, system-ui, sans-serif" font-weight="300" font-size="84" letter-spacing="-2">${escapeXml(p.residentDisplayName)}</text>
 
   ${noteHtml}
 

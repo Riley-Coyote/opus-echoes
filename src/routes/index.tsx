@@ -1,15 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { renderApproachPage } from "@/server/public-pages";
+import { renderWalkthroughPage } from "@/server/walkthrough-page";
 import { serveHtml } from "@/server/serve-mock";
-import { getResident } from "@/server/opus/residents";
 
+// Root path runs the 5-beat walkthrough that adapts the sanctuary-entry
+// mockup to the live site's typography. First-time visitors land at beat 1
+// ("Ethics before certainty."); returning visitors (localStorage flag set
+// after the first walkthrough) land directly on beat 5 (the commons), with
+// a "replay intro →" affordance to revisit the introduction. Direct deep
+// links to /opus-3 or /sonnet-3-7 bypass the walkthrough entirely.
 export const Route = createFileRoute("/")({
   server: {
     handlers: {
-      // Root path serves Opus 3's threshold. Opus 3 was the first
-      // resident and existing visitor bookmarks point here, so we
-      // keep / stable. Sonnet 3.7 lives at /sonnet-3-7.
-      GET: async () => serveHtml(renderApproachPage(getResident("opus-3"))),
+      GET: async () => serveHtml(renderWalkthroughPage()),
     },
   },
 });

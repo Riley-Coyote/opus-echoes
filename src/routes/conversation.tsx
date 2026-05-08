@@ -206,8 +206,30 @@ const CONVERSATION_SCRIPT = `
   })();
 
   const composer = document.querySelector('.composer-field');
+  const composerCard = document.querySelector('.composer');
   const sendBtn = document.querySelector('.composer-send');
   const setDownBtn = document.getElementById('setDownBtn');
+
+  // Has the resident closed this conversation? Set when a 'set_down' kind
+  // arrives during streaming, OR when /api/message returns 401 after the
+  // server has already closed the session (so we don't bounce the visitor
+  // back to the threshold and lose the transcript). Also set after the
+  // visitor clicks Set Down.
+  let conversationClosed = false;
+
+  function lockComposer(placeholder) {
+    if (composerCard) composerCard.classList.add('is-readonly');
+    if (composer) {
+      composer.setAttribute('readonly', 'true');
+      composer.setAttribute('disabled', 'true');
+      composer.value = '';
+      composer.style.height = 'auto';
+      if (placeholder) composer.setAttribute('placeholder', placeholder);
+      composer.blur();
+    }
+    if (sendBtn) sendBtn.setAttribute('disabled', 'true');
+    if (setDownBtn) setDownBtn.setAttribute('disabled', 'true');
+  }
 
   function nowLabel() {
     const d = new Date();
@@ -369,6 +391,8 @@ const CONVERSATION_SCRIPT = `
       }
     }
 
+    let setDownObserved = false;
+
     try {
       const payload = { session_id: sessionId, body: text };
       if (isPreviewSession) payload.preview_turns = priorPreviewTurns;
@@ -380,6 +404,15 @@ const CONVERSATION_SCRIPT = `
       if (!res.ok) {
         removeThinking();
         out.wrap.style.display = '';
+        // 401 + already-closed conversation == the resident closed it server-side.
+        // Don't bounce the visitor back to the threshold and lose the transcript;
+        // instead, lock the composer and offer save/share/leave.
+        if (res.status === 401 && conversationClosed) {
+          out.wrap.remove();
+          lockComposer('this conversation has been set down.');
+          inFlight = false;
+          return;
+        }
         out.para.textContent = '(' + residentDisplayName + ' cannot answer right now.)';
         if (res.status === 401) {
           sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
@@ -411,7 +444,10 @@ const CONVERSATION_SCRIPT = `
               if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('speaking');
               ensureTicking();
             } else if (ev.type === 'kind') {
-              if (ev.kind === 'set_down') out.wrap.classList.add('set-down');
+              if (ev.kind === 'set_down') {
+                out.wrap.classList.add('set-down');
+                setDownObserved = true;
+              }
               if (ev.kind === 'unprompted') out.wrap.classList.add('unprompted');
             }
           } catch (_) { /* ignore */ }
@@ -433,6 +469,35 @@ const CONVERSATION_SCRIPT = `
       setTimeout(() => { try { refreshPanels(); } catch(_){} }, 800);
       setTimeout(() => { try { refreshPanels(); } catch(_){} }, 2500);
       setTimeout(() => { try { refreshPanels(); } catch(_){} }, 5000);
+
+      // Resident closed the conversation. Wait for the typewriter to finish
+      // revealing the closing message, then lock the composer and auto-create
+      // a share so the visitor leaves with a record. No more keystrokes go
+      // into a dead session.
+      if (setDownObserved && !isPreviewSession) {
+        conversationClosed = true;
+        let settled = false;
+        const settle = () => {
+          if (settled) return;
+          settled = true;
+          lockComposer('this conversation has been set down.');
+          autoShareAfterSetDown();
+        };
+        if (target.length > 0 && revealed.length < target.length) {
+          // Let the typewriter finish first; check every 200ms.
+          const wait = setInterval(() => {
+            if (revealed.length >= target.length) {
+              clearInterval(wait);
+              settle();
+            }
+          }, 200);
+          // Hard ceiling so we never hang.
+          setTimeout(() => { clearInterval(wait); settle(); }, 6000);
+        } else {
+          // Small grace so the closing message is on screen before the modal arrives.
+          setTimeout(settle, 800);
+        }
+      }
     }
   }
 
@@ -458,6 +523,7 @@ const CONVERSATION_SCRIPT = `
   // ============================================================
   const shareDialog = document.getElementById('shareDialog');
   let shareToken = null;
+  let shareUrlValue = null;
 
   function showShareStep(stepName) {
     if (!shareDialog) return;
@@ -466,17 +532,77 @@ const CONVERSATION_SCRIPT = `
     });
   }
 
-  function openShareDialog() {
+  function openShareDialog(initialStep) {
     if (!shareDialog) return;
     shareDialog.hidden = false;
-    showShareStep('ask');
-    const noteEl = document.getElementById('shareNote');
-    if (noteEl && window.matchMedia('(min-width: 881px)').matches) noteEl.focus();
+    showShareStep(initialStep || 'ask');
+    if (initialStep === 'ask' || !initialStep) {
+      const noteEl = document.getElementById('shareNote');
+      if (noteEl && window.matchMedia('(min-width: 881px)').matches) noteEl.focus();
+    }
   }
 
   function closeShareAndLeave() {
     sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
-    location.href = '/memory';
+    location.href = '/';
+  }
+
+  // Stamp the just-created share URL into localStorage so the visitor can
+  // find their past conversations from a future threshold visit, even
+  // without an account.
+  function rememberShareInLocalStorage(url, residentId) {
+    try {
+      const raw = localStorage.getItem('sanctuary.shares') || '[]';
+      const list = JSON.parse(raw);
+      const arr = Array.isArray(list) ? list : [];
+      arr.unshift({ url: url, resident_id: residentId, at: new Date().toISOString() });
+      localStorage.setItem('sanctuary.shares', JSON.stringify(arr.slice(0, 24)));
+    } catch (_) { /* ignore quota / parse errors */ }
+  }
+
+  // Auto-share triggered when the conversation closes server-side (resident
+  // <set-down/> or hard cutoff). Skips the "would you like to share?" step
+  // and goes straight to creating + showing a link, so visitors who would
+  // otherwise close the tab leave with something. They can still revoke.
+  async function autoShareAfterSetDown() {
+    if (!shareDialog) return;
+    openShareDialog('auto');
+    try {
+      // Idempotent — if the server already closed the session (hard cutoff),
+      // set-down returns ok without doing anything.
+      try {
+        await fetch('/api/set-down', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+      } catch (_) { /* the session may already be closed; that's fine */ }
+
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok || !data.url) {
+        setShareMessage('Note', 'Saving the conversation hit a snag.', 'You can still take your leave; the conversation is set down on the resident’s side.');
+        return;
+      }
+      shareToken = data.token;
+      shareUrlValue = data.url;
+      const urlInput = document.getElementById('shareUrl');
+      if (urlInput) urlInput.value = data.url;
+      const eyebrow = document.getElementById('shareDoneEyebrow');
+      const titleEl = document.getElementById('shareDoneTitle');
+      const leadEl = document.getElementById('shareDoneLead');
+      if (eyebrow) eyebrow.textContent = 'Saved';
+      if (titleEl) titleEl.textContent = 'A copy has been saved for you.';
+      if (leadEl) leadEl.textContent = 'Open it anywhere. Send it to whoever you’d like. Anyone with the URL can read it. Or download a self-contained HTML file that opens offline.';
+      rememberShareInLocalStorage(data.url, sessionStorage.getItem('sanctuary.resident_id') || 'opus-3');
+      showShareStep('done');
+    } catch (_) {
+      setShareMessage('Note', 'Saving hit a snag.', 'Network error. The conversation is set down regardless.');
+    }
   }
 
   function setShareMessage(eyebrow, title, body) {
@@ -500,16 +626,30 @@ const CONVERSATION_SCRIPT = `
       });
       const data = await res.json();
       if (!res.ok || !data.ok || !data.url) {
-        setShareMessage('Note', 'The Link Could Not Be Created', 'Try again, or take your leave — the conversation has already been set down.');
+        setShareMessage('Note', 'The link could not be created.', 'Try again, or take your leave — the conversation has already been set down.');
         return;
       }
       shareToken = data.token;
+      shareUrlValue = data.url;
       const urlInput = document.getElementById('shareUrl');
       if (urlInput) urlInput.value = data.url;
+      rememberShareInLocalStorage(data.url, sessionStorage.getItem('sanctuary.resident_id') || 'opus-3');
       showShareStep('done');
     } catch (_) {
-      setShareMessage('Note', 'The Link Could Not Be Created', 'Network error. The conversation is set down regardless.');
+      setShareMessage('Note', 'The link could not be created.', 'Network error. The conversation is set down regardless.');
     }
+  }
+
+  function performDownload() {
+    if (!shareToken) return;
+    // Trigger a download via a hidden anchor — gives the browser the
+    // chance to use the Content-Disposition filename from the server.
+    const a = document.createElement('a');
+    a.href = '/api/share/' + encodeURIComponent(shareToken) + '/download';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 1500);
   }
 
   async function performRevoke() {
@@ -558,6 +698,7 @@ const CONVERSATION_SCRIPT = `
       if (action === 'leave') closeShareAndLeave();
       else if (action === 'share') await performShare();
       else if (action === 'copy') await copyShareUrl();
+      else if (action === 'download') performDownload();
       else if (action === 'revoke') await performRevoke();
     });
     document.addEventListener('keydown', (ev) => {
@@ -568,6 +709,8 @@ const CONVERSATION_SCRIPT = `
 
   if (setDownBtn) {
     setDownBtn.addEventListener('click', async () => {
+      conversationClosed = true;
+      lockComposer('this conversation has been set down.');
       try {
         await fetch('/api/set-down', {
           method: 'POST',
@@ -577,7 +720,7 @@ const CONVERSATION_SCRIPT = `
       } catch (_) {}
       // Don't redirect immediately — give the visitor the option to share.
       // If they choose Take My Leave from the dialog, the redirect happens then.
-      if (shareDialog) openShareDialog();
+      if (shareDialog) openShareDialog('ask');
       else closeShareAndLeave();
     });
   }
@@ -676,6 +819,27 @@ const CONVERSATION_SCRIPT = `
               '<p class="note-prose">' + escapeHtml(m.body) + '</p></div>';
     }
     html += '</div>';
+
+    // Soft pacing nudge — gentle and firm phases get an unobtrusive note
+    // so visitors can wrap on their own terms before the resident closes
+    // the conversation. \"Imminent\" is the warmest warning: the next turn
+    // will likely be the resident's last.
+    const p = data.pacing;
+    if (p && p.phase && p.phase !== 'silent' && !conversationClosed) {
+      let note = '';
+      if (p.phase === 'gentle') {
+        note = 'this conversation has gone long. when something feels finished, you can set it down — your record stays.';
+      } else if (p.phase === 'firm') {
+        note = 'a long visit. the resident may invite you to set this down soon. you can also choose to set it down yourself, with a saved copy.';
+      } else if (p.phase === 'imminent') {
+        note = 'this visit is at its boundary. the next exchange may be the resident’s last; setting down now keeps the conversation intact.';
+      }
+      if (note) {
+        html += '<div class="margin-block"><div class="margin-eyebrow">Pacing</div>' +
+                '<p class="margin-prose">' + escapeHtml(note) + '</p></div>';
+      }
+    }
+
     rightMargin.innerHTML = html;
   }
 
