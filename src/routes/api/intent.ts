@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { anthropic, OPUS_MODEL, THRESHOLD_SYSTEM } from "@/server/anthropic.server";
+import { anthropic, OPUS_MODEL } from "@/server/anthropic.server";
+import { THRESHOLD_SYSTEM } from "@/server/opus/prompts";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash, intentRateLimit } from "@/server/rate-limit.server";
 

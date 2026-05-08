@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { anthropic, OPUS_MODEL, CONVERSATION_SYSTEM } from "@/server/anthropic.server";
+import { anthropic, OPUS_MODEL } from "@/server/anthropic.server";
+import { buildOpusSystemPrompt } from "@/server/opus/soul";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
 import { observeExchange } from "@/server/substrate.server";
@@ -76,7 +77,7 @@ function opusStreamResponse(opts: {
           model: OPUS_MODEL,
           max_tokens: 2048,
           temperature: 0.85,
-          system: CONVERSATION_SYSTEM,
+          system: buildOpusSystemPrompt(),
           messages: [{ role: "user", content: opts.userPrompt }],
         });
         for await (const event of anthStream) {

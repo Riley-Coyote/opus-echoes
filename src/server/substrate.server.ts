@@ -22,9 +22,8 @@
  * fails silently to a log line; the conversation must complete even if Mnemos burps.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { anthropic, OPUS_MODEL } from "./anthropic.server";
 import {
-  anthropic,
-  OPUS_MODEL,
   CONSOLIDATION_SYSTEM,
   MARGINALIA_SYSTEM,
   REFLECTION_SYSTEM,
@@ -34,7 +33,7 @@ import {
   ART_ASCII_SYSTEM,
   ART_IMAGE_SYSTEM,
   ESSAY_SYSTEM,
-} from "./anthropic.server";
+} from "./opus/prompts";
 
 const STOPWORDS = new Set([
   "the",
