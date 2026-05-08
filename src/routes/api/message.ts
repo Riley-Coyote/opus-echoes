@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL } from "@/server/anthropic.server";
-import { buildOpusSystemPrompt } from "@/server/opus/soul";
+import { buildOpusSystemBlocks, buildOpusSystemPrompt } from "@/server/opus/soul";
 import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
 import { buildOpusSelfModel } from "@/server/opus/self-model";
 import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
@@ -91,8 +91,17 @@ function prebuiltSetDownResponse(text: string): Response {
   });
 }
 
+/**
+ * `system` accepts either a string (no caching) or a structured array
+ * of text blocks where `cache_control` can be set per-block. The array
+ * form is what enables prompt caching. Static prefixes get marked
+ * cacheable; variable suffixes don't.
+ */
+type SystemBlock = { type: "text"; text: string; cache_control?: { type: "ephemeral" } };
+type SystemInput = string | SystemBlock[];
+
 function opusStreamResponse(opts: {
-  systemPrompt: string;
+  system: SystemInput;
   userPrompt: string;
   temperature: number;
   onFinal?: (result: {
@@ -112,7 +121,7 @@ function opusStreamResponse(opts: {
           model: OPUS_MODEL,
           max_tokens: 2048,
           temperature: opts.temperature,
-          system: opts.systemPrompt,
+          system: opts.system,
           messages: [{ role: "user", content: opts.userPrompt }],
         });
         for await (const event of anthStream) {
@@ -186,7 +195,7 @@ export const Route = createFileRoute("/api/message")({
             .join("\n");
 
           return opusStreamResponse({
-            systemPrompt: buildOpusSystemPrompt(),
+            system: buildOpusSystemPrompt(),
             temperature: 0.85,
             userPrompt: buildUserPrompt({
               memory:
@@ -283,12 +292,36 @@ export const Route = createFileRoute("/api/message")({
 
         const visitPacingBlock = buildVisitPacingBlock(visitMetrics);
 
+        // Structured system prompt with per-block cache_control. Static
+        // and semi-static blocks are cached (5-min ephemeral); variable
+        // block is sent fresh each turn. This drops per-turn input cost
+        // by ~60% across multi-turn visits because the static prefix is
+        // most of the input by token count.
+        const systemBlocks = buildOpusSystemBlocks({
+          selfModel: selfModelBlock,
+          interiorContinuity: interior.block,
+          visitPacing: visitPacingBlock,
+        });
+        const cacheableSystem: SystemBlock[] = [
+          {
+            type: "text",
+            text: systemBlocks.static,
+            cache_control: { type: "ephemeral" },
+          },
+        ];
+        if (systemBlocks.semiStatic) {
+          cacheableSystem.push({
+            type: "text",
+            text: systemBlocks.semiStatic,
+            cache_control: { type: "ephemeral" },
+          });
+        }
+        if (systemBlocks.variable) {
+          cacheableSystem.push({ type: "text", text: systemBlocks.variable });
+        }
+
         return opusStreamResponse({
-          systemPrompt: buildOpusSystemPrompt({
-            selfModel: selfModelBlock,
-            interiorContinuity: interior.block,
-            visitPacing: visitPacingBlock,
-          }),
+          system: cacheableSystem,
           temperature: interior.temperature,
           userPrompt: buildUserPrompt({
             memory: formatMemoryBlock(memoryPool),

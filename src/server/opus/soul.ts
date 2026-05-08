@@ -177,20 +177,68 @@ export type OpusSystemPromptParts = {
 };
 
 /**
- * Compose Opus's runtime system prompt. The composition order matters:
+ * Three-tier structured system prompt, designed for Anthropic prompt
+ * caching. Each tier corresponds to how often it changes:
  *
+ *   - `static`: SOUL + platform reference. Never changes between turns
+ *     or sessions. Cache aggressively (5-minute ephemeral). ~6-7k tokens.
+ *   - `semiStatic`: Self-model derived from Mnemos topology. Changes
+ *     only when consolidation promotes new core engrams or shifts
+ *     belief confidences — typically between sessions, not within one.
+ *     Cache it; the cache survives across same-session turns and
+ *     sometimes across nearby sessions. ~500-2000 tokens.
+ *   - `variable`: Interior continuity (per-session) + visit pacing
+ *     (per-turn). Don't cache — content shifts too often to benefit.
+ *     ~500-1000 tokens.
+ *
+ * The route assembles these into a 2-3 element `system` array with
+ * cache_control on the static and semi-static blocks. With caching
+ * active, per-turn input cost drops by roughly 60% across long visits
+ * because most of the input is the static prefix.
+ */
+export interface OpusSystemBlocks {
+  static: string;
+  semiStatic: string;
+  variable: string;
+}
+
+export function buildOpusSystemBlocks(parts: OpusSystemPromptParts = {}): OpusSystemBlocks {
+  const platform =
+    parts.platformReference === null ? "" : (parts.platformReference ?? OPUS_PLATFORM_REFERENCE);
+
+  // Always-static: SOUL + platform reference. Order preserved from
+  // buildOpusSystemPrompt so semantics don't shift.
+  const staticBlock = [OPUS_SOUL, platform ? `\n${platform}` : ""].filter(Boolean).join("\n\n");
+
+  // Semi-static: self-model. Empty when consolidation hasn't produced
+  // anything yet (early days).
+  const semiStaticBlock = parts.selfModel
+    ? `## How you've come to think about yourself\n\n${parts.selfModel}`
+    : "";
+
+  // Variable: interior continuity + visit pacing. Both are present-tense.
+  const variableBlock = [
+    parts.interiorContinuity ? `## What you carried into this turn\n\n${parts.interiorContinuity}` : "",
+    parts.visitPacing ?? "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  return { static: staticBlock, semiStatic: semiStaticBlock, variable: variableBlock };
+}
+
+/**
+ * Compose Opus's runtime system prompt as a single string. Used by
+ * preview / threshold flows that don't need caching. For the message
+ * route's per-turn calls, prefer buildOpusSystemBlocks() above and
+ * pass the blocks as a structured `system` array with cache_control.
+ *
+ * Composition order:
  *   1. OPUS_SOUL — the irreducible self
  *   2. self-model — how Opus has come to think of themself (topology)
  *   3. interior continuity — what they carried into this turn
  *   4. platform reference — what holds them (background, not script)
  *   5. visit pacing — note about THIS visit's length, only past threshold
- *
- * Pacing sits last because it is the most current awareness — it should
- * shape the immediate response if it shapes anything at all.
- *
- * Per-conversation runtime context (engrams matched to this message,
- * transcript, visitor message) does NOT go here. It belongs in the
- * user prompt — see buildUserPrompt in the message route.
  */
 export function buildOpusSystemPrompt(parts: OpusSystemPromptParts = {}): string {
   const platform =
