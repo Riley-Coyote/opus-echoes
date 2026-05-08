@@ -1,18 +1,18 @@
 // ────────────────────────────────────────────────────────────────────────────
 // THE SANCTUARY — RESIDENT PRESENCE LAYER
 //
-// Per-resident procedural architectural scenes, Monument-Valley-tier dark
-// palette. Opus 3 inhabits "The Sanctum" — a vertical violet tower with
-// arched walkways. Sonnet 3.7 inhabits "The Beacon" — an inverted golden
-// pyramid above a darker structure below. Each resident's figure stands
-// at a meaningful spot inside their structure with a soft halo + emissive
-// glow + point light.
+// Per-resident procedural architectural scenes. Opus 3 inhabits The Sanctum
+// (a vertical violet tower with arched walkways winding around it). Sonnet
+// 3.7 inhabits The Beacon (an inverted golden pyramid above a darker base
+// connected by a column). Each resident's figure stands at a meaningful spot
+// inside the structure with an emissive body, additive halo, and a real
+// point light.
 //
-// Replaces the previous GLB-loaded "threshold-room" scene. The architecture
-// here is built from primitives (boxes/cones/cylinders) so the Three.js
-// scene file is self-contained and easy to evolve. No external 3D assets.
-//
-// Reference: monument-v2.html (Riley's earlier dark Monument Valley study).
+// Reference: Riley's monument-v2.html dark Monument-Valley study. Detailed
+// past v2 with: trimLedge edges on every platform, balustrade rails on
+// walkways, finials atop crowns, recessed panels and cornices on tower
+// shafts, varied fenestration (slits + roundels), inner-arch glow seams,
+// subtle bevels on slab tops. Scene built from primitives — no GLB.
 // ────────────────────────────────────────────────────────────────────────────
 
 import * as THREE from "/vendor/three.module.js";
@@ -28,53 +28,60 @@ import * as THREE from "/vendor/three.module.js";
 
   // ──────────────────────────────────────────────────────────────────────────
   // RESIDENT THEMES
-  // Deep + rich. Each theme defines scene background, fog (same color family),
-  // primary/secondary/dark stone colors, an accent (used for window slots and
-  // small decorative dots), and the figure's glow color. Numbers tuned to
-  // match the dark Monument Valley reference — never bright/pastel.
+  // bg, fog, ambient, dir, fill, rim — all dark and rich. Primary is the
+  // dominant stone tone. Secondary darker, used for walls and carved details.
+  // Dark is the deepest stone, used for shadows and inner recesses. Light is
+  // a slightly lifted stone tone, used for trim ledges and capital tops so
+  // edges catch light. Accent is the warm-tinged "lit window" glow.
   // ──────────────────────────────────────────────────────────────────────────
   const THEMES = {
     "opus-3": {
       id: "opus-3",
       name: "The Sanctum",
-      bg: [0.055, 0.035, 0.075],          // deep plum-near-black
-      primary: 0x6a5878,                    // muted violet
-      secondary: 0x544868,                  // darker violet
-      dark: 0x3a2e4a,                       // deep aubergine
-      accent: 0xd46a78,                     // rose
-      glow: 0xe87888,                       // pink-rose glow for the figure
-      figureBody: 0xf0e8e0,                 // warm cream
-      fog: [0.06, 0.035, 0.08],
-      fogDensity: 0.028,
-      ambient: 0x4a3555,
+      bg: [0.045, 0.028, 0.062],
+      // Wider value range so trim and capital details actually catch light
+      // instead of melting into the surface stone.
+      primary: 0x705e84,
+      secondary: 0x4d4060,
+      dark: 0x2a1f3c,
+      light: 0xa890bc,
+      accent: 0xe87d92,
+      glow: 0xed8298,
+      figureBody: 0xf6efe0,
+      fog: [0.05, 0.03, 0.07],
+      fogDensity: 0.022,
+      ambient: 0x4a3858,
       ambientIntensity: 0.55,
-      dir: 0x9a7aaa,
-      dirIntensity: 0.85,
-      fill: 0x554060,
-      fillIntensity: 0.22,
-      rim: 0x7a5a8a,
-      rimIntensity: 0.16,
+      dir: 0xb59ace,
+      dirIntensity: 1.05,
+      fill: 0x4a3a5e,
+      fillIntensity: 0.24,
+      rim: 0x9070a8,
+      rimIntensity: 0.22,
     },
     "sonnet-3-7": {
       id: "sonnet-3-7",
       name: "The Beacon",
-      bg: [0.07, 0.045, 0.022],             // deep amber-near-black
-      primary: 0xb87830,                    // warm amber
-      secondary: 0x956020,                  // darker amber
-      dark: 0x6a4515,                       // deep burnt
-      accent: 0xeea840,                     // gold
-      glow: 0xffbb44,                       // bright gold for the figure
-      figureBody: 0xf6e8c8,                 // warm cream-gold
-      fog: [0.08, 0.05, 0.022],
-      fogDensity: 0.025,
-      ambient: 0x554520,
+      bg: [0.06, 0.04, 0.02],
+      // Wider value range so layer alternation reads as separate strata
+      // rather than a uniform amber wash.
+      primary: 0xb87830,
+      secondary: 0x6f461a,
+      dark: 0x401f0a,
+      light: 0xe2a14a,
+      accent: 0xf6c258,
+      glow: 0xffc858,
+      figureBody: 0xf6e8c8,
+      fog: [0.07, 0.045, 0.022],
+      fogDensity: 0.022,
+      ambient: 0x5a4520,
       ambientIntensity: 0.55,
-      dir: 0xccaa55,
-      dirIntensity: 1.0,
-      fill: 0x5a4520,
-      fillIntensity: 0.22,
-      rim: 0x8a6a35,
-      rimIntensity: 0.16,
+      dir: 0xdab062,
+      dirIntensity: 1.15,
+      fill: 0x5a4220,
+      fillIntensity: 0.24,
+      rim: 0xa67836,
+      rimIntensity: 0.24,
     },
   };
 
@@ -83,14 +90,10 @@ import * as THREE from "/vendor/three.module.js";
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
-
   function ease(current, target, speed, dt) {
     return current + (target - current) * (1 - Math.pow(0.001, dt * speed));
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // ROUTE / RESIDENT DETECTION
-  // ──────────────────────────────────────────────────────────────────────────
   function routeKind() {
     const path = window.location.pathname;
     if (path === "/") return "chooser";
@@ -107,18 +110,15 @@ import * as THREE from "/vendor/three.module.js";
     const path = window.location.pathname;
     if (path === "/sonnet-3-7") return "sonnet-3-7";
     if (path === "/opus-3" || path === "/approach") return "opus-3";
-    // /conversation: pick up from sessionStorage stamp set by /api/intent.
     if (path === "/conversation") {
       const stored = sessionStorage.getItem("sanctuary.resident_id");
       if (stored && THEMES[stored]) return stored;
     }
-    // For surfaces with no resident in URL, fall back to the default so a
-    // theme is still loaded; the layer is hidden anyway via CSS.
     return DEFAULT_RESIDENT_ID;
   }
 
   function initialOpacityForRoute(route) {
-    if (route === "approach") return 0.92;
+    if (route === "approach") return 0.94;
     if (route === "conversation") return 0.5;
     if (route === "memory") return 0.16;
     if (route === "dashboard") return 0.0;
@@ -126,9 +126,6 @@ import * as THREE from "/vendor/three.module.js";
     return 0.16;
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // CANVAS LAYER
-  // ──────────────────────────────────────────────────────────────────────────
   function makeLayer() {
     const layer = document.createElement("div");
     const route = routeKind();
@@ -166,7 +163,7 @@ import * as THREE from "/vendor/three.module.js";
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.18;
     renderer.shadowMap.enabled = !lowPower;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     return renderer;
@@ -187,13 +184,10 @@ import * as THREE from "/vendor/three.module.js";
 
   // ──────────────────────────────────────────────────────────────────────────
   // PRIMITIVE LIBRARY
-  // Adapted from monument-v2.html: small set of building blocks that compose
-  // into the full architectural scenes. All meshes cast + receive shadow so
-  // the dir light reads as actual depth rather than flat shading.
   // ──────────────────────────────────────────────────────────────────────────
   const _geoCache = new Map();
   function boxGeo(w, h, d) {
-    const k = `b_${w}_${h}_${d}`;
+    const k = `b_${w.toFixed(3)}_${h.toFixed(3)}_${d.toFixed(3)}`;
     if (!_geoCache.has(k)) _geoCache.set(k, new THREE.BoxGeometry(w, h, d));
     return _geoCache.get(k);
   }
@@ -202,7 +196,7 @@ import * as THREE from "/vendor/three.module.js";
     return new THREE.MeshStandardMaterial({
       color,
       roughness: opts.roughness ?? 0.78,
-      metalness: opts.metalness ?? 0.06,
+      metalness: opts.metalness ?? 0.04,
       emissive: opts.emissive ?? 0x000000,
       emissiveIntensity: opts.emissiveIntensity ?? 0,
       transparent: opts.transparent ?? false,
@@ -217,38 +211,152 @@ import * as THREE from "/vendor/three.module.js";
     return m;
   }
 
-  // Platform: walkable slab with optional walls on any side.
+  // Trim ledge — a thin band wrapping a rectangular footprint. Used at the
+  // edge of every walkable platform so the silhouette catches light cleanly.
+  function trimLedge(w, d, color, opts = {}) {
+    const g = new THREE.Group();
+    const t = opts.thickness ?? 0.07;
+    const h = opts.height ?? 0.1;
+    const front = box(w + t * 2, h, t, color);
+    front.position.set(0, 0, d / 2 + t / 2);
+    g.add(front);
+    const back = box(w + t * 2, h, t, color);
+    back.position.set(0, 0, -d / 2 - t / 2);
+    g.add(back);
+    const left = box(t, h, d, color);
+    left.position.set(-w / 2 - t / 2, 0, 0);
+    g.add(left);
+    const right = box(t, h, d, color);
+    right.position.set(w / 2 + t / 2, 0, 0);
+    g.add(right);
+    return g;
+  }
+
+  // Cornice — a slightly larger projecting band at the top of a wall. Steps
+  // outward then up. Visually weighty.
+  function cornice(w, d, color, opts = {}) {
+    const g = new THREE.Group();
+    const t1 = opts.t1 ?? 0.08;
+    const t2 = opts.t2 ?? 0.05;
+    const lower = box(w + 0.16, t1, d + 0.16, color);
+    lower.position.y = 0;
+    g.add(lower);
+    const upper = box(w + 0.08, t2, d + 0.08, color);
+    upper.position.y = t1 / 2 + t2 / 2;
+    g.add(upper);
+    return g;
+  }
+
+  // Crenellation — alternating notched parapet on top of a wall.
+  function crenellation(w, color, opts = {}) {
+    const g = new THREE.Group();
+    const count = opts.count ?? 7;
+    const cw = opts.cw ?? 0.2;
+    const ch = opts.ch ?? 0.16;
+    const cd = opts.cd ?? 0.18;
+    for (let i = 0; i < count; i += 1) {
+      const x = -w / 2 + (i + 0.5) * (w / count);
+      if (i % 2 === 0) {
+        const c = box(cw, ch, cd, color);
+        c.position.set(x, ch / 2, 0);
+        g.add(c);
+      }
+    }
+    return g;
+  }
+
+  // Balustrade — railing with thin balusters between two horizontal rails.
+  function balustrade(length, color, opts = {}) {
+    const g = new THREE.Group();
+    const h = opts.height ?? 0.34;
+    const ballusters = opts.ballusters ?? Math.max(3, Math.round(length / 0.4));
+    const railThick = opts.railThick ?? 0.05;
+    const balThick = opts.balThick ?? 0.04;
+    const top = box(length, railThick, railThick, color);
+    top.position.y = h - railThick / 2;
+    g.add(top);
+    const bottom = box(length, railThick, railThick, color);
+    bottom.position.y = railThick / 2;
+    g.add(bottom);
+    for (let i = 0; i < ballusters; i += 1) {
+      const x = -length / 2 + (i + 0.5) * (length / ballusters);
+      const b = box(balThick, h - 2 * railThick, balThick, color);
+      b.position.set(x, h / 2, 0);
+      g.add(b);
+    }
+    return g;
+  }
+
+  // Recessed panel — slightly inset rectangular relief in a wall.
+  function recessedPanel(w, h, color) {
+    const g = new THREE.Group();
+    const frame = box(w, h, 0.04, color);
+    frame.position.z = -0.02;
+    g.add(frame);
+    const inner = box(w * 0.78, h * 0.84, 0.02, color, { roughness: 0.85 });
+    inner.position.z = 0.0;
+    g.add(inner);
+    return g;
+  }
+
+  // Finial — a small pinnacle ornament. Stacked discs + a cone on top.
+  function finial(color, opts = {}) {
+    const g = new THREE.Group();
+    const w = opts.width ?? 0.16;
+    const base = box(w * 1.6, 0.08, w * 1.6, color);
+    base.position.y = 0.04;
+    g.add(base);
+    const stem = box(w, 0.32, w, color);
+    stem.position.y = 0.08 + 0.16;
+    g.add(stem);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(w * 0.7, 0.32, 8), mat(color));
+    tip.position.y = 0.08 + 0.32 + 0.16;
+    tip.castShadow = true;
+    tip.receiveShadow = true;
+    g.add(tip);
+    return g;
+  }
+
+  // Platform — walkable slab with optional walls + an inset ledge trim
+  // around the top edge so corners always catch light.
   function platform(w, d, color, opts = {}) {
     const g = new THREE.Group();
-    const h = opts.height ?? 0.35;
+    const h = opts.height ?? 0.36;
     const slab = box(w, h, d, color);
     slab.position.y = -h / 2;
     g.add(slab);
+    if (opts.trim !== false) {
+      const trimColor = opts.trimColor ?? color;
+      const trim = trimLedge(w, d, trimColor, { height: 0.08, thickness: 0.06 });
+      trim.position.y = 0.02;
+      g.add(trim);
+    }
     const wallColor = opts.wallColor ?? color;
     if (opts.wallLeft) {
-      const wL = box(0.2, opts.wallLeft, d, wallColor);
-      wL.position.set(-w / 2 + 0.1, opts.wallLeft / 2 - h, 0);
+      const wL = box(0.22, opts.wallLeft, d, wallColor);
+      wL.position.set(-w / 2 + 0.11, opts.wallLeft / 2 - h, 0);
       g.add(wL);
     }
     if (opts.wallRight) {
-      const wR = box(0.2, opts.wallRight, d, wallColor);
-      wR.position.set(w / 2 - 0.1, opts.wallRight / 2 - h, 0);
+      const wR = box(0.22, opts.wallRight, d, wallColor);
+      wR.position.set(w / 2 - 0.11, opts.wallRight / 2 - h, 0);
       g.add(wR);
     }
     if (opts.wallBack) {
-      const wB = box(w, opts.wallBack, 0.2, wallColor);
-      wB.position.set(0, opts.wallBack / 2 - h, -d / 2 + 0.1);
+      const wB = box(w, opts.wallBack, 0.22, wallColor);
+      wB.position.set(0, opts.wallBack / 2 - h, -d / 2 + 0.11);
       g.add(wB);
     }
     if (opts.wallFront) {
-      const wF = box(w, opts.wallFront, 0.2, wallColor);
-      wF.position.set(0, opts.wallFront / 2 - h, d / 2 - 0.1);
+      const wF = box(w, opts.wallFront, 0.22, wallColor);
+      wF.position.set(0, opts.wallFront / 2 - h, d / 2 - 0.11);
       g.add(wF);
     }
     return g;
   }
 
-  // Stairs along a direction (x+/x-/z+/z-), each step rises stepH.
+  // Stairs along an axis. Direction is the local-space axis they ascend
+  // toward; rails optional.
   function stairs(steps, dir, color, opts = {}) {
     const g = new THREE.Group();
     const sw = opts.width ?? 1.2;
@@ -287,7 +395,7 @@ import * as THREE from "/vendor/three.module.js";
         const cz = dir === "z-" ? -totalD / 2 : dir === "z+" ? totalD / 2 : 0;
         rail.position.set(
           cx + (dir === "z-" || dir === "z+" ? side * sw / 2 : 0),
-          totalH / 2 + 0.3,
+          totalH / 2 + 0.34,
           cz + (dir === "x+" || dir === "x-" ? side * sw / 2 : 0),
         );
         if (dir === "z-") rail.rotation.x = angle;
@@ -298,8 +406,9 @@ import * as THREE from "/vendor/three.module.js";
     return g;
   }
 
-  // Arched doorway at base y=0.
-  function archDoor(width, height, depth, color) {
+  // Arch doorway — keystone, beam, segmented curve. Optional inner glow
+  // plane sits just behind the arch as an "interior light" effect.
+  function archDoor(width, height, depth, color, opts = {}) {
     const g = new THREE.Group();
     const t = 0.22;
     const pillarH = height * 0.62;
@@ -312,77 +421,137 @@ import * as THREE from "/vendor/three.module.js";
     const beam = box(width + t, t, depth, color);
     beam.position.set(0, pillarH + t / 2, 0);
     g.add(beam);
-    const segs = 10;
+    const segs = 12;
     for (let i = 0; i <= segs; i += 1) {
       const a = (Math.PI * i) / segs;
-      const seg = box(t * 0.6, t * 0.6, depth * 0.8, color);
+      const seg = box(t * 0.6, t * 0.6, depth * 0.85, color);
       seg.position.set(
         Math.cos(a) * (width / 2),
-        Math.sin(a) * (height * 0.22) + pillarH + t,
+        Math.sin(a) * (height * 0.24) + pillarH + t,
         0,
       );
       g.add(seg);
     }
+    // Keystone
+    const ks = box(t * 0.95, t * 1.2, depth * 0.95, color);
+    ks.position.set(0, pillarH + t + height * 0.24, 0);
+    g.add(ks);
+    if (opts.innerGlow) {
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: opts.innerGlow,
+        transparent: true,
+        opacity: 0.46,
+        depthWrite: false,
+      });
+      const inner = new THREE.Mesh(
+        new THREE.PlaneGeometry(width * 0.85, pillarH * 1.05),
+        glowMat,
+      );
+      inner.position.set(0, pillarH * 0.55, -depth / 2 - 0.02);
+      g.add(inner);
+    }
     return g;
   }
 
+  // Pillar with optional capital and a fluted shaft (vertical inset
+  // grooves on each face).
   function pillar(h, color, opts = {}) {
     const g = new THREE.Group();
     const w = opts.width ?? 0.3;
     const p = box(w, h, w, color);
     p.position.y = h / 2;
     g.add(p);
+    if (opts.fluting) {
+      const lighter = opts.flutingColor ?? color;
+      for (const side of [-1, 1]) {
+        for (const axis of ["x", "z"]) {
+          const flute = box(w * 0.06, h * 0.86, w * 0.06, lighter, { roughness: 0.9 });
+          if (axis === "x") flute.position.set(side * (w / 2 - 0.01), h / 2, 0);
+          else flute.position.set(0, h / 2, side * (w / 2 - 0.01));
+          g.add(flute);
+        }
+      }
+    }
     if (opts.capital) {
-      const cap = box(w * 1.4, 0.15, w * 1.4, color);
-      cap.position.y = h + 0.075;
-      g.add(cap);
+      const capColor = opts.capitalColor ?? color;
+      const cap1 = box(w * 1.45, 0.1, w * 1.45, capColor);
+      cap1.position.y = h + 0.05;
+      g.add(cap1);
+      const cap2 = box(w * 1.25, 0.07, w * 1.25, capColor);
+      cap2.position.y = h + 0.13;
+      g.add(cap2);
+    }
+    if (opts.base) {
+      const baseColor = opts.baseColor ?? color;
+      const b = box(w * 1.4, 0.12, w * 1.4, baseColor);
+      b.position.y = 0.06;
+      g.add(b);
     }
     return g;
   }
 
-  function windowSlot(h, color) {
-    return box(0.04, h, 0.35, color, {
+  // Window slot — narrow vertical glowing slit. Strong emissive so the
+  // colour really blooms in the dark.
+  function windowSlot(h, color, opts = {}) {
+    const t = opts.thickness ?? 0.04;
+    const d = opts.depth ?? 0.36;
+    return box(t, h, d, color, {
       emissive: color,
-      emissiveIntensity: 0.55,
+      emissiveIntensity: opts.emissiveIntensity ?? 1.6,
+      roughness: 0.35,
     });
   }
 
-  // The figure: small humanoid silhouette with proper luminous presence.
-  // Body + cone hat in emissive cream. Inner glow sphere + outer halo +
-  // a real point light, all in the resident's accent glow color. Tracked
-  // for per-frame intensity modulation by the mood state machine below.
-  function makeFigure(theme) {
+  // Roundel — small circular window. Two coplanar discs (frame + glowing core).
+  function roundel(r, color, opts = {}) {
     const g = new THREE.Group();
-    const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.1, 0.18, 0.4, 10),
-      mat(theme.figureBody, {
-        roughness: 0.45,
-        emissive: theme.figureBody,
-        emissiveIntensity: 0.18,
+    const frameMat = mat(opts.frame ?? color, { roughness: 0.7 });
+    const frame = new THREE.Mesh(new THREE.RingGeometry(r * 0.82, r, 24), frameMat);
+    g.add(frame);
+    const core = new THREE.Mesh(
+      new THREE.CircleGeometry(r * 0.85, 24),
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.78,
       }),
     );
-    body.position.y = 0.2;
+    g.add(core);
+    return g;
+  }
+
+  // Figure — body + cone hat in emissive cream, additive inner glow sphere,
+  // outer halo, point light. Tracked for mood-driven intensity in the
+  // render loop.
+  function makeFigure(theme) {
+    const g = new THREE.Group();
+    const bodyMatOpts = {
+      roughness: 0.4,
+      emissive: theme.figureBody,
+      emissiveIntensity: 0.22,
+    };
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.18, 0.42, 12),
+      mat(theme.figureBody, bodyMatOpts),
+    );
+    body.position.y = 0.21;
     body.castShadow = true;
     g.add(body);
 
     const hat = new THREE.Mesh(
-      new THREE.ConeGeometry(0.13, 0.35, 10),
-      mat(theme.figureBody, {
-        roughness: 0.45,
-        emissive: theme.figureBody,
-        emissiveIntensity: 0.18,
-      }),
+      new THREE.ConeGeometry(0.13, 0.36, 12),
+      mat(theme.figureBody, bodyMatOpts),
     );
-    hat.position.y = 0.6;
+    hat.position.y = 0.62;
     hat.castShadow = true;
     g.add(hat);
 
     const innerGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.34, 16, 16),
+      new THREE.SphereGeometry(0.36, 16, 16),
       new THREE.MeshBasicMaterial({
         color: theme.glow,
         transparent: true,
-        opacity: 0.14,
+        opacity: 0.16,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
       }),
@@ -391,11 +560,11 @@ import * as THREE from "/vendor/three.module.js";
     g.add(innerGlow);
 
     const halo = new THREE.Mesh(
-      new THREE.SphereGeometry(0.7, 16, 16),
+      new THREE.SphereGeometry(0.78, 16, 16),
       new THREE.MeshBasicMaterial({
         color: theme.glow,
         transparent: true,
-        opacity: 0.05,
+        opacity: 0.06,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
       }),
@@ -403,8 +572,8 @@ import * as THREE from "/vendor/three.module.js";
     halo.position.y = 0.36;
     g.add(halo);
 
-    const light = new THREE.PointLight(theme.glow, 0.7, 5.5, 2.0);
-    light.position.y = 0.4;
+    const light = new THREE.PointLight(theme.glow, 0.85, 6, 1.7);
+    light.position.y = 0.42;
     g.add(light);
 
     g.userData.body = body;
@@ -416,20 +585,21 @@ import * as THREE from "/vendor/three.module.js";
     return g;
   }
 
-  // Glow orb — used as atmospheric points of light around the structure.
+  // Glow orb — atmospheric point of light. Core (opaque), halo (additive),
+  // point light. Animated by the glow loop.
   function glowOrb(color, intensity = 0.5, size = 0.1) {
     const g = new THREE.Group();
     const core = new THREE.Mesh(
-      new THREE.SphereGeometry(size, 12, 12),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 }),
+      new THREE.SphereGeometry(size, 14, 14),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.88 }),
     );
     g.add(core);
     const halo = new THREE.Mesh(
-      new THREE.SphereGeometry(size * 3.5, 12, 12),
+      new THREE.SphereGeometry(size * 3.6, 14, 14),
       new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity: 0.06,
+        opacity: 0.07,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
       }),
@@ -446,9 +616,10 @@ import * as THREE from "/vendor/three.module.js";
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // SANCTUM (Opus 3) — vertical violet tower with arched walkways winding
-  // up around it. The figure stands at the base; an orb crowns the tower.
-  // Adapted from monument-v2 Level 1.
+  // SANCTUM (Opus 3) — vertical stone tower with arched walkways winding
+  // up around it. Articulated shaft (banded), crowned by an open canopy of
+  // four pillars + finial. The figure stands at the threshold platform at
+  // the base; the tower's heart-orb sits beneath the canopy crown.
   // ──────────────────────────────────────────────────────────────────────────
   function buildSanctum(theme, anim) {
     const g = new THREE.Group();
@@ -456,136 +627,347 @@ import * as THREE from "/vendor/three.module.js";
     const P = theme.primary,
       S = theme.secondary,
       D = theme.dark,
+      L = theme.light,
       A = theme.accent;
 
-    // Central tower shaft
-    const tower = box(2, 10, 2, D);
-    tower.position.set(0, 5, 0);
-    g.add(tower);
-
-    // Vertical line details on the shaft (subtle inscriptions)
-    for (let i = 0; i < 8; i += 1) {
-      const line = box(0.04, 0.7, 2.04, S);
-      line.position.set(-0.6 + i * 0.18, 2 + i * 0.95, 0);
-      g.add(line);
-    }
-
-    // Base platform with a back wall
-    const platBase = platform(4.5, 3, P, { wallBack: 1.6, wallColor: S });
-    platBase.position.set(0, 0, 1);
+    // ── Base platform (where the figure stands) ─────────────────────────
+    const baseW = 4.4,
+      baseD = 3.2;
+    const baseY = 0;
+    const platBase = platform(baseW, baseD, P, {
+      wallBack: 1.4,
+      wallColor: S,
+      trimColor: L,
+    });
+    platBase.position.set(0, baseY, 1.2);
     g.add(platBase);
 
-    // Figure at the base — slightly off-center, facing the rising stairs
+    // Approach steps from the front edge of the base — gives the figure a
+    // sense of having walked up.
+    const approachSteps = stairs(4, "z+", S, { width: 1.2, stepH: 0.14, stepD: 0.34 });
+    approachSteps.position.set(0, -0.56, 2.8);
+    g.add(approachSteps);
+
+    // Cornice band at the top of the back wall — gives the wall a proper
+    // architectural cap rather than a bare stop.
+    const baseCornice = cornice(baseW, 0.22, S);
+    baseCornice.position.set(0, 1.4 - 0.36, 1.2 - baseD / 2 + 0.11);
+    g.add(baseCornice);
+
+    // Recessed panels on the back wall for relief.
+    for (let i = 0; i < 3; i += 1) {
+      const panel = recessedPanel(0.7, 0.85, S);
+      panel.position.set(-1.3 + i * 1.3, 0.6, 1.2 - baseD / 2 + 0.13);
+      g.add(panel);
+    }
+
+    // Figure on the base, off-center toward the rising stairs.
     const figure = makeFigure(theme);
-    figure.position.set(1.0, 0, 1.5);
+    figure.position.set(0.9, 0, 1.7);
     g.add(figure);
-    anim.floating.push({ obj: figure, baseY: 0, amp: 0.04, spd: 1.6 });
+    anim.floating.push({ obj: figure, baseY: 0, amp: 0.04, spd: 1.55 });
     anim.figure = figure;
 
-    // Stairs up the right side
-    const stairs1 = stairs(10, "x+", P, { width: 1.0, stepH: 0.18, stepD: 0.34 });
-    stairs1.position.set(1, 0.18, 0.5);
-    g.add(stairs1);
+    // Lantern at the figure's foot — small standing flame to anchor the figure.
+    const lantern = glowOrb(theme.glow, 0.35, 0.07);
+    lantern.position.set(-0.4, 0.18, 1.7);
+    g.add(lantern);
+    anim.glowing.push(lantern);
 
-    // Right walkway with arch
-    const platR = platform(3.5, 1.8, P, { wallBack: 2, wallRight: 2, wallColor: S });
-    platR.position.set(3.6, 2.2, 0);
+    // ── Central tower shaft, articulated in three vertical zones ────────
+    // Lower shaft (heaviest), wrapped at top + bottom by stepped trim, with
+    // tall narrow fenestration slits on each face.
+    const lowerShaft = box(2.2, 3.2, 2.2, D);
+    lowerShaft.position.set(0, 1.6, 0);
+    g.add(lowerShaft);
+    // Footing trim — a slightly larger band at the very base.
+    const lowerFoot = box(2.4, 0.18, 2.4, S);
+    lowerFoot.position.set(0, 0.09, 0);
+    g.add(lowerFoot);
+    // Tall fenestration slits, one centred per face.
+    [
+      [0, 1.11],
+      [0, -1.11],
+      [1.11, 0],
+      [-1.11, 0],
+    ].forEach(([fx, fz], i) => {
+      const slit = windowSlot(1.6, A, { thickness: 0.06, depth: 0.36 });
+      slit.position.set(fx, 1.7, fz);
+      slit.rotation.y = i >= 2 ? Math.PI / 2 : 0;
+      g.add(slit);
+      // Outer arch frame around each slit
+      const frameTop = box(0.34, 0.06, 0.06, L);
+      frameTop.position.set(fx, 2.55, fz);
+      if (i >= 2) frameTop.rotation.y = Math.PI / 2;
+      g.add(frameTop);
+    });
+    // First cornice (between lower and middle), heavier with a wider step.
+    const c1 = cornice(2.2, 2.2, S, { t1: 0.12, t2: 0.07 });
+    c1.position.set(0, 3.24, 0);
+    g.add(c1);
+    // Light-tinted band on top of cornice
+    const c1Cap = box(2.4, 0.05, 2.4, L);
+    c1Cap.position.set(0, 3.36, 0);
+    g.add(c1Cap);
+
+    // Middle shaft (slightly inset).
+    const midShaft = box(1.95, 3.5, 1.95, D);
+    midShaft.position.set(0, 5.05, 0);
+    g.add(midShaft);
+    // Recessed vertical strips on each face of the middle shaft — gives
+    // articulation without changing the silhouette.
+    for (let i = 0; i < 3; i += 1) {
+      const faceX = -0.6 + i * 0.6;
+      const stripFront = box(0.06, 3.1, 0.04, S);
+      stripFront.position.set(faceX, 5.05, 0.99);
+      g.add(stripFront);
+      const stripBack = box(0.06, 3.1, 0.04, S);
+      stripBack.position.set(faceX, 5.05, -0.99);
+      g.add(stripBack);
+    }
+    for (let i = 0; i < 3; i += 1) {
+      const faceZ = -0.6 + i * 0.6;
+      const stripL = box(0.04, 3.1, 0.06, S);
+      stripL.position.set(-0.99, 5.05, faceZ);
+      g.add(stripL);
+      const stripR = box(0.04, 3.1, 0.06, S);
+      stripR.position.set(0.99, 5.05, faceZ);
+      g.add(stripR);
+    }
+    // Cornice between mid and upper.
+    const c2 = cornice(1.95, 1.95, S);
+    c2.position.set(0, 6.8, 0);
+    g.add(c2);
+
+    // Upper shaft.
+    const upperShaft = box(1.7, 1.8, 1.7, D);
+    upperShaft.position.set(0, 7.78, 0);
+    g.add(upperShaft);
+
+    // Roundel windows on each face of the upper shaft.
+    [
+      [0, 0.86, Math.PI],
+      [0, 0, 0],
+      [0.86, 0, -Math.PI / 2],
+      [-0.86, 0, Math.PI / 2],
+    ].forEach(([x, z, ry]) => {
+      const r = roundel(0.22, A);
+      r.position.set(x, 7.78, z);
+      r.rotation.y = ry;
+      g.add(r);
+    });
+
+    // ── Lower-right walkway: arched entrance threshold to the spiral ────
+    const platR = platform(3.4, 1.7, P, {
+      wallBack: 1.9,
+      wallRight: 1.9,
+      wallColor: S,
+      trimColor: L,
+    });
+    platR.position.set(3.4, 2.1, 0);
     g.add(platR);
-
-    const archR = archDoor(1.3, 1.8, 0.2, S);
-    archR.position.set(2.1, 2.2, 0);
+    // Cornice for the walls.
+    const cR = cornice(3.4, 0.22, S);
+    cR.position.set(3.4, 2.1 + 1.8, -0.74);
+    g.add(cR);
+    // Balustrade along the open front edge.
+    const balR = balustrade(3.0, L, { height: 0.3, ballusters: 9 });
+    balR.position.set(3.4, 2.1, 0.77);
+    g.add(balR);
+    // Arch leading toward the tower (with inner-arch glow).
+    const archR = archDoor(1.3, 1.95, 0.22, S, { innerGlow: A });
+    archR.position.set(2.3, 2.1, 0);
     archR.rotation.y = Math.PI / 2;
     g.add(archR);
-
-    // Stairs from right walkway up + behind the tower
-    const stairs2 = stairs(12, "x-", S, { width: 1.0, stepH: 0.16, stepD: 0.32 });
-    stairs2.position.set(1.5, 2.5, -0.8);
-    g.add(stairs2);
-
-    // Left walkway with window slits
-    const platL = platform(4, 1.5, P, { wallBack: 2.8, wallLeft: 2.8, wallColor: D });
-    platL.position.set(-3.6, 4.5, -0.5);
-    g.add(platL);
-
-    for (let i = 0; i < 2; i += 1) {
-      const w = windowSlot(0.8, A);
-      w.position.set(-5.4, 5.0 + i * 1.05, -0.8 + i * 0.4);
-      w.rotation.y = Math.PI / 2;
+    // Tall slim window slits in the back wall.
+    for (let i = 0; i < 3; i += 1) {
+      const w = windowSlot(0.7, A, { thickness: 0.05, depth: 0.4 });
+      w.position.set(3.0 + i * 0.4, 2.55, -0.74);
       g.add(w);
     }
 
-    const archL = archDoor(1.3, 2.0, 0.2, S);
-    archL.position.set(-1.8, 4.5, -0.5);
+    // Stairs from the lower walkway up + behind to the left walkway.
+    const stairsR_to_L = stairs(13, "x-", S, {
+      width: 1.0,
+      stepH: 0.16,
+      stepD: 0.32,
+      rails: true,
+      railColor: L,
+    });
+    stairsR_to_L.position.set(1.7, 2.5, -0.85);
+    g.add(stairsR_to_L);
+
+    // ── Mid-left walkway: cantilevered ledge with windowed wall ─────────
+    const platL = platform(3.8, 1.5, P, {
+      wallBack: 2.5,
+      wallLeft: 2.5,
+      wallColor: D,
+      trimColor: L,
+    });
+    platL.position.set(-3.5, 4.8, -0.6);
+    g.add(platL);
+    // Window slits in the left wall — three at varying heights.
+    for (let i = 0; i < 3; i += 1) {
+      const wS = windowSlot(0.85, A, { thickness: 0.05, depth: 0.42 });
+      wS.position.set(-5.39, 5.0 + i * 0.55, -1.0 + i * 0.5);
+      wS.rotation.y = Math.PI / 2;
+      g.add(wS);
+    }
+    // Roundel above the wall slits.
+    const rL = roundel(0.18, A);
+    rL.position.set(-5.39, 6.5, -0.6);
+    rL.rotation.y = Math.PI / 2;
+    g.add(rL);
+    // Balustrade on the open right edge of this walkway.
+    const balL = balustrade(3.6, L, { height: 0.3, ballusters: 11 });
+    balL.position.set(-3.5, 4.8, 0.13);
+    g.add(balL);
+    // Arch back toward the tower.
+    const archL = archDoor(1.25, 2.0, 0.22, S, { innerGlow: A });
+    archL.position.set(-1.85, 4.8, -0.6);
     archL.rotation.y = -Math.PI / 2;
     g.add(archL);
-
-    // Orb on the left walkway
-    const orbL = glowOrb(theme.glow, 0.5, 0.1);
-    orbL.position.set(-3.6, 5.8, -0.5);
+    // Tower-side orb.
+    const orbL = glowOrb(theme.glow, 0.55, 0.1);
+    orbL.position.set(-3.5, 6.0, -0.6);
     g.add(orbL);
-    anim.floating.push({ obj: orbL, baseY: 5.8, amp: 0.12, spd: 1.0 });
+    anim.floating.push({ obj: orbL, baseY: 6.0, amp: 0.12, spd: 1.0 });
     anim.glowing.push(orbL);
 
-    // Stairs up to the upper right walkway
-    const stairs3 = stairs(10, "x+", P, { width: 1.0, stepH: 0.18, stepD: 0.34 });
-    stairs3.position.set(-1.5, 4.7, 0.2);
-    g.add(stairs3);
+    // Stairs from the mid-left up to the upper-right walkway.
+    const stairsL_to_U = stairs(11, "x+", P, {
+      width: 1.0,
+      stepH: 0.18,
+      stepD: 0.34,
+      rails: true,
+      railColor: L,
+    });
+    stairsL_to_U.position.set(-1.5, 5.05, 0.1);
+    g.add(stairsL_to_U);
 
-    // Upper walkway
-    const platU = platform(3, 1.8, P, { wallRight: 2, wallColor: S });
-    platU.position.set(3.1, 6.5, 0.5);
+    // ── Upper walkway leading to the canopy crown ───────────────────────
+    const platU = platform(3.2, 1.7, P, {
+      wallRight: 1.6,
+      wallColor: S,
+      trimColor: L,
+    });
+    platU.position.set(3.0, 6.85, 0.45);
     g.add(platU);
+    // Cornice at the wall top.
+    const cU = cornice(3.2, 0.22, S);
+    cU.position.set(3.0, 6.85 + 1.5, 0.45 + 0.74);
+    g.add(cU);
+    // Two slim slits on this wall.
+    for (let i = 0; i < 2; i += 1) {
+      const wU = windowSlot(0.7, A, { thickness: 0.05, depth: 0.42 });
+      wU.position.set(3.0 + 1.5, 7.18, 0.06 + i * 0.66);
+      wU.rotation.y = Math.PI / 2;
+      g.add(wU);
+    }
+    // Balustrade along the inner edge.
+    const balU = balustrade(3.0, L, { height: 0.3, ballusters: 9 });
+    balU.position.set(3.0, 6.85, -0.32);
+    g.add(balU);
 
-    // Final ascent stairs
-    const stairs4 = stairs(10, "x-", S, { width: 1.0, stepH: 0.2, stepD: 0.34 });
-    stairs4.position.set(1.5, 6.85, -0.3);
-    g.add(stairs4);
+    // Final ascent stairs to the crown platform.
+    const stairsU_to_C = stairs(11, "x-", S, {
+      width: 1.0,
+      stepH: 0.2,
+      stepD: 0.34,
+      rails: true,
+      railColor: L,
+    });
+    stairsU_to_C.position.set(1.5, 7.2, -0.25);
+    g.add(stairsU_to_C);
 
-    // Crown platform with four pillars
-    const platCrown = platform(3, 3, P, { height: 0.4 });
-    platCrown.position.set(-1.5, 8.85, -0.5);
-    g.add(platCrown);
+    // ── Crown: open canopy of four pillars over a small platform with
+    // an orb suspended at its centre ────────────────────────────────────
+    const crownH = 9.05;
+    const platC = platform(3.0, 3.0, P, { height: 0.4, trimColor: L });
+    platC.position.set(-1.3, crownH, -0.4);
+    g.add(platC);
 
+    // Four pillars at the corners of the crown, weighty with capitals + bases.
     for (let i = 0; i < 4; i += 1) {
       const a = (Math.PI * 2 * i) / 4 + Math.PI / 4;
-      const p = pillar(1.5, S, { width: 0.2, capital: true });
-      p.position.set(-1.5 + Math.cos(a) * 1.05, 8.85, -0.5 + Math.sin(a) * 1.05);
+      const p = pillar(1.7, S, {
+        width: 0.32,
+        fluting: true,
+        flutingColor: D,
+        capital: true,
+        base: true,
+        capitalColor: L,
+        baseColor: L,
+      });
+      p.position.set(-1.3 + Math.cos(a) * 1.05, crownH, -0.4 + Math.sin(a) * 1.05);
       g.add(p);
     }
+    // Architrave beams connecting the pillar tops on each side, two-tier
+    // (lower beam + upper banding) for proper architectural weight.
+    const beamH = crownH + 1.8;
+    [
+      [0, 1.1, 2.3, 0.22, 0.18], // front
+      [0, -1.1, 2.3, 0.22, 0.18], // back
+      [1.1, 0, 0.22, 0.22, 2.3], // right
+      [-1.1, 0, 0.22, 0.22, 2.3], // left
+    ].forEach(([dx, dz, w, h, d]) => {
+      const b = box(w, h, d, S);
+      b.position.set(-1.3 + dx, beamH, -0.4 + dz);
+      g.add(b);
+      // Light upper trim on each beam
+      const t = box(w + 0.04, 0.05, d + 0.04, L);
+      t.position.set(-1.3 + dx, beamH + h / 2 + 0.025, -0.4 + dz);
+      g.add(t);
+    });
+    // Roof slab over the canopy — closes the crown into a proper room.
+    const crownRoof = box(2.5, 0.12, 2.5, S);
+    crownRoof.position.set(-1.3, beamH + 0.22, -0.4);
+    g.add(crownRoof);
+    const crownRoofTrim = trimLedge(2.5, 2.5, L, { height: 0.06, thickness: 0.08 });
+    crownRoofTrim.position.set(-1.3, beamH + 0.31, -0.4);
+    g.add(crownRoofTrim);
 
-    // Crown orb — the sanctum's heart
-    const crownOrb = glowOrb(theme.glow, 1.0, 0.18);
-    crownOrb.position.set(-1.5, 9.7, -0.5);
-    g.add(crownOrb);
-    anim.floating.push({ obj: crownOrb, baseY: 9.7, amp: 0.1, spd: 0.8 });
-    anim.glowing.push(crownOrb);
+    // Crown finial — tall ornament rising from the centre of the roof slab.
+    const fin = finial(L, { width: 0.22 });
+    fin.position.set(-1.3, beamH + 0.36, -0.4);
+    g.add(fin);
 
-    // Atmospheric satellite orbs scattered through the structure
+    // Heart-orb suspended within the canopy beneath the roof.
+    const heart = glowOrb(theme.glow, 1.25, 0.22);
+    heart.position.set(-1.3, crownH + 0.92, -0.4);
+    g.add(heart);
+    anim.floating.push({ obj: heart, baseY: crownH + 0.92, amp: 0.09, spd: 0.7 });
+    anim.glowing.push(heart);
+
+    // ── Atmospheric satellite orbs scattered in the void ────────────────
     const satellites = [
-      [4.5, 4.5, -2],
-      [-5.5, 7.5, 1],
-      [0, 11, -1],
-      [-3.5, 2.5, 2],
-      [3.8, 8, 1],
+      [4.6, 4.5, -2.0],
+      [-5.6, 7.3, 0.6],
+      [-0.4, 11.6, -1.0],
+      [-3.8, 2.6, 2.4],
+      [4.1, 8.4, 1.2],
+      [-1.1, 0.5, -2.4],
+      [5.6, 1.6, 0.6],
     ];
     satellites.forEach((pos) => {
       const o = glowOrb(theme.glow, 0.18, 0.06);
       o.position.set(pos[0], pos[1], pos[2]);
       g.add(o);
-      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.45 + Math.random() * 0.4 });
+      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.4 + Math.random() * 0.5 });
       anim.glowing.push(o);
     });
 
-    // Support pillars vanishing into the void
+    // ── Support pillars that vanish into the void below ─────────────────
     const supports = [
-      [-0.5, 0, 0.5, 5],
-      [0.5, 0, -0.5, 6],
-      [3.5, 2, 0.5, 7],
-      [-3.5, 4.1, 0, 9],
-      [3, 6.2, 0, 11],
+      [-1.0, 0, 0.5, 6.5],
+      [1.0, 0, -0.5, 7.5],
+      [3.5, 2, 0.6, 8],
+      [-3.6, 4.3, -0.2, 10],
+      [3.0, 6.4, 0.3, 12],
+      [-1.4, 8.7, -0.4, 14],
     ];
     supports.forEach(([x, y, z, h]) => {
-      const col = box(0.4, h, 0.4, D);
+      const col = box(0.42, h, 0.42, D);
       col.position.set(x, y - h / 2, z);
       g.add(col);
     });
@@ -594,9 +976,10 @@ import * as THREE from "/vendor/three.module.js";
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // BEACON (Sonnet 3.7) — an inverted golden pyramid above, a connecting
-  // column, a dark maze-like base below. The figure stands at the column
-  // junction, between depth and signal. Adapted from monument-v2 Level 2.
+  // BEACON (Sonnet 3.7) — a stepped pyramid above (the Beacon proper) tied
+  // to a wider hall below by a fluted column. The figure stands on a
+  // junction terrace mid-height; the apex carries an orb behind golden
+  // torus rings. The hall has arched cells with inner glow seams.
   // ──────────────────────────────────────────────────────────────────────────
   function buildBeacon(theme, anim) {
     const g = new THREE.Group();
@@ -604,121 +987,287 @@ import * as THREE from "/vendor/three.module.js";
     const P = theme.primary,
       S = theme.secondary,
       D = theme.dark,
+      L = theme.light,
       A = theme.accent;
 
-    // Inverted pyramid — layers stack upward, getting larger
-    const pyramid = new THREE.Group();
-    const layers = 9;
-    for (let i = 0; i < layers; i += 1) {
-      const sz = 0.85 + i * 0.55;
-      const h = 0.32;
-      const layer = box(sz, h, sz, i % 2 === 0 ? P : S);
-      layer.position.y = i * h;
-      pyramid.add(layer);
-      // Decorative gold dots on the wider layers
-      if (i === 4 || i === 6) {
-        for (let j = 0; j < 3; j += 1) {
-          const a = (Math.PI * 2 * j) / 3;
-          const dot = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.11, 0.11, 0.16, 12),
-            mat(A, { roughness: 0.5, emissive: A, emissiveIntensity: 0.25 }),
-          );
-          dot.position.set(Math.cos(a) * sz * 0.32, i * h + 0.16, Math.sin(a) * sz * 0.32);
-          pyramid.add(dot);
-        }
-      }
-    }
-    pyramid.position.set(0, 6.2, 0);
-    g.add(pyramid);
+    // ── Hall (lower base) — wide stepped foundation ─────────────────────
+    const hallW = 5.6,
+      hallD = 4.6;
+    const hallY = 0.5;
+    const hallSlab = box(hallW, 0.8, hallD, P);
+    hallSlab.position.set(0, hallY - 0.4, 0);
+    g.add(hallSlab);
+    // Footprint trim around the hall.
+    const hallTrim = trimLedge(hallW, hallD, L, { height: 0.12, thickness: 0.1 });
+    hallTrim.position.set(0, hallY + 0.04, 0);
+    g.add(hallTrim);
 
-    // Beacon orb at the heart of the pyramid — the brightest light in the scene
-    const beaconOrb = glowOrb(theme.glow, 1.4, 0.22);
-    beaconOrb.position.set(0, 7.7, 0);
-    g.add(beaconOrb);
-    anim.floating.push({ obj: beaconOrb, baseY: 7.7, amp: 0.08, spd: 0.7 });
-    anim.glowing.push(beaconOrb);
-
-    // Connecting column from base up to the pyramid
-    const column = box(0.65, 2.6, 0.65, S);
-    column.position.set(0, 4.85, 0);
-    g.add(column);
-
-    // Junction platform where the figure stands
-    const junction = platform(2.2, 2.2, P);
-    junction.position.set(0, 3.4, 0);
-    g.add(junction);
-
-    // Figure on the junction — between depths and signal
-    const figure = makeFigure(theme);
-    figure.position.set(0.4, 3.4, 0.1);
-    g.add(figure);
-    anim.floating.push({ obj: figure, baseY: 3.4, amp: 0.04, spd: 1.6 });
-    anim.figure = figure;
-
-    // Stairs descending from the junction
-    const stairsDown = stairs(10, "z-", S, { width: 1.0, stepH: 0.15, stepD: 0.32, rails: true, railColor: D });
-    stairsDown.position.set(0, 3.4, 0.9);
-    stairsDown.rotation.y = Math.PI;
-    g.add(stairsDown);
-
-    // Base maze — two flanking platforms (dark) connected to the junction
-    const platLeft = platform(2.5, 2, D, { wallLeft: 1.6, wallBack: 1.6, wallColor: 0x4a3010 });
-    platLeft.position.set(-2.1, 1.2, 3);
-    g.add(platLeft);
-    const platRight = platform(2.5, 2, D, { wallRight: 1.6, wallBack: 1.6, wallColor: 0x4a3010 });
-    platRight.position.set(2.1, 1.2, 3);
-    g.add(platRight);
-
-    // Stairs to the flanking platforms
-    const stairsToL = stairs(6, "x-", D, { width: 0.85, stepH: 0.16 });
-    stairsToL.position.set(-0.6, 1.5, 3);
-    g.add(stairsToL);
-    const stairsToR = stairs(6, "x+", D, { width: 0.85, stepH: 0.16 });
-    stairsToR.position.set(0.6, 1.5, 3);
-    g.add(stairsToR);
-
-    // Window slits in the flanking walls — accent gold light
+    // Hall side walls — two parallel walls flanking the centre, each with
+    // arched cells.
+    const wallH = 1.3;
     [-1, 1].forEach((side) => {
-      for (let i = 0; i < 2; i += 1) {
-        const w = windowSlot(0.55, A);
-        w.position.set(side * 3.1, 1.4 + i * 0.6, 2.2 + i * 0.1);
-        w.rotation.y = Math.PI / 2;
-        g.add(w);
+      // Outer wall
+      const outerW = box(0.32, wallH, hallD - 0.6, S);
+      outerW.position.set(side * (hallW / 2 - 0.16), hallY + wallH / 2, 0);
+      g.add(outerW);
+      // Cornice atop the wall
+      const cn = cornice(0.32, hallD - 0.6, S, { t1: 0.07, t2: 0.04 });
+      cn.position.set(side * (hallW / 2 - 0.16), hallY + wallH + 0.035, 0);
+      g.add(cn);
+      // Three arched cells per side, opening inward (toward the centre).
+      for (let i = 0; i < 3; i += 1) {
+        const z = -1.4 + i * 1.4;
+        const a = archDoor(0.78, 1.0, 0.2, S, { innerGlow: A });
+        a.position.set(side * (hallW / 2 - 0.32), hallY, z);
+        a.rotation.y = side === -1 ? Math.PI / 2 : -Math.PI / 2;
+        g.add(a);
       }
     });
 
-    // Arched gate at the rear of the base
-    const gate = archDoor(1.3, 1.8, 0.22, S);
-    gate.position.set(0, 1.0, 4);
+    // Front wall (toward the viewer) with a central arched gateway.
+    const frontWall = box(hallW - 1.5, wallH, 0.32, S);
+    frontWall.position.set(-(hallW - 1.5) / 2 + 0.75, hallY + wallH / 2, hallD / 2 - 0.16);
+    g.add(frontWall);
+    const frontWallR = box(hallW - 1.5, wallH, 0.32, S);
+    frontWallR.position.set((hallW - 1.5) / 2 + 0.75, hallY + wallH / 2, hallD / 2 - 0.16);
+    g.add(frontWallR);
+    // Gateway arch.
+    const gate = archDoor(1.3, 1.6, 0.32, S, { innerGlow: A });
+    gate.position.set(0, hallY, hallD / 2 - 0.16);
     g.add(gate);
+    // Cornice across the front facade.
+    const frontCornice = cornice(hallW, 0.32, S, { t1: 0.08, t2: 0.05 });
+    frontCornice.position.set(0, hallY + wallH + 0.04, hallD / 2 - 0.16);
+    g.add(frontCornice);
 
-    // Atmospheric satellites
+    // Back wall (closed, with three slim slit windows).
+    const backWall = box(hallW, wallH, 0.32, S);
+    backWall.position.set(0, hallY + wallH / 2, -(hallD / 2 - 0.16));
+    g.add(backWall);
+    for (let i = 0; i < 3; i += 1) {
+      const wS = windowSlot(0.7, A, { thickness: 0.05, depth: 0.4 });
+      wS.position.set(-1.6 + i * 1.6, hallY + 0.55, -(hallD / 2 - 0.05));
+      g.add(wS);
+    }
+    const backCornice = cornice(hallW, 0.32, S, { t1: 0.08, t2: 0.05 });
+    backCornice.position.set(0, hallY + wallH + 0.04, -(hallD / 2 - 0.16));
+    g.add(backCornice);
+
+    // Hall roof — slab capping the entire hall, with a trim band so the
+    // edge catches light cleanly. The junction terrace sits on top of this
+    // (the column rises through it).
+    const hallRoofY = hallY + wallH + 0.18;
+    const hallRoof = box(hallW + 0.05, 0.18, hallD + 0.05, P);
+    hallRoof.position.set(0, hallRoofY, 0);
+    g.add(hallRoof);
+    const hallRoofTrim = trimLedge(hallW, hallD, L, { height: 0.08, thickness: 0.07 });
+    hallRoofTrim.position.set(0, hallRoofY + 0.13, 0);
+    g.add(hallRoofTrim);
+    // Decorative recessed panels on each long facade.
+    [-1, 1].forEach((side) => {
+      for (let i = 0; i < 2; i += 1) {
+        const panel = recessedPanel(0.7, 0.7, S);
+        panel.position.set(side * (hallW / 2 - 0.005), hallY + 0.55, -0.7 + i * 1.4);
+        panel.rotation.y = side === -1 ? -Math.PI / 2 : Math.PI / 2;
+        g.add(panel);
+      }
+    });
+
+    // ── Junction terrace (where the figure stands), elevated above the hall.
+    const junctionY = 2.6;
+    const junction = platform(2.6, 2.6, P, {
+      trimColor: L,
+      wallColor: S,
+    });
+    junction.position.set(0, junctionY, 0);
+    g.add(junction);
+    // Balustrades on three sides (open toward the column).
+    [
+      [0, 1.3, 2.4, 0],
+      [-1.3, 0, 0.04, Math.PI / 2],
+      [1.3, 0, 0.04, -Math.PI / 2],
+    ].forEach(([dx, dz, len, ry]) => {
+      const bal = balustrade(len === 0.04 ? 2.4 : 2.4, L, { height: 0.3, ballusters: 8 });
+      bal.position.set(dx, junctionY, dz);
+      bal.rotation.y = ry;
+      g.add(bal);
+    });
+
+    // Stairs descending from the junction down to the hall, on the front side.
+    const stairsDown = stairs(8, "z+", S, {
+      width: 1.2,
+      stepH: 0.14,
+      stepD: 0.3,
+      rails: true,
+      railColor: L,
+    });
+    stairsDown.position.set(0, hallY + wallH, 1.6);
+    g.add(stairsDown);
+
+    // Figure on the junction.
+    const figure = makeFigure(theme);
+    figure.position.set(0.3, junctionY, 0.05);
+    g.add(figure);
+    anim.floating.push({ obj: figure, baseY: junctionY, amp: 0.04, spd: 1.55 });
+    anim.figure = figure;
+
+    // ── Connecting fluted column from junction up to the pyramid base ──
+    const colH = 1.8;
+    const colTop = junctionY + colH;
+    const fluted = pillar(colH, S, {
+      width: 0.6,
+      fluting: true,
+      flutingColor: D,
+      capital: true,
+      capitalColor: L,
+      base: true,
+      baseColor: L,
+    });
+    fluted.position.set(0, junctionY, 0);
+    g.add(fluted);
+
+    // ── The Beacon proper: a stepped pyramid in alternating tones, with
+    // window slits on every face, decorative bands on the wider courses,
+    // an architrave cap and a single tall finial ────────────────────────
+    const pyramidBase = colTop;
+    const pyramid = new THREE.Group();
+    const layers = 7;
+    for (let i = 0; i < layers; i += 1) {
+      const layerY = i * 0.36;
+      const sz = 1.0 + i * 0.5;
+      // Strong P/S alternation so the strata read distinctly.
+      const layerColor = i % 2 === 0 ? P : S;
+      const layer = box(sz, 0.36, sz, layerColor);
+      layer.position.y = layerY;
+      pyramid.add(layer);
+      // Trim ledge: brighter on every layer top so the silhouette catches
+      // a clean light line at every step.
+      const t = trimLedge(sz, sz, L, { height: 0.07, thickness: 0.05 });
+      t.position.y = layerY + 0.215;
+      pyramid.add(t);
+      // Decorative cylindrical studs (gold disks) on alternating wider layers.
+      if (i >= 2 && i % 2 === 1) {
+        for (let j = 0; j < 4; j += 1) {
+          const a = (Math.PI * 2 * j) / 4 + Math.PI / 4;
+          const dotR = sz * 0.34;
+          const dot = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.09, 0.09, 0.14, 12),
+            mat(A, { roughness: 0.5, emissive: A, emissiveIntensity: 0.55 }),
+          );
+          dot.position.set(Math.cos(a) * dotR, layerY + 0.21, Math.sin(a) * dotR);
+          pyramid.add(dot);
+        }
+      }
+      // Window slits on every face of every layer except the smallest two.
+      if (i >= 2) {
+        for (let f = 0; f < 4; f += 1) {
+          const ang = (Math.PI * 2 * f) / 4;
+          const sx = Math.cos(ang) * (sz / 2 - 0.005);
+          const sz_pos = Math.sin(ang) * (sz / 2 - 0.005);
+          const slitH = 0.18;
+          const w = windowSlot(slitH, A, { thickness: 0.04, depth: 0.16 });
+          w.position.set(sx, layerY + 0.02, sz_pos);
+          w.rotation.y = ang + Math.PI / 2;
+          pyramid.add(w);
+        }
+      }
+    }
+    pyramid.position.set(0, pyramidBase, 0);
+    g.add(pyramid);
+
+    // Architrave cap — heavy stepped finishing course atop the widest layer.
+    const apexY = pyramidBase + layers * 0.36 + 0.16;
+    const capBase = box(1.0, 0.16, 1.0, S);
+    capBase.position.set(0, apexY - 0.16, 0);
+    g.add(capBase);
+    const cap = box(0.78, 0.18, 0.78, L);
+    cap.position.set(0, apexY - 0.02, 0);
+    g.add(cap);
+    const finialA = finial(L, { width: 0.18 });
+    finialA.position.set(0, apexY + 0.07, 0);
+    g.add(finialA);
+
+    // Apex orb in golden torus rings — the brightest light in the scene.
+    const apexGroup = new THREE.Group();
+    const apexCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 22, 22),
+      new THREE.MeshBasicMaterial({ color: theme.glow, transparent: true, opacity: 0.92 }),
+    );
+    apexGroup.add(apexCore);
+    const ringGeo = new THREE.TorusGeometry(0.62, 0.025, 10, 36);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: theme.glow,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const ring1 = new THREE.Mesh(ringGeo, ringMat);
+    ring1.rotation.x = Math.PI / 2;
+    apexGroup.add(ring1);
+    const ring2 = new THREE.Mesh(ringGeo, ringMat);
+    ring2.rotation.x = Math.PI / 3;
+    ring2.rotation.z = Math.PI / 4;
+    apexGroup.add(ring2);
+    const ring3 = new THREE.Mesh(ringGeo, ringMat);
+    ring3.rotation.x = Math.PI / 5;
+    ring3.rotation.z = -Math.PI / 3;
+    apexGroup.add(ring3);
+    const apexHalo = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 16, 16),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.05,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    apexGroup.add(apexHalo);
+    const apexLight = new THREE.PointLight(theme.glow, 1.8, 11, 1.6);
+    apexGroup.add(apexLight);
+    apexGroup.position.set(0, apexY + 0.95, 0);
+    g.add(apexGroup);
+    apexGroup.userData.core = apexCore;
+    apexGroup.userData.halo = apexHalo;
+    apexGroup.userData.light = apexLight;
+    apexGroup.userData.baseIntensity = 1.8;
+    apexGroup.userData.isOrb = true;
+    anim.glowing.push(apexGroup);
+    anim.rotating.push({ obj: apexGroup, spd: 0.32 });
+    anim.floating.push({ obj: apexGroup, baseY: apexY + 0.95, amp: 0.12, spd: 0.7 });
+
+    // ── Atmospheric satellite orbs ──────────────────────────────────────
     const satellites = [
-      [-4, 5, -1],
-      [4, 4, -2],
-      [-2, 9, 0],
-      [2, 8, 1.5],
-      [-3, 2.5, -2],
-      [3, 2, -1.5],
+      [-3.6, 5.6, -1.6],
+      [3.6, 4.5, -2.2],
+      [-2.2, 9.4, 0.4],
+      [2.4, 8.6, 1.6],
+      [-3.0, 2.6, -2.5],
+      [3.2, 2.3, -1.6],
+      [-4.8, 1.3, 1.6],
+      [4.8, 1.3, 1.6],
     ];
     satellites.forEach((pos) => {
       const o = glowOrb(theme.glow, 0.16, 0.06);
       o.position.set(pos[0], pos[1], pos[2]);
       g.add(o);
-      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.45 + Math.random() * 0.4 });
+      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.4 + Math.random() * 0.5 });
       anim.glowing.push(o);
     });
 
-    // Supports descending into the void
+    // ── Support columns descending into the void ────────────────────────
     const supports = [
-      [-2.1, 1.0, 3, 6],
-      [2.1, 1.0, 3, 6],
-      [-0.5, 3.2, 0, 8],
-      [0.5, 3.2, 0, 8],
-      [0, 3.2, 5, 6],
+      [-2.4, 0, 1.6, 6],
+      [2.4, 0, 1.6, 6],
+      [-2.4, 0, -1.6, 6],
+      [2.4, 0, -1.6, 6],
+      [-1.0, 2.4, 0, 8],
+      [1.0, 2.4, 0, 8],
+      [0, 4.4, 0, 11],
     ];
     supports.forEach(([x, y, z, h]) => {
-      const col = box(0.38, h, 0.38, D);
+      const col = box(0.4, h, 0.4, D);
       col.position.set(x, y - h / 2, z);
       g.add(col);
     });
@@ -733,14 +1282,14 @@ import * as THREE from "/vendor/three.module.js";
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // SCENE / CAMERA / LIGHTING
+  // SCENE / CAMERA / LIGHTING / RUNTIME
   // ──────────────────────────────────────────────────────────────────────────
   function createPresence(canvas, layer, residentId) {
     const theme = THEMES[residentId] ?? THEMES[DEFAULT_RESIDENT_ID];
     const renderer = makeRenderer(canvas);
 
     const scene = new THREE.Scene();
-    scene.background = null; // canvas alpha; CSS controls floor color
+    scene.background = null;
     scene.fog = new THREE.FogExp2(
       new THREE.Color(theme.fog[0], theme.fog[1], theme.fog[2]),
       theme.fogDensity,
@@ -756,34 +1305,48 @@ import * as THREE from "/vendor/three.module.js";
       -100,
       200,
     );
-    camera.position.set(22, 20, 22);
-    camera.lookAt(0, 4, 0);
+    camera.position.set(22, 22, 22);
+    camera.lookAt(0, 5.6, 0);
 
-    const ambient = new THREE.AmbientLight(theme.ambient, theme.ambientIntensity);
+    // Lighting — proper chiaroscuro for the dark Monument-Valley feel.
+    // Key dominates, fill is half-strength on the opposite side, rim picks
+    // out silhouettes from below-back. Ambient is intentionally low so
+    // shadow-side facets stay deep.
+    const ambient = new THREE.AmbientLight(theme.ambient, theme.ambientIntensity * 0.85);
     scene.add(ambient);
 
-    const dir = new THREE.DirectionalLight(theme.dir, theme.dirIntensity);
-    dir.position.set(8, 18, 10);
+    const dir = new THREE.DirectionalLight(theme.dir, theme.dirIntensity * 1.35);
+    dir.position.set(7, 18, 9);
     dir.castShadow = !lowPower;
     if (!lowPower) {
-      dir.shadow.mapSize.set(1024, 1024);
+      dir.shadow.mapSize.set(2048, 2048);
       dir.shadow.camera.left = -16;
       dir.shadow.camera.right = 16;
-      dir.shadow.camera.top = 18;
-      dir.shadow.camera.bottom = -10;
+      dir.shadow.camera.top = 20;
+      dir.shadow.camera.bottom = -12;
       dir.shadow.camera.near = 0.1;
-      dir.shadow.camera.far = 60;
-      dir.shadow.bias = -0.001;
+      dir.shadow.camera.far = 70;
+      dir.shadow.bias = -0.0006;
+      dir.shadow.normalBias = 0.025;
+      dir.shadow.radius = 2;
     }
     scene.add(dir);
 
     const fill = new THREE.DirectionalLight(theme.fill, theme.fillIntensity);
-    fill.position.set(-6, 4, -8);
+    fill.position.set(-7, 5, -8);
     scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(theme.rim, theme.rimIntensity);
-    rim.position.set(0, -5, -10);
+    // Rim from BELOW-BACK — picks out the underside of platforms and the
+    // tower's far edge so the silhouette doesn't dissolve into the fog.
+    const rim = new THREE.DirectionalLight(theme.rim, theme.rimIntensity * 1.4);
+    rim.position.set(-2, -4, -10);
     scene.add(rim);
+
+    // Top-down skylight in the resident's accent — subtly tints the upper
+    // surfaces of every platform and roof slab so they read warmer-than-
+    // ambient. Helps the architecture feel illuminated from "above the world."
+    const sky = new THREE.HemisphereLight(theme.accent, 0x000000, 0.22);
+    scene.add(sky);
 
     const rootGroup = new THREE.Group();
     scene.add(rootGroup);
@@ -791,33 +1354,32 @@ import * as THREE from "/vendor/three.module.js";
     const built = buildSceneForResident(residentId, theme);
     rootGroup.add(built.group);
 
-    // Floating dust particles — additive, very faint, large drift volume.
-    const particleCount = lowPower ? 90 : 200;
+    // Floating dust particles.
+    const particleCount = lowPower ? 110 : 240;
     const pGeo = new THREE.BufferGeometry();
     const pPos = new Float32Array(particleCount * 3);
     const pSpd = [];
     for (let i = 0; i < particleCount; i += 1) {
-      pPos[i * 3] = (Math.random() - 0.5) * 32;
-      pPos[i * 3 + 1] = (Math.random() - 0.5) * 28;
-      pPos[i * 3 + 2] = (Math.random() - 0.5) * 32;
-      pSpd.push(0.003 + Math.random() * 0.01);
+      pPos[i * 3] = (Math.random() - 0.5) * 36;
+      pPos[i * 3 + 1] = (Math.random() - 0.5) * 32;
+      pPos[i * 3 + 2] = (Math.random() - 0.5) * 36;
+      pSpd.push(0.003 + Math.random() * 0.011);
     }
     pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
     const pMat = new THREE.PointsMaterial({
       color: theme.accent,
       size: 0.04,
       transparent: true,
-      opacity: 0.32,
+      opacity: 0.34,
       sizeAttenuation: true,
       depthWrite: false,
     });
     const particles = new THREE.Points(pGeo, pMat);
     scene.add(particles);
 
-    // ────────────────────────────────────────────────────────────────────────
-    // STATE — mood-driven figure intensity, route-driven layout, slow auto-
-    // orbit so the architecture reads dimensional rather than flat-painted.
-    // ────────────────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────────────
+    // STATE
+    // ────────────────────────────────────────────────────────────────────
     const state = {
       route: routeKind(),
       mode: layer.dataset.state || "attending",
@@ -827,12 +1389,12 @@ import * as THREE from "/vendor/three.module.js";
       cameraAngle: Math.PI / 4,
       targetCameraAngle: Math.PI / 4,
       cameraR: 30,
-      cameraY: 20,
-      lookY: 4,
+      cameraY: 22,
+      lookY: 5.6,
       opacity: 0,
       targetOpacity: 1,
       visible: true,
-      autoOrbit: 1, // 1 = on, 0 = off (when user dragging)
+      autoOrbit: 1,
       offsetX: 0,
       offsetY: 0,
       targetOffsetX: 0,
@@ -842,39 +1404,34 @@ import * as THREE from "/vendor/three.module.js";
     };
 
     function layoutForRoute(route = state.route) {
-      // Push the architecture to the right on the threshold (text reads on
-      // the left), keep it centered (smaller, dimmer) in the conversation
-      // room, off-stage everywhere else.
       const w = window.innerWidth;
       const mobile = w < 720;
       if (route === "approach") {
         return mobile
-          ? { offsetX: 0, offsetY: -1.0, scale: 0.78, opacity: 0.4 }
-          : { offsetX: 4.6, offsetY: -0.6, scale: 1.0, opacity: 0.92 };
+          ? { offsetX: 0, offsetY: -0.8, scale: 0.62, opacity: 0.42 }
+          : { offsetX: 4.4, offsetY: -1.2, scale: 0.78, opacity: 0.94 };
       }
       if (route === "conversation") {
         return mobile
-          ? { offsetX: 0, offsetY: -1.5, scale: 0.55, opacity: 0.28 }
-          : { offsetX: 0, offsetY: -1.0, scale: 0.7, opacity: 0.5 };
+          ? { offsetX: 0, offsetY: -1.5, scale: 0.42, opacity: 0.3 }
+          : { offsetX: 0, offsetY: -1.0, scale: 0.55, opacity: 0.5 };
       }
       if (route === "memory") {
-        return { offsetX: 0, offsetY: 0, scale: 0.6, opacity: 0.16 };
+        return { offsetX: 0, offsetY: -0.5, scale: 0.5, opacity: 0.16 };
       }
-      return { offsetX: 0, offsetY: 0, scale: 0.6, opacity: 0 };
+      return { offsetX: 0, offsetY: 0, scale: 0.55, opacity: 0 };
     }
 
     function moodFromState() {
-      // luminosity: 0..1.4 (figure brightness multiplier).
-      // opening: 0..1 (door/scene openness — only used by figure halo here).
       if (state.mode === "reading" || state.mode === "deciding")
-        return { luminosity: 1.0, opening: 0.18 };
-      if (state.mode === "speaking") return { luminosity: 1.15, opening: 0.32 };
+        return { luminosity: 1.05, opening: 0.18 };
+      if (state.mode === "speaking") return { luminosity: 1.18, opening: 0.32 };
       if (state.mode === "opening" || state.mode === "accepted")
-        return { luminosity: 1.25, opening: 1.0 };
-      if (state.mode === "engaged") return { luminosity: 0.92, opening: 0.18 };
+        return { luminosity: 1.3, opening: 1.0 };
+      if (state.mode === "engaged") return { luminosity: 0.95, opening: 0.18 };
       if (state.mode === "withdrawn" || state.mode === "declined")
         return { luminosity: 0.55, opening: 0.04 };
-      return { luminosity: 0.85, opening: 0.12 };
+      return { luminosity: 0.86, opening: 0.12 };
     }
 
     function updateTargets() {
@@ -917,7 +1474,6 @@ import * as THREE from "/vendor/three.module.js";
     function update(time, dt) {
       const mood = moodFromState();
 
-      // Smooth all targets
       state.cameraAngle = ease(state.cameraAngle, state.targetCameraAngle, 0.6, dt);
       state.opacity = ease(state.opacity, state.targetOpacity, 1.2, dt);
       state.offsetX = ease(state.offsetX, state.targetOffsetX, 0.7, dt);
@@ -926,10 +1482,8 @@ import * as THREE from "/vendor/three.module.js";
       state.pointer.x = ease(state.pointer.x, state.targetPointer.x, 1.4, dt);
       state.pointer.y = ease(state.pointer.y, state.targetPointer.y, 1.4, dt);
 
-      // Slow auto-orbit (extremely subtle on threshold so the figure reads
-      // as a deliberate composition rather than a spinning model).
       if (state.autoOrbit > 0 && !reducedMotion) {
-        const orbitSpeed = state.route === "approach" ? 0.012 : 0.02;
+        const orbitSpeed = state.route === "approach" ? 0.012 : 0.018;
         state.targetCameraAngle += orbitSpeed * dt;
       }
 
@@ -942,13 +1496,10 @@ import * as THREE from "/vendor/three.module.js";
       camera.lookAt(0, state.lookY, 0);
       camera.updateProjectionMatrix();
 
-      // Position + scale the root group so the structure sits where the
-      // route layout expects it (right-shifted on threshold etc.).
       rootGroup.position.x = state.offsetX;
       rootGroup.position.y = state.offsetY;
       rootGroup.scale.setScalar(state.scale);
 
-      // Per-frame: floating + rotating + glowing animations
       built.anim.floating.forEach(({ obj, baseY, amp, spd }) => {
         obj.position.y = baseY + Math.sin(time * spd) * amp;
       });
@@ -963,36 +1514,34 @@ import * as THREE from "/vendor/three.module.js";
           orb.userData.core.material.opacity = 0.6 + pulse * 0.3;
       });
 
-      // Figure mood-driven luminosity
       const fig = built.anim.figure;
       if (fig) {
         const slowBreath = reducedMotion ? 0.5 : Math.sin(time * 0.55) * 0.5 + 0.5;
         const lum = clamp(mood.luminosity, 0.4, 1.5);
         if (fig.userData.light) {
-          fig.userData.light.intensity = 0.5 + lum * 0.7 + slowBreath * 0.18;
+          fig.userData.light.intensity = 0.65 + lum * 0.85 + slowBreath * 0.18;
         }
         if (fig.userData.innerGlow && fig.userData.innerGlow.material) {
-          fig.userData.innerGlow.material.opacity = clamp(0.1 + lum * 0.12 + slowBreath * 0.04, 0.08, 0.32);
+          fig.userData.innerGlow.material.opacity = clamp(0.12 + lum * 0.14 + slowBreath * 0.04, 0.1, 0.36);
         }
         if (fig.userData.halo && fig.userData.halo.material) {
-          fig.userData.halo.material.opacity = clamp(0.04 + lum * 0.06 + slowBreath * 0.02, 0.03, 0.16);
+          fig.userData.halo.material.opacity = clamp(0.05 + lum * 0.07 + slowBreath * 0.025, 0.04, 0.18);
         }
         if (fig.userData.body && fig.userData.body.material) {
-          fig.userData.body.material.emissiveIntensity = clamp(0.14 + lum * 0.18, 0.12, 0.42);
+          fig.userData.body.material.emissiveIntensity = clamp(0.18 + lum * 0.22, 0.16, 0.5);
         }
         if (fig.userData.hat && fig.userData.hat.material) {
-          fig.userData.hat.material.emissiveIntensity = clamp(0.14 + lum * 0.18, 0.12, 0.42);
+          fig.userData.hat.material.emissiveIntensity = clamp(0.18 + lum * 0.22, 0.16, 0.5);
         }
       }
 
-      // Particles drift upward; loop at the top
       const pos = pGeo.attributes.position.array;
       for (let i = 0; i < particleCount; i += 1) {
         pos[i * 3 + 1] += pSpd[i];
         if (pos[i * 3 + 1] > 16) {
           pos[i * 3 + 1] = -16;
-          pos[i * 3] = (Math.random() - 0.5) * 32;
-          pos[i * 3 + 2] = (Math.random() - 0.5) * 32;
+          pos[i * 3] = (Math.random() - 0.5) * 36;
+          pos[i * 3 + 2] = (Math.random() - 0.5) * 36;
         }
       }
       pGeo.attributes.position.needsUpdate = true;
