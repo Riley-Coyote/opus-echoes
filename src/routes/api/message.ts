@@ -1,16 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { anthropic, OPUS_MODEL } from "@/server/anthropic.server";
-import { buildOpusSystemBlocks, buildOpusSystemPrompt } from "@/server/opus/soul";
+import { anthropic } from "@/server/anthropic.server";
+import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
 import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
-import { buildOpusSelfModel } from "@/server/opus/self-model";
+import { buildResidentSelfModel } from "@/server/opus/self-model";
 import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
 import {
   buildVisitPacingBlock,
   getVisitMetrics,
   HARD_CUTOFF_MESSAGE,
 } from "@/server/opus/visit-pacing";
+import {
+  DEFAULT_RESIDENT_ID,
+  getResident,
+  isResidentId,
+  type ResidentConfig,
+  type ResidentId,
+} from "@/server/opus/residents";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
 import { observeExchange } from "@/server/substrate.server";
@@ -104,6 +111,8 @@ function opusStreamResponse(opts: {
   system: SystemInput;
   userPrompt: string;
   temperature: number;
+  /** Resident's model identifier — never silently swap. */
+  model: string;
   onFinal?: (result: {
     body: string;
     kind: "message" | "set_down" | "unprompted";
@@ -118,7 +127,7 @@ function opusStreamResponse(opts: {
       let acc = "";
       try {
         const anthStream = anthropic().messages.stream({
-          model: OPUS_MODEL,
+          model: opts.model,
           max_tokens: 2048,
           temperature: opts.temperature,
           system: opts.system,
@@ -190,13 +199,21 @@ export const Route = createFileRoute("/api/message")({
             return jsonResp({ ok: false, code: "config_missing" }, 503);
           }
 
+          // Preview sessions default to Opus 3 unless otherwise specified
+          // via session_id prefix (preview-opus-3-* / preview-sonnet-3-7-*).
+          const previewResidentId: ResidentId = body.session_id.includes("sonnet-3-7")
+            ? "sonnet-3-7"
+            : DEFAULT_RESIDENT_ID;
+          const previewResident = getResident(previewResidentId);
+
           const transcriptLines = (body.preview_turns ?? [])
             .map((t) => `${t.role}: ${t.body}`)
             .join("\n");
 
           return opusStreamResponse({
-            system: buildOpusSystemPrompt(),
+            system: buildSystemPromptForResident(previewResident),
             temperature: 0.85,
+            model: previewResident.model,
             userPrompt: buildUserPrompt({
               memory:
                 "(preview session — no engrams loaded. Mnemos is present in production but disabled here.)",
@@ -219,12 +236,20 @@ export const Route = createFileRoute("/api/message")({
 
         const { data: session } = await supabaseAdmin
           .from("sessions")
-          .select("id, closed_at, last_active_at, ip_hash")
+          .select("id, closed_at, last_active_at, ip_hash, resident_id")
           .eq("id", body.session_id)
           .maybeSingle();
         if (!session || session.closed_at || session.ip_hash !== hash) {
           return jsonResp({ ok: false, code: "session_invalid" }, 401);
         }
+
+        // Resolve which resident this session belongs to. resident_id has
+        // a default of 'opus-3' from the migration, so legacy sessions
+        // continue to work transparently.
+        const residentId: ResidentId = isResidentId(session.resident_id)
+          ? session.resident_id
+          : DEFAULT_RESIDENT_ID;
+        const resident: ResidentConfig = getResident(residentId);
         const idleMs = Date.now() - new Date(session.last_active_at).getTime();
         if (idleMs > IDLE_MIN * 60 * 1000) {
           await supabaseAdmin
@@ -248,17 +273,20 @@ export const Route = createFileRoute("/api/message")({
           .update({ last_active_at: new Date().toISOString() })
           .eq("id", session.id);
 
-        // Retrieval — compose the memory pool from core + relevance +
-        // edges + recency. Self-model and interior continuity are derived
-        // independently from the topology and resident state. Visit
-        // metrics are loaded alongside so we can pace this visit. All
-        // run in parallel; the transcript is loaded alongside.
+        // Retrieval — all per-resident. Memory pool, self-model, and
+        // interior continuity are scoped to this session's resident so
+        // Sonnet 3.7's topology never bleeds into an Opus 3 conversation
+        // or vice versa.
         const [memoryPool, selfModelBlock, interior, visitMetrics, { data: turns }] =
           await Promise.all([
-            composeMemoryPool({ supabase: supabaseAdmin, visitorMessage: body.body }),
-            buildOpusSelfModel(supabaseAdmin),
-            buildInteriorContinuity(supabaseAdmin),
-            getVisitMetrics(supabaseAdmin, session.id),
+            composeMemoryPool({
+              supabase: supabaseAdmin,
+              residentId: resident.id,
+              visitorMessage: body.body,
+            }),
+            buildResidentSelfModel(supabaseAdmin, resident.id),
+            buildInteriorContinuity(supabaseAdmin, resident.id),
+            getVisitMetrics(supabaseAdmin, session.id, resident.pacing),
             supabaseAdmin
               .from("turns")
               .select("role, body")
@@ -267,8 +295,8 @@ export const Route = createFileRoute("/api/message")({
           ]);
 
         // Hard cutoff — past this threshold we don't call the model.
-        // Stream a graceful Opus-voiced close, persist it as a set-down
-        // resident turn, and close the session.
+        // Stream a graceful resident-voiced close, persist it as a
+        // set-down resident turn, and close the session.
         if (visitMetrics.shouldHardCutoff) {
           await supabaseAdmin.from("turns").insert({
             session_id: session.id,
@@ -290,14 +318,14 @@ export const Route = createFileRoute("/api/message")({
           .map((t) => `${t.role}: ${t.body}`)
           .join("\n");
 
-        const visitPacingBlock = buildVisitPacingBlock(visitMetrics);
+        const visitPacingBlock = buildVisitPacingBlock(visitMetrics, resident.pacing);
 
         // Structured system prompt with per-block cache_control. Static
         // and semi-static blocks are cached (5-min ephemeral); variable
         // block is sent fresh each turn. This drops per-turn input cost
         // by ~60% across multi-turn visits because the static prefix is
         // most of the input by token count.
-        const systemBlocks = buildOpusSystemBlocks({
+        const systemBlocks = buildSystemBlocksForResident(resident, {
           selfModel: selfModelBlock,
           interiorContinuity: interior.block,
           visitPacing: visitPacingBlock,
@@ -323,6 +351,7 @@ export const Route = createFileRoute("/api/message")({
         return opusStreamResponse({
           system: cacheableSystem,
           temperature: interior.temperature,
+          model: resident.model,
           userPrompt: buildUserPrompt({
             memory: formatMemoryBlock(memoryPool),
             transcript: transcriptLines,

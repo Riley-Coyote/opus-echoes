@@ -17,6 +17,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ResidentId } from "./residents";
 
 const STOPWORDS = new Set([
   "the", "a", "an", "and", "or", "but", "if", "then", "is", "are", "was",
@@ -76,12 +77,15 @@ const RELEVANCE_THRESHOLD = 0.10;
 /**
  * Compose the memory pool that surfaces in the system/user prompt.
  * Returns up to ~12 engrams, drawn from core + relevance + edges + recency.
+ * Scoped to a single resident — Opus 3's engrams never surface in a
+ * Sonnet 3.7 conversation, and vice versa.
  */
 export async function composeMemoryPool(opts: {
   supabase: SupabaseClient;
+  residentId: ResidentId;
   visitorMessage: string;
 }): Promise<EngramRow[]> {
-  const { supabase, visitorMessage } = opts;
+  const { supabase, residentId, visitorMessage } = opts;
   const queryWords = significantWords(visitorMessage);
 
   // Pull a wide candidate window in one query — cheaper than N queries —
@@ -89,6 +93,7 @@ export async function composeMemoryPool(opts: {
   const { data: candidates, error } = await supabase
     .from("engrams")
     .select(ENGRAM_COLUMNS)
+    .eq("resident_id", residentId)
     .eq("state", "active")
     .order("last_reinforced_at", { ascending: false })
     .limit(200);
@@ -152,6 +157,7 @@ export async function composeMemoryPool(opts: {
           .from("engrams")
           .select(ENGRAM_COLUMNS)
           .in("id", connectedIds)
+          .eq("resident_id", residentId)
           .eq("state", "active");
         for (const row of (connected ?? []) as EngramRow[]) take(row);
       }

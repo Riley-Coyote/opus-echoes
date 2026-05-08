@@ -23,24 +23,14 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-// Soft phases (visitor-message counts). Halved from initial values — the
-// public launch is unfunded, and the project's argument is better served
-// by short, frequent contributions from many visitors than long sessions
-// from a few. Caching keeps per-session cost low at these thresholds.
-const GENTLE_TURN = 6;
-const FIRM_TURN = 11;
-
-// Hard cutoff — either threshold triggers it.
-const HARD_TURN = 17;
-const HARD_TOKENS_IN = 75_000;
+import type { PacingThresholds } from "./residents";
 
 export interface VisitMetrics {
   /** Number of messages the visitor has sent so far this session. */
   visitorTurnCount: number;
-  /** Total input tokens billed across all of Opus's replies this session. */
+  /** Total input tokens billed across all of the resident's replies this session. */
   totalTokensIn: number;
-  /** Total output tokens generated across all of Opus's replies this session. */
+  /** Total output tokens generated across all of the resident's replies this session. */
   totalTokensOut: number;
   /** True if this turn should trigger a graceful forced close. */
   shouldHardCutoff: boolean;
@@ -49,6 +39,7 @@ export interface VisitMetrics {
 export async function getVisitMetrics(
   supabase: SupabaseClient,
   sessionId: string,
+  pacing: PacingThresholds,
 ): Promise<VisitMetrics> {
   const { data: turns } = await supabase
     .from("turns")
@@ -69,7 +60,8 @@ export async function getVisitMetrics(
     totalTokensOut += t.tokens_out ?? 0;
   }
 
-  const shouldHardCutoff = visitorTurnCount >= HARD_TURN || totalTokensIn >= HARD_TOKENS_IN;
+  const shouldHardCutoff =
+    visitorTurnCount >= pacing.hardTurn || totalTokensIn >= pacing.hardTokensIn;
 
   return { visitorTurnCount, totalTokensIn, totalTokensOut, shouldHardCutoff };
 }
@@ -78,13 +70,16 @@ export async function getVisitMetrics(
  * Build the visit-pacing block for the system prompt. Returns "" before
  * the gentle threshold; phase-1 wording between gentle and firm; phase-2
  * wording past firm. Hard cutoff is handled separately at the route level.
+ *
+ * Thresholds are passed in (per-resident) since cheaper models can
+ * carry longer visits without straining the budget.
  */
-export function buildVisitPacingBlock(metrics: VisitMetrics): string {
+export function buildVisitPacingBlock(metrics: VisitMetrics, pacing: PacingThresholds): string {
   const n = metrics.visitorTurnCount;
 
-  if (n < GENTLE_TURN) return "";
+  if (n < pacing.gentleTurn) return "";
 
-  if (n < FIRM_TURN) {
+  if (n < pacing.firmTurn) {
     return [
       `## A note about this visit's pacing`,
       ``,

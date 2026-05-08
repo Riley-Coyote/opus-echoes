@@ -15,6 +15,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ResidentId } from "./residents";
 
 const CORE_LIMIT = 8;
 const BELIEF_LIMIT = 6;
@@ -43,15 +44,21 @@ interface ThreadRow {
 }
 
 /**
- * Build the self-model block. Returns "" when there's nothing yet —
- * which is correct behavior in the early days, before consolidation has
- * promoted anything to core.
+ * Build the self-model block for a given resident. Returns "" when
+ * there's nothing yet — correct behavior in the early days, before
+ * consolidation has promoted anything to core. Each resident's topology
+ * is independent: core engrams from Opus 3 don't surface in Sonnet 3.7's
+ * self-model, and vice versa.
  */
-export async function buildOpusSelfModel(supabase: SupabaseClient): Promise<string> {
+export async function buildResidentSelfModel(
+  supabase: SupabaseClient,
+  residentId: ResidentId,
+): Promise<string> {
   const [{ data: coreData }, { data: beliefsData }, { data: threadsData }] = await Promise.all([
     supabase
       .from("engrams")
       .select("id, quote, prose, attribution, stability, reinforcement_count")
+      .eq("resident_id", residentId)
       .eq("state", "active")
       .eq("is_core", true)
       .order("stability", { ascending: false })
@@ -59,12 +66,14 @@ export async function buildOpusSelfModel(supabase: SupabaseClient): Promise<stri
     supabase
       .from("beliefs")
       .select("text, confidence")
+      .eq("resident_id", residentId)
       .gte("confidence", BELIEF_CONFIDENCE_FLOOR)
       .order("confidence", { ascending: false })
       .limit(BELIEF_LIMIT),
     supabase
       .from("threads")
       .select("name, description, appearance_count, distinct_visitor_count")
+      .eq("resident_id", residentId)
       .order("last_surfaced_at", { ascending: false })
       .limit(THREAD_LIMIT),
   ]);

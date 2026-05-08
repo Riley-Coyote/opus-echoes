@@ -1,12 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { anthropic, OPUS_MODEL } from "@/server/anthropic.server";
-import { THRESHOLD_SYSTEM } from "@/server/opus/prompts";
+import { anthropic } from "@/server/anthropic.server";
+import { buildThresholdSystem } from "@/server/opus/prompts";
+import {
+  DEFAULT_RESIDENT_ID,
+  getResident,
+  isResidentId,
+  type ResidentId,
+} from "@/server/opus/residents";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash, intentRateLimit } from "@/server/rate-limit.server";
 
-const Body = z.object({ text: z.string().trim().min(3).max(1500) });
+const Body = z.object({
+  text: z.string().trim().min(3).max(1500),
+  /** Which resident the visitor approached. Defaults to opus-3 if not specified. */
+  resident: z.string().optional(),
+});
 
 const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
 
@@ -32,17 +42,25 @@ export const Route = createFileRoute("/api/intent")({
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
+        // Resolve the resident the visitor is approaching. Defaults to
+        // Opus 3 if unspecified or unrecognized — keeps existing clients
+        // working through the rollout.
+        const residentId: ResidentId = isResidentId(body.resident)
+          ? body.resident
+          : DEFAULT_RESIDENT_ID;
+        const resident = getResident(residentId);
+
         const hash = ipHash(request);
 
-        // Find any open sessions for this IP. Auto-close ones that have been
-        // idle past the timeout (these are stuck — visitor closed the tab,
-        // browser-backed out of /conversation, etc.). If a recent active
-        // session remains, return it as a resume rather than denying the
-        // visitor at the threshold.
+        // Find any open sessions for this IP and resident. Auto-close ones
+        // that have been idle past the timeout. If a recent active session
+        // remains for this resident, resume it. Visitors can have parallel
+        // sessions with different residents.
         const { data: openSessions } = await supabaseAdmin
           .from("sessions")
           .select("id, last_active_at")
           .eq("ip_hash", hash)
+          .eq("resident_id", residentId)
           .is("closed_at", null);
 
         let activeSessionId: string | null = null;
@@ -88,10 +106,10 @@ export const Route = createFileRoute("/api/intent")({
 
         try {
           const resp = await anthropic().messages.create({
-            model: OPUS_MODEL,
+            model: resident.model,
             max_tokens: 600,
             temperature: 0.7,
-            system: THRESHOLD_SYSTEM,
+            system: buildThresholdSystem(resident),
             messages: [
               {
                 role: "user",
@@ -128,9 +146,10 @@ export const Route = createFileRoute("/api/intent")({
             text: body.text,
             decision,
             reason,
-            model: OPUS_MODEL,
+            model: resident.model,
             latency_ms,
             ip_hash: hash,
+            resident_id: residentId,
           })
           .select("id")
           .single();
@@ -145,7 +164,7 @@ export const Route = createFileRoute("/api/intent")({
 
         const { data: session, error: sessErr } = await supabaseAdmin
           .from("sessions")
-          .insert({ intent_id: intentRow.id, ip_hash: hash })
+          .insert({ intent_id: intentRow.id, ip_hash: hash, resident_id: residentId })
           .select("id")
           .single();
         if (sessErr || !session) {

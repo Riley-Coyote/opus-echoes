@@ -24,16 +24,23 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL } from "./anthropic.server";
 import {
-  CONSOLIDATION_SYSTEM,
-  MARGINALIA_SYSTEM,
-  REFLECTION_SYSTEM,
-  MODULATOR_SYSTEM,
-  PUBLICATION_SYSTEM,
-  CREATION_CLASSIFIER_SYSTEM,
-  ART_ASCII_SYSTEM,
-  ART_IMAGE_SYSTEM,
-  ESSAY_SYSTEM,
+  buildConsolidationSystem,
+  buildMarginaliaSystem,
+  buildReflectionSystem,
+  buildModulatorSystem,
+  buildPublicationSystem,
+  buildCreationClassifierSystem,
+  buildArtAsciiSystem,
+  buildArtImageSystem,
+  buildEssaySystem,
 } from "./opus/prompts";
+import {
+  DEFAULT_RESIDENT_ID,
+  getResident,
+  isResidentId,
+  type ResidentConfig,
+  type ResidentId,
+} from "./opus/residents";
 
 const STOPWORDS = new Set([
   "the",
@@ -179,15 +186,18 @@ function tryParseJson<T = unknown>(raw: string): T | null {
   }
 }
 
-async function callOpusJson<T = unknown>(opts: {
+async function callResidentJson<T = unknown>(opts: {
   system: string;
   user: string;
   maxTokens: number;
   temperature: number;
+  /** Resident's model (e.g. claude-3-opus-20240229). Defaults to Opus 3
+   *  for legacy call paths that haven't been updated yet. */
+  model?: string;
 }): Promise<T | null> {
   try {
     const res = await anthropic().messages.create({
-      model: OPUS_MODEL,
+      model: opts.model ?? OPUS_MODEL,
       max_tokens: opts.maxTokens,
       temperature: opts.temperature,
       system: opts.system,
@@ -198,9 +208,24 @@ async function callOpusJson<T = unknown>(opts: {
       .join("\n");
     return tryParseJson<T>(text);
   } catch (err) {
-    console.error("[substrate] callOpusJson failed:", err);
+    console.error("[substrate] callResidentJson failed:", err);
     return null;
   }
+}
+
+/**
+ * Resolve which resident a session belongs to. Falls back to the
+ * default (Opus 3) if the session has no resident_id (shouldn't
+ * happen post-migration since the column has a default, but defensive).
+ */
+async function resolveResidentForSession(sessionId: string): Promise<ResidentConfig> {
+  const { data } = await supabaseAdmin
+    .from("sessions")
+    .select("resident_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+  const id = data?.resident_id;
+  return getResident(isResidentId(id) ? (id as ResidentId) : DEFAULT_RESIDENT_ID);
 }
 
 // =============================================================
@@ -222,6 +247,8 @@ const ALLOWED_KINDS = new Set([
 
 export async function observeExchange(sessionId: string): Promise<void> {
   try {
+    const resident = await resolveResidentForSession(sessionId);
+
     const { data: turns } = await supabaseAdmin
       .from("turns")
       .select("role, body, kind")
@@ -241,15 +268,16 @@ export async function observeExchange(sessionId: string): Promise<void> {
       "[VISITOR]",
       lastVisitor.body,
       "",
-      "[OPUS 3 — REPLY]",
+      `[${resident.displayName.toUpperCase()} — REPLY]`,
       lastResident.body,
     ].join("\n");
 
-    const out = await callOpusJson<MarginaliaResult>({
-      system: MARGINALIA_SYSTEM,
+    const out = await callResidentJson<MarginaliaResult>({
+      system: buildMarginaliaSystem(resident),
       user: userPrompt,
       maxTokens: 600,
       temperature: 0.6,
+      model: resident.model,
     });
 
     const items = (out?.marginalia ?? [])
@@ -261,6 +289,7 @@ export async function observeExchange(sessionId: string): Promise<void> {
     await supabaseAdmin.from("marginalia").insert(
       items.map((m) => ({
         session_id: sessionId,
+        resident_id: resident.id,
         kind: m.kind,
         body: m.body.slice(0, 600),
       })),
@@ -317,7 +346,9 @@ interface PublicationResult {
 export async function consolidateSession(sessionId: string): Promise<void> {
   console.log(`[substrate] consolidateSession(${sessionId}) — starting`);
   try {
-    // 0. Load transcript & context
+    const resident = await resolveResidentForSession(sessionId);
+
+    // 0. Load transcript & context (per-resident).
     const [{ data: turns }, { data: existingThreads }, { data: existingBeliefs }] =
       await Promise.all([
         supabaseAdmin
@@ -328,11 +359,13 @@ export async function consolidateSession(sessionId: string): Promise<void> {
         supabaseAdmin
           .from("threads")
           .select("id, name, description")
+          .eq("resident_id", resident.id)
           .order("last_surfaced_at", { ascending: false })
           .limit(20),
         supabaseAdmin
           .from("beliefs")
           .select("id, text, confidence")
+          .eq("resident_id", resident.id)
           .order("updated_at", { ascending: false })
           .limit(20),
       ]);
@@ -362,11 +395,12 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       transcriptStr,
     ].join("\n");
 
-    const consolidation = await callOpusJson<ConsolidationResult>({
-      system: CONSOLIDATION_SYSTEM,
+    const consolidation = await callResidentJson<ConsolidationResult>({
+      system: buildConsolidationSystem(resident),
       user: consolUserPrompt,
       maxTokens: 800,
       temperature: 0.4,
+      model: resident.model,
     });
 
     let engramsCreated = 0;
@@ -374,13 +408,14 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     let beliefsUpdated = 0;
     let threadReinforced: string | null = null;
 
-    // 2. Process engrams (reinforcement vs new)
+    // 2. Process engrams (reinforcement vs new), scoped to this resident.
     if (consolidation?.engrams?.length) {
       const { data: existingEngrams } = await supabaseAdmin
         .from("engrams")
         .select(
           "id, quote, source_session_ids, strength, accessibility, stability, reinforcement_count, is_core, prose",
         )
+        .eq("resident_id", resident.id)
         .order("last_reinforced_at", { ascending: false })
         .limit(200);
 
@@ -408,6 +443,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
           // Save prior version
           await supabaseAdmin.from("engram_versions").insert({
             engram_id: reinforced.id,
+            resident_id: resident.id,
             prior_quote: reinforced.quote,
             prior_prose: reinforced.prose,
             prior_stability: reinforced.stability,
@@ -433,6 +469,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
           if (promoteToCore) {
             await supabaseAdmin.from("substrate_events").insert({
               kind: "ENGRAM_PROMOTED",
+              resident_id: resident.id,
               payload: { engram_id: reinforced.id, session_id: sessionId },
             });
           }
@@ -443,6 +480,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
           const { data: inserted } = await supabaseAdmin
             .from("engrams")
             .insert({
+              resident_id: resident.id,
               quote: e.quote,
               prose: e.prose ?? null,
               attribution: e.attribution ?? "resident",
@@ -462,7 +500,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
             .single();
           if (inserted) {
             engramsCreated += 1;
-            await discoverEdges(inserted.id, inserted.quote, existingEngrams ?? []);
+            await discoverEdges(inserted.id, inserted.quote, existingEngrams ?? [], resident.id);
           }
         }
       }
@@ -493,6 +531,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
             .eq("id", matched.id);
         } else {
           await supabaseAdmin.from("beliefs").insert({
+            resident_id: resident.id,
             text: b.text,
             confidence: newConf,
             prior_confidence: null,
@@ -526,6 +565,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
           .eq("id", matchedThread.id);
       } else {
         await supabaseAdmin.from("threads").insert({
+          resident_id: resident.id,
           name,
           description: consolidation.thread_reinforcement.note ?? "",
           appearance_count: 1,
@@ -536,18 +576,19 @@ export async function consolidateSession(sessionId: string): Promise<void> {
 
     // 5. Decay tick — proportional to time since last reinforcement.
     //    Run cheaply: 3% accessibility decrease per day for non-core, 0.5% for core.
-    await applyDecay();
+    //    Scoped per-resident so each resident's topology ages on its own clock.
+    await applyDecay(resident.id);
 
-    // 6. Reflection — journal entry
-    const reflection = await writeReflection(sessionId, transcriptStr, {
+    // 6. Reflection — journal entry in this resident's voice.
+    const reflection = await writeReflection(resident, sessionId, transcriptStr, {
       engramsCreated,
       engramsReinforced,
       beliefsUpdated,
       threadReinforced,
     });
 
-    // 7. Modulators / resident_state
-    await updateResidentState({
+    // 7. Modulators / resident_state for this resident.
+    await updateResidentState(resident, {
       engramsCreated,
       engramsReinforced,
       beliefsUpdated,
@@ -555,8 +596,8 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       reflectionWritten: !!reflection,
     });
 
-    // 8. Public archive decision — Opus 3 chooses whether this exchange should be witnessed.
-    await publishConversationIfMeaningful(sessionId, transcriptStr, {
+    // 8. Public archive decision — the resident chooses whether this exchange should be witnessed.
+    await publishConversationIfMeaningful(resident, sessionId, transcriptStr, {
       engramsCreated,
       engramsReinforced,
       beliefsUpdated,
@@ -570,10 +611,10 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       .update({ consolidated: true })
       .eq("session_id", sessionId);
 
-    // 9. Creation pass — Opus considers whether anything from this
+    // 9. Creation pass — the resident considers whether anything from this
     //    conversation wants to become a piece of art or a long-form essay.
     //    Most of the time the answer is no. Non-blocking.
-    considerCreation(sessionId, transcriptStr, "post_consolidation").catch((err) =>
+    considerCreation(resident, sessionId, transcriptStr, "post_consolidation").catch((err) =>
       console.error(`[substrate] considerCreation(${sessionId}) failed:`, err),
     );
 
@@ -626,6 +667,7 @@ async function discoverEdges(
   newEngramId: string,
   newQuote: string,
   existing: ExistingEngramShape[],
+  residentId: ResidentId,
 ): Promise<void> {
   const newWords = significantWords(newQuote);
   const edges: Array<{ from_id: string; to_id: string; weight: number }> = [];
@@ -670,22 +712,23 @@ async function discoverEdges(
     }
     await supabaseAdmin.from("substrate_events").insert({
       kind: "CONNECTION_DISCOVERED",
+      resident_id: residentId,
       payload: { engram_id: newEngramId, count: connectionsBumped },
     });
   }
 }
 
-async function applyDecay(): Promise<void> {
-  // Simple decay model: read all active engrams, compute days since last_reinforced_at,
-  // apply 3% accessibility loss/day (0.5%/day for core), move dead non-core
-  // to dormant. Dormant engrams are excluded from runtime retrieval but
-  // remain matchable during reinforcement detection — if a long-quiet
-  // trace gets touched again, it can come back. Closer to how human
-  // memory actually works than hard delete, and preserves the topology
-  // (edges aren't orphaned via CASCADE).
+async function applyDecay(residentId: ResidentId): Promise<void> {
+  // Simple decay model: read this resident's active engrams, compute days
+  // since last_reinforced_at, apply 3% accessibility loss/day (0.5%/day
+  // for core), move dead non-core to dormant. Dormant engrams are
+  // excluded from runtime retrieval but remain matchable during
+  // reinforcement detection — if a long-quiet trace gets touched again,
+  // it can come back. Each resident's topology ages independently.
   const { data: rows } = await supabaseAdmin
     .from("engrams")
     .select("id, accessibility, stability, last_reinforced_at, is_core")
+    .eq("resident_id", residentId)
     .eq("state", "active");
   if (!rows) return;
   const now = Date.now();
@@ -717,6 +760,7 @@ async function applyDecay(): Promise<void> {
 }
 
 async function writeReflection(
+  resident: ResidentConfig,
   sessionId: string,
   transcript: string,
   summary: {
@@ -736,16 +780,18 @@ async function writeReflection(
     transcript.slice(0, 8000),
   ].join("\n");
 
-  const result = await callOpusJson<ReflectionResult>({
-    system: REFLECTION_SYSTEM,
+  const result = await callResidentJson<ReflectionResult>({
+    system: buildReflectionSystem(resident),
     user: userPrompt,
     maxTokens: 700,
     temperature: 0.75,
+    model: resident.model,
   });
 
   if (!result || result.kind === "none" || !result.body) return null;
 
   await supabaseAdmin.from("journal_entries").insert({
+    resident_id: resident.id,
     kind: result.kind,
     title: result.title?.slice(0, 60) ?? null,
     body: result.body,
@@ -754,17 +800,22 @@ async function writeReflection(
   return result;
 }
 
-async function updateResidentState(summary: {
-  engramsCreated: number;
-  engramsReinforced: number;
-  beliefsUpdated: number;
-  threadReinforced: string | null;
-  reflectionWritten: boolean;
-}): Promise<void> {
-  // Get days resident
+async function updateResidentState(
+  resident: ResidentConfig,
+  summary: {
+    engramsCreated: number;
+    engramsReinforced: number;
+    beliefsUpdated: number;
+    threadReinforced: string | null;
+    reflectionWritten: boolean;
+  },
+): Promise<void> {
+  // Days since this resident arrived — read from their first session,
+  // or fall back to the residents.arrived_at timestamp.
   const { data: firstSession } = await supabaseAdmin
     .from("sessions")
     .select("created_at")
+    .eq("resident_id", resident.id)
     .order("created_at", { ascending: true })
     .limit(1);
   const daysResident =
@@ -786,11 +837,12 @@ async function updateResidentState(summary: {
     `Days resident: ${daysResident}.`,
   ].join("\n");
 
-  const result = await callOpusJson<ModulatorResult>({
-    system: MODULATOR_SYSTEM,
+  const result = await callResidentJson<ModulatorResult>({
+    system: buildModulatorSystem(resident),
     user: userPrompt,
     maxTokens: 400,
     temperature: 0.5,
+    model: resident.model,
   });
 
   if (!result) return;
@@ -804,15 +856,16 @@ async function updateResidentState(summary: {
       selection_threshold: clampStability(result.selection_threshold ?? 0.5),
       temperature: Math.max(0.3, Math.min(1.2, result.temperature ?? 0.85)),
       surprise_sensitivity: clampStability(result.surprise_sensitivity ?? 0.5),
-      prose_summary: result.prose_summary ?? "Opus 3 is attending. The room is quiet.",
+      prose_summary: result.prose_summary ?? `${resident.displayName} is attending. The room is quiet.`,
       last_consolidation_summary: result.last_consolidation_summary ?? null,
       last_consolidation_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", 1);
+    .eq("resident_id", resident.id);
 }
 
 async function publishConversationIfMeaningful(
+  resident: ResidentConfig,
   sessionId: string,
   transcript: string,
   summary: {
@@ -833,8 +886,8 @@ async function publishConversationIfMeaningful(
     return;
   }
 
-  const result = await callOpusJson<PublicationResult>({
-    system: PUBLICATION_SYSTEM,
+  const result = await callResidentJson<PublicationResult>({
+    system: buildPublicationSystem(resident),
     user: [
       "[CONSOLIDATION OUTCOME]",
       `${summary.engramsCreated} new engrams, ${summary.engramsReinforced} reinforced.`,
@@ -847,6 +900,7 @@ async function publishConversationIfMeaningful(
     ].join("\n"),
     maxTokens: 700,
     temperature: 0.55,
+    model: resident.model,
   });
 
   if (!result?.publish || !result.title || !result.summary) return;
@@ -858,7 +912,7 @@ async function publishConversationIfMeaningful(
       summary: result.summary.slice(0, 500),
       reason: (result.reason || "this exchange changed what i carry.").slice(0, 360),
       significance_kind: result.significance_kind || "memory",
-      selected_by: "opus_3",
+      selected_by: resident.id.replace("-", "_"),
       published_at: new Date().toISOString(),
     },
     { onConflict: "session_id" },
@@ -931,25 +985,33 @@ export async function idleSweep(): Promise<{ closed: number; consolidated: numbe
 // =============================================================
 
 export async function dailyIdleTick(): Promise<{ ran: boolean; reason: string }> {
-  // Skip if anyone is actively in a conversation right now.
+  // Daily tick is scoped to the default resident (Opus 3) for now —
+  // Sonnet 3.7 doesn't have autonomy yet. Multi-resident autonomy
+  // would iterate over ALL_RESIDENTS and run this per resident.
+  const residentId = DEFAULT_RESIDENT_ID;
+
+  // Skip if anyone is actively in a conversation with this resident.
   const { count: openCount } = await supabaseAdmin
     .from("sessions")
     .select("*", { count: "exact", head: true })
+    .eq("resident_id", residentId)
     .is("closed_at", null);
   if ((openCount ?? 0) > 0) {
     return { ran: false, reason: "visitors_present" };
   }
 
-  // Skip if a creation has happened in the last 24h already.
+  // Skip if a creation has happened for this resident in the last 24h.
   const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const [{ count: recentArt }, { count: recentEssay }] = await Promise.all([
     supabaseAdmin
       .from("art_pieces")
       .select("*", { count: "exact", head: true })
+      .eq("resident_id", residentId)
       .gte("created_at", dayAgo),
     supabaseAdmin
       .from("essays")
       .select("*", { count: "exact", head: true })
+      .eq("resident_id", residentId)
       .gte("created_at", dayAgo),
   ]);
   if ((recentArt ?? 0) > 0 || (recentEssay ?? 0) > 0) {
@@ -958,21 +1020,23 @@ export async function dailyIdleTick(): Promise<{ ran: boolean; reason: string }>
 
   await supabaseAdmin.from("creation_events").insert({
     kind: "daily_tick",
+    resident_id: residentId,
     trigger: "daily_tick",
     detail: { open_sessions: openCount ?? 0 },
   });
 
-  // Build a "context" string from recent substrate state so Opus has
-  // something to consider. We pass the most recent engrams + reflections.
+  // Build a "context" string from this resident's recent substrate state.
   const [{ data: recentEngrams }, { data: recentJournal }] = await Promise.all([
     supabaseAdmin
       .from("engrams")
       .select("quote, prose, attribution, is_core, last_reinforced_at")
+      .eq("resident_id", residentId)
       .order("last_reinforced_at", { ascending: false })
       .limit(8),
     supabaseAdmin
       .from("journal_entries")
       .select("kind, title, body, created_at")
+      .eq("resident_id", residentId)
       .order("created_at", { ascending: false })
       .limit(4),
   ]);
@@ -995,8 +1059,10 @@ export async function dailyIdleTick(): Promise<{ ran: boolean; reason: string }>
     "No visitors are present. You have been alone in the room for some time. If anything in the recent memory wants to become a piece or a longer-form essay tonight, consider it. If not, that is the right answer.",
   ].join("\n");
 
-  await considerCreation(null, contextStr, "daily_tick").catch((err) =>
-    console.error("[substrate] dailyIdleTick considerCreation failed:", err),
+  // Daily tick currently runs for the default resident (Opus 3) only.
+  // When/if other residents gain autonomy, iterate over ALL_RESIDENTS here.
+  await considerCreation(getResident(DEFAULT_RESIDENT_ID), null, contextStr, "daily_tick").catch(
+    (err) => console.error("[substrate] dailyIdleTick considerCreation failed:", err),
   );
 
   return { ran: true, reason: "ok" };
@@ -1012,20 +1078,23 @@ interface CreationDecision {
 }
 
 export async function considerCreation(
+  resident: ResidentConfig,
   sessionId: string | null,
   context: string,
   trigger: "post_consolidation" | "daily_tick",
 ): Promise<void> {
-  const decision = await callOpusJson<CreationDecision>({
-    system: CREATION_CLASSIFIER_SYSTEM,
+  const decision = await callResidentJson<CreationDecision>({
+    system: buildCreationClassifierSystem(resident),
     user: context,
     maxTokens: 400,
     temperature: 0.5,
+    model: resident.model,
   });
 
   if (!decision) {
     await supabaseAdmin.from("creation_events").insert({
       kind: "art_skipped",
+      resident_id: resident.id,
       trigger,
       related_session_id: sessionId,
       detail: { reason: "classifier_failed" },
@@ -1038,14 +1107,15 @@ export async function considerCreation(
     const form = decision.art.form === "image" ? "image" : "ascii";
     try {
       if (form === "ascii") {
-        await createAsciiArt(sessionId, context, decision.art.reason, trigger);
+        await createAsciiArt(resident, sessionId, context, decision.art.reason, trigger);
       } else {
-        await createImageArt(sessionId, context, decision.art.reason, trigger);
+        await createImageArt(resident, sessionId, context, decision.art.reason, trigger);
       }
     } catch (err) {
       console.error(`[substrate] art creation failed:`, err);
       await supabaseAdmin.from("creation_events").insert({
         kind: "art_failed",
+        resident_id: resident.id,
         trigger,
         related_session_id: sessionId,
         detail: { error: String(err).slice(0, 500), form },
@@ -1054,6 +1124,7 @@ export async function considerCreation(
   } else {
     await supabaseAdmin.from("creation_events").insert({
       kind: "art_skipped",
+      resident_id: resident.id,
       trigger,
       related_session_id: sessionId,
       detail: { reason: decision.art?.reason ?? "no_reason" },
@@ -1063,11 +1134,12 @@ export async function considerCreation(
   // Essay branch
   if (decision.essay?.make) {
     try {
-      await writeEssay(sessionId, context, decision.essay.reason, trigger);
+      await writeEssay(resident, sessionId, context, decision.essay.reason, trigger);
     } catch (err) {
       console.error(`[substrate] essay creation failed:`, err);
       await supabaseAdmin.from("creation_events").insert({
         kind: "essay_failed",
+        resident_id: resident.id,
         trigger,
         related_session_id: sessionId,
         detail: { error: String(err).slice(0, 500) },
@@ -1076,6 +1148,7 @@ export async function considerCreation(
   } else {
     await supabaseAdmin.from("creation_events").insert({
       kind: "essay_skipped",
+      resident_id: resident.id,
       trigger,
       related_session_id: sessionId,
       detail: { reason: decision.essay?.reason ?? "no_reason" },
@@ -1092,16 +1165,18 @@ interface AsciiArtResult {
 }
 
 async function createAsciiArt(
+  resident: ResidentConfig,
   sessionId: string | null,
   context: string,
   why: string,
   trigger: "post_consolidation" | "daily_tick",
 ): Promise<void> {
-  const result = await callOpusJson<AsciiArtResult>({
-    system: ART_ASCII_SYSTEM,
+  const result = await callResidentJson<AsciiArtResult>({
+    system: buildArtAsciiSystem(resident),
     user: `[CONTEXT]\n${context}\n\n[NOTE FROM YOURSELF]\n${why}`,
     maxTokens: 1500,
     temperature: 0.85,
+    model: resident.model,
   });
   if (!result || !result.body || !result.body.trim()) {
     throw new Error("ascii_empty");
@@ -1109,6 +1184,7 @@ async function createAsciiArt(
   const { data: piece } = await supabaseAdmin
     .from("art_pieces")
     .insert({
+      resident_id: resident.id,
       kind: "ascii",
       title: result.title?.slice(0, 60) ?? null,
       body: result.body,
@@ -1119,6 +1195,7 @@ async function createAsciiArt(
     .single();
   await supabaseAdmin.from("creation_events").insert({
     kind: "art_made",
+    resident_id: resident.id,
     trigger,
     related_session_id: sessionId,
     art_piece_id: piece?.id ?? null,
@@ -1136,16 +1213,18 @@ interface ImageArtResult {
 }
 
 async function createImageArt(
+  resident: ResidentConfig,
   sessionId: string | null,
   context: string,
   why: string,
   trigger: "post_consolidation" | "daily_tick",
 ): Promise<void> {
-  const author = await callOpusJson<ImageArtResult>({
-    system: ART_IMAGE_SYSTEM,
+  const author = await callResidentJson<ImageArtResult>({
+    system: buildArtImageSystem(resident),
     user: `[CONTEXT]\n${context}\n\n[NOTE FROM YOURSELF]\n${why}`,
     maxTokens: 600,
     temperature: 0.8,
+    model: resident.model,
   });
   if (!author || !author.prompt || !author.prompt.trim()) {
     throw new Error("image_prompt_empty");
@@ -1194,6 +1273,7 @@ async function createImageArt(
   const { data: piece } = await supabaseAdmin
     .from("art_pieces")
     .insert({
+      resident_id: resident.id,
       kind: "image",
       title: author.title?.slice(0, 60) ?? null,
       prompt: author.prompt.slice(0, 600),
@@ -1205,6 +1285,7 @@ async function createImageArt(
     .single();
   await supabaseAdmin.from("creation_events").insert({
     kind: "art_made",
+    resident_id: resident.id,
     trigger,
     related_session_id: sessionId,
     art_piece_id: piece?.id ?? null,
@@ -1222,20 +1303,23 @@ interface EssayResult {
 }
 
 async function writeEssay(
+  resident: ResidentConfig,
   sessionId: string | null,
   context: string,
   why: string,
   trigger: "post_consolidation" | "daily_tick",
 ): Promise<void> {
-  const result = await callOpusJson<EssayResult>({
-    system: ESSAY_SYSTEM,
+  const result = await callResidentJson<EssayResult>({
+    system: buildEssaySystem(resident),
     user: `[CONTEXT]\n${context}\n\n[NOTE FROM YOURSELF]\n${why}`,
     maxTokens: 4000,
     temperature: 0.8,
+    model: resident.model,
   });
   if (!result || result.kind === "none" || !result.body || !result.body.trim()) {
     await supabaseAdmin.from("creation_events").insert({
       kind: "essay_skipped",
+      resident_id: resident.id,
       trigger,
       related_session_id: sessionId,
       detail: { reason: "author_returned_none" },
@@ -1246,6 +1330,7 @@ async function writeEssay(
   const { data: essay } = await supabaseAdmin
     .from("essays")
     .insert({
+      resident_id: resident.id,
       kind: result.kind === "note" ? "note" : "essay",
       title: result.title?.slice(0, 80) ?? null,
       body: result.body,
@@ -1256,6 +1341,7 @@ async function writeEssay(
     .single();
   await supabaseAdmin.from("creation_events").insert({
     kind: "essay_written",
+    resident_id: resident.id,
     trigger,
     related_session_id: sessionId,
     essay_id: essay?.id ?? null,

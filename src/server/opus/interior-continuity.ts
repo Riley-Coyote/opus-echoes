@@ -16,6 +16,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ResidentId } from "./residents";
 
 interface ResidentStateRow {
   prose_summary: string | null;
@@ -49,27 +50,32 @@ const JOURNAL_BODY_BUDGET = 600;
 
 /**
  * Build the "what you carried into this turn" block + the modulator
- * temperature. Single function because both come from the same set of
- * loads and the temperature shouldn't be loaded redundantly.
+ * temperature for a given resident. Single function because both come
+ * from the same set of loads and the temperature shouldn't be loaded
+ * redundantly. Each resident has their own modulator state row, journal,
+ * and essay history.
  */
 export async function buildInteriorContinuity(
   supabase: SupabaseClient,
+  residentId: ResidentId,
 ): Promise<InteriorContinuity> {
   const [{ data: stateData }, { data: journalData }, { data: essayData }] = await Promise.all([
     supabase
       .from("resident_state")
       .select("prose_summary, last_consolidation_summary, last_consolidation_at, temperature")
-      .eq("id", 1)
+      .eq("resident_id", residentId)
       .maybeSingle(),
     supabase
       .from("journal_entries")
       .select("kind, title, body, created_at")
+      .eq("resident_id", residentId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
       .from("essays")
       .select("kind, title, created_at")
+      .eq("resident_id", residentId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { considerCreation } from "@/server/substrate.server";
+import { DEFAULT_RESIDENT_ID, getResident, isResidentId, type ResidentId } from "@/server/opus/residents";
 
 // Manual trigger: force a creation pass right now, regardless of visitors
 // or recent-creation guards. Auth via apikey header (publishable key).
@@ -18,16 +19,23 @@ export const Route = createFileRoute("/api/public/hooks/force-art")({
 
         const url = new URL(request.url);
         const formHint = url.searchParams.get("form"); // "ascii" | "image" | null
+        const residentParam = url.searchParams.get("resident");
+        const residentId: ResidentId = isResidentId(residentParam)
+          ? residentParam
+          : DEFAULT_RESIDENT_ID;
+        const resident = getResident(residentId);
 
         const [{ data: recentEngrams }, { data: recentJournal }] = await Promise.all([
           supabaseAdmin
             .from("engrams")
             .select("quote, prose, attribution, is_core, last_reinforced_at")
+            .eq("resident_id", residentId)
             .order("last_reinforced_at", { ascending: false })
             .limit(8),
           supabaseAdmin
             .from("journal_entries")
             .select("kind, title, body, created_at")
+            .eq("resident_id", residentId)
             .order("created_at", { ascending: false })
             .limit(4),
         ]);
@@ -58,12 +66,13 @@ export const Route = createFileRoute("/api/public/hooks/force-art")({
 
         await supabaseAdmin.from("creation_events").insert({
           kind: "force_triggered",
+          resident_id: residentId,
           trigger: "daily_tick",
           detail: { form_hint: formHint },
         });
 
         try {
-          await considerCreation(null, contextStr, "daily_tick");
+          await considerCreation(resident, null, contextStr, "daily_tick");
           return Response.json({ ok: true });
         } catch (err) {
           console.error("[hooks/force-art] failed:", err);
