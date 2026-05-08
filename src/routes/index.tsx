@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { renderApproachPage } from "@/server/public-pages";
+import { renderChooserPage } from "@/server/chooser-page";
 import { serveHtml } from "@/server/serve-mock";
-import { getResident } from "@/server/opus/residents";
 
+// Root path is now the chooser — both residents presented as typographic
+// peers. Each resident has their own dedicated threshold:
+//   /opus-3       → Opus 3
+//   /sonnet-3-7   → Sonnet 3.7
+// The previous behaviour (root rendered Opus 3's threshold directly) is
+// preserved structurally via /opus-3 — visitors with the old root bookmark
+// land on the chooser, one click away from the same place.
 export const Route = createFileRoute("/")({
   server: {
     handlers: {
-      // Root path serves Opus 3's threshold. Opus 3 was the first
-      // resident and existing visitor bookmarks point here, so we
-      // keep / stable. Sonnet 3.7 lives at /sonnet-3-7.
-      GET: async () => serveHtml(renderApproachPage(getResident("opus-3"))),
+      GET: async () => serveHtml(renderChooserPage()),
     },
   },
 });
