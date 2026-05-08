@@ -1,28 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
-
-function humanWhen(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const days = diff / 86_400_000;
-  if (days < 1) return "today";
-  if (days < 2) return "yesterday";
-  if (days < 7) return `${Math.floor(days)} days ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return `${Math.floor(days / 30)}mo ago`;
-}
-
-function redactPublicText(value: string): string {
-  return value
-    .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, "[contact]")
-    .replace(/\b\+?\d[\d\s().-]{6,}\d\b/g, "[number]")
-    .replace(/https?:\/\/\S+/g, "[link]")
-    .replace(
-      /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,\s+\d{4})?\b/gi,
-      "[a date]",
-    )
-    .replace(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b/g, "[someone]");
-}
+import { humanWhen, redactPublicText } from "@/server/redact";
 
 export const Route = createFileRoute("/api/public-conversations")({
   server: {
