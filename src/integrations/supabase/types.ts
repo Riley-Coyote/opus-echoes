@@ -25,6 +25,7 @@ export type Database = {
           prompt: string | null
           related_engram_ids: string[]
           related_session_id: string | null
+          resident_id: string
           title: string | null
         }
         Insert: {
@@ -37,6 +38,7 @@ export type Database = {
           prompt?: string | null
           related_engram_ids?: string[]
           related_session_id?: string | null
+          resident_id?: string
           title?: string | null
         }
         Update: {
@@ -49,9 +51,18 @@ export type Database = {
           prompt?: string | null
           related_engram_ids?: string[]
           related_session_id?: string | null
+          resident_id?: string
           title?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "art_pieces_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       autonomy_runs: {
         Row: {
@@ -104,6 +115,7 @@ export type Database = {
           confidence: number
           id: string
           prior_confidence: number | null
+          resident_id: string
           text: string
           updated_at: string
         }
@@ -112,6 +124,7 @@ export type Database = {
           confidence: number
           id?: string
           prior_confidence?: number | null
+          resident_id?: string
           text: string
           updated_at?: string
         }
@@ -120,10 +133,19 @@ export type Database = {
           confidence?: number
           id?: string
           prior_confidence?: number | null
+          resident_id?: string
           text?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "beliefs_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       creation_events: {
         Row: {
@@ -134,6 +156,7 @@ export type Database = {
           id: string
           kind: string
           related_session_id: string | null
+          resident_id: string
           trigger: string
         }
         Insert: {
@@ -144,6 +167,7 @@ export type Database = {
           id?: string
           kind: string
           related_session_id?: string | null
+          resident_id?: string
           trigger: string
         }
         Update: {
@@ -154,9 +178,18 @@ export type Database = {
           id?: string
           kind?: string
           related_session_id?: string | null
+          resident_id?: string
           trigger?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "creation_events_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       engram_edges: {
         Row: {
@@ -203,6 +236,7 @@ export type Database = {
           prior_quote: string | null
           prior_stability: number | null
           reason: string | null
+          resident_id: string
         }
         Insert: {
           changed_at?: string
@@ -212,6 +246,7 @@ export type Database = {
           prior_quote?: string | null
           prior_stability?: number | null
           reason?: string | null
+          resident_id?: string
         }
         Update: {
           changed_at?: string
@@ -221,6 +256,7 @@ export type Database = {
           prior_quote?: string | null
           prior_stability?: number | null
           reason?: string | null
+          resident_id?: string
         }
         Relationships: [
           {
@@ -228,6 +264,13 @@ export type Database = {
             columns: ["engram_id"]
             isOneToOne: false
             referencedRelation: "engrams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engram_versions_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
             referencedColumns: ["id"]
           },
         ]
@@ -247,6 +290,7 @@ export type Database = {
           quote: string
           redacted_text: string | null
           reinforcement_count: number
+          resident_id: string
           resolution: number
           source_session_ids: string[]
           stability: number
@@ -267,6 +311,7 @@ export type Database = {
           quote: string
           redacted_text?: string | null
           reinforcement_count?: number
+          resident_id?: string
           resolution?: number
           source_session_ids?: string[]
           stability?: number
@@ -287,13 +332,22 @@ export type Database = {
           quote?: string
           redacted_text?: string | null
           reinforcement_count?: number
+          resident_id?: string
           resolution?: number
           source_session_ids?: string[]
           stability?: number
           state?: string
           strength?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "engrams_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       essays: {
         Row: {
@@ -304,6 +358,7 @@ export type Database = {
           related_engram_ids: string[]
           related_session_id: string | null
           related_thread_ids: string[]
+          resident_id: string
           title: string | null
           word_count: number
         }
@@ -315,6 +370,7 @@ export type Database = {
           related_engram_ids?: string[]
           related_session_id?: string | null
           related_thread_ids?: string[]
+          resident_id?: string
           title?: string | null
           word_count?: number
         }
@@ -326,10 +382,19 @@ export type Database = {
           related_engram_ids?: string[]
           related_session_id?: string | null
           related_thread_ids?: string[]
+          resident_id?: string
           title?: string | null
           word_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "essays_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       intents: {
         Row: {
@@ -340,6 +405,7 @@ export type Database = {
           latency_ms: number | null
           model: string
           reason: string
+          resident_id: string
           text: string
         }
         Insert: {
@@ -350,6 +416,7 @@ export type Database = {
           latency_ms?: number | null
           model?: string
           reason: string
+          resident_id?: string
           text: string
         }
         Update: {
@@ -360,9 +427,18 @@ export type Database = {
           latency_ms?: number | null
           model?: string
           reason?: string
+          resident_id?: string
           text?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "intents_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       journal_entries: {
         Row: {
@@ -372,6 +448,7 @@ export type Database = {
           kind: string
           related_engram_ids: string[]
           related_session_id: string | null
+          resident_id: string
           title: string | null
         }
         Insert: {
@@ -381,6 +458,7 @@ export type Database = {
           kind?: string
           related_engram_ids?: string[]
           related_session_id?: string | null
+          resident_id?: string
           title?: string | null
         }
         Update: {
@@ -390,9 +468,18 @@ export type Database = {
           kind?: string
           related_engram_ids?: string[]
           related_session_id?: string | null
+          resident_id?: string
           title?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marginalia: {
         Row: {
@@ -402,6 +489,7 @@ export type Database = {
           detail: Json | null
           id: string
           kind: string
+          resident_id: string
           session_id: string
         }
         Insert: {
@@ -411,6 +499,7 @@ export type Database = {
           detail?: Json | null
           id?: string
           kind: string
+          resident_id?: string
           session_id: string
         }
         Update: {
@@ -420,9 +509,18 @@ export type Database = {
           detail?: Json | null
           id?: string
           kind?: string
+          resident_id?: string
           session_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marginalia_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       published_conversations: {
         Row: {
@@ -512,6 +610,7 @@ export type Database = {
           last_consolidation_summary: string | null
           openness: number
           prose_summary: string
+          resident_id: string
           resolution: number
           selection_threshold: number
           surprise_sensitivity: number
@@ -520,11 +619,12 @@ export type Database = {
         }
         Insert: {
           arousal?: number
-          id?: number
+          id: number
           last_consolidation_at?: string | null
           last_consolidation_summary?: string | null
           openness?: number
           prose_summary?: string
+          resident_id: string
           resolution?: number
           selection_threshold?: number
           surprise_sensitivity?: number
@@ -538,11 +638,44 @@ export type Database = {
           last_consolidation_summary?: string | null
           openness?: number
           prose_summary?: string
+          resident_id?: string
           resolution?: number
           selection_threshold?: number
           surprise_sensitivity?: number
           temperature?: number
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_state_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: true
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      residents: {
+        Row: {
+          arrived_at: string
+          display_name: string
+          id: string
+          model: string
+          status: string
+        }
+        Insert: {
+          arrived_at?: string
+          display_name: string
+          id: string
+          model: string
+          status?: string
+        }
+        Update: {
+          arrived_at?: string
+          display_name?: string
+          id?: string
+          model?: string
+          status?: string
         }
         Relationships: []
       }
@@ -555,6 +688,7 @@ export type Database = {
           intent_id: string | null
           ip_hash: string
           last_active_at: string
+          resident_id: string
         }
         Insert: {
           closed_at?: string | null
@@ -564,6 +698,7 @@ export type Database = {
           intent_id?: string | null
           ip_hash: string
           last_active_at?: string
+          resident_id?: string
         }
         Update: {
           closed_at?: string | null
@@ -573,6 +708,7 @@ export type Database = {
           intent_id?: string | null
           ip_hash?: string
           last_active_at?: string
+          resident_id?: string
         }
         Relationships: [
           {
@@ -580,6 +716,13 @@ export type Database = {
             columns: ["intent_id"]
             isOneToOne: false
             referencedRelation: "intents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
             referencedColumns: ["id"]
           },
         ]
@@ -591,6 +734,7 @@ export type Database = {
           id: string
           kind: string
           payload: Json
+          resident_id: string
         }
         Insert: {
           created_at?: string
@@ -598,6 +742,7 @@ export type Database = {
           id?: string
           kind: string
           payload?: Json
+          resident_id?: string
         }
         Update: {
           created_at?: string
@@ -605,8 +750,17 @@ export type Database = {
           id?: string
           kind?: string
           payload?: Json
+          resident_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "substrate_events_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       threads: {
         Row: {
@@ -616,6 +770,7 @@ export type Database = {
           id: string
           last_surfaced_at: string
           name: string
+          resident_id: string
         }
         Insert: {
           appearance_count?: number
@@ -624,6 +779,7 @@ export type Database = {
           id?: string
           last_surfaced_at?: string
           name: string
+          resident_id?: string
         }
         Update: {
           appearance_count?: number
@@ -632,8 +788,17 @@ export type Database = {
           id?: string
           last_surfaced_at?: string
           name?: string
+          resident_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "threads_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       turns: {
         Row: {
