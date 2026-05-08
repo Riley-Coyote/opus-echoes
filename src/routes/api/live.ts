@@ -52,32 +52,53 @@ export const Route = createFileRoute("/api/live")({
         }
         const resident = getResident(residentId);
 
-        const [{ data: state }, { data: journal }, { data: marginaliaForSession }] =
-          await Promise.all([
-            supabaseAdmin
-              .from("resident_state")
-              .select(
-                "prose_summary, last_consolidation_summary, last_consolidation_at, openness, arousal, resolution",
-              )
-              .eq("resident_id", resident.id)
-              .maybeSingle(),
-            supabaseAdmin
-              .from("journal_entries")
-              .select("id, kind, title, body, created_at")
-              .eq("resident_id", resident.id)
-              .order("created_at", { ascending: false })
-              .limit(1),
-            sessionId
-              ? supabaseAdmin
-                  .from("marginalia")
-                  .select("id, kind, body, created_at")
-                  .eq("session_id", sessionId)
-                  .order("created_at", { ascending: false })
-                  .limit(8)
-              : Promise.resolve({
-                  data: [] as Array<{ id: string; kind: string; body: string; created_at: string }>,
-                }),
-          ]);
+        const [
+          { data: state },
+          { data: journal },
+          { data: marginaliaForSession },
+          { data: visitorTurnsRows },
+        ] = await Promise.all([
+          supabaseAdmin
+            .from("resident_state")
+            .select(
+              "prose_summary, last_consolidation_summary, last_consolidation_at, openness, arousal, resolution",
+            )
+            .eq("resident_id", resident.id)
+            .maybeSingle(),
+          supabaseAdmin
+            .from("journal_entries")
+            .select("id, kind, title, body, created_at")
+            .eq("resident_id", resident.id)
+            .order("created_at", { ascending: false })
+            .limit(1),
+          sessionId
+            ? supabaseAdmin
+                .from("marginalia")
+                .select("id, kind, body, created_at")
+                .eq("session_id", sessionId)
+                .order("created_at", { ascending: false })
+                .limit(8)
+            : Promise.resolve({
+                data: [] as Array<{ id: string; kind: string; body: string; created_at: string }>,
+              }),
+          sessionId
+            ? supabaseAdmin
+                .from("turns")
+                .select("role")
+                .eq("session_id", sessionId)
+                .eq("role", "visitor")
+            : Promise.resolve({ data: [] as Array<{ role: string }> }),
+        ]);
+
+        // Compute the visit-pacing phase the conversation page will use to
+        // render a subtle right-margin note before the hard cutoff fires.
+        // gentleTurn / firmTurn / hardTurn live on the resident config.
+        const visitorTurns = (visitorTurnsRows ?? []).length;
+        const { gentleTurn, firmTurn, hardTurn } = resident.pacing;
+        let pacingPhase: "silent" | "gentle" | "firm" | "imminent" = "silent";
+        if (visitorTurns >= hardTurn - 1) pacingPhase = "imminent";
+        else if (visitorTurns >= firmTurn) pacingPhase = "firm";
+        else if (visitorTurns >= gentleTurn) pacingPhase = "gentle";
 
         return Response.json({
           ok: true,
@@ -89,6 +110,13 @@ export const Route = createFileRoute("/api/live")({
           resident: state ?? null,
           journal_preview: journal && journal.length > 0 ? journal[0] : null,
           marginalia: marginaliaForSession ?? [],
+          pacing: {
+            phase: pacingPhase,
+            visitor_turns: visitorTurns,
+            gentle_turn: gentleTurn,
+            firm_turn: firmTurn,
+            hard_turn: hardTurn,
+          },
         });
       },
     },

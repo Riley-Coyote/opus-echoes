@@ -963,37 +963,49 @@ window.addEventListener('load',buildFramePath);
 <div class="share-dialog" id="shareDialog" hidden role="dialog" aria-modal="true" aria-labelledby="shareDialogTitle">
   <div class="share-dialog-backdrop" data-dismiss></div>
   <div class="share-dialog-card" role="document">
-    <!-- Step 1: ask whether to share -->
+    <!-- Step: visitor-initiated set-down (asks first) -->
     <section class="share-step share-step--ask" data-step="ask">
       <div class="share-eyebrow">Set Down</div>
-      <h2 class="share-h" id="shareDialogTitle">Would You Like to Share This Conversation?</h2>
-      <p class="share-lead">A short, public link anyone with the URL can read. Your messages will be lightly redacted (names, contacts, dates). The resident's words appear unchanged. You can revoke the link any time you return.</p>
+      <h2 class="share-h" id="shareDialogTitle">Keep a copy of this conversation?</h2>
+      <p class="share-lead">A short, public link anyone with the URL can read. Your messages are lightly redacted (names, contacts, dates); the resident's words appear unchanged. You can revoke the link any time you return.</p>
       <label class="share-label" for="shareNote">A note (optional)</label>
-      <textarea class="share-note-input" id="shareNote" rows="2" maxlength="280" placeholder="Why are you sharing this?"></textarea>
+      <textarea class="share-note-input" id="shareNote" rows="2" maxlength="280" placeholder="Why are you keeping this?"></textarea>
       <div class="share-actions">
         <button type="button" class="share-btn-secondary" data-share-action="leave">Take My Leave</button>
-        <button type="button" class="share-btn-primary" data-share-action="share">Share Conversation</button>
+        <button type="button" class="share-btn-primary" data-share-action="share">Save &amp; Share</button>
       </div>
     </section>
-    <!-- Step 2: confirmed — show URL -->
+    <!-- Step: resident closed the conversation; auto-creating the share -->
+    <section class="share-step share-step--auto" data-step="auto" hidden>
+      <div class="share-eyebrow">Set Down</div>
+      <h2 class="share-h">This conversation has been set down.</h2>
+      <p class="share-lead" id="shareAutoLead">Saving a copy for you. A moment…</p>
+      <div class="share-actions">
+        <button type="button" class="share-btn-secondary" data-share-action="leave">Take My Leave</button>
+      </div>
+    </section>
+    <!-- Step: confirmed — show URL + download + copy + revoke + leave -->
     <section class="share-step share-step--done" data-step="done" hidden>
-      <div class="share-eyebrow">Shared</div>
-      <h2 class="share-h">Your Conversation Has a Link</h2>
-      <p class="share-lead">Send it to whoever you'd like. Anyone with the URL can read it.</p>
+      <div class="share-eyebrow" id="shareDoneEyebrow">Saved</div>
+      <h2 class="share-h" id="shareDoneTitle">Your conversation has a link.</h2>
+      <p class="share-lead" id="shareDoneLead">Open it anywhere. Send it to whoever you'd like. Anyone with the URL can read it. You can also download a self-contained HTML file that opens offline.</p>
       <div class="share-url-row">
         <input type="text" class="share-url-input" id="shareUrl" readonly aria-label="Shareable URL"/>
         <button type="button" class="share-btn-secondary share-btn-copy" data-share-action="copy">Copy</button>
       </div>
       <div class="share-actions share-actions--done">
         <button type="button" class="share-btn-tertiary" data-share-action="revoke">Revoke Link</button>
-        <button type="button" class="share-btn-primary" data-share-action="leave">Take My Leave</button>
+        <div class="share-actions-pair">
+          <button type="button" class="share-btn-secondary" data-share-action="download">Download HTML</button>
+          <button type="button" class="share-btn-primary" data-share-action="leave">Take My Leave</button>
+        </div>
       </div>
     </section>
-    <!-- Step 3: error/revoked -->
+    <!-- Step: error / revoked -->
     <section class="share-step share-step--message" data-step="message" hidden>
       <div class="share-eyebrow" id="shareMessageEyebrow">Note</div>
-      <h2 class="share-h" id="shareMessageTitle">Something Went Wrong</h2>
-      <p class="share-lead" id="shareMessageBody">The link could not be created. You can still leave; the conversation is set down.</p>
+      <h2 class="share-h" id="shareMessageTitle">Something went wrong.</h2>
+      <p class="share-lead" id="shareMessageBody">The link could not be created. You can still take your leave; the conversation is set down.</p>
       <div class="share-actions">
         <button type="button" class="share-btn-secondary" data-share-action="leave">Take My Leave</button>
       </div>
@@ -1016,7 +1028,8 @@ window.addEventListener('load',buildFramePath);
 .share-note-input:focus{border-color:var(--rule)}
 .share-note-input::placeholder{color:var(--quiet)}
 .share-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
-.share-actions--done{margin-top:18px;justify-content:space-between;align-items:center}
+.share-actions--done{margin-top:18px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.share-actions-pair{display:flex;gap:10px;align-items:center}
 .share-btn-primary,.share-btn-secondary,.share-btn-tertiary{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.16em;cursor:pointer;transition:border-color 0.18s var(--ease),color 0.18s var(--ease),background 0.18s var(--ease)}
 .share-btn-primary{padding:11px 18px;border:1px solid var(--rule);border-radius:7px;background:rgba(255,255,255,0.02);color:var(--ink)}
 .share-btn-primary:hover{border-color:var(--state-soft);background:rgba(130,180,132,0.04)}
@@ -1033,9 +1046,22 @@ window.addEventListener('load',buildFramePath);
   .share-h{font-size:26px}
   .share-actions{flex-direction:column-reverse;gap:8px}
   .share-actions--done{flex-direction:column;align-items:stretch}
+  .share-actions-pair{flex-direction:column-reverse;gap:8px}
   .share-btn-primary,.share-btn-secondary{width:100%;text-align:center}
   .share-url-row{flex-direction:column}
 }
+
+/* Composer: read-only state. Set after the conversation has been set down
+   (by visitor, by resident's <set-down/>, or by the hard cutoff). The field
+   is disabled, the placeholder explains what happened, the breathing-pool
+   animation pauses so the page reads as "this conversation is closed" at a
+   glance. */
+.composer.is-readonly{opacity:0.78;cursor:default}
+.composer.is-readonly::before{animation-play-state:paused;opacity:0.4}
+.composer.is-readonly .composer-field{cursor:default;color:var(--quiet)}
+.composer.is-readonly .composer-field::placeholder{color:var(--quiet);font-style:italic}
+.composer.is-readonly .composer-send{opacity:0.4;cursor:default;pointer-events:none}
+.composer.is-readonly .composer-foot{border-top-color:var(--hairline-whisper)}
 </style>
 
 </body>

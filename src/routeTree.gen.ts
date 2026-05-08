@@ -39,6 +39,7 @@ import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
+import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
@@ -194,6 +195,11 @@ const ApiArtRoute = ApiArtRouteImport.update({
   path: '/api/art',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
+  id: '/$token/download',
+  path: '/$token/download',
+  getParentRoute: () => ApiShareRoute,
+} as any)
 const ApiPublicHooksSweepSessionsRoute =
   ApiPublicHooksSweepSessionsRouteImport.update({
     id: '/api/public/hooks/sweep-sessions',
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
@@ -323,6 +331,7 @@ export interface FileRoutesById {
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   id:
     | '__root__'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
@@ -684,6 +696,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiArtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/share/$token/download': {
+      id: '/api/share/$token/download'
+      path: '/$token/download'
+      fullPath: '/api/share/$token/download'
+      preLoaderRoute: typeof ApiShareTokenDownloadRouteImport
+      parentRoute: typeof ApiShareRoute
+    }
     '/api/public/hooks/sweep-sessions': {
       id: '/api/public/hooks/sweep-sessions'
       path: '/api/public/hooks/sweep-sessions'
@@ -716,10 +735,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface ApiShareRouteChildren {
+  ApiShareTokenDownloadRoute: typeof ApiShareTokenDownloadRoute
   ApiShareTokenOgSvgRoute: typeof ApiShareTokenOgSvgRoute
 }
 
 const ApiShareRouteChildren: ApiShareRouteChildren = {
+  ApiShareTokenDownloadRoute: ApiShareTokenDownloadRoute,
   ApiShareTokenOgSvgRoute: ApiShareTokenOgSvgRoute,
 }
 

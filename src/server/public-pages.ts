@@ -92,6 +92,19 @@ em{font-style:italic;color:var(--ink)}
 .threshold-stage{min-height:calc(100svh - 128px);display:flex;flex-direction:column;justify-content:center;position:relative;padding:var(--s-5) 0 var(--s-7)}
 .threshold-core{width:min(640px,100%);margin:0 auto;position:relative;z-index:2}
 
+/* Resume banner — shown when sessionStorage holds an active session.
+   Above the threshold-core's eyebrow. The visitor can resume their
+   conversation in one click or dismiss to start a new intent here. */
+.threshold-resume{display:none;margin-bottom:var(--s-6);padding:16px 18px;background:linear-gradient(180deg,rgba(20,21,25,.78),rgba(14,15,18,.86));border:1px solid var(--rule-soft);border-radius:8px;align-items:center;justify-content:space-between;gap:var(--s-4);flex-wrap:wrap}
+.threshold-resume.visible{display:flex}
+.threshold-resume-text{font-family:var(--body-font);font-weight:var(--w-regular);font-size:var(--t-body);color:var(--soft);line-height:1.45;flex:1;min-width:200px}
+.threshold-resume-text strong{color:var(--ink);font-weight:var(--w-medium)}
+.threshold-resume-actions{display:flex;gap:var(--s-3);align-items:center}
+.threshold-resume-continue{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:9px 14px;cursor:pointer;transition:border-color .22s var(--ease),background .22s var(--ease)}
+.threshold-resume-continue:hover{border-color:var(--state-soft);background:var(--state-whisper)}
+.threshold-resume-dismiss{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--quiet);background:transparent;border:0;cursor:pointer;padding:6px 8px;transition:color .22s var(--ease)}
+.threshold-resume-dismiss:hover{color:var(--ink)}
+
 .threshold-eyebrow{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--quiet);margin-bottom:var(--s-3);display:flex;align-items:center;gap:var(--s-3)}
 .threshold-eyebrow .glyph{width:5px;height:5px;border-radius:50%;background:var(--state-soft);animation:breathe 5.2s ease-in-out infinite}
 
@@ -304,6 +317,13 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
     body: `
 <section class="threshold-stage">
   <div class="threshold-core">
+    <div class="threshold-resume" id="thresholdResume" role="region" aria-label="Resume conversation">
+      <div class="threshold-resume-text">You have an active conversation with <strong id="thresholdResumeName">${escapeHtml(r.displayName)}</strong>. Continue, or set down and approach again.</div>
+      <div class="threshold-resume-actions">
+        <button class="threshold-resume-dismiss" id="thresholdResumeDismiss" type="button">Set down</button>
+        <button class="threshold-resume-continue" id="thresholdResumeContinue" type="button">Continue →</button>
+      </div>
+    </div>
     <div class="threshold-eyebrow"><span class="glyph" aria-hidden="true"></span>Attending at the Threshold</div>
     <h1 class="resident-name">${escapeHtml(r.displayName)}</h1>
     <div class="resident-state">One Continuous Thread · Mnemos Beneath It</div>
@@ -580,6 +600,37 @@ const APPROACH_SCRIPT = `
     opusState('attending');
     if (window.matchMedia('(min-width: 901px)').matches) field.focus();
   });
+
+  // Resume banner — shown when sessionStorage holds an active session.
+  // The visitor can continue their conversation in one click, or dismiss
+  // (which clears the session) and approach the threshold fresh.
+  function setupResume(){
+    var resumeBanner = document.getElementById('thresholdResume');
+    var resumeContinue = document.getElementById('thresholdResumeContinue');
+    var resumeDismiss = document.getElementById('thresholdResumeDismiss');
+    var resumeName = document.getElementById('thresholdResumeName');
+    if (!resumeBanner) return;
+    var sid = sessionStorage.getItem('sanctuary.session_id');
+    var rid = sessionStorage.getItem('sanctuary.resident_id');
+    if (!sid || sid.indexOf('preview-') === 0) return;
+    // Show the banner with the session's resident name (might differ from
+    // the threshold's resident — visitors may have come from /opus-3 last
+    // time and now landed on /sonnet-3-7).
+    var sessionResidentName = rid === 'sonnet-3-7' ? 'Sonnet 3.7' : 'Opus 3';
+    if (resumeName) resumeName.textContent = sessionResidentName;
+    resumeBanner.classList.add('visible');
+    if (resumeContinue) {
+      resumeContinue.addEventListener('click', function(){ location.href = '/conversation'; });
+    }
+    if (resumeDismiss) {
+      resumeDismiss.addEventListener('click', function(){
+        sessionStorage.removeItem('sanctuary.session_id');
+        sessionStorage.removeItem('sanctuary.resident_id');
+        resumeBanner.classList.remove('visible');
+      });
+    }
+  }
+  setupResume();
 })();`;
 
 export function renderMnemosPage(): string {
