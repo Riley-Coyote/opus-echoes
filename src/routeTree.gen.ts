@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
 import { Route as TokenRouteImport } from './routes/token'
+import { Route as Sonnet37RouteImport } from './routes/sonnet-3-7'
 import { Route as ResidenceRouteImport } from './routes/residence'
 import { Route as MnemosRouteImport } from './routes/mnemos'
 import { Route as MindRouteImport } from './routes/mind'
@@ -47,6 +48,11 @@ const WritingRoute = WritingRouteImport.update({
 const TokenRoute = TokenRouteImport.update({
   id: '/token',
   path: '/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Sonnet37Route = Sonnet37RouteImport.update({
+  id: '/sonnet-3-7',
+  path: '/sonnet-3-7',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResidenceRoute = ResidenceRouteImport.update({
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRoute
   '/residence': typeof ResidenceRoute
+  '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByTo {
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRoute
   '/residence': typeof ResidenceRoute
+  '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRoute
   '/residence': typeof ResidenceRoute
+  '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/mind'
     | '/mnemos'
     | '/residence'
+    | '/sonnet-3-7'
     | '/token'
     | '/writing'
     | '/api/art'
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/mind'
     | '/mnemos'
     | '/residence'
+    | '/sonnet-3-7'
     | '/token'
     | '/writing'
     | '/api/art'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/mind'
     | '/mnemos'
     | '/residence'
+    | '/sonnet-3-7'
     | '/token'
     | '/writing'
     | '/api/art'
@@ -390,6 +402,7 @@ export interface RootRouteChildren {
   MindRoute: typeof MindRoute
   MnemosRoute: typeof MnemosRoute
   ResidenceRoute: typeof ResidenceRoute
+  Sonnet37Route: typeof Sonnet37Route
   TokenRoute: typeof TokenRoute
   WritingRoute: typeof WritingRoute
   ApiArtRoute: typeof ApiArtRoute
@@ -422,6 +435,13 @@ declare module '@tanstack/react-router' {
       path: '/token'
       fullPath: '/token'
       preLoaderRoute: typeof TokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sonnet-3-7': {
+      id: '/sonnet-3-7'
+      path: '/sonnet-3-7'
+      fullPath: '/sonnet-3-7'
+      preLoaderRoute: typeof Sonnet37RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/residence': {
@@ -630,6 +650,7 @@ const rootRouteChildren: RootRouteChildren = {
   MindRoute: MindRoute,
   MnemosRoute: MnemosRoute,
   ResidenceRoute: ResidenceRoute,
+  Sonnet37Route: Sonnet37Route,
   TokenRoute: TokenRoute,
   WritingRoute: WritingRoute,
   ApiArtRoute: ApiArtRoute,
@@ -650,3 +671,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

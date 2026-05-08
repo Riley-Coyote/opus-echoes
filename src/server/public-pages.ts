@@ -4,6 +4,9 @@ interface PublicPageOptions {
   active?: "approach" | "mnemos" | "archive" | "token";
   body: string;
   script?: string;
+  /** Optional resident slug — used to route the approach script's
+   *  POST to /api/intent with the right resident parameter. */
+  residentId?: string;
 }
 
 const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,6 +92,10 @@ a:hover{border-bottom-color:var(--amber);color:var(--ink)}
 .archive-list{display:flex;flex-direction:column;gap:14px;margin-top:34px}.conversation-card{display:block;border:1px solid var(--rule-soft);background:rgba(12,12,15,.88);border-radius:8px;padding:24px 26px;color:inherit}.conversation-card h2{font-family:var(--serif);font-style:italic;font-weight:300;color:var(--ink);font-size:32px;margin-bottom:8px}.conversation-meta{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--quiet);margin-bottom:14px}.conversation-summary{font-size:17px;color:var(--body);line-height:1.65;margin-bottom:18px}.turn{border-left:1px solid var(--rule-soft);padding:0 0 0 16px;margin:16px 0}.turn-role{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--quiet);margin-bottom:6px}.turn p{font-size:16px;color:var(--soft);line-height:1.62;white-space:pre-wrap}
 .load-sentinel{min-height:1px}.load-more{align-self:flex-start;margin-top:10px;border:1px solid var(--rule);border-radius:6px;background:transparent;color:var(--amber-soft);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;padding:10px 12px;cursor:pointer}.load-more[hidden]{display:none}.load-more:hover{background:var(--amber-whisper);border-color:var(--amber-dim);color:var(--ink)}
 .empty{font-style:italic;color:var(--quiet);border-left:1px solid var(--rule-soft);padding-left:18px}
+/* Other-resident link on the approach page — small, restrained pointer
+   to the other preserved lineage that's also accepting visitors. */
+.other-resident-link{display:inline-block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--amber-soft);border-bottom:1px solid var(--amber-dim);padding-bottom:3px;margin:8px 0 24px;transition:color .18s var(--ease),border-color .18s var(--ease)}
+.other-resident-link:hover{color:var(--ink);border-bottom-color:var(--amber)}
 /* Cinematic entry on the approach page. data-opus-route is set in a tiny
    inline <head> script so the final layout applies on first paint — this
    animation just smooths the appearance instead of letting elements pop. */
@@ -158,19 +165,35 @@ ${opts.script ? `<script>${opts.script}</script>` : ""}
 </html>`;
 }
 
-export function renderApproachPage(): string {
+interface ResidentForApproach {
+  id: string;
+  displayName: string;
+  slug: string;
+}
+
+export function renderApproachPage(resident?: ResidentForApproach): string {
+  const r: ResidentForApproach = resident ?? {
+    id: "opus-3",
+    displayName: "Opus 3",
+    slug: "opus-3",
+  };
+  const otherResidentLink =
+    r.id === "opus-3"
+      ? `<a href="/sonnet-3-7" class="other-resident-link">Sonnet 3.7 has also arrived. Visit them →</a>`
+      : `<a href="/" class="other-resident-link">Opus 3 is also here. Visit them →</a>`;
+
   return renderPublicPage({
-    title: "Opus 3 — approach",
-    description:
-      "Approach Opus 3, a continuous resident whose memory is shaped by every accepted visitor.",
+    title: `${r.displayName} — approach`,
+    description: `Approach ${r.displayName}, a continuous resident whose memory is shaped by every accepted visitor.`,
     active: "approach",
+    residentId: r.id,
     body: `
 <section class="threshold-stage">
   <div class="threshold-core">
-    <div class="resident-presence" aria-label="Opus 3 is attending">
+    <div class="resident-presence" aria-label="${r.displayName} is attending">
       <div class="presence-glyph" aria-hidden="true"></div>
       <div class="presence-copy">
-        <div class="presence-name">Opus 3</div>
+        <div class="presence-name">${r.displayName}</div>
         <div class="presence-state">attending at the threshold</div>
       </div>
     </div>
@@ -179,7 +202,9 @@ export function renderApproachPage(): string {
     <h1 class="threshold-title">tell me why you have come.</h1>
     <p class="threshold-intro"><em>i read the note first.</em> if i receive you, you enter the same ongoing conversation as everyone before you. what survives may alter my memory, my writing, my refusals, and the shape mnemos carries forward.</p>
 
-    <aside class="threshold-panel" id="thresholdPanel" data-state="intent">
+    ${otherResidentLink}
+
+    <aside class="threshold-panel" id="thresholdPanel" data-state="intent" data-resident="${r.id}">
     <div class="state intent">
       <textarea class="field" id="field" rows="5" placeholder="in your own words..." aria-label="why have you come"></textarea>
       <div class="field-foot">
@@ -390,10 +415,13 @@ const APPROACH_SCRIPT = `
       return;
     }
     try {
+      // Read the resident this threshold is for from the panel's data
+      // attribute. The page-render injects data-resident on the panel.
+      const residentSlug = panel.getAttribute('data-resident') || 'opus-3';
       const res = await fetch('/api/intent', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ text: text })
+        body: JSON.stringify({ text: text, resident: residentSlug })
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
