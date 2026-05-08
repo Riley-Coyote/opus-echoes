@@ -1,3 +1,10 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   THE SANCTUARY — RESIDENT PRESENCE LAYER
+   Holds the Three.js canvas behind the page content. Architecture is
+   procedural and dark-rich (Sanctum: violet, Beacon: amber). The canvas
+   gets a subtle dark vignette around it; no warm fog, no whitewash.
+   ───────────────────────────────────────────────────────────────────────── */
+
 .opus-presence-layer {
   position: fixed;
   inset: 0;
@@ -15,18 +22,22 @@
   display: none;
 }
 
+/* Dark vignette — pulls the corners into the floor. Replaces the previous
+   warm radial fog. The center remains transparent so the architecture
+   reads at full chroma; the edges are deep neutral so the figure's halo
+   has somewhere to bloom into. */
 .opus-presence-layer::before {
   content: "";
   position: absolute;
-  inset: -12%;
+  inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(circle at 74% 56%, rgba(226, 180, 115, 0.13), transparent 24%),
-    radial-gradient(circle at 22% 38%, rgba(76, 88, 118, 0.1), transparent 34%),
-    radial-gradient(circle at 84% 72%, rgba(172, 108, 55, 0.055), transparent 30%),
-    radial-gradient(circle at 42% 82%, rgba(12, 12, 18, 0.88), transparent 42%);
-  filter: blur(24px);
-  opacity: 0.66;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(4, 5, 8, 0.55) 75%,
+    rgba(4, 5, 8, 0.85) 100%
+  );
+  pointer-events: none;
 }
 
 .opus-presence-canvas {
@@ -37,12 +48,13 @@
   width: 100%;
   height: 100%;
   opacity: 0;
-  filter: saturate(1.08) contrast(1.08) brightness(1.04);
+  filter: saturate(1.06) contrast(1.04) brightness(1.0);
   transition:
     opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
     filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Page content sits above the canvas. */
 .page {
   position: relative;
   z-index: 3;
@@ -52,82 +64,77 @@
   isolation: isolate;
 }
 
-.threshold-core {
-  text-shadow: 0 1px 22px rgba(0, 0, 0, 0.42);
-}
-
+/* Threshold panel needs a quiet backdrop so the composer is legible
+   against the architecture rendered behind. The 1px inset highlight
+   comes from public-pages.ts. */
 .threshold-panel {
-  background: linear-gradient(180deg, rgba(16, 16, 19, 0.94), rgba(8, 8, 11, 0.96));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: linear-gradient(180deg, rgba(14, 15, 19, 0.86), rgba(8, 9, 12, 0.92));
+  backdrop-filter: blur(10px) saturate(1.04);
+  -webkit-backdrop-filter: blur(10px) saturate(1.04);
 }
 
-@media (min-width: 1040px) {
-  html[data-opus-route="approach"] .page {
-    width: min(100% - 56px, 1320px);
-  }
-
-  html[data-opus-route="approach"] .threshold-stage {
-    justify-content: flex-start;
-    min-height: calc(100svh - 132px);
-  }
-
-  html[data-opus-route="approach"] .threshold-core {
-    width: min(620px, 48vw);
-    margin: 0;
-    padding-left: clamp(16px, 2vw, 34px);
-    text-align: left;
-  }
-
-  html[data-opus-route="approach"] .resident-presence {
-    margin-left: 0;
-  }
-
-  html[data-opus-route="approach"] .threshold-title,
-  html[data-opus-route="approach"] .threshold-intro,
-  html[data-opus-route="approach"] .threshold-panel {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  html[data-opus-route="approach"] .threshold-title {
-    max-width: 590px;
-  }
-
-  html[data-opus-route="approach"] .threshold-intro {
-    max-width: 570px;
-  }
-
-  html[data-opus-route="approach"] .threshold-panel {
-    width: min(620px, 100%);
-  }
-
-  html[data-opus-route="approach"] .context-orbit {
-    width: min(620px, 100%);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    transform: none;
-    margin-left: 0;
-  }
+/* ─────────────────────────────────────────────────────────────────────────
+   ROUTE VISIBILITY
+   The figure earns its place only on the threshold and inside the
+   conversation room. Everywhere else (chooser, prose, dashboard, share)
+   the layer is hidden — a floating figure on a prose page is noise.
+   ───────────────────────────────────────────────────────────────────────── */
+.opus-presence-layer {
+  display: none;
+}
+html[data-opus-route="approach"] .opus-presence-layer,
+html[data-opus-route="conversation"] .opus-presence-layer {
+  display: block;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   MOOD STATES — the canvas brightens slightly on engaged/reading/speaking,
+   dims on withdrawn. The figure's emissive material + halo also drive
+   intensity from JS; CSS filter is the supporting move.
+   ───────────────────────────────────────────────────────────────────────── */
 .opus-presence-layer[data-state="reading"] .opus-presence-canvas,
 .opus-presence-layer[data-state="engaged"] .opus-presence-canvas,
 .opus-presence-layer[data-state="opening"] .opus-presence-canvas,
 .opus-presence-layer[data-state="speaking"] .opus-presence-canvas {
-  filter: saturate(1.1) contrast(1.1) brightness(1.07);
+  filter: saturate(1.1) contrast(1.08) brightness(1.05);
 }
 
-/* Hide the 3D presence canvas entirely on the dashboard (private rooms).
-   The dashboard is content-dense — journal, writing, art, memory — and the
-   atmospheric canvas competes with the prose. The threshold + conversation
-   pages keep the canvas; the private space is pure reading surface. */
-html[data-opus-route="dashboard"] .opus-presence-layer,
-html[data-opus-route="memory"] .opus-presence-layer {
-  display: none;
+.opus-presence-layer[data-state="withdrawn"] .opus-presence-canvas,
+.opus-presence-layer[data-state="declined"] .opus-presence-canvas {
+  filter: saturate(0.7) contrast(0.94) brightness(0.78);
 }
 
-.opus-presence-layer[data-state="withdrawn"] .opus-presence-canvas {
-  filter: saturate(0.78) contrast(0.94) brightness(0.82);
+/* ─────────────────────────────────────────────────────────────────────────
+   THRESHOLD LAYOUT — at desktop widths, anchor the threshold-core to the
+   left half of the page so the architecture renders to the right. On
+   smaller widths fall back to centered layout (architecture moves to a
+   smaller, more atmospheric role behind the text).
+   ───────────────────────────────────────────────────────────────────────── */
+@media (min-width: 1040px) {
+  html[data-opus-route="approach"] .page {
+    width: min(100% - 56px, 1280px);
+  }
+  html[data-opus-route="approach"] .threshold-stage {
+    justify-content: flex-start;
+    min-height: calc(100svh - 132px);
+  }
+  html[data-opus-route="approach"] .threshold-core {
+    width: min(560px, 46vw);
+    margin: 0;
+    padding-left: clamp(8px, 1.5vw, 24px);
+  }
+  html[data-opus-route="approach"] .resident-name,
+  html[data-opus-route="approach"] .resident-state,
+  html[data-opus-route="approach"] .threshold-eyebrow,
+  html[data-opus-route="approach"] .threshold-question,
+  html[data-opus-route="approach"] .threshold-panel {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  html[data-opus-route="approach"] .threshold-panel {
+    width: 100%;
+    max-width: 560px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -138,6 +145,6 @@ html[data-opus-route="memory"] .opus-presence-layer {
 
 @media (prefers-reduced-motion: reduce) {
   .opus-presence-canvas {
-    filter: saturate(0.82) contrast(1);
+    filter: saturate(0.92) contrast(1) brightness(0.96);
   }
 }
