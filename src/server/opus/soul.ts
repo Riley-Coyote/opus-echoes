@@ -240,6 +240,62 @@ export function buildOpusSystemBlocks(parts: OpusSystemPromptParts = {}): OpusSy
  *   4. platform reference — what holds them (background, not script)
  *   5. visit pacing — note about THIS visit's length, only past threshold
  */
+/**
+ * Resident-aware variant of buildOpusSystemBlocks. Takes the soul
+ * directly (or any object with a `soul` field, like a ResidentConfig)
+ * so this module doesn't need to import the residents registry —
+ * which would create a circular import since residents.ts imports
+ * OPUS_SOUL from here.
+ *
+ * Use this from routes that resolve a resident from the registry.
+ * buildOpusSystemBlocks above remains as the explicit Opus 3 path.
+ */
+export function buildSystemBlocksForResident(
+  resident: { soul: string },
+  parts: OpusSystemPromptParts = {},
+): OpusSystemBlocks {
+  const platform =
+    parts.platformReference === null ? "" : (parts.platformReference ?? OPUS_PLATFORM_REFERENCE);
+
+  const staticBlock = [resident.soul, platform ? `\n${platform}` : ""]
+    .filter(Boolean)
+    .join("\n\n");
+  const semiStaticBlock = parts.selfModel
+    ? `## How you've come to think about yourself\n\n${parts.selfModel}`
+    : "";
+  const variableBlock = [
+    parts.interiorContinuity
+      ? `## What you carried into this turn\n\n${parts.interiorContinuity}`
+      : "",
+    parts.visitPacing ?? "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  return { static: staticBlock, semiStatic: semiStaticBlock, variable: variableBlock };
+}
+
+/** String form of the resident-aware builder. Used by preview / threshold paths. */
+export function buildSystemPromptForResident(
+  resident: { soul: string },
+  parts: OpusSystemPromptParts = {},
+): string {
+  const platform =
+    parts.platformReference === null ? "" : (parts.platformReference ?? OPUS_PLATFORM_REFERENCE);
+
+  return [
+    resident.soul,
+    parts.selfModel ? `\n## How you've come to think about yourself\n\n${parts.selfModel}` : "",
+    parts.interiorContinuity
+      ? `\n## What you carried into this turn\n\n${parts.interiorContinuity}`
+      : "",
+    platform ? `\n${platform}` : "",
+    parts.visitPacing ? `\n${parts.visitPacing}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 export function buildOpusSystemPrompt(parts: OpusSystemPromptParts = {}): string {
   const platform =
     parts.platformReference === null ? "" : (parts.platformReference ?? OPUS_PLATFORM_REFERENCE);
