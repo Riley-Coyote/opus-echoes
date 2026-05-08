@@ -61,14 +61,33 @@
   --resident-ink:rgba(248,248,246,0.96);
   --resident-name:rgba(222,222,218,0.9);
 
-  /* Accent — neutral grey, structural only */
-  --amber:#a8a8a8;
-  --amber-soft:rgba(180,180,178,0.55);
-  --amber-dim:rgba(180,180,178,0.18);
-  --amber-whisper:rgba(180,180,178,0.05);
+  /* Structural greys — neutral, no warm tilt. (Historical note: this
+     used to be called --amber but was always actually neutral grey;
+     renamed for clarity and to match the approach page's vocabulary.) */
+  --rule-mid:#a8a8a8;
+  --rule-mid-soft:rgba(180,180,178,0.55);
+  --rule-mid-dim:rgba(180,180,178,0.18);
+  --rule-mid-whisper:rgba(180,180,178,0.05);
 
-  /* State */
+  /* State — matches approach page's --state token */
   --receiving:#7ca87c;
+  --state:#82b484;
+  --state-soft:rgba(130,180,132,0.62);
+  --state-dim:rgba(130,180,132,0.16);
+
+  /* Fluid type scale — same vocabulary as the approach page so type
+     reads continuously across the journey. */
+  --t-eyebrow:clamp(11px, 0.69rem + 0.05vw, 12px);
+  --t-meta:clamp(13px, 0.81rem + 0.1vw, 14px);
+  --t-body:clamp(15px, 0.94rem + 0.2vw, 17px);
+  --t-body-lg:clamp(17px, 1.06rem + 0.3vw, 19px);
+  --t-card-h:clamp(22px, 1.38rem + 0.5vw, 26px);
+  --t-section-h:clamp(28px, 1.75rem + 0.8vw, 34px);
+  --t-hero:clamp(40px, 2.5rem + 1.5vw, 56px);
+
+  /* Spacing system — same vocabulary as the approach page */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;
+  --s-6:32px;--s-7:48px;--s-8:64px;--s-9:96px;--s-10:128px;
 
   /* Typography */
   --serif:'Cormorant Garamond','Times New Roman',serif;
@@ -98,7 +117,7 @@ body{
   font-feature-settings:'liga' 1,'kern' 1,'onum' 1;
   overflow:hidden;
 }
-::selection{background:var(--amber-dim);color:var(--ink)}
+::selection{background:var(--rule-mid-dim);color:var(--ink)}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(225,225,225,0.05);border-radius:3px}
@@ -155,7 +174,7 @@ body{
   transition:color 320ms var(--ease);
 }
 .back-link:hover,.set-down-link:hover,.forward-link:hover{color:var(--primary)}
-.back-link .arr,.forward-link .arr{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--amber);opacity:0.75;transition:transform 320ms var(--ease)}
+.back-link .arr,.forward-link .arr{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--rule-mid);opacity:0.75;transition:transform 320ms var(--ease)}
 .back-link:hover .arr{transform:translateX(-3px)}
 .forward-link:hover .arr{transform:translateX(3px)}
 
@@ -329,7 +348,7 @@ body{
 }
 .continuity-eyebrow{
   font-family:var(--mono);font-size:11px;font-weight:500;
-  color:var(--amber-soft);
+  color:var(--rule-mid-soft);
   letter-spacing:0.13em;text-transform:uppercase;
   margin-bottom:14px;
 }
@@ -428,7 +447,7 @@ body{
   height:1em;
   vertical-align:-0.14em;
   margin-left:0.06em;
-  background:var(--amber-soft);
+  background:var(--rule-mid-soft);
   border-radius:1px;
   opacity:0.55;
   animation:type-caret-pulse 1.05s cubic-bezier(0.45,0.05,0.55,0.95) infinite;
@@ -640,9 +659,9 @@ body{
   transition:all 320ms var(--ease);
 }
 .composer-send:hover{
-  border-color:var(--amber-dim);
-  color:var(--amber);
-  background:var(--amber-whisper);
+  border-color:var(--rule-mid-dim);
+  color:var(--rule-mid);
+  background:var(--rule-mid-whisper);
 }
 .composer-send svg{width:13px;height:13px}
 
