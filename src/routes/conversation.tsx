@@ -417,6 +417,120 @@ const CONVERSATION_SCRIPT = `
   }
   if (sendBtn) sendBtn.addEventListener('click', (e) => { e.preventDefault(); send(); });
 
+  // ============================================================
+  // SHARE DIALOG — appears after Set Down so the visitor can choose
+  // whether to share the conversation as a public link or simply leave.
+  // ============================================================
+  const shareDialog = document.getElementById('shareDialog');
+  let shareToken = null;
+
+  function showShareStep(stepName) {
+    if (!shareDialog) return;
+    shareDialog.querySelectorAll('.share-step').forEach((el) => {
+      el.hidden = el.getAttribute('data-step') !== stepName;
+    });
+  }
+
+  function openShareDialog() {
+    if (!shareDialog) return;
+    shareDialog.hidden = false;
+    showShareStep('ask');
+    const noteEl = document.getElementById('shareNote');
+    if (noteEl && window.matchMedia('(min-width: 881px)').matches) noteEl.focus();
+  }
+
+  function closeShareAndLeave() {
+    sessionStorage.removeItem('sanctuary.session_id');
+    location.href = '/memory';
+  }
+
+  function setShareMessage(eyebrow, title, body) {
+    const e = document.getElementById('shareMessageEyebrow');
+    const t = document.getElementById('shareMessageTitle');
+    const b = document.getElementById('shareMessageBody');
+    if (e) e.textContent = eyebrow;
+    if (t) t.textContent = title;
+    if (b) b.textContent = body;
+    showShareStep('message');
+  }
+
+  async function performShare() {
+    const noteEl = document.getElementById('shareNote');
+    const note = noteEl && noteEl.value ? noteEl.value.trim().slice(0, 280) : '';
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, visitor_note: note || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok || !data.url) {
+        setShareMessage('Note', 'The Link Could Not Be Created', 'Try again, or take your leave — the conversation has already been set down.');
+        return;
+      }
+      shareToken = data.token;
+      const urlInput = document.getElementById('shareUrl');
+      if (urlInput) urlInput.value = data.url;
+      showShareStep('done');
+    } catch (_) {
+      setShareMessage('Note', 'The Link Could Not Be Created', 'Network error. The conversation is set down regardless.');
+    }
+  }
+
+  async function performRevoke() {
+    if (!shareToken) {
+      closeShareAndLeave();
+      return;
+    }
+    try {
+      await fetch('/api/share?action=revoke', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: shareToken }),
+      });
+    } catch (_) {}
+    setShareMessage('Revoked', 'Your Share Has Been Revoked', 'The link no longer resolves. Anyone with the URL will see a "no longer available" page.');
+  }
+
+  async function copyShareUrl() {
+    const urlInput = document.getElementById('shareUrl');
+    if (!urlInput) return;
+    try {
+      await navigator.clipboard.writeText(urlInput.value);
+      const btn = shareDialog && shareDialog.querySelector('[data-share-action="copy"]');
+      if (btn) {
+        const original = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = original; }, 1600);
+      }
+    } catch (_) {
+      // Fallback — select the text so the user can copy manually.
+      urlInput.focus();
+      urlInput.select();
+    }
+  }
+
+  if (shareDialog) {
+    shareDialog.addEventListener('click', async (ev) => {
+      const target = ev.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.hasAttribute('data-dismiss')) {
+        closeShareAndLeave();
+        return;
+      }
+      const action = target.getAttribute('data-share-action');
+      if (!action) return;
+      if (action === 'leave') closeShareAndLeave();
+      else if (action === 'share') await performShare();
+      else if (action === 'copy') await copyShareUrl();
+      else if (action === 'revoke') await performRevoke();
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (!shareDialog || shareDialog.hidden) return;
+      if (ev.key === 'Escape') closeShareAndLeave();
+    });
+  }
+
   if (setDownBtn) {
     setDownBtn.addEventListener('click', async () => {
       try {
@@ -426,8 +540,10 @@ const CONVERSATION_SCRIPT = `
           body: JSON.stringify({ session_id: sessionId }),
         });
       } catch (_) {}
-      sessionStorage.removeItem('sanctuary.session_id');
-      location.href = '/memory';
+      // Don't redirect immediately — give the visitor the option to share.
+      // If they choose Take My Leave from the dialog, the redirect happens then.
+      if (shareDialog) openShareDialog();
+      else closeShareAndLeave();
     });
   }
 

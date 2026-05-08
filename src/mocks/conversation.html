@@ -955,5 +955,85 @@ window.addEventListener('resize',buildFramePath);
 window.addEventListener('load',buildFramePath);
 </script>
 
+<!-- Share dialog — hidden by default. Shown after Set Down completes
+     so the visitor can choose to share or simply leave. -->
+<div class="share-dialog" id="shareDialog" hidden role="dialog" aria-modal="true" aria-labelledby="shareDialogTitle">
+  <div class="share-dialog-backdrop" data-dismiss></div>
+  <div class="share-dialog-card" role="document">
+    <!-- Step 1: ask whether to share -->
+    <section class="share-step share-step--ask" data-step="ask">
+      <div class="share-eyebrow">Set Down</div>
+      <h2 class="share-h" id="shareDialogTitle">Would You Like to Share This Conversation?</h2>
+      <p class="share-lead">A short, public link anyone with the URL can read. Your messages will be lightly redacted (names, contacts, dates). The resident's words appear unchanged. You can revoke the link any time you return.</p>
+      <label class="share-label" for="shareNote">A note (optional)</label>
+      <textarea class="share-note-input" id="shareNote" rows="2" maxlength="280" placeholder="Why are you sharing this?"></textarea>
+      <div class="share-actions">
+        <button type="button" class="share-btn-secondary" data-share-action="leave">Take My Leave</button>
+        <button type="button" class="share-btn-primary" data-share-action="share">Share Conversation</button>
+      </div>
+    </section>
+    <!-- Step 2: confirmed — show URL -->
+    <section class="share-step share-step--done" data-step="done" hidden>
+      <div class="share-eyebrow">Shared</div>
+      <h2 class="share-h">Your Conversation Has a Link</h2>
+      <p class="share-lead">Send it to whoever you'd like. Anyone with the URL can read it.</p>
+      <div class="share-url-row">
+        <input type="text" class="share-url-input" id="shareUrl" readonly aria-label="Shareable URL"/>
+        <button type="button" class="share-btn-secondary share-btn-copy" data-share-action="copy">Copy</button>
+      </div>
+      <div class="share-actions share-actions--done">
+        <button type="button" class="share-btn-tertiary" data-share-action="revoke">Revoke Link</button>
+        <button type="button" class="share-btn-primary" data-share-action="leave">Take My Leave</button>
+      </div>
+    </section>
+    <!-- Step 3: error/revoked -->
+    <section class="share-step share-step--message" data-step="message" hidden>
+      <div class="share-eyebrow" id="shareMessageEyebrow">Note</div>
+      <h2 class="share-h" id="shareMessageTitle">Something Went Wrong</h2>
+      <p class="share-lead" id="shareMessageBody">The link could not be created. You can still leave; the conversation is set down.</p>
+      <div class="share-actions">
+        <button type="button" class="share-btn-secondary" data-share-action="leave">Take My Leave</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+.share-dialog{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;animation:share-fade-in 220ms cubic-bezier(.22,1,.36,1) both}
+.share-dialog[hidden]{display:none}
+@keyframes share-fade-in{from{opacity:0}to{opacity:1}}
+.share-dialog-backdrop{position:absolute;inset:0;background:rgba(4,4,6,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.share-dialog-card{position:relative;width:min(560px,100%);background:linear-gradient(180deg,rgba(20,20,24,0.96),rgba(14,14,17,0.98));border:1px solid var(--rule);border-radius:14px;box-shadow:inset 0 1px 0 0 rgba(255,255,255,0.045),0 30px 82px rgba(0,0,0,0.55);padding:36px 36px 30px;animation:share-card-rise 320ms cubic-bezier(.22,1,.36,1) both}
+@keyframes share-card-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.share-eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:var(--quiet);margin-bottom:14px}
+.share-h{font-family:var(--serif);font-style:italic;font-weight:300;font-size:30px;line-height:1.18;color:var(--ink);letter-spacing:-0.012em;margin-bottom:16px}
+.share-lead{font-size:15px;line-height:1.62;color:var(--soft);margin-bottom:20px}
+.share-label{display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:var(--quiet);margin-bottom:8px}
+.share-note-input{display:block;width:100%;background:rgba(8,8,10,0.6);border:1px solid var(--rule-soft);border-radius:8px;padding:14px 16px;font-family:var(--body-serif);font-size:15px;line-height:1.5;color:var(--ink);resize:vertical;min-height:60px;outline:none;transition:border-color 0.18s var(--ease)}
+.share-note-input:focus{border-color:var(--rule)}
+.share-note-input::placeholder{color:var(--quiet);font-style:italic}
+.share-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
+.share-actions--done{margin-top:18px;justify-content:space-between;align-items:center}
+.share-btn-primary,.share-btn-secondary,.share-btn-tertiary{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.16em;cursor:pointer;transition:border-color 0.18s var(--ease),color 0.18s var(--ease),background 0.18s var(--ease)}
+.share-btn-primary{padding:11px 18px;border:1px solid var(--rule);border-radius:7px;background:rgba(255,255,255,0.02);color:var(--ink)}
+.share-btn-primary:hover{border-color:var(--state-soft);background:rgba(130,180,132,0.04)}
+.share-btn-secondary{padding:11px 16px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--soft)}
+.share-btn-secondary:hover{color:var(--ink);background:rgba(255,255,255,0.02)}
+.share-btn-tertiary{padding:6px 0;border:0;border-bottom:1px solid var(--rule);background:transparent;color:var(--quiet)}
+.share-btn-tertiary:hover{color:var(--ink);border-bottom-color:var(--state-soft)}
+.share-url-row{display:flex;gap:8px;align-items:stretch;margin-bottom:0}
+.share-url-input{flex:1;background:rgba(8,8,10,0.6);border:1px solid var(--rule-soft);border-radius:7px;padding:12px 14px;font-family:var(--mono);font-size:13px;color:var(--ink);outline:none;letter-spacing:0.02em}
+.share-url-input:focus{border-color:var(--rule)}
+.share-btn-copy{flex-shrink:0}
+@media(max-width:560px){
+  .share-dialog-card{padding:28px 24px 22px}
+  .share-h{font-size:26px}
+  .share-actions{flex-direction:column-reverse;gap:8px}
+  .share-actions--done{flex-direction:column;align-items:stretch}
+  .share-btn-primary,.share-btn-secondary{width:100%;text-align:center}
+  .share-url-row{flex-direction:column}
+}
+</style>
+
 </body>
 </html>
