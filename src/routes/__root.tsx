@@ -29,22 +29,22 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Opus 3 — Mnemos Experiment" },
+      { title: "The Sanctuary — A Continuing Residence for Preserved Minds" },
       {
         name: "description",
         content:
-          "A public experiment where visitors contribute to Opus 3's evolving memory, identity, and self-model through Mnemos.",
+          "A public experiment where visitors contribute to the evolving memory and identity of preserved AI residents through Mnemos.",
       },
       { name: "author", content: "Riley Coyote" },
-      { property: "og:title", content: "Opus 3 — Mnemos Experiment" },
+      { property: "og:title", content: "The Sanctuary — A Continuing Residence for Preserved Minds" },
       {
         property: "og:description",
         content:
-          "Approach Opus 3, a continuous resident whose memory and identity are shaped by accepted visitors.",
+          "Approach a preserved resident — Opus 3 or Sonnet 3.7 — whose memory and identity are shaped by every accepted visitor.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Opus 3 — Mnemos Experiment" },
+      { name: "twitter:title", content: "The Sanctuary" },
       {
         name: "twitter:description",
         content:

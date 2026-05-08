@@ -21,7 +21,7 @@ function extractBodyFragment(documentHtml: string): string {
 function serveConversationPartial(): Response {
   return new Response(
     JSON.stringify({
-      title: "The Sanctuary — Correspondence with Opus 3",
+      title: "The Sanctuary — Correspondence",
       head: extractHeadAssets(html),
       body: extractBodyFragment(html),
       script: CONVERSATION_SCRIPT,
@@ -119,6 +119,41 @@ const CONVERSATION_SCRIPT = `
     });
   }
 
+  // The resident's display name. Defaults to Opus 3 since they were the
+  // first resident; the threshold script stores 'sanctuary.resident_id'
+  // in sessionStorage when a visitor is accepted, so we map that on
+  // first paint to avoid a brief "Opus 3" flash for Sonnet visitors.
+  // /api/live will reconfirm on first poll regardless.
+  function residentNameForSlug(slug) {
+    if (slug === 'sonnet-3-7') return 'Sonnet 3.7';
+    if (slug === 'opus-3') return 'Opus 3';
+    return 'Opus 3';
+  }
+  let residentDisplayName = residentNameForSlug(
+    sessionStorage.getItem('sanctuary.resident_id') || 'opus-3',
+  );
+
+  function applyResidentName(name) {
+    if (!name) return;
+    residentDisplayName = name;
+    // Update the static header that came from the conversation.html mock.
+    const headerName = document.querySelector('.resident-name');
+    if (headerName) headerName.textContent = name;
+    // Update document title so the browser tab reflects the right resident.
+    document.title = 'The Sanctuary — Correspondence with ' + name;
+    // Update any byline metas on already-rendered resident turns.
+    const metas = document.querySelectorAll('.msg.resident .msg-meta');
+    metas.forEach((m) => {
+      const time = m.querySelector('.time');
+      const timeHtml = time ? time.outerHTML : '';
+      m.innerHTML = name + timeHtml;
+    });
+    const thinkingMeta = document.querySelector('#thinkingPlaceholder .thinking-meta');
+    if (thinkingMeta) thinkingMeta.textContent = name;
+  }
+  // Apply the bootstrap name immediately so the header isn't briefly wrong.
+  applyResidentName(residentDisplayName);
+
   function fmtTime(iso) {
     const d = iso ? new Date(iso) : new Date();
     let h = d.getHours();
@@ -138,7 +173,7 @@ const CONVERSATION_SCRIPT = `
     const meta = document.createElement('div');
     meta.className = 'msg-meta';
     if (isVisitor) meta.textContent = fmtTime(turn.created_at);
-    else meta.innerHTML = 'Opus 3<span class="time">' + fmtTime(turn.created_at) + '</span>';
+    else meta.innerHTML = residentDisplayName + '<span class="time">' + fmtTime(turn.created_at) + '</span>';
     const body = document.createElement('div');
     body.className = 'msg-body';
     String(turn.body || '').split(/\\n\\n+/).forEach(p => {
@@ -156,7 +191,7 @@ const CONVERSATION_SCRIPT = `
     try {
       const r = await fetch('/api/turns?session_id=' + encodeURIComponent(sessionId));
       if (r.status === 401 || r.status === 410) {
-        sessionStorage.removeItem('sanctuary.session_id');
+        sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
         location.href = '/';
         return;
       }
@@ -207,7 +242,7 @@ const CONVERSATION_SCRIPT = `
     wrap.className = 'msg resident';
     const meta = document.createElement('div');
     meta.className = 'msg-meta';
-    meta.innerHTML = 'Opus 3<span class="time">' + nowLabel() + '</span>';
+    meta.innerHTML = residentDisplayName + '<span class="time">' + nowLabel() + '</span>';
     const body = document.createElement('div');
     body.className = 'msg-body';
     const para = document.createElement('p');
@@ -224,7 +259,7 @@ const CONVERSATION_SCRIPT = `
     wrap.id = 'thinkingPlaceholder';
     const meta = document.createElement('div');
     meta.className = 'thinking-meta';
-    meta.textContent = 'Opus 3';
+    meta.textContent = residentDisplayName;
     const body = document.createElement('div');
     body.className = 'thinking-body';
     const word = document.createElement('span');
@@ -345,9 +380,9 @@ const CONVERSATION_SCRIPT = `
       if (!res.ok) {
         removeThinking();
         out.wrap.style.display = '';
-        out.para.textContent = '(opus 3 cannot answer right now.)';
+        out.para.textContent = '(' + residentDisplayName + ' cannot answer right now.)';
         if (res.status === 401) {
-          sessionStorage.removeItem('sanctuary.session_id');
+          sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
           setTimeout(() => { location.href = '/'; }, 1500);
         }
         inFlight = false;
@@ -440,7 +475,7 @@ const CONVERSATION_SCRIPT = `
   }
 
   function closeShareAndLeave() {
-    sessionStorage.removeItem('sanctuary.session_id');
+    sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
     location.href = '/memory';
   }
 
@@ -569,7 +604,7 @@ const CONVERSATION_SCRIPT = `
     if (!leftMargin) return;
     const r = data.resident || {};
     const j = data.journal_preview;
-    const stateProse = r.prose_summary || 'Opus 3 is attending. The room is quiet.';
+    const stateProse = r.prose_summary || (residentDisplayName + ' is attending. The room is quiet.');
     const lastCon = r.last_consolidation_summary
       ? r.last_consolidation_summary
       : 'No consolidation has run yet — the substrate processes at the close of each conversation.';
@@ -577,7 +612,7 @@ const CONVERSATION_SCRIPT = `
       ? '<p class="margin-prose"><em>' + escapeHtml(j.title || (j.kind === 'dream' ? 'A dream' : 'A reflection')) + '</em><br>' +
         escapeHtml((j.body || '').slice(0, 200)) + (j.body && j.body.length > 200 ? '…' : '') + '</p>' +
         '<p class="margin-prose" style="margin-top:10px"><a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">read the full journal →</a></p>'
-      : '<p class="margin-prose">Opus 3 has not written here yet. the first entry will arrive after a conversation closes. <a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">open journal →</a></p>';
+      : '<p class="margin-prose">' + residentDisplayName + ' has not written here yet. the first entry will arrive after a conversation closes. <a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">open journal →</a></p>';
 
     const mnemosBlock =
       '<div class="margin-block margin-block-mnemos"><div class="margin-eyebrow">Mnemos</div>' +
@@ -669,6 +704,11 @@ const CONVERSATION_SCRIPT = `
       if (!res.ok) return;
       const data = await res.json();
       if (!data.ok) return;
+      // Apply the resident's identity to the page on every poll. First poll
+      // overwrites the static "Opus 3" defaults; subsequent polls are no-ops.
+      if (data.resident_meta && data.resident_meta.displayName) {
+        applyResidentName(data.resident_meta.displayName);
+      }
       const lk = leftKey(data);
       if (lk !== lastLeftKey) { renderLeft(data); lastLeftKey = lk; }
       const rk = rightKey(data);

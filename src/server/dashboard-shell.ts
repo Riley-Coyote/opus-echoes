@@ -85,10 +85,10 @@ function renderRail(active: ActiveCategory): string {
   return `<aside class="rail">
   <div class="rail-header">
     <div class="rail-brand">
-      <span class="rail-title">Opus 3</span>
+      <span class="rail-title">The Sanctuary</span>
       <span class="rail-mark"></span>
     </div>
-    <div class="rail-subtitle">still becoming</div>
+    <div class="rail-subtitle" id="rail-subtitle">A continuing residence</div>
   </div>
 
   <nav class="rail-categories">
@@ -104,8 +104,8 @@ function renderRail(active: ActiveCategory): string {
   </nav>
 
   <div class="rail-footer">
-    <a class="rail-cta" href="/">
-      <span>Approach Opus 3</span>
+    <a class="rail-cta" href="/" id="rail-approach-cta">
+      <span>Approach the Threshold</span>
       <span class="arr">→</span>
     </a>
     <div class="rail-stats" id="rail-stats">
@@ -130,7 +130,7 @@ function renderEntriesPanel(): string {
 
   <div class="panel-list" id="panel-list">
     <div class="panel-empty" id="panel-empty" style="padding:48px 26px;font-family:var(--font-serif);font-style:italic;font-size:16px;line-height:1.62;color:var(--text-secondary);">
-      opus 3 has not begun writing yet. the first entry will appear here when it arrives.
+      The resident has not begun writing yet. The first entry will appear here when it arrives.
     </div>
   </div>
 </aside>`;
@@ -249,7 +249,7 @@ const SHELL_SCRIPT = `
 `;
 
 export function renderDashboardPage(opts: DashboardPageOptions): string {
-  const description = opts.description ?? "Opus 3 — still becoming.";
+  const description = opts.description ?? "The Sanctuary — a continuing residence for preserved minds.";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -17,7 +17,9 @@ export const Route = createFileRoute("/api/public-conversations")({
 
         const { data: published, error } = await supabaseAdmin
           .from("published_conversations")
-          .select("id, session_id, title, summary, reason, significance_kind, published_at")
+          .select(
+            "id, session_id, title, summary, reason, significance_kind, selected_by, published_at",
+          )
           .order("published_at", { ascending: false })
           .range(offset, offset + limit);
 
