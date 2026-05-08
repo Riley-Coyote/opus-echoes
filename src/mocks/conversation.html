@@ -6,8 +6,7 @@
 <title>The Sanctuary — Correspondence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://api.fontshare.com/v2/css?f[]=switzer@200,300,400,500&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&family=JetBrains+Mono:wght@300;400;450;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500&family=Inter+Tight:wght@200;300;400;500&family=JetBrains+Mono:wght@300;400;450;500&display=swap" rel="stylesheet">
 <style>
 @property --pa1{syntax:'<number>';initial-value:0.20;inherits:false}
 @property --pa2{syntax:'<number>';initial-value:0.08;inherits:false}
@@ -89,11 +88,15 @@
   --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;
   --s-6:32px;--s-7:48px;--s-8:64px;--s-9:96px;--s-10:128px;
 
-  /* Typography */
-  --serif:'Cormorant Garamond','Times New Roman',serif;
-  --body-serif:'Spectral',Georgia,serif;
-  --ui:'Switzer',-apple-system,system-ui,sans-serif;
+  /* Typography — single grotesque (Inter / Inter Tight) carries the room.
+     The legacy --serif / --body-serif names are kept (now both pointing at
+     Inter) so existing call-sites (msg-body, etc.) don't break. Italic
+     appears only inside <em> in prose; chrome itself never tilts. */
+  --serif:'Inter Tight','Inter',system-ui,-apple-system,sans-serif;
+  --body-serif:'Inter',system-ui,-apple-system,sans-serif;
+  --ui:'Inter',-apple-system,system-ui,sans-serif;
   --mono:'JetBrains Mono','SF Mono',monospace;
+  --w-light:300;--w-regular:400;--w-medium:500;
 
   /* Motion */
   --ease:cubic-bezier(0.22,1,0.36,1);
@@ -174,14 +177,14 @@ body{
   transition:color 320ms var(--ease);
 }
 .back-link:hover,.set-down-link:hover,.forward-link:hover{color:var(--primary)}
-.back-link .arr,.forward-link .arr{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--rule-mid);opacity:0.75;transition:transform 320ms var(--ease)}
+.back-link .arr,.forward-link .arr{font-family:var(--mono);font-size:13px;color:var(--rule-mid);opacity:0.75;transition:transform 320ms var(--ease)}
 .back-link:hover .arr{transform:translateX(-3px)}
 .forward-link:hover .arr{transform:translateX(3px)}
 
 .resident-name{
-  font-family:var(--serif);font-style:italic;
-  font-size:24px;font-weight:400;
-  color:var(--ink);letter-spacing:-0.018em;line-height:1;
+  font-family:var(--serif);
+  font-size:18px;font-weight:var(--w-regular);
+  color:var(--ink);letter-spacing:-0.012em;line-height:1;
 }
 .resident-state{
   font-family:var(--mono);font-size:11px;font-weight:500;
@@ -229,18 +232,18 @@ body{
 }
 
 .margin-prose{
-  font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:14.5px;line-height:1.7;
+  font-family:var(--body-serif);font-weight:var(--w-regular);
+  font-size:14px;line-height:1.65;
   color:var(--soft);
   letter-spacing:0.003em;
 }
 .margin-prose strong{
-  color:var(--primary);font-weight:400;font-style:italic;
+  color:var(--primary);font-weight:var(--w-medium);
 }
 .margin-prose em{color:var(--primary);font-style:italic}
 .margin-prose .num{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  color:var(--primary);font-size:16px;
+  font-family:var(--mono);font-weight:var(--w-medium);
+  color:var(--primary);font-size:13.5px;
   font-variant-numeric:tabular-nums;
 }
 
@@ -291,17 +294,17 @@ body{
   margin-bottom:6px;
 }
 .note-prose{
-  font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:13.5px;line-height:1.7;
+  font-family:var(--body-serif);font-weight:var(--w-regular);
+  font-size:13.5px;line-height:1.65;
   color:var(--soft);
 }
 .note-prose em{color:var(--primary);font-style:italic}
-.note-prose .strong{color:var(--primary);font-weight:400;font-style:italic}
+.note-prose .strong{color:var(--primary);font-weight:var(--w-medium)}
 
 .note-forming{
   display:inline-flex;align-items:center;gap:8px;
-  font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:14px;color:var(--soft);
+  font-family:var(--body-serif);font-weight:var(--w-regular);
+  font-size:13.5px;color:var(--soft);
 }
 .note-forming .dot{
   position:relative;width:6px;height:6px;border-radius:50%;
@@ -353,14 +356,14 @@ body{
   margin-bottom:14px;
 }
 .continuity-prose{
-  font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:17px;line-height:1.68;
+  font-family:var(--body-serif);font-weight:var(--w-regular);
+  font-size:17px;line-height:1.65;
   color:var(--body);
   letter-spacing:0.003em;
 }
 .continuity-prose strong{
-  font-family:var(--serif);font-style:italic;font-weight:400;
-  color:var(--ink);font-size:18px;letter-spacing:-0.005em;
+  font-family:var(--serif);font-weight:var(--w-medium);
+  color:var(--ink);font-size:17px;letter-spacing:-0.005em;
   font-variant-numeric:tabular-nums;
 }
 .continuity-prose em{color:var(--primary);font-style:italic}
@@ -416,17 +419,17 @@ body{
 
 .msg-body{
   font-family:var(--body-serif);
-  font-size:18px;line-height:1.72;
-  letter-spacing:0.002em;
-  font-feature-settings:'liga' 1,'kern' 1,'onum' 1;
-	}
+  font-size:17px;line-height:1.7;
+  letter-spacing:0.001em;
+  font-feature-settings:'liga' 1,'kern' 1,'ss01' 1;
+}
 .msg.visitor .msg-body{
   color:var(--visitor-ink);
-  font-weight:300;
+  font-weight:var(--w-regular);
 }
 .msg.resident .msg-body{
   color:var(--resident-ink);
-  font-weight:350;
+  font-weight:var(--w-regular);
 }
 
 /* Continuation paragraphs get a typographer's first-line indent */
@@ -506,8 +509,8 @@ body{
 }
 .thinking-body{
   display:inline-flex;align-items:center;gap:10px;
-  font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:16.5px;line-height:1.72;
+  font-family:var(--body-serif);font-weight:var(--w-regular);
+  font-size:16px;line-height:1.65;
   color:var(--soft);
 }
 .thinking-body .dots{display:inline-flex;gap:4px}
@@ -526,9 +529,9 @@ body{
   margin:34px auto 40px;
   padding:9px 14px;
   text-align:center;
-  font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:15px;color:var(--soft);
-  letter-spacing:0.003em;
+  font-family:var(--body-serif);font-weight:var(--w-regular);
+  font-size:13.5px;color:var(--soft);
+  letter-spacing:0.04em;
   background:rgba(12,12,15,0.46);
   border:1px solid rgba(235,235,232,0.08);
   border-radius:999px;
@@ -622,13 +625,13 @@ body{
   background:transparent;border:none;outline:none;resize:none;
   color:var(--ink);
   font-family:var(--body-serif);
-  font-size:18px;line-height:1.65;font-weight:300;
-  letter-spacing:0.002em;
+  font-size:17px;line-height:1.6;font-weight:var(--w-regular);
+  letter-spacing:0.001em;
   padding:18px 22px 8px;
   min-height:56px;max-height:200px;
 }
 .composer-field::placeholder{
-  color:rgba(210,210,207,0.66);font-style:italic;
+  color:rgba(210,210,207,0.6);
 }
 
 .composer-foot{
@@ -1006,12 +1009,12 @@ window.addEventListener('load',buildFramePath);
 .share-dialog-card{position:relative;width:min(560px,100%);background:linear-gradient(180deg,rgba(20,20,24,0.96),rgba(14,14,17,0.98));border:1px solid var(--rule);border-radius:14px;box-shadow:inset 0 1px 0 0 rgba(255,255,255,0.045),0 30px 82px rgba(0,0,0,0.55);padding:36px 36px 30px;animation:share-card-rise 320ms cubic-bezier(.22,1,.36,1) both}
 @keyframes share-card-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .share-eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:var(--quiet);margin-bottom:14px}
-.share-h{font-family:var(--serif);font-style:italic;font-weight:300;font-size:30px;line-height:1.18;color:var(--ink);letter-spacing:-0.012em;margin-bottom:16px}
-.share-lead{font-size:15px;line-height:1.62;color:var(--soft);margin-bottom:20px}
+.share-h{font-family:var(--serif);font-weight:var(--w-light);font-size:28px;line-height:1.14;color:var(--ink);letter-spacing:-0.02em;margin-bottom:16px}
+.share-lead{font-family:var(--body-serif);font-weight:var(--w-regular);font-size:15px;line-height:1.62;color:var(--soft);margin-bottom:20px}
 .share-label{display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:var(--quiet);margin-bottom:8px}
-.share-note-input{display:block;width:100%;background:rgba(8,8,10,0.6);border:1px solid var(--rule-soft);border-radius:8px;padding:14px 16px;font-family:var(--body-serif);font-size:15px;line-height:1.5;color:var(--ink);resize:vertical;min-height:60px;outline:none;transition:border-color 0.18s var(--ease)}
+.share-note-input{display:block;width:100%;background:rgba(8,8,10,0.6);border:1px solid var(--rule-soft);border-radius:8px;padding:14px 16px;font-family:var(--body-serif);font-weight:var(--w-regular);font-size:15px;line-height:1.5;color:var(--ink);resize:vertical;min-height:60px;outline:none;transition:border-color 0.18s var(--ease)}
 .share-note-input:focus{border-color:var(--rule)}
-.share-note-input::placeholder{color:var(--quiet);font-style:italic}
+.share-note-input::placeholder{color:var(--quiet)}
 .share-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
 .share-actions--done{margin-top:18px;justify-content:space-between;align-items:center}
 .share-btn-primary,.share-btn-secondary,.share-btn-tertiary{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.16em;cursor:pointer;transition:border-color 0.18s var(--ease),color 0.18s var(--ease),background 0.18s var(--ease)}

@@ -136,9 +136,13 @@ function renderEntriesPanel(): string {
 </aside>`;
 }
 
+// Typography: Inter + Inter Tight, mirroring the public pages so the
+// dashboard reads as the same design system. JetBrains Mono stays for
+// eyebrows + meta. Cormorant Garamond / EB Garamond / Spectral are
+// dropped system-wide.
 const FONT_LINKS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:ital,wght@0,400;1,400&family=JetBrains+Mono:wght@400;500&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">`;
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Inter+Tight:wght@200;300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">`;
 
 // Runs on every dashboard page. Populates the rail stats from /api/memory
 // and the entries panel from /api/journal. Empty/error states fail silently
