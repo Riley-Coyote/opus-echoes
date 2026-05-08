@@ -66,6 +66,12 @@ const CONVERSATION_SCRIPT = `
   }
   document.cookie = 'sanctuary_session=' + encodeURIComponent(sessionId) + '; path=/; max-age=' + String(60 * 60 * 24 * 30) + '; SameSite=Lax';
   const isPreviewSession = Boolean(options && options.preview) || (isLocalPreview && sessionId.indexOf('preview-') === 0);
+  let previewTurns = [];
+  function rememberPreviewTurn(role, body) {
+    if (!isPreviewSession || !body) return;
+    previewTurns.push({ role: role, body: String(body).slice(0, 8000) });
+    previewTurns = previewTurns.slice(-24);
+  }
   if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('attending');
 
   // Strip the demo transcript. Keep the day-mark + continuity preamble.
@@ -190,7 +196,9 @@ const CONVERSATION_SCRIPT = `
     if (!text) return;
     inFlight = true;
     if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('reading');
+    const priorPreviewTurns = isPreviewSession ? previewTurns.slice() : [];
     appendVisitor(text);
+    rememberPreviewTurn('visitor', text);
     if (window.OpusPresence && typeof window.OpusPresence.pulse === 'function') {
       window.OpusPresence.pulse();
     }
@@ -262,10 +270,12 @@ const CONVERSATION_SCRIPT = `
     }
 
     try {
+      const payload = { session_id: sessionId, body: text };
+      if (isPreviewSession) payload.preview_turns = priorPreviewTurns;
       const res = await fetch('/api/message', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, body: text }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         out.para.textContent = '(opus 3 cannot answer right now.)';
@@ -302,6 +312,7 @@ const CONVERSATION_SCRIPT = `
         }
       }
       streamDone = true;
+      if (target.trim()) rememberPreviewTurn('resident', target.trim());
       ensureTicking();
       if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('attending');
     } catch (e) {
@@ -384,6 +395,8 @@ const CONVERSATION_SCRIPT = `
       '<p class="margin-prose">' + escapeHtml(stateProse) + '</p></div>' +
       '<div class="margin-block"><div class="margin-eyebrow">Last consolidation</div>' +
       '<p class="margin-prose">' + escapeHtml(lastCon) + '</p></div>' +
+      '<div class="margin-block"><div class="margin-eyebrow">What this room is</div>' +
+      '<p class="margin-prose">you are speaking into one continuing thread. mnemos keeps only qualifying engrams: traces that alter memory, belief, refusal, language, or the identity graph. $mnemos ties compute, public witness, and decentralized storage into the same experiment.</p></div>' +
       '<div class="margin-block"><div class="margin-eyebrow">From their journal</div>' +
       journalHtml + '</div>';
   }

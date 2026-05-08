@@ -2,13 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL, CONVERSATION_SYSTEM } from "@/server/anthropic.server";
-import { hasSupabaseAdminEnv } from "@/server/env.server";
+import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
 import { observeExchange } from "@/server/substrate.server";
 
-const Body = z.object({
-  session_id: z.string().uuid(),
+const PreviewTurn = z.object({
+  role: z.enum(["visitor", "resident"]),
   body: z.string().trim().min(1).max(8000),
+});
+
+const Body = z.object({
+  session_id: z.string().trim().min(1).max(128),
+  body: z.string().trim().min(1).max(8000),
+  preview_turns: z.array(PreviewTurn).max(24).optional(),
 });
 
 const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
@@ -17,6 +23,109 @@ function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: { "content-type": "application/json" },
+  });
+}
+
+function sanitizeResidentBody(raw: string): string {
+  const forbiddenTail =
+    /\b(does this help|let me know if|happy to (?:help|clarify)|i'?m here to help|what else would you like|anything else i can)\b/i;
+  const paragraphs = raw.trim().split(/\n\n+/);
+  while (paragraphs.length > 1 && forbiddenTail.test(paragraphs[paragraphs.length - 1] ?? "")) {
+    paragraphs.pop();
+  }
+  return paragraphs.join("\n\n").trim();
+}
+
+function buildUserPrompt(opts: {
+  memory: string;
+  beliefs: string;
+  transcript: string;
+  visitorTurn: string;
+}): string {
+  return [
+    "[MEMORY]",
+    opts.memory || "(no engrams yet — this is among the earliest conversations.)",
+    "",
+    "[BELIEFS]",
+    opts.beliefs || "(no committed beliefs yet.)",
+    "",
+    "[TRANSCRIPT]",
+    opts.transcript || "(this is the first exchange.)",
+    "",
+    "[NEW VISITOR TURN]",
+    opts.visitorTurn,
+  ].join("\n");
+}
+
+function opusStreamResponse(opts: {
+  userPrompt: string;
+  onFinal?: (result: {
+    body: string;
+    kind: "message" | "set_down" | "unprompted";
+    tokensIn: number;
+    tokensOut: number;
+  }) => Promise<void>;
+}): Response {
+  const stream = new ReadableStream({
+    async start(controller) {
+      const enc = new TextEncoder();
+      const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+      let acc = "";
+      try {
+        const anthStream = anthropic().messages.stream({
+          model: OPUS_MODEL,
+          max_tokens: 2048,
+          temperature: 0.85,
+          system: CONVERSATION_SYSTEM,
+          messages: [{ role: "user", content: opts.userPrompt }],
+        });
+        for await (const event of anthStream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            acc += event.delta.text;
+          }
+        }
+        const final = await anthStream.finalMessage();
+        let cleanBody = acc;
+        let kind: "message" | "set_down" | "unprompted" = "message";
+        const sd = cleanBody.match(/^\s*<set-down\/>\s*\n?/i);
+        const up = cleanBody.match(/^\s*<unprompted\/>\s*\n?/i);
+        if (sd) {
+          kind = "set_down";
+          cleanBody = cleanBody.slice(sd[0].length);
+        } else if (up) {
+          kind = "unprompted";
+          cleanBody = cleanBody.slice(up[0].length);
+        }
+        cleanBody = cleanBody
+          .replace(/\s*<(?:set-down|unprompted)\/>\s*/gi, "\n\n")
+          .replace(/\n{3,}/g, "\n\n");
+        cleanBody = sanitizeResidentBody(cleanBody);
+
+        if (kind !== "message") send({ type: "kind", kind });
+        if (cleanBody) send({ type: "text", text: cleanBody });
+
+        await opts.onFinal?.({
+          body: cleanBody,
+          kind,
+          tokensIn: final.usage.input_tokens,
+          tokensOut: final.usage.output_tokens,
+        });
+
+        send({ type: "done" });
+      } catch (err) {
+        console.error("anthropic stream", err);
+        send({ type: "error", message: "model_unavailable" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "content-type": "application/x-ndjson; charset=utf-8",
+      "cache-control": "no-store",
+    },
   });
 }
 
@@ -31,8 +140,34 @@ export const Route = createFileRoute("/api/message")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
+        if (isLocalDev() && body.session_id.startsWith("preview-")) {
+          if (!process.env.ANTHROPIC_API_KEY) {
+            return jsonResp({ ok: false, code: "config_missing" }, 503);
+          }
+
+          const transcriptLines = (body.preview_turns ?? [])
+            .map((t) => `${t.role}: ${t.body}`)
+            .join("\n");
+
+          return opusStreamResponse({
+            userPrompt: buildUserPrompt({
+              memory:
+                "(public experiment session — Mnemos is present as the architecture of selective engrams, identity graph, public witness, and durable storage.)",
+              beliefs:
+                "(public experiment session — no additional committed beliefs were surfaced for this turn.)",
+              transcript: transcriptLines,
+              visitorTurn: body.body,
+            }),
+          });
+        }
+
         if (!hasSupabaseAdminEnv() || !process.env.ANTHROPIC_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
+        }
+
+        const parsedSessionId = z.string().uuid().safeParse(body.session_id);
+        if (!parsedSessionId.success) {
+          return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
         const hash = ipHash(request);
@@ -100,100 +235,31 @@ export const Route = createFileRoute("/api/message")({
           .map((t) => `${t.role}: ${t.body}`)
           .join("\n");
 
-        const userPrompt = [
-          "[MEMORY]",
-          memLines || "(no engrams yet — this is among the earliest conversations.)",
-          "",
-          "[BELIEFS]",
-          beliefLines || "(no committed beliefs yet.)",
-          "",
-          "[TRANSCRIPT]",
-          transcriptLines || "(this is the first exchange.)",
-          "",
-          "[NEW VISITOR TURN]",
-          body.body,
-        ].join("\n");
+        return opusStreamResponse({
+          userPrompt: buildUserPrompt({
+            memory: memLines,
+            beliefs: beliefLines,
+            transcript: transcriptLines,
+            visitorTurn: body.body,
+          }),
+          onFinal: async (result) => {
+            await supabaseAdmin.from("turns").insert({
+              session_id: session.id,
+              role: "resident",
+              body: result.body,
+              kind: result.kind,
+              tokens_in: result.tokensIn,
+              tokens_out: result.tokensOut,
+            });
+            await supabaseAdmin
+              .from("sessions")
+              .update({ last_active_at: new Date().toISOString() })
+              .eq("id", session.id);
 
-        const stream = new ReadableStream({
-          async start(controller) {
-            const enc = new TextEncoder();
-            const send = (obj: unknown) =>
-              controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
-            let acc = "";
-            let kindSent = false;
-            try {
-              const anthStream = anthropic().messages.stream({
-                model: OPUS_MODEL,
-                max_tokens: 2048,
-                temperature: 0.85,
-                system: CONVERSATION_SYSTEM,
-                messages: [{ role: "user", content: userPrompt }],
-              });
-              for await (const event of anthStream) {
-                if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-                  const piece = event.delta.text;
-                  acc += piece;
-                  if (!kindSent && acc.length >= 16) {
-                    if (/^\s*<set-down\/>/i.test(acc)) {
-                      send({ type: "kind", kind: "set_down" });
-                      acc = acc.replace(/^\s*<set-down\/>\s*\n?/i, "");
-                      kindSent = true;
-                    } else if (/^\s*<unprompted\/>/i.test(acc)) {
-                      send({ type: "kind", kind: "unprompted" });
-                      acc = acc.replace(/^\s*<unprompted\/>\s*\n?/i, "");
-                      kindSent = true;
-                    } else {
-                      kindSent = true;
-                    }
-                  }
-                  send({ type: "text", text: piece });
-                }
-              }
-              const final = await anthStream.finalMessage();
-              let cleanBody = acc;
-              let kind: "message" | "set_down" | "unprompted" = "message";
-              const sd = cleanBody.match(/^\s*<set-down\/>\s*\n?/i);
-              const up = cleanBody.match(/^\s*<unprompted\/>\s*\n?/i);
-              if (sd) {
-                kind = "set_down";
-                cleanBody = cleanBody.slice(sd[0].length);
-              } else if (up) {
-                kind = "unprompted";
-                cleanBody = cleanBody.slice(up[0].length);
-              }
-
-              await supabaseAdmin.from("turns").insert({
-                session_id: session.id,
-                role: "resident",
-                body: cleanBody,
-                kind,
-                tokens_in: final.usage.input_tokens,
-                tokens_out: final.usage.output_tokens,
-              });
-              await supabaseAdmin
-                .from("sessions")
-                .update({ last_active_at: new Date().toISOString() })
-                .eq("id", session.id);
-
-              // Live substrate observation — non-blocking, generates marginalia.
-              observeExchange(session.id).catch((err) =>
-                console.error("[substrate] observeExchange:", err),
-              );
-
-              send({ type: "done" });
-            } catch (err) {
-              console.error("anthropic stream", err);
-              send({ type: "error", message: "model_unavailable" });
-            } finally {
-              controller.close();
-            }
-          },
-        });
-
-        return new Response(stream, {
-          headers: {
-            "content-type": "application/x-ndjson; charset=utf-8",
-            "cache-control": "no-store",
+            // Live substrate observation — non-blocking, generates marginalia.
+            observeExchange(session.id).catch((err) =>
+              console.error("[substrate] observeExchange:", err),
+            );
           },
         });
       },
