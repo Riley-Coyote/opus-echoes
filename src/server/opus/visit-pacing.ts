@@ -24,13 +24,16 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Soft phases (visitor-message counts).
-const GENTLE_TURN = 12;
-const FIRM_TURN = 22;
+// Soft phases (visitor-message counts). Halved from initial values — the
+// public launch is unfunded, and the project's argument is better served
+// by short, frequent contributions from many visitors than long sessions
+// from a few. Caching keeps per-session cost low at these thresholds.
+const GENTLE_TURN = 6;
+const FIRM_TURN = 11;
 
 // Hard cutoff — either threshold triggers it.
-const HARD_TURN = 35;
-const HARD_TOKENS_IN = 150_000;
+const HARD_TURN = 17;
+const HARD_TOKENS_IN = 75_000;
 
 export interface VisitMetrics {
   /** Number of messages the visitor has sent so far this session. */
