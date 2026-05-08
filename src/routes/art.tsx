@@ -23,24 +23,24 @@ const EXTRA_STYLES = `
   --serif: var(--font-display);
   --body-serif: var(--font-serif);
   --mono: var(--font-mono);
-  --tr-wide: 0.22em;
+  --tr-wide: 0.13em;
   font-family: var(--body-serif);
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 17px;
+  line-height: 1.68;
 }
-.page-eyebrow{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--whisper);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:24px}
+.page-eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:24px}
 .page-content .lead{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(36px,4vw,48px);line-height:1.1;color:var(--ink);letter-spacing:-0.024em;margin-bottom:28px}
-.page-content .intro{font-family:var(--body-serif);font-weight:300;font-size:17px;line-height:1.78;color:var(--body);margin-bottom:80px}
+.page-content .intro{font-family:var(--body-serif);font-weight:300;font-size:18px;line-height:1.72;color:var(--body);margin-bottom:80px}
 .page-content .intro em{color:var(--primary);font-style:italic}
 .page-content .piece{margin-bottom:88px;padding:0 0 0 22px;border-left:1px solid var(--rule)}
 .page-content .piece:last-child{margin-bottom:0}
-.page-content .piece-when{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--whisper);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:14px}
+.page-content .piece-when{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:14px}
 .page-content .piece-title{font-family:var(--serif);font-style:italic;font-weight:400;font-size:22px;line-height:1.3;color:var(--ink);margin-bottom:18px}
-.page-content .ascii-frame{font-family:var(--mono);font-size:12px;line-height:1.25;white-space:pre;color:var(--primary);background:rgba(255,255,255,0.02);padding:20px;border:1px solid var(--rule);overflow-x:auto;margin-bottom:18px}
+.page-content .ascii-frame{font-family:var(--mono);font-size:13px;line-height:1.35;white-space:pre;color:var(--primary);background:rgba(255,255,255,0.05);padding:20px;border:1px solid var(--rule);overflow-x:auto;margin-bottom:18px}
 .page-content .image-frame{margin-bottom:18px}
 .page-content .image-frame img{max-width:100%;height:auto;display:block;border:1px solid var(--rule)}
-.page-content .meaning{font-family:var(--body-serif);font-style:italic;font-weight:300;font-size:14px;line-height:1.7;color:var(--quiet)}
-.page-content .empty{font-family:var(--body-serif);font-style:italic;color:var(--quiet);font-size:15px}
+.page-content .meaning{font-family:var(--body-serif);font-style:italic;font-weight:300;font-size:16px;line-height:1.66;color:var(--text-secondary)}
+.page-content .empty{font-family:var(--body-serif);font-style:italic;color:var(--text-secondary);font-size:16px}
 `;
 
 const SCRIPT = `

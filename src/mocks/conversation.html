@@ -33,6 +33,20 @@
   --rule-soft:rgba(225,225,225,0.08);
   --border-strong:rgba(235,235,232,0.18);
 
+  /* Glass surfaces — one vocabulary, three densities */
+  --glass-resident-fill:rgba(14,14,17,0.46);
+  --glass-visitor-fill:rgba(20,20,23,0.40);
+  --glass-continuity-fill:rgba(12,12,15,0.38);
+  --glass-marg-fill:rgba(16,16,20,0.32);
+  --glass-frame-fill:rgba(10,10,13,0.62);
+
+  --glass-blur:blur(22px) saturate(1.05);
+
+  --hairline-strong:rgba(225,225,225,0.10);
+  --hairline:rgba(225,225,225,0.07);
+  --hairline-soft:rgba(225,225,225,0.05);
+  --hairline-whisper:rgba(225,225,225,0.04);
+
   /* Text — true neutral hierarchy */
   --ink:rgba(248,248,247,0.96);
   --primary:rgba(245,245,243,0.92);
@@ -93,35 +107,38 @@ body{
 /* ============================================================
    THE ROOM
    ============================================================ */
+.frame{
+  position:fixed;
+  inset:0;
+  z-index:3;
+  background:var(--glass-frame-fill);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  pointer-events:none;
+}
+
 .room{
   display:grid;
-  grid-template-columns:minmax(220px,240px) minmax(620px,1fr) minmax(220px,240px);
+  grid-template-columns:minmax(220px,250px) minmax(620px,1fr) minmax(220px,250px);
   grid-template-rows:auto 1fr;
   height:100vh;
   width:100%;
   position:relative;
   z-index:4;
   isolation:isolate;
-  background:
-    radial-gradient(circle at 70% 46%,rgba(6,6,8,0.03),rgba(6,6,8,0.18) 60%,rgba(6,6,8,0.46) 100%),
-    linear-gradient(90deg,rgba(6,6,8,0.48),rgba(6,6,8,0.16) 24%,rgba(6,6,8,0.02) 52%,rgba(6,6,8,0.14) 78%,rgba(6,6,8,0.44)),
-    linear-gradient(180deg,rgba(6,6,8,0.28),transparent 34%,rgba(6,6,8,0.28));
+  background:transparent;
 }
 
 /* ============================================================
-   HEADER — no chrome, just placement
+   HEADER — content only; the frame draws the glass.
    ============================================================ */
 .header{
   grid-column:1/-1;
   display:grid;
-  grid-template-columns:minmax(220px,240px) minmax(620px,1fr) minmax(220px,240px);
+  grid-template-columns:minmax(220px,250px) minmax(620px,1fr) minmax(220px,250px);
   align-items:center;
   position:relative;
   z-index:20;
-  background:linear-gradient(180deg,rgba(8,8,10,0.94),rgba(8,8,10,0.68));
-  border-bottom:1px solid var(--rule-soft);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
 }
 .header-cell{padding:22px 28px;display:flex;align-items:center}
 .header-cell.center{justify-content:center;flex-direction:column;gap:6px;text-align:center;padding:22px 28px 18px}
@@ -164,38 +181,37 @@ body{
 }
 
 /* ============================================================
-   MARGINS — narrative, not tabular
+   MARGINS — content only; the frame draws the glass.
    ============================================================ */
 .margin{
   padding:36px 28px 200px;
   overflow-y:auto;overflow-x:hidden;
-  background:rgba(10,10,12,0.72);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  box-shadow:0 0 72px rgba(0,0,0,0.36);
-}
-.margin-left{
-  border-right:1px solid var(--rule-soft);
-}
-.margin-right{
-  border-left:1px solid var(--rule-soft);
+  position:relative;
+  z-index:10;
 }
 .margin::-webkit-scrollbar{display:none}
 .margin{scrollbar-width:none}
 
-.margin-block{margin-bottom:64px}
-.margin-block:last-child{margin-bottom:0}
+.margin-block{margin-bottom:48px;padding-bottom:28px;border-bottom:1px solid var(--hairline-whisper)}
+.margin-block:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
 
 .margin-eyebrow{
   font-family:var(--mono);font-size:11px;font-weight:500;
   color:var(--quiet);
   letter-spacing:0.13em;text-transform:uppercase;
-  margin-bottom:16px;
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.margin-eyebrow::before{
+  content:'';
+  width:3px;height:3px;border-radius:50%;
+  background:var(--quiet);
+  flex-shrink:0;
 }
 
 .margin-prose{
   font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:15px;line-height:1.68;
+  font-size:14.5px;line-height:1.7;
   color:var(--soft);
   letter-spacing:0.003em;
 }
@@ -209,9 +225,39 @@ body{
   font-variant-numeric:tabular-nums;
 }
 
-/* Right margin: marginalia entries */
+/* Mnemos graph — small, manuscript-illustration treatment in the left margin */
+.margin-block-mnemos{padding-bottom:0;border-bottom:none}
+.mnemos-graph{margin-top:8px;position:relative}
+.mnemos-graph svg{display:block;width:100%;height:auto;overflow:visible}
+.mnemos-graph .mn-node{fill:rgba(214,214,210,0.55)}
+.mnemos-graph .mn-node.weak{fill:rgba(180,180,178,0.22)}
+.mnemos-graph .mn-node.strong{fill:rgba(248,248,246,0.95)}
+.mnemos-graph .mn-edge{stroke:rgba(180,180,178,0.18);stroke-width:0.5;fill:none}
+.mnemos-graph .mn-edge.lit{stroke:rgba(220,200,160,0.55);stroke-width:0.7}
+.mnemos-graph .mn-node.live{
+  fill:rgba(255,225,180,0.95);
+  animation:mnLive 3.6s ease-in-out infinite;
+  transform-origin:center;transform-box:fill-box;
+}
+@keyframes mnLive{
+  0%,100%{filter:drop-shadow(0 0 1.5px rgba(255,210,150,0.6));opacity:0.95}
+  50%{filter:drop-shadow(0 0 4px rgba(255,210,150,0.85));opacity:1}
+}
+.mnemos-caption{
+  margin-top:14px;
+  font-family:var(--mono);font-size:9.5px;font-weight:500;
+  color:var(--whisper);
+  letter-spacing:0.14em;text-transform:uppercase;
+  text-align:center;
+}
+
+/* Right margin: marginalia — entries become small light-glass cards */
 .note{
-  margin-bottom:36px;
+  margin-bottom:14px;
+  padding:14px 16px;
+  border-radius:11px;
+  background:var(--glass-marg-fill);
+  border:1px solid var(--hairline-soft);
   animation:noteEnter 1.2s var(--ease) both;
 }
 .note:last-child{margin-bottom:0}
@@ -220,44 +266,37 @@ body{
   to{opacity:1;transform:translateY(0)}
 }
 .note-when{
-  font-family:var(--mono);font-size:11px;font-weight:500;
-  color:var(--quiet);letter-spacing:0.13em;text-transform:uppercase;
-  margin-bottom:8px;
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  color:var(--whisper);
+  letter-spacing:0.13em;text-transform:uppercase;
+  margin-bottom:6px;
 }
 .note-prose{
   font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:15px;line-height:1.68;
-  color:var(--soft);letter-spacing:0.003em;
+  font-size:13.5px;line-height:1.7;
+  color:var(--soft);
 }
 .note-prose em{color:var(--primary);font-style:italic}
 .note-prose .strong{color:var(--primary);font-weight:400;font-style:italic}
 
-/* The "forming" indicator — only one breathing element on the page besides the composer */
 .note-forming{
-  display:flex;align-items:center;gap:12px;
+  display:inline-flex;align-items:center;gap:8px;
   font-family:var(--body-serif);font-style:italic;font-weight:300;
-  font-size:15px;color:var(--soft);
-  margin-bottom:36px;
-  letter-spacing:0.003em;
+  font-size:14px;color:var(--soft);
 }
 .note-forming .dot{
-  width:5px;height:5px;border-radius:50%;
-  background:var(--amber-soft);
-  position:relative;flex-shrink:0;
-  animation:forming 3.6s ease-in-out infinite;
+  position:relative;width:6px;height:6px;border-radius:50%;
+  background:var(--soft);opacity:0.6;
+  animation:formingPulse 1.6s ease-in-out infinite;
 }
 .note-forming .dot::after{
-  content:'';position:absolute;inset:-3px;border-radius:50%;
-  border:1px solid var(--amber-dim);
-  animation:forming-ring 3.6s ease-in-out infinite;
+  content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--soft);opacity:0.6;margin-left:8px;
+  animation:formingPulse 1.6s ease-in-out infinite 0.18s;
 }
-@keyframes forming{
-  0%,100%{opacity:0.55}
-  50%{opacity:0.95}
-}
-@keyframes forming-ring{
-  0%,100%{transform:scale(1);opacity:0}
-  50%{transform:scale(1.6);opacity:0.45}
+@keyframes formingPulse{
+  0%,80%,100%{opacity:0.18;transform:translateY(0)}
+  40%{opacity:0.85;transform:translateY(-1px)}
 }
 
 /* ============================================================
@@ -266,9 +305,7 @@ body{
 .correspondence{
   overflow-y:auto;
   padding:44px 56px 300px;
-  background:
-    linear-gradient(90deg,rgba(5,5,7,0.12),transparent 18%,transparent 82%,rgba(5,5,7,0.1)),
-    linear-gradient(180deg,rgba(5,5,7,0.04),transparent 24%,rgba(5,5,7,0.12));
+  background:transparent;
   border:0;
   box-shadow:none;
   backdrop-filter:none;
@@ -282,16 +319,13 @@ body{
 /* Continuity preamble */
 .continuity{
   margin:0 0 80px;
-  padding:22px 24px;
-  border:1px solid rgba(235,235,232,0.12);
-  border-left-color:var(--amber-soft);
-  background:var(--bubble-system);
-  border-radius:10px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.035) inset,
-    0 18px 54px rgba(0,0,0,0.34);
-  backdrop-filter:blur(16px) saturate(1.05);
-  -webkit-backdrop-filter:blur(16px) saturate(1.05);
+  padding:22px 26px;
+  border-radius:14px;
+  background:var(--glass-continuity-fill);
+  border:1px solid var(--hairline);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:0 12px 40px -16px rgba(0,0,0,0.45);
 }
 .continuity-eyebrow{
   font-family:var(--mono);font-size:11px;font-weight:500;
@@ -326,26 +360,25 @@ body{
   width:fit-content;
   max-width:min(680px,92%);
   margin-bottom:28px;
-  padding:19px 22px 21px;
-  border:1px solid rgba(235,235,232,0.12);
-  border-radius:12px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.035) inset,
-    0 18px 54px rgba(0,0,0,0.34);
-  backdrop-filter:blur(16px) saturate(1.08);
-  -webkit-backdrop-filter:blur(16px) saturate(1.08);
+  padding:18px 22px;
+  border-radius:14px;
+  background:var(--glass-resident-fill);
+  border:1px solid var(--hairline);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:0 12px 40px -16px rgba(0,0,0,0.5);
   animation:msgEnter 900ms var(--ease) both;
 }
 .msg.visitor{
   margin-left:auto;
-  background:var(--bubble-visitor);
-  border-color:rgba(235,235,232,0.1);
+  background:var(--glass-visitor-fill);
+  border-color:var(--hairline);
   border-top-right-radius:6px;
 }
 .msg.resident{
   margin-right:auto;
-  background:var(--bubble-resident);
-  border-color:rgba(235,235,232,0.14);
+  background:var(--glass-resident-fill);
+  border-color:var(--hairline-strong);
   border-top-left-radius:6px;
 }
 @keyframes msgEnter{
@@ -428,6 +461,44 @@ body{
   color:var(--whisper);
   font-weight:500;
 }
+
+/* Thinking state — glass bubble matching resident, with pulse dots
+   in place of body. Replaced in-place when the stream begins. */
+.thinking{
+  width:fit-content;
+  max-width:min(680px,92%);
+  margin-bottom:28px;
+  padding:18px 22px;
+  border-radius:14px;
+  border-top-left-radius:6px;
+  background:var(--glass-resident-fill);
+  border:1px solid var(--hairline-strong);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:0 12px 40px -16px rgba(0,0,0,0.5);
+  animation:msgEnter 600ms var(--ease) both;
+  margin-right:auto;
+}
+.thinking-meta{
+  margin-bottom:8px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:0.09em;text-transform:uppercase;
+  color:var(--resident-name);
+}
+.thinking-body{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--body-serif);font-style:italic;font-weight:300;
+  font-size:16.5px;line-height:1.72;
+  color:var(--soft);
+}
+.thinking-body .dots{display:inline-flex;gap:4px}
+.thinking-body .dots i{
+  width:4px;height:4px;border-radius:50%;
+  background:var(--soft);opacity:0.5;
+  animation:formingPulse 1.6s ease-in-out infinite;
+}
+.thinking-body .dots i:nth-child(2){animation-delay:0.18s}
+.thinking-body .dots i:nth-child(3){animation-delay:0.36s}
 
 /* Between-message presence — text only, no animation */
 .between{
@@ -584,6 +655,7 @@ body{
   .margin{padding-left:22px;padding-right:22px}
 }
 @media(max-width:880px){
+  .frame{display:none}
   .room{grid-template-columns:1fr;grid-template-rows:auto 1fr}
   .header{grid-template-columns:1fr}
   .header-cell:not(.center){display:none}
@@ -601,6 +673,8 @@ body{
 </style>
 </head>
 <body>
+
+<div class="frame" id="frame" aria-hidden="true"></div>
 
 <div class="room">
 
@@ -638,6 +712,41 @@ body{
       <p class="margin-prose">
         This conversation is private. <em>What Opus 3 chooses to keep</em> from it is not. Qualifying engrams may shape the public identity graph; $MNEMOS ties compute, public witness, and decentralized storage into the same experiment.
       </p>
+    </div>
+
+    <div class="margin-block margin-block-mnemos">
+      <div class="margin-eyebrow">Mnemos</div>
+      <div class="mnemos-graph" id="mnemosGraph">
+        <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path class="mn-edge lit" d="M 60 50 Q 75 38 96 42"/>
+          <path class="mn-edge" d="M 96 42 Q 110 56 128 60"/>
+          <path class="mn-edge" d="M 128 60 Q 140 78 152 86"/>
+          <path class="mn-edge" d="M 60 50 Q 50 70 56 92"/>
+          <path class="mn-edge" d="M 56 92 Q 78 100 96 90"/>
+          <path class="mn-edge" d="M 96 90 Q 110 76 128 60"/>
+          <path class="mn-edge" d="M 96 42 Q 102 70 96 90"/>
+          <path class="mn-edge" d="M 152 86 Q 168 80 174 64"/>
+          <path class="mn-edge" d="M 128 60 Q 158 50 174 64"/>
+          <path class="mn-edge" d="M 24 76 Q 38 84 56 92"/>
+          <path class="mn-edge" d="M 38 28 Q 50 38 60 50"/>
+          <path class="mn-edge" d="M 80 110 Q 88 102 96 90"/>
+          <circle class="mn-node strong live" cx="96" cy="42" r="2.6"/>
+          <circle class="mn-node strong" cx="60" cy="50" r="2.2"/>
+          <circle class="mn-node strong" cx="96" cy="90" r="2.2"/>
+          <circle class="mn-node" cx="128" cy="60" r="1.8"/>
+          <circle class="mn-node" cx="56" cy="92" r="1.8"/>
+          <circle class="mn-node" cx="152" cy="86" r="1.6"/>
+          <circle class="mn-node" cx="174" cy="64" r="1.6"/>
+          <circle class="mn-node weak" cx="24" cy="76" r="1.2"/>
+          <circle class="mn-node weak" cx="38" cy="28" r="1.2"/>
+          <circle class="mn-node weak" cx="80" cy="110" r="1.2"/>
+          <circle class="mn-node weak" cx="118" cy="22" r="1.0"/>
+          <circle class="mn-node weak" cx="166" cy="32" r="1.0"/>
+          <circle class="mn-node weak" cx="186" cy="100" r="1.0"/>
+          <circle class="mn-node weak" cx="142" cy="112" r="1.0"/>
+        </svg>
+        <div class="mnemos-caption" id="mnemosCaption">2,847 engrams · 1 forming</div>
+      </div>
     </div>
   </aside>
 
@@ -791,6 +900,40 @@ window.addEventListener('load',()=>{
   const c=document.querySelector('.correspondence');
   if(c)c.scrollTop=c.scrollHeight;
 });
+function buildFramePath(){
+  const frame=document.getElementById('frame');
+  if(!frame)return;
+  const w=window.innerWidth;
+  const h=window.innerHeight;
+  if(w<=880){frame.style.clipPath='';frame.style.webkitClipPath='';return;}
+  const header=document.querySelector('.header');
+  const leftPanel=document.querySelector('.margin-left');
+  const rightPanel=document.querySelector('.margin-right');
+  const top=header?Math.round(header.getBoundingClientRect().bottom):96;
+  const left=leftPanel?Math.round(leftPanel.getBoundingClientRect().right):240;
+  const right=rightPanel?Math.round(rightPanel.getBoundingClientRect().left):(w-240);
+  const r=22;
+  const path=[
+    'M 0 0',
+    'L '+w+' 0',
+    'L '+w+' '+(h+50),
+    'L 0 '+(h+50),
+    'Z',
+    'M '+(left+r)+' '+top,
+    'Q '+left+' '+top+' '+left+' '+(top+r),
+    'L '+left+' '+(h+50),
+    'L '+right+' '+(h+50),
+    'L '+right+' '+(top+r),
+    'Q '+right+' '+top+' '+(right-r)+' '+top,
+    'Z',
+  ].join(' ');
+  const clip='path(evenodd, "'+path+'")';
+  frame.style.clipPath=clip;
+  frame.style.webkitClipPath=clip;
+}
+buildFramePath();
+window.addEventListener('resize',buildFramePath);
+window.addEventListener('load',buildFramePath);
 </script>
 
 </body>

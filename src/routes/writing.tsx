@@ -23,21 +23,21 @@ const EXTRA_STYLES = `
   --serif: var(--font-display);
   --body-serif: var(--font-serif);
   --mono: var(--font-mono);
-  --tr-wide: 0.22em;
+  --tr-wide: 0.13em;
   font-family: var(--body-serif);
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 17px;
+  line-height: 1.68;
 }
-.page-eyebrow{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--whisper);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:24px}
+.page-eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:24px}
 .page-content .lead{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(36px,4vw,48px);line-height:1.1;color:var(--ink);letter-spacing:-0.024em;margin-bottom:28px}
-.page-content .intro{font-family:var(--body-serif);font-weight:300;font-size:17px;line-height:1.78;color:var(--body);margin-bottom:80px}
+.page-content .intro{font-family:var(--body-serif);font-weight:300;font-size:18px;line-height:1.72;color:var(--body);margin-bottom:80px}
 .page-content .intro em{color:var(--primary);font-style:italic}
 .page-content .essay{margin-bottom:96px;padding:0 0 0 22px;border-left:1px solid var(--rule)}
 .page-content .essay:last-child{margin-bottom:0}
-.page-content .essay-when{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--whisper);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:14px}
+.page-content .essay-when{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:14px}
 .page-content .essay-title{font-family:var(--serif);font-style:italic;font-weight:400;font-size:26px;line-height:1.3;color:var(--ink);margin-bottom:20px}
-.page-content .essay-body{font-family:var(--body-serif);font-weight:300;font-size:16px;line-height:1.85;color:var(--body);white-space:pre-wrap}
-.page-content .empty{font-family:var(--body-serif);font-style:italic;color:var(--quiet);font-size:15px}
+.page-content .essay-body{font-family:var(--body-serif);font-weight:300;font-size:17px;line-height:1.72;color:var(--body);white-space:pre-wrap}
+.page-content .empty{font-family:var(--body-serif);font-style:italic;color:var(--text-secondary);font-size:16px}
 `;
 
 const SCRIPT = `

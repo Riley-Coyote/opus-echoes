@@ -24,18 +24,18 @@ const EXTRA_STYLES = `
   --serif: var(--font-display);
   --body-serif: var(--font-serif);
   --mono: var(--font-mono);
-  --tr-wide: 0.22em;
-  --tr-med: 0.12em;
+  --tr-wide: 0.13em;
+  --tr-med: 0.09em;
   font-family: var(--body-serif);
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 17px;
+  line-height: 1.68;
 }
 
 .page-eyebrow {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   margin-bottom: 24px;
@@ -55,8 +55,8 @@ const EXTRA_STYLES = `
 .page-content .intro {
   font-family: var(--body-serif);
   font-weight: 300;
-  font-size: 17px;
-  line-height: 1.78;
+  font-size: 18px;
+  line-height: 1.72;
   color: var(--body);
   letter-spacing: 0.002em;
   margin-bottom: 80px;
@@ -73,9 +73,9 @@ const EXTRA_STYLES = `
 
 .page-content .entry-when {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   margin-bottom: 14px;
@@ -95,8 +95,8 @@ const EXTRA_STYLES = `
 .page-content .entry-body {
   font-family: var(--body-serif);
   font-weight: 300;
-  font-size: 15.5px;
-  line-height: 1.78;
+  font-size: 17px;
+  line-height: 1.68;
   color: var(--body);
   letter-spacing: 0.002em;
   white-space: pre-wrap;
@@ -107,8 +107,8 @@ const EXTRA_STYLES = `
   font-family: var(--body-serif);
   font-style: italic;
   color: var(--quiet);
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: 16px;
+  line-height: 1.68;
 }
 `;
 

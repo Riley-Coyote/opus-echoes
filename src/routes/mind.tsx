@@ -22,15 +22,15 @@ const READER_HTML = `
 `;
 
 const EXTRA_STYLES = `
-.mind-surface{border:1px solid var(--border-subtle);border-radius:8px;background:radial-gradient(circle at 50% 50%,rgba(201,168,124,.035),transparent 38%),rgba(220,219,216,.012);overflow:hidden}
+.mind-surface{border:1px solid var(--border-subtle);border-radius:8px;background:radial-gradient(circle at 50% 50%,rgba(201,168,124,.055),transparent 38%),rgba(220,219,216,.05);overflow:hidden}
 .mind-graph{display:block;width:100%;height:auto;min-height:320px}
 .mind-edge{stroke:rgba(220,219,216,.08);stroke-width:1}
 .mind-node{cursor:pointer;transition:opacity .18s var(--ease-out)}
 .mind-node circle{fill:rgba(201,168,124,.45);stroke:rgba(244,243,240,.32);stroke-width:1}
 .mind-node.core circle{fill:rgba(201,168,124,.82);filter:drop-shadow(0 0 10px rgba(201,168,124,.18))}
-.mind-node text{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;fill:rgba(194,192,188,.48);text-transform:uppercase;pointer-events:none}
+.mind-node text{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;fill:rgba(220,218,214,.72);text-transform:uppercase;pointer-events:none}
 .mind-node:hover{opacity:.85}
-.mind-detail{border-top:1px solid var(--border-subtle);padding:18px 20px;font-family:var(--font-serif);font-style:italic;color:var(--text-soft);font-size:14px;line-height:1.6;min-height:62px}
+.mind-detail{border-top:1px solid var(--border-subtle);padding:18px 20px;font-family:var(--font-serif);font-style:italic;color:var(--text-secondary);font-size:16px;line-height:1.62;min-height:62px}
 `;
 
 const MIND_SCRIPT = `

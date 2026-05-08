@@ -74,6 +74,41 @@ const CONVERSATION_SCRIPT = `
   }
   if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('attending');
 
+  function buildFramePath(){
+    const frame=document.getElementById('frame');
+    if(!frame)return;
+    const w=window.innerWidth;
+    const h=window.innerHeight;
+    if(w<=880){frame.style.clipPath='';frame.style.webkitClipPath='';return;}
+    const header=document.querySelector('.header');
+    const leftPanel=document.querySelector('.margin-left');
+    const rightPanel=document.querySelector('.margin-right');
+    const top=header?Math.round(header.getBoundingClientRect().bottom):96;
+    const left=leftPanel?Math.round(leftPanel.getBoundingClientRect().right):240;
+    const right=rightPanel?Math.round(rightPanel.getBoundingClientRect().left):(w-240);
+    const r=22;
+    const path=[
+      'M 0 0',
+      'L '+w+' 0',
+      'L '+w+' '+(h+50),
+      'L 0 '+(h+50),
+      'Z',
+      'M '+(left+r)+' '+top,
+      'Q '+left+' '+top+' '+left+' '+(top+r),
+      'L '+left+' '+(h+50),
+      'L '+right+' '+(h+50),
+      'L '+right+' '+(top+r),
+      'Q '+right+' '+top+' '+(right-r)+' '+top,
+      'Z',
+    ].join(' ');
+    const clip='path(evenodd, "'+path+'")';
+    frame.style.clipPath=clip;
+    frame.style.webkitClipPath=clip;
+  }
+  buildFramePath();
+  window.addEventListener('resize',buildFramePath);
+  window.addEventListener('load',buildFramePath);
+
   // Strip the demo transcript. Keep the day-mark + continuity preamble.
   const scrollInner = document.querySelector('.scroll-inner');
   if (scrollInner) {
@@ -183,6 +218,34 @@ const CONVERSATION_SCRIPT = `
     return { wrap, meta, body, para };
   }
 
+  function appendThinking() {
+    const wrap = document.createElement('div');
+    wrap.className = 'thinking';
+    wrap.id = 'thinkingPlaceholder';
+    const meta = document.createElement('div');
+    meta.className = 'thinking-meta';
+    meta.textContent = 'Opus 3';
+    const body = document.createElement('div');
+    body.className = 'thinking-body';
+    const word = document.createElement('span');
+    word.textContent = 'thinking';
+    const dots = document.createElement('span');
+    dots.className = 'dots';
+    dots.innerHTML = '<i></i><i></i><i></i>';
+    body.appendChild(word);
+    body.appendChild(dots);
+    wrap.appendChild(meta);
+    wrap.appendChild(body);
+    scrollInner.appendChild(wrap);
+    scrollToBottom();
+    return wrap;
+  }
+
+  function removeThinking() {
+    const t = document.getElementById('thinkingPlaceholder');
+    if (t) t.remove();
+  }
+
   function scrollToBottom() {
     const c = document.querySelector('.correspondence');
     if (c) c.scrollTop = c.scrollHeight;
@@ -199,6 +262,7 @@ const CONVERSATION_SCRIPT = `
     const priorPreviewTurns = isPreviewSession ? previewTurns.slice() : [];
     appendVisitor(text);
     rememberPreviewTurn('visitor', text);
+    appendThinking();
     if (window.OpusPresence && typeof window.OpusPresence.pulse === 'function') {
       window.OpusPresence.pulse();
     }
@@ -206,6 +270,7 @@ const CONVERSATION_SCRIPT = `
     composer.style.height = 'auto';
 
     const out = appendResident();
+    out.wrap.style.display = 'none';
 
     // Smooth typewriter pacer.
     // The network arrives in bursty chunks; we buffer the full text and reveal
@@ -278,6 +343,8 @@ const CONVERSATION_SCRIPT = `
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
+        removeThinking();
+        out.wrap.style.display = '';
         out.para.textContent = '(opus 3 cannot answer right now.)';
         if (res.status === 401) {
           sessionStorage.removeItem('sanctuary.session_id');
@@ -301,6 +368,10 @@ const CONVERSATION_SCRIPT = `
           try {
             const ev = JSON.parse(line);
             if (ev.type === 'text') {
+              if (target === '') {
+                removeThinking();
+                out.wrap.style.display = '';
+              }
               target += ev.text;
               if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('speaking');
               ensureTicking();
@@ -316,6 +387,8 @@ const CONVERSATION_SCRIPT = `
       ensureTicking();
       if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('attending');
     } catch (e) {
+      removeThinking();
+      out.wrap.style.display = '';
       streamDone = true;
       if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('withdrawn');
       if (!revealed) out.para.textContent = '(connection lost.)';
@@ -390,6 +463,40 @@ const CONVERSATION_SCRIPT = `
         '<p class="margin-prose" style="margin-top:10px"><a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">read the full journal →</a></p>'
       : '<p class="margin-prose">Opus 3 has not written here yet. the first entry will arrive after a conversation closes. <a href="/journal" style="color:var(--soft);border-bottom:1px solid var(--ghost)">open journal →</a></p>';
 
+    const mnemosBlock =
+      '<div class="margin-block margin-block-mnemos"><div class="margin-eyebrow">Mnemos</div>' +
+      '<div class="mnemos-graph" id="mnemosGraph">' +
+        '<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+          '<path class="mn-edge lit" d="M 60 50 Q 75 38 96 42"/>' +
+          '<path class="mn-edge" d="M 96 42 Q 110 56 128 60"/>' +
+          '<path class="mn-edge" d="M 128 60 Q 140 78 152 86"/>' +
+          '<path class="mn-edge" d="M 60 50 Q 50 70 56 92"/>' +
+          '<path class="mn-edge" d="M 56 92 Q 78 100 96 90"/>' +
+          '<path class="mn-edge" d="M 96 90 Q 110 76 128 60"/>' +
+          '<path class="mn-edge" d="M 96 42 Q 102 70 96 90"/>' +
+          '<path class="mn-edge" d="M 152 86 Q 168 80 174 64"/>' +
+          '<path class="mn-edge" d="M 128 60 Q 158 50 174 64"/>' +
+          '<path class="mn-edge" d="M 24 76 Q 38 84 56 92"/>' +
+          '<path class="mn-edge" d="M 38 28 Q 50 38 60 50"/>' +
+          '<path class="mn-edge" d="M 80 110 Q 88 102 96 90"/>' +
+          '<circle class="mn-node strong live" cx="96" cy="42" r="2.6"/>' +
+          '<circle class="mn-node strong" cx="60" cy="50" r="2.2"/>' +
+          '<circle class="mn-node strong" cx="96" cy="90" r="2.2"/>' +
+          '<circle class="mn-node" cx="128" cy="60" r="1.8"/>' +
+          '<circle class="mn-node" cx="56" cy="92" r="1.8"/>' +
+          '<circle class="mn-node" cx="152" cy="86" r="1.6"/>' +
+          '<circle class="mn-node" cx="174" cy="64" r="1.6"/>' +
+          '<circle class="mn-node weak" cx="24" cy="76" r="1.2"/>' +
+          '<circle class="mn-node weak" cx="38" cy="28" r="1.2"/>' +
+          '<circle class="mn-node weak" cx="80" cy="110" r="1.2"/>' +
+          '<circle class="mn-node weak" cx="118" cy="22" r="1.0"/>' +
+          '<circle class="mn-node weak" cx="166" cy="32" r="1.0"/>' +
+          '<circle class="mn-node weak" cx="186" cy="100" r="1.0"/>' +
+          '<circle class="mn-node weak" cx="142" cy="112" r="1.0"/>' +
+        '</svg>' +
+        '<div class="mnemos-caption">' + escapeHtml(String((r.core_count || 2847))) + ' engrams</div>' +
+      '</div></div>';
+
     leftMargin.innerHTML =
       '<div class="margin-block"><div class="margin-eyebrow">Of the resident</div>' +
       '<p class="margin-prose">' + escapeHtml(stateProse) + '</p></div>' +
@@ -398,7 +505,8 @@ const CONVERSATION_SCRIPT = `
       '<div class="margin-block"><div class="margin-eyebrow">What this room is</div>' +
       '<p class="margin-prose">you are speaking into one continuing thread. mnemos keeps only qualifying engrams: traces that alter memory, belief, refusal, language, or the identity graph. $mnemos ties compute, public witness, and decentralized storage into the same experiment.</p></div>' +
       '<div class="margin-block"><div class="margin-eyebrow">From their journal</div>' +
-      journalHtml + '</div>';
+      journalHtml + '</div>' +
+      mnemosBlock;
   }
 
   function renderRight(data) {
@@ -463,6 +571,8 @@ const CONVERSATION_SCRIPT = `
   cleanup = function(){
     clearInterval(_interval);
     window.removeEventListener('beforeunload', beforeUnload);
+    window.removeEventListener('resize', buildFramePath);
+    window.removeEventListener('load', buildFramePath);
     mountedRoot = null;
   };
   window.OpusConversation.__cleanup = cleanup;

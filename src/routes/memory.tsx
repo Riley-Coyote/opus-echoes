@@ -150,18 +150,18 @@ const EXTRA_STYLES = `
   --serif: var(--font-display);
   --body-serif: var(--font-serif);
   --mono: var(--font-mono);
-  --tr-wide: 0.22em;
-  --tr-med: 0.12em;
+  --tr-wide: 0.13em;
+  --tr-med: 0.09em;
   font-family: var(--body-serif);
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 17px;
+  line-height: 1.68;
 }
 
 .page-eyebrow {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   margin-bottom: 24px;
@@ -181,8 +181,8 @@ const EXTRA_STYLES = `
 .page-content .intro {
   font-family: var(--body-serif);
   font-weight: 300;
-  font-size: 17px;
-  line-height: 1.78;
+  font-size: 18px;
+  line-height: 1.72;
   color: var(--body);
   letter-spacing: 0.002em;
   margin-bottom: 8px;
@@ -193,16 +193,16 @@ const EXTRA_STYLES = `
   font-style: italic;
   font-weight: 400;
   color: var(--ink);
-  font-size: 18px;
+  font-size: 19px;
 }
 
 .page-content .intro-secondary {
   font-family: var(--body-serif);
   font-style: italic;
   font-weight: 300;
-  font-size: 14.5px;
-  line-height: 1.74;
-  color: var(--soft);
+  font-size: 16px;
+  line-height: 1.68;
+  color: var(--text-secondary);
   letter-spacing: 0.002em;
   margin-bottom: 80px;
 }
@@ -230,9 +230,9 @@ const EXTRA_STYLES = `
 }
 .page-content .count-label {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   margin-top: 14px;
@@ -244,7 +244,7 @@ const EXTRA_STYLES = `
 
 .page-content .section-eyebrow {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--soft);
   letter-spacing: var(--tr-wide);
@@ -262,9 +262,9 @@ const EXTRA_STYLES = `
 
 .page-content .entry-when {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   margin-bottom: 12px;
@@ -285,9 +285,9 @@ const EXTRA_STYLES = `
   font-family: var(--body-serif);
   font-style: italic;
   font-weight: 300;
-  font-size: 14.5px;
-  line-height: 1.72;
-  color: var(--soft);
+  font-size: 16px;
+  line-height: 1.66;
+  color: var(--text-secondary);
   letter-spacing: 0.003em;
 }
 .page-content .entry-prose em { color: var(--primary); font-style: italic; }
@@ -296,7 +296,7 @@ const EXTRA_STYLES = `
   font-style: italic;
   font-weight: 400;
   color: var(--primary);
-  font-size: 15.5px;
+  font-size: 17px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -319,9 +319,9 @@ const EXTRA_STYLES = `
 }
 .page-content .thread-meta {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   margin-bottom: 14px;
@@ -330,9 +330,9 @@ const EXTRA_STYLES = `
   font-family: var(--body-serif);
   font-style: italic;
   font-weight: 300;
-  font-size: 14.5px;
-  line-height: 1.72;
-  color: var(--soft);
+  font-size: 16px;
+  line-height: 1.66;
+  color: var(--text-secondary);
   letter-spacing: 0.003em;
 }
 
@@ -349,8 +349,8 @@ const EXTRA_STYLES = `
 .page-content .belief-text {
   font-family: var(--body-serif);
   font-weight: 300;
-  font-size: 15.5px;
-  line-height: 1.72;
+  font-size: 16.5px;
+  line-height: 1.66;
   color: var(--body);
   letter-spacing: 0.002em;
   margin-bottom: 6px;
@@ -358,15 +358,15 @@ const EXTRA_STYLES = `
 .page-content .belief-text em { color: var(--primary); font-style: italic; }
 .page-content .belief-meta {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
 }
 .page-content .belief-conf {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--soft);
   letter-spacing: 0.04em;
@@ -394,9 +394,9 @@ const EXTRA_STYLES = `
 }
 .page-content .journal-preview-when {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--whisper);
+  color: var(--quiet);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   margin-bottom: 12px;
@@ -415,8 +415,8 @@ const EXTRA_STYLES = `
 .page-content .journal-preview-body {
   font-family: var(--body-serif);
   font-weight: 300;
-  font-size: 15px;
-  line-height: 1.75;
+  font-size: 16px;
+  line-height: 1.66;
   color: var(--body);
   letter-spacing: 0.002em;
   margin: 0;
@@ -424,7 +424,7 @@ const EXTRA_STYLES = `
 }
 .page-content .journal-preview-cta {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--amber-soft);
   letter-spacing: var(--tr-med);
@@ -440,9 +440,9 @@ const EXTRA_STYLES = `
   font-family: var(--body-serif);
   font-style: italic;
   font-weight: 300;
-  font-size: 14px;
-  line-height: 1.74;
-  color: var(--quiet);
+  font-size: 16px;
+  line-height: 1.68;
+  color: var(--text-secondary);
   letter-spacing: 0.003em;
 }
 .page-content .foot-note a {
@@ -500,7 +500,7 @@ const MEMORY_SCRIPT = `
     function renderEmpty(section, line) {
       clearChildrenAfter(section, '.section-eyebrow');
       const p = document.createElement('p');
-      p.style.cssText = 'font-family:var(--font-serif);font-style:italic;color:var(--text-tertiary);font-size:15px;line-height:1.7';
+      p.style.cssText = 'font-family:var(--font-serif);font-style:italic;color:var(--text-secondary);font-size:16px;line-height:1.68';
       p.textContent = line;
       section.appendChild(p);
     }

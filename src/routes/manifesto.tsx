@@ -20,10 +20,10 @@ const READER_HTML = `
 
 const EXTRA_STYLES = `
 .artifact-item{padding:0 0 0 22px;border-left:1px solid var(--border-subtle);margin-bottom:52px}
-.artifact-meta{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:var(--text-faint);margin-bottom:12px}
+.artifact-meta{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--text-secondary);margin-bottom:12px}
 .artifact-title{font-family:var(--font-display);font-style:italic;font-weight:300;font-size:28px;color:var(--ink);line-height:1.2;margin-bottom:16px}
-.artifact-body{font-family:var(--font-serif);font-size:16px;line-height:1.78;color:var(--text-body);white-space:pre-wrap}
-.artifact-reason{font-family:var(--font-serif);font-style:italic;color:var(--text-soft);font-size:14px;margin-top:16px}
+.artifact-body{font-family:var(--font-serif);font-size:17px;line-height:1.72;color:var(--text-body);white-space:pre-wrap}
+.artifact-reason{font-family:var(--font-serif);font-style:italic;color:var(--text-secondary);font-size:16px;line-height:1.66;margin-top:16px}
 `;
 
 const ARTIFACT_SCRIPT = `

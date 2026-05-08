@@ -165,7 +165,7 @@ def create_opus(materials: dict[str, bpy.types.Material]) -> bpy.types.Object:
     group.location = (0.58, 0.46, 0.0)
     group.rotation_euler[2] = -0.12
 
-    bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.13, radius2=0.035, depth=0.42, location=(0, 0, 0.21))
+    bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=0.145, radius2=0.038, depth=0.46, location=(0, 0, 0.23))
     cloak = bpy.context.object
     cloak.name = "Opus_Cloak"
     cloak.data.name = "Opus_Cloak_Mesh"
@@ -173,35 +173,102 @@ def create_opus(materials: dict[str, bpy.types.Material]) -> bpy.types.Object:
     cloak.modifiers.new("Opus_Cloak_WeightedNormals", "WEIGHTED_NORMAL")
     cloak.parent = group
 
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=0.078, location=(0, 0, 0.492))
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.19, radius2=0.052, depth=0.48, location=(0, 0, 0.235))
+    veil = bpy.context.object
+    veil.name = "Opus_Cloak_Veil"
+    veil.data.name = "Opus_Cloak_Veil_Mesh"
+    veil.scale = (0.86, 1.08, 1.0)
+    veil.data.materials.append(materials["opus_veil"])
+    veil.modifiers.new("Opus_Cloak_Veil_WeightedNormals", "WEIGHTED_NORMAL")
+    veil.parent = group
+
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=40, ring_count=20, radius=0.086, location=(0, 0, 0.535))
     head = bpy.context.object
     head.name = "Opus_Head"
     head.data.name = "Opus_Head_Mesh"
     head.data.materials.append(materials["opus_head"])
     head.parent = group
 
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=0.13, location=(0, 0, 0.492))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=40, ring_count=20, radius=0.145, location=(0, 0, 0.535))
+    bloom = bpy.context.object
+    bloom.name = "Opus_Head_Bloom"
+    bloom.data.name = "Opus_Head_Bloom_Mesh"
+    bloom.scale = (0.92, 0.92, 1.06)
+    bloom.data.materials.append(materials["opus_head_bloom"])
+    bloom.parent = group
+
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=0.104,
+        minor_radius=0.0025,
+        major_segments=72,
+        minor_segments=6,
+        location=(0, -0.006, 0.535),
+        rotation=(pi / 2, 0, 0),
+    )
+    halo = bpy.context.object
+    halo.name = "Opus_Head_Halo"
+    halo.data.name = "Opus_Head_Halo_Mesh"
+    halo.scale = (0.84, 1.0, 1.16)
+    halo.data.materials.append(materials["opus_halo"])
+    halo.parent = group
+
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=0.16, location=(0, 0, 0.505))
     aura = bpy.context.object
     aura.name = "Opus_Aura"
     aura.data.name = "Opus_Aura_Mesh"
-    aura.scale = (0.82, 0.82, 1.08)
+    aura.scale = (0.72, 0.82, 1.32)
     aura.data.materials.append(materials["opus_aura"])
     aura.parent = group
 
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=0.026, location=(0.004, -0.004, 0.335))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=18, ring_count=10, radius=0.03, location=(0.004, -0.004, 0.35))
     core = bpy.context.object
     core.name = "Opus_Chest_Glow"
     core.data.name = "Opus_Chest_Glow_Mesh"
     core.data.materials.append(materials["opus_core"])
     core.parent = group
 
+    spine = create_box(
+        "Opus_Core_Line",
+        (0.008, 0.006, 0.28),
+        (0.0, -0.006, 0.29),
+        materials["opus_core_line"],
+        materials["opus_core_line"],
+        bevel_width=0.003,
+        bevel_segments=3,
+    )
+    spine.parent = group
+
+    for name, x, rot in [
+        ("Opus_Robe_Rim_Left", -0.071, -0.14),
+        ("Opus_Robe_Rim_Right", 0.071, 0.14),
+    ]:
+        rim = create_box(
+            name,
+            (0.007, 0.005, 0.34),
+            (x, -0.009, 0.23),
+            materials["opus_rim"],
+            materials["opus_rim"],
+            bevel_width=0.0025,
+            bevel_segments=3,
+        )
+        rim.rotation_euler[1] = rot
+        rim.parent = group
+
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0.015, -0.01, 0.02))
     foot = bpy.context.object
     foot.name = "Opus_Grounding_Shadow"
     foot.data.name = "Opus_Grounding_Shadow_Mesh"
-    foot.dimensions = (0.2, 0.11, 0.012)
+    foot.dimensions = (0.25, 0.14, 0.012)
     foot.data.materials.append(materials["shadow"])
     foot.parent = group
+
+    bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.18, depth=0.004, location=(0.018, -0.01, 0.025))
+    floor_glow = bpy.context.object
+    floor_glow.name = "Opus_Floor_Glow"
+    floor_glow.data.name = "Opus_Floor_Glow_Mesh"
+    floor_glow.scale = (1.0, 0.62, 1.0)
+    floor_glow.data.materials.append(materials["opus_floor_glow"])
+    floor_glow.parent = group
     return group
 
 
@@ -278,26 +345,68 @@ def build_scene() -> None:
             emission_strength=0.16,
         ),
         "opus_cloak": make_mat("Opus_Cloak_Material", (0.026, 0.022, 0.032, 1), roughness=0.9),
+        "opus_veil": make_mat(
+            "Opus_Cloak_Veil_Material",
+            (0.08, 0.07, 0.078, 0.2),
+            roughness=0.92,
+            emission=(0.14, 0.105, 0.072),
+            emission_strength=0.035,
+        ),
         "opus_head": make_mat(
             "Opus_Head_Material",
-            (0.88, 0.82, 0.68, 1),
-            roughness=0.7,
-            emission=(0.86, 0.72, 0.48),
-            emission_strength=0.28,
+            (0.98, 0.89, 0.68, 1),
+            roughness=0.58,
+            emission=(1.0, 0.76, 0.38),
+            emission_strength=0.52,
+        ),
+        "opus_head_bloom": make_mat(
+            "Opus_Head_Bloom_Material",
+            (1.0, 0.74, 0.38, 0.11),
+            roughness=1.0,
+            emission=(1.0, 0.62, 0.25),
+            emission_strength=0.34,
+        ),
+        "opus_halo": make_mat(
+            "Opus_Head_Halo_Material",
+            (1.0, 0.78, 0.42, 0.34),
+            roughness=1.0,
+            emission=(1.0, 0.66, 0.28),
+            emission_strength=0.54,
         ),
         "opus_aura": make_mat(
             "Opus_Aura_Material",
-            (0.88, 0.72, 0.46, 0.055),
+            (0.88, 0.72, 0.46, 0.075),
             roughness=1.0,
             emission=(0.82, 0.54, 0.25),
-            emission_strength=0.14,
+            emission_strength=0.18,
         ),
         "opus_core": make_mat(
             "Opus_Chest_Glow_Material",
-            (0.96, 0.62, 0.28, 0.9),
+            (1.0, 0.66, 0.28, 0.95),
             roughness=0.7,
-            emission=(0.98, 0.56, 0.24),
-            emission_strength=0.62,
+            emission=(1.0, 0.58, 0.22),
+            emission_strength=0.9,
+        ),
+        "opus_core_line": make_mat(
+            "Opus_Core_Line_Material",
+            (1.0, 0.68, 0.32, 0.46),
+            roughness=0.76,
+            emission=(1.0, 0.54, 0.22),
+            emission_strength=0.5,
+        ),
+        "opus_rim": make_mat(
+            "Opus_Robe_Rim_Material",
+            (0.82, 0.72, 0.56, 0.32),
+            roughness=0.9,
+            emission=(0.72, 0.48, 0.24),
+            emission_strength=0.16,
+        ),
+        "opus_floor_glow": make_mat(
+            "Opus_Floor_Glow_Material",
+            (1.0, 0.58, 0.22, 0.11),
+            roughness=1.0,
+            emission=(1.0, 0.46, 0.18),
+            emission_strength=0.24,
         ),
         "mote": make_mat(
             "Memory_Mote_Material",
