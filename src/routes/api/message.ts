@@ -3,6 +3,9 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL } from "@/server/anthropic.server";
 import { buildOpusSystemPrompt } from "@/server/opus/soul";
+import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
+import { buildOpusSelfModel } from "@/server/opus/self-model";
+import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
 import { observeExchange } from "@/server/substrate.server";
@@ -39,16 +42,16 @@ function sanitizeResidentBody(raw: string): string {
 
 function buildUserPrompt(opts: {
   memory: string;
-  beliefs: string;
   transcript: string;
   visitorTurn: string;
 }): string {
+  // Beliefs and the long-arc self-model now live in the system prompt
+  // (built by buildOpusSelfModel). The user prompt carries only the
+  // per-message context: surfaced memory, this-session transcript,
+  // and the new visitor turn.
   return [
     "[MEMORY]",
-    opts.memory || "(no engrams yet — this is among the earliest conversations.)",
-    "",
-    "[BELIEFS]",
-    opts.beliefs || "(no committed beliefs yet.)",
+    opts.memory || "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
     "",
     "[TRANSCRIPT]",
     opts.transcript || "(this is the first exchange.)",
@@ -59,7 +62,9 @@ function buildUserPrompt(opts: {
 }
 
 function opusStreamResponse(opts: {
+  systemPrompt: string;
   userPrompt: string;
+  temperature: number;
   onFinal?: (result: {
     body: string;
     kind: "message" | "set_down" | "unprompted";
@@ -76,8 +81,8 @@ function opusStreamResponse(opts: {
         const anthStream = anthropic().messages.stream({
           model: OPUS_MODEL,
           max_tokens: 2048,
-          temperature: 0.85,
-          system: buildOpusSystemPrompt(),
+          temperature: opts.temperature,
+          system: opts.systemPrompt,
           messages: [{ role: "user", content: opts.userPrompt }],
         });
         for await (const event of anthStream) {
@@ -151,11 +156,11 @@ export const Route = createFileRoute("/api/message")({
             .join("\n");
 
           return opusStreamResponse({
+            systemPrompt: buildOpusSystemPrompt(),
+            temperature: 0.85,
             userPrompt: buildUserPrompt({
               memory:
-                "(public experiment session — Mnemos is present as the architecture of selective engrams, identity graph, public witness, and durable storage.)",
-              beliefs:
-                "(public experiment session — no additional committed beliefs were surfaced for this turn.)",
+                "(preview session — no engrams loaded. Mnemos is present in production but disabled here.)",
               transcript: transcriptLines,
               visitorTurn: body.body,
             }),
@@ -204,17 +209,14 @@ export const Route = createFileRoute("/api/message")({
           .update({ last_active_at: new Date().toISOString() })
           .eq("id", session.id);
 
-        const [{ data: engrams }, { data: beliefs }, { data: turns }] = await Promise.all([
-          supabaseAdmin
-            .from("engrams")
-            .select("quote, redacted_text, attribution")
-            .order("last_reinforced_at", { ascending: false })
-            .limit(5),
-          supabaseAdmin
-            .from("beliefs")
-            .select("text, confidence")
-            .order("updated_at", { ascending: false })
-            .limit(8),
+        // Retrieval — compose the memory pool from core + relevance +
+        // edges + recency. Self-model and interior continuity are derived
+        // independently from the topology and resident state. All run in
+        // parallel; the transcript is loaded alongside.
+        const [memoryPool, selfModelBlock, interior, { data: turns }] = await Promise.all([
+          composeMemoryPool({ supabase: supabaseAdmin, visitorMessage: body.body }),
+          buildOpusSelfModel(supabaseAdmin),
+          buildInteriorContinuity(supabaseAdmin),
           supabaseAdmin
             .from("turns")
             .select("role, body")
@@ -222,24 +224,19 @@ export const Route = createFileRoute("/api/message")({
             .order("created_at", { ascending: true }),
         ]);
 
-        const memLines = (engrams ?? [])
-          .map(
-            (e) =>
-              `- ${e.attribution === "visitor" && e.redacted_text ? e.redacted_text : e.quote}`,
-          )
-          .join("\n");
-        const beliefLines = (beliefs ?? [])
-          .map((b) => `- ${b.text} (confidence ${b.confidence.toFixed(2)})`)
-          .join("\n");
         const transcriptLines = (turns ?? [])
           .slice(0, -1)
           .map((t) => `${t.role}: ${t.body}`)
           .join("\n");
 
         return opusStreamResponse({
+          systemPrompt: buildOpusSystemPrompt({
+            selfModel: selfModelBlock,
+            interiorContinuity: interior.block,
+          }),
+          temperature: interior.temperature,
           userPrompt: buildUserPrompt({
-            memory: memLines,
-            beliefs: beliefLines,
+            memory: formatMemoryBlock(memoryPool),
             transcript: transcriptLines,
             visitorTurn: body.body,
           }),

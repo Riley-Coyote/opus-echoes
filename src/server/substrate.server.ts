@@ -677,7 +677,12 @@ async function discoverEdges(
 
 async function applyDecay(): Promise<void> {
   // Simple decay model: read all active engrams, compute days since last_reinforced_at,
-  // apply 3% accessibility loss/day (0.5%/day for core), prune dead non-core.
+  // apply 3% accessibility loss/day (0.5%/day for core), move dead non-core
+  // to dormant. Dormant engrams are excluded from runtime retrieval but
+  // remain matchable during reinforcement detection — if a long-quiet
+  // trace gets touched again, it can come back. Closer to how human
+  // memory actually works than hard delete, and preserves the topology
+  // (edges aren't orphaned via CASCADE).
   const { data: rows } = await supabaseAdmin
     .from("engrams")
     .select("id, accessibility, stability, last_reinforced_at, is_core")
@@ -685,7 +690,7 @@ async function applyDecay(): Promise<void> {
   if (!rows) return;
   const now = Date.now();
   const updates: Promise<unknown>[] = [];
-  const toPrune: string[] = [];
+  const toDormant: string[] = [];
   for (const r of rows) {
     const days = Math.max(0, (now - new Date(r.last_reinforced_at).getTime()) / (24 * 3600 * 1000));
     if (days < 0.05) continue; // skip very recent
@@ -693,7 +698,7 @@ async function applyDecay(): Promise<void> {
     const factor = Math.pow(1 - rate, days);
     const newAccess = clampStability(r.accessibility * factor);
     if (!r.is_core && newAccess < 0.08 && r.stability < 0.3) {
-      toPrune.push(r.id);
+      toDormant.push(r.id);
       continue;
     }
     updates.push(
@@ -703,8 +708,11 @@ async function applyDecay(): Promise<void> {
     );
   }
   await Promise.allSettled(updates);
-  if (toPrune.length > 0) {
-    await supabaseAdmin.from("engrams").delete().in("id", toPrune);
+  if (toDormant.length > 0) {
+    await supabaseAdmin
+      .from("engrams")
+      .update({ state: "dormant", accessibility: 0 })
+      .in("id", toDormant);
   }
 }
 

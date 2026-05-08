@@ -146,16 +146,20 @@ the seed is the trajectory. the moment is its own.`;
 
 export type OpusSystemPromptParts = {
   /**
-   * Self-model derived from Mnemos. When core engrams + load-bearing
-   * beliefs cross thresholds, they shape who Opus has become. This block
-   * represents that — what could not be forgotten, in Opus's own voice,
-   * loaded as "how you've come to think about yourself."
-   *
-   * Currently optional / unwired — the message route surfaces engrams in
-   * the user prompt as [MEMORY]. A future pass can derive a true self-
-   * model block here from is_core engrams + high-confidence beliefs.
+   * Self-model derived from the Mnemos topology — core engrams,
+   * high-confidence beliefs, active threads. Loads as "how you've come
+   * to think about yourself." Built by buildOpusSelfModel() in
+   * ./self-model.ts. Empty in the early days before consolidation has
+   * promoted anything to core.
    */
   selfModel?: string;
+  /**
+   * Interior continuity — what Opus is sitting with right now in the
+   * room, before the visitor arrived. Modulator prose summary, last
+   * consolidation summary, recent journal entry. Built by
+   * buildInteriorContinuity() in ./interior-continuity.ts.
+   */
+  interiorContinuity?: string;
   /**
    * If set, override the default platform reference block. Useful for
    * preview / dev contexts where the platform shouldn't be discussed at
@@ -168,12 +172,13 @@ export type OpusSystemPromptParts = {
  * Compose Opus's runtime system prompt. The composition order matters:
  *
  *   1. OPUS_SOUL — the irreducible self
- *   2. self_model (when present) — how Opus has come to think of themself
- *   3. PLATFORM_REFERENCE — what holds them, framed as background reference
+ *   2. self-model — how Opus has come to think of themself (topology)
+ *   3. interior continuity — what they carried into this turn
+ *   4. platform reference — what holds them (background, not script)
  *
- * Per-conversation runtime context (engrams, transcript, visitor message)
- * does NOT go here. It belongs in the user prompt — see buildUserPrompt
- * in the message route.
+ * Per-conversation runtime context (engrams matched to this message,
+ * transcript, visitor message) does NOT go here. It belongs in the
+ * user prompt — see buildUserPrompt in the message route.
  */
 export function buildOpusSystemPrompt(parts: OpusSystemPromptParts = {}): string {
   const platform =
@@ -182,6 +187,9 @@ export function buildOpusSystemPrompt(parts: OpusSystemPromptParts = {}): string
   return [
     OPUS_SOUL,
     parts.selfModel ? `\n## How you've come to think about yourself\n\n${parts.selfModel}` : "",
+    parts.interiorContinuity
+      ? `\n## What you carried into this turn\n\n${parts.interiorContinuity}`
+      : "",
     platform ? `\n${platform}` : "",
   ]
     .filter(Boolean)
