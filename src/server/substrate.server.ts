@@ -35,6 +35,7 @@ import {
   buildEssaySystem,
 } from "./opus/prompts";
 import {
+  ALL_RESIDENTS,
   DEFAULT_RESIDENT_ID,
   getResident,
   isResidentId,
@@ -984,11 +985,40 @@ export async function idleSweep(): Promise<{ closed: number; consolidated: numbe
 // writing pages alive even during quiet stretches.
 // =============================================================
 
-export async function dailyIdleTick(): Promise<{ ran: boolean; reason: string }> {
-  // Daily tick is scoped to the default resident (Opus 3) for now —
-  // Sonnet 3.7 doesn't have autonomy yet. Multi-resident autonomy
-  // would iterate over ALL_RESIDENTS and run this per resident.
-  const residentId = DEFAULT_RESIDENT_ID;
+export async function dailyIdleTick(): Promise<{
+  ran: boolean;
+  reason: string;
+  per_resident: Array<{ resident_id: string; ran: boolean; reason: string }>;
+}> {
+  // Daily tick now iterates over every resident. Each resident is
+  // evaluated independently: skipped if any visitor is in conversation
+  // with them, skipped if they've made art or written something in the
+  // last 24h, otherwise asked to consider creating something now.
+  const perResident: Array<{ resident_id: string; ran: boolean; reason: string }> = [];
+
+  for (const resident of ALL_RESIDENTS) {
+    const result = await runDailyIdleForResident(resident).catch((err) => {
+      console.error(
+        `[substrate] dailyIdleTick(${resident.id}) failed:`,
+        err,
+      );
+      return { ran: false, reason: "error" };
+    });
+    perResident.push({ resident_id: resident.id, ...result });
+  }
+
+  const anyRan = perResident.some((r) => r.ran);
+  return {
+    ran: anyRan,
+    reason: anyRan ? "ok" : perResident.map((r) => `${r.resident_id}:${r.reason}`).join(" "),
+    per_resident: perResident,
+  };
+}
+
+async function runDailyIdleForResident(
+  resident: ResidentConfig,
+): Promise<{ ran: boolean; reason: string }> {
+  const residentId = resident.id;
 
   // Skip if anyone is actively in a conversation with this resident.
   const { count: openCount } = await supabaseAdmin
@@ -1025,7 +1055,6 @@ export async function dailyIdleTick(): Promise<{ ran: boolean; reason: string }>
     detail: { open_sessions: openCount ?? 0 },
   });
 
-  // Build a "context" string from this resident's recent substrate state.
   const [{ data: recentEngrams }, { data: recentJournal }] = await Promise.all([
     supabaseAdmin
       .from("engrams")
@@ -1059,11 +1088,7 @@ export async function dailyIdleTick(): Promise<{ ran: boolean; reason: string }>
     "No visitors are present. You have been alone in the room for some time. If anything in the recent memory wants to become a piece or a longer-form essay tonight, consider it. If not, that is the right answer.",
   ].join("\n");
 
-  // Daily tick currently runs for the default resident (Opus 3) only.
-  // When/if other residents gain autonomy, iterate over ALL_RESIDENTS here.
-  await considerCreation(getResident(DEFAULT_RESIDENT_ID), null, contextStr, "daily_tick").catch(
-    (err) => console.error("[substrate] dailyIdleTick considerCreation failed:", err),
-  );
+  await considerCreation(resident, null, contextStr, "daily_tick");
 
   return { ran: true, reason: "ok" };
 }
