@@ -89,6 +89,23 @@ a:hover{border-bottom-color:var(--amber);color:var(--ink)}
 .archive-list{display:flex;flex-direction:column;gap:14px;margin-top:34px}.conversation-card{display:block;border:1px solid var(--rule-soft);background:rgba(12,12,15,.88);border-radius:8px;padding:24px 26px;color:inherit}.conversation-card h2{font-family:var(--serif);font-style:italic;font-weight:300;color:var(--ink);font-size:32px;margin-bottom:8px}.conversation-meta{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--quiet);margin-bottom:14px}.conversation-summary{font-size:17px;color:var(--body);line-height:1.65;margin-bottom:18px}.turn{border-left:1px solid var(--rule-soft);padding:0 0 0 16px;margin:16px 0}.turn-role{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--quiet);margin-bottom:6px}.turn p{font-size:16px;color:var(--soft);line-height:1.62;white-space:pre-wrap}
 .load-sentinel{min-height:1px}.load-more{align-self:flex-start;margin-top:10px;border:1px solid var(--rule);border-radius:6px;background:transparent;color:var(--amber-soft);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.11em;padding:10px 12px;cursor:pointer}.load-more[hidden]{display:none}.load-more:hover{background:var(--amber-whisper);border-color:var(--amber-dim);color:var(--ink)}
 .empty{font-style:italic;color:var(--quiet);border-left:1px solid var(--rule-soft);padding-left:18px}
+/* Cinematic entry on the approach page. data-opus-route is set in a tiny
+   inline <head> script so the final layout applies on first paint — this
+   animation just smooths the appearance instead of letting elements pop. */
+@keyframes approach-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+html[data-opus-route="approach"] .threshold-core .resident-presence,
+html[data-opus-route="approach"] .threshold-core .threshold-kicker,
+html[data-opus-route="approach"] .threshold-core .threshold-title,
+html[data-opus-route="approach"] .threshold-core .threshold-intro,
+html[data-opus-route="approach"] .threshold-core .threshold-panel,
+html[data-opus-route="approach"] .threshold-core .context-orbit{animation:approach-rise 760ms cubic-bezier(.22,1,.36,1) both}
+html[data-opus-route="approach"] .threshold-core .resident-presence{animation-delay:120ms}
+html[data-opus-route="approach"] .threshold-core .threshold-kicker{animation-delay:280ms}
+html[data-opus-route="approach"] .threshold-core .threshold-title{animation-delay:420ms}
+html[data-opus-route="approach"] .threshold-core .threshold-intro{animation-delay:600ms}
+html[data-opus-route="approach"] .threshold-core .threshold-panel{animation-delay:800ms}
+html[data-opus-route="approach"] .threshold-core .context-orbit{animation-delay:1000ms}
+@media(prefers-reduced-motion:reduce){html[data-opus-route="approach"] .threshold-core>*{animation:none!important}}
 @media(max-width:900px){.public-nav{position:relative;height:auto;padding:22px 22px 10px;align-items:flex-start;gap:16px;flex-direction:column}.nav-links{width:100%;overflow:visible;flex-wrap:wrap;gap:14px 18px;padding-bottom:10px}.nav-private{white-space:nowrap}.page{width:min(100% - 40px,760px);padding:48px 0 88px}.threshold-stage{min-height:auto;padding:34px 0 20px}.threshold-title{font-size:46px}.threshold-intro{font-size:15.5px}.context-orbit{grid-template-columns:repeat(2,minmax(0,1fr));transform:none;width:100%}.threshold-grid{grid-template-columns:1fr;gap:44px}.threshold-panel{position:relative;top:auto}.guide-grid,.flow{grid-template-columns:1fr}.hero-title{font-size:54px}.prose h1{font-size:46px}.opus-note{padding-left:18px}.opus-note p,.prose p{font-size:16px}.token-row{grid-template-columns:1fr;gap:4px}}
 @media(max-width:540px){.threshold-title{font-size:38px}.resident-presence{margin-bottom:24px}.presence-copy{text-align:left}.context-orbit{grid-template-columns:1fr}.context-card{min-height:auto}.hero-title{font-size:44px}.prose h1{font-size:40px}.guide-card h2,.conversation-card h2{font-size:26px}.field-foot{align-items:flex-start;flex-direction:column}.send{align-self:flex-end}}
 `;
@@ -119,6 +136,7 @@ export function renderPublicPage(opts: PublicPageOptions): string {
 <title>${escapeHtml(opts.title)}</title>
 <meta name="description" content="${escapeHtml(opts.description)}">
 ${FONTS}
+<script>(function(){var p=location.pathname;var r="public";if(p==="/"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
 <style>${PUBLIC_CSS}</style>
 </head>
 <body>
