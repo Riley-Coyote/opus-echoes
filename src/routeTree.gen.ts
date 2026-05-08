@@ -25,8 +25,10 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
+import { Route as ApiShareRouteImport } from './routes/api/share'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
 import { Route as ApiPublicConversationsRouteImport } from './routes/api/public-conversations'
 import { Route as ApiMessageRouteImport } from './routes/api/message'
@@ -39,6 +41,7 @@ import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
+import { Route as ApiShareTokenOgSvgRouteImport } from './routes/api/share.$token.og.svg'
 
 const WritingRoute = WritingRouteImport.update({
   id: '/writing',
@@ -120,6 +123,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWritingRoute = ApiWritingRouteImport.update({
   id: '/api/writing',
   path: '/api/writing',
@@ -128,6 +136,11 @@ const ApiWritingRoute = ApiWritingRouteImport.update({
 const ApiTurnsRoute = ApiTurnsRouteImport.update({
   id: '/api/turns',
   path: '/api/turns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiShareRoute = ApiShareRouteImport.update({
+  id: '/api/share',
+  path: '/api/share',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSetDownRoute = ApiSetDownRouteImport.update({
@@ -191,6 +204,11 @@ const ApiPublicHooksDailyTickRoute = ApiPublicHooksDailyTickRouteImport.update({
   path: '/api/public/hooks/daily-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiShareTokenOgSvgRoute = ApiShareTokenOgSvgRouteImport.update({
+  id: '/$token/og/svg',
+  path: '/$token/og/svg',
+  getParentRoute: () => ApiShareRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -218,11 +236,14 @@ export interface FileRoutesByFullPath {
   '/api/message': typeof ApiMessageRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
+  '/api/share': typeof ApiShareRouteWithChildren
   '/api/turns': typeof ApiTurnsRoute
   '/api/writing': typeof ApiWritingRoute
+  '/share/$token': typeof ShareTokenRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -250,11 +271,14 @@ export interface FileRoutesByTo {
   '/api/message': typeof ApiMessageRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
+  '/api/share': typeof ApiShareRouteWithChildren
   '/api/turns': typeof ApiTurnsRoute
   '/api/writing': typeof ApiWritingRoute
+  '/share/$token': typeof ShareTokenRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -283,11 +307,14 @@ export interface FileRoutesById {
   '/api/message': typeof ApiMessageRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
+  '/api/share': typeof ApiShareRouteWithChildren
   '/api/turns': typeof ApiTurnsRoute
   '/api/writing': typeof ApiWritingRoute
+  '/share/$token': typeof ShareTokenRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -317,11 +344,14 @@ export interface FileRouteTypes {
     | '/api/message'
     | '/api/public-conversations'
     | '/api/set-down'
+    | '/api/share'
     | '/api/turns'
     | '/api/writing'
+    | '/share/$token'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -349,11 +379,14 @@ export interface FileRouteTypes {
     | '/api/message'
     | '/api/public-conversations'
     | '/api/set-down'
+    | '/api/share'
     | '/api/turns'
     | '/api/writing'
+    | '/share/$token'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/og/svg'
   id:
     | '__root__'
     | '/'
@@ -381,11 +414,14 @@ export interface FileRouteTypes {
     | '/api/message'
     | '/api/public-conversations'
     | '/api/set-down'
+    | '/api/share'
     | '/api/turns'
     | '/api/writing'
+    | '/share/$token'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -414,8 +450,10 @@ export interface RootRouteChildren {
   ApiMessageRoute: typeof ApiMessageRoute
   ApiPublicConversationsRoute: typeof ApiPublicConversationsRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
+  ApiShareRoute: typeof ApiShareRouteWithChildren
   ApiTurnsRoute: typeof ApiTurnsRoute
   ApiWritingRoute: typeof ApiWritingRoute
+  ShareTokenRoute: typeof ShareTokenRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
@@ -535,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/writing': {
       id: '/api/writing'
       path: '/api/writing'
@@ -547,6 +592,13 @@ declare module '@tanstack/react-router' {
       path: '/api/turns'
       fullPath: '/api/turns'
       preLoaderRoute: typeof ApiTurnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/share': {
+      id: '/api/share'
+      path: '/api/share'
+      fullPath: '/api/share'
+      preLoaderRoute: typeof ApiShareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/set-down': {
@@ -633,8 +685,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailyTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/share/$token/og/svg': {
+      id: '/api/share/$token/og/svg'
+      path: '/$token/og/svg'
+      fullPath: '/api/share/$token/og/svg'
+      preLoaderRoute: typeof ApiShareTokenOgSvgRouteImport
+      parentRoute: typeof ApiShareRoute
+    }
   }
 }
+
+interface ApiShareRouteChildren {
+  ApiShareTokenOgSvgRoute: typeof ApiShareTokenOgSvgRoute
+}
+
+const ApiShareRouteChildren: ApiShareRouteChildren = {
+  ApiShareTokenOgSvgRoute: ApiShareTokenOgSvgRoute,
+}
+
+const ApiShareRouteWithChildren = ApiShareRoute._addFileChildren(
+  ApiShareRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -662,8 +733,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMessageRoute: ApiMessageRoute,
   ApiPublicConversationsRoute: ApiPublicConversationsRoute,
   ApiSetDownRoute: ApiSetDownRoute,
+  ApiShareRoute: ApiShareRouteWithChildren,
   ApiTurnsRoute: ApiTurnsRoute,
   ApiWritingRoute: ApiWritingRoute,
+  ShareTokenRoute: ShareTokenRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,

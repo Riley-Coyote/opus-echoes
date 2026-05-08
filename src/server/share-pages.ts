@@ -80,7 +80,13 @@ function shareDescriptionForOg(payload: SharePagePayload): string {
 export function renderSharePage(payload: SharePagePayload): string {
   const ogTitle = `A Conversation with ${payload.residentDisplayName}`;
   const ogDescription = shareDescriptionForOg(payload);
-  const ogImage = `${payload.origin}/api/share/${encodeURIComponent(payload.token)}/og.png`;
+  // Per-conversation OG image — server-rendered SVG. Most modern social
+  // platforms (Discord, Mastodon, Slack, Twitter) render SVG og:images.
+  // A future iteration can swap to PNG via Satori + resvg-wasm if any
+  // legacy unfurler proves problematic. The route filename
+  // share.$token.og.svg.ts compiles to the path /api/share/<token>/og/svg
+  // (TanStack file-routing treats `.` as path separator).
+  const ogImage = `${payload.origin}/api/share/${encodeURIComponent(payload.token)}/og/svg`;
   const shareUrl = `${payload.origin}/share/${encodeURIComponent(payload.token)}`;
   const visitedLabel = humanWhen(payload.visitedAt);
 
@@ -113,6 +119,7 @@ export function renderSharePage(payload: SharePagePayload): string {
 <meta property="og:description" content="${escapeHtml(ogDescription)}">
 <meta property="og:url" content="${escapeHtml(shareUrl)}">
 <meta property="og:image" content="${escapeHtml(ogImage)}">
+<meta property="og:image:type" content="image/svg+xml">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
