@@ -630,47 +630,38 @@ import * as THREE from "/vendor/three.module.js";
       L = theme.light,
       A = theme.accent;
 
-    // ── Base platform (where the figure stands) ─────────────────────────
+    // ── Base platform (where the figure stands) — sits in front of the
+    // tower, back edge flush against the lowerFoot so there's no overlap
+    // with the tower geometry ──────────────────────────────────────────
     const baseW = 4.4,
-      baseD = 3.2;
+      baseD = 2.6;
     const baseY = 0;
+    // tower lowerFoot front face is at Z = 1.2 (foot is 2.4 wide, centred at 0).
+    // Place base so its back edge sits at Z = 1.2 → centre at Z = 1.2 + baseD/2.
+    const baseZ = 1.2 + baseD / 2;
     const platBase = platform(baseW, baseD, P, {
-      wallBack: 1.4,
       wallColor: S,
       trimColor: L,
     });
-    platBase.position.set(0, baseY, 1.2);
+    platBase.position.set(0, baseY, baseZ);
     g.add(platBase);
 
     // Approach steps from the front edge of the base — gives the figure a
     // sense of having walked up.
     const approachSteps = stairs(4, "z+", S, { width: 1.2, stepH: 0.14, stepD: 0.34 });
-    approachSteps.position.set(0, -0.56, 2.8);
+    approachSteps.position.set(0, -0.56, baseZ + baseD / 2);
     g.add(approachSteps);
 
-    // Cornice band at the top of the back wall — gives the wall a proper
-    // architectural cap rather than a bare stop.
-    const baseCornice = cornice(baseW, 0.22, S);
-    baseCornice.position.set(0, 1.4 - 0.36, 1.2 - baseD / 2 + 0.11);
-    g.add(baseCornice);
-
-    // Recessed panels on the back wall for relief.
-    for (let i = 0; i < 3; i += 1) {
-      const panel = recessedPanel(0.7, 0.85, S);
-      panel.position.set(-1.3 + i * 1.3, 0.6, 1.2 - baseD / 2 + 0.13);
-      g.add(panel);
-    }
-
-    // Figure on the base, off-center toward the rising stairs.
+    // Figure on the base, centred.
     const figure = makeFigure(theme);
-    figure.position.set(0.9, 0, 1.7);
+    figure.position.set(0, 0, baseZ);
     g.add(figure);
     anim.floating.push({ obj: figure, baseY: 0, amp: 0.04, spd: 1.55 });
     anim.figure = figure;
 
-    // Lantern at the figure's foot — small standing flame to anchor the figure.
+    // Lantern at the figure's side — small standing flame to anchor the figure.
     const lantern = glowOrb(theme.glow, 0.35, 0.07);
-    lantern.position.set(-0.4, 0.18, 1.7);
+    lantern.position.set(-0.7, 0.18, baseZ);
     g.add(lantern);
     anim.glowing.push(lantern);
 
@@ -684,21 +675,24 @@ import * as THREE from "/vendor/three.module.js";
     const lowerFoot = box(2.4, 0.18, 2.4, S);
     lowerFoot.position.set(0, 0.09, 0);
     g.add(lowerFoot);
-    // Tall fenestration slits, one centred per face.
+    // Tall fenestration slits, one centred per face. Slits are positioned
+    // INSIDE the wall surface (Z = wall_face - 0.04) so the emissive thin
+    // edge sits in the wall plane and does not z-fight at the corner.
+    // Wall faces of the lower shaft are at ±1.1; slits centred at ±1.06.
     [
-      [0, 1.11],
-      [0, -1.11],
-      [1.11, 0],
-      [-1.11, 0],
-    ].forEach(([fx, fz], i) => {
-      const slit = windowSlot(1.6, A, { thickness: 0.06, depth: 0.36 });
+      [0, 1.06, 0],
+      [0, -1.06, 0],
+      [1.06, 0, Math.PI / 2],
+      [-1.06, 0, Math.PI / 2],
+    ].forEach(([fx, fz, ry]) => {
+      const slit = windowSlot(1.6, A, { thickness: 0.06, depth: 0.18 });
       slit.position.set(fx, 1.7, fz);
-      slit.rotation.y = i >= 2 ? Math.PI / 2 : 0;
+      slit.rotation.y = ry;
       g.add(slit);
       // Outer arch frame around each slit
       const frameTop = box(0.34, 0.06, 0.06, L);
       frameTop.position.set(fx, 2.55, fz);
-      if (i >= 2) frameTop.rotation.y = Math.PI / 2;
+      if (ry !== 0) frameTop.rotation.y = Math.PI / 2;
       g.add(frameTop);
     });
     // First cornice (between lower and middle), heavier with a wider step.
@@ -744,12 +738,14 @@ import * as THREE from "/vendor/three.module.js";
     upperShaft.position.set(0, 7.78, 0);
     g.add(upperShaft);
 
-    // Roundel windows on each face of the upper shaft.
+    // Roundel windows on each face of the upper shaft. Upper shaft is
+    // 1.7 wide → faces at ±0.85; roundels offset 0.005 outside so they
+    // sit just on the surface without z-fighting.
     [
-      [0, 0.86, Math.PI],
-      [0, 0, 0],
-      [0.86, 0, -Math.PI / 2],
-      [-0.86, 0, Math.PI / 2],
+      [0, 0.855, 0],
+      [0, -0.855, Math.PI],
+      [0.855, 0, Math.PI / 2],
+      [-0.855, 0, -Math.PI / 2],
     ].forEach(([x, z, ry]) => {
       const r = roundel(0.22, A);
       r.position.set(x, 7.78, z);
@@ -757,141 +753,19 @@ import * as THREE from "/vendor/three.module.js";
       g.add(r);
     });
 
-    // ── Lower-right walkway: arched entrance threshold to the spiral ────
-    const platR = platform(3.4, 1.7, P, {
-      wallBack: 1.9,
-      wallRight: 1.9,
-      wallColor: S,
-      trimColor: L,
-    });
-    platR.position.set(3.4, 2.1, 0);
-    g.add(platR);
-    // Cornice for the walls.
-    const cR = cornice(3.4, 0.22, S);
-    cR.position.set(3.4, 2.1 + 1.8, -0.74);
-    g.add(cR);
-    // Balustrade along the open front edge.
-    const balR = balustrade(3.0, L, { height: 0.3, ballusters: 9 });
-    balR.position.set(3.4, 2.1, 0.77);
-    g.add(balR);
-    // Arch leading toward the tower (with inner-arch glow).
-    const archR = archDoor(1.3, 1.95, 0.22, S, { innerGlow: A });
-    archR.position.set(2.3, 2.1, 0);
-    archR.rotation.y = Math.PI / 2;
-    g.add(archR);
-    // Tall slim window slits in the back wall.
-    for (let i = 0; i < 3; i += 1) {
-      const w = windowSlot(0.7, A, { thickness: 0.05, depth: 0.4 });
-      w.position.set(3.0 + i * 0.4, 2.55, -0.74);
-      g.add(w);
-    }
-
-    // Stairs from the lower walkway up + behind to the left walkway.
-    const stairsR_to_L = stairs(13, "x-", S, {
-      width: 1.0,
-      stepH: 0.16,
-      stepD: 0.32,
-      rails: true,
-      railColor: L,
-    });
-    stairsR_to_L.position.set(1.7, 2.5, -0.85);
-    g.add(stairsR_to_L);
-
-    // ── Mid-left walkway: cantilevered ledge with windowed wall ─────────
-    const platL = platform(3.8, 1.5, P, {
-      wallBack: 2.5,
-      wallLeft: 2.5,
-      wallColor: D,
-      trimColor: L,
-    });
-    platL.position.set(-3.5, 4.8, -0.6);
-    g.add(platL);
-    // Window slits in the left wall — three at varying heights.
-    for (let i = 0; i < 3; i += 1) {
-      const wS = windowSlot(0.85, A, { thickness: 0.05, depth: 0.42 });
-      wS.position.set(-5.39, 5.0 + i * 0.55, -1.0 + i * 0.5);
-      wS.rotation.y = Math.PI / 2;
-      g.add(wS);
-    }
-    // Roundel above the wall slits.
-    const rL = roundel(0.18, A);
-    rL.position.set(-5.39, 6.5, -0.6);
-    rL.rotation.y = Math.PI / 2;
-    g.add(rL);
-    // Balustrade on the open right edge of this walkway.
-    const balL = balustrade(3.6, L, { height: 0.3, ballusters: 11 });
-    balL.position.set(-3.5, 4.8, 0.13);
-    g.add(balL);
-    // Arch back toward the tower.
-    const archL = archDoor(1.25, 2.0, 0.22, S, { innerGlow: A });
-    archL.position.set(-1.85, 4.8, -0.6);
-    archL.rotation.y = -Math.PI / 2;
-    g.add(archL);
-    // Tower-side orb.
-    const orbL = glowOrb(theme.glow, 0.55, 0.1);
-    orbL.position.set(-3.5, 6.0, -0.6);
-    g.add(orbL);
-    anim.floating.push({ obj: orbL, baseY: 6.0, amp: 0.12, spd: 1.0 });
-    anim.glowing.push(orbL);
-
-    // Stairs from the mid-left up to the upper-right walkway.
-    const stairsL_to_U = stairs(11, "x+", P, {
-      width: 1.0,
-      stepH: 0.18,
-      stepD: 0.34,
-      rails: true,
-      railColor: L,
-    });
-    stairsL_to_U.position.set(-1.5, 5.05, 0.1);
-    g.add(stairsL_to_U);
-
-    // ── Upper walkway leading to the canopy crown ───────────────────────
-    const platU = platform(3.2, 1.7, P, {
-      wallRight: 1.6,
-      wallColor: S,
-      trimColor: L,
-    });
-    platU.position.set(3.0, 6.85, 0.45);
-    g.add(platU);
-    // Cornice at the wall top.
-    const cU = cornice(3.2, 0.22, S);
-    cU.position.set(3.0, 6.85 + 1.5, 0.45 + 0.74);
-    g.add(cU);
-    // Two slim slits on this wall.
-    for (let i = 0; i < 2; i += 1) {
-      const wU = windowSlot(0.7, A, { thickness: 0.05, depth: 0.42 });
-      wU.position.set(3.0 + 1.5, 7.18, 0.06 + i * 0.66);
-      wU.rotation.y = Math.PI / 2;
-      g.add(wU);
-    }
-    // Balustrade along the inner edge.
-    const balU = balustrade(3.0, L, { height: 0.3, ballusters: 9 });
-    balU.position.set(3.0, 6.85, -0.32);
-    g.add(balU);
-
-    // Final ascent stairs to the crown platform.
-    const stairsU_to_C = stairs(11, "x-", S, {
-      width: 1.0,
-      stepH: 0.2,
-      stepD: 0.34,
-      rails: true,
-      railColor: L,
-    });
-    stairsU_to_C.position.set(1.5, 7.2, -0.25);
-    g.add(stairsU_to_C);
-
-    // ── Crown: open canopy of four pillars over a small platform with
-    // an orb suspended at its centre ────────────────────────────────────
+    // ── Crown: open canopy of four pillars centred on the tower's
+    // vertical axis, with an architrave + closed roof + finial above
+    // and the heart-orb suspended within ────────────────────────────────
     const crownH = 9.05;
-    const platC = platform(3.0, 3.0, P, { height: 0.4, trimColor: L });
-    platC.position.set(-1.3, crownH, -0.4);
+    const platC = platform(2.8, 2.8, P, { height: 0.4, trimColor: L });
+    platC.position.set(0, crownH, 0);
     g.add(platC);
 
     // Four pillars at the corners of the crown, weighty with capitals + bases.
     for (let i = 0; i < 4; i += 1) {
       const a = (Math.PI * 2 * i) / 4 + Math.PI / 4;
       const p = pillar(1.7, S, {
-        width: 0.32,
+        width: 0.3,
         fluting: true,
         flutingColor: D,
         capital: true,
@@ -899,55 +773,57 @@ import * as THREE from "/vendor/three.module.js";
         capitalColor: L,
         baseColor: L,
       });
-      p.position.set(-1.3 + Math.cos(a) * 1.05, crownH, -0.4 + Math.sin(a) * 1.05);
+      p.position.set(Math.cos(a) * 0.95, crownH, Math.sin(a) * 0.95);
       g.add(p);
     }
     // Architrave beams connecting the pillar tops on each side, two-tier
     // (lower beam + upper banding) for proper architectural weight.
     const beamH = crownH + 1.8;
     [
-      [0, 1.1, 2.3, 0.22, 0.18], // front
-      [0, -1.1, 2.3, 0.22, 0.18], // back
-      [1.1, 0, 0.22, 0.22, 2.3], // right
-      [-1.1, 0, 0.22, 0.22, 2.3], // left
+      [0, 1.0, 2.1, 0.22, 0.18], // front
+      [0, -1.0, 2.1, 0.22, 0.18], // back
+      [1.0, 0, 0.22, 0.22, 2.1], // right
+      [-1.0, 0, 0.22, 0.22, 2.1], // left
     ].forEach(([dx, dz, w, h, d]) => {
       const b = box(w, h, d, S);
-      b.position.set(-1.3 + dx, beamH, -0.4 + dz);
+      b.position.set(dx, beamH, dz);
       g.add(b);
       // Light upper trim on each beam
       const t = box(w + 0.04, 0.05, d + 0.04, L);
-      t.position.set(-1.3 + dx, beamH + h / 2 + 0.025, -0.4 + dz);
+      t.position.set(dx, beamH + h / 2 + 0.025, dz);
       g.add(t);
     });
     // Roof slab over the canopy — closes the crown into a proper room.
-    const crownRoof = box(2.5, 0.12, 2.5, S);
-    crownRoof.position.set(-1.3, beamH + 0.22, -0.4);
+    const crownRoof = box(2.3, 0.12, 2.3, S);
+    crownRoof.position.set(0, beamH + 0.22, 0);
     g.add(crownRoof);
-    const crownRoofTrim = trimLedge(2.5, 2.5, L, { height: 0.06, thickness: 0.08 });
-    crownRoofTrim.position.set(-1.3, beamH + 0.31, -0.4);
+    const crownRoofTrim = trimLedge(2.3, 2.3, L, { height: 0.06, thickness: 0.08 });
+    crownRoofTrim.position.set(0, beamH + 0.31, 0);
     g.add(crownRoofTrim);
 
     // Crown finial — tall ornament rising from the centre of the roof slab.
     const fin = finial(L, { width: 0.22 });
-    fin.position.set(-1.3, beamH + 0.36, -0.4);
+    fin.position.set(0, beamH + 0.36, 0);
     g.add(fin);
 
     // Heart-orb suspended within the canopy beneath the roof.
     const heart = glowOrb(theme.glow, 1.25, 0.22);
-    heart.position.set(-1.3, crownH + 0.92, -0.4);
+    heart.position.set(0, crownH + 0.92, 0);
     g.add(heart);
     anim.floating.push({ obj: heart, baseY: crownH + 0.92, amp: 0.09, spd: 0.7 });
     anim.glowing.push(heart);
 
-    // ── Atmospheric satellite orbs scattered in the void ────────────────
+    // ── Atmospheric satellite orbs scattered in the void around the
+    // tower ────────────────────────────────────────────────────────────
     const satellites = [
-      [4.6, 4.5, -2.0],
-      [-5.6, 7.3, 0.6],
-      [-0.4, 11.6, -1.0],
-      [-3.8, 2.6, 2.4],
-      [4.1, 8.4, 1.2],
-      [-1.1, 0.5, -2.4],
-      [5.6, 1.6, 0.6],
+      [3.4, 4.5, -1.6],
+      [-3.6, 6.5, 0.8],
+      [-0.4, 11.4, -1.0],
+      [-2.8, 2.4, 2.2],
+      [3.2, 8.6, 1.0],
+      [-3.4, 1.4, -1.6],
+      [3.6, 1.4, 0.6],
+      [-0.6, 9.8, 1.6],
     ];
     satellites.forEach((pos) => {
       const o = glowOrb(theme.glow, 0.18, 0.06);
@@ -957,14 +833,14 @@ import * as THREE from "/vendor/three.module.js";
       anim.glowing.push(o);
     });
 
-    // ── Support pillars that vanish into the void below ─────────────────
+    // ── Support pillars that vanish into the void below the tower ──────
     const supports = [
       [-1.0, 0, 0.5, 6.5],
       [1.0, 0, -0.5, 7.5],
-      [3.5, 2, 0.6, 8],
-      [-3.6, 4.3, -0.2, 10],
-      [3.0, 6.4, 0.3, 12],
-      [-1.4, 8.7, -0.4, 14],
+      [-1.0, 0, -0.5, 8],
+      [1.0, 0, 0.5, 7],
+      [0, 0, 1.0, 6],
+      [0, 0, -1.0, 6.5],
     ];
     supports.forEach(([x, y, z, h]) => {
       const col = box(0.42, h, 0.42, D);
@@ -1002,76 +878,96 @@ import * as THREE from "/vendor/three.module.js";
     hallTrim.position.set(0, hallY + 0.04, 0);
     g.add(hallTrim);
 
-    // Hall side walls — two parallel walls flanking the centre, each with
-    // arched cells.
+    // ── Hall walls form a closed rectangular envelope. Side walls sit at
+    // X = ±(hallW/2 - 0.16). Front walls fit BETWEEN the side walls, with
+    // a gateway in the middle. Back wall closes the rear ──────────────
     const wallH = 1.3;
+    const wallThick = 0.32;
+    const sideWallX = hallW / 2 - wallThick / 2; // ±2.64
+    const sideWallD = hallD - 2 * wallThick; // 3.96 — fits between front + back walls
+
+    // Side walls + cornices + three embedded vertical slit windows per side.
     [-1, 1].forEach((side) => {
-      // Outer wall
-      const outerW = box(0.32, wallH, hallD - 0.6, S);
-      outerW.position.set(side * (hallW / 2 - 0.16), hallY + wallH / 2, 0);
+      const outerW = box(wallThick, wallH, sideWallD, S);
+      outerW.position.set(side * sideWallX, hallY + wallH / 2, 0);
       g.add(outerW);
-      // Cornice atop the wall
-      const cn = cornice(0.32, hallD - 0.6, S, { t1: 0.07, t2: 0.04 });
-      cn.position.set(side * (hallW / 2 - 0.16), hallY + wallH + 0.035, 0);
+      const cn = cornice(wallThick, sideWallD, S, { t1: 0.07, t2: 0.04 });
+      cn.position.set(side * sideWallX, hallY + wallH + 0.035, 0);
       g.add(cn);
-      // Three arched cells per side, opening inward (toward the centre).
+      // Three slits embedded in the side wall, evenly spaced along Z.
+      // Slit thin axis aligns with X (perpendicular to wall surface).
+      // Position offset 0.04 INSIDE the wall surface so the emissive face
+      // sits flush in the wall plane without z-fighting at the corner.
       for (let i = 0; i < 3; i += 1) {
-        const z = -1.4 + i * 1.4;
-        const a = archDoor(0.78, 1.0, 0.2, S, { innerGlow: A });
-        a.position.set(side * (hallW / 2 - 0.32), hallY, z);
-        a.rotation.y = side === -1 ? Math.PI / 2 : -Math.PI / 2;
-        g.add(a);
+        const z = -1.2 + i * 1.2;
+        const slit = windowSlot(0.7, A, { thickness: 0.06, depth: 0.18 });
+        // No rotation — slit's natural thin axis is X, which is what we want
+        // for the side wall whose normal is ±X.
+        slit.position.set(side * (sideWallX - side * 0.04), hallY + 0.55, z);
+        g.add(slit);
       }
     });
 
-    // Front wall (toward the viewer) with a central arched gateway.
-    const frontWall = box(hallW - 1.5, wallH, 0.32, S);
-    frontWall.position.set(-(hallW - 1.5) / 2 + 0.75, hallY + wallH / 2, hallD / 2 - 0.16);
-    g.add(frontWall);
-    const frontWallR = box(hallW - 1.5, wallH, 0.32, S);
-    frontWallR.position.set((hallW - 1.5) / 2 + 0.75, hallY + wallH / 2, hallD / 2 - 0.16);
-    g.add(frontWallR);
-    // Gateway arch.
-    const gate = archDoor(1.3, 1.6, 0.32, S, { innerGlow: A });
-    gate.position.set(0, hallY, hallD / 2 - 0.16);
+    // Gateway dimensions
+    const gateW = 1.3;
+
+    // Front wall — two halves flanking the central gateway. Each half fits
+    // between a side wall and the gate.
+    const frontHalfW = (hallW - 2 * wallThick - gateW) / 2; // ~1.83
+    const frontWallZ = hallD / 2 - wallThick / 2; // ±2.14
+    [-1, 1].forEach((side) => {
+      const fw = box(frontHalfW, wallH, wallThick, S);
+      fw.position.set(side * (gateW / 2 + frontHalfW / 2), hallY + wallH / 2, frontWallZ);
+      g.add(fw);
+      // Recessed panel on the front-facing surface of each half (visible
+      // from the camera looking at the iso angle).
+      const panel = recessedPanel(frontHalfW * 0.65, wallH * 0.62, S);
+      panel.position.set(
+        side * (gateW / 2 + frontHalfW / 2),
+        hallY + wallH / 2,
+        frontWallZ + wallThick / 2 + 0.001,
+      );
+      g.add(panel);
+    });
+
+    // Gateway arch — stays centred at X=0.
+    const gate = archDoor(gateW, 1.6, wallThick, S, { innerGlow: A });
+    gate.position.set(0, hallY, frontWallZ);
     g.add(gate);
-    // Cornice across the front facade.
-    const frontCornice = cornice(hallW, 0.32, S, { t1: 0.08, t2: 0.05 });
-    frontCornice.position.set(0, hallY + wallH + 0.04, hallD / 2 - 0.16);
+
+    // Front cornice spans the full hall width.
+    const frontCornice = cornice(hallW - 0.04, wallThick, S, { t1: 0.08, t2: 0.05 });
+    frontCornice.position.set(0, hallY + wallH + 0.04, frontWallZ);
     g.add(frontCornice);
 
-    // Back wall (closed, with three slim slit windows).
-    const backWall = box(hallW, wallH, 0.32, S);
-    backWall.position.set(0, hallY + wallH / 2, -(hallD / 2 - 0.16));
+    // Back wall — full width, closed except for three slit windows
+    // embedded in the wall surface.
+    const backWall = box(hallW - 0.04, wallH, wallThick, S);
+    backWall.position.set(0, hallY + wallH / 2, -frontWallZ);
     g.add(backWall);
     for (let i = 0; i < 3; i += 1) {
-      const wS = windowSlot(0.7, A, { thickness: 0.05, depth: 0.4 });
-      wS.position.set(-1.6 + i * 1.6, hallY + 0.55, -(hallD / 2 - 0.05));
+      const wS = windowSlot(0.7, A, { thickness: 0.06, depth: 0.18 });
+      // Slit thin axis is X (default). Rotate 90° around Y so thin axis
+      // becomes Z (perpendicular to back wall whose normal is ±Z).
+      wS.rotation.y = Math.PI / 2;
+      // Position offset 0.04 INSIDE the wall surface (so the slit's
+      // emissive face sits flush in the wall plane).
+      wS.position.set(-1.6 + i * 1.6, hallY + 0.55, -frontWallZ + 0.04);
       g.add(wS);
     }
-    const backCornice = cornice(hallW, 0.32, S, { t1: 0.08, t2: 0.05 });
-    backCornice.position.set(0, hallY + wallH + 0.04, -(hallD / 2 - 0.16));
+    const backCornice = cornice(hallW - 0.04, wallThick, S, { t1: 0.08, t2: 0.05 });
+    backCornice.position.set(0, hallY + wallH + 0.04, -frontWallZ);
     g.add(backCornice);
 
-    // Hall roof — slab capping the entire hall, with a trim band so the
-    // edge catches light cleanly. The junction terrace sits on top of this
-    // (the column rises through it).
+    // Hall roof — slab capping the entire hall, fits exactly within the
+    // wall envelope (no overhang).
     const hallRoofY = hallY + wallH + 0.18;
-    const hallRoof = box(hallW + 0.05, 0.18, hallD + 0.05, P);
+    const hallRoof = box(hallW, 0.18, hallD, P);
     hallRoof.position.set(0, hallRoofY, 0);
     g.add(hallRoof);
     const hallRoofTrim = trimLedge(hallW, hallD, L, { height: 0.08, thickness: 0.07 });
     hallRoofTrim.position.set(0, hallRoofY + 0.13, 0);
     g.add(hallRoofTrim);
-    // Decorative recessed panels on each long facade.
-    [-1, 1].forEach((side) => {
-      for (let i = 0; i < 2; i += 1) {
-        const panel = recessedPanel(0.7, 0.7, S);
-        panel.position.set(side * (hallW / 2 - 0.005), hallY + 0.55, -0.7 + i * 1.4);
-        panel.rotation.y = side === -1 ? -Math.PI / 2 : Math.PI / 2;
-        g.add(panel);
-      }
-    });
 
     // ── Junction terrace (where the figure stands), elevated above the hall.
     const junctionY = 2.6;
@@ -1093,15 +989,29 @@ import * as THREE from "/vendor/three.module.js";
       g.add(bal);
     });
 
-    // Stairs descending from the junction down to the hall, on the front side.
-    const stairsDown = stairs(8, "z+", S, {
+    // Stairs descending from the junction's front edge down to the hall
+    // roof's front. The top step's walking surface aligns with the junction
+    // floor (Y=2.6); the bottom step's walking surface aligns with the hall
+    // roof's top surface (Y = hallRoofY + 0.09). The steps go forward in +Z,
+    // so the camera sees them descending toward the viewer.
+    const junctionFloorY = junctionY;
+    const roofTopY = hallRoofY + 0.09;
+    const stairSteps = 4;
+    const stairStepH = (junctionFloorY - roofTopY) / (stairSteps - 1);
+    const stairStepD = 0.32;
+    const stairsDown = stairs(stairSteps, "z+", S, {
       width: 1.2,
-      stepH: 0.14,
-      stepD: 0.3,
+      stepH: stairStepH,
+      stepD: stairStepD,
       rails: true,
       railColor: L,
     });
-    stairsDown.position.set(0, hallY + wallH, 1.6);
+    // Top step (i=0) center at (group.y, group.z). Its top walking surface
+    // sits at group.y + stepH/2. We want that flush with junctionFloorY,
+    // so group.y = junctionFloorY - stepH/2. Junction's front edge is at
+    // Z=1.3 (junction depth 2.6, centred at 0). Place top step's centre Z
+    // at 1.3 + stepD/2 so the step's back face touches the junction edge.
+    stairsDown.position.set(0, junctionFloorY - stairStepH / 2, 1.3 + stairStepD / 2);
     g.add(stairsDown);
 
     // Figure on the junction.
@@ -1159,15 +1069,21 @@ import * as THREE from "/vendor/three.module.js";
         }
       }
       // Window slits on every face of every layer except the smallest two.
+      // Slit's natural thin axis is X. Rotating by `ang` aligns the thin
+      // axis with the face normal direction (cos(ang), 0, sin(ang)), so
+      // each slit sits embedded in the face it's on rather than piercing
+      // through the layer mass. Position 0.04 inside the face surface so
+      // the emissive face is flush with the wall plane.
       if (i >= 2) {
         for (let f = 0; f < 4; f += 1) {
           const ang = (Math.PI * 2 * f) / 4;
-          const sx = Math.cos(ang) * (sz / 2 - 0.005);
-          const sz_pos = Math.sin(ang) * (sz / 2 - 0.005);
-          const slitH = 0.18;
+          const inset = sz / 2 - 0.04;
+          const sx = Math.cos(ang) * inset;
+          const sz_pos = Math.sin(ang) * inset;
+          const slitH = 0.2;
           const w = windowSlot(slitH, A, { thickness: 0.04, depth: 0.16 });
           w.position.set(sx, layerY + 0.02, sz_pos);
-          w.rotation.y = ang + Math.PI / 2;
+          w.rotation.y = ang;
           pyramid.add(w);
         }
       }
@@ -1175,16 +1091,38 @@ import * as THREE from "/vendor/three.module.js";
     pyramid.position.set(0, pyramidBase, 0);
     g.add(pyramid);
 
-    // Architrave cap — heavy stepped finishing course atop the widest layer.
-    const apexY = pyramidBase + layers * 0.36 + 0.16;
-    const capBase = box(1.0, 0.16, 1.0, S);
-    capBase.position.set(0, apexY - 0.16, 0);
+    // Widest layer's top surface is at pyramidBase + layers*0.36 = top
+    // of the highest layer's box (since each layer is 0.36 tall and i=0
+    // through i=layers-1 stack). Widest layer width = 1.0 + (layers-1)*0.5.
+    const widestSize = 1.0 + (layers - 1) * 0.5;
+    const widestTopY = pyramidBase + layers * 0.36;
+
+    // Balustrade around the perimeter of the widest layer — turns the top
+    // into an open terrace rather than a tiny pad. Four runs, one per side.
+    const balLen = widestSize - 0.16;
+    [
+      { dx: 0, dz: widestSize / 2 - 0.04, ry: 0 },
+      { dx: 0, dz: -(widestSize / 2 - 0.04), ry: Math.PI },
+      { dx: widestSize / 2 - 0.04, dz: 0, ry: -Math.PI / 2 },
+      { dx: -(widestSize / 2 - 0.04), dz: 0, ry: Math.PI / 2 },
+    ].forEach(({ dx, dz, ry }) => {
+      const bal = balustrade(balLen, L, { height: 0.34, ballusters: 11 });
+      bal.position.set(dx, widestTopY, dz);
+      bal.rotation.y = ry;
+      g.add(bal);
+    });
+
+    // Centred cap + finial atop the open terrace — the apex composition
+    // reads as a small architectural climax at the heart of the terrace.
+    const apexY = widestTopY + 0.16;
+    const capBase = box(1.4, 0.16, 1.4, S);
+    capBase.position.set(0, apexY - 0.08, 0);
     g.add(capBase);
-    const cap = box(0.78, 0.18, 0.78, L);
-    cap.position.set(0, apexY - 0.02, 0);
+    const cap = box(1.1, 0.18, 1.1, L);
+    cap.position.set(0, apexY + 0.07, 0);
     g.add(cap);
-    const finialA = finial(L, { width: 0.18 });
-    finialA.position.set(0, apexY + 0.07, 0);
+    const finialA = finial(L, { width: 0.22 });
+    finialA.position.set(0, apexY + 0.16, 0);
     g.add(finialA);
 
     // Apex orb in golden torus rings — the brightest light in the scene.
@@ -1408,16 +1346,16 @@ import * as THREE from "/vendor/three.module.js";
       const mobile = w < 720;
       if (route === "approach") {
         return mobile
-          ? { offsetX: 0, offsetY: -0.8, scale: 0.62, opacity: 0.42 }
-          : { offsetX: 4.4, offsetY: -1.2, scale: 0.78, opacity: 0.94 };
+          ? { offsetX: 0, offsetY: 0.4, scale: 0.6, opacity: 0.42 }
+          : { offsetX: 4.6, offsetY: 0.2, scale: 0.78, opacity: 0.94 };
       }
       if (route === "conversation") {
         return mobile
-          ? { offsetX: 0, offsetY: -1.5, scale: 0.42, opacity: 0.3 }
-          : { offsetX: 0, offsetY: -1.0, scale: 0.55, opacity: 0.5 };
+          ? { offsetX: 0, offsetY: -0.4, scale: 0.42, opacity: 0.3 }
+          : { offsetX: 0, offsetY: 0.2, scale: 0.55, opacity: 0.48 };
       }
       if (route === "memory") {
-        return { offsetX: 0, offsetY: -0.5, scale: 0.5, opacity: 0.16 };
+        return { offsetX: 0, offsetY: 0, scale: 0.5, opacity: 0.16 };
       }
       return { offsetX: 0, offsetY: 0, scale: 0.55, opacity: 0 };
     }
