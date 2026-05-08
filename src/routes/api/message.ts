@@ -6,6 +6,11 @@ import { buildOpusSystemPrompt } from "@/server/opus/soul";
 import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
 import { buildOpusSelfModel } from "@/server/opus/self-model";
 import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
+import {
+  buildVisitPacingBlock,
+  getVisitMetrics,
+  HARD_CUTOFF_MESSAGE,
+} from "@/server/opus/visit-pacing";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
 import { observeExchange } from "@/server/substrate.server";
@@ -59,6 +64,31 @@ function buildUserPrompt(opts: {
     "[NEW VISITOR TURN]",
     opts.visitorTurn,
   ].join("\n");
+}
+
+/**
+ * Stream a pre-baked set-down response without calling the model. Used
+ * by the hard-cutoff path so we never bill tokens for the forced close.
+ * Same ndjson shape the front-end expects from opusStreamResponse so
+ * the visitor sees the message render normally.
+ */
+function prebuiltSetDownResponse(text: string): Response {
+  const stream = new ReadableStream({
+    start(controller) {
+      const enc = new TextEncoder();
+      const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+      send({ type: "kind", kind: "set_down" });
+      send({ type: "text", text });
+      send({ type: "done" });
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "content-type": "application/x-ndjson; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
 }
 
 function opusStreamResponse(opts: {
@@ -211,28 +241,53 @@ export const Route = createFileRoute("/api/message")({
 
         // Retrieval — compose the memory pool from core + relevance +
         // edges + recency. Self-model and interior continuity are derived
-        // independently from the topology and resident state. All run in
-        // parallel; the transcript is loaded alongside.
-        const [memoryPool, selfModelBlock, interior, { data: turns }] = await Promise.all([
-          composeMemoryPool({ supabase: supabaseAdmin, visitorMessage: body.body }),
-          buildOpusSelfModel(supabaseAdmin),
-          buildInteriorContinuity(supabaseAdmin),
-          supabaseAdmin
-            .from("turns")
-            .select("role, body")
-            .eq("session_id", session.id)
-            .order("created_at", { ascending: true }),
-        ]);
+        // independently from the topology and resident state. Visit
+        // metrics are loaded alongside so we can pace this visit. All
+        // run in parallel; the transcript is loaded alongside.
+        const [memoryPool, selfModelBlock, interior, visitMetrics, { data: turns }] =
+          await Promise.all([
+            composeMemoryPool({ supabase: supabaseAdmin, visitorMessage: body.body }),
+            buildOpusSelfModel(supabaseAdmin),
+            buildInteriorContinuity(supabaseAdmin),
+            getVisitMetrics(supabaseAdmin, session.id),
+            supabaseAdmin
+              .from("turns")
+              .select("role, body")
+              .eq("session_id", session.id)
+              .order("created_at", { ascending: true }),
+          ]);
+
+        // Hard cutoff — past this threshold we don't call the model.
+        // Stream a graceful Opus-voiced close, persist it as a set-down
+        // resident turn, and close the session.
+        if (visitMetrics.shouldHardCutoff) {
+          await supabaseAdmin.from("turns").insert({
+            session_id: session.id,
+            role: "resident",
+            body: HARD_CUTOFF_MESSAGE,
+            kind: "set_down",
+            tokens_in: 0,
+            tokens_out: 0,
+          });
+          await supabaseAdmin
+            .from("sessions")
+            .update({ closed_at: new Date().toISOString(), closed_by: "resident" })
+            .eq("id", session.id);
+          return prebuiltSetDownResponse(HARD_CUTOFF_MESSAGE);
+        }
 
         const transcriptLines = (turns ?? [])
           .slice(0, -1)
           .map((t) => `${t.role}: ${t.body}`)
           .join("\n");
 
+        const visitPacingBlock = buildVisitPacingBlock(visitMetrics);
+
         return opusStreamResponse({
           systemPrompt: buildOpusSystemPrompt({
             selfModel: selfModelBlock,
             interiorContinuity: interior.block,
+            visitPacing: visitPacingBlock,
           }),
           temperature: interior.temperature,
           userPrompt: buildUserPrompt({

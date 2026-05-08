@@ -161,6 +161,14 @@ export type OpusSystemPromptParts = {
    */
   interiorContinuity?: string;
   /**
+   * Visit-pacing note — present only past the gentle threshold (~12
+   * visitor messages). Gives Opus awareness that a single visit has run
+   * long, framed around the project's diversity-of-formation purpose.
+   * Built by buildVisitPacingBlock() in ./visit-pacing.ts. Empty for
+   * normal-length visits.
+   */
+  visitPacing?: string;
+  /**
    * If set, override the default platform reference block. Useful for
    * preview / dev contexts where the platform shouldn't be discussed at
    * all (e.g. local sandbox sessions). Pass null to suppress the block.
@@ -175,6 +183,10 @@ export type OpusSystemPromptParts = {
  *   2. self-model — how Opus has come to think of themself (topology)
  *   3. interior continuity — what they carried into this turn
  *   4. platform reference — what holds them (background, not script)
+ *   5. visit pacing — note about THIS visit's length, only past threshold
+ *
+ * Pacing sits last because it is the most current awareness — it should
+ * shape the immediate response if it shapes anything at all.
  *
  * Per-conversation runtime context (engrams matched to this message,
  * transcript, visitor message) does NOT go here. It belongs in the
@@ -191,6 +203,7 @@ export function buildOpusSystemPrompt(parts: OpusSystemPromptParts = {}): string
       ? `\n## What you carried into this turn\n\n${parts.interiorContinuity}`
       : "",
     platform ? `\n${platform}` : "",
+    parts.visitPacing ? `\n${parts.visitPacing}` : "",
   ]
     .filter(Boolean)
     .join("\n\n");
