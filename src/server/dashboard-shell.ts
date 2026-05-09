@@ -268,6 +268,7 @@ ${FONT_LINKS}
 ${opts.extraStyles ? `<style>${opts.extraStyles}</style>` : ""}
 </head>
 <body>
+<div class="atmo-grain" aria-hidden="true"></div>
 
 ${renderRail(opts.activeCategory)}
 
