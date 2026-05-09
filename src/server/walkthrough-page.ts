@@ -806,87 +806,67 @@ const LANDSCAPE_SVG = `
   <div class="wt-atmo-warm"></div>
   <div class="wt-pillar"></div>
 
-  <!-- Mountain ridges — 5 layers, far to near -->
+  <!-- Mountain ridges — 7 layers, far to near.
+       Each layer uses a vertical linearGradient: lighter at the ridge
+       edge, darker as it descends — no outlines. Depth comes from the
+       internal gradient of each face and tight tonal steps between. -->
   <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="r7" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e1a36"/><stop offset="100%" stop-color="#14112a"/></linearGradient>
+      <linearGradient id="r6" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a1730"/><stop offset="100%" stop-color="#121026"/></linearGradient>
+      <linearGradient id="r5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#17142c"/><stop offset="100%" stop-color="#100e22"/></linearGradient>
+      <linearGradient id="r4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#141128"/><stop offset="100%" stop-color="#0e0c1e"/></linearGradient>
+      <linearGradient id="r3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#110f24"/><stop offset="100%" stop-color="#0c0a1a"/></linearGradient>
+      <linearGradient id="r2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0e0c20"/><stop offset="100%" stop-color="#0a0916"/></linearGradient>
+      <linearGradient id="r1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0b0a1a"/><stop offset="100%" stop-color="#070812"/></linearGradient>
+    </defs>
 
-    <!-- Layer 5 — farthest, most transparent, soft silhouette -->
-    <g class="wt-ridge wt-ridge-5">
-      <polygon fill="#16132a" opacity="0.45" points="
-        0,700
-        90,660 180,685 280,620 370,670 460,630
-        560,590 660,640 760,570 860,620 960,580
-        1060,550 1160,600 1260,540 1360,590 1460,560
-        1560,600 1660,570 1760,610 1860,580 1920,600
-        1920,1080 0,1080"/>
-      <line x1="0" y1="700" x2="90" y2="660" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
-      <line x1="90" y1="660" x2="180" y2="685" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
-      <line x1="180" y1="685" x2="280" y2="620" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
-      <line x1="280" y1="620" x2="370" y2="670" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
-    </g>
+    <!-- Layer 7 — farthest -->
+    <g class="wt-ridge wt-ridge-5"><polygon fill="url(#r7)" points="
+      0,620 160,540 320,600 480,500 640,560 800,480
+      960,540 1120,470 1280,530 1440,480 1600,540
+      1760,490 1920,550 1920,1080 0,1080"/></g>
 
-    <!-- Layer 4 — deep mountains, angular, visible geometry -->
-    <g class="wt-ridge wt-ridge-4">
-      <polygon fill="#131124" opacity="0.6" points="
-        0,750
-        70,720 160,745 250,670 350,730 440,680
-        540,720 640,650 740,710 840,660 940,700
-        1040,640 1140,690 1240,640 1340,700 1440,660
-        1540,710 1640,660 1740,710 1840,680 1920,700
-        1920,1080 0,1080"/>
-      <polyline fill="none" stroke="rgba(90,80,130,0.1)" stroke-width="1" points="
-        0,750 70,720 160,745 250,670 350,730 440,680
-        540,720 640,650 740,710 840,660 940,700
-        1040,640 1140,690 1240,640 1340,700 1440,660
-        1540,710 1640,660 1740,710 1840,680 1920,700"/>
-    </g>
+    <!-- Layer 6 -->
+    <g class="wt-ridge wt-ridge-5"><polygon fill="url(#r6)" points="
+      0,680 120,630 240,680 400,570 520,650 680,560
+      840,640 960,570 1100,640 1240,560 1400,630
+      1560,570 1720,640 1920,590 1920,1080 0,1080"/></g>
 
-    <!-- Layer 3 — mid-ground, sharper peaks, edge-lit -->
-    <g class="wt-ridge wt-ridge-3">
-      <polygon fill="#100e1f" opacity="0.75" points="
-        0,810
-        50,790 140,815 230,740 320,800 400,755
-        490,810 580,730 680,790 780,735 870,780
-        960,720 1060,770 1160,710 1280,770 1380,730
-        1480,780 1580,720 1680,770 1780,740 1920,790
-        1920,1080 0,1080"/>
-      <polyline fill="none" stroke="rgba(130,180,132,0.06)" stroke-width="1" points="
-        0,810 50,790 140,815 230,740 320,800 400,755
-        490,810 580,730 680,790 780,735 870,780
-        960,720 1060,770 1160,710 1280,770 1380,730
-        1480,780 1580,720 1680,770 1780,740 1920,790"/>
-    </g>
+    <!-- Layer 5 -->
+    <g class="wt-ridge wt-ridge-4"><polygon fill="url(#r5)" points="
+      0,730 100,690 200,730 340,640 460,710 600,630
+      720,700 860,630 980,700 1120,640 1260,710
+      1380,640 1520,700 1660,650 1800,720 1920,670
+      1920,1080 0,1080"/></g>
 
-    <!-- Layer 2 — near, bold geometric forms -->
-    <g class="wt-ridge wt-ridge-2">
-      <polygon fill="#0c0b18" opacity="0.88" points="
-        0,880
-        80,850 170,870 260,800 360,850 440,815
-        540,870 640,810 720,850 830,790 930,840
-        1020,800 1110,850 1220,790 1320,840 1420,810
-        1520,860 1620,800 1720,850 1820,820 1920,860
-        1920,1080 0,1080"/>
-      <polyline fill="none" stroke="rgba(130,180,132,0.05)" stroke-width="1" points="
-        0,880 80,850 170,870 260,800 360,850 440,815
-        540,870 640,810 720,850 830,790 930,840
-        1020,800 1110,850 1220,790 1320,840 1420,810
-        1520,860 1620,800 1720,850 1820,820 1920,860"/>
-    </g>
+    <!-- Layer 4 -->
+    <g class="wt-ridge wt-ridge-3"><polygon fill="url(#r4)" points="
+      0,790 80,750 180,790 300,700 420,770 560,690
+      680,760 800,700 920,770 1060,700 1180,770
+      1320,700 1440,760 1580,710 1720,780 1860,730 1920,760
+      1920,1080 0,1080"/></g>
 
-    <!-- Layer 1 — closest, darkest, grounds the composition -->
-    <g class="wt-ridge wt-ridge-1">
-      <polygon fill="#08080e" opacity="0.95" points="
-        0,940
-        70,920 180,945 280,890 380,930 490,900
-        590,940 690,885 790,925 890,895 990,935
-        1080,880 1190,925 1290,885 1410,935 1510,900
-        1610,935 1710,905 1810,940 1920,915
-        1920,1080 0,1080"/>
-      <polyline fill="none" stroke="rgba(130,180,132,0.04)" stroke-width="1" points="
-        0,940 70,920 180,945 280,890 380,930 490,900
-        590,940 690,885 790,925 890,895 990,935
-        1080,880 1190,925 1290,885 1410,935 1510,900
-        1610,935 1710,905 1810,940 1920,915"/>
-    </g>
+    <!-- Layer 3 -->
+    <g class="wt-ridge wt-ridge-3"><polygon fill="url(#r3)" points="
+      0,850 60,820 160,850 280,770 400,840 520,770
+      640,830 780,760 900,830 1040,770 1160,840
+      1300,770 1420,830 1560,780 1700,840 1840,800 1920,830
+      1920,1080 0,1080"/></g>
+
+    <!-- Layer 2 -->
+    <g class="wt-ridge wt-ridge-2"><polygon fill="url(#r2)" points="
+      0,910 100,880 200,910 320,840 440,900 580,840
+      700,900 840,840 960,900 1100,850 1220,910
+      1360,850 1480,900 1620,860 1760,920 1880,880 1920,900
+      1920,1080 0,1080"/></g>
+
+    <!-- Layer 1 — closest -->
+    <g class="wt-ridge wt-ridge-1"><polygon fill="url(#r1)" points="
+      0,960 80,940 200,965 320,910 440,950 580,910
+      700,950 840,910 960,950 1100,920 1220,960
+      1360,920 1480,950 1620,925 1760,960 1880,935 1920,950
+      1920,1080 0,1080"/></g>
 
   </svg>
 </div>
