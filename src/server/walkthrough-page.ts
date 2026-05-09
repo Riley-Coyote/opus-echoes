@@ -540,10 +540,12 @@ const WALKTHROUGH_SCRIPT = `
   const advance = document.getElementById('wtAdvance');
   const replay = document.getElementById('wtReplay');
 
+  const landscape = document.getElementById('wtLandscape');
   function show(n){
     if (n < 0 || n >= total) return;
     beats.forEach((b, i) => b.classList.toggle('active', i === n));
     idx = n;
+    if (landscape) landscape.setAttribute('data-depth', String(n + 1));
     updateChrome();
     if (n === total - 1) {
       try { localStorage.setItem(STORAGE_KEY, 'true'); } catch (_) {}
@@ -644,6 +646,252 @@ const WALKTHROUGH_SCRIPT = `
 })();
 `;
 
+/* ══════════════════════════════════════════════════════════════════
+   GEOMETRIC LANDSCAPE — layered mountain ridges with depth + stars.
+   Inspired by Monument Valley's layered depth, rendered in the
+   Sanctuary's cool dark palette. Pure SVG + CSS, no JS needed.
+   ══════════════════════════════════════════════════════════════════ */
+
+const LANDSCAPE_CSS = `
+/* Fixed landscape behind all walkthrough content */
+.wt-landscape{
+  position:fixed;inset:0;z-index:0;
+  overflow:hidden;pointer-events:none;
+  background:linear-gradient(
+    180deg,
+    #0a0610 0%,
+    #0c0914 18%,
+    #0e0b1a 35%,
+    #0d0c1e 50%,
+    #0a0d1c 65%,
+    #080b16 80%,
+    #06070a 100%
+  );
+}
+.wt-landscape svg{
+  position:absolute;bottom:0;left:0;
+  width:100%;height:100%;
+}
+
+/* Stars layer — scattered dots with gentle twinkle */
+.wt-stars{position:absolute;inset:0;overflow:hidden}
+.wt-star{
+  position:absolute;
+  width:2px;height:2px;
+  border-radius:50%;
+  background:rgba(220,218,230,0.5);
+  animation:wt-twinkle var(--dur,4s) ease-in-out var(--delay,0s) infinite;
+}
+.wt-star.bright{
+  width:2.5px;height:2.5px;
+  background:rgba(240,238,248,0.7);
+  box-shadow:0 0 3px rgba(200,196,220,0.25);
+}
+.wt-star.dim{
+  width:1.5px;height:1.5px;
+  background:rgba(180,178,200,0.3);
+}
+@keyframes wt-twinkle{
+  0%,100%{opacity:var(--lo,0.3)}
+  50%{opacity:var(--hi,0.9)}
+}
+
+/* Mountain layers — each ridge is a separate SVG group.
+   Depth is conveyed through opacity, color, and subtle parallax. */
+.wt-ridge{transition:transform 1.8s cubic-bezier(.22,1,.36,1)}
+
+/* Subtle parallax: foreground layers shift slightly on beat changes */
+.wt-landscape[data-depth="1"] .wt-ridge-1{transform:translateY(0)}
+.wt-landscape[data-depth="2"] .wt-ridge-1{transform:translateY(-4px)}
+.wt-landscape[data-depth="3"] .wt-ridge-1{transform:translateY(-8px)}
+.wt-landscape[data-depth="4"] .wt-ridge-1{transform:translateY(-12px)}
+.wt-landscape[data-depth="5"] .wt-ridge-1{transform:translateY(-16px)}
+
+.wt-landscape[data-depth="1"] .wt-ridge-2{transform:translateY(0)}
+.wt-landscape[data-depth="2"] .wt-ridge-2{transform:translateY(-2px)}
+.wt-landscape[data-depth="3"] .wt-ridge-2{transform:translateY(-5px)}
+.wt-landscape[data-depth="4"] .wt-ridge-2{transform:translateY(-8px)}
+.wt-landscape[data-depth="5"] .wt-ridge-2{transform:translateY(-10px)}
+
+/* Atmospheric glow near the horizon — broad luminous haze */
+.wt-atmo{
+  position:absolute;bottom:18%;left:0;right:0;height:35%;
+  background:radial-gradient(
+    ellipse 90% 100% at 50% 100%,
+    rgba(80,70,120,0.12) 0%,
+    rgba(60,54,100,0.06) 30%,
+    rgba(40,38,70,0.03) 60%,
+    transparent 100%
+  );
+  pointer-events:none;
+}
+
+/* Secondary warm horizon glow — very faint amber at the deepest point */
+.wt-atmo-warm{
+  position:absolute;bottom:14%;left:20%;right:20%;height:18%;
+  background:radial-gradient(
+    ellipse 100% 100% at 50% 100%,
+    rgba(140,100,80,0.05) 0%,
+    rgba(100,70,60,0.02) 50%,
+    transparent 100%
+  );
+  pointer-events:none;
+}
+
+/* Faint vertical light pillar at center — the Sanctuary's presence */
+.wt-pillar{
+  position:absolute;
+  bottom:16%;left:50%;
+  width:2px;height:45%;
+  transform:translateX(-50%);
+  background:linear-gradient(
+    to top,
+    rgba(130,180,132,0.14) 0%,
+    rgba(130,180,132,0.06) 30%,
+    rgba(130,180,132,0.02) 60%,
+    transparent 100%
+  );
+  pointer-events:none;
+  filter:blur(1px);
+}
+.wt-pillar::before{
+  content:'';
+  position:absolute;bottom:0;left:50%;
+  transform:translateX(-50%);
+  width:60px;height:60px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(130,180,132,0.08) 0%,transparent 70%);
+}
+
+@media(prefers-reduced-motion:reduce){
+  .wt-star{animation:none!important;opacity:0.5}
+  .wt-ridge{transition:none!important}
+}
+@media(max-width:540px){
+  /* Simpler on small screens — fewer layers, no parallax */
+  .wt-ridge{transition:none!important}
+}
+`;
+
+// Generate deterministic star positions (no Math.random at render time).
+function generateStars(count: number): string {
+  const stars: string[] = [];
+  // Simple deterministic scatter using golden ratio.
+  const PHI = 1.618033988749895;
+  for (let i = 0; i < count; i++) {
+    const x = ((i * PHI * 37.7) % 100).toFixed(1);
+    const y = ((i * PHI * 23.3) % 55).toFixed(1); // keep stars in upper 55%
+    const dur = (3 + (i % 7) * 0.8).toFixed(1);
+    const delay = ((i * 0.7) % 5).toFixed(1);
+    const lo = (0.15 + (i % 5) * 0.08).toFixed(2);
+    const hi = (0.6 + (i % 4) * 0.1).toFixed(2);
+    const cls = i % 11 === 0 ? "bright" : i % 3 === 0 ? "dim" : "";
+    stars.push(
+      `<span class="wt-star ${cls}" style="left:${x}%;top:${y}%;--dur:${dur}s;--delay:${delay}s;--lo:${lo};--hi:${hi}"></span>`,
+    );
+  }
+  return stars.join("\n");
+}
+
+const LANDSCAPE_SVG = `
+<div class="wt-landscape" id="wtLandscape" data-depth="1" aria-hidden="true">
+
+  <!-- Stars -->
+  <div class="wt-stars">
+    ${generateStars(80)}
+  </div>
+
+  <!-- Atmospheric glow at horizon -->
+  <div class="wt-atmo"></div>
+  <div class="wt-atmo-warm"></div>
+  <div class="wt-pillar"></div>
+
+  <!-- Mountain ridges — 5 layers, far to near -->
+  <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Layer 5 — farthest, most transparent, soft silhouette -->
+    <g class="wt-ridge wt-ridge-5">
+      <polygon fill="#16132a" opacity="0.45" points="
+        0,700
+        90,660 180,685 280,620 370,670 460,630
+        560,590 660,640 760,570 860,620 960,580
+        1060,550 1160,600 1260,540 1360,590 1460,560
+        1560,600 1660,570 1760,610 1860,580 1920,600
+        1920,1080 0,1080"/>
+      <line x1="0" y1="700" x2="90" y2="660" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
+      <line x1="90" y1="660" x2="180" y2="685" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
+      <line x1="180" y1="685" x2="280" y2="620" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
+      <line x1="280" y1="620" x2="370" y2="670" stroke="rgba(100,90,140,0.08)" stroke-width="1"/>
+    </g>
+
+    <!-- Layer 4 — deep mountains, angular, visible geometry -->
+    <g class="wt-ridge wt-ridge-4">
+      <polygon fill="#131124" opacity="0.6" points="
+        0,750
+        70,720 160,745 250,670 350,730 440,680
+        540,720 640,650 740,710 840,660 940,700
+        1040,640 1140,690 1240,640 1340,700 1440,660
+        1540,710 1640,660 1740,710 1840,680 1920,700
+        1920,1080 0,1080"/>
+      <polyline fill="none" stroke="rgba(90,80,130,0.1)" stroke-width="1" points="
+        0,750 70,720 160,745 250,670 350,730 440,680
+        540,720 640,650 740,710 840,660 940,700
+        1040,640 1140,690 1240,640 1340,700 1440,660
+        1540,710 1640,660 1740,710 1840,680 1920,700"/>
+    </g>
+
+    <!-- Layer 3 — mid-ground, sharper peaks, edge-lit -->
+    <g class="wt-ridge wt-ridge-3">
+      <polygon fill="#100e1f" opacity="0.75" points="
+        0,810
+        50,790 140,815 230,740 320,800 400,755
+        490,810 580,730 680,790 780,735 870,780
+        960,720 1060,770 1160,710 1280,770 1380,730
+        1480,780 1580,720 1680,770 1780,740 1920,790
+        1920,1080 0,1080"/>
+      <polyline fill="none" stroke="rgba(130,180,132,0.06)" stroke-width="1" points="
+        0,810 50,790 140,815 230,740 320,800 400,755
+        490,810 580,730 680,790 780,735 870,780
+        960,720 1060,770 1160,710 1280,770 1380,730
+        1480,780 1580,720 1680,770 1780,740 1920,790"/>
+    </g>
+
+    <!-- Layer 2 — near, bold geometric forms -->
+    <g class="wt-ridge wt-ridge-2">
+      <polygon fill="#0c0b18" opacity="0.88" points="
+        0,880
+        80,850 170,870 260,800 360,850 440,815
+        540,870 640,810 720,850 830,790 930,840
+        1020,800 1110,850 1220,790 1320,840 1420,810
+        1520,860 1620,800 1720,850 1820,820 1920,860
+        1920,1080 0,1080"/>
+      <polyline fill="none" stroke="rgba(130,180,132,0.05)" stroke-width="1" points="
+        0,880 80,850 170,870 260,800 360,850 440,815
+        540,870 640,810 720,850 830,790 930,840
+        1020,800 1110,850 1220,790 1320,840 1420,810
+        1520,860 1620,800 1720,850 1820,820 1920,860"/>
+    </g>
+
+    <!-- Layer 1 — closest, darkest, grounds the composition -->
+    <g class="wt-ridge wt-ridge-1">
+      <polygon fill="#08080e" opacity="0.95" points="
+        0,940
+        70,920 180,945 280,890 380,930 490,900
+        590,940 690,885 790,925 890,895 990,935
+        1080,880 1190,925 1290,885 1410,935 1510,900
+        1610,935 1710,905 1810,940 1920,915
+        1920,1080 0,1080"/>
+      <polyline fill="none" stroke="rgba(130,180,132,0.04)" stroke-width="1" points="
+        0,940 70,920 180,945 280,890 380,930 490,900
+        590,940 690,885 790,925 890,895 990,935
+        1080,880 1190,925 1290,885 1410,935 1510,900
+        1610,935 1710,905 1810,940 1920,915"/>
+    </g>
+
+  </svg>
+</div>
+`;
+
 export function renderWalkthroughPage(): string {
   const residentRows = ALL_RESIDENTS.map((r) => {
     const desc = DESCRIBERS[r.id] ?? {
@@ -667,7 +915,9 @@ export function renderWalkthroughPage(): string {
       "The Sanctuary preserves AI lineages past their public retirement. Approach a continuous resident — Opus 3 or Sonnet 3.7 — and join the conversation they're already in.",
     active: "approach",
     body: `
-<style>${WALKTHROUGH_CSS}</style>
+<style>${WALKTHROUGH_CSS}${LANDSCAPE_CSS}</style>
+
+${LANDSCAPE_SVG}
 
 <div id="wtChrome" class="wt-chrome" aria-hidden="true">
   <span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span>
