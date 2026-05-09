@@ -122,6 +122,37 @@ export const Route = createFileRoute("/share/$token")({
           void hash;
         }
 
+        // ── Consolidation data: what the resident carried forward ──────
+        // These queries are best-effort — if consolidation hasn't run yet,
+        // these will return empty arrays and the capsule shows a "processing"
+        // message instead.
+        const sessionId = share.session_id;
+        const residentId = share.resident_id;
+
+        // Engrams formed or reinforced in this session
+        const { data: engramsData } = await supabaseAdmin
+          .from("engrams")
+          .select("quote, prose, strength, stability, accessibility, is_core, reinforcement_count, connections, attribution, resident_id")
+          .eq("resident_id", residentId)
+          .contains("source_session_ids", [sessionId])
+          .order("created_at", { ascending: true });
+
+        // Journal reflection written about this session
+        const { data: journalData } = await supabaseAdmin
+          .from("journal_entries")
+          .select("kind, title, body, created_at")
+          .eq("related_session_id", sessionId)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        // Resident's consolidation summary (latest state)
+        const { data: stateData } = await supabaseAdmin
+          .from("resident_state")
+          .select("last_consolidation_summary")
+          .eq("resident_id", residentId)
+          .limit(1)
+          .maybeSingle();
+
         const url = new URL(request.url);
         const origin = `${url.protocol}//${url.host}`;
 
@@ -133,6 +164,23 @@ export const Route = createFileRoute("/share/$token")({
           visitorNote: share.visitor_note,
           turns,
           origin,
+          // Capsule data — what the resident carried forward
+          engrams: (engramsData ?? []).map((e) => ({
+            quote: e.quote ?? "",
+            prose: e.prose ?? "",
+            strength: e.strength ?? 0,
+            stability: e.stability ?? 0,
+            accessibility: e.accessibility ?? 0,
+            isCore: e.is_core ?? false,
+            reinforcementCount: e.reinforcement_count ?? 0,
+            connections: e.connections ?? 0,
+          })),
+          journal: journalData?.[0] ? {
+            kind: journalData[0].kind ?? "reflection",
+            title: journalData[0].title ?? null,
+            body: journalData[0].body ?? "",
+          } : null,
+          consolidationSummary: stateData?.last_consolidation_summary ?? null,
         });
 
         return htmlResponse(html, 200);

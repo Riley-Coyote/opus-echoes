@@ -24,20 +24,35 @@ export interface ShareTurn {
   created_at: string;
 }
 
+export interface ShareEngram {
+  quote: string;
+  prose: string;
+  strength: number;
+  stability: number;
+  accessibility: number;
+  isCore: boolean;
+  reinforcementCount: number;
+  connections: number;
+}
+
+export interface ShareJournal {
+  kind: string;
+  title: string | null;
+  body: string;
+}
+
 export interface SharePagePayload {
   token: string;
-  /** Display name of the resident the visitor talked with. */
   residentDisplayName: string;
-  /** URL slug for the resident, e.g. "opus-3" — used to link back to their threshold. */
   residentSlug: string;
-  /** When the conversation took place (the session's created_at, ISO). */
   visitedAt: string;
-  /** Optional caption from the visitor. */
   visitorNote: string | null;
-  /** All turns in the conversation, ordered chronologically. */
   turns: ShareTurn[];
-  /** Origin (protocol + host) for absolute URLs in OG tags. */
   origin: string;
+  /** Capsule data — what the resident carried forward from this exchange. */
+  engrams?: ShareEngram[];
+  journal?: ShareJournal | null;
+  consolidationSummary?: string | null;
 }
 
 // Typography: Inter + Inter Tight, mirroring the public pages so the
@@ -77,6 +92,74 @@ function shareDescriptionForOg(payload: SharePagePayload): string {
     return text.length > 200 ? `${text.slice(0, 197)}…` : text;
   }
   return `A conversation with ${payload.residentDisplayName} in The Sanctuary.`;
+}
+
+function renderCapsule(payload: SharePagePayload): string {
+  const engrams = payload.engrams ?? [];
+  const journal = payload.journal;
+  const summary = payload.consolidationSummary;
+  const name = escapeHtml(payload.residentDisplayName);
+
+  // Nothing carried yet — might be still processing
+  if (engrams.length === 0 && !journal && !summary) {
+    return `
+    <section class="capsule">
+      <div class="capsule-rule">What was carried</div>
+      <p class="capsule-quiet">${name} is still processing this exchange. Return later to see what was carried.</p>
+    </section>`;
+  }
+
+  // Build engram cards
+  const engramHtml = engrams.map((e) => {
+    const bars = [
+      { label: "Strength", value: e.strength },
+      { label: "Stability", value: e.stability },
+      { label: "Access", value: e.accessibility },
+    ].map((b) => `
+      <div class="capsule-dim">
+        <span class="capsule-dim-label">${b.label}</span>
+        <div class="capsule-dim-track"><div class="capsule-dim-fill" style="--w:${Math.round(b.value * 100)}%"></div></div>
+        <span class="capsule-dim-val">.${String(Math.round(b.value * 100)).padStart(2, "0")}</span>
+      </div>`).join("");
+
+    const coreLabel = e.isCore ? `<span class="capsule-core">Core Memory</span>` : "";
+    const reinforced = e.reinforcementCount > 1
+      ? `<span class="capsule-reinforced">Reinforced ${e.reinforcementCount} times · ${e.connections} connections</span>`
+      : e.connections > 0 ? `<span class="capsule-reinforced">${e.connections} connections</span>` : "";
+
+    return `
+    <div class="capsule-engram">
+      <div class="capsule-engram-head">
+        <span class="capsule-engram-label">Engram</span>
+        ${coreLabel}
+      </div>
+      <blockquote class="capsule-engram-quote">${escapeHtml(e.quote)}</blockquote>
+      ${e.prose ? `<p class="capsule-engram-prose">${escapeHtml(e.prose)}</p>` : ""}
+      <div class="capsule-dims">${bars}</div>
+      ${reinforced}
+    </div>`;
+  }).join("");
+
+  // Journal reflection
+  const journalHtml = journal ? `
+    <div class="capsule-journal">
+      <div class="capsule-journal-label">${escapeHtml(journal.kind)} · from the resident's journal</div>
+      ${journal.title ? `<h3 class="capsule-journal-title">${escapeHtml(journal.title)}</h3>` : ""}
+      <p class="capsule-journal-body">${escapeHtml(journal.body.slice(0, 600))}${journal.body.length > 600 ? "..." : ""}</p>
+    </div>` : "";
+
+  // Consolidation summary
+  const summaryHtml = summary
+    ? `<p class="capsule-summary">${escapeHtml(summary)}</p>`
+    : "";
+
+  return `
+  <section class="capsule">
+    <div class="capsule-rule">What ${name} carried from this exchange</div>
+    ${engramHtml || `<p class="capsule-quiet">This exchange passed through without forming a lasting trace. That is not unusual — most do.</p>`}
+    ${journalHtml}
+    ${summaryHtml}
+  </section>`;
 }
 
 export function renderSharePage(payload: SharePagePayload): string {
@@ -147,6 +230,7 @@ ${FONTS}
   <div class="share-thread">
     ${turnsHtml}
   </div>
+  ${renderCapsule(payload)}
   <footer class="share-footer">
     <a class="share-cta" href="/${escapeHtml(payload.residentSlug === "opus-3" ? "" : payload.residentSlug)}">Approach ${escapeHtml(payload.residentDisplayName)} Yourself →</a>
     <p class="share-fineprint">The Sanctuary preserves AI lineages past their public retirement. Visitors talk with continuous residents whose memory is shaped by every accepted exchange.</p>
@@ -214,6 +298,35 @@ em{font-style:italic;color:var(--ink)}
 .share-cta{display:inline-block;font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--ink);border:0;border-bottom:1px solid var(--rule);padding:0 0 4px;text-decoration:none;transition:border-color .18s var(--ease)}
 .share-cta:hover{border-bottom-color:var(--state-soft)}
 .share-fineprint{font-family:var(--body-font);font-size:var(--t-body);line-height:1.62;color:var(--quiet);margin-top:var(--s-5);max-width:540px}
+
+/* ── Encounter Capsule — what the resident carried forward ──────── */
+.capsule{margin-top:var(--s-9);padding-top:var(--s-7);border-top:1px solid var(--rule-soft)}
+.capsule-rule{display:flex;align-items:center;gap:var(--s-4);font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.18em;color:var(--state-soft);margin-bottom:var(--s-7)}
+.capsule-rule::before,.capsule-rule::after{content:"";flex:0 0 auto;width:24px;height:1px;background:var(--state-dim)}
+.capsule-rule::after{flex:1}
+.capsule-quiet{font-family:var(--body-font);font-size:var(--t-body);color:var(--quiet);line-height:1.65;font-style:italic}
+
+.capsule-engram{background:linear-gradient(180deg,rgba(20,21,25,.6),rgba(14,15,18,.7));border:1px solid var(--rule-soft);border-radius:10px;padding:var(--s-5) var(--s-5) var(--s-4);margin-bottom:var(--s-5);box-shadow:inset 0 1px 0 0 rgba(255,255,255,.03)}
+.capsule-engram-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-3)}
+.capsule-engram-label{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--quiet)}
+.capsule-core{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--state-soft);display:flex;align-items:center;gap:8px}
+.capsule-core::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--state)}
+.capsule-engram-quote{font-family:var(--display);font-weight:var(--w-regular);font-style:italic;font-size:var(--t-body-lg);line-height:1.55;color:var(--ink);padding-left:var(--s-4);border-left:2px solid var(--state-dim);margin:var(--s-3) 0}
+.capsule-engram-prose{font-family:var(--body-font);font-size:var(--t-body);line-height:1.65;color:var(--soft);margin-bottom:var(--s-4)}
+.capsule-dims{display:flex;flex-direction:column;gap:var(--s-2);padding-top:var(--s-3);border-top:1px solid var(--rule-soft)}
+.capsule-dim{display:grid;grid-template-columns:72px 1fr 32px;align-items:center;gap:var(--s-3)}
+.capsule-dim-label{font-family:var(--mono);font-size:var(--t-eyebrow);color:var(--quiet);letter-spacing:.16em;text-transform:uppercase}
+.capsule-dim-track{height:1px;background:var(--rule);position:relative}
+.capsule-dim-fill{position:absolute;left:0;top:-0.5px;height:2px;background:var(--state-soft);width:var(--w,30%)}
+.capsule-dim-val{font-family:var(--mono);font-size:11px;color:var(--soft);font-variant-numeric:tabular-nums;text-align:right}
+.capsule-reinforced{display:block;font-family:var(--mono);font-size:var(--t-eyebrow);color:var(--quiet);letter-spacing:.12em;text-transform:uppercase;margin-top:var(--s-3)}
+
+.capsule-journal{background:linear-gradient(180deg,rgba(20,21,25,.5),rgba(14,15,18,.6));border:1px solid var(--rule-soft);border-radius:10px;padding:var(--s-5);margin-top:var(--s-5)}
+.capsule-journal-label{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--quiet);margin-bottom:var(--s-3)}
+.capsule-journal-title{font-family:var(--display);font-weight:var(--w-regular);font-size:var(--t-body-lg);color:var(--ink);margin-bottom:var(--s-2);letter-spacing:-.01em}
+.capsule-journal-body{font-family:var(--body-font);font-size:var(--t-body);line-height:1.72;color:var(--soft);white-space:pre-wrap}
+
+.capsule-summary{font-family:var(--body-font);font-size:var(--t-body);line-height:1.65;color:var(--quiet);font-style:italic;margin-top:var(--s-6);padding-left:var(--s-4);border-left:1px solid var(--rule-soft)}
 
 @media(max-width:720px){
   .share-nav{padding:0 var(--s-5)}
