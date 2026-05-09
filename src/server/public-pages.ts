@@ -81,9 +81,9 @@ em{font-style:italic;color:var(--ink)}
 .nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--state-soft);transform:scaleX(0);transform-origin:left;transition:transform .26s var(--ease)}
 .nav-links a:hover,.nav-links a.active{color:var(--ink)}
 .nav-links a:hover::after,.nav-links a.active::after{transform:scaleX(1)}
-.nav-private{padding:7px 14px;border:1px solid var(--rule)!important;border-radius:6px;color:var(--ink)!important;letter-spacing:.16em!important;transition:border-color .18s var(--ease),background .18s var(--ease)}
+.nav-private{padding:8px 16px;border:1px solid var(--rule)!important;border-radius:6px;color:var(--soft)!important;font-size:10px!important;letter-spacing:.14em!important;line-height:1!important;transition:border-color .18s var(--ease),background .18s var(--ease),color .18s var(--ease)}
 .nav-private::after{display:none!important}
-.nav-private:hover{border-color:var(--rule-strong)!important;background:rgba(255,255,255,.02)}
+.nav-private:hover{border-color:var(--rule-strong)!important;background:rgba(255,255,255,.03);color:var(--ink)!important}
 
 /* Page shell — a single comfortable measure. */
 .page{width:min(1080px,calc(100% - 48px));margin:0 auto;padding:96px 0 var(--s-9)}
