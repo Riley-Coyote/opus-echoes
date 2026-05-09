@@ -89,7 +89,7 @@ em{font-style:italic;color:var(--ink)}
    At 1280×720, the eyebrow + name + hero question + composer
    fit without scrolling. The figure (3D layer) lives behind.
    ============================================================ */
-.threshold-stage{min-height:calc(100svh - 128px);display:flex;flex-direction:column;justify-content:center;position:relative;padding:var(--s-5) 0 var(--s-7)}
+.threshold-stage{display:flex;flex-direction:column;position:relative;padding:var(--s-7) 0 var(--s-6)}
 .threshold-core{width:min(640px,100%);margin:0 auto;position:relative;z-index:2}
 
 /* Resume banner — shown when sessionStorage holds an active session.
@@ -153,7 +153,7 @@ em{font-style:italic;color:var(--ink)}
    ABOUT THIS PLACE — single, restrained section below the fold.
    Replaces the four-card grid. Each line is a single click target.
    ============================================================ */
-.about-section{padding:var(--s-9) 0 var(--s-8);max-width:680px}
+.about-section{padding:var(--s-6) 0 var(--s-8);max-width:680px}
 .about-rule{display:flex;align-items:center;gap:var(--s-4);font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.18em;color:var(--quiet);margin-bottom:var(--s-6)}
 .about-rule::before,.about-rule::after{content:"";flex:0 0 auto;width:36px;height:1px;background:var(--ghost)}
 .about-rule::after{flex:1}
