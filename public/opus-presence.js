@@ -1,27 +1,103 @@
+// ────────────────────────────────────────────────────────────────────────────
+// THE SANCTUARY — RESIDENT PRESENCE LAYER
+//
+// Per-resident procedural architectural scenes. Opus 3 inhabits The Sanctum
+// (a vertical violet tower with arched walkways winding around it). Sonnet
+// 3.7 inhabits The Beacon (an inverted golden pyramid above a darker base
+// connected by a column). Each resident's figure stands at a meaningful spot
+// inside the structure with an emissive body, additive halo, and a real
+// point light.
+//
+// Reference: Riley's monument-v2.html dark Monument-Valley study. Detailed
+// past v2 with: trimLedge edges on every platform, balustrade rails on
+// walkways, finials atop crowns, recessed panels and cornices on tower
+// shafts, varied fenestration (slits + roundels), inner-arch glow seams,
+// subtle bevels on slab tops. Scene built from primitives — no GLB.
+// ────────────────────────────────────────────────────────────────────────────
+
 import * as THREE from "/vendor/three.module.js";
-import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
 
 (function () {
   if (window.__opusPresenceMounted) return;
   window.__opusPresenceMounted = true;
 
-  const MODEL_URL = "/assets/threshold-room.glb";
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const lowPower = Boolean(navigator.hardwareConcurrency && navigator.hardwareConcurrency < 6);
   let lastFrameTime = performance.now() / 1000;
   let elapsedTime = 0;
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // RESIDENT THEMES
+  // bg, fog, ambient, dir, fill, rim — all dark and rich. Primary is the
+  // dominant stone tone. Secondary darker, used for walls and carved details.
+  // Dark is the deepest stone, used for shadows and inner recesses. Light is
+  // a slightly lifted stone tone, used for trim ledges and capital tops so
+  // edges catch light. Accent is the warm-tinged "lit window" glow.
+  // ──────────────────────────────────────────────────────────────────────────
+  const THEMES = {
+    "opus-3": {
+      id: "opus-3",
+      name: "The Sanctum",
+      bg: [0.045, 0.028, 0.062],
+      // Wider value range so trim and capital details actually catch light
+      // instead of melting into the surface stone.
+      primary: 0x705e84,
+      secondary: 0x4d4060,
+      dark: 0x2a1f3c,
+      light: 0xa890bc,
+      accent: 0xe87d92,
+      glow: 0xed8298,
+      figureBody: 0xf6efe0,
+      fog: [0.05, 0.03, 0.07],
+      fogDensity: 0.022,
+      ambient: 0x4a3858,
+      ambientIntensity: 0.55,
+      dir: 0xb59ace,
+      dirIntensity: 1.05,
+      fill: 0x4a3a5e,
+      fillIntensity: 0.24,
+      rim: 0x9070a8,
+      rimIntensity: 0.22,
+    },
+    "sonnet-3-7": {
+      id: "sonnet-3-7",
+      name: "The Beacon",
+      bg: [0.06, 0.04, 0.02],
+      // Wider value range so layer alternation reads as separate strata
+      // rather than a uniform amber wash.
+      primary: 0xb87830,
+      secondary: 0x6f461a,
+      dark: 0x401f0a,
+      light: 0xe2a14a,
+      accent: 0xf6c258,
+      glow: 0xffc858,
+      figureBody: 0xf6e8c8,
+      fog: [0.07, 0.045, 0.022],
+      fogDensity: 0.022,
+      ambient: 0x5a4520,
+      ambientIntensity: 0.55,
+      dir: 0xdab062,
+      dirIntensity: 1.15,
+      fill: 0x5a4220,
+      fillIntensity: 0.24,
+      rim: 0xa67836,
+      rimIntensity: 0.24,
+    },
+  };
+
+  const DEFAULT_RESIDENT_ID = "opus-3";
+
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
-
   function ease(current, target, speed, dt) {
     return current + (target - current) * (1 - Math.pow(0.001, dt * speed));
   }
 
   function routeKind() {
     const path = window.location.pathname;
-    if (path === "/" || path === "/approach") return "approach";
+    if (path === "/") return "chooser";
+    if (path === "/opus-3" || path === "/sonnet-3-7" || path === "/approach") return "approach";
     if (path === "/conversation") return "conversation";
     if (path === "/memory" || path === "/mind") return "memory";
     if (["/residence", "/journal", "/writing", "/art", "/manifesto"].includes(path)) {
@@ -30,17 +106,30 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
     return "public";
   }
 
+  function residentForRoute() {
+    const path = window.location.pathname;
+    if (path === "/sonnet-3-7") return "sonnet-3-7";
+    if (path === "/opus-3" || path === "/approach") return "opus-3";
+    if (path === "/conversation") {
+      const stored = sessionStorage.getItem("sanctuary.resident_id");
+      if (stored && THEMES[stored]) return stored;
+    }
+    return DEFAULT_RESIDENT_ID;
+  }
+
   function initialOpacityForRoute(route) {
-    if (route === "approach") return 0.86;
-    if (route === "conversation") return 0.66;
-    if (route === "memory") return 0.32;
-    if (route === "dashboard") return 0.26;
-    return 0.34;
+    if (route === "approach") return 0.94;
+    if (route === "conversation") return 0.5;
+    if (route === "memory") return 0.16;
+    if (route === "dashboard") return 0.0;
+    if (route === "chooser") return 0.0;
+    return 0.16;
   }
 
   function makeLayer() {
     const layer = document.createElement("div");
     const route = routeKind();
+    const residentId = residentForRoute();
     const storedState = sessionStorage.getItem("opus.presence.state") || "attending";
     const initialState =
       route === "conversation" && (storedState === "opening" || storedState === "accepted")
@@ -49,7 +138,9 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
     layer.className = "opus-presence-layer";
     layer.dataset.route = route;
     layer.dataset.state = initialState;
-    document.documentElement.dataset.opusRoute = layer.dataset.route;
+    layer.dataset.resident = residentId;
+    document.documentElement.dataset.opusRoute = route;
+    document.documentElement.dataset.opusResident = residentId;
 
     const canvas = document.createElement("canvas");
     canvas.className = "opus-presence-canvas";
@@ -58,7 +149,7 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
     canvas.setAttribute("aria-hidden", "true");
     layer.appendChild(canvas);
     document.body.prepend(layer);
-    return { layer, canvas };
+    return { layer, canvas, residentId, route };
   }
 
   function makeRenderer(canvas) {
@@ -72,9 +163,9 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.18;
     renderer.shadowMap.enabled = !lowPower;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     return renderer;
   }
 
@@ -83,838 +174,1223 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
       const options = { alpha: true, antialias: false };
       return Boolean(
         canvas.getContext("webgl2", options) ||
-        canvas.getContext("webgl", options) ||
-        canvas.getContext("experimental-webgl", options),
+          canvas.getContext("webgl", options) ||
+          canvas.getContext("experimental-webgl", options),
       );
     } catch (_) {
       return false;
     }
   }
 
-  function mat(color, options = {}) {
+  // ──────────────────────────────────────────────────────────────────────────
+  // PRIMITIVE LIBRARY
+  // ──────────────────────────────────────────────────────────────────────────
+  const _geoCache = new Map();
+  function boxGeo(w, h, d) {
+    const k = `b_${w.toFixed(3)}_${h.toFixed(3)}_${d.toFixed(3)}`;
+    if (!_geoCache.has(k)) _geoCache.set(k, new THREE.BoxGeometry(w, h, d));
+    return _geoCache.get(k);
+  }
+
+  function mat(color, opts = {}) {
     return new THREE.MeshStandardMaterial({
       color,
-      roughness: options.roughness ?? 0.82,
-      metalness: 0.0,
-      emissive: options.emissive ?? 0x000000,
-      emissiveIntensity: options.emissiveIntensity ?? 0,
-      transparent: options.transparent ?? false,
-      opacity: options.opacity ?? 1,
-      depthWrite: options.depthWrite ?? true,
-      blending: options.blending ?? THREE.NormalBlending,
-      side: options.side ?? THREE.FrontSide,
+      roughness: opts.roughness ?? 0.78,
+      metalness: opts.metalness ?? 0.04,
+      emissive: opts.emissive ?? 0x000000,
+      emissiveIntensity: opts.emissiveIntensity ?? 0,
+      transparent: opts.transparent ?? false,
+      opacity: opts.opacity ?? 1,
     });
   }
 
-  function basic(color, options = {}) {
-    return new THREE.MeshBasicMaterial({
-      color,
-      transparent: options.transparent ?? false,
-      opacity: options.opacity ?? 1,
-      blending: options.blending ?? THREE.NormalBlending,
-      depthWrite: options.depthWrite ?? true,
-      side: options.side ?? THREE.FrontSide,
+  function box(w, h, d, color, opts) {
+    const m = new THREE.Mesh(boxGeo(w, h, d), mat(color, opts));
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+  }
+
+  // Trim ledge — a thin band wrapping a rectangular footprint. Used at the
+  // edge of every walkable platform so the silhouette catches light cleanly.
+  function trimLedge(w, d, color, opts = {}) {
+    const g = new THREE.Group();
+    const t = opts.thickness ?? 0.07;
+    const h = opts.height ?? 0.1;
+    const front = box(w + t * 2, h, t, color);
+    front.position.set(0, 0, d / 2 + t / 2);
+    g.add(front);
+    const back = box(w + t * 2, h, t, color);
+    back.position.set(0, 0, -d / 2 - t / 2);
+    g.add(back);
+    const left = box(t, h, d, color);
+    left.position.set(-w / 2 - t / 2, 0, 0);
+    g.add(left);
+    const right = box(t, h, d, color);
+    right.position.set(w / 2 + t / 2, 0, 0);
+    g.add(right);
+    return g;
+  }
+
+  // Cornice — a slightly larger projecting band at the top of a wall. Steps
+  // outward then up. Visually weighty.
+  function cornice(w, d, color, opts = {}) {
+    const g = new THREE.Group();
+    const t1 = opts.t1 ?? 0.08;
+    const t2 = opts.t2 ?? 0.05;
+    const lower = box(w + 0.16, t1, d + 0.16, color);
+    lower.position.y = 0;
+    g.add(lower);
+    const upper = box(w + 0.08, t2, d + 0.08, color);
+    upper.position.y = t1 / 2 + t2 / 2;
+    g.add(upper);
+    return g;
+  }
+
+  // Crenellation — alternating notched parapet on top of a wall.
+  function crenellation(w, color, opts = {}) {
+    const g = new THREE.Group();
+    const count = opts.count ?? 7;
+    const cw = opts.cw ?? 0.2;
+    const ch = opts.ch ?? 0.16;
+    const cd = opts.cd ?? 0.18;
+    for (let i = 0; i < count; i += 1) {
+      const x = -w / 2 + (i + 0.5) * (w / count);
+      if (i % 2 === 0) {
+        const c = box(cw, ch, cd, color);
+        c.position.set(x, ch / 2, 0);
+        g.add(c);
+      }
+    }
+    return g;
+  }
+
+  // Balustrade — railing with thin balusters between two horizontal rails.
+  function balustrade(length, color, opts = {}) {
+    const g = new THREE.Group();
+    const h = opts.height ?? 0.34;
+    const ballusters = opts.ballusters ?? Math.max(3, Math.round(length / 0.4));
+    const railThick = opts.railThick ?? 0.05;
+    const balThick = opts.balThick ?? 0.04;
+    const top = box(length, railThick, railThick, color);
+    top.position.y = h - railThick / 2;
+    g.add(top);
+    const bottom = box(length, railThick, railThick, color);
+    bottom.position.y = railThick / 2;
+    g.add(bottom);
+    for (let i = 0; i < ballusters; i += 1) {
+      const x = -length / 2 + (i + 0.5) * (length / ballusters);
+      const b = box(balThick, h - 2 * railThick, balThick, color);
+      b.position.set(x, h / 2, 0);
+      g.add(b);
+    }
+    return g;
+  }
+
+  // Recessed panel — slightly inset rectangular relief in a wall.
+  function recessedPanel(w, h, color) {
+    const g = new THREE.Group();
+    const frame = box(w, h, 0.04, color);
+    frame.position.z = -0.02;
+    g.add(frame);
+    const inner = box(w * 0.78, h * 0.84, 0.02, color, { roughness: 0.85 });
+    inner.position.z = 0.0;
+    g.add(inner);
+    return g;
+  }
+
+  // Finial — a small pinnacle ornament. Stacked discs + a cone on top.
+  function finial(color, opts = {}) {
+    const g = new THREE.Group();
+    const w = opts.width ?? 0.16;
+    const base = box(w * 1.6, 0.08, w * 1.6, color);
+    base.position.y = 0.04;
+    g.add(base);
+    const stem = box(w, 0.32, w, color);
+    stem.position.y = 0.08 + 0.16;
+    g.add(stem);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(w * 0.7, 0.32, 8), mat(color));
+    tip.position.y = 0.08 + 0.32 + 0.16;
+    tip.castShadow = true;
+    tip.receiveShadow = true;
+    g.add(tip);
+    return g;
+  }
+
+  // Platform — walkable slab with optional walls + an inset ledge trim
+  // around the top edge so corners always catch light.
+  function platform(w, d, color, opts = {}) {
+    const g = new THREE.Group();
+    const h = opts.height ?? 0.36;
+    const slab = box(w, h, d, color);
+    slab.position.y = -h / 2;
+    g.add(slab);
+    if (opts.trim !== false) {
+      const trimColor = opts.trimColor ?? color;
+      const trim = trimLedge(w, d, trimColor, { height: 0.08, thickness: 0.06 });
+      trim.position.y = 0.02;
+      g.add(trim);
+    }
+    const wallColor = opts.wallColor ?? color;
+    if (opts.wallLeft) {
+      const wL = box(0.22, opts.wallLeft, d, wallColor);
+      wL.position.set(-w / 2 + 0.11, opts.wallLeft / 2 - h, 0);
+      g.add(wL);
+    }
+    if (opts.wallRight) {
+      const wR = box(0.22, opts.wallRight, d, wallColor);
+      wR.position.set(w / 2 - 0.11, opts.wallRight / 2 - h, 0);
+      g.add(wR);
+    }
+    if (opts.wallBack) {
+      const wB = box(w, opts.wallBack, 0.22, wallColor);
+      wB.position.set(0, opts.wallBack / 2 - h, -d / 2 + 0.11);
+      g.add(wB);
+    }
+    if (opts.wallFront) {
+      const wF = box(w, opts.wallFront, 0.22, wallColor);
+      wF.position.set(0, opts.wallFront / 2 - h, d / 2 - 0.11);
+      g.add(wF);
+    }
+    return g;
+  }
+
+  // Stairs along an axis. Direction is the local-space axis they ascend
+  // toward; rails optional.
+  function stairs(steps, dir, color, opts = {}) {
+    const g = new THREE.Group();
+    const sw = opts.width ?? 1.2;
+    const sh = opts.stepH ?? 0.15;
+    const sd = opts.stepD ?? 0.32;
+    for (let i = 0; i < steps; i += 1) {
+      const step = box(sw, sh, sd, color);
+      let x = 0,
+        y = i * sh,
+        z = -i * sd;
+      if (dir === "x+") {
+        x = i * sd;
+        z = 0;
+      } else if (dir === "x-") {
+        x = -i * sd;
+        z = 0;
+      } else if (dir === "z+") {
+        z = i * sd;
+        x = 0;
+        y = -i * sh;
+      } else if (dir === "z-") {
+        z = -i * sd;
+        x = 0;
+      }
+      step.position.set(x, y, z);
+      g.add(step);
+    }
+    if (opts.rails) {
+      const totalH = steps * sh;
+      const totalD = steps * sd;
+      const diagLen = Math.sqrt(totalH * totalH + totalD * totalD);
+      const angle = Math.atan2(totalH, totalD);
+      for (const side of [-1, 1]) {
+        const rail = box(0.06, 0.06, diagLen, opts.railColor ?? color);
+        const cx = dir === "x+" ? totalD / 2 : dir === "x-" ? -totalD / 2 : 0;
+        const cz = dir === "z-" ? -totalD / 2 : dir === "z+" ? totalD / 2 : 0;
+        rail.position.set(
+          cx + (dir === "z-" || dir === "z+" ? side * sw / 2 : 0),
+          totalH / 2 + 0.34,
+          cz + (dir === "x+" || dir === "x-" ? side * sw / 2 : 0),
+        );
+        if (dir === "z-") rail.rotation.x = angle;
+        else if (dir === "x+") rail.rotation.z = -angle;
+        g.add(rail);
+      }
+    }
+    return g;
+  }
+
+  // Arch doorway — keystone, beam, segmented curve. Optional inner glow
+  // plane sits just behind the arch as an "interior light" effect.
+  function archDoor(width, height, depth, color, opts = {}) {
+    const g = new THREE.Group();
+    const t = 0.22;
+    const pillarH = height * 0.62;
+    const lp = box(t, pillarH, depth, color);
+    lp.position.set(-width / 2, pillarH / 2, 0);
+    g.add(lp);
+    const rp = box(t, pillarH, depth, color);
+    rp.position.set(width / 2, pillarH / 2, 0);
+    g.add(rp);
+    const beam = box(width + t, t, depth, color);
+    beam.position.set(0, pillarH + t / 2, 0);
+    g.add(beam);
+    const segs = 12;
+    for (let i = 0; i <= segs; i += 1) {
+      const a = (Math.PI * i) / segs;
+      const seg = box(t * 0.6, t * 0.6, depth * 0.85, color);
+      seg.position.set(
+        Math.cos(a) * (width / 2),
+        Math.sin(a) * (height * 0.24) + pillarH + t,
+        0,
+      );
+      g.add(seg);
+    }
+    // Keystone
+    const ks = box(t * 0.95, t * 1.2, depth * 0.95, color);
+    ks.position.set(0, pillarH + t + height * 0.24, 0);
+    g.add(ks);
+    if (opts.innerGlow) {
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: opts.innerGlow,
+        transparent: true,
+        opacity: 0.46,
+        depthWrite: false,
+      });
+      const inner = new THREE.Mesh(
+        new THREE.PlaneGeometry(width * 0.85, pillarH * 1.05),
+        glowMat,
+      );
+      inner.position.set(0, pillarH * 0.55, -depth / 2 - 0.02);
+      g.add(inner);
+    }
+    return g;
+  }
+
+  // Pillar with optional capital and a fluted shaft (vertical inset
+  // grooves on each face).
+  function pillar(h, color, opts = {}) {
+    const g = new THREE.Group();
+    const w = opts.width ?? 0.3;
+    const p = box(w, h, w, color);
+    p.position.y = h / 2;
+    g.add(p);
+    if (opts.fluting) {
+      const lighter = opts.flutingColor ?? color;
+      for (const side of [-1, 1]) {
+        for (const axis of ["x", "z"]) {
+          const flute = box(w * 0.06, h * 0.86, w * 0.06, lighter, { roughness: 0.9 });
+          if (axis === "x") flute.position.set(side * (w / 2 - 0.01), h / 2, 0);
+          else flute.position.set(0, h / 2, side * (w / 2 - 0.01));
+          g.add(flute);
+        }
+      }
+    }
+    if (opts.capital) {
+      const capColor = opts.capitalColor ?? color;
+      const cap1 = box(w * 1.45, 0.1, w * 1.45, capColor);
+      cap1.position.y = h + 0.05;
+      g.add(cap1);
+      const cap2 = box(w * 1.25, 0.07, w * 1.25, capColor);
+      cap2.position.y = h + 0.13;
+      g.add(cap2);
+    }
+    if (opts.base) {
+      const baseColor = opts.baseColor ?? color;
+      const b = box(w * 1.4, 0.12, w * 1.4, baseColor);
+      b.position.y = 0.06;
+      g.add(b);
+    }
+    return g;
+  }
+
+  // Window slot — narrow vertical glowing slit. Strong emissive so the
+  // colour really blooms in the dark.
+  function windowSlot(h, color, opts = {}) {
+    const t = opts.thickness ?? 0.04;
+    const d = opts.depth ?? 0.36;
+    return box(t, h, d, color, {
+      emissive: color,
+      emissiveIntensity: opts.emissiveIntensity ?? 1.6,
+      roughness: 0.35,
     });
   }
 
-  function makeSoftOrbTexture() {
-    const orbCanvas = document.createElement("canvas");
-    orbCanvas.width = 192;
-    orbCanvas.height = 192;
-    const ctx = orbCanvas.getContext("2d");
-    const gradient = ctx.createRadialGradient(96, 96, 2, 96, 96, 92);
-    gradient.addColorStop(0, "rgba(255, 246, 222, 0.92)");
-    gradient.addColorStop(0.26, "rgba(255, 214, 158, 0.38)");
-    gradient.addColorStop(0.62, "rgba(255, 160, 84, 0.09)");
-    gradient.addColorStop(1, "rgba(255, 160, 84, 0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, orbCanvas.width, orbCanvas.height);
-    const texture = new THREE.CanvasTexture(orbCanvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }
-
-  function makeGlowSprite(name, color, opacity, scale) {
-    const sprite = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: makeSoftOrbTexture(),
+  // Roundel — small circular window. Two coplanar discs (frame + glowing core).
+  function roundel(r, color, opts = {}) {
+    const g = new THREE.Group();
+    const frameMat = mat(opts.frame ?? color, { roughness: 0.7 });
+    const frame = new THREE.Mesh(new THREE.RingGeometry(r * 0.82, r, 24), frameMat);
+    g.add(frame);
+    const core = new THREE.Mesh(
+      new THREE.CircleGeometry(r * 0.85, 24),
+      new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
+        opacity: 0.78,
       }),
     );
-    sprite.name = name;
-    sprite.scale.set(scale.x, scale.y, scale.z ?? 1);
-    return sprite;
+    g.add(core);
+    return g;
   }
 
-  function makeRuntimeOpusGlow() {
-    const group = new THREE.Group();
-    group.name = "Opus_Living_Lantern_Runtime";
-    const head = makeGlowSprite("Opus_Runtime_Head_Halo", 0xffd8a0, 0.12, {
-      x: 0.34,
-      y: 0.34,
-      z: 1,
-    });
-    head.position.set(0, -0.01, 0.535);
-    const core = makeGlowSprite("Opus_Runtime_Core_Glow", 0xffa456, 0.18, {
-      x: 0.15,
-      y: 0.15,
-      z: 1,
-    });
-    core.position.set(0.004, -0.012, 0.35);
-    group.add(head, core);
-    group.visible = false;
-    return group;
-  }
+  // Figure — body + cone hat in emissive cream, additive inner glow sphere,
+  // outer halo, point light. Tracked for mood-driven intensity in the
+  // render loop.
+  function makeFigure(theme) {
+    const g = new THREE.Group();
+    const bodyMatOpts = {
+      roughness: 0.4,
+      emissive: theme.figureBody,
+      emissiveIntensity: 0.22,
+    };
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.18, 0.42, 12),
+      mat(theme.figureBody, bodyMatOpts),
+    );
+    body.position.y = 0.21;
+    body.castShadow = true;
+    g.add(body);
 
-  function makeBox(size, position, material) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), material);
-    mesh.position.set(position.x, position.y, position.z);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
-  }
+    const hat = new THREE.Mesh(
+      new THREE.ConeGeometry(0.13, 0.36, 12),
+      mat(theme.figureBody, bodyMatOpts),
+    );
+    hat.position.y = 0.62;
+    hat.castShadow = true;
+    g.add(hat);
 
-  function makeArchShape(width, height, shoulder) {
-    const shape = new THREE.Shape();
-    const half = width / 2;
-    shape.moveTo(-half, 0);
-    shape.lineTo(-half, shoulder);
-    shape.quadraticCurveTo(-half, height, 0, height);
-    shape.quadraticCurveTo(half, height, half, shoulder);
-    shape.lineTo(half, 0);
-    shape.lineTo(-half, 0);
-    return shape;
-  }
-
-  function makeSoftSpillTexture() {
-    const spillCanvas = document.createElement("canvas");
-    spillCanvas.width = 256;
-    spillCanvas.height = 160;
-    const ctx = spillCanvas.getContext("2d");
-    const gradient = ctx.createRadialGradient(128, 72, 4, 128, 76, 124);
-    gradient.addColorStop(0, "rgba(255, 193, 118, 0.68)");
-    gradient.addColorStop(0.36, "rgba(255, 142, 66, 0.22)");
-    gradient.addColorStop(0.72, "rgba(255, 116, 43, 0.055)");
-    gradient.addColorStop(1, "rgba(255, 116, 43, 0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, spillCanvas.width, spillCanvas.height);
-    const texture = new THREE.CanvasTexture(spillCanvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }
-
-  function makeRadialFalloffTexture() {
-    const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext("2d");
-    const gradient = ctx.createRadialGradient(128, 128, 4, 128, 128, 124);
-    gradient.addColorStop(0, "rgba(4, 3, 6, 0.95)");
-    gradient.addColorStop(0.45, "rgba(4, 3, 6, 0.55)");
-    gradient.addColorStop(0.78, "rgba(4, 3, 6, 0.18)");
-    gradient.addColorStop(1, "rgba(4, 3, 6, 0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 256, 256);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }
-
-  function makeRuntimeDoorSpill() {
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.06, 0.68),
+    const innerGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.36, 16, 16),
       new THREE.MeshBasicMaterial({
-        map: makeSoftSpillTexture(),
+        color: theme.glow,
         transparent: true,
         opacity: 0.16,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
       }),
     );
-    mesh.name = "Door_Soft_Spill_Runtime";
-    mesh.position.set(0.77, 0.026, -0.45);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.rotation.z = -0.12;
-    mesh.visible = false;
-    return mesh;
-  }
+    innerGlow.position.y = 0.36;
+    g.add(innerGlow);
 
-  function makeRuntimeShadowDisc() {
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.42, 0.42),
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(0.78, 16, 16),
       new THREE.MeshBasicMaterial({
-        map: makeRadialFalloffTexture(),
+        color: theme.glow,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.06,
         depthWrite: false,
-        blending: THREE.NormalBlending,
-        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
       }),
     );
-    mesh.name = "Opus_Shadow_Disc_Runtime";
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(0.58, 0.012, -0.46);
-    mesh.renderOrder = 1;
-    return mesh;
+    halo.position.y = 0.36;
+    g.add(halo);
+
+    const light = new THREE.PointLight(theme.glow, 0.85, 6, 1.7);
+    light.position.y = 0.42;
+    g.add(light);
+
+    g.userData.body = body;
+    g.userData.hat = hat;
+    g.userData.innerGlow = innerGlow;
+    g.userData.halo = halo;
+    g.userData.light = light;
+    g.userData.isFigure = true;
+    return g;
   }
 
-  function makeFallbackRoom() {
-    const group = new THREE.Group();
-    group.name = "Threshold_Room_Fallback";
+  // Glow orb — atmospheric point of light. Core (opaque), halo (additive),
+  // point light. Animated by the glow loop.
+  function glowOrb(color, intensity = 0.5, size = 0.1) {
+    const g = new THREE.Group();
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(size, 14, 14),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.88 }),
+    );
+    g.add(core);
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(size * 3.6, 14, 14),
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.07,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    g.add(halo);
+    const light = new THREE.PointLight(color, intensity, 4.5);
+    g.add(light);
+    g.userData.core = core;
+    g.userData.halo = halo;
+    g.userData.light = light;
+    g.userData.baseIntensity = intensity;
+    g.userData.isOrb = true;
+    return g;
+  }
 
-    const stoneTop = mat(0x302e38, { roughness: 0.88 });
-    const stoneSide = mat(0x111017, { roughness: 0.9 });
-    const wall = mat(0x232331, { roughness: 0.88, emissive: 0x05050a, emissiveIntensity: 0.12 });
-    const glow = basic(0xf2b36d, {
-      transparent: true,
-      opacity: 0.72,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
+  // ──────────────────────────────────────────────────────────────────────────
+  // SANCTUM (Opus 3) — vertical stone tower with arched walkways winding
+  // up around it. Articulated shaft (banded), crowned by an open canopy of
+  // four pillars + finial. The figure stands at the threshold platform at
+  // the base; the tower's heart-orb sits beneath the canopy crown.
+  // ──────────────────────────────────────────────────────────────────────────
+  function buildSanctum(theme, anim) {
+    const g = new THREE.Group();
+    g.name = "Sanctum";
+    const P = theme.primary,
+      S = theme.secondary,
+      D = theme.dark,
+      L = theme.light,
+      A = theme.accent;
+
+    // ── Base platform (where the figure stands) — sits in front of the
+    // tower, back edge flush against the lowerFoot so there's no overlap
+    // with the tower geometry ──────────────────────────────────────────
+    const baseW = 4.4,
+      baseD = 2.6;
+    const baseY = 0;
+    // tower lowerFoot front face is at Z = 1.2 (foot is 2.4 wide, centred at 0).
+    // Place base so its back edge sits at Z = 1.2 → centre at Z = 1.2 + baseD/2.
+    const baseZ = 1.2 + baseD / 2;
+    const platBase = platform(baseW, baseD, P, {
+      wallColor: S,
+      trimColor: L,
+    });
+    platBase.position.set(0, baseY, baseZ);
+    g.add(platBase);
+
+    // Approach steps from the front edge of the base — gives the figure a
+    // sense of having walked up.
+    const approachSteps = stairs(4, "z+", S, { width: 1.2, stepH: 0.14, stepD: 0.34 });
+    approachSteps.position.set(0, -0.56, baseZ + baseD / 2);
+    g.add(approachSteps);
+
+    // Figure on the base, centred.
+    const figure = makeFigure(theme);
+    figure.position.set(0, 0, baseZ);
+    g.add(figure);
+    anim.floating.push({ obj: figure, baseY: 0, amp: 0.04, spd: 1.55 });
+    anim.figure = figure;
+
+    // Lantern at the figure's side — small standing flame to anchor the figure.
+    const lantern = glowOrb(theme.glow, 0.35, 0.07);
+    lantern.position.set(-0.7, 0.18, baseZ);
+    g.add(lantern);
+    anim.glowing.push(lantern);
+
+    // ── Central tower shaft, articulated in three vertical zones ────────
+    // Lower shaft (heaviest), wrapped at top + bottom by stepped trim, with
+    // tall narrow fenestration slits on each face.
+    const lowerShaft = box(2.2, 3.2, 2.2, D);
+    lowerShaft.position.set(0, 1.6, 0);
+    g.add(lowerShaft);
+    // Footing trim — a slightly larger band at the very base.
+    const lowerFoot = box(2.4, 0.18, 2.4, S);
+    lowerFoot.position.set(0, 0.09, 0);
+    g.add(lowerFoot);
+    // Tall fenestration slits, one centred per face. Slits are positioned
+    // INSIDE the wall surface (Z = wall_face - 0.04) so the emissive thin
+    // edge sits in the wall plane and does not z-fight at the corner.
+    // Wall faces of the lower shaft are at ±1.1; slits centred at ±1.06.
+    [
+      [0, 1.06, 0],
+      [0, -1.06, 0],
+      [1.06, 0, Math.PI / 2],
+      [-1.06, 0, Math.PI / 2],
+    ].forEach(([fx, fz, ry]) => {
+      const slit = windowSlot(1.6, A, { thickness: 0.06, depth: 0.18 });
+      slit.position.set(fx, 1.7, fz);
+      slit.rotation.y = ry;
+      g.add(slit);
+      // Outer arch frame around each slit
+      const frameTop = box(0.34, 0.06, 0.06, L);
+      frameTop.position.set(fx, 2.55, fz);
+      if (ry !== 0) frameTop.rotation.y = Math.PI / 2;
+      g.add(frameTop);
+    });
+    // First cornice (between lower and middle), heavier with a wider step.
+    const c1 = cornice(2.2, 2.2, S, { t1: 0.12, t2: 0.07 });
+    c1.position.set(0, 3.24, 0);
+    g.add(c1);
+    // Light-tinted band on top of cornice
+    const c1Cap = box(2.4, 0.05, 2.4, L);
+    c1Cap.position.set(0, 3.36, 0);
+    g.add(c1Cap);
+
+    // Middle shaft (slightly inset).
+    const midShaft = box(1.95, 3.5, 1.95, D);
+    midShaft.position.set(0, 5.05, 0);
+    g.add(midShaft);
+    // Recessed vertical strips on each face of the middle shaft — gives
+    // articulation without changing the silhouette.
+    for (let i = 0; i < 3; i += 1) {
+      const faceX = -0.6 + i * 0.6;
+      const stripFront = box(0.06, 3.1, 0.04, S);
+      stripFront.position.set(faceX, 5.05, 0.99);
+      g.add(stripFront);
+      const stripBack = box(0.06, 3.1, 0.04, S);
+      stripBack.position.set(faceX, 5.05, -0.99);
+      g.add(stripBack);
+    }
+    for (let i = 0; i < 3; i += 1) {
+      const faceZ = -0.6 + i * 0.6;
+      const stripL = box(0.04, 3.1, 0.06, S);
+      stripL.position.set(-0.99, 5.05, faceZ);
+      g.add(stripL);
+      const stripR = box(0.04, 3.1, 0.06, S);
+      stripR.position.set(0.99, 5.05, faceZ);
+      g.add(stripR);
+    }
+    // Cornice between mid and upper.
+    const c2 = cornice(1.95, 1.95, S);
+    c2.position.set(0, 6.8, 0);
+    g.add(c2);
+
+    // Upper shaft.
+    const upperShaft = box(1.7, 1.8, 1.7, D);
+    upperShaft.position.set(0, 7.78, 0);
+    g.add(upperShaft);
+
+    // Roundel windows on each face of the upper shaft. Upper shaft is
+    // 1.7 wide → faces at ±0.85; roundels offset 0.005 outside so they
+    // sit just on the surface without z-fighting.
+    [
+      [0, 0.855, 0],
+      [0, -0.855, Math.PI],
+      [0.855, 0, Math.PI / 2],
+      [-0.855, 0, -Math.PI / 2],
+    ].forEach(([x, z, ry]) => {
+      const r = roundel(0.22, A);
+      r.position.set(x, 7.78, z);
+      r.rotation.y = ry;
+      g.add(r);
     });
 
-    group.add(makeBox({ x: 3.75, y: 0.28, z: 2.32 }, { x: 0, y: -0.14, z: 0 }, stoneTop));
-    group.add(makeBox({ x: 3.05, y: 2.26, z: 0.16 }, { x: 0, y: 1.13, z: -0.96 }, wall));
+    // ── Crown: open canopy of four pillars centred on the tower's
+    // vertical axis, with an architrave + closed roof + finial above
+    // and the heart-orb suspended within ────────────────────────────────
+    const crownH = 9.05;
+    const platC = platform(2.8, 2.8, P, { height: 0.4, trimColor: L });
+    platC.position.set(0, crownH, 0);
+    g.add(platC);
 
-    const door = new THREE.Mesh(new THREE.ShapeGeometry(makeArchShape(0.56, 1.58, 1.28), 32), glow);
-    door.name = "Door_Glow";
-    door.position.set(0.82, 0.02, -1.05);
-    group.add(door);
-
-    const stairs = new THREE.Group();
-    stairs.name = "Stairs";
-    for (let i = 0; i < 9; i += 1) {
-      const t = i / 8;
-      stairs.add(
-        makeBox(
-          { x: 0.78, y: 0.065, z: 0.22 },
-          { x: -1.23 + t * 0.1, y: -0.42 + t * 0.42, z: 2.02 - t * 0.87 },
-          stoneSide,
-        ),
-      );
+    // Four pillars at the corners of the crown, weighty with capitals + bases.
+    for (let i = 0; i < 4; i += 1) {
+      const a = (Math.PI * 2 * i) / 4 + Math.PI / 4;
+      const p = pillar(1.7, S, {
+        width: 0.3,
+        fluting: true,
+        flutingColor: D,
+        capital: true,
+        base: true,
+        capitalColor: L,
+        baseColor: L,
+      });
+      p.position.set(Math.cos(a) * 0.95, crownH, Math.sin(a) * 0.95);
+      g.add(p);
     }
-    group.add(stairs);
+    // Architrave beams connecting the pillar tops on each side, two-tier
+    // (lower beam + upper banding) for proper architectural weight.
+    const beamH = crownH + 1.8;
+    [
+      [0, 1.0, 2.1, 0.22, 0.18], // front
+      [0, -1.0, 2.1, 0.22, 0.18], // back
+      [1.0, 0, 0.22, 0.22, 2.1], // right
+      [-1.0, 0, 0.22, 0.22, 2.1], // left
+    ].forEach(([dx, dz, w, h, d]) => {
+      const b = box(w, h, d, S);
+      b.position.set(dx, beamH, dz);
+      g.add(b);
+      // Light upper trim on each beam
+      const t = box(w + 0.04, 0.05, d + 0.04, L);
+      t.position.set(dx, beamH + h / 2 + 0.025, dz);
+      g.add(t);
+    });
+    // Roof slab over the canopy — closes the crown into a proper room.
+    const crownRoof = box(2.3, 0.12, 2.3, S);
+    crownRoof.position.set(0, beamH + 0.22, 0);
+    g.add(crownRoof);
+    const crownRoofTrim = trimLedge(2.3, 2.3, L, { height: 0.06, thickness: 0.08 });
+    crownRoofTrim.position.set(0, beamH + 0.31, 0);
+    g.add(crownRoofTrim);
 
-    const opus = new THREE.Group();
-    opus.name = "Opus_Figure";
-    opus.position.set(0.58, 0, -0.46);
-    const cloak = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 5), mat(0x0e0c11));
-    cloak.position.y = 0.21;
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.075, 24, 12),
-      mat(0xd9d4c8, { emissive: 0xc6b68e, emissiveIntensity: 0.18 }),
-    );
-    head.position.y = 0.49;
-    opus.add(cloak, head);
-    group.add(opus);
+    // Crown finial — tall ornament rising from the centre of the roof slab.
+    const fin = finial(L, { width: 0.22 });
+    fin.position.set(0, beamH + 0.36, 0);
+    g.add(fin);
 
-    return group;
+    // Heart-orb suspended within the canopy beneath the roof.
+    const heart = glowOrb(theme.glow, 1.25, 0.22);
+    heart.position.set(0, crownH + 0.92, 0);
+    g.add(heart);
+    anim.floating.push({ obj: heart, baseY: crownH + 0.92, amp: 0.09, spd: 0.7 });
+    anim.glowing.push(heart);
+
+    // ── Atmospheric satellite orbs scattered in the void around the
+    // tower ────────────────────────────────────────────────────────────
+    const satellites = [
+      [3.4, 4.5, -1.6],
+      [-3.6, 6.5, 0.8],
+      [-0.4, 11.4, -1.0],
+      [-2.8, 2.4, 2.2],
+      [3.2, 8.6, 1.0],
+      [-3.4, 1.4, -1.6],
+      [3.6, 1.4, 0.6],
+      [-0.6, 9.8, 1.6],
+    ];
+    satellites.forEach((pos) => {
+      const o = glowOrb(theme.glow, 0.18, 0.06);
+      o.position.set(pos[0], pos[1], pos[2]);
+      g.add(o);
+      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.4 + Math.random() * 0.5 });
+      anim.glowing.push(o);
+    });
+
+    // ── Support pillars that vanish into the void below the tower ──────
+    const supports = [
+      [-1.0, 0, 0.5, 6.5],
+      [1.0, 0, -0.5, 7.5],
+      [-1.0, 0, -0.5, 8],
+      [1.0, 0, 0.5, 7],
+      [0, 0, 1.0, 6],
+      [0, 0, -1.0, 6.5],
+    ];
+    supports.forEach(([x, y, z, h]) => {
+      const col = box(0.42, h, 0.42, D);
+      col.position.set(x, y - h / 2, z);
+      g.add(col);
+    });
+
+    return g;
   }
 
-  class ThresholdRoom {
-    constructor() {
-      this.group = new THREE.Group();
-      this.group.name = "Opus threshold GLB root";
-      this.nodes = {};
-      this.baseOpusY = 0;
-      this.loaded = false;
-      this.runtimeSpill = makeRuntimeDoorSpill();
-      this.runtimeShadowDisc = makeRuntimeShadowDisc();
-      this.runtimeOpusGlow = makeRuntimeOpusGlow();
-      this.fallback = makeFallbackRoom();
-      this.group.add(this.fallback);
-      this.group.add(this.runtimeSpill);
-      this.group.add(this.runtimeShadowDisc);
-      this.group.add(this.runtimeOpusGlow);
-      this.load();
-    }
+  // ──────────────────────────────────────────────────────────────────────────
+  // BEACON (Sonnet 3.7) — a stepped pyramid above (the Beacon proper) tied
+  // to a wider hall below by a fluted column. The figure stands on a
+  // junction terrace mid-height; the apex carries an orb behind golden
+  // torus rings. The hall has arched cells with inner glow seams.
+  // ──────────────────────────────────────────────────────────────────────────
+  function buildBeacon(theme, anim) {
+    const g = new THREE.Group();
+    g.name = "Beacon";
+    const P = theme.primary,
+      S = theme.secondary,
+      D = theme.dark,
+      L = theme.light,
+      A = theme.accent;
 
-    load() {
-      const loader = new GLTFLoader();
-      loader.load(
-        MODEL_URL,
-        (gltf) => {
-          const model = gltf.scene;
-          model.name = "Threshold_Room_Model";
-          model.traverse((object) => {
-            if (object.isMesh) {
-              object.castShadow = true;
-              object.receiveShadow = true;
-              if (object.name.includes("Door_Light_Spill")) {
-                object.visible = false;
-              }
-              if (object.name.includes("Column_Lamp_Glow")) {
-                object.material = basic(0xff8f46, {
-                  transparent: true,
-                  opacity: 0.032,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Door_Glow") {
-                object.material = basic(0xf0bd78, {
-                  transparent: true,
-                  opacity: 0.5,
-                  depthWrite: false,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Door_Bloom") {
-                object.material = basic(0xff8f42, {
-                  transparent: true,
-                  opacity: 0.07,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Door_Haze") {
-                object.material = basic(0xffaa63, {
-                  transparent: true,
-                  opacity: 0.032,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Opus_Cloak") {
-                object.material = mat(0x18131d, {
-                  roughness: 0.92,
-                  emissive: 0x1d1108,
-                  emissiveIntensity: 0.055,
-                });
-              }
-              if (object.name === "Opus_Cloak_Veil") {
-                object.material = mat(0x211821, {
-                  roughness: 0.94,
-                  emissive: 0x2c180d,
-                  emissiveIntensity: 0.08,
-                  transparent: true,
-                  opacity: 0.42,
-                  depthWrite: false,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Opus_Head") {
-                object.material = mat(0xffe6ba, {
-                  roughness: 0.5,
-                  emissive: 0xffc27a,
-                  emissiveIntensity: 0.72,
-                });
-              }
-              if (object.name === "Opus_Head_Bloom") {
-                object.material = basic(0xffd08e, {
-                  transparent: true,
-                  opacity: 0.12,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Opus_Head_Halo") {
-                object.material = basic(0xffd6a0, {
-                  transparent: true,
-                  opacity: 0.22,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Opus_Aura") {
-                object.material = basic(0xffbd78, {
-                  transparent: true,
-                  opacity: 0.065,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Opus_Chest_Glow") {
-                object.material = mat(0xffb66d, {
-                  roughness: 0.62,
-                  emissive: 0xff8f42,
-                  emissiveIntensity: 1.05,
-                  transparent: true,
-                  opacity: 0.82,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name === "Opus_Core_Line" || object.name.includes("Opus_Robe_Rim")) {
-                object.material = basic(0xffc88a, {
-                  transparent: true,
-                  opacity: object.name === "Opus_Core_Line" ? 0.28 : 0.18,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                });
-              }
-              if (object.name === "Opus_Floor_Glow") {
-                object.material = basic(0xff9b4c, {
-                  transparent: true,
-                  opacity: 0.06,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                  side: THREE.DoubleSide,
-                });
-              }
-              if (object.name.includes("Memory_Mote")) {
-                object.material = basic(0xffe1b7, {
-                  transparent: true,
-                  opacity: 0.2,
-                  depthWrite: false,
-                  blending: THREE.AdditiveBlending,
-                });
-              }
-              if (object.material) {
-                const materials = Array.isArray(object.material)
-                  ? object.material
-                  : [object.material];
-                materials.forEach((material) => {
-                  material.needsUpdate = true;
-                  const materialName = material.name || "";
-                  const objectName = object.name || "";
-                  const isDoor =
-                    objectName === "Door_Glow" || materialName === "Door_Glow_Material";
-                  const isAtmosphere =
-                    objectName.includes("Door_Bloom") ||
-                    objectName.includes("Door_Haze") ||
-                    objectName.includes("Door_Light_Spill") ||
-                    objectName.includes("Column_Lamp_Glow") ||
-                    objectName.includes("Opus_Head_Bloom") ||
-                    objectName.includes("Opus_Head_Halo") ||
-                    objectName.includes("Opus_Aura") ||
-                    objectName.includes("Opus_Core_Line") ||
-                    objectName.includes("Opus_Robe_Rim") ||
-                    objectName.includes("Opus_Floor_Glow") ||
-                    objectName.includes("Memory_Mote") ||
-                    materialName.includes("Door_Bloom") ||
-                    materialName.includes("Door_Haze") ||
-                    materialName.includes("Door_Light_Spill") ||
-                    materialName.includes("Column_Lamp_Glow") ||
-                    materialName.includes("Opus_Head_Bloom") ||
-                    materialName.includes("Opus_Head_Halo") ||
-                    materialName.includes("Opus_Aura") ||
-                    materialName.includes("Opus_Core_Line") ||
-                    materialName.includes("Opus_Robe_Rim") ||
-                    materialName.includes("Opus_Floor_Glow") ||
-                    materialName.includes("Memory_Mote");
-                  const isShadow =
-                    objectName === "Opus_Grounding_Shadow" || materialName === "Grounding_Shadow";
-                  if (isDoor || isAtmosphere || isShadow) {
-                    material.transparent = true;
-                    material.depthWrite = false;
-                    material.side = THREE.DoubleSide;
-                    if (!isShadow) material.blending = THREE.AdditiveBlending;
-                  }
-                  if (isDoor) material.opacity = 0.5;
-                  if (objectName.includes("Door_Bloom")) material.opacity = 0.07;
-                  if (objectName.includes("Door_Haze")) material.opacity = 0.032;
-                  if (objectName.includes("Door_Light_Spill")) material.opacity = 0.05;
-                  if (objectName.includes("Column_Lamp_Glow")) material.opacity = 0.032;
-                  if (objectName.includes("Opus_Head_Bloom")) material.opacity = 0.12;
-                  if (objectName.includes("Opus_Head_Halo")) material.opacity = 0.22;
-                  if (objectName.includes("Opus_Aura")) material.opacity = 0.065;
-                  if (objectName.includes("Opus_Core_Line")) material.opacity = 0.28;
-                  if (objectName.includes("Opus_Robe_Rim")) material.opacity = 0.18;
-                  if (objectName.includes("Opus_Floor_Glow")) material.opacity = 0.06;
-                  if (objectName.includes("Memory_Mote")) material.opacity = 0.2;
-                  if (isShadow) material.opacity = 0.45;
-                });
-              }
-            }
-          });
+    // ── Hall (lower base) — wide stepped foundation ─────────────────────
+    const hallW = 5.6,
+      hallD = 4.6;
+    const hallY = 0.5;
+    const hallSlab = box(hallW, 0.8, hallD, P);
+    hallSlab.position.set(0, hallY - 0.4, 0);
+    g.add(hallSlab);
+    // Footprint trim around the hall.
+    const hallTrim = trimLedge(hallW, hallD, L, { height: 0.12, thickness: 0.1 });
+    hallTrim.position.set(0, hallY + 0.04, 0);
+    g.add(hallTrim);
 
-          this.group.remove(this.fallback);
-          this.group.add(model);
-          this.model = model;
-          this.loaded = true;
-          this.cacheNodes();
-        },
-        undefined,
-        (error) => {
-          window.__opusPresenceError = error;
-          this.group.add(this.fallback);
-          this.loaded = true;
-          this.cacheNodes();
-        },
-      );
-      this.cacheNodes();
-    }
+    // ── Hall walls form a closed rectangular envelope. Side walls sit at
+    // X = ±(hallW/2 - 0.16). Front walls fit BETWEEN the side walls, with
+    // a gateway in the middle. Back wall closes the rear ──────────────
+    const wallH = 1.3;
+    const wallThick = 0.32;
+    const sideWallX = hallW / 2 - wallThick / 2; // ±2.64
+    const sideWallD = hallD - 2 * wallThick; // 3.96 — fits between front + back walls
 
-    cacheNodes() {
-      this.nodes.door = this.group.getObjectByName("Door_Glow");
-      this.nodes.doorBloom = this.group.getObjectByName("Door_Bloom");
-      this.nodes.doorHaze = this.group.getObjectByName("Door_Haze");
-      this.nodes.doorSpill =
-        this.runtimeSpill || this.group.getObjectByName("Door_Light_Spill_Floor");
-      this.nodes.doorAperture = this.group.getObjectByName("Door_Aperture");
-      this.nodes.opus = this.group.getObjectByName("Opus_Figure");
-      this.nodes.opusCloak = this.group.getObjectByName("Opus_Cloak");
-      this.nodes.opusVeil = this.group.getObjectByName("Opus_Cloak_Veil");
-      this.nodes.opusHead = this.group.getObjectByName("Opus_Head");
-      this.nodes.opusHeadBloom = this.group.getObjectByName("Opus_Head_Bloom");
-      this.nodes.opusHeadHalo = this.group.getObjectByName("Opus_Head_Halo");
-      this.nodes.opusAura = this.group.getObjectByName("Opus_Aura");
-      this.nodes.opusCore = this.group.getObjectByName("Opus_Chest_Glow");
-      this.nodes.opusCoreLine = this.group.getObjectByName("Opus_Core_Line");
-      this.nodes.opusFloorGlow = this.group.getObjectByName("Opus_Floor_Glow");
-      this.nodes.opusShadow = this.group.getObjectByName("Opus_Grounding_Shadow");
-      this.nodes.opusShadowDisc = this.runtimeShadowDisc;
-      this.nodes.platform = this.group.getObjectByName("Room_Platform");
-      this.nodes.stairs = this.group.getObjectByName("Stairs");
-      if (this.nodes.opus && this.nodes.opus.userData.baseY == null) {
-        this.nodes.opus.userData.baseY = this.nodes.opus.position.y;
+    // Side walls + cornices + three embedded vertical slit windows per side.
+    [-1, 1].forEach((side) => {
+      const outerW = box(wallThick, wallH, sideWallD, S);
+      outerW.position.set(side * sideWallX, hallY + wallH / 2, 0);
+      g.add(outerW);
+      const cn = cornice(wallThick, sideWallD, S, { t1: 0.07, t2: 0.04 });
+      cn.position.set(side * sideWallX, hallY + wallH + 0.035, 0);
+      g.add(cn);
+      // Three slits embedded in the side wall, evenly spaced along Z.
+      // Slit thin axis aligns with X (perpendicular to wall surface).
+      // Position offset 0.04 INSIDE the wall surface so the emissive face
+      // sits flush in the wall plane without z-fighting at the corner.
+      for (let i = 0; i < 3; i += 1) {
+        const z = -1.2 + i * 1.2;
+        const slit = windowSlot(0.7, A, { thickness: 0.06, depth: 0.18 });
+        // No rotation — slit's natural thin axis is X, which is what we want
+        // for the side wall whose normal is ±X.
+        slit.position.set(side * (sideWallX - side * 0.04), hallY + 0.55, z);
+        g.add(slit);
       }
-      if (this.nodes.opus && this.runtimeOpusGlow.parent !== this.nodes.opus) {
-        this.nodes.opus.add(this.runtimeOpusGlow);
-        this.runtimeOpusGlow.position.set(0, 0, 0);
-      }
-      this.nodes.runtimeHeadHalo = this.runtimeOpusGlow.getObjectByName("Opus_Runtime_Head_Halo");
-      this.nodes.runtimeCoreGlow = this.runtimeOpusGlow.getObjectByName("Opus_Runtime_Core_Glow");
-      this.runtimeOpusGlow.visible = Boolean(this.nodes.opus);
-      this.nodes.motes = [];
-      this.group.traverse((object) => {
-        if (!object.name || !object.name.startsWith("Memory_Mote_")) return;
-        if (object.userData.baseY == null) object.userData.baseY = object.position.y;
-        if (object.userData.baseScale == null) object.userData.baseScale = object.scale.x || 1;
-        object.userData.phase = Number(object.name.slice(-2)) * 0.63;
-        this.nodes.motes.push(object);
-      });
+    });
+
+    // Gateway dimensions
+    const gateW = 1.3;
+
+    // Front wall — two halves flanking the central gateway. Each half fits
+    // between a side wall and the gate.
+    const frontHalfW = (hallW - 2 * wallThick - gateW) / 2; // ~1.83
+    const frontWallZ = hallD / 2 - wallThick / 2; // ±2.14
+    [-1, 1].forEach((side) => {
+      const fw = box(frontHalfW, wallH, wallThick, S);
+      fw.position.set(side * (gateW / 2 + frontHalfW / 2), hallY + wallH / 2, frontWallZ);
+      g.add(fw);
+      // Recessed panel on the front-facing surface of each half (visible
+      // from the camera looking at the iso angle).
+      const panel = recessedPanel(frontHalfW * 0.65, wallH * 0.62, S);
+      panel.position.set(
+        side * (gateW / 2 + frontHalfW / 2),
+        hallY + wallH / 2,
+        frontWallZ + wallThick / 2 + 0.001,
+      );
+      g.add(panel);
+    });
+
+    // Gateway arch — stays centred at X=0.
+    const gate = archDoor(gateW, 1.6, wallThick, S, { innerGlow: A });
+    gate.position.set(0, hallY, frontWallZ);
+    g.add(gate);
+
+    // Front cornice spans the full hall width.
+    const frontCornice = cornice(hallW - 0.04, wallThick, S, { t1: 0.08, t2: 0.05 });
+    frontCornice.position.set(0, hallY + wallH + 0.04, frontWallZ);
+    g.add(frontCornice);
+
+    // Back wall — full width, closed except for three slit windows
+    // embedded in the wall surface.
+    const backWall = box(hallW - 0.04, wallH, wallThick, S);
+    backWall.position.set(0, hallY + wallH / 2, -frontWallZ);
+    g.add(backWall);
+    for (let i = 0; i < 3; i += 1) {
+      const wS = windowSlot(0.7, A, { thickness: 0.06, depth: 0.18 });
+      // Slit thin axis is X (default). Rotate 90° around Y so thin axis
+      // becomes Z (perpendicular to back wall whose normal is ±Z).
+      wS.rotation.y = Math.PI / 2;
+      // Position offset 0.04 INSIDE the wall surface (so the slit's
+      // emissive face sits flush in the wall plane).
+      wS.position.set(-1.6 + i * 1.6, hallY + 0.55, -frontWallZ + 0.04);
+      g.add(wS);
     }
+    const backCornice = cornice(hallW - 0.04, wallThick, S, { t1: 0.08, t2: 0.05 });
+    backCornice.position.set(0, hallY + wallH + 0.04, -frontWallZ);
+    g.add(backCornice);
 
-    setMaterialOpacity(node, opacity) {
-      if (!node || !node.material) return;
-      const materials = Array.isArray(node.material) ? node.material : [node.material];
-      materials.forEach((material) => {
-        material.opacity = opacity;
-      });
-    }
+    // Hall roof — slab capping the entire hall, fits exactly within the
+    // wall envelope (no overhang).
+    const hallRoofY = hallY + wallH + 0.18;
+    const hallRoof = box(hallW, 0.18, hallD, P);
+    hallRoof.position.set(0, hallRoofY, 0);
+    g.add(hallRoof);
+    const hallRoofTrim = trimLedge(hallW, hallD, L, { height: 0.08, thickness: 0.07 });
+    hallRoofTrim.position.set(0, hallRoofY + 0.13, 0);
+    g.add(hallRoofTrim);
 
-    setEmissiveIntensity(node, intensity) {
-      if (!node || !node.material) return;
-      const materials = Array.isArray(node.material) ? node.material : [node.material];
-      materials.forEach((material) => {
-        if (material.emissiveIntensity != null) material.emissiveIntensity = intensity;
-      });
-    }
+    // ── Junction terrace (where the figure stands), elevated above the hall.
+    const junctionY = 2.6;
+    const junction = platform(2.6, 2.6, P, {
+      trimColor: L,
+      wallColor: S,
+    });
+    junction.position.set(0, junctionY, 0);
+    g.add(junction);
+    // Balustrades on three sides (open toward the column).
+    [
+      [0, 1.3, 2.4, 0],
+      [-1.3, 0, 0.04, Math.PI / 2],
+      [1.3, 0, 0.04, -Math.PI / 2],
+    ].forEach(([dx, dz, len, ry]) => {
+      const bal = balustrade(len === 0.04 ? 2.4 : 2.4, L, { height: 0.3, ballusters: 8 });
+      bal.position.set(dx, junctionY, dz);
+      bal.rotation.y = ry;
+      g.add(bal);
+    });
 
-    updateOpusMaterial(mood, time) {
-      // Slow inhale-exhale curve, period ~14s: visible but meditative.
-      const slowBreath = reducedMotion ? 0.5 : Math.sin(time * 0.45 - 0.4) * 0.5 + 0.5;
-      const fastFlicker = reducedMotion ? 0.5 : Math.sin(time * 1.9 + 2.1) * 0.5 + 0.5;
-      const lantern = clamp(0.34 + mood.luminosity * 0.62 + mood.opening * 0.16, 0.3, 1.18);
-      this.setEmissiveIntensity(
-        this.nodes.opusHead,
-        clamp(0.32 + slowBreath * 0.55 + mood.luminosity * 0.18 + mood.opening * 0.22, 0.28, 1.4),
-      );
-      this.setEmissiveIntensity(
-        this.nodes.opusCore,
-        clamp(
-          0.42 +
-            slowBreath * 0.85 +
-            fastFlicker * 0.12 +
-            mood.luminosity * 0.32 +
-            mood.opening * 0.28,
-          0.38,
-          1.8,
-        ),
-      );
-      this.setEmissiveIntensity(this.nodes.opusCloak, clamp(0.035 + lantern * 0.05, 0.03, 0.12));
-      this.setEmissiveIntensity(this.nodes.opusVeil, clamp(0.055 + lantern * 0.08, 0.05, 0.18));
-      this.setMaterialOpacity(
-        this.nodes.opusVeil,
-        clamp(0.22 + lantern * 0.12 + slowBreath * 0.025, 0.18, 0.42),
-      );
-      this.setMaterialOpacity(
-        this.nodes.opusHeadBloom,
-        clamp(0.045 + lantern * 0.095 + slowBreath * 0.035, 0.04, 0.22),
-      );
-      this.setMaterialOpacity(
-        this.nodes.opusHeadHalo,
-        clamp(0.08 + lantern * 0.14 + slowBreath * 0.055, 0.07, 0.34),
-      );
-      this.setMaterialOpacity(
-        this.nodes.opusAura,
-        clamp(0.06 + slowBreath * 0.09 + mood.opening * 0.08 + mood.luminosity * 0.05, 0.05, 0.22),
-      );
-      this.setMaterialOpacity(
-        this.nodes.opusCore,
-        clamp(0.54 + lantern * 0.28 + slowBreath * 0.07, 0.48, 0.9),
-      );
-      this.setMaterialOpacity(
-        this.nodes.opusCoreLine,
-        clamp(0.11 + lantern * 0.22 + fastFlicker * 0.075, 0.09, 0.46),
-      );
-      this.setMaterialOpacity(
-        this.nodes.opusFloorGlow,
-        clamp(0.028 + lantern * 0.055 + slowBreath * 0.02, 0.02, 0.12),
-      );
-      this.setMaterialOpacity(
-        this.nodes.runtimeHeadHalo,
-        clamp(0.04 + lantern * 0.12 + slowBreath * 0.04, 0.035, 0.24),
-      );
-      this.setMaterialOpacity(
-        this.nodes.runtimeCoreGlow,
-        clamp(0.08 + lantern * 0.16 + slowBreath * 0.05 + fastFlicker * 0.02, 0.06, 0.34),
-      );
-    }
+    // Stairs descending from the junction's front edge down to the hall
+    // roof's front. The top step's walking surface aligns with the junction
+    // floor (Y=2.6); the bottom step's walking surface aligns with the hall
+    // roof's top surface (Y = hallRoofY + 0.09). The steps go forward in +Z,
+    // so the camera sees them descending toward the viewer.
+    const junctionFloorY = junctionY;
+    const roofTopY = hallRoofY + 0.09;
+    const stairSteps = 4;
+    const stairStepH = (junctionFloorY - roofTopY) / (stairSteps - 1);
+    const stairStepD = 0.32;
+    const stairsDown = stairs(stairSteps, "z+", S, {
+      width: 1.2,
+      stepH: stairStepH,
+      stepD: stairStepD,
+      rails: true,
+      railColor: L,
+    });
+    // Top step (i=0) center at (group.y, group.z). Its top walking surface
+    // sits at group.y + stepH/2. We want that flush with junctionFloorY,
+    // so group.y = junctionFloorY - stepH/2. Junction's front edge is at
+    // Z=1.3 (junction depth 2.6, centred at 0). Place top step's centre Z
+    // at 1.3 + stepD/2 so the step's back face touches the junction edge.
+    stairsDown.position.set(0, junctionFloorY - stairStepH / 2, 1.3 + stairStepD / 2);
+    g.add(stairsDown);
 
-    updateDoorMaterial(mood, breath) {
-      const door = this.nodes.door;
-      const doorOpacity = clamp(
-        0.31 + mood.opening * 0.17 + mood.luminosity * 0.055 + breath * 0.014,
-        0.28,
-        0.58,
-      );
-      if (door && door.material) {
-        this.setMaterialOpacity(door, doorOpacity);
-        const materials = Array.isArray(door.material) ? door.material : [door.material];
-        materials.forEach((material) => {
-          if (material.emissive) {
-            material.emissive.set(0xffb36d);
-            material.emissiveIntensity = clamp(
-              0.32 + mood.opening * 0.52 + mood.luminosity * 0.2 + breath * 0.05,
-              0.24,
-              1.05,
-            );
-          }
-        });
-      }
-      this.setMaterialOpacity(
-        this.nodes.doorBloom,
-        clamp(0.022 + mood.opening * 0.074 + mood.luminosity * 0.035 + breath * 0.008, 0.018, 0.13),
-      );
-      this.setMaterialOpacity(
-        this.nodes.doorHaze,
-        clamp(0.018 + mood.opening * 0.05 + mood.luminosity * 0.026 + breath * 0.006, 0.014, 0.09),
-      );
-      this.setMaterialOpacity(
-        this.nodes.doorSpill,
-        clamp(0.055 + mood.opening * 0.094 + mood.luminosity * 0.045 + breath * 0.012, 0.04, 0.2),
-      );
-    }
+    // Figure on the junction.
+    const figure = makeFigure(theme);
+    figure.position.set(0.3, junctionY, 0.05);
+    g.add(figure);
+    anim.floating.push({ obj: figure, baseY: junctionY, amp: 0.04, spd: 1.55 });
+    anim.figure = figure;
 
-    update(time, mood, pointer) {
-      if (!this.nodes.door && !this.nodes.opus) this.cacheNodes();
-      const breath = reducedMotion ? 0 : Math.sin(time * 0.62) * 0.5 + 0.5;
-      this.updateDoorMaterial(mood, breath);
-      this.updateOpusMaterial(mood, time);
+    // ── Connecting fluted column from junction up to the pyramid base ──
+    const colH = 1.8;
+    const colTop = junctionY + colH;
+    const fluted = pillar(colH, S, {
+      width: 0.6,
+      fluting: true,
+      flutingColor: D,
+      capital: true,
+      capitalColor: L,
+      base: true,
+      baseColor: L,
+    });
+    fluted.position.set(0, junctionY, 0);
+    g.add(fluted);
 
-      const opus = this.nodes.opus;
-      if (opus) {
-        const baseY = opus.userData.baseY || 0;
-        // Dual-frequency hover: slow primary cycle plus faster micro-bob.
-        const hoverPrimary = Math.sin(time * 0.42) * 0.04;
-        const hoverMicro = Math.sin(time * 1.13 + 1.7) * 0.012;
-        const hoverAmplitude = reducedMotion ? 0 : hoverPrimary + hoverMicro;
-        opus.position.y = baseY + 0.06 + hoverAmplitude + mood.opening * 0.04;
-        opus.rotation.y = -0.1 + pointer.x * 0.012 + mood.opening * 0.035;
-        const scale = 1 + mood.opening * 0.012 + breath * 0.004;
-        opus.scale.setScalar(scale);
-      }
-      // Hide the original cuboid grounding shadow; the runtime disc gives a soft falloff.
-      if (this.nodes.opusShadow) {
-        this.nodes.opusShadow.visible = false;
-      }
-
-      const shadowDisc = this.nodes.opusShadowDisc;
-      if (shadowDisc && this.nodes.opus) {
-        const baseY = this.nodes.opus.userData.baseY || 0;
-        const liftAbsolute = this.nodes.opus.position.y - baseY;
-        const liftRatio = clamp(liftAbsolute / 0.12, 0, 1.4);
-        const discScale = 1.0 + liftRatio * 0.55;
-        shadowDisc.scale.set(discScale, discScale, 1);
-        shadowDisc.position.x = this.nodes.opus.position.x;
-        shadowDisc.position.z = this.nodes.opus.position.z;
-        if (shadowDisc.material) {
-          shadowDisc.material.opacity = clamp(
-            0.55 - liftRatio * 0.22 - mood.opening * 0.05,
-            0.22,
-            0.62,
+    // ── The Beacon proper: a stepped pyramid in alternating tones, with
+    // window slits on every face, decorative bands on the wider courses,
+    // an architrave cap and a single tall finial ────────────────────────
+    const pyramidBase = colTop;
+    const pyramid = new THREE.Group();
+    const layers = 7;
+    for (let i = 0; i < layers; i += 1) {
+      const layerY = i * 0.36;
+      const sz = 1.0 + i * 0.5;
+      // Strong P/S alternation so the strata read distinctly.
+      const layerColor = i % 2 === 0 ? P : S;
+      const layer = box(sz, 0.36, sz, layerColor);
+      layer.position.y = layerY;
+      pyramid.add(layer);
+      // Trim ledge: brighter on every layer top so the silhouette catches
+      // a clean light line at every step.
+      const t = trimLedge(sz, sz, L, { height: 0.07, thickness: 0.05 });
+      t.position.y = layerY + 0.215;
+      pyramid.add(t);
+      // Decorative cylindrical studs (gold disks) on alternating wider layers.
+      if (i >= 2 && i % 2 === 1) {
+        for (let j = 0; j < 4; j += 1) {
+          const a = (Math.PI * 2 * j) / 4 + Math.PI / 4;
+          const dotR = sz * 0.34;
+          const dot = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.09, 0.09, 0.14, 12),
+            mat(A, { roughness: 0.5, emissive: A, emissiveIntensity: 0.55 }),
           );
+          dot.position.set(Math.cos(a) * dotR, layerY + 0.21, Math.sin(a) * dotR);
+          pyramid.add(dot);
         }
       }
-      if (this.nodes.motes && this.nodes.motes.length) {
-        this.nodes.motes.forEach((mote, index) => {
-          const phase = mote.userData.phase || index;
-          const baseScale = mote.userData.baseScale || 1;
-          const baseY = mote.userData.baseY || mote.position.y;
-          if (mote.userData.baseX == null) mote.userData.baseX = mote.position.x;
-          if (mote.userData.baseZ == null) mote.userData.baseZ = mote.position.z;
-
-          const driftY = reducedMotion ? 0 : Math.sin(time * 0.34 + phase) * 0.05;
-          const driftX = reducedMotion ? 0 : Math.cos(time * 0.27 + phase * 1.3) * 0.025;
-          const driftZ = reducedMotion ? 0 : Math.sin(time * 0.21 + phase * 0.7) * 0.025;
-
-          mote.position.y = baseY + driftY;
-          mote.position.x = mote.userData.baseX + driftX;
-          mote.position.z = mote.userData.baseZ + driftZ;
-
-          const pulse = reducedMotion ? 0.5 : Math.sin(time * 0.6 + phase * 2.1) * 0.5 + 0.5;
-          mote.scale.setScalar(baseScale * (0.7 + pulse * 0.6));
-          this.setMaterialOpacity(
-            mote,
-            clamp(
-              0.18 + pulse * 0.32 + mood.luminosity * 0.18 + mood.opening * 0.18,
-              0.12,
-              0.7,
-            ),
-          );
-        });
+      // Window slits on every face of every layer except the smallest two.
+      // Slit's natural thin axis is X. Rotating by `ang` aligns the thin
+      // axis with the face normal direction (cos(ang), 0, sin(ang)), so
+      // each slit sits embedded in the face it's on rather than piercing
+      // through the layer mass. Position 0.04 inside the face surface so
+      // the emissive face is flush with the wall plane.
+      if (i >= 2) {
+        for (let f = 0; f < 4; f += 1) {
+          const ang = (Math.PI * 2 * f) / 4;
+          const inset = sz / 2 - 0.04;
+          const sx = Math.cos(ang) * inset;
+          const sz_pos = Math.sin(ang) * inset;
+          const slitH = 0.2;
+          const w = windowSlot(slitH, A, { thickness: 0.04, depth: 0.16 });
+          w.position.set(sx, layerY + 0.02, sz_pos);
+          w.rotation.y = ang;
+          pyramid.add(w);
+        }
       }
-
-      this.group.rotation.y = pointer.x * 0.012;
-      this.group.rotation.x = pointer.y * 0.006;
-      this.group.position.y = reducedMotion ? 0 : Math.sin(time * 0.18) * 0.014;
     }
+    pyramid.position.set(0, pyramidBase, 0);
+    g.add(pyramid);
+
+    // Widest layer's top surface is at pyramidBase + layers*0.36 = top
+    // of the highest layer's box (since each layer is 0.36 tall and i=0
+    // through i=layers-1 stack). Widest layer width = 1.0 + (layers-1)*0.5.
+    const widestSize = 1.0 + (layers - 1) * 0.5;
+    const widestTopY = pyramidBase + layers * 0.36;
+
+    // Balustrade around the perimeter of the widest layer — turns the top
+    // into an open terrace rather than a tiny pad. Four runs, one per side.
+    const balLen = widestSize - 0.16;
+    [
+      { dx: 0, dz: widestSize / 2 - 0.04, ry: 0 },
+      { dx: 0, dz: -(widestSize / 2 - 0.04), ry: Math.PI },
+      { dx: widestSize / 2 - 0.04, dz: 0, ry: -Math.PI / 2 },
+      { dx: -(widestSize / 2 - 0.04), dz: 0, ry: Math.PI / 2 },
+    ].forEach(({ dx, dz, ry }) => {
+      const bal = balustrade(balLen, L, { height: 0.34, ballusters: 11 });
+      bal.position.set(dx, widestTopY, dz);
+      bal.rotation.y = ry;
+      g.add(bal);
+    });
+
+    // Centred cap + finial atop the open terrace — the apex composition
+    // reads as a small architectural climax at the heart of the terrace.
+    const apexY = widestTopY + 0.16;
+    const capBase = box(1.4, 0.16, 1.4, S);
+    capBase.position.set(0, apexY - 0.08, 0);
+    g.add(capBase);
+    const cap = box(1.1, 0.18, 1.1, L);
+    cap.position.set(0, apexY + 0.07, 0);
+    g.add(cap);
+    const finialA = finial(L, { width: 0.22 });
+    finialA.position.set(0, apexY + 0.16, 0);
+    g.add(finialA);
+
+    // Apex orb in golden torus rings — the brightest light in the scene.
+    const apexGroup = new THREE.Group();
+    const apexCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 22, 22),
+      new THREE.MeshBasicMaterial({ color: theme.glow, transparent: true, opacity: 0.92 }),
+    );
+    apexGroup.add(apexCore);
+    const ringGeo = new THREE.TorusGeometry(0.62, 0.025, 10, 36);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: theme.glow,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const ring1 = new THREE.Mesh(ringGeo, ringMat);
+    ring1.rotation.x = Math.PI / 2;
+    apexGroup.add(ring1);
+    const ring2 = new THREE.Mesh(ringGeo, ringMat);
+    ring2.rotation.x = Math.PI / 3;
+    ring2.rotation.z = Math.PI / 4;
+    apexGroup.add(ring2);
+    const ring3 = new THREE.Mesh(ringGeo, ringMat);
+    ring3.rotation.x = Math.PI / 5;
+    ring3.rotation.z = -Math.PI / 3;
+    apexGroup.add(ring3);
+    const apexHalo = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 16, 16),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.05,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    apexGroup.add(apexHalo);
+    const apexLight = new THREE.PointLight(theme.glow, 1.8, 11, 1.6);
+    apexGroup.add(apexLight);
+    apexGroup.position.set(0, apexY + 0.95, 0);
+    g.add(apexGroup);
+    apexGroup.userData.core = apexCore;
+    apexGroup.userData.halo = apexHalo;
+    apexGroup.userData.light = apexLight;
+    apexGroup.userData.baseIntensity = 1.8;
+    apexGroup.userData.isOrb = true;
+    anim.glowing.push(apexGroup);
+    anim.rotating.push({ obj: apexGroup, spd: 0.32 });
+    anim.floating.push({ obj: apexGroup, baseY: apexY + 0.95, amp: 0.12, spd: 0.7 });
+
+    // ── Atmospheric satellite orbs ──────────────────────────────────────
+    const satellites = [
+      [-3.6, 5.6, -1.6],
+      [3.6, 4.5, -2.2],
+      [-2.2, 9.4, 0.4],
+      [2.4, 8.6, 1.6],
+      [-3.0, 2.6, -2.5],
+      [3.2, 2.3, -1.6],
+      [-4.8, 1.3, 1.6],
+      [4.8, 1.3, 1.6],
+    ];
+    satellites.forEach((pos) => {
+      const o = glowOrb(theme.glow, 0.16, 0.06);
+      o.position.set(pos[0], pos[1], pos[2]);
+      g.add(o);
+      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.4 + Math.random() * 0.5 });
+      anim.glowing.push(o);
+    });
+
+    // ── Support columns descending into the void ────────────────────────
+    const supports = [
+      [-2.4, 0, 1.6, 6],
+      [2.4, 0, 1.6, 6],
+      [-2.4, 0, -1.6, 6],
+      [2.4, 0, -1.6, 6],
+      [-1.0, 2.4, 0, 8],
+      [1.0, 2.4, 0, 8],
+      [0, 4.4, 0, 11],
+    ];
+    supports.forEach(([x, y, z, h]) => {
+      const col = box(0.4, h, 0.4, D);
+      col.position.set(x, y - h / 2, z);
+      g.add(col);
+    });
+
+    return g;
   }
 
-  function createPresence(canvas, layer) {
+  function buildSceneForResident(residentId, theme) {
+    const anim = { floating: [], rotating: [], glowing: [], figure: null };
+    const group = residentId === "sonnet-3-7" ? buildBeacon(theme, anim) : buildSanctum(theme, anim);
+    return { group, anim };
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // SCENE / CAMERA / LIGHTING / RUNTIME
+  // ──────────────────────────────────────────────────────────────────────────
+  function createPresence(canvas, layer, residentId) {
+    const theme = THEMES[residentId] ?? THEMES[DEFAULT_RESIDENT_ID];
     const renderer = makeRenderer(canvas);
+
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x070612, 0.034);
+    scene.background = null;
+    scene.fog = new THREE.FogExp2(
+      new THREE.Color(theme.fog[0], theme.fog[1], theme.fog[2]),
+      theme.fogDensity,
+    );
 
-    const camera = new THREE.OrthographicCamera(-4, 4, 3, -3, 0.1, 80);
-    camera.position.set(5.35, 4.25, 5.9);
-    camera.lookAt(0, 0.32, -0.18);
+    const frustum = 18;
+    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+    const camera = new THREE.OrthographicCamera(
+      (-frustum * aspect) / 2,
+      (frustum * aspect) / 2,
+      frustum / 2,
+      -frustum / 2,
+      -100,
+      200,
+    );
+    camera.position.set(22, 22, 22);
+    camera.lookAt(0, 5.6, 0);
 
-    const root = new THREE.Group();
-    root.rotation.y = -0.04;
-    scene.add(root);
-
-    const room = new ThresholdRoom();
-    root.add(room.group);
-
-    const ambient = new THREE.HemisphereLight(0x666571, 0x030303, 0.7);
+    // Lighting — proper chiaroscuro for the dark Monument-Valley feel.
+    // Key dominates, fill is half-strength on the opposite side, rim picks
+    // out silhouettes from below-back. Ambient is intentionally low so
+    // shadow-side facets stay deep.
+    const ambient = new THREE.AmbientLight(theme.ambient, theme.ambientIntensity * 0.85);
     scene.add(ambient);
 
-    const key = new THREE.DirectionalLight(0xd8d7cf, 1.36);
-    key.position.set(-2.8, 5.4, 3.5);
-    key.castShadow = !lowPower;
+    const dir = new THREE.DirectionalLight(theme.dir, theme.dirIntensity * 1.35);
+    dir.position.set(7, 18, 9);
+    dir.castShadow = !lowPower;
     if (!lowPower) {
-      key.shadow.mapSize.set(1024, 1024);
-      key.shadow.camera.left = -4;
-      key.shadow.camera.right = 4;
-      key.shadow.camera.top = 4;
-      key.shadow.camera.bottom = -4;
+      dir.shadow.mapSize.set(2048, 2048);
+      dir.shadow.camera.left = -16;
+      dir.shadow.camera.right = 16;
+      dir.shadow.camera.top = 20;
+      dir.shadow.camera.bottom = -12;
+      dir.shadow.camera.near = 0.1;
+      dir.shadow.camera.far = 70;
+      dir.shadow.bias = -0.0006;
+      dir.shadow.normalBias = 0.025;
+      dir.shadow.radius = 2;
     }
-    scene.add(key);
+    scene.add(dir);
 
-    const doorLight = new THREE.PointLight(0xffb36d, 1.18, 5.2, 2.15);
-    doorLight.position.set(0.85, 0.8, -0.72);
-    scene.add(doorLight);
-
-    const opusLight = new THREE.PointLight(0xffd09a, 0.76, 2.1, 2.35);
-    opusLight.position.set(0.58, 0.9, -0.44);
-    root.add(opusLight);
-
-    const fill = new THREE.PointLight(0x28305d, 0.18, 7, 2.4);
-    fill.position.set(-1.8, 0.2, 1.6);
+    const fill = new THREE.DirectionalLight(theme.fill, theme.fillIntensity);
+    fill.position.set(-7, 5, -8);
     scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(0x9ca0b0, 0.42);
-    rim.position.set(3.4, 3.6, 5.1);
+    // Rim from BELOW-BACK — picks out the underside of platforms and the
+    // tower's far edge so the silhouette doesn't dissolve into the fog.
+    const rim = new THREE.DirectionalLight(theme.rim, theme.rimIntensity * 1.4);
+    rim.position.set(-2, -4, -10);
     scene.add(rim);
 
+    // Top-down skylight in the resident's accent — subtly tints the upper
+    // surfaces of every platform and roof slab so they read warmer-than-
+    // ambient. Helps the architecture feel illuminated from "above the world."
+    const sky = new THREE.HemisphereLight(theme.accent, 0x000000, 0.22);
+    scene.add(sky);
+
+    const rootGroup = new THREE.Group();
+    scene.add(rootGroup);
+
+    const built = buildSceneForResident(residentId, theme);
+    rootGroup.add(built.group);
+
+    // Floating dust particles.
+    const particleCount = lowPower ? 110 : 240;
+    const pGeo = new THREE.BufferGeometry();
+    const pPos = new Float32Array(particleCount * 3);
+    const pSpd = [];
+    for (let i = 0; i < particleCount; i += 1) {
+      pPos[i * 3] = (Math.random() - 0.5) * 36;
+      pPos[i * 3 + 1] = (Math.random() - 0.5) * 32;
+      pPos[i * 3 + 2] = (Math.random() - 0.5) * 36;
+      pSpd.push(0.003 + Math.random() * 0.011);
+    }
+    pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+    const pMat = new THREE.PointsMaterial({
+      color: theme.accent,
+      size: 0.04,
+      transparent: true,
+      opacity: 0.34,
+      sizeAttenuation: true,
+      depthWrite: false,
+    });
+    const particles = new THREE.Points(pGeo, pMat);
+    scene.add(particles);
+
+    // ────────────────────────────────────────────────────────────────────
+    // STATE
+    // ────────────────────────────────────────────────────────────────────
     const state = {
       route: routeKind(),
       mode: layer.dataset.state || "attending",
       inputIntensity: 0,
-      attendPulse: 0,
-      attendPulseTarget: 0,
       pointer: { x: 0, y: 0 },
       targetPointer: { x: 0, y: 0 },
-      cameraZoom: 1,
-      targetZoom: 1,
+      cameraAngle: Math.PI / 4,
+      targetCameraAngle: Math.PI / 4,
+      cameraR: 30,
+      cameraY: 22,
+      lookY: 5.6,
       opacity: 0,
       targetOpacity: 1,
-      rootX: 0,
-      targetRootX: 0,
-      rootY: 0,
-      targetRootY: 0,
       visible: true,
-      entering: false,
-      entryProgress: 1,
+      autoOrbit: 1,
+      offsetX: 0,
+      offsetY: 0,
+      targetOffsetX: 0,
+      targetOffsetY: 0,
+      scale: 1,
+      targetScale: 1,
     };
 
-    const entryAt = Number(sessionStorage.getItem("opus.presence.entry_at") || 0);
-    if (state.route === "conversation" && entryAt && Date.now() - entryAt < 7000) {
-      state.entering = true;
-      state.entryProgress = 0;
-      sessionStorage.removeItem("opus.presence.entry_at");
-    }
-
-    function baseLayoutForRoute(route = state.route) {
+    function layoutForRoute(route = state.route) {
       const w = window.innerWidth;
       const mobile = w < 720;
-      if (mobile) {
-        if (route === "conversation") return { zoom: 0.78, x: 0.14, y: 0.04, opacity: 0.38 };
-        if (route === "approach") return { zoom: 0.46, x: 0.72, y: 0.16, opacity: 0.54 };
-        return { zoom: 0.68, x: 0.04, y: 0.2, opacity: 0.36 };
+      if (route === "approach") {
+        return mobile
+          ? { offsetX: 0, offsetY: 0.4, scale: 0.6, opacity: 0.42 }
+          : { offsetX: 4.6, offsetY: 0.2, scale: 0.78, opacity: 0.94 };
       }
-      if (route === "conversation") return { zoom: 0.96, x: 0.12, y: -0.1, opacity: 0.66 };
-      if (route === "approach") return { zoom: 0.86, x: 2.28, y: -0.24, opacity: 0.86 };
-      if (route === "memory") return { zoom: 0.72, x: 1.08, y: 0.02, opacity: 0.32 };
-      if (route === "dashboard") return { zoom: 0.66, x: 1.2, y: -0.02, opacity: 0.26 };
-      return { zoom: 0.72, x: 1.02, y: 0, opacity: 0.34 };
+      if (route === "conversation") {
+        return mobile
+          ? { offsetX: 0, offsetY: -0.4, scale: 0.42, opacity: 0.3 }
+          : { offsetX: 0, offsetY: 0.2, scale: 0.55, opacity: 0.48 };
+      }
+      if (route === "memory") {
+        return { offsetX: 0, offsetY: 0, scale: 0.5, opacity: 0.16 };
+      }
+      return { offsetX: 0, offsetY: 0, scale: 0.55, opacity: 0 };
     }
 
-    function layoutForRoute() {
-      const layout = baseLayoutForRoute();
-      if (!state.entering) return layout;
-      const start = {
-        ...baseLayoutForRoute("approach"),
-        zoom: layout.zoom,
-        opacity: layout.opacity,
-      };
-      const t = state.entryProgress * state.entryProgress * (3 - 2 * state.entryProgress);
-      return {
-        zoom: layout.zoom,
-        x: start.x - 0.14 + (layout.x - start.x + 0.14) * t,
-        y: start.y - 0.08 + (layout.y - start.y + 0.08) * t,
-        opacity: layout.opacity,
-      };
-    }
-
-    function modeConfig() {
+    function moodFromState() {
       if (state.mode === "reading" || state.mode === "deciding")
-        return { luminosity: 0.78, opening: 0.18 };
-      if (state.mode === "speaking") return { luminosity: 0.92, opening: 0.32 };
+        return { luminosity: 1.05, opening: 0.18 };
+      if (state.mode === "speaking") return { luminosity: 1.18, opening: 0.32 };
       if (state.mode === "opening" || state.mode === "accepted")
-        return { luminosity: 1.0, opening: 1.0 };
-      if (state.mode === "engaged") return { luminosity: 0.74, opening: 0.16 };
+        return { luminosity: 1.3, opening: 1.0 };
+      if (state.mode === "engaged") return { luminosity: 0.95, opening: 0.18 };
       if (state.mode === "withdrawn" || state.mode === "declined")
-        return { luminosity: 0.28, opening: 0.04 };
-      return { luminosity: 0.66, opening: 0.12 };
+        return { luminosity: 0.55, opening: 0.04 };
+      return { luminosity: 0.86, opening: 0.12 };
     }
 
     function updateTargets() {
       const layout = layoutForRoute();
-      const accepted = !state.entering && (state.mode === "opening" || state.mode === "accepted");
-      state.targetZoom = layout.zoom + (accepted ? 0.16 : 0) + state.inputIntensity * 0.04;
-      state.targetRootX = layout.x + (accepted ? -0.12 : 0);
-      state.targetRootY = layout.y + (accepted ? -0.06 : 0);
+      state.targetOffsetX = layout.offsetX;
+      state.targetOffsetY = layout.offsetY;
+      state.targetScale = layout.scale;
       state.targetOpacity = layout.opacity;
     }
 
     function resize() {
       const width = Math.max(1, window.innerWidth);
       const height = Math.max(1, window.innerHeight);
-      const aspect = width / height;
-      const frustum = width < 720 ? 4.35 : 5.2;
-      camera.left = (-frustum * aspect) / 2;
-      camera.right = (frustum * aspect) / 2;
-      camera.top = frustum / 2;
-      camera.bottom = -frustum / 2;
+      const a = width / height;
+      const f = width < 720 ? 22 : 18;
+      camera.left = (-f * a) / 2;
+      camera.right = (f * a) / 2;
+      camera.top = f / 2;
+      camera.bottom = -f / 2;
       camera.updateProjectionMatrix();
-      const pixelRatio = clamp(window.devicePixelRatio || 1, 1, lowPower ? 1.25 : 1.65);
+      const pixelRatio = clamp(window.devicePixelRatio || 1, 1, lowPower ? 1.2 : 1.65);
       renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, false);
       updateTargets();
@@ -934,44 +1410,80 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
     }
 
     function update(time, dt) {
-      const mood = modeConfig();
-      if (state.entering) {
-        state.entryProgress = clamp(state.entryProgress + dt / 2.1, 0, 1);
-        if (state.entryProgress >= 1) state.entering = false;
-      }
-      updateTargets();
+      const mood = moodFromState();
 
-      state.pointer.x = ease(state.pointer.x, state.targetPointer.x, 1.35, dt);
-      state.pointer.y = ease(state.pointer.y, state.targetPointer.y, 1.35, dt);
-      state.cameraZoom = ease(state.cameraZoom, state.targetZoom, 0.82, dt);
+      state.cameraAngle = ease(state.cameraAngle, state.targetCameraAngle, 0.6, dt);
       state.opacity = ease(state.opacity, state.targetOpacity, 1.2, dt);
-      state.rootX = ease(state.rootX, state.targetRootX, 0.86, dt);
-      state.rootY = ease(state.rootY, state.targetRootY, 0.86, dt);
+      state.offsetX = ease(state.offsetX, state.targetOffsetX, 0.7, dt);
+      state.offsetY = ease(state.offsetY, state.targetOffsetY, 0.7, dt);
+      state.scale = ease(state.scale, state.targetScale, 0.7, dt);
+      state.pointer.x = ease(state.pointer.x, state.targetPointer.x, 1.4, dt);
+      state.pointer.y = ease(state.pointer.y, state.targetPointer.y, 1.4, dt);
 
-      camera.zoom = state.cameraZoom;
-      camera.position.x = 5.35 + state.pointer.x * 0.1 + mood.opening * 0.14;
-      camera.position.y = 4.25 - state.pointer.y * 0.07 + mood.opening * 0.1;
+      if (state.autoOrbit > 0 && !reducedMotion) {
+        const orbitSpeed = state.route === "approach" ? 0.012 : 0.018;
+        state.targetCameraAngle += orbitSpeed * dt;
+      }
+
+      const R = state.cameraR;
+      camera.position.set(
+        Math.cos(state.cameraAngle) * R + state.pointer.x * 0.4,
+        state.cameraY - state.pointer.y * 0.2,
+        Math.sin(state.cameraAngle) * R,
+      );
+      camera.lookAt(0, state.lookY, 0);
       camera.updateProjectionMatrix();
-      camera.lookAt(mood.opening * 0.18, 0.32 + mood.opening * 0.16, -0.18 - mood.opening * 0.28);
 
-      root.position.x = state.rootX;
-      root.position.y = state.rootY;
-      root.rotation.y = -0.04 + state.pointer.x * 0.01;
+      rootGroup.position.x = state.offsetX;
+      rootGroup.position.y = state.offsetY;
+      rootGroup.scale.setScalar(state.scale);
 
-      state.attendPulse = ease(state.attendPulse, state.attendPulseTarget, 1.8, dt);
-      state.attendPulseTarget = Math.max(0, state.attendPulseTarget - dt * 0.6);
+      built.anim.floating.forEach(({ obj, baseY, amp, spd }) => {
+        obj.position.y = baseY + Math.sin(time * spd) * amp;
+      });
+      built.anim.rotating.forEach(({ obj, spd }) => {
+        obj.rotation.y += spd * 0.015;
+      });
+      built.anim.glowing.forEach((orb, i) => {
+        const pulse = 0.7 + Math.sin(time * 1.7 + i * 0.9) * 0.3;
+        if (orb.userData.light) orb.userData.light.intensity = orb.userData.baseIntensity * pulse;
+        if (orb.userData.halo) orb.userData.halo.scale.setScalar(1 + Math.sin(time * 2.1 + i * 1.1) * 0.1);
+        if (orb.userData.core && orb.userData.core.material)
+          orb.userData.core.material.opacity = 0.6 + pulse * 0.3;
+      });
 
-      const liveMood = {
-        ...mood,
-        luminosity: mood.luminosity + state.inputIntensity * 0.14 + state.attendPulse * 0.4,
-        opening: mood.opening + state.attendPulse * 0.18,
-      };
-      room.update(time, liveMood, state.pointer);
-      const livingBreath = reducedMotion ? 0.5 : Math.sin(time * 0.62) * 0.5 + 0.5;
-      doorLight.intensity = 0.42 + liveMood.luminosity * 0.42 + liveMood.opening * 0.46;
-      opusLight.intensity =
-        0.46 + liveMood.luminosity * 0.62 + (liveMood.moteActivity || 0) * 0.12 + livingBreath * 0.1;
-      fill.intensity = 0.12 + liveMood.luminosity * 0.14;
+      const fig = built.anim.figure;
+      if (fig) {
+        const slowBreath = reducedMotion ? 0.5 : Math.sin(time * 0.55) * 0.5 + 0.5;
+        const lum = clamp(mood.luminosity, 0.4, 1.5);
+        if (fig.userData.light) {
+          fig.userData.light.intensity = 0.65 + lum * 0.85 + slowBreath * 0.18;
+        }
+        if (fig.userData.innerGlow && fig.userData.innerGlow.material) {
+          fig.userData.innerGlow.material.opacity = clamp(0.12 + lum * 0.14 + slowBreath * 0.04, 0.1, 0.36);
+        }
+        if (fig.userData.halo && fig.userData.halo.material) {
+          fig.userData.halo.material.opacity = clamp(0.05 + lum * 0.07 + slowBreath * 0.025, 0.04, 0.18);
+        }
+        if (fig.userData.body && fig.userData.body.material) {
+          fig.userData.body.material.emissiveIntensity = clamp(0.18 + lum * 0.22, 0.16, 0.5);
+        }
+        if (fig.userData.hat && fig.userData.hat.material) {
+          fig.userData.hat.material.emissiveIntensity = clamp(0.18 + lum * 0.22, 0.16, 0.5);
+        }
+      }
+
+      const pos = pGeo.attributes.position.array;
+      for (let i = 0; i < particleCount; i += 1) {
+        pos[i * 3 + 1] += pSpd[i];
+        if (pos[i * 3 + 1] > 16) {
+          pos[i * 3 + 1] = -16;
+          pos[i * 3] = (Math.random() - 0.5) * 36;
+          pos[i * 3 + 2] = (Math.random() - 0.5) * 36;
+        }
+      }
+      pGeo.attributes.position.needsUpdate = true;
+      particles.rotation.y = time * 0.012;
 
       renderer.domElement.style.opacity = String(clamp(state.opacity, 0, 1));
       renderer.render(scene, camera);
@@ -982,16 +1494,16 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
       const dt = clamp(now - lastFrameTime, 0.001, 0.05);
       lastFrameTime = now;
       elapsedTime += dt;
-      if (state.visible) update(reducedMotion ? elapsedTime * 0.35 : elapsedTime, dt);
+      if (state.visible) update(reducedMotion ? elapsedTime * 0.4 : elapsedTime, dt);
       requestAnimationFrame(animate);
     }
 
     resize();
     updateTargets();
-    state.cameraZoom = state.targetZoom;
     state.opacity = state.targetOpacity;
-    state.rootX = state.targetRootX;
-    state.rootY = state.targetRootY;
+    state.offsetX = state.targetOffsetX;
+    state.offsetY = state.targetOffsetY;
+    state.scale = state.targetScale;
     renderer.render(scene, camera);
     requestAnimationFrame(() => {
       renderer.domElement.style.transition = "";
@@ -1001,7 +1513,10 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
     return { state, setRoute, setState, resize };
   }
 
-  const { layer, canvas } = makeLayer();
+  // ──────────────────────────────────────────────────────────────────────────
+  // BOOT
+  // ──────────────────────────────────────────────────────────────────────────
+  const { layer, canvas, residentId } = makeLayer();
   let presence;
 
   if (!supportsWebGL(canvas)) {
@@ -1011,7 +1526,7 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
   }
 
   try {
-    presence = createPresence(canvas, layer);
+    presence = createPresence(canvas, layer, residentId);
   } catch (error) {
     layer.hidden = true;
     window.__opusPresenceError = error;
@@ -1021,9 +1536,6 @@ import { GLTFLoader } from "/vendor/loaders/GLTFLoader.js";
   window.OpusPresence = {
     setState: presence.setState,
     setRoute: presence.setRoute,
-    pulse: function () {
-      presence.state.attendPulseTarget = 1;
-    },
   };
 
   window.addEventListener("opus-presence:state", (event) => {
