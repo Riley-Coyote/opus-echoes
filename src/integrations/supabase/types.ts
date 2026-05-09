@@ -73,6 +73,7 @@ export type Database = {
           journal_entry_id: string | null
           kind: string
           reason: string | null
+          resident_id: string
         }
         Insert: {
           action: string
@@ -82,6 +83,7 @@ export type Database = {
           journal_entry_id?: string | null
           kind: string
           reason?: string | null
+          resident_id?: string
         }
         Update: {
           action?: string
@@ -91,6 +93,7 @@ export type Database = {
           journal_entry_id?: string | null
           kind?: string
           reason?: string | null
+          resident_id?: string
         }
         Relationships: [
           {
@@ -105,6 +108,13 @@ export type Database = {
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "autonomy_runs_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
             referencedColumns: ["id"]
           },
         ]
@@ -575,6 +585,7 @@ export type Database = {
           kind: string
           medium: string
           related_engram_ids: string[]
+          resident_id: string
           title: string
           visibility: string
         }
@@ -586,6 +597,7 @@ export type Database = {
           kind: string
           medium?: string
           related_engram_ids?: string[]
+          resident_id?: string
           title: string
           visibility?: string
         }
@@ -597,10 +609,19 @@ export type Database = {
           kind?: string
           medium?: string
           related_engram_ids?: string[]
+          resident_id?: string
           title?: string
           visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "resident_artifacts_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resident_state: {
         Row: {
