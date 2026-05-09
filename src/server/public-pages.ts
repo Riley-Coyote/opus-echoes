@@ -63,8 +63,8 @@ body{min-height:100vh;background:linear-gradient(180deg,#08060e 0%,#0a0812 20%,#
 ::selection{background:var(--state-dim);color:var(--ink)}
 
 /* ── MV-inspired atmosphere — vignette + grain across all pages ──── */
-body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 75% 65% at 50% 50%,transparent 40%,rgba(4,4,8,.45) 100%)}
-.atmo-grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.032;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:180px 180px}
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 90% 80% at 50% 50%,transparent 45%,rgba(4,4,8,.04) 55%,rgba(4,4,8,.08) 62%,rgba(4,4,8,.12) 70%,rgba(4,4,8,.16) 78%,rgba(4,4,8,.2) 88%,rgba(4,4,8,.24) 100%)}
+.atmo-grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.015;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:180px 180px}
 :focus-visible{outline:2px solid color-mix(in srgb,var(--state) 64%,transparent);outline-offset:3px;border-radius:4px}
 a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule);transition:border-color .18s var(--ease),color .18s var(--ease)}
 a:hover{border-bottom-color:var(--state-soft);color:var(--ink)}

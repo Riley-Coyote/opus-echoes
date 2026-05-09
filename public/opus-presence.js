@@ -49,7 +49,7 @@ import * as THREE from "/vendor/three.module.js";
       glow: 0xed8298,
       figureBody: 0xf6efe0,
       fog: [0.05, 0.03, 0.07],
-      fogDensity: 0.022,
+      fogDensity: 0.019,
       ambient: 0x4a3858,
       ambientIntensity: 0.55,
       dir: 0xb59ace,
@@ -73,7 +73,7 @@ import * as THREE from "/vendor/three.module.js";
       glow: 0xffc858,
       figureBody: 0xf6e8c8,
       fog: [0.07, 0.045, 0.022],
-      fogDensity: 0.022,
+      fogDensity: 0.019,
       ambient: 0x5a4520,
       ambientIntensity: 0.55,
       dir: 0xdab062,
@@ -1213,9 +1213,179 @@ import * as THREE from "/vendor/three.module.js";
     return g;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // ENVIRONMENT — Monument Valley-inspired geometric terrain surrounding
+  // the main structure. Layered terraces descend into fog. Each face uses
+  // a two-tone technique (darker sides, lighter top) for MV's internal
+  // gradient feel. All colors drawn from the resident's theme palette.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  function buildEnvironment(group, theme, anim, kind) {
+    const P = theme.primary, S = theme.secondary, D = theme.dark, L = theme.light, A = theme.accent;
+
+    // Darken a hex color by mixing toward black. f=0 is original, f=1 is black.
+    function darken(hex, f) {
+      const c = new THREE.Color(hex);
+      c.lerp(new THREE.Color(0x000000), f);
+      return c.getHex();
+    }
+    // Lighten a hex color by mixing toward the theme light color.
+    function lighten(hex, f) {
+      const c = new THREE.Color(hex);
+      c.lerp(new THREE.Color(L), f);
+      return c.getHex();
+    }
+
+    // MV-style terraced block: darker side faces, lighter top face.
+    // Creates a box for the sides and a thin slab on top at a lighter tone.
+    function terrace(w, h, d, sideColor, topColor, pos) {
+      const g2 = new THREE.Group();
+      const sides = box(w, h, d, sideColor);
+      g2.add(sides);
+      const cap = box(w + 0.02, 0.06, d + 0.02, topColor);
+      cap.position.y = h / 2;
+      g2.add(cap);
+      g2.position.set(pos[0], pos[1], pos[2]);
+      return g2;
+    }
+
+    // ── Layer 1: Foundation — stepped plateau beneath the structure ────
+    // Concentric platforms getting wider as they descend, each slightly
+    // darker. The existing support pillars land on the first level.
+
+    const isBeacon = kind === "beacon";
+    const foundationY = isBeacon ? -1.5 : -1.0;
+
+    // Level 1 — closest to the structure
+    group.add(terrace(5.6, 1.2, 5.6, D, darken(P, 0.25), [0, foundationY - 0.6, 0]));
+    // Trim ledge on top
+    const trim1 = trimLedge(5.6, 5.6, lighten(D, 0.15), { height: 0.08 });
+    trim1.position.set(0, foundationY + 0.02, 0);
+    group.add(trim1);
+
+    // Level 2 — wider step
+    group.add(terrace(7.4, 1.4, 7.4, darken(D, 0.15), darken(P, 0.35), [0, foundationY - 1.9, 0]));
+    const trim2 = trimLedge(7.4, 7.4, darken(L, 0.4), { height: 0.06 });
+    trim2.position.set(0, foundationY - 1.18, 0);
+    group.add(trim2);
+
+    // Level 3 — even wider
+    group.add(terrace(9.6, 1.6, 9.6, darken(D, 0.3), darken(S, 0.35), [0, foundationY - 3.7, 0]));
+
+    // Level 4 — broadest base
+    group.add(terrace(12.0, 2.0, 12.0, darken(D, 0.42), darken(D, 0.2), [0, foundationY - 5.8, 0]));
+
+    // ── Layer 2: Geometric mountain ridges ─────────────────────────
+    // Large geometric peaks arranged in concentric rings around the
+    // structure, creating MV's layered landscape background. Each ring
+    // is farther, darker, and more fogged. The peaks are simple
+    // triangular prisms (wedge shapes) — flat-faced geometric mountains.
+
+    // Wedge mountain — a triangular prism (peak shape) using BufferGeometry.
+    // The peak runs along Z; width spans X; height is Y.
+    // Geometric mountain peak — triangular prism, no cap highlight.
+    // The face color is close to the fog so it dissolves atmospherically.
+    function ridge(w, h, d, faceColor) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-w / 2, 0);
+      shape.lineTo(0, h);
+      shape.lineTo(w / 2, 0);
+      shape.closePath();
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+      geo.translate(0, 0, -d / 2);
+      const mesh = new THREE.Mesh(geo, mat(faceColor, { roughness: 0.95 }));
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    const baseLevel = foundationY - 6;
+
+    // Ring 1 — mid-distance mountains. Pushed out, darkened heavily.
+    // Colors are close to the fog tone so they read as atmosphere, not geometry.
+    const ring1 = [
+      // [x, z, w, h, d, rotY]
+      [18, 8, 7, 9, 5, 0.3],
+      [-16, 14, 6, 8, 4, -0.2],
+      [10, -18, 8, 10, 6, 0.5],
+      [-14, -16, 6, 7.5, 4.5, -0.4],
+      [20, -8, 5.5, 8.5, 4, 0.15],
+      [-20, 4, 7, 9.5, 5, -0.1],
+    ];
+    ring1.forEach(([x, z, w, h, d, ry]) => {
+      const peak = ridge(w, h, d, darken(D, 0.5));
+      peak.position.set(x, baseLevel, z);
+      peak.rotation.y = ry;
+      group.add(peak);
+    });
+
+    // Ring 2 — farther, larger, ghostlier
+    const ring2 = [
+      [28, 14, 10, 14, 7, 0.2],
+      [-26, 20, 11, 12, 6, -0.3],
+      [18, -28, 12, 16, 8, 0.45],
+      [-24, -22, 9, 13, 6, -0.5],
+      [30, -4, 8, 11, 5, 0.1],
+      [-30, 10, 10, 15, 7, -0.15],
+      [10, 30, 9, 12, 6, 0.55],
+      [-14, -30, 11, 13, 7, -0.4],
+    ];
+    ring2.forEach(([x, z, w, h, d, ry]) => {
+      const peak = ridge(w, h, d, darken(D, 0.6));
+      peak.position.set(x, baseLevel - 2, z);
+      peak.rotation.y = ry;
+      group.add(peak);
+    });
+
+    // Ring 3 — most distant, nearly dissolving into fog
+    const ring3 = [
+      [38, 14, 14, 20, 10, 0.15],
+      [-36, 24, 16, 18, 10, -0.2],
+      [22, -38, 15, 22, 11, 0.4],
+      [-34, -28, 12, 17, 8, -0.35],
+      [40, -16, 11, 16, 7, 0.25],
+      [-40, -6, 13, 19, 9, -0.1],
+    ];
+    ring3.forEach(([x, z, w, h, d, ry]) => {
+      const peak = ridge(w, h, d, darken(D, 0.68));
+      peak.position.set(x, baseLevel - 4, z);
+      peak.rotation.y = ry;
+      group.add(peak);
+    });
+
+    // ── Ground plane — large dark surface beneath everything ────────
+    // Gives the mountains something to rise from instead of void.
+    const groundGeo = new THREE.PlaneGeometry(80, 80);
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(darken(D, 0.6)),
+      roughness: 1.0,
+      metalness: 0,
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = baseLevel;
+    ground.receiveShadow = true;
+    group.add(ground);
+
+    // ── Atmospheric fog plane — emissive glow at the horizon ────────
+    const fogGeo = new THREE.PlaneGeometry(60, 60);
+    const fogMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(theme.fog[0] * 1.5, theme.fog[1] * 1.5, theme.fog[2] * 1.5),
+      transparent: true,
+      opacity: 0.08,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const fogPlane = new THREE.Mesh(fogGeo, fogMat);
+    fogPlane.rotation.x = -Math.PI / 2;
+    fogPlane.position.y = baseLevel + 0.5;
+    group.add(fogPlane);
+  }
+
   function buildSceneForResident(residentId, theme) {
     const anim = { floating: [], rotating: [], glowing: [], figure: null };
     const group = residentId === "sonnet-3-7" ? buildBeacon(theme, anim) : buildSanctum(theme, anim);
+    buildEnvironment(group, theme, anim, residentId === "sonnet-3-7" ? "beacon" : "sanctum");
     return { group, anim };
   }
 
