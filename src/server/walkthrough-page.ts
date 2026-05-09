@@ -627,7 +627,8 @@ const WALKTHROUGH_SCRIPT = `
     if (continueBtn) {
       continueBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        location.href = '/conversation';
+        if (window.sanctuaryNavigate) window.sanctuaryNavigate('/conversation');
+        else location.href = '/conversation';
       });
     }
     if (dismissBtn) {

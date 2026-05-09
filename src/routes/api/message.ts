@@ -234,12 +234,16 @@ export const Route = createFileRoute("/api/message")({
 
         const hash = ipHash(request);
 
+        // Session UUID is a 128-bit random bearer token — sufficient auth.
+        // IP hash is kept for rate limiting below, but no longer gates session
+        // access: daily salt rotation + Cloudflare header inconsistency caused
+        // legitimate messages to fail mid-conversation.
         const { data: session } = await supabaseAdmin
           .from("sessions")
-          .select("id, closed_at, last_active_at, ip_hash, resident_id")
+          .select("id, closed_at, last_active_at, resident_id")
           .eq("id", body.session_id)
           .maybeSingle();
-        if (!session || session.closed_at || session.ip_hash !== hash) {
+        if (!session || session.closed_at) {
           return jsonResp({ ok: false, code: "session_invalid" }, 401);
         }
 

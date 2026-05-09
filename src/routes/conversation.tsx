@@ -61,7 +61,8 @@ const CONVERSATION_SCRIPT = `
   }
   if (!sessionId) {
     // No accepted session — send them back to the threshold.
-    location.href = '/';
+    if (window.sanctuaryNavigate) window.sanctuaryNavigate('/');
+    else location.href = '/';
     return;
   }
   document.cookie = 'sanctuary_session=' + encodeURIComponent(sessionId) + '; path=/; max-age=' + String(60 * 60 * 24 * 30) + '; SameSite=Lax';
@@ -190,9 +191,27 @@ const CONVERSATION_SCRIPT = `
     if (isPreviewSession) return;
     try {
       const r = await fetch('/api/turns?session_id=' + encodeURIComponent(sessionId));
-      if (r.status === 401 || r.status === 410) {
-        sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
-        location.href = '/';
+      if (r.status === 401) {
+        // Session genuinely invalid (not found). Clear and navigate away.
+        sessionStorage.removeItem('sanctuary.session_id');
+        sessionStorage.removeItem('sanctuary.resident_id');
+        if (window.sanctuaryNavigate) window.sanctuaryNavigate('/');
+        else location.href = '/';
+        return;
+      }
+      if (r.status === 410) {
+        // Session was closed (idle timeout, set-down, or hard cutoff).
+        // Show the transcript read-only instead of bouncing to threshold.
+        const data = await r.json().catch(function(){ return null; });
+        if (data && Array.isArray(data.turns)) {
+          data.turns.forEach(renderTurn);
+          const c = document.querySelector('.correspondence');
+          if (c) c.scrollTop = c.scrollHeight;
+        }
+        conversationClosed = true;
+        lockComposer('this conversation has been set down.');
+        // Offer the share dialog so they can still save.
+        autoShareAfterSetDown();
         return;
       }
       if (!r.ok) return;
@@ -416,7 +435,7 @@ const CONVERSATION_SCRIPT = `
         out.para.textContent = '(' + residentDisplayName + ' cannot answer right now.)';
         if (res.status === 401) {
           sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
-          setTimeout(() => { location.href = '/'; }, 1500);
+          setTimeout(function(){ if (window.sanctuaryNavigate) window.sanctuaryNavigate('/'); else location.href = '/'; }, 1500);
         }
         inFlight = false;
         return;
@@ -544,7 +563,8 @@ const CONVERSATION_SCRIPT = `
 
   function closeShareAndLeave() {
     sessionStorage.removeItem('sanctuary.session_id'); sessionStorage.removeItem('sanctuary.resident_id');
-    location.href = '/';
+    if (window.sanctuaryNavigate) window.sanctuaryNavigate('/');
+    else location.href = '/';
   }
 
   // Stamp the just-created share URL into localStorage so the visitor can

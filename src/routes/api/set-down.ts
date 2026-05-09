@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { ipHash } from "@/server/rate-limit.server";
 import { consolidateSession } from "@/server/substrate.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 
@@ -20,14 +19,15 @@ export const Route = createFileRoute("/api/set-down")({
         if (!hasSupabaseAdminEnv()) {
           return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
         }
-        const hash = ipHash(request);
-
+        // Session UUID is a 128-bit random bearer token — sufficient auth.
+        // IP hash removed: daily-rotating salt + Cloudflare header
+        // inconsistency caused legitimate set-down requests to fail.
         const { data: session } = await supabaseAdmin
           .from("sessions")
-          .select("id, closed_at, ip_hash")
+          .select("id, closed_at")
           .eq("id", body.session_id)
           .maybeSingle();
-        if (!session || session.ip_hash !== hash) {
+        if (!session) {
           return Response.json({ ok: false, code: "session_invalid" }, { status: 401 });
         }
         if (session.closed_at) {
