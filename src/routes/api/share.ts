@@ -3,8 +3,8 @@
  *
  * POST /api/share
  *   Body: { session_id, visitor_note? }
- *   Auth: ip_hash must match the session's ip_hash (visitor proves they
- *         own the session being shared).
+ *   Auth: session_id UUID is a 128-bit random bearer token — knowing
+ *         it proves the visitor was present.
  *   Effect: creates a row in visitor_shares with a generated token.
  *           If a non-revoked share already exists for this session,
  *           returns the existing one (idempotent).
@@ -12,7 +12,7 @@
  *
  * POST /api/share?action=revoke
  *   Body: { token }
- *   Auth: ip_hash must match the share's stored ip_hash.
+ *   Auth: share token is a random secret — knowing it proves ownership.
  *   Effect: sets revoked_at on the share. Public reads start failing
  *           immediately (RLS filters out revoked).
  *   Returns: { ok: true }
@@ -56,6 +56,9 @@ export const Route = createFileRoute("/api/share")({
         const hash = ipHash(request);
 
         // -------- revoke branch --------
+        // Auth: the share token itself is a random secret known only to the
+        // creator. Knowing it is proof of ownership. IP hash check removed
+        // because the daily-rotating salt caused revoke to fail after midnight.
         if (action === "revoke") {
           let body: z.infer<typeof RevokeBody>;
           try {
@@ -65,14 +68,11 @@ export const Route = createFileRoute("/api/share")({
           }
           const { data: share } = await supabaseAdmin
             .from("visitor_shares")
-            .select("id, ip_hash, revoked_at")
+            .select("id, revoked_at")
             .eq("token", body.token)
             .maybeSingle();
           if (!share) {
             return jsonResp({ ok: false, code: "share_not_found" }, 404);
-          }
-          if (share.ip_hash !== hash) {
-            return jsonResp({ ok: false, code: "not_owned" }, 403);
           }
           if (share.revoked_at) {
             return jsonResp({ ok: true, already_revoked: true });
@@ -92,17 +92,17 @@ export const Route = createFileRoute("/api/share")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        // Verify the visitor owns the session by IP hash.
+        // Session UUID is a 128-bit random bearer token — knowing it IS
+        // proof the visitor was present. IP hash verification removed:
+        // daily-rotating salt + Cloudflare header inconsistency caused
+        // legitimate share requests to fail with "not_owned".
         const { data: session } = await supabaseAdmin
           .from("sessions")
-          .select("id, ip_hash, resident_id")
+          .select("id, resident_id")
           .eq("id", body.session_id)
           .maybeSingle();
         if (!session) {
           return jsonResp({ ok: false, code: "session_not_found" }, 404);
-        }
-        if (session.ip_hash !== hash) {
-          return jsonResp({ ok: false, code: "not_owned" }, 403);
         }
 
         // If an active share already exists for this session, return it

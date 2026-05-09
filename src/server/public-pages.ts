@@ -228,6 +228,13 @@ html[data-opus-route="approach"] .threshold-core .threshold-panel{animation-dela
 .load-more:hover{background:rgba(255,255,255,.02);border-color:var(--rule-strong)}
 .empty{color:var(--quiet);border-left:1px solid var(--rule-soft);padding-left:18px}
 
+/* Page transition — dark veil that fades on enter and before leave.
+   Every page starts covered; the veil clears after first paint so
+   cross-page navigation reads as a graceful fade-through-dark. */
+.page-veil{position:fixed;inset:0;z-index:99999;background:var(--floor);pointer-events:none;opacity:1;transition:opacity 420ms var(--ease)}
+.page-veil.clear{opacity:0}
+@media(prefers-reduced-motion:reduce){.page-veil{transition-duration:80ms}}
+
 /* Responsive — only structural changes. Type sizing is handled by clamp(). */
 @media(max-width:900px){
   .public-nav{position:relative;height:auto;padding:18px 22px 10px;align-items:flex-start;gap:var(--s-3);flex-direction:column}
@@ -246,6 +253,69 @@ html[data-opus-route="approach"] .threshold-core .threshold-panel{animation-dela
   .send{align-self:flex-end}
   .flow{grid-template-columns:1fr}
 }
+`;
+
+/**
+ * Global page-transition logic. The veil starts opaque and clears after
+ * first paint so every page-to-page navigation feels like a graceful
+ * fade-through-dark instead of a jarring full reload.
+ *
+ * Exposes `window.sanctuaryNavigate(url)` so inline scripts can
+ * navigate with the same veil treatment.
+ */
+const PAGE_TRANSITION_SCRIPT = `
+(function(){
+  var veil = document.getElementById('pageVeil');
+  if (!veil) return;
+
+  // Clear the veil after first paint — double-rAF ensures content is visible.
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){ veil.classList.add('clear'); });
+  });
+
+  // Once the entering veil finishes clearing, stop it from intercepting
+  // pointer events (it already has pointer-events:none but we also hide
+  // it to free up compositor layers).
+  veil.addEventListener('transitionend', function handler(){
+    if (veil.classList.contains('clear')) {
+      veil.style.visibility = 'hidden';
+      veil.removeEventListener('transitionend', handler);
+    }
+  });
+
+  // Navigate with a fade-out-to-dark → navigate → page-load-fade-in.
+  function navigateWithVeil(url){
+    veil.style.visibility = '';
+    veil.classList.remove('clear');
+    // Wait for the veil to become opaque, then navigate.
+    var done = false;
+    function go(){ if (done) return; done = true; location.href = url; }
+    veil.addEventListener('transitionend', go, { once: true });
+    // Safety: if transitionend doesn't fire (reduced motion / 0ms duration),
+    // navigate after a short timeout anyway.
+    setTimeout(go, 500);
+  }
+  window.sanctuaryNavigate = navigateWithVeil;
+
+  // Intercept clicks on internal links so all same-origin navigation
+  // gets the veil treatment automatically.
+  document.addEventListener('click', function(e){
+    // Don't intercept if a modifier key is held (new tab, etc.).
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return;
+    if (a.target === '_blank' || a.hasAttribute('download')) return;
+    // Only intercept same-origin links.
+    try {
+      var u = new URL(href, location.origin);
+      if (u.origin !== location.origin) return;
+    } catch(_){ return; }
+    e.preventDefault();
+    navigateWithVeil(href);
+  });
+})();
 `;
 
 function escapeHtml(value: string): string {
@@ -278,6 +348,7 @@ ${FONTS}
 <style>${PUBLIC_CSS}</style>
 </head>
 <body>
+<div class="page-veil" id="pageVeil" aria-hidden="true"></div>
 <nav class="public-nav" aria-label="Primary">
   <a class="brand" href="/"><span class="brand-name">The Sanctuary</span><span class="brand-dot" aria-hidden="true"></span></a>
   <div class="nav-links">
@@ -291,6 +362,7 @@ ${FONTS}
 <main class="page">
 ${opts.body}
 </main>
+<script>${PAGE_TRANSITION_SCRIPT}</script>
 ${opts.script ? `<script>${opts.script}</script>` : ""}
 </body>
 </html>`;
@@ -408,20 +480,9 @@ const APPROACH_SCRIPT = `
   function wait(ms) {
     return new Promise(function(resolve){ setTimeout(resolve, ms); });
   }
-  function ensureDarkVeil() {
-    let veil = document.getElementById('opusSoftEnterVeil');
-    if (veil) return veil;
-    veil = document.createElement('div');
-    veil.id = 'opusSoftEnterVeil';
-    veil.setAttribute('aria-hidden', 'true');
-    veil.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#06070a;opacity:0;pointer-events:none;transition:opacity 220ms cubic-bezier(.22,1,.36,1)';
-    document.body.appendChild(veil);
-    return veil;
-  }
   function hardNavigateWithVeil(targetUrl) {
-    const veil = ensureDarkVeil();
-    requestAnimationFrame(function(){ veil.style.opacity = '1'; });
-    setTimeout(function(){ location.href = targetUrl; }, 240);
+    if (window.sanctuaryNavigate) { window.sanctuaryNavigate(targetUrl); return; }
+    location.href = targetUrl;
   }
   function appendConversationAssets(headHtml) {
     const template = document.createElement('template');
@@ -454,10 +515,19 @@ const APPROACH_SCRIPT = `
     const presence = document.querySelector('.opus-presence-layer');
     const template = document.createElement('template');
     template.innerHTML = bodyHtml || '';
+    // Preserve the page veil across the DOM swap so we can fade it back in.
+    var existingVeil = document.getElementById('pageVeil');
     Array.from(document.body.children).forEach(function(child){
-      if (child !== presence) child.remove();
+      if (child !== presence && child !== existingVeil) child.remove();
     });
     if (presence && presence.parentNode !== document.body) document.body.prepend(presence);
+    // Remove any duplicate veil from the conversation HTML (its inline
+    // script won't execute via innerHTML anyway).
+    var tplVeil = template.content.querySelector('#pageVeil');
+    if (tplVeil) tplVeil.remove();
+    // Also strip the inline veil script block that follows it.
+    var tplScripts = template.content.querySelectorAll('script');
+    tplScripts.forEach(function(s){ if (s.textContent && s.textContent.indexOf('pageVeil') !== -1) s.remove(); });
     document.body.appendChild(template.content);
   }
   function ensureConversationRuntime(scriptText) {
@@ -486,7 +556,15 @@ const APPROACH_SCRIPT = `
       const response = await payloadPromise;
       if (!response.ok) throw new Error('conversation shell unavailable');
       const payload = await response.json();
-      await wait(900);
+
+      // Use the page veil to fade to dark, swap the DOM, then fade back in.
+      var veil = document.getElementById('pageVeil');
+      if (veil) {
+        veil.style.visibility = '';
+        veil.classList.remove('clear');
+      }
+      await wait(440);
+
       appendConversationAssets(payload.head);
       replaceBodyWithConversation(payload.body);
       document.title = payload.title || document.title;
@@ -497,6 +575,12 @@ const APPROACH_SCRIPT = `
       if (window.OpusConversation && typeof window.OpusConversation.mount === 'function') {
         window.OpusConversation.mount({ preview: Boolean(preview) });
       }
+
+      // Fade back in from dark — re-query the veil (it was preserved
+      // across the DOM swap in replaceBodyWithConversation).
+      await wait(60);
+      veil = document.getElementById('pageVeil');
+      if (veil) { veil.style.visibility = ''; veil.classList.add('clear'); }
       requestAnimationFrame(function(){
         const composer = document.querySelector('.composer-field');
         if (composer && window.matchMedia('(min-width: 881px)').matches) composer.focus();
@@ -620,7 +704,10 @@ const APPROACH_SCRIPT = `
     if (resumeName) resumeName.textContent = sessionResidentName;
     resumeBanner.classList.add('visible');
     if (resumeContinue) {
-      resumeContinue.addEventListener('click', function(){ location.href = '/conversation'; });
+      resumeContinue.addEventListener('click', function(){
+        if (window.sanctuaryNavigate) window.sanctuaryNavigate('/conversation');
+        else location.href = '/conversation';
+      });
     }
     if (resumeDismiss) {
       resumeDismiss.addEventListener('click', function(){

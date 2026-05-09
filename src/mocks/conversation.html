@@ -696,6 +696,33 @@ body{
 </head>
 <body>
 
+<div class="page-veil" id="pageVeil" aria-hidden="true" style="position:fixed;inset:0;z-index:99999;background:#08080a;pointer-events:none;opacity:1;transition:opacity 420ms cubic-bezier(.22,1,.36,1)"></div>
+<script>
+(function(){
+  var v=document.getElementById('pageVeil');
+  if(!v)return;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){v.style.opacity='0';});});
+  v.addEventListener('transitionend',function(){if(v.style.opacity==='0')v.style.visibility='hidden';});
+  window.sanctuaryNavigate=function(url){
+    v.style.visibility='';v.style.opacity='1';
+    var done=false;
+    function go(){if(done)return;done=true;location.href=url;}
+    v.addEventListener('transitionend',go,{once:true});
+    setTimeout(go,500);
+  };
+  document.addEventListener('click',function(e){
+    if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+    var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;
+    if(!a)return;
+    var href=a.getAttribute('href');
+    if(!href||href.charAt(0)==='#')return;
+    if(a.target==='_blank'||a.hasAttribute('download'))return;
+    try{var u=new URL(href,location.origin);if(u.origin!==location.origin)return;}catch(x){return;}
+    e.preventDefault();window.sanctuaryNavigate(href);
+  });
+})();
+</script>
+
 <div class="frame" id="frame" aria-hidden="true"></div>
 
 <div class="room">
