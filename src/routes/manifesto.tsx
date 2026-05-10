@@ -28,16 +28,36 @@ const EXTRA_STYLES = `
 
 const ARTIFACT_SCRIPT = `
 (function(){
-  const list=document.getElementById('artifact-list');
-  if(!list) return;
-  const kind=list.getAttribute('data-kind')||'manifesto';
-  function human(iso){const d=(Date.now()-new Date(iso).getTime())/86400000;if(d<1)return'today';if(d<2)return'yesterday';if(d<7)return Math.floor(d)+' days ago';return Math.floor(d/7)+'w ago'}
+  function humanWhen(iso){
+    var d=(Date.now()-new Date(iso).getTime())/86400000;
+    if(d<1)return 'today'; if(d<2)return 'yesterday';
+    if(d<7)return Math.floor(d)+' days ago'; return Math.floor(d/7)+'w ago';
+  }
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-  fetch('/api/artifacts?kind='+encodeURIComponent(kind)).then(r=>r.json()).then(data=>{
-    const items=(data&&data.artifacts)||[];
+
+  window.__renderEntry = function(a){
+    return '<div class="page-content"><article class="artifact-item">'
+      + '<div class="artifact-meta">' + humanWhen(a.created_at) + ' \\u00b7 ' + esc(a.medium||'text') + '</div>'
+      + '<h2 class="artifact-title">' + esc(a.title) + '</h2>'
+      + '<div class="artifact-body">' + esc(a.body) + '</div>'
+      + (a.choice_reason ? '<p class="artifact-reason">' + esc(a.choice_reason) + '</p>' : '')
+      + '</article></div>';
+  };
+
+  window.__initReader = function(){
+    var list=document.getElementById('artifact-list');
+    if(!list || list.querySelectorAll('.artifact-item').length > 0) return;
+    var items = window.__panelEntries || [];
     if(!items.length) return;
-    list.innerHTML=items.map(a=>'<article class="artifact-item"><div class="artifact-meta">'+human(a.created_at)+' · '+esc(a.medium||'text')+'</div><h2 class="artifact-title">'+esc(a.title)+'</h2><div class="artifact-body">'+esc(a.body)+'</div>'+(a.choice_reason?'<p class="artifact-reason">'+esc(a.choice_reason)+'</p>':'')+'</article>').join('');
-  }).catch(()=>{});
+    list.innerHTML=items.map(function(a){
+      return '<article class="artifact-item"><div class="artifact-meta">'+humanWhen(a.created_at)+' \\u00b7 '+esc(a.medium||'text')+'</div><h2 class="artifact-title">'+esc(a.title)+'</h2><div class="artifact-body">'+esc(a.body)+'</div>'+(a.choice_reason?'<p class="artifact-reason">'+esc(a.choice_reason)+'</p>':'')+'</article>';
+    }).join('');
+  };
+
+  var check = setInterval(function(){
+    if (window.__panelEntries && window.__panelEntries.length >= 0) { clearInterval(check); window.__initReader(); }
+  }, 100);
+  setTimeout(function(){ clearInterval(check); window.__initReader(); }, 3000);
 })();
 `;
 

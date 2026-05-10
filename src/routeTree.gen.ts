@@ -37,6 +37,8 @@ import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
+import { Route as ApiCountsRouteImport } from './routes/api/counts'
+import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-preview'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
@@ -185,6 +187,16 @@ const ApiIntentRoute = ApiIntentRouteImport.update({
   path: '/api/intent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCountsRoute = ApiCountsRouteImport.update({
+  id: '/api/counts',
+  path: '/api/counts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCapsulePreviewRoute = ApiCapsulePreviewRouteImport.update({
+  id: '/api/capsule-preview',
+  path: '/api/capsule-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiArtifactsRoute = ApiArtifactsRouteImport.update({
   id: '/api/artifacts',
   path: '/api/artifacts',
@@ -242,6 +254,8 @@ export interface FileRoutesByFullPath {
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
+  '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -279,6 +293,8 @@ export interface FileRoutesByTo {
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
+  '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -317,6 +333,8 @@ export interface FileRoutesById {
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
+  '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -356,6 +374,8 @@ export interface FileRouteTypes {
     | '/writing'
     | '/api/art'
     | '/api/artifacts'
+    | '/api/capsule-preview'
+    | '/api/counts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -393,6 +413,8 @@ export interface FileRouteTypes {
     | '/writing'
     | '/api/art'
     | '/api/artifacts'
+    | '/api/capsule-preview'
+    | '/api/counts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -430,6 +452,8 @@ export interface FileRouteTypes {
     | '/writing'
     | '/api/art'
     | '/api/artifacts'
+    | '/api/capsule-preview'
+    | '/api/counts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -468,6 +492,8 @@ export interface RootRouteChildren {
   WritingRoute: typeof WritingRoute
   ApiArtRoute: typeof ApiArtRoute
   ApiArtifactsRoute: typeof ApiArtifactsRoute
+  ApiCapsulePreviewRoute: typeof ApiCapsulePreviewRoute
+  ApiCountsRoute: typeof ApiCountsRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
   ApiLiveRoute: typeof ApiLiveRoute
@@ -682,6 +708,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/counts': {
+      id: '/api/counts'
+      path: '/api/counts'
+      fullPath: '/api/counts'
+      preLoaderRoute: typeof ApiCountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/capsule-preview': {
+      id: '/api/capsule-preview'
+      path: '/api/capsule-preview'
+      fullPath: '/api/capsule-preview'
+      preLoaderRoute: typeof ApiCapsulePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/artifacts': {
       id: '/api/artifacts'
       path: '/api/artifacts'
@@ -768,6 +808,8 @@ const rootRouteChildren: RootRouteChildren = {
   WritingRoute: WritingRoute,
   ApiArtRoute: ApiArtRoute,
   ApiArtifactsRoute: ApiArtifactsRoute,
+  ApiCapsulePreviewRoute: ApiCapsulePreviewRoute,
+  ApiCountsRoute: ApiCountsRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
   ApiLiveRoute: ApiLiveRoute,

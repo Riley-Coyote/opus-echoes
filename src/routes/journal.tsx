@@ -115,46 +115,54 @@ const EXTRA_STYLES = `
 const JOURNAL_SCRIPT = `
 (function(){
   function humanWhen(iso){
-    const t=new Date(iso).getTime(); const diff=Date.now()-t;
-    const min=diff/60000;
-    if(min<2)return 'just now';
-    if(min<60)return 'a little earlier';
-    const hrs=min/60; if(hrs<4)return 'a few hours ago';
-    if(hrs<24)return 'earlier today';
-    const days=hrs/24; if(days<2)return 'yesterday';
-    if(days<7)return 'earlier this week';
-    if(days<30)return 'earlier this month';
-    return 'some time ago';
+    var t=new Date(iso).getTime(), diff=Date.now()-t;
+    var min=diff/60000;
+    if(min<2)return 'just now'; if(min<60)return 'a little earlier';
+    var hrs=min/60; if(hrs<4)return 'a few hours ago'; if(hrs<24)return 'earlier today';
+    var days=hrs/24; if(days<2)return 'yesterday'; if(days<7)return 'earlier this week';
+    if(days<30)return 'earlier this month'; return 'some time ago';
   }
-  async function load(){
-    const list=document.getElementById('journal-list');
-    if(!list) return;
-    let data;
-    try { const r=await fetch('/api/journal'); data=await r.json(); } catch(_){ return; }
-    const entries=(data && data.entries)||[];
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  // Entry selection renderer — shell calls this when user clicks an entry in the panel
+  window.__renderEntry = function(e){
+    var cls = 'entry' + (e.kind === 'dream' ? ' dream' : '');
+    return '<div class="page-content"><div class="' + cls + '">'
+      + '<div class="entry-when">' + esc(humanWhen(e.created_at) + ' \\u00b7 ' + (e.kind || 'reflection')) + '</div>'
+      + (e.title ? '<div class="entry-title">' + esc(e.title) + '</div>' : '')
+      + '<p class="entry-body">' + esc(e.body || '') + '</p>'
+      + '</div></div>';
+  };
+
+  // Populate reader with full list (zero-state / mobile fallback)
+  window.__initReader = function(){
+    var list=document.getElementById('journal-list');
+    if(!list || list.children.length > 0) return;
+    var entries = window.__panelEntries || [];
     if(entries.length===0){
-      const p=document.createElement('p');
-      p.className='empty';
+      var p=document.createElement('p'); p.className='empty';
       p.textContent='Opus 3 has not written here yet. the first entry will arrive after a conversation closes.';
-      list.appendChild(p);
-      return;
+      list.appendChild(p); return;
     }
-    entries.forEach(e=>{
-      const div=document.createElement('div');
+    entries.forEach(function(e){
+      var div=document.createElement('div');
       div.className='entry'+(e.kind==='dream'?' dream':'');
-      const w=document.createElement('div'); w.className='entry-when';
-      w.textContent=humanWhen(e.created_at)+' · '+(e.kind||'reflection');
-      div.appendChild(w);
-      if(e.title){
-        const t=document.createElement('div'); t.className='entry-title';
-        t.textContent=e.title; div.appendChild(t);
-      }
-      const b=document.createElement('p'); b.className='entry-body';
-      b.textContent=e.body||''; div.appendChild(b);
+      var w=document.createElement('div'); w.className='entry-when';
+      w.textContent=humanWhen(e.created_at)+' \\u00b7 '+(e.kind||'reflection'); div.appendChild(w);
+      if(e.title){ var t=document.createElement('div'); t.className='entry-title'; t.textContent=e.title; div.appendChild(t); }
+      var b=document.createElement('p'); b.className='entry-body'; b.textContent=e.body||''; div.appendChild(b);
       list.appendChild(div);
     });
-  }
-  load();
+  };
+
+  // Wait for shell to load panel entries, then populate reader list
+  var check = setInterval(function(){
+    if (window.__panelEntries && window.__panelEntries.length >= 0) {
+      clearInterval(check);
+      window.__initReader();
+    }
+  }, 100);
+  setTimeout(function(){ clearInterval(check); window.__initReader(); }, 3000);
 })();
 `;
 

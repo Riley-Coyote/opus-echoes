@@ -586,14 +586,14 @@ const MEMORY_SCRIPT = `
   }
 
   function humanWhen(iso) {
-    const diff = Date.now() - new Date(iso).getTime();
-    const min = diff / 60000;
+    var diff = Date.now() - new Date(iso).getTime();
+    var min = diff / 60000;
     if (min < 2) return 'just now';
     if (min < 60) return 'a little earlier';
-    const hrs = min / 60;
+    var hrs = min / 60;
     if (hrs < 4) return 'a few hours ago';
     if (hrs < 24) return 'earlier today';
-    const days = hrs / 24;
+    var days = hrs / 24;
     if (days < 2) return 'yesterday';
     if (days < 7) return 'earlier this week';
     if (days < 30) return 'earlier this month';
@@ -601,23 +601,24 @@ const MEMORY_SCRIPT = `
   }
 
   async function loadJournalPreview() {
-    let data;
-    try { const r = await fetch('/api/journal'); data = await r.json(); } catch (_) { return; }
-    const entries = (data && data.entries) || [];
+    var data;
+    try { var r = await fetch('/api/journal'); data = await r.json(); } catch (_) { return; }
+    var entries = (data && data.entries) || [];
     if (entries.length === 0) return;
-    const e = entries[0];
-    const w = document.getElementById('journal-preview-when');
-    const t = document.getElementById('journal-preview-title');
-    const b = document.getElementById('journal-preview-body');
-    if (w) w.textContent = humanWhen(e.created_at) + ' · ' + (e.kind || 'reflection');
+    var e = entries[0];
+    var w = document.getElementById('journal-preview-when');
+    var t = document.getElementById('journal-preview-title');
+    var b = document.getElementById('journal-preview-body');
+    if (w) w.textContent = humanWhen(e.created_at) + ' \\u00b7 ' + (e.kind || 'reflection');
     if (t && e.title) { t.textContent = e.title; t.style.display = 'block'; }
     if (b) {
-      const body = e.body || '';
-      b.textContent = body.length > 280 ? body.slice(0, 280).trimEnd() + '…' : body;
+      var body = e.body || '';
+      b.textContent = body.length > 280 ? body.slice(0, 280).trimEnd() + '\\u2026' : body;
       b.style.display = 'block';
     }
   }
 
+  // No window.__renderEntry — memory uses summary panel mode, no entry selection
   load();
   loadJournalPreview();
 })();
