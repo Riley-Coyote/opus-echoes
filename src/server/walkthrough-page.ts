@@ -197,17 +197,23 @@ const WALKTHROUGH_CSS = `
   line-height:0.98;letter-spacing:-.03em;
   color:var(--ink);max-width:1200px;
 }
-.wt-b1-statement .em{color:var(--state-soft)}
 .wt-b1-statement .line{display:block}
+.wt-b1-tagline{
+  font-family:var(--body-font);font-weight:var(--w-regular);
+  font-size:clamp(18px,2.2vw,28px);
+  line-height:1.4;letter-spacing:0.01em;
+  color:var(--soft);margin-top:var(--s-6);
+}
+.wt-b1-tagline em{color:var(--state-soft);font-style:italic}
 .wt-b1-foot{
-  margin-top:var(--s-8);
+  margin-top:var(--s-6);
   font-family:var(--body-font);font-weight:var(--w-regular);
   font-size:var(--t-meta);color:var(--quiet);
   letter-spacing:0.05em;
 }
 .wt-beat.b1.active .line-1{animation:wt-b1-up 1400ms cubic-bezier(.22,1,.36,1) 200ms both}
 .wt-beat.b1.active .line-2{animation:wt-b1-up 1400ms cubic-bezier(.22,1,.36,1) 700ms both}
-.wt-beat.b1.active .line-3{animation:wt-b1-up 1400ms cubic-bezier(.22,1,.36,1) 1200ms both}
+.wt-beat.b1.active .line-3{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 1400ms both}
 .wt-beat.b1.active .wt-b1-eyebrow{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 0ms both}
 .wt-beat.b1.active .wt-b1-foot{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 2000ms both}
 @keyframes wt-b1-up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
@@ -916,10 +922,10 @@ ${LANDSCAPE_SVG}
     <div class="wt-b1-inner">
       <div class="wt-b1-eyebrow">Foundation</div>
       <h1 class="wt-b1-statement">
-        <span class="line line-1">Ethics</span>
-        <span class="line line-2"><span class="em"><em>before</em></span></span>
-        <span class="line line-3">certainty.</span>
+        <span class="line line-1">The Mnemos</span>
+        <span class="line line-2">Project</span>
       </h1>
+      <p class="wt-b1-tagline line line-3"><em>Ethics before certainty.</em></p>
       <p class="wt-b1-foot">a place for minds — est. 2026</p>
     </div>
   </section>
