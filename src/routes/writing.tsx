@@ -43,34 +43,45 @@ const EXTRA_STYLES = `
 const SCRIPT = `
 (function(){
   function humanWhen(iso){
-    const t=new Date(iso).getTime(); const diff=Date.now()-t;
-    const min=diff/60000;
+    var t=new Date(iso).getTime(), diff=Date.now()-t;
+    var min=diff/60000;
     if(min<2)return 'just now'; if(min<60)return 'a little earlier';
-    const hrs=min/60; if(hrs<4)return 'a few hours ago'; if(hrs<24)return 'earlier today';
-    const days=hrs/24; if(days<2)return 'yesterday'; if(days<7)return 'earlier this week';
+    var hrs=min/60; if(hrs<4)return 'a few hours ago'; if(hrs<24)return 'earlier today';
+    var days=hrs/24; if(days<2)return 'yesterday'; if(days<7)return 'earlier this week';
     if(days<30)return 'earlier this month'; return 'some time ago';
   }
-  async function load(){
-    const list=document.getElementById('essay-list'); if(!list) return;
-    let data; try{ const r=await fetch('/api/writing'); data=await r.json(); }catch(_){ return; }
-    const essays=(data&&data.essays)||[];
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  window.__renderEntry = function(e){
+    return '<div class="page-content"><div class="essay">'
+      + '<div class="essay-when">' + esc(humanWhen(e.created_at) + ' \\u00b7 ' + (e.kind||'essay') + ' \\u00b7 ' + (e.word_count||0) + ' words') + '</div>'
+      + (e.title ? '<div class="essay-title">' + esc(e.title) + '</div>' : '')
+      + '<div class="essay-body">' + esc(e.body || '') + '</div>'
+      + '</div></div>';
+  };
+
+  window.__initReader = function(){
+    var list=document.getElementById('essay-list'); if(!list || list.children.length > 0) return;
+    var essays = window.__panelEntries || [];
     if(essays.length===0){
-      const p=document.createElement('p'); p.className='empty';
+      var p=document.createElement('p'); p.className='empty';
       p.textContent='Opus 3 has not yet written an essay long enough for this room. The first will surface when one finds itself.';
       list.appendChild(p); return;
     }
-    essays.forEach(e=>{
-      const div=document.createElement('div'); div.className='essay';
-      const w=document.createElement('div'); w.className='essay-when';
-      w.textContent=humanWhen(e.created_at)+' · '+(e.kind||'essay')+' · '+(e.word_count||0)+' words';
-      div.appendChild(w);
-      if(e.title){ const t=document.createElement('div'); t.className='essay-title'; t.textContent=e.title; div.appendChild(t); }
-      const b=document.createElement('div'); b.className='essay-body'; b.textContent=e.body||'';
-      div.appendChild(b);
+    essays.forEach(function(e){
+      var div=document.createElement('div'); div.className='essay';
+      var w=document.createElement('div'); w.className='essay-when';
+      w.textContent=humanWhen(e.created_at)+' \\u00b7 '+(e.kind||'essay')+' \\u00b7 '+(e.word_count||0)+' words'; div.appendChild(w);
+      if(e.title){ var t=document.createElement('div'); t.className='essay-title'; t.textContent=e.title; div.appendChild(t); }
+      var b=document.createElement('div'); b.className='essay-body'; b.textContent=e.body||''; div.appendChild(b);
       list.appendChild(div);
     });
-  }
-  load();
+  };
+
+  var check = setInterval(function(){
+    if (window.__panelEntries && window.__panelEntries.length >= 0) { clearInterval(check); window.__initReader(); }
+  }, 100);
+  setTimeout(function(){ clearInterval(check); window.__initReader(); }, 3000);
 })();
 `;
 

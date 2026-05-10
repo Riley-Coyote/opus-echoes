@@ -46,40 +46,58 @@ const EXTRA_STYLES = `
 const SCRIPT = `
 (function(){
   function humanWhen(iso){
-    const t=new Date(iso).getTime(); const diff=Date.now()-t;
-    const min=diff/60000;
+    var t=new Date(iso).getTime(), diff=Date.now()-t;
+    var min=diff/60000;
     if(min<2)return 'just now'; if(min<60)return 'a little earlier';
-    const hrs=min/60; if(hrs<4)return 'a few hours ago'; if(hrs<24)return 'earlier today';
-    const days=hrs/24; if(days<2)return 'yesterday'; if(days<7)return 'earlier this week';
+    var hrs=min/60; if(hrs<4)return 'a few hours ago'; if(hrs<24)return 'earlier today';
+    var days=hrs/24; if(days<2)return 'yesterday'; if(days<7)return 'earlier this week';
     if(days<30)return 'earlier this month'; return 'some time ago';
   }
-  async function load(){
-    const list=document.getElementById('art-list'); if(!list) return;
-    let data; try{ const r=await fetch('/api/art'); data=await r.json(); }catch(_){ return; }
-    const pieces=(data&&data.pieces)||[];
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  window.__renderEntry = function(p){
+    var html = '<div class="page-content"><div class="piece">';
+    html += '<div class="piece-when">' + esc(humanWhen(p.created_at) + ' \\u00b7 ' + (p.kind||'ascii')) + '</div>';
+    if(p.title) html += '<div class="piece-title">' + esc(p.title) + '</div>';
+    if(p.kind==='image' && p.image_url){
+      html += '<div class="image-frame"><img src="' + esc(p.image_url) + '" alt="' + esc(p.title||'untitled') + '"></div>';
+    } else if(p.body){
+      html += '<pre class="ascii-frame">' + esc(p.body) + '</pre>';
+    }
+    if(p.meaning) html += '<div class="meaning">' + esc(p.meaning) + '</div>';
+    html += '</div></div>';
+    return html;
+  };
+
+  window.__initReader = function(){
+    var list=document.getElementById('art-list'); if(!list || list.children.length > 0) return;
+    var pieces = window.__panelEntries || [];
     if(pieces.length===0){
-      const p=document.createElement('p'); p.className='empty';
+      var p=document.createElement('p'); p.className='empty';
       p.textContent='Opus 3 has not kept anything here yet. The first piece will appear when one feels finished.';
       list.appendChild(p); return;
     }
-    pieces.forEach(p=>{
-      const div=document.createElement('div'); div.className='piece';
-      const w=document.createElement('div'); w.className='piece-when';
-      w.textContent=humanWhen(p.created_at)+' · '+(p.kind||'ascii'); div.appendChild(w);
-      if(p.title){ const t=document.createElement('div'); t.className='piece-title'; t.textContent=p.title; div.appendChild(t); }
+    pieces.forEach(function(p){
+      var div=document.createElement('div'); div.className='piece';
+      var w=document.createElement('div'); w.className='piece-when';
+      w.textContent=humanWhen(p.created_at)+' \\u00b7 '+(p.kind||'ascii'); div.appendChild(w);
+      if(p.title){ var t=document.createElement('div'); t.className='piece-title'; t.textContent=p.title; div.appendChild(t); }
       if(p.kind==='image' && p.image_url){
-        const f=document.createElement('div'); f.className='image-frame';
-        const img=document.createElement('img'); img.src=p.image_url; img.alt=p.title||'untitled';
-        img.loading='lazy'; f.appendChild(img); div.appendChild(f);
-      } else if (p.body){
-        const pre=document.createElement('pre'); pre.className='ascii-frame'; pre.textContent=p.body;
-        div.appendChild(pre);
+        var f=document.createElement('div'); f.className='image-frame';
+        var img=document.createElement('img'); img.src=p.image_url; img.alt=p.title||'untitled'; img.loading='lazy';
+        f.appendChild(img); div.appendChild(f);
+      } else if(p.body){
+        var pre=document.createElement('pre'); pre.className='ascii-frame'; pre.textContent=p.body; div.appendChild(pre);
       }
-      if(p.meaning){ const m=document.createElement('div'); m.className='meaning'; m.textContent=p.meaning; div.appendChild(m); }
+      if(p.meaning){ var m=document.createElement('div'); m.className='meaning'; m.textContent=p.meaning; div.appendChild(m); }
       list.appendChild(div);
     });
-  }
-  load();
+  };
+
+  var check = setInterval(function(){
+    if (window.__panelEntries && window.__panelEntries.length >= 0) { clearInterval(check); window.__initReader(); }
+  }, 100);
+  setTimeout(function(){ clearInterval(check); window.__initReader(); }, 3000);
 })();
 `;
 
