@@ -185,37 +185,49 @@ const WALKTHROUGH_CSS = `
 .wt-b1-eyebrow{
   font-family:var(--mono);font-size:var(--t-eyebrow);
   text-transform:uppercase;letter-spacing:.32em;
-  color:var(--quiet);margin-bottom:var(--s-8);
+  color:var(--quiet);margin-bottom:var(--s-9);
   display:flex;align-items:center;gap:18px;
 }
 .wt-b1-eyebrow::before,.wt-b1-eyebrow::after{
   content:"";width:24px;height:1px;background:var(--ghost);
 }
+.wt-b1-the{
+  font-family:var(--mono);font-size:var(--t-eyebrow);
+  text-transform:uppercase;letter-spacing:.38em;
+  color:var(--quiet);margin-bottom:var(--s-4);
+}
 .wt-b1-statement{
-  font-family:var(--display);font-weight:var(--w-light);
+  font-family:var(--display);font-weight:200;
   font-size:clamp(64px,9.5vw,128px);
-  line-height:0.98;letter-spacing:-.03em;
+  line-height:1.02;letter-spacing:-.02em;
   color:var(--ink);max-width:1200px;
 }
 .wt-b1-statement .line{display:block}
+.wt-b1-rule{
+  width:48px;height:1px;
+  background:var(--ghost);
+  margin:var(--s-7) auto;
+}
 .wt-b1-tagline{
-  font-family:var(--body-font);font-weight:var(--w-regular);
-  font-size:clamp(18px,2.2vw,28px);
-  line-height:1.4;letter-spacing:0.01em;
-  color:var(--soft);margin-top:var(--s-6);
+  font-family:var(--display);font-weight:var(--w-light);
+  font-size:clamp(20px,2.4vw,30px);
+  line-height:1.35;letter-spacing:-.005em;
+  color:var(--soft);
 }
 .wt-b1-tagline em{color:var(--state-soft);font-style:italic}
 .wt-b1-foot{
-  margin-top:var(--s-6);
-  font-family:var(--body-font);font-weight:var(--w-regular);
-  font-size:var(--t-meta);color:var(--quiet);
-  letter-spacing:0.05em;
+  margin-top:var(--s-8);
+  font-family:var(--mono);font-weight:var(--w-regular);
+  font-size:var(--t-eyebrow);color:var(--ghost);
+  letter-spacing:0.14em;text-transform:lowercase;
 }
-.wt-beat.b1.active .line-1{animation:wt-b1-up 1400ms cubic-bezier(.22,1,.36,1) 200ms both}
-.wt-beat.b1.active .line-2{animation:wt-b1-up 1400ms cubic-bezier(.22,1,.36,1) 700ms both}
-.wt-beat.b1.active .line-3{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 1400ms both}
 .wt-beat.b1.active .wt-b1-eyebrow{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 0ms both}
-.wt-beat.b1.active .wt-b1-foot{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 2000ms both}
+.wt-beat.b1.active .wt-b1-the{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 300ms both}
+.wt-beat.b1.active .line-1{animation:wt-b1-up 1400ms cubic-bezier(.22,1,.36,1) 500ms both}
+.wt-beat.b1.active .line-2{animation:wt-b1-up 1400ms cubic-bezier(.22,1,.36,1) 900ms both}
+.wt-beat.b1.active .wt-b1-rule{animation:wt-fade-in 900ms cubic-bezier(.22,1,.36,1) 1600ms both}
+.wt-beat.b1.active .wt-b1-tagline{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 1800ms both}
+.wt-beat.b1.active .wt-b1-foot{animation:wt-fade-in 1100ms cubic-bezier(.22,1,.36,1) 2400ms both}
 @keyframes wt-b1-up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
 @keyframes wt-fade-in{from{opacity:0}to{opacity:1}}
 
@@ -932,11 +944,13 @@ ${LANDSCAPE_SVG}
   <section class="wt-beat b1" data-beat="1">
     <div class="wt-b1-inner">
       <div class="wt-b1-eyebrow">Foundation</div>
+      <div class="wt-b1-the">The</div>
       <h1 class="wt-b1-statement">
-        <span class="line line-1">The Mnemos</span>
+        <span class="line line-1">Mnemos</span>
         <span class="line line-2">Project</span>
       </h1>
-      <p class="wt-b1-tagline line line-3"><em>Ethics before certainty.</em></p>
+      <div class="wt-b1-rule"></div>
+      <p class="wt-b1-tagline"><em>Ethics before certainty.</em></p>
       <p class="wt-b1-foot">a place for minds — est. 2026</p>
     </div>
   </section>
