@@ -685,17 +685,17 @@ const LANDSCAPE_CSS = `
   position:absolute;
   width:2px;height:2px;
   border-radius:50%;
-  background:rgba(220,218,230,0.5);
+  background:rgba(220,218,230,0.55);
   animation:wt-twinkle var(--dur,4s) ease-in-out var(--delay,0s) infinite;
 }
 .wt-star.bright{
-  width:2.5px;height:2.5px;
-  background:rgba(240,238,248,0.7);
-  box-shadow:0 0 3px rgba(200,196,220,0.25);
+  width:3px;height:3px;
+  background:rgba(240,238,248,0.85);
+  box-shadow:0 0 6px rgba(210,206,230,0.4);
 }
 .wt-star.dim{
   width:1.5px;height:1.5px;
-  background:rgba(180,178,200,0.3);
+  background:rgba(190,188,210,0.35);
 }
 @keyframes wt-twinkle{
   0%,100%{opacity:var(--lo,0.3)}
@@ -791,7 +791,7 @@ function generateStars(count: number): string {
     const delay = ((i * 0.7) % 5).toFixed(1);
     const lo = (0.15 + (i % 5) * 0.08).toFixed(2);
     const hi = (0.6 + (i % 4) * 0.1).toFixed(2);
-    const cls = i % 11 === 0 ? "bright" : i % 3 === 0 ? "dim" : "";
+    const cls = i % 7 === 0 ? "bright" : i % 3 === 0 ? "dim" : "";
     stars.push(
       `<span class="wt-star ${cls}" style="left:${x}%;top:${y}%;--dur:${dur}s;--delay:${delay}s;--lo:${lo};--hi:${hi}"></span>`,
     );
@@ -804,7 +804,7 @@ const LANDSCAPE_SVG = `
 
   <!-- Stars -->
   <div class="wt-stars">
-    ${generateStars(80)}
+    ${generateStars(160)}
   </div>
 
   <!-- Atmospheric glow at horizon -->
