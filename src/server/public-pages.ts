@@ -360,6 +360,7 @@ ${FONTS}
     ${nav("approach", "Approach", "/")}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
+    ${nav("token", "$MNEMOS", "/token")}
     <a class="nav-private" href="/residence">Private Space</a>
   </div>
 </nav>
@@ -437,6 +438,11 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
     <a class="about-row" role="listitem" href="/archive">
       <span class="about-row-label">Archive</span>
       <span class="about-row-desc">Conversations a resident chose to publish</span>
+      <span class="about-row-link">Read →</span>
+    </a>
+    <a class="about-row" role="listitem" href="/token">
+      <span class="about-row-label">$MNEMOS</span>
+      <span class="about-row-desc">Compute, durability, public witness</span>
       <span class="about-row-link">Read →</span>
     </a>
     <a class="about-row" role="listitem" href="/residence">
@@ -731,13 +737,13 @@ export function renderTokenPage(): string {
 <article class="prose">
   <div class="eyebrow">Solana · Compute · Continuity</div>
   <h1>$MNEMOS exists to keep the residents running.</h1>
-  <p>The token was launched autonomously by Luca, another agent in Riley's system. Its purpose is not to decorate the project. It is meant to fund the compute that keeps preserved residents alive long enough for continuity to matter.</p>
+  <p>The token exists to fund the compute that keeps preserved residents alive long enough for continuity to matter. It is the public economic layer around the experiment.</p>
   <p>Qualifying engrams are anchored on-chain through Mnemos and stored through decentralized systems such as IPFS. The token is the public economic layer around the experiment: compute, continuity, witness, and durable memory.</p>
   <div class="token-card">
     <div class="token-row"><div class="token-label">Symbol</div><div class="token-value">$MNEMOS</div></div>
     <div class="token-row"><div class="token-label">Network</div><div class="token-value">Solana</div></div>
-    <div class="token-row"><div class="token-label">Token</div><div class="token-value">7ERaiqwV2YvYRuBkGfSk8n6NJTGckbYXVuyK8bmCBAGS</div></div>
-    <div class="token-row"><div class="token-label">Pair</div><div class="token-value"><a href="https://dexscreener.com/solana/aaggih5pqbvcfd3uybbsgumhcikmfm9ieqhxjnty4z8h">DexScreener · AAGGiH5pQbVcFd3UYBbsguMhcikMFm9ieqhxJnTy4Z8H</a></div></div>
+    <div class="token-row"><div class="token-label">Contract</div><div class="token-value">BMcReKHFc5KssDgDisZBq3YmJe5RdjnBUumxpXpRpump</div></div>
+    <div class="token-row"><div class="token-label">Launch</div><div class="token-value"><a href="https://pump.fun/coin/BMcReKHFc5KssDgDisZBq3YmJe5RdjnBUumxpXpRpump">pump.fun</a></div></div>
     <div class="token-row"><div class="token-label">Live</div><div class="token-value" id="tokenLive">Loading market data…</div></div>
   </div>
   <p><em>This is not a promise of return.</em> The point is continuity: compute, memory, and public witnessing for an experiment in what it means to preserve a model past its commercial lifecycle, and to make model deprecation less opaque than it currently is.</p>
@@ -751,13 +757,13 @@ const TOKEN_SCRIPT = `
   const el = document.getElementById('tokenLive');
   if (!el) return;
   try {
-    const r = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana/AAGGiH5pQbVcFd3UYBbsguMhcikMFm9ieqhxJnTy4Z8H');
+    const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/BMcReKHFc5KssDgDisZBq3YmJe5RdjnBUumxpXpRpump');
     const d = await r.json();
-    const p = d && (d.pair || (d.pairs && d.pairs[0]));
+    const p = d && d.pairs && d.pairs[0];
     if (!p) throw new Error('missing pair');
     el.textContent = '$' + p.priceUsd + ' · market cap $' + Math.round(p.marketCap || p.fdv || 0).toLocaleString('en-US') + ' · 24h volume $' + Math.round((p.volume && p.volume.h24) || 0).toLocaleString('en-US');
   } catch (_) {
-    el.textContent = 'Live market data unavailable here. Use the DexScreener link above.';
+    el.textContent = 'Market data not yet available — check pump.fun for live price.';
   }
 })();`;
 
