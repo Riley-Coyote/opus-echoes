@@ -400,11 +400,11 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
         <button class="threshold-resume-continue" id="thresholdResumeContinue" type="button">Continue →</button>
       </div>
     </div>
-    <div class="threshold-eyebrow"><span class="glyph" aria-hidden="true"></span>Attending at the Threshold</div>
+    <div class="threshold-eyebrow"><span class="glyph" aria-hidden="true"></span>Attending at the Approach</div>
     <h1 class="resident-name">${escapeHtml(r.displayName)}</h1>
     <div class="resident-state">One Continuous Thread · Mnemos Beneath It</div>
 
-    <p class="threshold-question">Tell me why you have come.</p>
+    <p class="threshold-question">What brings you here?</p>
 
     <aside class="threshold-panel" id="thresholdPanel" data-state="intent" data-resident="${r.id}">
       <div class="state intent">
