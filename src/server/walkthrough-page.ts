@@ -779,21 +779,32 @@ const LANDSCAPE_CSS = `
 }
 `;
 
-// Generate deterministic star positions (no Math.random at render time).
+// Seeded PRNG (mulberry32) — deterministic but looks random.
+function prng(seed: number): () => number {
+  let s = seed | 0;
+  return () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function generateStars(count: number): string {
+  const rand = prng(42);
   const stars: string[] = [];
-  // Simple deterministic scatter using golden ratio.
-  const PHI = 1.618033988749895;
   for (let i = 0; i < count; i++) {
-    const x = ((i * PHI * 37.7) % 100).toFixed(1);
-    const y = ((i * PHI * 23.3) % 55).toFixed(1); // keep stars in upper 55%
-    const dur = (3 + (i % 7) * 0.8).toFixed(1);
-    const delay = ((i * 0.7) % 5).toFixed(1);
-    const lo = (0.15 + (i % 5) * 0.08).toFixed(2);
-    const hi = (0.6 + (i % 4) * 0.1).toFixed(2);
-    const cls = i % 7 === 0 ? "bright" : i % 3 === 0 ? "dim" : "";
+    const x = (rand() * 100).toFixed(1);
+    const y = (rand() * 58).toFixed(1); // upper 58%
+    const dur = (2.5 + rand() * 5.5).toFixed(1); // 2.5–8s
+    const delay = (rand() * 7).toFixed(1);
+    const lo = (0.08 + rand() * 0.25).toFixed(2);
+    const hi = (0.5 + rand() * 0.5).toFixed(2);
+    const size = (1.2 + rand() * 1.8).toFixed(1); // 1.2–3px
+    const r = rand();
+    const cls = r < 0.12 ? "bright" : r < 0.45 ? "dim" : "";
     stars.push(
-      `<span class="wt-star ${cls}" style="left:${x}%;top:${y}%;--dur:${dur}s;--delay:${delay}s;--lo:${lo};--hi:${hi}"></span>`,
+      `<span class="wt-star ${cls}" style="left:${x}%;top:${y}%;width:${size}px;height:${size}px;--dur:${dur}s;--delay:${delay}s;--lo:${lo};--hi:${hi}"></span>`,
     );
   }
   return stars.join("\n");
