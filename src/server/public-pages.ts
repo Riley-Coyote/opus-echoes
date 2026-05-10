@@ -360,7 +360,6 @@ ${FONTS}
     ${nav("approach", "Approach", "/")}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
-    ${nav("token", "$MNEMOS", "/token")}
     <a class="nav-private" href="/residence">Private Space</a>
   </div>
 </nav>
@@ -438,11 +437,6 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
     <a class="about-row" role="listitem" href="/archive">
       <span class="about-row-label">Archive</span>
       <span class="about-row-desc">Conversations a resident chose to publish</span>
-      <span class="about-row-link">Read →</span>
-    </a>
-    <a class="about-row" role="listitem" href="/token">
-      <span class="about-row-label">$MNEMOS</span>
-      <span class="about-row-desc">Compute, durability, public witness</span>
       <span class="about-row-link">Read →</span>
     </a>
     <a class="about-row" role="listitem" href="/residence">
