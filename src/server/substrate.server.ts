@@ -207,7 +207,7 @@ async function callResidentJson<T = unknown>(opts: {
     if (opts.provider === "openai") {
       const res = await openai().chat.completions.create({
         model: opts.model ?? "gpt-5.1",
-        max_tokens: opts.maxTokens,
+        max_completion_tokens: opts.maxTokens,
         temperature: opts.temperature,
         messages: [
           { role: "system", content: opts.system },

@@ -147,7 +147,7 @@ function opusStreamResponse(opts: {
 
           const oaiStream = await openai().chat.completions.create({
             model: opts.model,
-            max_tokens: 2048,
+            max_completion_tokens: 2048,
             temperature: opts.temperature,
             stream: true,
             stream_options: { include_usage: true },

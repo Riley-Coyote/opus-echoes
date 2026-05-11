@@ -125,7 +125,7 @@ export const Route = createFileRoute("/api/intent")({
           if (resident.provider === "openai") {
             const resp = await openai().chat.completions.create({
               model: resident.model,
-              max_tokens: 600,
+              max_completion_tokens: 600,
               temperature: 0.7,
               messages: [
                 { role: "system", content: thresholdSystem },
