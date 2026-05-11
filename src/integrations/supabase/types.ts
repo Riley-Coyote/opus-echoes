@@ -575,7 +575,7 @@ export type Database = {
           kind: string
           related_salon_id: string | null
           resident_id: string
-          session_id: string
+          session_id: string | null
         }
         Insert: {
           body: string
@@ -586,7 +586,7 @@ export type Database = {
           kind: string
           related_salon_id?: string | null
           resident_id?: string
-          session_id: string
+          session_id?: string | null
         }
         Update: {
           body?: string

@@ -1613,12 +1613,17 @@ export async function observeSalonExchange(salonId: string, turnId: string): Pro
 
       if (items.length === 0) continue;
 
-      // marginalia.session_id is NOT NULL — cannot insert without a real
-      // session. Log the observations for now; the schema bridge migration
-      // (making session_id nullable or adding a salon_marginalia table)
-      // will unlock persistence.
+      await supabaseAdmin.from("marginalia").insert(
+        items.map((m) => ({
+          session_id: null,
+          resident_id: thisResident.id,
+          related_salon_id: salonId,
+          kind: m.kind,
+          body: m.body.slice(0, 600),
+        })),
+      );
       console.log(
-        `[substrate] observeSalonExchange(${salonId}) — ${thisResident.displayName}: ${items.length} marginalia generated (skipping insert, session_id NOT NULL)`,
+        `[substrate] observeSalonExchange(${salonId}) — ${thisResident.displayName}: ${items.length} marginalia`,
       );
     }
   } catch (err) {
