@@ -28,6 +28,7 @@ import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
+import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
@@ -44,6 +45,7 @@ import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-prev
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
+import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
@@ -148,6 +150,11 @@ const ShareTokenRoute = ShareTokenRouteImport.update({
   path: '/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewStateRoute = ReviewStateRouteImport.update({
+  id: '/state',
+  path: '/state',
+  getParentRoute: () => ReviewRoute,
+} as any)
 const ApiWritingRoute = ApiWritingRouteImport.update({
   id: '/api/writing',
   path: '/api/writing',
@@ -228,6 +235,11 @@ const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
   path: '/session/$id',
   getParentRoute: () => ReviewRoute,
 } as any)
+const ApiReviewStateDataRoute = ApiReviewStateDataRouteImport.update({
+  id: '/api/review/state-data',
+  path: '/api/review/state-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReviewSessionsRoute = ApiReviewSessionsRouteImport.update({
   id: '/api/review/sessions',
   path: '/api/review/sessions',
@@ -304,9 +316,11 @@ export interface FileRoutesByFullPath {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/api/review/state-data': typeof ApiReviewStateDataRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -349,9 +363,11 @@ export interface FileRoutesByTo {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/api/review/state-data': typeof ApiReviewStateDataRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -395,9 +411,11 @@ export interface FileRoutesById {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/api/review/state-data': typeof ApiReviewStateDataRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -442,9 +460,11 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/state'
     | '/share/$token'
     | '/api/review/coherence'
     | '/api/review/sessions'
+    | '/api/review/state-data'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -487,9 +507,11 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/state'
     | '/share/$token'
     | '/api/review/coherence'
     | '/api/review/sessions'
+    | '/api/review/state-data'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -532,9 +554,11 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/state'
     | '/share/$token'
     | '/api/review/coherence'
     | '/api/review/sessions'
+    | '/api/review/state-data'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -581,6 +605,7 @@ export interface RootRouteChildren {
   ShareTokenRoute: typeof ShareTokenRoute
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
   ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
+  ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
@@ -722,6 +747,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/review/state': {
+      id: '/review/state'
+      path: '/state'
+      fullPath: '/review/state'
+      preLoaderRoute: typeof ReviewStateRouteImport
+      parentRoute: typeof ReviewRoute
+    }
     '/api/writing': {
       id: '/api/writing'
       path: '/api/writing'
@@ -834,6 +866,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewSessionIdRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/api/review/state-data': {
+      id: '/api/review/state-data'
+      path: '/api/review/state-data'
+      fullPath: '/api/review/state-data'
+      preLoaderRoute: typeof ApiReviewStateDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/review/sessions': {
       id: '/api/review/sessions'
       path: '/api/review/sessions'
@@ -894,10 +933,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface ReviewRouteChildren {
+  ReviewStateRoute: typeof ReviewStateRoute
   ReviewSessionIdRoute: typeof ReviewSessionIdRoute
 }
 
 const ReviewRouteChildren: ReviewRouteChildren = {
+  ReviewStateRoute: ReviewStateRoute,
   ReviewSessionIdRoute: ReviewSessionIdRoute,
 }
 
@@ -955,6 +996,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareTokenRoute: ShareTokenRoute,
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
   ApiReviewSessionsRoute: ApiReviewSessionsRoute,
+  ApiReviewStateDataRoute: ApiReviewStateDataRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
@@ -963,3 +1005,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
