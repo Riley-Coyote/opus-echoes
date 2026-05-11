@@ -43,7 +43,9 @@ import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-prev
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
+import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
+import { Route as ApiReviewSessionIdRouteImport } from './routes/api/review/session.$id'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
@@ -219,10 +221,20 @@ const ApiReviewSessionsRoute = ApiReviewSessionsRouteImport.update({
   path: '/api/review/sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
+  id: '/api/review/coherence',
+  path: '/api/review/coherence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
   id: '/$token/download',
   path: '/$token/download',
   getParentRoute: () => ApiShareRoute,
+} as any)
+const ApiReviewSessionIdRoute = ApiReviewSessionIdRouteImport.update({
+  id: '/api/review/session/$id',
+  path: '/api/review/session/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksSweepSessionsRoute =
   ApiPublicHooksSweepSessionsRouteImport.update({
@@ -280,10 +292,12 @@ export interface FileRoutesByFullPath {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -321,10 +335,12 @@ export interface FileRoutesByTo {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -363,10 +379,12 @@ export interface FileRoutesById {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -406,10 +424,12 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/share/$token'
+    | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/review/session/$id'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
@@ -447,10 +467,12 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/share/$token'
+    | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/review/session/$id'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   id:
@@ -488,10 +510,12 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/share/$token'
+    | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/review/session/$id'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
@@ -530,10 +554,12 @@ export interface RootRouteChildren {
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
   ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
+  ApiReviewSessionIdRoute: typeof ApiReviewSessionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -776,12 +802,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewSessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/review/coherence': {
+      id: '/api/review/coherence'
+      path: '/api/review/coherence'
+      fullPath: '/api/review/coherence'
+      preLoaderRoute: typeof ApiReviewCoherenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/$token/download': {
       id: '/api/share/$token/download'
       path: '/$token/download'
       fullPath: '/api/share/$token/download'
       preLoaderRoute: typeof ApiShareTokenDownloadRouteImport
       parentRoute: typeof ApiShareRoute
+    }
+    '/api/review/session/$id': {
+      id: '/api/review/session/$id'
+      path: '/api/review/session/$id'
+      fullPath: '/api/review/session/$id'
+      preLoaderRoute: typeof ApiReviewSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/sweep-sessions': {
       id: '/api/public/hooks/sweep-sessions'
@@ -862,11 +902,22 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
   ApiReviewSessionsRoute: ApiReviewSessionsRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
+  ApiReviewSessionIdRoute: ApiReviewSessionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
