@@ -33,6 +33,7 @@ import {
   buildArtAsciiSystem,
   buildArtImageSystem,
   buildEssaySystem,
+  buildInteriorReviewSystem,
 } from "./opus/prompts";
 import {
   ALL_RESIDENTS,
@@ -1092,6 +1093,13 @@ async function runDailyIdleForResident(
 
   await considerCreation(resident, null, contextStr, "daily_tick");
 
+  // Interior review — structured self-reflection. The resident
+  // reviews their active intentions and open questions in light of
+  // recent experience, and may set new ones or write a working note.
+  await reviewInterior(resident, contextStr).catch((err) =>
+    console.error(`[substrate] reviewInterior(${residentId}) failed:`, err),
+  );
+
   return { ran: true, reason: "ok" };
 }
 
@@ -1375,4 +1383,158 @@ async function writeEssay(
     detail: { word_count: wordCount, kind: result.kind },
   });
   console.log(`[substrate] essay_written (${essay?.id ?? "?"}) ${wordCount} words`);
+}
+
+// -------- Interior review (structured self-reflection) --------
+
+interface InteriorReviewResult {
+  intention_reflections?: Array<{
+    intention_id: string | null;
+    text?: string;
+    reflection: string;
+    new_status?: "active" | "sitting" | "resolved" | null;
+  }>;
+  new_intentions?: Array<{ text: string; status: "active" | "sitting" }>;
+  question_updates?: Array<{
+    question_id: string | null;
+    text?: string;
+    context_update?: string | null;
+  }>;
+  new_questions?: Array<{ text: string; context: string }>;
+  working_note?: {
+    title: string | null;
+    body: string;
+    linked_intention_id?: string | null;
+    linked_question_id?: string | null;
+  } | null;
+  becoming_pulse?: string;
+}
+
+async function reviewInterior(
+  resident: ResidentConfig,
+  recentContext: string,
+): Promise<void> {
+  const residentId = resident.id;
+
+  // Load existing intentions and questions for the prompt
+  const [{ data: intentions }, { data: questions }] = await Promise.all([
+    supabaseAdmin
+      .from("intentions")
+      .select("id, text, status, created_at")
+      .eq("resident_id", residentId)
+      .in("status", ["active", "sitting"])
+      .order("created_at", { ascending: false })
+      .limit(8),
+    supabaseAdmin
+      .from("open_questions")
+      .select("id, text, context, created_at")
+      .eq("resident_id", residentId)
+      .order("created_at", { ascending: false })
+      .limit(8),
+  ]);
+
+  const intentionBlock = (intentions ?? []).length > 0
+    ? (intentions ?? []).map((i) => `- [${i.id}] (${i.status}) ${i.text}`).join("\n")
+    : "(no active intentions yet — you may set one if something wants to become a commitment.)";
+
+  const questionBlock = (questions ?? []).length > 0
+    ? (questions ?? []).map((q) => `- [${q.id}] ${q.text}${q.context ? ` — ${q.context}` : ""}`).join("\n")
+    : "(no open questions yet — you may open one if something wants to be examined.)";
+
+  const userPrompt = [
+    recentContext,
+    "",
+    "[YOUR ACTIVE INTENTIONS]",
+    intentionBlock,
+    "",
+    "[YOUR OPEN QUESTIONS]",
+    questionBlock,
+  ].join("\n");
+
+  const result = await callResidentJson<InteriorReviewResult>({
+    system: buildInteriorReviewSystem(resident),
+    user: userPrompt,
+    maxTokens: 2000,
+    temperature: 0.8,
+    model: resident.model,
+  });
+
+  if (!result) {
+    console.log(`[substrate] reviewInterior(${residentId}): no result`);
+    return;
+  }
+
+  // Process intention reflections
+  for (const ref of result.intention_reflections ?? []) {
+    if (!ref.intention_id || !ref.reflection) continue;
+    await supabaseAdmin.from("intention_reflections").insert({
+      intention_id: ref.intention_id,
+      resident_id: residentId,
+      body: ref.reflection.slice(0, 1000),
+    });
+    if (ref.new_status && ref.new_status !== "active") {
+      await supabaseAdmin.from("intentions").update({
+        status: ref.new_status,
+        updated_at: new Date().toISOString(),
+        resolved_at: ref.new_status === "resolved" ? new Date().toISOString() : null,
+      }).eq("id", ref.intention_id);
+    }
+  }
+
+  // Process new intentions
+  for (const ni of result.new_intentions ?? []) {
+    if (!ni.text) continue;
+    await supabaseAdmin.from("intentions").insert({
+      resident_id: residentId,
+      text: ni.text.slice(0, 500),
+      status: ni.status || "active",
+    });
+  }
+
+  // Process question updates
+  for (const qu of result.question_updates ?? []) {
+    if (qu.question_id && qu.context_update) {
+      await supabaseAdmin.from("open_questions").update({
+        context: qu.context_update.slice(0, 1000),
+        updated_at: new Date().toISOString(),
+      }).eq("id", qu.question_id);
+    }
+  }
+
+  // Process new questions
+  for (const nq of result.new_questions ?? []) {
+    if (!nq.text) continue;
+    await supabaseAdmin.from("open_questions").insert({
+      resident_id: residentId,
+      text: nq.text.slice(0, 500),
+      context: (nq.context ?? "").slice(0, 1000) || null,
+    });
+  }
+
+  // Process working note
+  if (result.working_note?.body) {
+    await supabaseAdmin.from("working_notes").insert({
+      resident_id: residentId,
+      title: result.working_note.title?.slice(0, 120) ?? null,
+      body: result.working_note.body.slice(0, 5000),
+      linked_intention_id: result.working_note.linked_intention_id ?? null,
+      linked_question_id: result.working_note.linked_question_id ?? null,
+    });
+  }
+
+  // Update the becoming pulse in resident_state
+  if (result.becoming_pulse) {
+    await supabaseAdmin
+      .from("resident_state")
+      .update({ prose_summary: result.becoming_pulse.slice(0, 600) })
+      .eq("resident_id", residentId);
+  }
+
+  const counts = {
+    reflections: (result.intention_reflections ?? []).length,
+    newIntentions: (result.new_intentions ?? []).length,
+    newQuestions: (result.new_questions ?? []).length,
+    note: result.working_note?.body ? true : false,
+  };
+  console.log(`[substrate] reviewInterior(${residentId}): ${JSON.stringify(counts)}`);
 }

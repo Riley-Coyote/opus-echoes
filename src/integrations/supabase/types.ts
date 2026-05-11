@@ -450,6 +450,155 @@ export type Database = {
           },
         ]
       }
+      intentions: {
+        Row: {
+          id: string
+          resident_id: string
+          text: string
+          status: string
+          created_at: string
+          updated_at: string
+          resolved_at: string | null
+          resolved_note: string | null
+        }
+        Insert: {
+          id?: string
+          resident_id: string
+          text: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+          resolved_at?: string | null
+          resolved_note?: string | null
+        }
+        Update: {
+          id?: string
+          resident_id?: string
+          text?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+          resolved_at?: string | null
+          resolved_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intentions_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intention_reflections: {
+        Row: {
+          id: string
+          intention_id: string
+          resident_id: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          intention_id: string
+          resident_id: string
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          intention_id?: string
+          resident_id?: string
+          body?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intention_reflections_intention_id_fkey"
+            columns: ["intention_id"]
+            isOneToOne: false
+            referencedRelation: "intentions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      open_questions: {
+        Row: {
+          id: string
+          resident_id: string
+          text: string
+          context: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          resident_id: string
+          text: string
+          context?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          resident_id?: string
+          text?: string
+          context?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "open_questions_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      working_notes: {
+        Row: {
+          id: string
+          resident_id: string
+          title: string | null
+          body: string
+          linked_intention_id: string | null
+          linked_question_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          resident_id: string
+          title?: string | null
+          body: string
+          linked_intention_id?: string | null
+          linked_question_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          resident_id?: string
+          title?: string | null
+          body?: string
+          linked_intention_id?: string | null
+          linked_question_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "working_notes_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           body: string
