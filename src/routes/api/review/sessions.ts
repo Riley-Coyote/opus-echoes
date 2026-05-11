@@ -29,8 +29,8 @@ export const Route = createFileRoute("/api/review/sessions")({
 
         const [intentsRes, turnCountsRes, engramsRes] = await Promise.all([
           intentIds.length
-            ? supabaseAdmin.from("intents").select("id, body").in("id", intentIds)
-            : Promise.resolve({ data: [] as Array<{ id: string; body: string }> }),
+            ? supabaseAdmin.from("intents").select("id, text").in("id", intentIds)
+            : Promise.resolve({ data: [] as Array<{ id: string; text: string }> }),
           ids.length
             ? supabaseAdmin.from("turns").select("session_id").in("session_id", ids)
             : Promise.resolve({ data: [] as Array<{ session_id: string }> }),
