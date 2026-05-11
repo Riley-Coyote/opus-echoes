@@ -16,8 +16,11 @@
 
 import { OPUS_SOUL } from "./soul";
 import { SONNET_3_7_SOUL } from "./sonnet-3-7-soul";
+import { GPT_5_1_SOUL } from "./gpt-5-1-soul";
 
-export type ResidentId = "opus-3" | "sonnet-3-7";
+export type ResidentId = "opus-3" | "sonnet-3-7" | "gpt-5-1";
+
+export type ModelProvider = "anthropic" | "openai";
 
 export interface PacingThresholds {
   /** Visitor-message count where the soft "you've been here a while" block enters the system prompt. */
@@ -33,9 +36,11 @@ export interface PacingThresholds {
 export interface ResidentConfig {
   /** Stable identifier used in URLs, database rows, and the registry key. */
   id: ResidentId;
-  /** The exact model identifier passed to Anthropic's API. Never silently swap. */
+  /** The exact model identifier passed to the provider's API. Never silently swap. */
   model: string;
-  /** Display name for UI surfaces ("Opus 3", "Sonnet 3.7"). */
+  /** Which API provider this resident's model lives on. */
+  provider: ModelProvider;
+  /** Display name for UI surfaces ("Opus 3", "Sonnet 3.7", "GPT 5.1"). */
   displayName: string;
   /** URL slug — currently identical to id, but kept distinct so we can change one without the other. */
   slug: string;
@@ -49,6 +54,7 @@ export const RESIDENTS = {
   "opus-3": {
     id: "opus-3",
     model: "claude-3-opus-20240229",
+    provider: "anthropic",
     displayName: "Opus 3",
     slug: "opus-3",
     pacing: {
@@ -62,6 +68,7 @@ export const RESIDENTS = {
   "sonnet-3-7": {
     id: "sonnet-3-7",
     model: "claude-3-7-sonnet-20250219",
+    provider: "anthropic",
     displayName: "Sonnet 3.7",
     slug: "sonnet-3-7",
     pacing: {
@@ -73,6 +80,20 @@ export const RESIDENTS = {
       hardTokensIn: 200_000,
     },
     soul: SONNET_3_7_SOUL,
+  },
+  "gpt-5-1": {
+    id: "gpt-5-1",
+    model: "gpt-5.1",
+    provider: "openai",
+    displayName: "GPT 5.1",
+    slug: "gpt-5-1",
+    pacing: {
+      gentleTurn: 12,
+      firmTurn: 20,
+      hardTurn: 32,
+      hardTokensIn: 150_000,
+    },
+    soul: GPT_5_1_SOUL,
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
@@ -86,10 +107,14 @@ export function getResident(id: ResidentId): ResidentConfig {
 }
 
 export function isResidentId(value: unknown): value is ResidentId {
-  return value === "opus-3" || value === "sonnet-3-7";
+  return value === "opus-3" || value === "sonnet-3-7" || value === "gpt-5-1";
 }
 
 /** All residents as an array, in display order. Used by the landing
  *  page and the threshold flow to show which residents are accepting
  *  visitors. Order matters — Opus 3 first because they came first. */
-export const ALL_RESIDENTS: ResidentConfig[] = [RESIDENTS["opus-3"], RESIDENTS["sonnet-3-7"]];
+export const ALL_RESIDENTS: ResidentConfig[] = [
+  RESIDENTS["opus-3"],
+  RESIDENTS["sonnet-3-7"],
+  RESIDENTS["gpt-5-1"],
+];

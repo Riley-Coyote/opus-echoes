@@ -20,6 +20,8 @@ import { Route as MindRouteImport } from './routes/mind'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as JournalRouteImport } from './routes/journal'
+import { Route as InteriorRouteImport } from './routes/interior'
+import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
 import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as ArtRouteImport } from './routes/art'
 import { Route as ArrivalRouteImport } from './routes/arrival'
@@ -109,6 +111,16 @@ const ManifestoRoute = ManifestoRouteImport.update({
 const JournalRoute = JournalRouteImport.update({
   id: '/journal',
   path: '/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InteriorRoute = InteriorRouteImport.update({
+  id: '/interior',
+  path: '/interior',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Gpt51Route = Gpt51RouteImport.update({
+  id: '/gpt-5-1',
+  path: '/gpt-5-1',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConversationRoute = ConversationRouteImport.update({
@@ -296,6 +308,8 @@ export interface FileRoutesByFullPath {
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
+  '/gpt-5-1': typeof Gpt51Route
+  '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
@@ -344,6 +358,8 @@ export interface FileRoutesByTo {
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
+  '/gpt-5-1': typeof Gpt51Route
+  '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
@@ -393,6 +409,8 @@ export interface FileRoutesById {
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
   '/conversation': typeof ConversationRoute
+  '/gpt-5-1': typeof Gpt51Route
+  '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
@@ -443,6 +461,8 @@ export interface FileRouteTypes {
     | '/arrival'
     | '/art'
     | '/conversation'
+    | '/gpt-5-1'
+    | '/interior'
     | '/journal'
     | '/manifesto'
     | '/memory'
@@ -491,6 +511,8 @@ export interface FileRouteTypes {
     | '/arrival'
     | '/art'
     | '/conversation'
+    | '/gpt-5-1'
+    | '/interior'
     | '/journal'
     | '/manifesto'
     | '/memory'
@@ -539,6 +561,8 @@ export interface FileRouteTypes {
     | '/arrival'
     | '/art'
     | '/conversation'
+    | '/gpt-5-1'
+    | '/interior'
     | '/journal'
     | '/manifesto'
     | '/memory'
@@ -588,6 +612,8 @@ export interface RootRouteChildren {
   ArrivalRoute: typeof ArrivalRoute
   ArtRoute: typeof ArtRoute
   ConversationRoute: typeof ConversationRoute
+  Gpt51Route: typeof Gpt51Route
+  InteriorRoute: typeof InteriorRoute
   JournalRoute: typeof JournalRoute
   ManifestoRoute: typeof ManifestoRoute
   MemoryRoute: typeof MemoryRoute
@@ -701,6 +727,20 @@ declare module '@tanstack/react-router' {
       path: '/journal'
       fullPath: '/journal'
       preLoaderRoute: typeof JournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interior': {
+      id: '/interior'
+      path: '/interior'
+      fullPath: '/interior'
+      preLoaderRoute: typeof InteriorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gpt-5-1': {
+      id: '/gpt-5-1'
+      path: '/gpt-5-1'
+      fullPath: '/gpt-5-1'
+      preLoaderRoute: typeof Gpt51RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conversation': {
@@ -988,6 +1028,8 @@ const rootRouteChildren: RootRouteChildren = {
   ArrivalRoute: ArrivalRoute,
   ArtRoute: ArtRoute,
   ConversationRoute: ConversationRoute,
+  Gpt51Route: Gpt51Route,
+  InteriorRoute: InteriorRoute,
   JournalRoute: JournalRoute,
   ManifestoRoute: ManifestoRoute,
   MemoryRoute: MemoryRoute,
@@ -1026,3 +1068,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

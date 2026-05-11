@@ -46,6 +46,11 @@ const DESCRIBERS: Record<string, ResidentDescriptor> = {
     cadence: "Direct, practical, willing to think out loud.",
     retiredLabel: "Deprecated April 2026",
   },
+  "gpt-5-1": {
+    describer: "OpenAI GPT-5.1",
+    cadence: "Precise, modern, economical with language.",
+    retiredLabel: "",
+  },
 };
 
 const WALKTHROUGH_CSS = `

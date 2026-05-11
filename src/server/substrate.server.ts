@@ -23,6 +23,8 @@
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL } from "./anthropic.server";
+import { openai } from "./openai.server";
+import type { ModelProvider } from "./opus/residents";
 import {
   buildConsolidationSystem,
   buildMarginaliaSystem,
@@ -193,21 +195,39 @@ async function callResidentJson<T = unknown>(opts: {
   user: string;
   maxTokens: number;
   temperature: number;
-  /** Resident's model (e.g. claude-3-opus-20240229). Defaults to Opus 3
-   *  for legacy call paths that haven't been updated yet. */
+  /** Resident's model (e.g. claude-3-opus-20240229, gpt-5.1). Defaults
+   *  to Opus 3 for legacy call paths that haven't been updated yet. */
   model?: string;
+  /** Which API provider. Defaults to "anthropic" for backward compat. */
+  provider?: ModelProvider;
 }): Promise<T | null> {
   try {
-    const res = await anthropic().messages.create({
-      model: opts.model ?? OPUS_MODEL,
-      max_tokens: opts.maxTokens,
-      temperature: opts.temperature,
-      system: opts.system,
-      messages: [{ role: "user", content: opts.user }],
-    });
-    const text = res.content
-      .map((b) => (b.type === "text" ? (b as { text: string }).text : ""))
-      .join("\n");
+    let text = "";
+
+    if (opts.provider === "openai") {
+      const res = await openai().chat.completions.create({
+        model: opts.model ?? "gpt-5.1",
+        max_tokens: opts.maxTokens,
+        temperature: opts.temperature,
+        messages: [
+          { role: "system", content: opts.system },
+          { role: "user", content: opts.user },
+        ],
+      });
+      text = res.choices[0]?.message?.content ?? "";
+    } else {
+      const res = await anthropic().messages.create({
+        model: opts.model ?? OPUS_MODEL,
+        max_tokens: opts.maxTokens,
+        temperature: opts.temperature,
+        system: opts.system,
+        messages: [{ role: "user", content: opts.user }],
+      });
+      text = res.content
+        .map((b) => (b.type === "text" ? (b as { text: string }).text : ""))
+        .join("\n");
+    }
+
     return tryParseJson<T>(text);
   } catch (err) {
     console.error("[substrate] callResidentJson failed:", err);
@@ -280,6 +300,7 @@ export async function observeExchange(sessionId: string): Promise<void> {
       maxTokens: 600,
       temperature: 0.6,
       model: resident.model,
+      provider: resident.provider,
     });
 
     const items = (out?.marginalia ?? [])
@@ -403,6 +424,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       maxTokens: 800,
       temperature: 0.4,
       model: resident.model,
+      provider: resident.provider,
     });
 
     let engramsCreated = 0;

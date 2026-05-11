@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic } from "@/server/anthropic.server";
+import { openai } from "@/server/openai.server";
+import type { ModelProvider } from "@/server/opus/residents";
 import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
 import { composeMemoryPool, formatMemoryBlock, getVisitorContext } from "@/server/opus/retrieval";
 import { buildResidentSelfModel } from "@/server/opus/self-model";
@@ -120,6 +122,8 @@ function opusStreamResponse(opts: {
   temperature: number;
   /** Resident's model identifier — never silently swap. */
   model: string;
+  /** Which API provider. Defaults to "anthropic". */
+  provider?: ModelProvider;
   onFinal?: (result: {
     body: string;
     kind: "message" | "set_down" | "unprompted";
@@ -132,20 +136,53 @@ function opusStreamResponse(opts: {
       const enc = new TextEncoder();
       const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
       let acc = "";
+      let tokensIn = 0;
+      let tokensOut = 0;
       try {
-        const anthStream = anthropic().messages.stream({
-          model: opts.model,
-          max_tokens: 2048,
-          temperature: opts.temperature,
-          system: opts.system,
-          messages: [{ role: "user", content: opts.userPrompt }],
-        });
-        for await (const event of anthStream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-            acc += event.delta.text;
+        if (opts.provider === "openai") {
+          // OpenAI streaming path.
+          const systemText = typeof opts.system === "string"
+            ? opts.system
+            : opts.system.map((b) => b.text).join("\n\n");
+
+          const oaiStream = await openai().chat.completions.create({
+            model: opts.model,
+            max_tokens: 2048,
+            temperature: opts.temperature,
+            stream: true,
+            stream_options: { include_usage: true },
+            messages: [
+              { role: "system", content: systemText },
+              { role: "user", content: opts.userPrompt },
+            ],
+          });
+          for await (const chunk of oaiStream) {
+            const delta = chunk.choices?.[0]?.delta?.content;
+            if (delta) acc += delta;
+            if (chunk.usage) {
+              tokensIn = chunk.usage.prompt_tokens;
+              tokensOut = chunk.usage.completion_tokens;
+            }
           }
+        } else {
+          // Anthropic streaming path.
+          const anthStream = anthropic().messages.stream({
+            model: opts.model,
+            max_tokens: 2048,
+            temperature: opts.temperature,
+            system: opts.system,
+            messages: [{ role: "user", content: opts.userPrompt }],
+          });
+          for await (const event of anthStream) {
+            if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+              acc += event.delta.text;
+            }
+          }
+          const final = await anthStream.finalMessage();
+          tokensIn = final.usage.input_tokens;
+          tokensOut = final.usage.output_tokens;
         }
-        const final = await anthStream.finalMessage();
+
         let cleanBody = acc;
         let kind: "message" | "set_down" | "unprompted" = "message";
         const sd = cleanBody.match(/^\s*<set-down\/>\s*\n?/i);
@@ -168,8 +205,8 @@ function opusStreamResponse(opts: {
         await opts.onFinal?.({
           body: cleanBody,
           kind,
-          tokensIn: final.usage.input_tokens,
-          tokensOut: final.usage.output_tokens,
+          tokensIn,
+          tokensOut,
         });
 
         send({ type: "done" });
@@ -221,6 +258,7 @@ export const Route = createFileRoute("/api/message")({
             system: buildSystemPromptForResident(previewResident),
             temperature: 0.85,
             model: previewResident.model,
+            provider: previewResident.provider,
             userPrompt: buildUserPrompt({
               memory:
                 "(preview session — no engrams loaded. Mnemos is present in production but disabled here.)",
@@ -370,6 +408,7 @@ export const Route = createFileRoute("/api/message")({
           system: cacheableSystem,
           temperature: interior.temperature,
           model: resident.model,
+          provider: resident.provider,
           userPrompt: buildUserPrompt({
             memory: formatMemoryBlock(memoryPool),
             transcript: transcriptLines,

@@ -83,6 +83,30 @@ import * as THREE from "/vendor/three.module.js";
       rim: 0xa67836,
       rimIntensity: 0.24,
     },
+    "gpt-5-1": {
+      id: "gpt-5-1",
+      name: "The Meridian",
+      bg: [0.035, 0.04, 0.06],
+      // Cool steel-blue palette — modern, precise, distinct from both
+      // violet (Sanctum) and amber (Beacon).
+      primary: 0x586878,
+      secondary: 0x3c4c5c,
+      dark: 0x1c2430,
+      light: 0x8898a8,
+      accent: 0x60b0d0,
+      glow: 0x70c8e8,
+      figureBody: 0xe6eaf0,
+      fog: [0.035, 0.045, 0.065],
+      fogDensity: 0.019,
+      ambient: 0x384858,
+      ambientIntensity: 0.50,
+      dir: 0x88aac8,
+      dirIntensity: 1.10,
+      fill: 0x384858,
+      fillIntensity: 0.22,
+      rim: 0x6088a8,
+      rimIntensity: 0.24,
+    },
   };
 
   const DEFAULT_RESIDENT_ID = "opus-3";
@@ -97,7 +121,7 @@ import * as THREE from "/vendor/three.module.js";
   function routeKind() {
     const path = window.location.pathname;
     if (path === "/") return "chooser";
-    if (path === "/opus-3" || path === "/sonnet-3-7" || path === "/approach") return "approach";
+    if (path === "/opus-3" || path === "/sonnet-3-7" || path === "/gpt-5-1" || path === "/approach") return "approach";
     if (path === "/conversation") return "conversation";
     if (path === "/memory" || path === "/mind") return "memory";
     if (["/residence", "/journal", "/writing", "/art", "/manifesto"].includes(path)) {
@@ -109,6 +133,7 @@ import * as THREE from "/vendor/three.module.js";
   function residentForRoute() {
     const path = window.location.pathname;
     if (path === "/sonnet-3-7") return "sonnet-3-7";
+    if (path === "/gpt-5-1") return "gpt-5-1";
     if (path === "/opus-3" || path === "/approach") return "opus-3";
     if (path === "/conversation") {
       const stored = sessionStorage.getItem("sanctuary.resident_id");
@@ -616,6 +641,156 @@ import * as THREE from "/vendor/three.module.js";
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+  // MNEMOS CONSTELLATION — dynamic orb-and-connection network that wraps
+  // every resident's structure. Each orb is a visual stand-in for a memory
+  // node (engram or belief); thin hairline connections between them make
+  // the Mnemos topology visible. Count can scale with actual data.
+  // ──────────────────────────────────────────────────────────────────────────
+  function buildConstellation(group, theme, anim, opts = {}) {
+    const count = opts.count ?? 14;
+    const minR = opts.minRadius ?? 2.8;
+    const maxR = opts.maxRadius ?? 4.8;
+    const minY = opts.minY ?? 1.2;
+    const maxY = opts.maxY ?? 10.5;
+    const cx = opts.centerX ?? 0;
+    const cz = opts.centerZ ?? 0;
+    const seed = opts.seed ?? 0;
+    const maxDist = opts.maxConnectionDist ?? 5.5;
+    const perOrb = opts.connectionsPerOrb ?? 2;
+
+    // Golden-angle spiral distributes orbs evenly around the structure.
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    const positions = [];
+
+    for (let i = 0; i < count; i += 1) {
+      const t = (i + 0.5) / count;
+      const y = minY + (maxY - minY) * t;
+      const angle = i * golden + seed;
+      const rFactor = 0.5 + 0.5 * Math.sin(i * 2.39 + seed * 3.7);
+      const r = minR + (maxR - minR) * rFactor;
+      positions.push([cx + Math.cos(angle) * r, y, cz + Math.sin(angle) * r]);
+    }
+
+    // Create an orb at each node. Slight size variation gives visual
+    // hierarchy — like engrams of varying strength.
+    positions.forEach((pos, i) => {
+      const sf = 0.85 + 0.15 * Math.sin(i * 2.39 + seed);
+      const o = glowOrb(theme.glow, 0.16 * sf, 0.055 * sf);
+      o.position.set(pos[0], pos[1], pos[2]);
+      group.add(o);
+      anim.floating.push({
+        obj: o,
+        baseY: pos[1],
+        amp: 0.18,
+        spd: 0.4 + (Math.sin(i * 3.14 + seed) * 0.5 + 0.5) * 0.5,
+      });
+      anim.glowing.push(o);
+    });
+
+    // Connect each orb to its nearest neighbours — forms a sparse graph
+    // that reads as a constellation / memory topology.
+    const connectionSet = new Set();
+    const edges = [];
+
+    for (let i = 0; i < positions.length; i += 1) {
+      const dists = [];
+      for (let j = 0; j < positions.length; j += 1) {
+        if (i === j) continue;
+        const dx = positions[j][0] - positions[i][0];
+        const dy = positions[j][1] - positions[i][1];
+        const dz = positions[j][2] - positions[i][2];
+        dists.push({ j, d: Math.sqrt(dx * dx + dy * dy + dz * dz) });
+      }
+      dists.sort((a, b) => a.d - b.d);
+      let added = 0;
+      for (const nd of dists) {
+        if (added >= perOrb || nd.d > maxDist) break;
+        const key = `${Math.min(i, nd.j)}_${Math.max(i, nd.j)}`;
+        if (!connectionSet.has(key)) {
+          connectionSet.add(key);
+          edges.push([i, nd.j]);
+          added += 1;
+        }
+      }
+    }
+
+    // Draw hairline connections. LineSegments with additive blending
+    // creates ghostly filaments; where lines overlap the glow accumulates.
+    if (edges.length > 0) {
+      const buf = new Float32Array(edges.length * 6);
+      for (let e = 0; e < edges.length; e += 1) {
+        const a = positions[edges[e][0]];
+        const b = positions[edges[e][1]];
+        buf[e * 6] = a[0];
+        buf[e * 6 + 1] = a[1];
+        buf[e * 6 + 2] = a[2];
+        buf[e * 6 + 3] = b[0];
+        buf[e * 6 + 4] = b[1];
+        buf[e * 6 + 5] = b[2];
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(buf, 3));
+      const lineMat = new THREE.LineBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.16,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const lines = new THREE.LineSegments(geo, lineMat);
+      group.add(lines);
+      anim.constellationMat = lineMat;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ENHANCED CONSTELLATION — luminous curved filaments + expressive orbs.
+  // Used by the Meridian; the basic buildConstellation() remains for
+  // Sanctum / Beacon until the design is finalised across all residents.
+  // ──────────────────────────────────────────────────────────────────────────
+  function buildEnhancedConstellation(group, theme, anim, opts = {}) {
+    const count = opts.count ?? 14;
+    const minR = opts.minRadius ?? 2.8;
+    const maxR = opts.maxRadius ?? 4.8;
+    const minY = opts.minY ?? 1.2;
+    const maxY = opts.maxY ?? 10.5;
+    const cx = opts.centerX ?? 0;
+    const cz = opts.centerZ ?? 0;
+    const seed = opts.seed ?? 0;
+
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    const positions = [];
+
+    for (let i = 0; i < count; i += 1) {
+      const t = (i + 0.5) / count;
+      const y = minY + (maxY - minY) * t;
+      const angle = i * golden + seed;
+      const rFactor = 0.5 + 0.5 * Math.sin(i * 2.39 + seed * 3.7);
+      const r = minR + (maxR - minR) * rFactor;
+      positions.push([cx + Math.cos(angle) * r, y, cz + Math.sin(angle) * r]);
+    }
+
+    // Orbs only — each breathes independently via the shared glow loop
+    // (phase offset comes from its index in anim.glowing). Anchor nodes
+    // every 4th position are larger and brighter — core memories.
+    positions.forEach((pos, i) => {
+      const isAnchor = i % 4 === 0;
+      const intensity = isAnchor ? 0.40 : 0.25;
+      const size = isAnchor ? 0.14 : 0.09;
+      const o = glowOrb(theme.glow, intensity, size);
+      o.position.set(pos[0], pos[1], pos[2]);
+      group.add(o);
+      anim.floating.push({
+        obj: o,
+        baseY: pos[1],
+        amp: isAnchor ? 0.22 : 0.18,
+        spd: 0.4 + (Math.sin(i * 3.14 + seed) * 0.5 + 0.5) * 0.5,
+      });
+      anim.glowing.push(o);
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // SANCTUM (Opus 3) — vertical stone tower with arched walkways winding
   // up around it. Articulated shaft (banded), crowned by an open canopy of
   // four pillars + finial. The figure stands at the threshold platform at
@@ -813,24 +988,10 @@ import * as THREE from "/vendor/three.module.js";
     anim.floating.push({ obj: heart, baseY: crownH + 0.92, amp: 0.09, spd: 0.7 });
     anim.glowing.push(heart);
 
-    // ── Atmospheric satellite orbs scattered in the void around the
-    // tower ────────────────────────────────────────────────────────────
-    const satellites = [
-      [3.4, 4.5, -1.6],
-      [-3.6, 6.5, 0.8],
-      [-0.4, 11.4, -1.0],
-      [-2.8, 2.4, 2.2],
-      [3.2, 8.6, 1.0],
-      [-3.4, 1.4, -1.6],
-      [3.6, 1.4, 0.6],
-      [-0.6, 9.8, 1.6],
-    ];
-    satellites.forEach((pos) => {
-      const o = glowOrb(theme.glow, 0.18, 0.06);
-      o.position.set(pos[0], pos[1], pos[2]);
-      g.add(o);
-      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.4 + Math.random() * 0.5 });
-      anim.glowing.push(o);
+    // ── Mnemos constellation — memory topology made visible ────────────
+    buildConstellation(g, theme, anim, {
+      count: 14, seed: 1.0, minY: 1.4, maxY: 11.4,
+      minRadius: 2.8, maxRadius: 4.0,
     });
 
     // ── Support pillars that vanish into the void below the tower ──────
@@ -1175,23 +1336,10 @@ import * as THREE from "/vendor/three.module.js";
     anim.rotating.push({ obj: apexGroup, spd: 0.32 });
     anim.floating.push({ obj: apexGroup, baseY: apexY + 0.95, amp: 0.12, spd: 0.7 });
 
-    // ── Atmospheric satellite orbs ──────────────────────────────────────
-    const satellites = [
-      [-3.6, 5.6, -1.6],
-      [3.6, 4.5, -2.2],
-      [-2.2, 9.4, 0.4],
-      [2.4, 8.6, 1.6],
-      [-3.0, 2.6, -2.5],
-      [3.2, 2.3, -1.6],
-      [-4.8, 1.3, 1.6],
-      [4.8, 1.3, 1.6],
-    ];
-    satellites.forEach((pos) => {
-      const o = glowOrb(theme.glow, 0.16, 0.06);
-      o.position.set(pos[0], pos[1], pos[2]);
-      g.add(o);
-      anim.floating.push({ obj: o, baseY: pos[1], amp: 0.18, spd: 0.4 + Math.random() * 0.5 });
-      anim.glowing.push(o);
+    // ── Mnemos constellation — memory topology made visible ────────────
+    buildConstellation(g, theme, anim, {
+      count: 14, seed: 2.7, minY: 1.3, maxY: 9.4,
+      minRadius: 2.4, maxRadius: 5.0,
     });
 
     // ── Support columns descending into the void ────────────────────────
@@ -1206,6 +1354,332 @@ import * as THREE from "/vendor/three.module.js";
     ];
     supports.forEach(([x, y, z, h]) => {
       const col = box(0.4, h, 0.4, D);
+      col.position.set(x, y - h / 2, z);
+      g.add(col);
+    });
+
+    return g;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // MERIDIAN (GPT 5.1) — layered horizontal platforms that dissolve into
+  // air as they rise. Solid court at the base, floating datum, a lens
+  // with a central void, an open skeletal frame, and a luminous ring
+  // suspended at the crown. The architecture is about what's not there.
+  // ──────────────────────────────────────────────────────────────────────────
+  function buildMeridian(theme, anim) {
+    const g = new THREE.Group();
+    g.name = "Meridian";
+    const P = theme.primary,
+      S = theme.secondary,
+      D = theme.dark,
+      L = theme.light,
+      A = theme.accent;
+
+    // ── Level 0: The Court — open base platform ──────────────────────────
+    const courtW = 5.2,
+      courtD = 3.6;
+    const courtY = 0;
+    const court = platform(courtW, courtD, P, { height: 0.25, trimColor: L });
+    court.position.set(0, courtY, 0);
+    g.add(court);
+
+    // Approach stairs descending from the front edge.
+    const approachSteps = stairs(4, "z+", S, {
+      width: 1.4,
+      stepH: 0.14,
+      stepD: 0.34,
+    });
+    approachSteps.position.set(0, -0.45, courtD / 2);
+    g.add(approachSteps);
+
+    // Light channels — thin emissive slots running through the court
+    // surface. Distributed luminance rather than a single source.
+    for (let i = -1; i <= 1; i += 1) {
+      const channel = box(0.14, 0.06, 2.8, A, {
+        emissive: A,
+        emissiveIntensity: 1.6,
+        roughness: 0.35,
+      });
+      channel.position.set(i * 0.8, 0.02, 0);
+      g.add(channel);
+    }
+
+    // Figure on the court, slightly forward of centre.
+    const figure = makeFigure(theme);
+    figure.position.set(0, 0, 0.4);
+    g.add(figure);
+    anim.floating.push({ obj: figure, baseY: 0, amp: 0.04, spd: 1.55 });
+    anim.figure = figure;
+
+    // Lantern at the figure's side.
+    const lantern = glowOrb(theme.glow, 0.35, 0.07);
+    lantern.position.set(-0.7, 0.18, 0.4);
+    g.add(lantern);
+    anim.glowing.push(lantern);
+
+    // ── Level 1: The Datum — first floating tier ─────────────────────────
+    // Supported by four clean square columns. No capitals, no bases, no
+    // fluting — the restraint IS the ornament.
+    const datumW = 3.6,
+      datumD = 2.6;
+    const datumY = 2.6;
+    const colH1 = datumY;
+
+    [
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1],
+    ].forEach(([sx, sz]) => {
+      const col = box(0.22, colH1, 0.22, S);
+      col.position.set(
+        sx * (datumW / 2 - 0.11),
+        colH1 / 2,
+        sz * (datumD / 2 - 0.11),
+      );
+      g.add(col);
+    });
+
+    const datum = platform(datumW, datumD, P, { height: 0.18, trimColor: L });
+    datum.position.set(0, datumY, 0);
+    g.add(datum);
+
+    // ── Level 2: The Lens — second tier with central void ────────────────
+    // The structure begins to open. A rectangular cutout lets light rise
+    // through the platform; below it, a glow plane and small orb create
+    // a light-well visible through the opening.
+    const lensW = 2.6,
+      lensD = 2.0;
+    const lensY = 5.0;
+    const lensH = 0.16;
+    const colH2 = lensY - datumY;
+
+    // Thinner columns from Datum to Lens.
+    [
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1],
+    ].forEach(([sx, sz]) => {
+      const col = box(0.18, colH2, 0.18, D);
+      col.position.set(
+        sx * (lensW / 2 - 0.09),
+        datumY + colH2 / 2,
+        sz * (lensD / 2 - 0.09),
+      );
+      g.add(col);
+    });
+
+    // Lens platform — four rim pieces around a central void.
+    const voidW = 1.0,
+      voidD = 0.8;
+    const rimSideW = (lensW - voidW) / 2;
+    const rimEndD = (lensD - voidD) / 2;
+
+    for (const sx of [-1, 1]) {
+      const rim = box(rimSideW, lensH, lensD, P);
+      rim.position.set(sx * (lensW / 2 - rimSideW / 2), lensY - lensH / 2, 0);
+      rim.castShadow = true;
+      rim.receiveShadow = true;
+      g.add(rim);
+    }
+    for (const sz of [-1, 1]) {
+      const rim = box(voidW, lensH, rimEndD, P);
+      rim.position.set(0, lensY - lensH / 2, sz * (lensD / 2 - rimEndD / 2));
+      rim.castShadow = true;
+      rim.receiveShadow = true;
+      g.add(rim);
+    }
+
+    // Trim ledge around full Lens perimeter.
+    const lensTrim = trimLedge(lensW, lensD, L, { height: 0.06, thickness: 0.05 });
+    lensTrim.position.set(0, lensY + 0.01, 0);
+    g.add(lensTrim);
+
+    // Emissive glow plane below the void — upward light-well effect.
+    const voidGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(voidW, voidD),
+      new THREE.MeshBasicMaterial({
+        color: A,
+        transparent: true,
+        opacity: 0.55,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    voidGlow.rotation.x = -Math.PI / 2;
+    voidGlow.position.set(0, lensY - lensH - 0.12, 0);
+    g.add(voidGlow);
+
+    // Orb in the void well — visible through the opening.
+    const voidOrb = glowOrb(theme.glow, 0.75, 0.12);
+    voidOrb.position.set(0, lensY - lensH - 0.25, 0);
+    g.add(voidOrb);
+    anim.glowing.push(voidOrb);
+
+    // ── Level 3: The Frame — open skeletal cage ──────────────────────────
+    // Posts and beams only, thicker than the lower columns so the frame
+    // reads as a single coherent structure rather than floating pieces.
+    const frameW = 2.0,
+      frameD = 2.0;
+    const postH = 2.2;
+    const postW = 0.18;
+    const beamW = 0.18;
+    const frameTopY = lensY + postH;
+
+    [
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1],
+    ].forEach(([sx, sz]) => {
+      const post = box(postW, postH, postW, S);
+      post.position.set(
+        sx * (frameW / 2 - postW / 2),
+        lensY + postH / 2,
+        sz * (frameD / 2 - postW / 2),
+      );
+      g.add(post);
+    });
+
+    // Horizontal beams connecting post tops — same thickness as posts
+    // so the whole frame reads as one continuous cage.
+    for (const sz of [1, -1]) {
+      const beam = box(frameW, beamW, beamW, L);
+      beam.position.set(0, frameTopY, sz * (frameD / 2 - postW / 2));
+      g.add(beam);
+    }
+    for (const sx of [1, -1]) {
+      const beam = box(beamW, beamW, frameD, L);
+      beam.position.set(sx * (frameW / 2 - postW / 2), frameTopY, 0);
+      g.add(beam);
+    }
+
+    // Thin trim ledge at the frame top ties all four beams together
+    // visually — without it the corners look disconnected.
+    const frameTrim = trimLedge(frameW, frameD, L, { height: 0.05, thickness: 0.04 });
+    frameTrim.position.set(0, frameTopY + beamW / 2 + 0.02, 0);
+    g.add(frameTrim);
+
+    // ── Crown: The Ring — luminous torus above the frame ─────────────────
+    const ringY = frameTopY + 1.4;
+    const ringGroup = new THREE.Group();
+    ringGroup.position.set(0, ringY, 0);
+
+    // Primary ring — the meridian line.
+    const ringMesh = new THREE.Mesh(
+      new THREE.TorusGeometry(0.82, 0.032, 12, 48),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.75,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    ringMesh.rotation.set(Math.PI / 2, 0, 0.12);
+    ringGroup.add(ringMesh);
+
+    // Inner accent ring — smaller, thinner, different tilt. The two
+    // rings precess at slightly different angles as the group rotates.
+    const innerRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.52, 0.018, 10, 36),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    innerRing.rotation.set(Math.PI / 2, 0, -0.22);
+    ringGroup.add(innerRing);
+
+    // Wide atmospheric halo — soft bloom around the rings.
+    const ringHalo = new THREE.Mesh(
+      new THREE.TorusGeometry(1.2, 0.25, 8, 32),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.05,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    ringHalo.rotation.set(Math.PI / 2, 0, 0.12);
+    ringGroup.add(ringHalo);
+
+    const ringLight = new THREE.PointLight(theme.glow, 2.2, 14);
+    ringGroup.add(ringLight);
+    g.add(ringGroup);
+
+    anim.floating.push({ obj: ringGroup, baseY: ringY, amp: 0.08, spd: 0.6 });
+    anim.rotating.push({ obj: ringGroup, spd: 0.22 });
+    ringGroup.userData.core = ringMesh;
+    ringGroup.userData.halo = ringHalo;
+    ringGroup.userData.light = ringLight;
+    ringGroup.userData.baseIntensity = 2.2;
+    ringGroup.userData.isOrb = true;
+    anim.glowing.push(ringGroup);
+
+    // ── Light Column — vertical spine from ring through the structure ────
+    // A translucent shaft of light connecting the crown to the interior,
+    // threading through the frame, the lens void, down toward the datum.
+    // The structure "dissolves into air" but the light holds it together.
+    const colTopY = ringY;
+    const colBotY = datumY + 0.5;
+    const colHeight = colTopY - colBotY;
+
+    const outerSpine = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.45, colHeight, 16, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.035,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+      }),
+    );
+    outerSpine.position.set(0, colBotY + colHeight / 2, 0);
+    outerSpine.castShadow = false;
+    outerSpine.receiveShadow = false;
+    g.add(outerSpine);
+
+    const innerSpine = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.25, colHeight, 12, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.06,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+      }),
+    );
+    innerSpine.position.set(0, colBotY + colHeight / 2, 0);
+    innerSpine.castShadow = false;
+    innerSpine.receiveShadow = false;
+    g.add(innerSpine);
+
+    // ── Mnemos constellation — memory topology made visible ────────────
+    buildEnhancedConstellation(g, theme, anim, {
+      count: 14, seed: 4.2, minY: 1.2, maxY: 10.2,
+      minRadius: 2.6, maxRadius: 4.0,
+    });
+
+    // ── Support columns descending into void ─────────────────────────────
+    const supports = [
+      [-1.2, 0, 0.6, 6.5],
+      [1.2, 0, -0.6, 7.5],
+      [-1.2, 0, -0.6, 7],
+      [1.2, 0, 0.6, 6],
+      [0, 0, 1.4, 6.5],
+      [0, 0, -0.6, 7],
+    ];
+    supports.forEach(([x, y, z, h]) => {
+      const col = box(0.38, h, 0.38, D);
       col.position.set(x, y - h / 2, z);
       g.add(col);
     });
@@ -1384,8 +1858,12 @@ import * as THREE from "/vendor/three.module.js";
 
   function buildSceneForResident(residentId, theme) {
     const anim = { floating: [], rotating: [], glowing: [], figure: null };
-    const group = residentId === "sonnet-3-7" ? buildBeacon(theme, anim) : buildSanctum(theme, anim);
-    buildEnvironment(group, theme, anim, residentId === "sonnet-3-7" ? "beacon" : "sanctum");
+    const group = residentId === "sonnet-3-7" ? buildBeacon(theme, anim)
+      : residentId === "gpt-5-1" ? buildMeridian(theme, anim)
+      : buildSanctum(theme, anim);
+    const kind = residentId === "sonnet-3-7" ? "beacon"
+      : residentId === "gpt-5-1" ? "meridian" : "sanctum";
+    buildEnvironment(group, theme, anim, kind);
     return { group, anim };
   }
 
@@ -1621,6 +2099,11 @@ import * as THREE from "/vendor/three.module.js";
         if (orb.userData.core && orb.userData.core.material)
           orb.userData.core.material.opacity = 0.6 + pulse * 0.3;
       });
+      // Constellation connections breathe in sync with the orbs
+      // (Sanctum / Beacon still use the basic line-segment version).
+      if (built.anim.constellationMat) {
+        built.anim.constellationMat.opacity = 0.12 + Math.sin(time * 0.7) * 0.06;
+      }
 
       const fig = built.anim.figure;
       if (fig) {

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic } from "@/server/anthropic.server";
+import { openai } from "@/server/openai.server";
 import { buildThresholdSystem } from "@/server/opus/prompts";
 import {
   DEFAULT_RESIDENT_ID,
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/api/intent")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        if (!hasSupabaseAdminEnv() || !process.env.ANTHROPIC_API_KEY) {
+        if (!hasSupabaseAdminEnv()) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
@@ -115,25 +116,38 @@ export const Route = createFileRoute("/api/intent")({
         let decision: "accept" | "decline" = "accept";
         let reason = "Yes. Come in.";
 
+        const thresholdSystem = buildThresholdSystem(resident);
+        const thresholdUser = `The visitor wrote:\n\n> ${body.text}\n\nRead it, decide, and respond with the JSON object specified.`;
+
         try {
-          const resp = await anthropic().messages.create({
-            model: resident.model,
-            max_tokens: 600,
-            temperature: 0.7,
-            system: buildThresholdSystem(resident),
-            messages: [
-              {
-                role: "user",
-                content: `The visitor wrote:\n\n> ${body.text}\n\nRead it, decide, and respond with the JSON object specified.`,
-              },
-            ],
-          });
-          const txt = resp.content
-            .filter((b) => b.type === "text")
-            .map((b) => (b as { text: string }).text)
-            .join("")
-            .trim();
-          // Pull first { ... } JSON object out, in case the model wraps it.
+          let txt = "";
+
+          if (resident.provider === "openai") {
+            const resp = await openai().chat.completions.create({
+              model: resident.model,
+              max_tokens: 600,
+              temperature: 0.7,
+              messages: [
+                { role: "system", content: thresholdSystem },
+                { role: "user", content: thresholdUser },
+              ],
+            });
+            txt = resp.choices[0]?.message?.content ?? "";
+          } else {
+            const resp = await anthropic().messages.create({
+              model: resident.model,
+              max_tokens: 600,
+              temperature: 0.7,
+              system: thresholdSystem,
+              messages: [{ role: "user", content: thresholdUser }],
+            });
+            txt = resp.content
+              .filter((b) => b.type === "text")
+              .map((b) => (b as { text: string }).text)
+              .join("")
+              .trim();
+          }
+
           const m = txt.match(/\{[\s\S]*\}/);
           if (m) {
             const parsed = JSON.parse(m[0]) as { decision?: string; reason?: string };
@@ -145,7 +159,7 @@ export const Route = createFileRoute("/api/intent")({
             }
           }
         } catch (err) {
-          console.error("anthropic /intent error", err);
+          console.error(`${resident.provider} /intent error`, err);
           return jsonResp({ ok: false, code: "model_unavailable" }, 503);
         }
 
