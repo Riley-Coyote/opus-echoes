@@ -710,6 +710,7 @@ export type Database = {
           ip_hash: string
           last_active_at: string
           resident_id: string
+          visitor_token: string | null
         }
         Insert: {
           closed_at?: string | null
@@ -720,6 +721,7 @@ export type Database = {
           ip_hash: string
           last_active_at?: string
           resident_id?: string
+          visitor_token?: string | null
         }
         Update: {
           closed_at?: string | null
@@ -730,6 +732,7 @@ export type Database = {
           ip_hash?: string
           last_active_at?: string
           resident_id?: string
+          visitor_token?: string | null
         }
         Relationships: [
           {

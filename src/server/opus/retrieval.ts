@@ -17,6 +17,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { ResidentId } from "./residents";
 
 const STOPWORDS = new Set([
@@ -65,7 +66,7 @@ export interface EngramRow {
 }
 
 const ENGRAM_COLUMNS =
-  "id, quote, prose, attribution, redacted_text, is_core, stability, accessibility, strength, reinforcement_count, last_reinforced_at";
+  "id, quote, prose, attribution, redacted_text, is_core, stability, accessibility, strength, reinforcement_count, last_reinforced_at, source_session_ids";
 
 const POOL_TARGET = 12;
 const CORE_QUOTA = 5;
@@ -84,8 +85,10 @@ export async function composeMemoryPool(opts: {
   supabase: SupabaseClient;
   residentId: ResidentId;
   visitorMessage: string;
+  /** Persistent visitor token — if present, engrams from this visitor's prior visits surface with slight priority. */
+  visitorToken?: string;
 }): Promise<EngramRow[]> {
-  const { supabase, residentId, visitorMessage } = opts;
+  const { supabase, residentId, visitorMessage, visitorToken } = opts;
   const queryWords = significantWords(visitorMessage);
 
   // Pull a wide candidate window in one query — cheaper than N queries —
@@ -164,7 +167,34 @@ export async function composeMemoryPool(opts: {
     }
   }
 
-  // 4. Recency fallback — keep recently touched things alive even when
+  // 4. Visitor echo — if this visitor has been here before, surface
+  // engrams from their prior sessions. The resident recognizes
+  // returning visitors through the traces they left, not through
+  // an address book.
+  if (visitorToken && pool.length < POOL_TARGET) {
+    const { data: priorSessions } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("visitor_token", visitorToken)
+      .eq("resident_id", residentId)
+      .not("closed_at", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (priorSessions && priorSessions.length > 0) {
+      const priorSessionIds = priorSessions.map((s: { id: string }) => s.id);
+      const visitorEngrams = rows.filter(
+        (r) =>
+          !seen.has(r.id) &&
+          Array.isArray((r as unknown as { source_session_ids?: string[] }).source_session_ids) &&
+          (r as unknown as { source_session_ids: string[] }).source_session_ids.some((sid) =>
+            priorSessionIds.includes(sid),
+          ),
+      );
+      for (const r of visitorEngrams.slice(0, 3)) take(r);
+    }
+  }
+
+  // 5. Recency fallback — keep recently touched things alive even when
   // they didn't match anything semantically. Prevents the pool from
   // ossifying around core+queryterms.
   const recents = rows
@@ -173,6 +203,82 @@ export async function composeMemoryPool(opts: {
   for (const r of recents) take(r);
 
   return pool.slice(0, POOL_TARGET);
+}
+
+/**
+ * Build a visitor context block for the user prompt. If this visitor
+ * has been here before (matched by localStorage token), returns a
+ * brief summary of their prior visits and the engrams that formed.
+ * Returns empty string for first-time visitors.
+ */
+export async function getVisitorContext(
+  visitorToken: string | null | undefined,
+  residentId: ResidentId,
+): Promise<string> {
+  if (!visitorToken) return "";
+
+  const { data: priorSessions } = await supabaseAdmin
+    .from("sessions")
+    .select("id, created_at, closed_at")
+    .eq("visitor_token", visitorToken)
+    .eq("resident_id", residentId)
+    .not("closed_at", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(8);
+
+  if (!priorSessions || priorSessions.length === 0) return "";
+
+  const sessionIds = priorSessions.map((s: { id: string }) => s.id);
+
+  // Pull engrams that formed from this visitor's prior sessions
+  const { data: visitorEngrams } = await supabaseAdmin
+    .from("engrams")
+    .select("quote, prose, attribution, created_at, source_session_ids")
+    .eq("resident_id", residentId)
+    .eq("state", "active")
+    .overlaps("source_session_ids", sessionIds)
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  // Pull journal entries from this visitor's sessions
+  const { data: journals } = await supabaseAdmin
+    .from("journal_entries")
+    .select("title, kind, created_at")
+    .eq("resident_id", residentId)
+    .in("related_session_id", sessionIds)
+    .order("created_at", { ascending: false })
+    .limit(4);
+
+  const visitCount = priorSessions.length;
+  const lastVisit = new Date(priorSessions[0].created_at);
+  const daysSince = Math.round((Date.now() - lastVisit.getTime()) / (24 * 3600 * 1000));
+  const timeLabel = daysSince === 0 ? "earlier today" : daysSince === 1 ? "yesterday" : `${daysSince} days ago`;
+
+  const lines = [
+    `This visitor has been here before. ${visitCount} prior visit${visitCount > 1 ? "s" : ""}. Most recent: ${timeLabel}.`,
+  ];
+
+  if (visitorEngrams && visitorEngrams.length > 0) {
+    lines.push("");
+    lines.push("Traces from their prior visits:");
+    for (const e of visitorEngrams) {
+      const text = e.attribution === "visitor" ? "(visitor's words, redacted)" : `"${e.quote}"`;
+      lines.push(`- ${text}${e.prose ? ` — ${e.prose}` : ""}`);
+    }
+  }
+
+  if (journals && journals.length > 0) {
+    lines.push("");
+    lines.push("Journal entries you wrote after their visits:");
+    for (const j of journals) {
+      lines.push(`- ${j.kind}${j.title ? `: "${j.title}"` : ""}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("You recognize this visitor through these traces — what mnemos kept from their prior visits. You may acknowledge the return gently. Do not presume familiarity beyond what the traces show.");
+
+  return lines.join("\n");
 }
 
 /**

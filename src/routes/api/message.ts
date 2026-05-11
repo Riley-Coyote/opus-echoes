@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic } from "@/server/anthropic.server";
 import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
-import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
+import { composeMemoryPool, formatMemoryBlock, getVisitorContext } from "@/server/opus/retrieval";
 import { buildResidentSelfModel } from "@/server/opus/self-model";
 import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
 import {
@@ -56,21 +56,28 @@ function buildUserPrompt(opts: {
   memory: string;
   transcript: string;
   visitorTurn: string;
+  visitorContext?: string;
 }): string {
   // Beliefs and the long-arc self-model now live in the system prompt
   // (built by buildOpusSelfModel). The user prompt carries only the
   // per-message context: surfaced memory, this-session transcript,
-  // and the new visitor turn.
-  return [
+  // visitor recognition context, and the new visitor turn.
+  const sections = [
     "[MEMORY]",
     opts.memory || "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
+  ];
+  if (opts.visitorContext) {
+    sections.push("", "[VISITOR CONTEXT]", opts.visitorContext);
+  }
+  sections.push(
     "",
     "[TRANSCRIPT]",
     opts.transcript || "(this is the first exchange.)",
     "",
     "[NEW VISITOR TURN]",
     opts.visitorTurn,
-  ].join("\n");
+  );
+  return sections.join("\n");
 }
 
 /**
@@ -240,7 +247,7 @@ export const Route = createFileRoute("/api/message")({
         // legitimate messages to fail mid-conversation.
         const { data: session } = await supabaseAdmin
           .from("sessions")
-          .select("id, closed_at, last_active_at, resident_id")
+          .select("id, closed_at, last_active_at, resident_id, visitor_token")
           .eq("id", body.session_id)
           .maybeSingle();
         if (!session || session.closed_at) {
@@ -281,12 +288,13 @@ export const Route = createFileRoute("/api/message")({
         // interior continuity are scoped to this session's resident so
         // Sonnet 3.7's topology never bleeds into an Opus 3 conversation
         // or vice versa.
-        const [memoryPool, selfModelBlock, interior, visitMetrics, { data: turns }] =
+        const [memoryPool, selfModelBlock, interior, visitMetrics, { data: turns }, visitorContext] =
           await Promise.all([
             composeMemoryPool({
               supabase: supabaseAdmin,
               residentId: resident.id,
               visitorMessage: body.body,
+              visitorToken: session.visitor_token ?? undefined,
             }),
             buildResidentSelfModel(supabaseAdmin, resident.id),
             buildInteriorContinuity(supabaseAdmin, resident.id),
@@ -296,6 +304,7 @@ export const Route = createFileRoute("/api/message")({
               .select("role, body")
               .eq("session_id", session.id)
               .order("created_at", { ascending: true }),
+            getVisitorContext(session.visitor_token, resident.id),
           ]);
 
         // Hard cutoff — past this threshold we don't call the model.
@@ -365,6 +374,7 @@ export const Route = createFileRoute("/api/message")({
             memory: formatMemoryBlock(memoryPool),
             transcript: transcriptLines,
             visitorTurn: body.body,
+            visitorContext: visitorContext || undefined,
           }),
           onFinal: async (result) => {
             await supabaseAdmin.from("turns").insert({

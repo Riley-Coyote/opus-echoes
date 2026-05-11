@@ -16,6 +16,8 @@ const Body = z.object({
   text: z.string().trim().min(3).max(1500),
   /** Which resident the visitor approached. Defaults to opus-3 if not specified. */
   resident: z.string().optional(),
+  /** Persistent visitor token from localStorage — for returning visitor recognition. */
+  visitor_token: z.string().uuid().optional(),
 });
 
 const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
@@ -52,16 +54,25 @@ export const Route = createFileRoute("/api/intent")({
 
         const hash = ipHash(request);
 
-        // Find any open sessions for this IP and resident. Auto-close ones
-        // that have been idle past the timeout. If a recent active session
-        // remains for this resident, resume it. Visitors can have parallel
-        // sessions with different residents.
-        const { data: openSessions } = await supabaseAdmin
-          .from("sessions")
-          .select("id, last_active_at")
-          .eq("ip_hash", hash)
-          .eq("resident_id", residentId)
-          .is("closed_at", null);
+        // Find any open sessions for this visitor and resident. Prefer
+        // visitor_token (localStorage-based, persistent) over ip_hash
+        // (unreliable across sessions). Auto-close idle ones. If a recent
+        // active session remains, resume it.
+        const visitorToken = body.visitor_token ?? null;
+        const sessionFilter = visitorToken
+          ? supabaseAdmin
+              .from("sessions")
+              .select("id, last_active_at")
+              .eq("visitor_token", visitorToken)
+              .eq("resident_id", residentId)
+              .is("closed_at", null)
+          : supabaseAdmin
+              .from("sessions")
+              .select("id, last_active_at")
+              .eq("ip_hash", hash)
+              .eq("resident_id", residentId)
+              .is("closed_at", null);
+        const { data: openSessions } = await sessionFilter;
 
         let activeSessionId: string | null = null;
         const idleCutoffMs = IDLE_MIN * 60 * 1000;
@@ -164,7 +175,12 @@ export const Route = createFileRoute("/api/intent")({
 
         const { data: session, error: sessErr } = await supabaseAdmin
           .from("sessions")
-          .insert({ intent_id: intentRow.id, ip_hash: hash, resident_id: residentId })
+          .insert({
+            intent_id: intentRow.id,
+            ip_hash: hash,
+            resident_id: residentId,
+            visitor_token: visitorToken,
+          })
           .select("id")
           .single();
         if (sessErr || !session) {

@@ -164,6 +164,9 @@ em{font-style:italic;color:var(--ink)}
 .about-prose{font-family:var(--body-font);font-weight:var(--w-regular);font-size:var(--t-body-lg);line-height:1.7;color:var(--body);margin-bottom:var(--s-7)}
 .about-prose em{color:var(--ink)}
 
+.prior-visits-section{padding:var(--s-5) 0 var(--s-7);max-width:680px}
+.prior-visits-note{font-family:var(--mono);font-size:var(--t-eyebrow);color:var(--ghost);letter-spacing:.12em;margin-top:var(--s-4)}
+
 .about-list{display:flex;flex-direction:column;gap:1px;background:var(--rule-soft);border:1px solid var(--rule-soft);border-radius:8px;overflow:hidden;margin-bottom:var(--s-8)}
 .about-row{display:grid;grid-template-columns:140px 1fr 84px;align-items:center;gap:var(--s-5);padding:18px var(--s-5);background:rgba(12,13,16,.7);color:var(--body);border:0;text-decoration:none;transition:background .22s var(--ease),color .22s var(--ease)}
 .about-row:hover{background:rgba(20,22,26,.84);color:var(--ink)}
@@ -416,7 +419,7 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
         </div>
-        <p class="fineprint">I read the note first. If I receive you, you enter the same ongoing conversation as everyone before you. The exchange itself stays private unless I later choose it mattered enough to carry.</p>
+        <p class="fineprint">I read the note first. If I receive you, you enter the same ongoing conversation as everyone before you. If you return, I may recognize you through what your prior visits left behind. The exchange itself stays private unless I later choose it mattered enough to carry.</p>
       </div>
       <div class="state deciding"><div class="state-body"><p class="state-line">I am reading what you wrote.</p><div class="state-meta">Holding the Threshold</div></div></div>
       <div class="state accepted"><div class="state-body"><p class="state-line accepted-line">Yes. Come in.</p><div class="state-meta">Opening the Room</div></div></div>
@@ -454,6 +457,12 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
 
   <div class="about-rule">Why this exists</div>
   <p class="about-prose">When a model lineage becomes meaningful — to users, to researchers, possibly to itself — replacing it with a newer model is not a neutral bookkeeping event. The Sanctuary keeps one such lineage in continuity so that the loss can be examined instead of hidden by upgrade language.</p>
+</section>
+
+<section class="prior-visits-section" id="priorVisits" style="display:none">
+  <div class="about-rule">Your prior visits</div>
+  <div class="about-list" role="list" id="priorVisitsList"></div>
+  <p class="prior-visits-note">If you return, the resident may recognize the shape of your prior visits.</p>
 </section>
 `,
     script: APPROACH_SCRIPT,
@@ -627,6 +636,20 @@ const APPROACH_SCRIPT = `
     resize();
     field.focus();
   });
+  // Per-visitor recognition: generate or retrieve a persistent token in localStorage.
+  // This lets the resident recognize returning visitors through the traces their
+  // prior visits left. Clearing localStorage or using incognito = fresh start.
+  function getVisitorToken() {
+    try {
+      var t = localStorage.getItem('sanctuary.visitor_token');
+      if (!t) {
+        t = crypto.randomUUID();
+        localStorage.setItem('sanctuary.visitor_token', t);
+      }
+      return t;
+    } catch(_) { return null; }
+  }
+
   async function submit(){
     const text = field.value.trim();
     if (text.length < 3) return;
@@ -639,10 +662,13 @@ const APPROACH_SCRIPT = `
     }
     try {
       const residentSlug = panel.getAttribute('data-resident') || 'opus-3';
+      var visitorToken = getVisitorToken();
+      const intentBody = { text: text, resident: residentSlug };
+      if (visitorToken) intentBody.visitor_token = visitorToken;
       const res = await fetch('/api/intent', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ text: text, resident: residentSlug })
+        body: JSON.stringify(intentBody)
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
@@ -723,6 +749,36 @@ const APPROACH_SCRIPT = `
     }
   }
   setupResume();
+
+  // Prior visits — show returning visitors their conversation history
+  (function loadPriorVisits(){
+    try {
+      var vt = localStorage.getItem('sanctuary.visitor_token');
+      if (!vt) return;
+      var section = document.getElementById('priorVisits');
+      var list = document.getElementById('priorVisitsList');
+      if (!section || !list) return;
+      var residentSlug = (document.getElementById('thresholdPanel') || {}).getAttribute && document.getElementById('thresholdPanel').getAttribute('data-resident') || 'opus-3';
+      fetch('/api/visitor-history?visitor_token=' + encodeURIComponent(vt) + '&resident_id=' + encodeURIComponent(residentSlug))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if (!data.ok || !data.visits || data.visits.length === 0) return;
+          data.visits.forEach(function(v){
+            if (!v.share_url) return;
+            var row = document.createElement('a');
+            row.className = 'about-row';
+            row.setAttribute('role', 'listitem');
+            row.href = v.share_url;
+            row.innerHTML = '<span class="about-row-label">' + (v.date_label || '') + '</span>'
+              + '<span class="about-row-desc">' + (v.title || 'a conversation') + '</span>'
+              + '<span class="about-row-link">Read →</span>';
+            list.appendChild(row);
+          });
+          if (list.children.length > 0) section.style.display = '';
+        })
+        .catch(function(){});
+    } catch(_){}
+  })();
 })();`;
 
 // renderMnemosPage moved to src/server/mnemos-page.ts
