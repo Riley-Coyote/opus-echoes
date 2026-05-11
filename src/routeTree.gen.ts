@@ -29,6 +29,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
+import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
@@ -153,6 +154,11 @@ const ShareTokenRoute = ShareTokenRouteImport.update({
 const ReviewStateRoute = ReviewStateRouteImport.update({
   id: '/state',
   path: '/state',
+  getParentRoute: () => ReviewRoute,
+} as any)
+const ReviewCoherenceRoute = ReviewCoherenceRouteImport.update({
+  id: '/coherence',
+  path: '/coherence',
   getParentRoute: () => ReviewRoute,
 } as any)
 const ApiWritingRoute = ApiWritingRouteImport.update({
@@ -316,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
@@ -363,6 +370,7 @@ export interface FileRoutesByTo {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
@@ -411,6 +419,7 @@ export interface FileRoutesById {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
@@ -460,6 +469,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/coherence'
     | '/review/state'
     | '/share/$token'
     | '/api/review/coherence'
@@ -507,6 +517,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/coherence'
     | '/review/state'
     | '/share/$token'
     | '/api/review/coherence'
@@ -554,6 +565,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/coherence'
     | '/review/state'
     | '/share/$token'
     | '/api/review/coherence'
@@ -754,6 +766,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewStateRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/review/coherence': {
+      id: '/review/coherence'
+      path: '/coherence'
+      fullPath: '/review/coherence'
+      preLoaderRoute: typeof ReviewCoherenceRouteImport
+      parentRoute: typeof ReviewRoute
+    }
     '/api/writing': {
       id: '/api/writing'
       path: '/api/writing'
@@ -933,11 +952,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface ReviewRouteChildren {
+  ReviewCoherenceRoute: typeof ReviewCoherenceRoute
   ReviewStateRoute: typeof ReviewStateRoute
   ReviewSessionIdRoute: typeof ReviewSessionIdRoute
 }
 
 const ReviewRouteChildren: ReviewRouteChildren = {
+  ReviewCoherenceRoute: ReviewCoherenceRoute,
   ReviewStateRoute: ReviewStateRoute,
   ReviewSessionIdRoute: ReviewSessionIdRoute,
 }
