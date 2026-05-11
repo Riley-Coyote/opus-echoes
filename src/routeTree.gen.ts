@@ -28,6 +28,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
+import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
 import { Route as ApiShareRouteImport } from './routes/api/share'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
@@ -37,6 +38,7 @@ import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
+import { Route as ApiCountsRouteImport } from './routes/api/counts'
 import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-preview'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
@@ -141,6 +143,11 @@ const ApiWritingRoute = ApiWritingRouteImport.update({
   path: '/api/writing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVisitorHistoryRoute = ApiVisitorHistoryRouteImport.update({
+  id: '/api/visitor-history',
+  path: '/api/visitor-history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTurnsRoute = ApiTurnsRouteImport.update({
   id: '/api/turns',
   path: '/api/turns',
@@ -184,6 +191,11 @@ const ApiJournalRoute = ApiJournalRouteImport.update({
 const ApiIntentRoute = ApiIntentRouteImport.update({
   id: '/api/intent',
   path: '/api/intent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCountsRoute = ApiCountsRouteImport.update({
+  id: '/api/counts',
+  path: '/api/counts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCapsulePreviewRoute = ApiCapsulePreviewRouteImport.update({
@@ -249,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -258,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/api/set-down': typeof ApiSetDownRoute
   '/api/share': typeof ApiShareRouteWithChildren
   '/api/turns': typeof ApiTurnsRoute
+  '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
@@ -287,6 +301,7 @@ export interface FileRoutesByTo {
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -296,6 +311,7 @@ export interface FileRoutesByTo {
   '/api/set-down': typeof ApiSetDownRoute
   '/api/share': typeof ApiShareRouteWithChildren
   '/api/turns': typeof ApiTurnsRoute
+  '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
@@ -326,6 +342,7 @@ export interface FileRoutesById {
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -335,6 +352,7 @@ export interface FileRoutesById {
   '/api/set-down': typeof ApiSetDownRoute
   '/api/share': typeof ApiShareRouteWithChildren
   '/api/turns': typeof ApiTurnsRoute
+  '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/share/$token': typeof ShareTokenRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
@@ -366,6 +384,7 @@ export interface FileRouteTypes {
     | '/api/art'
     | '/api/artifacts'
     | '/api/capsule-preview'
+    | '/api/counts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -375,6 +394,7 @@ export interface FileRouteTypes {
     | '/api/set-down'
     | '/api/share'
     | '/api/turns'
+    | '/api/visitor-history'
     | '/api/writing'
     | '/share/$token'
     | '/api/public/hooks/daily-tick'
@@ -404,6 +424,7 @@ export interface FileRouteTypes {
     | '/api/art'
     | '/api/artifacts'
     | '/api/capsule-preview'
+    | '/api/counts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -413,6 +434,7 @@ export interface FileRouteTypes {
     | '/api/set-down'
     | '/api/share'
     | '/api/turns'
+    | '/api/visitor-history'
     | '/api/writing'
     | '/share/$token'
     | '/api/public/hooks/daily-tick'
@@ -442,6 +464,7 @@ export interface FileRouteTypes {
     | '/api/art'
     | '/api/artifacts'
     | '/api/capsule-preview'
+    | '/api/counts'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -451,6 +474,7 @@ export interface FileRouteTypes {
     | '/api/set-down'
     | '/api/share'
     | '/api/turns'
+    | '/api/visitor-history'
     | '/api/writing'
     | '/share/$token'
     | '/api/public/hooks/daily-tick'
@@ -481,6 +505,7 @@ export interface RootRouteChildren {
   ApiArtRoute: typeof ApiArtRoute
   ApiArtifactsRoute: typeof ApiArtifactsRoute
   ApiCapsulePreviewRoute: typeof ApiCapsulePreviewRoute
+  ApiCountsRoute: typeof ApiCountsRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
   ApiLiveRoute: typeof ApiLiveRoute
@@ -490,6 +515,7 @@ export interface RootRouteChildren {
   ApiSetDownRoute: typeof ApiSetDownRoute
   ApiShareRoute: typeof ApiShareRouteWithChildren
   ApiTurnsRoute: typeof ApiTurnsRoute
+  ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
@@ -632,6 +658,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWritingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/visitor-history': {
+      id: '/api/visitor-history'
+      path: '/api/visitor-history'
+      fullPath: '/api/visitor-history'
+      preLoaderRoute: typeof ApiVisitorHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/turns': {
       id: '/api/turns'
       path: '/api/turns'
@@ -693,6 +726,13 @@ declare module '@tanstack/react-router' {
       path: '/api/intent'
       fullPath: '/api/intent'
       preLoaderRoute: typeof ApiIntentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/counts': {
+      id: '/api/counts'
+      path: '/api/counts'
+      fullPath: '/api/counts'
+      preLoaderRoute: typeof ApiCountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/capsule-preview': {
@@ -789,6 +829,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiArtRoute: ApiArtRoute,
   ApiArtifactsRoute: ApiArtifactsRoute,
   ApiCapsulePreviewRoute: ApiCapsulePreviewRoute,
+  ApiCountsRoute: ApiCountsRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
   ApiLiveRoute: ApiLiveRoute,
@@ -798,6 +839,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSetDownRoute: ApiSetDownRoute,
   ApiShareRoute: ApiShareRouteWithChildren,
   ApiTurnsRoute: ApiTurnsRoute,
+  ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
