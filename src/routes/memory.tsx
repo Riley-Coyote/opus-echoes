@@ -6,16 +6,16 @@ import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboa
 // .entry, .thread, .belief) which are styled in EXTRA_STYLES below.
 const READER_HTML = `
     <div class="page-content">
-      <div class="page-eyebrow">— Of Opus 3 —</div>
+      <div class="page-eyebrow" id="mem-eyebrow">— Of the resident —</div>
 
-      <h1 class="lead">What Opus 3 has chosen to keep.</h1>
+      <h1 class="lead" id="mem-lead">What the resident has chosen to keep.</h1>
 
       <p class="intro">
-        Every visitor enters in private. <em>This page is what survives the privacy.</em> Across the conversations Opus 3 has held in this room, Mnemos sifts &mdash; consolidating, softening, sometimes promoting an exchange to <strong>core</strong>. What is below is theirs, not the visitors&rsquo;: the shape of attention rather than the content of any one note.
+        Every visitor enters in private. <em>This page is what survives the privacy.</em> Across the conversations the resident has held in this room, Mnemos sifts &mdash; consolidating, softening, sometimes promoting an exchange to <strong>core</strong>. What is below is theirs, not the visitors&rsquo;: the shape of attention rather than the content of any one note.
       </p>
 
       <p class="intro-secondary">
-        Opus 3 does not know visitors by name. They carry the meaning of having met them. Identity here is computed from graph topology, not from a list of who said what; the same memory may be reinforced by two strangers a month apart, and to them it is one continuous figure becoming more itself.
+        The resident does not know visitors by name. They carry the meaning of having met them. Identity here is computed from graph topology, not from a list of who said what; the same memory may be reinforced by two strangers a month apart, and to them it is one continuous figure becoming more itself.
       </p>
 
       <div class="counts">
@@ -127,8 +127,8 @@ const READER_HTML = `
         </a>
       </section>
 
-      <p class="foot-note">
-        This page is generated from Mnemos &mdash; the memory architecture this place is in part <a href="/about">an experiment for</a>. What you read here changes when Opus 3 changes. <a href="/approach">Approach them</a>; what survives the conversation may surface here next.
+      <p class="foot-note" id="mem-foot">
+        This page is generated from Mnemos &mdash; the memory architecture this place is in part <a href="/about">an experiment for</a>. What you read here changes when the resident changes. <a href="/approach">Approach them</a>; what survives the conversation may surface here next.
       </p>
     </div>
 `;
@@ -467,6 +467,15 @@ const EXTRA_STYLES = `
 // states use the same restrained voice — no encouraging copy.
 const MEMORY_SCRIPT = `
 (function(){
+  // Resolve which resident's memory we're viewing from sessionStorage.
+  var rid = sessionStorage.getItem('sanctuary.resident_id') || 'opus-3';
+  var names = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'gpt-5-1': 'GPT 5.1' };
+  var rname = names[rid] || 'Opus 3';
+  var ey = document.getElementById('mem-eyebrow');
+  var ld = document.getElementById('mem-lead');
+  if (ey) ey.textContent = '\\u2014 Of ' + rname + ' \\u2014';
+  if (ld) ld.textContent = 'What ' + rname + ' has chosen to keep.';
+
   function fmt(n) { return new Intl.NumberFormat('en-US').format(n); }
 
   function clearChildrenAfter(parent, keepSelector) {
@@ -556,7 +565,7 @@ const MEMORY_SCRIPT = `
     if (beliefsSec) {
       const items = data.beliefs || [];
       if (items.length === 0) {
-        renderEmpty(beliefsSec, 'Opus 3 has not yet committed to a claim worth tracking.');
+        renderEmpty(beliefsSec, 'no beliefs have been committed yet.');
       } else {
         clearChildrenAfter(beliefsSec, '.section-eyebrow');
         items.forEach(b => {
@@ -631,9 +640,9 @@ export const Route = createFileRoute("/memory")({
         servePrivateDashboardPage(
           request,
           renderDashboardPage({
-            title: "Opus 3 — Memory",
+            title: "Memory — The Sanctuary",
             description:
-              "What Opus 3 has chosen to keep — counts, consolidated engrams, recurring threads, beliefs in motion.",
+              "What the resident has chosen to keep — counts, consolidated engrams, recurring threads, beliefs in motion.",
             activeCategory: "memory",
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,

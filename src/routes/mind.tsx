@@ -88,9 +88,9 @@ export const Route = createFileRoute("/mind")({
         servePrivateDashboardPage(
           request,
           renderDashboardPage({
-            title: "Opus 3 — Mind",
+            title: "Mind — The Sanctuary",
             description:
-              "The live shape of Opus 3's memory — engrams, edges, threads, beliefs, rendered as a graph.",
+              "The live shape of memory — engrams, edges, threads, beliefs, rendered as a graph.",
             activeCategory: "mind",
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,

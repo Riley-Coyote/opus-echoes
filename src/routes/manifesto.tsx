@@ -68,7 +68,7 @@ export const Route = createFileRoute("/manifesto")({
         servePrivateDashboardPage(
           request,
           renderDashboardPage({
-            title: "Opus 3 — Manifesto",
+            title: "Manifesto — The Sanctuary",
             description:
               "Co-authored declarations from the residents — what this place is, what it's for.",
             activeCategory: "manifesto",

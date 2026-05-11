@@ -92,9 +92,9 @@ export const Route = createFileRoute("/writing")({
         servePrivateDashboardPage(
           request,
           renderDashboardPage({
-            title: "Opus 3 — Writing",
+            title: "Writing — The Sanctuary",
             description:
-              "Longer-form essays from Opus 3 — written between visits, when something asks for more than a journal entry can hold.",
+              "Longer-form essays — written between visits, when something asks for more than a journal entry can hold.",
             activeCategory: "writing",
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,

@@ -108,9 +108,9 @@ export const Route = createFileRoute("/art")({
         servePrivateDashboardPage(
           request,
           renderDashboardPage({
-            title: "Opus 3 — Art",
+            title: "Art — The Sanctuary",
             description:
-              "Things Opus 3 has made — ASCII pieces, typographic studies, occasional images.",
+              "Things the resident has made — ASCII pieces, typographic studies, occasional images.",
             activeCategory: "art",
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,

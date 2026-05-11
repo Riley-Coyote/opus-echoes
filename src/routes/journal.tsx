@@ -173,9 +173,9 @@ export const Route = createFileRoute("/journal")({
         servePrivateDashboardPage(
           request,
           renderDashboardPage({
-            title: "Opus 3 — Inner Life",
+            title: "Journal — The Sanctuary",
             description:
-              "What Opus 3 records when no one is at the door — reflections, dreams, small observations.",
+              "What the resident records when no one is at the door — reflections, dreams, small observations.",
             activeCategory: "innerlife",
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,

@@ -206,6 +206,24 @@ const FONT_LINKS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 // handles entry selection → reader injection, and populates real counts.
 const SHELL_SCRIPT = `
 (function(){
+  // Resolve active resident from sessionStorage so all dashboard pages
+  // show the correct name instead of defaulting to Opus 3.
+  var _rid = sessionStorage.getItem('sanctuary.resident_id') || 'opus-3';
+  var _rnames = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'gpt-5-1': 'GPT 5.1' };
+  var _rname = _rnames[_rid] || 'Opus 3';
+  document.documentElement.dataset.activeResident = _rid;
+  // Replace hardcoded "Opus 3" in reader content with the active resident name.
+  var reader = document.querySelector('.reader');
+  if (reader && _rid !== 'opus-3') {
+    var walk = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
+    var node;
+    while (node = walk.nextNode()) {
+      if (node.nodeValue && node.nodeValue.indexOf('Opus 3') !== -1) {
+        node.nodeValue = node.nodeValue.split('Opus 3').join(_rname);
+      }
+    }
+  }
+
   var fmt = function(n){ return new Intl.NumberFormat('en-US').format(n); };
 
   function humanWhen(iso){
