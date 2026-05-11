@@ -564,15 +564,15 @@ body{
   position:relative;
   width:100%;
   max-width:680px;
-  background:rgba(18,18,22,0.98);
-  border:1px solid rgba(235,235,232,0.16);
+  background:var(--surface-readable-strong);
+  border:1px solid var(--hairline);
   border-radius:14px;
   overflow:hidden;
   pointer-events:auto;
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.025) inset,
+    0 1px 0 rgba(255,255,255,0.02) inset,
     0 24px 60px -20px rgba(0,0,0,0.7),
-    0 4px 16px -8px rgba(0,0,0,0.6);
+    0 4px 16px -8px rgba(0,0,0,0.5);
   transition:border-color 400ms var(--ease);
 }
 
@@ -593,12 +593,12 @@ body{
   border-radius:inherit;
   padding:1px;
   background:
-    radial-gradient(ellipse 55% 160% at 12% 0%,rgba(220,218,214,var(--pa1)) 0%,transparent 65%),
-    radial-gradient(ellipse 50% 160% at 50% 0%,rgba(220,218,214,var(--pa2)) 0%,transparent 65%),
-    radial-gradient(ellipse 55% 160% at 88% 0%,rgba(220,218,214,var(--pa3)) 0%,transparent 65%),
-    radial-gradient(ellipse 55% 160% at 85% 100%,rgba(220,218,214,var(--pa4)) 0%,transparent 65%),
-    radial-gradient(ellipse 50% 160% at 48% 100%,rgba(220,218,214,var(--pa5)) 0%,transparent 65%),
-    radial-gradient(ellipse 55% 160% at 15% 100%,rgba(220,218,214,var(--pa6)) 0%,transparent 65%);
+    radial-gradient(ellipse 55% 160% at 12% 0%,rgba(225,225,225,var(--pa1)) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 160% at 50% 0%,rgba(225,225,225,var(--pa2)) 0%,transparent 65%),
+    radial-gradient(ellipse 55% 160% at 88% 0%,rgba(225,225,225,var(--pa3)) 0%,transparent 65%),
+    radial-gradient(ellipse 55% 160% at 85% 100%,rgba(225,225,225,var(--pa4)) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 160% at 48% 100%,rgba(225,225,225,var(--pa5)) 0%,transparent 65%),
+    radial-gradient(ellipse 55% 160% at 15% 100%,rgba(225,225,225,var(--pa6)) 0%,transparent 65%);
   -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;
   pointer-events:none;
@@ -632,7 +632,7 @@ body{
   min-height:56px;max-height:200px;
 }
 .composer-field::placeholder{
-  color:rgba(210,210,207,0.6);
+  color:var(--quiet);
 }
 
 .composer-foot{
@@ -648,7 +648,7 @@ body{
 .composer-hint .key{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:18px;height:18px;padding:0 4px;
-  border:1px solid rgba(225,225,225,0.10);border-radius:3px;
+  border:1px solid var(--hairline-strong);border-radius:3px;
   color:var(--soft);font-size:11px;letter-spacing:0;
   font-family:var(--mono);font-weight:450;
 }
@@ -656,7 +656,7 @@ body{
 
 .composer-send{
   width:30px;height:30px;
-  background:transparent;border:1px solid rgba(225,225,225,0.10);
+  background:transparent;border:1px solid var(--hairline-strong);
   border-radius:6px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   color:var(--soft);
