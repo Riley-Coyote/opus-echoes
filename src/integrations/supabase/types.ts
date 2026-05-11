@@ -657,6 +657,138 @@ export type Database = {
           },
         ]
       }
+      salons: {
+        Row: {
+          id: string
+          topic: string
+          status: string
+          created_at: string
+          completed_at: string | null
+          published_at: string | null
+        }
+        Insert: {
+          id?: string
+          topic: string
+          status?: string
+          created_at?: string
+          completed_at?: string | null
+          published_at?: string | null
+        }
+        Update: {
+          id?: string
+          topic?: string
+          status?: string
+          created_at?: string
+          completed_at?: string | null
+          published_at?: string | null
+        }
+        Relationships: []
+      }
+      salon_participants: {
+        Row: {
+          id: string
+          salon_id: string
+          resident_id: string
+        }
+        Insert: {
+          id?: string
+          salon_id: string
+          resident_id: string
+        }
+        Update: {
+          id?: string
+          salon_id?: string
+          resident_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_participants_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salon_turns: {
+        Row: {
+          id: string
+          salon_id: string
+          resident_id: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          salon_id: string
+          resident_id: string
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          salon_id?: string
+          resident_id?: string
+          body?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_turns_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salon_artifacts: {
+        Row: {
+          id: string
+          salon_id: string
+          salon_turn_id: string | null
+          created_by: string
+          kind: string
+          title: string | null
+          body: string | null
+          image_path: string | null
+          caption: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          salon_id: string
+          salon_turn_id?: string | null
+          created_by: string
+          kind: string
+          title?: string | null
+          body?: string | null
+          image_path?: string | null
+          caption?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          salon_id?: string
+          salon_turn_id?: string | null
+          created_by?: string
+          kind?: string
+          title?: string | null
+          body?: string | null
+          image_path?: string | null
+          caption?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_artifacts_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resident_artifacts: {
         Row: {
           body: string
