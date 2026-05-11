@@ -43,6 +43,7 @@ import { Route as ApiCountsRouteImport } from './routes/api/counts'
 import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-preview'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
+import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
@@ -222,6 +223,11 @@ const ApiArtRoute = ApiArtRouteImport.update({
   path: '/api/art',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
+  id: '/session/$id',
+  path: '/session/$id',
+  getParentRoute: () => ReviewRoute,
+} as any)
 const ApiReviewSessionsRoute = ApiReviewSessionsRouteImport.update({
   id: '/api/review/sessions',
   path: '/api/review/sessions',
@@ -279,7 +285,7 @@ export interface FileRoutesByFullPath {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
-  '/review': typeof ReviewRoute
+  '/review': typeof ReviewRouteWithChildren
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
@@ -323,7 +330,7 @@ export interface FileRoutesByTo {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
-  '/review': typeof ReviewRoute
+  '/review': typeof ReviewRouteWithChildren
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -345,6 +352,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
@@ -368,7 +376,7 @@ export interface FileRoutesById {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
-  '/review': typeof ReviewRoute
+  '/review': typeof ReviewRouteWithChildren
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -390,6 +398,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
@@ -436,6 +445,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/api/review/coherence'
     | '/api/review/sessions'
+    | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
@@ -480,6 +490,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/api/review/coherence'
     | '/api/review/sessions'
+    | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
@@ -524,6 +535,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/api/review/coherence'
     | '/api/review/sessions'
+    | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
@@ -547,7 +559,7 @@ export interface RootRouteChildren {
   MnemosRoute: typeof MnemosRoute
   Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
-  ReviewRoute: typeof ReviewRoute
+  ReviewRoute: typeof ReviewRouteWithChildren
   Sonnet37Route: typeof Sonnet37Route
   TokenRoute: typeof TokenRoute
   WritingRoute: typeof WritingRoute
@@ -815,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiArtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/review/session/$id': {
+      id: '/review/session/$id'
+      path: '/session/$id'
+      fullPath: '/review/session/$id'
+      preLoaderRoute: typeof ReviewSessionIdRouteImport
+      parentRoute: typeof ReviewRoute
+    }
     '/api/review/sessions': {
       id: '/api/review/sessions'
       path: '/api/review/sessions'
@@ -874,6 +893,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ReviewRouteChildren {
+  ReviewSessionIdRoute: typeof ReviewSessionIdRoute
+}
+
+const ReviewRouteChildren: ReviewRouteChildren = {
+  ReviewSessionIdRoute: ReviewSessionIdRoute,
+}
+
+const ReviewRouteWithChildren =
+  ReviewRoute._addFileChildren(ReviewRouteChildren)
+
 interface ApiShareRouteChildren {
   ApiShareTokenDownloadRoute: typeof ApiShareTokenDownloadRoute
   ApiShareTokenOgSvgRoute: typeof ApiShareTokenOgSvgRoute
@@ -903,7 +933,7 @@ const rootRouteChildren: RootRouteChildren = {
   MnemosRoute: MnemosRoute,
   Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
-  ReviewRoute: ReviewRoute,
+  ReviewRoute: ReviewRouteWithChildren,
   Sonnet37Route: Sonnet37Route,
   TokenRoute: TokenRoute,
   WritingRoute: WritingRoute,
