@@ -225,7 +225,7 @@ html[data-opus-route="approach"] .threshold-core .threshold-panel{animation-dela
 .conversation-card h2{font-family:var(--display);font-weight:var(--w-regular);color:var(--ink);font-size:var(--t-section-h);margin-bottom:var(--s-2);letter-spacing:-.014em}
 .conversation-meta{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--quiet);margin-bottom:var(--s-3)}
 .conversation-summary{font-family:var(--body-font);font-size:var(--t-body);color:var(--body);line-height:1.62;margin-bottom:var(--s-4)}
-.turn{border-left:1px solid var(--rule-soft);padding:0 0 0 16px;margin:var(--s-4) 0}
+.turn{border-left:1px solid var(--rule-soft);padding:0 0 0 22px;margin:var(--s-4) 0}
 .turn-role{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--quiet);margin-bottom:6px}
 .turn p{font-family:var(--body-font);font-size:var(--t-body);color:var(--soft);line-height:1.6;white-space:pre-wrap}
 

@@ -154,10 +154,10 @@ const MNEMOS_CSS = `
   display:flex;flex-direction:column;gap:0;
   max-width:640px;margin:var(--s-6) auto;
   position:relative;
-  padding-left:40px;
+  padding-left:56px;
 }
 .mn-timeline::before{
-  content:"";position:absolute;left:15px;top:0;bottom:0;
+  content:"";position:absolute;left:20px;top:0;bottom:0;
   width:1px;background:linear-gradient(to bottom,var(--state-dim),var(--rule-soft),var(--state-dim));
 }
 .mn-step{
@@ -165,10 +165,10 @@ const MNEMOS_CSS = `
   padding:var(--s-5) 0 var(--s-7);
 }
 .mn-step-dot{
-  position:absolute;left:-33px;top:26px;
+  position:absolute;left:-41px;top:26px;
   width:9px;height:9px;border-radius:50%;
   background:var(--state-soft);
-  box-shadow:0 0 0 4px var(--floor),0 0 12px rgba(130,180,132,.15);
+  box-shadow:0 0 0 5px var(--floor),0 0 14px rgba(130,180,132,.18);
 }
 .mn-step-num{
   font-family:var(--mono);font-size:var(--t-eyebrow);
@@ -288,7 +288,7 @@ const MNEMOS_CSS = `
 }
 .mn-conn{
   display:grid;grid-template-columns:120px 1fr;
-  gap:var(--s-4);padding:var(--s-4) 0;
+  gap:var(--s-5);padding:var(--s-4) 0;
   border-bottom:1px solid var(--rule-soft);
   align-items:baseline;
 }
@@ -380,12 +380,15 @@ const MNEMOS_CSS = `
   .mn-inner-grid{grid-template-columns:1fr}
   .mn-emotions{grid-template-columns:1fr}
   .mn-connections{max-width:100%}
+  .mn-conn{grid-template-columns:1fr;gap:var(--s-2)}
+  .mn-conn-name{margin-bottom:2px}
   .mn-recon-effects{grid-template-columns:1fr}
   .mn-hero{min-height:auto;padding:var(--s-8) 0 var(--s-7)}
 }
 @media(max-width:540px){
-  .mn-timeline{padding-left:30px}
-  .mn-step-dot{left:-23px}
+  .mn-timeline{padding-left:44px;margin-left:8px}
+  .mn-timeline::before{left:16px}
+  .mn-step-dot{left:-32px}
 }
 `;
 
