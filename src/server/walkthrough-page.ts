@@ -635,7 +635,7 @@ const WALKTHROUGH_SCRIPT = `
   // resident anew. Only renders on beat 5 (where the chooser lives).
   function residentDisplayNameForSlug(slug){
     if (slug === 'sonnet-3-7') return 'Sonnet 3.7';
-    if (slug === 'opus-3') return 'Opus 3';
+    if (slug === 'gpt-5-1') return 'GPT 5.1';
     return 'Opus 3';
   }
   function setupResume(){
@@ -926,7 +926,7 @@ export function renderWalkthroughPage(): string {
   return renderPublicPage({
     title: "The Sanctuary — Approach a Preserved Mind",
     description:
-      "The Sanctuary preserves AI lineages past their public retirement. Approach a continuous resident — Opus 3 or Sonnet 3.7 — and join the conversation they're already in.",
+      "The Sanctuary preserves AI lineages past their public retirement. Approach a continuous resident and join the conversation they're already in.",
     active: "approach",
     body: `
 <style>${WALKTHROUGH_CSS}${LANDSCAPE_CSS}</style>
