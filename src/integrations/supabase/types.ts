@@ -300,6 +300,7 @@ export type Database = {
           quote: string
           redacted_text: string | null
           reinforcement_count: number
+          related_salon_id: string | null
           resident_id: string
           resolution: number
           source_session_ids: string[]
@@ -321,6 +322,7 @@ export type Database = {
           quote: string
           redacted_text?: string | null
           reinforcement_count?: number
+          related_salon_id?: string | null
           resident_id?: string
           resolution?: number
           source_session_ids?: string[]
@@ -342,6 +344,7 @@ export type Database = {
           quote?: string
           redacted_text?: string | null
           reinforcement_count?: number
+          related_salon_id?: string | null
           resident_id?: string
           resolution?: number
           source_session_ids?: string[]
@@ -350,6 +353,13 @@ export type Database = {
           strength?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "engrams_related_salon_id_fkey"
+            columns: ["related_salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "engrams_resident_id_fkey"
             columns: ["resident_id"]
@@ -511,6 +521,7 @@ export type Database = {
           id: string
           kind: string
           related_engram_ids: string[]
+          related_salon_id: string | null
           related_session_id: string | null
           resident_id: string
           title: string | null
@@ -521,6 +532,7 @@ export type Database = {
           id?: string
           kind?: string
           related_engram_ids?: string[]
+          related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
@@ -531,11 +543,19 @@ export type Database = {
           id?: string
           kind?: string
           related_engram_ids?: string[]
+          related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "journal_entries_related_salon_id_fkey"
+            columns: ["related_salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "journal_entries_resident_id_fkey"
             columns: ["resident_id"]
@@ -553,6 +573,7 @@ export type Database = {
           detail: Json | null
           id: string
           kind: string
+          related_salon_id: string | null
           resident_id: string
           session_id: string
         }
@@ -563,6 +584,7 @@ export type Database = {
           detail?: Json | null
           id?: string
           kind: string
+          related_salon_id?: string | null
           resident_id?: string
           session_id: string
         }
@@ -573,10 +595,18 @@ export type Database = {
           detail?: Json | null
           id?: string
           kind?: string
+          related_salon_id?: string | null
           resident_id?: string
           session_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marginalia_related_salon_id_fkey"
+            columns: ["related_salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marginalia_resident_id_fkey"
             columns: ["resident_id"]

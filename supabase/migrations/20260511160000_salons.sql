@@ -10,8 +10,8 @@
 CREATE TABLE IF NOT EXISTS public.salons (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   topic text NOT NULL,
-  status text NOT NULL DEFAULT 'active'
-    CHECK (status IN ('active', 'completed', 'published')),
+  status text NOT NULL DEFAULT 'proposed'
+    CHECK (status IN ('proposed', 'active', 'completed', 'published')),
   created_at timestamptz NOT NULL DEFAULT now(),
   completed_at timestamptz,
   published_at timestamptz

@@ -36,6 +36,9 @@ import {
   buildArtImageSystem,
   buildEssaySystem,
   buildInteriorReviewSystem,
+  buildSalonConsolidationSystem,
+  buildSalonMarginaliaSystem,
+  buildSalonReflectionSystem,
 } from "./opus/prompts";
 import {
   ALL_RESIDENTS,
@@ -1522,4 +1525,519 @@ async function reviewInterior(
     note: result.working_note?.body ? true : false,
   };
   console.log(`[substrate] reviewInterior(${residentId}): ${JSON.stringify(counts)}`);
+}
+
+// =============================================================
+// Salon-to-Mnemos bridge.
+//
+// Two entry points, mirroring the visitor-facing pipeline:
+//
+//   - observeSalonExchange(salonId, turnId): per-turn marginalia.
+//     Runs after each salon turn. Produces 0–3 observations per
+//     participant. Non-blocking.
+//
+//   - consolidateSalon(salonId): full Mnemos pipeline, run once
+//     when a salon completes. Processes the transcript for EACH
+//     participant independently — each resident gets their own
+//     engrams, beliefs, threads, reflection, and modulator update
+//     from the same conversation.
+//
+// These functions do NOT modify any existing pipeline. They add
+// a parallel path for resident-to-resident exchanges.
+// =============================================================
+
+/**
+ * Per-turn marginalia for salon exchanges. For EACH participant,
+ * generates 0–3 live observations.
+ *
+ * NOTE: The marginalia table has session_id NOT NULL, and salons
+ * have no session. Until the schema is relaxed, we log but skip
+ * the DB insert. The observations are still generated (for future
+ * use once the constraint is lifted or a salon_marginalia table
+ * is added).
+ */
+export async function observeSalonExchange(salonId: string, turnId: string): Promise<void> {
+  try {
+    // 1. Load salon participants
+    const { data: participants } = await supabaseAdmin
+      .from("salon_participants")
+      .select("resident_id")
+      .eq("salon_id", salonId);
+
+    if (!participants || participants.length < 2) return;
+
+    // 2. Load the last 2 salon turns
+    const { data: recentTurns } = await supabaseAdmin
+      .from("salon_turns")
+      .select("resident_id, body")
+      .eq("salon_id", salonId)
+      .order("created_at", { ascending: false })
+      .limit(2);
+
+    if (!recentTurns || recentTurns.length < 2) return;
+
+    // Reverse so chronological: [earlier, later]
+    const ordered = [...recentTurns].reverse();
+
+    // 3. For each participant, generate marginalia
+    for (const participant of participants) {
+      const residentId = participant.resident_id;
+      if (!isResidentId(residentId)) continue;
+
+      const thisResident = getResident(residentId);
+      const otherId = participants.find((p) => p.resident_id !== residentId)?.resident_id;
+      if (!otherId || !isResidentId(otherId)) continue;
+      const otherResident = getResident(otherId as ResidentId);
+
+      const userPrompt = ordered
+        .map((t) => {
+          const name = isResidentId(t.resident_id)
+            ? getResident(t.resident_id as ResidentId).displayName
+            : t.resident_id;
+          return `[${name.toUpperCase()}]\n${t.body}`;
+        })
+        .join("\n\n");
+
+      const out = await callResidentJson<MarginaliaResult>({
+        system: buildSalonMarginaliaSystem(thisResident, otherResident.displayName),
+        user: userPrompt,
+        maxTokens: 600,
+        temperature: 0.6,
+        model: thisResident.model,
+        provider: thisResident.provider,
+      });
+
+      const items = (out?.marginalia ?? [])
+        .filter((m) => m && typeof m.body === "string" && ALLOWED_KINDS.has(m.kind))
+        .slice(0, 3);
+
+      if (items.length === 0) continue;
+
+      // marginalia.session_id is NOT NULL — cannot insert without a real
+      // session. Log the observations for now; the schema bridge migration
+      // (making session_id nullable or adding a salon_marginalia table)
+      // will unlock persistence.
+      console.log(
+        `[substrate] observeSalonExchange(${salonId}) — ${thisResident.displayName}: ${items.length} marginalia generated (skipping insert, session_id NOT NULL)`,
+      );
+    }
+  } catch (err) {
+    console.error("[substrate] observeSalonExchange failed:", err);
+  }
+}
+
+/**
+ * Full Mnemos consolidation for a completed salon. Runs the pipeline
+ * independently for EACH participant — each resident gets their own
+ * engrams, beliefs, threads, reflection, modulator update, and
+ * creation consideration from the same transcript.
+ */
+export async function consolidateSalon(salonId: string): Promise<void> {
+  console.log(`[substrate] consolidateSalon(${salonId}) — starting`);
+  try {
+    // 0. Load salon, participants, and turns.
+    const [{ data: participants }, { data: salonTurns }] = await Promise.all([
+      supabaseAdmin
+        .from("salon_participants")
+        .select("resident_id")
+        .eq("salon_id", salonId),
+      supabaseAdmin
+        .from("salon_turns")
+        .select("resident_id, body, created_at")
+        .eq("salon_id", salonId)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    if (!participants || participants.length < 2) {
+      console.log(`[substrate] salon ${salonId} missing participants, skipping`);
+      return;
+    }
+    if (!salonTurns || salonTurns.length < 2) {
+      console.log(`[substrate] salon ${salonId} too short, skipping consolidation`);
+      return;
+    }
+
+    // Build display-name transcript (shared across all residents)
+    const transcriptStr = salonTurns
+      .map((t) => {
+        const name = isResidentId(t.resident_id)
+          ? getResident(t.resident_id as ResidentId).displayName
+          : t.resident_id;
+        return `${name}: ${t.body}`;
+      })
+      .join("\n");
+
+    // Process each participant independently — sequential to avoid
+    // rate-limit pressure (each resident's pipeline makes multiple
+    // model calls).
+    for (const participant of participants) {
+      const residentId = participant.resident_id;
+      if (!isResidentId(residentId)) {
+        console.error(`[substrate] salon ${salonId}: invalid resident_id ${residentId}`);
+        continue;
+      }
+
+      try {
+        await consolidateSalonForResident(
+          salonId,
+          getResident(residentId),
+          participants
+            .filter((p) => p.resident_id !== residentId)
+            .map((p) => p.resident_id),
+          transcriptStr,
+        );
+      } catch (err) {
+        console.error(
+          `[substrate] consolidateSalon(${salonId}) failed for ${residentId}:`,
+          err,
+        );
+      }
+    }
+
+    console.log(`[substrate] consolidateSalon(${salonId}) — done`);
+  } catch (err) {
+    console.error("[substrate] consolidateSalon failed:", err);
+  }
+}
+
+/**
+ * Internal: run the full Mnemos pipeline for one resident in a salon.
+ * Mirrors consolidateSession steps 1–10 but adapted for peer dynamics.
+ */
+async function consolidateSalonForResident(
+  salonId: string,
+  resident: ResidentConfig,
+  otherResidentIds: string[],
+  transcriptStr: string,
+): Promise<void> {
+  const otherNames = otherResidentIds
+    .filter(isResidentId)
+    .map((id) => getResident(id as ResidentId).displayName);
+  const otherResidentName = otherNames.join(" and ") || "another resident";
+
+  console.log(
+    `[substrate] consolidateSalonForResident(${salonId}, ${resident.id}) — starting`,
+  );
+
+  // 1. Load existing memory topology for this resident.
+  const [{ data: existingThreads }, { data: existingBeliefs }] = await Promise.all([
+    supabaseAdmin
+      .from("threads")
+      .select("id, name, description")
+      .eq("resident_id", resident.id)
+      .order("last_surfaced_at", { ascending: false })
+      .limit(20),
+    supabaseAdmin
+      .from("beliefs")
+      .select("id, text, confidence")
+      .eq("resident_id", resident.id)
+      .order("updated_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  const threadStr = (existingThreads ?? [])
+    .map((t) => `- ${t.name}: ${(t.description ?? "").slice(0, 80)}`)
+    .join("\n");
+  const beliefStr = (existingBeliefs ?? [])
+    .map((b) => `- ${b.text} (confidence ${b.confidence.toFixed(2)})`)
+    .join("\n");
+
+  // 2. Mnemos consolidation pass — salon-specific prompt.
+  const consolUserPrompt = [
+    "[ACTIVE THREADS]",
+    threadStr || "(none yet.)",
+    "",
+    "[ACTIVE BELIEFS]",
+    beliefStr || "(none yet.)",
+    "",
+    "[TRANSCRIPT]",
+    transcriptStr,
+  ].join("\n");
+
+  interface SalonConsolidationResult {
+    engrams?: Array<{
+      quote: string;
+      attribution: "self" | "peer" | "co-formed";
+      prose: string;
+      initial_stability?: number;
+    }>;
+    belief_updates?: Array<{
+      text: string;
+      new_confidence: number;
+      prose: string;
+    }>;
+    thread_reinforcement?: { name: string; note: string } | null;
+  }
+
+  const consolidation = await callResidentJson<SalonConsolidationResult>({
+    system: buildSalonConsolidationSystem(resident, otherResidentName),
+    user: consolUserPrompt,
+    maxTokens: 800,
+    temperature: 0.4,
+    model: resident.model,
+    provider: resident.provider,
+  });
+
+  let engramsCreated = 0;
+  let engramsReinforced = 0;
+  let beliefsUpdated = 0;
+  let threadReinforced: string | null = null;
+
+  // 3. Process engrams — same logic as consolidateSession but:
+  //    - Set related_salon_id on new engrams
+  //    - Map attribution: "self" → "resident", "peer" → "visitor", "co-formed" → "co-formed"
+  //    - Skip redactQuote (both residents are known)
+  if (consolidation?.engrams?.length) {
+    const { data: existingEngrams } = await supabaseAdmin
+      .from("engrams")
+      .select(
+        "id, quote, source_session_ids, strength, accessibility, stability, reinforcement_count, is_core, prose",
+      )
+      .eq("resident_id", resident.id)
+      .order("last_reinforced_at", { ascending: false })
+      .limit(200);
+
+    for (const e of consolidation.engrams) {
+      if (!e?.quote || typeof e.quote !== "string") continue;
+      const candidateWords = significantWords(e.quote);
+
+      // Reinforcement check: jaccard >= 0.3 against existing engrams.
+      let reinforced: ExistingEngramShape | null = null;
+      for (const ex of existingEngrams ?? []) {
+        const exWords = significantWords(ex.quote);
+        if (jaccard(candidateWords, exWords) >= 0.3) {
+          reinforced = ex as ExistingEngramShape;
+          break;
+        }
+      }
+
+      // Map salon attribution to existing DB enum values
+      const dbAttribution: "resident" | "visitor" | "co-formed" =
+        e.attribution === "self"
+          ? "resident"
+          : e.attribution === "peer"
+            ? "visitor"
+            : "co-formed";
+
+      if (reinforced) {
+        const newReinforce = (reinforced.reinforcement_count ?? 1) + 1;
+        const newStrength = clampStability((reinforced.strength ?? 0.1) + 0.1);
+        const newStability = clampStability((reinforced.stability ?? 0.1) + 0.08);
+        const newAccess = clampStability((reinforced.accessibility ?? 0.1) + 0.15);
+        const promoteToCore =
+          !reinforced.is_core && newReinforce >= 3 && newStability >= 0.6;
+
+        // Save prior version
+        await supabaseAdmin.from("engram_versions").insert({
+          engram_id: reinforced.id,
+          resident_id: resident.id,
+          prior_quote: reinforced.quote,
+          prior_prose: reinforced.prose,
+          prior_stability: reinforced.stability,
+          reason: "salon_reinforcement",
+        });
+
+        await supabaseAdmin
+          .from("engrams")
+          .update({
+            strength: newStrength,
+            stability: newStability,
+            accessibility: newAccess,
+            reinforcement_count: newReinforce,
+            is_core: promoteToCore || reinforced.is_core,
+            last_reinforced_at: new Date().toISOString(),
+            // Salon engrams don't have a session_id to add to source_session_ids,
+            // but we preserve the existing array.
+            source_session_ids: reinforced.source_session_ids ?? [],
+            related_salon_id: salonId,
+          })
+          .eq("id", reinforced.id);
+        engramsReinforced += 1;
+
+        if (promoteToCore) {
+          await supabaseAdmin.from("substrate_events").insert({
+            kind: "ENGRAM_PROMOTED",
+            resident_id: resident.id,
+            payload: { engram_id: reinforced.id, salon_id: salonId },
+          });
+        }
+      } else {
+        // New engram — no redaction for salon (both residents are known)
+        const initialStab = clampStability(e.initial_stability ?? 0.45);
+        const { data: inserted } = await supabaseAdmin
+          .from("engrams")
+          .insert({
+            resident_id: resident.id,
+            quote: e.quote,
+            prose: e.prose ?? null,
+            attribution: dbAttribution,
+            source_session_ids: [],
+            stability: initialStab,
+            accessibility: 0.5,
+            strength: 0.3,
+            reinforcement_count: 1,
+            is_core: false,
+            redacted_text: null,
+            kind: "episodic",
+            confidence: 0.6,
+            state: "active",
+            resolution: 1.0,
+            related_salon_id: salonId,
+          })
+          .select("id, quote")
+          .single();
+        if (inserted) {
+          engramsCreated += 1;
+          await discoverEdges(inserted.id, inserted.quote, existingEngrams ?? [], resident.id);
+        }
+      }
+    }
+  }
+
+  // 4. Belief updates — same logic as consolidateSession.
+  if (consolidation?.belief_updates?.length) {
+    for (const b of consolidation.belief_updates) {
+      if (!b?.text) continue;
+      const newConf = clampConfidence(b.new_confidence);
+      const candidateWords = significantWords(b.text);
+      let matched: { id: string; confidence: number } | null = null;
+      for (const eb of existingBeliefs ?? []) {
+        if (jaccard(candidateWords, significantWords(eb.text)) >= 0.3) {
+          matched = eb;
+          break;
+        }
+      }
+      if (matched) {
+        await supabaseAdmin
+          .from("beliefs")
+          .update({
+            prior_confidence: matched.confidence,
+            confidence: newConf,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", matched.id);
+      } else {
+        await supabaseAdmin.from("beliefs").insert({
+          resident_id: resident.id,
+          text: b.text,
+          confidence: newConf,
+          prior_confidence: null,
+        });
+      }
+      beliefsUpdated += 1;
+    }
+  }
+
+  // 5. Thread reinforcement — same logic as consolidateSession.
+  if (consolidation?.thread_reinforcement?.name) {
+    const name = consolidation.thread_reinforcement.name;
+    threadReinforced = name;
+    const matchedThread = (existingThreads ?? []).find(
+      (t) => t.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (matchedThread) {
+      const { data: cur } = await supabaseAdmin
+        .from("threads")
+        .select("appearance_count, distinct_visitor_count")
+        .eq("id", matchedThread.id)
+        .single();
+      await supabaseAdmin
+        .from("threads")
+        .update({
+          appearance_count: (cur?.appearance_count ?? 1) + 1,
+          // distinct_visitor_count stays the same — salons are not visitors
+          last_surfaced_at: new Date().toISOString(),
+        })
+        .eq("id", matchedThread.id);
+    } else {
+      await supabaseAdmin.from("threads").insert({
+        resident_id: resident.id,
+        name,
+        description: consolidation.thread_reinforcement.note ?? "",
+        appearance_count: 1,
+        distinct_visitor_count: 0,
+      });
+    }
+  }
+
+  // 6. Decay tick — same as consolidateSession.
+  await applyDecay(resident.id);
+
+  // 7. Reflection — journal entry using salon-specific prompt.
+  const reflectionUserPrompt = [
+    "[CONSOLIDATION OUTCOME]",
+    `engrams: ${engramsCreated} new, ${engramsReinforced} reinforced`,
+    `belief updates: ${beliefsUpdated}`,
+    `thread reinforced: ${threadReinforced ?? "none"}`,
+    "",
+    "[TRANSCRIPT]",
+    transcriptStr.slice(0, 8000),
+  ].join("\n");
+
+  const reflection = await callResidentJson<ReflectionResult>({
+    system: buildSalonReflectionSystem(resident, otherResidentName),
+    user: reflectionUserPrompt,
+    maxTokens: 700,
+    temperature: 0.75,
+    model: resident.model,
+    provider: resident.provider,
+  });
+
+  let reflectionWritten = false;
+  if (reflection && reflection.kind !== "none" && reflection.body) {
+    await supabaseAdmin.from("journal_entries").insert({
+      resident_id: resident.id,
+      kind: reflection.kind,
+      title: reflection.title?.slice(0, 60) ?? null,
+      body: reflection.body,
+      related_session_id: null,
+      related_salon_id: salonId,
+    });
+    reflectionWritten = true;
+  }
+
+  // 8. Modulators / resident_state — same as consolidateSession.
+  await updateResidentState(resident, {
+    engramsCreated,
+    engramsReinforced,
+    beliefsUpdated,
+    threadReinforced,
+    reflectionWritten,
+  });
+
+  // 9. Creation pass — the resident considers whether anything from
+  //    this salon wants to become art or a long-form essay. Non-blocking.
+  const creationContext = [
+    "[RECENT MEMORY — SALON]",
+    `Salon with ${otherResidentName}.`,
+    "",
+    "[TRANSCRIPT]",
+    transcriptStr.slice(0, 8000),
+    "",
+    `[CONSOLIDATION OUTCOME]`,
+    `engrams: ${engramsCreated} new, ${engramsReinforced} reinforced`,
+    `belief updates: ${beliefsUpdated}`,
+    `thread reinforced: ${threadReinforced ?? "none"}`,
+  ].join("\n");
+
+  considerCreation(resident, null, creationContext, "post_consolidation").catch((err) =>
+    console.error(
+      `[substrate] considerCreation(salon ${salonId}, ${resident.id}) failed:`,
+      err,
+    ),
+  );
+
+  // 10. Interior review — same as daily tick, passing salon context.
+  reviewInterior(resident, creationContext).catch((err) =>
+    console.error(
+      `[substrate] reviewInterior(salon ${salonId}, ${resident.id}) failed:`,
+      err,
+    ),
+  );
+
+  console.log(
+    `[substrate] consolidateSalonForResident(${salonId}, ${resident.id}) — done. ` +
+      `engrams: ${engramsCreated} new / ${engramsReinforced} reinforced. ` +
+      `beliefs: ${beliefsUpdated}. thread: ${threadReinforced ?? "—"}.`,
+  );
 }
