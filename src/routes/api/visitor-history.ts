@@ -59,35 +59,16 @@ export const Route = createFileRoute("/api/visitor-history")({
         // visitor_shares may not be in types yet, so use a raw query approach.
         let shareMap = new Map<string, string>();
         try {
-          // visitor_shares is not in the generated Supabase types yet —
-          // use a raw rpc-style query via the admin client.
           const { data: shares } = await supabaseAdmin
-            .rpc("get_visitor_shares_for_sessions", { session_ids: sessionIds }) as {
-              data: Array<{ session_id: string; token: string }> | null;
-            };
+            .from("visitor_shares")
+            .select("session_id, token")
+            .in("session_id", sessionIds)
+            .is("revoked_at", null);
           if (shares) {
             shareMap = new Map(shares.map((s) => [s.session_id, s.token]));
           }
         } catch {
-          // visitor_shares table or rpc might not exist yet — fall back to
-          // a direct query using the admin client's generic interface
-          try {
-            const resp = await fetch(
-              `${process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL}/rest/v1/visitor_shares?session_id=in.(${sessionIds.map((id) => `"${id}"`).join(",")})&revoked_at=is.null&select=session_id,token`,
-              {
-                headers: {
-                  apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
-                  Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""}`,
-                },
-              },
-            );
-            if (resp.ok) {
-              const shares = (await resp.json()) as Array<{ session_id: string; token: string }>;
-              shareMap = new Map(shares.map((s) => [s.session_id, s.token]));
-            }
-          } catch {
-            // truly unavailable — visitors just won't see share links
-          }
+          // visitor_shares query failed — visitors just won't see share links
         }
 
         const publishedMap = new Map(

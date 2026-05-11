@@ -865,6 +865,60 @@ export type Database = {
           },
         ]
       }
+      visitor_shares: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+          last_viewed_at: string | null
+          resident_id: string
+          revoked_at: string | null
+          session_id: string
+          token: string
+          view_count: number
+          visitor_note: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+          last_viewed_at?: string | null
+          resident_id: string
+          revoked_at?: string | null
+          session_id: string
+          token: string
+          view_count?: number
+          visitor_note?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          last_viewed_at?: string | null
+          resident_id?: string
+          revoked_at?: string | null
+          session_id?: string
+          token?: string
+          view_count?: number
+          visitor_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_shares_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitor_shares_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
