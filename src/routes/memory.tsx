@@ -488,7 +488,7 @@ const MEMORY_SCRIPT = `
   async function load() {
     let data;
     try {
-      const res = await fetch('/api/memory?resident=' + _rid);
+      const res = await fetch('/api/memory?resident=' + rid);
       data = await res.json();
     } catch (_) { return; }
     if (!data || !data.ok) return;
