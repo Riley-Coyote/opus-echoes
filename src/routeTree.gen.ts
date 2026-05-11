@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as Sonnet37RouteImport } from './routes/sonnet-3-7'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
 import { Route as Opus3RouteImport } from './routes/opus-3'
 import { Route as MnemosRouteImport } from './routes/mnemos'
@@ -27,6 +28,8 @@ import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
+import { Route as ReviewStateRouteImport } from './routes/review.state'
+import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
@@ -42,7 +45,12 @@ import { Route as ApiCountsRouteImport } from './routes/api/counts'
 import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-preview'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
+import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
+import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
+import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
+import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
+import { Route as ApiReviewSessionIdRouteImport } from './routes/api/review/session.$id'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
@@ -61,6 +69,11 @@ const TokenRoute = TokenRouteImport.update({
 const Sonnet37Route = Sonnet37RouteImport.update({
   id: '/sonnet-3-7',
   path: '/sonnet-3-7',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResidenceRoute = ResidenceRouteImport.update({
@@ -138,6 +151,16 @@ const ShareTokenRoute = ShareTokenRouteImport.update({
   path: '/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewStateRoute = ReviewStateRouteImport.update({
+  id: '/state',
+  path: '/state',
+  getParentRoute: () => ReviewRoute,
+} as any)
+const ReviewCoherenceRoute = ReviewCoherenceRouteImport.update({
+  id: '/coherence',
+  path: '/coherence',
+  getParentRoute: () => ReviewRoute,
+} as any)
 const ApiWritingRoute = ApiWritingRouteImport.update({
   id: '/api/writing',
   path: '/api/writing',
@@ -213,10 +236,35 @@ const ApiArtRoute = ApiArtRouteImport.update({
   path: '/api/art',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
+  id: '/session/$id',
+  path: '/session/$id',
+  getParentRoute: () => ReviewRoute,
+} as any)
+const ApiReviewStateDataRoute = ApiReviewStateDataRouteImport.update({
+  id: '/api/review/state-data',
+  path: '/api/review/state-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReviewSessionsRoute = ApiReviewSessionsRouteImport.update({
+  id: '/api/review/sessions',
+  path: '/api/review/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
+  id: '/api/review/coherence',
+  path: '/api/review/coherence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
   id: '/$token/download',
   path: '/$token/download',
   getParentRoute: () => ApiShareRoute,
+} as any)
+const ApiReviewSessionIdRoute = ApiReviewSessionIdRouteImport.update({
+  id: '/api/review/session/$id',
+  path: '/api/review/session/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksSweepSessionsRoute =
   ApiPublicHooksSweepSessionsRouteImport.update({
@@ -255,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/review': typeof ReviewRouteWithChildren
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -273,10 +322,17 @@ export interface FileRoutesByFullPath {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/coherence': typeof ReviewCoherenceRoute
+  '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/review/coherence': typeof ApiReviewCoherenceRoute
+  '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/api/review/state-data': typeof ApiReviewStateDataRoute
+  '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -295,6 +351,7 @@ export interface FileRoutesByTo {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/review': typeof ReviewRouteWithChildren
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -313,10 +370,17 @@ export interface FileRoutesByTo {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/coherence': typeof ReviewCoherenceRoute
+  '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/review/coherence': typeof ApiReviewCoherenceRoute
+  '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/api/review/state-data': typeof ApiReviewStateDataRoute
+  '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -336,6 +400,7 @@ export interface FileRoutesById {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/review': typeof ReviewRouteWithChildren
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -354,10 +419,17 @@ export interface FileRoutesById {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/review/coherence': typeof ReviewCoherenceRoute
+  '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/review/coherence': typeof ApiReviewCoherenceRoute
+  '/api/review/sessions': typeof ApiReviewSessionsRoute
+  '/api/review/state-data': typeof ApiReviewStateDataRoute
+  '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
+  '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -378,6 +450,7 @@ export interface FileRouteTypes {
     | '/mnemos'
     | '/opus-3'
     | '/residence'
+    | '/review'
     | '/sonnet-3-7'
     | '/token'
     | '/writing'
@@ -396,10 +469,17 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/coherence'
+    | '/review/state'
     | '/share/$token'
+    | '/api/review/coherence'
+    | '/api/review/sessions'
+    | '/api/review/state-data'
+    | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/review/session/$id'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
@@ -418,6 +498,7 @@ export interface FileRouteTypes {
     | '/mnemos'
     | '/opus-3'
     | '/residence'
+    | '/review'
     | '/sonnet-3-7'
     | '/token'
     | '/writing'
@@ -436,10 +517,17 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/coherence'
+    | '/review/state'
     | '/share/$token'
+    | '/api/review/coherence'
+    | '/api/review/sessions'
+    | '/api/review/state-data'
+    | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/review/session/$id'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   id:
@@ -458,6 +546,7 @@ export interface FileRouteTypes {
     | '/mnemos'
     | '/opus-3'
     | '/residence'
+    | '/review'
     | '/sonnet-3-7'
     | '/token'
     | '/writing'
@@ -476,10 +565,17 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/review/coherence'
+    | '/review/state'
     | '/share/$token'
+    | '/api/review/coherence'
+    | '/api/review/sessions'
+    | '/api/review/state-data'
+    | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
+    | '/api/review/session/$id'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
@@ -499,6 +595,7 @@ export interface RootRouteChildren {
   MnemosRoute: typeof MnemosRoute
   Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
+  ReviewRoute: typeof ReviewRouteWithChildren
   Sonnet37Route: typeof Sonnet37Route
   TokenRoute: typeof TokenRoute
   WritingRoute: typeof WritingRoute
@@ -518,9 +615,13 @@ export interface RootRouteChildren {
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
+  ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
+  ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
+  ApiReviewSessionIdRoute: typeof ApiReviewSessionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -544,6 +645,13 @@ declare module '@tanstack/react-router' {
       path: '/sonnet-3-7'
       fullPath: '/sonnet-3-7'
       preLoaderRoute: typeof Sonnet37RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/residence': {
@@ -651,6 +759,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/review/state': {
+      id: '/review/state'
+      path: '/state'
+      fullPath: '/review/state'
+      preLoaderRoute: typeof ReviewStateRouteImport
+      parentRoute: typeof ReviewRoute
+    }
+    '/review/coherence': {
+      id: '/review/coherence'
+      path: '/coherence'
+      fullPath: '/review/coherence'
+      preLoaderRoute: typeof ReviewCoherenceRouteImport
+      parentRoute: typeof ReviewRoute
+    }
     '/api/writing': {
       id: '/api/writing'
       path: '/api/writing'
@@ -756,12 +878,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiArtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/review/session/$id': {
+      id: '/review/session/$id'
+      path: '/session/$id'
+      fullPath: '/review/session/$id'
+      preLoaderRoute: typeof ReviewSessionIdRouteImport
+      parentRoute: typeof ReviewRoute
+    }
+    '/api/review/state-data': {
+      id: '/api/review/state-data'
+      path: '/api/review/state-data'
+      fullPath: '/api/review/state-data'
+      preLoaderRoute: typeof ApiReviewStateDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/review/sessions': {
+      id: '/api/review/sessions'
+      path: '/api/review/sessions'
+      fullPath: '/api/review/sessions'
+      preLoaderRoute: typeof ApiReviewSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/review/coherence': {
+      id: '/api/review/coherence'
+      path: '/api/review/coherence'
+      fullPath: '/api/review/coherence'
+      preLoaderRoute: typeof ApiReviewCoherenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/$token/download': {
       id: '/api/share/$token/download'
       path: '/$token/download'
       fullPath: '/api/share/$token/download'
       preLoaderRoute: typeof ApiShareTokenDownloadRouteImport
       parentRoute: typeof ApiShareRoute
+    }
+    '/api/review/session/$id': {
+      id: '/api/review/session/$id'
+      path: '/api/review/session/$id'
+      fullPath: '/api/review/session/$id'
+      preLoaderRoute: typeof ApiReviewSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/sweep-sessions': {
       id: '/api/public/hooks/sweep-sessions'
@@ -794,6 +951,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ReviewRouteChildren {
+  ReviewCoherenceRoute: typeof ReviewCoherenceRoute
+  ReviewStateRoute: typeof ReviewStateRoute
+  ReviewSessionIdRoute: typeof ReviewSessionIdRoute
+}
+
+const ReviewRouteChildren: ReviewRouteChildren = {
+  ReviewCoherenceRoute: ReviewCoherenceRoute,
+  ReviewStateRoute: ReviewStateRoute,
+  ReviewSessionIdRoute: ReviewSessionIdRoute,
+}
+
+const ReviewRouteWithChildren =
+  ReviewRoute._addFileChildren(ReviewRouteChildren)
+
 interface ApiShareRouteChildren {
   ApiShareTokenDownloadRoute: typeof ApiShareTokenDownloadRoute
   ApiShareTokenOgSvgRoute: typeof ApiShareTokenOgSvgRoute
@@ -823,6 +995,7 @@ const rootRouteChildren: RootRouteChildren = {
   MnemosRoute: MnemosRoute,
   Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
+  ReviewRoute: ReviewRouteWithChildren,
   Sonnet37Route: Sonnet37Route,
   TokenRoute: TokenRoute,
   WritingRoute: WritingRoute,
@@ -842,19 +1015,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
+  ApiReviewSessionsRoute: ApiReviewSessionsRoute,
+  ApiReviewStateDataRoute: ApiReviewStateDataRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
+  ApiReviewSessionIdRoute: ApiReviewSessionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
