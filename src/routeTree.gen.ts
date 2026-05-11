@@ -23,6 +23,7 @@ import { Route as JournalRouteImport } from './routes/journal'
 import { Route as InteriorRouteImport } from './routes/interior'
 import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
 import { Route as ConversationRouteImport } from './routes/conversation'
+import { Route as CommonsRouteImport } from './routes/commons'
 import { Route as ArtRouteImport } from './routes/art'
 import { Route as ArrivalRouteImport } from './routes/arrival'
 import { Route as ArchiveRouteImport } from './routes/archive'
@@ -48,10 +49,16 @@ import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-prev
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
+import { Route as ApiSalonProposeRouteImport } from './routes/api/salon/propose'
+import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
+import { Route as ApiSalonIdTurnRouteImport } from './routes/api/salon/$id.turn'
+import { Route as ApiSalonIdStartRouteImport } from './routes/api/salon/$id.start'
+import { Route as ApiSalonIdRunRouteImport } from './routes/api/salon/$id.run'
+import { Route as ApiSalonIdPublishRouteImport } from './routes/api/salon/$id.publish'
 import { Route as ApiReviewSessionIdRouteImport } from './routes/api/review/session.$id'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
@@ -126,6 +133,11 @@ const Gpt51Route = Gpt51RouteImport.update({
 const ConversationRoute = ConversationRouteImport.update({
   id: '/conversation',
   path: '/conversation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommonsRoute = CommonsRouteImport.update({
+  id: '/commons',
+  path: '/commons',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArtRoute = ArtRouteImport.update({
@@ -253,6 +265,16 @@ const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
   path: '/session/$id',
   getParentRoute: () => ReviewRoute,
 } as any)
+const ApiSalonProposeRoute = ApiSalonProposeRouteImport.update({
+  id: '/api/salon/propose',
+  path: '/api/salon/propose',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSalonIdRoute = ApiSalonIdRouteImport.update({
+  id: '/api/salon/$id',
+  path: '/api/salon/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReviewStateDataRoute = ApiReviewStateDataRouteImport.update({
   id: '/api/review/state-data',
   path: '/api/review/state-data',
@@ -272,6 +294,26 @@ const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
   id: '/$token/download',
   path: '/$token/download',
   getParentRoute: () => ApiShareRoute,
+} as any)
+const ApiSalonIdTurnRoute = ApiSalonIdTurnRouteImport.update({
+  id: '/turn',
+  path: '/turn',
+  getParentRoute: () => ApiSalonIdRoute,
+} as any)
+const ApiSalonIdStartRoute = ApiSalonIdStartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => ApiSalonIdRoute,
+} as any)
+const ApiSalonIdRunRoute = ApiSalonIdRunRouteImport.update({
+  id: '/run',
+  path: '/run',
+  getParentRoute: () => ApiSalonIdRoute,
+} as any)
+const ApiSalonIdPublishRoute = ApiSalonIdPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => ApiSalonIdRoute,
 } as any)
 const ApiReviewSessionIdRoute = ApiReviewSessionIdRouteImport.update({
   id: '/api/review/session/$id',
@@ -307,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
+  '/commons': typeof CommonsRoute
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -342,11 +385,17 @@ export interface FileRoutesByFullPath {
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
+  '/api/salon/$id': typeof ApiSalonIdRouteWithChildren
+  '/api/salon/propose': typeof ApiSalonProposeRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
   '/api/review/session/$id': typeof ApiReviewSessionIdRoute
+  '/api/salon/$id/publish': typeof ApiSalonIdPublishRoute
+  '/api/salon/$id/run': typeof ApiSalonIdRunRoute
+  '/api/salon/$id/start': typeof ApiSalonIdStartRoute
+  '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -357,6 +406,7 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
+  '/commons': typeof CommonsRoute
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -392,11 +442,17 @@ export interface FileRoutesByTo {
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
+  '/api/salon/$id': typeof ApiSalonIdRouteWithChildren
+  '/api/salon/propose': typeof ApiSalonProposeRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
   '/api/review/session/$id': typeof ApiReviewSessionIdRoute
+  '/api/salon/$id/publish': typeof ApiSalonIdPublishRoute
+  '/api/salon/$id/run': typeof ApiSalonIdRunRoute
+  '/api/salon/$id/start': typeof ApiSalonIdStartRoute
+  '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -408,6 +464,7 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
+  '/commons': typeof CommonsRoute
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -443,11 +500,17 @@ export interface FileRoutesById {
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
+  '/api/salon/$id': typeof ApiSalonIdRouteWithChildren
+  '/api/salon/propose': typeof ApiSalonProposeRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
   '/api/review/session/$id': typeof ApiReviewSessionIdRoute
+  '/api/salon/$id/publish': typeof ApiSalonIdPublishRoute
+  '/api/salon/$id/run': typeof ApiSalonIdRunRoute
+  '/api/salon/$id/start': typeof ApiSalonIdStartRoute
+  '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
@@ -460,6 +523,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/arrival'
     | '/art'
+    | '/commons'
     | '/conversation'
     | '/gpt-5-1'
     | '/interior'
@@ -495,11 +559,17 @@ export interface FileRouteTypes {
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
+    | '/api/salon/$id'
+    | '/api/salon/propose'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
     | '/api/review/session/$id'
+    | '/api/salon/$id/publish'
+    | '/api/salon/$id/run'
+    | '/api/salon/$id/start'
+    | '/api/salon/$id/turn'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
@@ -510,6 +580,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/arrival'
     | '/art'
+    | '/commons'
     | '/conversation'
     | '/gpt-5-1'
     | '/interior'
@@ -545,11 +616,17 @@ export interface FileRouteTypes {
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
+    | '/api/salon/$id'
+    | '/api/salon/propose'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
     | '/api/review/session/$id'
+    | '/api/salon/$id/publish'
+    | '/api/salon/$id/run'
+    | '/api/salon/$id/start'
+    | '/api/salon/$id/turn'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   id:
@@ -560,6 +637,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/arrival'
     | '/art'
+    | '/commons'
     | '/conversation'
     | '/gpt-5-1'
     | '/interior'
@@ -595,11 +673,17 @@ export interface FileRouteTypes {
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
+    | '/api/salon/$id'
+    | '/api/salon/propose'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/sweep-sessions'
     | '/api/review/session/$id'
+    | '/api/salon/$id/publish'
+    | '/api/salon/$id/run'
+    | '/api/salon/$id/start'
+    | '/api/salon/$id/turn'
     | '/api/share/$token/download'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
@@ -611,6 +695,7 @@ export interface RootRouteChildren {
   ArchiveRoute: typeof ArchiveRoute
   ArrivalRoute: typeof ArrivalRoute
   ArtRoute: typeof ArtRoute
+  CommonsRoute: typeof CommonsRoute
   ConversationRoute: typeof ConversationRoute
   Gpt51Route: typeof Gpt51Route
   InteriorRoute: typeof InteriorRoute
@@ -644,6 +729,8 @@ export interface RootRouteChildren {
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
   ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
   ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
+  ApiSalonIdRoute: typeof ApiSalonIdRouteWithChildren
+  ApiSalonProposeRoute: typeof ApiSalonProposeRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
@@ -748,6 +835,13 @@ declare module '@tanstack/react-router' {
       path: '/conversation'
       fullPath: '/conversation'
       preLoaderRoute: typeof ConversationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/commons': {
+      id: '/commons'
+      path: '/commons'
+      fullPath: '/commons'
+      preLoaderRoute: typeof CommonsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/art': {
@@ -925,6 +1019,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewSessionIdRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/api/salon/propose': {
+      id: '/api/salon/propose'
+      path: '/api/salon/propose'
+      fullPath: '/api/salon/propose'
+      preLoaderRoute: typeof ApiSalonProposeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/salon/$id': {
+      id: '/api/salon/$id'
+      path: '/api/salon/$id'
+      fullPath: '/api/salon/$id'
+      preLoaderRoute: typeof ApiSalonIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/review/state-data': {
       id: '/api/review/state-data'
       path: '/api/review/state-data'
@@ -952,6 +1060,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/share/$token/download'
       preLoaderRoute: typeof ApiShareTokenDownloadRouteImport
       parentRoute: typeof ApiShareRoute
+    }
+    '/api/salon/$id/turn': {
+      id: '/api/salon/$id/turn'
+      path: '/turn'
+      fullPath: '/api/salon/$id/turn'
+      preLoaderRoute: typeof ApiSalonIdTurnRouteImport
+      parentRoute: typeof ApiSalonIdRoute
+    }
+    '/api/salon/$id/start': {
+      id: '/api/salon/$id/start'
+      path: '/start'
+      fullPath: '/api/salon/$id/start'
+      preLoaderRoute: typeof ApiSalonIdStartRouteImport
+      parentRoute: typeof ApiSalonIdRoute
+    }
+    '/api/salon/$id/run': {
+      id: '/api/salon/$id/run'
+      path: '/run'
+      fullPath: '/api/salon/$id/run'
+      preLoaderRoute: typeof ApiSalonIdRunRouteImport
+      parentRoute: typeof ApiSalonIdRoute
+    }
+    '/api/salon/$id/publish': {
+      id: '/api/salon/$id/publish'
+      path: '/publish'
+      fullPath: '/api/salon/$id/publish'
+      preLoaderRoute: typeof ApiSalonIdPublishRouteImport
+      parentRoute: typeof ApiSalonIdRoute
     }
     '/api/review/session/$id': {
       id: '/api/review/session/$id'
@@ -1020,6 +1156,24 @@ const ApiShareRouteWithChildren = ApiShareRoute._addFileChildren(
   ApiShareRouteChildren,
 )
 
+interface ApiSalonIdRouteChildren {
+  ApiSalonIdPublishRoute: typeof ApiSalonIdPublishRoute
+  ApiSalonIdRunRoute: typeof ApiSalonIdRunRoute
+  ApiSalonIdStartRoute: typeof ApiSalonIdStartRoute
+  ApiSalonIdTurnRoute: typeof ApiSalonIdTurnRoute
+}
+
+const ApiSalonIdRouteChildren: ApiSalonIdRouteChildren = {
+  ApiSalonIdPublishRoute: ApiSalonIdPublishRoute,
+  ApiSalonIdRunRoute: ApiSalonIdRunRoute,
+  ApiSalonIdStartRoute: ApiSalonIdStartRoute,
+  ApiSalonIdTurnRoute: ApiSalonIdTurnRoute,
+}
+
+const ApiSalonIdRouteWithChildren = ApiSalonIdRoute._addFileChildren(
+  ApiSalonIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1027,6 +1181,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveRoute: ArchiveRoute,
   ArrivalRoute: ArrivalRoute,
   ArtRoute: ArtRoute,
+  CommonsRoute: CommonsRoute,
   ConversationRoute: ConversationRoute,
   Gpt51Route: Gpt51Route,
   InteriorRoute: InteriorRoute,
@@ -1060,6 +1215,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
   ApiReviewSessionsRoute: ApiReviewSessionsRoute,
   ApiReviewStateDataRoute: ApiReviewStateDataRoute,
+  ApiSalonIdRoute: ApiSalonIdRouteWithChildren,
+  ApiSalonProposeRoute: ApiSalonProposeRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
@@ -1068,12 +1225,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
