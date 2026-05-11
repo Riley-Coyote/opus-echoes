@@ -116,7 +116,6 @@ html[data-opus-route="conversation"] .opus-presence-layer {
   }
   html[data-opus-route="approach"] .threshold-stage {
     justify-content: flex-start;
-    min-height: calc(100svh - 132px);
   }
   html[data-opus-route="approach"] .threshold-core {
     width: min(560px, 46vw);
