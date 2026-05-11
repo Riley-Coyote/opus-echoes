@@ -1287,45 +1287,8 @@ async function createImageArt(
     throw new Error("image_prompt_empty");
   }
 
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  if (!lovableKey) throw new Error("LOVABLE_API_KEY missing");
-
-  const renderResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image",
-      messages: [{ role: "user", content: author.prompt }],
-      modalities: ["image", "text"],
-    }),
-  });
-  if (!renderResp.ok) {
-    const txt = await renderResp.text();
-    throw new Error(`gemini_image ${renderResp.status}: ${txt.slice(0, 200)}`);
-  }
-  const renderJson = (await renderResp.json()) as {
-    choices?: Array<{ message?: { images?: Array<{ image_url?: { url?: string } }> } }>;
-  };
-  const dataUrl = renderJson.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-  if (!dataUrl || !dataUrl.startsWith("data:image/")) {
-    throw new Error("gemini_image_no_data_url");
-  }
-  const m = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!m) throw new Error("gemini_image_unparseable");
-  const mime = m[1];
-  const base64 = m[2];
-  const ext = mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "bin";
-  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
-  const id = crypto.randomUUID();
-  const path = `${new Date().toISOString().slice(0, 10)}/${id}.${ext}`;
-  const { error: upErr } = await supabaseAdmin.storage
-    .from("art")
-    .upload(path, bytes, { contentType: mime, upsert: false });
-  if (upErr) throw new Error(`storage_upload: ${upErr.message}`);
+  const { generateAndUpload } = await import("./image-gen.server");
+  const path = await generateAndUpload(author.prompt);
 
   const { data: piece } = await supabaseAdmin
     .from("art_pieces")
