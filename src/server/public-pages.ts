@@ -351,7 +351,7 @@ export function renderPublicPage(opts: PublicPageOptions): string {
 <title>${escapeHtml(opts.title)}</title>
 <meta name="description" content="${escapeHtml(opts.description)}">
 ${FONTS}
-<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-3-7"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
+<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-3-7"||p==="/gpt-5-1"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
 <style>${PUBLIC_CSS}</style>
 </head>
 <body>
