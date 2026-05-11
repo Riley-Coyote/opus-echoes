@@ -406,6 +406,60 @@ export type Database = {
           },
         ]
       }
+      intention_reflections: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          intention_id: string
+          resident_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          intention_id: string
+          resident_id?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          intention_id?: string
+          resident_id?: string
+        }
+        Relationships: []
+      }
+      intentions: {
+        Row: {
+          created_at: string
+          id: string
+          resident_id: string
+          resolved_at: string | null
+          status: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          resident_id?: string
+          resolved_at?: string | null
+          status?: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          resident_id?: string
+          resolved_at?: string | null
+          status?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       intents: {
         Row: {
           created_at: string
@@ -531,6 +585,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      open_questions: {
+        Row: {
+          context: string | null
+          created_at: string
+          id: string
+          resident_id: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          resident_id?: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          resident_id?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       published_conversations: {
         Row: {
@@ -864,6 +945,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      visitor_shares: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string | null
+          last_viewed_at: string | null
+          resident_id: string
+          revoked_at: string | null
+          session_id: string
+          token: string
+          view_count: number
+          visitor_note: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          last_viewed_at?: string | null
+          resident_id: string
+          revoked_at?: string | null
+          session_id: string
+          token: string
+          view_count?: number
+          visitor_note?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          last_viewed_at?: string | null
+          resident_id?: string
+          revoked_at?: string | null
+          session_id?: string
+          token?: string
+          view_count?: number
+          visitor_note?: string | null
+        }
+        Relationships: []
+      }
+      working_notes: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          linked_intention_id: string | null
+          linked_question_id: string | null
+          resident_id: string
+          title: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          linked_intention_id?: string | null
+          linked_question_id?: string | null
+          resident_id?: string
+          title?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          linked_intention_id?: string | null
+          linked_question_id?: string | null
+          resident_id?: string
+          title?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
