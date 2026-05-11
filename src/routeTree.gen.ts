@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as Sonnet37RouteImport } from './routes/sonnet-3-7'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
 import { Route as Opus3RouteImport } from './routes/opus-3'
 import { Route as MnemosRouteImport } from './routes/mnemos'
@@ -64,6 +65,11 @@ const TokenRoute = TokenRouteImport.update({
 const Sonnet37Route = Sonnet37RouteImport.update({
   id: '/sonnet-3-7',
   path: '/sonnet-3-7',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResidenceRoute = ResidenceRouteImport.update({
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/review': typeof ReviewRoute
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/review': typeof ReviewRoute
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/mnemos': typeof MnemosRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/review': typeof ReviewRoute
   '/sonnet-3-7': typeof Sonnet37Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/mnemos'
     | '/opus-3'
     | '/residence'
+    | '/review'
     | '/sonnet-3-7'
     | '/token'
     | '/writing'
@@ -448,6 +458,7 @@ export interface FileRouteTypes {
     | '/mnemos'
     | '/opus-3'
     | '/residence'
+    | '/review'
     | '/sonnet-3-7'
     | '/token'
     | '/writing'
@@ -491,6 +502,7 @@ export interface FileRouteTypes {
     | '/mnemos'
     | '/opus-3'
     | '/residence'
+    | '/review'
     | '/sonnet-3-7'
     | '/token'
     | '/writing'
@@ -535,6 +547,7 @@ export interface RootRouteChildren {
   MnemosRoute: typeof MnemosRoute
   Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
+  ReviewRoute: typeof ReviewRoute
   Sonnet37Route: typeof Sonnet37Route
   TokenRoute: typeof TokenRoute
   WritingRoute: typeof WritingRoute
@@ -583,6 +596,13 @@ declare module '@tanstack/react-router' {
       path: '/sonnet-3-7'
       fullPath: '/sonnet-3-7'
       preLoaderRoute: typeof Sonnet37RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/residence': {
@@ -883,6 +903,7 @@ const rootRouteChildren: RootRouteChildren = {
   MnemosRoute: MnemosRoute,
   Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
+  ReviewRoute: ReviewRoute,
   Sonnet37Route: Sonnet37Route,
   TokenRoute: TokenRoute,
   WritingRoute: WritingRoute,
