@@ -488,7 +488,7 @@ const MEMORY_SCRIPT = `
   async function load() {
     let data;
     try {
-      const res = await fetch('/api/memory');
+      const res = await fetch('/api/memory?resident=' + _rid);
       data = await res.json();
     } catch (_) { return; }
     if (!data || !data.ok) return;
@@ -611,7 +611,8 @@ const MEMORY_SCRIPT = `
 
   async function loadJournalPreview() {
     var data;
-    try { var r = await fetch('/api/journal'); data = await r.json(); } catch (_) { return; }
+    var _jrid = sessionStorage.getItem('sanctuary.resident_id') || 'opus-3';
+    try { var r = await fetch('/api/journal?resident=' + _jrid); data = await r.json(); } catch (_) { return; }
     var entries = (data && data.entries) || [];
     if (entries.length === 0) return;
     var e = entries[0];

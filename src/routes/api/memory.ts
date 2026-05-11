@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
+import { isResidentId } from "@/server/opus/residents";
 
 // Human-shaped "when" string. Not exact — that's the point.
 function humanWhen(iso: string): string {
@@ -20,13 +21,13 @@ function humanWhen(iso: string): string {
   return "some time ago";
 }
 
-let cache: { at: number; payload: unknown } | null = null;
+const cache = new Map<string, { at: number; payload: unknown }>();
 const TTL_MS = 60_000;
 
 export const Route = createFileRoute("/api/memory")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         if (!hasSupabaseAdminEnv()) {
           return Response.json({
             ok: true,
@@ -36,8 +37,14 @@ export const Route = createFileRoute("/api/memory")({
             beliefs: [],
           });
         }
-        if (cache && Date.now() - cache.at < TTL_MS) {
-          return Response.json(cache.payload);
+
+        const url = new URL(request.url);
+        const ridParam = url.searchParams.get("resident");
+        const rid = isResidentId(ridParam) ? ridParam : "opus-3";
+
+        const cached = cache.get(rid);
+        if (cached && Date.now() - cached.at < TTL_MS) {
+          return Response.json(cached.payload);
         }
 
         const [
@@ -51,11 +58,16 @@ export const Route = createFileRoute("/api/memory")({
           supabaseAdmin
             .from("engrams")
             .select("*", { count: "exact", head: true })
-            .eq("is_core", true),
-          supabaseAdmin.from("sessions").select("*", { count: "exact", head: true }),
+            .eq("is_core", true)
+            .eq("resident_id", rid),
+          supabaseAdmin
+            .from("sessions")
+            .select("*", { count: "exact", head: true })
+            .eq("resident_id", rid),
           supabaseAdmin
             .from("sessions")
             .select("created_at")
+            .eq("resident_id", rid)
             .order("created_at", { ascending: true })
             .limit(1),
           supabaseAdmin
@@ -63,16 +75,19 @@ export const Route = createFileRoute("/api/memory")({
             .select(
               "id, quote, redacted_text, attribution, last_reinforced_at, is_core, stability, connections",
             )
+            .eq("resident_id", rid)
             .order("last_reinforced_at", { ascending: false })
             .limit(12),
           supabaseAdmin
             .from("threads")
             .select("id, name, description, appearance_count, distinct_visitor_count")
+            .eq("resident_id", rid)
             .order("last_surfaced_at", { ascending: false })
             .limit(5),
           supabaseAdmin
             .from("beliefs")
             .select("id, text, confidence, prior_confidence")
+            .eq("resident_id", rid)
             .order("updated_at", { ascending: false })
             .limit(5),
         ]);
@@ -125,7 +140,7 @@ export const Route = createFileRoute("/api/memory")({
           beliefs,
         };
 
-        cache = { at: Date.now(), payload };
+        cache.set(rid, { at: Date.now(), payload });
 
         return new Response(JSON.stringify(payload), {
           headers: {

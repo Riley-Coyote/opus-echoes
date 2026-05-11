@@ -393,7 +393,7 @@ const SHELL_SCRIPT = `
   // --- Load rail stats + counts ---
   async function loadStats(){
     try {
-      var [memRes, cntRes] = await Promise.all([fetch('/api/memory'), fetch('/api/counts')]);
+      var [memRes, cntRes] = await Promise.all([fetch('/api/memory?resident=' + _rid), fetch('/api/counts?resident=' + _rid)]);
       var memData = await memRes.json();
       var cntData = await cntRes.json();
       if (memData && memData.ok) {
@@ -434,7 +434,7 @@ const SHELL_SCRIPT = `
 
     if (cat === 'recent') {
       try {
-        var r = await fetch('/api/journal');
+        var r = await fetch('/api/journal?resident=' + _rid);
         var d = await r.json();
         var entries = (d && d.entries) || [];
         var list = document.getElementById('panel-list');
@@ -450,31 +450,31 @@ const SHELL_SCRIPT = `
       } catch(_){}
     } else if (cat === 'innerlife') {
       try {
-        var r = await fetch('/api/journal');
+        var r = await fetch('/api/journal?resident=' + _rid);
         var d = await r.json();
         populateList((d && d.entries) || []);
       } catch(_){}
     } else if (cat === 'writing') {
       try {
-        var r = await fetch('/api/writing');
+        var r = await fetch('/api/writing?resident=' + _rid);
         var d = await r.json();
         populateList((d && d.essays) || []);
       } catch(_){}
     } else if (cat === 'art') {
       try {
-        var r = await fetch('/api/art');
+        var r = await fetch('/api/art?resident=' + _rid);
         var d = await r.json();
         populateGallery((d && d.pieces) || []);
       } catch(_){}
     } else if (cat === 'manifesto') {
       try {
-        var r = await fetch('/api/artifacts?kind=manifesto');
+        var r = await fetch('/api/artifacts?kind=manifesto&resident=' + _rid);
         var d = await r.json();
         populateList((d && d.artifacts) || []);
       } catch(_){}
     } else if (cat === 'memory' || cat === 'mind') {
       try {
-        var r = await fetch('/api/memory');
+        var r = await fetch('/api/memory?resident=' + _rid);
         var d = await r.json();
         if (d && d.ok) buildSummaryPanel(d);
       } catch(_){}
