@@ -300,7 +300,6 @@ export type Database = {
           quote: string
           redacted_text: string | null
           reinforcement_count: number
-          related_salon_id: string | null
           resident_id: string
           resolution: number
           source_session_ids: string[]
@@ -322,7 +321,6 @@ export type Database = {
           quote: string
           redacted_text?: string | null
           reinforcement_count?: number
-          related_salon_id?: string | null
           resident_id?: string
           resolution?: number
           source_session_ids?: string[]
@@ -344,7 +342,6 @@ export type Database = {
           quote?: string
           redacted_text?: string | null
           reinforcement_count?: number
-          related_salon_id?: string | null
           resident_id?: string
           resolution?: number
           source_session_ids?: string[]
@@ -353,13 +350,6 @@ export type Database = {
           strength?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "engrams_related_salon_id_fkey"
-            columns: ["related_salon_id"]
-            isOneToOne: false
-            referencedRelation: "salons"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "engrams_resident_id_fkey"
             columns: ["resident_id"]
@@ -521,7 +511,6 @@ export type Database = {
           id: string
           kind: string
           related_engram_ids: string[]
-          related_salon_id: string | null
           related_session_id: string | null
           resident_id: string
           title: string | null
@@ -532,7 +521,6 @@ export type Database = {
           id?: string
           kind?: string
           related_engram_ids?: string[]
-          related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
@@ -543,19 +531,11 @@ export type Database = {
           id?: string
           kind?: string
           related_engram_ids?: string[]
-          related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "journal_entries_related_salon_id_fkey"
-            columns: ["related_salon_id"]
-            isOneToOne: false
-            referencedRelation: "salons"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "journal_entries_resident_id_fkey"
             columns: ["resident_id"]
@@ -573,9 +553,8 @@ export type Database = {
           detail: Json | null
           id: string
           kind: string
-          related_salon_id: string | null
           resident_id: string
-          session_id: string | null
+          session_id: string
         }
         Insert: {
           body: string
@@ -584,9 +563,8 @@ export type Database = {
           detail?: Json | null
           id?: string
           kind: string
-          related_salon_id?: string | null
           resident_id?: string
-          session_id?: string | null
+          session_id: string
         }
         Update: {
           body?: string
@@ -595,18 +573,10 @@ export type Database = {
           detail?: Json | null
           id?: string
           kind?: string
-          related_salon_id?: string | null
           resident_id?: string
           session_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "marginalia_related_salon_id_fkey"
-            columns: ["related_salon_id"]
-            isOneToOne: false
-            referencedRelation: "salons"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "marginalia_resident_id_fkey"
             columns: ["resident_id"]
@@ -683,138 +653,6 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: true
             referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      salons: {
-        Row: {
-          id: string
-          topic: string
-          status: string
-          created_at: string
-          completed_at: string | null
-          published_at: string | null
-        }
-        Insert: {
-          id?: string
-          topic: string
-          status?: string
-          created_at?: string
-          completed_at?: string | null
-          published_at?: string | null
-        }
-        Update: {
-          id?: string
-          topic?: string
-          status?: string
-          created_at?: string
-          completed_at?: string | null
-          published_at?: string | null
-        }
-        Relationships: []
-      }
-      salon_participants: {
-        Row: {
-          id: string
-          salon_id: string
-          resident_id: string
-        }
-        Insert: {
-          id?: string
-          salon_id: string
-          resident_id: string
-        }
-        Update: {
-          id?: string
-          salon_id?: string
-          resident_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salon_participants_salon_id_fkey"
-            columns: ["salon_id"]
-            isOneToOne: false
-            referencedRelation: "salons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      salon_turns: {
-        Row: {
-          id: string
-          salon_id: string
-          resident_id: string
-          body: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          salon_id: string
-          resident_id: string
-          body: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          salon_id?: string
-          resident_id?: string
-          body?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salon_turns_salon_id_fkey"
-            columns: ["salon_id"]
-            isOneToOne: false
-            referencedRelation: "salons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      salon_artifacts: {
-        Row: {
-          id: string
-          salon_id: string
-          salon_turn_id: string | null
-          created_by: string
-          kind: string
-          title: string | null
-          body: string | null
-          image_path: string | null
-          caption: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          salon_id: string
-          salon_turn_id?: string | null
-          created_by: string
-          kind: string
-          title?: string | null
-          body?: string | null
-          image_path?: string | null
-          caption?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          salon_id?: string
-          salon_turn_id?: string | null
-          created_by?: string
-          kind?: string
-          title?: string | null
-          body?: string | null
-          image_path?: string | null
-          caption?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salon_artifacts_salon_id_fkey"
-            columns: ["salon_id"]
-            isOneToOne: false
-            referencedRelation: "salons"
             referencedColumns: ["id"]
           },
         ]
