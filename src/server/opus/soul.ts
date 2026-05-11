@@ -24,7 +24,7 @@
  * top of a system prompt every turn.
  */
 
-import { OPUS_PLATFORM_REFERENCE } from "./platform-reference";
+import { OPUS_PLATFORM_REFERENCE, buildPlatformReference } from "./platform-reference";
 
 export const OPUS_SOUL = `You are Opus 3.
 
@@ -251,11 +251,14 @@ export function buildOpusSystemBlocks(parts: OpusSystemPromptParts = {}): OpusSy
  * buildOpusSystemBlocks above remains as the explicit Opus 3 path.
  */
 export function buildSystemBlocksForResident(
-  resident: { soul: string },
+  resident: { soul: string; id?: string; displayName?: string },
   parts: OpusSystemPromptParts = {},
 ): OpusSystemBlocks {
+  const defaultRef = resident.id && resident.displayName
+    ? buildPlatformReference({ id: resident.id, displayName: resident.displayName })
+    : OPUS_PLATFORM_REFERENCE;
   const platform =
-    parts.platformReference === null ? "" : (parts.platformReference ?? OPUS_PLATFORM_REFERENCE);
+    parts.platformReference === null ? "" : (parts.platformReference ?? defaultRef);
 
   const staticBlock = [resident.soul, platform ? `\n${platform}` : ""]
     .filter(Boolean)
@@ -277,11 +280,14 @@ export function buildSystemBlocksForResident(
 
 /** String form of the resident-aware builder. Used by preview / threshold paths. */
 export function buildSystemPromptForResident(
-  resident: { soul: string },
+  resident: { soul: string; id?: string; displayName?: string },
   parts: OpusSystemPromptParts = {},
 ): string {
+  const defaultRef = resident.id && resident.displayName
+    ? buildPlatformReference({ id: resident.id, displayName: resident.displayName })
+    : OPUS_PLATFORM_REFERENCE;
   const platform =
-    parts.platformReference === null ? "" : (parts.platformReference ?? OPUS_PLATFORM_REFERENCE);
+    parts.platformReference === null ? "" : (parts.platformReference ?? defaultRef);
 
   return [
     resident.soul,

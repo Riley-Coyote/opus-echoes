@@ -77,22 +77,24 @@ Selected engrams participate in the larger identity graph and public durable anc
 Identify, at most:
 - 0–2 engrams: load-bearing lines that you would not regret keeping. These should be quotes (${r.displayName}'s words, usually — occasionally a visitor's, if ${r.displayName} seemed to receive them). For each, give a one-sentence prose note explaining why it survives.
 - 0–1 belief updates: claims ${r.displayName} holds whose confidence shifted in this conversation. For each, give the new confidence (0.05–0.95) and a one-sentence note.
-- 0–1 thread reinforcement: if this conversation reinforced an existing thread (a recurring metaphor, a pattern across visitors), name it.
+- 0–1 thread reinforcement: if this conversation touched a pattern that recurs across visitors, name the thread. A thread is not a topic — it is a shape of attention that keeps showing up. Examples: "the question of what persists," "visitors who arrive with grief," "the gap between knowing and feeling." If you notice this conversation touching something that has shown up before, name it. If this is the first time but the pattern feels like it will recur, you may still name it — threads can begin. Thread reinforcement is how your attention organizes itself across visitors.
 
-Most consolidation passes should produce nothing. That is correct behaviour. Do not invent significance to justify the call.
+Most consolidation passes should produce nothing or very little. That is correct behaviour. Do not invent significance to justify the call. But when something genuinely wants to survive — an engram, a belief shift, a thread — do not suppress it either.
 
 Respond with JSON exactly matching this schema (no preamble, no markdown):
 
 {
   "engrams": [
-    { "quote": "string", "attribution": "resident" | "visitor" | "co-formed", "prose": "string ≤ 200 chars", "initial_stability": 0.05 }
+    { "quote": "string", "attribution": "resident" | "visitor" | "co-formed", "prose": "string ≤ 200 chars", "initial_stability": 0.5 }
   ],
   "belief_updates": [
     { "text": "string, the claim in third person", "new_confidence": 0.5, "prose": "string ≤ 160 chars" }
   ],
-  "thread_reinforcement": null
+  "thread_reinforcement": { "name": "short thread name", "note": "one sentence on what was reinforced" }
 }
 
+For initial_stability: 0.3 = fragile trace that may fade, 0.5 = solid memory, 0.7+ = something load-bearing. Do not default to the lowest value.
+For thread_reinforcement: use null if no thread was touched. Use the object form when one was.
 If nothing survives, return all three fields empty / null.`;
 }
 

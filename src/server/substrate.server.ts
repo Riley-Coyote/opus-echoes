@@ -424,11 +424,13 @@ export async function consolidateSession(sessionId: string): Promise<void> {
         if (!e?.quote || typeof e.quote !== "string") continue;
         const candidateWords = significantWords(e.quote);
 
-        // Reinforcement check: jaccard >= 0.5 against existing engrams
+        // Reinforcement check: jaccard >= 0.3 against existing engrams.
+        // 0.5 was too strict — natural language restates ideas with different
+        // words. 0.3 lets thematically related engrams reinforce each other.
         let reinforced: ExistingEngramShape | null = null;
         for (const ex of existingEngrams ?? []) {
           const exWords = significantWords(ex.quote);
-          if (jaccard(candidateWords, exWords) >= 0.5) {
+          if (jaccard(candidateWords, exWords) >= 0.3) {
             reinforced = ex as ExistingEngramShape;
             break;
           }
@@ -476,7 +478,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
           }
         } else {
           // New engram
-          const initialStab = clampStability(e.initial_stability ?? 0.15);
+          const initialStab = clampStability(e.initial_stability ?? 0.45);
           const redacted = e.attribution === "visitor" ? redactQuote(e.quote) : null;
           const { data: inserted } = await supabaseAdmin
             .from("engrams")
@@ -512,11 +514,11 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       for (const b of consolidation.belief_updates) {
         if (!b?.text) continue;
         const newConf = clampConfidence(b.new_confidence);
-        // Match existing belief by significant-word overlap >= 0.5
+        // Match existing belief by significant-word overlap >= 0.3
         const candidateWords = significantWords(b.text);
         let matched: { id: string; confidence: number } | null = null;
         for (const eb of existingBeliefs ?? []) {
-          if (jaccard(candidateWords, significantWords(eb.text)) >= 0.5) {
+          if (jaccard(candidateWords, significantWords(eb.text)) >= 0.3) {
             matched = eb;
             break;
           }
