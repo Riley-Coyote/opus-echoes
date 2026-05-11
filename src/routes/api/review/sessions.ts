@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/review/sessions")({
         ]);
 
         const intentMap = new Map<string, string>();
-        for (const i of intentsRes.data ?? []) intentMap.set(i.id, i.body);
+        for (const i of intentsRes.data ?? []) intentMap.set(i.id, i.text);
 
         const turnCount = new Map<string, number>();
         for (const t of turnCountsRes.data ?? []) {
