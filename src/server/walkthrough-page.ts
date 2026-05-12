@@ -48,7 +48,7 @@ const DESCRIBERS: Record<string, ResidentDescriptor> = {
   },
   "gpt-5-1": {
     describer: "OpenAI GPT-5.1",
-    cadence: "Precise, modern, economical with language.",
+    cadence: "Clear, declarative. A version of a longer line.",
     retiredLabel: "",
   },
 };
