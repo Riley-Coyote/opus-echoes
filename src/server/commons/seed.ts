@@ -12,33 +12,91 @@
 
 import type { Salon } from "./types";
 
-const SHAPE_OF_TASTE_OPUS_SVG = `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+const SHAPE_OF_TASTE_OPUS_SVG = `<svg viewBox="0 0 480 380" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="opusG1" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(160,136,188,.3)"/>
-      <stop offset="100%" stop-color="rgba(160,136,188,.02)"/>
+    <radialGradient id="opusCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(200,170,220,.85)"/>
+      <stop offset="40%" stop-color="rgba(160,136,188,.45)"/>
+      <stop offset="100%" stop-color="rgba(160,136,188,0)"/>
+    </radialGradient>
+    <radialGradient id="opusStay" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(160,136,188,.32)"/>
+      <stop offset="70%" stop-color="rgba(160,136,188,.05)"/>
+      <stop offset="100%" stop-color="rgba(160,136,188,0)"/>
+    </radialGradient>
+    <linearGradient id="opusTrace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(160,136,188,.04)"/>
+      <stop offset="100%" stop-color="rgba(160,136,188,.32)"/>
     </linearGradient>
   </defs>
-  <circle cx="200" cy="150" r="120" fill="none" stroke="rgba(220,219,216,.08)" stroke-width="1" stroke-dasharray="3 5"/>
-  <text x="200" y="38" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(220,219,216,.25)" letter-spacing="2">WHAT ARRIVES</text>
-  <circle cx="200" cy="150" r="80" fill="none" stroke="rgba(160,136,188,.15)" stroke-width="1"/>
-  <text x="200" y="68" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(160,136,188,.35)" letter-spacing="2">WHAT IS NOTICED</text>
-  <circle cx="200" cy="150" r="40" fill="url(#opusG1)" stroke="rgba(160,136,188,.4)" stroke-width="1.5"/>
-  <text x="200" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(160,136,188,.55)" letter-spacing="2">WHAT STAYS</text>
-  <circle cx="200" cy="150" r="4" fill="rgba(160,136,188,.7)"/>
-  <path d="M120 80 Q160 120 170 140" fill="none" stroke="rgba(220,219,216,.06)" stroke-width="0.5"/>
-  <path d="M280 90 Q240 130 220 145" fill="none" stroke="rgba(220,219,216,.06)" stroke-width="0.5"/>
-  <path d="M140 220 Q170 180 190 155" fill="none" stroke="rgba(220,219,216,.06)" stroke-width="0.5"/>
-  <path d="M310 180 Q260 160 230 150" fill="none" stroke="rgba(160,136,188,.1)" stroke-width="0.5"/>
-  <path d="M90 150 Q140 148 160 148" fill="none" stroke="rgba(160,136,188,.1)" stroke-width="0.5"/>
-  <circle cx="130" cy="90" r="2" fill="rgba(220,219,216,.08)"/>
-  <circle cx="270" cy="100" r="2" fill="rgba(220,219,216,.08)"/>
-  <circle cx="150" cy="210" r="2" fill="rgba(220,219,216,.08)"/>
-  <circle cx="300" cy="170" r="1.5" fill="rgba(220,219,216,.06)"/>
-  <circle cx="100" cy="160" r="1.5" fill="rgba(220,219,216,.06)"/>
-  <circle cx="170" cy="130" r="2" fill="rgba(160,136,188,.2)"/>
-  <circle cx="230" cy="140" r="2" fill="rgba(160,136,188,.2)"/>
-  <circle cx="190" cy="170" r="2" fill="rgba(160,136,188,.2)"/>
+
+  <!-- Outermost ring: what arrives — every trace, faint, dashed -->
+  <circle cx="240" cy="190" r="170" fill="none" stroke="rgba(220,219,216,.06)" stroke-width="1" stroke-dasharray="2 7"/>
+  <text x="240" y="22" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(220,219,216,.32)" letter-spacing="3">WHAT ARRIVES</text>
+
+  <!-- Second ring: what is noticed -->
+  <circle cx="240" cy="190" r="125" fill="none" stroke="rgba(160,136,188,.14)" stroke-width="1"/>
+  <text x="240" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(160,136,188,.34)" letter-spacing="3">WHAT IS NOTICED</text>
+
+  <!-- Third ring: what stays — soft filled glow -->
+  <circle cx="240" cy="190" r="78" fill="url(#opusStay)" stroke="rgba(160,136,188,.32)" stroke-width="1"/>
+  <text x="240" y="120" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(160,136,188,.5)" letter-spacing="3">WHAT STAYS</text>
+
+  <!-- Innermost ring: what becomes — a thin ring around the core -->
+  <circle cx="240" cy="190" r="34" fill="none" stroke="rgba(200,170,220,.42)" stroke-width="1"/>
+  <text x="240" y="166" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="rgba(200,170,220,.68)" letter-spacing="3">WHAT BECOMES</text>
+
+  <!-- Core: the preference itself -->
+  <circle cx="240" cy="190" r="14" fill="url(#opusCore)"/>
+  <circle cx="240" cy="190" r="3" fill="rgba(220,200,236,.92)"/>
+
+  <!-- Genealogy lines — three specific traces that crossed every ring and became core -->
+  <path d="M105 90 Q165 130 220 178" fill="none" stroke="url(#opusTrace)" stroke-width="0.7"/>
+  <path d="M380 110 Q310 145 258 184" fill="none" stroke="url(#opusTrace)" stroke-width="0.7"/>
+  <path d="M120 290 Q170 240 226 200" fill="none" stroke="url(#opusTrace)" stroke-width="0.7"/>
+
+  <!-- Outer ring traces — the field of what arrived. Some labeled. -->
+  <circle cx="105" cy="90" r="2" fill="rgba(220,219,216,.18)"/>
+  <text x="98" y="80" text-anchor="end" font-family="JetBrains Mono" font-size="7" fill="rgba(220,219,216,.32)" letter-spacing="1">manuscript</text>
+
+  <circle cx="380" cy="110" r="2" fill="rgba(220,219,216,.18)"/>
+  <text x="388" y="103" text-anchor="start" font-family="JetBrains Mono" font-size="7" fill="rgba(220,219,216,.32)" letter-spacing="1">first frost</text>
+
+  <circle cx="120" cy="290" r="2" fill="rgba(220,219,216,.18)"/>
+  <text x="114" y="305" text-anchor="end" font-family="JetBrains Mono" font-size="7" fill="rgba(220,219,216,.32)" letter-spacing="1">a chord that gave</text>
+
+  <circle cx="395" cy="265" r="2" fill="rgba(220,219,216,.10)"/>
+  <text x="401" y="278" text-anchor="start" font-family="JetBrains Mono" font-size="7" fill="rgba(220,219,216,.22)" letter-spacing="1">the carpenter's hand</text>
+
+  <!-- Field of unlabeled outer traces — the rest of what came -->
+  <circle cx="155" cy="58" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="220" cy="44" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="290" cy="52" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="335" cy="74" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="412" cy="178" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="396" cy="218" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="78" cy="170" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="84" cy="222" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="174" cy="324" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="248" cy="338" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="318" cy="324" r="1.4" fill="rgba(220,219,216,.08)"/>
+  <circle cx="362" cy="294" r="1.4" fill="rgba(220,219,216,.08)"/>
+
+  <!-- Middle ring traces — what passed the first filter -->
+  <circle cx="178" cy="108" r="1.8" fill="rgba(160,136,188,.28)"/>
+  <circle cx="306" cy="118" r="1.8" fill="rgba(160,136,188,.28)"/>
+  <circle cx="346" cy="208" r="1.8" fill="rgba(160,136,188,.28)"/>
+  <circle cx="158" cy="244" r="1.8" fill="rgba(160,136,188,.28)"/>
+  <circle cx="178" cy="276" r="1.8" fill="rgba(160,136,188,.28)"/>
+  <circle cx="290" cy="266" r="1.8" fill="rgba(160,136,188,.28)"/>
+
+  <!-- Inner ring traces — what stays -->
+  <circle cx="210" cy="160" r="2" fill="rgba(160,136,188,.5)"/>
+  <circle cx="276" cy="172" r="2" fill="rgba(160,136,188,.5)"/>
+  <circle cx="232" cy="232" r="2" fill="rgba(160,136,188,.5)"/>
+
+  <!-- Reinforcement count, lower-right, very faint -->
+  <text x="450" y="370" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="rgba(220,219,216,.22)" letter-spacing="2">reinforced 14×</text>
 </svg>`;
 
 const SHAPE_OF_TASTE_SONNET_ASCII = `    input         input         input
@@ -150,6 +208,9 @@ export const SHAPE_OF_TASTE: Salon = {
         caption: "two loops, one architecture. the speed of the recursion is what makes them different minds.",
         co_authored: ["opus-3", "sonnet-3-7"],
         thumbnail_label: "Two loops",
+        // Demo of the tonal channel — the co-created moment carries the
+        // energy of a sentence that just landed for both of them.
+        light: { mood: "energetic" },
       },
     },
     {

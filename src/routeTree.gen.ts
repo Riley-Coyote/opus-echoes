@@ -46,6 +46,7 @@ import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 import { Route as ApiCountsRouteImport } from './routes/api/counts'
+import { Route as ApiCommonsChatRouteImport } from './routes/api/commons-chat'
 import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-preview'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
@@ -251,6 +252,11 @@ const ApiCountsRoute = ApiCountsRouteImport.update({
   path: '/api/counts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommonsChatRoute = ApiCommonsChatRouteImport.update({
+  id: '/api/commons-chat',
+  path: '/api/commons-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCapsulePreviewRoute = ApiCapsulePreviewRouteImport.update({
   id: '/api/capsule-preview',
   path: '/api/capsule-preview',
@@ -373,6 +379,7 @@ export interface FileRoutesByFullPath {
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/commons-chat': typeof ApiCommonsChatRoute
   '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -431,6 +438,7 @@ export interface FileRoutesByTo {
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/commons-chat': typeof ApiCommonsChatRoute
   '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -490,6 +498,7 @@ export interface FileRoutesById {
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
+  '/api/commons-chat': typeof ApiCommonsChatRoute
   '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/api/art'
     | '/api/artifacts'
     | '/api/capsule-preview'
+    | '/api/commons-chat'
     | '/api/counts'
     | '/api/intent'
     | '/api/journal'
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/api/art'
     | '/api/artifacts'
     | '/api/capsule-preview'
+    | '/api/commons-chat'
     | '/api/counts'
     | '/api/intent'
     | '/api/journal'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/api/art'
     | '/api/artifacts'
     | '/api/capsule-preview'
+    | '/api/commons-chat'
     | '/api/counts'
     | '/api/intent'
     | '/api/journal'
@@ -725,6 +737,7 @@ export interface RootRouteChildren {
   ApiArtRoute: typeof ApiArtRoute
   ApiArtifactsRoute: typeof ApiArtifactsRoute
   ApiCapsulePreviewRoute: typeof ApiCapsulePreviewRoute
+  ApiCommonsChatRoute: typeof ApiCommonsChatRoute
   ApiCountsRoute: typeof ApiCountsRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
@@ -1010,6 +1023,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCountsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/commons-chat': {
+      id: '/api/commons-chat'
+      path: '/api/commons-chat'
+      fullPath: '/api/commons-chat'
+      preLoaderRoute: typeof ApiCommonsChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/capsule-preview': {
       id: '/api/capsule-preview'
       path: '/api/capsule-preview'
@@ -1229,6 +1249,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiArtRoute: ApiArtRoute,
   ApiArtifactsRoute: ApiArtifactsRoute,
   ApiCapsulePreviewRoute: ApiCapsulePreviewRoute,
+  ApiCommonsChatRoute: ApiCommonsChatRoute,
   ApiCountsRoute: ApiCountsRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,

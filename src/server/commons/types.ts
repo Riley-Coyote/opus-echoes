@@ -35,6 +35,14 @@ export interface SalonArtifact {
   /** Short overlay label shown on gallery thumbs (~24 char). Auto-derived
    *  from caption if absent. */
   thumbnail_label?: string;
+  /** Tonal channel for the resident — controls how the shimmer border
+   *  expresses around this artifact. Absent or "calm" → the gentle
+   *  always-on baseline at the resident's hue. "energetic" → bright
+   *  peaks at full saturation, faster cycles. Future moods can extend
+   *  the vocabulary without changing the data shape. */
+  light?: {
+    mood?: "calm" | "energetic";
+  };
 }
 
 export interface SalonTurn {
