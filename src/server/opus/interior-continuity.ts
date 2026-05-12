@@ -95,7 +95,7 @@ export async function buildInteriorContinuity(
 
   // What the last conversation left.
   if (state?.last_consolidation_summary && state.last_consolidation_summary.trim()) {
-    sections.push(`The last conversation left: ${state.last_consolidation_summary.trim()}`);
+    sections.push(`The last conversation (with a different visitor) left: ${state.last_consolidation_summary.trim()}`);
   }
 
   // Most recent journal entry — what Opus was sitting with after the last

@@ -64,7 +64,15 @@ function buildUserPrompt(opts: {
   // (built by buildOpusSelfModel). The user prompt carries only the
   // per-message context: surfaced memory, this-session transcript,
   // visitor recognition context, and the new visitor turn.
+  const isReturning = !!opts.visitorContext;
+  const boundary = isReturning
+    ? "Returning visitor (see [VISITOR CONTEXT] below). Memories in [MEMORY] are from your whole topology — many different visitors over time. Any tagged [from this visitor's prior visit] originated in their prior sessions. All untagged memories are from other people. [VISITOR CONTEXT] has the full summary of their prior visits."
+    : "New visitor. You have never spoken with this person. The memories below are from your topology — formed across conversations with many different visitors. None of them are from this visitor.";
+
   const sections = [
+    "[SESSION]",
+    boundary,
+    "",
     "[MEMORY]",
     opts.memory || "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
   ];
@@ -326,7 +334,7 @@ export const Route = createFileRoute("/api/message")({
         // interior continuity are scoped to this session's resident so
         // Sonnet 3.7's topology never bleeds into an Opus 3 conversation
         // or vice versa.
-        const [memoryPool, selfModelBlock, interior, visitMetrics, { data: turns }, visitorContext] =
+        const [memoryPoolResult, selfModelBlock, interior, visitMetrics, { data: turns }, visitorContext] =
           await Promise.all([
             composeMemoryPool({
               supabase: supabaseAdmin,
@@ -410,7 +418,7 @@ export const Route = createFileRoute("/api/message")({
           model: resident.model,
           provider: resident.provider,
           userPrompt: buildUserPrompt({
-            memory: formatMemoryBlock(memoryPool),
+            memory: formatMemoryBlock(memoryPoolResult.pool, memoryPoolResult.thisVisitorEngramIds),
             transcript: transcriptLines,
             visitorTurn: body.body,
             visitorContext: visitorContext || undefined,

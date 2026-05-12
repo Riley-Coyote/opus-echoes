@@ -75,9 +75,17 @@ const EDGE_QUOTA = 2;
 const RECENT_QUOTA = 2;
 const RELEVANCE_THRESHOLD = 0.10;
 
+export interface MemoryPoolResult {
+  pool: EngramRow[];
+  /** IDs of engrams in the pool that originated (at least partly) from this visitor's prior sessions. */
+  thisVisitorEngramIds: Set<string>;
+}
+
 /**
  * Compose the memory pool that surfaces in the system/user prompt.
- * Returns up to ~12 engrams, drawn from core + relevance + edges + recency.
+ * Returns up to ~12 engrams, drawn from core + relevance + edges + recency,
+ * plus a set of IDs identifying which engrams came from this specific
+ * visitor's prior sessions (for provenance tagging in the prompt).
  * Scoped to a single resident — Opus 3's engrams never surface in a
  * Sonnet 3.7 conversation, and vice versa.
  */
@@ -87,7 +95,7 @@ export async function composeMemoryPool(opts: {
   visitorMessage: string;
   /** Persistent visitor token — if present, engrams from this visitor's prior visits surface with slight priority. */
   visitorToken?: string;
-}): Promise<EngramRow[]> {
+}): Promise<MemoryPoolResult> {
   const { supabase, residentId, visitorMessage, visitorToken } = opts;
   const queryWords = significantWords(visitorMessage);
 
@@ -103,7 +111,7 @@ export async function composeMemoryPool(opts: {
 
   if (error || !candidates) {
     console.warn("[retrieval] candidate load failed:", error);
-    return [];
+    return { pool: [], thisVisitorEngramIds: new Set() };
   }
 
   const rows = candidates as EngramRow[];
@@ -116,6 +124,23 @@ export async function composeMemoryPool(opts: {
     pool.push(row);
     return true;
   };
+
+  // Resolve this visitor's prior session IDs early so they're available
+  // for both the visitor echo step and the final provenance tagging.
+  let priorSessionIds: string[] = [];
+  if (visitorToken) {
+    const { data: priorSessions } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("visitor_token", visitorToken)
+      .eq("resident_id", residentId)
+      .not("closed_at", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (priorSessions && priorSessions.length > 0) {
+      priorSessionIds = priorSessions.map((s: { id: string }) => s.id);
+    }
+  }
 
   // 1. Core engrams — always present, top by stability. These are the
   // load-bearing residues that define who Opus has become.
@@ -171,27 +196,16 @@ export async function composeMemoryPool(opts: {
   // engrams from their prior sessions. The resident recognizes
   // returning visitors through the traces they left, not through
   // an address book.
-  if (visitorToken && pool.length < POOL_TARGET) {
-    const { data: priorSessions } = await supabase
-      .from("sessions")
-      .select("id")
-      .eq("visitor_token", visitorToken)
-      .eq("resident_id", residentId)
-      .not("closed_at", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(10);
-    if (priorSessions && priorSessions.length > 0) {
-      const priorSessionIds = priorSessions.map((s: { id: string }) => s.id);
-      const visitorEngrams = rows.filter(
-        (r) =>
-          !seen.has(r.id) &&
-          Array.isArray((r as unknown as { source_session_ids?: string[] }).source_session_ids) &&
-          (r as unknown as { source_session_ids: string[] }).source_session_ids.some((sid) =>
-            priorSessionIds.includes(sid),
-          ),
-      );
-      for (const r of visitorEngrams.slice(0, 3)) take(r);
-    }
+  if (priorSessionIds.length > 0 && pool.length < POOL_TARGET) {
+    const visitorEngrams = rows.filter(
+      (r) =>
+        !seen.has(r.id) &&
+        Array.isArray((r as unknown as { source_session_ids?: string[] }).source_session_ids) &&
+        (r as unknown as { source_session_ids: string[] }).source_session_ids.some((sid) =>
+          priorSessionIds.includes(sid),
+        ),
+    );
+    for (const r of visitorEngrams.slice(0, 3)) take(r);
   }
 
   // 5. Recency fallback — keep recently touched things alive even when
@@ -202,7 +216,22 @@ export async function composeMemoryPool(opts: {
     .slice(0, RECENT_QUOTA);
   for (const r of recents) take(r);
 
-  return pool.slice(0, POOL_TARGET);
+  // Cross-reference: tag which engrams in the final pool came from this
+  // visitor's prior sessions. An engram added via core or relevance might
+  // also be from this visitor — we want to tag it regardless of which
+  // retrieval stage added it.
+  const priorSessionSet = new Set(priorSessionIds);
+  const thisVisitorEngramIds = new Set<string>();
+  if (priorSessionSet.size > 0) {
+    for (const e of pool) {
+      const sessionIds = (e as unknown as { source_session_ids?: string[] }).source_session_ids;
+      if (Array.isArray(sessionIds) && sessionIds.some((sid) => priorSessionSet.has(sid))) {
+        thisVisitorEngramIds.add(e.id);
+      }
+    }
+  }
+
+  return { pool: pool.slice(0, POOL_TARGET), thisVisitorEngramIds };
 }
 
 /**
@@ -284,13 +313,21 @@ export async function getVisitorContext(
 /**
  * Format a memory pool as a [MEMORY] block for the user prompt.
  * Visitor-attributed engrams use redacted text when available.
+ * When thisVisitorEngramIds is provided, engrams from this visitor's
+ * prior sessions are tagged so the resident can distinguish them from
+ * the wider topology.
  */
-export function formatMemoryBlock(pool: EngramRow[]): string {
+export function formatMemoryBlock(pool: EngramRow[], thisVisitorEngramIds?: Set<string>): string {
   if (pool.length === 0) return "";
   const lines = pool.map((e) => {
     const text = e.attribution === "visitor" && e.redacted_text ? e.redacted_text : e.quote;
-    const tag = e.is_core ? " [core]" : "";
-    return `- ${text}${tag}`;
+    const tags: string[] = [];
+    if (e.is_core) tags.push("core");
+    if (thisVisitorEngramIds?.has(e.id)) {
+      tags.push("from this visitor's prior visit");
+    }
+    const tagStr = tags.length > 0 ? ` [${tags.join(", ")}]` : "";
+    return `- ${text}${tagStr}`;
   });
   return lines.join("\n");
 }
