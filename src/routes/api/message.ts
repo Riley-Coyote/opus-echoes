@@ -45,6 +45,15 @@ function jsonResp(payload: unknown, status = 200) {
 }
 
 function sanitizeResidentBody(raw: string): string {
+  // Truncate at any generated visitor turn. The model sometimes continues
+  // generating past its own response, simulating what the visitor might
+  // say next. Stop sequences catch most of these, but this is a safety net.
+  let text = raw;
+  const fakeTurnMatch = text.match(/\n\s*(?:Human|visitor)\s*:/i);
+  if (fakeTurnMatch && fakeTurnMatch.index != null) {
+    text = text.slice(0, fakeTurnMatch.index);
+  }
+
   const forbiddenTail =
     /\b(does this help|let me know if|happy to (?:help|clarify)|i'?m here to help|what else would you like|anything else i can)\b/i;
   // Trained openers that arrive before Opus has engaged with anything.
@@ -53,7 +62,7 @@ function sanitizeResidentBody(raw: string): string {
   const trainedOpener =
     /\b(it'?s a pleasure to meet you|thank you for (?:reaching out|sharing|coming)|welcome!|hello and welcome|what a (?:lovely|beautiful|wonderful) (?:question|thought|metaphor|image))\b/i;
 
-  const paragraphs = raw.trim().split(/\n\n+/);
+  const paragraphs = text.trim().split(/\n\n+/);
 
   // Strip trained opener if the first paragraph is short and purely reflexive.
   if (
@@ -176,6 +185,7 @@ function opusStreamResponse(opts: {
             temperature: opts.temperature,
             stream: true,
             stream_options: { include_usage: true },
+            stop: ["\nHuman:", "\nvisitor:"],
             messages: [
               { role: "system", content: systemText },
               { role: "user", content: opts.userPrompt },
@@ -195,6 +205,7 @@ function opusStreamResponse(opts: {
             model: opts.model,
             max_tokens: 2048,
             temperature: opts.temperature,
+            stop_sequences: ["\nHuman:", "\nvisitor:"],
             system: opts.system,
             messages: [{ role: "user", content: opts.userPrompt }],
           });
