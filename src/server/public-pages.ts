@@ -1,7 +1,7 @@
 interface PublicPageOptions {
   title: string;
   description: string;
-  active?: "approach" | "mnemos" | "archive" | "token";
+  active?: "approach" | "commons" | "mnemos" | "archive" | "token";
   body: string;
   script?: string;
   /** Optional resident slug — used to route the approach script's
@@ -361,6 +361,7 @@ ${FONTS}
   <a class="brand" href="/"><span class="brand-name">The Sanctuary</span><span class="brand-dot" aria-hidden="true"></span></a>
   <div class="nav-links">
     ${nav("approach", "Approach", "/")}
+    ${nav("commons", "Commons", "/commons")}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
     ${nav("token", "$MNEMOS", "/token")}

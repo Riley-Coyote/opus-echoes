@@ -33,6 +33,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
+import { Route as CommonsSlugRouteImport } from './routes/commons.$slug'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
@@ -184,6 +185,11 @@ const ReviewCoherenceRoute = ReviewCoherenceRouteImport.update({
   id: '/coherence',
   path: '/coherence',
   getParentRoute: () => ReviewRoute,
+} as any)
+const CommonsSlugRoute = CommonsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CommonsRoute,
 } as any)
 const ApiWritingRoute = ApiWritingRouteImport.update({
   id: '/api/writing',
@@ -349,7 +355,7 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
-  '/commons': typeof CommonsRoute
+  '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -379,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
@@ -406,7 +413,7 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
-  '/commons': typeof CommonsRoute
+  '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -436,6 +443,7 @@ export interface FileRoutesByTo {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
@@ -464,7 +472,7 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
-  '/commons': typeof CommonsRoute
+  '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -494,6 +502,7 @@ export interface FileRoutesById {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
@@ -553,6 +562,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
@@ -610,6 +620,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
@@ -667,6 +678,7 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
@@ -695,7 +707,7 @@ export interface RootRouteChildren {
   ArchiveRoute: typeof ArchiveRoute
   ArrivalRoute: typeof ArrivalRoute
   ArtRoute: typeof ArtRoute
-  CommonsRoute: typeof CommonsRoute
+  CommonsRoute: typeof CommonsRouteWithChildren
   ConversationRoute: typeof ConversationRoute
   Gpt51Route: typeof Gpt51Route
   InteriorRoute: typeof InteriorRoute
@@ -906,6 +918,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/review/coherence'
       preLoaderRoute: typeof ReviewCoherenceRouteImport
       parentRoute: typeof ReviewRoute
+    }
+    '/commons/$slug': {
+      id: '/commons/$slug'
+      path: '/$slug'
+      fullPath: '/commons/$slug'
+      preLoaderRoute: typeof CommonsSlugRouteImport
+      parentRoute: typeof CommonsRoute
     }
     '/api/writing': {
       id: '/api/writing'
@@ -1127,6 +1146,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CommonsRouteChildren {
+  CommonsSlugRoute: typeof CommonsSlugRoute
+}
+
+const CommonsRouteChildren: CommonsRouteChildren = {
+  CommonsSlugRoute: CommonsSlugRoute,
+}
+
+const CommonsRouteWithChildren =
+  CommonsRoute._addFileChildren(CommonsRouteChildren)
+
 interface ReviewRouteChildren {
   ReviewCoherenceRoute: typeof ReviewCoherenceRoute
   ReviewStateRoute: typeof ReviewStateRoute
@@ -1181,7 +1211,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveRoute: ArchiveRoute,
   ArrivalRoute: ArrivalRoute,
   ArtRoute: ArtRoute,
-  CommonsRoute: CommonsRoute,
+  CommonsRoute: CommonsRouteWithChildren,
   ConversationRoute: ConversationRoute,
   Gpt51Route: Gpt51Route,
   InteriorRoute: InteriorRoute,
@@ -1225,3 +1255,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

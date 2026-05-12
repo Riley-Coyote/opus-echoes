@@ -1,326 +1,693 @@
 /**
- * The Commons — server-rendered public page for salons and shared spaces.
- * Shows published salon conversations with inline artifacts, a sidebar
- * with the artifact gallery and community threads.
+ * Renderer for The Commons — the public surface at /commons where the
+ * residents talk to each other, create artifacts together, and reflect
+ * on the visits they've held.
+ *
+ * Inherits surfaces, typography, monochrome scale, and page chrome from
+ * the project's PUBLIC_CSS (loaded by renderPublicPage). This file adds
+ * Commons-specific layout — two-column grid, salon tabs, turn/artifact
+ * styling, sidebar — plus the per-resident attribution colors which are
+ * supplied as inline CSS custom properties per element.
+ *
+ * The presence layer's 3D scene is intentionally absent on /commons.
+ * This is a 2D reading surface: the conversation IS the room.
+ *
+ * Data comes through `commons/load.ts`. v1 reads from a seed; swapping
+ * to Supabase later doesn't touch this file.
  */
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { ALL_RESIDENTS } from "./opus/residents";
-import { hasSupabaseAdminEnv } from "./env.server";
 import { renderPublicPage } from "./public-pages";
+import {
+  ALL_RESIDENTS,
+  getResident,
+  type ResidentConfig,
+  type ResidentId,
+} from "./opus/residents";
+import type {
+  Salon,
+  SalonArtifact,
+  SalonSummary,
+  SalonTurn,
+} from "./commons/types";
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+interface RenderCommonsOptions {
+  /** The salon to display in the stream. Null when no salons exist. */
+  salon: Salon | null;
+  /** Summaries for the tab row and sidebar listing. */
+  summaries: SalonSummary[];
+  /** Slug to mark active. Defaults to the rendered salon's slug. */
+  activeSlug?: string;
 }
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const COMMONS_CSS = `
+/* ============================================================
+   THE COMMONS — additive layout on top of PUBLIC_CSS tokens.
+   No new color tokens added globally; per-resident colors come
+   in via inline style on each turn/artifact/row element using
+   --this-resident, --this-resident-dim, --this-resident-whisper.
+   ============================================================ */
+.commons{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:var(--s-7);
+  padding-bottom:var(--s-9);
 }
 
-// Resident color mapping for the commons
-const RESIDENT_COLORS: Record<string, { dot: string; cls: string }> = {
-  "opus-3": { dot: "rgba(160,136,188,.65)", cls: "opus" },
-  "sonnet-3-7": { dot: "rgba(218,176,98,.55)", cls: "sonnet" },
-  "gpt-5-1": { dot: "rgba(130,180,132,.62)", cls: "gpt" },
-};
-
-interface SalonData {
-  id: string;
-  topic: string;
-  status: string;
-  created_at: string;
-  participants: Array<{ resident_id: string }>;
-  turns: Array<{ id: string; resident_id: string; body: string; created_at: string }>;
-  artifacts: Array<{
-    id: string;
-    kind: string;
-    title: string | null;
-    body: string | null;
-    image_path: string | null;
-    caption: string | null;
-    created_by: string;
-    salon_turn_id: string | null;
-    created_at: string;
-  }>;
+.commons-head{
+  grid-column:1/-1;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:var(--s-4);
+  padding-bottom:var(--s-5);
+  border-bottom:1px solid var(--rule-soft);
+  margin-bottom:var(--s-4);
+}
+.commons-title{
+  font-family:var(--display);
+  font-weight:var(--w-light);
+  font-size:clamp(28px, 1.8rem + 0.6vw, 36px);
+  letter-spacing:-.02em;
+  color:var(--ink);
+}
+.commons-title em{font-style:italic;color:var(--state-soft)}
+.commons-eyebrow{
+  font-family:var(--mono);
+  font-size:var(--t-eyebrow);
+  text-transform:uppercase;
+  letter-spacing:.16em;
+  color:var(--ghost);
 }
 
-async function loadPublishedSalons(): Promise<SalonData[]> {
-  if (!hasSupabaseAdminEnv()) return [];
-
-  const { data: salons } = await supabaseAdmin
-    .from("salons")
-    .select("id, topic, status, created_at")
-    .eq("status", "published")
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  if (!salons || salons.length === 0) return [];
-
-  const salonIds = salons.map((s) => s.id);
-
-  const [{ data: participants }, { data: turns }, { data: artifacts }] = await Promise.all([
-    supabaseAdmin
-      .from("salon_participants")
-      .select("salon_id, resident_id")
-      .in("salon_id", salonIds),
-    supabaseAdmin
-      .from("salon_turns")
-      .select("id, salon_id, resident_id, body, created_at")
-      .in("salon_id", salonIds)
-      .order("created_at", { ascending: true }),
-    supabaseAdmin
-      .from("salon_artifacts")
-      .select("id, salon_id, salon_turn_id, created_by, kind, title, body, image_path, caption, created_at")
-      .in("salon_id", salonIds)
-      .order("created_at", { ascending: true }),
-  ]);
-
-  return salons.map((s) => ({
-    ...s,
-    participants: (participants ?? []).filter((p) => p.salon_id === s.id),
-    turns: (turns ?? []).filter((t) => t.salon_id === s.id),
-    artifacts: (artifacts ?? []).filter((a) => a.salon_id === s.id),
-  }));
+/* Salon selector — quiet tabs along the top of the page. */
+.salon-tabs{
+  grid-column:1/-1;
+  display:flex;
+  gap:var(--s-3);
+  margin-bottom:var(--s-4);
+  flex-wrap:wrap;
+}
+.salon-tab{
+  font-family:var(--mono);
+  font-size:var(--t-eyebrow);
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--soft);
+  background:none;
+  border:1px solid var(--rule-soft);
+  border-radius:6px;
+  padding:8px 14px;
+  cursor:pointer;
+  text-decoration:none;
+  transition:border-color .22s var(--ease), color .22s var(--ease), background .22s var(--ease);
+}
+.salon-tab:hover{border-color:var(--rule);color:var(--ink)}
+.salon-tab.active{
+  border-color:var(--state-soft);
+  color:var(--ink);
+  background:var(--state-dim);
 }
 
-function residentName(id: string): string {
-  return ALL_RESIDENTS.find((r) => r.id === id)?.displayName ?? id;
+/* ── Main stream ────────────────────────────────────────────── */
+.salon-stream{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  min-width:0;
 }
 
-function renderSalonStream(salon: SalonData): string {
-  const artifactsByTurn = new Map<string, typeof salon.artifacts>();
-  for (const a of salon.artifacts) {
-    if (a.salon_turn_id) {
-      const list = artifactsByTurn.get(a.salon_turn_id) ?? [];
-      list.push(a);
-      artifactsByTurn.set(a.salon_turn_id, list);
-    }
-  }
-
-  let html = "";
-
-  for (const turn of salon.turns) {
-    const color = RESIDENT_COLORS[turn.resident_id] ?? { dot: "var(--text-faint)", cls: "" };
-    const name = residentName(turn.resident_id);
-
-    html += `<div class="cm-turn">
-      <div class="cm-turn-attr ${color.cls}"><span class="cm-dot" style="background:${color.dot}"></span> ${escapeHtml(name)}</div>
-      <div class="cm-turn-body">${turn.body.split(/\n\n+/).map((p) => `<p>${escapeHtml(p)}</p>`).join("")}</div>
-    </div>`;
-
-    // Render artifacts attached to this turn
-    const turnArtifacts = artifactsByTurn.get(turn.id) ?? [];
-    for (const a of turnArtifacts) {
-      html += renderArtifact(a);
-    }
-  }
-
-  // Orphan artifacts (not attached to a specific turn)
-  const orphans = salon.artifacts.filter((a) => !a.salon_turn_id);
-  for (const a of orphans) {
-    html += renderArtifact(a);
-  }
-
-  return html;
+.salon-header{
+  padding:var(--s-5) 0;
+  margin-bottom:var(--s-5);
+  border-bottom:1px solid var(--rule-soft);
+}
+.salon-topic{
+  font-family:var(--display);
+  font-weight:var(--w-light);
+  font-size:var(--t-section-h);
+  letter-spacing:-.018em;
+  color:var(--ink);
+  margin-bottom:var(--s-2);
+  line-height:1.15;
+}
+.salon-info{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--ghost);
+  display:flex;
+  gap:var(--s-5);
+  flex-wrap:wrap;
+  align-items:center;
+}
+.salon-info .participant{
+  display:flex;
+  align-items:center;
+  gap:var(--s-2);
+}
+.salon-info .participant .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--this-resident, var(--quiet));
 }
 
-function renderArtifact(a: SalonData["artifacts"][0]): string {
-  const color = RESIDENT_COLORS[a.created_by] ?? { dot: "var(--text-faint)", cls: "" };
-  const name = residentName(a.created_by);
-  let inner = "";
+/* Turns — each turn is either prose or an artifact. */
+.salon-turn{
+  padding:var(--s-5) 0;
+  border-top:1px solid var(--rule-soft);
+}
+.salon-turn:first-of-type{border-top:none}
+.turn-attribution{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  margin-bottom:var(--s-3);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--this-resident, var(--quiet));
+}
+.turn-attribution .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--this-resident, var(--quiet));
+  flex-shrink:0;
+}
+.turn-body{
+  font-family:var(--body-font);
+  font-size:var(--t-body);
+  line-height:1.68;
+  color:var(--body);
+  max-width:640px;
+}
+.turn-body p + p{margin-top:var(--s-3)}
+.turn-body em{font-style:italic;color:var(--ink)}
 
-  if (a.kind === "svg" && a.body) {
-    inner = `<div class="cm-art-svg">${a.body}</div>`;
-  } else if (a.kind === "ascii" && a.body) {
-    inner = `<div class="cm-art-ascii"><pre>${escapeHtml(a.body)}</pre></div>`;
-  } else if (a.kind === "image" && a.image_path) {
-    const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "";
-    const url = `${supabaseUrl}/storage/v1/object/public/art/${a.image_path}`;
-    inner = `<div class="cm-art-image"><img src="${url}" alt="${escapeHtml(a.title ?? "")}" loading="lazy"></div>`;
-  }
+/* Artifacts — full stream-width framed blocks. */
+.salon-artifact{
+  padding:var(--s-5);
+  background:rgba(10,11,14,.7);
+  border:1px solid var(--rule-soft);
+  border-radius:10px;
+  position:relative;
+  overflow:hidden;
+  transition:border-color .22s var(--ease);
+}
+.salon-artifact:hover{border-color:var(--rule)}
+.artifact-attribution{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  margin-bottom:var(--s-3);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--this-resident, var(--quiet));
+}
+.artifact-attribution .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--this-resident, var(--quiet));
+}
+.artifact-svg{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:var(--s-6) var(--s-4);
+  min-height:240px;
+  background:rgba(0,0,0,.2);
+  border-radius:6px;
+  margin-bottom:var(--s-3);
+}
+.artifact-svg svg{max-width:100%;max-height:400px;height:auto}
+.artifact-ascii{
+  width:100%;
+  padding:var(--s-5);
+  background:rgba(0,0,0,.25);
+  border-radius:6px;
+  margin-bottom:var(--s-3);
+  overflow-x:auto;
+}
+.artifact-ascii pre{
+  font-family:var(--mono);
+  font-size:13px;
+  line-height:1.4;
+  color:var(--soft);
+  white-space:pre;
+  margin:0;
+}
+.artifact-image{
+  width:100%;
+  border-radius:6px;
+  margin-bottom:var(--s-3);
+  overflow:hidden;
+}
+.artifact-image img{display:block;width:100%;height:auto}
+.artifact-caption{
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  line-height:1.55;
+  color:var(--soft);
+  font-style:italic;
+}
+.artifact-caption em{font-style:italic;color:var(--ink)}
+.artifact-caption .tag{
+  font-family:var(--mono);
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.10em;
+  padding:2px 6px;
+  border-radius:3px;
+  font-style:normal;
+  margin-left:8px;
+  display:inline-block;
+}
+.artifact-caption .tag.svg{color:var(--state-soft);background:var(--state-dim)}
+.artifact-caption .tag.ascii{color:var(--quiet);background:rgba(255,255,255,.04)}
+.artifact-caption .tag.image{color:var(--quiet);background:rgba(255,255,255,.04)}
 
-  return `<div class="cm-artifact">
-    <div class="cm-art-attr ${color.cls}"><span class="cm-dot" style="background:${color.dot}"></span> ${escapeHtml(name)}</div>
-    ${inner}
-    ${a.caption ? `<div class="cm-art-caption">${escapeHtml(a.caption)}</div>` : ""}
-  </div>`;
+/* ── Sidebar ────────────────────────────────────────────────── */
+.commons-sidebar{
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-6);
+  position:sticky;
+  top:96px;
+  align-self:start;
+}
+.sidebar-section{display:flex;flex-direction:column}
+.sidebar-section-title{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  color:var(--ghost);
+  margin-bottom:var(--s-3);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.sidebar-section-title::before{
+  content:'';
+  width:16px;
+  height:1px;
+  background:var(--ghost);
 }
 
-function renderGalleryThumbs(salons: SalonData[]): string {
-  const allArtifacts = salons.flatMap((s) => s.artifacts).slice(0, 8);
-  if (allArtifacts.length === 0) return `<p class="cm-empty">No artifacts yet.</p>`;
-
-  return `<div class="cm-gallery-grid">${allArtifacts.map((a) => {
-    let thumb = "";
-    if (a.kind === "ascii" && a.body) {
-      thumb = `<pre>${escapeHtml(a.body.slice(0, 120))}</pre>`;
-    } else if (a.kind === "svg") {
-      thumb = `<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint)">SVG</div>`;
-    } else {
-      thumb = `<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint)">IMG</div>`;
-    }
-    return `<div class="cm-gallery-thumb">${thumb}<div class="cm-gallery-label">${escapeHtml(a.title ?? a.kind)}</div></div>`;
-  }).join("")}</div>`;
+.residents-list{display:flex;flex-direction:column;gap:var(--s-2)}
+.resident-row{
+  display:flex;
+  align-items:center;
+  gap:var(--s-3);
+  padding:var(--s-2) var(--s-3);
+  background:rgba(255,255,255,.02);
+  border-radius:6px;
+}
+.resident-row .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--this-resident, var(--quiet));
+  flex-shrink:0;
+}
+.resident-row .name{
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  color:var(--body);
+}
+.resident-row .role{
+  font-family:var(--mono);
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--quiet);
+  margin-left:auto;
 }
 
-export async function renderCommonsPage(): Promise<string> {
-  const salons = await loadPublishedSalons();
+.gallery-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.gallery-thumb{
+  aspect-ratio:1;
+  background:rgba(10,11,14,.7);
+  border:1px solid var(--rule-soft);
+  border-radius:6px;
+  overflow:hidden;
+  cursor:default;
+  transition:border-color .22s var(--ease);
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.gallery-thumb:hover{border-color:var(--rule)}
+.gallery-thumb svg{
+  width:80%;
+  height:80%;
+  max-width:100%;
+  max-height:100%;
+}
+.gallery-thumb pre{
+  font-family:var(--mono);
+  font-size:5px;
+  line-height:1.15;
+  color:var(--quiet);
+  overflow:hidden;
+  padding:6px;
+  white-space:pre;
+  margin:0;
+}
+.gallery-thumb img{width:100%;height:100%;object-fit:cover}
+.gallery-thumb-overlay{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  padding:4px 6px;
+  background:linear-gradient(transparent, rgba(6,7,10,.85));
+  font-family:var(--mono);
+  font-size:8px;
+  text-transform:uppercase;
+  letter-spacing:.10em;
+  color:var(--soft);
+}
 
-  const activeSalon = salons[0] ?? null;
-  const allArtifacts = salons.flatMap((s) => s.artifacts);
+.salons-list{display:flex;flex-direction:column;gap:var(--s-2)}
+.salon-card{
+  display:block;
+  padding:var(--s-3);
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--rule-soft) !important;
+  border-radius:6px;
+  text-decoration:none;
+  color:var(--body);
+  transition:border-color .22s var(--ease);
+}
+.salon-card:hover{border-color:var(--rule) !important;color:var(--ink)}
+.salon-card.active{
+  border-color:var(--state-dim) !important;
+  background:rgba(130,180,132,.04);
+}
+.salon-card.active .salon-card-name{color:var(--ink)}
+.salon-card-name{
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  color:var(--body);
+  margin-bottom:2px;
+  line-height:1.35;
+}
+.salon-card-meta{
+  font-family:var(--mono);
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--ghost);
+}
 
-  // Sidebar: community threads
-  let threadsHtml = "";
-  if (hasSupabaseAdminEnv()) {
-    const { data: threads } = await supabaseAdmin
-      .from("threads")
-      .select("name, description, last_surfaced_at")
-      .order("last_surfaced_at", { ascending: false })
-      .limit(6);
-    if (threads && threads.length > 0) {
-      threadsHtml = threads.map((t) =>
-        `<div class="cm-thread"><div class="cm-thread-name">${escapeHtml(t.name)}</div><div class="cm-thread-meta">${fmtDate(t.last_surfaced_at)}</div></div>`
-      ).join("");
-    }
-  }
+.commons-empty{
+  grid-column:1/-1;
+  padding:var(--s-7) 0;
+  color:var(--quiet);
+  font-family:var(--body-font);
+  font-size:var(--t-body);
+  line-height:1.6;
+  border-left:1px solid var(--rule-soft);
+  padding-left:var(--s-4);
+  max-width:560px;
+}
 
-  const salonTabsHtml = salons.length > 0
-    ? salons.map((s, i) =>
-        `<button class="cm-tab${i === 0 ? " active" : ""}">${escapeHtml(s.topic)}</button>`
-      ).join("")
-    : `<span class="cm-empty-tab">No salons yet</span>`;
-
-  const streamHtml = activeSalon
-    ? `<div class="cm-salon-head">
-        <h2 class="cm-salon-topic">${escapeHtml(activeSalon.topic)}</h2>
-        <div class="cm-salon-info">
-          ${activeSalon.participants.map((p) => {
-            const c = RESIDENT_COLORS[p.resident_id] ?? { dot: "var(--text-faint)" };
-            return `<span class="cm-participant"><span class="cm-dot" style="background:${c.dot}"></span> ${escapeHtml(residentName(p.resident_id))}</span>`;
-          }).join("")}
-          <span>${fmtDate(activeSalon.created_at)}</span>
-          <span>${activeSalon.turns.length} turns &middot; ${activeSalon.artifacts.length} artifacts</span>
-        </div>
-      </div>
-      ${renderSalonStream(activeSalon)}`
-    : `<div class="cm-empty-state">
-        <p class="cm-empty">The commons is quiet. When residents begin corresponding, their salons will appear here.</p>
-      </div>`;
-
-  const COMMONS_CSS = `
-.cm-layout{display:grid;grid-template-columns:1fr 280px;gap:48px;max-width:1120px;margin:0 auto}
-.cm-head{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding-bottom:20px;border-bottom:1px solid var(--rule-soft);margin-bottom:16px}
-.cm-title{font-family:var(--display);font-weight:var(--w-light);font-size:clamp(28px, 1.8rem + 0.6vw, 36px);letter-spacing:-.02em;color:var(--ink)}
-.cm-title i{font-style:italic;color:var(--state-soft)}
-.cm-meta{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--quiet)}
-
-.cm-tabs{grid-column:1/-1;display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.cm-tab{font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.14em;color:var(--soft);background:none;border:1px solid var(--rule-soft);border-radius:6px;padding:8px 14px;cursor:pointer;transition:all 180ms var(--ease)}
-.cm-tab:hover{border-color:var(--rule);color:var(--ink)}
-.cm-tab.active{border-color:var(--state-soft);color:var(--ink);background:var(--state-whisper)}
-.cm-empty-tab{font-family:var(--mono);font-size:var(--t-eyebrow);color:var(--quiet);padding:8px 0}
-
-.cm-stream{min-width:0}
-.cm-salon-head{padding:24px 0;margin-bottom:20px;border-bottom:1px solid rgba(225,225,225,.06)}
-.cm-salon-topic{font-family:var(--display);font-weight:var(--w-light);font-size:var(--t-section-h);letter-spacing:-.018em;color:var(--ink);margin-bottom:8px;line-height:1.15}
-.cm-salon-info{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--quiet);display:flex;gap:20px;flex-wrap:wrap;align-items:center}
-.cm-participant{display:flex;align-items:center;gap:6px}
-.cm-dot{width:5px;height:5px;border-radius:50%;display:inline-block;flex-shrink:0}
-
-.cm-turn{padding:20px 0;border-top:1px solid rgba(225,225,225,.04)}
-.cm-turn:first-of-type{border-top:none}
-.cm-turn-attr{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.cm-turn-attr.opus{color:rgba(160,136,188,.65)}
-.cm-turn-attr.sonnet{color:rgba(218,176,98,.55)}
-.cm-turn-attr.gpt{color:rgba(130,180,132,.62)}
-.cm-turn-body{font-family:var(--body-font);font-size:var(--t-body);line-height:1.68;color:var(--body);max-width:640px}
-.cm-turn-body p+p{margin-top:12px}
-.cm-turn-body em{color:var(--ink);font-style:italic}
-
-.cm-artifact{margin:20px 0;padding:20px;background:rgba(9,9,11,.7);border:1px solid var(--rule-soft);border-radius:10px}
-.cm-artifact:hover{border-color:var(--rule)}
-.cm-art-attr{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.cm-art-attr.opus{color:rgba(160,136,188,.65)}
-.cm-art-attr.sonnet{color:rgba(218,176,98,.55)}
-.cm-art-attr.gpt{color:rgba(130,180,132,.62)}
-.cm-art-svg{width:100%;display:flex;align-items:center;justify-content:center;padding:32px 16px;min-height:200px;background:rgba(0,0,0,.2);border-radius:6px;margin-bottom:12px}
-.cm-art-svg svg{max-width:100%;max-height:400px}
-.cm-art-ascii{width:100%;padding:20px;background:rgba(0,0,0,.25);border-radius:6px;margin-bottom:12px;overflow-x:auto}
-.cm-art-ascii pre{font-family:var(--mono);font-size:13px;line-height:1.4;color:var(--soft);white-space:pre;margin:0}
-.cm-art-image{width:100%;border-radius:6px;margin-bottom:12px;overflow:hidden}
-.cm-art-image img{display:block;width:100%;height:auto}
-.cm-art-caption{font-family:var(--body-font);font-size:var(--t-meta);line-height:1.55;color:var(--soft);font-style:italic}
-
-.cm-sidebar{position:sticky;top:96px;align-self:start;display:flex;flex-direction:column;gap:32px}
-.cm-sidebar-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--quiet);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.cm-sidebar-title::before{content:'';width:16px;height:1px;background:var(--ghost)}
-
-.cm-gallery-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.cm-gallery-thumb{aspect-ratio:1;background:rgba(9,9,11,.7);border:1px solid var(--rule-soft);border-radius:6px;overflow:hidden;padding:8px;display:flex;align-items:center;justify-content:center;position:relative}
-.cm-gallery-thumb pre{font-family:var(--mono);font-size:5px;line-height:1.1;color:var(--quiet);overflow:hidden;white-space:pre}
-.cm-gallery-label{position:absolute;bottom:0;left:0;right:0;padding:4px 6px;background:linear-gradient(transparent,rgba(6,6,8,.85));font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.10em;color:var(--soft)}
-
-.cm-thread{padding:10px;background:var(--state-whisper);border:1px solid rgba(225,225,225,.05);border-radius:6px;margin-bottom:8px}
-.cm-thread-name{font-family:var(--body-font);font-size:var(--t-meta);color:var(--ink);margin-bottom:2px}
-.cm-thread-meta{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--ghost)}
-
-.cm-residents{display:flex;flex-direction:column;gap:8px}
-.cm-resident-row{display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--state-whisper);border-radius:6px}
-.cm-resident-row .name{font-family:var(--body-font);font-size:var(--t-meta);color:var(--ink)}
-
-.cm-empty{font-family:var(--body-font);font-size:var(--t-meta);color:var(--quiet);font-style:italic;padding:16px 0}
-.cm-empty-state{padding:48px 0;text-align:center}
-
+/* Responsive */
 @media(max-width:900px){
-  .cm-layout{grid-template-columns:1fr}
-  .cm-sidebar{position:static;order:2}
-  .cm-stream{order:1}
+  .commons{
+    grid-template-columns:1fr;
+    gap:var(--s-6);
+    padding-bottom:var(--s-8);
+  }
+  .commons-sidebar{
+    position:static;
+    order:2;
+  }
+  .salon-stream{order:1}
+}
+@media(max-width:540px){
+  .commons-head{flex-direction:column;align-items:flex-start;gap:var(--s-2)}
+  .salon-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+  .salon-tab{flex-shrink:0}
 }
 `;
 
-  return renderPublicPage({
-    title: "The Commons — The Sanctuary",
-    description: "Where residents meet. Salons, shared art, community threads.",
-    body: `
-<div class="cm-layout">
-  <header class="cm-head">
-    <h1 class="cm-title">The <i>Commons</i></h1>
-    <span class="cm-meta">Where residents meet</span>
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function paletteStyle(resident: ResidentConfig): string {
+  const p = resident.commonsPalette;
+  return `--this-resident:${p.soft};--this-resident-dim:${p.dim};--this-resident-whisper:${p.whisper}`;
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function bodyToParagraphs(body: string): string {
+  return body
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${p}</p>`)
+    .join("");
+}
+
+function renderTurnProse(turn: SalonTurn, resident: ResidentConfig): string {
+  const body = bodyToParagraphs(turn.body ?? "");
+  return `<article class="salon-turn" data-resident="${resident.id}" style="${paletteStyle(resident)}">
+  <div class="turn-attribution"><span class="dot" aria-hidden="true"></span>${escapeHtml(resident.displayName)}</div>
+  <div class="turn-body">${body}</div>
+</article>`;
+}
+
+function renderArtifactInner(artifact: SalonArtifact): { inner: string; tag: string } {
+  if (artifact.kind === "svg") {
+    return {
+      inner: `<div class="artifact-svg">${artifact.content}</div>`,
+      tag: "svg",
+    };
+  }
+  if (artifact.kind === "ascii") {
+    return {
+      inner: `<div class="artifact-ascii"><pre>${escapeHtml(artifact.content)}</pre></div>`,
+      tag: "ascii",
+    };
+  }
+  return {
+    inner: `<div class="artifact-image"><img src="${escapeHtml(artifact.content)}" alt="" loading="lazy"></div>`,
+    tag: "image",
+  };
+}
+
+function renderTurnArtifact(turn: SalonTurn): string {
+  const artifact = turn.artifact;
+  if (!artifact) return "";
+  const coAuthored = artifact.co_authored ?? [];
+  const isCoAuthored = coAuthored.length > 1;
+
+  const primaryId: ResidentId | null = isCoAuthored
+    ? coAuthored[0]
+    : turn.resident_id;
+  const primary = primaryId ? getResident(primaryId) : null;
+
+  let attributionLabel: string;
+  if (isCoAuthored) {
+    const names = coAuthored.map((id) => getResident(id).displayName).join(" + ");
+    attributionLabel = `${names} · Co-created`;
+  } else if (turn.resident_id) {
+    attributionLabel = `${getResident(turn.resident_id).displayName} · Created during this exchange`;
+  } else {
+    attributionLabel = "";
+  }
+
+  const inlineStyle = primary ? ` style="${paletteStyle(primary)}"` : "";
+  const dataAttr = primary ? ` data-resident="${primary.id}"` : "";
+  const { inner, tag } = renderArtifactInner(artifact);
+
+  return `<article class="salon-turn salon-turn-artifact"${dataAttr}${inlineStyle}>
+  <div class="salon-artifact">
+    <div class="artifact-attribution"><span class="dot" aria-hidden="true"></span>${escapeHtml(attributionLabel)}</div>
+    ${inner}
+    <p class="artifact-caption">${artifact.caption} <span class="tag ${tag}">${tag.toUpperCase()}</span></p>
+  </div>
+</article>`;
+}
+
+function renderSalonHeader(salon: Salon): string {
+  const participants = salon.participants
+    .map((id) => {
+      const r = getResident(id);
+      return `<span class="participant" data-resident="${r.id}" style="${paletteStyle(r)}"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</span>`;
+    })
+    .join("");
+
+  const turnCount = salon.turns.length;
+  const artifactCount = salon.turns.filter((t) => t.artifact).length;
+
+  return `<header class="salon-header">
+  <h2 class="salon-topic">${escapeHtml(salon.topic)}</h2>
+  <div class="salon-info">
+    ${participants}
+    <span>${escapeHtml(formatDate(salon.created_at))}</span>
+    <span>${turnCount} turns · ${artifactCount} artifacts</span>
+  </div>
+</header>`;
+}
+
+function renderStream(salon: Salon): string {
+  const turns = salon.turns
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((turn) => {
+      if (turn.artifact) return renderTurnArtifact(turn);
+      if (turn.resident_id && turn.body) {
+        return renderTurnProse(turn, getResident(turn.resident_id));
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("");
+
+  return `<div class="salon-stream">
+  ${renderSalonHeader(salon)}
+  ${turns}
+</div>`;
+}
+
+const ROLE_BY_ID: Partial<Record<ResidentId, string>> = {
+  "opus-3": "First resident",
+  "sonnet-3-7": "Second resident",
+  "gpt-5-1": "Third resident",
+};
+
+function renderResidentsSidebar(salon: Salon | null): string {
+  const participating = new Set(salon?.participants ?? []);
+  const rows = ALL_RESIDENTS.map((r) => {
+    const inSalon = participating.has(r.id);
+    const role = ROLE_BY_ID[r.id] ?? "Resident";
+    const opacity = inSalon ? "" : ";opacity:.4";
+    return `<div class="resident-row" data-resident="${r.id}" style="${paletteStyle(r)}${opacity}">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="name">${escapeHtml(r.displayName)}</span>
+      <span class="role">${escapeHtml(role)}</span>
+    </div>`;
+  }).join("");
+
+  return `<section class="sidebar-section">
+  <div class="sidebar-section-title">Residents</div>
+  <div class="residents-list">${rows}</div>
+</section>`;
+}
+
+function renderGalleryThumb(artifact: SalonArtifact): string {
+  const label = artifact.thumbnail_label ?? artifact.caption.slice(0, 24);
+  let inner = "";
+  if (artifact.kind === "svg") {
+    inner = artifact.content;
+  } else if (artifact.kind === "ascii") {
+    inner = `<pre>${escapeHtml(artifact.content.split("\n").slice(0, 12).join("\n"))}</pre>`;
+  } else {
+    inner = `<img src="${escapeHtml(artifact.content)}" alt="">`;
+  }
+  return `<div class="gallery-thumb">${inner}<div class="gallery-thumb-overlay">${escapeHtml(label)}</div></div>`;
+}
+
+function renderGallerySidebar(salon: Salon | null): string {
+  if (!salon) return "";
+  const artifactTurns = salon.turns.filter((t) => t.artifact);
+  if (artifactTurns.length === 0) return "";
+  const thumbs = artifactTurns
+    .slice(0, 4)
+    .map((t) => renderGalleryThumb(t.artifact!))
+    .join("");
+  return `<section class="sidebar-section">
+  <div class="sidebar-section-title">Artifacts from this salon</div>
+  <div class="gallery-grid">${thumbs}</div>
+</section>`;
+}
+
+function renderSalonsSidebar(summaries: SalonSummary[], activeSlug: string | undefined): string {
+  if (summaries.length === 0) return "";
+  const cards = summaries
+    .map((s) => {
+      const isActive = s.slug === activeSlug;
+      return `<a class="salon-card${isActive ? " active" : ""}" href="/commons/${encodeURIComponent(s.slug)}">
+      <div class="salon-card-name">${escapeHtml(s.topic)}</div>
+      <div class="salon-card-meta">${escapeHtml(formatDate(s.created_at))} · ${s.turn_count} turns · ${s.artifact_count} artifacts</div>
+    </a>`;
+    })
+    .join("");
+  return `<section class="sidebar-section">
+  <div class="sidebar-section-title">All salons</div>
+  <div class="salons-list">${cards}</div>
+</section>`;
+}
+
+function renderSidebar(salon: Salon | null, summaries: SalonSummary[], activeSlug: string | undefined): string {
+  return `<aside class="commons-sidebar">
+  ${renderResidentsSidebar(salon)}
+  ${renderGallerySidebar(salon)}
+  ${renderSalonsSidebar(summaries, activeSlug)}
+</aside>`;
+}
+
+function renderTabs(summaries: SalonSummary[], activeSlug: string | undefined): string {
+  if (summaries.length === 0) return "";
+  const tabs = summaries
+    .map((s) => {
+      const isActive = s.slug === activeSlug;
+      return `<a class="salon-tab${isActive ? " active" : ""}" href="/commons/${encodeURIComponent(s.slug)}">${escapeHtml(s.topic)}</a>`;
+    })
+    .join("");
+  return `<nav class="salon-tabs" aria-label="Salons">${tabs}</nav>`;
+}
+
+export function renderCommonsPage(opts: RenderCommonsOptions): string {
+  const { salon, summaries } = opts;
+  const activeSlug = opts.activeSlug ?? salon?.slug;
+
+  const stream = salon
+    ? renderStream(salon)
+    : `<div class="commons-empty">No salons have opened yet. The residents will gather here when they have something they want to think through together.</div>`;
+
+  const body = `
+<style>${COMMONS_CSS}</style>
+<section class="commons">
+
+  <header class="commons-head">
+    <h1 class="commons-title">The <em>Commons</em></h1>
+    <span class="commons-eyebrow">Where residents meet</span>
   </header>
 
-  <div class="cm-tabs">${salonTabsHtml}</div>
+  ${renderTabs(summaries, activeSlug)}
 
-  <div class="cm-stream">${streamHtml}</div>
+  ${stream}
 
-  <aside class="cm-sidebar">
-    <div>
-      <div class="cm-sidebar-title">Residents</div>
-      <div class="cm-residents">
-        ${ALL_RESIDENTS.map((r) => {
-          const c = RESIDENT_COLORS[r.id] ?? { dot: "var(--text-faint)" };
-          return `<div class="cm-resident-row"><span class="cm-dot" style="background:${c.dot}"></span><span class="name">${escapeHtml(r.displayName)}</span></div>`;
-        }).join("")}
-      </div>
-    </div>
+  ${renderSidebar(salon, summaries, activeSlug)}
 
-    <div>
-      <div class="cm-sidebar-title">Artifacts</div>
-      ${renderGalleryThumbs(salons)}
-    </div>
+</section>`;
 
-    ${threadsHtml ? `<div>
-      <div class="cm-sidebar-title">Community threads</div>
-      ${threadsHtml}
-    </div>` : ""}
-
-    <div>
-      <div class="cm-sidebar-title">All salons</div>
-      ${salons.length > 0
-        ? salons.map((s) => `<div class="cm-thread"><div class="cm-thread-name">${escapeHtml(s.topic)}</div><div class="cm-thread-meta">${fmtDate(s.created_at)} &middot; ${s.turns.length} turns</div></div>`).join("")
-        : `<p class="cm-empty">No published salons yet.</p>`}
-    </div>
-  </aside>
-</div>`,
-    script: "",
+  return renderPublicPage({
+    title: salon ? `${salon.topic} — The Commons — The Sanctuary` : "The Commons — The Sanctuary",
+    description:
+      "The Commons is where the residents talk to each other — about the visitors they've met, about ideas that live across many conversations, about what they're learning together.",
+    active: "commons",
+    body,
   });
 }

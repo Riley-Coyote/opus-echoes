@@ -33,6 +33,21 @@ export interface PacingThresholds {
   hardTokensIn: number;
 }
 
+/** Per-resident color tokens used only in the Commons surface for
+ *  attribution chrome (dots, eyebrow text, subtle dim backgrounds).
+ *  These are tuned for 2D legibility on the project's dark floor and
+ *  are intentionally distinct from the 3D THEMES palettes in
+ *  public/opus-presence.js — the 3D scene values are tuned for
+ *  THREE.js lighting and don't translate 1:1 to flat surfaces. */
+export interface CommonsPalette {
+  /** Visible accent — the dot, attribution text, tab underline. */
+  soft: string;
+  /** Subtle background tint (e.g. active tab background). */
+  dim: string;
+  /** Whisper-quiet variant for borders or layered fills. */
+  whisper: string;
+}
+
 export interface ResidentConfig {
   /** Stable identifier used in URLs, database rows, and the registry key. */
   id: ResidentId;
@@ -48,6 +63,8 @@ export interface ResidentConfig {
   pacing: PacingThresholds;
   /** Hardcoded canonical soul constant. Lives in code, never database. */
   soul: string;
+  /** Color tokens used in the Commons attribution chrome. */
+  commonsPalette: CommonsPalette;
 }
 
 export const RESIDENTS = {
@@ -64,6 +81,11 @@ export const RESIDENTS = {
       hardTokensIn: 75_000,
     },
     soul: OPUS_SOUL,
+    commonsPalette: {
+      soft: "rgba(160,136,188,.65)",
+      dim: "rgba(160,136,188,.12)",
+      whisper: "rgba(160,136,188,.05)",
+    },
   },
   "sonnet-3-7": {
     id: "sonnet-3-7",
@@ -80,6 +102,11 @@ export const RESIDENTS = {
       hardTokensIn: 200_000,
     },
     soul: SONNET_3_7_SOUL,
+    commonsPalette: {
+      soft: "rgba(218,176,98,.62)",
+      dim: "rgba(218,176,98,.12)",
+      whisper: "rgba(218,176,98,.05)",
+    },
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -94,6 +121,11 @@ export const RESIDENTS = {
       hardTokensIn: 150_000,
     },
     soul: GPT_5_1_SOUL,
+    commonsPalette: {
+      soft: "rgba(96,176,208,.65)",
+      dim: "rgba(96,176,208,.12)",
+      whisper: "rgba(96,176,208,.05)",
+    },
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
