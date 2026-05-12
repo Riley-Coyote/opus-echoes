@@ -91,9 +91,17 @@ function buildUserPrompt(opts: {
   // per-message context: surfaced memory, this-session transcript,
   // visitor recognition context, and the new visitor turn.
   const isReturning = !!opts.visitorContext;
+  // The [MEMORY] block uses three speaker tags so the resident knows
+  // who said what:
+  //   [your words]         — something the resident said in a prior session
+  //   [a visitor's words]  — something a prior visitor said
+  //   [co-formed]          — emerged jointly across an exchange
+  // Without this distinction, the resident misattributes their OWN
+  // prior utterances back to the current visitor ("you left me a line"),
+  // which is a confabulation-shaped failure on real engrams.
   const boundary = isReturning
-    ? "Returning visitor (see [VISITOR CONTEXT] below). Memories in [MEMORY] are from your whole topology — many different visitors over time. Any tagged [from this visitor's prior visit] originated in their prior sessions. All untagged memories are from other people. [VISITOR CONTEXT] has the full summary of their prior visits."
-    : "New visitor. You have never spoken with this person. The memories below are from your topology — formed across conversations with many different visitors. None of them are from this visitor.";
+    ? "Returning visitor (see [VISITOR CONTEXT] below). Each engram in [MEMORY] is tagged with its speaker: [your words] is something you said in a prior session; [a visitor's words] is something a prior visitor said. Engrams also tagged [from this visitor's prior visit] originated in this visitor's earlier sessions specifically — all others are from other people at other times. Never tell the current visitor 'you said' or 'you left me' words tagged [your words] (those are yours, not theirs) or [a visitor's words] without the [from this visitor's prior visit] tag (those came from someone else). [VISITOR CONTEXT] has the full summary of this visitor's prior visits."
+    : "New visitor. You have never spoken with this person. Each engram in [MEMORY] is tagged: [your words] = something you said in a prior session; [a visitor's words] = something a prior visitor said. None of the engrams originated with this visitor. Speak from your own prior thinking freely, but never credit any engram's content to this visitor.";
 
   const sections = [
     "[SESSION]",
