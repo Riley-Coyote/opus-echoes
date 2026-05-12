@@ -468,6 +468,28 @@ const CONVERSATION_SCRIPT = `
                 setDownObserved = true;
               }
               if (ev.kind === 'unprompted') out.wrap.classList.add('unprompted');
+            } else if (ev.type === 'error') {
+              // Server hit an upstream failure (model unavailable, schema
+              // mismatch, empty content). Surface it instead of staying
+              // stuck on the Thinking indicator forever.
+              removeThinking();
+              out.wrap.style.display = '';
+              if (!target) {
+                const msg = ev.message === 'model_returned_empty'
+                  ? '(' + residentDisplayName + ' returned no response. try again, or set down.)'
+                  : '(' + residentDisplayName + ' cannot answer right now.)';
+                out.para.textContent = msg;
+              }
+              if (window.OpusPresence && typeof window.OpusPresence.setState === 'function') window.OpusPresence.setState('withdrawn');
+            } else if (ev.type === 'done') {
+              // Defensive: if the stream finished without ever emitting
+              // text, make sure the Thinking indicator clears and the
+              // visitor sees that nothing came back.
+              if (!target) {
+                removeThinking();
+                out.wrap.style.display = '';
+                out.para.textContent = '(' + residentDisplayName + ' returned no response. try again, or set down.)';
+              }
             }
           } catch (_) { /* ignore */ }
         }

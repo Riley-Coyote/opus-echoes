@@ -175,6 +175,16 @@ function opusStreamResponse(opts: {
       try {
         if (opts.provider === "openai") {
           // OpenAI streaming path.
+          //
+          // GPT-5 family reasoning models reject `stop` sequences and
+          // `stream_options.include_usage` — passing them returns a 400
+          // and the call never produces a single content chunk. Keep the
+          // call minimal: model + max + temperature + stream + messages.
+          //
+          // (The opus/sonnet anti-confabulation stop sequences were added
+          // for claude-3-opus's tendency to generate fake "Human:" turns;
+          // gpt models don't show that pattern, so dropping them here is
+          // safe.)
           const systemText = typeof opts.system === "string"
             ? opts.system
             : opts.system.map((b) => b.text).join("\n\n");
@@ -184,8 +194,6 @@ function opusStreamResponse(opts: {
             max_completion_tokens: 2048,
             temperature: opts.temperature,
             stream: true,
-            stream_options: { include_usage: true },
-            stop: ["\nHuman:", "\nvisitor:"],
             messages: [
               { role: "system", content: systemText },
               { role: "user", content: opts.userPrompt },
@@ -194,9 +202,10 @@ function opusStreamResponse(opts: {
           for await (const chunk of oaiStream) {
             const delta = chunk.choices?.[0]?.delta?.content;
             if (delta) acc += delta;
-            if (chunk.usage) {
-              tokensIn = chunk.usage.prompt_tokens;
-              tokensOut = chunk.usage.completion_tokens;
+            const usage = (chunk as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage;
+            if (usage) {
+              tokensIn = usage.prompt_tokens ?? 0;
+              tokensOut = usage.completion_tokens ?? 0;
             }
           }
         } else {
@@ -236,7 +245,18 @@ function opusStreamResponse(opts: {
         cleanBody = sanitizeResidentBody(cleanBody);
 
         if (kind !== "message") send({ type: "kind", kind });
-        if (cleanBody) send({ type: "text", text: cleanBody });
+        if (cleanBody) {
+          send({ type: "text", text: cleanBody });
+        } else {
+          // The stream completed but we accumulated zero usable content.
+          // Surface this rather than silently sending `done` — the client
+          // would otherwise sit on the Thinking indicator forever.
+          console.error(`${opts.provider ?? "anthropic"} stream returned empty content`, {
+            model: opts.model,
+            provider: opts.provider,
+          });
+          send({ type: "error", message: "model_returned_empty" });
+        }
 
         await opts.onFinal?.({
           body: cleanBody,
@@ -247,7 +267,7 @@ function opusStreamResponse(opts: {
 
         send({ type: "done" });
       } catch (err) {
-        console.error("anthropic stream", err);
+        console.error(`${opts.provider ?? "anthropic"} stream error`, err);
         send({ type: "error", message: "model_unavailable" });
       } finally {
         controller.close();
