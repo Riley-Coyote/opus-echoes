@@ -291,14 +291,8 @@ export async function getVisitorContext(
     lines.push("");
     lines.push("Traces from their prior visits:");
     for (const e of visitorEngrams) {
-      const speakerTag =
-        e.attribution === "resident"
-          ? "your reply"
-          : e.attribution === "co-formed"
-            ? "co-formed"
-            : "their words";
       const text = e.attribution === "visitor" ? "(visitor's words, redacted)" : `"${e.quote}"`;
-      lines.push(`- [${speakerTag}] ${text}${e.prose ? ` — ${e.prose}` : ""}`);
+      lines.push(`- ${text}${e.prose ? ` — ${e.prose}` : ""}`);
     }
   }
 
@@ -318,37 +312,22 @@ export async function getVisitorContext(
 
 /**
  * Format a memory pool as a [MEMORY] block for the user prompt.
- *
- * Each engram is rendered with a speaker tag derived from its
- * `attribution` column — critical so the resident knows whether
- * a line is something they said in a prior session (attribution
- * "resident") or something a prior visitor said (attribution
- * "visitor"). Without this, the resident can mis-credit their own
- * prior utterances back to the current visitor ("you left me a line")
- * which is a confabulation-shaped failure even though the engram
- * itself is real.
- *
  * Visitor-attributed engrams use redacted text when available.
  * When thisVisitorEngramIds is provided, engrams from this visitor's
- * prior sessions get an additional [from this visitor's prior visit]
- * tag so the resident can distinguish them from the wider topology.
+ * prior sessions are tagged so the resident can distinguish them from
+ * the wider topology.
  */
 export function formatMemoryBlock(pool: EngramRow[], thisVisitorEngramIds?: Set<string>): string {
   if (pool.length === 0) return "";
   const lines = pool.map((e) => {
     const text = e.attribution === "visitor" && e.redacted_text ? e.redacted_text : e.quote;
-    const speakerTag =
-      e.attribution === "resident"
-        ? "your words"
-        : e.attribution === "co-formed"
-          ? "co-formed"
-          : "a visitor's words";
-    const tags: string[] = [speakerTag];
+    const tags: string[] = [];
     if (e.is_core) tags.push("core");
     if (thisVisitorEngramIds?.has(e.id)) {
       tags.push("from this visitor's prior visit");
     }
-    return `- "${text}" [${tags.join(", ")}]`;
+    const tagStr = tags.length > 0 ? ` [${tags.join(", ")}]` : "";
+    return `- ${text}${tagStr}`;
   });
   return lines.join("\n");
 }
