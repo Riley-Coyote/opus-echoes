@@ -324,7 +324,13 @@ export const Route = createFileRoute("/api/message")({
           });
         }
 
-        if (!hasSupabaseAdminEnv() || !process.env.ANTHROPIC_API_KEY) {
+        // Deployment readiness check — need supabase admin access and at
+        // least one provider key. Per-call provider-specific failures
+        // surface later as error events in the stream.
+        if (
+          !hasSupabaseAdminEnv() ||
+          (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY)
+        ) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
