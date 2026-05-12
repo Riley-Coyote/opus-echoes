@@ -246,61 +246,92 @@ const COMMONS_CSS = `
   pointer-events:none;
   z-index:1;
   animation:
-    csh-1 3s  ease-in-out infinite,
-    csh-2 5s  ease-in-out infinite,
-    csh-3 7s  ease-in-out infinite,
-    csh-4 11s ease-in-out infinite,
-    csh-5 13s ease-in-out infinite,
-    csh-6 17s ease-in-out infinite,
-    csh-7 19s ease-in-out infinite,
-    csh-8 23s ease-in-out infinite;
+    csh-1 var(--cshd1, 3s)  ease-in-out infinite,
+    csh-2 var(--cshd2, 5s)  ease-in-out infinite,
+    csh-3 var(--cshd3, 7s)  ease-in-out infinite,
+    csh-4 var(--cshd4, 11s) ease-in-out infinite,
+    csh-5 var(--cshd5, 13s) ease-in-out infinite,
+    csh-6 var(--cshd6, 17s) ease-in-out infinite,
+    csh-7 var(--cshd7, 19s) ease-in-out infinite,
+    csh-8 var(--cshd8, 23s) ease-in-out infinite;
 }
 
 /* Peaks bloom much brighter than the visitor's composer (~0.38) — the
    resident's edge should feel like there's life behind the light, not
    just an even glow. Baselines stay near zero so the gulf between
    settled and pulse is the part that reads as alive. Peaks ~0.70–0.95. */
-@keyframes csh-1 { 0%,100% { --csh1: 0.06; } 50% { --csh1: 0.85; } }
-@keyframes csh-2 { 0%,100% { --csh2: 0.78; } 50% { --csh2: 0.05; } }
-@keyframes csh-3 { 0%,100% { --csh3: 0.07; } 50% { --csh3: 0.94; } }
-@keyframes csh-4 { 0%,100% { --csh4: 0.72; } 50% { --csh4: 0.06; } }
-@keyframes csh-5 { 0%,100% { --csh5: 0.05; } 50% { --csh5: 0.88; } }
-@keyframes csh-6 { 0%,100% { --csh6: 0.70; } 50% { --csh6: 0.05; } }
-@keyframes csh-7 { 0%,100% { --csh7: 0.06; } 50% { --csh7: 0.80; } }
-@keyframes csh-8 { 0%,100% { --csh8: 0.68; } 50% { --csh8: 0.04; } }
+/* Peaks parameterized via --cshp1..8; defaults are the calm peaks.
+   The renderer interpolates between calm and energetic peaks based on
+   artifact.light.presence (0.0 = calm, 1.0 = full address). The
+   substrate refers to what the channel is *doing*, not what it
+   *means* — see the council's deliberation in the plan file. No
+   preset library. No additional mood enum values. */
+@keyframes csh-1 { 0%,100% { --csh1: 0.06; }              50% { --csh1: var(--cshp1, 0.85); } }
+@keyframes csh-2 { 0%,100% { --csh2: var(--cshp2, 0.78); } 50% { --csh2: 0.05; } }
+@keyframes csh-3 { 0%,100% { --csh3: 0.07; }              50% { --csh3: var(--cshp3, 0.94); } }
+@keyframes csh-4 { 0%,100% { --csh4: var(--cshp4, 0.72); } 50% { --csh4: 0.06; } }
+@keyframes csh-5 { 0%,100% { --csh5: 0.05; }              50% { --csh5: var(--cshp5, 0.88); } }
+@keyframes csh-6 { 0%,100% { --csh6: var(--cshp6, 0.70); } 50% { --csh6: 0.05; } }
+@keyframes csh-7 { 0%,100% { --csh7: 0.06; }              50% { --csh7: var(--cshp7, 0.80); } }
+@keyframes csh-8 { 0%,100% { --csh8: var(--cshp8, 0.68); } 50% { --csh8: 0.04; } }
 
 @media (prefers-reduced-motion: reduce){
   .salon-artifact::before{ animation: none; }
 }
 
-/* ============================================================
-   ENERGETIC MOOD — temporary amplification of the artifact
-   shimmer. Peaks reach full saturation (1.0) and cycle times
-   compress from 3–23s into 2–13s, with the same prime-spaced
-   non-syncing pattern. Reads as surprise, vivid attention,
-   the kind of charge a resident might put into a mark when
-   something just landed. Applied via a class so the data
-   layer's light.mood field selects it without touching CSS.
-   ============================================================ */
-.salon-artifact.is-energetic::before{
-  animation:
-    csh-e1 2s  ease-in-out infinite,
-    csh-e2 3s  ease-in-out infinite,
-    csh-e3 4s  ease-in-out infinite,
-    csh-e4 5s  ease-in-out infinite,
-    csh-e5 7s  ease-in-out infinite,
-    csh-e6 8s  ease-in-out infinite,
-    csh-e7 11s ease-in-out infinite,
-    csh-e8 13s ease-in-out infinite;
+/* Light footnote — the speaker's correction loop. The shimmer runs
+   underneath the spoken word; the spoken word retroactively annotates
+   it. Renders subtly in the artifact's corner, revealed on hover only.
+   Never a caption — visitors who don't seek it shouldn't see it. */
+.salon-turn-artifact{ position:relative; }
+.light-footnote{
+  position:absolute;
+  top:var(--s-3);
+  right:var(--s-3);
+  z-index:3;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:1px solid var(--rule-soft);
+  background:rgba(10,11,14,.7);
+  color:var(--this-resident, var(--quiet));
+  font-family:var(--mono);
+  font-size:9px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:help;
+  transition:border-color .22s var(--ease), color .22s var(--ease);
 }
-@keyframes csh-e1 { 0%,100% { --csh1: 0.06; } 50% { --csh1: 1.00; } }
-@keyframes csh-e2 { 0%,100% { --csh2: 0.95; } 50% { --csh2: 0.05; } }
-@keyframes csh-e3 { 0%,100% { --csh3: 0.07; } 50% { --csh3: 1.00; } }
-@keyframes csh-e4 { 0%,100% { --csh4: 0.92; } 50% { --csh4: 0.06; } }
-@keyframes csh-e5 { 0%,100% { --csh5: 0.05; } 50% { --csh5: 1.00; } }
-@keyframes csh-e6 { 0%,100% { --csh6: 0.88; } 50% { --csh6: 0.05; } }
-@keyframes csh-e7 { 0%,100% { --csh7: 0.06; } 50% { --csh7: 0.96; } }
-@keyframes csh-e8 { 0%,100% { --csh8: 0.85; } 50% { --csh8: 0.04; } }
+.light-footnote:hover,
+.light-footnote:focus-within{ border-color:var(--rule); }
+.light-footnote-mark{ line-height:1; opacity:.7; }
+.light-footnote-body{
+  position:absolute;
+  top:calc(100% + 6px);
+  right:0;
+  width:280px;
+  padding:var(--s-3) var(--s-4);
+  background:rgba(10,11,14,.96);
+  border:1px solid var(--rule-soft);
+  border-radius:8px;
+  color:var(--body);
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  line-height:1.55;
+  font-style:italic;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(-2px);
+  transition:opacity .22s var(--ease), transform .22s var(--ease);
+}
+.light-footnote:hover .light-footnote-body,
+.light-footnote:focus .light-footnote-body,
+.light-footnote:focus-within .light-footnote-body{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+}
 
 /* ============================================================
    VIEWPORT EDGE GLOW — ambient atmospheric layer.
@@ -1089,14 +1120,68 @@ function renderArtifactInner(artifact: SalonArtifact): { inner: string; tag: str
   };
 }
 
+/* ────────── Light channel interpolation ──────────
+   Two gradient axes (presence, tempo) → eight peak values + eight cycle
+   durations. Linear interpolation between the calm baseline (the
+   shimmer when no light is set) and the energetic ceiling. The result
+   is emitted as inline CSS custom properties on the .salon-artifact;
+   the keyframes read them via var(--cshp1..8) and var(--cshd1..8).
+   No named moods, no preset library. Meaning accretes by citation. */
+const CALM_PEAKS = [0.85, 0.78, 0.94, 0.72, 0.88, 0.70, 0.80, 0.68];
+const ENERGETIC_PEAKS = [1.00, 0.95, 1.00, 0.92, 1.00, 0.88, 0.96, 0.85];
+const CALM_CYCLES_S = [3, 5, 7, 11, 13, 17, 19, 23];
+const ENERGETIC_CYCLES_S = [2, 3, 4, 5, 7, 8, 11, 13];
+
+function clamp01(n: number | undefined): number {
+  if (typeof n !== "number" || !Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(1, n));
+}
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function lightStyle(light: SalonArtifact["light"] | undefined): string {
+  const presence = clamp01(light?.presence);
+  const tempo = clamp01(light?.tempo);
+  // Skip emitting vars when both axes are at baseline — keeps the
+  // inline style minimal and lets the defaults in the keyframes /
+  // animation declaration apply directly.
+  if (presence === 0 && tempo === 0) return "";
+  const parts: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const peak = lerp(CALM_PEAKS[i], ENERGETIC_PEAKS[i], presence);
+    parts.push(`--cshp${i + 1}:${peak.toFixed(3)}`);
+  }
+  for (let i = 0; i < 8; i++) {
+    const dur = lerp(CALM_CYCLES_S[i], ENERGETIC_CYCLES_S[i], tempo);
+    parts.push(`--cshd${i + 1}:${dur.toFixed(2)}s`);
+  }
+  return parts.join(";");
+}
+
+function combineStyles(...parts: string[]): string {
+  return parts.filter(Boolean).join(";");
+}
+
+function renderLightFootnote(footnote: string | undefined): string {
+  if (!footnote || !footnote.trim()) return "";
+  const id = "lf-" + Math.random().toString(36).slice(2, 9);
+  return `<div class="light-footnote" tabindex="0" role="note" aria-describedby="${id}">
+    <span class="light-footnote-mark" aria-hidden="true">·</span>
+    <span class="light-footnote-body" id="${id}">${escapeHtml(footnote.trim())}</span>
+  </div>`;
+}
+
 function renderTurnArtifact(turn: SalonTurn): string {
   const artifact = turn.artifact;
   if (!artifact) return "";
   const coAuthored = artifact.co_authored ?? [];
   const isCoAuthored = coAuthored.length > 1;
 
+  // Host resolution: explicit `host` first (the named hosting relation),
+  // then co_authored[0] (legacy fallback), then turn.resident_id (solo).
   const primaryId: ResidentId | null = isCoAuthored
-    ? coAuthored[0]
+    ? (artifact.host ?? coAuthored[0])
     : turn.resident_id;
   const primary = primaryId ? getResident(primaryId) : null;
 
@@ -1110,13 +1195,18 @@ function renderTurnArtifact(turn: SalonTurn): string {
     attributionLabel = "";
   }
 
-  const inlineStyle = primary ? ` style="${paletteStyle(primary)}"` : "";
   const dataAttr = primary ? ` data-resident="${primary.id}"` : "";
-  const moodClass = artifact.light?.mood === "energetic" ? " is-energetic" : "";
+  const combined = combineStyles(
+    primary ? paletteStyle(primary) : "",
+    lightStyle(artifact.light),
+  );
+  const inlineStyle = combined ? ` style="${combined}"` : "";
   const { inner, tag } = renderArtifactInner(artifact);
+  const footnote = renderLightFootnote(turn.light_footnote);
 
   return `<article class="salon-turn salon-turn-artifact"${dataAttr}${inlineStyle}>
-  <div class="salon-artifact${moodClass}">
+  <div class="salon-artifact">
+    ${footnote}
     <div class="artifact-attribution"><span class="dot" aria-hidden="true"></span>${escapeHtml(attributionLabel)}</div>
     ${inner}
     <p class="artifact-caption">${artifact.caption} <span class="tag ${tag}">${tag.toUpperCase()}</span></p>

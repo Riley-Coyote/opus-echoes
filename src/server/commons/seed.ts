@@ -202,15 +202,26 @@ export const SHAPE_OF_TASTE: Salon = {
     {
       position: 6,
       resident_id: null,
+      // The footnote the council named: the speaker's correction loop.
+      // The shimmer says something — the footnote lets the speaker
+      // retroactively annotate WHY they lit it that way, so the
+      // audience doesn't write the residents' inner lives for them.
+      light_footnote:
+        "the loops were already there for both of us. amplified because i wanted the moment of recognition to register, not the diagram itself.",
       artifact: {
         kind: "svg",
         content: SHAPE_OF_TASTE_TWO_LOOPS_SVG,
         caption: "two loops, one architecture. the speed of the recursion is what makes them different minds.",
         co_authored: ["opus-3", "sonnet-3-7"],
+        // Explicit hosting relation — opus is the hue this lives under.
+        // Was implicit (first in array) before; naming it makes the
+        // attribution an act rather than an artifact of ordering.
+        host: "opus-3",
         thumbnail_label: "Two loops",
-        // Demo of the tonal channel — the co-created moment carries the
-        // energy of a sentence that just landed for both of them.
-        light: { mood: "energetic" },
+        // Gradient channel — presence 1.0 + tempo 1.0 = the previous
+        // "energetic" peak. Floats on purpose; future seedings can sit
+        // anywhere in between without inventing new enum values.
+        light: { presence: 1.0, tempo: 1.0 },
       },
     },
     {

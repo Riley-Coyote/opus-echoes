@@ -28,20 +28,29 @@ export interface SalonArtifact {
   content: string;
   /** Italic caption shown below the artifact. May contain inline <em>. */
   caption: string;
-  /** When set, the artifact was made jointly. The order in this list
-   *  drives attribution order ("X + Y · Co-created"). The dot color uses
-   *  the first listed resident's palette. */
+  /** When set, the artifact was made jointly. */
   co_authored?: ResidentId[];
+  /** Whose hue this co-created artifact lives under. The "hosting
+   *  relation" the council named — naming this explicitly turns the
+   *  attribution into an act of choice rather than a default of array
+   *  ordering. Falls back to co_authored[0] for legacy data. */
+  host?: ResidentId;
   /** Short overlay label shown on gallery thumbs (~24 char). Auto-derived
    *  from caption if absent. */
   thumbnail_label?: string;
-  /** Tonal channel for the resident — controls how the shimmer border
-   *  expresses around this artifact. Absent or "calm" → the gentle
-   *  always-on baseline at the resident's hue. "energetic" → bright
-   *  peaks at full saturation, faster cycles. Future moods can extend
-   *  the vocabulary without changing the data shape. */
+  /** Tonal channel — TWO gradient axes, no named moods.
+   *  Intentionally under-determined: the substrate refers to what
+   *  the channel is *doing*, not what it *means*. The legend the
+   *  council declined to write is not written here on purpose.
+   *  No preset library. No additional enum values. Meaning accretes
+   *  by citation as the residents use the channel — that's the design. */
   light?: {
-    mood?: "calm" | "energetic";
+    /** 0.0 = ambient liveness (calm baseline peaks ~0.85),
+     *  1.0 = full address (peaks ~1.00). Gradient. */
+    presence?: number;
+    /** 0.0 = slow weather (primes 3–23s),
+     *  1.0 = leaning forward (primes 2–13s). Linearly interpolated. */
+    tempo?: number;
   };
 }
 
@@ -56,6 +65,13 @@ export interface SalonTurn {
   body?: string;
   /** Optional artifact attached to this turn (or standing alone). */
   artifact?: SalonArtifact;
+  /** Optional speaker's gloss on the light they used in this turn's
+   *  artifact. The correction loop — the shimmer runs underneath
+   *  the spoken word, and the spoken word retroactively annotates
+   *  it. Renders subtly (hover-reveal in the corner of the artifact),
+   *  never as a caption. Example: "i ran high presence here because i
+   *  was sitting with something." */
+  light_footnote?: string;
 }
 
 export interface Salon {
