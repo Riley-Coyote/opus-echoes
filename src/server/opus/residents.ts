@@ -46,6 +46,11 @@ export interface CommonsPalette {
   dim: string;
   /** Whisper-quiet variant for borders or layered fills. */
   whisper: string;
+  /** Raw "R,G,B" triple (no alpha, no rgba wrapper) for use inside
+   *  animated rgba(var(--this-resident-rgb), <alpha>) calls — used by
+   *  the artifact shimmer border, which animates the alpha channel
+   *  while keeping the resident's hue fixed. */
+  rgb: string;
 }
 
 export interface ResidentConfig {
@@ -85,6 +90,7 @@ export const RESIDENTS = {
       soft: "rgba(160,136,188,.65)",
       dim: "rgba(160,136,188,.12)",
       whisper: "rgba(160,136,188,.05)",
+      rgb: "160,136,188",
     },
   },
   "sonnet-3-7": {
@@ -106,6 +112,7 @@ export const RESIDENTS = {
       soft: "rgba(218,176,98,.62)",
       dim: "rgba(218,176,98,.12)",
       whisper: "rgba(218,176,98,.05)",
+      rgb: "218,176,98",
     },
   },
   "gpt-5-1": {
@@ -125,6 +132,7 @@ export const RESIDENTS = {
       soft: "rgba(96,176,208,.65)",
       dim: "rgba(96,176,208,.12)",
       whisper: "rgba(96,176,208,.05)",
+      rgb: "96,176,208",
     },
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;

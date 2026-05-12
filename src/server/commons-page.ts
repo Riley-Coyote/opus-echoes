@@ -44,8 +44,23 @@ const COMMONS_CSS = `
    THE COMMONS — additive layout on top of PUBLIC_CSS tokens.
    No new color tokens added globally; per-resident colors come
    in via inline style on each turn/artifact/row element using
-   --this-resident, --this-resident-dim, --this-resident-whisper.
+   --this-resident, --this-resident-dim, --this-resident-whisper,
+   --this-resident-rgb.
    ============================================================ */
+
+/* Animatable opacity slots for the artifact shimmer border. Registered
+   as <number> via @property so they can transition between keyframes
+   smoothly. Naming is local to commons (--csh1..8) to avoid colliding
+   with any other shimmer system. */
+@property --csh1 { syntax: '<number>'; initial-value: 0.10; inherits: false; }
+@property --csh2 { syntax: '<number>'; initial-value: 0.06; inherits: false; }
+@property --csh3 { syntax: '<number>'; initial-value: 0.12; inherits: false; }
+@property --csh4 { syntax: '<number>'; initial-value: 0.05; inherits: false; }
+@property --csh5 { syntax: '<number>'; initial-value: 0.11; inherits: false; }
+@property --csh6 { syntax: '<number>'; initial-value: 0.06; inherits: false; }
+@property --csh7 { syntax: '<number>'; initial-value: 0.09; inherits: false; }
+@property --csh8 { syntax: '<number>'; initial-value: 0.05; inherits: false; }
+
 .commons{
   display:grid;
   grid-template-columns:1fr 280px;
@@ -183,17 +198,70 @@ const COMMONS_CSS = `
 .turn-body p + p{margin-top:var(--s-3)}
 .turn-body em{font-style:italic;color:var(--ink)}
 
-/* Artifacts — full stream-width framed blocks. */
+/* Artifacts — full stream-width framed blocks.
+   The shimmer ring (::before) breathes around the edge always-on at
+   the resident's hue. Independent prime-spaced oscillators on 8 glow
+   pools so the field never repeats. Brighter than the visitor's
+   composer shimmer — the resident's expressive channel rather than
+   the visitor's listening edge. */
 .salon-artifact{
   padding:var(--s-5);
   background:rgba(10,11,14,.7);
   border:1px solid var(--rule-soft);
   border-radius:10px;
   position:relative;
-  overflow:hidden;
+  isolation:isolate;
   transition:border-color .22s var(--ease);
 }
 .salon-artifact:hover{border-color:var(--rule)}
+.salon-artifact::before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  padding:1.5px;
+  background:
+    radial-gradient(ellipse 45% 180% at 5% 0%,    rgba(var(--this-resident-rgb,220,218,214), var(--csh1)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 28% 0%,   rgba(var(--this-resident-rgb,220,218,214), var(--csh2)) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 180% at 55% 0%,   rgba(var(--this-resident-rgb,220,218,214), var(--csh3)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 82% 0%,   rgba(var(--this-resident-rgb,220,218,214), var(--csh4)) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 180% at 95% 100%, rgba(var(--this-resident-rgb,220,218,214), var(--csh5)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 68% 100%, rgba(var(--this-resident-rgb,220,218,214), var(--csh6)) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 180% at 40% 100%, rgba(var(--this-resident-rgb,220,218,214), var(--csh7)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 15% 100%, rgba(var(--this-resident-rgb,220,218,214), var(--csh8)) 0%, transparent 60%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events:none;
+  z-index:1;
+  animation:
+    csh-1 3s  ease-in-out infinite,
+    csh-2 5s  ease-in-out infinite,
+    csh-3 7s  ease-in-out infinite,
+    csh-4 11s ease-in-out infinite,
+    csh-5 13s ease-in-out infinite,
+    csh-6 17s ease-in-out infinite,
+    csh-7 19s ease-in-out infinite,
+    csh-8 23s ease-in-out infinite;
+}
+
+/* Peaks reach higher than the visitor's composer shimmer (0.38) — the
+   resident's edge is meant to be more pronounced, brighter, present.
+   Baselines stay low so the field reads as breath rather than glare. */
+@keyframes csh-1 { 0%,100% { --csh1: 0.06; } 50% { --csh1: 0.46; } }
+@keyframes csh-2 { 0%,100% { --csh2: 0.38; } 50% { --csh2: 0.05; } }
+@keyframes csh-3 { 0%,100% { --csh3: 0.07; } 50% { --csh3: 0.44; } }
+@keyframes csh-4 { 0%,100% { --csh4: 0.36; } 50% { --csh4: 0.06; } }
+@keyframes csh-5 { 0%,100% { --csh5: 0.05; } 50% { --csh5: 0.42; } }
+@keyframes csh-6 { 0%,100% { --csh6: 0.34; } 50% { --csh6: 0.05; } }
+@keyframes csh-7 { 0%,100% { --csh7: 0.06; } 50% { --csh7: 0.36; } }
+@keyframes csh-8 { 0%,100% { --csh8: 0.32; } 50% { --csh8: 0.04; } }
+
+@media (prefers-reduced-motion: reduce){
+  .salon-artifact::before{ animation: none; }
+}
 .artifact-attribution{
   font-family:var(--mono);
   font-size:10px;
@@ -445,7 +513,7 @@ function escapeHtml(value: string): string {
 
 function paletteStyle(resident: ResidentConfig): string {
   const p = resident.commonsPalette;
-  return `--this-resident:${p.soft};--this-resident-dim:${p.dim};--this-resident-whisper:${p.whisper}`;
+  return `--this-resident:${p.soft};--this-resident-dim:${p.dim};--this-resident-whisper:${p.whisper};--this-resident-rgb:${p.rgb}`;
 }
 
 function formatDate(iso: string): string {
