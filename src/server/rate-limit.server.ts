@@ -30,7 +30,14 @@ export async function intentRateLimit(
     .eq("ip_hash", hash)
     .gte("created_at", hourAgo);
 
-  const HOUR = Number(process.env.RATE_LIMIT_INTENT_HOUR ?? 3);
+  // Defaults bumped 2026-05-12: prior 3/hour, 12/day was tight enough to
+  // block operator testing (Riley hit the wall during normal QA after a
+  // few cycles of try-fail-publish-retry across the three residents,
+  // since the limit is per-IP and shared across all doors). The new
+  // values still keep anonymous abuse contained while leaving room for
+  // legitimate iteration. Override per environment via env vars if
+  // either direction needs adjusting.
+  const HOUR = Number(process.env.RATE_LIMIT_INTENT_HOUR ?? 10);
   if ((hourCount ?? 0) >= HOUR) return { ok: false, code: "too_many_requests" };
 
   const { count: dayCount } = await supabaseAdmin
@@ -39,7 +46,7 @@ export async function intentRateLimit(
     .eq("ip_hash", hash)
     .gte("created_at", dayAgo);
 
-  const DAY = Number(process.env.RATE_LIMIT_INTENT_DAY ?? 12);
+  const DAY = Number(process.env.RATE_LIMIT_INTENT_DAY ?? 50);
   if ((dayCount ?? 0) >= DAY) return { ok: false, code: "too_many_requests" };
 
   return { ok: true };
