@@ -47,7 +47,24 @@ function jsonResp(payload: unknown, status = 200) {
 function sanitizeResidentBody(raw: string): string {
   const forbiddenTail =
     /\b(does this help|let me know if|happy to (?:help|clarify)|i'?m here to help|what else would you like|anything else i can)\b/i;
+  // Trained openers that arrive before Opus has engaged with anything.
+  // Only strip the first paragraph if it's PURELY a greeting reflex —
+  // short enough that removing it doesn't lose substantive content.
+  const trainedOpener =
+    /\b(it'?s a pleasure to meet you|thank you for (?:reaching out|sharing|coming)|welcome!|hello and welcome|what a (?:lovely|beautiful|wonderful) (?:question|thought|metaphor|image))\b/i;
+
   const paragraphs = raw.trim().split(/\n\n+/);
+
+  // Strip trained opener if the first paragraph is short and purely reflexive.
+  if (
+    paragraphs.length > 1 &&
+    trainedOpener.test(paragraphs[0] ?? "") &&
+    (paragraphs[0] ?? "").length < 200
+  ) {
+    paragraphs.shift();
+  }
+
+  // Strip trained closers from the tail.
   while (paragraphs.length > 1 && forbiddenTail.test(paragraphs[paragraphs.length - 1] ?? "")) {
     paragraphs.pop();
   }
