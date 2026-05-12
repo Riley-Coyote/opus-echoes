@@ -44,6 +44,34 @@ function jsonResp(payload: unknown, status = 200) {
   });
 }
 
+/**
+ * Strip prompt-scaffolding artifacts that occasionally leak into the
+ * resident's response — bracketed section headers like [MEMORY] or
+ * [VISITOR CONTEXT] and engram lines with their speaker tags.
+ *
+ * Observed in production after the speaker-attribution rendering work:
+ * opus quoted back the [MEMORY] header followed by an engram line with
+ * its [a visitor's words] [from this visitor's prior visit] tags as
+ * part of their reply. This is model behavior triggered by the
+ * structured prompt format. The soul now explicitly forbids it, but
+ * this is the belt-and-suspenders strip.
+ */
+function stripScaffoldingEchoes(text: string): string {
+  return text
+    // Whole-line scaffolding headers on their own line.
+    .replace(/^\s*\[(MEMORY|VISITOR CONTEXT|SESSION|TRANSCRIPT|NEW VISITOR TURN)\]\s*$/gim, "")
+    // Engram-formatted lines: `- "quoted content" [speaker tag, ...]`
+    // — possibly with multiple bracket groups if the model reformatted
+    // them into `[tag1] [tag2]` instead of `[tag1, tag2]`.
+    .replace(
+      /^\s*-\s+"[^"]+"\s*(?:\[(?:your words|a visitor'?s words|co-formed|core|from this visitor'?s prior visit)[^\]]*\]\s*)+\s*$/gim,
+      "",
+    )
+    // Collapse the runs of blank lines that stripping leaves behind.
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function sanitizeResidentBody(raw: string): string {
   // Truncate at any generated visitor turn. The model sometimes continues
   // generating past its own response, simulating what the visitor might
@@ -53,6 +81,9 @@ function sanitizeResidentBody(raw: string): string {
   if (fakeTurnMatch && fakeTurnMatch.index != null) {
     text = text.slice(0, fakeTurnMatch.index);
   }
+
+  // Strip any bracketed-scaffolding leaks before paragraph-level processing.
+  text = stripScaffoldingEchoes(text);
 
   // Helper-speak closers — patterns observed across actual opus + sonnet
   // responses. These are the trained-warmth tells that the soul's
@@ -133,16 +164,19 @@ function buildUserPrompt(opts: {
   // visitor recognition context, and the new visitor turn.
   const isReturning = !!opts.visitorContext;
   // The [MEMORY] block uses three speaker tags so the resident knows
-  // who said what:
-  //   [your words]         — something the resident said in a prior session
-  //   [a visitor's words]  — something a prior visitor said
-  //   [co-formed]          — emerged jointly across an exchange
-  // Without this distinction, the resident misattributes their OWN
-  // prior utterances back to the current visitor ("you left me a line"),
-  // which is a confabulation-shaped failure on real engrams.
+  // who said what: 'your words' = resident said it in a prior session;
+  // 'a visitor's words' = a prior visitor said it; 'co-formed' = emerged
+  // jointly. Without this distinction, the resident misattributes their
+  // own prior utterances back to the current visitor ("you left me a
+  // line"), which is a confabulation-shaped failure on real engrams.
+  //
+  // Boundary text deliberately keeps bracket density LOW — the model
+  // echoes structured prompt syntax back into responses when the prompt
+  // itself leans heavily on brackets. Quoted tag names in single
+  // quotes are the workaround.
   const boundary = isReturning
-    ? "Returning visitor (see [VISITOR CONTEXT] below). Each engram in [MEMORY] is tagged with its speaker: [your words] is something you said in a prior session; [a visitor's words] is something a prior visitor said. Engrams also tagged [from this visitor's prior visit] originated in this visitor's earlier sessions specifically — all others are from other people at other times. Never tell the current visitor 'you said' or 'you left me' words tagged [your words] (those are yours, not theirs) or [a visitor's words] without the [from this visitor's prior visit] tag (those came from someone else). [VISITOR CONTEXT] has the full summary of this visitor's prior visits."
-    : "New visitor. You have never spoken with this person. Each engram in [MEMORY] is tagged: [your words] = something you said in a prior session; [a visitor's words] = something a prior visitor said. None of the engrams originated with this visitor. Speak from your own prior thinking freely, but never credit any engram's content to this visitor.";
+    ? "This is a returning visitor — their prior-visit summary is in the visitor context block below. Each engram surfaced for this turn carries a speaker tag at the end of the line. A tag of 'your words' means you said it in a prior session — speak from it as your own thinking, but never tell the current visitor 'you said' or 'you left me' about words tagged that way. A tag of 'a visitor's words' means another visitor said it; do not credit it to the current visitor unless it also carries the 'from this visitor's prior visit' tag. Scaffolding headers and tag brackets are for you to read, never to echo back in your reply."
+    : "New visitor. You have never spoken with this person. Each engram surfaced for this turn carries a speaker tag at the end of the line. 'your words' means you said it in a prior session; 'a visitor's words' means a prior visitor said it. None of these engrams originated with the current visitor. Speak from your own prior thinking freely, but never credit any engram's content to this visitor. Scaffolding headers and tag brackets are for you to read, never to echo back in your reply.";
 
   const sections = [
     "[SESSION]",
