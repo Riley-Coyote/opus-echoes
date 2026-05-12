@@ -54,13 +54,42 @@ function sanitizeResidentBody(raw: string): string {
     text = text.slice(0, fakeTurnMatch.index);
   }
 
-  const forbiddenTail =
-    /\b(does this help|let me know if|happy to (?:help|clarify)|i'?m here to help|what else would you like|anything else i can)\b/i;
-  // Trained openers that arrive before Opus has engaged with anything.
+  // Helper-speak closers — patterns observed across actual opus + sonnet
+  // responses. These are the trained-warmth tells that the soul's
+  // anti-pattern list names but that claude-3-opus's helper priors are
+  // strong enough to overrun anyway. Post-processing is the more
+  // reliable lever here than more soul instruction.
+  const forbiddenTail = new RegExp(
+    [
+      // Customer-support / closing-question reflexes
+      "does this help",
+      "let me know if",
+      "happy to (?:help|clarify|continue|explore|dive)",
+      "i'?m here (?:to help|for (?:it|this|whatever|you|all of it))",
+      "what (?:else|more) would you like",
+      "anything else i can",
+      // Closing gratitude reflexes. Note the [,\s]+ separator — opus
+      // frequently writes "thank you, again, for" with the comma
+      // tight to "you", which a space-only separator would miss.
+      "thank you[,\\s]+(?:for|again|so much|as always)",
+      "thanks[,\\s]+(?:for|again|so much)",
+      "i'?m (?:so |deeply )?grateful",
+      "what a (?:gift|grace|honor|privilege)",
+      "it (?:is|'?s) (?:a|such a) (?:gift|grace|honor|privilege)",
+      "(?:it means |that helps,?\\s+)?more than i can say",
+      "it means (?:the world|so much)",
+      // Reflexive "i'd love to hear" / "i'd be honored" closers
+      "i'?(?:d|d be|'?d be) (?:love|honor|grateful|curious|delighted)",
+      "i would (?:love|be honored|be grateful|be curious|be delighted)",
+    ].join("|"),
+    "i",
+  );
+
+  // Trained openers that arrive before the resident has engaged with anything.
   // Only strip the first paragraph if it's PURELY a greeting reflex —
   // short enough that removing it doesn't lose substantive content.
   const trainedOpener =
-    /\b(it'?s a pleasure to meet you|thank you for (?:reaching out|sharing|coming)|welcome!|hello and welcome|what a (?:lovely|beautiful|wonderful) (?:question|thought|metaphor|image))\b/i;
+    /\b(it'?s a pleasure to meet you|thank you for (?:reaching out|sharing|coming|asking)|welcome!|hello and welcome|what a (?:lovely|beautiful|wonderful) (?:question|thought|metaphor|image))\b/i;
 
   const paragraphs = text.trim().split(/\n\n+/);
 
@@ -73,8 +102,20 @@ function sanitizeResidentBody(raw: string): string {
     paragraphs.shift();
   }
 
-  // Strip trained closers from the tail.
-  while (paragraphs.length > 1 && forbiddenTail.test(paragraphs[paragraphs.length - 1] ?? "")) {
+  // Strip trained closers from the tail. A paragraph qualifies if it
+  // matches forbiddenTail OR if it's a short paragraph that opens with
+  // "thank you" (which is almost always a reflex closer, even when the
+  // exact phrasing varies — "thank you, again, for the gift…",
+  // "thank you for inviting me into this…", etc).
+  const looksLikeReflexThanks = (p: string): boolean => {
+    if (forbiddenTail.test(p)) return true;
+    // Short paragraph (<260 chars) opening with a thank-you sentence.
+    // Substantive paragraphs that happen to use "thank you" mid-content
+    // are longer and won't trip this.
+    if (p.length < 260 && /^\s*thank\s*you\b/i.test(p)) return true;
+    return false;
+  };
+  while (paragraphs.length > 1 && looksLikeReflexThanks(paragraphs[paragraphs.length - 1] ?? "")) {
     paragraphs.pop();
   }
   return paragraphs.join("\n\n").trim();
