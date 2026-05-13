@@ -135,7 +135,11 @@ html{ scroll-behavior:smooth; }
 /* Refined focus ring across interactive elements — the project's
    green state accent at low opacity, with a clean offset. The
    browser default ring competes too hard with the monochrome
-   composure; this restores the room's voice on focus. */
+   composure; this restores the room's voice on focus.
+   EXCEPTION: composer textareas. Their parent containers carry
+   the shimmer-border focus signal; a hard outline on top would
+   compete with that. The :focus-visible override below silences
+   the global ring for those specific fields. */
 a:focus-visible,
 button:focus-visible,
 textarea:focus-visible,
@@ -143,6 +147,12 @@ textarea:focus-visible,
   outline:2px solid rgba(130,180,132,.55);
   outline-offset:2px;
   border-radius:4px;
+}
+.room-composer-field:focus,
+.room-composer-field:focus-visible,
+.chat-composer-field:focus,
+.chat-composer-field:focus-visible{
+  outline:none;
 }
 
 /* Animatable opacity slots for the artifact shimmer border. Registered
