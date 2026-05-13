@@ -65,11 +65,17 @@ const COMMONS_CSS = `
 
 /* Re-anchor the global site nav inside the safe area. The nav is
    defined in PUBLIC_CSS as position:fixed at top/left/right:0; we
-   shift it inward on commons pages only. */
+   shift it inward on commons pages only AND round its top corners
+   so they meet the band's inner rounded edge cleanly (otherwise
+   the nav reads as a sharp rectangle clipping the safe-area's
+   top-corner curve). */
 .public-nav{
   top:var(--safe-inset)!important;
   left:var(--safe-inset)!important;
   right:var(--safe-inset)!important;
+  border-top-left-radius:20px;
+  border-top-right-radius:20px;
+  overflow:hidden;
 }
 
 /* Animatable opacity slots for the artifact shimmer border. Registered
@@ -387,6 +393,11 @@ const COMMONS_CSS = `
   inset:0;
   pointer-events:none;
   z-index:2;
+  /* Opaque floor under the gradients. With the band mask only the
+     perimeter shows, but inside the band area the floor color hides
+     any content scrolling past the inner edge — so text scrolling
+     through doesn't bleed across the bottom band. */
+  background-color:#06070a;
   /* Two-layer mask for pixel-uniform band thickness regardless of
      viewport aspect ratio:
        Layer 1: a solid black rectangle covering the full viewport
@@ -433,14 +444,14 @@ const COMMONS_CSS = `
    always drifting without any single transition feeling like
    "motion" — it's weather, but visible weather. Baselines stay
    low so the contrast between settled and pulse remains felt. */
-@keyframes vg-1 { 0%,100% { --vg1: 0.04; } 50% { --vg1: 0.36; } }
-@keyframes vg-2 { 0%,100% { --vg2: 0.30; } 50% { --vg2: 0.05; } }
-@keyframes vg-3 { 0%,100% { --vg3: 0.05; } 50% { --vg3: 0.40; } }
-@keyframes vg-4 { 0%,100% { --vg4: 0.28; } 50% { --vg4: 0.04; } }
-@keyframes vg-5 { 0%,100% { --vg5: 0.05; } 50% { --vg5: 0.34; } }
-@keyframes vg-6 { 0%,100% { --vg6: 0.26; } 50% { --vg6: 0.05; } }
-@keyframes vg-7 { 0%,100% { --vg7: 0.04; } 50% { --vg7: 0.32; } }
-@keyframes vg-8 { 0%,100% { --vg8: 0.24; } 50% { --vg8: 0.04; } }
+@keyframes vg-1 { 0%,100% { --vg1: 0.06; } 50% { --vg1: 0.62; } }
+@keyframes vg-2 { 0%,100% { --vg2: 0.52; } 50% { --vg2: 0.07; } }
+@keyframes vg-3 { 0%,100% { --vg3: 0.07; } 50% { --vg3: 0.66; } }
+@keyframes vg-4 { 0%,100% { --vg4: 0.48; } 50% { --vg4: 0.06; } }
+@keyframes vg-5 { 0%,100% { --vg5: 0.07; } 50% { --vg5: 0.58; } }
+@keyframes vg-6 { 0%,100% { --vg6: 0.44; } 50% { --vg6: 0.07; } }
+@keyframes vg-7 { 0%,100% { --vg7: 0.06; } 50% { --vg7: 0.54; } }
+@keyframes vg-8 { 0%,100% { --vg8: 0.40; } 50% { --vg8: 0.06; } }
 
 @media (prefers-reduced-motion: reduce){
   .viewport-glow{ animation: none; }
@@ -729,7 +740,6 @@ const COMMONS_CSS = `
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
   transition:width .32s var(--ease), background .32s var(--ease);
-  overflow:hidden;
 }
 
 /* Collapse / expand toggle — visible on desktop only. Positioned at
@@ -785,6 +795,11 @@ const COMMONS_CSS = `
   right:calc(10px + var(--safe-inset));
   left:auto;
   margin-top:-14px;
+  /* When position becomes fixed the button escapes the panel's
+     stacking context — its base z-index:2 would sit below the
+     panel's z:30. Bump above the panel so it remains the visible
+     re-open affordance. */
+  z-index:31;
 }
 .chat-panel.collapsed .chat-collapse svg{ transform:rotate(180deg); }
 @media(min-width:1180px){
