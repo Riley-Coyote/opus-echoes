@@ -155,21 +155,41 @@ textarea:focus-visible,
 @property --csh7 { syntax: '<number>'; initial-value: 0.09; inherits: false; }
 @property --csh8 { syntax: '<number>'; initial-value: 0.05; inherits: false; }
 
+/* Override .page (from PUBLIC_CSS, which constrains it to 1080px
+   centered) on commons routes. We cap at a wider --page-max so
+   content + chat panel can sit side-by-side as a single centered
+   group instead of separating into two visual zones on ultrawide.
+   The chat panel's right position is computed from the same
+   --page-max so it always aligns with .page's right edge. */
+:root{
+  --page-max:1320px;
+}
+.page{
+  width:auto!important;
+  max-width:var(--page-max)!important;
+  margin:0 auto!important;
+  padding-left:var(--safe-inset)!important;
+  padding-right:var(--safe-inset)!important;
+}
+@media(min-width:1180px){
+  .page{
+    /* Reserve room for the chat panel: panel itself is 380px wide
+       + 4px inset from the band on each side + safe-inset + an
+       8px visual gap between content area and panel. */
+    padding-right:calc(var(--safe-inset) + 400px)!important;
+  }
+  body.chat-panel-collapsed .page{
+    padding-right:calc(var(--safe-inset) + 68px)!important;
+  }
+}
+
 .commons{
   display:grid;
   grid-template-columns:minmax(0,1fr);
   gap:var(--s-6);
-  padding-bottom:calc(var(--s-9) + var(--safe-inset));
-  /* leave room for the fixed chat panel on the right at wider viewports */
-  padding-right:0;
-  padding-left:var(--safe-inset);
-  max-width:calc(760px + var(--safe-inset));
-}
-@media(min-width:1180px){
-  .commons{
-    margin-right:calc(380px + var(--safe-inset));
-    padding-right:var(--s-6);
-  }
+  padding-bottom:var(--s-9);
+  max-width:760px;
+  margin:0 auto;
 }
 
 .commons-head{
@@ -807,9 +827,16 @@ textarea:focus-visible,
   position:fixed;
   /* Slight nudge in from the band (4px) so the panel reads as
      a held object inside the room rather than something pasted
-     to the inner edge. */
+     to the inner edge.
+     The right calc keeps the panel aligned with .page's right
+     edge: on viewports wider than --page-max the panel shifts
+     in so it sits within the centered page container; on narrow
+     viewports the max() clamp keeps it inside the safe-area. */
   top:calc(64px + var(--safe-inset) + 12px);
-  right:calc(var(--safe-inset) + 4px);
+  right:max(
+    calc(var(--safe-inset) + 4px),
+    calc((100vw - var(--page-max)) / 2 + var(--safe-inset) + 4px)
+  );
   bottom:calc(var(--safe-inset) + 4px);
   width:380px;
   display:flex;
