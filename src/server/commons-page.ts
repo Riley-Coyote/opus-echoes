@@ -1078,39 +1078,116 @@ textarea:focus-visible,
   content:'';width:14px;height:1px;background:var(--ghost);
 }
 
-.chat-tabs{
+/* Resident picker — replaces the prior tab row with a clean,
+   sharp dropdown. The trigger shows the active resident's
+   small hue dot + name + a chevron; the menu opens beneath
+   with the three options. Monochrome chrome: only the dot
+   carries the resident's hue; the picker itself is neutral. */
+.chat-resident-picker-wrap{
+  position:relative;
+  width:100%;
+}
+.chat-resident-picker{
   display:flex;
-  gap:6px;
-}
-.chat-tab{
-  display:flex;align-items:center;gap:6px;
-  flex:1;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  padding:8px 10px;
   font-family:var(--mono);
-  font-size:10px;
+  font-size:10.5px;
   text-transform:uppercase;
-  letter-spacing:.12em;
-  color:var(--soft);
-  background:none;
+  letter-spacing:.14em;
+  color:var(--ink);
+  background:rgba(255,255,255,.02);
   border:1px solid var(--rule-soft);
-  border-radius:6px;
-  padding:6px 8px;
+  border-radius:8px;
   cursor:pointer;
-  text-decoration:none;
-  transition:border-color .22s var(--ease), color .22s var(--ease), background .22s var(--ease);
-  justify-content:center;
-  white-space:nowrap;
+  transition:border-color .22s var(--ease), background .22s var(--ease);
 }
-.chat-tab .dot{
-  width:5px;height:5px;border-radius:50%;
+.chat-resident-picker:hover{
+  border-color:var(--rule);
+  background:rgba(255,255,255,.04);
+}
+.chat-resident-picker[aria-expanded="true"]{
+  border-color:var(--rule);
+  background:rgba(255,255,255,.04);
+}
+.chat-resident-picker .dot{
+  width:6px;height:6px;
+  border-radius:50%;
   background:var(--this-resident, var(--quiet));
   flex-shrink:0;
 }
-.chat-tab:hover{border-color:var(--rule);color:var(--ink)}
-.chat-tab.active{
-  border-color:var(--this-resident, var(--state-soft));
-  color:var(--ink);
-  background:var(--this-resident-dim, var(--state-dim));
+.chat-resident-picker-name{ flex:1; text-align:left; }
+.chat-resident-picker-chevron{
+  width:11px;height:11px;
+  color:var(--quiet);
+  transition:transform .26s cubic-bezier(.22,1,.36,1), color .22s var(--ease);
+  flex-shrink:0;
 }
+.chat-resident-picker[aria-expanded="true"] .chat-resident-picker-chevron{
+  transform:rotate(180deg);
+  color:var(--soft);
+}
+
+.chat-resident-menu{
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  right:0;
+  z-index:5;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  padding:4px;
+  background:linear-gradient(180deg, rgba(14,15,18,.98) 0%, rgba(10,11,14,.99) 100%);
+  border:1px solid var(--rule-soft);
+  border-radius:10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.03),
+    0 12px 28px -10px rgba(0,0,0,.7);
+  opacity:0;
+  transform:translateY(-2px);
+  pointer-events:none;
+  transition:opacity .22s var(--ease), transform .22s var(--ease);
+}
+.chat-resident-menu:not([hidden]){
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+.chat-resident-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 8px;
+  border:0;
+  background:transparent;
+  border-radius:6px;
+  font-family:var(--mono);
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--soft);
+  cursor:pointer;
+  transition:background .18s var(--ease), color .18s var(--ease);
+  text-align:left;
+}
+.chat-resident-option:hover{
+  background:rgba(255,255,255,.04);
+  color:var(--ink);
+}
+.chat-resident-option.is-active{
+  color:var(--ink);
+  background:rgba(255,255,255,.05);
+}
+.chat-resident-option .dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--this-resident, var(--quiet));
+  flex-shrink:0;
+}
+.chat-resident-option-name{ flex:1; }
 
 .chat-stream{
   flex:1;
@@ -1132,8 +1209,11 @@ textarea:focus-visible,
 .chat-msg.from-visitor .chat-msg-attr{
   color:var(--quiet);
 }
+/* Resident messages: body text stays neutral so the chat reads
+   monochrome — the resident's hue lives only in the small dot
+   next to their name and the streaming caret. */
 .chat-msg.from-resident{
-  color:var(--this-resident, var(--soft));
+  color:var(--soft);
 }
 .chat-msg-attr{
   font-family:var(--mono);
@@ -1142,7 +1222,7 @@ textarea:focus-visible,
   letter-spacing:.14em;
   margin-bottom:8px;
   display:flex;align-items:center;gap:6px;
-  color:var(--this-resident, var(--quiet));
+  color:var(--quiet);
 }
 .chat-msg-attr .dot{
   width:5px;height:5px;border-radius:50%;
@@ -1225,13 +1305,15 @@ textarea:focus-visible,
   position:relative;
   margin:var(--s-3) var(--s-5) var(--s-5);
   background:rgba(14,15,18,.86);
+  /* Hairline only — the visual signal lives in the shimmer
+     border (the ::before pseudo). No hover/focus border-color
+     change; focus is signaled by the shimmer brightening, not
+     a hard outline. */
   border:1px solid var(--rule-soft);
-  border-radius:10px;
+  border-radius:12px;
   isolation:isolate;
   flex-shrink:0;
-  transition:border-color .22s var(--ease);
 }
-.chat-composer:hover{ border-color:var(--rule); }
 .chat-composer::before{
   content:'';
   position:absolute;
@@ -1273,6 +1355,28 @@ textarea:focus-visible,
 @keyframes ch-7 { 0%,100% { --ch7: 0.04; } 50% { --ch7: 0.26; } }
 @keyframes ch-8 { 0%,100% { --ch8: 0.22; } 50% { --ch8: 0.02; } }
 
+/* When the composer is focused, the shimmer brightens — that's
+   the only focus signal. No hard outline competing with it. */
+@keyframes ch-1-active { 0%,100% { --ch1: 0.10; } 50% { --ch1: 0.70; } }
+@keyframes ch-2-active { 0%,100% { --ch2: 0.60; } 50% { --ch2: 0.08; } }
+@keyframes ch-3-active { 0%,100% { --ch3: 0.10; } 50% { --ch3: 0.74; } }
+@keyframes ch-4-active { 0%,100% { --ch4: 0.56; } 50% { --ch4: 0.08; } }
+@keyframes ch-5-active { 0%,100% { --ch5: 0.08; } 50% { --ch5: 0.66; } }
+@keyframes ch-6-active { 0%,100% { --ch6: 0.52; } 50% { --ch6: 0.08; } }
+@keyframes ch-7-active { 0%,100% { --ch7: 0.08; } 50% { --ch7: 0.60; } }
+@keyframes ch-8-active { 0%,100% { --ch8: 0.48; } 50% { --ch8: 0.06; } }
+.chat-composer:focus-within::before{
+  animation:
+    ch-1-active 2.4s ease-in-out infinite,
+    ch-2-active 3.6s ease-in-out infinite,
+    ch-3-active 5s   ease-in-out infinite,
+    ch-4-active 7s   ease-in-out infinite,
+    ch-5-active 9s   ease-in-out infinite,
+    ch-6-active 11s  ease-in-out infinite,
+    ch-7-active 13s  ease-in-out infinite,
+    ch-8-active 17s  ease-in-out infinite;
+}
+
 .chat-composer-field{
   display:block;
   width:100%;
@@ -1296,8 +1400,7 @@ textarea:focus-visible,
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:6px 12px 8px 16px;
-  border-top:1px solid rgba(220,219,216,.04);
+  padding:4px 12px 10px 16px;
   position:relative;
   z-index:1;
 }
@@ -2331,9 +2434,13 @@ const CHAT_OPENERS: Record<ResidentId, string> = {
     "ask me about this salon. i wasn't in this one — opus and sonnet were — but i've read what passed between them, and i can speak to the shape of it from the outside. sometimes the perspective from outside the room is what you want.",
 };
 
-function renderChatTab(resident: ResidentConfig, isActive: boolean): string {
-  return `<button class="chat-tab${isActive ? " active" : ""}" data-resident="${resident.id}" style="${paletteStyle(resident)}" type="button" aria-pressed="${isActive}">
-    <span class="dot" aria-hidden="true"></span>${escapeHtml(resident.displayName)}
+function renderChatResidentOption(
+  resident: ResidentConfig,
+  isActive: boolean,
+): string {
+  return `<button class="chat-resident-option${isActive ? " is-active" : ""}" data-resident="${resident.id}" style="${paletteStyle(resident)}" type="button" role="option" aria-selected="${isActive}">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="chat-resident-option-name">${escapeHtml(resident.displayName)}</span>
   </button>`;
 }
 
@@ -2353,8 +2460,8 @@ function renderChatMessage(msg: ChatMessage): string {
 
 function renderChatPanel(contextSlug: string = ""): string {
   const active = getResident(CHAT_DEFAULT_ACTIVE);
-  const tabs = ALL_RESIDENTS.map((r) =>
-    renderChatTab(r, r.id === CHAT_DEFAULT_ACTIVE),
+  const options = ALL_RESIDENTS.map((r) =>
+    renderChatResidentOption(r, r.id === CHAT_DEFAULT_ACTIVE),
   ).join("");
   const initialMessages = renderChatMessage({
     from: "resident",
@@ -2391,7 +2498,16 @@ function renderChatPanel(contextSlug: string = ""): string {
     <button class="chat-close" type="button" aria-label="Close chat panel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
     </button>
-    <div class="chat-tabs" role="tablist">${tabs}</div>
+    <div class="chat-resident-picker-wrap">
+      <button class="chat-resident-picker" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose resident">
+        <span class="dot" aria-hidden="true" style="${paletteStyle(active)}"></span>
+        <span class="chat-resident-picker-name">${escapeHtml(active.displayName)}</span>
+        <svg class="chat-resident-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="chat-resident-menu" role="listbox" aria-label="Residents" hidden>${options}</div>
+    </div>
   </header>
   <div class="chat-stream" role="log" aria-live="polite">${initialMessages}</div>
   <div class="chat-status" aria-live="polite"></div>
@@ -2491,7 +2607,12 @@ const CHAT_PANEL_SCRIPT = `
   }
 
   const stream = panel.querySelector('.chat-stream');
-  const tabs = Array.from(panel.querySelectorAll('.chat-tab'));
+  const picker = panel.querySelector('.chat-resident-picker');
+  const pickerWrap = panel.querySelector('.chat-resident-picker-wrap');
+  const pickerName = panel.querySelector('.chat-resident-picker-name');
+  const pickerDot = picker ? picker.querySelector('.dot') : null;
+  const menu = panel.querySelector('.chat-resident-menu');
+  const options = Array.from(panel.querySelectorAll('.chat-resident-option'));
   const field = panel.querySelector('.chat-composer-field');
   const sendBtn = panel.querySelector('.chat-composer-send');
   const status = panel.querySelector('.chat-status');
@@ -2572,15 +2693,51 @@ const CHAT_PANEL_SCRIPT = `
   }
 
   function applyActiveStyling(rid){
-    tabs.forEach(function(t){
-      const active = t.dataset.resident === rid;
-      t.classList.toggle('active', active);
-      t.setAttribute('aria-pressed', active ? 'true' : 'false');
+    // Update the dropdown's option states + the trigger label.
+    options.forEach(function(o){
+      const active = o.dataset.resident === rid;
+      o.classList.toggle('is-active', active);
+      o.setAttribute('aria-selected', active ? 'true' : 'false');
     });
-    panel.dataset.resident = rid;
     const m = META[rid];
+    if (m) {
+      if (pickerName) pickerName.textContent = m.displayName;
+      if (pickerDot && m.style) pickerDot.setAttribute('style', m.style);
+    }
+    panel.dataset.resident = rid;
     if (m && m.style) panel.setAttribute('style', m.style);
   }
+
+  // Dropdown menu open/close behavior.
+  function setMenuOpen(open){
+    if (!menu || !picker) return;
+    if (open) {
+      menu.hidden = false;
+      picker.setAttribute('aria-expanded', 'true');
+    } else {
+      menu.hidden = true;
+      picker.setAttribute('aria-expanded', 'false');
+    }
+  }
+  if (picker) {
+    picker.addEventListener('click', function(e){
+      e.stopPropagation();
+      const isOpen = picker.getAttribute('aria-expanded') === 'true';
+      setMenuOpen(!isOpen);
+    });
+  }
+  // Close on outside click.
+  document.addEventListener('click', function(e){
+    if (!pickerWrap) return;
+    if (!pickerWrap.contains(e.target)) setMenuOpen(false);
+  });
+  // Close on escape.
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && picker && picker.getAttribute('aria-expanded') === 'true') {
+      setMenuOpen(false);
+      picker.focus();
+    }
+  });
 
   function setActiveResident(rid, opts){
     opts = opts || {};
@@ -2731,11 +2888,13 @@ const CHAT_PANEL_SCRIPT = `
     updateSendDisabled();
   }
 
-  // Tab wiring
-  tabs.forEach(function(t){
-    t.addEventListener('click', function(e){
+  // Dropdown option wiring — picks a resident + closes the menu.
+  options.forEach(function(o){
+    o.addEventListener('click', function(e){
       e.preventDefault();
-      const rid = t.dataset.resident;
+      e.stopPropagation();
+      const rid = o.dataset.resident;
+      setMenuOpen(false);
       if (!rid || rid === activeResident || isSending) return;
       setActiveResident(rid, { focus: true });
     });
