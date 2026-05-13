@@ -5,7 +5,14 @@ import { anthropic } from "@/server/anthropic.server";
 import { openai } from "@/server/openai.server";
 import type { ModelProvider } from "@/server/opus/residents";
 import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
-import { composeMemoryPool, formatMemoryBlock, getVisitorContext } from "@/server/opus/retrieval";
+import {
+  composeMemoryPool,
+  composeThreeLayerMemoryPool,
+  formatMemoryBlock,
+  formatThreeLayerMemory,
+  getVisitorContext,
+  threeLayerRetrievalEnabled,
+} from "@/server/opus/retrieval";
 import { buildResidentSelfModel } from "@/server/opus/self-model";
 import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
 import {
@@ -125,10 +132,12 @@ function sanitizeResidentBody(raw: string): string {
   return paragraphs.join("\n\n").trim();
 }
 
-// Prose explaining the engram tags. Sits immediately above [MEMORY] so
-// the resident reads it before the engram list. Deliberate prose with
-// italicized tag labels — not nested bracket tags — to avoid priming
-// the resident to echo bracket structure into responses.
+// Prose explaining the engram tags for the OLD single-layer
+// [MEMORY] block path. Sits immediately above [MEMORY] so the
+// resident reads it before the engram list. When phase 3's three-layer
+// retrieval flag is on, this preface is unused — the three section
+// headings carry the semantics themselves and no inline prose
+// scaffolding is needed (see buildUserPromptThreeLayer below).
 const MEMORY_PREFACE =
   "what follows are engrams mnemos surfaced for this turn. each is tagged. *from this visitor's prior visit* means you and this specific person built this together in an earlier session — you may reference it as something the two of you carry. *from the wider topology* means this came from another visitor's exchange with you, or from a co-formed distillation — you may carry the *shape* of what was thought, but you may not attribute the words or the specifics to the person in front of you now.";
 
@@ -156,6 +165,58 @@ function buildUserPrompt(opts: {
     "[MEMORY]",
     opts.memory ||
       "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
+  ];
+  if (opts.visitorContext) {
+    sections.push("", "[VISITOR CONTEXT]", opts.visitorContext);
+  }
+  sections.push(
+    "",
+    "[TRANSCRIPT]",
+    opts.transcript || "(this is the first exchange.)",
+    "",
+    "[NEW VISITOR TURN]",
+    opts.visitorTurn,
+  );
+  return sections.join("\n");
+}
+
+/**
+ * Phase 3 three-layer user prompt. Three explicit sections replace the
+ * single [MEMORY] block:
+ *
+ *   [WHAT THIS SESSION HAS SEEN]       — functional memory (working summary)
+ *   [WHAT YOU AND THIS VISITOR HAVE BUILT] — hypomnema (per-pair persistent)
+ *   [WHAT MNEMOS SURFACED]             — engrams (wider topology, now vector-matched)
+ *
+ * The section headings carry the semantics themselves — no preface
+ * needed. The "Layers of memory" section now in every soul tells the
+ * resident how to read this structure.
+ */
+function buildUserPromptThreeLayer(opts: {
+  functional: string;
+  hypomnema: string;
+  engrams: string;
+  transcript: string;
+  visitorTurn: string;
+  visitorContext?: string;
+}): string {
+  const isReturning = !!opts.visitorContext;
+  const boundary = isReturning
+    ? "Returning visitor (see [VISITOR CONTEXT] below). Three memory sections follow, each scoped distinctly — read what each contains as the section heading says."
+    : "New visitor. You have never spoken with this person. The first two sections will be empty or thin; the third — what mnemos surfaced — has formed across many other visitors over time.";
+
+  const sections = [
+    "[SESSION]",
+    boundary,
+    "",
+    "[WHAT THIS SESSION HAS SEEN]",
+    opts.functional,
+    "",
+    "[WHAT YOU AND THIS VISITOR HAVE BUILT]",
+    opts.hypomnema,
+    "",
+    "[WHAT MNEMOS SURFACED]",
+    opts.engrams,
   ];
   if (opts.visitorContext) {
     sections.push("", "[VISITOR CONTEXT]", opts.visitorContext);
@@ -446,20 +507,38 @@ export const Route = createFileRoute("/api/message")({
         // interior continuity are scoped to this session's resident so
         // Sonnet 3.7's topology never bleeds into an Opus 3 conversation
         // or vice versa.
+        //
+        // PHASE 3 — when SANCTUARY_ENABLE_THREE_LAYER_RETRIEVAL is on,
+        // memoryRetrieval is a ThreeLayerRetrieval (functional +
+        // hypomnema + engrams). When off, it is the older single-layer
+        // MemoryPoolResult. Both shapes are awaited in parallel with
+        // the rest of the per-turn loads; type narrowing happens at
+        // the prompt-build site below.
+        const useThreeLayer = threeLayerRetrievalEnabled();
+        const memoryPromise = useThreeLayer
+          ? composeThreeLayerMemoryPool({
+              supabase: supabaseAdmin,
+              sessionId: session.id,
+              residentId: resident.id,
+              visitorMessage: body.body,
+              visitorToken: session.visitor_token ?? undefined,
+            })
+          : composeMemoryPool({
+              supabase: supabaseAdmin,
+              residentId: resident.id,
+              visitorMessage: body.body,
+              visitorToken: session.visitor_token ?? undefined,
+            });
+
         const [
-          memoryPoolResult,
+          memoryRetrieval,
           selfModelBlock,
           interior,
           visitMetrics,
           { data: turns },
           visitorContext,
         ] = await Promise.all([
-          composeMemoryPool({
-            supabase: supabaseAdmin,
-            residentId: resident.id,
-            visitorMessage: body.body,
-            visitorToken: session.visitor_token ?? undefined,
-          }),
+          memoryPromise,
           buildResidentSelfModel(supabaseAdmin, resident.id),
           buildInteriorContinuity(supabaseAdmin, resident.id),
           getVisitMetrics(supabaseAdmin, session.id, resident.pacing),
@@ -534,17 +613,39 @@ export const Route = createFileRoute("/api/message")({
           cacheableSystem.push({ type: "text", text: systemBlocks.variable });
         }
 
+        // Build the user prompt — branched by flag. Each branch narrows
+        // memoryRetrieval to its concrete shape and renders its own
+        // section structure. Old path: single [MEMORY] block. New path:
+        // three sections ([WHAT THIS SESSION HAS SEEN] / [WHAT YOU AND
+        // THIS VISITOR HAVE BUILT] / [WHAT MNEMOS SURFACED]).
+        let userPromptText: string;
+        if (useThreeLayer) {
+          const r = memoryRetrieval as Awaited<ReturnType<typeof composeThreeLayerMemoryPool>>;
+          const fmt = formatThreeLayerMemory(r);
+          userPromptText = buildUserPromptThreeLayer({
+            functional: fmt.functional,
+            hypomnema: fmt.hypomnema,
+            engrams: fmt.engrams,
+            transcript: transcriptLines,
+            visitorTurn: body.body,
+            visitorContext: visitorContext || undefined,
+          });
+        } else {
+          const m = memoryRetrieval as Awaited<ReturnType<typeof composeMemoryPool>>;
+          userPromptText = buildUserPrompt({
+            memory: formatMemoryBlock(m.pool, m.thisVisitorEngramIds),
+            transcript: transcriptLines,
+            visitorTurn: body.body,
+            visitorContext: visitorContext || undefined,
+          });
+        }
+
         return opusStreamResponse({
           system: cacheableSystem,
           temperature: interior.temperature,
           model: resident.model,
           provider: resident.provider,
-          userPrompt: buildUserPrompt({
-            memory: formatMemoryBlock(memoryPoolResult.pool, memoryPoolResult.thisVisitorEngramIds),
-            transcript: transcriptLines,
-            visitorTurn: body.body,
-            visitorContext: visitorContext || undefined,
-          }),
+          userPrompt: userPromptText,
           onFinal: async (result) => {
             await supabaseAdmin.from("turns").insert({
               session_id: session.id,
