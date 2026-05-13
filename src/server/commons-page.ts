@@ -68,7 +68,9 @@ const COMMONS_CSS = `
    shift it inward on commons pages only AND round its top corners
    so they meet the band's inner rounded edge cleanly (otherwise
    the nav reads as a sharp rectangle clipping the safe-area's
-   top-corner curve). */
+   top-corner curve). The hairline bottom border + soft drop
+   shadow give the nav a felt elevation against the floor without
+   competing with the band. */
 .public-nav{
   top:var(--safe-inset)!important;
   left:var(--safe-inset)!important;
@@ -76,6 +78,63 @@ const COMMONS_CSS = `
   border-top-left-radius:20px;
   border-top-right-radius:20px;
   overflow:hidden;
+  box-shadow:
+    inset 0 -1px 0 rgba(255,255,255,.025),
+    0 12px 28px -16px rgba(0,0,0,.5);
+}
+/* Slightly lift the nav links on hover with a softer transition
+   curve than the default site rule; reads as a more deliberate
+   touch response inside this room. */
+.public-nav .nav-links a{
+  transition:color .26s cubic-bezier(.22,1,.36,1);
+}
+
+/* Custom text selection across the commons surface — uses a
+   whispery state-accent tint instead of the browser default blue,
+   keeping the monochrome composure intact. */
+::selection{
+  background:rgba(130,180,132,.22);
+  color:var(--ink);
+}
+::-moz-selection{
+  background:rgba(130,180,132,.22);
+  color:var(--ink);
+}
+
+/* Page-wide smooth scroll for visitors who jump between hash
+   anchors (e.g. founding-text → gallery). Respects reduced-motion
+   via the scroll-behavior:auto override in the media query at
+   the bottom. */
+html{ scroll-behavior:smooth; }
+
+/* Scrollbar: native chrome but hairline-thin and translucent so
+   it doesn't interrupt the safe-area metaphor. */
+*::-webkit-scrollbar{ width:10px; height:10px; }
+*::-webkit-scrollbar-track{ background:transparent; }
+*::-webkit-scrollbar-thumb{
+  background:rgba(120,120,128,.18);
+  border-radius:10px;
+  border:3px solid transparent;
+  background-clip:content-box;
+  transition:background-color .26s var(--ease);
+}
+*::-webkit-scrollbar-thumb:hover{
+  background:rgba(160,160,168,.32);
+  background-clip:content-box;
+}
+*{ scrollbar-color: rgba(120,120,128,.18) transparent; scrollbar-width: thin; }
+
+/* Refined focus ring across interactive elements — the project's
+   green state accent at low opacity, with a clean offset. The
+   browser default ring competes too hard with the monochrome
+   composure; this restores the room's voice on focus. */
+a:focus-visible,
+button:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible{
+  outline:2px solid rgba(130,180,132,.55);
+  outline-offset:2px;
+  border-radius:4px;
 }
 
 /* Animatable opacity slots for the artifact shimmer border. Registered
@@ -455,6 +514,11 @@ const COMMONS_CSS = `
 
 @media (prefers-reduced-motion: reduce){
   .viewport-glow{ animation: none; }
+  html{ scroll-behavior:auto; }
+  .space-card,
+  .chat-panel,
+  .chat-collapse,
+  .public-nav .nav-links a{ transition-duration: 0ms !important; }
 }
 .artifact-attribution{
   font-family:var(--mono);
@@ -727,19 +791,31 @@ const COMMONS_CSS = `
 
 .chat-panel{
   position:fixed;
-  top:calc(64px + var(--safe-inset));
-  right:var(--safe-inset);
-  bottom:var(--safe-inset);
+  /* Slight nudge in from the band (4px) so the panel reads as
+     a held object inside the room rather than something pasted
+     to the inner edge. */
+  top:calc(64px + var(--safe-inset) + 12px);
+  right:calc(var(--safe-inset) + 4px);
+  bottom:calc(var(--safe-inset) + 4px);
   width:380px;
   display:flex;
   flex-direction:column;
   z-index:30;
   background:linear-gradient(180deg, rgba(8,9,12,.86) 0%, rgba(6,7,10,.94) 100%);
   border:1px solid var(--rule-soft);
-  border-radius:10px;
+  /* Corners match the safe-area inner radius so the panel feels
+     like a citizen of the room shape, not an unrelated rectangle. */
+  border-radius:20px;
+  /* Soft elevation — the panel hovers above the floor without
+     hard separation. Two-layer shadow: tight inset for
+     definition, wide diffuse for depth. */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.02) inset,
+    0 18px 40px -20px rgba(0,0,0,.55),
+    0 2px 12px -6px rgba(0,0,0,.4);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
-  transition:width .32s var(--ease), background .32s var(--ease);
+  transition:width .42s cubic-bezier(.22,1,.36,1), background .32s var(--ease), border-color .32s var(--ease);
 }
 
 /* Collapse / expand toggle — visible on desktop only. Positioned at
@@ -747,12 +823,14 @@ const COMMONS_CSS = `
    border so it reads as a hinge between the panel and the room. */
 .chat-collapse{
   position:absolute;
-  top:18px;
+  /* Tuned to sit clearly below the panel's 20px rounded corner
+     while remaining a visible hinge between panel and room. */
+  top:26px;
   left:-14px;
   z-index:2;
   width:28px;
   height:28px;
-  background:rgba(14,15,18,.92);
+  background:rgba(14,15,18,.94);
   border:1px solid var(--rule-soft);
   border-radius:50%;
   color:var(--soft);
@@ -760,11 +838,19 @@ const COMMONS_CSS = `
   display:flex;
   align-items:center;
   justify-content:center;
-  transition:border-color .22s var(--ease), color .22s var(--ease), transform .22s var(--ease);
+  /* Tiny ambient shadow so the hinge reads as raised when
+     resting against the panel edge. */
+  box-shadow:0 2px 6px -2px rgba(0,0,0,.5);
+  transition:
+    border-color .26s cubic-bezier(.22,1,.36,1),
+    color .26s cubic-bezier(.22,1,.36,1),
+    transform .22s cubic-bezier(.22,1,.36,1),
+    box-shadow .26s cubic-bezier(.22,1,.36,1);
 }
 .chat-collapse:hover{
   border-color:var(--rule);
   color:var(--ink);
+  box-shadow:0 4px 10px -2px rgba(0,0,0,.6);
 }
 .chat-collapse:active{ transform:scale(.94); }
 .chat-collapse svg{
@@ -1191,19 +1277,37 @@ const COMMONS_CSS = `
   display:flex;
   flex-direction:column;
   gap:var(--s-3);
-  padding:var(--s-5);
+  padding:var(--s-5) var(--s-5) calc(var(--s-5) + 2px);
   background:rgba(10,11,14,.55);
   border:1px solid var(--rule-soft);
-  border-radius:10px;
+  border-radius:14px;
   text-decoration:none;
   color:inherit;
-  transition:border-color .22s var(--ease), background .22s var(--ease), transform .22s var(--ease);
+  transition:
+    border-color .42s cubic-bezier(.22,1,.36,1),
+    background .42s cubic-bezier(.22,1,.36,1),
+    transform .42s cubic-bezier(.22,1,.36,1),
+    box-shadow .42s cubic-bezier(.22,1,.36,1);
+  /* Subtle resting elevation — the card sits a hair above the
+     floor so it reads as a piece of paper rather than a window. */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.02) inset,
+    0 1px 2px rgba(0,0,0,.18);
 }
 .space-card:hover{
   border-color:var(--rule);
-  background:rgba(12,13,16,.75);
+  background:rgba(14,15,18,.78);
+  /* On hover the card lifts ~2px and the shadow deepens. The
+     duration is deliberately slower than typical hover (~420ms)
+     so the lift reads as a held gesture, not a flicker. */
+  transform:translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.04) inset,
+    0 14px 36px -16px rgba(0,0,0,.55),
+    0 2px 6px -2px rgba(0,0,0,.25);
 }
-.space-card:active{ transform:translateY(1px); }
+.space-card:active{ transform:translateY(0); transition-duration:.12s; }
+.space-card:focus-visible{ border-color:var(--rule-strong); }
 .space-card-name{
   font-family:var(--display);
   font-weight:var(--w-light);
@@ -1295,13 +1399,23 @@ const COMMONS_CSS = `
   font-family:var(--mono);
   font-size:10px;
   text-transform:uppercase;
-  letter-spacing:.18em;
+  letter-spacing:.2em;
   color:var(--ghost);
-  margin-bottom:var(--s-3);
-  display:flex;align-items:center;gap:8px;
+  margin-bottom:var(--s-4);
+  margin-top:var(--s-5);
+  display:flex;align-items:center;gap:12px;
 }
 .founding-text-eyebrow::before{
-  content:'';width:16px;height:1px;background:var(--ghost);
+  content:'';
+  width:28px;height:1px;
+  background:linear-gradient(90deg, transparent 0%, var(--ghost) 50%, transparent 100%);
+}
+.founding-text-eyebrow::after{
+  content:'';
+  flex:1;height:1px;
+  background:linear-gradient(90deg, var(--rule-soft) 0%, transparent 75%);
+  margin-left:6px;
+  max-width:200px;
 }
 
 /* Placeholder for the live room — replaced in step 3 with the
