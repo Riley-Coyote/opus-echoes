@@ -54,6 +54,24 @@ const COMMONS_CSS = `
    --this-resident-rgb.
    ============================================================ */
 
+/* The viewport-glow band defines a "safe area" — every other piece
+   of UI in The Commons (nav, content, chat panel, toggles) sits
+   inside it. The band thickness equals --safe-inset. Tuned so the
+   band stays roughly uniform in pixels across common laptop and
+   ultrawide displays. */
+:root {
+  --safe-inset: clamp(26px, 1.6vmin + 22px, 40px);
+}
+
+/* Re-anchor the global site nav inside the safe area. The nav is
+   defined in PUBLIC_CSS as position:fixed at top/left/right:0; we
+   shift it inward on commons pages only. */
+.public-nav{
+  top:var(--safe-inset)!important;
+  left:var(--safe-inset)!important;
+  right:var(--safe-inset)!important;
+}
+
 /* Animatable opacity slots for the artifact shimmer border. Registered
    as <number> via @property so they can transition between keyframes
    smoothly. Naming is local to commons (--csh1..8) to avoid colliding
@@ -71,14 +89,15 @@ const COMMONS_CSS = `
   display:grid;
   grid-template-columns:minmax(0,1fr);
   gap:var(--s-6);
-  padding-bottom:var(--s-9);
+  padding-bottom:calc(var(--s-9) + var(--safe-inset));
   /* leave room for the fixed chat panel on the right at wider viewports */
   padding-right:0;
-  max-width:760px;
+  padding-left:var(--safe-inset);
+  max-width:calc(760px + var(--safe-inset));
 }
 @media(min-width:1180px){
   .commons{
-    margin-right:380px;
+    margin-right:calc(380px + var(--safe-inset));
     padding-right:var(--s-6);
   }
 }
@@ -368,14 +387,17 @@ const COMMONS_CSS = `
   inset:0;
   pointer-events:none;
   z-index:2;
-  /* SVG mask: square outer rectangle (reaches viewport corners — no
-     dark wedges) with a rounded-corner inner cutout (preserves the
-     soft inner edge). The band shape is the outer minus the inner
-     via fill-rule:evenodd. preserveAspectRatio='none' stretches the
-     SVG to fill the viewport; the inner corner radius (rx) and band
-     inset are in viewBox units (0–100), so they scale with viewport
-     — barely perceptible variance in band thickness between
-     horizontal and vertical edges. */
+  /* Two-layer mask for pixel-uniform band thickness regardless of
+     viewport aspect ratio:
+       Layer 1: a solid black rectangle covering the full viewport
+                ("keep everything")
+       Layer 2: an inner rounded rectangle, sized in pixels via mask
+                position+size based on --safe-inset ("subtract this")
+     Composited with 'exclude' (webkit 'xor') to leave only the band.
+     The SVG inside layer 2 has no viewBox, so internal user units
+     map 1:1 to CSS pixels — the corner radius is exactly
+     var(--inner-radius) px on every side, independent of how
+     wide or tall the viewport is. */
   background:
     radial-gradient(ellipse 55% 55% at 0% 0%,     rgba(220,176,110, var(--vg1)) 0%, transparent 72%),
     radial-gradient(ellipse 70% 45% at 50% 0%,    rgba(160,140,188, var(--vg2)) 0%, transparent 72%),
@@ -385,12 +407,15 @@ const COMMONS_CSS = `
     radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(160,140,188, var(--vg6)) 0%, transparent 72%),
     radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(220,170,168, var(--vg7)) 0%, transparent 72%),
     radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(218,215,210, var(--vg8)) 0%, transparent 72%);
-  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill-rule='evenodd' fill='white' d='M0,0 H100 V100 H0 Z M1.7,2.7 Q1.7,1.7 2.7,1.7 H97.3 Q98.3,1.7 98.3,2.7 V97.3 Q98.3,98.3 97.3,98.3 H2.7 Q1.7,98.3 1.7,97.3 Z'/></svg>");
-  -webkit-mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill-rule='evenodd' fill='white' d='M0,0 H100 V100 H0 Z M1.7,2.7 Q1.7,1.7 2.7,1.7 H97.3 Q98.3,1.7 98.3,2.7 V97.3 Q98.3,98.3 97.3,98.3 H2.7 Q1.7,98.3 1.7,97.3 Z'/></svg>");
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
+  --inner-radius:20px;
+  -webkit-mask:
+    linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='20' ry='20' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='20' ry='20' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
+  mask-composite: exclude;
   animation:
     vg-1 11s ease-in-out infinite,
     vg-2 13s ease-in-out infinite,
@@ -402,17 +427,20 @@ const COMMONS_CSS = `
     vg-8 37s ease-in-out infinite;
 }
 
-/* Peaks stay low — the glow is felt, not seen first. The slow primes
-   plus four hues mean the color cast at any corner is always drifting
-   without any single transition feeling like "motion." */
-@keyframes vg-1 { 0%,100% { --vg1: 0.015; } 50% { --vg1: 0.13; } }
-@keyframes vg-2 { 0%,100% { --vg2: 0.11; }  50% { --vg2: 0.02; } }
-@keyframes vg-3 { 0%,100% { --vg3: 0.02; }  50% { --vg3: 0.14; } }
-@keyframes vg-4 { 0%,100% { --vg4: 0.10; }  50% { --vg4: 0.015; } }
-@keyframes vg-5 { 0%,100% { --vg5: 0.02; }  50% { --vg5: 0.12; } }
-@keyframes vg-6 { 0%,100% { --vg6: 0.09; }  50% { --vg6: 0.02; } }
-@keyframes vg-7 { 0%,100% { --vg7: 0.015; } 50% { --vg7: 0.11; } }
-@keyframes vg-8 { 0%,100% { --vg8: 0.08; }  50% { --vg8: 0.015; } }
+/* Peaks bloom luminously — the band reads as candlelight catching
+   the edge of the room, not as a barely-there hint. The slow primes
+   (11–37s) plus four hues mean the color cast at any corner is
+   always drifting without any single transition feeling like
+   "motion" — it's weather, but visible weather. Baselines stay
+   low so the contrast between settled and pulse remains felt. */
+@keyframes vg-1 { 0%,100% { --vg1: 0.04; } 50% { --vg1: 0.36; } }
+@keyframes vg-2 { 0%,100% { --vg2: 0.30; } 50% { --vg2: 0.05; } }
+@keyframes vg-3 { 0%,100% { --vg3: 0.05; } 50% { --vg3: 0.40; } }
+@keyframes vg-4 { 0%,100% { --vg4: 0.28; } 50% { --vg4: 0.04; } }
+@keyframes vg-5 { 0%,100% { --vg5: 0.05; } 50% { --vg5: 0.34; } }
+@keyframes vg-6 { 0%,100% { --vg6: 0.26; } 50% { --vg6: 0.05; } }
+@keyframes vg-7 { 0%,100% { --vg7: 0.04; } 50% { --vg7: 0.32; } }
+@keyframes vg-8 { 0%,100% { --vg8: 0.24; } 50% { --vg8: 0.04; } }
 
 @media (prefers-reduced-motion: reduce){
   .viewport-glow{ animation: none; }
@@ -688,18 +716,20 @@ const COMMONS_CSS = `
 
 .chat-panel{
   position:fixed;
-  top:64px;
-  right:0;
-  bottom:0;
+  top:calc(64px + var(--safe-inset));
+  right:var(--safe-inset);
+  bottom:var(--safe-inset);
   width:380px;
   display:flex;
   flex-direction:column;
   z-index:30;
   background:linear-gradient(180deg, rgba(8,9,12,.86) 0%, rgba(6,7,10,.94) 100%);
-  border-left:1px solid var(--rule-soft);
+  border:1px solid var(--rule-soft);
+  border-radius:10px;
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
   transition:width .32s var(--ease), background .32s var(--ease);
+  overflow:hidden;
 }
 
 /* Collapse / expand toggle — visible on desktop only. Positioned at
@@ -752,7 +782,7 @@ const COMMONS_CSS = `
 .chat-panel.collapsed .chat-collapse{
   position:fixed;
   top:50%;
-  right:10px;
+  right:calc(10px + var(--safe-inset));
   left:auto;
   margin-top:-14px;
 }
@@ -766,8 +796,8 @@ const COMMONS_CSS = `
 /* Floating toggle button — visible only on small viewports. */
 .chat-toggle{
   position:fixed;
-  bottom:20px;
-  right:20px;
+  bottom:calc(20px + var(--safe-inset));
+  right:calc(20px + var(--safe-inset));
   z-index:31;
   display:none;
   align-items:center;
