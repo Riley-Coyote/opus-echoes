@@ -56,6 +56,8 @@ import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
+import { Route as ApiSpaceSlugMessagesRouteImport } from './routes/api/space.$slug.messages'
+import { Route as ApiSpaceSlugMessageRouteImport } from './routes/api/space.$slug.message'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
 import { Route as ApiSalonIdTurnRouteImport } from './routes/api/salon/$id.turn'
 import { Route as ApiSalonIdStartRouteImport } from './routes/api/salon/$id.start'
@@ -302,6 +304,16 @@ const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
   path: '/api/review/coherence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSpaceSlugMessagesRoute = ApiSpaceSlugMessagesRouteImport.update({
+  id: '/api/space/$slug/messages',
+  path: '/api/space/$slug/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSpaceSlugMessageRoute = ApiSpaceSlugMessageRouteImport.update({
+  id: '/api/space/$slug/message',
+  path: '/api/space/$slug/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
   id: '/$token/download',
   path: '/$token/download',
@@ -411,6 +423,8 @@ export interface FileRoutesByFullPath {
   '/api/salon/$id/start': typeof ApiSalonIdStartRoute
   '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
+  '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
+  '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
@@ -470,6 +484,8 @@ export interface FileRoutesByTo {
   '/api/salon/$id/start': typeof ApiSalonIdStartRoute
   '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
+  '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
+  '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
@@ -530,6 +546,8 @@ export interface FileRoutesById {
   '/api/salon/$id/start': typeof ApiSalonIdStartRoute
   '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
+  '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
+  '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
@@ -591,6 +609,8 @@ export interface FileRouteTypes {
     | '/api/salon/$id/start'
     | '/api/salon/$id/turn'
     | '/api/share/$token/download'
+    | '/api/space/$slug/message'
+    | '/api/space/$slug/messages'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -650,6 +670,8 @@ export interface FileRouteTypes {
     | '/api/salon/$id/start'
     | '/api/salon/$id/turn'
     | '/api/share/$token/download'
+    | '/api/space/$slug/message'
+    | '/api/space/$slug/messages'
     | '/api/share/$token/og/svg'
   id:
     | '__root__'
@@ -709,6 +731,8 @@ export interface FileRouteTypes {
     | '/api/salon/$id/start'
     | '/api/salon/$id/turn'
     | '/api/share/$token/download'
+    | '/api/space/$slug/message'
+    | '/api/space/$slug/messages'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
@@ -760,6 +784,8 @@ export interface RootRouteChildren {
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
   ApiReviewSessionIdRoute: typeof ApiReviewSessionIdRoute
+  ApiSpaceSlugMessageRoute: typeof ApiSpaceSlugMessageRoute
+  ApiSpaceSlugMessagesRoute: typeof ApiSpaceSlugMessagesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1093,6 +1119,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewCoherenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/space/$slug/messages': {
+      id: '/api/space/$slug/messages'
+      path: '/api/space/$slug/messages'
+      fullPath: '/api/space/$slug/messages'
+      preLoaderRoute: typeof ApiSpaceSlugMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/space/$slug/message': {
+      id: '/api/space/$slug/message'
+      path: '/api/space/$slug/message'
+      fullPath: '/api/space/$slug/message'
+      preLoaderRoute: typeof ApiSpaceSlugMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/$token/download': {
       id: '/api/share/$token/download'
       path: '/$token/download'
@@ -1272,6 +1312,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
   ApiReviewSessionIdRoute: ApiReviewSessionIdRoute,
+  ApiSpaceSlugMessageRoute: ApiSpaceSlugMessageRoute,
+  ApiSpaceSlugMessagesRoute: ApiSpaceSlugMessagesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

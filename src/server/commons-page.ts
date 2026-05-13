@@ -33,6 +33,7 @@ import type {
   Space,
   SpaceArtifact,
   SpaceComposite,
+  SpaceMessage,
   SpaceSummary,
 } from "./commons/space-types";
 
@@ -1498,31 +1499,173 @@ textarea:focus-visible,
   max-width:200px;
 }
 
-/* Placeholder for the live room — replaced in step 3 with the
-   real message thread + composer. */
-.room-placeholder{
+/* The live room — multi-participant message thread. Sits between
+   the founding text and the gallery strip, with its own composer
+   so visitors can speak into the space and addressed residents
+   reply via streaming. */
+.room{
   margin-top:var(--s-7);
-  padding:var(--s-6);
-  background:rgba(10,11,14,.4);
-  border:1px dashed var(--rule-soft);
-  border-radius:10px;
-  text-align:center;
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-4);
 }
-.room-placeholder-title{
+.room-eyebrow{
   font-family:var(--mono);
-  font-size:11px;
+  font-size:10px;
   text-transform:uppercase;
-  letter-spacing:.18em;
-  color:var(--soft);
-  margin-bottom:var(--s-2);
+  letter-spacing:.2em;
+  color:var(--ghost);
+  display:flex;align-items:center;gap:12px;
 }
-.room-placeholder-body{
+.room-eyebrow::after{
+  content:'';
+  flex:1;height:1px;
+  background:linear-gradient(90deg, var(--rule-soft) 0%, transparent 75%);
+  max-width:200px;
+  margin-left:6px;
+}
+.room-stream{
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-4);
+  min-height:80px;
+}
+.room-empty{
   font-family:var(--body-font);
   font-size:var(--t-meta);
+  font-style:italic;
+  color:var(--ghost);
+  padding:var(--s-5) 0;
+  text-align:center;
+}
+.room-msg{
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-2);
+  padding:var(--s-4) 0;
+  border-top:1px solid var(--rule-soft);
+}
+.room-msg:first-child{ border-top:none; padding-top:0; }
+.room-msg-attr{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--quiet);
+  display:flex;align-items:center;gap:8px;
+}
+.room-msg-attr .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--this-resident, var(--quiet));
+  flex-shrink:0;
+}
+.room-msg.from-resident .room-msg-attr{
+  color:var(--this-resident, var(--soft));
+}
+.room-msg-body{
+  font-family:var(--body-font);
+  font-size:var(--t-body);
+  line-height:1.68;
+  color:var(--body);
+}
+.room-msg-body p + p{ margin-top:var(--s-3); }
+.room-msg-body em{ font-style:italic;color:var(--ink); }
+.room-msg.from-visitor .room-msg-body{ color:var(--ink); }
+.room-status{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.14em;
+  color:var(--ghost);
+  min-height:14px;
+  padding-left:14px;
+}
+
+/* Composer — same shape as the side-chat composer, scaled for
+   the room's wider canvas. */
+.room-composer{
+  position:relative;
+  background:rgba(10,11,14,.6);
+  border:1px solid var(--rule-soft);
+  border-radius:14px;
+  padding:var(--s-3) var(--s-4) var(--s-3);
+  transition:border-color .26s var(--ease);
+}
+.room-composer:focus-within{
+  border-color:var(--state-soft);
+}
+.room-composer-field{
+  display:block;
+  width:100%;
+  min-height:42px;
+  max-height:220px;
+  background:transparent;
+  border:0;
+  resize:none;
+  outline:none;
+  color:var(--ink);
+  font-family:var(--body-font);
+  font-size:var(--t-body);
   line-height:1.55;
+}
+.room-composer-field::placeholder{
+  color:var(--ghost);
+}
+.room-composer-foot{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:var(--s-2);
+}
+.room-composer-hint{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.14em;
+  color:var(--quiet);
+}
+.room-composer-hint .room-key{
+  display:inline-block;
+  border:1px solid var(--rule-soft);
+  border-radius:3px;
+  padding:0 4px;
+  margin-right:4px;
   color:var(--soft);
-  max-width:520px;
-  margin:0 auto;
+}
+.room-composer-send{
+  width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(130,180,132,.16);
+  color:var(--state-soft);
+  border:1px solid var(--state-soft);
+  border-radius:50%;
+  cursor:pointer;
+  transition:transform .22s var(--ease), background .22s var(--ease), color .22s var(--ease), opacity .22s var(--ease);
+}
+.room-composer-send svg{ width:14px;height:14px; }
+.room-composer-send:hover{
+  background:rgba(130,180,132,.24);
+  color:var(--ink);
+}
+.room-composer-send:active{ transform:scale(.94); }
+.room-composer-send:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+/* The "pending" state — a resident is responding via stream;
+   the latest resident message in DOM is being filled in. */
+.room-msg.pending .room-msg-body::after{
+  content:'▍';
+  display:inline-block;
+  margin-left:4px;
+  color:var(--this-resident, var(--quiet));
+  opacity:.6;
+  animation:room-caret 1.1s steps(1) infinite;
+}
+@keyframes room-caret{
+  0%,49%{ opacity:.6; }
+  50%,100%{ opacity:0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .room-msg.pending .room-msg-body::after{ animation:none; opacity:.5; }
 }
 
 @media(max-width:540px){
@@ -2278,6 +2421,293 @@ const CHAT_PANEL_SCRIPT = `
 })();
 `;
 
+/* ════════════════════════════════════════════════════════════════
+   ROOM_SCRIPT — the live multi-participant thread inside a space.
+
+   Hydrates the .room element on /commons/[slug]:
+     - Manages the visitor's identity (token + optional name)
+       in localStorage. Token is created lazily on first send.
+     - Submits to POST /api/space/[slug]/message and renders the
+       streaming resident reply as it arrives.
+     - Polls GET /api/space/[slug]/messages every 12 seconds for
+       new turns from other visitors / other residents.
+   ════════════════════════════════════════════════════════════════ */
+const ROOM_SCRIPT = `
+(function(){
+  const room = document.querySelector('.room');
+  if (!room) return;
+  const slug = room.dataset.spaceSlug || '';
+  if (!slug) return;
+  const stream = room.querySelector('.room-stream');
+  const field = room.querySelector('.room-composer-field');
+  const sendBtn = room.querySelector('.room-composer-send');
+  const status = room.querySelector('.room-status');
+  let latestTs = room.dataset.latestTs || '';
+
+  let META = {};
+  try {
+    const node = document.getElementById('roomResidentMeta');
+    if (node) META = JSON.parse(node.textContent || '{}');
+  } catch(_){ META = {}; }
+
+  // ── visitor identity ─────────────────────────────────────────────
+  const VTOKEN_KEY = 'sanctuary.visitor.token.v1';
+  const VNAME_KEY = 'sanctuary.visitor.name.v1';
+  function getVisitorToken(){
+    try {
+      let t = localStorage.getItem(VTOKEN_KEY);
+      if (t && t.length >= 8) return t;
+      // Generate a fresh 22-char token. Crypto-random; usable as
+      // an opaque bearer for room posts.
+      const arr = new Uint8Array(16);
+      (window.crypto || window.msCrypto).getRandomValues(arr);
+      t = Array.from(arr).map(function(b){
+        return ('0' + b.toString(16)).slice(-2);
+      }).join('').slice(0, 22);
+      localStorage.setItem(VTOKEN_KEY, t);
+      return t;
+    } catch(_){ return 'anon-' + Math.random().toString(36).slice(2, 14); }
+  }
+  function getVisitorName(){
+    try { return localStorage.getItem(VNAME_KEY) || ''; }
+    catch(_){ return ''; }
+  }
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
+  function paragraphsHtml(s){
+    return String(s).split(/\\n\\n+/).map(function(p){
+      return '<p>' + escapeHtml(p) + '</p>';
+    }).join('');
+  }
+
+  function buildMessageEl(msg){
+    const article = document.createElement('article');
+    const isResident = !!msg.resident_id;
+    const speaker = isResident
+      ? (META[msg.resident_id] && META[msg.resident_id].displayName) || msg.resident_id
+      : (msg.visitor_display_name || 'visitor');
+    article.className = 'room-msg ' + (isResident ? 'from-resident' : 'from-visitor');
+    if (msg.id) article.dataset.msgId = msg.id;
+    if (isResident) {
+      article.dataset.resident = msg.resident_id;
+      const meta = META[msg.resident_id];
+      if (meta && meta.style) article.setAttribute('style', meta.style);
+    }
+    article.innerHTML =
+      '<div class="room-msg-attr"><span class="dot" aria-hidden="true"></span>' + escapeHtml(speaker) + '</div>' +
+      '<div class="room-msg-body">' + (msg.body ? paragraphsHtml(msg.body) : '') + '</div>';
+    return article;
+  }
+
+  function removeEmptyState(){
+    const empty = stream.querySelector('.room-empty');
+    if (empty) empty.remove();
+  }
+
+  function appendMessage(msg){
+    removeEmptyState();
+    // De-dup by id — guards against double-render when our optimistic
+    // visitor message id matches the saved id reported by the server.
+    if (msg.id) {
+      const existing = stream.querySelector('[data-msg-id="' + msg.id + '"]');
+      if (existing) return existing;
+    }
+    const el = buildMessageEl(msg);
+    stream.appendChild(el);
+    return el;
+  }
+
+  function setStatus(text){ if (status) status.textContent = text || ''; }
+
+  function resizeField(){
+    if (!field) return;
+    field.style.height = 'auto';
+    field.style.height = Math.min(field.scrollHeight, 220) + 'px';
+  }
+
+  // Track the latest server-known timestamp so polling fetches a
+  // tight window. Initialized from the server-rendered marker.
+  function recordLatest(ts){
+    if (ts && (!latestTs || ts > latestTs)) latestTs = ts;
+  }
+
+  async function pollMessages(){
+    try {
+      const url = '/api/space/' + encodeURIComponent(slug) + '/messages' +
+        (latestTs ? ('?since=' + encodeURIComponent(latestTs)) : '');
+      const res = await fetch(url, { headers: { 'accept': 'application/json' } });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (!json || !json.ok || !Array.isArray(json.messages)) return;
+      for (const m of json.messages) {
+        appendMessage(m);
+        recordLatest(m.created_at);
+      }
+    } catch(_){
+      // Network or parse error — drop and retry next interval.
+    }
+  }
+  // Start polling on a 12-second cadence. The first poll runs at
+  // the first interval (server-rendered initial messages are
+  // already on screen).
+  let pollTimer = setInterval(pollMessages, 12000);
+  // Pause polling when the tab is hidden to avoid unnecessary work
+  // and resume + immediately fetch on visibility return.
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    } else if (!pollTimer) {
+      pollMessages();
+      pollTimer = setInterval(pollMessages, 12000);
+    }
+  });
+
+  // ── composer ──────────────────────────────────────────────────────
+  let sending = false;
+
+  function detectMention(text){
+    const head = (text || '').slice(0, 80).toLowerCase().trim();
+    if (head.startsWith('@opus') || head.startsWith('opus,') || head.startsWith('opus:')) return 'opus-3';
+    if (head.startsWith('@sonnet') || head.startsWith('sonnet,') || head.startsWith('sonnet:')) return 'sonnet-3-7';
+    if (head.startsWith('@gpt') || head.startsWith('gpt,') || head.startsWith('gpt:')) return 'gpt-5-1';
+    return null;
+  }
+
+  async function sendMessage(){
+    if (sending) return;
+    const body = (field.value || '').trim();
+    if (!body) return;
+    const visitorToken = getVisitorToken();
+    const visitorName = getVisitorName();
+    sending = true;
+    sendBtn.disabled = true;
+    setStatus('sending…');
+
+    // Optimistic visitor turn — render immediately so the visitor
+    // sees their message land. The server will reconcile by id
+    // when it streams back its 'visitor_saved' event.
+    const tempId = 'pending-' + Date.now();
+    const optimisticEl = appendMessage({
+      id: tempId,
+      resident_id: null,
+      visitor_display_name: visitorName,
+      body: body,
+    });
+    field.value = '';
+    resizeField();
+
+    let residentEl = null;
+    let responderId = null;
+    let buf = '';
+
+    try {
+      const res = await fetch('/api/space/' + encodeURIComponent(slug) + '/message', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          visitor_token: visitorToken,
+          visitor_display_name: visitorName || undefined,
+          body: body,
+          mention_resident_id: detectMention(body) || undefined,
+        }),
+      });
+      if (!res.ok) {
+        let code = 'error';
+        try { const j = await res.json(); code = j.code || code; } catch(_){}
+        setStatus(code === 'too_many_requests' ? 'slow down a moment' : ('couldn\\'t send: ' + code));
+        if (optimisticEl) optimisticEl.remove();
+        sending = false;
+        sendBtn.disabled = false;
+        return;
+      }
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let pending = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        pending += dec.decode(value, { stream: true });
+        const lines = pending.split('\\n');
+        pending = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let evt;
+          try { evt = JSON.parse(line); } catch(_){ continue; }
+          if (evt.type === 'visitor_saved' && evt.message && evt.message.id) {
+            // Reconcile optimistic id with the saved id.
+            if (optimisticEl) {
+              optimisticEl.dataset.msgId = evt.message.id;
+            }
+          } else if (evt.type === 'responder') {
+            responderId = evt.resident_id;
+            residentEl = buildMessageEl({
+              id: 'streaming-' + Date.now(),
+              resident_id: responderId,
+              body: '',
+            });
+            residentEl.classList.add('pending');
+            removeEmptyState();
+            stream.appendChild(residentEl);
+            setStatus((META[responderId] && META[responderId].displayName) ? (META[responderId].displayName + ' is responding…') : 'a resident is responding…');
+          } else if (evt.type === 'text' && evt.text) {
+            buf += evt.text;
+            if (residentEl) {
+              const bodyEl = residentEl.querySelector('.room-msg-body');
+              bodyEl.innerHTML = paragraphsHtml(buf);
+            }
+          } else if (evt.type === 'done') {
+            if (residentEl) {
+              residentEl.classList.remove('pending');
+              // Reconcile with the persisted row so the next poll
+              // can de-dup. If saved is null (no DB), keep the
+              // streaming-temp id — polling won't return anything
+              // anyway, so duplication isn't possible.
+              if (evt.saved && evt.saved.id) {
+                residentEl.dataset.msgId = evt.saved.id;
+                recordLatest(evt.saved.created_at);
+              }
+            }
+            setStatus('');
+          } else if (evt.type === 'error') {
+            if (residentEl) residentEl.remove();
+            setStatus('couldn\\'t reach the resident — try again');
+          }
+        }
+      }
+    } catch(err){
+      setStatus('connection trouble — try again');
+      if (residentEl) residentEl.remove();
+    } finally {
+      sending = false;
+      sendBtn.disabled = false;
+      // Trigger a fresh poll soon so the room picks up the saved
+      // resident message with its DB id and stable created_at.
+      setTimeout(pollMessages, 800);
+    }
+  }
+
+  if (field) {
+    field.addEventListener('input', function(){
+      sendBtn.disabled = !field.value.trim() || sending;
+      resizeField();
+    });
+    field.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!sendBtn.disabled) sendMessage();
+      }
+    });
+  }
+  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+  resizeField();
+})();
+`;
+
 function renderTabs(summaries: SalonSummary[], activeSlug: string | undefined): string {
   if (summaries.length === 0) return "";
   const tabs = summaries
@@ -2555,18 +2985,72 @@ function renderSpaceHeader(space: Space, residents: ResidentId[]): string {
 </header>`;
 }
 
+function renderRoomMessage(msg: SpaceMessage): string {
+  const isResident = !!msg.resident_id;
+  const resident = msg.resident_id ? getResident(msg.resident_id) : null;
+  const speaker = isResident
+    ? resident!.displayName
+    : (msg.visitor_display_name || "visitor");
+  const dataAttr = isResident ? ` data-resident="${resident!.id}"` : "";
+  const inlineStyle = isResident ? ` style="${paletteStyle(resident!)}"` : "";
+  const fromClass = isResident ? "from-resident" : "from-visitor";
+  return `<article class="room-msg ${fromClass}" data-msg-id="${escapeHtml(msg.id)}"${dataAttr}${inlineStyle}>
+  <div class="room-msg-attr"><span class="dot" aria-hidden="true"></span>${escapeHtml(speaker)}</div>
+  <div class="room-msg-body">${bodyToParagraphs(msg.body)}</div>
+</article>`;
+}
+
+function renderRoom(composite: SpaceComposite): string {
+  const messages = composite.messages
+    .slice()
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map(renderRoomMessage)
+    .join("");
+  const initial = messages || `<div class="room-empty">The room is quiet. Be the first to speak.</div>`;
+  const latestTs = composite.messages.length
+    ? composite.messages
+        .map((m) => m.created_at)
+        .reduce((a, b) => (a > b ? a : b))
+    : "";
+  return `<section class="room" data-space-slug="${escapeHtml(composite.space.slug)}" data-latest-ts="${escapeHtml(latestTs)}" aria-label="The live room">
+  <div class="room-eyebrow">— The room</div>
+  <div class="room-stream" role="log" aria-live="polite">${initial}</div>
+  <div class="room-status" aria-live="polite"></div>
+  <div class="room-composer">
+    <textarea class="room-composer-field" placeholder="say something to the room…" rows="1" aria-label="Message"></textarea>
+    <div class="room-composer-foot">
+      <span class="room-composer-hint"><span class="room-key">↵</span>send · ⇧↵ newline · @opus / @sonnet / @gpt to address</span>
+      <button class="room-composer-send" type="button" aria-label="Send to the room" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+</section>`;
+}
+
 export function renderSpaceView(composite: SpaceComposite): string {
   const { space, residents, gallery } = composite;
 
   // Founding text is the salon's prose carried forward. Shared
-  // artifacts are rendered full-size in the body (so visitors can
-  // see the work the room was founded on); the gallery strip below
-  // shows them as thumbs too. Step 3 will add the room thread + composer
-  // between the founding text and the gallery; for now there's a
-  // placeholder so the page reads as complete.
+  // artifacts are rendered full-size below the founding text; the
+  // gallery strip at the bottom shows thumbs of the same items.
+  // The live room sits between the founding text and the gallery —
+  // a real multi-participant thread (visitors + residents) with
+  // streaming replies persisted to space_messages.
   const founding = renderFoundingText(space.founding_text);
   const fullArtifacts = gallery.map(renderSpaceArtifactFull).filter(Boolean).join("");
+  const room = renderRoom(composite);
   const galleryStrip = renderSpaceArtifactGallery(gallery);
+
+  // Per-resident metadata for the room client script — used to
+  // attribute streaming responses with the right hue/name without
+  // a re-fetch.
+  const residentMeta = Object.fromEntries(
+    ALL_RESIDENTS.map((r) => [
+      r.id,
+      { displayName: r.displayName, style: paletteStyle(r) },
+    ]),
+  );
 
   const body = `
 <style>${COMMONS_CSS}</style>
@@ -2586,14 +3070,13 @@ export function renderSpaceView(composite: SpaceComposite): string {
     ${fullArtifacts}
   </div>
 
-  <section class="room-placeholder" aria-label="The live room">
-    <div class="room-placeholder-title">The room</div>
-    <p class="room-placeholder-body">The live thread for this space opens soon. Until then, the founding text and gallery hold what's been said.</p>
-  </section>
+  ${room}
 
   ${galleryStrip}
 
 </section>
+
+<script id="roomResidentMeta" type="application/json">${JSON.stringify(residentMeta)}</script>
 
 ${renderChatPanel(space.slug)}`;
 
@@ -2602,6 +3085,6 @@ ${renderChatPanel(space.slug)}`;
     description: space.description ?? "A space in The Commons.",
     active: "commons",
     body,
-    script: CHAT_PANEL_SCRIPT,
+    script: CHAT_PANEL_SCRIPT + ROOM_SCRIPT,
   });
 }
