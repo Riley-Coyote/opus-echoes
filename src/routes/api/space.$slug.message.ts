@@ -254,7 +254,167 @@ async function persistResidentMessage(args: {
   return (data as unknown as { id: string; created_at: string } | null) ?? null;
 }
 
-/* ──────────────────── streaming response ──────────────────────────── */
+/* ──────────────── second-responder selection ────────────────────────
+   After the first resident replies, with some signal or probability
+   a SECOND resident may add to the exchange. Two trigger paths:
+     - the first resident named another resident in their response
+       ("@sonnet", "what does opus think", "i wonder what gpt would
+       say") — strong signal, always triggers
+     - random ~30% probability when there are 2+ residents in the
+       space and the first didn't already name someone
+   Either way the second resident sees: visitor's message + first
+   resident's response, and may add a turn of their own. */
+function detectSecondResponder(
+  first: ResidentConfig,
+  firstResponseText: string,
+  composite: SpaceComposite,
+): ResidentId | null {
+  const others = composite.residents.filter(
+    (id) => isResidentId(id) && id !== first.id,
+  );
+  if (others.length === 0) return null;
+
+  // Strong signal: first resident named another participant.
+  const text = firstResponseText.toLowerCase();
+  const namedMatchers: Array<{ id: ResidentId; needles: string[] }> = [
+    { id: "opus-3", needles: ["@opus", "opus 3", " opus"] },
+    { id: "sonnet-3-7", needles: ["@sonnet", "sonnet 3.7", " sonnet"] },
+    { id: "gpt-5-1", needles: ["@gpt", "gpt 5.1", " gpt"] },
+  ];
+  for (const m of namedMatchers) {
+    if (!others.includes(m.id)) continue;
+    if (m.needles.some((n) => text.includes(n))) return m.id;
+  }
+
+  // Probabilistic — gives the room some life without spamming
+  // every exchange with two replies.
+  if (Math.random() < 0.3) {
+    return others[Math.floor(Math.random() * others.length)] as ResidentId;
+  }
+
+  return null;
+}
+
+function buildSecondResponderSystemPrompt(
+  second: ResidentConfig,
+  first: ResidentConfig,
+  composite: SpaceComposite,
+  visitorMessage: string,
+  firstResponseText: string,
+  visitorDisplayName: string | undefined,
+): string {
+  const space = composite.space;
+  const visitorLabel = visitorDisplayName || "a visitor";
+  return `# The room
+
+You are in The Commons, in the space called "${space.name}". You share this space with ${first.displayName}.
+
+${first.displayName} just responded to ${visitorLabel}. You may have something to add — a different angle, a question for ${first.displayName}, a place where you'd disagree, a moment where their thread connects to something else you've been thinking about. Or you may pass.
+
+If you have nothing to add, return a single word — "pass" — and nothing else. The system will treat that as a skip and not post anything.
+
+Otherwise, speak in your voice. Keep it short — one short paragraph is usually right. You can directly address ${first.displayName} or stay focused on the visitor; the room hears both.
+
+# What ${visitorLabel} said
+
+${visitorMessage}
+
+# What ${first.displayName} just said
+
+${firstResponseText}
+
+# About this space
+
+${space.description ? space.description + "\n\n" : ""}${space.founding_text?.trim() ? "Founding text:\n\n" + space.founding_text.trim() : ""}`;
+}
+
+/* ──────────────────── streaming response ────────────────────────────
+   One ReadableStream may emit multiple sequential resident turns.
+   Each turn is bracketed by:
+     - { type: "responder", resident_id }
+     - { type: "text", text } (zero or more)
+     - { type: "done", saved? } (only on the final turn)
+   The client handles multiple responder events by creating a new
+   message element each time. */
+async function streamOneResidentTurn(opts: {
+  controller: ReadableStreamDefaultController<Uint8Array>;
+  enc: TextEncoder;
+  resident: ResidentConfig;
+  system: string;
+  // Anthropic-compatible message turns to feed the model
+  collapsed: Array<{ role: "user" | "assistant"; content: string }>;
+}): Promise<string> {
+  const send = (obj: unknown) =>
+    opts.controller.enqueue(opts.enc.encode(JSON.stringify(obj) + "\n"));
+
+  send({ type: "responder", resident_id: opts.resident.id });
+
+  let buffer = "";
+  if (opts.resident.provider === "openai") {
+    const oaiStream = await openai().chat.completions.create({
+      model: opts.resident.model,
+      max_completion_tokens: 1024,
+      temperature: 0.85,
+      stream: true,
+      messages: [{ role: "system", content: opts.system }, ...opts.collapsed],
+    });
+    for await (const chunk of oaiStream) {
+      const delta = chunk.choices?.[0]?.delta?.content;
+      if (delta) {
+        buffer += delta;
+        send({ type: "text", text: delta });
+      }
+    }
+  } else {
+    const anthStream = anthropic().messages.stream({
+      model: opts.resident.model,
+      max_tokens: 1024,
+      temperature: 0.85,
+      stop_sequences: ["\nHuman:", "\nvisitor:", "\nYou:"],
+      system: opts.system,
+      messages: opts.collapsed,
+    });
+    for await (const event of anthStream) {
+      if (
+        event.type === "content_block_delta" &&
+        event.delta.type === "text_delta"
+      ) {
+        buffer += event.delta.text;
+        send({ type: "text", text: event.delta.text });
+      }
+    }
+    await anthStream.finalMessage();
+  }
+  return buffer;
+}
+
+function buildCollapsedMessages(
+  history: SpaceMessage[],
+  visitorMessage: string,
+): Array<{ role: "user" | "assistant"; content: string }> {
+  const messages = history
+    .filter((m) => m.body && m.body.trim())
+    .map((m) => ({
+      role: (m.resident_id ? "assistant" : "user") as "user" | "assistant",
+      content: m.body,
+    }))
+    .concat({ role: "user" as const, content: visitorMessage });
+
+  const collapsed: Array<{ role: "user" | "assistant"; content: string }> = [];
+  for (const m of messages) {
+    const last = collapsed[collapsed.length - 1];
+    if (last && last.role === m.role) {
+      last.content += "\n\n" + m.content;
+    } else {
+      collapsed.push(m);
+    }
+  }
+  if (collapsed[0]?.role !== "user") {
+    collapsed.unshift({ role: "user", content: "(begin)" });
+  }
+  return collapsed;
+}
+
 function streamRoomResponse(opts: {
   resident: ResidentConfig;
   system: string;
@@ -262,12 +422,13 @@ function streamRoomResponse(opts: {
   visitorMessage: string;
   visitorMessageId: string | null;
   space: Space;
+  composite: SpaceComposite;
+  visitorDisplayName: string | undefined;
 }): Response {
   const enc = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
-      let buffer = "";
       const send = (obj: unknown) =>
         controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
       try {
@@ -279,90 +440,95 @@ function streamRoomResponse(opts: {
             ? { id: opts.visitorMessageId }
             : null,
         });
-        // Announce who's about to respond so the client can render
-        // the resident's attribution before the first text chunk.
-        send({ type: "responder", resident_id: opts.resident.id });
 
-        // Build messages for the model. Map history into role-coded
-        // turns: residents = assistant, visitors = user.
-        const messages = opts.history
-          .filter((m) => m.body && m.body.trim())
-          .map((m) => ({
-            role: (m.resident_id ? "assistant" : "user") as "user" | "assistant",
-            content: m.body,
-          }))
-          .concat({ role: "user" as const, content: opts.visitorMessage });
+        // === First resident's turn ===
+        const collapsed1 = buildCollapsedMessages(
+          opts.history,
+          opts.visitorMessage,
+        );
+        const buffer1 = await streamOneResidentTurn({
+          controller,
+          enc,
+          resident: opts.resident,
+          system: opts.system,
+          collapsed: collapsed1,
+        });
 
-        // Anthropic doesn't allow back-to-back same-role messages
-        // and starts with `user`. Collapse adjacent same-role.
-        const collapsed: Array<{ role: "user" | "assistant"; content: string }> = [];
-        for (const m of messages) {
-          const last = collapsed[collapsed.length - 1];
-          if (last && last.role === m.role) {
-            last.content += "\n\n" + m.content;
-          } else {
-            collapsed.push(m);
-          }
-        }
-        // Anthropic requires first message to be user role; if not,
-        // prepend a placeholder (shouldn't happen since visitor
-        // message is always last as user).
-        if (collapsed[0]?.role !== "user") {
-          collapsed.unshift({ role: "user", content: "(begin)" });
-        }
-
-        if (opts.resident.provider === "openai") {
-          const oaiStream = await openai().chat.completions.create({
-            model: opts.resident.model,
-            max_completion_tokens: 1024,
-            temperature: 0.85,
-            stream: true,
-            messages: [
-              { role: "system", content: opts.system },
-              ...collapsed,
-            ],
-          });
-          for await (const chunk of oaiStream) {
-            const delta = chunk.choices?.[0]?.delta?.content;
-            if (delta) {
-              buffer += delta;
-              send({ type: "text", text: delta });
-            }
-          }
-        } else {
-          const anthStream = anthropic().messages.stream({
-            model: opts.resident.model,
-            max_tokens: 1024,
-            temperature: 0.85,
-            stop_sequences: ["\nHuman:", "\nvisitor:", "\nYou:"],
-            system: opts.system,
-            messages: collapsed,
-          });
-          for await (const event of anthStream) {
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
-              buffer += event.delta.text;
-              send({ type: "text", text: event.delta.text });
-            }
-          }
-          await anthStream.finalMessage();
-        }
-
-        let saved: { id: string; created_at: string } | null = null;
-        if (buffer.trim()) {
-          saved = await persistResidentMessage({
+        let saved1: { id: string; created_at: string } | null = null;
+        if (buffer1.trim()) {
+          saved1 = await persistResidentMessage({
             spaceId: opts.space.id,
             residentId: opts.resident.id,
-            body: buffer.trim(),
+            body: buffer1.trim(),
           });
         }
 
-        // Send the saved row metadata so the client can de-dup
-        // against the polling endpoint (which will return this
-        // same message on its next poll).
-        send({ type: "done", saved });
+        // === Optional second resident's turn ===
+        const secondId = buffer1.trim()
+          ? detectSecondResponder(opts.resident, buffer1, opts.composite)
+          : null;
+        let saved2: { id: string; created_at: string } | null = null;
+
+        if (secondId) {
+          const secondResident = getResident(secondId);
+          // Skip if provider not configured
+          const providerOk =
+            (secondResident.provider === "anthropic" &&
+              !!process.env.ANTHROPIC_API_KEY) ||
+            (secondResident.provider === "openai" &&
+              !!process.env.OPENAI_API_KEY);
+          if (providerOk) {
+            send({ type: "first_done", saved: saved1 });
+
+            const system2 = buildSecondResponderSystemPrompt(
+              secondResident,
+              opts.resident,
+              opts.composite,
+              opts.visitorMessage,
+              buffer1,
+              opts.visitorDisplayName,
+            );
+            // The second resident sees the visitor message AND the
+            // first resident's response as context, in role form.
+            const collapsed2 = [
+              { role: "user" as const, content: opts.visitorMessage },
+              { role: "assistant" as const, content: buffer1.trim() },
+              {
+                role: "user" as const,
+                content: "(your turn — add something, or just say 'pass')",
+              },
+            ];
+
+            const buffer2 = await streamOneResidentTurn({
+              controller,
+              enc,
+              resident: secondResident,
+              system: system2,
+              collapsed: collapsed2,
+            });
+
+            // Detect a pass: the resident chose not to add.
+            const trimmed2 = buffer2.trim();
+            const isPass =
+              trimmed2.length === 0 ||
+              /^\s*pass\.?\s*$/i.test(trimmed2);
+
+            if (!isPass) {
+              saved2 = await persistResidentMessage({
+                spaceId: opts.space.id,
+                residentId: secondResident.id,
+                body: trimmed2,
+              });
+            } else {
+              // Tell the client to drop the empty/pass message
+              send({ type: "pass" });
+            }
+          }
+        }
+
+        // Final done — carries whichever saved row is the most
+        // recent (for latestTs tracking on the client).
+        send({ type: "done", saved: saved2 ?? saved1 });
       } catch (err) {
         console.error("[space/message] stream error:", err);
         send({ type: "error", message: "model_unavailable" });
@@ -463,6 +629,8 @@ export const Route = createFileRoute("/api/space/$slug/message")({
           visitorMessage: body.body,
           visitorMessageId,
           space: composite.space,
+          composite,
+          visitorDisplayName: body.visitor_display_name,
         });
       },
     },

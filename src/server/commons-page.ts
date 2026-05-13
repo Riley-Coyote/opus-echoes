@@ -3162,7 +3162,12 @@ const ROOM_SCRIPT = `
               optimisticEl.dataset.msgId = evt.message.id;
             }
           } else if (evt.type === 'responder') {
+            // New resident turn beginning. If we already have a
+            // resident-el in flight, finalize it (first turn in a
+            // multi-turn exchange). The 'first_done' event handles
+            // saved-id reconciliation for the prior turn.
             responderId = evt.resident_id;
+            buf = '';
             residentEl = buildMessageEl({
               id: 'streaming-' + Date.now(),
               resident_id: responderId,
@@ -3178,6 +3183,26 @@ const ROOM_SCRIPT = `
               const bodyEl = residentEl.querySelector('.room-msg-body');
               bodyEl.innerHTML = paragraphsHtml(buf);
             }
+          } else if (evt.type === 'first_done') {
+            // First turn in a multi-turn exchange has been
+            // persisted; reconcile its saved id and clear the
+            // pending state, but keep the element in the stream.
+            if (residentEl) {
+              residentEl.classList.remove('pending');
+              if (evt.saved && evt.saved.id) {
+                residentEl.dataset.msgId = evt.saved.id;
+                recordLatest(evt.saved.created_at);
+              }
+            }
+          } else if (evt.type === 'pass') {
+            // Second resident chose to pass — drop their (empty)
+            // streaming element so the room doesn't show a blank
+            // turn.
+            if (residentEl) {
+              residentEl.remove();
+              residentEl = null;
+            }
+            setStatus('');
           } else if (evt.type === 'done') {
             if (residentEl) {
               residentEl.classList.remove('pending');
