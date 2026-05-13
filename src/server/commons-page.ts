@@ -362,11 +362,14 @@ const COMMONS_CSS = `
   inset:0;
   pointer-events:none;
   z-index:2;
-  /* No mask, no border-radius. The eight gradients sit at the actual
-     viewport corners and edge-midpoints, fading naturally toward the
-     center. The "band" feel comes from the gradient falloff alone —
-     no hard inner edge, no rounded outer wedges. Candlelight at the
-     edge of a room, not a framed window. */
+  padding:24px;
+  /* The 24px band is carved out via mask-composite (outer rectangle
+     minus content-box). With no border-radius, the outer corners
+     reach the viewport edges directly — no dark wedges — and the
+     gradients positioned AT the corners (0%/100%) light those
+     corners with their peaks. The inner edge is a sharp rectangle
+     for now; can be softened in a future iteration via a fade-in
+     mask if it reads too hard. */
   background:
     radial-gradient(ellipse 55% 55% at 0% 0%,     rgba(220,176,110, var(--vg1)) 0%, transparent 72%),
     radial-gradient(ellipse 70% 45% at 50% 0%,    rgba(160,140,188, var(--vg2)) 0%, transparent 72%),
@@ -376,6 +379,11 @@ const COMMONS_CSS = `
     radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(160,140,188, var(--vg6)) 0%, transparent 72%),
     radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(220,170,168, var(--vg7)) 0%, transparent 72%),
     radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(218,215,210, var(--vg8)) 0%, transparent 72%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   animation:
     vg-1 11s ease-in-out infinite,
     vg-2 13s ease-in-out infinite,
