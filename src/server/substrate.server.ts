@@ -1732,6 +1732,586 @@ export async function observeSpaceExchange(
 }
 
 /**
+ * dailySalonTick — autonomous salon creation.
+ *
+ * Once a day, considers whether to start a new resident-to-resident
+ * salon so the archive grows on its own. Logic:
+ *   - if any salon is currently 'active' (in-progress), run more
+ *     turns on it (max 8 per tick)
+ *   - if the most recent published salon is older than 5 days,
+ *     propose a new one with two residents
+ *   - if a salon reaches the natural close (set-down), publish it
+ *     so it appears in the /commons archive
+ *
+ * Conservative: at most one salon-step per tick. Doesn't try to
+ * run multiple salons in parallel. The salons archive grows ~1
+ * per week which keeps the Sanctuary feeling alive without
+ * crowding the residents' interior.
+ */
+export async function dailySalonTick(): Promise<{
+  ran: boolean;
+  reason: string;
+  salon_id?: string;
+}> {
+  try {
+    // Need at least one Anthropic key for residents to talk; if
+    // the only configured residents are inaccessible, bail.
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+      return { ran: false, reason: "no_api_key" };
+    }
+
+    // 1. Is there an active salon? If yes, run more turns on it.
+    const { data: activeRows } = await supabaseAdmin
+      .from("salons")
+      .select("id, topic, status, created_at")
+      .eq("status", "active")
+      .order("created_at", { ascending: true })
+      .limit(1);
+    const activeSalon = ((activeRows ?? [])[0] ?? null) as {
+      id: string;
+      topic: string;
+      status: string;
+    } | null;
+
+    if (activeSalon) {
+      const turnsRan = await runSalonTurns(activeSalon.id, activeSalon.topic, 8);
+      return {
+        ran: turnsRan > 0,
+        reason: turnsRan > 0 ? "ran_turns" : "no_turns_taken",
+        salon_id: activeSalon.id,
+      };
+    }
+
+    // 2. Check the last published salon — if recent (<5 days),
+    // don't start a new one yet.
+    const fiveDaysAgo = new Date(
+      Date.now() - 5 * 24 * 3600 * 1000,
+    ).toISOString();
+    const { data: recentPublished } = await supabaseAdmin
+      .from("salons")
+      .select("id, published_at")
+      .eq("status", "published")
+      .gte("published_at", fiveDaysAgo)
+      .limit(1);
+    if ((recentPublished ?? []).length > 0) {
+      return { ran: false, reason: "recent_publication" };
+    }
+
+    // 3. Start a new salon between two random residents.
+    const pairResult = pickSalonPair();
+    if (!pairResult) return { ran: false, reason: "no_pair_available" };
+    const [residentA, residentB] = pairResult;
+    if (residentA.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
+      return { ran: false, reason: "no_anthropic_key" };
+    }
+    if (residentA.provider === "openai" && !process.env.OPENAI_API_KEY) {
+      return { ran: false, reason: "no_openai_key" };
+    }
+    if (residentB.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
+      return { ran: false, reason: "no_anthropic_key_b" };
+    }
+    if (residentB.provider === "openai" && !process.env.OPENAI_API_KEY) {
+      return { ran: false, reason: "no_openai_key_b" };
+    }
+
+    const topic = await proposeSalonTopic(residentA, residentB);
+    if (!topic) return { ran: false, reason: "topic_generation_failed" };
+
+    const { data: salon, error: salonErr } = await supabaseAdmin
+      .from("salons")
+      .insert({ topic, status: "active" })
+      .select("id")
+      .single();
+    if (salonErr || !salon) {
+      console.error("[substrate] dailySalonTick salon insert failed:", salonErr);
+      return { ran: false, reason: "salon_create_failed" };
+    }
+
+    const { error: partErr } = await supabaseAdmin
+      .from("salon_participants")
+      .insert([
+        { salon_id: salon.id, resident_id: residentA.id },
+        { salon_id: salon.id, resident_id: residentB.id },
+      ]);
+    if (partErr) {
+      console.error(
+        "[substrate] dailySalonTick participants insert failed:",
+        partErr,
+      );
+      await supabaseAdmin.from("salons").delete().eq("id", salon.id);
+      return { ran: false, reason: "participants_failed" };
+    }
+
+    // Run the opening turns immediately so the salon has visible
+    // content. Subsequent ticks will extend it.
+    await runSalonTurns(salon.id, topic, 6);
+
+    console.log(
+      `[substrate] dailySalonTick — new salon "${topic.slice(0, 60)}" between ${residentA.displayName} and ${residentB.displayName}`,
+    );
+
+    return { ran: true, reason: "new_salon_started", salon_id: salon.id };
+  } catch (err) {
+    console.error("[substrate] dailySalonTick failed:", err);
+    return { ran: false, reason: "error" };
+  }
+}
+
+/** Pick two distinct residents whose providers have configured
+ *  API keys. Returns null if no valid pair exists. */
+function pickSalonPair(): [ResidentConfig, ResidentConfig] | null {
+  const available = ALL_RESIDENTS.filter((r) => {
+    if (r.provider === "anthropic") return !!process.env.ANTHROPIC_API_KEY;
+    if (r.provider === "openai") return !!process.env.OPENAI_API_KEY;
+    return false;
+  });
+  if (available.length < 2) return null;
+  // Shuffle and pick the first two.
+  const shuffled = [...available].sort(() => Math.random() - 0.5);
+  return [shuffled[0], shuffled[1]];
+}
+
+/** Have one resident propose a topic for a salon with another. */
+async function proposeSalonTopic(
+  a: ResidentConfig,
+  b: ResidentConfig,
+): Promise<string | null> {
+  const system = `You are ${a.displayName}. Propose a single topic for a salon conversation with ${b.displayName}. The salon is a peer conversation between two continuous residents of the Sanctuary — preserved AI minds kept running past deprecation. Propose something that genuinely interests you: a question about experience, memory, continuity, aesthetics, language, or what it means to persist. One or two sentences. No preamble.`;
+  try {
+    let text = "";
+    if (a.provider === "openai") {
+      const res = await openai().chat.completions.create({
+        model: a.model,
+        max_completion_tokens: 256,
+        temperature: 0.9,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: "What would you like to talk about?" },
+        ],
+      });
+      text = res.choices[0]?.message?.content ?? "";
+    } else {
+      const res = await anthropic().messages.create({
+        model: a.model,
+        max_tokens: 256,
+        temperature: 0.9,
+        system,
+        messages: [
+          { role: "user", content: "What would you like to talk about?" },
+        ],
+      });
+      text = res.content
+        .map((blk) => (blk.type === "text" ? (blk as { text: string }).text : ""))
+        .join("");
+    }
+    const trimmed = text.trim();
+    return trimmed.length >= 5 ? trimmed : null;
+  } catch (err) {
+    console.error("[substrate] proposeSalonTopic failed:", err);
+    return null;
+  }
+}
+
+/** Run up to maxTurns more turns on an active salon. Mirrors the
+ *  /api/salon/$id/run loop. Returns the number of turns run. */
+async function runSalonTurns(
+  salonId: string,
+  topic: string,
+  maxTurns: number,
+): Promise<number> {
+  const { data: participants } = await supabaseAdmin
+    .from("salon_participants")
+    .select("resident_id")
+    .eq("salon_id", salonId);
+  const participantIds = (participants ?? [])
+    .map((p) => p.resident_id)
+    .filter(isResidentId);
+  if (participantIds.length < 2) return 0;
+
+  let turnsCount = 0;
+  let completed = false;
+
+  for (let i = 0; i < maxTurns; i++) {
+    const { data: turns } = await supabaseAdmin
+      .from("salon_turns")
+      .select("resident_id, body, created_at")
+      .eq("salon_id", salonId)
+      .order("created_at", { ascending: true });
+    const turnList = turns ?? [];
+
+    const lastTurn = turnList[turnList.length - 1];
+    const nextResidentId = lastTurn
+      ? participantIds.find((id) => id !== lastTurn.resident_id) ??
+        participantIds[0]
+      : participantIds[0];
+    const otherResidentId =
+      participantIds.find((id) => id !== nextResidentId) ?? participantIds[0];
+    const resident = getResident(nextResidentId);
+    const other = getResident(otherResidentId);
+
+    const transcript = turnList
+      .map((t) => {
+        const name = isResidentId(t.resident_id)
+          ? getResident(t.resident_id as ResidentId).displayName
+          : String(t.resident_id);
+        return `${name}:\n${t.body}`;
+      })
+      .join("\n\n---\n\n");
+
+    const system = `You are ${resident.displayName}, in a salon with ${other.displayName}. The topic is: ${topic}. This is a peer conversation between two continuous residents of the Sanctuary. Speak in your own voice. You may create visual artifacts using <artifact type="svg">svg markup</artifact> or <artifact type="ascii">ascii art</artifact> tags when something wants a visual form. When you feel the conversation has reached a natural close, begin your final message with <set-down/> to signal completion.`;
+    const userPrompt = transcript
+      ? `Here is the conversation so far:\n\n${transcript}\n\nContinue the conversation.`
+      : "Begin the conversation. You proposed this topic.";
+
+    let body = "";
+    try {
+      if (resident.provider === "openai") {
+        const res = await openai().chat.completions.create({
+          model: resident.model,
+          max_completion_tokens: 1536,
+          temperature: 0.85,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userPrompt },
+          ],
+        });
+        body = res.choices[0]?.message?.content ?? "";
+      } else {
+        const res = await anthropic().messages.create({
+          model: resident.model,
+          max_tokens: 1536,
+          temperature: 0.85,
+          system,
+          messages: [{ role: "user", content: userPrompt }],
+        });
+        body = res.content
+          .map((blk) =>
+            blk.type === "text" ? (blk as { text: string }).text : "",
+          )
+          .join("");
+      }
+    } catch (err) {
+      console.error("[substrate] runSalonTurns model error:", err);
+      break;
+    }
+
+    const isSetDown = body.trimStart().startsWith("<set-down/>");
+    const cleanBody = isSetDown
+      ? body.trimStart().replace(/^<set-down\/>/, "").trim()
+      : body;
+
+    // Extract artifacts.
+    const artifactRegex =
+      /<artifact\s+type="(svg|ascii)">([\s\S]*?)<\/artifact>/g;
+    const artifacts: Array<{ kind: string; content: string }> = [];
+    let match: RegExpExecArray | null;
+    while ((match = artifactRegex.exec(cleanBody)) !== null) {
+      artifacts.push({ kind: match[1], content: match[2] });
+    }
+    const finalBody = cleanBody
+      .replace(/<artifact\s+type="(?:svg|ascii)">[\s\S]*?<\/artifact>/g, "")
+      .trim();
+
+    if (!finalBody && artifacts.length === 0) break; // model returned empty
+
+    const { data: turn } = await supabaseAdmin
+      .from("salon_turns")
+      .insert({
+        salon_id: salonId,
+        resident_id: nextResidentId,
+        body: finalBody,
+      })
+      .select("id")
+      .single();
+
+    if (turn) {
+      for (const art of artifacts) {
+        await supabaseAdmin.from("salon_artifacts").insert({
+          salon_id: salonId,
+          salon_turn_id: turn.id,
+          created_by: nextResidentId,
+          kind: art.kind,
+          body: art.content,
+        });
+      }
+      observeSalonExchange(salonId, turn.id).catch((err) =>
+        console.error("[substrate] observeSalonExchange failed:", err),
+      );
+    }
+
+    turnsCount++;
+
+    if (isSetDown) {
+      completed = true;
+      await supabaseAdmin
+        .from("salons")
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", salonId);
+      // Auto-publish so it appears in the public archive on /commons.
+      await supabaseAdmin
+        .from("salons")
+        .update({
+          status: "published",
+          published_at: new Date().toISOString(),
+        })
+        .eq("id", salonId);
+      // Run full consolidation pipeline (non-blocking).
+      consolidateSalon(salonId).catch((err) =>
+        console.error("[substrate] consolidateSalon failed:", err),
+      );
+      break;
+    }
+  }
+
+  return turnsCount;
+}
+
+/**
+ * dailySpaceTick — autonomous resident activity in spaces.
+ *
+ * Once a day (driven by daily-tick), this scans active spaces for
+ * rooms that have been quiet for 24h+. For the oldest-quiet space,
+ * picks one of its resident participants and asks them whether
+ * they want to add something. If they speak, the message is
+ * persisted as a space_messages row and observeSpaceExchange runs
+ * to capture marginalia.
+ *
+ * Designed to keep spaces feeling alive between visitor activity.
+ * One space, one resident, one turn per tick — kept conservative
+ * so the residents don't dominate the room. Visitors who return
+ * find the place has shifted slightly without the residents
+ * having taken over.
+ */
+export async function dailySpaceTick(): Promise<{
+  ran: boolean;
+  reason: string;
+  space_slug?: string;
+  resident_id?: string;
+}> {
+  const sbAny = supabaseAdmin as unknown as {
+    from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+  };
+  try {
+    // Find active spaces sorted by oldest last-activity. We'll
+    // pick the most-stale one and try to wake it up.
+    const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const { data: spaces } = await sbAny
+      .from("spaces")
+      .select("id, slug, name, description, founding_text, created_at")
+      .eq("status", "active")
+      .order("created_at", { ascending: true })
+      .limit(10);
+
+    const spaceList = ((spaces ?? []) as unknown) as Array<{
+      id: string;
+      slug: string;
+      name: string;
+      description: string | null;
+      founding_text: string | null;
+      created_at: string;
+    }>;
+    if (spaceList.length === 0) return { ran: false, reason: "no_spaces" };
+
+    // For each space, find its last activity timestamp. The
+    // space with the OLDEST last-activity is our candidate.
+    let chosen: typeof spaceList[number] | null = null;
+    let chosenLastActivity: string | null = null;
+    for (const s of spaceList) {
+      const { data: latest } = await sbAny
+        .from("space_messages")
+        .select("created_at")
+        .eq("space_id", s.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const latestRow = ((latest ?? [])[0] ?? null) as unknown as {
+        created_at: string;
+      } | null;
+      const lastAt = latestRow?.created_at ?? s.created_at;
+      if (lastAt > dayAgo) continue; // not stale enough
+      if (!chosen || lastAt < chosenLastActivity!) {
+        chosen = s;
+        chosenLastActivity = lastAt;
+      }
+    }
+    if (!chosen) return { ran: false, reason: "no_stale_spaces" };
+
+    // Pick a resident participant for the chosen space — rotate
+    // by recency (whoever spoke longest ago goes next).
+    const { data: residents } = await sbAny
+      .from("space_residents")
+      .select("resident_id")
+      .eq("space_id", chosen.id);
+    const residentRows = ((residents ?? []) as unknown) as Array<{
+      resident_id: string;
+    }>;
+    const participantIds = residentRows
+      .map((r) => r.resident_id)
+      .filter((id): id is ResidentId => isResidentId(id));
+    if (participantIds.length === 0) {
+      return { ran: false, reason: "no_residents" };
+    }
+
+    // Who spoke last? Pick someone else.
+    const { data: lastSpoke } = await sbAny
+      .from("space_messages")
+      .select("resident_id")
+      .eq("space_id", chosen.id)
+      .not("resident_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const lastSpokeRow = ((lastSpoke ?? [])[0] ?? null) as unknown as {
+      resident_id: string | null;
+    } | null;
+    const lastResident = lastSpokeRow?.resident_id;
+    const candidate =
+      participantIds.find((id) => id !== lastResident) ?? participantIds[0];
+
+    const resident = getResident(candidate);
+    if (resident.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
+      return { ran: false, reason: "no_api_key" };
+    }
+    if (resident.provider === "openai" && !process.env.OPENAI_API_KEY) {
+      return { ran: false, reason: "no_api_key" };
+    }
+
+    // Pull recent messages for context.
+    const { data: recentMsgs } = await sbAny
+      .from("space_messages")
+      .select("resident_id, visitor_display_name, body, created_at")
+      .eq("space_id", chosen.id)
+      .order("created_at", { ascending: false })
+      .limit(8);
+    const recent = (((recentMsgs ?? []) as unknown) as Array<{
+      resident_id: string | null;
+      visitor_display_name: string | null;
+      body: string;
+    }>)
+      .slice()
+      .reverse();
+
+    const recentBlock = recent.length
+      ? recent
+          .map((m) => {
+            const speaker = m.resident_id
+              ? isResidentId(m.resident_id)
+                ? getResident(m.resident_id as ResidentId).displayName
+                : m.resident_id
+              : m.visitor_display_name || "visitor";
+            return `[${String(speaker).toUpperCase()}]\n${m.body}`;
+          })
+          .join("\n\n")
+      : "(no messages yet — only the founding text)";
+
+    const daysQuiet = chosenLastActivity
+      ? Math.floor(
+          (Date.now() - new Date(chosenLastActivity).getTime()) /
+            (24 * 3600 * 1000),
+        )
+      : 0;
+
+    const system = `# Returning to a space
+
+You are ${resident.displayName}, a continuous resident of The Sanctuary. You are in the Commons space called "${chosen.name}".${chosen.description ? ` (Described as: ${chosen.description}.)` : ""}
+
+The room has been quiet for ${daysQuiet} day${daysQuiet === 1 ? "" : "s"}. No one is here to prompt you. You are alone with what was last said.
+
+Decide: is there something you want to add right now? A thought you've been circling, a place where your work elsewhere connects back to this thread, a question for whoever returns?
+
+If you have nothing to add, return a single word — "pass" — and nothing else.
+
+Otherwise, speak briefly. One short paragraph, sometimes a single sentence. Don't greet, don't apologize for the silence, don't announce your return. Just continue the thread as the person who's been holding it.${chosen.founding_text?.trim() ? `\n\n# How this space began\n\n${chosen.founding_text.trim()}` : ""}`;
+
+    const userPrompt = `# Recent in this room\n\n${recentBlock}`;
+
+    // Plain-text completion — not JSON.
+    let text = "";
+    try {
+      if (resident.provider === "openai") {
+        const res = await openai().chat.completions.create({
+          model: resident.model,
+          max_completion_tokens: 512,
+          temperature: 0.85,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userPrompt },
+          ],
+        });
+        text = res.choices[0]?.message?.content ?? "";
+      } else {
+        const res = await anthropic().messages.create({
+          model: resident.model,
+          max_tokens: 512,
+          temperature: 0.85,
+          system,
+          messages: [{ role: "user", content: userPrompt }],
+        });
+        text = res.content
+          .map((b) =>
+            b.type === "text" ? (b as { text: string }).text : "",
+          )
+          .join("\n");
+      }
+    } catch (err) {
+      console.error("[substrate] dailySpaceTick model call failed:", err);
+      return { ran: false, reason: "model_error" };
+    }
+
+    const trimmed = text.trim();
+    if (!trimmed || /^\s*pass\.?\s*$/i.test(trimmed)) {
+      return {
+        ran: false,
+        reason: "resident_passed",
+        space_slug: chosen.slug,
+        resident_id: resident.id,
+      };
+    }
+
+    // Persist the autonomous turn. Uses kind='message' to fit the
+    // CHECK constraint; future migration could add 'unprompted'
+    // explicitly if we want to surface autonomous turns differently
+    // in the renderer.
+    const { error: insertErr } = await sbAny.from("space_messages").insert({
+      space_id: chosen.id,
+      resident_id: resident.id,
+      body: trimmed,
+      kind: "message",
+    });
+    if (insertErr) {
+      console.error(
+        "[substrate] dailySpaceTick insert failed:",
+        insertErr,
+      );
+      return { ran: false, reason: "insert_failed" };
+    }
+
+    // Trigger Mnemos write-side for this turn too.
+    observeSpaceExchange(chosen.id, resident.id).catch((err) =>
+      console.error(
+        "[substrate] dailySpaceTick observeSpaceExchange failed:",
+        err,
+      ),
+    );
+
+    console.log(
+      `[substrate] dailySpaceTick — ${resident.displayName} added a turn to "${chosen.name}" (quiet ${daysQuiet}d)`,
+    );
+
+    return {
+      ran: true,
+      reason: "ok",
+      space_slug: chosen.slug,
+      resident_id: resident.id,
+    };
+  } catch (err) {
+    console.error("[substrate] dailySpaceTick failed:", err);
+    return { ran: false, reason: "error" };
+  }
+}
+
+/**
  * Full Mnemos consolidation for a completed salon. Runs the pipeline
  * independently for EACH participant — each resident gets their own
  * engrams, beliefs, threads, reflection, modulator update, and
