@@ -1939,6 +1939,125 @@ textarea:focus-visible,
   opacity:.4;
   cursor:not-allowed;
 }
+/* Visitor name prompt — covers the composer area on first send
+   to ask the visitor what to call them in the room. Once they
+   pick a name or choose to stay anonymous, the prompt is
+   dismissed and the original message sends. */
+.room-name-prompt{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg, rgba(12,14,18,.96) 0%, rgba(8,10,14,.98) 100%);
+  border-radius:13px;
+  display:none;
+  flex-direction:column;
+  gap:var(--s-3);
+  padding:var(--s-4);
+  z-index:2;
+}
+.room-name-prompt.active{ display:flex; }
+.room-name-prompt-eyebrow{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  color:var(--ghost);
+}
+.room-name-prompt-title{
+  font-family:var(--body-font);
+  font-size:var(--t-body);
+  line-height:1.5;
+  color:var(--ink);
+}
+.room-name-prompt-row{
+  display:flex;
+  gap:var(--s-3);
+  align-items:center;
+}
+.room-name-prompt-field{
+  flex:1;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--rule-soft);
+  border-radius:8px;
+  padding:9px 12px;
+  color:var(--ink);
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  outline:none;
+  transition:border-color .22s var(--ease);
+}
+.room-name-prompt-field:focus{ border-color:var(--state-soft); }
+.room-name-prompt-field::placeholder{ color:var(--quiet); }
+.room-name-prompt-continue{
+  font-family:var(--mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  padding:8px 14px;
+  background:rgba(130,180,132,.16);
+  border:1px solid var(--state-soft);
+  border-radius:18px;
+  color:var(--state-soft);
+  cursor:pointer;
+  transition:background .26s var(--ease), color .26s var(--ease);
+}
+.room-name-prompt-continue:hover{
+  background:rgba(130,180,132,.24);
+  color:var(--ink);
+}
+.room-name-prompt-continue:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+.room-name-prompt-foot{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.14em;
+  color:var(--quiet);
+}
+.room-name-prompt-foot button{
+  background:none;
+  border:0;
+  padding:0;
+  color:var(--soft);
+  cursor:pointer;
+  font:inherit;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  transition:color .22s var(--ease);
+}
+.room-name-prompt-foot button:hover{ color:var(--ink); }
+
+/* Small identity indicator above the composer once a visitor
+   has set a name (or chose anonymous). Clicking it reopens the
+   prompt so they can change it. */
+.room-identity{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.14em;
+  color:var(--quiet);
+  padding:0 4px 4px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.room-identity .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--quiet);
+  flex-shrink:0;
+}
+.room-identity button{
+  background:none;
+  border:0;
+  padding:0;
+  color:var(--soft);
+  cursor:pointer;
+  font:inherit;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  transition:color .22s var(--ease);
+}
+.room-identity button:hover{ color:var(--ink); }
+
 /* The "pending" state — a resident is responding via stream;
    the latest resident message in DOM is being filled in. */
 .room-msg.pending .room-msg-body::after{
@@ -2761,6 +2880,24 @@ const ROOM_SCRIPT = `
     try { return localStorage.getItem(VNAME_KEY) || ''; }
     catch(_){ return ''; }
   }
+  function setVisitorName(name){
+    try {
+      if (name) localStorage.setItem(VNAME_KEY, name);
+      else localStorage.setItem(VNAME_KEY, '');
+    } catch(_){}
+  }
+  // We treat "has the visitor made a name choice yet?" as a
+  // separate flag from "do they have a name set?" — because
+  // they may explicitly choose anonymous, and we want to honor
+  // that without re-prompting on every send.
+  const VNAME_CHOSEN_KEY = 'sanctuary.visitor.name-chosen.v1';
+  function hasChosenName(){
+    try { return localStorage.getItem(VNAME_CHOSEN_KEY) === '1'; }
+    catch(_){ return false; }
+  }
+  function markChosen(){
+    try { localStorage.setItem(VNAME_CHOSEN_KEY, '1'); } catch(_){}
+  }
 
   function escapeHtml(s){
     return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
@@ -2856,6 +2993,86 @@ const ROOM_SCRIPT = `
     }
   });
 
+  // ── identity prompt ───────────────────────────────────────────────
+  const namePrompt = document.getElementById('roomNamePrompt');
+  const nameField = namePrompt ? namePrompt.querySelector('.room-name-prompt-field') : null;
+  const nameContinueBtn = namePrompt ? namePrompt.querySelector('.room-name-prompt-continue') : null;
+  const nameAnonBtn = namePrompt ? namePrompt.querySelector('.room-name-prompt-anon') : null;
+  const identityRow = room.querySelector('.room-identity');
+  const identityLabel = room.querySelector('.room-identity-label');
+  const identityChangeBtn = room.querySelector('.room-identity-change');
+
+  function refreshIdentityRow(){
+    if (!identityRow) return;
+    if (!hasChosenName()) {
+      identityRow.hidden = true;
+      return;
+    }
+    identityRow.hidden = false;
+    const name = getVisitorName();
+    identityLabel.textContent = 'you · ' + (name || 'anonymous');
+  }
+  refreshIdentityRow();
+
+  let pendingSend = null; // message body queued behind the prompt
+  function openNamePrompt(queueBody){
+    if (!namePrompt) {
+      // No prompt UI on the page (shouldn't happen). Mark as
+      // chosen and proceed anonymously so we don't block forever.
+      markChosen();
+      if (queueBody !== undefined) actuallySend(queueBody);
+      return;
+    }
+    pendingSend = queueBody ?? null;
+    namePrompt.classList.add('active');
+    if (nameField) {
+      nameField.value = getVisitorName();
+      nameField.focus();
+      if (nameContinueBtn) nameContinueBtn.disabled = !(nameField.value && nameField.value.trim());
+    }
+  }
+  function closeNamePrompt(){
+    if (namePrompt) namePrompt.classList.remove('active');
+    refreshIdentityRow();
+    if (field) field.focus();
+  }
+  function commitName(name){
+    setVisitorName(name);
+    markChosen();
+    closeNamePrompt();
+    const queued = pendingSend;
+    pendingSend = null;
+    if (queued !== null && queued !== undefined) actuallySend(queued);
+  }
+  if (nameField) {
+    nameField.addEventListener('input', function(){
+      const v = (nameField.value || '').trim();
+      if (nameContinueBtn) nameContinueBtn.disabled = !v;
+    });
+    nameField.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const v = (nameField.value || '').trim();
+        if (v) commitName(v);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        commitName('');
+      }
+    });
+  }
+  if (nameContinueBtn) {
+    nameContinueBtn.addEventListener('click', function(){
+      const v = (nameField.value || '').trim();
+      if (v) commitName(v);
+    });
+  }
+  if (nameAnonBtn) {
+    nameAnonBtn.addEventListener('click', function(){ commitName(''); });
+  }
+  if (identityChangeBtn) {
+    identityChangeBtn.addEventListener('click', function(){ openNamePrompt(); });
+  }
+
   // ── composer ──────────────────────────────────────────────────────
   let sending = false;
 
@@ -2869,8 +3086,20 @@ const ROOM_SCRIPT = `
 
   async function sendMessage(){
     if (sending) return;
-    const body = (field.value || '').trim();
-    if (!body) return;
+    const bodyText = (field.value || '').trim();
+    if (!bodyText) return;
+    // First-time gate: if the visitor hasn't chosen a name (or
+    // explicitly chosen anonymous), pause the send and ask them
+    // first. The prompt resumes the send on continue.
+    if (!hasChosenName()) {
+      openNamePrompt(bodyText);
+      return;
+    }
+    actuallySend(bodyText);
+  }
+
+  async function actuallySend(body){
+    if (sending) return;
     const visitorToken = getVisitorToken();
     const visitorName = getVisitorName();
     sending = true;
@@ -3667,7 +3896,23 @@ function renderRoom(composite: SpaceComposite): string {
   <div class="room-eyebrow">— The room</div>
   <div class="room-stream" role="log" aria-live="polite">${initial}</div>
   <div class="room-status" aria-live="polite"></div>
+  <div class="room-identity" aria-live="polite" hidden>
+    <span class="dot" aria-hidden="true"></span>
+    <span class="room-identity-label">you</span>
+    <button type="button" class="room-identity-change" aria-label="Change name">change</button>
+  </div>
   <div class="room-composer">
+    <div class="room-name-prompt" id="roomNamePrompt" role="dialog" aria-label="Set your name for the room">
+      <div class="room-name-prompt-eyebrow">— First time here</div>
+      <p class="room-name-prompt-title">What should we call you in this room? Other visitors and the residents will see this name on your messages.</p>
+      <div class="room-name-prompt-row">
+        <input type="text" class="room-name-prompt-field" maxlength="48" placeholder="your name" aria-label="Your name">
+        <button type="button" class="room-name-prompt-continue" disabled>Continue</button>
+      </div>
+      <div class="room-name-prompt-foot">
+        <button type="button" class="room-name-prompt-anon">stay anonymous</button>
+      </div>
+    </div>
     <textarea class="room-composer-field" placeholder="say something to the room…" rows="1" aria-label="Message"></textarea>
     <div class="room-composer-foot">
       <span class="room-composer-hint"><span class="room-key">↵</span>send · ⇧↵ newline<span class="room-mention-hint"> · @opus / @sonnet / @gpt to address</span></span>
