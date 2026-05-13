@@ -62,10 +62,11 @@ function injectPresenceAssets(html: string): string {
   return `${headAssets}${html}`;
 }
 
-export function serveHtml(html: string, extraScript?: string): Response {
+export function serveHtml(html: string, extraScript?: string, opts?: { status?: number }): Response {
   let out = injectPresenceAssets(rewriteLinks(html));
   if (extraScript) out = injectScript(out, extraScript);
   return new Response(out, {
+    status: opts?.status ?? 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",

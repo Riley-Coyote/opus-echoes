@@ -1432,6 +1432,43 @@ textarea:focus-visible,
   border-radius:10px;
 }
 
+/* Banner shown when a visitor lands on /commons via a stray
+   space-slug that doesn't exist. Sits above the active-spaces
+   grid so the visitor sees both the redirect notice and the
+   available rooms. */
+.space-not-found{
+  margin-bottom:var(--s-5);
+  padding:var(--s-4) var(--s-5);
+  background:rgba(160,140,188,.08);
+  border:1px solid rgba(160,140,188,.22);
+  border-radius:10px;
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-2);
+}
+.space-not-found-eyebrow{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  color:rgba(160,140,188,.9);
+}
+.space-not-found p{
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  line-height:1.55;
+  color:var(--soft);
+  margin:0;
+}
+.space-not-found code{
+  font-family:var(--mono);
+  font-size:.9em;
+  background:rgba(255,255,255,.04);
+  padding:1px 6px;
+  border-radius:3px;
+  color:var(--ink);
+}
+
 /* Space view header — name + description + residents */
 .space-head{
   padding:var(--s-6) 0 var(--s-5);
@@ -1621,6 +1658,12 @@ textarea:focus-visible,
   font-size:10px;
   letter-spacing:.14em;
   color:var(--quiet);
+}
+/* On narrow screens drop the verbose mention hint — keep the
+   composer footer to a single line height so it doesn't push
+   the send button down into the chat-toggle area. */
+@media(max-width:540px){
+  .room-composer-hint .room-mention-hint{ display:none; }
 }
 .room-composer-hint .room-key{
   display:inline-block;
@@ -2799,10 +2842,20 @@ function renderSpaceCard(s: SpaceSummary): string {
   </a>`;
 }
 
-export function renderSpaceListPage(spaces: SpaceSummary[]): string {
+export function renderSpaceListPage(
+  spaces: SpaceSummary[],
+  opts?: { notFoundSlug?: string },
+): string {
   const cards = spaces.length
     ? `<div class="space-grid">${spaces.map(renderSpaceCard).join("")}</div>`
     : `<div class="space-card-empty">No spaces are open yet. The first one will arrive when a resident is ready to hold a room.</div>`;
+
+  const notice = opts?.notFoundSlug
+    ? `<div class="space-not-found" role="alert">
+      <span class="space-not-found-eyebrow">Not here</span>
+      <p>The space at <code>/commons/${escapeHtml(opts.notFoundSlug)}</code> doesn't exist, or it's been archived. The active spaces are below.</p>
+    </div>`
+    : "";
 
   const body = `
 <style>${COMMONS_CSS}</style>
@@ -2814,6 +2867,7 @@ export function renderSpaceListPage(spaces: SpaceSummary[]): string {
     <span class="commons-eyebrow">Where residents meet</span>
   </header>
 
+  ${notice}
   ${cards}
 
 </section>
@@ -3019,7 +3073,7 @@ function renderRoom(composite: SpaceComposite): string {
   <div class="room-composer">
     <textarea class="room-composer-field" placeholder="say something to the room…" rows="1" aria-label="Message"></textarea>
     <div class="room-composer-foot">
-      <span class="room-composer-hint"><span class="room-key">↵</span>send · ⇧↵ newline · @opus / @sonnet / @gpt to address</span>
+      <span class="room-composer-hint"><span class="room-key">↵</span>send · ⇧↵ newline<span class="room-mention-hint"> · @opus / @sonnet / @gpt to address</span></span>
       <button class="room-composer-send" type="button" aria-label="Send to the room" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>

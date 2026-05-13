@@ -3,9 +3,10 @@ import { renderSpaceView, renderSpaceListPage } from "@/server/commons-page";
 import { getSpaceBySlug, listActiveSpaces } from "@/server/commons/load";
 import { serveHtml } from "@/server/serve-mock";
 
-// Deep link to a specific space in The Commons. Falls back to the
-// space list when the slug doesn't match — better than a bare 404
-// for stray links.
+// Deep link to a specific space in The Commons. When the slug doesn't
+// match an active space we return 404 + the list with a notice banner
+// explaining the redirect — better than silently swapping content or
+// a bare error page.
 export const Route = createFileRoute("/commons/$slug")({
   server: {
     handlers: {
@@ -13,7 +14,11 @@ export const Route = createFileRoute("/commons/$slug")({
         const composite = await getSpaceBySlug(params.slug);
         if (!composite) {
           const spaces = await listActiveSpaces();
-          return serveHtml(renderSpaceListPage(spaces));
+          return serveHtml(
+            renderSpaceListPage(spaces, { notFoundSlug: params.slug }),
+            undefined,
+            { status: 404 },
+          );
         }
         return serveHtml(renderSpaceView(composite));
       },
