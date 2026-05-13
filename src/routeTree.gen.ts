@@ -56,6 +56,7 @@ import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
+import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
 import { Route as ApiSalonIdTurnRouteImport } from './routes/api/salon/$id.turn'
 import { Route as ApiSalonIdStartRouteImport } from './routes/api/salon/$id.start'
@@ -302,6 +303,12 @@ const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
   path: '/api/review/coherence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminBackfillEmbeddingsRoute =
+  ApiAdminBackfillEmbeddingsRouteImport.update({
+    id: '/api/admin/backfill-embeddings',
+    path: '/api/admin/backfill-embeddings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
   id: '/$token/download',
   path: '/$token/download',
@@ -396,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -455,6 +463,7 @@ export interface FileRoutesByTo {
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -515,6 +524,7 @@ export interface FileRoutesById {
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -576,6 +586,7 @@ export interface FileRouteTypes {
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/api/admin/backfill-embeddings'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -635,6 +646,7 @@ export interface FileRouteTypes {
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/api/admin/backfill-embeddings'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -694,6 +706,7 @@ export interface FileRouteTypes {
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/api/admin/backfill-embeddings'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -751,6 +764,7 @@ export interface RootRouteChildren {
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
   ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
   ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
@@ -1093,6 +1107,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewCoherenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/backfill-embeddings': {
+      id: '/api/admin/backfill-embeddings'
+      path: '/api/admin/backfill-embeddings'
+      fullPath: '/api/admin/backfill-embeddings'
+      preLoaderRoute: typeof ApiAdminBackfillEmbeddingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/$token/download': {
       id: '/api/share/$token/download'
       path: '/$token/download'
@@ -1263,6 +1284,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
   ApiReviewSessionsRoute: ApiReviewSessionsRoute,
   ApiReviewStateDataRoute: ApiReviewStateDataRoute,
