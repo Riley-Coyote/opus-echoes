@@ -451,12 +451,11 @@ textarea:focus-visible,
   position:fixed;
   inset:0;
   pointer-events:none;
-  z-index:2;
-  /* Opaque floor under the gradients. With the band mask only the
-     perimeter shows, but inside the band area the floor color hides
-     any content scrolling past the inner edge — so text scrolling
-     through doesn't bleed across the bottom band. */
-  background-color:#06070a;
+  /* z-index must sit ABOVE the page main element (which has its
+     own positioning + z:3 via the public layout); otherwise the
+     scrolling text renders on top of the band. We sit below the
+     nav (z:20) and chat panel (z:30). */
+  z-index:5;
   /* Two-layer mask for pixel-uniform band thickness regardless of
      viewport aspect ratio:
        Layer 1: a solid black rectangle covering the full viewport
@@ -477,6 +476,13 @@ textarea:focus-visible,
     radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(160,140,188, var(--vg6)) 0%, transparent 72%),
     radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(220,170,168, var(--vg7)) 0%, transparent 72%),
     radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(218,215,210, var(--vg8)) 0%, transparent 72%);
+  /* Opaque floor UNDER the gradient layers. Placed after the
+     background shorthand so it isn't reset by it — the shorthand
+     would otherwise set background-color back to transparent and
+     scrolling text would bleed through the band. With the mask
+     only the perimeter shows, so this opaque color paints only
+     in the band area. */
+  background-color:#06070a;
   --inner-radius:20px;
   -webkit-mask:
     linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
