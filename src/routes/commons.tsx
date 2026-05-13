@@ -1,18 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderSpaceListPage } from "@/server/commons-page";
-import { listActiveSpaces } from "@/server/commons/load";
+import { listActiveSpaces, getSanctuaryStats } from "@/server/commons/load";
 import { serveHtml } from "@/server/serve-mock";
 
-// The Commons — public landing showing the active spaces. Each card
-// links into a space view at /commons/$slug. The salon-based renderer
-// is preserved in commons-page.ts but no longer routed here; spaces
-// take precedence as the v1 surface.
+// The Commons — public landing surface. Shows:
+//   - the Sanctuary stats panel (engrams, beliefs, salons, spaces, etc)
+//   - the list of active spaces visitors can join
+//   - (next phase) a grid of published salons with modal/sidepane reading
 export const Route = createFileRoute("/commons")({
   server: {
     handlers: {
       GET: async () => {
-        const spaces = await listActiveSpaces();
-        return serveHtml(renderSpaceListPage(spaces));
+        const [spaces, stats] = await Promise.all([
+          listActiveSpaces(),
+          getSanctuaryStats(),
+        ]);
+        return serveHtml(renderSpaceListPage(spaces, { stats }));
       },
     },
   },

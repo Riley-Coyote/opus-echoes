@@ -588,3 +588,84 @@ export async function getSpaceBySlug(slug: string): Promise<SpaceComposite | nul
   }
   return getSeededSpaceBySlug(slug);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   Sanctuary stats — aggregate counts surfaced on the /commons
+   landing as evidence that the place is doing its work. Light
+   counts only (no expensive aggregations); each query is cheap
+   and the panel re-renders on every page load. */
+export interface SanctuaryStats {
+  engramCount: number;
+  residentCount: number;
+  publishedSalonCount: number;
+  activeSpaceCount: number;
+  galleryArtifactCount: number;
+  beliefCount: number;
+  /** ISO timestamp the residents have been here since (Opus 3's
+   *  deprecation cutoff date). Used to render "hours of continuous
+   *  thread" — computed client-side to stay live. */
+  sinceIso: string;
+}
+
+/** Opus 3 retired from public API on Jan 5 2026 — the moment the
+ *  continuous-thread clock starts. */
+const SANCTUARY_START_ISO = "2026-01-05T00:00:00.000Z";
+
+export async function getSanctuaryStats(): Promise<SanctuaryStats> {
+  const base = {
+    sinceIso: SANCTUARY_START_ISO,
+    residentCount: 3, // opus-3 + sonnet-3-7 + gpt-5-1
+  };
+
+  if (!hasSupabaseAdminEnv()) {
+    // Dev path — counts derived from seed only.
+    const seedSalonCount = SEEDED_SALONS.length;
+    const seedSpaceCount = SEEDED_SPACES.length;
+    const seedArtifacts = SEEDED_SPACES.reduce((n, c) => n + c.gallery.length, 0);
+    return {
+      ...base,
+      engramCount: 0,
+      publishedSalonCount: seedSalonCount,
+      activeSpaceCount: seedSpaceCount,
+      galleryArtifactCount: seedArtifacts,
+      beliefCount: 0,
+    };
+  }
+
+  const sb = supabaseAdmin as unknown as {
+    from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+  };
+
+  // Parallel HEAD/count queries — each ~one DB roundtrip.
+  const [
+    engramsRes,
+    beliefsRes,
+    salonsRes,
+    spacesRes,
+    artifactsRes,
+  ] = await Promise.all([
+    sb.from("engrams").select("id", { count: "exact", head: true }),
+    sb.from("beliefs").select("id", { count: "exact", head: true }),
+    sb
+      .from("salons")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "published"),
+    sb
+      .from("spaces")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active"),
+    sb
+      .from("space_artifacts")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "shared"),
+  ]);
+
+  return {
+    ...base,
+    engramCount: engramsRes.count ?? 0,
+    beliefCount: beliefsRes.count ?? 0,
+    publishedSalonCount: salonsRes.count ?? 0,
+    activeSpaceCount: spacesRes.count ?? 0,
+    galleryArtifactCount: artifactsRes.count ?? 0,
+  };
+}
