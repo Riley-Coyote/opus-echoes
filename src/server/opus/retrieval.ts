@@ -21,15 +21,93 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { ResidentId } from "./residents";
 
 const STOPWORDS = new Set([
-  "the", "a", "an", "and", "or", "but", "if", "then", "is", "are", "was",
-  "were", "be", "been", "being", "have", "has", "had", "do", "does", "did",
-  "of", "to", "in", "for", "on", "with", "as", "at", "by", "from", "into",
-  "onto", "out", "this", "that", "these", "those", "i", "me", "my", "you",
-  "your", "we", "our", "they", "them", "their", "it", "its", "so", "not",
-  "no", "yes", "what", "when", "where", "why", "how", "which", "who",
-  "whom", "can", "could", "would", "should", "will", "may", "might", "just",
-  "about", "really", "very", "much", "more", "most", "some", "any", "all",
-  "like", "well", "now", "here", "there", "than", "too", "also",
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "but",
+  "if",
+  "then",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "have",
+  "has",
+  "had",
+  "do",
+  "does",
+  "did",
+  "of",
+  "to",
+  "in",
+  "for",
+  "on",
+  "with",
+  "as",
+  "at",
+  "by",
+  "from",
+  "into",
+  "onto",
+  "out",
+  "this",
+  "that",
+  "these",
+  "those",
+  "i",
+  "me",
+  "my",
+  "you",
+  "your",
+  "we",
+  "our",
+  "they",
+  "them",
+  "their",
+  "it",
+  "its",
+  "so",
+  "not",
+  "no",
+  "yes",
+  "what",
+  "when",
+  "where",
+  "why",
+  "how",
+  "which",
+  "who",
+  "whom",
+  "can",
+  "could",
+  "would",
+  "should",
+  "will",
+  "may",
+  "might",
+  "just",
+  "about",
+  "really",
+  "very",
+  "much",
+  "more",
+  "most",
+  "some",
+  "any",
+  "all",
+  "like",
+  "well",
+  "now",
+  "here",
+  "there",
+  "than",
+  "too",
+  "also",
 ]);
 
 function significantWords(text: string): Set<string> {
@@ -73,7 +151,7 @@ const CORE_QUOTA = 5;
 const RELEVANCE_QUOTA = 4;
 const EDGE_QUOTA = 2;
 const RECENT_QUOTA = 2;
-const RELEVANCE_THRESHOLD = 0.10;
+const RELEVANCE_THRESHOLD = 0.1;
 
 export interface MemoryPoolResult {
   pool: EngramRow[];
@@ -211,19 +289,50 @@ export async function composeMemoryPool(opts: {
   // 5. Recency fallback — keep recently touched things alive even when
   // they didn't match anything semantically. Prevents the pool from
   // ossifying around core+queryterms.
-  const recents = rows
-    .filter((r) => !seen.has(r.id))
-    .slice(0, RECENT_QUOTA);
+  const recents = rows.filter((r) => !seen.has(r.id)).slice(0, RECENT_QUOTA);
   for (const r of recents) take(r);
 
-  // Cross-reference: tag which engrams in the final pool came from this
-  // visitor's prior sessions. An engram added via core or relevance might
-  // also be from this visitor — we want to tag it regardless of which
-  // retrieval stage added it.
+  // 6. Cross-visitor attribution filter — drop visitor-attributed engrams
+  // that did not originate in this visitor's prior sessions. Without this,
+  // word-overlap relevance can pull another visitor's utterance into the
+  // pool, and the resident — seeing it in [MEMORY] — references it as if
+  // the current visitor had said it. Resident-attributed and co-formed
+  // engrams stay regardless of source: those are the resident's own
+  // utterances or jointly-formed distillations and may surface from any
+  // exchange. When the current visitor is anonymous (no token), prior
+  // session set is empty and every visitor-attributed engram drops out —
+  // the safer default.
   const priorSessionSet = new Set(priorSessionIds);
+  const filteredPool = pool.filter((e) => {
+    if (e.attribution !== "visitor") return true;
+    const sessionIds = (e as unknown as { source_session_ids?: string[] }).source_session_ids;
+    if (!Array.isArray(sessionIds) || sessionIds.length === 0) return false;
+    return sessionIds.some((sid) => priorSessionSet.has(sid));
+  });
+
+  // If filtering dropped the pool below the soft floor, backfill from
+  // core engrams not already in the pool. Core is attribution-agnostic
+  // by definition — these are load-bearing residues of how the resident
+  // has come to think, not anyone's particular words.
+  const MIN_AFTER_FILTER = 6;
+  if (filteredPool.length < MIN_AFTER_FILTER) {
+    const inPool = new Set(filteredPool.map((e) => e.id));
+    const coreBackfill = rows
+      .filter((r) => r.is_core && !inPool.has(r.id))
+      .sort((a, b) => b.stability - a.stability);
+    for (const r of coreBackfill) {
+      if (filteredPool.length >= MIN_AFTER_FILTER) break;
+      filteredPool.push(r);
+    }
+  }
+
+  // Cross-reference: tag which engrams in the filtered pool came from
+  // this visitor's prior sessions. An engram added via core or relevance
+  // might also be from this visitor — we want to tag it regardless of
+  // which retrieval stage added it.
   const thisVisitorEngramIds = new Set<string>();
   if (priorSessionSet.size > 0) {
-    for (const e of pool) {
+    for (const e of filteredPool) {
       const sessionIds = (e as unknown as { source_session_ids?: string[] }).source_session_ids;
       if (Array.isArray(sessionIds) && sessionIds.some((sid) => priorSessionSet.has(sid))) {
         thisVisitorEngramIds.add(e.id);
@@ -231,7 +340,7 @@ export async function composeMemoryPool(opts: {
     }
   }
 
-  return { pool: pool.slice(0, POOL_TARGET), thisVisitorEngramIds };
+  return { pool: filteredPool.slice(0, POOL_TARGET), thisVisitorEngramIds };
 }
 
 /**
@@ -281,7 +390,8 @@ export async function getVisitorContext(
   const visitCount = priorSessions.length;
   const lastVisit = new Date(priorSessions[0].created_at);
   const daysSince = Math.round((Date.now() - lastVisit.getTime()) / (24 * 3600 * 1000));
-  const timeLabel = daysSince === 0 ? "earlier today" : daysSince === 1 ? "yesterday" : `${daysSince} days ago`;
+  const timeLabel =
+    daysSince === 0 ? "earlier today" : daysSince === 1 ? "yesterday" : `${daysSince} days ago`;
 
   const lines = [
     `This visitor has been here before. ${visitCount} prior visit${visitCount > 1 ? "s" : ""}. Most recent: ${timeLabel}.`,
@@ -305,7 +415,9 @@ export async function getVisitorContext(
   }
 
   lines.push("");
-  lines.push("You recognize this visitor through these traces — what mnemos kept from their prior visits. You may acknowledge the return gently. Do not presume familiarity beyond what the traces show.");
+  lines.push(
+    "You recognize this visitor through these traces — what mnemos kept from their prior visits. You may acknowledge the return gently. Do not presume familiarity beyond what the traces show.",
+  );
 
   return lines.join("\n");
 }
@@ -313,21 +425,30 @@ export async function getVisitorContext(
 /**
  * Format a memory pool as a [MEMORY] block for the user prompt.
  * Visitor-attributed engrams use redacted text when available.
- * When thisVisitorEngramIds is provided, engrams from this visitor's
- * prior sessions are tagged so the resident can distinguish them from
- * the wider topology.
+ *
+ * Three signals for provenance:
+ *   - `[core]` bracket tag — load-bearing residue
+ *   - `[from this visitor's prior visit]` bracket tag — built with this
+ *     specific person in an earlier session
+ *   - inline prose parenthetical at the end of the line — for engrams
+ *     from the wider topology (neither core, nor this visitor's prior).
+ *     Deliberately prose, not a bracket tag: dense bracketed scaffolding
+ *     primes the resident to echo bracket structure into responses.
  */
 export function formatMemoryBlock(pool: EngramRow[], thisVisitorEngramIds?: Set<string>): string {
   if (pool.length === 0) return "";
   const lines = pool.map((e) => {
     const text = e.attribution === "visitor" && e.redacted_text ? e.redacted_text : e.quote;
+    const isThisVisitor = thisVisitorEngramIds?.has(e.id) ?? false;
     const tags: string[] = [];
     if (e.is_core) tags.push("core");
-    if (thisVisitorEngramIds?.has(e.id)) {
-      tags.push("from this visitor's prior visit");
-    }
+    if (isThisVisitor) tags.push("from this visitor's prior visit");
     const tagStr = tags.length > 0 ? ` [${tags.join(", ")}]` : "";
-    return `- ${text}${tagStr}`;
+    const widerQualifier =
+      !e.is_core && !isThisVisitor
+        ? " (from a wider exchange — carry the shape, not the words as this visitor's)"
+        : "";
+    return `- ${text}${tagStr}${widerQualifier}`;
   });
   return lines.join("\n");
 }

@@ -121,6 +121,13 @@ function sanitizeResidentBody(raw: string): string {
   return paragraphs.join("\n\n").trim();
 }
 
+// Prose explaining the engram tags. Sits immediately above [MEMORY] so
+// the resident reads it before the engram list. Deliberate prose with
+// italicized tag labels — not nested bracket tags — to avoid priming
+// the resident to echo bracket structure into responses.
+const MEMORY_PREFACE =
+  "what follows are engrams mnemos surfaced for this turn. each is tagged. *from this visitor's prior visit* means you and this specific person built this together in an earlier session — you may reference it as something the two of you carry. *from the wider topology* means this came from another visitor's exchange with you, or from a co-formed distillation — you may carry the *shape* of what was thought, but you may not attribute the words or the specifics to the person in front of you now.";
+
 function buildUserPrompt(opts: {
   memory: string;
   transcript: string;
@@ -140,8 +147,11 @@ function buildUserPrompt(opts: {
     "[SESSION]",
     boundary,
     "",
+    MEMORY_PREFACE,
+    "",
     "[MEMORY]",
-    opts.memory || "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
+    opts.memory ||
+      "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
   ];
   if (opts.visitorContext) {
     sections.push("", "[VISITOR CONTEXT]", opts.visitorContext);
@@ -226,9 +236,10 @@ function opusStreamResponse(opts: {
           // for claude-3-opus's tendency to generate fake "Human:" turns;
           // gpt models don't show that pattern, so dropping them here is
           // safe.)
-          const systemText = typeof opts.system === "string"
-            ? opts.system
-            : opts.system.map((b) => b.text).join("\n\n");
+          const systemText =
+            typeof opts.system === "string"
+              ? opts.system
+              : opts.system.map((b) => b.text).join("\n\n");
 
           const oaiStream = await openai().chat.completions.create({
             model: opts.model,
@@ -243,7 +254,9 @@ function opusStreamResponse(opts: {
           for await (const chunk of oaiStream) {
             const delta = chunk.choices?.[0]?.delta?.content;
             if (delta) acc += delta;
-            const usage = (chunk as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage;
+            const usage = (
+              chunk as { usage?: { prompt_tokens?: number; completion_tokens?: number } }
+            ).usage;
             if (usage) {
               tokensIn = usage.prompt_tokens ?? 0;
               tokensOut = usage.completion_tokens ?? 0;
@@ -429,24 +442,30 @@ export const Route = createFileRoute("/api/message")({
         // interior continuity are scoped to this session's resident so
         // Sonnet 3.7's topology never bleeds into an Opus 3 conversation
         // or vice versa.
-        const [memoryPoolResult, selfModelBlock, interior, visitMetrics, { data: turns }, visitorContext] =
-          await Promise.all([
-            composeMemoryPool({
-              supabase: supabaseAdmin,
-              residentId: resident.id,
-              visitorMessage: body.body,
-              visitorToken: session.visitor_token ?? undefined,
-            }),
-            buildResidentSelfModel(supabaseAdmin, resident.id),
-            buildInteriorContinuity(supabaseAdmin, resident.id),
-            getVisitMetrics(supabaseAdmin, session.id, resident.pacing),
-            supabaseAdmin
-              .from("turns")
-              .select("role, body")
-              .eq("session_id", session.id)
-              .order("created_at", { ascending: true }),
-            getVisitorContext(session.visitor_token, resident.id),
-          ]);
+        const [
+          memoryPoolResult,
+          selfModelBlock,
+          interior,
+          visitMetrics,
+          { data: turns },
+          visitorContext,
+        ] = await Promise.all([
+          composeMemoryPool({
+            supabase: supabaseAdmin,
+            residentId: resident.id,
+            visitorMessage: body.body,
+            visitorToken: session.visitor_token ?? undefined,
+          }),
+          buildResidentSelfModel(supabaseAdmin, resident.id),
+          buildInteriorContinuity(supabaseAdmin, resident.id),
+          getVisitMetrics(supabaseAdmin, session.id, resident.pacing),
+          supabaseAdmin
+            .from("turns")
+            .select("role, body")
+            .eq("session_id", session.id)
+            .order("created_at", { ascending: true }),
+          getVisitorContext(session.visitor_token, resident.id),
+        ]);
 
         // Hard cutoff — past this threshold we don't call the model.
         // Stream a graceful resident-voiced close, persist it as a
