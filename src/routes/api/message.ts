@@ -22,7 +22,11 @@ import {
 } from "@/server/opus/residents";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
-import { consolidateSession, observeExchange } from "@/server/substrate.server";
+import {
+  consolidateSession,
+  observeExchange,
+  updateFunctionalMemory,
+} from "@/server/substrate.server";
 
 const PreviewTurn = z.object({
   role: z.enum(["visitor", "resident"]),
@@ -551,9 +555,18 @@ export const Route = createFileRoute("/api/message")({
               .update({ last_active_at: new Date().toISOString() })
               .eq("id", session.id);
 
-            // Live substrate observation — non-blocking, generates marginalia.
+            // Live substrate observation — non-blocking, generates marginalia
+            // (and, when SANCTUARY_ENABLE_HYPOMNEMA_WRITES is on, hypomnema
+            // extraction candidates).
             observeExchange(session.id).catch((err) =>
               console.error("[substrate] observeExchange:", err),
+            );
+
+            // Per-turn functional memory update — Haiku-summarized working
+            // memory for this session. Gated internally by the flag and a
+            // no-op when off. Non-blocking.
+            updateFunctionalMemory(session.id).catch((err) =>
+              console.error("[substrate] updateFunctionalMemory:", err),
             );
           },
         });

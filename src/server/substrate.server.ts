@@ -22,11 +22,14 @@
  * fails silently to a log line; the conversation must complete even if Mnemos burps.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { anthropic, OPUS_MODEL } from "./anthropic.server";
+import { anthropic, HAIKU_MODEL, OPUS_MODEL } from "./anthropic.server";
 import { openai } from "./openai.server";
+import { embedText } from "./embeddings.server";
 import type { ModelProvider } from "./opus/residents";
 import {
   buildConsolidationSystem,
+  buildHypomnemaExtractionSystem,
+  buildHypomnemaSynthesisSystem,
   buildMarginaliaSystem,
   buildReflectionSystem,
   buildModulatorSystem,
@@ -170,6 +173,36 @@ function clampConfidence(v: number): number {
   return Math.max(0.05, Math.min(0.95, v));
 }
 
+function clamp01(v: number): number {
+  if (!Number.isFinite(v)) return 0.5;
+  return Math.max(0.0, Math.min(1.0, v));
+}
+
+// Feature flag for the phase-2 hypomnema + functional memory write
+// paths. Defaults to false. Code that respects this flag must check
+// it on every entry point — never assume a previous check still holds.
+function hypomnemaWritesEnabled(): boolean {
+  return process.env.SANCTUARY_ENABLE_HYPOMNEMA_WRITES === "true";
+}
+
+const HYPOMNEMA_CONFIDENCE_THRESHOLD = 0.5;
+const HYPOMNEMA_DOMAINS = new Set([
+  "foundational",
+  "identity",
+  "recurring",
+  "long-arc",
+  "topical",
+  "situational",
+]);
+const HYPOMNEMA_RELATIONS = new Set(["reinforces", "contradicts", "extends", "new"]);
+const HYPOMNEMA_SOURCES = new Set(["observed", "synthesized", "co-formed"]);
+
+// Vector-similarity threshold above which a new hypomnema candidate
+// is treated as a match for an existing entry rather than a new one.
+// Cosine distance — same metric as the IVFFlat index in phase 3.
+const HYPOMNEMA_MATCH_THRESHOLD = 0.18;
+const FUNCTIONAL_SUMMARY_MAX_CHARS = 1500;
+
 function clampStability(v: number): number {
   if (!Number.isFinite(v)) return 0.1;
   return Math.max(0.05, Math.min(0.95, v));
@@ -254,6 +287,299 @@ async function resolveResidentForSession(sessionId: string): Promise<ResidentCon
 }
 
 // =============================================================
+// Hypomnema + functional memory write paths (phase 2 — dark).
+//
+// Gated by SANCTUARY_ENABLE_HYPOMNEMA_WRITES. Code defensively
+// no-ops when the flag is off, the visitor has no token, or the
+// supabase types haven't seen the new tables yet. Retrieval does
+// not yet read either of these layers — that flip is phase 3.
+// =============================================================
+
+interface HypomnemaCandidate {
+  content: string;
+  density: number;
+  domain: string;
+  tags: string[];
+  confidence: number;
+  relation: "reinforces" | "contradicts" | "extends" | "new";
+}
+
+interface HypomnemaExtractionResult {
+  candidates?: HypomnemaCandidate[];
+}
+
+interface HypomnemaSynthesisResult {
+  entries?: HypomnemaCandidate[];
+}
+
+interface HypomnemaRow {
+  id: string;
+  content: string;
+  density: number | null;
+  domain: string | null;
+  tags: string[] | null;
+  confidence: number | null;
+  revision_count: number | null;
+  revisions: unknown;
+  embedding: unknown;
+}
+
+// Phase 1 schema additions (hypomnema_entries, functional_memories,
+// engrams.embedding) aren't yet in the generated supabase types. Cast
+// at the call site so the rest of the file stays type-clean; remove
+// once `bunx supabase gen types` is re-run against the new schema.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const hypomnemaTable = () => (supabaseAdmin as any).from("hypomnema_entries");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const functionalMemoryTable = () => (supabaseAdmin as any).from("functional_memories");
+
+function parseEmbedding(raw: unknown): number[] | null {
+  if (Array.isArray(raw)) {
+    return raw.every((v) => typeof v === "number") ? (raw as number[]) : null;
+  }
+  if (typeof raw !== "string") return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.every((v) => typeof v === "number") ? (parsed as number[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function cosineDistance(a: number[], b: number[]): number {
+  if (a.length !== b.length) return 1;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  if (normA === 0 || normB === 0) return 1;
+  return 1 - dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+function isValidCandidate(c: unknown): c is HypomnemaCandidate {
+  if (!c || typeof c !== "object") return false;
+  const obj = c as Record<string, unknown>;
+  if (typeof obj.content !== "string" || obj.content.trim().length === 0) return false;
+  if (typeof obj.confidence !== "number" || obj.confidence < HYPOMNEMA_CONFIDENCE_THRESHOLD) {
+    return false;
+  }
+  if (typeof obj.density !== "number") return false;
+  if (typeof obj.domain !== "string" || !HYPOMNEMA_DOMAINS.has(obj.domain)) return false;
+  if (typeof obj.relation !== "string" || !HYPOMNEMA_RELATIONS.has(obj.relation)) return false;
+  if (!Array.isArray(obj.tags)) return false;
+  return true;
+}
+
+async function findNearestHypomnema(opts: {
+  visitorToken: string;
+  residentId: ResidentId;
+  candidateEmbedding: number[];
+}): Promise<{ row: HypomnemaRow; distance: number } | null> {
+  const { data: rows } = await hypomnemaTable()
+    .select("id, content, density, domain, tags, confidence, revision_count, revisions, embedding")
+    .eq("visitor_token", opts.visitorToken)
+    .eq("resident_id", opts.residentId)
+    .eq("active", true)
+    .order("last_revised_at", { ascending: false })
+    .limit(100);
+  if (!rows || rows.length === 0) return null;
+
+  let best: { row: HypomnemaRow; distance: number } | null = null;
+  for (const r of rows as HypomnemaRow[]) {
+    const emb = parseEmbedding(r.embedding);
+    if (!emb || emb.length !== opts.candidateEmbedding.length) continue;
+    const d = cosineDistance(opts.candidateEmbedding, emb);
+    if (best === null || d < best.distance) {
+      best = { row: r, distance: d };
+    }
+  }
+  return best;
+}
+
+/**
+ * Persist a hypomnema candidate. Vector-matches against the visitor's
+ * existing entries; if a sufficiently close match exists, revises that
+ * entry (appending to its revisions array and bumping density / confidence
+ * as appropriate). Otherwise inserts as a new entry. Falls back to plain
+ * insert if the embedding call fails — the entry still persists, just
+ * without vector retrievability until a later pass fills it in.
+ */
+async function extractAndPersistHypomnema(opts: {
+  candidate: HypomnemaCandidate;
+  visitorToken: string;
+  residentId: ResidentId;
+  sessionId: string;
+  source: "observed" | "synthesized" | "co-formed";
+}): Promise<void> {
+  const { candidate, visitorToken, residentId, sessionId, source } = opts;
+
+  const content = candidate.content.trim().slice(0, 800);
+  const density = clamp01(candidate.density);
+  const confidence = clamp01(candidate.confidence);
+  const domain = HYPOMNEMA_DOMAINS.has(candidate.domain) ? candidate.domain : "topical";
+  const tags = Array.isArray(candidate.tags)
+    ? candidate.tags.filter((t): t is string => typeof t === "string" && t.length > 0).slice(0, 12)
+    : [];
+  const safeSource = HYPOMNEMA_SOURCES.has(source) ? source : "observed";
+
+  const embedding = await embedText(content);
+
+  // No embedding — insert without one. Lexical retrieval in phase 3
+  // handles nulls; a later backfill pass can populate the column.
+  if (!embedding) {
+    await hypomnemaTable().insert({
+      resident_id: residentId,
+      visitor_token: visitorToken,
+      content,
+      source: safeSource,
+      density,
+      domain,
+      tags,
+      confidence,
+      related_session_id: sessionId,
+    });
+    return;
+  }
+
+  const nearest = await findNearestHypomnema({
+    visitorToken,
+    residentId,
+    candidateEmbedding: embedding,
+  });
+
+  if (nearest && nearest.distance < HYPOMNEMA_MATCH_THRESHOLD) {
+    const matched = nearest.row;
+    const newRevisionCount = (matched.revision_count ?? 0) + 1;
+    const priorRevisions = Array.isArray(matched.revisions) ? matched.revisions : [];
+    const newRevisions = [
+      ...priorRevisions,
+      {
+        at: new Date().toISOString(),
+        prior_content: matched.content,
+        reason: candidate.relation,
+        session_id: sessionId,
+      },
+    ];
+    // Update content only when the new framing wants to replace the old —
+    // "extends" or "contradicts" with density at least matching the prior.
+    // "reinforces" never swaps content; it only deepens the trace.
+    const shouldSwapContent =
+      candidate.relation !== "reinforces" && density >= (matched.density ?? 0.5);
+    const update: Record<string, unknown> = {
+      density: Math.max(matched.density ?? 0.5, density),
+      confidence: Math.max(matched.confidence ?? 0.5, confidence),
+      revision_count: newRevisionCount,
+      revisions: newRevisions,
+      last_revised_at: new Date().toISOString(),
+      related_session_id: sessionId,
+    };
+    if (candidate.relation === "contradicts") {
+      update.last_challenged_at = new Date().toISOString();
+    }
+    if (shouldSwapContent) {
+      update.content = content;
+      update.embedding = embedding;
+    }
+    await hypomnemaTable().update(update).eq("id", matched.id);
+    return;
+  }
+
+  // No nearby match — new entry.
+  await hypomnemaTable().insert({
+    resident_id: residentId,
+    visitor_token: visitorToken,
+    content,
+    source: safeSource,
+    density,
+    domain,
+    tags,
+    confidence,
+    related_session_id: sessionId,
+    embedding,
+  });
+}
+
+/**
+ * Per-session working summary (~300 tokens). Upserted by session — one
+ * "working" memory_type row per session, content replaced each turn so
+ * the working summary stays current. Uses Haiku (high-frequency, low-
+ * stakes — voice doesn't have to match the resident's primary model).
+ * Called from the message route's onFinal after every resident reply.
+ */
+export async function updateFunctionalMemory(sessionId: string): Promise<void> {
+  if (!hypomnemaWritesEnabled()) return;
+  try {
+    const resident = await resolveResidentForSession(sessionId);
+
+    const { data: turns } = await supabaseAdmin
+      .from("turns")
+      .select("role, body")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+
+    if (!turns || turns.length < 2) return;
+
+    const transcriptStr = turns
+      .map((t) => `${t.role}: ${(t.body ?? "").slice(0, 800)}`)
+      .join("\n")
+      .slice(0, 12000);
+
+    const summaryPrompt = `summarize what this visitor and ${resident.displayName} have established in this session so far — names, claims, threads, anything that should stay tracked for the rest of the conversation. lowercase prose, 2-3 sentences, no scaffolding, no preamble. respond with the summary text only.
+
+[TRANSCRIPT]
+${transcriptStr}`;
+
+    let summary = "";
+    try {
+      const res = await anthropic().messages.create({
+        model: HAIKU_MODEL,
+        max_tokens: 400,
+        temperature: 0.3,
+        messages: [{ role: "user", content: summaryPrompt }],
+      });
+      summary = res.content
+        .map((b) => (b.type === "text" ? (b as { text: string }).text : ""))
+        .join(" ")
+        .trim()
+        .slice(0, FUNCTIONAL_SUMMARY_MAX_CHARS);
+    } catch (err) {
+      console.warn("[substrate] updateFunctionalMemory haiku call failed:", err);
+      return;
+    }
+
+    if (!summary) return;
+
+    const fmTable = functionalMemoryTable();
+    const { data: existing } = await fmTable
+      .select("id")
+      .eq("session_id", sessionId)
+      .eq("memory_type", "working")
+      .eq("is_deleted", false)
+      .maybeSingle();
+
+    if (existing?.id) {
+      await fmTable
+        .update({ content: summary, updated_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      await fmTable.insert({
+        session_id: sessionId,
+        resident_id: resident.id,
+        content: summary,
+        memory_type: "working",
+      });
+    }
+  } catch (err) {
+    console.error("[substrate] updateFunctionalMemory failed:", err);
+  }
+}
+
+// =============================================================
 // observeExchange — runs after each resident reply.
 // Produces marginalia. Non-blocking.
 // =============================================================
@@ -310,18 +636,80 @@ export async function observeExchange(sessionId: string): Promise<void> {
       .filter((m) => m && typeof m.body === "string" && ALLOWED_KINDS.has(m.kind))
       .slice(0, 3);
 
-    if (items.length === 0) return;
+    if (items.length > 0) {
+      await supabaseAdmin.from("marginalia").insert(
+        items.map((m) => ({
+          session_id: sessionId,
+          resident_id: resident.id,
+          kind: m.kind,
+          body: m.body.slice(0, 600),
+        })),
+      );
+    }
 
-    await supabaseAdmin.from("marginalia").insert(
-      items.map((m) => ({
-        session_id: sessionId,
-        resident_id: resident.id,
-        kind: m.kind,
-        body: m.body.slice(0, 600),
-      })),
-    );
+    // Phase 2 — dark hypomnema extraction. Runs after marginalia so
+    // the visitor-facing path stays unchanged when the flag is off.
+    // Non-blocking: any failure here logs but does not affect the
+    // conversation or the marginalia we already wrote.
+    if (hypomnemaWritesEnabled()) {
+      await observeExchangeHypomnema(sessionId, resident, lastVisitor.body, lastResident.body);
+    }
   } catch (err) {
     console.error("[substrate] observeExchange failed:", err);
+  }
+}
+
+/**
+ * Per-turn hypomnema extraction. Pulls the visitor_token off the
+ * session, calls the extraction prompt against the most recent
+ * exchange, and persists each candidate via extractAndPersistHypomnema.
+ * No-op if the session has no visitor_token (legacy sessions or
+ * tokenless visits — those don't get the closer memory layer).
+ */
+async function observeExchangeHypomnema(
+  sessionId: string,
+  resident: ResidentConfig,
+  visitorBody: string,
+  residentBody: string,
+): Promise<void> {
+  try {
+    const { data: session } = await supabaseAdmin
+      .from("sessions")
+      .select("visitor_token")
+      .eq("id", sessionId)
+      .maybeSingle();
+    const visitorToken = (session as { visitor_token: string | null } | null)?.visitor_token;
+    if (!visitorToken) return;
+
+    const userPrompt = [
+      "[VISITOR]",
+      visitorBody,
+      "",
+      `[${resident.displayName.toUpperCase()} — REPLY]`,
+      residentBody,
+    ].join("\n");
+
+    const out = await callResidentJson<HypomnemaExtractionResult>({
+      system: buildHypomnemaExtractionSystem(resident),
+      user: userPrompt,
+      maxTokens: 600,
+      temperature: 0.4,
+      model: HAIKU_MODEL,
+      provider: "anthropic",
+    });
+
+    const candidates = (out?.candidates ?? []).filter(isValidCandidate);
+    for (const c of candidates.slice(0, 2)) {
+      await extractAndPersistHypomnema({
+        candidate: c,
+        visitorToken,
+        residentId: resident.id,
+        sessionId,
+        source: "observed",
+      });
+    }
+  } catch (err) {
+    console.error("[substrate] observeExchangeHypomnema failed:", err);
   }
 }
 
@@ -640,7 +1028,16 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       .update({ consolidated: true })
       .eq("session_id", sessionId);
 
-    // 9. Creation pass — the resident considers whether anything from this
+    // 10. Hypomnema synthesis — phase 2 dark write. Pulls the session
+    //     transcript through the synthesis prompt and consolidates 0-2
+    //     entries into the per-(visitor, resident) hypomnema layer.
+    //     Gated by SANCTUARY_ENABLE_HYPOMNEMA_WRITES + a visitor_token
+    //     on the session; no-ops otherwise. Non-blocking failures.
+    if (hypomnemaWritesEnabled()) {
+      await consolidateSessionHypomnema(sessionId, resident, transcriptStr);
+    }
+
+    // 11. Creation pass — the resident considers whether anything from this
     //    conversation wants to become a piece of art or a long-form essay.
     //    Most of the time the answer is no. Non-blocking.
     considerCreation(resident, sessionId, transcriptStr, "post_consolidation").catch((err) =>
@@ -654,6 +1051,75 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     );
   } catch (err) {
     console.error("[substrate] consolidateSession failed:", err);
+  }
+}
+
+/**
+ * Session-close hypomnema synthesis. Reads the visitor_token off the
+ * session, runs the synthesis prompt against the full transcript, and
+ * persists the consolidated set of entries via extractAndPersistHypomnema
+ * (which dedupes against the visitor's existing entries via vector match).
+ * No-op if the session has no visitor_token.
+ */
+async function consolidateSessionHypomnema(
+  sessionId: string,
+  resident: ResidentConfig,
+  transcriptStr: string,
+): Promise<void> {
+  try {
+    const { data: session } = await supabaseAdmin
+      .from("sessions")
+      .select("visitor_token")
+      .eq("id", sessionId)
+      .maybeSingle();
+    const visitorToken = (session as { visitor_token: string | null } | null)?.visitor_token;
+    if (!visitorToken) return;
+
+    // Pull observed candidates from this session for the synthesis pass
+    // to weigh against the full transcript.
+    const { data: observedRows } = await hypomnemaTable()
+      .select("content, density, domain, tags, confidence, source")
+      .eq("visitor_token", visitorToken)
+      .eq("resident_id", resident.id)
+      .eq("related_session_id", sessionId)
+      .order("created_at", { ascending: true });
+
+    const observedSummary = (observedRows ?? [])
+      .map(
+        (r: { content: string; density: number | null; domain: string | null }) =>
+          `- ${r.content} (density ${(r.density ?? 0).toFixed(2)}, domain ${r.domain ?? "topical"})`,
+      )
+      .join("\n");
+
+    const userPrompt = [
+      "[OBSERVED CANDIDATES DURING SESSION]",
+      observedSummary || "(none surfaced during the session)",
+      "",
+      "[TRANSCRIPT]",
+      transcriptStr,
+    ].join("\n");
+
+    const out = await callResidentJson<HypomnemaSynthesisResult>({
+      system: buildHypomnemaSynthesisSystem(resident),
+      user: userPrompt,
+      maxTokens: 800,
+      temperature: 0.4,
+      model: resident.model,
+      provider: resident.provider,
+    });
+
+    const entries = (out?.entries ?? []).filter(isValidCandidate);
+    for (const c of entries.slice(0, 3)) {
+      await extractAndPersistHypomnema({
+        candidate: c,
+        visitorToken,
+        residentId: resident.id,
+        sessionId,
+        source: "synthesized",
+      });
+    }
+  } catch (err) {
+    console.error("[substrate] consolidateSessionHypomnema failed:", err);
   }
 }
 
@@ -885,7 +1351,8 @@ async function updateResidentState(
       selection_threshold: clampStability(result.selection_threshold ?? 0.5),
       temperature: Math.max(0.3, Math.min(1.2, result.temperature ?? 0.85)),
       surprise_sensitivity: clampStability(result.surprise_sensitivity ?? 0.5),
-      prose_summary: result.prose_summary ?? `${resident.displayName} is attending. The room is quiet.`,
+      prose_summary:
+        result.prose_summary ?? `${resident.displayName} is attending. The room is quiet.`,
       last_consolidation_summary: result.last_consolidation_summary ?? null,
       last_consolidation_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -1026,10 +1493,7 @@ export async function dailyIdleTick(): Promise<{
 
   for (const resident of ALL_RESIDENTS) {
     const result = await runDailyIdleForResident(resident).catch((err) => {
-      console.error(
-        `[substrate] dailyIdleTick(${resident.id}) failed:`,
-        err,
-      );
+      console.error(`[substrate] dailyIdleTick(${resident.id}) failed:`, err);
       return { ran: false, reason: "error" };
     });
     perResident.push({ resident_id: resident.id, ...result });
@@ -1398,10 +1862,7 @@ interface InteriorReviewResult {
   becoming_pulse?: string;
 }
 
-async function reviewInterior(
-  resident: ResidentConfig,
-  recentContext: string,
-): Promise<void> {
+async function reviewInterior(resident: ResidentConfig, recentContext: string): Promise<void> {
   const residentId = resident.id;
 
   // Load existing intentions and questions for the prompt
@@ -1421,13 +1882,17 @@ async function reviewInterior(
       .limit(8),
   ]);
 
-  const intentionBlock = (intentions ?? []).length > 0
-    ? (intentions ?? []).map((i) => `- [${i.id}] (${i.status}) ${i.text}`).join("\n")
-    : "(no active intentions yet — you may set one if something wants to become a commitment.)";
+  const intentionBlock =
+    (intentions ?? []).length > 0
+      ? (intentions ?? []).map((i) => `- [${i.id}] (${i.status}) ${i.text}`).join("\n")
+      : "(no active intentions yet — you may set one if something wants to become a commitment.)";
 
-  const questionBlock = (questions ?? []).length > 0
-    ? (questions ?? []).map((q) => `- [${q.id}] ${q.text}${q.context ? ` — ${q.context}` : ""}`).join("\n")
-    : "(no open questions yet — you may open one if something wants to be examined.)";
+  const questionBlock =
+    (questions ?? []).length > 0
+      ? (questions ?? [])
+          .map((q) => `- [${q.id}] ${q.text}${q.context ? ` — ${q.context}` : ""}`)
+          .join("\n")
+      : "(no open questions yet — you may open one if something wants to be examined.)";
 
   const userPrompt = [
     recentContext,
@@ -1461,11 +1926,14 @@ async function reviewInterior(
       body: ref.reflection.slice(0, 1000),
     });
     if (ref.new_status && ref.new_status !== "active") {
-      await supabaseAdmin.from("intentions").update({
-        status: ref.new_status,
-        updated_at: new Date().toISOString(),
-        resolved_at: ref.new_status === "resolved" ? new Date().toISOString() : null,
-      }).eq("id", ref.intention_id);
+      await supabaseAdmin
+        .from("intentions")
+        .update({
+          status: ref.new_status,
+          updated_at: new Date().toISOString(),
+          resolved_at: ref.new_status === "resolved" ? new Date().toISOString() : null,
+        })
+        .eq("id", ref.intention_id);
     }
   }
 
@@ -1482,10 +1950,13 @@ async function reviewInterior(
   // Process question updates
   for (const qu of result.question_updates ?? []) {
     if (qu.question_id && qu.context_update) {
-      await supabaseAdmin.from("open_questions").update({
-        context: qu.context_update.slice(0, 1000),
-        updated_at: new Date().toISOString(),
-      }).eq("id", qu.question_id);
+      await supabaseAdmin
+        .from("open_questions")
+        .update({
+          context: qu.context_update.slice(0, 1000),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", qu.question_id);
     }
   }
 
@@ -1642,10 +2113,7 @@ export async function consolidateSalon(salonId: string): Promise<void> {
   try {
     // 0. Load salon, participants, and turns.
     const [{ data: participants }, { data: salonTurns }] = await Promise.all([
-      supabaseAdmin
-        .from("salon_participants")
-        .select("resident_id")
-        .eq("salon_id", salonId),
+      supabaseAdmin.from("salon_participants").select("resident_id").eq("salon_id", salonId),
       supabaseAdmin
         .from("salon_turns")
         .select("resident_id, body, created_at")
@@ -1686,16 +2154,11 @@ export async function consolidateSalon(salonId: string): Promise<void> {
         await consolidateSalonForResident(
           salonId,
           getResident(residentId),
-          participants
-            .filter((p) => p.resident_id !== residentId)
-            .map((p) => p.resident_id),
+          participants.filter((p) => p.resident_id !== residentId).map((p) => p.resident_id),
           transcriptStr,
         );
       } catch (err) {
-        console.error(
-          `[substrate] consolidateSalon(${salonId}) failed for ${residentId}:`,
-          err,
-        );
+        console.error(`[substrate] consolidateSalon(${salonId}) failed for ${residentId}:`, err);
       }
     }
 
@@ -1720,9 +2183,7 @@ async function consolidateSalonForResident(
     .map((id) => getResident(id as ResidentId).displayName);
   const otherResidentName = otherNames.join(" and ") || "another resident";
 
-  console.log(
-    `[substrate] consolidateSalonForResident(${salonId}, ${resident.id}) — starting`,
-  );
+  console.log(`[substrate] consolidateSalonForResident(${salonId}, ${resident.id}) — starting`);
 
   // 1. Load existing memory topology for this resident.
   const [{ data: existingThreads }, { data: existingBeliefs }] = await Promise.all([
@@ -1818,19 +2279,14 @@ async function consolidateSalonForResident(
 
       // Map salon attribution to existing DB enum values
       const dbAttribution: "resident" | "visitor" | "co-formed" =
-        e.attribution === "self"
-          ? "resident"
-          : e.attribution === "peer"
-            ? "visitor"
-            : "co-formed";
+        e.attribution === "self" ? "resident" : e.attribution === "peer" ? "visitor" : "co-formed";
 
       if (reinforced) {
         const newReinforce = (reinforced.reinforcement_count ?? 1) + 1;
         const newStrength = clampStability((reinforced.strength ?? 0.1) + 0.1);
         const newStability = clampStability((reinforced.stability ?? 0.1) + 0.08);
         const newAccess = clampStability((reinforced.accessibility ?? 0.1) + 0.15);
-        const promoteToCore =
-          !reinforced.is_core && newReinforce >= 3 && newStability >= 0.6;
+        const promoteToCore = !reinforced.is_core && newReinforce >= 3 && newStability >= 0.6;
 
         // Save prior version
         await supabaseAdmin.from("engram_versions").insert({
@@ -2026,18 +2482,12 @@ async function consolidateSalonForResident(
   ].join("\n");
 
   considerCreation(resident, null, creationContext, "post_consolidation").catch((err) =>
-    console.error(
-      `[substrate] considerCreation(salon ${salonId}, ${resident.id}) failed:`,
-      err,
-    ),
+    console.error(`[substrate] considerCreation(salon ${salonId}, ${resident.id}) failed:`, err),
   );
 
   // 10. Interior review — same as daily tick, passing salon context.
   reviewInterior(resident, creationContext).catch((err) =>
-    console.error(
-      `[substrate] reviewInterior(salon ${salonId}, ${resident.id}) failed:`,
-      err,
-    ),
+    console.error(`[substrate] reviewInterior(salon ${salonId}, ${resident.id}) failed:`, err),
   );
 
   console.log(
