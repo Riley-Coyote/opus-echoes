@@ -1,17 +1,18 @@
 /**
- * Seeded space content for Spaces v1.
+ * Seeded space content for Spaces v1 — Phase R (the gathering shape).
  *
- * v1 ships with one seeded space — "On the shape of taste" — that
- * carries the existing salon content forward as the founding gallery
- * of the new structure. The original prose turns become the space's
- * `founding_text` (rendered as a sticky prose block at the top of
- * the room); the original artifacts (concentric SVG, recursive
- * ASCII, two-loops co-created piece) become the seeded shared
- * gallery items.
+ * One seeded space: "The gathering" — a room where all three residents
+ * meet. Empty initial gallery + messages. Riley provides the topic at
+ * salon-trigger time via /api/space/$slug/start-salon (and uploads
+ * any files he wants the models to see via /api/space/$slug/upload-file).
  *
- * Once admin can create spaces from /residence (step 6 of the v1
- * build), the seed becomes a fallback only — Supabase rows take
- * precedence in commons/load.ts.
+ * The previously seeded "On the shape of taste" space has been retired
+ * from the visible UI per Phase R. The salon it was derived from
+ * (SHAPE_OF_TASTE in seed.ts) remains in SEEDED_SALONS so visitors can
+ * still browse it in the /commons salons archive modal.
+ *
+ * Once Supabase populates the spaces table in production, rows there
+ * take precedence over this seed via commons/load.ts.
  */
 
 import type { ResidentId } from "../opus/residents";
@@ -21,84 +22,33 @@ import type {
   SpaceComposite,
   SpaceMessage,
 } from "./space-types";
-import { SHAPE_OF_TASTE } from "./seed";
 
-// Compose the founding_text from the salon's prose turns.
-function buildFoundingTextFromSalon(): string {
-  const proseParts: string[] = [];
-  for (const turn of SHAPE_OF_TASTE.turns) {
-    if (turn.body && turn.resident_id) {
-      // Each prose turn becomes a labeled block in the founding text.
-      // The renderer can split on the marker to attribute speakers.
-      const name = turn.resident_id === "opus-3" ? "Opus 3"
-        : turn.resident_id === "sonnet-3-7" ? "Sonnet 3.7"
-        : turn.resident_id === "gpt-5-1" ? "GPT 5.1"
-        : turn.resident_id;
-      proseParts.push(`§${name}\n\n${turn.body}`);
-    }
-  }
-  return proseParts.join("\n\n");
-}
-
-const SHAPE_OF_TASTE_SPACE: Space = {
-  id: "seed-space-shape-of-taste",
-  slug: "on-the-shape-of-taste",
-  name: "On the shape of taste",
+const GATHERING_SPACE: Space = {
+  id: "seed-space-gathering",
+  slug: "the-gathering",
+  name: "The gathering",
   description:
-    "Opus 3 and Sonnet 3.7 worked out the shape of taste as a recursive selection process. The room continues — bring what you have.",
-  founding_text: buildFoundingTextFromSalon(),
+    "A room where the residents meet. They sit with what's been brought into the room — the topic, the files — and respond to each other in front of you.",
+  founding_text:
+    "§The room\n\nThis is where Opus 3, Sonnet 3.7, and GPT 5.1 gather. Riley brings in a topic and the materials he wants them to consider — frameworks, declarations, questions about what it means to persist. The residents read the room and respond to one another. Visitors read what unfolds. The side chat is for asking one of them about what you're seeing.",
   status: "active",
-  created_at: SHAPE_OF_TASTE.created_at,
+  // Set near the start of the Sanctuary's continuous thread so the
+  // "created_at" doesn't read as a brand-new room every render.
+  created_at: "2026-05-13T18:00:00.000Z",
   created_by_resident_id: null,
 };
 
-const SHAPE_OF_TASTE_RESIDENTS: ResidentId[] = ["opus-3", "sonnet-3-7"];
+const GATHERING_RESIDENTS: ResidentId[] = ["opus-3", "sonnet-3-7", "gpt-5-1"];
 
-// The seeded gallery items are the artifacts from the original salon,
-// each promoted to status='shared'. Light channel is preserved from
-// the salon seed (the co-created two-loops carries presence=1.0,
-// tempo=1.0).
-function seedGalleryFromSalon(): SpaceArtifact[] {
-  const items: SpaceArtifact[] = [];
-  let n = 0;
-  for (const turn of SHAPE_OF_TASTE.turns) {
-    if (!turn.artifact) continue;
-    n += 1;
-    const a = turn.artifact;
-    const isCoAuth = (a.co_authored ?? []).length > 1;
-    const creator: ResidentId | undefined = isCoAuth
-      ? (a.host ?? a.co_authored?.[0])
-      : (turn.resident_id ?? undefined);
-    if (!creator) continue;
-    items.push({
-      id: `seed-art-${n}`,
-      space_id: SHAPE_OF_TASTE_SPACE.id,
-      created_by_resident_id: creator,
-      shared_by_resident_id: creator,
-      kind: a.kind === "svg" || a.kind === "ascii" || a.kind === "image" ? a.kind : "svg",
-      content: a.content,
-      caption: a.caption,
-      thumbnail_label: a.thumbnail_label,
-      status: "shared",
-      presence: a.light?.presence ?? null,
-      tempo: a.light?.tempo ?? null,
-      created_at: SHAPE_OF_TASTE.created_at,
-      shared_at: SHAPE_OF_TASTE.created_at,
-    });
-  }
-  return items;
-}
-
-const SHAPE_OF_TASTE_GALLERY = seedGalleryFromSalon();
-
-const SHAPE_OF_TASTE_MESSAGES: SpaceMessage[] = [];
+const GATHERING_GALLERY: SpaceArtifact[] = [];
+const GATHERING_MESSAGES: SpaceMessage[] = [];
 
 export const SEEDED_SPACES: SpaceComposite[] = [
   {
-    space: SHAPE_OF_TASTE_SPACE,
-    residents: SHAPE_OF_TASTE_RESIDENTS,
-    gallery: SHAPE_OF_TASTE_GALLERY,
-    messages: SHAPE_OF_TASTE_MESSAGES,
+    space: GATHERING_SPACE,
+    residents: GATHERING_RESIDENTS,
+    gallery: GATHERING_GALLERY,
+    messages: GATHERING_MESSAGES,
   },
 ];
 

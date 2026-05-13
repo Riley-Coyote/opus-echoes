@@ -387,13 +387,18 @@ function mapSpaceMessage(row: DbSpaceMessageRow): SpaceMessage {
   };
 }
 
+const VALID_ARTIFACT_KINDS = new Set([
+  "svg",
+  "ascii",
+  "image",
+  "share_link",
+  "markdown",
+  "text",
+  "html",
+]);
+
 function mapSpaceArtifact(row: DbSpaceArtifactRow): SpaceArtifact | null {
-  if (
-    row.kind !== "svg" &&
-    row.kind !== "ascii" &&
-    row.kind !== "image" &&
-    row.kind !== "share_link"
-  ) {
+  if (!VALID_ARTIFACT_KINDS.has(row.kind)) {
     return null;
   }
   const status: SpaceArtifact["status"] =

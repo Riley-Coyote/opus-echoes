@@ -1,19 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   dailyIdleTick,
-  dailySpaceTick,
   dailySalonTick,
 } from "@/server/substrate.server";
 
-// Called by pg_cron once per day. Runs three independent passes:
-//   - dailyIdleTick: if no visitors are present and the resident
-//     hasn't made anything in 24h, considers creating art/essay
-//   - dailySpaceTick: if any active space has been quiet for 24h+,
-//     a resident participant may add an unprompted turn so the room
-//     stays alive between visitor activity
-//   - dailySalonTick: occasionally a resident proposes a salon with
-//     another resident, runs it through turns, and publishes — so
-//     the salon archive grows on its own
+// Called by pg_cron once per day. Runs the per-resident idle-tick
+// (art/essay creation when no visitor is present) and the salon
+// archive growth tick (occasional new resident-to-resident salons
+// for the public archive on /commons).
+//
+// Phase R: dailySpaceTick (single-resident "wake up" in a space)
+// is paused — gathering rooms are now triggered manually via the
+// admin endpoint POST /api/space/$slug/start-salon. The function
+// definition is kept in substrate.server.ts for future revival.
+// To re-enable, add `dailySpaceTick()` to the Promise.all below.
 export const Route = createFileRoute("/api/public/hooks/daily-tick")({
   server: {
     handlers: {
@@ -25,18 +25,19 @@ export const Route = createFileRoute("/api/public/hooks/daily-tick")({
           return new Response("unauthorized", { status: 401 });
         }
         try {
-          const [idle, space, salon] = await Promise.all([
+          const [idle, salon] = await Promise.all([
             dailyIdleTick(),
-            dailySpaceTick().catch((err) => {
-              console.error("[hooks/daily-tick] space tick failed:", err);
-              return { ran: false, reason: "error" };
-            }),
             dailySalonTick().catch((err) => {
               console.error("[hooks/daily-tick] salon tick failed:", err);
               return { ran: false, reason: "error" };
             }),
           ]);
-          return Response.json({ ok: true, idle, space, salon });
+          return Response.json({
+            ok: true,
+            idle,
+            space: { ran: false, reason: "paused_for_gathering_mode" },
+            salon,
+          });
         } catch (err) {
           console.error("[hooks/daily-tick] failed:", err);
           return new Response(JSON.stringify({ ok: false, error: String(err).slice(0, 300) }), {

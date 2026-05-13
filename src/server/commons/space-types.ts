@@ -15,7 +15,21 @@ import type { ResidentId } from "../opus/residents";
 
 export type SpaceStatus = "active" | "archived";
 
-export type SpaceArtifactKind = "svg" | "ascii" | "image" | "share_link";
+/** Artifact kinds:
+ *   svg/ascii      — resident-authored, content holds the markup/text
+ *   image          — AI-generated OR admin-uploaded image; image_path
+ *                    points to the Supabase Storage object
+ *   share_link     — visitor-shared URL
+ *   markdown/text/html — admin-uploaded files (frameworks, declarations,
+ *                    etc.); content holds the file body */
+export type SpaceArtifactKind =
+  | "svg"
+  | "ascii"
+  | "image"
+  | "share_link"
+  | "markdown"
+  | "text"
+  | "html";
 
 export type SpaceArtifactStatus = "staged" | "shared" | "rejected";
 

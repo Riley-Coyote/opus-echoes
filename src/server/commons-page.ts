@@ -37,6 +37,7 @@ import type {
   SpaceSummary,
 } from "./commons/space-types";
 import type { SanctuaryStats } from "./commons/load";
+import { renderMarkdown, renderSanitizedHtml } from "./commons/file-render";
 
 interface RenderCommonsOptions {
   /** The salon to display in the stream. Null when no salons exist. */
@@ -586,6 +587,143 @@ textarea:focus-visible,
   overflow:hidden;
 }
 .artifact-image img{display:block;width:100%;height:auto}
+
+/* Admin-uploaded file artifacts — markdown / text / html. Rendered
+   inside the same .salon-artifact frame as other artifact kinds so
+   the shimmer border + caption styling apply. The inner document
+   gets reading-width body typography. */
+.artifact-document{
+  width:100%;
+  max-width:none;
+  margin-bottom:var(--s-3);
+  padding:var(--s-3) var(--s-4);
+  background:rgba(255,255,255,.015);
+  border:1px solid var(--rule-soft);
+  border-radius:6px;
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  line-height:1.65;
+  color:var(--body);
+  max-height:520px;
+  overflow-y:auto;
+}
+.artifact-document h1,
+.artifact-document h2,
+.artifact-document h3,
+.artifact-document h4{
+  font-family:var(--display);
+  font-weight:var(--w-light);
+  letter-spacing:-.012em;
+  color:var(--ink);
+  margin-top:var(--s-4);
+  margin-bottom:var(--s-2);
+  line-height:1.2;
+}
+.artifact-document h1{ font-size:1.4em; }
+.artifact-document h2{ font-size:1.25em; }
+.artifact-document h3{ font-size:1.12em; }
+.artifact-document h4{ font-size:1em; }
+.artifact-document p{ margin-bottom:var(--s-3); }
+.artifact-document p:last-child{ margin-bottom:0; }
+.artifact-document em{ font-style:italic; color:var(--ink); }
+.artifact-document strong{ font-weight:var(--w-medium); color:var(--ink); }
+.artifact-document ul,
+.artifact-document ol{
+  padding-left:1.6em;
+  margin-bottom:var(--s-3);
+}
+.artifact-document li{ margin-bottom:4px; }
+.artifact-document code{
+  font-family:var(--mono);
+  font-size:.92em;
+  background:rgba(255,255,255,.05);
+  padding:1px 5px;
+  border-radius:3px;
+  color:var(--ink);
+}
+.artifact-document pre{
+  font-family:var(--mono);
+  font-size:.88em;
+  background:rgba(0,0,0,.35);
+  padding:var(--s-3);
+  border-radius:6px;
+  overflow-x:auto;
+  margin-bottom:var(--s-3);
+}
+.artifact-document pre code{
+  background:none;
+  padding:0;
+}
+.artifact-document blockquote{
+  border-left:2px solid var(--rule-soft);
+  padding-left:var(--s-3);
+  color:var(--soft);
+  font-style:italic;
+  margin:var(--s-3) 0;
+}
+.artifact-document a{
+  color:var(--state-soft);
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+.artifact-document a:hover{ color:var(--ink); }
+.artifact-document hr{
+  border:0;
+  border-top:1px solid var(--rule-soft);
+  margin:var(--s-4) 0;
+}
+.artifact-document table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:var(--s-3);
+}
+.artifact-document th,
+.artifact-document td{
+  padding:6px 10px;
+  border-bottom:1px solid var(--rule-soft);
+  text-align:left;
+}
+.artifact-document th{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--ghost);
+}
+.artifact-document img{
+  max-width:100%;
+  height:auto;
+  border-radius:4px;
+}
+.artifact-text pre{
+  background:transparent;
+  padding:0;
+  white-space:pre-wrap;
+  word-break:break-word;
+  line-height:1.55;
+  color:var(--body);
+  font-family:var(--mono);
+  font-size:12px;
+}
+
+/* Gallery thumbnail for uploaded files — a small badge instead of
+   a content preview, since these aren't visual at a glance. */
+.gallery-thumb-file{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  background:rgba(255,255,255,.02);
+}
+.gallery-thumb-file-badge{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.16em;
+  color:var(--soft);
+  border:1px solid var(--rule-soft);
+  border-radius:4px;
+  padding:8px 12px;
+}
 .artifact-caption{
   font-family:var(--body-font);
   font-size:var(--t-meta);
@@ -3962,10 +4100,17 @@ function renderSpaceArtifactGallery(gallery: SpaceArtifact[]): string {
         inner = `<pre>${escapeHtml(a.content.split("\n").slice(0, 12).join("\n"))}</pre>`;
       } else if (a.kind === "image" && a.content) {
         inner = `<img src="${escapeHtml(a.content)}" alt="">`;
+      } else if (a.kind === "markdown" || a.kind === "text" || a.kind === "html") {
+        // File thumb: a small badge with the file kind, no content
+        // preview (uploaded files are read by clicking through).
+        const badge = a.kind === "markdown" ? "MD"
+          : a.kind === "html" ? "HTML"
+          : "TXT";
+        inner = `<div class="gallery-thumb-file"><span class="gallery-thumb-file-badge">${badge}</span></div>`;
       } else {
         return "";
       }
-      return `<div class="gallery-thumb">${inner}<div class="gallery-thumb-overlay">${escapeHtml(label)}</div></div>`;
+      return `<div class="gallery-thumb gallery-thumb-${escapeHtml(a.kind)}">${inner}<div class="gallery-thumb-overlay">${escapeHtml(label)}</div></div>`;
     })
     .filter(Boolean)
     .join("");
@@ -3997,6 +4142,15 @@ function renderSpaceArtifactFull(a: SpaceArtifact): string {
   } else if (a.kind === "image" && a.content) {
     inner = `<div class="artifact-image"><img src="${escapeHtml(a.content)}" alt="" loading="lazy"></div>`;
     tag = "image";
+  } else if (a.kind === "markdown" && a.content) {
+    inner = `<div class="artifact-document artifact-markdown">${renderMarkdown(a.content)}</div>`;
+    tag = "markdown";
+  } else if (a.kind === "html" && a.content) {
+    inner = `<div class="artifact-document artifact-html">${renderSanitizedHtml(a.content)}</div>`;
+    tag = "html";
+  } else if (a.kind === "text" && a.content) {
+    inner = `<div class="artifact-document artifact-text"><pre>${escapeHtml(a.content)}</pre></div>`;
+    tag = "text";
   } else {
     return "";
   }

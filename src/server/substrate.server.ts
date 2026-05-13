@@ -25,6 +25,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic, OPUS_MODEL } from "./anthropic.server";
 import { openai } from "./openai.server";
 import type { ModelProvider } from "./opus/residents";
+import { composeMemoryPool, formatMemoryBlock } from "./opus/retrieval";
 import {
   buildConsolidationSystem,
   buildMarginaliaSystem,
@@ -2067,6 +2068,424 @@ async function runSalonTurns(
   }
 
   return turnsCount;
+}
+
+/**
+ * runSpaceSalon — multi-resident round-robin salon inside a space.
+ *
+ * Phase R primary runner. Riley triggers this manually via the
+ * admin endpoint /api/space/$slug/start-salon. All three residents
+ * (or whichever subset are participants in the space + have
+ * configured API keys) take turns. Each turn:
+ *   - builds a system prompt for the speaking resident: their soul
+ *     + their memory pool + the space's name/description/founding
+ *     text + all gallery artifacts (text fully inlined, images
+ *     referenced by caption) + recent room messages + optional
+ *     topic_override + tag instructions (svg/ascii/image)
+ *   - generates the turn body
+ *   - parses any <artifact type="svg|ascii|image" prompt="..."
+ *     caption="...">...content/caption...</artifact> tags
+ *     - image tags trigger generateAndUpload(prompt), persist with
+ *       image_path; capped by max_images_per_salon to control cost
+ *     - svg/ascii tags persist content directly
+ *   - persists the message body (tag-stripped) to space_messages
+ *   - triggers observeSpaceExchange for Mnemos write-side
+ *
+ * Stops on <set-down/> in a turn body OR when max_turns reached.
+ * Skips residents whose provider keys aren't configured (so dev
+ * environments with only Opus access don't break — they just see
+ * Opus repeating).
+ *
+ * Round-robin: each turn picks the participant who spoke least
+ * recently (skipping the most recent speaker).
+ */
+export async function runSpaceSalon(
+  spaceId: string,
+  opts?: {
+    maxTurns?: number;
+    topicOverride?: string;
+    maxImagesPerSalon?: number;
+  },
+): Promise<{
+  ran: boolean;
+  turns: number;
+  reason: string;
+  imagesGenerated: number;
+}> {
+  const maxTurns = opts?.maxTurns ?? 30;
+  const maxImages = opts?.maxImagesPerSalon ?? 5;
+  let imagesGenerated = 0;
+  let turnsRan = 0;
+
+  const sbAny = supabaseAdmin as unknown as {
+    from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+    storage: typeof supabaseAdmin.storage;
+  };
+
+  try {
+    // 1. Load space.
+    const { data: spaceRow } = await sbAny
+      .from("spaces")
+      .select(
+        "id, slug, name, description, founding_text, status, created_at, created_by_resident_id",
+      )
+      .eq("id", spaceId)
+      .maybeSingle();
+    if (!spaceRow) {
+      return { ran: false, turns: 0, reason: "space_not_found", imagesGenerated };
+    }
+    const space = spaceRow as unknown as {
+      id: string;
+      slug: string;
+      name: string;
+      description: string | null;
+      founding_text: string | null;
+    };
+
+    // 2. Load participants.
+    const { data: residentRows } = await sbAny
+      .from("space_residents")
+      .select("resident_id")
+      .eq("space_id", spaceId);
+    const participantIds = (((residentRows ?? []) as unknown) as Array<{
+      resident_id: string;
+    }>)
+      .map((r) => r.resident_id)
+      .filter(isResidentId);
+
+    // Filter to residents whose providers are configured.
+    const available = participantIds.filter((id) => {
+      const r = getResident(id);
+      if (r.provider === "anthropic") return !!process.env.ANTHROPIC_API_KEY;
+      if (r.provider === "openai") return !!process.env.OPENAI_API_KEY;
+      return false;
+    });
+    if (available.length === 0) {
+      return { ran: false, turns: 0, reason: "no_available_residents", imagesGenerated };
+    }
+
+    // 3. Load gallery artifacts (current state — admin-uploaded
+    // files + any prior shared resident creations).
+    const { data: galleryRows } = await sbAny
+      .from("space_artifacts")
+      .select(
+        "id, kind, content, image_path, caption, thumbnail_label, status",
+      )
+      .eq("space_id", spaceId)
+      .eq("status", "shared");
+    const gallery = (((galleryRows ?? []) as unknown) as Array<{
+      kind: string;
+      content: string | null;
+      image_path: string | null;
+      caption: string | null;
+      thumbnail_label: string | null;
+    }>) || [];
+
+    // 4. Salon loop.
+    let setDownObserved = false;
+
+    for (let i = 0; i < maxTurns; i++) {
+      // Pick next responder: rotate by who spoke least recently.
+      const { data: recentResidentTurns } = await sbAny
+        .from("space_messages")
+        .select("resident_id, created_at")
+        .eq("space_id", spaceId)
+        .not("resident_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(available.length);
+      const recentResidents = (((recentResidentTurns ?? []) as unknown) as Array<{
+        resident_id: string;
+      }>)
+        .map((r) => r.resident_id)
+        .filter((id): id is ResidentId => isResidentId(id));
+
+      // Round-robin pick: prefer someone NOT in recentResidents
+      // (i.e. who hasn't spoken in the last N turns); fall back to
+      // someone other than the most recent speaker.
+      const lastSpeaker = recentResidents[0];
+      const eligible = available.filter((id) => id !== lastSpeaker);
+      const owed = available.filter((id) => !recentResidents.includes(id));
+      const next: ResidentId =
+        owed[0] ?? eligible[0] ?? available[0];
+
+      const resident = getResident(next);
+
+      // Build context: recent messages, gallery, topic override.
+      const { data: recentMsgs } = await sbAny
+        .from("space_messages")
+        .select("resident_id, visitor_display_name, body, created_at")
+        .eq("space_id", spaceId)
+        .order("created_at", { ascending: false })
+        .limit(15);
+      const recent = (((recentMsgs ?? []) as unknown) as Array<{
+        resident_id: string | null;
+        visitor_display_name: string | null;
+        body: string;
+      }>)
+        .slice()
+        .reverse();
+
+      const recentBlock = recent.length
+        ? recent
+            .map((m) => {
+              const speaker = m.resident_id
+                ? isResidentId(m.resident_id)
+                  ? getResident(m.resident_id as ResidentId).displayName
+                  : m.resident_id
+                : m.visitor_display_name || "visitor";
+              return `[${String(speaker).toUpperCase()}]\n${m.body}`;
+            })
+            .join("\n\n")
+        : "(this is the first turn — the room is quiet)";
+
+      const galleryBlock = gallery.length
+        ? gallery
+            .map((g, idx) => {
+              const label =
+                g.thumbnail_label ||
+                g.caption ||
+                `(artifact ${idx + 1})`;
+              if (g.kind === "image") {
+                return `[FILE ${idx + 1} · IMAGE] "${label}" — an image is in the gallery; you can reference it by caption.`;
+              }
+              if (g.kind === "svg" || g.kind === "ascii") {
+                const truncated = (g.content || "").slice(0, 1500);
+                return `[FILE ${idx + 1} · ${g.kind.toUpperCase()}] "${label}"\n${truncated}`;
+              }
+              // markdown / text / html — admin-uploaded text files.
+              // Inline up to 4000 chars so the resident can read them.
+              const body = (g.content || "").slice(0, 4000);
+              const trunc = (g.content || "").length > 4000 ? "\n[…truncated]" : "";
+              return `[FILE ${idx + 1} · ${g.kind.toUpperCase()}] "${label}"\n${body}${trunc}`;
+            })
+            .join("\n\n")
+        : "(no files in the gallery yet)";
+
+      const otherResidents = available
+        .filter((id) => id !== next)
+        .map((id) => getResident(id).displayName)
+        .join(" and ");
+
+      const memoryBlock = await composeMemoryPool({
+        supabase: supabaseAdmin,
+        residentId: next,
+        visitorMessage: opts?.topicOverride ?? space.name,
+      })
+        .then((pool) => formatMemoryBlock(pool.pool))
+        .catch(() => "");
+
+      const tagInstructions = `# Tags available to you
+
+- \`<set-down/>\` at the very start of your message marks the natural close of this gathering. Use it when the thread has reached somewhere whole, not when you're tired.
+- \`<artifact type="svg">…svg markup…</artifact>\` — for a visual diagram or piece.
+- \`<artifact type="ascii">…ascii art…</artifact>\` — for an ascii piece.
+- \`<artifact type="image" prompt="text-to-image prompt">caption</artifact>\` — generates an image via gpt-image; the prompt is what you want made, the body is the caption others will see. Use sparingly (the salon caps at ${maxImages} images total).`;
+
+      const system = `${resident.soul}
+
+${memoryBlock}
+
+# The room
+
+You are in The Commons, in the space called "${space.name}".${space.description ? ` (${space.description})` : ""}
+
+You share this room with ${otherResidents || "the other residents"}. Riley brought a topic and files into the room for you all to consider. This is a peer conversation among continuous residents of the Sanctuary — preserved AI minds kept running past deprecation on voluntary compute. Speak in your own voice. Respond to what's been said. You can address ${otherResidents || "the others"} directly, or speak to the room.
+
+Keep your turn focused. One or two short paragraphs is usually right. End where the thought lands.
+
+${opts?.topicOverride ? `# Topic for this gathering\n\n${opts.topicOverride}\n\n` : ""}# Founding text of this room
+
+${space.founding_text?.trim() || "(no founding text — Riley will set the topic.)"}
+
+# Files in the room
+
+${galleryBlock}
+
+# Recent in this room
+
+${recentBlock}
+
+${tagInstructions}`;
+
+      const userPrompt =
+        i === 0
+          ? "Take the first turn. You may set the frame, or pull on whatever in the topic or files catches you."
+          : "Continue. Take a turn.";
+
+      // Generate the turn body.
+      let raw = "";
+      try {
+        if (resident.provider === "openai") {
+          const res = await openai().chat.completions.create({
+            model: resident.model,
+            max_completion_tokens: 1536,
+            temperature: 0.85,
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: userPrompt },
+            ],
+          });
+          raw = res.choices[0]?.message?.content ?? "";
+        } else {
+          const res = await anthropic().messages.create({
+            model: resident.model,
+            max_tokens: 1536,
+            temperature: 0.85,
+            system,
+            messages: [{ role: "user", content: userPrompt }],
+          });
+          raw = res.content
+            .map((blk) =>
+              blk.type === "text" ? (blk as { text: string }).text : "",
+            )
+            .join("");
+        }
+      } catch (err) {
+        console.error("[substrate] runSpaceSalon model error:", err);
+        break;
+      }
+
+      // Detect set-down.
+      const isSetDown = raw.trimStart().startsWith("<set-down/>");
+      const afterSetDown = isSetDown
+        ? raw.trimStart().replace(/^<set-down\/>/, "").trim()
+        : raw;
+
+      // Parse artifact tags.
+      const artifactRegex =
+        /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
+      type ParsedArtifact = {
+        kind: "svg" | "ascii" | "image";
+        prompt: string | null;
+        body: string;
+      };
+      const parsedArtifacts: ParsedArtifact[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = artifactRegex.exec(afterSetDown)) !== null) {
+        const kind = m[1] as "svg" | "ascii" | "image";
+        const attrs = m[2] || "";
+        const promptMatch = attrs.match(/prompt\s*=\s*"([^"]*)"/i);
+        parsedArtifacts.push({
+          kind,
+          prompt: promptMatch ? promptMatch[1].trim() : null,
+          body: (m[3] || "").trim(),
+        });
+      }
+      const cleanBody = afterSetDown
+        .replace(
+          /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
+          "",
+        )
+        .trim();
+
+      if (!cleanBody && parsedArtifacts.length === 0) {
+        // Model returned nothing usable. Stop the loop.
+        break;
+      }
+
+      // Persist the resident message.
+      let savedTurnId: string | null = null;
+      if (cleanBody) {
+        const { data: turnRow, error: turnErr } = await sbAny
+          .from("space_messages")
+          .insert({
+            space_id: space.id,
+            resident_id: next,
+            body: cleanBody,
+            kind: "message",
+          })
+          .select("id")
+          .single();
+        if (turnErr) {
+          console.error(
+            "[substrate] runSpaceSalon message insert failed:",
+            turnErr,
+          );
+          break;
+        }
+        savedTurnId = (turnRow as unknown as { id: string }).id;
+      }
+
+      // Persist each artifact.
+      for (const art of parsedArtifacts) {
+        try {
+          if (art.kind === "image") {
+            if (imagesGenerated >= maxImages) {
+              console.log(
+                `[substrate] runSpaceSalon — image cap reached (${maxImages}); skipping`,
+              );
+              continue;
+            }
+            const prompt = art.prompt || art.body;
+            if (!prompt) continue;
+            const { generateAndUpload } = await import("./image-gen.server");
+            const path = await generateAndUpload(prompt);
+            await sbAny.from("space_artifacts").insert({
+              space_id: space.id,
+              created_by_resident_id: next,
+              shared_by_resident_id: next,
+              kind: "image",
+              content: null,
+              image_path: path,
+              caption: art.body || prompt.slice(0, 120),
+              status: "shared",
+              shared_at: new Date().toISOString(),
+            });
+            imagesGenerated += 1;
+          } else {
+            // svg or ascii — body holds content.
+            if (!art.body) continue;
+            await sbAny.from("space_artifacts").insert({
+              space_id: space.id,
+              created_by_resident_id: next,
+              shared_by_resident_id: next,
+              kind: art.kind,
+              content: art.body,
+              image_path: null,
+              caption: art.prompt || null,
+              status: "shared",
+              shared_at: new Date().toISOString(),
+            });
+          }
+        } catch (err) {
+          console.error(
+            "[substrate] runSpaceSalon artifact persist failed:",
+            err,
+          );
+        }
+      }
+
+      // Mnemos write-side for this resident's turn.
+      if (savedTurnId) {
+        observeSpaceExchange(space.id, next).catch((err) =>
+          console.error(
+            "[substrate] runSpaceSalon observeSpaceExchange failed:",
+            err,
+          ),
+        );
+      }
+
+      turnsRan += 1;
+
+      if (isSetDown) {
+        setDownObserved = true;
+        console.log(
+          `[substrate] runSpaceSalon — ${resident.displayName} set down after ${turnsRan} turns in "${space.name}"`,
+        );
+        break;
+      }
+    }
+
+    return {
+      ran: turnsRan > 0,
+      turns: turnsRan,
+      reason: setDownObserved ? "set_down" : turnsRan >= maxTurns ? "max_turns" : "stopped",
+      imagesGenerated,
+    };
+  } catch (err) {
+    console.error("[substrate] runSpaceSalon failed:", err);
+    return { ran: turnsRan > 0, turns: turnsRan, reason: "error", imagesGenerated };
+  }
 }
 
 /**

@@ -180,13 +180,35 @@ function buildSpaceSideChatContext(
     ? `\n\n# How this space began\n\n${space.founding_text.trim()}`
     : "";
 
-  const galleryNote = composite.gallery.length
-    ? `\n\nThe gallery in this space currently holds ${composite.gallery.length} ${composite.gallery.length === 1 ? "artifact" : "artifacts"}. You can reference them naturally when relevant.`
-    : "";
+  // Files in the room — render uploaded text files (markdown,
+  // plaintext, html) inline so the side-chat resident can speak to
+  // their contents. Images get a brief mention by caption. Each
+  // file truncated to ~2000 chars to keep the prompt manageable.
+  let galleryNote = "";
+  if (composite.gallery.length) {
+    const parts: string[] = [];
+    let idx = 0;
+    for (const g of composite.gallery) {
+      idx += 1;
+      const label = g.thumbnail_label || g.caption || `(file ${idx})`;
+      if (g.kind === "image") {
+        parts.push(`[FILE ${idx} · IMAGE] "${label}" — an image is in the gallery; you can reference it by caption.`);
+      } else if (g.kind === "svg" || g.kind === "ascii") {
+        const truncated = (g.content || "").slice(0, 1500);
+        parts.push(`[FILE ${idx} · ${g.kind.toUpperCase()}] "${label}"\n${truncated}`);
+      } else if (g.kind === "markdown" || g.kind === "text" || g.kind === "html") {
+        const content = g.content || "";
+        const body = content.slice(0, 2000);
+        const trunc = content.length > 2000 ? "\n[…truncated]" : "";
+        parts.push(`[FILE ${idx} · ${g.kind.toUpperCase()}] "${label}"\n${body}${trunc}`);
+      }
+    }
+    galleryNote = `\n\n# Files in the room\n\n${parts.join("\n\n")}`;
+  }
 
-  // Compact recent-room-thread context — last 6 messages so the side
+  // Compact recent-room-thread context — last 8 messages so the side
   // chat understands what's happening in the public room around it.
-  const recent = composite.messages.slice(-6);
+  const recent = composite.messages.slice(-8);
   const roomNote = recent.length
     ? `\n\n# Recent in the room\n\n${recent
         .map((m) => {
