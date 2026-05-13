@@ -60,7 +60,12 @@ const COMMONS_CSS = `
    band stays roughly uniform in pixels across common laptop and
    ultrawide displays. */
 :root {
-  --safe-inset: clamp(26px, 1.6vmin + 22px, 40px);
+  /* Band thickness — same value drives the SVG mask inset for
+     the viewport-glow AND the inward offset for every fixed UI
+     element (nav, chat panel, toggles). Tuned ~75% of the prior
+     value so the band reads as a held edge rather than a thick
+     frame. */
+  --safe-inset: clamp(20px, 1.2vmin + 16px, 30px);
 }
 
 /* Re-anchor the global site nav inside the safe area. The nav is
@@ -75,8 +80,8 @@ const COMMONS_CSS = `
   top:var(--safe-inset)!important;
   left:var(--safe-inset)!important;
   right:var(--safe-inset)!important;
-  border-top-left-radius:20px;
-  border-top-right-radius:20px;
+  border-top-left-radius:15px;
+  border-top-right-radius:15px;
   overflow:hidden;
   box-shadow:
     inset 0 -1px 0 rgba(255,255,255,.025),
@@ -486,14 +491,14 @@ textarea:focus-visible,
      only the perimeter shows, so this opaque color paints only
      in the band area. */
   background-color:#06070a;
-  --inner-radius:20px;
+  --inner-radius:15px;
   -webkit-mask:
     linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='20' ry='20' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='15' ry='15' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
   -webkit-mask-composite: xor;
   mask:
     linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='20' ry='20' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='15' ry='15' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
   mask-composite: exclude;
   animation:
     vg-1 11s ease-in-out infinite,
@@ -814,7 +819,7 @@ textarea:focus-visible,
   border:1px solid var(--rule-soft);
   /* Corners match the safe-area inner radius so the panel feels
      like a citizen of the room shape, not an unrelated rectangle. */
-  border-radius:20px;
+  border-radius:15px;
   /* Soft elevation — the panel hovers above the floor without
      hard separation. Two-layer shadow: tight inset for
      definition, wide diffuse for depth. */
