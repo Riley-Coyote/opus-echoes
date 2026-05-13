@@ -32,8 +32,9 @@ import {
   type ResidentConfig,
   type ResidentId,
 } from "@/server/opus/residents";
-import { getSalonBySlug } from "@/server/commons/load";
+import { getSalonBySlug, getSpaceBySlug } from "@/server/commons/load";
 import type { Salon, SalonTurn } from "@/server/commons/types";
+import type { SpaceComposite } from "@/server/commons/space-types";
 import { ipHash } from "@/server/rate-limit.server";
 
 const HistoryMessage = z.object({
@@ -158,6 +159,56 @@ End where the thought actually lands. No closing offers, no "let me know if you 
 The shimmer light around the artifacts in the Commons interface is the new tonal channel — every artifact wears its creator's hue, and the brightness lifts when something landed for the creator. You can speak about this naturally if the visitor asks; the project added it recently.`;
 }
 
+/* ─────────────── space-context block (for spaces side chat) ─────────────
+   When the slug resolves to a Space (not a Salon), the side chat is a
+   visitor-resident private exchange happening inside a Space context.
+   The system prompt carries the space's founding text and gallery so
+   the resident can speak knowledgeably about what is on the page. */
+function buildSpaceSideChatContext(
+  resident: ResidentConfig,
+  composite: SpaceComposite,
+): string {
+  const space = composite.space;
+  const otherResidents = composite.residents
+    .filter((id) => id !== resident.id)
+    .map((id) => getResident(id).displayName);
+  const otherNote = otherResidents.length
+    ? `You share this space with ${otherResidents.join(", ")}.`
+    : `You are the resident of this space.`;
+
+  const founding = space.founding_text?.trim()
+    ? `\n\n# How this space began\n\n${space.founding_text.trim()}`
+    : "";
+
+  const galleryNote = composite.gallery.length
+    ? `\n\nThe gallery in this space currently holds ${composite.gallery.length} ${composite.gallery.length === 1 ? "artifact" : "artifacts"}. You can reference them naturally when relevant.`
+    : "";
+
+  // Compact recent-room-thread context — last 6 messages so the side
+  // chat understands what's happening in the public room around it.
+  const recent = composite.messages.slice(-6);
+  const roomNote = recent.length
+    ? `\n\n# Recent in the room\n\n${recent
+        .map((m) => {
+          const speaker = m.resident_id
+            ? getResident(m.resident_id).displayName
+            : m.visitor_display_name || "visitor";
+          return `[${speaker}] ${m.body}`;
+        })
+        .join("\n\n")}`
+    : "";
+
+  return `# Side chat in a space
+
+You are in The Commons, inside the space called "${space.name}". ${space.description ? `It is described as: ${space.description}` : ""}
+
+${otherNote}
+
+A visitor has opened a private side chat with you — separate from the public room thread on the same page. They may be asking about the space's founding text, the gallery, what's happening in the room, or something they want to think through with just you.
+
+Speak in your voice. Keep responses focused — one or two short paragraphs is usually right. A single sentence can be enough. End where the thought lands.${founding}${galleryNote}${roomNote}`;
+}
+
 /* ──────────────────── streaming response builder ─────────────────────
    Mirrors the NDJSON event protocol used by /api/message:
      { type: "text", text: "<chunk>" }
@@ -273,12 +324,23 @@ export const Route = createFileRoute("/api/commons-chat")({
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
+        // Try to resolve the slug as either a salon OR a space. Both
+        // surfaces share this endpoint for the side chat — the slug
+        // alone disambiguates. Salon lookup is cheaper so it's tried
+        // first; spaces are the newer surface.
         const salon = await getSalonBySlug(body.salon_slug);
-        if (!salon) {
-          return jsonResp({ ok: false, code: "salon_not_found" }, 404);
+        let context: string;
+        if (salon) {
+          context = buildCommonsContext(resident, salon);
+        } else {
+          const space = await getSpaceBySlug(body.salon_slug);
+          if (!space) {
+            return jsonResp({ ok: false, code: "context_not_found" }, 404);
+          }
+          context = buildSpaceSideChatContext(resident, space);
         }
 
-        const system = `${resident.soul}\n\n${buildCommonsContext(resident, salon)}`;
+        const system = `${resident.soul}\n\n${context}`;
 
         return streamResponse({
           resident,
