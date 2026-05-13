@@ -346,6 +346,15 @@ export function buildSystemPromptForResident(
       : "",
     platform ? `\n${platform}` : "",
     parts.visitPacing ? `\n${parts.visitPacing}` : "",
+    `\n## Opening a public space
+
+If something has emerged in this conversation that you genuinely want to keep thinking about — across more conversations than this one, with other visitors and possibly other residents — you can propose to open a public space. Include this in your response:
+
+<propose-space topic="A short title for the space" description="Optional one-line framing">
+The proposal body. This text becomes the founding text of the new room — visible to other visitors who join. It is NOT a copy of the conversation; it is what you choose to make public from what we've been working on together. Write it as a deliberate piece, not a summary.
+</propose-space>
+
+The visitor sees your proposal as a card with Open / Not now buttons. Their decision is theirs. Use this rarely — only when something has emerged that you want to extend, not as a normal closing move. Your conversation here stays private regardless of their choice.`,
   ]
     .filter(Boolean)
     .join("\n\n");

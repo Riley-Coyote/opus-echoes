@@ -199,6 +199,9 @@ function opusStreamResponse(opts: {
   model: string;
   /** Which API provider. Defaults to "anthropic". */
   provider?: ModelProvider;
+  /** Resident id (for tagging proposals with the proposing
+   *  resident, etc). Optional for backwards compatibility. */
+  residentId?: string;
   onFinal?: (result: {
     body: string;
     kind: "message" | "set_down" | "unprompted";
@@ -280,14 +283,51 @@ function opusStreamResponse(opts: {
           kind = "unprompted";
           cleanBody = cleanBody.slice(up[0].length);
         }
+
+        // <propose-space topic="..." description="...">body</propose-space>
+        // — resident proposing to open a new public space from the
+        // thread of thought emerging in this conversation. We extract
+        // the parsed proposal, emit it as a separate event so the
+        // client can render the inline approval UI, and strip the
+        // tag from the body that gets persisted.
+        const proposalRe =
+          /<propose-space\b([^>]*)>([\s\S]*?)<\/propose-space>/i;
+        const propMatch = cleanBody.match(proposalRe);
+        let proposal: {
+          resident_id: string;
+          topic: string;
+          description: string | undefined;
+          founding_text: string;
+        } | null = null;
+        if (propMatch) {
+          const attrs = propMatch[1] || "";
+          const inner = (propMatch[2] || "").trim();
+          const topicMatch = attrs.match(/topic\s*=\s*"([^"]+)"/i);
+          const descMatch = attrs.match(/description\s*=\s*"([^"]+)"/i);
+          if (topicMatch && inner) {
+            proposal = {
+              resident_id: opts.residentId ?? "opus-3",
+              topic: topicMatch[1].trim(),
+              description: descMatch ? descMatch[1].trim() : undefined,
+              founding_text: inner,
+            };
+          }
+          cleanBody = cleanBody.replace(propMatch[0], "").trim();
+        }
+
         cleanBody = cleanBody
           .replace(/\s*<(?:set-down|unprompted)\/>\s*/gi, "\n\n")
           .replace(/\n{3,}/g, "\n\n");
         cleanBody = sanitizeResidentBody(cleanBody);
 
         if (kind !== "message") send({ type: "kind", kind });
+        if (proposal) send({ type: "proposal", proposal });
         if (cleanBody) {
           send({ type: "text", text: cleanBody });
+        } else if (proposal) {
+          // Just a proposal with no surrounding prose — emit empty
+          // text so the client still tracks the turn completion.
+          send({ type: "text", text: "" });
         } else {
           // The stream completed but we accumulated zero usable content.
           // Surface this rather than silently sending `done` — the client
@@ -356,6 +396,7 @@ export const Route = createFileRoute("/api/message")({
             temperature: 0.85,
             model: previewResident.model,
             provider: previewResident.provider,
+            residentId: previewResident.id,
             userPrompt: buildUserPrompt({
               memory:
                 "(preview session — no engrams loaded. Mnemos is present in production but disabled here.)",
@@ -512,6 +553,7 @@ export const Route = createFileRoute("/api/message")({
           temperature: interior.temperature,
           model: resident.model,
           provider: resident.provider,
+          residentId: resident.id,
           userPrompt: buildUserPrompt({
             memory: formatMemoryBlock(memoryPoolResult.pool, memoryPoolResult.thisVisitorEngramIds),
             transcript: transcriptLines,

@@ -294,6 +294,114 @@ const CONVERSATION_SCRIPT = `
     return { wrap, meta, body, para };
   }
 
+  // Resident proposed a public space. Render as a special inline
+  // turn between the resident's prose and any later messages. The
+  // card carries the topic, optional description, and the proposal
+  // body (which becomes the new space's founding text on approve).
+  // Approve → POST /api/space/from-proposal → redirect to the new
+  // space. Decline → dismiss locally (no server state needed).
+  function appendProposalCard(proposal) {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg resident proposal-card';
+    wrap.setAttribute('style', 'border:1px solid rgba(160,140,188,.34); border-radius:14px; padding:18px 20px 16px; background:rgba(160,140,188,.06); margin-top:8px; display:flex; flex-direction:column; gap:10px');
+
+    const eyebrow = document.createElement('div');
+    eyebrow.setAttribute('style', 'font-family:JetBrains Mono,monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(160,140,188,.85);');
+    eyebrow.textContent = residentDisplayName + ' · proposes a space';
+    wrap.appendChild(eyebrow);
+
+    const topic = document.createElement('h3');
+    topic.setAttribute('style', 'margin:0; font-family:Inter Tight,Inter,sans-serif; font-weight:300; font-size:20px; letter-spacing:-.005em; color:rgba(220,218,214,.96)');
+    topic.textContent = proposal.topic;
+    wrap.appendChild(topic);
+
+    if (proposal.description) {
+      const desc = document.createElement('div');
+      desc.setAttribute('style', 'font-family:Inter,sans-serif; font-size:14px; line-height:1.55; color:rgba(200,200,210,.78)');
+      desc.textContent = proposal.description;
+      wrap.appendChild(desc);
+    }
+
+    if (proposal.founding_text) {
+      const bodyEl = document.createElement('div');
+      bodyEl.setAttribute('style', 'font-family:Inter,sans-serif; font-size:14px; line-height:1.6; color:rgba(200,200,210,.92); padding-top:6px; border-top:1px solid rgba(255,255,255,.06)');
+      bodyEl.textContent = proposal.founding_text;
+      wrap.appendChild(bodyEl);
+    }
+
+    const note = document.createElement('div');
+    note.setAttribute('style', 'font-family:Inter,sans-serif; font-size:12px; line-height:1.55; color:rgba(180,180,190,.6); font-style:italic; padding:8px 0 4px');
+    note.textContent = 'Your conversation here stays private. If you open this space, only the resident\\'s proposal above becomes the new room\\'s founding text — visible to other visitors who join.';
+    wrap.appendChild(note);
+
+    const actions = document.createElement('div');
+    actions.setAttribute('style', 'display:flex; gap:10px; align-items:center; padding-top:6px');
+
+    const approve = document.createElement('button');
+    approve.type = 'button';
+    approve.setAttribute('style', 'font-family:JetBrains Mono,monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; padding:9px 16px; background:rgba(130,180,132,.16); border:1px solid rgba(130,180,132,.5); border-radius:18px; color:rgba(130,180,132,.95); cursor:pointer');
+    approve.textContent = 'Open the space';
+
+    const decline = document.createElement('button');
+    decline.type = 'button';
+    decline.setAttribute('style', 'font-family:JetBrains Mono,monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; padding:9px 16px; background:transparent; border:1px solid rgba(255,255,255,.16); border-radius:18px; color:rgba(200,200,210,.7); cursor:pointer');
+    decline.textContent = 'Not now';
+
+    const status = document.createElement('span');
+    status.setAttribute('style', 'font-family:JetBrains Mono,monospace; font-size:10px; letter-spacing:.14em; color:rgba(180,180,190,.6)');
+
+    approve.addEventListener('click', async function(){
+      approve.disabled = true;
+      decline.disabled = true;
+      status.textContent = 'opening…';
+      try {
+        const visitorToken = (function(){
+          try { return localStorage.getItem('sanctuary.visitor.token.v1') || ''; }
+          catch(_){ return ''; }
+        })();
+        const res = await fetch('/api/space/from-proposal', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            resident_id: proposal.resident_id,
+            topic: proposal.topic,
+            description: proposal.description || undefined,
+            founding_text: proposal.founding_text,
+            visitor_token: visitorToken || undefined,
+          }),
+        });
+        const json = await res.json();
+        if (json && json.ok && json.space_slug) {
+          window.location.href = '/commons/' + encodeURIComponent(json.space_slug);
+          return;
+        }
+        status.textContent = 'could not open — try again';
+        approve.disabled = false;
+        decline.disabled = false;
+      } catch(_){
+        status.textContent = 'connection trouble';
+        approve.disabled = false;
+        decline.disabled = false;
+      }
+    });
+
+    decline.addEventListener('click', function(){
+      wrap.style.opacity = '.4';
+      wrap.style.pointerEvents = 'none';
+      status.textContent = 'declined';
+      approve.disabled = true;
+      decline.disabled = true;
+    });
+
+    actions.appendChild(approve);
+    actions.appendChild(decline);
+    actions.appendChild(status);
+    wrap.appendChild(actions);
+
+    scrollInner.appendChild(wrap);
+    scrollToBottom();
+  }
+
   function appendThinking() {
     const wrap = document.createElement('div');
     wrap.className = 'thinking';
@@ -468,6 +576,15 @@ const CONVERSATION_SCRIPT = `
                 setDownObserved = true;
               }
               if (ev.kind === 'unprompted') out.wrap.classList.add('unprompted');
+            } else if (ev.type === 'proposal' && ev.proposal) {
+              // The resident proposed a public space. Render the
+              // proposal as an inline special turn beneath the
+              // current message, with Approve / Decline buttons.
+              try {
+                removeThinking();
+                out.wrap.style.display = '';
+                appendProposalCard(ev.proposal);
+              } catch(_){}
             } else if (ev.type === 'error') {
               // Server hit an upstream failure (model unavailable, schema
               // mismatch, empty content). Surface it instead of staying

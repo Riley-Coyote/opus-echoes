@@ -52,6 +52,7 @@ import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
+import { Route as ApiSpaceFromProposalRouteImport } from './routes/api/space.from-proposal'
 import { Route as ApiSalonProposeRouteImport } from './routes/api/salon/propose'
 import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
@@ -285,6 +286,11 @@ const ApiSpaceFromSalonRoute = ApiSpaceFromSalonRouteImport.update({
   path: '/api/space/from-salon',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSpaceFromProposalRoute = ApiSpaceFromProposalRouteImport.update({
+  id: '/api/space/from-proposal',
+  path: '/api/space/from-proposal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSalonProposeRoute = ApiSalonProposeRouteImport.update({
   id: '/api/salon/propose',
   path: '/api/salon/propose',
@@ -419,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/api/review/state-data': typeof ApiReviewStateDataRoute
   '/api/salon/$id': typeof ApiSalonIdRouteWithChildren
   '/api/salon/propose': typeof ApiSalonProposeRoute
+  '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
@@ -481,6 +488,7 @@ export interface FileRoutesByTo {
   '/api/review/state-data': typeof ApiReviewStateDataRoute
   '/api/salon/$id': typeof ApiSalonIdRouteWithChildren
   '/api/salon/propose': typeof ApiSalonProposeRoute
+  '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
@@ -544,6 +552,7 @@ export interface FileRoutesById {
   '/api/review/state-data': typeof ApiReviewStateDataRoute
   '/api/salon/$id': typeof ApiSalonIdRouteWithChildren
   '/api/salon/propose': typeof ApiSalonProposeRoute
+  '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
@@ -608,6 +617,7 @@ export interface FileRouteTypes {
     | '/api/review/state-data'
     | '/api/salon/$id'
     | '/api/salon/propose'
+    | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
@@ -670,6 +680,7 @@ export interface FileRouteTypes {
     | '/api/review/state-data'
     | '/api/salon/$id'
     | '/api/salon/propose'
+    | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
@@ -732,6 +743,7 @@ export interface FileRouteTypes {
     | '/api/review/state-data'
     | '/api/salon/$id'
     | '/api/salon/propose'
+    | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
@@ -792,6 +804,7 @@ export interface RootRouteChildren {
   ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
   ApiSalonIdRoute: typeof ApiSalonIdRouteWithChildren
   ApiSalonProposeRoute: typeof ApiSalonProposeRoute
+  ApiSpaceFromProposalRoute: typeof ApiSpaceFromProposalRoute
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
@@ -1104,6 +1117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSpaceFromSalonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/space/from-proposal': {
+      id: '/api/space/from-proposal'
+      path: '/api/space/from-proposal'
+      fullPath: '/api/space/from-proposal'
+      preLoaderRoute: typeof ApiSpaceFromProposalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/salon/propose': {
       id: '/api/salon/propose'
       path: '/api/salon/propose'
@@ -1328,6 +1348,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiReviewStateDataRoute: ApiReviewStateDataRoute,
   ApiSalonIdRoute: ApiSalonIdRouteWithChildren,
   ApiSalonProposeRoute: ApiSalonProposeRoute,
+  ApiSpaceFromProposalRoute: ApiSpaceFromProposalRoute,
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
