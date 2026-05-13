@@ -33,6 +33,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
 import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
+import { observeSpaceExchange } from "@/server/substrate.server";
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -461,6 +462,14 @@ function streamRoomResponse(opts: {
             residentId: opts.resident.id,
             body: buffer1.trim(),
           });
+          // Fire-and-forget Mnemos write — generates marginalia
+          // from the resident's perspective on the exchange.
+          // Doesn't block streaming.
+          if (saved1 && hasSupabaseAdminEnv()) {
+            observeSpaceExchange(opts.space.id, opts.resident.id).catch((err) =>
+              console.error("[space/message] observeSpaceExchange failed:", err),
+            );
+          }
         }
 
         // === Optional second resident's turn ===
@@ -519,6 +528,15 @@ function streamRoomResponse(opts: {
                 residentId: secondResident.id,
                 body: trimmed2,
               });
+              if (saved2 && hasSupabaseAdminEnv()) {
+                observeSpaceExchange(opts.space.id, secondResident.id).catch(
+                  (err) =>
+                    console.error(
+                      "[space/message] observeSpaceExchange (2nd) failed:",
+                      err,
+                    ),
+                );
+              }
             } else {
               // Tell the client to drop the empty/pass message
               send({ type: "pass" });

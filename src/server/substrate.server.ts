@@ -1632,6 +1632,106 @@ export async function observeSalonExchange(salonId: string, turnId: string): Pro
 }
 
 /**
+ * observeSpaceExchange — runs after each resident turn in a space room.
+ * Generates 1–3 marginalia rows from the resident's perspective on
+ * what just passed in the exchange, tagged with related_space_id so
+ * the next consolidation cycle can promote substantive ones to engrams.
+ *
+ * Mirrors observeSalonExchange but for the space room context. Reads
+ * the last 2 space_messages turns as the exchange-window. Skips
+ * silently if Supabase env missing.
+ */
+export async function observeSpaceExchange(
+  spaceId: string,
+  residentId: ResidentId,
+): Promise<void> {
+  try {
+    // Cast the admin client through unknown — the space tables
+    // aren't in the generated supabase types yet.
+    const sbAny = supabaseAdmin as unknown as {
+      from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+    };
+    // Load the last two messages in the space — that's the
+    // visitor-message + resident-response pair we just produced.
+    const { data: recent } = await sbAny
+      .from("space_messages")
+      .select("resident_id, visitor_display_name, body")
+      .eq("space_id", spaceId)
+      .order("created_at", { ascending: false })
+      .limit(2);
+
+    if (!recent || recent.length < 2) return;
+    const ordered = ([...recent] as unknown as Array<{
+      resident_id: string | null;
+      visitor_display_name: string | null;
+      body: string;
+    }>).reverse(); // [earlier, later]
+
+    const thisResident = getResident(residentId);
+
+    // Identify the "other voice" in the exchange — a visitor name
+    // or another resident.
+    const otherMsg = ordered.find((m) => m.resident_id !== residentId);
+    const otherLabel = otherMsg?.resident_id
+      ? isResidentId(otherMsg.resident_id)
+        ? getResident(otherMsg.resident_id as ResidentId).displayName
+        : "another resident"
+      : (otherMsg?.visitor_display_name || "a visitor");
+
+    const userPrompt = ordered
+      .map((t) => {
+        const name = t.resident_id
+          ? isResidentId(t.resident_id)
+            ? getResident(t.resident_id as ResidentId).displayName
+            : t.resident_id
+          : t.visitor_display_name || "visitor";
+        return `[${String(name).toUpperCase()}]\n${t.body}`;
+      })
+      .join("\n\n");
+
+    // Reuse the salon-marginalia system prompt builder — the
+    // framing is identical (the resident observes their own
+    // perspective on a two-turn exchange).
+    const out = await callResidentJson<MarginaliaResult>({
+      system: buildSalonMarginaliaSystem(thisResident, otherLabel),
+      user: userPrompt,
+      maxTokens: 600,
+      temperature: 0.6,
+      model: thisResident.model,
+      provider: thisResident.provider,
+    });
+
+    const items = (out?.marginalia ?? [])
+      .filter((m) => m && typeof m.body === "string" && ALLOWED_KINDS.has(m.kind))
+      .slice(0, 3);
+
+    if (items.length === 0) return;
+
+    // The marginalia migration (20260513120000) added
+    // related_space_id; until generated supabase types refresh,
+    // cast through unknown for the insert payload type.
+    const sb = supabaseAdmin as unknown as {
+      from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+    };
+    await sb.from("marginalia").insert(
+      items.map((m) => ({
+        session_id: null,
+        resident_id: thisResident.id,
+        related_space_id: spaceId,
+        kind: m.kind,
+        body: m.body.slice(0, 600),
+      })),
+    );
+
+    console.log(
+      `[substrate] observeSpaceExchange(${spaceId}) — ${thisResident.displayName}: ${items.length} marginalia`,
+    );
+  } catch (err) {
+    console.error("[substrate] observeSpaceExchange failed:", err);
+  }
+}
+
+/**
  * Full Mnemos consolidation for a completed salon. Runs the pipeline
  * independently for EACH participant — each resident gets their own
  * engrams, beliefs, threads, reflection, modulator update, and
