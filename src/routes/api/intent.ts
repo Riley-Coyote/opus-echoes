@@ -160,7 +160,19 @@ export const Route = createFileRoute("/api/intent")({
           }
         } catch (err) {
           console.error(`${resident.provider} /intent error`, err);
-          return jsonResp({ ok: false, code: "model_unavailable" }, 503);
+          // TEMPORARY DIAGNOSTIC — surfaces the actual model API error in the
+          // decline panel so threshold failures don't disappear into the
+          // Cloudflare logs. The "[diagnostic — temporary]" prefix makes it
+          // visually distinct from a real resident decline. Remove this whole
+          // block (revert to the previous `jsonResp({ok:false, code:"model_unavailable"}, 503)`)
+          // once the threshold failure mode is resolved.
+          const errMsg =
+            err instanceof Error ? err.message : typeof err === "string" ? err : String(err);
+          return jsonResp({
+            ok: true,
+            decision: "decline" as const,
+            reason: `[diagnostic — temporary] model ${resident.model} did not respond: ${errMsg.slice(0, 320)}`,
+          });
         }
 
         const latency_ms = Date.now() - t0;
