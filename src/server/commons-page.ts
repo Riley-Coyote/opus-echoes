@@ -173,6 +173,9 @@ textarea:focus-visible,
   align-items:baseline;
   justify-content:space-between;
   gap:var(--s-4);
+  /* Generous top buffer — the title shouldn't sit on the nav's
+     shoulder; give it room to breathe inside the room. */
+  padding-top:var(--s-8);
   padding-bottom:var(--s-5);
   border-bottom:1px solid var(--rule-soft);
   margin-bottom:var(--s-4);
@@ -824,45 +827,72 @@ textarea:focus-visible,
   transition:width .42s cubic-bezier(.22,1,.36,1), background .32s var(--ease), border-color .32s var(--ease);
 }
 
-/* Collapse / expand toggle — visible on desktop only. Positioned at
-   the top-left edge of the panel, half-overhanging the panel's left
-   border so it reads as a hinge between the panel and the room. */
+/* The chat handle — a single sophisticated edge tab that is the
+   only open/close affordance for the side chat on desktop. It
+   lives on the panel's left edge, vertically centered, in a
+   shape borrowed from premium app sidebars (Linear, Notion). On
+   click it toggles collapsed state. Hover nudges horizontally
+   in the direction the panel will travel and intensifies a soft
+   glow so the gesture reads as deliberate. */
 .chat-collapse{
   position:absolute;
-  /* Tuned to sit clearly below the panel's 20px rounded corner
-     while remaining a visible hinge between panel and room. */
-  top:26px;
-  left:-14px;
+  top:50%;
+  left:-13px;
+  transform:translateY(-50%);
   z-index:2;
-  width:28px;
-  height:28px;
-  background:rgba(14,15,18,.94);
+  width:26px;
+  height:64px;
+  background:
+    linear-gradient(180deg,
+      rgba(20,22,26,.96) 0%,
+      rgba(14,16,20,.96) 50%,
+      rgba(20,22,26,.96) 100%);
   border:1px solid var(--rule-soft);
-  border-radius:50%;
+  border-radius:13px;
   color:var(--soft);
   cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
-  /* Tiny ambient shadow so the hinge reads as raised when
-     resting against the panel edge. */
-  box-shadow:0 2px 6px -2px rgba(0,0,0,.5);
+  /* Two-layer shadow: inset hairline catches the safe-area band
+     light, diffuse outer settles the tab as a held object. */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    inset 0 -1px 0 rgba(0,0,0,.3),
+    0 4px 14px -4px rgba(0,0,0,.6),
+    0 2px 4px -2px rgba(0,0,0,.4);
   transition:
-    border-color .26s cubic-bezier(.22,1,.36,1),
-    color .26s cubic-bezier(.22,1,.36,1),
-    transform .22s cubic-bezier(.22,1,.36,1),
-    box-shadow .26s cubic-bezier(.22,1,.36,1);
+    border-color .42s cubic-bezier(.22,1,.36,1),
+    color .42s cubic-bezier(.22,1,.36,1),
+    transform .42s cubic-bezier(.22,1,.36,1),
+    box-shadow .42s cubic-bezier(.22,1,.36,1),
+    background .42s cubic-bezier(.22,1,.36,1);
 }
 .chat-collapse:hover{
   border-color:var(--rule);
   color:var(--ink);
-  box-shadow:0 4px 10px -2px rgba(0,0,0,.6);
+  background:
+    linear-gradient(180deg,
+      rgba(26,28,32,.98) 0%,
+      rgba(18,20,24,.98) 50%,
+      rgba(26,28,32,.98) 100%);
+  /* Nudge left ~3px — tab will travel left when clicked from
+     expanded state, signaling the direction of motion. */
+  transform:translateY(-50%) translateX(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(0,0,0,.35),
+    0 8px 22px -6px rgba(0,0,0,.7),
+    0 3px 6px -2px rgba(0,0,0,.5);
 }
-.chat-collapse:active{ transform:scale(.94); }
+.chat-collapse:active{
+  transform:translateY(-50%) translateX(-1px) scale(.98);
+  transition-duration:.16s;
+}
 .chat-collapse svg{
-  width:12px;
-  height:12px;
-  transition:transform .32s var(--ease);
+  width:13px;
+  height:13px;
+  transition:transform .42s cubic-bezier(.22,1,.36,1);
 }
 @media(max-width:1179px){
   .chat-collapse{ display:none; }
@@ -870,30 +900,69 @@ textarea:focus-visible,
 
 /* Collapsed state: the panel shrinks to a thin strip at the right
    edge of the viewport. The interior (tabs, stream, composer) is
-   hidden; the collapse toggle now reads as a re-open affordance.
-   The toggle's chevron rotates so it points toward where the panel
-   will return from. */
+   hidden — what remains is an inviting tab. A vertical "TALK
+   WITH" eyebrow text, centered on the strip and rotated 90°,
+   tells the visitor what the affordance opens. The handle stays
+   on the left edge (now visually flush with the strip's left
+   edge) with its chevron flipped to point at the room — the
+   direction the panel will travel when expanded. The whole strip
+   is clickable so the visitor doesn't have to aim at a small
+   target. */
 .chat-panel.collapsed{
   width:48px;
-  background:linear-gradient(180deg, rgba(8,9,12,.78) 0%, rgba(6,7,10,.88) 100%);
+  background:linear-gradient(180deg, rgba(10,11,14,.82) 0%, rgba(8,9,12,.92) 100%);
+  cursor:pointer;
+}
+.chat-panel.collapsed:hover{
+  background:linear-gradient(180deg, rgba(14,15,18,.88) 0%, rgba(10,11,14,.96) 100%);
+  border-color:var(--rule);
 }
 .chat-panel.collapsed .chat-panel-header,
 .chat-panel.collapsed .chat-stream,
 .chat-panel.collapsed .chat-composer,
 .chat-panel.collapsed .chat-status{ display:none; }
-.chat-panel.collapsed .chat-collapse{
-  position:fixed;
+/* Vertical label revealed on the collapsed strip. Composed in JS
+   from the panel template; positioned via this rule so the strip
+   reads as labeled rather than blank. */
+.chat-panel.collapsed::before{
+  content:'TALK WITH';
+  position:absolute;
   top:50%;
-  right:calc(10px + var(--safe-inset));
-  left:auto;
-  margin-top:-14px;
-  /* When position becomes fixed the button escapes the panel's
-     stacking context — its base z-index:2 would sit below the
-     panel's z:30. Bump above the panel so it remains the visible
-     re-open affordance. */
-  z-index:31;
+  left:50%;
+  transform:translate(-50%, -50%) rotate(-90deg);
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.32em;
+  color:var(--ghost);
+  white-space:nowrap;
+  transition:color .42s cubic-bezier(.22,1,.36,1);
+  pointer-events:none;
+}
+.chat-panel.collapsed:hover::before{ color:var(--soft); }
+/* In collapsed state the chat-handle becomes the smaller
+   pin-on-tab affordance — still visually consistent with its
+   expanded state, but positioned to sit at the top of the strip
+   (where the chevron pointing left is most readable as "click to
+   open"). The whole strip is clickable, so the handle is now
+   purely visual punctuation. */
+.chat-panel.collapsed .chat-collapse{
+  position:absolute;
+  top:calc(50% - 110px);
+  left:50%;
+  transform:translateX(-50%);
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  pointer-events:none;
+}
+.chat-panel.collapsed:hover .chat-collapse{
+  border-color:var(--rule);
+  color:var(--ink);
+  transform:translateX(-50%) translateX(-3px);
 }
 .chat-panel.collapsed .chat-collapse svg{ transform:rotate(180deg); }
+.chat-panel.collapsed:hover .chat-collapse svg{ transform:rotate(180deg) translateX(2px); }
 @media(min-width:1180px){
   body.chat-panel-collapsed .commons{
     margin-right:48px;
@@ -1895,7 +1964,8 @@ const CHAT_PANEL_SCRIPT = `
     catch(_){}
   }
   if (collapseBtn) {
-    collapseBtn.addEventListener('click', function(){
+    collapseBtn.addEventListener('click', function(e){
+      e.stopPropagation();
       const wasCollapsed = panel.classList.contains('collapsed');
       setCollapsed(!wasCollapsed);
       if (wasCollapsed && field && window.matchMedia('(min-width: 1180px)').matches) {
@@ -1904,6 +1974,16 @@ const CHAT_PANEL_SCRIPT = `
       }
     });
   }
+  // Whole collapsed strip is clickable — premium open affordance.
+  // In expanded state, clicking inside the panel does nothing
+  // (interactive children handle their own clicks); only the
+  // collapsed strip behaves as a single open target.
+  panel.addEventListener('click', function(){
+    if (panel.classList.contains('collapsed') && window.matchMedia('(min-width: 1180px)').matches) {
+      setCollapsed(false);
+      requestAnimationFrame(function(){ if (field) field.focus(); });
+    }
+  });
   // Hydrate initial collapsed state on desktop. On mobile, the
   // collapse concept doesn't apply (the panel slides in/out as a
   // drawer instead) — skip applying the class to avoid layout shifts.
