@@ -32,6 +32,7 @@ import type { Space, SpaceComposite, SpaceMessage } from "@/server/commons/space
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
+import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -426,12 +427,34 @@ export const Route = createFileRoute("/api/space/$slug/message")({
           replyToId: body.reply_to_message_id ?? null,
         });
 
-        const system = `${responder.soul}\n\n${buildSpaceContext(
+        // Pull the resident's relevant engrams + memory pool. Cheap
+        // DB-only query — gives the resident continuity with their
+        // threshold sessions and prior salon work when speaking in
+        // a space. Silent fallback to empty memory when env missing.
+        let memoryBlock = "";
+        if (hasSupabaseAdminEnv()) {
+          try {
+            const pool = await composeMemoryPool({
+              supabase: supabaseAdmin,
+              residentId: responder.id,
+              visitorMessage: body.body,
+              visitorToken: body.visitor_token,
+            });
+            memoryBlock = formatMemoryBlock(pool.pool);
+          } catch (err) {
+            console.error("[space/message] memory pool failed:", err);
+          }
+        }
+
+        const spaceContext = buildSpaceContext(
           responder,
           composite,
           body.body,
           body.visitor_display_name,
-        )}`;
+        );
+        const system = memoryBlock
+          ? `${responder.soul}\n\n${memoryBlock}\n\n${spaceContext}`
+          : `${responder.soul}\n\n${spaceContext}`;
 
         return streamRoomResponse({
           resident: responder,
