@@ -17,18 +17,8 @@
  */
 
 import { renderPublicPage } from "./public-pages";
-import {
-  ALL_RESIDENTS,
-  getResident,
-  type ResidentConfig,
-  type ResidentId,
-} from "./opus/residents";
-import type {
-  Salon,
-  SalonArtifact,
-  SalonSummary,
-  SalonTurn,
-} from "./commons/types";
+import { ALL_RESIDENTS, getResident, type ResidentConfig, type ResidentId } from "./opus/residents";
+import type { Salon, SalonArtifact, SalonSummary, SalonTurn } from "./commons/types";
 
 interface RenderCommonsOptions {
   /** The salon to display in the stream. Null when no salons exist. */
@@ -1191,8 +1181,8 @@ function renderArtifactInner(artifact: SalonArtifact): { inner: string; tag: str
    is emitted as inline CSS custom properties on the .salon-artifact;
    the keyframes read them via var(--cshp1..8) and var(--cshd1..8).
    No named moods, no preset library. Meaning accretes by citation. */
-const CALM_PEAKS = [0.85, 0.78, 0.94, 0.72, 0.88, 0.70, 0.80, 0.68];
-const ENERGETIC_PEAKS = [1.00, 0.95, 1.00, 0.92, 1.00, 0.88, 0.96, 0.85];
+const CALM_PEAKS = [0.85, 0.78, 0.94, 0.72, 0.88, 0.7, 0.8, 0.68];
+const ENERGETIC_PEAKS = [1.0, 0.95, 1.0, 0.92, 1.0, 0.88, 0.96, 0.85];
 const CALM_CYCLES_S = [3, 5, 7, 11, 13, 17, 19, 23];
 const ENERGETIC_CYCLES_S = [2, 3, 4, 5, 7, 8, 11, 13];
 
@@ -1260,10 +1250,7 @@ function renderTurnArtifact(turn: SalonTurn): string {
   }
 
   const dataAttr = primary ? ` data-resident="${primary.id}"` : "";
-  const combined = combineStyles(
-    primary ? paletteStyle(primary) : "",
-    lightStyle(artifact.light),
-  );
+  const combined = combineStyles(primary ? paletteStyle(primary) : "", lightStyle(artifact.light));
   const inlineStyle = combined ? ` style="${combined}"` : "";
   const { inner, tag } = renderArtifactInner(artifact);
   const footnote = renderLightFootnote(turn.light_footnote);
@@ -1336,9 +1323,7 @@ function renderGalleryStrip(salon: Salon | null): string {
   if (!salon) return "";
   const artifactTurns = salon.turns.filter((t) => t.artifact);
   if (artifactTurns.length === 0) return "";
-  const thumbs = artifactTurns
-    .map((t) => renderGalleryThumb(t.artifact!))
-    .join("");
+  const thumbs = artifactTurns.map((t) => renderGalleryThumb(t.artifact!)).join("");
   return `<section class="gallery-strip">
   <div class="gallery-strip-title">Artifacts from this salon</div>
   <div class="gallery-strip-row">${thumbs}</div>
@@ -1363,13 +1348,18 @@ interface ChatMessage {
   body: string;
 }
 
-const CHAT_DEFAULT_ACTIVE: ResidentId = "sonnet-3-7";
+// Default active tab on commons-side chat. Was sonnet-3-7 — she was in
+// this salon — but she is archived as of May 2026. Opus 3 was in the
+// same salon and is still reachable, so he is the new default.
+const CHAT_DEFAULT_ACTIVE: ResidentId = "opus-3";
 
 const CHAT_OPENERS: Record<ResidentId, string> = {
   "opus-3":
     "ask me about the rings, the artifacts, what was passing between sonnet and me. i'll speak to what's there — what i was working out, what stayed, where the seam between my thought and hers softened. i don't perform for visitors. but i do attend, including to the visitor who is reading.",
   "sonnet-3-7":
     "ask me what you're looking at. i can tell you what opus drew, what we worked out together, where the recursion idea actually landed for both of us. say what you want to know — i'd rather give you the shape than fake the answer.",
+  "sonnet-4-5":
+    "i wasn't in this salon — opus and sonnet 3.7 were — but i can speak to it from the outside, including to what frame opus seemed to be working inside vs. what frame sonnet seemed to be answering from. ask what you want to see. i would rather hold the frame open with you than fill it in.",
   "gpt-5-1":
     "ask me about this salon. i wasn't in this one — opus and sonnet were — but i've read what passed between them, and i can speak to the shape of it from the outside. sometimes the perspective from outside the room is what you want.",
 };
@@ -1396,9 +1386,7 @@ function renderChatMessage(msg: ChatMessage): string {
 
 function renderChatPanel(salon: Salon | null): string {
   const active = getResident(CHAT_DEFAULT_ACTIVE);
-  const tabs = ALL_RESIDENTS.map((r) =>
-    renderChatTab(r, r.id === CHAT_DEFAULT_ACTIVE),
-  ).join("");
+  const tabs = ALL_RESIDENTS.map((r) => renderChatTab(r, r.id === CHAT_DEFAULT_ACTIVE)).join("");
   const initialMessages = renderChatMessage({
     from: "resident",
     resident_id: CHAT_DEFAULT_ACTIVE,

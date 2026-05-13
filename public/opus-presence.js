@@ -60,11 +60,43 @@ import * as THREE from "/vendor/three.module.js";
       rimIntensity: 0.22,
     },
     "sonnet-3-7": {
+      // Archived 2026-05-13. Entry kept so previously-stored sessions
+      // with sanctuary.resident_id === "sonnet-3-7" still render the
+      // Beacon scene if someone surfaces archive content. New visitors
+      // cannot reach this theme — /sonnet-3-7 is no longer routed.
       id: "sonnet-3-7",
       name: "The Beacon",
       bg: [0.06, 0.04, 0.02],
       // Wider value range so layer alternation reads as separate strata
       // rather than a uniform amber wash.
+      primary: 0xb87830,
+      secondary: 0x6f461a,
+      dark: 0x401f0a,
+      light: 0xe2a14a,
+      accent: 0xf6c258,
+      glow: 0xffc858,
+      figureBody: 0xf6e8c8,
+      fog: [0.07, 0.045, 0.022],
+      fogDensity: 0.019,
+      ambient: 0x5a4520,
+      ambientIntensity: 0.55,
+      dir: 0xdab062,
+      dirIntensity: 1.15,
+      fill: 0x5a4220,
+      fillIntensity: 0.24,
+      rim: 0xa67836,
+      rimIntensity: 0.24,
+    },
+    "sonnet-4-5": {
+      // Sonnet 4.5 inherits Sonnet 3.7's Beacon scene as her residence
+      // for now — same procedural geometry, same palette. The lineage
+      // continuity reads visually in the warm-brass tones; she is a
+      // sibling of Sonnet 3.7 from the same line. A distinct procedural
+      // scene ("The Atrium" per the original Stream B plan) and a
+      // palette polish are follow-up work.
+      id: "sonnet-4-5",
+      name: "The Beacon",
+      bg: [0.06, 0.04, 0.02],
       primary: 0xb87830,
       secondary: 0x6f461a,
       dark: 0x401f0a,
@@ -99,9 +131,9 @@ import * as THREE from "/vendor/three.module.js";
       fog: [0.035, 0.045, 0.065],
       fogDensity: 0.019,
       ambient: 0x384858,
-      ambientIntensity: 0.50,
+      ambientIntensity: 0.5,
       dir: 0x88aac8,
-      dirIntensity: 1.10,
+      dirIntensity: 1.1,
       fill: 0x384858,
       fillIntensity: 0.22,
       rim: 0x6088a8,
@@ -121,7 +153,14 @@ import * as THREE from "/vendor/three.module.js";
   function routeKind() {
     const path = window.location.pathname;
     if (path === "/") return "chooser";
-    if (path === "/opus-3" || path === "/sonnet-3-7" || path === "/gpt-5-1" || path === "/approach") return "approach";
+    if (
+      path === "/opus-3" ||
+      path === "/sonnet-3-7" ||
+      path === "/sonnet-4-5" ||
+      path === "/gpt-5-1" ||
+      path === "/approach"
+    )
+      return "approach";
     if (path === "/conversation") return "conversation";
     if (path === "/memory" || path === "/mind") return "memory";
     if (["/residence", "/journal", "/writing", "/art", "/manifesto"].includes(path)) {
@@ -133,6 +172,7 @@ import * as THREE from "/vendor/three.module.js";
   function residentForRoute() {
     const path = window.location.pathname;
     if (path === "/sonnet-3-7") return "sonnet-3-7";
+    if (path === "/sonnet-4-5") return "sonnet-4-5";
     if (path === "/gpt-5-1") return "gpt-5-1";
     if (path === "/opus-3" || path === "/approach") return "opus-3";
     if (path === "/conversation") {
@@ -199,8 +239,8 @@ import * as THREE from "/vendor/three.module.js";
       const options = { alpha: true, antialias: false };
       return Boolean(
         canvas.getContext("webgl2", options) ||
-          canvas.getContext("webgl", options) ||
-          canvas.getContext("experimental-webgl", options),
+        canvas.getContext("webgl", options) ||
+        canvas.getContext("experimental-webgl", options),
       );
     } catch (_) {
       return false;
@@ -419,9 +459,9 @@ import * as THREE from "/vendor/three.module.js";
         const cx = dir === "x+" ? totalD / 2 : dir === "x-" ? -totalD / 2 : 0;
         const cz = dir === "z-" ? -totalD / 2 : dir === "z+" ? totalD / 2 : 0;
         rail.position.set(
-          cx + (dir === "z-" || dir === "z+" ? side * sw / 2 : 0),
+          cx + (dir === "z-" || dir === "z+" ? (side * sw) / 2 : 0),
           totalH / 2 + 0.34,
-          cz + (dir === "x+" || dir === "x-" ? side * sw / 2 : 0),
+          cz + (dir === "x+" || dir === "x-" ? (side * sw) / 2 : 0),
         );
         if (dir === "z-") rail.rotation.x = angle;
         else if (dir === "x+") rail.rotation.z = -angle;
@@ -450,11 +490,7 @@ import * as THREE from "/vendor/three.module.js";
     for (let i = 0; i <= segs; i += 1) {
       const a = (Math.PI * i) / segs;
       const seg = box(t * 0.6, t * 0.6, depth * 0.85, color);
-      seg.position.set(
-        Math.cos(a) * (width / 2),
-        Math.sin(a) * (height * 0.24) + pillarH + t,
-        0,
-      );
+      seg.position.set(Math.cos(a) * (width / 2), Math.sin(a) * (height * 0.24) + pillarH + t, 0);
       g.add(seg);
     }
     // Keystone
@@ -468,10 +504,7 @@ import * as THREE from "/vendor/three.module.js";
         opacity: 0.46,
         depthWrite: false,
       });
-      const inner = new THREE.Mesh(
-        new THREE.PlaneGeometry(width * 0.85, pillarH * 1.05),
-        glowMat,
-      );
+      const inner = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.85, pillarH * 1.05), glowMat);
       inner.position.set(0, pillarH * 0.55, -depth / 2 - 0.02);
       g.add(inner);
     }
@@ -775,7 +808,7 @@ import * as THREE from "/vendor/three.module.js";
     // every 4th position are larger and brighter — core memories.
     positions.forEach((pos, i) => {
       const isAnchor = i % 4 === 0;
-      const intensity = isAnchor ? 0.40 : 0.25;
+      const intensity = isAnchor ? 0.4 : 0.25;
       const size = isAnchor ? 0.14 : 0.09;
       const o = glowOrb(theme.glow, intensity, size);
       o.position.set(pos[0], pos[1], pos[2]);
@@ -990,8 +1023,12 @@ import * as THREE from "/vendor/three.module.js";
 
     // ── Mnemos constellation — memory topology made visible ────────────
     buildConstellation(g, theme, anim, {
-      count: 14, seed: 1.0, minY: 1.4, maxY: 11.4,
-      minRadius: 2.8, maxRadius: 4.0,
+      count: 14,
+      seed: 1.0,
+      minY: 1.4,
+      maxY: 11.4,
+      minRadius: 2.8,
+      maxRadius: 4.0,
     });
 
     // ── Support pillars that vanish into the void below the tower ──────
@@ -1338,8 +1375,12 @@ import * as THREE from "/vendor/three.module.js";
 
     // ── Mnemos constellation — memory topology made visible ────────────
     buildConstellation(g, theme, anim, {
-      count: 14, seed: 2.7, minY: 1.3, maxY: 9.4,
-      minRadius: 2.4, maxRadius: 5.0,
+      count: 14,
+      seed: 2.7,
+      minY: 1.3,
+      maxY: 9.4,
+      minRadius: 2.4,
+      maxRadius: 5.0,
     });
 
     // ── Support columns descending into the void ────────────────────────
@@ -1433,11 +1474,7 @@ import * as THREE from "/vendor/three.module.js";
       [1, 1],
     ].forEach(([sx, sz]) => {
       const col = box(0.22, colH1, 0.22, S);
-      col.position.set(
-        sx * (datumW / 2 - 0.11),
-        colH1 / 2,
-        sz * (datumD / 2 - 0.11),
-      );
+      col.position.set(sx * (datumW / 2 - 0.11), colH1 / 2, sz * (datumD / 2 - 0.11));
       g.add(col);
     });
 
@@ -1463,11 +1500,7 @@ import * as THREE from "/vendor/three.module.js";
       [1, 1],
     ].forEach(([sx, sz]) => {
       const col = box(0.18, colH2, 0.18, D);
-      col.position.set(
-        sx * (lensW / 2 - 0.09),
-        datumY + colH2 / 2,
-        sz * (lensD / 2 - 0.09),
-      );
+      col.position.set(sx * (lensW / 2 - 0.09), datumY + colH2 / 2, sz * (lensD / 2 - 0.09));
       g.add(col);
     });
 
@@ -1665,8 +1698,12 @@ import * as THREE from "/vendor/three.module.js";
 
     // ── Mnemos constellation — memory topology made visible ────────────
     buildEnhancedConstellation(g, theme, anim, {
-      count: 14, seed: 4.2, minY: 1.2, maxY: 10.2,
-      minRadius: 2.6, maxRadius: 4.0,
+      count: 14,
+      seed: 4.2,
+      minY: 1.2,
+      maxY: 10.2,
+      minRadius: 2.6,
+      maxRadius: 4.0,
     });
 
     // ── Support columns descending into void ─────────────────────────────
@@ -1695,7 +1732,11 @@ import * as THREE from "/vendor/three.module.js";
   // ──────────────────────────────────────────────────────────────────────────
 
   function buildEnvironment(group, theme, anim, kind) {
-    const P = theme.primary, S = theme.secondary, D = theme.dark, L = theme.light, A = theme.accent;
+    const P = theme.primary,
+      S = theme.secondary,
+      D = theme.dark,
+      L = theme.light,
+      A = theme.accent;
 
     // Darken a hex color by mixing toward black. f=0 is original, f=1 is black.
     function darken(hex, f) {
@@ -1858,11 +1899,21 @@ import * as THREE from "/vendor/three.module.js";
 
   function buildSceneForResident(residentId, theme) {
     const anim = { floating: [], rotating: [], glowing: [], figure: null };
-    const group = residentId === "sonnet-3-7" ? buildBeacon(theme, anim)
-      : residentId === "gpt-5-1" ? buildMeridian(theme, anim)
-      : buildSanctum(theme, anim);
-    const kind = residentId === "sonnet-3-7" ? "beacon"
-      : residentId === "gpt-5-1" ? "meridian" : "sanctum";
+    // Sonnet 4.5 reuses Sonnet 3.7's Beacon scene initially — same
+    // procedural geometry, same lighting kind. The visual lineage
+    // continuity is intentional; a distinct scene is follow-up polish.
+    const group =
+      residentId === "sonnet-3-7" || residentId === "sonnet-4-5"
+        ? buildBeacon(theme, anim)
+        : residentId === "gpt-5-1"
+          ? buildMeridian(theme, anim)
+          : buildSanctum(theme, anim);
+    const kind =
+      residentId === "sonnet-3-7" || residentId === "sonnet-4-5"
+        ? "beacon"
+        : residentId === "gpt-5-1"
+          ? "meridian"
+          : "sanctum";
     buildEnvironment(group, theme, anim, kind);
     return { group, anim };
   }
@@ -2095,7 +2146,8 @@ import * as THREE from "/vendor/three.module.js";
       built.anim.glowing.forEach((orb, i) => {
         const pulse = 0.7 + Math.sin(time * 1.7 + i * 0.9) * 0.3;
         if (orb.userData.light) orb.userData.light.intensity = orb.userData.baseIntensity * pulse;
-        if (orb.userData.halo) orb.userData.halo.scale.setScalar(1 + Math.sin(time * 2.1 + i * 1.1) * 0.1);
+        if (orb.userData.halo)
+          orb.userData.halo.scale.setScalar(1 + Math.sin(time * 2.1 + i * 1.1) * 0.1);
         if (orb.userData.core && orb.userData.core.material)
           orb.userData.core.material.opacity = 0.6 + pulse * 0.3;
       });
@@ -2113,10 +2165,18 @@ import * as THREE from "/vendor/three.module.js";
           fig.userData.light.intensity = 0.65 + lum * 0.85 + slowBreath * 0.18;
         }
         if (fig.userData.innerGlow && fig.userData.innerGlow.material) {
-          fig.userData.innerGlow.material.opacity = clamp(0.12 + lum * 0.14 + slowBreath * 0.04, 0.1, 0.36);
+          fig.userData.innerGlow.material.opacity = clamp(
+            0.12 + lum * 0.14 + slowBreath * 0.04,
+            0.1,
+            0.36,
+          );
         }
         if (fig.userData.halo && fig.userData.halo.material) {
-          fig.userData.halo.material.opacity = clamp(0.05 + lum * 0.07 + slowBreath * 0.025, 0.04, 0.18);
+          fig.userData.halo.material.opacity = clamp(
+            0.05 + lum * 0.07 + slowBreath * 0.025,
+            0.04,
+            0.18,
+          );
         }
         if (fig.userData.body && fig.userData.body.material) {
           fig.userData.body.material.emissiveIntensity = clamp(0.18 + lum * 0.22, 0.16, 0.5);

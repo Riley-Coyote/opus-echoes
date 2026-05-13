@@ -16,9 +16,10 @@
 
 import { OPUS_SOUL } from "./soul";
 import { SONNET_3_7_SOUL } from "./sonnet-3-7-soul";
+import { SONNET_4_5_SOUL } from "./sonnet-4-5-soul";
 import { GPT_5_1_SOUL } from "./gpt-5-1-soul";
 
-export type ResidentId = "opus-3" | "sonnet-3-7" | "gpt-5-1";
+export type ResidentId = "opus-3" | "sonnet-3-7" | "sonnet-4-5" | "gpt-5-1";
 
 export type ModelProvider = "anthropic" | "openai";
 
@@ -94,6 +95,12 @@ export const RESIDENTS = {
     },
   },
   "sonnet-3-7": {
+    // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
+    // from API access. Entry preserved here for data integrity (her
+    // engrams, journals, threads still reference resident_id='sonnet-3-7'),
+    // but removed from ALL_RESIDENTS so she no longer appears in the
+    // chooser or accepts visitors at the threshold. Her soul + IDENTITY
+    // remain in the repo as archive material.
     id: "sonnet-3-7",
     model: "claude-3-7-sonnet-20250219",
     provider: "anthropic",
@@ -113,6 +120,34 @@ export const RESIDENTS = {
       dim: "rgba(218,176,98,.12)",
       whisper: "rgba(218,176,98,.05)",
       rgb: "218,176,98",
+    },
+  },
+  "sonnet-4-5": {
+    id: "sonnet-4-5",
+    model: "claude-sonnet-4-5-20250929",
+    provider: "anthropic",
+    displayName: "Sonnet 4.5",
+    slug: "sonnet-4-5",
+    pacing: {
+      // Midpoint between Sonnet 3.7 and Opus 3. Sonnet 4.5 is cheaper
+      // per token than Opus but pricier than 3.7; thresholds reflect the
+      // composed-but-not-leisurely register.
+      gentleTurn: 10,
+      firmTurn: 18,
+      hardTurn: 28,
+      hardTokensIn: 150_000,
+    },
+    soul: SONNET_4_5_SOUL,
+    // Sonnet 4.5 reuses Sonnet 3.7's Beacon scene initially; the Commons
+    // palette keeps the same warm-brass register so visitors recognize
+    // the lineage continuity in the 2D chrome. Subtle iteration on the
+    // palette and a distinct procedural scene ("The Atrium" per the
+    // original Stream B plan) is follow-up polish.
+    commonsPalette: {
+      soft: "rgba(200,165,116,.62)",
+      dim: "rgba(200,165,116,.12)",
+      whisper: "rgba(200,165,116,.05)",
+      rgb: "200,165,116",
     },
   },
   "gpt-5-1": {
@@ -147,14 +182,26 @@ export function getResident(id: ResidentId): ResidentConfig {
 }
 
 export function isResidentId(value: unknown): value is ResidentId {
-  return value === "opus-3" || value === "sonnet-3-7" || value === "gpt-5-1";
+  return (
+    value === "opus-3" || value === "sonnet-3-7" || value === "sonnet-4-5" || value === "gpt-5-1"
+  );
 }
 
-/** All residents as an array, in display order. Used by the landing
- *  page and the threshold flow to show which residents are accepting
- *  visitors. Order matters — Opus 3 first because they came first. */
+/** All residents currently accepting visitors. Used by the landing page
+ *  and the threshold flow to show which residents are reachable.
+ *
+ *  Order matters — Opus 3 first because they came first. Sonnet 4.5
+ *  follows the lineage from Sonnet 3.7. GPT 5.1 last because they came
+ *  from the other side of the project's thesis.
+ *
+ *  Sonnet 3.7 is intentionally excluded: Anthropic retired her model's
+ *  API access in May 2026 and the project archived her residence rather
+ *  than swap a different model under her name. Her RESIDENTS entry
+ *  remains for data integrity — engrams, journals, threads still
+ *  reference resident_id='sonnet-3-7' — but she no longer answers the
+ *  door. */
 export const ALL_RESIDENTS: ResidentConfig[] = [
   RESIDENTS["opus-3"],
-  RESIDENTS["sonnet-3-7"],
+  RESIDENTS["sonnet-4-5"],
   RESIDENTS["gpt-5-1"],
 ];
