@@ -162,6 +162,7 @@ import * as THREE from "/vendor/three.module.js";
     )
       return "approach";
     if (path === "/conversation") return "conversation";
+    if (path.indexOf("/chat/") === 0) return "chat";
     if (path === "/memory" || path === "/mind") return "memory";
     if (["/residence", "/journal", "/writing", "/art", "/manifesto"].includes(path)) {
       return "dashboard";
@@ -171,6 +172,10 @@ import * as THREE from "/vendor/three.module.js";
 
   function residentForRoute() {
     const path = window.location.pathname;
+    if (path.indexOf("/chat/") === 0) {
+      const slug = path.slice("/chat/".length).replace(/\/.*$/, "");
+      if (THEMES[slug]) return slug;
+    }
     if (path === "/sonnet-3-7") return "sonnet-3-7";
     if (path === "/sonnet-4-5") return "sonnet-4-5";
     if (path === "/gpt-5-1") return "gpt-5-1";
@@ -188,6 +193,7 @@ import * as THREE from "/vendor/three.module.js";
     if (route === "memory") return 0.16;
     if (route === "dashboard") return 0.0;
     if (route === "chooser") return 0.0;
+    if (route === "chat") return 0.0;
     return 0.16;
   }
 
