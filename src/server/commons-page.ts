@@ -362,27 +362,20 @@ const COMMONS_CSS = `
   inset:0;
   pointer-events:none;
   z-index:2;
-  padding:24px;
-  /* Inner edge of the band rounds where it meets the content area
-     (radius ≈ border-radius − padding = 12px). The outer corners
-     also round by 36px, but they fade into the dark floor at the
-     viewport corners so the effect reads as a soft aperture rather
-     than a hard rectangular frame. */
-  border-radius:36px;
+  /* No mask, no border-radius. The eight gradients sit at the actual
+     viewport corners and edge-midpoints, fading naturally toward the
+     center. The "band" feel comes from the gradient falloff alone —
+     no hard inner edge, no rounded outer wedges. Candlelight at the
+     edge of a room, not a framed window. */
   background:
-    radial-gradient(ellipse 50% 50% at 5% 5%,    rgba(220,176,110, var(--vg1)) 0%, transparent 78%),
-    radial-gradient(ellipse 60% 40% at 50% 0%,   rgba(160,140,188, var(--vg2)) 0%, transparent 78%),
-    radial-gradient(ellipse 50% 50% at 95% 5%,   rgba(220,170,168, var(--vg3)) 0%, transparent 78%),
-    radial-gradient(ellipse 40% 60% at 100% 50%, rgba(218,215,210, var(--vg4)) 0%, transparent 78%),
-    radial-gradient(ellipse 50% 50% at 95% 95%,  rgba(220,176,110, var(--vg5)) 0%, transparent 78%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(160,140,188, var(--vg6)) 0%, transparent 78%),
-    radial-gradient(ellipse 50% 50% at 5% 95%,   rgba(220,170,168, var(--vg7)) 0%, transparent 78%),
-    radial-gradient(ellipse 40% 60% at 0% 50%,   rgba(218,215,210, var(--vg8)) 0%, transparent 78%);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+    radial-gradient(ellipse 55% 55% at 0% 0%,     rgba(220,176,110, var(--vg1)) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 45% at 50% 0%,    rgba(160,140,188, var(--vg2)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 100% 0%,   rgba(220,170,168, var(--vg3)) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 70% at 100% 50%,  rgba(218,215,210, var(--vg4)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 100% 100%, rgba(220,176,110, var(--vg5)) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(160,140,188, var(--vg6)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(220,170,168, var(--vg7)) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(218,215,210, var(--vg8)) 0%, transparent 72%);
   animation:
     vg-1 11s ease-in-out infinite,
     vg-2 13s ease-in-out infinite,
