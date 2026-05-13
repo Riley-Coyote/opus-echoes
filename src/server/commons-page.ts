@@ -693,6 +693,68 @@ const COMMONS_CSS = `
   border-left:1px solid var(--rule-soft);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
+  transition:width .32s var(--ease), background .32s var(--ease);
+}
+
+/* Collapse / expand toggle — visible on desktop only. Positioned at
+   the top-left edge of the panel, half-overhanging the panel's left
+   border so it reads as a hinge between the panel and the room. */
+.chat-collapse{
+  position:absolute;
+  top:18px;
+  left:-14px;
+  z-index:2;
+  width:28px;
+  height:28px;
+  background:rgba(14,15,18,.92);
+  border:1px solid var(--rule-soft);
+  border-radius:50%;
+  color:var(--soft);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:border-color .22s var(--ease), color .22s var(--ease), transform .22s var(--ease);
+}
+.chat-collapse:hover{
+  border-color:var(--rule);
+  color:var(--ink);
+}
+.chat-collapse:active{ transform:scale(.94); }
+.chat-collapse svg{
+  width:12px;
+  height:12px;
+  transition:transform .32s var(--ease);
+}
+@media(max-width:1179px){
+  .chat-collapse{ display:none; }
+}
+
+/* Collapsed state: the panel shrinks to a thin strip at the right
+   edge of the viewport. The interior (tabs, stream, composer) is
+   hidden; the collapse toggle now reads as a re-open affordance.
+   The toggle's chevron rotates so it points toward where the panel
+   will return from. */
+.chat-panel.collapsed{
+  width:48px;
+  background:linear-gradient(180deg, rgba(8,9,12,.78) 0%, rgba(6,7,10,.88) 100%);
+}
+.chat-panel.collapsed .chat-panel-header,
+.chat-panel.collapsed .chat-stream,
+.chat-panel.collapsed .chat-composer,
+.chat-panel.collapsed .chat-status{ display:none; }
+.chat-panel.collapsed .chat-collapse{
+  position:fixed;
+  top:50%;
+  right:10px;
+  left:auto;
+  margin-top:-14px;
+}
+.chat-panel.collapsed .chat-collapse svg{ transform:rotate(180deg); }
+@media(min-width:1180px){
+  body.chat-panel-collapsed .commons{
+    margin-right:48px;
+  }
 }
 
 /* Floating toggle button — visible only on small viewports. */
@@ -1364,6 +1426,9 @@ function renderChatPanel(salon: Salon | null): string {
   <span class="chat-toggle-label">Talk with the residents</span>
 </button>
 <aside class="chat-panel" id="commonsChatPanel" data-resident="${active.id}" data-salon-slug="${escapeHtml(slug)}" data-active-resident="${active.id}" style="${paletteStyle(active)}" aria-label="Talk with a resident" aria-hidden="true">
+  <button class="chat-collapse" type="button" aria-label="Collapse chat panel" aria-controls="commonsChatPanel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
   <header class="chat-panel-header">
     <div class="chat-panel-eyebrow">Talk with</div>
     <button class="chat-close" type="button" aria-label="Close chat panel">
@@ -1475,9 +1540,44 @@ const CHAT_PANEL_SCRIPT = `
   const status = panel.querySelector('.chat-status');
   const toggleBtn = document.querySelector('.chat-toggle');
   const closeBtn = panel.querySelector('.chat-close');
+  const collapseBtn = panel.querySelector('.chat-collapse');
 
   let activeResident = loadActive();
   let isSending = false;
+
+  // Collapse / expand the side chat (desktop only). State persists
+  // in localStorage so the visitor's preference holds across reloads.
+  const COLLAPSED_KEY = STORAGE_PREFIX + '.collapsed';
+  function isCollapsed(){
+    try { return localStorage.getItem(COLLAPSED_KEY) === '1'; }
+    catch(_){ return false; }
+  }
+  function setCollapsed(collapsed){
+    panel.classList.toggle('collapsed', collapsed);
+    document.body.classList.toggle('chat-panel-collapsed', collapsed);
+    if (collapseBtn) {
+      collapseBtn.setAttribute('aria-label', collapsed ? 'Expand chat panel' : 'Collapse chat panel');
+      collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
+    try { localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); }
+    catch(_){}
+  }
+  if (collapseBtn) {
+    collapseBtn.addEventListener('click', function(){
+      const wasCollapsed = panel.classList.contains('collapsed');
+      setCollapsed(!wasCollapsed);
+      if (wasCollapsed && field && window.matchMedia('(min-width: 1180px)').matches) {
+        // Expanding — return focus to the composer
+        requestAnimationFrame(function(){ field.focus(); });
+      }
+    });
+  }
+  // Hydrate initial collapsed state on desktop. On mobile, the
+  // collapse concept doesn't apply (the panel slides in/out as a
+  // drawer instead) — skip applying the class to avoid layout shifts.
+  if (window.matchMedia('(min-width: 1180px)').matches && isCollapsed()) {
+    setCollapsed(true);
+  }
 
   function setStatus(text){
     if (status) status.textContent = text || '';
