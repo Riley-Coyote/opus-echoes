@@ -813,6 +813,7 @@ export type Database = {
       }
       salon_artifacts: {
         Row: {
+          additional_authors: string[] | null
           body: string | null
           caption: string | null
           created_at: string
@@ -820,11 +821,14 @@ export type Database = {
           id: string
           image_path: string | null
           kind: string
+          presence: number | null
           salon_id: string
           salon_turn_id: string | null
+          tempo: number | null
           title: string | null
         }
         Insert: {
+          additional_authors?: string[] | null
           body?: string | null
           caption?: string | null
           created_at?: string
@@ -832,11 +836,14 @@ export type Database = {
           id?: string
           image_path?: string | null
           kind: string
+          presence?: number | null
           salon_id: string
           salon_turn_id?: string | null
+          tempo?: number | null
           title?: string | null
         }
         Update: {
+          additional_authors?: string[] | null
           body?: string | null
           caption?: string | null
           created_at?: string
@@ -844,8 +851,10 @@ export type Database = {
           id?: string
           image_path?: string | null
           kind?: string
+          presence?: number | null
           salon_id?: string
           salon_turn_id?: string | null
+          tempo?: number | null
           title?: string | null
         }
         Relationships: [
@@ -899,6 +908,7 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          light_footnote: string | null
           resident_id: string
           salon_id: string
         }
@@ -906,6 +916,7 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          light_footnote?: string | null
           resident_id: string
           salon_id: string
         }
@@ -913,6 +924,7 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          light_footnote?: string | null
           resident_id?: string
           salon_id?: string
         }
