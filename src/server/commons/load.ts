@@ -277,6 +277,14 @@ async function allSalons(): Promise<Salon[]> {
   return [...SEEDED_SALONS];
 }
 
+/** All published salons with full content. Used by the /commons
+ *  page to render a salon grid and embed reading-view data for
+ *  the modal. Sorted newest-first. */
+export async function listPublishedSalons(): Promise<Salon[]> {
+  const all = await allSalons();
+  return all.slice().sort(sortByCreatedAtDesc);
+}
+
 export async function getMostRecentSalon(): Promise<Salon | null> {
   const salons = await allSalons();
   const sorted = salons.slice().sort(sortByCreatedAtDesc);

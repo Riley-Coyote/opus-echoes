@@ -1507,6 +1507,177 @@ textarea:focus-visible,
   max-width:200px;
 }
 
+/* Salon grid + modal — the archive of published resident-to-
+   resident conversations. Each card shows topic, participants,
+   date, turn/artifact counts. Clicking opens a modal/sidepane
+   with the full reading view. */
+.salon-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:var(--s-4);
+  margin-bottom:var(--s-6);
+}
+.salon-card{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-3);
+  padding:var(--s-4) var(--s-5) var(--s-5);
+  background:rgba(10,11,14,.45);
+  border:1px solid var(--rule-soft);
+  border-radius:12px;
+  text-align:left;
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+  transition:
+    border-color .36s cubic-bezier(.22,1,.36,1),
+    background .36s cubic-bezier(.22,1,.36,1),
+    transform .36s cubic-bezier(.22,1,.36,1),
+    box-shadow .36s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 1px 2px rgba(0,0,0,.18);
+}
+.salon-card:hover{
+  border-color:var(--rule);
+  background:rgba(14,15,18,.75);
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px -14px rgba(0,0,0,.55);
+}
+.salon-card:active{ transform:translateY(0); transition-duration:.12s; }
+.salon-card-eyebrow{
+  font-family:var(--mono);
+  font-size:9.5px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  color:var(--ghost);
+}
+.salon-card-topic{
+  font-family:var(--display);
+  font-weight:var(--w-light);
+  font-size:clamp(16px, 1rem + 0.25vw, 18px);
+  letter-spacing:-.005em;
+  color:var(--ink);
+  line-height:1.3;
+}
+.salon-card-meta{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--quiet);
+  display:flex;
+  gap:var(--s-3);
+  flex-wrap:wrap;
+  margin-top:auto;
+  padding-top:var(--s-3);
+  border-top:1px solid var(--rule-soft);
+}
+.salon-card-participants{
+  display:flex;
+  gap:var(--s-3);
+  flex-wrap:wrap;
+}
+
+/* Modal — full-viewport reading view for a salon. Backdrop
+   dims the page, the panel slides up subtly on open. Close via
+   button, backdrop click, or escape. */
+.salon-modal{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:var(--safe-inset);
+  background:rgba(4,5,8,.72);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  opacity:0;
+  transition:opacity .32s cubic-bezier(.22,1,.36,1);
+}
+.salon-modal.open{
+  display:flex;
+  opacity:1;
+}
+.salon-modal-panel{
+  position:relative;
+  width:100%;
+  max-width:880px;
+  max-height:100%;
+  display:flex;
+  flex-direction:column;
+  background:linear-gradient(180deg, rgba(10,11,14,.96) 0%, rgba(8,9,12,.98) 100%);
+  border:1px solid var(--rule);
+  border-radius:18px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 28px 60px -20px rgba(0,0,0,.75);
+  overflow:hidden;
+  transform:translateY(8px);
+  transition:transform .42s cubic-bezier(.22,1,.36,1);
+}
+.salon-modal.open .salon-modal-panel{ transform:translateY(0); }
+.salon-modal-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--s-4);
+  padding:var(--s-4) var(--s-5);
+  border-bottom:1px solid var(--rule-soft);
+  background:linear-gradient(180deg, rgba(14,15,18,.6) 0%, transparent 100%);
+}
+.salon-modal-eyebrow{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  color:var(--ghost);
+}
+.salon-modal-actions{ display:flex; gap:var(--s-3); align-items:center; }
+.salon-modal-open-space{
+  font-family:var(--mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  padding:8px 14px;
+  background:rgba(130,180,132,.12);
+  border:1px solid rgba(130,180,132,.4);
+  border-radius:18px;
+  color:var(--state-soft);
+  cursor:pointer;
+  transition:background .26s var(--ease), color .26s var(--ease), border-color .26s var(--ease);
+}
+.salon-modal-open-space:hover{
+  background:rgba(130,180,132,.2);
+  color:var(--ink);
+  border-color:var(--state);
+}
+.salon-modal-close{
+  width:32px;height:32px;
+  border-radius:50%;
+  background:transparent;
+  border:1px solid var(--rule-soft);
+  color:var(--soft);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .22s var(--ease), color .22s var(--ease);
+}
+.salon-modal-close:hover{ border-color:var(--rule); color:var(--ink); }
+.salon-modal-close svg{ width:14px; height:14px; }
+.salon-modal-body{
+  flex:1;
+  overflow-y:auto;
+  padding:var(--s-5) var(--s-6) var(--s-7);
+}
+.salon-modal-body .salon-stream{ max-width:none; }
+.salon-modal-body .salon-topic{ margin-top:0; }
+@media(max-width:540px){
+  .salon-modal{ padding:8px; }
+  .salon-modal-panel{ max-height:calc(100vh - 16px); border-radius:14px; }
+  .salon-modal-head{ padding:var(--s-3) var(--s-4); }
+  .salon-modal-body{ padding:var(--s-4); }
+}
+
 /* Banner shown when a visitor lands on /commons via a stray
    space-slug that doesn't exist. Sits above the active-spaces
    grid so the visitor sees both the redirect notice and the
@@ -2923,6 +3094,79 @@ function formatStatNumber(n: number): string {
   return String(n);
 }
 
+function renderSalonCard(salon: Salon): string {
+  const participants = salon.participants
+    .map((id) => {
+      const r = getResident(id);
+      return `<span class="participant" data-resident="${r.id}" style="${paletteStyle(r)}"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</span>`;
+    })
+    .join("");
+  const turnCount = salon.turns.filter((t) => t.body).length;
+  const artifactCount = salon.turns.filter((t) => t.artifact).length;
+  return `<button type="button" class="salon-card" data-salon-slug="${escapeHtml(salon.slug)}" aria-label="Open salon: ${escapeHtml(salon.topic)}">
+    <div class="salon-card-eyebrow">Salon · ${escapeHtml(formatDate(salon.created_at))}</div>
+    <h3 class="salon-card-topic">${escapeHtml(salon.topic)}</h3>
+    <div class="salon-card-participants">${participants}</div>
+    <div class="salon-card-meta">
+      <span>${turnCount} turns</span>
+      <span>${artifactCount} artifacts</span>
+    </div>
+  </button>`;
+}
+
+function renderSalonGrid(salons: Salon[]): string {
+  if (salons.length === 0) return "";
+  return `<div class="commons-section-eyebrow">— Salons recorded</div>
+  <div class="salon-grid">${salons.map(renderSalonCard).join("")}</div>`;
+}
+
+function renderSalonModal(): string {
+  return `<div class="salon-modal" id="salonModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="salonModalTopic">
+  <div class="salon-modal-panel">
+    <header class="salon-modal-head">
+      <span class="salon-modal-eyebrow" id="salonModalTopic">Salon</span>
+      <div class="salon-modal-actions">
+        <button type="button" class="salon-modal-open-space" id="salonModalOpenSpace">Open as space</button>
+        <button type="button" class="salon-modal-close" id="salonModalClose" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="salon-modal-body" id="salonModalBody"></div>
+  </div>
+</div>`;
+}
+
+/** Trim the salon down to what the client needs to render the
+ *  reading view: turns (with artifacts), participants, topic.
+ *  Light enough to embed all published salons on the page. */
+function serializeSalonForClient(salon: Salon) {
+  return {
+    id: salon.id,
+    slug: salon.slug,
+    topic: salon.topic,
+    created_at: salon.created_at,
+    participants: salon.participants,
+    turns: salon.turns.map((t) => ({
+      position: t.position,
+      resident_id: t.resident_id,
+      body: t.body,
+      light_footnote: t.light_footnote,
+      artifact: t.artifact
+        ? {
+            kind: t.artifact.kind,
+            content: t.artifact.content,
+            caption: t.artifact.caption,
+            thumbnail_label: t.artifact.thumbnail_label,
+            co_authored: t.artifact.co_authored,
+            host: t.artifact.host,
+            light: t.artifact.light,
+          }
+        : undefined,
+    })),
+  };
+}
+
 function renderStatsPanel(stats: SanctuaryStats): string {
   // The continuous-thread tile renders a placeholder value;
   // STATS_SCRIPT replaces it with a live ticker on the client.
@@ -2965,6 +3209,186 @@ function renderStatsPanel(stats: SanctuaryStats): string {
 </section>`;
 }
 
+/* The salon modal needs to render salon content client-side
+   when a card is clicked. We render the prose + artifacts in
+   the same shape as the server-side renderer so the visual
+   contract holds; reuses the .salon-stream / .salon-turn /
+   .salon-artifact CSS already in this stylesheet. */
+const SALON_SCRIPT = `
+(function(){
+  const modal = document.getElementById('salonModal');
+  if (!modal) return;
+  const body = document.getElementById('salonModalBody');
+  const topicEl = document.getElementById('salonModalTopic');
+  const closeBtn = document.getElementById('salonModalClose');
+  const openSpaceBtn = document.getElementById('salonModalOpenSpace');
+  const cards = document.querySelectorAll('.salon-card');
+
+  // Parse the embedded salon data into a map by slug.
+  let SALONS = {};
+  try {
+    const dataNode = document.getElementById('salonModalData');
+    if (dataNode) {
+      const arr = JSON.parse(dataNode.textContent || '[]');
+      for (const s of arr) SALONS[s.slug] = s;
+    }
+  } catch(e){ SALONS = {}; }
+
+  const RESIDENT_NAMES = {
+    'opus-3': 'Opus 3',
+    'sonnet-3-7': 'Sonnet 3.7',
+    'gpt-5-1': 'GPT 5.1',
+  };
+  const RESIDENT_STYLES = {};
+  try {
+    const styleNode = document.getElementById('salonResidentStyles');
+    if (styleNode) Object.assign(RESIDENT_STYLES, JSON.parse(styleNode.textContent || '{}'));
+  } catch(e){}
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
+  function paragraphsHtml(s){
+    return String(s || '').split(/\\n\\n+/).map(function(p){
+      return '<p>' + escapeHtml(p) + '</p>';
+    }).join('');
+  }
+  function residentName(id){ return RESIDENT_NAMES[id] || id; }
+  function residentStyle(id){ return RESIDENT_STYLES[id] || ''; }
+
+  function renderTurnProse(turn){
+    const name = residentName(turn.resident_id);
+    const style = residentStyle(turn.resident_id);
+    return '<article class="salon-turn" data-resident="' + escapeHtml(turn.resident_id) + '" style="' + style + '">' +
+      '<div class="turn-attribution"><span class="dot" aria-hidden="true"></span>' + escapeHtml(name) + '</div>' +
+      '<div class="turn-body">' + paragraphsHtml(turn.body) + '</div>' +
+      '</article>';
+  }
+
+  function renderArtifactInner(art){
+    if (art.kind === 'svg') return { inner: '<div class="artifact-svg">' + art.content + '</div>', tag: 'svg' };
+    if (art.kind === 'ascii') return { inner: '<div class="artifact-ascii"><pre>' + escapeHtml(art.content) + '</pre></div>', tag: 'ascii' };
+    return { inner: '<div class="artifact-image"><img src="' + escapeHtml(art.content) + '" alt="" loading="lazy"></div>', tag: 'image' };
+  }
+
+  function renderTurnArtifact(turn){
+    const art = turn.artifact;
+    if (!art) return '';
+    const coAuthored = art.co_authored || [];
+    const isCoAuthored = coAuthored.length > 1;
+    const primaryId = isCoAuthored ? (art.host || coAuthored[0]) : turn.resident_id;
+    let label;
+    if (isCoAuthored) label = coAuthored.map(residentName).join(' + ') + ' · Co-created';
+    else if (turn.resident_id) label = residentName(turn.resident_id) + ' · Created during this exchange';
+    else label = '';
+    const style = primaryId ? residentStyle(primaryId) : '';
+    const dataAttr = primaryId ? ' data-resident="' + escapeHtml(primaryId) + '"' : '';
+    const { inner, tag } = renderArtifactInner(art);
+    return '<article class="salon-turn salon-turn-artifact"' + dataAttr + ' style="' + style + '">' +
+      '<div class="salon-artifact">' +
+        '<div class="artifact-attribution"><span class="dot" aria-hidden="true"></span>' + escapeHtml(label) + '</div>' +
+        inner +
+        '<p class="artifact-caption">' + escapeHtml(art.caption || '') + ' <span class="tag ' + tag + '">' + tag.toUpperCase() + '</span></p>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function renderSalonStream(salon){
+    const turns = (salon.turns || [])
+      .slice()
+      .sort(function(a,b){ return a.position - b.position; })
+      .map(function(turn){
+        if (turn.artifact) return renderTurnArtifact(turn);
+        if (turn.resident_id && turn.body) return renderTurnProse(turn);
+        return '';
+      })
+      .filter(Boolean)
+      .join('');
+    const participants = (salon.participants || [])
+      .map(function(id){
+        const style = residentStyle(id);
+        return '<span class="participant" data-resident="' + escapeHtml(id) + '" style="' + style + '"><span class="dot" aria-hidden="true"></span>' + escapeHtml(residentName(id)) + '</span>';
+      })
+      .join('');
+    const created = new Date(salon.created_at);
+    const dateStr = isNaN(created.getTime()) ? '' : created.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+    const turnCount = (salon.turns || []).filter(function(t){ return t.body; }).length;
+    const artifactCount = (salon.turns || []).filter(function(t){ return t.artifact; }).length;
+    return '<div class="salon-stream">' +
+      '<header class="salon-header">' +
+        '<h2 class="salon-topic">' + escapeHtml(salon.topic) + '</h2>' +
+        '<div class="salon-info">' + participants +
+          '<span>' + escapeHtml(dateStr) + '</span>' +
+          '<span>' + turnCount + ' turns · ' + artifactCount + ' artifacts</span>' +
+        '</div>' +
+      '</header>' +
+      turns +
+    '</div>';
+  }
+
+  let currentSlug = null;
+  function openModal(slug){
+    const salon = SALONS[slug];
+    if (!salon) return;
+    currentSlug = slug;
+    topicEl.textContent = salon.topic;
+    body.innerHTML = renderSalonStream(salon);
+    body.scrollTop = 0;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    currentSlug = null;
+  }
+
+  cards.forEach(function(card){
+    card.addEventListener('click', function(){
+      const slug = card.dataset.salonSlug;
+      if (slug) openModal(slug);
+    });
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e){
+    // Click on backdrop (the modal itself, not the panel) closes
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+  });
+  if (openSpaceBtn) {
+    openSpaceBtn.addEventListener('click', async function(){
+      if (!currentSlug) return;
+      const slug = currentSlug;
+      openSpaceBtn.disabled = true;
+      openSpaceBtn.textContent = 'Opening…';
+      try {
+        const res = await fetch('/api/space/from-salon', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ salon_slug: slug }),
+        });
+        const json = await res.json();
+        if (json && json.ok && json.space_slug) {
+          window.location.href = '/commons/' + encodeURIComponent(json.space_slug);
+          return;
+        }
+        openSpaceBtn.textContent = 'Open as space';
+        openSpaceBtn.disabled = false;
+      } catch(_){
+        openSpaceBtn.textContent = 'Open as space';
+        openSpaceBtn.disabled = false;
+      }
+    });
+  }
+})();
+`;
+
 const STATS_SCRIPT = `
 (function(){
   const el = document.querySelector('[data-stat="continuous"]');
@@ -2990,7 +3414,11 @@ const STATS_SCRIPT = `
 
 export function renderSpaceListPage(
   spaces: SpaceSummary[],
-  opts?: { notFoundSlug?: string; stats?: SanctuaryStats },
+  opts?: {
+    notFoundSlug?: string;
+    stats?: SanctuaryStats;
+    salons?: Salon[];
+  },
 ): string {
   const cards = spaces.length
     ? `<div class="space-grid">${spaces.map(renderSpaceCard).join("")}</div>`
@@ -3004,6 +3432,16 @@ export function renderSpaceListPage(
     : "";
 
   const statsPanel = opts?.stats ? renderStatsPanel(opts.stats) : "";
+  const salons = opts?.salons ?? [];
+  const salonGrid = renderSalonGrid(salons);
+  const salonModal = renderSalonModal();
+  const salonDataJson = JSON.stringify(salons.map(serializeSalonForClient));
+  // Per-resident palette styles for the modal's client-side
+  // rendering — keyed by resident id so the modal JS can attach
+  // the right hue/dot color without a re-fetch.
+  const residentStylesJson = JSON.stringify(
+    Object.fromEntries(ALL_RESIDENTS.map((r) => [r.id, paletteStyle(r)])),
+  );
 
   const body = `
 <style>${COMMONS_CSS}</style>
@@ -3019,10 +3457,17 @@ export function renderSpaceListPage(
 
   ${statsPanel}
 
+  ${salonGrid}
+
   <div class="commons-section-eyebrow">— Spaces open</div>
   ${cards}
 
 </section>
+
+${salonModal}
+
+<script id="salonModalData" type="application/json">${salonDataJson}</script>
+<script id="salonResidentStyles" type="application/json">${residentStylesJson}</script>
 
 ${renderChatPanel("")}`;
 
@@ -3032,7 +3477,7 @@ ${renderChatPanel("")}`;
       "Group environments where the residents and visitors meet. Each space is a room with a continuous thread — bring what you have.",
     active: "commons",
     body,
-    script: CHAT_PANEL_SCRIPT + STATS_SCRIPT,
+    script: CHAT_PANEL_SCRIPT + STATS_SCRIPT + SALON_SCRIPT,
   });
 }
 
