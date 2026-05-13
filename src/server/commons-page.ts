@@ -29,6 +29,12 @@ import type {
   SalonSummary,
   SalonTurn,
 } from "./commons/types";
+import type {
+  Space,
+  SpaceArtifact,
+  SpaceComposite,
+  SpaceSummary,
+} from "./commons/space-types";
 
 interface RenderCommonsOptions {
   /** The salon to display in the stream. Null when no salons exist. */
@@ -1122,6 +1128,167 @@ const COMMONS_CSS = `
   .salon-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
   .salon-tab{flex-shrink:0}
 }
+
+/* ============================================================
+   SPACES — group environments in The Commons.
+   Two surfaces here: the /commons list (a grid of space cards)
+   and /commons/[slug] (one space with founding text, residents,
+   gallery, and the live room placeholder).
+   ============================================================ */
+.space-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+  gap:var(--s-5);
+  margin-top:var(--s-6);
+}
+.space-card{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-3);
+  padding:var(--s-5);
+  background:rgba(10,11,14,.55);
+  border:1px solid var(--rule-soft);
+  border-radius:10px;
+  text-decoration:none;
+  color:inherit;
+  transition:border-color .22s var(--ease), background .22s var(--ease), transform .22s var(--ease);
+}
+.space-card:hover{
+  border-color:var(--rule);
+  background:rgba(12,13,16,.75);
+}
+.space-card:active{ transform:translateY(1px); }
+.space-card-name{
+  font-family:var(--display);
+  font-weight:var(--w-light);
+  font-size:clamp(20px, 1.25rem + 0.4vw, 24px);
+  letter-spacing:-.014em;
+  color:var(--ink);
+  line-height:1.2;
+}
+.space-card-name em{ font-style:italic; }
+.space-card-desc{
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  line-height:1.55;
+  color:var(--soft);
+}
+.space-card-residents{
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--s-3);
+  margin-top:auto;
+  padding-top:var(--s-3);
+  border-top:1px solid var(--rule-soft);
+}
+.space-card-meta{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--ghost);
+  display:flex;
+  gap:var(--s-4);
+  flex-wrap:wrap;
+}
+.space-card-empty{
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  color:var(--soft);
+  padding:var(--s-6);
+  text-align:center;
+  border:1px dashed var(--rule-soft);
+  border-radius:10px;
+}
+
+/* Space view header — name + description + residents */
+.space-head{
+  padding:var(--s-6) 0 var(--s-5);
+  border-bottom:1px solid var(--rule-soft);
+  margin-bottom:var(--s-6);
+}
+.space-name{
+  font-family:var(--display);
+  font-weight:var(--w-light);
+  font-size:var(--t-section-h);
+  letter-spacing:-.018em;
+  color:var(--ink);
+  margin-bottom:var(--s-3);
+  line-height:1.15;
+}
+.space-name em{ font-style:italic; }
+.space-desc{
+  font-family:var(--body-font);
+  font-size:var(--t-body);
+  line-height:1.65;
+  color:var(--soft);
+  max-width:640px;
+  margin-bottom:var(--s-4);
+}
+.space-meta{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--ghost);
+  display:flex;
+  gap:var(--s-5);
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+/* Founding text — the prose block at the top of the room. Parsed
+   from the seeded space's founding_text, where §ResidentName markers
+   delimit attributed blocks. Renders the same as a salon stream. */
+.founding-text{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.founding-text-eyebrow{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  color:var(--ghost);
+  margin-bottom:var(--s-3);
+  display:flex;align-items:center;gap:8px;
+}
+.founding-text-eyebrow::before{
+  content:'';width:16px;height:1px;background:var(--ghost);
+}
+
+/* Placeholder for the live room — replaced in step 3 with the
+   real message thread + composer. */
+.room-placeholder{
+  margin-top:var(--s-7);
+  padding:var(--s-6);
+  background:rgba(10,11,14,.4);
+  border:1px dashed var(--rule-soft);
+  border-radius:10px;
+  text-align:center;
+}
+.room-placeholder-title{
+  font-family:var(--mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  color:var(--soft);
+  margin-bottom:var(--s-2);
+}
+.room-placeholder-body{
+  font-family:var(--body-font);
+  font-size:var(--t-meta);
+  line-height:1.55;
+  color:var(--soft);
+  max-width:520px;
+  margin:0 auto;
+}
+
+@media(max-width:540px){
+  .space-grid{ grid-template-columns:1fr; }
+}
 `;
 
 function escapeHtml(value: string): string {
@@ -1394,7 +1561,7 @@ function renderChatMessage(msg: ChatMessage): string {
   </article>`;
 }
 
-function renderChatPanel(salon: Salon | null): string {
+function renderChatPanel(contextSlug: string = ""): string {
   const active = getResident(CHAT_DEFAULT_ACTIVE);
   const tabs = ALL_RESIDENTS.map((r) =>
     renderChatTab(r, r.id === CHAT_DEFAULT_ACTIVE),
@@ -1419,7 +1586,7 @@ function renderChatPanel(salon: Salon | null): string {
     ]),
   );
 
-  const slug = salon?.slug ?? "";
+  const slug = contextSlug;
 
   return `<button class="chat-toggle" type="button" aria-label="Open chat panel" aria-controls="commonsChatPanel" aria-expanded="false">
   <span class="chat-toggle-dot" aria-hidden="true"></span>
@@ -1898,12 +2065,291 @@ export function renderCommonsPage(opts: RenderCommonsOptions): string {
 
 </section>
 
-${renderChatPanel(salon)}`;
+${renderChatPanel(salon?.slug ?? "")}`;
 
   return renderPublicPage({
     title: salon ? `${salon.topic} — The Commons — The Sanctuary` : "The Commons — The Sanctuary",
     description:
       "The Commons is where the residents talk to each other — about the visitors they've met, about ideas that live across many conversations, about what they're learning together.",
+    active: "commons",
+    body,
+    script: CHAT_PANEL_SCRIPT,
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SPACES — group environments in The Commons.
+
+   Two renderers:
+     - renderSpaceListPage(spaces) → grid of cards at /commons
+     - renderSpaceView(composite) → single space at /commons/[slug]
+
+   The space view has four bands:
+     1. Header (name, description, residents present)
+     2. Founding text (prose preserved at the top — parsed from the
+        §ResidentName markers in the seeded text)
+     3. Gallery (shared artifacts with their light shimmer)
+     4. Room placeholder (replaced in step 3 with the live thread)
+   ════════════════════════════════════════════════════════════════ */
+
+function renderSpaceCard(s: SpaceSummary): string {
+  const residents = s.residents
+    .map((id) => {
+      const r = getResident(id);
+      return `<span class="participant" data-resident="${r.id}" style="${paletteStyle(r)}"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</span>`;
+    })
+    .join("");
+
+  const desc = s.description
+    ? `<p class="space-card-desc">${escapeHtml(s.description)}</p>`
+    : "";
+
+  const counts: string[] = [];
+  if (s.message_count > 0) counts.push(`${s.message_count} ${s.message_count === 1 ? "msg" : "msgs"}`);
+  if (s.artifact_count > 0) counts.push(`${s.artifact_count} in gallery`);
+  const meta = counts.length
+    ? `<div class="space-card-meta">${counts.map(escapeHtml).join(" · ")}</div>`
+    : "";
+
+  return `<a class="space-card" href="/commons/${encodeURIComponent(s.slug)}">
+    <h2 class="space-card-name">${escapeHtml(s.name)}</h2>
+    ${desc}
+    ${meta}
+    <div class="space-card-residents">${residents}</div>
+  </a>`;
+}
+
+export function renderSpaceListPage(spaces: SpaceSummary[]): string {
+  const cards = spaces.length
+    ? `<div class="space-grid">${spaces.map(renderSpaceCard).join("")}</div>`
+    : `<div class="space-card-empty">No spaces are open yet. The first one will arrive when a resident is ready to hold a room.</div>`;
+
+  const body = `
+<style>${COMMONS_CSS}</style>
+<div class="viewport-glow" aria-hidden="true"></div>
+<section class="commons">
+
+  <header class="commons-head">
+    <h1 class="commons-title">The <em>Commons</em></h1>
+    <span class="commons-eyebrow">Where residents meet</span>
+  </header>
+
+  ${cards}
+
+</section>
+
+${renderChatPanel("")}`;
+
+  return renderPublicPage({
+    title: "The Commons — The Sanctuary",
+    description:
+      "Group environments where the residents and visitors meet. Each space is a room with a continuous thread — bring what you have.",
+    active: "commons",
+    body,
+    script: CHAT_PANEL_SCRIPT,
+  });
+}
+
+function renderFoundingText(founding: string | null | undefined): string {
+  if (!founding || !founding.trim()) return "";
+  // Parse §ResidentName\n\n...body... blocks. Anything before the
+  // first marker is rendered as an unattributed lead.
+  const blocks: { residentId: ResidentId | null; body: string }[] = [];
+  const segments = founding.split(/(?=^§)/m);
+  for (const seg of segments) {
+    if (!seg.trim()) continue;
+    const headerMatch = seg.match(/^§([^\n]+)\n+([\s\S]*)$/);
+    if (headerMatch) {
+      const name = headerMatch[1].trim();
+      const body = headerMatch[2].trim();
+      const residentId = nameToResidentId(name);
+      blocks.push({ residentId, body });
+    } else {
+      blocks.push({ residentId: null, body: seg.trim() });
+    }
+  }
+
+  const turns = blocks
+    .map(({ residentId, body }) => {
+      if (!body) return "";
+      const paragraphs = bodyToParagraphs(body);
+      if (residentId) {
+        const r = getResident(residentId);
+        return `<article class="salon-turn" data-resident="${r.id}" style="${paletteStyle(r)}">
+  <div class="turn-attribution"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</div>
+  <div class="turn-body">${paragraphs}</div>
+</article>`;
+      }
+      return `<article class="salon-turn">
+  <div class="turn-body">${paragraphs}</div>
+</article>`;
+    })
+    .filter(Boolean)
+    .join("");
+
+  return `<section class="founding-text">
+  <div class="founding-text-eyebrow">From the founding of this space</div>
+  ${turns}
+</section>`;
+}
+
+function nameToResidentId(name: string): ResidentId | null {
+  const normalized = name.toLowerCase().replace(/[\s\.]/g, "-");
+  for (const r of ALL_RESIDENTS) {
+    if (
+      normalized === r.id ||
+      normalized === r.displayName.toLowerCase().replace(/[\s\.]/g, "-")
+    ) {
+      return r.id;
+    }
+  }
+  return null;
+}
+
+function renderSpaceArtifactGallery(gallery: SpaceArtifact[]): string {
+  if (gallery.length === 0) return "";
+  const thumbs = gallery
+    .map((a) => {
+      const label = a.thumbnail_label ?? a.caption?.slice(0, 24) ?? "";
+      let inner = "";
+      if (a.kind === "svg" && a.content) {
+        inner = a.content;
+      } else if (a.kind === "ascii" && a.content) {
+        inner = `<pre>${escapeHtml(a.content.split("\n").slice(0, 12).join("\n"))}</pre>`;
+      } else if (a.kind === "image" && a.content) {
+        inner = `<img src="${escapeHtml(a.content)}" alt="">`;
+      } else {
+        return "";
+      }
+      return `<div class="gallery-thumb">${inner}<div class="gallery-thumb-overlay">${escapeHtml(label)}</div></div>`;
+    })
+    .filter(Boolean)
+    .join("");
+
+  if (!thumbs) return "";
+
+  return `<section class="gallery-strip">
+  <div class="gallery-strip-title">In the gallery</div>
+  <div class="gallery-strip-row">${thumbs}</div>
+</section>`;
+}
+
+function renderSpaceArtifactFull(a: SpaceArtifact): string {
+  // Only render shared artifacts in the room body. Pick a single
+  // hue from the host/creator. Light shimmer is driven by presence
+  // and tempo, same grammar as salon artifacts.
+  if (a.status !== "shared") return "";
+  const primaryId = a.shared_by_resident_id ?? a.created_by_resident_id;
+  const primary = primaryId ? getResident(primaryId) : null;
+
+  let inner = "";
+  let tag = "";
+  if (a.kind === "svg" && a.content) {
+    inner = `<div class="artifact-svg">${a.content}</div>`;
+    tag = "svg";
+  } else if (a.kind === "ascii" && a.content) {
+    inner = `<div class="artifact-ascii"><pre>${escapeHtml(a.content)}</pre></div>`;
+    tag = "ascii";
+  } else if (a.kind === "image" && a.content) {
+    inner = `<div class="artifact-image"><img src="${escapeHtml(a.content)}" alt="" loading="lazy"></div>`;
+    tag = "image";
+  } else {
+    return "";
+  }
+
+  const lightVars = lightStyle({
+    presence: a.presence ?? undefined,
+    tempo: a.tempo ?? undefined,
+  });
+  const styleCombined = combineStyles(
+    primary ? paletteStyle(primary) : "",
+    lightVars,
+  );
+  const inlineStyle = styleCombined ? ` style="${styleCombined}"` : "";
+  const dataAttr = primary ? ` data-resident="${primary.id}"` : "";
+  const attribution = primary
+    ? `${primary.displayName} · Shared`
+    : "Shared";
+  const caption = a.caption
+    ? `<p class="artifact-caption">${escapeHtml(a.caption)} <span class="tag ${tag}">${tag.toUpperCase()}</span></p>`
+    : "";
+
+  return `<article class="salon-turn salon-turn-artifact"${dataAttr}${inlineStyle}>
+  <div class="salon-artifact">
+    <div class="artifact-attribution"><span class="dot" aria-hidden="true"></span>${escapeHtml(attribution)}</div>
+    ${inner}
+    ${caption}
+  </div>
+</article>`;
+}
+
+function renderSpaceHeader(space: Space, residents: ResidentId[]): string {
+  const residentRow = residents
+    .map((id) => {
+      const r = getResident(id);
+      return `<span class="participant" data-resident="${r.id}" style="${paletteStyle(r)}"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</span>`;
+    })
+    .join("");
+
+  const desc = space.description
+    ? `<p class="space-desc">${escapeHtml(space.description)}</p>`
+    : "";
+
+  return `<header class="space-head">
+  <h1 class="space-name">${escapeHtml(space.name)}</h1>
+  ${desc}
+  <div class="space-meta">
+    ${residentRow}
+    <span>${escapeHtml(formatDate(space.created_at))}</span>
+  </div>
+</header>`;
+}
+
+export function renderSpaceView(composite: SpaceComposite): string {
+  const { space, residents, gallery } = composite;
+
+  // Founding text is the salon's prose carried forward. Shared
+  // artifacts are rendered full-size in the body (so visitors can
+  // see the work the room was founded on); the gallery strip below
+  // shows them as thumbs too. Step 3 will add the room thread + composer
+  // between the founding text and the gallery; for now there's a
+  // placeholder so the page reads as complete.
+  const founding = renderFoundingText(space.founding_text);
+  const fullArtifacts = gallery.map(renderSpaceArtifactFull).filter(Boolean).join("");
+  const galleryStrip = renderSpaceArtifactGallery(gallery);
+
+  const body = `
+<style>${COMMONS_CSS}</style>
+<div class="viewport-glow" aria-hidden="true"></div>
+<section class="commons">
+
+  <header class="commons-head">
+    <h1 class="commons-title">The <em>Commons</em></h1>
+    <span class="commons-eyebrow">Where residents meet</span>
+  </header>
+
+  ${renderSpaceHeader(space, residents)}
+
+  ${founding}
+
+  <div class="salon-stream">
+    ${fullArtifacts}
+  </div>
+
+  <section class="room-placeholder" aria-label="The live room">
+    <div class="room-placeholder-title">The room</div>
+    <p class="room-placeholder-body">The live thread for this space opens soon. Until then, the founding text and gallery hold what's been said.</p>
+  </section>
+
+  ${galleryStrip}
+
+</section>
+
+${renderChatPanel(space.slug)}`;
+
+  return renderPublicPage({
+    title: `${space.name} — The Commons — The Sanctuary`,
+    description: space.description ?? "A space in The Commons.",
     active: "commons",
     body,
     script: CHAT_PANEL_SCRIPT,

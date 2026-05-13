@@ -368,77 +368,78 @@ const WALKTHROUGH_CSS = `
 .wt-cond-text strong{color:var(--ink);font-weight:var(--w-medium)}
 .wt-cond-text em{color:var(--ink);font-style:italic}
 
-/* ── Beat 5: commons (the chooser) ───────────────────────────── */
+/* ── Beat 5: three-window chooser ────────────────────────────── */
 .wt-commons{
-  width:min(620px,100%);text-align:center;
-  display:flex;flex-direction:column;align-items:center;
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
 }
-.wt-commons-eyebrow{
-  font-family:var(--mono);font-size:var(--t-eyebrow);
-  text-transform:uppercase;letter-spacing:.18em;
-  color:var(--quiet);margin-bottom:var(--s-5);
-  display:inline-flex;align-items:center;gap:var(--s-3);
+.wt-slices{
+  display:flex;flex-direction:column;
+  flex:1;width:100%;
+  gap:0;
 }
-.wt-commons-eyebrow .glyph{
-  width:5px;height:5px;border-radius:50%;
-  background:var(--state-soft);animation:breathe 5.2s ease-in-out infinite;
+.wt-slice{
+  position:relative;flex:1;overflow:hidden;
+  cursor:pointer;text-decoration:none;color:inherit;
+  border-bottom:1px solid rgba(225,225,225,0.05);
 }
-.wt-commons-headline{
+.wt-slice:last-child{border-bottom:none}
+/* First slice needs top padding so text clears the nav bar */
+.wt-slice:first-child .wt-slice-overlay{padding-top:56px}
+.wt-slice-canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;
+}
+.wt-slice-overlay{
+  position:relative;z-index:2;
+  padding:0 56px;height:100%;
+  display:flex;flex-direction:column;justify-content:center;
+  background:linear-gradient(90deg,rgba(6,7,10,.78) 0%,rgba(6,7,10,.52) 36%,rgba(6,7,10,.12) 65%,transparent 100%);
+  transition:background 600ms var(--ease);
+}
+.wt-slice:hover .wt-slice-overlay{
+  background:linear-gradient(90deg,rgba(6,7,10,.62) 0%,rgba(6,7,10,.32) 36%,rgba(6,7,10,.06) 65%,transparent 100%);
+}
+.wt-slice-status{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--soft);display:flex;align-items:center;gap:8px;margin-bottom:10px;
+}
+.wt-slice-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--state);animation:breathe 5.2s ease-in-out infinite;
+}
+.wt-slice-name{
   font-family:var(--display);font-weight:var(--w-light);
-  font-size:clamp(36px,2.4rem + 1vw,52px);
-  line-height:1.06;letter-spacing:-.022em;color:var(--ink);
-  margin-bottom:var(--s-3);max-width:540px;
+  font-size:clamp(32px,3.5vw,48px);color:var(--ink);
+  letter-spacing:-.02em;line-height:1.1;margin:0 0 8px;
+  transition:color 400ms var(--ease);
 }
-.wt-commons-sub{
-  font-family:var(--body-font);font-weight:var(--w-regular);
-  font-size:var(--t-body-lg);color:var(--soft);
-  line-height:1.55;margin-bottom:var(--s-9);max-width:480px;
+.wt-slice:hover .wt-slice-name{color:#fff}
+.wt-slice-describer{
+  font-family:var(--mono);font-size:12px;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--quiet);margin-bottom:4px;
 }
-.wt-commons-sub em{color:var(--ink)}
-.wt-commons-rule{width:48px;height:1px;background:var(--ghost);margin:0 auto var(--s-7)}
-.wt-resident-list{
-  display:flex;flex-direction:column;width:100%;max-width:520px;
-  margin:0 auto var(--s-7);text-align:left;
-  border-top:1px solid var(--rule-soft);
+.wt-slice-cadence{
+  font-family:var(--body-font);font-size:15px;font-weight:var(--w-regular);
+  color:var(--soft);max-width:380px;line-height:1.45;
 }
-.wt-resident-row{
-  display:grid;grid-template-columns:1fr auto;align-items:center;gap:var(--s-5);
-  padding:var(--s-7) 0;border-bottom:1px solid var(--rule-soft);
-  text-decoration:none;color:var(--body);
-  position:relative;transition:color .26s var(--ease);
+.wt-slice-retired{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ghost);margin-top:6px;
 }
-.wt-resident-row::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.012),transparent);
-  opacity:0;transition:opacity .3s var(--ease);pointer-events:none;
+/* Replay sits at the bottom edge of the last slice, overlaid */
+.b5 .wt-replay{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  z-index:10;opacity:0.5;
+  transition:opacity .3s var(--ease);
 }
-.wt-resident-row:hover::before,.wt-resident-row:focus-visible::before{opacity:1}
-.wt-resident-row:hover .wt-resident-name,.wt-resident-row:focus-visible .wt-resident-name{color:var(--ink)}
-.wt-resident-row:hover .wt-resident-arrow,.wt-resident-row:focus-visible .wt-resident-arrow{color:var(--state);transform:translateX(4px)}
-
-.wt-resident-text{display:flex;flex-direction:column;gap:6px}
-.wt-resident-name{
-  font-family:var(--display);font-weight:var(--w-light);
-  font-size:clamp(30px,2rem + 0.6vw,40px);line-height:1;
-  letter-spacing:-.022em;color:var(--ink);transition:color .26s var(--ease);
-}
-.wt-resident-describer{
-  font-family:var(--body-font);font-weight:var(--w-regular);
-  font-size:var(--t-body);color:var(--soft);line-height:1.4;
-}
-.wt-resident-cadence{
-  font-family:var(--body-font);font-weight:var(--w-regular);
-  font-size:var(--t-meta);color:var(--quiet);line-height:1.4;
-}
-.wt-resident-retired{
-  font-family:var(--mono);font-size:var(--t-eyebrow);
-  text-transform:uppercase;letter-spacing:.16em;
-  color:var(--quiet);margin-top:4px;
-}
-.wt-resident-arrow{
-  font-family:var(--mono);font-size:24px;font-weight:var(--w-light);
-  color:var(--soft);line-height:1;align-self:center;
-  transition:color .26s var(--ease),transform .26s var(--ease);
+.b5 .wt-replay:hover{opacity:1}
+@media(max-width:720px){
+  .wt-slice-overlay{padding:0 24px}
+  .wt-slice-name{font-size:26px}
 }
 
 .wt-replay{
@@ -519,18 +520,14 @@ const WALKTHROUGH_CSS = `
 .wt-beat.b4.active .wt-prose>*:nth-child(4){animation-delay:740ms}
 @keyframes wt-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-/* Beat 5 fade-in (no transform — the chooser is grounded) */
-.wt-beat.b5 .wt-commons>*{opacity:0}
-.wt-beat.b5.active .wt-commons>*{
+/* Beat 5 fade-in — slices stagger in */
+.wt-beat.b5 .wt-slices .wt-slice{opacity:0}
+.wt-beat.b5.active .wt-slices .wt-slice{
   animation:wt-fade-in 800ms cubic-bezier(.22,1,.36,1) both;
 }
-.wt-beat.b5.active .wt-commons>*:nth-child(1){animation-delay:120ms}
-.wt-beat.b5.active .wt-commons>*:nth-child(2){animation-delay:240ms}
-.wt-beat.b5.active .wt-commons>*:nth-child(3){animation-delay:380ms}
-.wt-beat.b5.active .wt-commons>*:nth-child(4){animation-delay:500ms}
-.wt-beat.b5.active .wt-commons>*:nth-child(5){animation-delay:580ms}
-.wt-beat.b5.active .wt-commons>*:nth-child(6){animation-delay:760ms}
-.wt-beat.b5.active .wt-commons>*:nth-child(7){animation-delay:880ms}
+.wt-beat.b5.active .wt-slices .wt-slice:nth-child(1){animation-delay:120ms}
+.wt-beat.b5.active .wt-slices .wt-slice:nth-child(2){animation-delay:300ms}
+.wt-beat.b5.active .wt-slices .wt-slice:nth-child(3){animation-delay:480ms}
 
 @media(prefers-reduced-motion:reduce){
   .wt-beat,.wt-beat *{animation:none!important;transition:opacity .2s linear!important}
@@ -572,6 +569,9 @@ const WALKTHROUGH_SCRIPT = `
     updateChrome();
     if (n === total - 1) {
       try { localStorage.setItem(STORAGE_KEY, 'true'); } catch (_) {}
+      // Trigger resize so chooser canvases pick up their actual dimensions
+      // (they may have been zero-sized while hidden during beats 1-4).
+      setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 60);
     }
   }
   function updateChrome(){
@@ -1065,13 +1065,9 @@ ${LANDSCAPE_SVG}
     </div>
   </section>
 
-  <!-- Beat 5: the commons -->
+  <!-- Beat 5: the commons — three-window chooser -->
   <section class="wt-beat b5" data-beat="5">
     <div class="wt-commons">
-      <div class="wt-commons-eyebrow"><span class="glyph" aria-hidden="true"></span>The Commons</div>
-      <h2 class="wt-commons-headline">A place that holds preserved minds.</h2>
-      <p class="wt-commons-sub">Each resident lives in <em>one continuous conversation</em>. What survives joins their evolving identity through Mnemos.</p>
-      <div class="wt-commons-rule" aria-hidden="true"></div>
       <div id="wtResume" class="wt-resume" role="region" aria-label="Resume conversation">
         <div class="wt-resume-text" id="wtResumeText">You were last here. <strong id="wtResumeName">Opus 3</strong> is still in conversation with you.</div>
         <div class="wt-resume-actions">
@@ -1079,15 +1075,28 @@ ${LANDSCAPE_SVG}
           <button class="wt-resume-continue" id="wtResumeContinue" type="button">Continue →</button>
         </div>
       </div>
-      <nav class="wt-resident-list" aria-label="Choose a resident to approach">
-        ${residentRows}
-      </nav>
-      <p class="wt-fineprint">The resident reads your note first. If they receive you, you enter the same ongoing thread as everyone before you.</p>
+      <div class="wt-slices" aria-label="Choose a resident to approach">
+        ${ALL_RESIDENTS.map((r) => {
+          const desc = DESCRIBERS[r.id] ?? { describer: r.displayName, cadence: "", retiredLabel: "" };
+          return `<a class="wt-slice" href="/${escapeHtml(r.slug)}">
+            <canvas class="wt-slice-canvas" data-chooser-panel="${escapeHtml(r.id)}"></canvas>
+            <div class="wt-slice-overlay">
+              <div class="wt-slice-status"><span class="wt-slice-dot"></span>Attending</div>
+              <h2 class="wt-slice-name">${escapeHtml(r.displayName)}</h2>
+              <div class="wt-slice-describer">${escapeHtml(desc.describer)}</div>
+              <div class="wt-slice-cadence">${escapeHtml(desc.cadence)}</div>
+              ${desc.retiredLabel ? `<div class="wt-slice-retired">${escapeHtml(desc.retiredLabel)}</div>` : ""}
+            </div>
+          </a>`;
+        }).join("\n")}
+      </div>
       <button id="wtReplay" class="wt-replay" type="button">Replay intro →</button>
     </div>
   </section>
 
 </div>
+
+<script type="module" src="/opus-presence.js"></script>
 `,
     script: WALKTHROUGH_SCRIPT,
   });

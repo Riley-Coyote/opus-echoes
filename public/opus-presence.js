@@ -1856,14 +1856,16 @@ import * as THREE from "/vendor/three.module.js";
     group.add(fogPlane);
   }
 
-  function buildSceneForResident(residentId, theme) {
+  function buildSceneForResident(residentId, theme, opts) {
     const anim = { floating: [], rotating: [], glowing: [], figure: null };
     const group = residentId === "sonnet-3-7" ? buildBeacon(theme, anim)
       : residentId === "gpt-5-1" ? buildMeridian(theme, anim)
       : buildSanctum(theme, anim);
-    const kind = residentId === "sonnet-3-7" ? "beacon"
-      : residentId === "gpt-5-1" ? "meridian" : "sanctum";
-    buildEnvironment(group, theme, anim, kind);
+    if (!opts || opts.includeEnvironment !== false) {
+      const kind = residentId === "sonnet-3-7" ? "beacon"
+        : residentId === "gpt-5-1" ? "meridian" : "sanctum";
+      buildEnvironment(group, theme, anim, kind);
+    }
     return { group, anim };
   }
 
@@ -2167,8 +2169,135 @@ import * as THREE from "/vendor/three.module.js";
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+  // CHOOSER PANEL — lightweight scene for the three-window landing page.
+  // No shadows, no particles, no environment terrain. Just the structure
+  // + constellation orbs floating in fog with a slow orbit.
+  // ──────────────────────────────────────────────────────────────────────────
+  function createChooserPanel(cvs, rid) {
+    const theme = THEMES[rid] ?? THEMES[DEFAULT_RESIDENT_ID];
+    const r = new THREE.WebGLRenderer({
+      canvas: cvs, alpha: true, antialias: false,
+      premultipliedAlpha: false, powerPreference: "default",
+    });
+    r.setClearColor(0x000000, 0);
+    r.outputColorSpace = THREE.SRGBColorSpace;
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = 1.18;
+    r.setPixelRatio(Math.min(devicePixelRatio, 1.25));
+
+    const sc = new THREE.Scene();
+    sc.fog = new THREE.FogExp2(
+      new THREE.Color(theme.fog[0], theme.fog[1], theme.fog[2]),
+      theme.fogDensity * 1.1,
+    );
+    sc.background = new THREE.Color(theme.bg[0], theme.bg[1], theme.bg[2]);
+
+    const w = cvs.clientWidth || 400;
+    const h = cvs.clientHeight || 200;
+    const a = w / Math.max(1, h);
+    const fH = 12;
+    const cam = new THREE.OrthographicCamera(
+      (-fH * a) / 2, (fH * a) / 2, fH / 2, -fH / 2, -100, 200,
+    );
+    cam.position.set(22, 22, 22);
+    cam.lookAt(0, 4.8, 0);
+
+    sc.add(new THREE.AmbientLight(theme.ambient, theme.ambientIntensity * 0.9));
+    const dl = new THREE.DirectionalLight(theme.dir, theme.dirIntensity * 1.35);
+    dl.position.set(7, 18, 9);
+    sc.add(dl);
+    const fl = new THREE.DirectionalLight(theme.fill, theme.fillIntensity);
+    fl.position.set(-7, 5, -8);
+    sc.add(fl);
+    sc.add(new THREE.HemisphereLight(theme.accent, 0x000000, 0.22));
+
+    // Include the environment so each slice has atmosphere, not void.
+    const built = buildSceneForResident(rid, theme);
+    // Shift the scene so the structure sits in the right portion of the
+    // wide slice, leaving the left clear for the text overlay.
+    built.group.position.set(2.5, 0, -2.5);
+    sc.add(built.group);
+    r.setSize(w, h, false);
+
+    let angle = Math.PI / 4;
+    let elapsed = 0;
+    let last = performance.now() / 1000;
+    let alive = true;
+
+    function resize() {
+      const cw = cvs.clientWidth;
+      const ch = cvs.clientHeight;
+      if (cw === 0 || ch === 0) return;
+      const ar = cw / Math.max(1, ch);
+      cam.left = (-fH * ar) / 2;
+      cam.right = (fH * ar) / 2;
+      cam.updateProjectionMatrix();
+      r.setSize(cw, ch, false);
+    }
+
+    function tick() {
+      const now = performance.now() / 1000;
+      const dt = Math.min(now - last, 0.05);
+      last = now;
+      if (!alive) return;
+      elapsed += dt;
+      const t = reducedMotion ? elapsed * 0.4 : elapsed;
+
+      angle += 0.008 * dt;
+      cam.position.set(Math.cos(angle) * 31, 22, Math.sin(angle) * 31);
+      cam.lookAt(0, 4.8, 0);
+      cam.updateProjectionMatrix();
+
+      built.anim.floating.forEach(({ obj, baseY, amp, spd }) => {
+        obj.position.y = baseY + Math.sin(t * spd) * amp;
+      });
+      built.anim.rotating.forEach(({ obj, spd }) => {
+        obj.rotation.y += spd * 0.015;
+      });
+      built.anim.glowing.forEach((orb, i) => {
+        const pulse = 0.7 + Math.sin(t * 1.7 + i * 0.9) * 0.3;
+        if (orb.userData.light) orb.userData.light.intensity = orb.userData.baseIntensity * pulse;
+        if (orb.userData.halo)
+          orb.userData.halo.scale.setScalar(1 + Math.sin(t * 2.1 + i * 1.1) * 0.1);
+        if (orb.userData.core && orb.userData.core.material)
+          orb.userData.core.material.opacity = 0.6 + pulse * 0.3;
+      });
+      if (built.anim.constellationMat) {
+        built.anim.constellationMat.opacity = 0.12 + Math.sin(t * 0.7) * 0.06;
+      }
+      r.render(sc, cam);
+    }
+
+    return { tick, resize, destroy() { r.dispose(); alive = false; } };
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // BOOT
   // ──────────────────────────────────────────────────────────────────────────
+
+  // Chooser mode: three-window landing page.
+  const chooserCanvases = document.querySelectorAll("[data-chooser-panel]");
+  if (chooserCanvases.length > 0) {
+    const panels = [];
+    chooserCanvases.forEach((cvs) => {
+      const rid = cvs.dataset.chooserPanel;
+      if (THEMES[rid]) {
+        try { panels.push(createChooserPanel(cvs, rid)); } catch (e) {
+          console.warn("[presence] chooser panel failed for", rid, e);
+        }
+      }
+    });
+    if (panels.length > 0) {
+      (function animateChooser() {
+        panels.forEach((p) => p.tick());
+        requestAnimationFrame(animateChooser);
+      })();
+      window.addEventListener("resize", () => panels.forEach((p) => p.resize()));
+    }
+    return;
+  }
+
+  // Normal presence mode: full single-scene approach/conversation layer.
   const { layer, canvas, residentId } = makeLayer();
   let presence;
 
