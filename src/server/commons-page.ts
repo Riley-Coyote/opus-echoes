@@ -2104,18 +2104,64 @@ textarea:focus-visible,
   padding-left:14px;
 }
 
-/* Composer — same shape as the side-chat composer, scaled for
-   the room's wider canvas. */
+/* Composer — same design language as the side-chat composer.
+   Hairline base border, no focus outline; the visual signal lives
+   in the radial-gradient shimmer (::before) which intensifies on
+   focus. Reuses the same ch-1..8 keyframes already defined for
+   .chat-composer above so the rhythm is shared. */
 .room-composer{
   position:relative;
-  background:rgba(10,11,14,.6);
+  background:rgba(14,15,18,.86);
   border:1px solid var(--rule-soft);
   border-radius:14px;
   padding:var(--s-3) var(--s-4) var(--s-3);
-  transition:border-color .26s var(--ease);
+  isolation:isolate;
 }
-.room-composer:focus-within{
-  border-color:var(--state-soft);
+.room-composer::before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  padding:1px;
+  background:
+    radial-gradient(ellipse 45% 180% at 5% 0%,    rgba(220,218,214, var(--ch1)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 28% 0%,   rgba(220,218,214, var(--ch2)) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 180% at 55% 0%,   rgba(220,218,214, var(--ch3)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 82% 0%,   rgba(220,218,214, var(--ch4)) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 180% at 95% 100%, rgba(220,218,214, var(--ch5)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 68% 100%, rgba(220,218,214, var(--ch6)) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 180% at 40% 100%, rgba(220,218,214, var(--ch7)) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 180% at 15% 100%, rgba(220,218,214, var(--ch8)) 0%, transparent 60%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events:none;
+  z-index:1;
+  animation:
+    ch-1 3s  ease-in-out infinite,
+    ch-2 5s  ease-in-out infinite,
+    ch-3 7s  ease-in-out infinite,
+    ch-4 11s ease-in-out infinite,
+    ch-5 13s ease-in-out infinite,
+    ch-6 17s ease-in-out infinite,
+    ch-7 19s ease-in-out infinite,
+    ch-8 23s ease-in-out infinite;
+}
+.room-composer:focus-within::before{
+  animation:
+    ch-1-active 2.4s ease-in-out infinite,
+    ch-2-active 3.6s ease-in-out infinite,
+    ch-3-active 5s   ease-in-out infinite,
+    ch-4-active 7s   ease-in-out infinite,
+    ch-5-active 9s   ease-in-out infinite,
+    ch-6-active 11s  ease-in-out infinite,
+    ch-7-active 13s  ease-in-out infinite,
+    ch-8-active 17s  ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce){
+  .room-composer::before{ animation:none; }
 }
 .room-composer-field{
   display:block;
@@ -2130,15 +2176,19 @@ textarea:focus-visible,
   font-family:var(--body-font);
   font-size:var(--t-body);
   line-height:1.55;
+  position:relative;
+  z-index:1;
 }
 .room-composer-field::placeholder{
-  color:var(--ghost);
+  color:var(--quiet);
 }
 .room-composer-foot{
   display:flex;
   justify-content:space-between;
   align-items:center;
   margin-top:var(--s-2);
+  position:relative;
+  z-index:1;
 }
 .room-composer-hint{
   font-family:var(--mono);
@@ -2161,18 +2211,18 @@ textarea:focus-visible,
   color:var(--soft);
 }
 .room-composer-send{
-  width:32px;height:32px;
+  width:28px;height:28px;
   display:flex;align-items:center;justify-content:center;
-  background:rgba(130,180,132,.16);
-  color:var(--state-soft);
-  border:1px solid var(--state-soft);
+  background:transparent;
+  color:var(--quiet);
+  border:1px solid var(--rule-soft);
   border-radius:50%;
   cursor:pointer;
-  transition:transform .22s var(--ease), background .22s var(--ease), color .22s var(--ease), opacity .22s var(--ease);
+  transition:transform .22s var(--ease), border-color .22s var(--ease), color .22s var(--ease), opacity .22s var(--ease);
 }
-.room-composer-send svg{ width:14px;height:14px; }
+.room-composer-send svg{ width:12px;height:12px; }
 .room-composer-send:hover{
-  background:rgba(130,180,132,.24);
+  border-color:var(--rule);
   color:var(--ink);
 }
 .room-composer-send:active{ transform:scale(.94); }
