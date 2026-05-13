@@ -362,14 +362,14 @@ const COMMONS_CSS = `
   inset:0;
   pointer-events:none;
   z-index:2;
-  padding:24px;
-  /* The 24px band is carved out via mask-composite (outer rectangle
-     minus content-box). With no border-radius, the outer corners
-     reach the viewport edges directly — no dark wedges — and the
-     gradients positioned AT the corners (0%/100%) light those
-     corners with their peaks. The inner edge is a sharp rectangle
-     for now; can be softened in a future iteration via a fade-in
-     mask if it reads too hard. */
+  /* SVG mask: square outer rectangle (reaches viewport corners — no
+     dark wedges) with a rounded-corner inner cutout (preserves the
+     soft inner edge). The band shape is the outer minus the inner
+     via fill-rule:evenodd. preserveAspectRatio='none' stretches the
+     SVG to fill the viewport; the inner corner radius (rx) and band
+     inset are in viewBox units (0–100), so they scale with viewport
+     — barely perceptible variance in band thickness between
+     horizontal and vertical edges. */
   background:
     radial-gradient(ellipse 55% 55% at 0% 0%,     rgba(220,176,110, var(--vg1)) 0%, transparent 72%),
     radial-gradient(ellipse 70% 45% at 50% 0%,    rgba(160,140,188, var(--vg2)) 0%, transparent 72%),
@@ -379,11 +379,12 @@ const COMMONS_CSS = `
     radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(160,140,188, var(--vg6)) 0%, transparent 72%),
     radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(220,170,168, var(--vg7)) 0%, transparent 72%),
     radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(218,215,210, var(--vg8)) 0%, transparent 72%);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill-rule='evenodd' fill='white' d='M0,0 H100 V100 H0 Z M1.7,2.7 Q1.7,1.7 2.7,1.7 H97.3 Q98.3,1.7 98.3,2.7 V97.3 Q98.3,98.3 97.3,98.3 H2.7 Q1.7,98.3 1.7,97.3 Z'/></svg>");
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill-rule='evenodd' fill='white' d='M0,0 H100 V100 H0 Z M1.7,2.7 Q1.7,1.7 2.7,1.7 H97.3 Q98.3,1.7 98.3,2.7 V97.3 Q98.3,98.3 97.3,98.3 H2.7 Q1.7,98.3 1.7,97.3 Z'/></svg>");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
   animation:
     vg-1 11s ease-in-out infinite,
     vg-2 13s ease-in-out infinite,
