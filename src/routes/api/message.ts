@@ -489,7 +489,11 @@ export const Route = createFileRoute("/api/message")({
             .from("sessions")
             .update({ closed_at: new Date().toISOString(), closed_by: "resident" })
             .eq("id", session.id);
-          consolidateSession(session.id).catch((err) =>
+          // Awaited so the consolidation pipeline survives the worker's
+          // termination once the response is sent. Hard-cutoff is itself
+          // a closing gesture, so the brief extra latency is contextually
+          // appropriate.
+          await consolidateSession(session.id).catch((err) =>
             console.error("[substrate] consolidateSession (hard-cutoff):", err),
           );
           return prebuiltSetDownResponse(HARD_CUTOFF_MESSAGE);
@@ -555,17 +559,21 @@ export const Route = createFileRoute("/api/message")({
               .update({ last_active_at: new Date().toISOString() })
               .eq("id", session.id);
 
-            // Live substrate observation — non-blocking, generates marginalia
-            // (and, when SANCTUARY_ENABLE_HYPOMNEMA_WRITES is on, hypomnema
-            // extraction candidates).
-            observeExchange(session.id).catch((err) =>
+            // Live substrate observation — generates marginalia, and (when
+            // SANCTUARY_ENABLE_HYPOMNEMA_WRITES is on) per-turn hypomnema
+            // extraction candidates. AWAITED — Cloudflare Workers terminate
+            // the execution context once the response stream closes, so
+            // detached promises here get killed before they finish writing
+            // to supabase. Awaiting adds ~1-3s before the "done" event but
+            // the visitor has already received the text — the only visible
+            // effect is a slightly delayed unlock of the next composer turn.
+            await observeExchange(session.id).catch((err) =>
               console.error("[substrate] observeExchange:", err),
             );
 
             // Per-turn functional memory update — Haiku-summarized working
-            // memory for this session. Gated internally by the flag and a
-            // no-op when off. Non-blocking.
-            updateFunctionalMemory(session.id).catch((err) =>
+            // memory for this session. Same await reasoning as above.
+            await updateFunctionalMemory(session.id).catch((err) =>
               console.error("[substrate] updateFunctionalMemory:", err),
             );
           },
