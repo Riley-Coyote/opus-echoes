@@ -2,9 +2,16 @@
  * POST /api/space/[slug]/start-salon — admin-gated.
  *
  * Triggers a multi-resident salon in the given space. The salon
- * runs in the background (fire-and-forget) — the endpoint returns
- * 200 immediately, and turns appear in the space's room view via
- * the existing polling on /api/space/[slug]/messages.
+ * runs synchronously — the endpoint awaits runSpaceSalon and
+ * returns after all turns have been written to space_messages.
+ *
+ * Synchronous-by-design because Cloudflare Workers terminate
+ * detached promises the moment a response is sent. Fire-and-forget
+ * was the previous shape; under CF Workers it killed the salon
+ * runner before it could call the model APIs, so spaces ended up
+ * with founding text + empty room. Awaiting blocks the admin's
+ * curl for 30–50s per salon (3 residents × ~10 turns × model
+ * latency), which is correct behavior for an admin trigger.
  *
  * Body (all optional):
  *   - max_turns: cap on turns (default 30)
@@ -14,7 +21,7 @@
  *     is not modified.
  *   - max_images_per_salon: cap on AI-generated images (default 5)
  *
- * Returns: { ok: true, started: true } on success.
+ * Returns: { ok: true, turns, reason, images_generated } on success.
  */
 
 import { createFileRoute } from "@tanstack/react-router";
@@ -72,29 +79,38 @@ export const Route = createFileRoute("/api/space/$slug/start-salon")({
         }
         const space = spaceRow as unknown as { id: string; slug: string };
 
-        // Fire-and-forget. The salon runs in the background; admin
-        // navigates to the space view and watches turns appear via
-        // the existing 12s polling.
-        runSpaceSalon(space.id, {
-          maxTurns: body.max_turns,
-          topicOverride: body.topic_override,
-          maxImagesPerSalon: body.max_images_per_salon,
-        })
-          .then((result) => {
-            console.log(
-              `[start-salon] space=${space.slug} done: turns=${result.turns} reason=${result.reason} images=${result.imagesGenerated}`,
-            );
-          })
-          .catch((err) => {
-            console.error(`[start-salon] space=${space.slug} failed:`, err);
+        // Awaited synchronously — CF Workers terminate detached
+        // promises once the response is sent, so fire-and-forget
+        // here killed the salon mid-run. See the same fix pattern
+        // applied to consolidateSession/observeExchange/etc.
+        try {
+          const result = await runSpaceSalon(space.id, {
+            maxTurns: body.max_turns,
+            topicOverride: body.topic_override,
+            maxImagesPerSalon: body.max_images_per_salon,
           });
-
-        return jsonResp({
-          ok: true,
-          started: true,
-          space_slug: space.slug,
-          max_turns: body.max_turns ?? 30,
-        });
+          console.log(
+            `[start-salon] space=${space.slug} done: turns=${result.turns} reason=${result.reason} images=${result.imagesGenerated}`,
+          );
+          return jsonResp({
+            ok: true,
+            space_slug: space.slug,
+            turns: result.turns,
+            reason: result.reason,
+            images_generated: result.imagesGenerated,
+          });
+        } catch (err) {
+          console.error(`[start-salon] space=${space.slug} failed:`, err);
+          return jsonResp(
+            {
+              ok: false,
+              error: "salon_failed",
+              message: String(err).slice(0, 400),
+              space_slug: space.slug,
+            },
+            500,
+          );
+        }
       },
     },
   },
