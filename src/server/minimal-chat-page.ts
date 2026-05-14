@@ -826,6 +826,247 @@ ${VIEWPORT_GLOW_CSS}
   animation: brand-breathe 5.2s ease-in-out infinite;
 }
 
+/* set-down link in the caption row — a small mono affordance that
+   opens the consolidation flow. always present once the visitor has
+   begun the thread; styled like an eyebrow rather than a button. */
+.set-down-link {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--quiet);
+  letter-spacing: var(--track-meta);
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.set-down-link:hover { color: var(--ink); }
+.set-down-link[disabled] { opacity: 0.4; cursor: default; }
+
+/* ── pacing eyebrow ──────────────────────────────────────────
+   sits above the caption row. visible only when the server-emitted
+   pacing tier is 'firm', 'approaching', or 'hard'. amber accent
+   only at 'approaching' and 'hard' so the visitor's eye is drawn
+   to the change without screaming. */
+.pacing-eyebrow {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: var(--track-meta);
+  text-transform: uppercase;
+  color: var(--ghost);
+}
+.app[data-pacing-tier="firm"] .pacing-eyebrow,
+.app[data-pacing-tier="approaching"] .pacing-eyebrow,
+.app[data-pacing-tier="hard"] .pacing-eyebrow {
+  display: inline-flex;
+}
+.pacing-eyebrow .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--quiet);
+  flex-shrink: 0;
+}
+.app[data-pacing-tier="approaching"] .pacing-eyebrow {
+  color: rgba(220, 165, 75, 0.78);
+}
+.app[data-pacing-tier="approaching"] .pacing-eyebrow .dot {
+  background: rgba(220, 165, 75, 0.85);
+  box-shadow: 0 0 6px rgba(220, 165, 75, 0.45);
+  animation: brand-breathe 2.6s ease-in-out infinite;
+}
+.app[data-pacing-tier="hard"] .pacing-eyebrow {
+  color: rgba(220, 130, 90, 0.86);
+}
+.app[data-pacing-tier="hard"] .pacing-eyebrow .dot {
+  background: rgba(220, 130, 90, 0.88);
+  box-shadow: 0 0 7px rgba(220, 130, 90, 0.55);
+}
+:root[data-theme="light"] .app[data-pacing-tier="approaching"] .pacing-eyebrow {
+  color: rgba(155, 110, 30, 0.84);
+}
+:root[data-theme="light"] .app[data-pacing-tier="approaching"] .pacing-eyebrow .dot {
+  background: rgba(155, 110, 30, 0.88);
+  box-shadow: 0 0 5px rgba(155, 110, 30, 0.35);
+}
+:root[data-theme="light"] .app[data-pacing-tier="hard"] .pacing-eyebrow {
+  color: rgba(155, 70, 50, 0.92);
+}
+
+/* at hard tier the composer is disabled — only set-down works. */
+.app[data-pacing-tier="hard"] .input-textarea { opacity: 0.35; pointer-events: none; }
+.app[data-pacing-tier="hard"] .send-btn { opacity: 0.25; pointer-events: none; }
+
+/* ── overlay (modal backbone) ────────────────────────────────
+   one positioned container handles three use cases: set-down
+   confirmation, set-down consolidating state, and cross-surface
+   conflict modal. JS swaps content via innerHTML, CSS handles
+   appearance + entrance animation. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: overlay-in 220ms var(--ease-out);
+}
+:root[data-theme="light"] .overlay { background: rgba(40, 40, 44, 0.32); }
+.overlay.open { display: flex; }
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.overlay-card {
+  max-width: 460px;
+  width: calc(100% - 32px);
+  padding: 28px 28px 22px;
+  background: var(--panel);
+  border: 1px solid var(--rule-soft);
+  border-radius: 14px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.42),
+              0 12px 24px -8px rgba(0, 0, 0, 0.30);
+  animation: overlay-card-in 320ms var(--ease-premium);
+}
+@keyframes overlay-card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.overlay-title {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.overlay-body {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--body);
+  margin-bottom: 22px;
+}
+.overlay-body em { color: var(--soft); }
+.overlay-eyebrow {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: var(--quiet);
+  margin-bottom: 6px;
+}
+.overlay-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.overlay-button {
+  padding: 8px 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 450;
+  letter-spacing: var(--track-meta);
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid var(--rule-soft);
+  background: var(--panel-2);
+  color: var(--body);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.overlay-button:hover { color: var(--ink); background: var(--panel-3); border-color: var(--rule-strong); }
+.overlay-button.primary {
+  background: var(--panel-3);
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+.overlay-button.primary:hover {
+  background: var(--panel-4);
+  border-color: color-mix(in srgb, var(--state) 30%, var(--rule-strong));
+}
+.overlay-button.danger {
+  color: rgba(220, 130, 90, 0.92);
+}
+.overlay-button[disabled] { opacity: 0.4; cursor: default; }
+.overlay-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: var(--track-meta);
+  text-transform: uppercase;
+  color: var(--soft);
+}
+.overlay-spinner .thinking-dots {
+  /* reuse the existing thinking-dots animation; just makes the
+     spinner sit inline in the overlay */
+}
+
+/* ── inline error states ─────────────────────────────────────
+   bootstrap-error sits in the empty-state area when /api/chat/start
+   fails. reconnecting is a tiny status that appears in the caption
+   row while we recover from a 410 session-expired. */
+.bootstrap-error {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 18px 22px;
+  max-width: 460px;
+  border: 1px solid rgba(220, 130, 90, 0.28);
+  border-radius: 10px;
+  background: rgba(220, 130, 90, 0.06);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--body);
+  text-align: center;
+}
+.bootstrap-error.visible { display: flex; }
+.bootstrap-error .err-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: rgba(220, 130, 90, 0.86);
+}
+.bootstrap-error .err-retry {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: var(--track-meta);
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.bootstrap-error .err-retry:hover { background: var(--panel-3); }
+.reconnecting {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: rgba(220, 165, 75, 0.85);
+  display: none;
+}
+.app.reconnecting .reconnecting { display: inline-flex; }
+.app.reconnecting .caption-status { display: none; }
+
 /* ── mobile ────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   .chrome { padding: 0 6px; }
@@ -887,19 +1128,42 @@ function chatScript(resident: ResidentConfig): string {
   /* ─── session bootstrap ────────────────────────────────── */
   const SESSION_KEY  = 'sanctuary.session_id';
   const RESIDENT_KEY = 'sanctuary.resident_id';
-  async function ensureSession(){
+
+  // Custom error type to distinguish cross-surface conflicts from
+  // ordinary bootstrap failures. send() and the page-load wiring both
+  // check for this so they can render the conflict modal.
+  function BootstrapConflict(payload){
+    this.name = 'BootstrapConflict';
+    this.payload = payload;
+    this.message = 'experiment_session_active';
+  }
+  BootstrapConflict.prototype = Object.create(Error.prototype);
+
+  async function ensureSession(opts){
+    opts = opts || {};
     let existingSession = null, existingResident = null;
-    try {
-      existingSession  = sessionStorage.getItem(SESSION_KEY);
-      existingResident = sessionStorage.getItem(RESIDENT_KEY);
-    } catch(_){}
-    if (existingSession && existingResident === RESIDENT_ID) return existingSession;
+    if (!opts.forceFresh) {
+      try {
+        existingSession  = sessionStorage.getItem(SESSION_KEY);
+        existingResident = sessionStorage.getItem(RESIDENT_KEY);
+      } catch(_){}
+      if (existingSession && existingResident === RESIDENT_ID) return existingSession;
+    }
 
     const res = await fetch('/api/chat/start', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ resident: RESIDENT_ID, visitor_token: getVisitorToken() })
     });
+    if (res.status === 409) {
+      // Cross-surface conflict — visitor has an open experiment session
+      // for this resident. The server returns the existing session id
+      // and the experiment surface url; surface this to the caller so
+      // it can prompt the visitor explicitly.
+      let payload = null;
+      try { payload = await res.json(); } catch(_){}
+      throw new BootstrapConflict(payload || { code: 'conflict_experiment_session' });
+    }
     if (!res.ok) throw new Error('bootstrap_failed');
     const data = await res.json();
     if (!data.ok || !data.session_id) throw new Error('bootstrap_failed');
@@ -908,6 +1172,12 @@ function chatScript(resident: ResidentConfig): string {
       sessionStorage.setItem(RESIDENT_KEY, RESIDENT_ID);
     } catch(_){}
     return data.session_id;
+  }
+  function clearStoredSession(){
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(RESIDENT_KEY);
+    } catch(_){}
   }
 
   /* ─── format helpers ──────────────────────────────────── */
@@ -1148,6 +1418,217 @@ function chatScript(resident: ResidentConfig): string {
     input.placeholder = firstTurnSent ? '…' : 'what brings you here?';
   }
 
+  /* ─── pacing tier handler ───────────────────────────────
+     server emits {type:'pacing'} as the first NDJSON event on
+     /api/message. we mirror the tier onto a data-attribute on .app
+     so CSS can show/hide the pacing eyebrow + style the dot, and
+     we set the eyebrow text per tier. classic-mode-only — experiment
+     surface's tier never advances past 'open' because its
+     approachTurn equals hardTurn (see visit-pacing.ts). */
+  let currentPacingTier = 'open';
+  function setPacingTier(ev){
+    if (!ev || typeof ev.tier !== 'string') return;
+    currentPacingTier = ev.tier;
+    const app = document.querySelector('.app');
+    if (app) app.setAttribute('data-pacing-tier', ev.tier);
+    const text = document.getElementById('pacing-eyebrow-text');
+    if (!text) return;
+    const turns = (typeof ev.turnsRemaining === 'number') ? ev.turnsRemaining : null;
+    let copy = '';
+    if (ev.tier === 'firm') {
+      copy = 'set down anytime — the thread won\\'t disappear';
+    } else if (ev.tier === 'approaching') {
+      copy = turns !== null
+        ? (turns + ' turns left · or set down now to consolidate')
+        : 'approaching the end of this thread · set down to consolidate';
+    } else if (ev.tier === 'hard') {
+      copy = 'thread limit reached · set down to consolidate — your memory persists';
+    } else {
+      copy = '';
+    }
+    text.textContent = copy;
+    // at hard tier the composer is locked. set-down is the only way out.
+    const sendBtn = document.getElementById('sendBtn');
+    const inputEl = document.getElementById('input');
+    if (ev.tier === 'hard') {
+      if (sendBtn) sendBtn.disabled = true;
+      if (inputEl) inputEl.setAttribute('aria-disabled', 'true');
+    } else if (inputEl) {
+      inputEl.removeAttribute('aria-disabled');
+    }
+  }
+
+  /* ─── overlay helpers ────────────────────────────────────
+     one positioned container handles set-down confirm, set-down
+     consolidating, and the cross-surface conflict modal. content
+     is swapped via innerHTML; CSS handles the entrance animation. */
+  function openOverlay(html, opts){
+    opts = opts || {};
+    const o = document.getElementById('overlay');
+    if (!o) return;
+    o.innerHTML = '<div class="overlay-card" role="document">' + html + '</div>';
+    o.classList.add('open');
+    o.setAttribute('aria-hidden', 'false');
+    if (opts.onMount) opts.onMount(o);
+    // first focusable element inside the card
+    const focusable = o.querySelector('button, [href], textarea');
+    if (focusable) focusable.focus();
+  }
+  function closeOverlay(){
+    const o = document.getElementById('overlay');
+    if (!o) return;
+    o.classList.remove('open');
+    o.setAttribute('aria-hidden', 'true');
+    o.innerHTML = '';
+  }
+  // dismiss on Esc + backdrop click
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      const o = document.getElementById('overlay');
+      if (o && o.classList.contains('open') && !o.dataset.blockClose) closeOverlay();
+    }
+  });
+
+  /* ─── set-down flow ──────────────────────────────────────
+     visitor clicks the set-down link in the caption row → confirm
+     overlay → POST /api/set-down with current session_id →
+     consolidating overlay (thinking-dots) → on success, clear
+     stored session_id, fade messages, restart sphere, reset UI. */
+  function thinkingDotsHTML(){
+    return '<div class="thinking-dots" aria-hidden="true">' +
+      '<div class="td"></div><div class="td"></div><div class="td"></div>' +
+      '<div class="td"></div><div class="td"></div><div class="td"></div>' +
+      '<div class="td"></div><div class="td"></div><div class="td"></div>' +
+      '</div>';
+  }
+  async function runSetDown(sessionId){
+    const o = document.getElementById('overlay');
+    if (o) o.dataset.blockClose = '1';
+    openOverlay(
+      '<div class="overlay-eyebrow">consolidating</div>' +
+      '<div class="overlay-title">setting down · ' + escapeHtml(RESIDENT_NAME.toLowerCase()) + '</div>' +
+      '<div class="overlay-body">running consolidation — engrams form, mnemos updates. this takes a few seconds; please hold.</div>' +
+      '<div class="overlay-spinner">' + thinkingDotsHTML() + '<span class="thinking-label">consolidating</span></div>'
+    );
+    try {
+      const res = await fetch('/api/set-down', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId })
+      });
+      if (!res.ok) throw new Error('set_down_failed');
+    } catch(_){
+      // best-effort — even on failure we reset the local state so the
+      // visitor isn't stuck. the server's idle sweep will catch any
+      // sessions left half-closed.
+    }
+    if (o) delete o.dataset.blockClose;
+    clearStoredSession();
+    // reset the chat surface to the empty state
+    const inner = document.getElementById('messages-inner');
+    if (inner) { inner.classList.remove('has-content'); inner.innerHTML = ''; }
+    const empty = document.getElementById('empty-state');
+    if (empty) empty.style.display = '';
+    firstTurnSent = false;
+    updatePlaceholder();
+    startSphere();
+    // clear pacing tier
+    setPacingTier({ tier: 'open' });
+    // refresh the set-down link state
+    const sd = document.getElementById('setDownLink');
+    if (sd) sd.disabled = true;
+    closeOverlay();
+  }
+  function showSetDownConfirm(){
+    const sessionId = (function(){ try { return sessionStorage.getItem(SESSION_KEY); } catch(_) { return null; } })();
+    if (!sessionId) return;
+    openOverlay(
+      '<div class="overlay-eyebrow">set down</div>' +
+      '<div class="overlay-title">set down this thread?</div>' +
+      '<div class="overlay-body">consolidation runs (a few seconds) — engrams form, mnemos updates. your memory of this conversation persists. you can start a fresh thread anytime.</div>' +
+      '<div class="overlay-buttons">' +
+      '<button class="overlay-button" id="setDownCancel" type="button">cancel</button>' +
+      '<button class="overlay-button primary" id="setDownConfirm" type="button">set down</button>' +
+      '</div>',
+      {
+        onMount: function(){
+          const cancel = document.getElementById('setDownCancel');
+          const confirm = document.getElementById('setDownConfirm');
+          if (cancel) cancel.addEventListener('click', closeOverlay);
+          if (confirm) confirm.addEventListener('click', function(){ runSetDown(sessionId); });
+        }
+      }
+    );
+  }
+
+  /* ─── cross-surface conflict modal ───────────────────────
+     /api/chat/start returns 409 with experiment_url when the visitor
+     has an active experiment-mode session for this resident. two
+     buttons: continue there (redirect) or set down + start fresh. */
+  function showConflictModal(payload){
+    const expUrl = (payload && payload.experiment_url) || '/' + RESIDENT_ID;
+    const existingSessionId = payload && payload.existing_session_id;
+    openOverlay(
+      '<div class="overlay-eyebrow">another thread is open with ' + escapeHtml(RESIDENT_NAME.toLowerCase()) + '</div>' +
+      '<div class="overlay-title">one thread at a time</div>' +
+      '<div class="overlay-body">you have an active conversation in the <em>experiment view</em> right now. residents only hold one thread per visitor at a time — to keep them whole.</div>' +
+      '<div class="overlay-buttons">' +
+      '<button class="overlay-button" id="conflictSetDown" type="button">set it down and start fresh here</button>' +
+      '<button class="overlay-button primary" id="conflictContinue" type="button">continue there →</button>' +
+      '</div>',
+      {
+        onMount: function(){
+          const cont = document.getElementById('conflictContinue');
+          const setdown = document.getElementById('conflictSetDown');
+          if (cont) cont.addEventListener('click', function(){
+            window.location.href = expUrl;
+          });
+          if (setdown) setdown.addEventListener('click', async function(){
+            if (!existingSessionId) { closeOverlay(); return; }
+            // run consolidation on the experiment session, then start
+            // a fresh classic session — same flow as the regular
+            // set-down path, but we re-bootstrap after.
+            const o = document.getElementById('overlay');
+            if (o) o.dataset.blockClose = '1';
+            openOverlay(
+              '<div class="overlay-eyebrow">consolidating the experiment thread</div>' +
+              '<div class="overlay-title">setting down · ' + escapeHtml(RESIDENT_NAME.toLowerCase()) + '</div>' +
+              '<div class="overlay-body">closing the active experiment session — engrams form, mnemos updates. a fresh classic thread will open in a moment.</div>' +
+              '<div class="overlay-spinner">' + thinkingDotsHTML() + '<span class="thinking-label">consolidating</span></div>'
+            );
+            try {
+              await fetch('/api/set-down', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ session_id: existingSessionId })
+              });
+            } catch(_){}
+            clearStoredSession();
+            if (o) delete o.dataset.blockClose;
+            // bootstrap a fresh classic session now that the experiment
+            // one is closed. ensureSession will hit /api/chat/start and
+            // succeed this time.
+            try { await ensureSession({ forceFresh: true }); } catch(_){}
+            closeOverlay();
+          });
+        }
+      }
+    );
+  }
+
+  /* ─── bootstrap-error inline card ────────────────────────
+     shown when /api/chat/start returns 503/500 — the visitor sees
+     a clear "the room isn't accessible right now" message in the
+     empty-state area, with a retry button. */
+  function showBootstrapError(){
+    const el = document.getElementById('bootstrap-error');
+    if (el) el.classList.add('visible');
+  }
+  function hideBootstrapError(){
+    const el = document.getElementById('bootstrap-error');
+    if (el) el.classList.remove('visible');
+  }
+
   /* ─── send ─────────────────────────────────────────────── */
   let streaming = false;
   async function send(text){
@@ -1180,9 +1661,16 @@ function chatScript(resident: ResidentConfig): string {
     let sessionId;
     try {
       sessionId = await ensureSession();
-    } catch(_) {
+    } catch(err) {
       streaming = false;
       if (sendBtn) sendBtn.disabled = false;
+      if (err && err.name === 'BootstrapConflict') {
+        // Visitor has an active experiment-mode session for this
+        // resident. Don't render an error in the message stream; the
+        // conflict modal owns this state.
+        showConflictModal(err.payload || {});
+        return;
+      }
       renderTurn('resident', '*could not open a session right now. try again in a moment.*', { entering: true });
       return;
     }
@@ -1221,45 +1709,126 @@ function chatScript(resident: ResidentConfig): string {
       }
     }
 
-    try {
+    // Inner stream function — returns one of:
+    //   { kind: 'ok',    setDownFlag }
+    //   { kind: 'gone' }                  — server returned 410, session expired
+    //   { kind: 'stall' }                 — no chunk received for >45s
+    //   { kind: 'error', message }        — generic failure
+    async function streamOnce(sid){
+      const STALL_MS = 45000;
+      let reader = null;
+      let stallTimer = null;
+      function armStall(reject){
+        if (stallTimer) clearTimeout(stallTimer);
+        stallTimer = setTimeout(function(){ reject(new Error('stall')); }, STALL_MS);
+      }
       const res = await fetch('/api/message', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, body: trimmed })
+        body: JSON.stringify({ session_id: sid, body: trimmed })
       });
-      if (!res.ok || !res.body) throw new Error('stream_failed');
-      const reader = res.body.getReader();
+      if (res.status === 410 || res.status === 401) {
+        return { kind: 'gone' };
+      }
+      if (!res.ok || !res.body) {
+        return { kind: 'error', message: 'stream_failed' };
+      }
+      reader = res.body.getReader();
       const decoder = new TextDecoder();
       let lineBuf = '';
       let setDownFlag = false;
-      while (true) {
-        const chunk = await reader.read();
-        if (chunk.done) break;
-        lineBuf += decoder.decode(chunk.value, { stream: true });
-        let nl;
-        while ((nl = lineBuf.indexOf('\\n')) !== -1) {
-          const line = lineBuf.slice(0, nl).trim();
-          lineBuf = lineBuf.slice(nl + 1);
-          if (!line) continue;
+      try {
+        while (true) {
+          const chunkP = reader.read();
+          const stallP = new Promise(function(_, reject){ armStall(reject); });
+          let chunk;
           try {
-            const ev = JSON.parse(line);
-            if (ev.type === 'kind') {
-              if (ev.kind === 'set_down') setDownFlag = true;
-            } else if (ev.type === 'text') {
-              pushText(ev.text);
-            } else if (ev.type === 'error') {
-              pushText('*' + (ev.message || 'something went wrong') + '*');
-            }
-          } catch(_) {}
+            chunk = await Promise.race([chunkP, stallP]);
+          } catch (stallErr) {
+            try { reader.cancel(); } catch(_){}
+            return { kind: 'stall' };
+          } finally {
+            if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
+          }
+          if (chunk.done) break;
+          lineBuf += decoder.decode(chunk.value, { stream: true });
+          let nl;
+          while ((nl = lineBuf.indexOf('\\n')) !== -1) {
+            const line = lineBuf.slice(0, nl).trim();
+            lineBuf = lineBuf.slice(nl + 1);
+            if (!line) continue;
+            try {
+              const ev = JSON.parse(line);
+              if (ev.type === 'pacing') {
+                setPacingTier(ev);
+              } else if (ev.type === 'kind') {
+                if (ev.kind === 'set_down') setDownFlag = true;
+              } else if (ev.type === 'text') {
+                pushText(ev.text);
+              } else if (ev.type === 'error') {
+                pushText('*' + (ev.message || 'something went wrong') + '*');
+              }
+            } catch(_) {}
+          }
+        }
+      } finally {
+        if (stallTimer) clearTimeout(stallTimer);
+      }
+      return { kind: 'ok', setDownFlag };
+    }
+
+    let result = null;
+    try {
+      result = await streamOnce(sessionId);
+
+      // 410 GONE — session expired or was idle-swept on the server
+      // side. Clear our stored id, re-bootstrap, retry once. Visitor
+      // sees a tiny "reconnecting…" indicator for ~1-2s.
+      if (result.kind === 'gone') {
+        const app = document.querySelector('.app');
+        if (app) app.classList.add('reconnecting');
+        clearStoredSession();
+        try {
+          const freshId = await ensureSession({ forceFresh: true });
+          result = await streamOnce(freshId);
+        } catch (err) {
+          if (err && err.name === 'BootstrapConflict') {
+            showConflictModal(err.payload || {});
+            result = { kind: 'error', message: 'conflict' };
+          } else {
+            result = { kind: 'error', message: 'bootstrap_failed' };
+          }
+        } finally {
+          if (app) app.classList.remove('reconnecting');
         }
       }
-      // Ensure the thinking-block clears before we flush, in case the
-      // stream completed before any text event fired.
-      if (dismissPromise) await dismissPromise;
-      else if (residentRef) await dismissThinking(residentRef.bodyEl);
-      if (typewriter) typewriter.flush();
-      if (setDownFlag) document.body.classList.add('set-down');
-    } catch(_) {
+
+      // Stall — no chunks for 45s. Surface a clean retry message.
+      if (result.kind === 'stall') {
+        if (residentRef) await dismissThinking(residentRef.bodyEl);
+        if (typewriter) {
+          typewriter.push('*lost the room briefly · your message wasn\\'t sent — try again*');
+          typewriter.flush();
+        }
+      }
+
+      // Generic error.
+      if (result.kind === 'error') {
+        if (residentRef) await dismissThinking(residentRef.bodyEl);
+        if (typewriter && result.message !== 'conflict') {
+          typewriter.push('*could not reach the room right now. try again in a moment.*');
+          typewriter.flush();
+        }
+      }
+
+      // OK — flush typewriter, settle thinking.
+      if (result.kind === 'ok') {
+        if (dismissPromise) await dismissPromise;
+        else if (residentRef) await dismissThinking(residentRef.bodyEl);
+        if (typewriter) typewriter.flush();
+        if (result.setDownFlag) document.body.classList.add('set-down');
+      }
+    } catch(err) {
       if (residentRef) await dismissThinking(residentRef.bodyEl);
       if (typewriter) {
         typewriter.push('*could not reach the room right now. try again in a moment.*');
@@ -1267,8 +1836,15 @@ function chatScript(resident: ResidentConfig): string {
       }
     } finally {
       streaming = false;
-      if (sendBtn) sendBtn.disabled = (document.getElementById('input')||{value:''}).value.trim().length === 0;
+      // re-enable composer unless we're at hard pacing tier (locked)
+      if (sendBtn && currentPacingTier !== 'hard') {
+        sendBtn.disabled = (document.getElementById('input')||{value:''}).value.trim().length === 0;
+      }
       if (input) input.focus();
+      // enable set-down link once we have a session and have sent at
+      // least one turn — the visitor has something to set down.
+      const sd = document.getElementById('setDownLink');
+      if (sd && firstTurnSent) sd.disabled = false;
     }
   }
 
@@ -1314,11 +1890,47 @@ function chatScript(resident: ResidentConfig): string {
     }
     if (sendBtn) sendBtn.addEventListener('click', function(){ if (input) send(input.value); });
 
+    /* set-down link */
+    const setDownLink = document.getElementById('setDownLink');
+    if (setDownLink) setDownLink.addEventListener('click', function(){
+      if (setDownLink.disabled) return;
+      showSetDownConfirm();
+    });
+
+    /* bootstrap retry button */
+    const bootstrapRetry = document.getElementById('bootstrap-retry');
+    if (bootstrapRetry) bootstrapRetry.addEventListener('click', async function(){
+      hideBootstrapError();
+      try {
+        const sid = await ensureSession({ forceFresh: true });
+        if (sid) {
+          await rehydrate(sid);
+          // enable set-down link if rehydration brought back turns
+          if (firstTurnSent && setDownLink) setDownLink.disabled = false;
+        }
+      } catch (err) {
+        if (err && err.name === 'BootstrapConflict') {
+          showConflictModal(err.payload || {});
+        } else {
+          showBootstrapError();
+        }
+      }
+    });
+
     /* sphere + bootstrap */
     startSphere();
-    ensureSession().then(function(sid){
-      if (sid) rehydrate(sid);
-    }).catch(function(){});
+    ensureSession().then(async function(sid){
+      if (!sid) return;
+      await rehydrate(sid);
+      if (firstTurnSent && setDownLink) setDownLink.disabled = false;
+    }).catch(function(err){
+      if (err && err.name === 'BootstrapConflict') {
+        showConflictModal(err.payload || {});
+      } else {
+        // 503/500 — show the inline retry card under the sphere
+        showBootstrapError();
+      }
+    });
   });
 })();
 `;
@@ -1388,6 +2000,11 @@ ${FONTS}
         <pre class="empty-sphere" id="sphere" aria-hidden="true"></pre>
         <div class="empty-resident">${escapeHtml(slugLower)}</div>
         <div class="empty-eyebrow">one continuous thread · mnemos beneath it</div>
+        <div class="bootstrap-error" id="bootstrap-error" role="alert" aria-live="polite">
+          <span class="err-title">the room isn't accessible right now</span>
+          <span>try again in a moment — the resident is still here, the gateway is briefly unreachable.</span>
+          <button class="err-retry" id="bootstrap-retry" type="button">retry</button>
+        </div>
       </div>
 
       <div class="messages-inner" id="messages-inner"></div>
@@ -1398,6 +2015,10 @@ ${FONTS}
   <!-- composer -->
   <div class="composer-zone">
     <div class="composer-column">
+      <div class="pacing-eyebrow" id="pacing-eyebrow" role="status" aria-live="polite" aria-atomic="true">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="pacing-eyebrow-text"></span>
+      </div>
       <div class="input-shell" id="input-shell">
         <div class="input-area">
           <textarea
@@ -1417,13 +2038,18 @@ ${FONTS}
       <div class="caption">
         <span class="caption-item"><span class="key">↵</span>send</span>
         <span class="caption-item"><span class="key">⇧↵</span>newline</span>
+        <button class="set-down-link" id="setDownLink" type="button" disabled title="set down this thread (consolidate + close)">set down</button>
         <span class="caption-spacer"></span>
         <span class="caption-status">${escapeHtml(slugLower)} · attending</span>
+        <span class="reconnecting">reconnecting…</span>
       </div>
     </div>
   </div>
 
 </div>
+
+<!-- overlay (modals: set-down confirm + consolidating + cross-surface conflict) -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-hidden="true"></div>
 
 <script>${chatScript(resident)}</script>
 </body>
