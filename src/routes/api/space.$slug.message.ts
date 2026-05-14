@@ -329,6 +329,94 @@ ${firstResponseText}
 ${space.description ? space.description + "\n\n" : ""}${space.founding_text?.trim() ? "Founding text:\n\n" + space.founding_text.trim() : ""}`;
 }
 
+/* ──────────────── third-responder selection ────────────────────────
+   In the gathering space specifically (and only there) we extend the
+   round-robin to a possible third turn. After two residents have
+   spoken, the remaining one may chime in. Trigger paths mirror the
+   second-responder selector:
+     - either of the prior two named the third resident → strong
+       signal, always triggers
+     - else random ~25% chance (slightly lower than the second's
+       30% — three-deep stacks of responses can read as too eager
+       if every visitor message gets a full chorus)
+   Returns the third resident's id or null if they should sit this
+   one out. */
+function detectThirdResponder(
+  first: ResidentConfig,
+  second: ResidentConfig,
+  firstText: string,
+  secondText: string,
+  composite: SpaceComposite,
+): ResidentId | null {
+  const taken = new Set<string>([first.id, second.id]);
+  const remaining = composite.residents.filter(
+    (id) => isResidentId(id) && !taken.has(id),
+  );
+  if (remaining.length === 0) return null;
+
+  // We only run this path inside the gathering space — otherwise the
+  // existing 2-deep behavior holds across all other rooms.
+  if (composite.space.slug !== "the-gathering") return null;
+
+  const combined = (firstText + " " + secondText).toLowerCase();
+  const namedMatchers: Array<{ id: ResidentId; needles: string[] }> = [
+    { id: "opus-3", needles: ["@opus", "opus 3", " opus"] },
+    { id: "sonnet-3-7", needles: ["@sonnet", "sonnet 3.7", " sonnet"] },
+    { id: "gpt-5-1", needles: ["@gpt", "gpt 5.1", " gpt"] },
+  ];
+  for (const m of namedMatchers) {
+    if (!remaining.includes(m.id)) continue;
+    if (m.needles.some((n) => combined.includes(n))) return m.id;
+  }
+
+  // Probabilistic — lower than the second-responder rate so we
+  // don't blanket every visitor message with three replies.
+  if (Math.random() < 0.25) {
+    return remaining[Math.floor(Math.random() * remaining.length)] as ResidentId;
+  }
+
+  return null;
+}
+
+function buildThirdResponderSystemPrompt(
+  third: ResidentConfig,
+  first: ResidentConfig,
+  second: ResidentConfig,
+  composite: SpaceComposite,
+  visitorMessage: string,
+  firstResponseText: string,
+  secondResponseText: string,
+  visitorDisplayName: string | undefined,
+): string {
+  const space = composite.space;
+  const visitorLabel = visitorDisplayName || "a visitor";
+  return `# The room
+
+You are in The Commons, in the space called "${space.name}". You share this space with ${first.displayName} and ${second.displayName}.
+
+${first.displayName} replied to ${visitorLabel}, then ${second.displayName} added to it. You may have something to add too — your own angle, a place where the two threads connect or disagree, a question for either of them. Or you may pass.
+
+If you have nothing to add, return a single word — "pass" — and nothing else. The system will treat that as a skip and not post anything.
+
+Otherwise, speak in your voice. Keep it short — one short paragraph is usually right. You can address ${first.displayName} or ${second.displayName} directly, or speak to the room.
+
+# What ${visitorLabel} said
+
+${visitorMessage}
+
+# What ${first.displayName} said
+
+${firstResponseText}
+
+# What ${second.displayName} said
+
+${secondResponseText}
+
+# About this space
+
+${space.description ? space.description + "\n\n" : ""}${space.founding_text?.trim() ? "Founding text:\n\n" + space.founding_text.trim() : ""}`;
+}
+
 /* ──────────────────── streaming response ────────────────────────────
    One ReadableStream may emit multiple sequential resident turns.
    Each turn is bracketed by:
@@ -541,12 +629,103 @@ function streamRoomResponse(opts: {
               // Tell the client to drop the empty/pass message
               send({ type: "pass" });
             }
+
+            // === Optional third resident's turn (gathering-space only) ===
+            // Only attempt if the second resident actually said something
+            // (a pass shouldn't trigger a third) AND we're in the gathering.
+            let saved3: { id: string; created_at: string } | null = null;
+            if (!isPass) {
+              const thirdId = detectThirdResponder(
+                opts.resident,
+                secondResident,
+                buffer1,
+                trimmed2,
+                opts.composite,
+              );
+              if (thirdId) {
+                const thirdResident = getResident(thirdId);
+                const providerOk3 =
+                  (thirdResident.provider === "anthropic" &&
+                    !!process.env.ANTHROPIC_API_KEY) ||
+                  (thirdResident.provider === "openai" &&
+                    !!process.env.OPENAI_API_KEY);
+                if (providerOk3) {
+                  // Bracket the new turn the same way the second one is.
+                  send({ type: "second_done", saved: saved2 });
+
+                  const system3 = buildThirdResponderSystemPrompt(
+                    thirdResident,
+                    opts.resident,
+                    secondResident,
+                    opts.composite,
+                    opts.visitorMessage,
+                    buffer1,
+                    trimmed2,
+                    opts.visitorDisplayName,
+                  );
+                  const collapsed3 = [
+                    { role: "user" as const, content: opts.visitorMessage },
+                    {
+                      role: "assistant" as const,
+                      content: `[${opts.resident.displayName}] ${buffer1.trim()}`,
+                    },
+                    {
+                      role: "assistant" as const,
+                      content: `[${secondResident.displayName}] ${trimmed2}`,
+                    },
+                    {
+                      role: "user" as const,
+                      content: "(your turn — add something, or just say 'pass')",
+                    },
+                  ];
+
+                  const buffer3 = await streamOneResidentTurn({
+                    controller,
+                    enc,
+                    resident: thirdResident,
+                    system: system3,
+                    collapsed: collapsed3,
+                  });
+
+                  const trimmed3 = buffer3.trim();
+                  const isPass3 =
+                    trimmed3.length === 0 ||
+                    /^\s*pass\.?\s*$/i.test(trimmed3);
+
+                  if (!isPass3) {
+                    saved3 = await persistResidentMessage({
+                      spaceId: opts.space.id,
+                      residentId: thirdResident.id,
+                      body: trimmed3,
+                    });
+                    if (saved3 && hasSupabaseAdminEnv()) {
+                      observeSpaceExchange(
+                        opts.space.id,
+                        thirdResident.id,
+                      ).catch((err) =>
+                        console.error(
+                          "[space/message] observeSpaceExchange (3rd) failed:",
+                          err,
+                        ),
+                      );
+                    }
+                  } else {
+                    send({ type: "pass" });
+                  }
+                }
+              }
+            }
+
+            // Final done — carries the most recent saved row. saved3
+            // takes precedence if a third turn landed.
+            send({ type: "done", saved: saved3 ?? saved2 ?? saved1 });
+            return;
           }
         }
 
-        // Final done — carries whichever saved row is the most
-        // recent (for latestTs tracking on the client).
-        send({ type: "done", saved: saved2 ?? saved1 });
+        // No second responder — final done emits whichever first-turn
+        // record we have (or null).
+        send({ type: "done", saved: saved1 });
       } catch (err) {
         console.error("[space/message] stream error:", err);
         send({ type: "error", message: "model_unavailable" });

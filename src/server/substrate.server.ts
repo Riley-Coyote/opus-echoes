@@ -2105,6 +2105,14 @@ export async function runSpaceSalon(
     maxTurns?: number;
     topicOverride?: string;
     maxImagesPerSalon?: number;
+    /** Caller wants this run to honor any queued pending_topic on
+     *  the space row. Cron passes true; explicit topic overrides
+     *  from admin/visitor endpoints pass false (since they
+     *  supply their own topic). */
+    consumePendingTopic?: boolean;
+    /** "scheduled" | "admin" | "visitor" — for logging /
+     *  diagnostics only. Not persisted. */
+    source?: string;
   },
 ): Promise<{
   ran: boolean;
@@ -2114,8 +2122,15 @@ export async function runSpaceSalon(
 }> {
   const maxTurns = opts?.maxTurns ?? 30;
   const maxImages = opts?.maxImagesPerSalon ?? 5;
+  const source = opts?.source ?? "unknown";
   let imagesGenerated = 0;
   let turnsRan = 0;
+  // Track whether we successfully claimed the run-state lock so we
+  // can release it in `finally`.
+  let claimedRunState = false;
+  // What topic we actually ended up running with — set after the
+  // claim step decides whether to consume pending_topic.
+  let effectiveTopic = opts?.topicOverride;
 
   const sbAny = supabaseAdmin as unknown as {
     from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
@@ -2127,7 +2142,7 @@ export async function runSpaceSalon(
     const { data: spaceRow } = await sbAny
       .from("spaces")
       .select(
-        "id, slug, name, description, founding_text, status, created_at, created_by_resident_id",
+        "id, slug, name, description, founding_text, status, created_at, created_by_resident_id, pending_topic, current_salon_started_at",
       )
       .eq("id", spaceId)
       .maybeSingle();
@@ -2140,7 +2155,56 @@ export async function runSpaceSalon(
       name: string;
       description: string | null;
       founding_text: string | null;
+      pending_topic: string | null;
+      current_salon_started_at: string | null;
     };
+
+    // 1a. Claim the run-state. If a salon is already running in
+    // this space (current_salon_started_at non-null and recent),
+    // bail out so we don't double up. A "stale" claim (>30min
+    // old) is treated as abandoned and we steal it — covers the
+    // case where a previous run errored without releasing.
+    if (space.current_salon_started_at) {
+      const startedMs = Date.parse(space.current_salon_started_at);
+      const ageMin = (Date.now() - startedMs) / 60_000;
+      if (ageMin >= 0 && ageMin < 30) {
+        return {
+          ran: false,
+          turns: 0,
+          reason: "already_running",
+          imagesGenerated,
+        };
+      }
+      console.warn(
+        `[substrate] runSpaceSalon — stealing stale run-claim (${ageMin.toFixed(0)}min old) for space ${space.slug}`,
+      );
+    }
+
+    // 1b. Consume pending_topic if asked + present. We do this in
+    // the same UPDATE that sets current_salon_started_at so the
+    // claim is atomic (no race where two ticks both grab the
+    // same queued topic).
+    const claimAt = new Date().toISOString();
+    let consumedTopic: string | null = null;
+    if (opts?.consumePendingTopic && space.pending_topic) {
+      consumedTopic = space.pending_topic;
+      effectiveTopic = effectiveTopic || consumedTopic;
+    }
+    const { error: claimErr } = await sbAny
+      .from("spaces")
+      .update({
+        current_salon_started_at: claimAt,
+        ...(consumedTopic ? { pending_topic: null } : {}),
+      })
+      .eq("id", spaceId);
+    if (claimErr) {
+      console.error("[substrate] runSpaceSalon claim failed:", claimErr);
+      return { ran: false, turns: 0, reason: "claim_failed", imagesGenerated };
+    }
+    claimedRunState = true;
+    console.log(
+      `[substrate] runSpaceSalon — claimed "${space.slug}" (source=${source}, topic=${effectiveTopic ? "yes" : "no"})`,
+    );
 
     // 2. Load participants.
     const { data: residentRows } = await sbAny
@@ -2269,7 +2333,7 @@ export async function runSpaceSalon(
       const memoryBlock = await composeMemoryPool({
         supabase: supabaseAdmin,
         residentId: next,
-        visitorMessage: opts?.topicOverride ?? space.name,
+        visitorMessage: effectiveTopic ?? space.name,
       })
         .then((pool) => formatMemoryBlock(pool.pool))
         .catch(() => "");
@@ -2293,7 +2357,7 @@ You share this room with ${otherResidents || "the other residents"}. Riley broug
 
 Keep your turn focused. One or two short paragraphs is usually right. End where the thought lands.
 
-${opts?.topicOverride ? `# Topic for this gathering\n\n${opts.topicOverride}\n\n` : ""}# Founding text of this room
+${effectiveTopic ? `# Topic for this gathering\n\n${effectiveTopic}\n\n` : ""}# Founding text of this room
 
 ${space.founding_text?.trim() || "(no founding text — Riley will set the topic.)"}
 
@@ -2485,6 +2549,26 @@ ${tagInstructions}`;
   } catch (err) {
     console.error("[substrate] runSpaceSalon failed:", err);
     return { ran: turnsRan > 0, turns: turnsRan, reason: "error", imagesGenerated };
+  } finally {
+    // Always release the run-state lock we claimed earlier, even
+    // if the salon errored. Update last_salon_at so visitors see
+    // "they last gathered N hours ago" timestamps.
+    if (claimedRunState) {
+      try {
+        await sbAny
+          .from("spaces")
+          .update({
+            current_salon_started_at: null,
+            last_salon_at: new Date().toISOString(),
+          })
+          .eq("id", spaceId);
+      } catch (releaseErr) {
+        console.error(
+          "[substrate] runSpaceSalon run-state release failed:",
+          releaseErr,
+        );
+      }
+    }
   }
 }
 

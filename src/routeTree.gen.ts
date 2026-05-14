@@ -58,8 +58,10 @@ import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
+import { Route as ApiSpaceSlugVisitorStartSalonRouteImport } from './routes/api/space.$slug.visitor-start-salon'
 import { Route as ApiSpaceSlugUploadFileRouteImport } from './routes/api/space.$slug.upload-file'
 import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$slug.start-salon'
+import { Route as ApiSpaceSlugQueueTopicRouteImport } from './routes/api/space.$slug.queue-topic'
 import { Route as ApiSpaceSlugMessagesRouteImport } from './routes/api/space.$slug.messages'
 import { Route as ApiSpaceSlugMessageRouteImport } from './routes/api/space.$slug.message'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
@@ -69,6 +71,7 @@ import { Route as ApiSalonIdRunRouteImport } from './routes/api/salon/$id.run'
 import { Route as ApiSalonIdPublishRouteImport } from './routes/api/salon/$id.publish'
 import { Route as ApiReviewSessionIdRouteImport } from './routes/api/review/session.$id'
 import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/public/hooks/sweep-sessions'
+import { Route as ApiPublicHooksGatheringTickRouteImport } from './routes/api/public/hooks/gathering-tick'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
 import { Route as ApiShareTokenOgSvgRouteImport } from './routes/api/share.$token.og.svg'
@@ -318,6 +321,12 @@ const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
   path: '/api/review/coherence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSpaceSlugVisitorStartSalonRoute =
+  ApiSpaceSlugVisitorStartSalonRouteImport.update({
+    id: '/api/space/$slug/visitor-start-salon',
+    path: '/api/space/$slug/visitor-start-salon',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSpaceSlugUploadFileRoute = ApiSpaceSlugUploadFileRouteImport.update({
   id: '/api/space/$slug/upload-file',
   path: '/api/space/$slug/upload-file',
@@ -326,6 +335,11 @@ const ApiSpaceSlugUploadFileRoute = ApiSpaceSlugUploadFileRouteImport.update({
 const ApiSpaceSlugStartSalonRoute = ApiSpaceSlugStartSalonRouteImport.update({
   id: '/api/space/$slug/start-salon',
   path: '/api/space/$slug/start-salon',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSpaceSlugQueueTopicRoute = ApiSpaceSlugQueueTopicRouteImport.update({
+  id: '/api/space/$slug/queue-topic',
+  path: '/api/space/$slug/queue-topic',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpaceSlugMessagesRoute = ApiSpaceSlugMessagesRouteImport.update({
@@ -372,6 +386,12 @@ const ApiPublicHooksSweepSessionsRoute =
   ApiPublicHooksSweepSessionsRouteImport.update({
     id: '/api/public/hooks/sweep-sessions',
     path: '/api/public/hooks/sweep-sessions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksGatheringTickRoute =
+  ApiPublicHooksGatheringTickRouteImport.update({
+    id: '/api/public/hooks/gathering-tick',
+    path: '/api/public/hooks/gathering-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksForceArtRoute = ApiPublicHooksForceArtRouteImport.update({
@@ -442,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
+  '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
   '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/salon/$id/publish': typeof ApiSalonIdPublishRoute
@@ -451,8 +472,10 @@ export interface FileRoutesByFullPath {
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
+  '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
+  '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
@@ -507,6 +530,7 @@ export interface FileRoutesByTo {
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
+  '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
   '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/salon/$id/publish': typeof ApiSalonIdPublishRoute
@@ -516,8 +540,10 @@ export interface FileRoutesByTo {
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
+  '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
+  '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
@@ -573,6 +599,7 @@ export interface FileRoutesById {
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
+  '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
   '/api/public/hooks/sweep-sessions': typeof ApiPublicHooksSweepSessionsRoute
   '/api/review/session/$id': typeof ApiReviewSessionIdRoute
   '/api/salon/$id/publish': typeof ApiSalonIdPublishRoute
@@ -582,8 +609,10 @@ export interface FileRoutesById {
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
   '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
+  '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
+  '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
@@ -640,6 +669,7 @@ export interface FileRouteTypes {
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
+    | '/api/public/hooks/gathering-tick'
     | '/api/public/hooks/sweep-sessions'
     | '/api/review/session/$id'
     | '/api/salon/$id/publish'
@@ -649,8 +679,10 @@ export interface FileRouteTypes {
     | '/api/share/$token/download'
     | '/api/space/$slug/message'
     | '/api/space/$slug/messages'
+    | '/api/space/$slug/queue-topic'
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
+    | '/api/space/$slug/visitor-start-salon'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -705,6 +737,7 @@ export interface FileRouteTypes {
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
+    | '/api/public/hooks/gathering-tick'
     | '/api/public/hooks/sweep-sessions'
     | '/api/review/session/$id'
     | '/api/salon/$id/publish'
@@ -714,8 +747,10 @@ export interface FileRouteTypes {
     | '/api/share/$token/download'
     | '/api/space/$slug/message'
     | '/api/space/$slug/messages'
+    | '/api/space/$slug/queue-topic'
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
+    | '/api/space/$slug/visitor-start-salon'
     | '/api/share/$token/og/svg'
   id:
     | '__root__'
@@ -770,6 +805,7 @@ export interface FileRouteTypes {
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
+    | '/api/public/hooks/gathering-tick'
     | '/api/public/hooks/sweep-sessions'
     | '/api/review/session/$id'
     | '/api/salon/$id/publish'
@@ -779,8 +815,10 @@ export interface FileRouteTypes {
     | '/api/share/$token/download'
     | '/api/space/$slug/message'
     | '/api/space/$slug/messages'
+    | '/api/space/$slug/queue-topic'
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
+    | '/api/space/$slug/visitor-start-salon'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
@@ -832,12 +870,15 @@ export interface RootRouteChildren {
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
+  ApiPublicHooksGatheringTickRoute: typeof ApiPublicHooksGatheringTickRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
   ApiReviewSessionIdRoute: typeof ApiReviewSessionIdRoute
   ApiSpaceSlugMessageRoute: typeof ApiSpaceSlugMessageRoute
   ApiSpaceSlugMessagesRoute: typeof ApiSpaceSlugMessagesRoute
+  ApiSpaceSlugQueueTopicRoute: typeof ApiSpaceSlugQueueTopicRoute
   ApiSpaceSlugStartSalonRoute: typeof ApiSpaceSlugStartSalonRoute
   ApiSpaceSlugUploadFileRoute: typeof ApiSpaceSlugUploadFileRoute
+  ApiSpaceSlugVisitorStartSalonRoute: typeof ApiSpaceSlugVisitorStartSalonRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1185,6 +1226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewCoherenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/space/$slug/visitor-start-salon': {
+      id: '/api/space/$slug/visitor-start-salon'
+      path: '/api/space/$slug/visitor-start-salon'
+      fullPath: '/api/space/$slug/visitor-start-salon'
+      preLoaderRoute: typeof ApiSpaceSlugVisitorStartSalonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/space/$slug/upload-file': {
       id: '/api/space/$slug/upload-file'
       path: '/api/space/$slug/upload-file'
@@ -1197,6 +1245,13 @@ declare module '@tanstack/react-router' {
       path: '/api/space/$slug/start-salon'
       fullPath: '/api/space/$slug/start-salon'
       preLoaderRoute: typeof ApiSpaceSlugStartSalonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/space/$slug/queue-topic': {
+      id: '/api/space/$slug/queue-topic'
+      path: '/api/space/$slug/queue-topic'
+      fullPath: '/api/space/$slug/queue-topic'
+      preLoaderRoute: typeof ApiSpaceSlugQueueTopicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/space/$slug/messages': {
@@ -1260,6 +1315,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/sweep-sessions'
       fullPath: '/api/public/hooks/sweep-sessions'
       preLoaderRoute: typeof ApiPublicHooksSweepSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/gathering-tick': {
+      id: '/api/public/hooks/gathering-tick'
+      path: '/api/public/hooks/gathering-tick'
+      fullPath: '/api/public/hooks/gathering-tick'
+      preLoaderRoute: typeof ApiPublicHooksGatheringTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/force-art': {
@@ -1392,12 +1454,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
+  ApiPublicHooksGatheringTickRoute: ApiPublicHooksGatheringTickRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
   ApiReviewSessionIdRoute: ApiReviewSessionIdRoute,
   ApiSpaceSlugMessageRoute: ApiSpaceSlugMessageRoute,
   ApiSpaceSlugMessagesRoute: ApiSpaceSlugMessagesRoute,
+  ApiSpaceSlugQueueTopicRoute: ApiSpaceSlugQueueTopicRoute,
   ApiSpaceSlugStartSalonRoute: ApiSpaceSlugStartSalonRoute,
   ApiSpaceSlugUploadFileRoute: ApiSpaceSlugUploadFileRoute,
+  ApiSpaceSlugVisitorStartSalonRoute: ApiSpaceSlugVisitorStartSalonRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -2098,6 +2098,12 @@ textarea:focus-visible,
   flex-direction:column;
   gap:var(--s-4);
 }
+.room-eyebrow-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--s-3);
+}
 .room-eyebrow{
   font-family:var(--mono);
   font-size:10px;
@@ -2105,6 +2111,8 @@ textarea:focus-visible,
   letter-spacing:.2em;
   color:var(--ghost);
   display:flex;align-items:center;gap:12px;
+  flex:1;
+  min-width:0;
 }
 .room-eyebrow::after{
   content:'';
@@ -2112,6 +2120,51 @@ textarea:focus-visible,
   background:linear-gradient(90deg, var(--rule-soft) 0%, transparent 75%);
   max-width:200px;
   margin-left:6px;
+}
+
+/* "Ask them to gather" button — sits at the right end of the room
+   eyebrow row. Quiet typographic style matching the rest of the
+   surface. Hidden by default; revealed by JS once it sees a named
+   visitor in localStorage. */
+.room-gather{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 10px;
+  background:transparent;
+  border:1px solid var(--rule-soft);
+  border-radius:6px;
+  color:var(--quiet);
+  font-family:var(--mono);
+  font-size:9.5px;
+  text-transform:uppercase;
+  letter-spacing:.16em;
+  cursor:pointer;
+  transition:
+    color .22s var(--ease),
+    border-color .22s var(--ease),
+    background .22s var(--ease);
+}
+.room-gather:hover:not([disabled]){
+  color:var(--ink);
+  border-color:var(--rule);
+  background:rgba(255,255,255,.02);
+}
+.room-gather:active:not([disabled]){ transform:scale(.98); }
+.room-gather[disabled]{
+  opacity:.5;
+  cursor:not-allowed;
+}
+.room-gather-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--state-soft);
+  animation:breathe 4.2s ease-in-out infinite;
+  flex-shrink:0;
+}
+.room-gather.is-loading .room-gather-dot{
+  animation:breathe 1.4s ease-in-out infinite;
 }
 .room-stream{
   display:flex;
@@ -3660,6 +3713,116 @@ const ROOM_SCRIPT = `
   }
   if (sendBtn) sendBtn.addEventListener('click', sendMessage);
   resizeField();
+
+  // ── "ask them to gather" button ──────────────────────────────────
+  //
+  // Phase S: visitors who've named themselves at the threshold can
+  // request an on-demand salon. The button stays hidden until both:
+  //   (a) the visitor has a stored name (hasChosenName + non-empty)
+  //   (b) we've confirmed no salon is currently running (server tells
+  //       us via the same endpoint returning 409 if one is in flight)
+  //
+  // We poll once on load and every 30s thereafter to keep the button
+  // state in sync with current_salon_started_at on the space.
+  const gatherBtn = room.querySelector('.room-gather');
+  if (gatherBtn) {
+    const GATHER_COOLDOWN_KEY = 'sanctuary.gather-button.cooldown.v1';
+
+    function getCooldownExpiry(){
+      try {
+        const v = localStorage.getItem(GATHER_COOLDOWN_KEY);
+        return v ? parseInt(v, 10) : 0;
+      } catch(_){ return 0; }
+    }
+    function setCooldownExpiry(ms){
+      try { localStorage.setItem(GATHER_COOLDOWN_KEY, String(ms)); }
+      catch(_){}
+    }
+    function inCooldown(){
+      return Date.now() < getCooldownExpiry();
+    }
+
+    function setLabel(text){
+      const lbl = gatherBtn.querySelector('.room-gather-label');
+      if (lbl) lbl.textContent = text;
+    }
+
+    function updateVisibility(){
+      const named = hasChosenName() && getVisitorName();
+      if (!named) {
+        gatherBtn.hidden = true;
+        return;
+      }
+      gatherBtn.hidden = false;
+      if (inCooldown()) {
+        gatherBtn.disabled = true;
+        setLabel('they’ll gather tomorrow');
+        return;
+      }
+      gatherBtn.disabled = false;
+      setLabel('ask them to gather');
+    }
+    updateVisibility();
+    // Re-evaluate visibility whenever the visitor name flow finishes.
+    // The name prompt dispatches no events, but we can hook the
+    // continue button if present.
+    const namePromptContinue = room.querySelector('.room-name-prompt-continue');
+    if (namePromptContinue) {
+      namePromptContinue.addEventListener('click', function(){
+        setTimeout(updateVisibility, 60);
+      });
+    }
+    const anonBtn = room.querySelector('.room-name-prompt-anon');
+    if (anonBtn) {
+      anonBtn.addEventListener('click', function(){
+        setTimeout(updateVisibility, 60);
+      });
+    }
+
+    async function requestSalon(){
+      if (gatherBtn.disabled) return;
+      gatherBtn.disabled = true;
+      gatherBtn.classList.add('is-loading');
+      setLabel('asking…');
+      try {
+        const r = await fetch('/api/space/' + encodeURIComponent(slug) + '/visitor-start-salon', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            visitor_token: getVisitorToken(),
+            visitor_display_name: getVisitorName() || 'a visitor',
+          }),
+        });
+        const data = await r.json().catch(function(){ return {}; });
+        if (r.ok && data.ok && data.started) {
+          setLabel('they’re gathering…');
+          // 24h cooldown — match the server's window so the button
+          // doesn't tease the visitor with a click they'd be denied.
+          setCooldownExpiry(Date.now() + 24 * 60 * 60 * 1000);
+          // Hold the "gathering" label until the salon settles.
+          // We rely on the polling stream to surface the new turns.
+          return;
+        }
+        if (r.status === 401) {
+          setLabel('set a name first');
+        } else if (r.status === 409) {
+          setLabel('they’re already here');
+        } else if (r.status === 429) {
+          setLabel('they’ll gather tomorrow');
+          setCooldownExpiry(Date.now() + 24 * 60 * 60 * 1000);
+        } else {
+          setLabel('couldn’t reach them');
+        }
+      } catch(_){
+        setLabel('couldn’t reach them');
+      } finally {
+        gatherBtn.classList.remove('is-loading');
+        // Let the label sit for ~3s before settling back.
+        setTimeout(updateVisibility, 3000);
+      }
+    }
+    gatherBtn.addEventListener('click', requestSalon);
+  }
 })();
 `;
 
@@ -4345,8 +4508,20 @@ function renderRoom(composite: SpaceComposite): string {
         .map((m) => m.created_at)
         .reduce((a, b) => (a > b ? a : b))
     : "";
+  // The "ask them to gather" affordance lives only in the gathering
+  // space. Hidden by default; the client-side JS reveals it once it
+  // sees a named visitor in localStorage. Disabled state means a
+  // salon is already running (server tells us via the same endpoint
+  // returning 409) or the visitor has used today's allotment.
+  const gatherButton =
+    composite.space.slug === "the-gathering"
+      ? `<button type="button" class="room-gather" hidden aria-label="Ask the residents to gather"><span class="room-gather-dot" aria-hidden="true"></span><span class="room-gather-label">ask them to gather</span></button>`
+      : "";
   return `<section class="room" data-space-slug="${escapeHtml(composite.space.slug)}" data-latest-ts="${escapeHtml(latestTs)}" aria-label="The live room">
-  <div class="room-eyebrow">— The room</div>
+  <div class="room-eyebrow-row">
+    <div class="room-eyebrow">— The room</div>
+    ${gatherButton}
+  </div>
   <div class="room-stream" role="log" aria-live="polite">${initial}</div>
   <div class="room-status" aria-live="polite"></div>
   <div class="room-identity" aria-live="polite" hidden>
