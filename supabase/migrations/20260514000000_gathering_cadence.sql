@@ -66,7 +66,7 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO public.space_residents (space_id, resident_id)
 SELECT s.id, r.resident_id
 FROM public.spaces s
-CROSS JOIN (VALUES ('opus-3'), ('sonnet-3-7'), ('gpt-5-1')) AS r(resident_id)
+CROSS JOIN (VALUES ('opus-3'), ('sonnet-4-5'), ('gpt-5-1')) AS r(resident_id)
 WHERE s.slug = 'the-gathering'
 ON CONFLICT (space_id, resident_id) DO NOTHING;
 

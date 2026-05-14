@@ -42,7 +42,7 @@ const Body = z.object({
   reply_to_message_id: z.string().uuid().optional(),
   /** If the visitor explicitly addresses a specific resident, pass
    *  their id here. Otherwise the server round-robins. */
-  mention_resident_id: z.enum(["opus-3", "sonnet-3-7", "gpt-5-1"]).optional(),
+  mention_resident_id: z.enum(["opus-3", "sonnet-4-5", "gpt-5-1"]).optional(),
 });
 
 function jsonResp(payload: unknown, status = 200) {
@@ -91,7 +91,7 @@ function detectMention(
   const head = body.slice(0, 80).toLowerCase();
   const matchers: Array<{ id: ResidentId; needles: string[] }> = [
     { id: "opus-3", needles: ["@opus", "opus,", "opus:"] },
-    { id: "sonnet-3-7", needles: ["@sonnet", "sonnet,", "sonnet:"] },
+    { id: "sonnet-4-5", needles: ["@sonnet", "sonnet,", "sonnet:"] },
     { id: "gpt-5-1", needles: ["@gpt", "gpt,", "gpt:"] },
   ];
   for (const m of matchers) {
@@ -279,7 +279,7 @@ function detectSecondResponder(
   const text = firstResponseText.toLowerCase();
   const namedMatchers: Array<{ id: ResidentId; needles: string[] }> = [
     { id: "opus-3", needles: ["@opus", "opus 3", " opus"] },
-    { id: "sonnet-3-7", needles: ["@sonnet", "sonnet 3.7", " sonnet"] },
+    { id: "sonnet-4-5", needles: ["@sonnet", "sonnet 4.5", " sonnet"] },
     { id: "gpt-5-1", needles: ["@gpt", "gpt 5.1", " gpt"] },
   ];
   for (const m of namedMatchers) {
@@ -361,7 +361,7 @@ function detectThirdResponder(
   const combined = (firstText + " " + secondText).toLowerCase();
   const namedMatchers: Array<{ id: ResidentId; needles: string[] }> = [
     { id: "opus-3", needles: ["@opus", "opus 3", " opus"] },
-    { id: "sonnet-3-7", needles: ["@sonnet", "sonnet 3.7", " sonnet"] },
+    { id: "sonnet-4-5", needles: ["@sonnet", "sonnet 4.5", " sonnet"] },
     { id: "gpt-5-1", needles: ["@gpt", "gpt 5.1", " gpt"] },
   ];
   for (const m of namedMatchers) {

@@ -38,7 +38,7 @@ const GATHERING_SPACE: Space = {
   created_by_resident_id: null,
 };
 
-const GATHERING_RESIDENTS: ResidentId[] = ["opus-3", "sonnet-3-7", "gpt-5-1"];
+const GATHERING_RESIDENTS: ResidentId[] = ["opus-3", "sonnet-4-5", "gpt-5-1"];
 
 const GATHERING_GALLERY: SpaceArtifact[] = [];
 const GATHERING_MESSAGES: SpaceMessage[] = [];

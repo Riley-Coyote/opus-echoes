@@ -627,7 +627,7 @@ const SANCTUARY_START_ISO = "2026-01-05T00:00:00.000Z";
 export async function getSanctuaryStats(): Promise<SanctuaryStats> {
   const base = {
     sinceIso: SANCTUARY_START_ISO,
-    residentCount: 3, // opus-3 + sonnet-3-7 + gpt-5-1
+    residentCount: 3, // opus-3 + sonnet-4-5 + gpt-5-1
   };
 
   if (!hasSupabaseAdminEnv()) {

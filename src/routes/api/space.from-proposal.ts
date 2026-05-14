@@ -30,7 +30,7 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { isResidentId, type ResidentId } from "@/server/opus/residents";
 
 const Body = z.object({
-  resident_id: z.enum(["opus-3", "sonnet-3-7", "gpt-5-1"]),
+  resident_id: z.enum(["opus-3", "sonnet-4-5", "gpt-5-1"]),
   topic: z.string().trim().min(1).max(160),
   description: z.string().trim().max(320).optional(),
   founding_text: z.string().trim().min(1).max(8000),
