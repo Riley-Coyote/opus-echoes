@@ -410,6 +410,126 @@ ${VIEWPORT_GLOW_CSS}
   50%      { opacity: 0.15; }
 }
 
+/* ── message entrance — fade-in + slow rise ─────────────────
+   visitor message fades in and rises from below over ~680ms.
+   resident message uses the same curve so the pairing reads as
+   one moment in two halves. premium curve, slow enough to feel
+   deliberate without dragging. */
+.msg {
+  opacity: 1;
+  transform: translateY(0);
+}
+.msg.entering {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: msg-enter 680ms var(--ease-premium) forwards;
+}
+@keyframes msg-enter {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── thinking — 9-dot murmur grid + shimmer-sweep label ─────
+   shown in the resident's slot from the moment the visitor's
+   message lands until the first text token arrives. each dot
+   has independent prime-rhythm opacity + scale animations so
+   the grid feels alive rather than a metronome. label uses the
+   same gradient-sweep trick the salons do for the light
+   channel — restrained, soft, identifiably the resident's
+   color via --agent-hue. */
+.thinking-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+  transition: opacity 260ms var(--ease-out);
+}
+.thinking-block.dismissed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.thinking-dots {
+  display: grid;
+  grid-template-columns: repeat(3, 3.5px);
+  grid-template-rows: repeat(3, 3.5px);
+  gap: 2px;
+  flex-shrink: 0;
+}
+.thinking-dots .td {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  animation:
+    murmur-slow 1s ease-in-out infinite,
+    murmur-fast 1s ease-in-out infinite;
+}
+.thinking-dots .td:nth-child(1) { animation-duration: 4.7s, 1.3s; animation-delay: 0.0s, 0.2s; }
+.thinking-dots .td:nth-child(2) { animation-duration: 3.9s, 1.7s; animation-delay: 0.6s, 0.8s; }
+.thinking-dots .td:nth-child(3) { animation-duration: 5.1s, 1.1s; animation-delay: 1.2s, 0.1s; }
+.thinking-dots .td:nth-child(4) { animation-duration: 4.3s, 1.9s; animation-delay: 0.3s, 0.5s; }
+.thinking-dots .td:nth-child(5) { animation-duration: 3.7s, 1.5s; animation-delay: 0.9s, 0.3s; }
+.thinking-dots .td:nth-child(6) { animation-duration: 5.3s, 1.3s; animation-delay: 1.5s, 0.9s; }
+.thinking-dots .td:nth-child(7) { animation-duration: 4.1s, 1.7s; animation-delay: 0.7s, 0.6s; }
+.thinking-dots .td:nth-child(8) { animation-duration: 3.5s, 1.1s; animation-delay: 1.8s, 0.4s; }
+.thinking-dots .td:nth-child(9) { animation-duration: 4.9s, 1.9s; animation-delay: 0.4s, 1.0s; }
+
+@keyframes murmur-slow {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+@keyframes murmur-fast {
+  0%, 100% { background: rgba(255, 255, 255, 0.06); transform: scale(1); }
+  50%      { background: rgba(var(--agent-hue), 0.42); transform: scale(1.12); }
+}
+:root[data-theme="light"] .thinking-dots .td { background: rgba(0, 0, 0, 0.08); }
+:root[data-theme="light"] .thinking-dots .td {
+  animation-name: murmur-slow, murmur-fast-light;
+}
+@keyframes murmur-fast-light {
+  0%, 100% { background: rgba(0, 0, 0, 0.08); transform: scale(1); }
+  50%      { background: rgba(var(--agent-hue), 0.55); transform: scale(1.12); }
+}
+
+.thinking-label {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 420;
+  letter-spacing: 0.02em;
+  color: var(--ghost);
+  background: linear-gradient(
+    90deg,
+    rgba(244, 243, 240, 0.20) 0%,
+    rgba(244, 243, 240, 0.22) 35%,
+    rgba(244, 243, 240, 0.62) 50%,
+    rgba(244, 243, 240, 0.22) 65%,
+    rgba(244, 243, 240, 0.20) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-sweep 2.6s ease-in-out infinite;
+}
+:root[data-theme="light"] .thinking-label {
+  background: linear-gradient(
+    90deg,
+    rgba(20, 20, 22, 0.32) 0%,
+    rgba(20, 20, 22, 0.34) 35%,
+    rgba(20, 20, 22, 0.78) 50%,
+    rgba(20, 20, 22, 0.34) 65%,
+    rgba(20, 20, 22, 0.32) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@keyframes shimmer-sweep {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: -100% 50%; }
+}
+
 /* ── composer zone — anchored at bottom ───────────────────── */
 .composer-zone {
   flex-shrink: 0;
@@ -430,19 +550,62 @@ ${VIEWPORT_GLOW_CSS}
   border: 1px solid var(--rule);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color var(--dur-normal) var(--ease-out),
-              box-shadow var(--dur-normal) var(--ease-out);
+
+  /* baseline brightness ceilings for the 8 shimmer pools.
+     these are what the @keyframes ramp toward at 50%. when the
+     shell becomes .focused we lift them — the border glow gently
+     brightens without any line, highlight, or shadow appearing. */
+  --pc-peak-1: 0.38;
+  --pc-peak-2: 0.32;
+  --pc-peak-3: 0.35;
+  --pc-peak-4: 0.30;
+  --pc-peak-5: 0.34;
+  --pc-peak-6: 0.28;
+  --pc-peak-7: 0.30;
+  --pc-peak-8: 0.26;
+
+  transition: --pc-peak-1 var(--dur-normal) var(--ease-out),
+              --pc-peak-2 var(--dur-normal) var(--ease-out),
+              --pc-peak-3 var(--dur-normal) var(--ease-out),
+              --pc-peak-4 var(--dur-normal) var(--ease-out),
+              --pc-peak-5 var(--dur-normal) var(--ease-out),
+              --pc-peak-6 var(--dur-normal) var(--ease-out),
+              --pc-peak-7 var(--dur-normal) var(--ease-out),
+              --pc-peak-8 var(--dur-normal) var(--ease-out);
 }
+@property --pc-peak-1 { syntax: '<number>'; initial-value: 0.38; inherits: true; }
+@property --pc-peak-2 { syntax: '<number>'; initial-value: 0.32; inherits: true; }
+@property --pc-peak-3 { syntax: '<number>'; initial-value: 0.35; inherits: true; }
+@property --pc-peak-4 { syntax: '<number>'; initial-value: 0.30; inherits: true; }
+@property --pc-peak-5 { syntax: '<number>'; initial-value: 0.34; inherits: true; }
+@property --pc-peak-6 { syntax: '<number>'; initial-value: 0.28; inherits: true; }
+@property --pc-peak-7 { syntax: '<number>'; initial-value: 0.30; inherits: true; }
+@property --pc-peak-8 { syntax: '<number>'; initial-value: 0.26; inherits: true; }
+
+/* on focus: only the border-glow's ceiling lifts. no divider line in
+   the body, no box-shadow, no border-color change. the shimmer reads
+   as the composer "leaning in." */
 .input-shell.focused {
-  border-color: var(--rule-strong);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22),
-              0 8px 24px rgba(0, 0, 0, 0.14),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.025);
+  --pc-peak-1: 0.62;
+  --pc-peak-2: 0.55;
+  --pc-peak-3: 0.58;
+  --pc-peak-4: 0.50;
+  --pc-peak-5: 0.56;
+  --pc-peak-6: 0.48;
+  --pc-peak-7: 0.50;
+  --pc-peak-8: 0.42;
 }
-:root[data-theme="light"] .input-shell.focused {
-  box-shadow: 0 2px 8px rgba(40, 30, 12, 0.10),
-              0 8px 24px rgba(40, 30, 12, 0.08),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.40);
+
+/* on send: brief deeper brightening pulse, scales back via transition */
+.input-shell.submitting {
+  --pc-peak-1: 0.85;
+  --pc-peak-2: 0.78;
+  --pc-peak-3: 0.80;
+  --pc-peak-4: 0.72;
+  --pc-peak-5: 0.78;
+  --pc-peak-6: 0.70;
+  --pc-peak-7: 0.72;
+  --pc-peak-8: 0.64;
 }
 
 /* Option C border glow — 8 prime-rhythm pools masked to 1px edge */
@@ -487,14 +650,16 @@ ${VIEWPORT_GLOW_CSS}
     shimmer-c7 19s  ease-in-out infinite,
     shimmer-c8 23s  ease-in-out infinite;
 }
-@keyframes shimmer-c1 { 0%,100% { --pc1: 0.05; } 50% { --pc1: 0.38; } }
-@keyframes shimmer-c2 { 0%,100% { --pc2: 0.32; } 50% { --pc2: 0.04; } }
-@keyframes shimmer-c3 { 0%,100% { --pc3: 0.06; } 50% { --pc3: 0.35; } }
-@keyframes shimmer-c4 { 0%,100% { --pc4: 0.30; } 50% { --pc4: 0.05; } }
-@keyframes shimmer-c5 { 0%,100% { --pc5: 0.04; } 50% { --pc5: 0.34; } }
-@keyframes shimmer-c6 { 0%,100% { --pc6: 0.28; } 50% { --pc6: 0.04; } }
-@keyframes shimmer-c7 { 0%,100% { --pc7: 0.05; } 50% { --pc7: 0.30; } }
-@keyframes shimmer-c8 { 0%,100% { --pc8: 0.26; } 50% { --pc8: 0.03; } }
+/* keyframes read var(--pc-peak-N) at runtime, so the focus/submit
+   state lifts the peak without rewriting any animation. */
+@keyframes shimmer-c1 { 0%,100% { --pc1: 0.05; } 50% { --pc1: var(--pc-peak-1); } }
+@keyframes shimmer-c2 { 0%,100% { --pc2: var(--pc-peak-2); } 50% { --pc2: 0.04; } }
+@keyframes shimmer-c3 { 0%,100% { --pc3: 0.06; } 50% { --pc3: var(--pc-peak-3); } }
+@keyframes shimmer-c4 { 0%,100% { --pc4: var(--pc-peak-4); } 50% { --pc4: 0.05; } }
+@keyframes shimmer-c5 { 0%,100% { --pc5: 0.04; } 50% { --pc5: var(--pc-peak-5); } }
+@keyframes shimmer-c6 { 0%,100% { --pc6: var(--pc-peak-6); } 50% { --pc6: 0.04; } }
+@keyframes shimmer-c7 { 0%,100% { --pc7: 0.05; } 50% { --pc7: var(--pc-peak-7); } }
+@keyframes shimmer-c8 { 0%,100% { --pc8: var(--pc-peak-8); } 50% { --pc8: 0.03; } }
 
 :root[data-theme="light"] .input-shell::before {
   background:
@@ -538,12 +703,8 @@ ${VIEWPORT_GLOW_CSS}
   align-items: center;
   justify-content: space-between;
   padding: 7px 14px 9px 18px;
-  border-top: 1px solid transparent;
-  transition: border-color var(--dur-normal) var(--ease-out);
   gap: 12px;
-}
-.input-shell.focused .input-footer {
-  border-top-color: var(--rule);
+  /* no divider line, ever — focus is communicated by the border glow alone */
 }
 .input-footer-left {
   font-family: var(--mono);
@@ -737,13 +898,27 @@ function chatScript(resident: ResidentConfig): string {
     const inner = document.getElementById('messages-inner');
     if (inner) inner.classList.add('has-content');
   }
+  // Build the thinking-block HTML — 9-dot murmur grid + shimmer label.
+  // Lives inside the resident's empty body until the first text event.
+  function thinkingBlockHTML(){
+    const dots = '<div class="td"></div>'.repeat(9);
+    const labels = ['thinking', 'considering', 'with you', 'attending', 'pulling threads'];
+    const label = labels[Math.floor(Math.random() * labels.length)];
+    return (
+      '<div class="thinking-block" data-state="waiting">' +
+        '<div class="thinking-dots" aria-hidden="true">' + dots + '</div>' +
+        '<span class="thinking-label">' + label + '</span>' +
+      '</div>'
+    );
+  }
+
   function renderTurn(role, body, opts){
     opts = opts || {};
     const inner = document.getElementById('messages-inner');
     if (!inner) return null;
     hideEmpty();
     const wrap = document.createElement('article');
-    wrap.className = 'msg';
+    wrap.className = 'msg' + (opts.entering ? ' entering' : '');
     wrap.dataset.role = role === 'visitor' ? 'visitor' : 'resident';
     const isVisitor = role === 'visitor';
     const senderName = isVisitor ? 'you' : RESIDENT_NAME.toLowerCase();
@@ -758,15 +933,41 @@ function chatScript(resident: ResidentConfig): string {
 
     const bodyEl = document.createElement('div');
     bodyEl.className = 'msg-body';
-    bodyEl.innerHTML = paragraphize(body);
+    if (opts.thinking) {
+      bodyEl.innerHTML = thinkingBlockHTML();
+    } else {
+      bodyEl.innerHTML = paragraphize(body);
+    }
 
     wrap.appendChild(sidehead);
     wrap.appendChild(bodyEl);
     inner.appendChild(wrap);
 
+    // Remove the entering class after the animation so subsequent reflows
+    // (e.g., long text streams that re-trigger layout) don't replay it.
+    if (opts.entering) {
+      setTimeout(function(){ wrap.classList.remove('entering'); }, 720);
+    }
+
     const feed = document.getElementById('feed');
     if (feed) feed.scrollTop = feed.scrollHeight;
     return { wrap: wrap, bodyEl: bodyEl };
+  }
+
+  // Fade out the thinking-block inside a resident body element, then
+  // remove it. Returns a promise that resolves when the body is empty
+  // and ready for the typewriter.
+  function dismissThinking(bodyEl){
+    return new Promise(function(resolve){
+      if (!bodyEl) { resolve(); return; }
+      const block = bodyEl.querySelector('.thinking-block');
+      if (!block) { resolve(); return; }
+      block.classList.add('dismissed');
+      setTimeout(function(){
+        if (block.parentNode) block.parentNode.removeChild(block);
+        resolve();
+      }, 280);
+    });
   }
 
   /* ─── ASCII sphere (lat/lon + cymatic harmonic stub) ──── */
@@ -918,6 +1119,16 @@ function chatScript(resident: ResidentConfig): string {
 
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('sendBtn');
+    const inputShell = document.getElementById('input-shell');
+
+    // submit pulse — the border glow lifts to peak brightness briefly,
+    // then settles back to the focused baseline. communicates the send
+    // without any literal "sent" indicator.
+    if (inputShell) {
+      inputShell.classList.add('submitting');
+      setTimeout(function(){ inputShell.classList.remove('submitting'); }, 320);
+    }
+
     if (input) { input.value = ''; input.style.height = 'auto'; }
     if (sendBtn) sendBtn.disabled = true;
 
@@ -925,7 +1136,7 @@ function chatScript(resident: ResidentConfig): string {
     stopSphere();
     firstTurnSent = true;
     updatePlaceholder();
-    renderTurn('visitor', trimmed, { at: Date.now() });
+    renderTurn('visitor', trimmed, { at: Date.now(), entering: true });
 
     let sessionId;
     try {
@@ -933,15 +1144,43 @@ function chatScript(resident: ResidentConfig): string {
     } catch(_) {
       streaming = false;
       if (sendBtn) sendBtn.disabled = false;
-      renderTurn('resident', '*could not open a session right now. try again in a moment.*');
+      renderTurn('resident', '*could not open a session right now. try again in a moment.*', { entering: true });
       return;
     }
 
-    const residentRef = renderTurn('resident', '');
+    // Small breath between visitor message landing and the resident
+    // slot appearing — keeps the rhythm slow and deliberate.
+    await new Promise(function(r){ setTimeout(r, 240); });
+
+    const residentRef = renderTurn('resident', '', { entering: true, thinking: true });
     const feed = document.getElementById('feed');
     const typewriter = residentRef ? makeTypewriter(residentRef.bodyEl, function(){
       if (feed) feed.scrollTop = feed.scrollHeight;
     }) : null;
+
+    // Buffer text events until the thinking-block has been dismissed.
+    // Once dismissed, replay the buffer and switch to direct typewriter
+    // pushes for the remainder of the stream.
+    let thinkingDismissed = false;
+    let dismissPromise = null;
+    let pendingBuffer = '';
+    function pushText(text){
+      if (!typewriter) return;
+      if (thinkingDismissed) {
+        typewriter.push(text);
+      } else {
+        pendingBuffer += text;
+        if (!dismissPromise && residentRef) {
+          dismissPromise = dismissThinking(residentRef.bodyEl).then(function(){
+            thinkingDismissed = true;
+            if (pendingBuffer) {
+              typewriter.push(pendingBuffer);
+              pendingBuffer = '';
+            }
+          });
+        }
+      }
+    }
 
     try {
       const res = await fetch('/api/message', {
@@ -968,16 +1207,21 @@ function chatScript(resident: ResidentConfig): string {
             if (ev.type === 'kind') {
               if (ev.kind === 'set_down') setDownFlag = true;
             } else if (ev.type === 'text') {
-              if (typewriter) typewriter.push(ev.text);
+              pushText(ev.text);
             } else if (ev.type === 'error') {
-              if (typewriter) typewriter.push('*' + (ev.message || 'something went wrong') + '*');
+              pushText('*' + (ev.message || 'something went wrong') + '*');
             }
           } catch(_) {}
         }
       }
+      // Ensure the thinking-block clears before we flush, in case the
+      // stream completed before any text event fired.
+      if (dismissPromise) await dismissPromise;
+      else if (residentRef) await dismissThinking(residentRef.bodyEl);
       if (typewriter) typewriter.flush();
       if (setDownFlag) document.body.classList.add('set-down');
     } catch(_) {
+      if (residentRef) await dismissThinking(residentRef.bodyEl);
       if (typewriter) {
         typewriter.push('*could not reach the room right now. try again in a moment.*');
         typewriter.flush();
