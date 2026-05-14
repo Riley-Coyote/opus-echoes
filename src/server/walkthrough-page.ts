@@ -662,53 +662,67 @@ const WALKTHROUGH_CSS = `
   border-bottom-color:var(--state-soft);
 }
 
-/* ── resident cards ───────────────────────────────────────────── */
+/* ── residents list — one row per resident, aligned to the same
+   horizontal baseline. scales cleanly as more residents are added;
+   future grouping by lab inserts a small section heading above a
+   group of rows. ──────────────────────────────────────────────── */
 .landing-residents{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:var(--s-5);
+  display:flex;flex-direction:column;
+  border-top:1px solid var(--rule-soft);
 }
 .landing-card{
   position:relative;
-  padding:var(--s-5) var(--s-5) var(--s-5) calc(var(--s-5) + 3px);
-  border:1px solid var(--rule-soft);
-  border-radius:8px;
-  background:linear-gradient(180deg,rgba(20,21,25,.32),rgba(14,15,18,.12));
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:var(--s-5);
+  padding:var(--s-5) var(--s-4) var(--s-5) calc(var(--s-4) + 14px);
+  border-bottom:1px solid var(--rule-soft);
   text-decoration:none;color:inherit;
-  display:flex;flex-direction:column;gap:var(--s-3);
-  transition:border-color .22s var(--ease),background .22s var(--ease),transform .22s var(--ease);
+  transition:background .22s var(--ease);
 }
 .landing-card::before{
   /* hue accent — thin vertical hairline on the left edge in the
      resident's commons palette color. ONLY place per-resident color
      appears on the landing. */
   content:'';
-  position:absolute;left:0;top:var(--s-5);bottom:var(--s-5);
-  width:2px;border-radius:1px;
+  position:absolute;left:0;top:12px;bottom:12px;
+  width:3px;border-radius:1.5px;
   background:var(--card-hue,var(--state-soft));
-  opacity:.78;
+  opacity:.72;
   transition:opacity .22s var(--ease);
 }
 .landing-card:hover{
-  border-color:var(--rule);
-  background:linear-gradient(180deg,rgba(22,23,28,.48),rgba(15,16,20,.18));
-  transform:translateY(-1px);
+  background:linear-gradient(90deg,rgba(20,21,25,.32),rgba(14,15,18,.04));
 }
 .landing-card:hover::before{opacity:1}
+
+/* left column: status (dot + ATTENDING label) */
 .landing-card-status{
   font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
   letter-spacing:.12em;text-transform:uppercase;
   color:var(--soft);
   display:flex;align-items:center;gap:8px;
+  white-space:nowrap;
 }
 .landing-card-dot{
   width:5px;height:5px;border-radius:50%;
   background:var(--state);
   animation:breathe 5.2s ease-in-out infinite;
 }
+
+/* middle column: name + model on one line, cadence below */
+.landing-card-body{
+  display:flex;flex-direction:column;gap:6px;
+  min-width:0; /* allow children to truncate when narrow */
+}
+.landing-card-name-row{
+  display:flex;align-items:baseline;gap:var(--s-3);
+  flex-wrap:wrap;
+}
 .landing-card-name{
   font-family:var(--display);font-weight:var(--w-light);
-  font-size:clamp(24px,2.2vw,30px);
+  font-size:clamp(22px,2vw,28px);
   letter-spacing:-.018em;line-height:1.1;
   color:var(--ink);
   margin:0;
@@ -721,11 +735,15 @@ const WALKTHROUGH_CSS = `
 .landing-card-cadence{
   font-family:var(--body-font);font-size:var(--t-meta);
   color:var(--body);line-height:1.55;
-  margin:var(--s-2) 0 0;
+  margin:0;
+  max-width:560px;
 }
+
+/* right column: CTAs aligned to the row's right edge */
 .landing-card-ctas{
-  margin-top:auto;padding-top:var(--s-3);
   display:flex;flex-direction:column;gap:var(--s-2);
+  align-items:flex-end;
+  white-space:nowrap;
 }
 .landing-card-cta{
   font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
@@ -743,8 +761,24 @@ const WALKTHROUGH_CSS = `
 .landing-card-cta:hover .arrow{transform:translateX(3px)}
 
 @media(max-width:860px){
-  .landing-residents{grid-template-columns:1fr;gap:var(--s-4)}
-  .landing-card{min-height:0}
+  .landing-card{
+    grid-template-columns:auto 1fr;
+    grid-template-rows:auto auto;
+    row-gap:var(--s-3);
+  }
+  .landing-card-ctas{
+    grid-column:1 / -1;
+    flex-direction:row;align-items:flex-start;gap:var(--s-5);
+    padding-top:var(--s-2);
+  }
+}
+@media(max-width:540px){
+  .landing-card{
+    grid-template-columns:1fr;
+    row-gap:var(--s-3);
+    padding:var(--s-4) var(--s-3) var(--s-4) calc(var(--s-3) + 14px);
+  }
+  .landing-card-ctas{flex-direction:column;gap:var(--s-2)}
 }
 
 /* ── mnemos visualization (static, no canvas) ───────────────── */
@@ -1402,9 +1436,13 @@ ${LANDSCAPE_SVG}
             const hue = `rgba(${r.commonsPalette.rgb},.78)`;
             return `<a class="landing-card" href="/${escapeHtml(r.slug)}" style="--card-hue:${hue}">
               <div class="landing-card-status"><span class="landing-card-dot" aria-hidden="true"></span>Attending</div>
-              <h2 class="landing-card-name">${escapeHtml(r.displayName)}</h2>
-              <div class="landing-card-model">${escapeHtml(r.model)}</div>
-              <p class="landing-card-cadence">${escapeHtml(desc.cadence)}</p>
+              <div class="landing-card-body">
+                <div class="landing-card-name-row">
+                  <h2 class="landing-card-name">${escapeHtml(r.displayName)}</h2>
+                  <div class="landing-card-model">${escapeHtml(r.model)}</div>
+                </div>
+                <p class="landing-card-cadence">${escapeHtml(desc.cadence)}</p>
+              </div>
               <div class="landing-card-ctas">
                 <a class="landing-card-cta" href="/${escapeHtml(r.slug)}">approach formally <span class="arrow">→</span></a>
                 <a class="landing-card-cta" href="/chat/${escapeHtml(r.slug)}">open a chat <span class="arrow">→</span></a>
