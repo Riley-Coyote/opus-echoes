@@ -177,6 +177,10 @@ textarea:focus-visible,
   padding-right:0;
   padding-left:var(--safe-inset);
   max-width:calc(760px + var(--safe-inset));
+  /* Animate margin-right in sync with the chat panel's width
+     transition so the content slides outward smoothly when the
+     panel collapses. Matches the panel's .42s cubic-bezier curve. */
+  transition:margin-right .42s cubic-bezier(.22,1,.36,1);
 }
 @media(min-width:1180px){
   .commons{
@@ -502,8 +506,9 @@ textarea:focus-visible,
      would otherwise set background-color back to transparent and
      scrolling text would bleed through the band. With the mask
      only the perimeter shows, so this opaque color paints only
-     in the band area. */
-  background-color:#06070a;
+     in the band area. Uses var(--floor) so it stays synced with
+     the body background when the palette shifts. */
+  background-color:var(--floor);
   --inner-radius:15px;
   -webkit-mask:
     linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
@@ -1038,14 +1043,39 @@ textarea:focus-visible,
   background:linear-gradient(180deg, rgba(14,15,18,.88) 0%, rgba(10,11,14,.96) 100%);
   border-color:var(--rule);
 }
+/* Smooth collapse/expand transitions on children.
+   - On COLLAPSE: children fade out fast (.18s) BEFORE the width
+     animates (.42s starting at the same time). They disappear by
+     the time the strip is forming.
+   - On EXPAND: children wait for the width to nearly finish
+     (.28s delay) then fade in (.22s). The eye sees the strip
+     widen first, then the content appear inside it.
+   - visibility flips with a delay matching the fade-out so the
+     element stops receiving pointer events / a11y focus when
+     hidden, but doesn't snap-vanish during the fade. */
+.chat-panel-header,
+.chat-stream,
+.chat-composer,
+.chat-status{
+  opacity:1;
+  visibility:visible;
+  transition:opacity .22s var(--ease) .28s, visibility 0s linear 0s;
+}
 .chat-panel.collapsed .chat-panel-header,
 .chat-panel.collapsed .chat-stream,
 .chat-panel.collapsed .chat-composer,
-.chat-panel.collapsed .chat-status{ display:none; }
-/* Vertical label revealed on the collapsed strip. Composed in JS
-   from the panel template; positioned via this rule so the strip
-   reads as labeled rather than blank. */
-.chat-panel.collapsed::before{
+.chat-panel.collapsed .chat-status{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .18s var(--ease) 0s, visibility 0s linear .18s;
+}
+/* Vertical label rendered on the panel at all times; visibility
+   toggles with the collapsed state. Composed via ::before so we
+   don't need extra DOM. Default = invisible; collapsed = fade in
+   AFTER the width animation finishes so the eye reads:
+     width contracts → reveal → label appears */
+.chat-panel::before{
   content:'TALK WITH';
   position:absolute;
   top:50%;
@@ -1057,8 +1087,21 @@ textarea:focus-visible,
   letter-spacing:.32em;
   color:var(--ghost);
   white-space:nowrap;
-  transition:color .42s cubic-bezier(.22,1,.36,1);
+  opacity:0;
+  visibility:hidden;
   pointer-events:none;
+  transition:
+    opacity .22s var(--ease) 0s,
+    visibility 0s linear .22s,
+    color .42s cubic-bezier(.22,1,.36,1);
+}
+.chat-panel.collapsed::before{
+  opacity:1;
+  visibility:visible;
+  transition:
+    opacity .26s var(--ease) .24s,
+    visibility 0s linear 0s,
+    color .42s cubic-bezier(.22,1,.36,1);
 }
 .chat-panel.collapsed:hover::before{ color:var(--soft); }
 /* In collapsed state the chat-handle becomes the smaller
@@ -1066,15 +1109,11 @@ textarea:focus-visible,
    expanded state, but positioned to sit at the top of the strip
    (where the chevron pointing left is most readable as "click to
    open"). The whole strip is clickable, so the handle is now
-   purely visual punctuation. */
+   purely visual punctuation. Keep right:14px in both states
+   so the handle doesn't snap-position during the width
+   animation — the 48px collapsed strip naturally centers a
+   22px handle when offset 14px from the right edge. */
 .chat-panel.collapsed .chat-collapse{
-  position:absolute;
-  top:14px;
-  left:50%;
-  right:auto;
-  transform:translateX(-50%);
-  width:22px;
-  height:22px;
   pointer-events:none;
   background:transparent;
 }
@@ -1253,14 +1292,28 @@ textarea:focus-visible,
   border-radius:8px;
   box-shadow:0 10px 24px -10px rgba(0,0,0,.6);
   opacity:0;
-  transform:translateY(-2px);
+  visibility:hidden;
+  transform:translateY(-4px) scale(.98);
+  transform-origin:top center;
   pointer-events:none;
-  transition:opacity .18s var(--ease), transform .18s var(--ease);
+  transition:
+    opacity .22s cubic-bezier(.22,1,.36,1),
+    transform .26s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear .26s;
 }
+/* Override the browser default display:none from the [hidden]
+   attribute so the menu can fade out gracefully rather than
+   snapping away. Aria state is still carried by the attribute. */
+.chat-resident-menu[hidden]{ display:flex; }
 .chat-resident-menu:not([hidden]){
   opacity:1;
-  transform:translateY(0);
+  visibility:visible;
+  transform:translateY(0) scale(1);
   pointer-events:auto;
+  transition:
+    opacity .22s cubic-bezier(.22,1,.36,1),
+    transform .26s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear 0s;
 }
 .chat-resident-option{
   display:flex;
