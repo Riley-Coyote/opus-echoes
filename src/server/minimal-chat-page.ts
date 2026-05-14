@@ -107,39 +107,63 @@ const MINIMAL_CHAT_CSS = `
 
 @media (max-width: 720px) { :root { --band: 14px; } }
 
-/* ── light theme — warm light grey, dark warm ink ──────────────
-   not off-white, not cream, not paper. a calm warm light grey
-   sitting around 81–82% lightness, with the composer panel
-   slightly darker than the floor so it reads as recessed-into
-   the surface rather than blasting out of it. text is a dark
-   warm charcoal rather than pure black — readable, never harsh.
-   any surface above ~88% lightness was making the room glare;
-   everything here is pulled below that ceiling intentionally. */
+/* ── light theme — cool neutral medium-light grey ──────────────
+   not white, not cream, not beige. a calm cool-neutral grey
+   palette in the 70–85% lightness band — the room reads as grey
+   paper, not white paper. composer recessed one step from the
+   floor. all surfaces share a faint cool undertone (HSL ~220,
+   3–6%) so the room feels modern rather than warm-vintage. text
+   is dark cool charcoal, never pure black. borders, focus rings,
+   placeholder, scrollbar, selection — all tuned to read against
+   the new floor with industry-standard contrast ratios. */
 :root[data-theme="light"] {
-  --floor:        #d4d0c6;  /* the room — warm light grey, ~82% L */
-  --deep:         #cbc7bc;
-  --panel:        #c4bfb3;  /* composer surface, slightly recessed */
-  --panel-2:      #bbb6a9;
-  --panel-3:      #b1ac9f;
-  --panel-4:      #a59f92;
+  --floor:        #d6d8db;  /* the room — cool neutral grey, ~85% L */
+  --deep:         #cdcfd3;
+  --panel:        #c5c7cc;  /* composer surface, recessed one step */
+  --panel-2:      #bbbec3;
+  --panel-3:      #b1b4ba;
+  --panel-4:      #a4a7ad;
 
-  --ink:          rgba(24, 22, 18, 0.94);
-  --primary:      rgba(30, 28, 24, 0.90);
-  --body:         rgba(52, 50, 46, 0.78);
-  --soft:         rgba(72, 70, 66, 0.60);
-  --quiet:        rgba(92, 90, 86, 0.46);
-  --tertiary:     rgba(104, 102, 98, 0.36);
-  --ghost:        rgba(114, 112, 108, 0.28);
-  --whisper:      rgba(124, 122, 118, 0.18);
+  /* cool charcoal ink — dark enough to read at body sizes, never
+     so black that it punches holes in the page. every visible text
+     tier passes WCAG AA-large (≥3:1) at minimum; functional tiers
+     (ink/primary/body/soft/quiet) pass full AA (≥4.5:1) for the
+     small mono caps used in eyebrows and captions. */
+  --ink:          rgba(26, 28, 32, 0.95);   /* 10.7:1 — AAA */
+  --primary:      rgba(34, 36, 40, 0.92);   /*  8.9:1 — AAA */
+  --body:         rgba(48, 50, 54, 0.84);   /*  6.0:1 — AA  */
+  --soft:         rgba(36, 38, 42, 0.74);   /*  5.0:1 — AA  */
+  --quiet:        rgba(30, 32, 36, 0.72);   /*  5.1:1 — AA  (chrome eyebrows, small mono caps) */
+  --tertiary:     rgba(36, 38, 44, 0.58);   /*  3.4:1 — AA-large (faint labels) */
+  --ghost:        rgba(40, 42, 50, 0.62);   /*  3.7:1 — AA-large (placeholder text) */
+  --whisper:      rgba(40, 42, 50, 0.55);   /*  3.2:1 — AA-large (caption text) */
 
+  /* darker borders so they remain visible against grey surface */
   --rule:         rgba(0, 0, 0, 0.10);
-  --rule-soft:    rgba(0, 0, 0, 0.13);
-  --rule-strong:  rgba(0, 0, 0, 0.20);
+  --rule-soft:    rgba(0, 0, 0, 0.14);
+  --rule-strong:  rgba(0, 0, 0, 0.22);
 
-  --state:        #3f7a52;  /* deeper forest — readable against warm grey */
-  --state-soft:   rgba(63, 122, 82, 0.72);
-  --state-dim:    rgba(63, 122, 82, 0.20);
-  --state-whisper: rgba(63, 122, 82, 0.08);
+  /* deeper forest green — visibly green, readable against cool grey */
+  --state:        #3a7a52;
+  --state-soft:   rgba(58, 122, 82, 0.72);
+  --state-dim:    rgba(58, 122, 82, 0.20);
+  --state-whisper: rgba(58, 122, 82, 0.08);
+}
+
+/* viewport-glow tinted slightly cooler in light mode so the gradient
+   pools (originally tuned for the dark floor) read as soft slate +
+   ember accents against the new grey, rather than washing into the
+   surface. preserves the four-hue continuous-luminescence feel. */
+:root[data-theme="light"] .viewport-glow {
+  background:
+    radial-gradient(ellipse 55% 55% at 0% 0%,     rgba(155, 110, 50, var(--vg1)) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 45% at 50% 0%,    rgba(110, 90, 140, var(--vg2)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 100% 0%,   rgba(165, 100, 105, var(--vg3)) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 70% at 100% 50%,  rgba(85, 95, 115, var(--vg4)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 100% 100%, rgba(155, 110, 50, var(--vg5)) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(110, 90, 140, var(--vg6)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(165, 100, 105, var(--vg7)) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(85, 95, 115, var(--vg8)) 0%, transparent 72%);
 }
 
 html, body { height: 100%; }
