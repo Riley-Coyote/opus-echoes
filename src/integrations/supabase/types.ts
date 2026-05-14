@@ -1147,6 +1147,7 @@ export type Database = {
           intent_id: string | null
           ip_hash: string
           last_active_at: string
+          mode: string
           resident_id: string
           visitor_token: string | null
         }
@@ -1158,6 +1159,7 @@ export type Database = {
           intent_id?: string | null
           ip_hash: string
           last_active_at?: string
+          mode?: string
           resident_id?: string
           visitor_token?: string | null
         }
@@ -1169,6 +1171,7 @@ export type Database = {
           intent_id?: string | null
           ip_hash?: string
           last_active_at?: string
+          mode?: string
           resident_id?: string
           visitor_token?: string | null
         }
