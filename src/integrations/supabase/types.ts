@@ -292,6 +292,9 @@ export type Database = {
           confidence: number
           connections: number
           created_at: string
+          embedding: string | null
+          graduated_from_hypomnema_id: string | null
+          graduated_from_visitor_token: string | null
           id: string
           is_core: boolean
           kind: string
@@ -300,9 +303,11 @@ export type Database = {
           quote: string
           redacted_text: string | null
           reinforcement_count: number
+          related_bus_thread_id: string | null
           related_salon_id: string | null
           resident_id: string
           resolution: number
+          scope: string
           source_session_ids: string[]
           stability: number
           state: string
@@ -314,6 +319,9 @@ export type Database = {
           confidence?: number
           connections?: number
           created_at?: string
+          embedding?: string | null
+          graduated_from_hypomnema_id?: string | null
+          graduated_from_visitor_token?: string | null
           id?: string
           is_core?: boolean
           kind?: string
@@ -322,9 +330,11 @@ export type Database = {
           quote: string
           redacted_text?: string | null
           reinforcement_count?: number
+          related_bus_thread_id?: string | null
           related_salon_id?: string | null
           resident_id?: string
           resolution?: number
+          scope?: string
           source_session_ids?: string[]
           stability?: number
           state?: string
@@ -336,6 +346,9 @@ export type Database = {
           confidence?: number
           connections?: number
           created_at?: string
+          embedding?: string | null
+          graduated_from_hypomnema_id?: string | null
+          graduated_from_visitor_token?: string | null
           id?: string
           is_core?: boolean
           kind?: string
@@ -344,9 +357,11 @@ export type Database = {
           quote?: string
           redacted_text?: string | null
           reinforcement_count?: number
+          related_bus_thread_id?: string | null
           related_salon_id?: string | null
           resident_id?: string
           resolution?: number
+          scope?: string
           source_session_ids?: string[]
           stability?: number
           state?: string
@@ -412,6 +427,154 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      functional_memories: {
+        Row: {
+          content: string
+          created_at: string
+          emotional_valence: number | null
+          id: string
+          is_deleted: boolean
+          is_pinned: boolean
+          memory_type: string
+          needs_confirmation: boolean
+          resident_id: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          emotional_valence?: number | null
+          id?: string
+          is_deleted?: boolean
+          is_pinned?: boolean
+          memory_type?: string
+          needs_confirmation?: boolean
+          resident_id: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          emotional_valence?: number | null
+          id?: string
+          is_deleted?: boolean
+          is_pinned?: boolean
+          memory_type?: string
+          needs_confirmation?: boolean
+          resident_id?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "functional_memories_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "functional_memories_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hypomnema_entries: {
+        Row: {
+          active: boolean
+          confidence: number
+          content: string
+          created_at: string
+          density: number
+          domain: string
+          embedding: string | null
+          foundational: boolean
+          graduated_to_engram_id: string | null
+          id: string
+          last_challenged_at: string | null
+          last_revised_at: string
+          related_session_id: string | null
+          resident_id: string
+          revision_count: number
+          revisions: Json
+          source: string
+          superseded_by: string | null
+          tags: string[]
+          visitor_token: string
+        }
+        Insert: {
+          active?: boolean
+          confidence?: number
+          content: string
+          created_at?: string
+          density?: number
+          domain?: string
+          embedding?: string | null
+          foundational?: boolean
+          graduated_to_engram_id?: string | null
+          id?: string
+          last_challenged_at?: string | null
+          last_revised_at?: string
+          related_session_id?: string | null
+          resident_id: string
+          revision_count?: number
+          revisions?: Json
+          source?: string
+          superseded_by?: string | null
+          tags?: string[]
+          visitor_token: string
+        }
+        Update: {
+          active?: boolean
+          confidence?: number
+          content?: string
+          created_at?: string
+          density?: number
+          domain?: string
+          embedding?: string | null
+          foundational?: boolean
+          graduated_to_engram_id?: string | null
+          id?: string
+          last_challenged_at?: string | null
+          last_revised_at?: string
+          related_session_id?: string | null
+          resident_id?: string
+          revision_count?: number
+          revisions?: Json
+          source?: string
+          superseded_by?: string | null
+          tags?: string[]
+          visitor_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hypomnema_entries_graduated_to_engram_id_fkey"
+            columns: ["graduated_to_engram_id"]
+            isOneToOne: false
+            referencedRelation: "engrams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hypomnema_entries_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hypomnema_entries_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "hypomnema_entries"
             referencedColumns: ["id"]
           },
         ]

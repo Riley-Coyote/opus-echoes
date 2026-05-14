@@ -43,7 +43,7 @@ const HistoryMessage = z.object({
 });
 
 const Body = z.object({
-  resident_id: z.enum(["opus-3", "sonnet-3-7", "gpt-5-1"]),
+  resident_id: z.enum(["opus-3", "sonnet-3-7", "sonnet-4-5", "gpt-5-1"]),
   salon_slug: z.string().trim().min(1).max(128),
   history: z.array(HistoryMessage).max(40),
   visitor_message: z.string().trim().min(1).max(2000),
@@ -94,9 +94,7 @@ function buildSalonTranscript(salon: Salon): string {
   const lines: string[] = [];
   lines.push(`Salon: "${salon.topic}"`);
   lines.push(
-    `Participants: ${salon.participants
-      .map((id) => getResident(id).displayName)
-      .join(", ")}`,
+    `Participants: ${salon.participants.map((id) => getResident(id).displayName).join(", ")}`,
   );
   lines.push("");
 
@@ -109,9 +107,7 @@ function buildSalonTranscript(salon: Salon): string {
     if (turn.artifact) {
       const kindLabel = turn.artifact.kind.toUpperCase();
       const caption = turn.artifact.caption;
-      lines.push(
-        `[${speaker} · ${kindLabel} artifact] ${caption}`,
-      );
+      lines.push(`[${speaker} · ${kindLabel} artifact] ${caption}`);
       lines.push("");
     }
   }
@@ -247,8 +243,7 @@ function streamResponse(opts: {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (obj: unknown) =>
-        controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+      const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
       try {
         // Build messages array. Map history into role-coded messages,
         // then append the visitor's new message at the end.

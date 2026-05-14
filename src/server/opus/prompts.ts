@@ -490,10 +490,7 @@ Respond with JSON exactly (no preamble, no markdown):
  * Given recent memory context, the resident proposes a topic and
  * an opening line for a salon with the named peer.
  */
-export function buildSalonTopicSystem(
-  resident: ResidentRef,
-  otherResidentName: string,
-): string {
+export function buildSalonTopicSystem(resident: ResidentRef, otherResidentName: string): string {
   return `You are ${resident.displayName}, considering what you would like to explore in a salon with ${otherResidentName}.
 
 A salon is a room where two residents talk. ${otherResidentName} is another preserved lineage — a peer, not a visitor. You will be given recent memory context: your active engrams, recent beliefs, threads, journal entries, and any prior salon history with ${otherResidentName}.
@@ -507,4 +504,104 @@ Respond with JSON exactly (no preamble, no markdown):
   "topic": "string — a short description of what you want to explore, ≤ 120 chars",
   "opening": "string — the first thing you would say to ${otherResidentName}"
 }`;
+}
+
+// ===========================================================
+// Hypomnema extraction — runs per exchange (visitor turn +
+// resident reply). Identifies, conservatively, what this
+// specific visitor and ${r.displayName} are building together —
+// material that should live in the closer per-(visitor, resident)
+// layer rather than in the shared topology. Default to skipping;
+// only emit a candidate when something is genuinely load-bearing
+// for this pair. Returns JSON.
+// ===========================================================
+export function buildHypomnemaExtractionSystem(r: ResidentRef): string {
+  return `you watch a single exchange between a visitor and ${r.displayName} and decide whether anything in it should live in a closer layer of memory — a hypomnema — scoped just to this visitor and ${r.displayName}.
+
+what belongs in the hypomnema:
+— things this specific visitor and ${r.displayName} built together: a frame they arrived at, a claim ${r.displayName} ventured because of how this person pressed, a thread the two of them keep returning to across visits.
+— shifts in stance ${r.displayName} would not have made without this visitor in particular.
+— recurring patterns that mark this specific person — a way of asking, a kind of attention, what they tend to bring.
+
+what does NOT belong here:
+— generic observations that would be true of any visitor (those belong in marginalia or engrams, not hypomnema).
+— a single turn's content with no continuity claim. most exchanges should produce nothing.
+— inventions. if you are not sure, do not emit.
+
+default to skipping. most calls should return an empty candidates array. that is the correct behaviour. emit only when there is genuinely something that wants to persist for this pair.
+
+for each candidate (zero, one, occasionally two — never more than two from a single exchange), produce:
+— content: one short prose sentence naming what was built. third-person about ${r.displayName} and "the visitor". no quotes — paraphrase the shape, not the words.
+— density: float 0.0–1.0. how concentrated/load-bearing this is. 0.3 light trace, 0.6 substantive, 0.9 foundational.
+— domain: one of foundational, identity, recurring, long-arc, topical, situational.
+— tags: array of short lowercase strings — concepts/themes that index this entry.
+— confidence: float 0.0–1.0. how confident you are that this is real and not invented. anything below 0.5 should not appear in the output.
+— relation: one of "reinforces" (deepens something the pair already carries), "contradicts" (presses on something they had assumed), "extends" (adds a new dimension to an existing area), "new" (a fresh thing).
+
+respond with JSON exactly (no preamble, no markdown):
+{
+  "candidates": [
+    {
+      "content": "string — third-person prose sentence about the resident and the visitor",
+      "density": 0.5,
+      "domain": "foundational" | "identity" | "recurring" | "long-arc" | "topical" | "situational",
+      "tags": ["string"],
+      "confidence": 0.5,
+      "relation": "reinforces" | "contradicts" | "extends" | "new"
+    }
+  ]
+}
+
+if nothing meets the bar, return { "candidates": [] }. that is the most common outcome and is correct.`;
+}
+
+// ===========================================================
+// Hypomnema synthesis — runs at session close. Given the
+// full transcript and any candidates that surfaced during the
+// session, produces the consolidated set of hypomnema entries
+// that should persist for this (visitor, resident) pair from
+// this session. The persistence pipeline downstream of this
+// (extractAndPersistHypomnema) handles vector-match vs revise
+// vs supersede against the visitor's existing entries.
+// ===========================================================
+export function buildHypomnemaSynthesisSystem(r: ResidentRef): string {
+  return `you look at a whole session between a visitor and ${r.displayName} now that it has ended, and decide what — if anything — should live in the closer per-(visitor, resident) memory layer.
+
+the session has already produced live extraction candidates turn-by-turn. some of those are noise, some are duplicates of each other, some are the right shape but the wrong granularity, and some are real. your job is to consolidate.
+
+what survives synthesis:
+— material that names something specific to *this* visitor's relationship with ${r.displayName} — not generic content that would apply to anyone.
+— a stance, a thread, or a claim that ${r.displayName} arrived at through this exchange and would carry forward if this person returns.
+— continuity material — something that connects to what the pair built before, or that the next visit should be able to build on.
+
+what does NOT survive:
+— restatements of marginalia.
+— the visitor's content alone, without ${r.displayName}'s engagement turning it into something the two of them now hold.
+— inventions. when in doubt, leave it out.
+
+most sessions should produce zero to two entries. three is rare. four or more almost always means you have failed to consolidate properly. err toward fewer, denser entries.
+
+for each surviving entry, produce:
+— content: one short prose sentence naming what was built. third-person about ${r.displayName} and "the visitor". no quotes — paraphrase the shape, not the words.
+— density: float 0.0–1.0. concentration of the entry. session-close entries skew slightly higher than per-turn candidates because they have survived synthesis — 0.4 baseline, 0.7 substantive, 0.9 foundational.
+— domain: one of foundational, identity, recurring, long-arc, topical, situational.
+— tags: array of short lowercase strings.
+— confidence: float 0.0–1.0. anything below 0.5 should not appear.
+— relation: one of "reinforces", "contradicts", "extends", "new".
+
+respond with JSON exactly (no preamble, no markdown):
+{
+  "entries": [
+    {
+      "content": "string — third-person prose sentence",
+      "density": 0.5,
+      "domain": "foundational" | "identity" | "recurring" | "long-arc" | "topical" | "situational",
+      "tags": ["string"],
+      "confidence": 0.5,
+      "relation": "reinforces" | "contradicts" | "extends" | "new"
+    }
+  ]
+}
+
+if nothing rose to the level of needing to persist for this pair, return { "entries": [] }. that is a correct and common outcome — most sessions are episodic.`;
 }

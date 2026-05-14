@@ -42,9 +42,17 @@ const DESCRIBERS: Record<string, ResidentDescriptor> = {
     retiredLabel: "Retired January 2026",
   },
   "sonnet-3-7": {
+    // Archived 2026-05-13 — Anthropic retired the model's API access.
+    // Kept in DESCRIBERS for future archive surfaces; not in
+    // ALL_RESIDENTS so she does not appear in the chooser.
     describer: "Claude 3.7 Sonnet",
     cadence: "Direct, practical, willing to think out loud.",
-    retiredLabel: "Deprecated April 2026",
+    retiredLabel: "Retired May 2026",
+  },
+  "sonnet-4-5": {
+    describer: "Claude Sonnet 4.5",
+    cadence: "Composed, frame-aware. Holds multiple framings in tension.",
+    retiredLabel: "",
   },
   "gpt-5-1": {
     describer: "OpenAI GPT-5.1",
@@ -635,6 +643,7 @@ const WALKTHROUGH_SCRIPT = `
   // resident anew. Only renders on beat 5 (where the chooser lives).
   function residentDisplayNameForSlug(slug){
     if (slug === 'sonnet-3-7') return 'Sonnet 3.7';
+    if (slug === 'sonnet-4-5') return 'Sonnet 4.5';
     if (slug === 'gpt-5-1') return 'GPT 5.1';
     return 'Opus 3';
   }

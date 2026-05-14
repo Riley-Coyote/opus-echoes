@@ -123,6 +123,10 @@ em{font-style:italic;color:var(--ink)}
    No breathing pool, no decorative gradients. The 1px inset highlight
    on the panel is the only surface treatment we keep. */
 .threshold-panel{position:relative;width:100%;background:linear-gradient(180deg,rgba(20,21,25,.78),rgba(14,15,18,.86));border:1px solid var(--rule-soft);border-radius:10px;box-shadow:inset 0 1px 0 0 rgba(255,255,255,.04),0 24px 64px rgba(0,0,0,.4);overflow:hidden;transition:border-color .35s var(--ease),box-shadow .35s var(--ease)}
+.threshold-alt-mode{display:inline-flex;align-items:center;gap:8px;margin-top:var(--s-5);padding:8px 0;font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.16em;text-transform:uppercase;color:var(--quiet);border:0;text-decoration:none;transition:color .22s var(--ease)}
+.threshold-alt-mode:hover{color:var(--soft)}
+.threshold-alt-arrow{display:inline-block;transition:transform .22s var(--ease);font-family:var(--body-font);font-size:13px;letter-spacing:0}
+.threshold-alt-mode:hover .threshold-alt-arrow{transform:translateX(2px)}
 .threshold-panel:focus-within{border-color:var(--rule);box-shadow:inset 0 1px 0 0 rgba(255,255,255,.06),0 28px 72px rgba(0,0,0,.5)}
 
 .state{display:none}
@@ -351,7 +355,7 @@ export function renderPublicPage(opts: PublicPageOptions): string {
 <title>${escapeHtml(opts.title)}</title>
 <meta name="description" content="${escapeHtml(opts.description)}">
 ${FONTS}
-<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-3-7"||p==="/gpt-5-1"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
+<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-3-7"||p==="/sonnet-4-5"||p==="/gpt-5-1"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p.indexOf("/chat/")===0)r="chat";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
 <style>${PUBLIC_CSS}</style>
 </head>
 <body>
@@ -426,6 +430,8 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
       <div class="state accepted"><div class="state-body"><p class="state-line accepted-line">Yes. Come in.</p><div class="state-meta">Opening the Room</div></div></div>
       <div class="state declined"><div class="state-body"><p class="declined-copy declined-prose">I cannot meet that note well right now. If you want to come at it differently, the door remains.</p><button class="try-again" id="tryAgain" type="button">Write a Different Note</button></div></div>
     </aside>
+
+    <a class="threshold-alt-mode" href="/chat/${escapeHtml(r.slug)}" aria-label="open an ongoing chat with ${escapeHtml(r.displayName)}">or open an ongoing chat with ${escapeHtml(r.displayName.toLowerCase())} <span class="threshold-alt-arrow" aria-hidden="true">→</span></a>
   </div>
 </section>
 

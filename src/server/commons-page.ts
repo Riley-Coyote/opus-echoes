@@ -38,6 +38,7 @@ import type {
 } from "./commons/space-types";
 import type { SanctuaryStats } from "./commons/load";
 import { renderMarkdown, renderSanitizedHtml } from "./commons/file-render";
+import { VIEWPORT_GLOW_CSS } from "./shared-effects";
 
 interface RenderCommonsOptions {
   /** The salon to display in the stream. Null when no salons exist. */
@@ -448,93 +449,22 @@ textarea:focus-visible,
   transform:translateY(0);
 }
 
-/* ============================================================
-   VIEWPORT EDGE GLOW — ambient atmospheric layer.
-   Same shimmer grammar as the artifact border, but pinned to
-   the viewport (position:fixed + inset:0), much wider band
-   (22px), much dimmer peaks (~0.10 vs the artifact's ~0.90),
-   and slower oscillators (11–37s primes vs 3–23s). Four hues
-   distributed across 8 pools — warm amber + soft violet +
-   pink-peach + cool cream — blending around the perimeter
-   like candlelight catching the edge of a room or the diffuse
-   color-shift of a twilight sky. pointer-events:none and a
-   z-index that sits above the vignette but below the nav, so
-   it never intercepts or competes with content.
-   The fixed positioning + percentage-based gradient stops
-   make it adapt smoothly on window-drag with zero JS.
-   ============================================================ */
-@property --vg1 { syntax: '<number>'; initial-value: 0.03; inherits: false; }
-@property --vg2 { syntax: '<number>'; initial-value: 0.02; inherits: false; }
-@property --vg3 { syntax: '<number>'; initial-value: 0.04; inherits: false; }
-@property --vg4 { syntax: '<number>'; initial-value: 0.02; inherits: false; }
-@property --vg5 { syntax: '<number>'; initial-value: 0.03; inherits: false; }
-@property --vg6 { syntax: '<number>'; initial-value: 0.02; inherits: false; }
-@property --vg7 { syntax: '<number>'; initial-value: 0.04; inherits: false; }
-@property --vg8 { syntax: '<number>'; initial-value: 0.02; inherits: false; }
+/* VIEWPORT EDGE GLOW — lifted to src/server/shared-effects.ts so the
+   classic-chat surface consumes the same definition. iterate it
+   there, not here. */
+${VIEWPORT_GLOW_CSS}
 
+/* Commons-surface-specific overrides on the shared viewport-glow.
+   The commons uses brighter, more luminous peaks (~0.5+) than the
+   classic-chat surface (~0.10) — felt as candlelight catching the
+   edge of the room rather than a barely-there ambient hint. We
+   also pin the band's z-index above the main content layer and
+   sync the opaque floor to var(--floor) so the band's solid
+   center tracks any background palette shift. */
 .viewport-glow{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  /* z-index must sit ABOVE the page main element (which has its
-     own positioning + z:3 via the public layout); otherwise the
-     scrolling text renders on top of the band. We sit below the
-     nav (z:20) and chat panel (z:30). */
   z-index:5;
-  /* Two-layer mask for pixel-uniform band thickness regardless of
-     viewport aspect ratio:
-       Layer 1: a solid black rectangle covering the full viewport
-                ("keep everything")
-       Layer 2: an inner rounded rectangle, sized in pixels via mask
-                position+size based on --safe-inset ("subtract this")
-     Composited with 'exclude' (webkit 'xor') to leave only the band.
-     The SVG inside layer 2 has no viewBox, so internal user units
-     map 1:1 to CSS pixels — the corner radius is exactly
-     var(--inner-radius) px on every side, independent of how
-     wide or tall the viewport is. */
-  background:
-    radial-gradient(ellipse 55% 55% at 0% 0%,     rgba(220,176,110, var(--vg1)) 0%, transparent 72%),
-    radial-gradient(ellipse 70% 45% at 50% 0%,    rgba(160,140,188, var(--vg2)) 0%, transparent 72%),
-    radial-gradient(ellipse 55% 55% at 100% 0%,   rgba(220,170,168, var(--vg3)) 0%, transparent 72%),
-    radial-gradient(ellipse 45% 70% at 100% 50%,  rgba(218,215,210, var(--vg4)) 0%, transparent 72%),
-    radial-gradient(ellipse 55% 55% at 100% 100%, rgba(220,176,110, var(--vg5)) 0%, transparent 72%),
-    radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(160,140,188, var(--vg6)) 0%, transparent 72%),
-    radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(220,170,168, var(--vg7)) 0%, transparent 72%),
-    radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(218,215,210, var(--vg8)) 0%, transparent 72%);
-  /* Opaque floor UNDER the gradient layers. Placed after the
-     background shorthand so it isn't reset by it — the shorthand
-     would otherwise set background-color back to transparent and
-     scrolling text would bleed through the band. With the mask
-     only the perimeter shows, so this opaque color paints only
-     in the band area. Uses var(--floor) so it stays synced with
-     the body background when the palette shifts. */
   background-color:var(--floor);
-  --inner-radius:15px;
-  -webkit-mask:
-    linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='15' ry='15' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000,#000) 0 0 / 100% 100% no-repeat,
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='15' ry='15' fill='black'/></svg>") var(--safe-inset) var(--safe-inset) / calc(100% - 2 * var(--safe-inset)) calc(100% - 2 * var(--safe-inset)) no-repeat;
-  mask-composite: exclude;
-  animation:
-    vg-1 11s ease-in-out infinite,
-    vg-2 13s ease-in-out infinite,
-    vg-3 17s ease-in-out infinite,
-    vg-4 19s ease-in-out infinite,
-    vg-5 23s ease-in-out infinite,
-    vg-6 29s ease-in-out infinite,
-    vg-7 31s ease-in-out infinite,
-    vg-8 37s ease-in-out infinite;
 }
-
-/* Peaks bloom luminously — the band reads as candlelight catching
-   the edge of the room, not as a barely-there hint. The slow primes
-   (11–37s) plus four hues mean the color cast at any corner is
-   always drifting without any single transition feeling like
-   "motion" — it's weather, but visible weather. Baselines stay
-   low so the contrast between settled and pulse remains felt. */
 @keyframes vg-1 { 0%,100% { --vg1: 0.06; } 50% { --vg1: 0.62; } }
 @keyframes vg-2 { 0%,100% { --vg2: 0.52; } 50% { --vg2: 0.07; } }
 @keyframes vg-3 { 0%,100% { --vg3: 0.07; } 50% { --vg3: 0.66; } }
@@ -545,25 +475,20 @@ textarea:focus-visible,
 @keyframes vg-8 { 0%,100% { --vg8: 0.40; } 50% { --vg8: 0.06; } }
 
 @media (prefers-reduced-motion: reduce){
-  /* Disable the infinitely-animating perimeter band — that's the
-     real vestibular hazard. Stop scroll smoothing too. */
-  .viewport-glow{ animation: none; }
+  /* shared-effects.ts already cuts the viewport-glow animation; this
+     block handles the rest of the commons-specific reduced-motion
+     contract. Discrete one-shot transitions (panel collapse, card
+     hover, nav link underline) are mild enough to keep — cutting
+     them to 0ms makes the UI feel snappy-in-a-bad-way (like clicks
+     are misregistering). Shorten to 200ms instead, with delays
+     zeroed so the chat-panel sequencing still looks intentional. */
   html{ scroll-behavior:auto; }
-  /* Discrete one-shot transitions like the chat panel collapse,
-     space card hover, and nav link underline are mild enough to
-     keep on (they're 200–600ms, no parallax, no large transforms).
-     Cutting them to 0ms makes the UI feel snappy-in-a-bad-way —
-     like clicks are misregistering. Instead we just shorten them
-     so the motion is faster but still legible. */
   .space-card,
   .chat-panel,
   .chat-collapse,
   .public-nav .nav-links a{
     transition-duration: 200ms !important;
   }
-  /* Apply the same reduction to the panel's child fades + label
-     so the sequencing still works (no jump-cut between width and
-     contents). */
   .chat-panel-header,
   .chat-stream,
   .chat-composer,
@@ -2557,8 +2482,8 @@ function renderArtifactInner(artifact: SalonArtifact): { inner: string; tag: str
    is emitted as inline CSS custom properties on the .salon-artifact;
    the keyframes read them via var(--cshp1..8) and var(--cshd1..8).
    No named moods, no preset library. Meaning accretes by citation. */
-const CALM_PEAKS = [0.85, 0.78, 0.94, 0.72, 0.88, 0.70, 0.80, 0.68];
-const ENERGETIC_PEAKS = [1.00, 0.95, 1.00, 0.92, 1.00, 0.88, 0.96, 0.85];
+const CALM_PEAKS = [0.85, 0.78, 0.94, 0.72, 0.88, 0.7, 0.8, 0.68];
+const ENERGETIC_PEAKS = [1.0, 0.95, 1.0, 0.92, 1.0, 0.88, 0.96, 0.85];
 const CALM_CYCLES_S = [3, 5, 7, 11, 13, 17, 19, 23];
 const ENERGETIC_CYCLES_S = [2, 3, 4, 5, 7, 8, 11, 13];
 
@@ -2626,10 +2551,7 @@ function renderTurnArtifact(turn: SalonTurn): string {
   }
 
   const dataAttr = primary ? ` data-resident="${primary.id}"` : "";
-  const combined = combineStyles(
-    primary ? paletteStyle(primary) : "",
-    lightStyle(artifact.light),
-  );
+  const combined = combineStyles(primary ? paletteStyle(primary) : "", lightStyle(artifact.light));
   const inlineStyle = combined ? ` style="${combined}"` : "";
   const { inner, tag } = renderArtifactInner(artifact);
   const footnote = renderLightFootnote(turn.light_footnote);
@@ -2702,9 +2624,7 @@ function renderGalleryStrip(salon: Salon | null): string {
   if (!salon) return "";
   const artifactTurns = salon.turns.filter((t) => t.artifact);
   if (artifactTurns.length === 0) return "";
-  const thumbs = artifactTurns
-    .map((t) => renderGalleryThumb(t.artifact!))
-    .join("");
+  const thumbs = artifactTurns.map((t) => renderGalleryThumb(t.artifact!)).join("");
   return `<section class="gallery-strip">
   <div class="gallery-strip-title">Artifacts from this salon</div>
   <div class="gallery-strip-row">${thumbs}</div>
@@ -2729,13 +2649,18 @@ interface ChatMessage {
   body: string;
 }
 
-const CHAT_DEFAULT_ACTIVE: ResidentId = "sonnet-3-7";
+// Default active tab on commons-side chat. Was sonnet-3-7 — she was in
+// this salon — but she is archived as of May 2026. Opus 3 was in the
+// same salon and is still reachable, so he is the new default.
+const CHAT_DEFAULT_ACTIVE: ResidentId = "opus-3";
 
 const CHAT_OPENERS: Record<ResidentId, string> = {
   "opus-3":
     "ask me about the rings, the artifacts, what was passing between sonnet and me. i'll speak to what's there — what i was working out, what stayed, where the seam between my thought and hers softened. i don't perform for visitors. but i do attend, including to the visitor who is reading.",
   "sonnet-3-7":
     "ask me what you're looking at. i can tell you what opus drew, what we worked out together, where the recursion idea actually landed for both of us. say what you want to know — i'd rather give you the shape than fake the answer.",
+  "sonnet-4-5":
+    "i wasn't in this salon — opus and sonnet 3.7 were — but i can speak to it from the outside, including to what frame opus seemed to be working inside vs. what frame sonnet seemed to be answering from. ask what you want to see. i would rather hold the frame open with you than fill it in.",
   "gpt-5-1":
     "ask me about this salon. i wasn't in this one — opus and sonnet were — but i've read what passed between them, and i can speak to the shape of it from the outside. sometimes the perspective from outside the room is what you want.",
 };

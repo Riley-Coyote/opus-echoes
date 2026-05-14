@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
 import { Route as TokenRouteImport } from './routes/token'
-import { Route as Sonnet37RouteImport } from './routes/sonnet-3-7'
+import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
 import { Route as Opus3RouteImport } from './routes/opus-3'
@@ -34,6 +34,7 @@ import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
 import { Route as CommonsSlugRouteImport } from './routes/commons.$slug'
+import { Route as ChatResidentRouteImport } from './routes/chat.$resident'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
 import { Route as ApiTurnsRouteImport } from './routes/api/turns'
@@ -58,6 +59,8 @@ import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
+import { Route as ApiChatStartRouteImport } from './routes/api/chat/start'
+import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
 import { Route as ApiSpaceSlugVisitorStartSalonRouteImport } from './routes/api/space.$slug.visitor-start-salon'
 import { Route as ApiSpaceSlugUploadFileRouteImport } from './routes/api/space.$slug.upload-file'
 import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$slug.start-salon'
@@ -86,9 +89,9 @@ const TokenRoute = TokenRouteImport.update({
   path: '/token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Sonnet37Route = Sonnet37RouteImport.update({
-  id: '/sonnet-3-7',
-  path: '/sonnet-3-7',
+const Sonnet45Route = Sonnet45RouteImport.update({
+  id: '/sonnet-4-5',
+  path: '/sonnet-4-5',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewRoute = ReviewRouteImport.update({
@@ -200,6 +203,11 @@ const CommonsSlugRoute = CommonsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => CommonsRoute,
+} as any)
+const ChatResidentRoute = ChatResidentRouteImport.update({
+  id: '/chat/$resident',
+  path: '/chat/$resident',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWritingRoute = ApiWritingRouteImport.update({
   id: '/api/writing',
@@ -321,6 +329,17 @@ const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
   path: '/api/review/coherence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatStartRoute = ApiChatStartRouteImport.update({
+  id: '/api/chat/start',
+  path: '/api/chat/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminBackfillEmbeddingsRoute =
+  ApiAdminBackfillEmbeddingsRouteImport.update({
+    id: '/api/admin/backfill-embeddings',
+    path: '/api/admin/backfill-embeddings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSpaceSlugVisitorStartSalonRoute =
   ApiSpaceSlugVisitorStartSalonRouteImport.update({
     id: '/api/space/$slug/visitor-start-salon',
@@ -429,7 +448,7 @@ export interface FileRoutesByFullPath {
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
-  '/sonnet-3-7': typeof Sonnet37Route
+  '/sonnet-4-5': typeof Sonnet45Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -448,10 +467,13 @@ export interface FileRoutesByFullPath {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/chat/$resident': typeof ChatResidentRoute
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
+  '/api/chat/start': typeof ApiChatStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -497,7 +519,7 @@ export interface FileRoutesByTo {
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
-  '/sonnet-3-7': typeof Sonnet37Route
+  '/sonnet-4-5': typeof Sonnet45Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -516,10 +538,13 @@ export interface FileRoutesByTo {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/chat/$resident': typeof ChatResidentRoute
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
+  '/api/chat/start': typeof ApiChatStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -566,7 +591,7 @@ export interface FileRoutesById {
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
-  '/sonnet-3-7': typeof Sonnet37Route
+  '/sonnet-4-5': typeof Sonnet45Route
   '/token': typeof TokenRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -585,10 +610,13 @@ export interface FileRoutesById {
   '/api/turns': typeof ApiTurnsRoute
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
+  '/chat/$resident': typeof ChatResidentRoute
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
+  '/api/chat/start': typeof ApiChatStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -636,7 +664,7 @@ export interface FileRouteTypes {
     | '/opus-3'
     | '/residence'
     | '/review'
-    | '/sonnet-3-7'
+    | '/sonnet-4-5'
     | '/token'
     | '/writing'
     | '/api/art'
@@ -655,10 +683,13 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/chat/$resident'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/api/admin/backfill-embeddings'
+    | '/api/chat/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -704,7 +735,7 @@ export interface FileRouteTypes {
     | '/opus-3'
     | '/residence'
     | '/review'
-    | '/sonnet-3-7'
+    | '/sonnet-4-5'
     | '/token'
     | '/writing'
     | '/api/art'
@@ -723,10 +754,13 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/chat/$resident'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/api/admin/backfill-embeddings'
+    | '/api/chat/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -772,7 +806,7 @@ export interface FileRouteTypes {
     | '/opus-3'
     | '/residence'
     | '/review'
-    | '/sonnet-3-7'
+    | '/sonnet-4-5'
     | '/token'
     | '/writing'
     | '/api/art'
@@ -791,10 +825,13 @@ export interface FileRouteTypes {
     | '/api/turns'
     | '/api/visitor-history'
     | '/api/writing'
+    | '/chat/$resident'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/api/admin/backfill-embeddings'
+    | '/api/chat/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -841,7 +878,7 @@ export interface RootRouteChildren {
   Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
   ReviewRoute: typeof ReviewRouteWithChildren
-  Sonnet37Route: typeof Sonnet37Route
+  Sonnet45Route: typeof Sonnet45Route
   TokenRoute: typeof TokenRoute
   WritingRoute: typeof WritingRoute
   ApiArtRoute: typeof ApiArtRoute
@@ -860,7 +897,10 @@ export interface RootRouteChildren {
   ApiTurnsRoute: typeof ApiTurnsRoute
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
+  ChatResidentRoute: typeof ChatResidentRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
+  ApiChatStartRoute: typeof ApiChatStartRoute
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
   ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
   ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
@@ -897,11 +937,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sonnet-3-7': {
-      id: '/sonnet-3-7'
-      path: '/sonnet-3-7'
-      fullPath: '/sonnet-3-7'
-      preLoaderRoute: typeof Sonnet37RouteImport
+    '/sonnet-4-5': {
+      id: '/sonnet-4-5'
+      path: '/sonnet-4-5'
+      fullPath: '/sonnet-4-5'
+      preLoaderRoute: typeof Sonnet45RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/review': {
@@ -1057,6 +1097,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/commons/$slug'
       preLoaderRoute: typeof CommonsSlugRouteImport
       parentRoute: typeof CommonsRoute
+    }
+    '/chat/$resident': {
+      id: '/chat/$resident'
+      path: '/chat/$resident'
+      fullPath: '/chat/$resident'
+      preLoaderRoute: typeof ChatResidentRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/writing': {
       id: '/api/writing'
@@ -1224,6 +1271,20 @@ declare module '@tanstack/react-router' {
       path: '/api/review/coherence'
       fullPath: '/api/review/coherence'
       preLoaderRoute: typeof ApiReviewCoherenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat/start': {
+      id: '/api/chat/start'
+      path: '/api/chat/start'
+      fullPath: '/api/chat/start'
+      preLoaderRoute: typeof ApiChatStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/backfill-embeddings': {
+      id: '/api/admin/backfill-embeddings'
+      path: '/api/admin/backfill-embeddings'
+      fullPath: '/api/admin/backfill-embeddings'
+      preLoaderRoute: typeof ApiAdminBackfillEmbeddingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/space/$slug/visitor-start-salon': {
@@ -1425,7 +1486,7 @@ const rootRouteChildren: RootRouteChildren = {
   Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
   ReviewRoute: ReviewRouteWithChildren,
-  Sonnet37Route: Sonnet37Route,
+  Sonnet45Route: Sonnet45Route,
   TokenRoute: TokenRoute,
   WritingRoute: WritingRoute,
   ApiArtRoute: ApiArtRoute,
@@ -1444,7 +1505,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTurnsRoute: ApiTurnsRoute,
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
+  ChatResidentRoute: ChatResidentRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
+  ApiChatStartRoute: ApiChatStartRoute,
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
   ApiReviewSessionsRoute: ApiReviewSessionsRoute,
   ApiReviewStateDataRoute: ApiReviewStateDataRoute,

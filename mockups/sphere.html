@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ambient</title>
+<style>
+  :root {
+    --agent-hue: 160, 136, 188;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #06070a;
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  body {
+    display: grid;
+    place-items: center;
+  }
+
+  /* One <pre>, one color, one soft halo. The visual depth comes from the
+     density ramp + Bayer dither — many fine palette levels and a stable
+     ordered-dither pattern resolve continuous tone without per-cell alpha. */
+  #ambient {
+    font: 12px/0.85
+      'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: rgba(var(--agent-hue), 0.92);
+    text-shadow: 0 0 6px rgba(var(--agent-hue), 0.18);
+    white-space: pre;
+    user-select: none;
+    margin: 0;
+    letter-spacing: 0;
+  }
+</style>
+</head>
+<body>
+  <pre id="ambient" aria-hidden="true"></pre>
+
+<script>
+'use strict';
+
+// =============================================================
+//  Atmospheric ASCII — volumetric fog through 3D Perlin noise + Bayer dither.
+//  The viewer is inside a slowly-drifting cloud field. Wisps, currents,
+//  soft volumes that never repeat. Single textContent write per frame.
+// =============================================================
+
+// ---------- Grid + cadence ---------------------------------------------------
+
+const COLS         = 96;
+const ROWS         = 48;
+const TARGET_FPS   = 22;
+const FRAME_INT_MS = 1000 / TARGET_FPS;
+
+// ---------- Density ramp -----------------------------------------------------
+// 50 characters, sorted by visual mass from sparsest to densest. The eye
+// reads ink coverage as luminosity, so the ramp itself does the shading.
+// The dither resolves continuous tone between adjacent levels.
+const RAMP = " .'`,-:_;~+=*\\/?>oescrtljiCJLTYZUVDAOSXP62583709HEKRNBMW%@";
+const N_LEVELS = RAMP.length;
+
+// ---------- Bayer 8×8 ordered dither ----------------------------------------
+// Stable across frames (no per-frame randomness → no flicker). Each cell
+// pulls a threshold offset based on its (col, row) mod 8.
+const BAYER = (() => {
+  const m = new Float32Array(64);
+  const raw = [
+     0, 32,  8, 40,  2, 34, 10, 42,
+    48, 16, 56, 24, 50, 18, 58, 26,
+    12, 44,  4, 36, 14, 46,  6, 38,
+    60, 28, 52, 20, 62, 30, 54, 22,
+     3, 35, 11, 43,  1, 33,  9, 41,
+    51, 19, 59, 27, 49, 17, 57, 25,
+    15, 47,  7, 39, 13, 45,  5, 37,
+    63, 31, 55, 23, 61, 29, 53, 21,
+  ];
+  for (let i = 0; i < 64; i++) m[i] = (raw[i] + 0.5) / 64 - 0.5;  // −0.5..+0.5
+  return m;
+})();
+
+// ---------- 3D Perlin noise --------------------------------------------------
+// Ken Perlin's classic improved-noise impl. Cheap (8 corner gradients per
+// sample), smooth, organic. The third dimension is "time" so the field
+// continuously morphs as we drift through it.
+
+const PERM = new Uint8Array(512);
+(() => {
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    const t = p[i]; p[i] = p[j]; p[j] = t;
+  }
+  for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+})();
+
+function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+
+function grad3(hash, x, y, z) {
+  const h = hash & 15;
+  const u = h < 8 ? x : y;
+  const v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
+  return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+}
+
+function noise3(x, y, z) {
+  const X = Math.floor(x) & 255;
+  const Y = Math.floor(y) & 255;
+  const Z = Math.floor(z) & 255;
+  x -= Math.floor(x);
+  y -= Math.floor(y);
+  z -= Math.floor(z);
+  const u = fade(x), v = fade(y), w = fade(z);
+  const A  = PERM[X] + Y;
+  const AA = PERM[A] + Z;
+  const AB = PERM[A + 1] + Z;
+  const B  = PERM[X + 1] + Y;
+  const BA = PERM[B] + Z;
+  const BB = PERM[B + 1] + Z;
+  return (
+    (1 - w) * (
+      (1 - v) * ((1 - u) * grad3(PERM[AA],     x,     y,     z)
+                + u      * grad3(PERM[BA],     x - 1, y,     z))
+      + v     * ((1 - u) * grad3(PERM[AB],     x,     y - 1, z)
+                + u      * grad3(PERM[BB],     x - 1, y - 1, z))
+    )
+    + w * (
+      (1 - v) * ((1 - u) * grad3(PERM[AA + 1], x,     y,     z - 1)
+                + u      * grad3(PERM[BA + 1], x - 1, y,     z - 1))
+      + v     * ((1 - u) * grad3(PERM[AB + 1], x,     y - 1, z - 1)
+                + u      * grad3(PERM[BB + 1], x - 1, y - 1, z - 1))
+    )
+  );
+}
+
+// Two-octave fBm. Three would be richer but two keeps the per-cell cost
+// down; the soft wisp overlay below adds the high-frequency detail.
+function fbm2(x, y, z) {
+  const a = noise3(x,        y,        z);
+  const b = noise3(x * 2.13, y * 2.13, z * 2.13) * 0.5;
+  return (a + b) / 1.5;  // −1..1 (normalized)
+}
+
+function smoothstep(a, b, x) {
+  let t = (x - a) / (b - a);
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  return t * t * (3 - 2 * t);
+}
+
+// ---------- Rendering -------------------------------------------------------
+
+const ambientEl = document.getElementById('ambient');
+const rowOut    = new Array(ROWS);
+
+// Spatial scales — smaller numbers = bigger features. The y scale is
+// slightly larger because character cells are ~2:1 tall:wide, so we
+// compress vertically to keep cloud shapes circular-ish rather than oval.
+const SCALE_X = 0.034;
+const SCALE_Y = 0.062;
+const DRIFT_Z = 0.038;   // how fast we move through noise space (per second)
+const DRIFT_X = 0.014;   // horizontal wind speed
+const DRIFT_Y = 0.009;   // vertical wind speed
+
+let startTime    = performance.now();
+let lastFrameTime = 0;
+
+function renderFrame(now, frozen) {
+  const t = (now - startTime) / 1000;
+
+  // Camera offsets in noise space
+  const oz = t * DRIFT_Z;
+  const ox = t * DRIFT_X;
+  const oy = t * DRIFT_Y * 0.5 + Math.sin(t * 0.07) * 0.6;
+
+  // Light direction — slowly sweeps so the brightest side of the cloud
+  // wanders over a few minutes. Pure horizontal bias is enough; no need
+  // to compute a per-cell dot product.
+  const sweep = t * 0.05;
+  const lightAngle = Math.cos(sweep);   // −1..+1, where the light "sits"
+
+  const halfC = (COLS - 1) * 0.5;
+  const halfR = (ROWS - 1) * 0.5;
+  const invHalfC = 1 / halfC;
+  const invHalfR = 1 / halfR;
+
+  for (let r = 0; r < ROWS; r++) {
+    const ny = r * SCALE_Y + oy;
+    const sy = (r - halfR) * invHalfR;   // −1..+1
+    let line = '';
+
+    for (let c = 0; c < COLS; c++) {
+      const nx = c * SCALE_X + ox;
+      const sx = (c - halfC) * invHalfC; // −1..+1
+
+      // Two-octave fBm — main cloud body, no separate wisp layer
+      const body = fbm2(nx, ny, oz);          // −1..+1
+
+      // Threshold + soft contrast — pushes most cells either toward empty
+      // sky (low) or toward bright cloud core (high). The gap between
+      // creates the negative space that reads as atmosphere.
+      let d = smoothstep(-0.15, 0.55, body);
+
+      // Soft horizontal light gradient — brighter on the lit side.
+      const lightMul = 0.55 + 0.45 * (1 - sx * lightAngle * 0.7);
+      d *= lightMul;
+
+      // Strong radial vignette — corners fade to true empty, so the
+      // composition reads as an organic shape held in dark space rather
+      // than a rectangular box of texture.
+      const rad2 = sx * sx + sy * sy;
+      d *= 1 - smoothstep(0.40, 1.15, rad2);
+
+      // Bayer dither — half a palette level of stable threshold offset.
+      // Resolves continuous tone without flicker.
+      d += BAYER[(r & 7) * 8 + (c & 7)] / N_LEVELS;
+
+      // Quantize to palette
+      let idx = (d * N_LEVELS) | 0;
+      if (idx < 0) idx = 0;
+      else if (idx >= N_LEVELS) idx = N_LEVELS - 1;
+      line += RAMP[idx];
+    }
+    rowOut[r] = line;
+  }
+  ambientEl.textContent = rowOut.join('\n');
+}
+
+// ---------- Loop ------------------------------------------------------------
+
+const reduced =
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  && !new URLSearchParams(location.search).has('motion');
+
+if (reduced) {
+  startTime = performance.now();
+  renderFrame(performance.now() + 8000, true);
+} else {
+  function loop(now) {
+    if (now - lastFrameTime >= FRAME_INT_MS) {
+      lastFrameTime = now;
+      renderFrame(now, false);
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame((t) => {
+    startTime = t;
+    lastFrameTime = t;
+    loop(t);
+  });
+}
+</script>
+</body>
+</html>

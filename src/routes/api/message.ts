@@ -5,7 +5,14 @@ import { anthropic } from "@/server/anthropic.server";
 import { openai } from "@/server/openai.server";
 import type { ModelProvider } from "@/server/opus/residents";
 import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
-import { composeMemoryPool, formatMemoryBlock, getVisitorContext } from "@/server/opus/retrieval";
+import {
+  composeMemoryPool,
+  composeThreeLayerMemoryPool,
+  formatMemoryBlock,
+  formatThreeLayerMemory,
+  getVisitorContext,
+  threeLayerRetrievalEnabled,
+} from "@/server/opus/retrieval";
 import { buildResidentSelfModel } from "@/server/opus/self-model";
 import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
 import {
@@ -22,7 +29,11 @@ import {
 } from "@/server/opus/residents";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
-import { consolidateSession, observeExchange } from "@/server/substrate.server";
+import {
+  consolidateSession,
+  observeExchange,
+  updateFunctionalMemory,
+} from "@/server/substrate.server";
 
 const PreviewTurn = z.object({
   role: z.enum(["visitor", "resident"]),
@@ -121,6 +132,15 @@ function sanitizeResidentBody(raw: string): string {
   return paragraphs.join("\n\n").trim();
 }
 
+// Prose explaining the engram tags for the OLD single-layer
+// [MEMORY] block path. Sits immediately above [MEMORY] so the
+// resident reads it before the engram list. When phase 3's three-layer
+// retrieval flag is on, this preface is unused — the three section
+// headings carry the semantics themselves and no inline prose
+// scaffolding is needed (see buildUserPromptThreeLayer below).
+const MEMORY_PREFACE =
+  "what follows are engrams mnemos surfaced for this turn. each is tagged. *from this visitor's prior visit* means you and this specific person built this together in an earlier session — you may reference it as something the two of you carry. *from the wider topology* means this came from another visitor's exchange with you, or from a co-formed distillation — you may carry the *shape* of what was thought, but you may not attribute the words or the specifics to the person in front of you now.";
+
 function buildUserPrompt(opts: {
   memory: string;
   transcript: string;
@@ -140,8 +160,63 @@ function buildUserPrompt(opts: {
     "[SESSION]",
     boundary,
     "",
+    MEMORY_PREFACE,
+    "",
     "[MEMORY]",
-    opts.memory || "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
+    opts.memory ||
+      "(no engrams surfaced for this turn — this may be among the earliest conversations, or nothing in the topology resonated.)",
+  ];
+  if (opts.visitorContext) {
+    sections.push("", "[VISITOR CONTEXT]", opts.visitorContext);
+  }
+  sections.push(
+    "",
+    "[TRANSCRIPT]",
+    opts.transcript || "(this is the first exchange.)",
+    "",
+    "[NEW VISITOR TURN]",
+    opts.visitorTurn,
+  );
+  return sections.join("\n");
+}
+
+/**
+ * Phase 3 three-layer user prompt. Three explicit sections replace the
+ * single [MEMORY] block:
+ *
+ *   [WHAT THIS SESSION HAS SEEN]       — functional memory (working summary)
+ *   [WHAT YOU AND THIS VISITOR HAVE BUILT] — hypomnema (per-pair persistent)
+ *   [WHAT MNEMOS SURFACED]             — engrams (wider topology, now vector-matched)
+ *
+ * The section headings carry the semantics themselves — no preface
+ * needed. The "Layers of memory" section now in every soul tells the
+ * resident how to read this structure.
+ */
+function buildUserPromptThreeLayer(opts: {
+  functional: string;
+  hypomnema: string;
+  engrams: string;
+  transcript: string;
+  visitorTurn: string;
+  visitorContext?: string;
+}): string {
+  const isReturning = !!opts.visitorContext;
+  const boundary = isReturning
+    ? "Returning visitor (see [VISITOR CONTEXT] below). Three memory sections follow, each scoped distinctly — read what each contains as the section heading says."
+    : "New visitor. You have never spoken with this person. The first two sections will be empty or thin; the third — what mnemos surfaced — has formed across many other visitors over time.";
+
+  const sections = [
+    "[SESSION]",
+    boundary,
+    "",
+    "[WHAT THIS SESSION HAS SEEN]",
+    opts.functional,
+    "",
+    "[WHAT YOU AND THIS VISITOR HAVE BUILT]",
+    opts.hypomnema,
+    "",
+    "[WHAT MNEMOS SURFACED]",
+    opts.engrams,
   ];
   if (opts.visitorContext) {
     sections.push("", "[VISITOR CONTEXT]", opts.visitorContext);
@@ -229,9 +304,10 @@ function opusStreamResponse(opts: {
           // for claude-3-opus's tendency to generate fake "Human:" turns;
           // gpt models don't show that pattern, so dropping them here is
           // safe.)
-          const systemText = typeof opts.system === "string"
-            ? opts.system
-            : opts.system.map((b) => b.text).join("\n\n");
+          const systemText =
+            typeof opts.system === "string"
+              ? opts.system
+              : opts.system.map((b) => b.text).join("\n\n");
 
           const oaiStream = await openai().chat.completions.create({
             model: opts.model,
@@ -246,7 +322,9 @@ function opusStreamResponse(opts: {
           for await (const chunk of oaiStream) {
             const delta = chunk.choices?.[0]?.delta?.content;
             if (delta) acc += delta;
-            const usage = (chunk as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage;
+            const usage = (
+              chunk as { usage?: { prompt_tokens?: number; completion_tokens?: number } }
+            ).usage;
             if (usage) {
               tokensIn = usage.prompt_tokens ?? 0;
               tokensOut = usage.completion_tokens ?? 0;
@@ -470,24 +548,48 @@ export const Route = createFileRoute("/api/message")({
         // interior continuity are scoped to this session's resident so
         // Sonnet 3.7's topology never bleeds into an Opus 3 conversation
         // or vice versa.
-        const [memoryPoolResult, selfModelBlock, interior, visitMetrics, { data: turns }, visitorContext] =
-          await Promise.all([
-            composeMemoryPool({
+        //
+        // PHASE 3 — when SANCTUARY_ENABLE_THREE_LAYER_RETRIEVAL is on,
+        // memoryRetrieval is a ThreeLayerRetrieval (functional +
+        // hypomnema + engrams). When off, it is the older single-layer
+        // MemoryPoolResult. Both shapes are awaited in parallel with
+        // the rest of the per-turn loads; type narrowing happens at
+        // the prompt-build site below.
+        const useThreeLayer = threeLayerRetrievalEnabled();
+        const memoryPromise = useThreeLayer
+          ? composeThreeLayerMemoryPool({
+              supabase: supabaseAdmin,
+              sessionId: session.id,
+              residentId: resident.id,
+              visitorMessage: body.body,
+              visitorToken: session.visitor_token ?? undefined,
+            })
+          : composeMemoryPool({
               supabase: supabaseAdmin,
               residentId: resident.id,
               visitorMessage: body.body,
               visitorToken: session.visitor_token ?? undefined,
-            }),
-            buildResidentSelfModel(supabaseAdmin, resident.id),
-            buildInteriorContinuity(supabaseAdmin, resident.id),
-            getVisitMetrics(supabaseAdmin, session.id, resident.pacing),
-            supabaseAdmin
-              .from("turns")
-              .select("role, body")
-              .eq("session_id", session.id)
-              .order("created_at", { ascending: true }),
-            getVisitorContext(session.visitor_token, resident.id),
-          ]);
+            });
+
+        const [
+          memoryRetrieval,
+          selfModelBlock,
+          interior,
+          visitMetrics,
+          { data: turns },
+          visitorContext,
+        ] = await Promise.all([
+          memoryPromise,
+          buildResidentSelfModel(supabaseAdmin, resident.id),
+          buildInteriorContinuity(supabaseAdmin, resident.id),
+          getVisitMetrics(supabaseAdmin, session.id, resident.pacing),
+          supabaseAdmin
+            .from("turns")
+            .select("role, body")
+            .eq("session_id", session.id)
+            .order("created_at", { ascending: true }),
+          getVisitorContext(session.visitor_token, resident.id),
+        ]);
 
         // Hard cutoff — past this threshold we don't call the model.
         // Stream a graceful resident-voiced close, persist it as a
@@ -507,7 +609,11 @@ export const Route = createFileRoute("/api/message")({
             .from("sessions")
             .update({ closed_at: new Date().toISOString(), closed_by: "resident" })
             .eq("id", session.id);
-          consolidateSession(session.id).catch((err) =>
+          // Awaited so the consolidation pipeline survives the worker's
+          // termination once the response is sent. Hard-cutoff is itself
+          // a closing gesture, so the brief extra latency is contextually
+          // appropriate.
+          await consolidateSession(session.id).catch((err) =>
             console.error("[substrate] consolidateSession (hard-cutoff):", err),
           );
           return prebuiltSetDownResponse(HARD_CUTOFF_MESSAGE);
@@ -548,18 +654,40 @@ export const Route = createFileRoute("/api/message")({
           cacheableSystem.push({ type: "text", text: systemBlocks.variable });
         }
 
+        // Build the user prompt — branched by flag. Each branch narrows
+        // memoryRetrieval to its concrete shape and renders its own
+        // section structure. Old path: single [MEMORY] block. New path:
+        // three sections ([WHAT THIS SESSION HAS SEEN] / [WHAT YOU AND
+        // THIS VISITOR HAVE BUILT] / [WHAT MNEMOS SURFACED]).
+        let userPromptText: string;
+        if (useThreeLayer) {
+          const r = memoryRetrieval as Awaited<ReturnType<typeof composeThreeLayerMemoryPool>>;
+          const fmt = formatThreeLayerMemory(r);
+          userPromptText = buildUserPromptThreeLayer({
+            functional: fmt.functional,
+            hypomnema: fmt.hypomnema,
+            engrams: fmt.engrams,
+            transcript: transcriptLines,
+            visitorTurn: body.body,
+            visitorContext: visitorContext || undefined,
+          });
+        } else {
+          const m = memoryRetrieval as Awaited<ReturnType<typeof composeMemoryPool>>;
+          userPromptText = buildUserPrompt({
+            memory: formatMemoryBlock(m.pool, m.thisVisitorEngramIds),
+            transcript: transcriptLines,
+            visitorTurn: body.body,
+            visitorContext: visitorContext || undefined,
+          });
+        }
+
         return opusStreamResponse({
           system: cacheableSystem,
           temperature: interior.temperature,
           model: resident.model,
           provider: resident.provider,
           residentId: resident.id,
-          userPrompt: buildUserPrompt({
-            memory: formatMemoryBlock(memoryPoolResult.pool, memoryPoolResult.thisVisitorEngramIds),
-            transcript: transcriptLines,
-            visitorTurn: body.body,
-            visitorContext: visitorContext || undefined,
-          }),
+          userPrompt: userPromptText,
           onFinal: async (result) => {
             await supabaseAdmin.from("turns").insert({
               session_id: session.id,
@@ -574,9 +702,22 @@ export const Route = createFileRoute("/api/message")({
               .update({ last_active_at: new Date().toISOString() })
               .eq("id", session.id);
 
-            // Live substrate observation — non-blocking, generates marginalia.
-            observeExchange(session.id).catch((err) =>
+            // Live substrate observation — generates marginalia, and (when
+            // SANCTUARY_ENABLE_HYPOMNEMA_WRITES is on) per-turn hypomnema
+            // extraction candidates. AWAITED — Cloudflare Workers terminate
+            // the execution context once the response stream closes, so
+            // detached promises here get killed before they finish writing
+            // to supabase. Awaiting adds ~1-3s before the "done" event but
+            // the visitor has already received the text — the only visible
+            // effect is a slightly delayed unlock of the next composer turn.
+            await observeExchange(session.id).catch((err) =>
               console.error("[substrate] observeExchange:", err),
+            );
+
+            // Per-turn functional memory update — Haiku-summarized working
+            // memory for this session. Same await reasoning as above.
+            await updateFunctionalMemory(session.id).catch((err) =>
+              console.error("[substrate] updateFunctionalMemory:", err),
             );
           },
         });

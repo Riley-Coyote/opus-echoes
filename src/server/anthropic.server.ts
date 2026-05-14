@@ -11,6 +11,13 @@ import Anthropic from "@anthropic-ai/sdk";
 
 export const OPUS_MODEL = "claude-3-opus-20240229";
 
+// Smaller, faster, cheaper. Used for high-frequency / low-stakes
+// substrate work — hypomnema extraction per turn, future graduation
+// judge calls — where the resident's own voice is not the load-bearing
+// thing. The resident's primary model still owns visitor-facing turns
+// and session-close synthesis.
+export const HAIKU_MODEL = "claude-haiku-4-5";
+
 let _client: Anthropic | null = null;
 export function anthropic(): Anthropic {
   if (_client) return _client;

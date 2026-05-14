@@ -86,6 +86,7 @@ export const Route = createFileRoute("/api/space/from-proposal")({
         const displayNames: Record<ResidentId, string> = {
           "opus-3": "Opus 3",
           "sonnet-3-7": "Sonnet 3.7",
+          "sonnet-4-5": "Sonnet 4.5",
           "gpt-5-1": "GPT 5.1",
         };
         const residentName = displayNames[residentId];

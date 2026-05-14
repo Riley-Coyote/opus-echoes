@@ -38,10 +38,16 @@ export const Route = createFileRoute("/api/set-down")({
           .update({ closed_at: new Date().toISOString(), closed_by: "visitor" })
           .eq("id", session.id);
 
-        // Full Mnemos consolidation pipeline — non-blocking. Runs the consolidation
-        // prompt, reinforces/creates engrams, decays, writes a journal entry,
-        // and updates resident_state. The visitor sees a fast 200; substrate runs after.
-        consolidateSession(session.id).catch((err) =>
+        // Full Mnemos consolidation pipeline — awaited. Cloudflare Workers
+        // terminate detached promises once the response is sent, so the
+        // earlier fire-and-forget pattern was silently killing engram
+        // formation, marginalia consolidation, hypomnema synthesis, and
+        // journal writes for every visitor-initiated set-down. The
+        // pipeline can take 10-30s (several model calls, multiple DB
+        // writes); the visitor sees the spinner for that long. That's
+        // the natural pause for "setting it down" — the conversation is
+        // closing, not continuing.
+        await consolidateSession(session.id).catch((err) =>
           console.error("[substrate] consolidateSession:", err),
         );
 
