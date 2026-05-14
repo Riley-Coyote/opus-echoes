@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sphere</title>
+<style>
+  :root {
+    /* Single accent hue, comma-separated RGB so it composes with rgba().
+       Default: a soft violet that demos without setup. */
+    --agent-hue: 160, 136, 188;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #06070a;
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  body {
+    display: grid;
+    place-items: center;
+  }
+
+  #sphere {
+    font:
+      16px/1.0
+      'JetBrains Mono',
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Consolas,
+      monospace;
+    color: rgba(var(--agent-hue), 0.78);
+    /* Atmospheric glow — the sphere should read as luminous, not printed.
+       Three layers for depth: close halo, mid glow, far ambient bloom.
+       The shadow's color is explicit (not derived from `color`), so it stays
+       uniform behind all letters regardless of per-tier text alpha. */
+    text-shadow:
+      0 0 10px rgba(var(--agent-hue), 0.28),
+      0 0 28px rgba(var(--agent-hue), 0.12),
+      0 0 56px rgba(var(--agent-hue), 0.05);
+    letter-spacing: 0;
+    white-space: pre;
+    user-select: none;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Per-tier depth alphas (faint → densest). Reads as luminosity gradient
+     across the sphere's surface even before motion is observed. */
+  #sphere .t0 { color: rgba(var(--agent-hue), 0.22); }
+  #sphere .t1 { color: rgba(var(--agent-hue), 0.40); }
+  #sphere .t2 { color: rgba(var(--agent-hue), 0.58); }
+  #sphere .t3 { color: rgba(var(--agent-hue), 0.78); }
+  #sphere .t4 { color: rgba(var(--agent-hue), 0.95); }
+</style>
+</head>
+<body>
+  <pre id="sphere" aria-hidden="true"></pre>
+
+<script>
+'use strict';
+
+// =============================================================
+//  Living ASCII sphere — phyllotaxis + spherical harmonics + drifting sun
+//  Single-file, vanilla JS, no external assets.
+// =============================================================
+
+// ---------- Configurable constants -----------------------------------------
+
+const COLS         = 80;        // character columns
+const ROWS         = 38;        // character rows
+const N_POINTS     = 2400;      // phyllotaxis surface points (1500–2500)
+const RADIUS       = 24;        // sphere radius in cells (along x)
+const ASPECT       = 0.5;       // y-scale (cells are ~2:1 tall:wide)
+const TARGET_FPS   = 20;        // 15–22 sweet spot
+const GAMMA        = 0.85;      // perceptual gamma
+
+// Three harmonic modes, summed with prime-number periods so the surface
+// never visibly loops. Amplitudes are small — we're rippling, not deforming.
+const HARMONICS = [
+  { mode: 'Y20', amp: 0.040, period:  7 },  // pole vs equator pulse
+  { mode: 'Y32', amp: 0.035, period: 13 },  // 4-lobed equatorial
+  { mode: 'Y44', amp: 0.025, period: 19 },  // 8-lobed fine ripple
+];
+
+// Rotation periods (seconds) — primes, so orientation never repeats either.
+const ROT = { y: 11, x: 17, z: 23 };
+const LIGHT_PERIOD = 13;       // seconds for the sun to wander
+
+// Letter scintillation: the surface "thinks" through letterforms.
+const SCINTILLATION_RATE   = 0.05;       // ~5% of points eligible per frame
+const SCINT_DURATION_MS    = [200, 400]; // swap-and-revert window
+const SCINT_COOLDOWN_MS    = 800;        // gap between consecutive scints
+
+// Slow in-tier letter drift so the texture evolves over a minute even at rest.
+const MIGRATION_WINDOW_MS  = [30000, 60000];
+
+// ---------- Letter tier pools ----------------------------------------------
+// 5 density tiers, indexed 0..4 (faint → densest). At each tier we draw from
+// a pool of glyphs rather than a single character, so the surface reads as
+// flowing typography rather than a bitmap.
+
+const TIERS = [
+  // 0 · faint — silhouette fade, ambient-only points
+  ['.', ',', "'", '\\', '"', '-', '_', ':', ';', '`'],
+  // 1 · light — dim surface, between dark and lit
+  ['r', 't', 'f', 'j', 'l', 'i', '1', '*', '+', '=', '?', '<', '>'],
+  // 2 · medium — bulk of the surface
+  ['C', 'J', 'F', 'L', 'T', 'o', 'e', 'a', 'n', 'u', 's', 'c', '2', '3', '7'],
+  // 3 · dense — well-lit shoulders
+  ['D', 'A', 'O', 'U', 'V', 'S', 'X', 'Y', 'Z', '8', '0', '4', '5', '6', '9'],
+  // 4 · densest — hot spot only (≤ ~15% of lit area)
+  ['@', 'M', 'W', 'B', 'H', 'N', 'R', 'K', 'E', 'P', 'Q', 'G', '#', '&', '%'],
+];
+
+// Curvature-bias sub-pools — letters that echo local surface geometry.
+// Applied softly (60% biased / 40% full tier) so the bias emerges across
+// the whole sphere rather than as visible zones.
+const ROUND_LETTERS    = ['O', 'Q', 'G', 'C', 'D', 'o', 'e', 'c'];
+const VERTICAL_LETTERS = ['I', 'l', '1', 'i', 't', 'f', 'j'];
+const HEAVY_LETTERS    = ['M', 'B', 'H', 'E', 'R', 'N', 'W'];
+
+const BIAS_NONE = 0, BIAS_ROUND = 1, BIAS_VERTICAL = 2, BIAS_HEAVY = 3;
+
+// Intersect a bias pool with a tier pool, then return a random letter.
+// Falls back to the full tier when the intersection is empty.
+function pickFromTier(tier, bias) {
+  const pool = TIERS[tier];
+  if (bias === BIAS_NONE || Math.random() > 0.6) {
+    return pool[(Math.random() * pool.length) | 0];
+  }
+  const biasPool =
+      bias === BIAS_ROUND    ? ROUND_LETTERS
+    : bias === BIAS_VERTICAL ? VERTICAL_LETTERS
+    :                          HEAVY_LETTERS;
+  // Build the intersection lazily.
+  const inter = [];
+  for (let i = 0; i < biasPool.length; i++) {
+    if (pool.indexOf(biasPool[i]) >= 0) inter.push(biasPool[i]);
+  }
+  if (inter.length === 0) return pool[(Math.random() * pool.length) | 0];
+  return inter[(Math.random() * inter.length) | 0];
+}
+
+// ---------- Phyllotaxis point cloud ----------------------------------------
+// Fibonacci sphere: evenly distributed without the moire that lat/lon grids
+// produce. y goes from ~+1 (north) to ~−1 (south); theta increments by the
+// golden angle.
+
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+function makePoint(i, n) {
+  const y      = 1 - 2 * (i + 0.5) / n;
+  const sinPhi = Math.sqrt(Math.max(0, 1 - y * y));
+  const theta  = i * GOLDEN_ANGLE;
+  const x      = sinPhi * Math.cos(theta);
+  const z      = sinPhi * Math.sin(theta);
+
+  // Intrinsic curvature bias — stable, computed once. Distributes round /
+  // vertical / heavy letters across regions of the sphere so the typographic
+  // texture has variety without obvious banding.
+  const absY = Math.abs(y);
+  let bias;
+  if (absY > 0.62) {
+    bias = BIAS_HEAVY;
+  } else if (absY < 0.20 && Math.cos(theta * 2) > 0.55) {
+    bias = BIAS_VERTICAL;
+  } else if (sinPhi > 0.55 && Math.sin(theta) > 0.30) {
+    bias = BIAS_ROUND;
+  } else {
+    bias = BIAS_NONE;
+  }
+
+  // Letters per tier — five stable letters, one per density bucket. Migration
+  // slowly swaps one of them every 30–60s.
+  const letters = new Array(5);
+  for (let t = 0; t < 5; t++) letters[t] = pickFromTier(t, bias);
+
+  return {
+    x, y, z,
+    sinPhi,
+    cosPhi: y,
+    theta,
+    bias,
+    letters,
+    // Scintillation phase (the small ±0.08 intensity wobble per point)
+    scintPhase: Math.random() * Math.PI * 2,
+    // Active letter scintillation override
+    scintActiveTier: -1,
+    scintOrigLetter: '',
+    scintEndAt: 0,
+    scintCooldownUntil: 0,
+    // Migration timer (ms since startTime when next migration fires)
+    migrationDueAt:
+      MIGRATION_WINDOW_MS[0] +
+      Math.random() * (MIGRATION_WINDOW_MS[1] - MIGRATION_WINDOW_MS[0]),
+  };
+}
+
+const points = new Array(N_POINTS);
+for (let i = 0; i < N_POINTS; i++) points[i] = makePoint(i, N_POINTS);
+
+// ---------- Spherical harmonics --------------------------------------------
+// Real-valued Y_lm forms, normalized to roughly ±1 so the amp constants in
+// HARMONICS map directly to surface displacement.
+
+function Y20(p) { return (3 * p.cosPhi * p.cosPhi - 1) * 0.5; }
+function Y32(p) {
+  const s2 = p.sinPhi * p.sinPhi;
+  return s2 * Math.cos(2 * p.theta);
+}
+function Y44(p) {
+  const s2 = p.sinPhi * p.sinPhi;
+  return s2 * s2 * Math.cos(4 * p.theta);
+}
+
+function harmonicValue(mode, p) {
+  if (mode === 'Y20') return Y20(p);
+  if (mode === 'Y32') return Y32(p);
+  return Y44(p);
+}
+
+// ---------- Frame buffer ---------------------------------------------------
+
+const cellCount = COLS * ROWS;
+const cellTier  = new Int8Array(cellCount);   // -1 = empty
+const cellChar  = new Uint16Array(cellCount); // char codes (painter's algorithm)
+const rowStrings = new Array(ROWS);
+
+const sphereEl = document.getElementById('sphere');
+
+// ---------- Rendering helpers ----------------------------------------------
+
+const HALF_X = COLS / 2;
+const HALF_Y = ROWS / 2;
+
+function smoothstep(a, b, x) {
+  let t = (x - a) / (b - a);
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  return t * t * (3 - 2 * t);
+}
+
+// ---------- Animation state ------------------------------------------------
+
+let startTime = performance.now();
+let lastFrameTime = 0;
+const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
+
+// ---------- The per-frame pipeline -----------------------------------------
+
+function renderFrame(now, frozen) {
+  const t   = (now - startTime) / 1000;        // seconds, float
+  const tMs = now - startTime;                 // ms, for ms-scale timers
+
+  // ---- Rotation (Y continuous, X+Z small wobbles) ----
+  const rotY = (t / ROT.y) * Math.PI * 2;
+  const rotX = Math.sin(t / ROT.x) * 0.18;
+  const rotZ = Math.sin(t / ROT.z) * 0.05;
+  const cy = Math.cos(rotY), sy = Math.sin(rotY);
+  const cx = Math.cos(rotX), sx = Math.sin(rotX);
+  const cz = Math.cos(rotZ), sz = Math.sin(rotZ);
+
+  // ---- Drifting sun (off-camera, traces a small circle) ----
+  const lxRaw = Math.sin(t / LIGHT_PERIOD);
+  const lyRaw = 0.4;
+  const lzRaw = Math.cos(t / LIGHT_PERIOD);
+  const lInv  = 1 / Math.sqrt(lxRaw * lxRaw + lyRaw * lyRaw + lzRaw * lzRaw);
+  const lnx = lxRaw * lInv, lny = lyRaw * lInv, lnz = lzRaw * lInv;
+
+  // ---- Harmonic time phases ----
+  const hp = [
+    Math.sin(t * 2 * Math.PI / HARMONICS[0].period),
+    Math.sin(t * 2 * Math.PI / HARMONICS[1].period + 1.7),
+    Math.sin(t * 2 * Math.PI / HARMONICS[2].period + 2.9),
+  ];
+
+  // ---- Expire any in-flight scintillation swaps ----
+  if (!frozen) {
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      if (p.scintActiveTier >= 0 && now >= p.scintEndAt) {
+        p.letters[p.scintActiveTier] = p.scintOrigLetter;
+        p.scintActiveTier = -1;
+        p.scintCooldownUntil = now + SCINT_COOLDOWN_MS;
+      }
+    }
+  }
+
+  // ---- Clear frame buffer ----
+  cellTier.fill(-1);
+
+  // ---- Per-point pipeline ----
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+
+    // 1) Surface displacement r(p, t)
+    let r = 1;
+    for (let k = 0; k < HARMONICS.length; k++) {
+      r += HARMONICS[k].amp * harmonicValue(HARMONICS[k].mode, p) * hp[k];
+    }
+    const px = p.x * r, py = p.y * r, pz = p.z * r;
+
+    // 2) Rotate Ry → Rx → Rz   (and also the unit normal in parallel)
+    // Ry on displaced position
+    const a1x = px * cy + pz * sy;
+    const a1y = py;
+    const a1z = -px * sy + pz * cy;
+    // Rx
+    const a2x = a1x;
+    const a2y = a1y * cx - a1z * sx;
+    const a2z = a1y * sx + a1z * cx;
+    // Rz
+    const aRx = a2x * cz - a2y * sz;
+    const aRy = a2x * sz + a2y * cz;
+    const aRz = a2z;
+
+    // Same rotations on the unit normal (treat surface as ~spherical for shading)
+    const n1x = p.x * cy + p.z * sy;
+    const n1y = p.y;
+    const n1z = -p.x * sy + p.z * cy;
+    const n2x = n1x;
+    const n2y = n1y * cx - n1z * sx;
+    const n2z = n1y * sx + n1z * cx;
+    const nRx = n2x * cz - n2y * sz;
+    const nRy = n2x * sz + n2y * cz;
+    const nRz = n2z;
+
+    // 3) Cull back hemisphere (sphere is solid)
+    if (aRz < -0.05) continue;
+
+    // 4) Project to character grid (cells are ~2:1 tall, hence ASPECT)
+    const ix = (HALF_X + aRx * RADIUS + 0.5) | 0;
+    const iy = (HALF_Y + aRy * RADIUS * ASPECT + 0.5) | 0;
+    if (ix < 0 || ix >= COLS || iy < 0 || iy >= ROWS) continue;
+
+    // 5) Shade — Lambertian + Fresnel rim + ambient + per-point scintillation
+    let ldot = nRx * lnx + nRy * lny + nRz * lnz;
+    if (ldot < 0) ldot = 0;
+
+    let vdot = nRz;                              // view dir = (0,0,1)
+    if (vdot < 0) vdot = 0;
+    const fb = 1 - vdot;
+    const fresnel = fb * fb * fb;
+
+    // Ambient + Lambertian + Fresnel rim. The rim weight is bumped slightly
+    // past the spec's 0.35 — at the limb (lambert≈0, fresnel≈1) this lands
+    // the silhouette in the dense tier rather than medium, so the sphere
+    // reads as luminous-against-dark rather than fading to black at the edge.
+    let intensity = 0.17 + 0.83 * ldot + 0.42 * fresnel;
+
+    // 6) Limb fade band — soften the silhouette
+    if (aRz < 0.05) {
+      const fade = smoothstep(-0.05, 0.05, aRz);
+      intensity *= fade * 0.6 + 0.4;
+    }
+
+    // 7) Per-point scintillation modulation (small wobble)
+    intensity += 0.08 * Math.sin(t * 6 + p.scintPhase);
+
+    // 8) Clamp + gamma
+    if (intensity < 0) intensity = 0; else if (intensity > 1) intensity = 1;
+    intensity = Math.pow(intensity, GAMMA);
+
+    // 9) Map intensity → tier (bias toward middle tiers; densest reserved for hot spot)
+    let tier;
+    if      (intensity < 0.18) tier = 0;
+    else if (intensity < 0.38) tier = 1;
+    else if (intensity < 0.58) tier = 2;
+    else if (intensity < 0.80) tier = 3;
+    else                       tier = 4;
+
+    // 10) Pull the stable letter for this point at this tier
+    const letter = p.letters[tier];
+
+    // 11) Painter's algorithm — denser tier wins on overlap
+    const cIdx = iy * COLS + ix;
+    if (tier > cellTier[cIdx]) {
+      cellTier[cIdx] = tier;
+      cellChar[cIdx] = letter.charCodeAt(0);
+    }
+  }
+
+  if (!frozen) {
+    // ---- Letter scintillation events ----
+    // Each event swaps a tier slot's letter for a neighboring-tier letter.
+    // We bias toward middle tiers (where most points are) so swaps are
+    // actually visible.
+    const nEvents = (SCINTILLATION_RATE * points.length) | 0;
+    for (let k = 0; k < nEvents; k++) {
+      const p = points[(Math.random() * points.length) | 0];
+      if (p.scintActiveTier >= 0) continue;
+      if (now < p.scintCooldownUntil) continue;
+
+      // Weighted: light(10) medium(40) dense(40) densest(10)
+      const r = Math.random();
+      let homeTier;
+      if      (r < 0.10) homeTier = 1;
+      else if (r < 0.50) homeTier = 2;
+      else if (r < 0.90) homeTier = 3;
+      else               homeTier = 4;
+
+      // Pick a neighboring tier (±1) for the temporary glyph
+      const delta = Math.random() < 0.5 ? -1 : 1;
+      let tgtTier = homeTier + delta;
+      if (tgtTier < 0) tgtTier = 0;
+      else if (tgtTier > 4) tgtTier = 4;
+
+      const dur = SCINT_DURATION_MS[0] +
+                  Math.random() * (SCINT_DURATION_MS[1] - SCINT_DURATION_MS[0]);
+      p.scintActiveTier = homeTier;
+      p.scintOrigLetter = p.letters[homeTier];
+      p.letters[homeTier] = pickFromTier(tgtTier, p.bias);
+      p.scintEndAt = now + dur;
+    }
+
+    // ---- Slow in-tier letter migration ----
+    // Each frame we check ~2% of points so over 50 frames (~2.5s) we've
+    // touched the whole population. Cheap and well-distributed.
+    const checkN = (points.length * 0.02) | 0;
+    for (let k = 0; k < checkN; k++) {
+      const p = points[(Math.random() * points.length) | 0];
+      if (tMs < p.migrationDueAt) continue;
+      // Migrate one tier slot at random — but never the one currently scintillating
+      let migTier = (Math.random() * 5) | 0;
+      if (migTier === p.scintActiveTier) migTier = (migTier + 1) % 5;
+      p.letters[migTier] = pickFromTier(migTier, p.bias);
+      p.migrationDueAt = tMs +
+        MIGRATION_WINDOW_MS[0] +
+        Math.random() * (MIGRATION_WINDOW_MS[1] - MIGRATION_WINDOW_MS[0]);
+    }
+  }
+
+  // ---- Compose output (single innerHTML write per frame) ----
+  // Group consecutive same-tier cells into runs so we emit ~5–30 spans per
+  // row instead of one per cell. Empty cells become unspanned spaces, which
+  // contribute zero text but preserve grid alignment.
+  let html = '';
+  for (let r = 0; r < ROWS; r++) {
+    const base = r * COLS;
+    let curTier = -2;     // -2 = uninitialized, -1 = empty, 0..4 = tier
+    for (let c = 0; c < COLS; c++) {
+      const idx = base + c;
+      const t = cellTier[idx];
+      if (t !== curTier) {
+        if (curTier >= 0) html += '</span>';
+        if (t >= 0) html += '<span class="t' + t + '">';
+        curTier = t;
+      }
+      if (t < 0) {
+        html += ' ';
+      } else {
+        const code = cellChar[idx];
+        // HTML-escape the three dangerous ASCII characters in our tier pools.
+        if      (code === 60) html += '&lt;';
+        else if (code === 62) html += '&gt;';
+        else if (code === 38) html += '&amp;';
+        else                  html += String.fromCharCode(code);
+      }
+    }
+    if (curTier >= 0) html += '</span>';
+    html += '\n';
+  }
+  sphereEl.innerHTML = html;
+}
+
+// ---------- Drive the loop -------------------------------------------------
+
+const reduced =
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  && !new URLSearchParams(location.search).has('motion');
+
+if (reduced) {
+  // Freeze on a single representative frame — pick a t > 0 so the surface
+  // shows some harmonic displacement and asymmetric lighting rather than the
+  // featureless t=0 alignment.
+  startTime = performance.now();
+  renderFrame(performance.now() + 3500, true);
+} else {
+  function loop(now) {
+    if (now - lastFrameTime >= FRAME_INTERVAL_MS) {
+      lastFrameTime = now;
+      renderFrame(now, false);
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame((t) => {
+    startTime = t;
+    lastFrameTime = t;
+    loop(t);
+  });
+}
+</script>
+</body>
+</html>
