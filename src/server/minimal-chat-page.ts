@@ -1837,7 +1837,12 @@ function chatScript(resident: ResidentConfig): string {
         if (dismissPromise) await dismissPromise;
         else if (residentRef) await dismissThinking(residentRef.bodyEl);
         if (typewriter) typewriter.flush();
-        if (result.setDownFlag) document.body.classList.add('set-down');
+        if (result.setDownFlag) {
+          document.body.classList.add('set-down');
+          await new Promise(function(resolve){ setTimeout(resolve, 1200); });
+          await runSetDown(sessionId);
+          return;
+        }
       }
     } catch(err) {
       if (residentRef) await dismissThinking(residentRef.bodyEl);
