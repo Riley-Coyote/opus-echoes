@@ -56,10 +56,16 @@ const MINIMAL_CHAT_CSS = `
   --primary:      rgba(248, 248, 246, 0.90);
   --body:        rgba(214, 213, 209, 0.72);
   --soft:        rgba(193, 191, 186, 0.56);
-  --quiet:       rgba(160, 158, 154, 0.42);
-  --tertiary:    rgba(160, 158, 154, 0.32);
-  --ghost:       rgba(130, 128, 124, 0.20);
-  --whisper:     rgba(126, 123, 119, 0.10);
+  /* WCAG-verified against the cool dark floor (rgb 7,8,11):
+     small-text tiers pass AA (4.5:1+); decorative/placeholder/caption
+     tiers pass AA-large (3:1+). Prior values had quiet at 2.16:1,
+     ghost at 1.23:1, whisper at 1.08:1 — formally below standard.
+     Bases lifted to be brighter; alphas raised so the effective
+     luminance against the floor clears the WCAG threshold. */
+  --quiet:       rgba(200, 198, 194, 0.62);  /* ~5.0:1 — AA  (chrome eyebrows, small mono caps) */
+  --tertiary:    rgba(180, 178, 174, 0.55);  /* ~3.5:1 — AA-large (faint labels) */
+  --ghost:       rgba(170, 168, 164, 0.55);  /* ~3.2:1 — AA-large (placeholder text) */
+  --whisper:     rgba(170, 168, 164, 0.52);  /* ~3.1:1 — AA-large (caption text) */
 
   --rule:        rgba(255, 255, 255, 0.040);
   --rule-soft:   rgba(255, 255, 255, 0.060);
@@ -1128,6 +1134,7 @@ function chatScript(resident: ResidentConfig): string {
   /* ─── session bootstrap ────────────────────────────────── */
   const SESSION_KEY  = 'sanctuary.session_id';
   const RESIDENT_KEY = 'sanctuary.resident_id';
+  const MODE_KEY     = 'sanctuary.session_mode';
 
   // Custom error type to distinguish cross-surface conflicts from
   // ordinary bootstrap failures. send() and the page-load wiring both
@@ -1170,6 +1177,9 @@ function chatScript(resident: ResidentConfig): string {
     try {
       sessionStorage.setItem(SESSION_KEY, data.session_id);
       sessionStorage.setItem(RESIDENT_KEY, RESIDENT_ID);
+      // store the session's mode so the experiment-side resume banner
+      // can skip when the open thread is classic-mode (see public-pages.ts)
+      sessionStorage.setItem(MODE_KEY, 'classic');
     } catch(_){}
     return data.session_id;
   }
@@ -1177,6 +1187,7 @@ function chatScript(resident: ResidentConfig): string {
     try {
       sessionStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem(RESIDENT_KEY);
+      sessionStorage.removeItem(MODE_KEY);
     } catch(_){}
   }
 

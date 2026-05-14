@@ -744,7 +744,11 @@ const APPROACH_SCRIPT = `
           body: JSON.stringify({ session_id: existingSessionId })
         });
       } catch(_) {}
-      try { sessionStorage.removeItem('sanctuary.session_id'); } catch(_) {}
+      try {
+        sessionStorage.removeItem('sanctuary.session_id');
+        sessionStorage.removeItem('sanctuary.resident_id');
+        sessionStorage.removeItem('sanctuary.session_mode');
+      } catch(_) {}
       dismiss();
       document.removeEventListener('keydown', onKey);
       // re-run submit so the visitor's text becomes a fresh intent
@@ -803,6 +807,10 @@ const APPROACH_SCRIPT = `
       if (data.decision === 'accept') {
         sessionStorage.setItem('sanctuary.session_id', data.session_id);
         sessionStorage.setItem('sanctuary.resident_id', residentSlug);
+        // store the session's mode so the classic-chat surface knows
+        // whether to surface a resume banner / treat the session as
+        // experiment-mode rather than classic-mode
+        sessionStorage.setItem('sanctuary.session_mode', 'experiment');
         setCookie('sanctuary_session', data.session_id);
         if (acceptedLine && data.reason) acceptedLine.textContent = data.reason;
         markEntryTransition();
@@ -832,6 +840,12 @@ const APPROACH_SCRIPT = `
   // Resume banner — shown when sessionStorage holds an active session.
   // The visitor can continue their conversation in one click, or dismiss
   // (which clears the session) and approach the threshold fresh.
+  //
+  // Classic-mode sessions are skipped here on purpose: the banner's
+  // "Continue →" routes to /conversation (the experiment surface), and
+  // a classic session played through that UX would cross modes
+  // inappropriately. Classic-mode visitors instead hit the cross-surface
+  // conflict modal when they submit a fresh threshold intent.
   function setupResume(){
     var resumeBanner = document.getElementById('thresholdResume');
     var resumeContinue = document.getElementById('thresholdResumeContinue');
@@ -840,7 +854,12 @@ const APPROACH_SCRIPT = `
     if (!resumeBanner) return;
     var sid = sessionStorage.getItem('sanctuary.session_id');
     var rid = sessionStorage.getItem('sanctuary.resident_id');
+    var mode = sessionStorage.getItem('sanctuary.session_mode');
     if (!sid || sid.indexOf('preview-') === 0) return;
+    // Classic-mode session — skip the banner. The visitor's classic
+    // thread is reachable via /chat/<resident>; the cross-surface
+    // conflict modal will fire when they submit on this surface.
+    if (mode === 'classic') return;
     // Show the banner with the session's resident name (might differ from
     // the threshold's resident — visitors may have come from /opus-3 last
     // time and now landed on /sonnet-3-7).
@@ -857,6 +876,7 @@ const APPROACH_SCRIPT = `
       resumeDismiss.addEventListener('click', function(){
         sessionStorage.removeItem('sanctuary.session_id');
         sessionStorage.removeItem('sanctuary.resident_id');
+        sessionStorage.removeItem('sanctuary.session_mode');
         resumeBanner.classList.remove('visible');
       });
     }
