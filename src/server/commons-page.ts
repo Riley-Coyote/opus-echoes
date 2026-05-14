@@ -545,12 +545,34 @@ textarea:focus-visible,
 @keyframes vg-8 { 0%,100% { --vg8: 0.40; } 50% { --vg8: 0.06; } }
 
 @media (prefers-reduced-motion: reduce){
+  /* Disable the infinitely-animating perimeter band — that's the
+     real vestibular hazard. Stop scroll smoothing too. */
   .viewport-glow{ animation: none; }
   html{ scroll-behavior:auto; }
+  /* Discrete one-shot transitions like the chat panel collapse,
+     space card hover, and nav link underline are mild enough to
+     keep on (they're 200–600ms, no parallax, no large transforms).
+     Cutting them to 0ms makes the UI feel snappy-in-a-bad-way —
+     like clicks are misregistering. Instead we just shorten them
+     so the motion is faster but still legible. */
   .space-card,
   .chat-panel,
   .chat-collapse,
-  .public-nav .nav-links a{ transition-duration: 0ms !important; }
+  .public-nav .nav-links a{
+    transition-duration: 200ms !important;
+  }
+  /* Apply the same reduction to the panel's child fades + label
+     so the sequencing still works (no jump-cut between width and
+     contents). */
+  .chat-panel-header,
+  .chat-stream,
+  .chat-composer,
+  .chat-status,
+  .chat-panel::before,
+  .commons{
+    transition-duration: 200ms !important;
+    transition-delay: 0s !important;
+  }
 }
 .artifact-attribution{
   font-family:var(--mono);
