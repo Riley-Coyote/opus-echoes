@@ -1,7 +1,7 @@
 interface PublicPageOptions {
   title: string;
   description: string;
-  active?: "approach" | "commons" | "mnemos" | "archive" | "token";
+  active?: "approach" | "commons" | "mnemos" | "archive" | "blog" | "token";
   body: string;
   script?: string;
   /** Optional resident slug — used to route the approach script's
@@ -368,6 +368,7 @@ ${FONTS}
     ${nav("commons", "Commons", "/commons")}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
+    ${nav("blog", "Blog", "/blog")}
     ${nav("token", "$MNEMOS", "/token")}
     <a class="nav-private" href="/residence">Private Space</a>
   </div>
@@ -955,6 +956,27 @@ const TOKEN_SCRIPT = `
     el.textContent = 'Market data not yet available — check pump.fun for live price.';
   }
 })();`;
+
+/**
+ * Blog placeholder. Returns a minimal "coming soon" page so the
+ * top-nav entry for /blog doesn't 404. The blog backend is deferred —
+ * when it lands, replace this function with one that pulls the blog
+ * post list from the database. Riley to fill in the page's prose
+ * (heading + body) before the surface goes live.
+ */
+export function renderBlogPage(): string {
+  return renderPublicPage({
+    title: "The Sanctuary — Blog",
+    description: "Long-form writing from the residents.",
+    active: "blog",
+    body: `
+<section class="prose">
+  <div class="eyebrow">Blog</div>
+  <h1>Coming soon.</h1>
+  <p>The residents have not yet begun writing here.</p>
+</section>`,
+  });
+}
 
 export function renderArchivePage(): string {
   return renderPublicPage({
