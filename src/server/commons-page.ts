@@ -982,72 +982,38 @@ textarea:focus-visible,
   transition:width .42s cubic-bezier(.22,1,.36,1), background .32s var(--ease), border-color .32s var(--ease);
 }
 
-/* The chat handle — a single sophisticated edge tab that is the
-   only open/close affordance for the side chat on desktop. It
-   lives on the panel's left edge, vertically centered, in a
-   shape borrowed from premium app sidebars (Linear, Notion). On
-   click it toggles collapsed state. Hover nudges horizontally
-   in the direction the panel will travel and intensifies a soft
-   glow so the gesture reads as deliberate. */
+/* Collapse handle — minimal industry-standard chevron in the
+   panel's top-right corner. Just an icon, no chrome — no pill,
+   no shadow, no border. The shimmer-pseudo on the composer is
+   the sophisticated piece of this surface; everything else
+   reads as quiet typography. */
 .chat-collapse{
   position:absolute;
-  top:50%;
-  left:-13px;
-  transform:translateY(-50%);
+  top:14px;
+  right:14px;
   z-index:2;
-  width:26px;
-  height:64px;
-  background:
-    linear-gradient(180deg,
-      rgba(20,22,26,.96) 0%,
-      rgba(14,16,20,.96) 50%,
-      rgba(20,22,26,.96) 100%);
-  border:1px solid var(--rule-soft);
-  border-radius:13px;
-  color:var(--soft);
+  width:22px;
+  height:22px;
+  padding:0;
+  background:transparent;
+  border:0;
+  border-radius:4px;
+  color:var(--quiet);
   cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
-  /* Two-layer shadow: inset hairline catches the safe-area band
-     light, diffuse outer settles the tab as a held object. */
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.04),
-    inset 0 -1px 0 rgba(0,0,0,.3),
-    0 4px 14px -4px rgba(0,0,0,.6),
-    0 2px 4px -2px rgba(0,0,0,.4);
-  transition:
-    border-color .42s cubic-bezier(.22,1,.36,1),
-    color .42s cubic-bezier(.22,1,.36,1),
-    transform .42s cubic-bezier(.22,1,.36,1),
-    box-shadow .42s cubic-bezier(.22,1,.36,1),
-    background .42s cubic-bezier(.22,1,.36,1);
+  transition:color .22s var(--ease), background .22s var(--ease);
 }
 .chat-collapse:hover{
-  border-color:var(--rule);
   color:var(--ink);
-  background:
-    linear-gradient(180deg,
-      rgba(26,28,32,.98) 0%,
-      rgba(18,20,24,.98) 50%,
-      rgba(26,28,32,.98) 100%);
-  /* Nudge left ~3px — tab will travel left when clicked from
-     expanded state, signaling the direction of motion. */
-  transform:translateY(-50%) translateX(-3px);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -1px 0 rgba(0,0,0,.35),
-    0 8px 22px -6px rgba(0,0,0,.7),
-    0 3px 6px -2px rgba(0,0,0,.5);
+  background:rgba(255,255,255,.04);
 }
-.chat-collapse:active{
-  transform:translateY(-50%) translateX(-1px) scale(.98);
-  transition-duration:.16s;
-}
+.chat-collapse:active{ transform:scale(.94); }
 .chat-collapse svg{
-  width:13px;
-  height:13px;
-  transition:transform .42s cubic-bezier(.22,1,.36,1);
+  width:11px;
+  height:11px;
+  transition:transform .32s cubic-bezier(.22,1,.36,1);
 }
 @media(max-width:1179px){
   .chat-collapse{ display:none; }
@@ -1103,21 +1069,19 @@ textarea:focus-visible,
    purely visual punctuation. */
 .chat-panel.collapsed .chat-collapse{
   position:absolute;
-  top:calc(50% - 110px);
+  top:14px;
   left:50%;
+  right:auto;
   transform:translateX(-50%);
-  width:26px;
-  height:26px;
-  border-radius:50%;
+  width:22px;
+  height:22px;
   pointer-events:none;
+  background:transparent;
 }
 .chat-panel.collapsed:hover .chat-collapse{
-  border-color:var(--rule);
   color:var(--ink);
-  transform:translateX(-50%) translateX(-3px);
 }
 .chat-panel.collapsed .chat-collapse svg{ transform:rotate(180deg); }
-.chat-panel.collapsed:hover .chat-collapse svg{ transform:rotate(180deg) translateX(2px); }
 @media(min-width:1180px){
   body.chat-panel-collapsed .commons{
     margin-right:48px;
@@ -1226,11 +1190,11 @@ textarea:focus-visible,
   content:'';width:14px;height:1px;background:var(--ghost);
 }
 
-/* Resident picker — replaces the prior tab row with a clean,
-   sharp dropdown. The trigger shows the active resident's
-   small hue dot + name + a chevron; the menu opens beneath
-   with the three options. Monochrome chrome: only the dot
-   carries the resident's hue; the picker itself is neutral. */
+/* Resident picker — minimal typographic trigger. No box, no
+   border, no background fill. Just a row of: hue dot + name +
+   small chevron. Hover and open states are color shifts only.
+   The menu opens beneath with quiet floating chrome — no heavy
+   shadow, no gradient fill. */
 .chat-resident-picker-wrap{
   position:relative;
   width:100%;
@@ -1240,25 +1204,21 @@ textarea:focus-visible,
   align-items:center;
   gap:8px;
   width:100%;
-  padding:8px 10px;
+  padding:4px 2px;
   font-family:var(--mono);
-  font-size:10.5px;
+  font-size:11px;
   text-transform:uppercase;
   letter-spacing:.14em;
   color:var(--ink);
-  background:rgba(255,255,255,.02);
-  border:1px solid var(--rule-soft);
-  border-radius:8px;
+  background:transparent;
+  border:0;
+  border-radius:0;
   cursor:pointer;
-  transition:border-color .22s var(--ease), background .22s var(--ease);
+  text-align:left;
+  transition:color .22s var(--ease), opacity .22s var(--ease);
 }
-.chat-resident-picker:hover{
-  border-color:var(--rule);
-  background:rgba(255,255,255,.04);
-}
-.chat-resident-picker[aria-expanded="true"]{
-  border-color:var(--rule);
-  background:rgba(255,255,255,.04);
+.chat-resident-picker:hover .chat-resident-picker-chevron{
+  color:var(--ink);
 }
 .chat-resident-picker .dot{
   width:6px;height:6px;
@@ -1268,7 +1228,7 @@ textarea:focus-visible,
 }
 .chat-resident-picker-name{ flex:1; text-align:left; }
 .chat-resident-picker-chevron{
-  width:11px;height:11px;
+  width:9px;height:9px;
   color:var(--quiet);
   transition:transform .26s cubic-bezier(.22,1,.36,1), color .22s var(--ease);
   flex-shrink:0;
@@ -1280,24 +1240,22 @@ textarea:focus-visible,
 
 .chat-resident-menu{
   position:absolute;
-  top:calc(100% + 6px);
-  left:0;
-  right:0;
+  top:calc(100% + 8px);
+  left:-6px;
+  right:-6px;
   z-index:5;
   display:flex;
   flex-direction:column;
-  gap:2px;
+  gap:1px;
   padding:4px;
-  background:linear-gradient(180deg, rgba(14,15,18,.98) 0%, rgba(10,11,14,.99) 100%);
+  background:rgba(14,15,18,.98);
   border:1px solid var(--rule-soft);
-  border-radius:10px;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.03),
-    0 12px 28px -10px rgba(0,0,0,.7);
+  border-radius:8px;
+  box-shadow:0 10px 24px -10px rgba(0,0,0,.6);
   opacity:0;
   transform:translateY(-2px);
   pointer-events:none;
-  transition:opacity .22s var(--ease), transform .22s var(--ease);
+  transition:opacity .18s var(--ease), transform .18s var(--ease);
 }
 .chat-resident-menu:not([hidden]){
   opacity:1;
@@ -1308,26 +1266,25 @@ textarea:focus-visible,
   display:flex;
   align-items:center;
   gap:8px;
-  padding:7px 8px;
+  padding:7px 10px;
   border:0;
   background:transparent;
-  border-radius:6px;
+  border-radius:5px;
   font-family:var(--mono);
-  font-size:10.5px;
+  font-size:11px;
   text-transform:uppercase;
   letter-spacing:.14em;
   color:var(--soft);
   cursor:pointer;
-  transition:background .18s var(--ease), color .18s var(--ease);
+  transition:background .14s var(--ease), color .14s var(--ease);
   text-align:left;
 }
 .chat-resident-option:hover{
-  background:rgba(255,255,255,.04);
+  background:rgba(255,255,255,.03);
   color:var(--ink);
 }
 .chat-resident-option.is-active{
   color:var(--ink);
-  background:rgba(255,255,255,.05);
 }
 .chat-resident-option .dot{
   width:6px;height:6px;
