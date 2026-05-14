@@ -107,32 +107,39 @@ const MINIMAL_CHAT_CSS = `
 
 @media (max-width: 720px) { :root { --band: 14px; } }
 
-/* ── light theme — warm off-white, dark ink ────────────────── */
+/* ── light theme — warm light grey, dark warm ink ──────────────
+   not off-white, not cream, not paper. a calm warm light grey
+   sitting around 81–82% lightness, with the composer panel
+   slightly darker than the floor so it reads as recessed-into
+   the surface rather than blasting out of it. text is a dark
+   warm charcoal rather than pure black — readable, never harsh.
+   any surface above ~88% lightness was making the room glare;
+   everything here is pulled below that ceiling intentionally. */
 :root[data-theme="light"] {
-  --floor:        #f0ece3;
-  --deep:         #ecdfd0;
-  --panel:        #f8f4ea;
-  --panel-2:      #efe9db;
-  --panel-3:      #e6dec9;
-  --panel-4:      #ddd2b7;
+  --floor:        #d4d0c6;  /* the room — warm light grey, ~82% L */
+  --deep:         #cbc7bc;
+  --panel:        #c4bfb3;  /* composer surface, slightly recessed */
+  --panel-2:      #bbb6a9;
+  --panel-3:      #b1ac9f;
+  --panel-4:      #a59f92;
 
-  --ink:          rgba(18, 18, 22, 0.96);
-  --primary:      rgba(22, 22, 26, 0.92);
-  --body:        rgba(42, 42, 48, 0.80);
-  --soft:        rgba(60, 60, 64, 0.62);
-  --quiet:       rgba(78, 78, 82, 0.46);
-  --tertiary:    rgba(90, 90, 94, 0.36);
-  --ghost:       rgba(102, 100, 96, 0.24);
-  --whisper:     rgba(108, 106, 102, 0.14);
+  --ink:          rgba(24, 22, 18, 0.94);
+  --primary:      rgba(30, 28, 24, 0.90);
+  --body:         rgba(52, 50, 46, 0.78);
+  --soft:         rgba(72, 70, 66, 0.60);
+  --quiet:        rgba(92, 90, 86, 0.46);
+  --tertiary:     rgba(104, 102, 98, 0.36);
+  --ghost:        rgba(114, 112, 108, 0.28);
+  --whisper:      rgba(124, 122, 118, 0.18);
 
-  --rule:        rgba(0, 0, 0, 0.060);
-  --rule-soft:   rgba(0, 0, 0, 0.080);
-  --rule-strong: rgba(0, 0, 0, 0.140);
+  --rule:         rgba(0, 0, 0, 0.10);
+  --rule-soft:    rgba(0, 0, 0, 0.13);
+  --rule-strong:  rgba(0, 0, 0, 0.20);
 
-  --state:       #4a8a5e;
-  --state-soft:  rgba(74, 138, 94, 0.66);
-  --state-dim:   rgba(74, 138, 94, 0.18);
-  --state-whisper: rgba(74, 138, 94, 0.06);
+  --state:        #3f7a52;  /* deeper forest — readable against warm grey */
+  --state-soft:   rgba(63, 122, 82, 0.72);
+  --state-dim:    rgba(63, 122, 82, 0.20);
+  --state-whisper: rgba(63, 122, 82, 0.08);
 }
 
 html, body { height: 100%; }
