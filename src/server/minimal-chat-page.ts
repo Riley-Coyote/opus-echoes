@@ -173,25 +173,33 @@ a { color: inherit; text-decoration: none; }
 
 ${VIEWPORT_GLOW_CSS}
 
-/* viewport-glow polish — override the shared SVG mask with a
-   padding-based linear-gradient mask. the shared SVG path uses
-   percentage-based coordinates with preserveAspectRatio='none',
-   which makes the band visibly thinner on top/bottom than on
-   left/right at landscape aspect ratios. the padding-based mask
-   is uniformly --band pixels wide on every side and has a soft
-   rounded inner corner. background-origin: border-box keeps the
-   gradients anchored to the viewport corners so the existing
-   shimmer pools still feel correct. */
+/* viewport-glow polish — clear the inherited SVG mask and any
+   prior padding-mask, then paint the gradients across the entire
+   viewport. an ::after pseudo with floor-color background covers
+   the inner area with a rounded inner corner. result: the outer
+   corners go all the way to the viewport edges (sharp 90°, no
+   stray triangles in the corners) while the inner edge stays
+   softly rounded where the band meets the content. uniform band
+   thickness in all directions via --band. */
 .viewport-glow {
-  padding: var(--band);
-  border-radius: calc(var(--band) + 16px);
-  background-origin: border-box;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box,
-                linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-          mask-composite: exclude;
+  -webkit-mask: none;
+  -webkit-mask-image: none;
+  mask: none;
+  mask-image: none;
+  padding: 0;
+  border-radius: 0;
+  background-origin: padding-box;
+}
+.viewport-glow::after {
+  content: '';
+  position: absolute;
+  inset: var(--band);
+  border-radius: 16px;
+  background: var(--floor);
+  pointer-events: none;
+}
+@media (max-width: 720px) {
+  .viewport-glow::after { border-radius: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
