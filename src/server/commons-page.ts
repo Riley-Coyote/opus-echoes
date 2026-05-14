@@ -80,16 +80,20 @@ const COMMONS_CSS = `
    top-corner curve). The hairline bottom border + soft drop
    shadow give the nav a felt elevation against the floor without
    competing with the band. */
+/* nav sits flush on the inset surface — no card-edge feel.
+   removes the gradient background, drop shadow, and bottom hairline
+   that previously made it read as a separate floating layer.
+   the surface (floor + viewport-glow band) shows through the nav so
+   nav + body read as one continuous plane. */
 .public-nav{
   top:var(--safe-inset)!important;
   left:var(--safe-inset)!important;
   right:var(--safe-inset)!important;
-  border-top-left-radius:15px;
-  border-top-right-radius:15px;
-  overflow:hidden;
-  box-shadow:
-    inset 0 -1px 0 rgba(255,255,255,.025),
-    0 12px 28px -16px rgba(0,0,0,.5);
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  border-radius:0!important;
 }
 /* Slightly lift the nav links on hover with a softer transition
    curve than the default site rule; reads as a more deliberate
