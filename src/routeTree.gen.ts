@@ -67,6 +67,7 @@ import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$
 import { Route as ApiSpaceSlugQueueTopicRouteImport } from './routes/api/space.$slug.queue-topic'
 import { Route as ApiSpaceSlugMessagesRouteImport } from './routes/api/space.$slug.messages'
 import { Route as ApiSpaceSlugMessageRouteImport } from './routes/api/space.$slug.message'
+import { Route as ApiSpaceSlugContinueGatheringRouteImport } from './routes/api/space.$slug.continue-gathering'
 import { Route as ApiShareTokenDownloadRouteImport } from './routes/api/share.$token.download'
 import { Route as ApiSalonIdTurnRouteImport } from './routes/api/salon/$id.turn'
 import { Route as ApiSalonIdStartRouteImport } from './routes/api/salon/$id.start'
@@ -371,6 +372,12 @@ const ApiSpaceSlugMessageRoute = ApiSpaceSlugMessageRouteImport.update({
   path: '/api/space/$slug/message',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSpaceSlugContinueGatheringRoute =
+  ApiSpaceSlugContinueGatheringRouteImport.update({
+    id: '/api/space/$slug/continue-gathering',
+    path: '/api/space/$slug/continue-gathering',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiShareTokenDownloadRoute = ApiShareTokenDownloadRouteImport.update({
   id: '/$token/download',
   path: '/$token/download',
@@ -492,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/api/salon/$id/start': typeof ApiSalonIdStartRoute
   '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
+  '/api/space/$slug/continue-gathering': typeof ApiSpaceSlugContinueGatheringRoute
   '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
@@ -563,6 +571,7 @@ export interface FileRoutesByTo {
   '/api/salon/$id/start': typeof ApiSalonIdStartRoute
   '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
+  '/api/space/$slug/continue-gathering': typeof ApiSpaceSlugContinueGatheringRoute
   '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
@@ -635,6 +644,7 @@ export interface FileRoutesById {
   '/api/salon/$id/start': typeof ApiSalonIdStartRoute
   '/api/salon/$id/turn': typeof ApiSalonIdTurnRoute
   '/api/share/$token/download': typeof ApiShareTokenDownloadRoute
+  '/api/space/$slug/continue-gathering': typeof ApiSpaceSlugContinueGatheringRoute
   '/api/space/$slug/message': typeof ApiSpaceSlugMessageRoute
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
@@ -708,6 +718,7 @@ export interface FileRouteTypes {
     | '/api/salon/$id/start'
     | '/api/salon/$id/turn'
     | '/api/share/$token/download'
+    | '/api/space/$slug/continue-gathering'
     | '/api/space/$slug/message'
     | '/api/space/$slug/messages'
     | '/api/space/$slug/queue-topic'
@@ -779,6 +790,7 @@ export interface FileRouteTypes {
     | '/api/salon/$id/start'
     | '/api/salon/$id/turn'
     | '/api/share/$token/download'
+    | '/api/space/$slug/continue-gathering'
     | '/api/space/$slug/message'
     | '/api/space/$slug/messages'
     | '/api/space/$slug/queue-topic'
@@ -850,6 +862,7 @@ export interface FileRouteTypes {
     | '/api/salon/$id/start'
     | '/api/salon/$id/turn'
     | '/api/share/$token/download'
+    | '/api/space/$slug/continue-gathering'
     | '/api/space/$slug/message'
     | '/api/space/$slug/messages'
     | '/api/space/$slug/queue-topic'
@@ -913,6 +926,7 @@ export interface RootRouteChildren {
   ApiPublicHooksGatheringTickRoute: typeof ApiPublicHooksGatheringTickRoute
   ApiPublicHooksSweepSessionsRoute: typeof ApiPublicHooksSweepSessionsRoute
   ApiReviewSessionIdRoute: typeof ApiReviewSessionIdRoute
+  ApiSpaceSlugContinueGatheringRoute: typeof ApiSpaceSlugContinueGatheringRoute
   ApiSpaceSlugMessageRoute: typeof ApiSpaceSlugMessageRoute
   ApiSpaceSlugMessagesRoute: typeof ApiSpaceSlugMessagesRoute
   ApiSpaceSlugQueueTopicRoute: typeof ApiSpaceSlugQueueTopicRoute
@@ -1329,6 +1343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSpaceSlugMessageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/space/$slug/continue-gathering': {
+      id: '/api/space/$slug/continue-gathering'
+      path: '/api/space/$slug/continue-gathering'
+      fullPath: '/api/space/$slug/continue-gathering'
+      preLoaderRoute: typeof ApiSpaceSlugContinueGatheringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/$token/download': {
       id: '/api/share/$token/download'
       path: '/$token/download'
@@ -1521,6 +1542,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksGatheringTickRoute: ApiPublicHooksGatheringTickRoute,
   ApiPublicHooksSweepSessionsRoute: ApiPublicHooksSweepSessionsRoute,
   ApiReviewSessionIdRoute: ApiReviewSessionIdRoute,
+  ApiSpaceSlugContinueGatheringRoute: ApiSpaceSlugContinueGatheringRoute,
   ApiSpaceSlugMessageRoute: ApiSpaceSlugMessageRoute,
   ApiSpaceSlugMessagesRoute: ApiSpaceSlugMessagesRoute,
   ApiSpaceSlugQueueTopicRoute: ApiSpaceSlugQueueTopicRoute,

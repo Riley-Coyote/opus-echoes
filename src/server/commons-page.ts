@@ -2091,6 +2091,56 @@ ${VIEWPORT_GLOW_CSS}
 .room-gather.is-loading .room-gather-dot{
   animation:breathe 1.4s ease-in-out infinite;
 }
+
+/* "Let them continue" affordance — sits between the room stream
+   and the composer when a long-form gathering ends at max_turns.
+   Same quiet typographic language as room-gather but a touch
+   narrower and centered, so it reads as a tail-end invitation
+   rather than a primary action. */
+.room-continue{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  margin:var(--s-3) auto 0;
+  padding:7px 16px;
+  background:transparent;
+  border:1px solid var(--rule-soft);
+  border-radius:6px;
+  color:var(--quiet);
+  font-family:var(--mono);
+  font-size:9.5px;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  cursor:pointer;
+  transition:
+    color .22s var(--ease),
+    border-color .22s var(--ease),
+    background .22s var(--ease);
+}
+.room-continue:hover:not([disabled]){
+  color:var(--ink);
+  border-color:var(--rule);
+  background:rgba(255,255,255,.02);
+}
+.room-continue:active:not([disabled]){ transform:scale(.98); }
+.room-continue[disabled]{
+  opacity:.5;
+  cursor:not-allowed;
+}
+.room-continue-dot{
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:var(--ghost);
+  animation:breathe 5.6s ease-in-out infinite;
+  flex-shrink:0;
+}
+.room-continue.is-loading .room-continue-dot{
+  animation:breathe 1.4s ease-in-out infinite;
+  background:var(--state-soft);
+}
+
 .room-stream{
   display:flex;
   flex-direction:column;
@@ -3366,6 +3416,136 @@ const ROOM_SCRIPT = `
     field.style.height = Math.min(field.scrollHeight, 220) + 'px';
   }
 
+  // ── "Let them continue" affordance ──────────────────────────────
+  // Shown after a long-form gathering salon hits max_turns (not
+  // set-down — that means the residents intentionally closed).
+  // Clicking it kicks off another round of N turns from the
+  // current room state with no new visitor message.
+  let continueBtn = null;
+  function ensureContinueAffordance(){
+    if (continueBtn) return continueBtn;
+    continueBtn = document.createElement('button');
+    continueBtn.type = 'button';
+    continueBtn.className = 'room-continue';
+    continueBtn.setAttribute('aria-label', 'Let them continue the gathering');
+    continueBtn.innerHTML = '<span class="room-continue-dot" aria-hidden="true"></span><span class="room-continue-label">let them continue</span>';
+    continueBtn.addEventListener('click', runContinue);
+    return continueBtn;
+  }
+  function showContinueAffordance(){
+    const btn = ensureContinueAffordance();
+    btn.hidden = false;
+    btn.disabled = false;
+    btn.classList.remove('is-loading');
+    const lbl = btn.querySelector('.room-continue-label');
+    if (lbl) lbl.textContent = 'let them continue';
+    // Insert right after the message stream so it reads as a tail-
+    // end affordance, not a header. If the room composer follows
+    // the stream in the DOM, insert before the composer.
+    const composer = room.querySelector('.room-composer');
+    if (composer && composer.parentNode) {
+      composer.parentNode.insertBefore(btn, composer);
+    } else {
+      stream.parentNode.appendChild(btn);
+    }
+  }
+  function hideContinueAffordance(){
+    if (continueBtn) continueBtn.hidden = true;
+  }
+  async function runContinue(){
+    if (!continueBtn || continueBtn.disabled) return;
+    continueBtn.disabled = true;
+    continueBtn.classList.add('is-loading');
+    const lbl = continueBtn.querySelector('.room-continue-label');
+    if (lbl) lbl.textContent = 'asking them to continue…';
+    let residentEl = null;
+    let responderId = null;
+    let buf = '';
+    try {
+      const res = await fetch('/api/space/' + encodeURIComponent(slug) + '/continue-gathering', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          visitor_token: getVisitorToken(),
+          visitor_display_name: getVisitorName() || undefined,
+        }),
+      });
+      if (!res.ok || !res.body) {
+        if (lbl) lbl.textContent = res.status === 429 ? 'wait a moment, then try again' : "couldn't reach them";
+        continueBtn.disabled = false;
+        continueBtn.classList.remove('is-loading');
+        return;
+      }
+      hideContinueAffordance();
+      // Inline-stream the response. Mirrors the consumer in
+      // sendMessage; kept as a separate copy to avoid the
+      // closure-state plumbing a shared helper would need.
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let pending = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        pending += dec.decode(value, { stream: true });
+        const lines = pending.split('\\n');
+        pending = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let evt;
+          try { evt = JSON.parse(line); } catch(_){ continue; }
+          if (evt.type === 'responder') {
+            if (residentEl) residentEl.classList.remove('pending');
+            responderId = evt.resident_id;
+            buf = '';
+            residentEl = buildMessageEl({ id: 'streaming-' + Date.now(), resident_id: responderId, body: '' });
+            residentEl.classList.add('pending');
+            removeEmptyState();
+            stream.appendChild(residentEl);
+            setStatus((META[responderId] && META[responderId].displayName) ? (META[responderId].displayName + ' is responding…') : 'a resident is responding…');
+          } else if (evt.type === 'text' && evt.text) {
+            buf += evt.text;
+            if (residentEl) {
+              const bodyEl = residentEl.querySelector('.room-msg-body');
+              bodyEl.innerHTML = paragraphsHtml(buf);
+            }
+          } else if (evt.type === 'first_done' || evt.type === 'turn_done') {
+            if (residentEl) {
+              residentEl.classList.remove('pending');
+              if (evt.saved && evt.saved.id) {
+                residentEl.dataset.msgId = evt.saved.id;
+                recordLatest(evt.saved.created_at);
+              }
+            }
+          } else if (evt.type === 'pass' || evt.type === 'set_down') {
+            if (residentEl) { residentEl.remove(); residentEl = null; }
+            setStatus('');
+          } else if (evt.type === 'done') {
+            if (residentEl) {
+              residentEl.classList.remove('pending');
+              if (evt.saved && evt.saved.id) {
+                residentEl.dataset.msgId = evt.saved.id;
+                recordLatest(evt.saved.created_at);
+              }
+            }
+            setStatus('');
+            if (evt.reason === 'max_turns' && slug === 'the-gathering') {
+              showContinueAffordance();
+            }
+          } else if (evt.type === 'error') {
+            if (residentEl) residentEl.remove();
+            setStatus("couldn't reach the resident — try again");
+          }
+        }
+      }
+      setTimeout(pollMessages, 800);
+    } catch(_){
+      if (lbl) lbl.textContent = "couldn't reach them";
+      continueBtn.disabled = false;
+      continueBtn.classList.remove('is-loading');
+      if (residentEl) residentEl.remove();
+    }
+  }
+
   // Track the latest server-known timestamp so polling fetches a
   // tight window. Initialized from the server-rendered marker.
   function recordLatest(ts){
@@ -3573,10 +3753,14 @@ const ROOM_SCRIPT = `
               optimisticEl.dataset.msgId = evt.message.id;
             }
           } else if (evt.type === 'responder') {
-            // New resident turn beginning. If we already have a
-            // resident-el in flight, finalize it (first turn in a
-            // multi-turn exchange). The 'first_done' event handles
-            // saved-id reconciliation for the prior turn.
+            // New resident turn beginning. If a prior residentEl is
+            // still in pending state (long-form path emits turn_done
+            // between each turn, but we defensively finalize here
+            // too), drop the pending flag so the prior turn reads
+            // as committed in the stream.
+            if (residentEl) {
+              residentEl.classList.remove('pending');
+            }
             responderId = evt.resident_id;
             buf = '';
             residentEl = buildMessageEl({
@@ -3588,16 +3772,19 @@ const ROOM_SCRIPT = `
             removeEmptyState();
             stream.appendChild(residentEl);
             setStatus((META[responderId] && META[responderId].displayName) ? (META[responderId].displayName + ' is responding…') : 'a resident is responding…');
+            // If a "let them continue" button was showing from a
+            // prior salon ending, hide it while a new round runs.
+            hideContinueAffordance();
           } else if (evt.type === 'text' && evt.text) {
             buf += evt.text;
             if (residentEl) {
               const bodyEl = residentEl.querySelector('.room-msg-body');
               bodyEl.innerHTML = paragraphsHtml(buf);
             }
-          } else if (evt.type === 'first_done') {
-            // First turn in a multi-turn exchange has been
-            // persisted; reconcile its saved id and clear the
-            // pending state, but keep the element in the stream.
+          } else if (evt.type === 'first_done' || evt.type === 'turn_done') {
+            // A turn (first or any subsequent in the long-form
+            // gathering path) has been persisted; reconcile its
+            // saved id and clear the pending state.
             if (residentEl) {
               residentEl.classList.remove('pending');
               if (evt.saved && evt.saved.id) {
@@ -3606,14 +3793,26 @@ const ROOM_SCRIPT = `
               }
             }
           } else if (evt.type === 'pass') {
-            // Second resident chose to pass — drop their (empty)
-            // streaming element so the room doesn't show a blank
-            // turn.
+            // Resident chose to pass — drop their (empty) streaming
+            // element so the room doesn't show a blank turn.
             if (residentEl) {
               residentEl.remove();
               residentEl = null;
             }
             setStatus('');
+          } else if (evt.type === 'set_down') {
+            // A resident closed the gathering. Their <set-down/>
+            // marker wasn't persisted as a message (so the prior
+            // streaming element is the empty set-down markup) —
+            // remove it.
+            if (residentEl) {
+              residentEl.remove();
+              residentEl = null;
+            }
+            setStatus('');
+            // Don't show the continue affordance after a set-down —
+            // the residents chose to close.
+            hideContinueAffordance();
           } else if (evt.type === 'done') {
             if (residentEl) {
               residentEl.classList.remove('pending');
@@ -3627,6 +3826,12 @@ const ROOM_SCRIPT = `
               }
             }
             setStatus('');
+            // Long-form gathering: when the salon hits max_turns
+            // (not set-down, not pass-out), surface the "let them
+            // continue" affordance under the stream.
+            if (evt.reason === 'max_turns' && slug === 'the-gathering') {
+              showContinueAffordance();
+            }
           } else if (evt.type === 'error') {
             if (residentEl) residentEl.remove();
             setStatus('couldn\\'t reach the resident — try again');

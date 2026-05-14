@@ -34,6 +34,16 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
 import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
 import { observeSpaceExchange } from "@/server/substrate.server";
+import { hasAdminAccess } from "@/server/access.server";
+
+/* ─────────────────────── gathering-mode tuning ──────────────────────────
+   When the visitor posts in the-gathering, the room runs as a multi-turn
+   salon: each visitor message triggers a round-robin of N resident turns
+   that build on each other until set-down or max turns. Other spaces
+   keep the existing 1-3 turn behavior. */
+const GATHERING_SLUG = "the-gathering";
+const VISITOR_MAX_TURNS_IN_GATHERING = 12;
+const ADMIN_MAX_TURNS_IN_GATHERING = 30;
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -504,6 +514,257 @@ function buildCollapsedMessages(
   return collapsed;
 }
 
+/* ──────────────── long-form gathering streamer ──────────────────────
+   When a visitor posts in the-gathering, the room runs as a multi-turn
+   salon: residents take turns round-robin (skip-most-recent), each one
+   sees the FULL conversation up to that point, can address the others
+   by name, and can begin their turn with <set-down/> to close the
+   thread naturally. Stops on set-down, max turns, two consecutive
+   passes, or no available residents.
+
+   NDJSON event protocol (per-turn):
+     { type: "visitor_saved", message: { id } }    (once at start, if visitor message)
+     { type: "responder", resident_id }            (each turn)
+     { type: "text", text }                        (per token)
+     { type: "turn_done", saved, resident_id }     (each turn — replaces first_done/second_done)
+     { type: "pass", resident_id }                 (when a resident passes)
+     { type: "set_down", resident_id }             (when a resident closes the thread)
+     { type: "done", reason, turns }               (once at end)
+
+   The Worker isolate stays alive as long as the response stream is
+   being written to and the client hasn't disconnected. Most wall
+   time is spent waiting on the model APIs (low CPU), which is why
+   we can run 12-30 turns inside a single response without hitting
+   the Worker CPU budget — unlike the cron path which is bound by
+   pg_cron's HTTP timeout. */
+export function streamGatheringExtended(opts: {
+  composite: SpaceComposite;
+  visitorMessage: string;
+  visitorMessageId: string | null;
+  visitorDisplayName: string | undefined;
+  visitorToken: string;
+  maxTurns: number;
+}): Response {
+  const enc = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (obj: unknown) =>
+        controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+
+      // We mutate a local copy of composite.messages as turns land so
+      // pickResponder's recency math + buildSpaceContext's recent-room
+      // transcript reflect the unfolding state.
+      const composite: SpaceComposite = {
+        ...opts.composite,
+        messages: [...opts.composite.messages],
+      };
+
+      // Append the visitor's just-posted message to the in-memory
+      // history (it's already persisted; we mirror it locally so the
+      // round-robin and context builders see it).
+      if (opts.visitorMessage && opts.visitorMessageId) {
+        composite.messages.push({
+          id: opts.visitorMessageId,
+          space_id: composite.space.id,
+          body: opts.visitorMessage,
+          resident_id: null,
+          visitor_token: opts.visitorToken,
+          visitor_display_name: opts.visitorDisplayName ?? null,
+          kind: "message",
+          reply_to_message_id: null,
+          created_at: new Date().toISOString(),
+        } as SpaceMessage);
+      }
+
+      try {
+        send({
+          type: "visitor_saved",
+          message: opts.visitorMessageId ? { id: opts.visitorMessageId } : null,
+        });
+
+        let turnsTaken = 0;
+        let consecutivePasses = 0;
+        let stopReason: string = "max_turns";
+
+        for (let turn = 0; turn < opts.maxTurns; turn++) {
+          // Pick next responder via existing round-robin (skip-most-
+          // recent). Reads composite.messages so each iteration's
+          // pick reflects the just-appended turn.
+          const nextId = pickResponder(composite, {
+            visitor_token: opts.visitorToken,
+            visitor_display_name: opts.visitorDisplayName,
+            body: opts.visitorMessage,
+          });
+          const next = getResident(nextId);
+
+          // Skip residents whose providers aren't configured. Don't
+          // count as a pass — just move on.
+          const providerOk =
+            (next.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
+            (next.provider === "openai" && !!process.env.OPENAI_API_KEY);
+          if (!providerOk) {
+            // Inject a marker into history so pickResponder doesn't
+            // re-pick the same one infinitely. Use a synthetic empty
+            // entry that counts toward recency.
+            composite.messages.push({
+              id: `synthetic-skip-${turn}`,
+              space_id: composite.space.id,
+              body: "",
+              resident_id: next.id,
+              visitor_token: null,
+              visitor_display_name: null,
+              kind: "message",
+              reply_to_message_id: null,
+              created_at: new Date().toISOString(),
+            } as SpaceMessage);
+            continue;
+          }
+
+          // Per-resident memory pool. Each resident gets their own
+          // engrams surfaced for THIS turn's context. Visitor token
+          // threaded through so engrams marked "from this visitor's
+          // prior visit" can be detected.
+          let memoryBlock = "";
+          if (hasSupabaseAdminEnv()) {
+            try {
+              const pool = await composeMemoryPool({
+                supabase: supabaseAdmin,
+                residentId: next.id,
+                visitorMessage: opts.visitorMessage,
+                visitorToken: opts.visitorToken,
+              });
+              memoryBlock = formatMemoryBlock(pool.pool);
+            } catch (err) {
+              console.error("[gathering-ext] memory pool failed:", err);
+            }
+          }
+
+          // Build the per-turn context. buildSpaceContext reads the
+          // updated composite.messages, so the resident sees all prior
+          // turns from this loop in the "Recent in this room" section.
+          const spaceContext = buildSpaceContext(
+            next,
+            composite,
+            opts.visitorMessage,
+            opts.visitorDisplayName,
+          );
+
+          // Append a set-down instruction to the context so residents
+          // know when/how to close the gathering naturally.
+          const setDownNote = `\n\n# Closing the gathering\n\nIf the thread feels whole and you have nothing more to add, begin your turn with <set-down/> on its own line and the gathering will close. If you have something small but not full, you can also respond with just "pass" and the next resident takes over. Don't force a close — let it happen when it happens. You have up to ${opts.maxTurns - turn - 1} more turns after this one before the gathering ends on its own.`;
+
+          const system = memoryBlock
+            ? `${next.soul}\n\n${memoryBlock}\n\n${spaceContext}${setDownNote}`
+            : `${next.soul}\n\n${spaceContext}${setDownNote}`;
+
+          // Collapse the in-memory history into model-message form.
+          // Pass empty visitorMessage because the visitor's turn is
+          // already in composite.messages (we appended it above).
+          // buildCollapsedMessages always tacks the visitorMessage
+          // onto the end as a user-role message; passing "" gives us
+          // just the history.
+          const collapsed = buildCollapsedMessages(composite.messages, "");
+
+          // Announce the responder before streaming any text.
+          send({ type: "responder", resident_id: next.id });
+
+          const buffer = await streamOneResidentTurn({
+            controller,
+            enc,
+            resident: next,
+            system,
+            collapsed,
+          });
+          const trimmed = buffer.trim();
+
+          // Set-down — first thing in the turn means close the thread.
+          if (/^<\s*set[\s-]?down\s*\/?\s*>/i.test(trimmed)) {
+            send({ type: "set_down", resident_id: next.id });
+            stopReason = "set_down";
+            break;
+          }
+
+          // Pass — empty or literal "pass" means skip without saving.
+          // Two consecutive passes ends the gathering (no one has more
+          // to say).
+          if (trimmed.length === 0 || /^\s*pass\.?\s*$/i.test(trimmed)) {
+            send({ type: "pass", resident_id: next.id });
+            consecutivePasses++;
+            if (consecutivePasses >= 2) {
+              stopReason = "consecutive_passes";
+              break;
+            }
+            // Insert a synthetic recency marker so the same resident
+            // isn't picked again immediately. This treats their pass
+            // as having "spoken most recently."
+            composite.messages.push({
+              id: `synthetic-pass-${turn}`,
+              space_id: composite.space.id,
+              body: "",
+              resident_id: next.id,
+              visitor_token: null,
+              visitor_display_name: null,
+              kind: "message",
+              reply_to_message_id: null,
+              created_at: new Date().toISOString(),
+            } as SpaceMessage);
+            continue;
+          }
+          consecutivePasses = 0;
+
+          // Persist and append to history.
+          const saved = await persistResidentMessage({
+            spaceId: composite.space.id,
+            residentId: next.id,
+            body: trimmed,
+          });
+          if (saved) {
+            composite.messages.push({
+              id: saved.id,
+              space_id: composite.space.id,
+              body: trimmed,
+              resident_id: next.id,
+              visitor_token: null,
+              visitor_display_name: null,
+              kind: "message",
+              reply_to_message_id: null,
+              created_at: saved.created_at,
+            } as SpaceMessage);
+          }
+
+          send({ type: "turn_done", saved, resident_id: next.id });
+
+          // Mnemos observe — fire-and-forget against the response
+          // stream (not against the worker isolate, which is still
+          // alive thanks to the continuing stream).
+          if (saved && hasSupabaseAdminEnv()) {
+            observeSpaceExchange(composite.space.id, next.id).catch((err) =>
+              console.error("[gathering-ext] observeSpaceExchange failed:", err),
+            );
+          }
+
+          turnsTaken++;
+        }
+
+        send({ type: "done", reason: stopReason, turns: turnsTaken });
+      } catch (err) {
+        console.error("[gathering-ext] stream error:", err);
+        send({ type: "error", message: "model_unavailable" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "content-type": "application/x-ndjson; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+}
+
 function streamRoomResponse(opts: {
   resident: ResidentConfig;
   system: string;
@@ -789,6 +1050,26 @@ export const Route = createFileRoute("/api/space/$slug/message")({
           body: body.body,
           replyToId: body.reply_to_message_id ?? null,
         });
+
+        // Gathering room: long-form multi-turn salon (up to 12 for
+        // visitors, 30 for admin). Each visitor message triggers a
+        // round-robin where residents read the whole thread and build
+        // on each other. Other spaces keep the existing 1-3 turn
+        // pattern below.
+        if (slug === GATHERING_SLUG) {
+          const isAdmin = hasAdminAccess(request);
+          const maxTurns = isAdmin
+            ? ADMIN_MAX_TURNS_IN_GATHERING
+            : VISITOR_MAX_TURNS_IN_GATHERING;
+          return streamGatheringExtended({
+            composite,
+            visitorMessage: body.body,
+            visitorMessageId,
+            visitorDisplayName: body.visitor_display_name,
+            visitorToken: body.visitor_token,
+            maxTurns,
+          });
+        }
 
         // Pull the resident's relevant engrams + memory pool. Cheap
         // DB-only query — gives the resident continuity with their
