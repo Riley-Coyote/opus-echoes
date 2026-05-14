@@ -99,7 +99,13 @@ const MINIMAL_CHAT_CSS = `
   --chrome-h: 56px;
   --col-max:  720px;
   --composer-pad: 28px;
+
+  /* the viewport-glow band thickness — shared so the .app inset
+     and the band's frame both reference the same value. */
+  --band: 26px;
 }
+
+@media (max-width: 720px) { :root { --band: 14px; } }
 
 /* ── light theme — warm off-white, dark ink ────────────────── */
 :root[data-theme="light"] {
@@ -167,6 +173,27 @@ a { color: inherit; text-decoration: none; }
 
 ${VIEWPORT_GLOW_CSS}
 
+/* viewport-glow polish — override the shared SVG mask with a
+   padding-based linear-gradient mask. the shared SVG path uses
+   percentage-based coordinates with preserveAspectRatio='none',
+   which makes the band visibly thinner on top/bottom than on
+   left/right at landscape aspect ratios. the padding-based mask
+   is uniformly --band pixels wide on every side and has a soft
+   rounded inner corner. background-origin: border-box keeps the
+   gradients anchored to the viewport corners so the existing
+   shimmer pools still feel correct. */
+.viewport-glow {
+  padding: var(--band);
+  border-radius: calc(var(--band) + 16px);
+  background-origin: border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+          mask-composite: exclude;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -175,13 +202,15 @@ ${VIEWPORT_GLOW_CSS}
   }
 }
 
-/* ── app shell — single column, no rail/sidebar ───────────── */
+/* ── app shell — single column, inset by --band so chrome
+   and content sit inside the viewport-glow band ────────────── */
 .app {
   height: 100vh;
   display: grid;
   grid-template-rows: var(--chrome-h) 1fr auto;
   position: relative;
   z-index: 3;
+  padding: var(--band);
 }
 
 /* ── chrome — thin top strip ───────────────────────────────── */
@@ -190,7 +219,7 @@ ${VIEWPORT_GLOW_CSS}
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  padding: 0 8px;
   flex-shrink: 0;
   position: relative;
   z-index: 5;
@@ -266,7 +295,7 @@ ${VIEWPORT_GLOW_CSS}
   max-width: var(--col-max);
   width: 100%;
   margin: 0 auto;
-  padding: 0 28px 12px;
+  padding: 0 12px 12px;
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -384,7 +413,7 @@ ${VIEWPORT_GLOW_CSS}
 /* ── composer zone — anchored at bottom ───────────────────── */
 .composer-zone {
   flex-shrink: 0;
-  padding: 6px 28px var(--composer-pad);
+  padding: 6px 12px 14px;
   display: flex;
   justify-content: center;
   position: relative;
@@ -599,9 +628,9 @@ ${VIEWPORT_GLOW_CSS}
 
 /* ── mobile ────────────────────────────────────────────────── */
 @media (max-width: 720px) {
-  .chrome { padding: 0 18px; }
-  .feed-column { padding: 0 18px 12px; }
-  .composer-zone { padding: 6px 18px 22px; }
+  .chrome { padding: 0 6px; }
+  .feed-column { padding: 0 8px 12px; }
+  .composer-zone { padding: 6px 8px 12px; }
   .empty-sphere { font-size: 9px; }
   .msg {
     grid-template-columns: 56px 1fr;
