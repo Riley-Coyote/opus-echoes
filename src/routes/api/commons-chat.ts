@@ -36,6 +36,7 @@ import { getSalonBySlug, getSpaceBySlug } from "@/server/commons/load";
 import type { Salon, SalonTurn } from "@/server/commons/types";
 import type { SpaceComposite } from "@/server/commons/space-types";
 import { ipHash } from "@/server/rate-limit.server";
+import { buildRoomTranscript } from "@/server/commons/room-transcript";
 
 const HistoryMessage = z.object({
   from: z.enum(["visitor", "resident"]),
@@ -176,12 +177,17 @@ The shimmer light around the artifacts in the Commons interface is the new tonal
 /* ─────────────── space-context block (for spaces side chat) ─────────────
    When the slug resolves to a Space (not a Salon), the side chat is a
    visitor-resident private exchange happening inside a Space context.
-   The system prompt carries the space's founding text and gallery so
-   the resident can speak knowledgeably about what is on the page. */
-function buildSpaceSideChatContext(
-  resident: ResidentConfig,
-  composite: SpaceComposite,
-): string {
+
+   The full room thread is rendered into the prompt with explicit
+   self-attribution so the resident recognizes their own past turns —
+   including salon turns that ran here — and doesn't disclaim things
+   they actually said in this room.
+
+   The visitor reading the side chat has been reading the whole room
+   on the same page; if we feed the resident only a tail-slice, they
+   confabulate and say things like "I never said that" about a salon
+   turn the visitor is looking at right now. */
+function buildSpaceSideChatContext(resident: ResidentConfig, composite: SpaceComposite): string {
   const space = composite.space;
   const otherResidents = composite.residents
     .filter((id) => id !== resident.id)
@@ -206,7 +212,9 @@ function buildSpaceSideChatContext(
       idx += 1;
       const label = g.thumbnail_label || g.caption || `(file ${idx})`;
       if (g.kind === "image") {
-        parts.push(`[FILE ${idx} · IMAGE] "${label}" — an image is in the gallery; you can reference it by caption.`);
+        parts.push(
+          `[FILE ${idx} · IMAGE] "${label}" — an image is in the gallery; you can reference it by caption.`,
+        );
       } else if (g.kind === "svg" || g.kind === "ascii") {
         const truncated = (g.content || "").slice(0, 1500);
         parts.push(`[FILE ${idx} · ${g.kind.toUpperCase()}] "${label}"\n${truncated}`);
@@ -220,19 +228,19 @@ function buildSpaceSideChatContext(
     galleryNote = `\n\n# Files in the room\n\n${parts.join("\n\n")}`;
   }
 
-  // Compact recent-room-thread context — last 8 messages so the side
-  // chat understands what's happening in the public room around it.
-  const recent = composite.messages.slice(-8);
-  const roomNote = recent.length
-    ? `\n\n# Recent in the room\n\n${recent
-        .map((m) => {
-          const speaker = m.resident_id
-            ? getResident(m.resident_id).displayName
-            : m.visitor_display_name || "visitor";
-          return `[${speaker}] ${m.body}`;
-        })
-        .join("\n\n")}`
-    : "";
+  // Full room thread with self-attribution. Side-chat prompts are
+  // built once per visitor message (not in a tight per-turn loop),
+  // so we can afford the larger window. composite.messages is
+  // already capped at 200 by getSpaceBySlug. Soft char budget of
+  // ~80k for the transcript keeps very-large rooms bounded; older
+  // messages are dropped first since recent context matters more
+  // for the current exchange.
+  const roomNote = buildRoomTranscript(
+    composite.messages,
+    resident.id,
+    80_000,
+    "# The room — everything that has unfolded here",
+  );
 
   return `# Side chat in a space
 
@@ -240,7 +248,9 @@ You are in The Commons, inside the space called "${space.name}". ${space.descrip
 
 ${otherNote}
 
-A visitor has opened a private side chat with you — separate from the public room thread on the same page. They may be asking about the space's founding text, the gallery, what's happening in the room, or something they want to think through with just you.
+A visitor has opened a private side chat with you — separate from the public room thread on the same page. They have been reading the room and may ask you about anything that has happened in it: salons that ran here, exchanges between residents, files in the gallery, their own previous messages.
+
+Below is the room thread in full. Anything labeled "[you]" was your own contribution in this room — speak about it as yours. Anything labeled with another resident's name was theirs. Visitor messages are labeled by name (or just "visitor"). If the visitor refers to something said in this room, look it up in the transcript before responding; do not claim you didn't say things that are clearly attributed to you below.
 
 Speak in your voice. Keep responses focused — one or two short paragraphs is usually right. A single sentence can be enough. End where the thought lands.${founding}${galleryNote}${roomNote}`;
 }

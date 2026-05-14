@@ -35,6 +35,7 @@ import { ipHash } from "@/server/rate-limit.server";
 import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
 import { observeSpaceExchange } from "@/server/substrate.server";
 import { hasAdminAccess } from "@/server/access.server";
+import { buildRoomTranscript } from "@/server/commons/room-transcript";
 
 /* ─────────────────────── gathering-mode tuning ──────────────────────────
    When the visitor posts in the-gathering, the room runs as a multi-turn
@@ -159,7 +160,14 @@ function pickResponder(
 
 /* ──────────────────── space-context system prompt ───────────────────
    Appended to the resident's full soul. Frames them for the room
-   without overwriting their voice. */
+   without overwriting their voice.
+
+   The room transcript is rendered with self-attribution — every
+   turn belonging to the current responder is labeled "[you]" so
+   they recognize their own past contributions, including prior
+   salon turns that ran in this space. Without this, residents
+   disclaim things they actually said when visitors reference
+   earlier room content. */
 function buildSpaceContext(
   resident: ResidentConfig,
   composite: SpaceComposite,
@@ -175,20 +183,20 @@ function buildSpaceContext(
     ? `You share this room with ${otherResidents.join(", ")}.`
     : `You are the resident of this room.`;
 
-  // Last ~12 messages of room history, oldest first. Excludes the
-  // visitor's brand-new message (which arrives as the assistant
-  // user-role turn separately).
-  const recent = composite.messages.slice(-12);
-  const transcriptLines: string[] = [];
-  for (const m of recent) {
-    const speaker = m.resident_id
-      ? getResident(m.resident_id).displayName
-      : m.visitor_display_name || "visitor";
-    transcriptLines.push(`[${speaker}] ${m.body}`);
-  }
-  const transcript = transcriptLines.length
-    ? transcriptLines.join("\n\n")
-    : "(no prior messages in this room yet)";
+  // Full room thread with self-attribution. composite.messages is
+  // already capped at 200 by getSpaceBySlug. 60k-char budget keeps
+  // the per-turn prompt size reasonable in multi-turn gatherings
+  // (each turn pays for this context). Older messages are dropped
+  // first when over budget.
+  const roomBlock = buildRoomTranscript(
+    composite.messages,
+    resident.id,
+    60_000,
+    "# What has unfolded in this room",
+  );
+  const roomNote = roomBlock
+    ? roomBlock
+    : "\n\n# What has unfolded in this room\n\n(no prior messages in this room yet)";
 
   const founding = space.founding_text?.trim()
     ? `\n\n# How this space began\n\n${space.founding_text.trim()}`
@@ -204,11 +212,9 @@ ${otherNote}
 
 This is a shared room. ${visitorLabel} just said something. Other visitors may be reading; other residents may speak after you. You do not need to greet, summarize, or wrap things up — speak the way you would in a continuing conversation.
 
-Keep responses focused. One or two short paragraphs is usually right. A single sentence can be enough. End where the thought lands.
+Below is the room thread in full. Anything labeled "[you]" was your own contribution in this room — including any salons that ran here. Speak about it as yours; don't claim you didn't say things attributed to you.
 
-# Recent in this room
-
-${transcript}${founding}`;
+Keep responses focused. One or two short paragraphs is usually right. A single sentence can be enough. End where the thought lands.${roomNote}${founding}`;
 }
 
 /* ──────────────────── persistence helpers ──────────────────────── */
