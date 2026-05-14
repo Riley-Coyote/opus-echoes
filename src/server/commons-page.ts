@@ -80,20 +80,27 @@ const COMMONS_CSS = `
    top-corner curve). The hairline bottom border + soft drop
    shadow give the nav a felt elevation against the floor without
    competing with the band. */
-/* nav sits flush on the inset surface — no card-edge feel.
-   removes the gradient background, drop shadow, and bottom hairline
-   that previously made it read as a separate floating layer.
-   the surface (floor + viewport-glow band) shows through the nav so
-   nav + body read as one continuous plane. */
+/* nav sits flush on the inset surface as one continuous plane.
+   solid floor background occludes the viewport-glow band's corner
+   gradient pools (radial gradients anchored at 0%/100% top corners)
+   so they don't bleed through and paint visible darker "shelves"
+   into the top-left and top-right corners. previous transparent
+   fill (commit f44c8d3) caused that bleed; this restores occlusion
+   without bringing back the floating-card elevation. top corners
+   rounded to match the band's small inner-cutout curve so the nav
+   follows the inset card rather than cutting a square step. */
 .public-nav{
   top:var(--safe-inset)!important;
   left:var(--safe-inset)!important;
   right:var(--safe-inset)!important;
-  background:transparent!important;
+  background:var(--floor)!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
   box-shadow:none!important;
-  border-radius:0!important;
+  border-top-left-radius:14px!important;
+  border-top-right-radius:14px!important;
+  border-bottom-left-radius:0!important;
+  border-bottom-right-radius:0!important;
 }
 /* Slightly lift the nav links on hover with a softer transition
    curve than the default site rule; reads as a more deliberate
