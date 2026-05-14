@@ -1,63 +1,49 @@
 /**
  * Render uploaded file content (markdown, html, plain text) for the
- * space view + gallery thumbnails. Kept isolated so the dependency
- * surface (marked, isomorphic-dompurify) lives in one place and the
- * rest of commons-page.ts stays renderer-pure.
+ * space view + gallery thumbnails.
+ *
+ * Worker compatibility note: this module originally pulled
+ * isomorphic-dompurify for HTML sanitization, which transitively
+ * imports jsdom — jsdom uses child_process/vm and explodes at
+ * module-load time in Cloudflare Workers (the runtime the
+ * mnemos.chat deployment uses), taking the entire bundled worker
+ * down with it. So sanitization is currently a no-op gate, with
+ * the following risk model:
+ *
+ *   - Uploads are admin-only via POST /api/space/$slug/upload-file
+ *     gated by hasAdminAccess(). Visitors cannot reach this path.
+ *   - The admin (Riley) is uploading his own files. The threat
+ *     surface is "Riley shoots his own foot" — accepted.
+ *
+ *   BEFORE ENABLING ANY VISITOR-SIDE FILE UPLOAD, swap in a
+ *   pure-JS allowlist sanitizer (e.g. the `xss` package by
+ *   leizongmin — Worker-compatible, no DOM dep) for both the
+ *   markdown-rendered HTML and the raw HTML path. Until then,
+ *   keep this surface admin-only.
  */
 
 import { marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
 
 // Marked configured for GitHub-flavored basics. No raw HTML pass-
-// through — anything that comes back through DOMPurify is the
-// surface available to admin-uploaded markdown.
+// through enabled in marked itself — but marked still emits anchor
+// tags, headings, etc. that pass through unmodified since we no
+// longer sanitize.
 marked.setOptions({
   gfm: true,
   breaks: true,
 });
 
-const PURIFY_CONFIG = {
-  ALLOWED_TAGS: [
-    "h1", "h2", "h3", "h4", "h5", "h6",
-    "p", "br", "strong", "em", "u", "s", "del", "ins", "code", "pre",
-    "ul", "ol", "li",
-    "a",
-    "blockquote", "hr",
-    "table", "thead", "tbody", "tr", "th", "td",
-    "span", "div",
-    "img",
-  ],
-  ALLOWED_ATTR: ["href", "title", "alt", "src", "class", "id", "target", "rel"],
-  ALLOW_DATA_ATTR: false,
-  // Force-add rel=noopener noreferrer to anchors and target=_blank
-  // via hooks below.
-  RETURN_TRUSTED_TYPE: false,
-};
-
-// Lazy: apply hook only once.
-let hookInstalled = false;
-function ensureHook() {
-  if (hookInstalled) return;
-  DOMPurify.addHook("afterSanitizeAttributes", (node: Element) => {
-    if (node.nodeName === "A") {
-      node.setAttribute("target", "_blank");
-      node.setAttribute("rel", "noopener noreferrer");
-    }
-  });
-  hookInstalled = true;
-}
-
-/** Render a markdown string to safe HTML. */
+/** Render a markdown string to HTML. Admin-trusted source. */
 export function renderMarkdown(text: string): string {
-  ensureHook();
-  const raw = marked.parse(text, { async: false }) as string;
-  return String(DOMPurify.sanitize(raw, PURIFY_CONFIG));
+  return marked.parse(text, { async: false }) as string;
 }
 
-/** Sanitize a user-provided HTML fragment. */
+/** Pass an HTML fragment through unchanged. Admin-trusted source.
+ *  Named `renderSanitizedHtml` for callsite compatibility, but
+ *  this function does NOT currently sanitize — see top-of-file
+ *  worker-compat note. */
 export function renderSanitizedHtml(text: string): string {
-  ensureHook();
-  return String(DOMPurify.sanitize(text, PURIFY_CONFIG));
+  return text;
 }
 
 /** Escape plain text for safe insertion inside HTML (without
