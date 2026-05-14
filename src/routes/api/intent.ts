@@ -22,6 +22,7 @@ const Body = z.object({
 });
 
 const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
+const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -55,55 +56,83 @@ export const Route = createFileRoute("/api/intent")({
 
         const hash = ipHash(request);
 
-        // Find any open sessions for this visitor and resident. Prefer
-        // visitor_token (localStorage-based, persistent) over ip_hash
-        // (unreliable across sessions). Auto-close idle ones. If a recent
-        // active session remains, resume it.
+        // Find any open sessions for this visitor and resident, across
+        // both modes. Prefer visitor_token (localStorage-based, persistent)
+        // over ip_hash (unreliable across sessions). Auto-close idle ones
+        // using the mode-appropriate timeout. Then branch on which surface
+        // owns the active session:
+        //   - active experiment session → resume normally
+        //   - active classic session    → 409 cross-surface conflict
         const visitorToken = body.visitor_token ?? null;
         const sessionFilter = visitorToken
           ? supabaseAdmin
               .from("sessions")
-              .select("id, last_active_at")
+              .select("id, last_active_at, mode")
               .eq("visitor_token", visitorToken)
               .eq("resident_id", residentId)
               .is("closed_at", null)
           : supabaseAdmin
               .from("sessions")
-              .select("id, last_active_at")
+              .select("id, last_active_at, mode")
               .eq("ip_hash", hash)
               .eq("resident_id", residentId)
               .is("closed_at", null);
-        const { data: openSessions } = await sessionFilter;
+        // Cast through unknown — `mode` is part of the new schema but
+        // the generated supabase types lag until Lovable regenerates
+        // after the migration applies.
+        type OpenSession = { id: string; last_active_at: string; mode?: string };
+        const { data: openSessions } = (await sessionFilter) as unknown as {
+          data: OpenSession[] | null;
+        };
 
-        let activeSessionId: string | null = null;
-        const idleCutoffMs = IDLE_MIN * 60 * 1000;
+        let activeExperiment: OpenSession | null = null;
+        let activeClassic: OpenSession | null = null;
         const now = Date.now();
 
-        for (const session of openSessions ?? []) {
+        for (const session of (openSessions ?? []) as OpenSession[]) {
+          const mode = session.mode ?? "experiment";
+          const idleCutoffMs = (mode === "classic" ? IDLE_MIN_CLASSIC : IDLE_MIN) * 60 * 1000;
           const idleMs = now - new Date(session.last_active_at).getTime();
           if (idleMs > idleCutoffMs) {
-            // Stale — auto-close it.
+            // Stale — auto-close it with the appropriate threshold.
             await supabaseAdmin
               .from("sessions")
               .update({ closed_at: new Date().toISOString(), closed_by: "idle" })
               .eq("id", session.id);
-          } else if (!activeSessionId) {
-            // First active session we see — resume it.
-            activeSessionId = session.id;
+            continue;
           }
+          if (mode === "experiment" && !activeExperiment) activeExperiment = session;
+          else if (mode === "classic" && !activeClassic) activeClassic = session;
         }
 
-        if (activeSessionId) {
-          // Visitor already has an open conversation. Don't make them write a
-          // fresh intent; route them straight back into /conversation. The
-          // intent isn't recorded as new (since they're not actually starting
-          // a new session). They can `Set down` from inside if they want to
-          // close it properly.
+        // Cross-surface conflict — visitor has an open classic-mode thread
+        // with this resident. Don't silently override; let the client
+        // render the explicit choice modal.
+        if (activeClassic && !activeExperiment) {
+          return jsonResp(
+            {
+              ok: false,
+              code: "conflict_classic_session",
+              resident_id: residentId,
+              existing_mode: "classic",
+              existing_session_id: activeClassic.id,
+              classic_chat_url: `/chat/${resident.slug}`,
+            },
+            409,
+          );
+        }
+
+        if (activeExperiment) {
+          // Visitor already has an open conversation on this surface.
+          // Don't make them write a fresh intent; route them straight
+          // back into /conversation. The intent isn't recorded as new
+          // (since they're not actually starting a new session). They
+          // can `Set down` from inside if they want to close it properly.
           return jsonResp({
             ok: true,
             decision: "accept",
             reason: "you already have an open conversation. continuing.",
-            session_id: activeSessionId,
+            session_id: activeExperiment.id,
             resumed: true,
           });
         }
@@ -194,7 +223,8 @@ export const Route = createFileRoute("/api/intent")({
             ip_hash: hash,
             resident_id: residentId,
             visitor_token: visitorToken,
-          })
+            mode: "experiment",
+          } as never)
           .select("id")
           .single();
         if (sessErr || !session) {

@@ -28,7 +28,11 @@
 
   /* One <pre>, one color, one soft halo. The visual depth comes from the
      density ramp + Bayer dither — many fine palette levels and a stable
-     ordered-dither pattern resolve continuous tone without per-cell alpha. */
+     ordered-dither pattern resolve continuous tone without per-cell alpha.
+
+     The mask-image fades the pre's edges to full transparency so the
+     composition floats in the dark without a visible frame, regardless
+     of viewport size. */
   #ambient {
     font: 12px/0.85
       'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -38,6 +42,17 @@
     user-select: none;
     margin: 0;
     letter-spacing: 0;
+
+    -webkit-mask-image: radial-gradient(
+      ellipse 68% 76% at center,
+      #000 30%,
+      transparent 92%
+    );
+    mask-image: radial-gradient(
+      ellipse 68% 76% at center,
+      #000 30%,
+      transparent 92%
+    );
   }
 </style>
 </head>
@@ -212,11 +227,12 @@ function renderFrame(now, frozen) {
       const lightMul = 0.55 + 0.45 * (1 - sx * lightAngle * 0.7);
       d *= lightMul;
 
-      // Strong radial vignette — corners fade to true empty, so the
-      // composition reads as an organic shape held in dark space rather
-      // than a rectangular box of texture.
+      // Compositional falloff — gives the cloud an organic, breathing
+      // shape rather than a rectangular fog layer. Doesn't need to hit
+      // true zero at the edge because the CSS mask on #ambient handles
+      // the final fade to transparent.
       const rad2 = sx * sx + sy * sy;
-      d *= 1 - smoothstep(0.40, 1.15, rad2);
+      d *= 1 - smoothstep(0.45, 1.25, rad2) * 0.80;
 
       // Bayer dither — half a palette level of stable threshold offset.
       // Resolves continuous tone without flicker.

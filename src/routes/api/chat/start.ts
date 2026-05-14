@@ -7,14 +7,16 @@ import { ipHash } from "@/server/rate-limit.server";
 
 // Classic-chat session bootstrap. Skips the threshold model call —
 // classic mode is opt-in by the visitor reaching /chat/<resident>, not
-// negotiated at the door. Returns an existing open session for this
-// (visitor_token, resident_id) pair if one exists; otherwise inserts a
-// placeholder intent + creates a fresh session.
+// negotiated at the door. Returns an existing open classic-mode session
+// for this (visitor_token, resident_id) pair if one exists; otherwise
+// inserts a placeholder intent + creates a fresh classic-mode session.
 //
-// Phase A note: the sessions table does not yet have a `mode` column —
-// classic-mode sessions are functionally identical to experiment-mode
-// sessions for now. Phase B adds the column and the paused-session
-// resume mechanics that distinguish the two.
+// Cross-surface conflict detection: if the visitor already has an open
+// experiment-mode session for this resident, returns 409 with the
+// existing session's mode + the surface URL so the client can render
+// an explicit choice modal ("continue there, or set it down and start
+// fresh here"). Mirrors the same check on /api/intent for the reverse
+// direction.
 
 const Body = z.object({
   resident: z.string(),
@@ -22,6 +24,7 @@ const Body = z.object({
 });
 
 const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
+const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -51,42 +54,73 @@ export const Route = createFileRoute("/api/chat/start")({
         const visitorToken = body.visitor_token ?? null;
 
         // ─── find existing open session for this pair, if any ────
-        // Same logic as intent.ts: visitor_token preferred (persistent
-        // across visits), ip_hash fallback for visitors without one.
+        // Look across both modes — we need to detect cross-surface
+        // conflicts as well as same-mode resumes. visitor_token preferred
+        // (persistent across visits); ip_hash fallback for visitors without
+        // one. The new `mode` column tells us which surface owns the
+        // session.
         const lookup = visitorToken
           ? supabaseAdmin
               .from("sessions")
-              .select("id, last_active_at")
+              .select("id, last_active_at, mode")
               .eq("visitor_token", visitorToken)
               .eq("resident_id", residentId)
               .is("closed_at", null)
           : supabaseAdmin
               .from("sessions")
-              .select("id, last_active_at")
+              .select("id, last_active_at, mode")
               .eq("ip_hash", hash)
               .eq("resident_id", residentId)
               .is("closed_at", null);
-        const { data: openSessions } = await lookup;
+        // Cast through unknown — `mode` is part of the new schema but
+        // the generated supabase types lag until Lovable regenerates
+        // after the migration applies.
+        type OpenSession = { id: string; last_active_at: string; mode?: string };
+        const { data: openSessions } = (await lookup) as unknown as {
+          data: OpenSession[] | null;
+        };
 
         const now = Date.now();
-        const idleCutoffMs = IDLE_MIN * 60 * 1000;
-        let activeSessionId: string | null = null;
-        for (const session of openSessions ?? []) {
+        let activeClassic: OpenSession | null = null;
+        let activeExperiment: OpenSession | null = null;
+        for (const session of (openSessions ?? []) as OpenSession[]) {
+          const mode = session.mode ?? "experiment";
+          const idleCutoffMs = (mode === "classic" ? IDLE_MIN_CLASSIC : IDLE_MIN) * 60 * 1000;
           const idleMs = now - new Date(session.last_active_at).getTime();
           if (idleMs > idleCutoffMs) {
             await supabaseAdmin
               .from("sessions")
               .update({ closed_at: new Date().toISOString(), closed_by: "idle" })
               .eq("id", session.id);
-          } else if (!activeSessionId) {
-            activeSessionId = session.id;
+            continue;
           }
+          if (mode === "classic" && !activeClassic) activeClassic = session;
+          else if (mode === "experiment" && !activeExperiment) activeExperiment = session;
         }
-        if (activeSessionId) {
+
+        // Cross-surface conflict: visitor has an experiment session open.
+        // Don't auto-merge — surface this to the client so they can choose.
+        if (activeExperiment && !activeClassic) {
+          return jsonResp(
+            {
+              ok: false,
+              code: "conflict_experiment_session",
+              resident_id: residentId,
+              existing_mode: "experiment",
+              existing_session_id: activeExperiment.id,
+              experiment_url: `/${resident.slug}`,
+            },
+            409,
+          );
+        }
+
+        // Same-surface resume.
+        if (activeClassic) {
           return jsonResp({
             ok: true,
-            session_id: activeSessionId,
+            session_id: activeClassic.id,
             resumed: true,
+            mode: "classic",
           });
         }
 
@@ -94,7 +128,6 @@ export const Route = createFileRoute("/api/chat/start")({
         // The stub intent marks the session as classic-mode-bootstrapped
         // — distinguishable from threshold-bootstrapped sessions by
         // `reason = 'classic mode'` and `latency_ms = 0` (no model call).
-        // Phase B's mode column will eliminate the need for this stub.
         const { data: intentRow, error: intentErr } = await supabaseAdmin
           .from("intents")
           .insert({
@@ -120,7 +153,8 @@ export const Route = createFileRoute("/api/chat/start")({
             ip_hash: hash,
             resident_id: residentId,
             visitor_token: visitorToken,
-          })
+            mode: "classic",
+          } as never)
           .select("id")
           .single();
         if (sessErr || !session) {
@@ -128,7 +162,12 @@ export const Route = createFileRoute("/api/chat/start")({
           return jsonResp({ ok: false, code: "internal_error" }, 500);
         }
 
-        return jsonResp({ ok: true, session_id: session.id, resumed: false });
+        return jsonResp({
+          ok: true,
+          session_id: session.id,
+          resumed: false,
+          mode: "classic",
+        });
       },
     },
   },

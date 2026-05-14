@@ -1427,21 +1427,51 @@ async function publishConversationIfMeaningful(
 // =============================================================
 
 const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
+const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
 
 export async function idleSweep(): Promise<{ closed: number; consolidated: number }> {
-  const cutoff = new Date(Date.now() - IDLE_MIN * 60 * 1000).toISOString();
-  const { data: stale, error } = await supabaseAdmin
-    .from("sessions")
-    .select("id")
-    .is("closed_at", null)
-    .lt("last_active_at", cutoff)
-    .limit(50); // bounded per tick — under heavy traffic the next tick picks up the rest
+  // Mode-aware idle thresholds: experiment sessions stale at 30 min by
+  // default; classic sessions hold for 30 days. We do two scoped queries
+  // and union the results before closing/consolidating, since a single
+  // query can't apply two different cutoffs to two different row sets.
+  const expCutoff = new Date(Date.now() - IDLE_MIN * 60 * 1000).toISOString();
+  const classicCutoff = new Date(Date.now() - IDLE_MIN_CLASSIC * 60 * 1000).toISOString();
 
-  if (error) {
-    console.error("[substrate] idleSweep query failed:", error);
-    return { closed: 0, consolidated: 0 };
-  }
-  if (!stale || stale.length === 0) return { closed: 0, consolidated: 0 };
+  // `mode` is real in the DB (added by the 20260514 migration) but the
+  // generated supabase types regenerate after Lovable applies the
+  // migration in production, so until then the local type cache rejects
+  // .eq("mode", ...). Re-narrow to an interface that supports the column
+  // we just added — keeps lint happy and avoids `any`.
+  type SessionsQuery = {
+    select: (cols: string) => SessionsQuery;
+    is: (col: string, value: null) => SessionsQuery;
+    eq: (col: string, value: string) => SessionsQuery;
+    lt: (col: string, value: string) => SessionsQuery;
+    limit: (n: number) => Promise<{ data: { id: string }[] | null; error: unknown }>;
+  };
+  const sessionsTable = () =>
+    (supabaseAdmin as unknown as { from: (t: string) => SessionsQuery }).from("sessions");
+  const [expRes, classicRes] = await Promise.all([
+    sessionsTable()
+      .select("id")
+      .is("closed_at", null)
+      .eq("mode", "experiment")
+      .lt("last_active_at", expCutoff)
+      .limit(40),
+    sessionsTable()
+      .select("id")
+      .is("closed_at", null)
+      .eq("mode", "classic")
+      .lt("last_active_at", classicCutoff)
+      .limit(10),
+  ]);
+
+  if (expRes.error) console.error("[substrate] idleSweep experiment query failed:", expRes.error);
+  if (classicRes.error)
+    console.error("[substrate] idleSweep classic query failed:", classicRes.error);
+
+  const stale = [...(expRes.data ?? []), ...(classicRes.data ?? [])];
+  if (stale.length === 0) return { closed: 0, consolidated: 0 };
 
   const ids = stale.map((s) => s.id);
   const closedAt = new Date().toISOString();
@@ -1468,7 +1498,9 @@ export async function idleSweep(): Promise<{ closed: number; consolidated: numbe
     }
   }
 
-  console.log(`[substrate] idleSweep — closed ${ids.length}, consolidated ${consolidated}`);
+  console.log(
+    `[substrate] idleSweep — closed ${ids.length} (exp ${expRes.data?.length ?? 0} + classic ${classicRes.data?.length ?? 0}), consolidated ${consolidated}`,
+  );
   return { closed: ids.length, consolidated };
 }
 
