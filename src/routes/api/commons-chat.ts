@@ -47,6 +47,11 @@ const Body = z.object({
   salon_slug: z.string().trim().min(1).max(128),
   history: z.array(HistoryMessage).max(40),
   visitor_message: z.string().trim().min(1).max(2000),
+  // Required as of 2026-05-14 to block raw-bot traffic. Legitimate
+  // visitors always have a token minted in localStorage on first
+  // load (see commons-page.ts client script). Bots hitting the
+  // endpoint without it will 400 instead of burning provider quota.
+  visitor_token: z.string().trim().min(8).max(64),
 });
 
 function jsonResp(payload: unknown, status = 200) {
@@ -61,10 +66,21 @@ function jsonResp(payload: unknown, status = 200) {
    instances; each maintains its own counters. Tradeoff accepted for v1
    — abusers would need to spread across instances to bypass, and the
    visitor-facing chat doesn't justify a DB round-trip per request. */
+// Tightened 2026-05-14 after Worker logs surfaced hundreds-per-minute
+// hits on /api/commons-chat (likely a runaway client loop or bot,
+// not legitimate visitor traffic). Old limits were 10/min, 200/day.
+// New limits are aggressive — a real visitor having a back-and-forth
+// with a resident easily fits under 4/min and 60/day; everything
+// above that is a leak.
 const RL_WINDOW_MS = 60 * 1000; // 1 minute
-const RL_LIMIT = 10; // max requests per minute per IP
+const RL_LIMIT = 4; // max requests per minute per IP (was 10)
 const RL_DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
-const RL_DAILY_LIMIT = 200;
+const RL_DAILY_LIMIT = 60; // max requests per day per IP (was 200)
+// Burst guard: very short window catches tight-loop hammering that
+// would otherwise pace itself under the 1-min limit by sneaking
+// exactly RL_LIMIT requests in the first second.
+const RL_BURST_MS = 5 * 1000;
+const RL_BURST_LIMIT = 2;
 const rlBuckets = new Map<string, number[]>();
 
 function checkRateLimit(hash: string): { ok: true } | { ok: false; code: "too_many_requests" } {
@@ -73,6 +89,8 @@ function checkRateLimit(hash: string): { ok: true } | { ok: false; code: "too_ma
   // Drop entries older than the daily window.
   const fresh = stamps.filter((t) => now - t < RL_DAILY_WINDOW_MS);
   const inMinute = fresh.filter((t) => now - t < RL_WINDOW_MS);
+  const inBurst = fresh.filter((t) => now - t < RL_BURST_MS);
+  if (inBurst.length >= RL_BURST_LIMIT) return { ok: false, code: "too_many_requests" };
   if (inMinute.length >= RL_LIMIT) return { ok: false, code: "too_many_requests" };
   if (fresh.length >= RL_DAILY_LIMIT) return { ok: false, code: "too_many_requests" };
   fresh.push(now);

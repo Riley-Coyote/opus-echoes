@@ -2766,6 +2766,26 @@ const CHAT_PANEL_SCRIPT = `
   const ACTIVE_KEY = STORAGE_PREFIX + '.active.' + slug;
   function chatKey(rid){ return STORAGE_PREFIX + '.' + slug + '.' + rid; }
 
+  // Visitor token — used as a presence check on POST /api/commons-chat
+  // so that endpoint can refuse raw-bot traffic (it was being hammered
+  // hundreds-of-times-per-minute on 2026-05-14 before the token check
+  // landed). Same key/format the room IIFE uses; both IIFEs read/write
+  // the same localStorage slot.
+  const VTOKEN_KEY = 'sanctuary.visitor.token.v1';
+  function getVisitorToken(){
+    try {
+      let t = localStorage.getItem(VTOKEN_KEY);
+      if (t && t.length >= 8) return t;
+      const arr = new Uint8Array(16);
+      (window.crypto || window.msCrypto).getRandomValues(arr);
+      t = Array.from(arr).map(function(b){
+        return ('0' + b.toString(16)).slice(-2);
+      }).join('').slice(0, 22);
+      localStorage.setItem(VTOKEN_KEY, t);
+      return t;
+    } catch(_){ return 'anon-' + Math.random().toString(36).slice(2, 14); }
+  }
+
   // Resident metadata from server
   let META = {};
   try {
@@ -3025,6 +3045,7 @@ const CHAT_PANEL_SCRIPT = `
           salon_slug: slug,
           history: currentChat.map(function(m2){ return { from: m2.from, body: m2.body }; }),
           visitor_message: text,
+          visitor_token: getVisitorToken(),
         }),
       });
 
