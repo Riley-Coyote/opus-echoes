@@ -737,6 +737,7 @@ export type Database = {
           id: string
           kind: string
           related_salon_id: string | null
+          related_space_id: string | null
           resident_id: string
           session_id: string | null
         }
@@ -748,6 +749,7 @@ export type Database = {
           id?: string
           kind: string
           related_salon_id?: string | null
+          related_space_id?: string | null
           resident_id?: string
           session_id?: string | null
         }
@@ -759,6 +761,7 @@ export type Database = {
           id?: string
           kind?: string
           related_salon_id?: string | null
+          related_space_id?: string | null
           resident_id?: string
           session_id?: string | null
         }
@@ -768,6 +771,13 @@ export type Database = {
             columns: ["related_salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marginalia_related_space_id_fkey"
+            columns: ["related_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
           {
@@ -1179,6 +1189,268 @@ export type Database = {
           },
         ]
       }
+      space_artifacts: {
+        Row: {
+          caption: string | null
+          content: string | null
+          created_at: string
+          created_by_resident_id: string | null
+          created_by_visitor_token: string | null
+          id: string
+          image_path: string | null
+          kind: string
+          presence: number | null
+          shared_at: string | null
+          shared_by_resident_id: string | null
+          side_chat_resident_id: string | null
+          space_id: string
+          status: string
+          tempo: number | null
+          thumbnail_label: string | null
+        }
+        Insert: {
+          caption?: string | null
+          content?: string | null
+          created_at?: string
+          created_by_resident_id?: string | null
+          created_by_visitor_token?: string | null
+          id?: string
+          image_path?: string | null
+          kind: string
+          presence?: number | null
+          shared_at?: string | null
+          shared_by_resident_id?: string | null
+          side_chat_resident_id?: string | null
+          space_id: string
+          status?: string
+          tempo?: number | null
+          thumbnail_label?: string | null
+        }
+        Update: {
+          caption?: string | null
+          content?: string | null
+          created_at?: string
+          created_by_resident_id?: string | null
+          created_by_visitor_token?: string | null
+          id?: string
+          image_path?: string | null
+          kind?: string
+          presence?: number | null
+          shared_at?: string | null
+          shared_by_resident_id?: string | null
+          side_chat_resident_id?: string | null
+          space_id?: string
+          status?: string
+          tempo?: number | null
+          thumbnail_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_artifacts_created_by_resident_id_fkey"
+            columns: ["created_by_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_artifacts_shared_by_resident_id_fkey"
+            columns: ["shared_by_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_artifacts_side_chat_resident_id_fkey"
+            columns: ["side_chat_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_artifacts_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          reply_to_message_id: string | null
+          resident_id: string | null
+          space_id: string
+          visitor_display_name: string | null
+          visitor_token: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          kind?: string
+          reply_to_message_id?: string | null
+          resident_id?: string | null
+          space_id: string
+          visitor_display_name?: string | null
+          visitor_token?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          reply_to_message_id?: string | null
+          resident_id?: string | null
+          space_id?: string
+          visitor_display_name?: string | null
+          visitor_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "space_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_messages_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_messages_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_residents: {
+        Row: {
+          added_at: string
+          resident_id: string
+          space_id: string
+        }
+        Insert: {
+          added_at?: string
+          resident_id: string
+          space_id: string
+        }
+        Update: {
+          added_at?: string
+          resident_id?: string
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_residents_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_residents_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_visitor_salon_requests: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+          space_id: string
+          visitor_display_name: string | null
+          visitor_token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+          space_id: string
+          visitor_display_name?: string | null
+          visitor_token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          space_id?: string
+          visitor_display_name?: string | null
+          visitor_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_visitor_salon_requests_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spaces: {
+        Row: {
+          created_at: string
+          created_by_resident_id: string | null
+          current_salon_started_at: string | null
+          description: string | null
+          founding_text: string | null
+          id: string
+          last_salon_at: string | null
+          name: string
+          pending_topic: string | null
+          slug: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_resident_id?: string | null
+          current_salon_started_at?: string | null
+          description?: string | null
+          founding_text?: string | null
+          id?: string
+          last_salon_at?: string | null
+          name: string
+          pending_topic?: string | null
+          slug: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_resident_id?: string | null
+          current_salon_started_at?: string | null
+          description?: string | null
+          founding_text?: string | null
+          id?: string
+          last_salon_at?: string | null
+          name?: string
+          pending_topic?: string | null
+          slug?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spaces_created_by_resident_id_fkey"
+            columns: ["created_by_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       substrate_events: {
         Row: {
           created_at: string
@@ -1367,7 +1639,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_engrams_vector: {
+        Args: {
+          match_count?: number
+          match_resident_id: string
+          query_embedding: string
+        }
+        Returns: {
+          accessibility: number
+          attribution: string
+          distance: number
+          id: string
+          is_core: boolean
+          last_reinforced_at: string
+          prose: string
+          quote: string
+          redacted_text: string
+          reinforcement_count: number
+          scope: string
+          source_session_ids: string[]
+          stability: number
+          strength: number
+        }[]
+      }
+      match_hypomnema_vector: {
+        Args: {
+          match_count?: number
+          match_resident_id: string
+          match_visitor_token: string
+          query_embedding: string
+        }
+        Returns: {
+          confidence: number
+          content: string
+          created_at: string
+          density: number
+          distance: number
+          domain: string
+          foundational: boolean
+          id: string
+          last_challenged_at: string
+          last_revised_at: string
+          related_session_id: string
+          revision_count: number
+          source: string
+          tags: string[]
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
