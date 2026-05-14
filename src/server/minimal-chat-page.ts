@@ -1892,7 +1892,10 @@ function chatScript(resident: ResidentConfig): string {
         if (sendBtn) sendBtn.disabled = input.value.trim().length === 0 || streaming;
       });
       input.addEventListener('keydown', function(e){
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.isComposing) return;
+        const bare = e.key === 'Enter' && !e.shiftKey;
+        const mod = (e.metaKey || e.ctrlKey) && e.key === 'Enter';
+        if (bare || mod) {
           e.preventDefault();
           send(input.value);
         }

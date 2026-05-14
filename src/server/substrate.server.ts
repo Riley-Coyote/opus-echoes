@@ -179,6 +179,18 @@ function clamp01(v: number): number {
   return Math.max(0.0, Math.min(1.0, v));
 }
 
+function truncateSoft(value: string | null | undefined, max: number): string {
+  const text = (value ?? "").trim();
+  if (text.length <= max) return text;
+  const candidate = text.slice(0, Math.max(0, max - 1)).trimEnd();
+  const boundary = candidate.lastIndexOf(" ");
+  const body =
+    boundary >= Math.floor(max * 0.72)
+      ? candidate.slice(0, boundary).trimEnd()
+      : candidate;
+  return `${body}…`;
+}
+
 // Feature flag for the phase-2 hypomnema + functional memory write
 // paths. Defaults to false. Code that respects this flag must check
 // it on every entry point — never assume a previous check still holds.
@@ -1282,6 +1294,7 @@ async function writeReflection(
     maxTokens: 700,
     temperature: 0.75,
     model: resident.model,
+    provider: resident.provider,
   });
 
   if (!result || result.kind === "none" || !result.body) return null;
@@ -1339,6 +1352,7 @@ async function updateResidentState(
     maxTokens: 400,
     temperature: 0.5,
     model: resident.model,
+    provider: resident.provider,
   });
 
   if (!result) return;
@@ -1398,6 +1412,7 @@ async function publishConversationIfMeaningful(
     maxTokens: 700,
     temperature: 0.55,
     model: resident.model,
+    provider: resident.provider,
   });
 
   if (!result?.publish || !result.title || !result.summary) return;
@@ -1405,11 +1420,11 @@ async function publishConversationIfMeaningful(
   await supabaseAdmin.from("published_conversations").upsert(
     {
       session_id: sessionId,
-      title: result.title.slice(0, 80),
-      summary: result.summary.slice(0, 500),
-      reason: (result.reason || "this exchange changed what i carry.").slice(0, 360),
+      title: truncateSoft(result.title, 80),
+      summary: truncateSoft(result.summary, 500),
+      reason: truncateSoft(result.reason || "this exchange changed what i carry.", 360),
       significance_kind: result.significance_kind || "memory",
-      selected_by: resident.id.replace("-", "_"),
+      selected_by: resident.id.replaceAll("-", "_"),
       published_at: new Date().toISOString(),
     },
     { onConflict: "session_id" },
@@ -1646,6 +1661,7 @@ export async function considerCreation(
     maxTokens: 400,
     temperature: 0.5,
     model: resident.model,
+    provider: resident.provider,
   });
 
   if (!decision) {
@@ -1734,6 +1750,7 @@ async function createAsciiArt(
     maxTokens: 1500,
     temperature: 0.85,
     model: resident.model,
+    provider: resident.provider,
   });
   if (!result || !result.body || !result.body.trim()) {
     throw new Error("ascii_empty");
@@ -1782,6 +1799,7 @@ async function createImageArt(
     maxTokens: 600,
     temperature: 0.8,
     model: resident.model,
+    provider: resident.provider,
   });
   if (!author || !author.prompt || !author.prompt.trim()) {
     throw new Error("image_prompt_empty");
@@ -1835,6 +1853,7 @@ async function writeEssay(
     maxTokens: 4000,
     temperature: 0.8,
     model: resident.model,
+    provider: resident.provider,
   });
   if (!result || result.kind === "none" || !result.body || !result.body.trim()) {
     await supabaseAdmin.from("creation_events").insert({
@@ -1943,6 +1962,7 @@ async function reviewInterior(resident: ResidentConfig, recentContext: string): 
     maxTokens: 2000,
     temperature: 0.8,
     model: resident.model,
+    provider: resident.provider,
   });
 
   if (!result) {

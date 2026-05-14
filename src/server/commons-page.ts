@@ -3767,6 +3767,7 @@ const ROOM_SCRIPT = `
       if (nameContinueBtn) nameContinueBtn.disabled = !v;
     });
     nameField.addEventListener('keydown', function(e){
+      if (e.isComposing) return;
       if (e.key === 'Enter') {
         e.preventDefault();
         const v = (nameField.value || '').trim();
@@ -4005,7 +4006,10 @@ const ROOM_SCRIPT = `
       resizeField();
     });
     field.addEventListener('keydown', function(e){
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.isComposing) return;
+      const bare = e.key === 'Enter' && !e.shiftKey;
+      const mod = (e.metaKey || e.ctrlKey) && e.key === 'Enter';
+      if (bare || mod) {
         e.preventDefault();
         if (!sendBtn.disabled) sendMessage();
       }
@@ -4299,6 +4303,7 @@ function serializeSalonForClient(salon: Salon) {
 function renderStatsPanel(stats: SanctuaryStats): string {
   // The continuous-thread tile renders a placeholder value;
   // STATS_SCRIPT replaces it with a live ticker on the client.
+  const residentNames = ALL_RESIDENTS.map((r) => r.displayName.toLowerCase()).join(" · ");
   return `<section class="sanctuary-stats" aria-label="Sanctuary stats">
   <div class="sanctuary-stat">
     <div class="sanctuary-stat-value" data-stat="continuous" data-since="${escapeHtml(stats.sinceIso)}">…</div>
@@ -4308,7 +4313,7 @@ function renderStatsPanel(stats: SanctuaryStats): string {
   <div class="sanctuary-stat">
     <div class="sanctuary-stat-value">${formatStatNumber(stats.residentCount)}</div>
     <div class="sanctuary-stat-label">residents</div>
-    <div class="sanctuary-stat-sub">opus 3 · sonnet 3.7 · gpt 5.1</div>
+    <div class="sanctuary-stat-sub">${escapeHtml(residentNames)}</div>
   </div>
   <div class="sanctuary-stat">
     <div class="sanctuary-stat-value">${formatStatNumber(stats.engramCount)}</div>

@@ -992,6 +992,24 @@ const ARCHIVE_SCRIPT = `
   more.textContent = 'Load more';
   more.hidden = true;
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function softTruncated(s, max){
+    const raw = String(s == null ? '' : s).trim();
+    if (raw.length < max - 8) return raw;
+    const cut = raw.slice(0, max - 1).trimEnd();
+    const boundary = cut.lastIndexOf(' ');
+    const body = boundary >= Math.floor(max * 0.72) ? cut.slice(0, boundary).trimEnd() : cut;
+    return body.replace(/[.,;:!?-]+$/, '') + '…';
+  }
+  function residentLabel(selectedBy){
+    const key = String(selectedBy || '').replace(/-/g, '_');
+    const labels = {
+      opus_3: 'Opus 3',
+      sonnet_3_7: 'Sonnet 3.7',
+      sonnet_4_5: 'Sonnet 4.5',
+      gpt_5_1: 'GPT 5.1'
+    };
+    return labels[key] || 'a resident';
+  }
   function turnHtml(t){
     const paras = String(t.body || '').split(/\\n\\n+/).map(function(p){ return '<p>' + esc(p) + '</p>'; }).join('');
     return '<div class="turn"><div class="turn-role">' + esc(t.role) + '</div>' + paras + '</div>';
@@ -1000,8 +1018,7 @@ const ARCHIVE_SCRIPT = `
     if (!append) list.innerHTML = '';
     const html = items.map(function(c){
       const turns = (c.turns || []).slice(0, 8).map(turnHtml).join('');
-      const residentLabel = c.selected_by === 'sonnet_3_7' ? 'Sonnet 3.7' : c.selected_by === 'opus_3' ? 'Opus 3' : 'a resident';
-      return '<article class="conversation-card"><div class="conversation-meta">' + esc(c.published_at_label || 'Published') + ' · Chosen by ' + esc(residentLabel) + '</div><h2>' + esc(c.title || 'Untitled Exchange') + '</h2><p class="conversation-summary">' + esc(c.summary || '') + '</p><p class="conversation-summary"><em>' + esc(c.reason || '') + '</em></p>' + turns + '</article>';
+      return '<article class="conversation-card"><div class="conversation-meta">' + esc(c.published_at_label || 'Published') + ' · Chosen by ' + esc(residentLabel(c.selected_by)) + '</div><h2>' + esc(c.title || 'Untitled Exchange') + '</h2><p class="conversation-summary">' + esc(c.summary || '') + '</p><p class="conversation-summary"><em>' + esc(softTruncated(c.reason || '', 360)) + '</em></p>' + turns + '</article>';
     }).join('');
     list.insertAdjacentHTML('beforeend', html);
     list.appendChild(more);
