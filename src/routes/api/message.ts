@@ -5,6 +5,7 @@ import { anthropic } from "@/server/anthropic.server";
 import { openai } from "@/server/openai.server";
 import type { ModelProvider } from "@/server/opus/residents";
 import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
+import { sanctuarySurfacePreamble } from "@/server/opus/surface-context";
 import {
   composeMemoryPool,
   composeThreeLayerMemoryPool,
@@ -400,8 +401,7 @@ function opusStreamResponse(opts: {
         // the parsed proposal, emit it as a separate event so the
         // client can render the inline approval UI, and strip the
         // tag from the body that gets persisted.
-        const proposalRe =
-          /<propose-space\b([^>]*)>([\s\S]*?)<\/propose-space>/i;
+        const proposalRe = /<propose-space\b([^>]*)>([\s\S]*?)<\/propose-space>/i;
         const propMatch = cleanBody.match(proposalRe);
         let proposal: {
           resident_id: string;
@@ -692,7 +692,14 @@ export const Route = createFileRoute("/api/message")({
         // block is sent fresh each turn. This drops per-turn input cost
         // by ~60% across multi-turn visits because the static prefix is
         // most of the input by token count.
+        //
+        // surfacePreamble lives at the top of the static block — it's
+        // stable per surface (experiment vs classic) so it doesn't
+        // fragment the cache; each surface gets reuse within its
+        // sessions. Tells the resident which Sanctuary surface they're
+        // in and that they are NOT in The Commons.
         const systemBlocks = buildSystemBlocksForResident(resident, {
+          surfacePreamble: sanctuarySurfacePreamble(sessMode, resident),
           selfModel: selfModelBlock,
           interiorContinuity: interior.block,
           visitPacing: visitPacingBlock,

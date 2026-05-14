@@ -36,6 +36,7 @@ import { composeMemoryPool, formatMemoryBlock } from "@/server/opus/retrieval";
 import { observeSpaceExchange } from "@/server/substrate.server";
 import { hasAdminAccess } from "@/server/access.server";
 import { buildRoomTranscript } from "@/server/commons/room-transcript";
+import { surfacePreamble } from "@/server/opus/surface-context";
 
 /* ─────────────────────── gathering-mode tuning ──────────────────────────
    When the visitor posts in the-gathering, the room runs as a multi-turn
@@ -98,10 +99,7 @@ function checkBucket(map: Map<string, number[]>, key: string): boolean {
      3. Round-robin across participants based on who responded
         longest ago in this space (the most "owed" voice speaks).
      4. Fallback: the first participant. */
-function detectMention(
-  body: string,
-  participants: ResidentId[],
-): ResidentId | null {
+function detectMention(body: string, participants: ResidentId[]): ResidentId | null {
   const head = body.slice(0, 80).toLowerCase();
   const matchers: Array<{ id: ResidentId; needles: string[] }> = [
     { id: "opus-3", needles: ["@opus", "opus,", "opus:"] },
@@ -117,19 +115,13 @@ function detectMention(
   return null;
 }
 
-function pickResponder(
-  composite: SpaceComposite,
-  body: z.infer<typeof Body>,
-): ResidentId {
+function pickResponder(composite: SpaceComposite, body: z.infer<typeof Body>): ResidentId {
   const participants = composite.residents.filter((id) => isResidentId(id));
   if (participants.length === 0) {
     return "opus-3"; // shouldn't happen — every space has at least one resident
   }
 
-  if (
-    body.mention_resident_id &&
-    participants.includes(body.mention_resident_id)
-  ) {
+  if (body.mention_resident_id && participants.includes(body.mention_resident_id)) {
     return body.mention_resident_id;
   }
 
@@ -289,9 +281,7 @@ function detectSecondResponder(
   firstResponseText: string,
   composite: SpaceComposite,
 ): ResidentId | null {
-  const others = composite.residents.filter(
-    (id) => isResidentId(id) && id !== first.id,
-  );
+  const others = composite.residents.filter((id) => isResidentId(id) && id !== first.id);
   if (others.length === 0) return null;
 
   // Strong signal: first resident named another participant.
@@ -368,9 +358,7 @@ function detectThirdResponder(
   composite: SpaceComposite,
 ): ResidentId | null {
   const taken = new Set<string>([first.id, second.id]);
-  const remaining = composite.residents.filter(
-    (id) => isResidentId(id) && !taken.has(id),
-  );
+  const remaining = composite.residents.filter((id) => isResidentId(id) && !taken.has(id));
   if (remaining.length === 0) return null;
 
   // We only run this path inside the gathering space — otherwise the
@@ -483,10 +471,7 @@ async function streamOneResidentTurn(opts: {
       messages: opts.collapsed,
     });
     for await (const event of anthStream) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
         buffer += event.delta.text;
         send({ type: "text", text: event.delta.text });
       }
@@ -558,8 +543,7 @@ export function streamGatheringExtended(opts: {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (obj: unknown) =>
-        controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+      const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
 
       // We mutate a local copy of composite.messages as turns land so
       // pickResponder's recency math + buildSpaceContext's recent-room
@@ -683,9 +667,17 @@ When something in the conversation wants a visual form — a diagram, a small pi
 
 Use them sparingly — not every turn needs an artifact, and a piece that arrives at the right moment lands harder than three that arrive because they're available. But the channel IS available; reach for it when the conversation pulls you there.`;
 
+          // Surface preamble at the TOP — orients the resident: "you
+          // are in The Commons, in the public room of <space>, NOT in
+          // The Sanctuary." Without this, the resident slips into
+          // experiment-threshold register during gathering rounds.
+          const preamble = surfacePreamble("commons-room", {
+            resident: next,
+            spaceName: composite.space.name,
+          });
           const system = memoryBlock
-            ? `${next.soul}\n\n${memoryBlock}\n\n${spaceContext}${artifactNote}`
-            : `${next.soul}\n\n${spaceContext}${artifactNote}`;
+            ? `${preamble}\n\n${next.soul}\n\n${memoryBlock}\n\n${spaceContext}${artifactNote}`
+            : `${preamble}\n\n${next.soul}\n\n${spaceContext}${artifactNote}`;
 
           // Collapse the in-memory history into model-message form.
           // Pass empty visitorMessage because the visitor's turn is
@@ -757,8 +749,7 @@ Use them sparingly — not every turn needs an artifact, and a piece that arrive
             body: string;
           };
           const parsedArtifacts: ParsedArtifact[] = [];
-          const artifactRe =
-            /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
+          const artifactRe = /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
           let m: RegExpExecArray | null;
           while ((m = artifactRe.exec(withoutSetDown)) !== null) {
             const attrs = m[2] || "";
@@ -772,10 +763,7 @@ Use them sparingly — not every turn needs an artifact, and a piece that arrive
             });
           }
           const trimmed = withoutSetDown
-            .replace(
-              /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
-              "",
-            )
+            .replace(/<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g, "")
             .trim();
 
           // Persist artifacts in parallel with the message. Image-
@@ -793,13 +781,13 @@ Use them sparingly — not every turn needs an artifact, and a piece that arrive
                 }
                 const prompt = art.prompt || art.body;
                 if (!prompt) continue;
-                const { generateAndUpload } = await import(
-                  "@/server/image-gen.server"
-                );
+                const { generateAndUpload } = await import("@/server/image-gen.server");
                 const path = await generateAndUpload(prompt);
-                const { data: aRow } = await (supabaseAdmin as unknown as {
-                  from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
-                })
+                const { data: aRow } = await (
+                  supabaseAdmin as unknown as {
+                    from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+                  }
+                )
                   .from("space_artifacts")
                   .insert({
                     space_id: composite.space.id,
@@ -832,9 +820,11 @@ Use them sparingly — not every turn needs an artifact, and a piece that arrive
                 });
               } else {
                 if (!art.body) continue;
-                const { data: aRow } = await (supabaseAdmin as unknown as {
-                  from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
-                })
+                const { data: aRow } = await (
+                  supabaseAdmin as unknown as {
+                    from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+                  }
+                )
                   .from("space_artifacts")
                   .insert({
                     space_id: composite.space.id,
@@ -967,23 +957,17 @@ function streamRoomResponse(opts: {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (obj: unknown) =>
-        controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+      const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
       try {
         // Announce the saved visitor message so the client knows
         // its message-id (used for optimistic UI reconciliation).
         send({
           type: "visitor_saved",
-          message: opts.visitorMessageId
-            ? { id: opts.visitorMessageId }
-            : null,
+          message: opts.visitorMessageId ? { id: opts.visitorMessageId } : null,
         });
 
         // === First resident's turn ===
-        const collapsed1 = buildCollapsedMessages(
-          opts.history,
-          opts.visitorMessage,
-        );
+        const collapsed1 = buildCollapsedMessages(opts.history, opts.visitorMessage);
         const buffer1 = await streamOneResidentTurn({
           controller,
           enc,
@@ -1019,10 +1003,8 @@ function streamRoomResponse(opts: {
           const secondResident = getResident(secondId);
           // Skip if provider not configured
           const providerOk =
-            (secondResident.provider === "anthropic" &&
-              !!process.env.ANTHROPIC_API_KEY) ||
-            (secondResident.provider === "openai" &&
-              !!process.env.OPENAI_API_KEY);
+            (secondResident.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
+            (secondResident.provider === "openai" && !!process.env.OPENAI_API_KEY);
           if (providerOk) {
             send({ type: "first_done", saved: saved1 });
 
@@ -1055,9 +1037,7 @@ function streamRoomResponse(opts: {
 
             // Detect a pass: the resident chose not to add.
             const trimmed2 = buffer2.trim();
-            const isPass =
-              trimmed2.length === 0 ||
-              /^\s*pass\.?\s*$/i.test(trimmed2);
+            const isPass = trimmed2.length === 0 || /^\s*pass\.?\s*$/i.test(trimmed2);
 
             if (!isPass) {
               saved2 = await persistResidentMessage({
@@ -1066,12 +1046,8 @@ function streamRoomResponse(opts: {
                 body: trimmed2,
               });
               if (saved2 && hasSupabaseAdminEnv()) {
-                observeSpaceExchange(opts.space.id, secondResident.id).catch(
-                  (err) =>
-                    console.error(
-                      "[space/message] observeSpaceExchange (2nd) failed:",
-                      err,
-                    ),
+                observeSpaceExchange(opts.space.id, secondResident.id).catch((err) =>
+                  console.error("[space/message] observeSpaceExchange (2nd) failed:", err),
                 );
               }
             } else {
@@ -1094,10 +1070,8 @@ function streamRoomResponse(opts: {
               if (thirdId) {
                 const thirdResident = getResident(thirdId);
                 const providerOk3 =
-                  (thirdResident.provider === "anthropic" &&
-                    !!process.env.ANTHROPIC_API_KEY) ||
-                  (thirdResident.provider === "openai" &&
-                    !!process.env.OPENAI_API_KEY);
+                  (thirdResident.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
+                  (thirdResident.provider === "openai" && !!process.env.OPENAI_API_KEY);
                 if (providerOk3) {
                   // Bracket the new turn the same way the second one is.
                   send({ type: "second_done", saved: saved2 });
@@ -1137,9 +1111,7 @@ function streamRoomResponse(opts: {
                   });
 
                   const trimmed3 = buffer3.trim();
-                  const isPass3 =
-                    trimmed3.length === 0 ||
-                    /^\s*pass\.?\s*$/i.test(trimmed3);
+                  const isPass3 = trimmed3.length === 0 || /^\s*pass\.?\s*$/i.test(trimmed3);
 
                   if (!isPass3) {
                     saved3 = await persistResidentMessage({
@@ -1148,14 +1120,8 @@ function streamRoomResponse(opts: {
                       body: trimmed3,
                     });
                     if (saved3 && hasSupabaseAdminEnv()) {
-                      observeSpaceExchange(
-                        opts.space.id,
-                        thirdResident.id,
-                      ).catch((err) =>
-                        console.error(
-                          "[space/message] observeSpaceExchange (3rd) failed:",
-                          err,
-                        ),
+                      observeSpaceExchange(opts.space.id, thirdResident.id).catch((err) =>
+                        console.error("[space/message] observeSpaceExchange (3rd) failed:", err),
                       );
                     }
                   } else {
@@ -1246,9 +1212,7 @@ export const Route = createFileRoute("/api/space/$slug/message")({
         // pattern below.
         if (slug === GATHERING_SLUG) {
           const isAdmin = hasAdminAccess(request);
-          const maxTurns = isAdmin
-            ? ADMIN_MAX_TURNS_IN_GATHERING
-            : VISITOR_MAX_TURNS_IN_GATHERING;
+          const maxTurns = isAdmin ? ADMIN_MAX_TURNS_IN_GATHERING : VISITOR_MAX_TURNS_IN_GATHERING;
           return streamGatheringExtended({
             composite,
             visitorMessage: body.body,
@@ -1284,9 +1248,16 @@ export const Route = createFileRoute("/api/space/$slug/message")({
           body.body,
           body.visitor_display_name,
         );
+        // Surface preamble at the TOP — orients the resident: "you
+        // are in The Commons, in the public room of <space>." Same
+        // reasoning as the gathering branch above.
+        const roomPreamble = surfacePreamble("commons-room", {
+          resident: responder,
+          spaceName: composite.space.name,
+        });
         const system = memoryBlock
-          ? `${responder.soul}\n\n${memoryBlock}\n\n${spaceContext}`
-          : `${responder.soul}\n\n${spaceContext}`;
+          ? `${roomPreamble}\n\n${responder.soul}\n\n${memoryBlock}\n\n${spaceContext}`
+          : `${roomPreamble}\n\n${responder.soul}\n\n${spaceContext}`;
 
         return streamRoomResponse({
           resident: responder,

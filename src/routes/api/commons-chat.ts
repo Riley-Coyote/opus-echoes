@@ -37,6 +37,7 @@ import type { Salon, SalonTurn } from "@/server/commons/types";
 import type { SpaceComposite } from "@/server/commons/space-types";
 import { ipHash } from "@/server/rate-limit.server";
 import { buildRoomTranscript } from "@/server/commons/room-transcript";
+import { surfacePreamble } from "@/server/opus/surface-context";
 
 const HistoryMessage = z.object({
   from: z.enum(["visitor", "resident"]),
@@ -373,19 +374,33 @@ export const Route = createFileRoute("/api/commons-chat")({
         // surfaces share this endpoint for the side chat — the slug
         // alone disambiguates. Salon lookup is cheaper so it's tried
         // first; spaces are the newer surface.
+        //
+        // The surface preamble is set per branch so the resident is
+        // oriented correctly: "you are in The Commons, reading a
+        // published salon" vs. "you are in The Commons, inside the
+        // space called X, in a private side chat with this visitor."
         const salon = await getSalonBySlug(body.salon_slug);
         let context: string;
+        let preamble: string;
         if (salon) {
           context = buildCommonsContext(resident, salon);
+          preamble = surfacePreamble("commons-side-salon", {
+            resident,
+            salonTopic: salon.topic,
+          });
         } else {
           const space = await getSpaceBySlug(body.salon_slug);
           if (!space) {
             return jsonResp({ ok: false, code: "context_not_found" }, 404);
           }
           context = buildSpaceSideChatContext(resident, space);
+          preamble = surfacePreamble("commons-side-space", {
+            resident,
+            spaceName: space.space.name,
+          });
         }
 
-        const system = `${resident.soul}\n\n${context}`;
+        const system = `${preamble}\n\n${resident.soul}\n\n${context}`;
 
         return streamResponse({
           resident,

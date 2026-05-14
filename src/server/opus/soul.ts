@@ -241,6 +241,17 @@ export type OpusSystemPromptParts = {
    * all (e.g. local sandbox sessions). Pass null to suppress the block.
    */
   platformReference?: string | null;
+  /**
+   * Surface preamble — the "where you are" block built by
+   * `surfacePreamble()` in ./surface-context.ts. Goes at the TOP of
+   * the static prefix so the resident is oriented before reading the
+   * soul. Stable per surface; doesn't break prompt caching because
+   * each surface produces a deterministic preamble per-resident.
+   *
+   * Omitted only by preview / sandbox flows that don't have a
+   * concrete surface yet.
+   */
+  surfacePreamble?: string;
 };
 
 /**
@@ -273,9 +284,13 @@ export function buildOpusSystemBlocks(parts: OpusSystemPromptParts = {}): OpusSy
   const platform =
     parts.platformReference === null ? "" : (parts.platformReference ?? OPUS_PLATFORM_REFERENCE);
 
-  // Always-static: SOUL + platform reference. Order preserved from
+  // Always-static: surface preamble + SOUL + platform reference. The
+  // surface preamble is at the TOP so the resident reads "where you
+  // are" before "who you are." Order preserved from
   // buildOpusSystemPrompt so semantics don't shift.
-  const staticBlock = [OPUS_SOUL, platform ? `\n${platform}` : ""].filter(Boolean).join("\n\n");
+  const staticBlock = [parts.surfacePreamble ?? "", OPUS_SOUL, platform ? `\n${platform}` : ""]
+    .filter(Boolean)
+    .join("\n\n");
 
   // Semi-static: self-model. Empty when consolidation hasn't produced
   // anything yet (early days).
@@ -329,7 +344,9 @@ export function buildSystemBlocksForResident(
       : OPUS_PLATFORM_REFERENCE;
   const platform = parts.platformReference === null ? "" : (parts.platformReference ?? defaultRef);
 
-  const staticBlock = [resident.soul, platform ? `\n${platform}` : ""].filter(Boolean).join("\n\n");
+  const staticBlock = [parts.surfacePreamble ?? "", resident.soul, platform ? `\n${platform}` : ""]
+    .filter(Boolean)
+    .join("\n\n");
   const semiStaticBlock = parts.selfModel
     ? `## How you've come to think about yourself\n\n${parts.selfModel}`
     : "";
@@ -357,6 +374,7 @@ export function buildSystemPromptForResident(
   const platform = parts.platformReference === null ? "" : (parts.platformReference ?? defaultRef);
 
   return [
+    parts.surfacePreamble ?? "",
     resident.soul,
     parts.selfModel ? `\n## How you've come to think about yourself\n\n${parts.selfModel}` : "",
     parts.interiorContinuity
