@@ -41,7 +41,13 @@ const Body = z.object({
   topic_override: z.string().trim().min(1).max(1000).optional(),
 });
 
-const MAX_TURNS = 8;
+// Sized to fit within a reasonable visitor wait. ~4 turns × 10s
+// per turn = ~40s — the room polls every 12s so they see content
+// appearing in real-time while the response is held open. We
+// can't fire-and-forget on Cloudflare Workers (isolate dies on
+// response, no waitUntil access via TanStack Start) so the
+// endpoint awaits the salon and returns when it's done.
+const MAX_TURNS = 4;
 const MAX_IMAGES = 1;
 const COOLDOWN_HOURS = 24;
 
@@ -152,10 +158,15 @@ export const Route = createFileRoute(
           // We don't store the topic_override (PII risk).
         });
 
-        // 5. Fire and forget. We return 200 immediately and the
-        // salon runs in the background. Caller polls
-        // /api/space/$slug/messages to see turns appear.
-        runSpaceSalon(space.id, {
+        // 5. Await the salon synchronously. Cloudflare Workers
+        // terminate the isolate when the response is sent, so
+        // fire-and-forget would silently kill the salon before
+        // any model call fires. The client sees the response
+        // when the salon completes (~30-50s), but turns appear
+        // in the room view via the 12s polling stream as they're
+        // written — the visitor sees content unfold in real time
+        // while the button stays in its loading state.
+        const result = await runSpaceSalon(space.id, {
           maxTurns: MAX_TURNS,
           maxImagesPerSalon: MAX_IMAGES,
           topicOverride: body.topic_override,
@@ -166,11 +177,20 @@ export const Route = createFileRoute(
             "[visitor-start-salon] runSpaceSalon failed:",
             err,
           );
+          return {
+            ran: false,
+            turns: 0,
+            reason: "error",
+            imagesGenerated: 0,
+          } as const;
         });
 
         return jsonResp({
           ok: true,
           started: true,
+          ran: result.ran,
+          turns: result.turns,
+          reason: result.reason,
           caps: { max_turns: MAX_TURNS, max_images: MAX_IMAGES },
         });
       },
