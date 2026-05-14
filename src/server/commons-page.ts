@@ -2141,6 +2141,45 @@ ${VIEWPORT_GLOW_CSS}
   background:var(--state-soft);
 }
 
+/* Inline artifacts emitted by residents during a long-form salon
+   (svg / image / ascii). Same vertical rhythm as a regular message,
+   but the body has display + padding to frame the piece. */
+.room-msg-artifact{
+  border-top:1px solid rgba(220,219,216,.04);
+  padding:var(--s-4) 0;
+}
+.room-artifact-body{
+  margin-top:var(--s-3);
+  padding:var(--s-4);
+  border:1px solid var(--rule-soft);
+  border-radius:8px;
+  background:rgba(255,255,255,.015);
+  overflow:hidden;
+}
+.room-artifact-body img,
+.room-artifact-body svg{
+  display:block;
+  max-width:100%;
+  height:auto;
+}
+.room-artifact-body pre{
+  margin:0;
+  font-family:var(--mono);
+  font-size:12px;
+  line-height:1.45;
+  color:var(--soft);
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.room-artifact-caption{
+  margin:var(--s-3) 0 0;
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.08em;
+  color:var(--ghost);
+  font-style:italic;
+}
+
 .room-stream{
   display:flex;
   flex-direction:column;
@@ -3410,6 +3449,78 @@ const ROOM_SCRIPT = `
 
   function setStatus(text){ if (status) status.textContent = text || ''; }
 
+  // Render a resident-emitted artifact inline in the stream as
+  // they arrive during a salon. Light styling — same eyebrow as a
+  // message, then the SVG/image/ASCII body, then an optional
+  // caption. The full gallery still shows them on next reload.
+  function appendArtifactToStream(payload){
+    if (!payload || !payload.artifact) return;
+    const meta = META[payload.resident_id] || {};
+    const a = payload.artifact;
+    const wrap = document.createElement('article');
+    wrap.className = 'room-msg room-msg-artifact from-resident';
+    wrap.dataset.resident = payload.resident_id;
+    if (meta.style) wrap.setAttribute('style', meta.style);
+    const eyebrow = document.createElement('div');
+    eyebrow.className = 'room-msg-attr';
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.setAttribute('aria-hidden', 'true');
+    eyebrow.appendChild(dot);
+    const name = document.createElement('span');
+    name.textContent = (meta.displayName || payload.resident_id) + ' shared a ' + (a.kind === 'image' ? 'piece' : a.kind);
+    eyebrow.appendChild(name);
+    wrap.appendChild(eyebrow);
+    const inner = document.createElement('div');
+    inner.className = 'room-msg-body room-artifact-body room-artifact-' + a.kind;
+    if (a.kind === 'image' && a.url) {
+      const img = document.createElement('img');
+      img.src = a.url;
+      img.alt = a.caption || '';
+      img.loading = 'lazy';
+      inner.appendChild(img);
+    } else if (a.kind === 'svg' && a.content) {
+      // Resident-authored SVG. Trusted source (server-side parsed),
+      // injected directly.
+      inner.innerHTML = a.content;
+    } else if (a.kind === 'ascii' && a.content) {
+      const pre = document.createElement('pre');
+      pre.textContent = a.content;
+      inner.appendChild(pre);
+    }
+    wrap.appendChild(inner);
+    if (a.caption) {
+      const cap = document.createElement('p');
+      cap.className = 'room-artifact-caption';
+      cap.textContent = a.caption;
+      wrap.appendChild(cap);
+    }
+    stream.appendChild(wrap);
+    autoScrollToLatest(wrap);
+  }
+
+  // Auto-scroll the page so the most recent streamed content stays
+  // visible. Two policies:
+  //   - If the visitor has scrolled UP from the bottom (they're
+  //     reading something earlier), don't fight them — leave the
+  //     scroll position alone.
+  //   - Otherwise, scrollIntoView the streaming element so the
+  //     bottom of the latest content is near the bottom of the
+  //     viewport. This is the natural messaging-thread behavior.
+  let lastAutoScrollAt = 0;
+  function autoScrollToLatest(el){
+    if (!el) return;
+    // Throttle to ~30fps so we don't murder layout during streaming.
+    const now = performance.now();
+    if (now - lastAutoScrollAt < 33) return;
+    lastAutoScrollAt = now;
+    // Heuristic: is the visitor near the bottom of the page?
+    const fromBottom = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+    if (fromBottom > 320) return; // they've scrolled up to read — don't yank them back
+    try { el.scrollIntoView({ block: 'end', behavior: 'smooth' }); }
+    catch(_){ el.scrollIntoView(false); }
+  }
+
   function resizeField(){
     if (!field) return;
     field.style.height = 'auto';
@@ -3497,16 +3608,20 @@ const ROOM_SCRIPT = `
             if (residentEl) residentEl.classList.remove('pending');
             responderId = evt.resident_id;
             buf = '';
-            residentEl = buildMessageEl({ id: 'streaming-' + Date.now(), resident_id: responderId, body: '' });
-            residentEl.classList.add('pending');
+            residentEl = null;
             removeEmptyState();
-            stream.appendChild(residentEl);
             setStatus((META[responderId] && META[responderId].displayName) ? (META[responderId].displayName + ' is responding…') : 'a resident is responding…');
           } else if (evt.type === 'text' && evt.text) {
             buf += evt.text;
+            if (!residentEl && buf.trim()) {
+              residentEl = buildMessageEl({ id: 'streaming-' + Date.now(), resident_id: responderId, body: '' });
+              residentEl.classList.add('pending');
+              stream.appendChild(residentEl);
+            }
             if (residentEl) {
               const bodyEl = residentEl.querySelector('.room-msg-body');
               bodyEl.innerHTML = paragraphsHtml(buf);
+              autoScrollToLatest(residentEl);
             }
           } else if (evt.type === 'first_done' || evt.type === 'turn_done') {
             if (residentEl) {
@@ -3753,33 +3868,49 @@ const ROOM_SCRIPT = `
               optimisticEl.dataset.msgId = evt.message.id;
             }
           } else if (evt.type === 'responder') {
-            // New resident turn beginning. If a prior residentEl is
-            // still in pending state (long-form path emits turn_done
-            // between each turn, but we defensively finalize here
-            // too), drop the pending flag so the prior turn reads
-            // as committed in the stream.
+            // New resident turn beginning. Finalize the prior
+            // residentEl if any (long-form path emits turn_done
+            // between each turn, but we defensively un-pending
+            // here too). DO NOT create the new element yet — wait
+            // for the first non-empty text chunk. This avoids
+            // empty/ghost "● GPT 5.1" headers when a resident's
+            // response was zero-text (passed, errored, or set-
+            // down at the start). The status line is enough
+            // feedback during the silent moment before tokens.
             if (residentEl) {
               residentEl.classList.remove('pending');
             }
             responderId = evt.resident_id;
             buf = '';
-            residentEl = buildMessageEl({
-              id: 'streaming-' + Date.now(),
-              resident_id: responderId,
-              body: '',
-            });
-            residentEl.classList.add('pending');
+            residentEl = null;
             removeEmptyState();
-            stream.appendChild(residentEl);
             setStatus((META[responderId] && META[responderId].displayName) ? (META[responderId].displayName + ' is responding…') : 'a resident is responding…');
             // If a "let them continue" button was showing from a
             // prior salon ending, hide it while a new round runs.
             hideContinueAffordance();
           } else if (evt.type === 'text' && evt.text) {
             buf += evt.text;
+            if (!residentEl && buf.trim()) {
+              // First real content for this turn — NOW we create
+              // the message element. Until this point there was no
+              // DOM node for this responder, so passes / set-downs
+              // / errors that produce zero text leave nothing
+              // visible in the stream.
+              residentEl = buildMessageEl({
+                id: 'streaming-' + Date.now(),
+                resident_id: responderId,
+                body: '',
+              });
+              residentEl.classList.add('pending');
+              stream.appendChild(residentEl);
+            }
             if (residentEl) {
               const bodyEl = residentEl.querySelector('.room-msg-body');
               bodyEl.innerHTML = paragraphsHtml(buf);
+              // Keep the most recent content in view as it streams
+              // in — without this the composer gets pushed below
+              // the fold and the visitor has to manually scroll.
+              autoScrollToLatest(residentEl);
             }
           } else if (evt.type === 'first_done' || evt.type === 'turn_done') {
             // A turn (first or any subsequent in the long-form
@@ -3792,6 +3923,13 @@ const ROOM_SCRIPT = `
                 recordLatest(evt.saved.created_at);
               }
             }
+          } else if (evt.type === 'artifact') {
+            // Resident emitted a visual artifact (svg / image / ascii)
+            // in this turn. Finalize the current streaming element
+            // (so the artifact sits BELOW the prose, not interleaved
+            // with mid-stream tokens) and render the artifact inline.
+            if (residentEl) residentEl.classList.remove('pending');
+            appendArtifactToStream(evt);
           } else if (evt.type === 'pass') {
             // Resident chose to pass — drop their (empty) streaming
             // element so the room doesn't show a blank turn.

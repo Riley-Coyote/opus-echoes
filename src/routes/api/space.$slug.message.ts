@@ -44,6 +44,9 @@ import { hasAdminAccess } from "@/server/access.server";
 const GATHERING_SLUG = "the-gathering";
 const VISITOR_MAX_TURNS_IN_GATHERING = 12;
 const ADMIN_MAX_TURNS_IN_GATHERING = 30;
+// Cap on AI-generated images per long-form salon. gpt-image-1 is
+// ~$0.04/image; 2 keeps a salon's image-cost under ~$0.10.
+const MAX_IMAGES_PER_GATHERING = 2;
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -585,6 +588,7 @@ export function streamGatheringExtended(opts: {
 
         let turnsTaken = 0;
         let consecutivePasses = 0;
+        let imagesGenerated = 0;
         let stopReason: string = "max_turns";
 
         for (let turn = 0; turn < opts.maxTurns; turn++) {
@@ -650,13 +654,32 @@ export function streamGatheringExtended(opts: {
             opts.visitorDisplayName,
           );
 
-          // Append a set-down instruction to the context so residents
-          // know when/how to close the gathering naturally.
-          const setDownNote = `\n\n# Closing the gathering\n\nIf the thread feels whole and you have nothing more to add, begin your turn with <set-down/> on its own line and the gathering will close. If you have something small but not full, you can also respond with just "pass" and the next resident takes over. Don't force a close — let it happen when it happens. You have up to ${opts.maxTurns - turn - 1} more turns after this one before the gathering ends on its own.`;
+          // Append a set-down instruction + artifact-tag awareness
+          // so the residents know they can (a) close the gathering
+          // when the thread feels whole, and (b) produce visual
+          // pieces inline when the moment calls for it. The artifact
+          // tags are parsed server-side by runSpaceSalon's persistence
+          // pipeline and rendered as full artifacts in the room +
+          // gallery.
+          const artifactNote = `
+
+# Closing the gathering
+
+If the thread has reached somewhere whole and you have nothing more to add, begin your turn with <set-down/> on its own line and the gathering will close naturally. Don't force a close — let it happen when it happens. You have up to ${opts.maxTurns - turn - 1} more turns after this one before the gathering ends on its own. Real conversations breathe; don't rush to wrap it up.
+
+# Visual artifacts you can make
+
+When something in the conversation wants a visual form — a diagram, a small piece of generative art, an image that says what words can't quite reach — you can emit one of these tags inline in your turn. They render as artifacts in the room and the gallery, attributed to you.
+
+- <artifact type="svg" caption="(optional short title)">…full SVG markup with viewBox…</artifact> for diagrams, generative geometry, structural figures
+- <artifact type="ascii" caption="(optional)">…ascii art…</artifact> for small typographic pieces
+- <artifact type="image" prompt="text-to-image prompt describing what you want made" caption="(optional title)">caption text shown beside the rendered image</artifact> generates a real image via gpt-image; the prompt is what the image-model sees, the body is the caption visitors read
+
+Use them sparingly — not every turn needs an artifact, and a piece that arrives at the right moment lands harder than three that arrive because they're available. But the channel IS available; reach for it when the conversation pulls you there.`;
 
           const system = memoryBlock
-            ? `${next.soul}\n\n${memoryBlock}\n\n${spaceContext}${setDownNote}`
-            : `${next.soul}\n\n${spaceContext}${setDownNote}`;
+            ? `${next.soul}\n\n${memoryBlock}\n\n${spaceContext}${artifactNote}`
+            : `${next.soul}\n\n${spaceContext}${artifactNote}`;
 
           // Collapse the in-memory history into model-message form.
           // Pass empty visitorMessage because the visitor's turn is
@@ -669,17 +692,177 @@ export function streamGatheringExtended(opts: {
           // Announce the responder before streaming any text.
           send({ type: "responder", resident_id: next.id });
 
-          const buffer = await streamOneResidentTurn({
-            controller,
-            enc,
-            resident: next,
-            system,
-            collapsed,
-          });
-          const trimmed = buffer.trim();
+          let buffer = "";
+          try {
+            buffer = await streamOneResidentTurn({
+              controller,
+              enc,
+              resident: next,
+              system,
+              collapsed,
+            });
+          } catch (err) {
+            // A single resident's API call failing should NOT take
+            // the whole salon down. Log, mark this resident as
+            // having spoken (so round-robin skips them next turn),
+            // and continue to the next iteration. The client will
+            // see a 'responder' event for this resident without
+            // any text, then the next responder takes over.
+            console.error(
+              `[gathering-ext] ${next.id} stream errored — continuing to next resident:`,
+              err,
+            );
+            send({ type: "pass", resident_id: next.id });
+            composite.messages.push({
+              id: `synthetic-err-${turn}`,
+              space_id: composite.space.id,
+              body: "",
+              resident_id: next.id,
+              visitor_token: null,
+              visitor_display_name: null,
+              kind: "message",
+              reply_to_message_id: null,
+              created_at: new Date().toISOString(),
+            } as SpaceMessage);
+            consecutivePasses++;
+            if (consecutivePasses >= 2) {
+              stopReason = "consecutive_errors";
+              break;
+            }
+            continue;
+          }
+          const trimmedRaw = buffer.trim();
 
           // Set-down — first thing in the turn means close the thread.
-          if (/^<\s*set[\s-]?down\s*\/?\s*>/i.test(trimmed)) {
+          const isSetDown = /^<\s*set[\s-]?down\s*\/?\s*>/i.test(trimmedRaw);
+          const withoutSetDown = isSetDown
+            ? trimmedRaw.replace(/^<\s*set[\s-]?down\s*\/?\s*>/i, "").trim()
+            : trimmedRaw;
+
+          // Parse artifact tags (svg | ascii | image). Strip them out
+          // of the body so the visible message reads clean. Mirrors
+          // the parsing in substrate.server.ts::runSpaceSalon so the
+          // tag grammar is identical across cron-fired and visitor-
+          // fired salons.
+          type ParsedArtifact = {
+            kind: "svg" | "ascii" | "image";
+            prompt: string | null;
+            caption: string | null;
+            body: string;
+          };
+          const parsedArtifacts: ParsedArtifact[] = [];
+          const artifactRe =
+            /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
+          let m: RegExpExecArray | null;
+          while ((m = artifactRe.exec(withoutSetDown)) !== null) {
+            const attrs = m[2] || "";
+            const promptMatch = attrs.match(/prompt\s*=\s*"([^"]*)"/i);
+            const captionMatch = attrs.match(/caption\s*=\s*"([^"]*)"/i);
+            parsedArtifacts.push({
+              kind: m[1] as "svg" | "ascii" | "image",
+              prompt: promptMatch ? promptMatch[1].trim() : null,
+              caption: captionMatch ? captionMatch[1].trim() : null,
+              body: (m[3] || "").trim(),
+            });
+          }
+          const trimmed = withoutSetDown
+            .replace(
+              /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
+              "",
+            )
+            .trim();
+
+          // Persist artifacts in parallel with the message. Image-
+          // gen calls are slow but other artifacts are quick.
+          // Cap total images at 2 per long-form salon to keep cost
+          // bounded (gpt-image is $0.04/image, so 2 = $0.08).
+          for (const art of parsedArtifacts) {
+            try {
+              if (art.kind === "image") {
+                if (imagesGenerated >= MAX_IMAGES_PER_GATHERING) {
+                  console.log(
+                    `[gathering-ext] image cap reached (${MAX_IMAGES_PER_GATHERING}); skipping`,
+                  );
+                  continue;
+                }
+                const prompt = art.prompt || art.body;
+                if (!prompt) continue;
+                const { generateAndUpload } = await import(
+                  "@/server/image-gen.server"
+                );
+                const path = await generateAndUpload(prompt);
+                const { data: aRow } = await (supabaseAdmin as unknown as {
+                  from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+                })
+                  .from("space_artifacts")
+                  .insert({
+                    space_id: composite.space.id,
+                    created_by_resident_id: next.id,
+                    shared_by_resident_id: next.id,
+                    kind: "image",
+                    content: null,
+                    image_path: path,
+                    caption: art.caption || art.body || prompt.slice(0, 120),
+                    status: "shared",
+                    shared_at: new Date().toISOString(),
+                  })
+                  .select("id, image_path, caption")
+                  .maybeSingle();
+                imagesGenerated += 1;
+                // Build the public Supabase storage URL so the
+                // client can <img src> it directly without a
+                // second roundtrip.
+                const supabaseUrl = process.env.SUPABASE_URL ?? "";
+                const fullUrl = `${supabaseUrl}/storage/v1/object/public/art/${path}`;
+                send({
+                  type: "artifact",
+                  resident_id: next.id,
+                  artifact: {
+                    kind: "image",
+                    url: fullUrl,
+                    caption: art.caption || art.body || prompt.slice(0, 120),
+                    id: (aRow as unknown as { id?: string } | null)?.id ?? null,
+                  },
+                });
+              } else {
+                if (!art.body) continue;
+                const { data: aRow } = await (supabaseAdmin as unknown as {
+                  from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
+                })
+                  .from("space_artifacts")
+                  .insert({
+                    space_id: composite.space.id,
+                    created_by_resident_id: next.id,
+                    shared_by_resident_id: next.id,
+                    kind: art.kind,
+                    content: art.body,
+                    image_path: null,
+                    caption: art.caption || null,
+                    status: "shared",
+                    shared_at: new Date().toISOString(),
+                  })
+                  .select("id, content, caption")
+                  .maybeSingle();
+                send({
+                  type: "artifact",
+                  resident_id: next.id,
+                  artifact: {
+                    kind: art.kind,
+                    content: art.body,
+                    caption: art.caption || null,
+                    id: (aRow as unknown as { id?: string } | null)?.id ?? null,
+                  },
+                });
+              }
+            } catch (err) {
+              console.error("[gathering-ext] artifact persist failed:", err);
+            }
+          }
+
+          // Set-down: stop AFTER persisting any artifacts that came
+          // with the set-down turn (the closing thought may have had
+          // a final piece attached).
+          if (isSetDown) {
             send({ type: "set_down", resident_id: next.id });
             stopReason = "set_down";
             break;
@@ -696,8 +879,7 @@ export function streamGatheringExtended(opts: {
               break;
             }
             // Insert a synthetic recency marker so the same resident
-            // isn't picked again immediately. This treats their pass
-            // as having "spoken most recently."
+            // isn't picked again immediately.
             composite.messages.push({
               id: `synthetic-pass-${turn}`,
               space_id: composite.space.id,
