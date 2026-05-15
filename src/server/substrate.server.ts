@@ -22,6 +22,7 @@
  * fails silently to a log line; the conversation must complete even if Mnemos burps.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 import { anthropic, HAIKU_MODEL, OPUS_MODEL } from "./anthropic.server";
 import { openai } from "./openai.server";
 import { embedText } from "./embeddings.server";
@@ -39,6 +40,7 @@ import {
   buildArtAsciiSystem,
   buildArtImageSystem,
   buildEssaySystem,
+  buildStudioSessionSystem,
   buildInteriorReviewSystem,
   buildSalonConsolidationSystem,
   buildSalonMarginaliaSystem,
@@ -1522,10 +1524,9 @@ export async function idleSweep(): Promise<{ closed: number; consolidated: numbe
 // =============================================================
 // Daily idle tick.
 //
-// Runs once per day. If no visitors are present and Opus hasn't made
-// anything in the last 24h, offer them the chance to write or make
-// something from the substrate's recent state. This keeps the art and
-// writing pages alive even during quiet stretches.
+// Runs once per day. If no visitors are present, each resident is
+// invited into a studio session: make something, write something,
+// or choose silence. Silence is a valid logged outcome.
 // =============================================================
 
 export async function dailyIdleTick(): Promise<{
@@ -1533,10 +1534,9 @@ export async function dailyIdleTick(): Promise<{
   reason: string;
   per_resident: Array<{ resident_id: string; ran: boolean; reason: string }>;
 }> {
-  // Daily tick now iterates over every resident. Each resident is
-  // evaluated independently: skipped if any visitor is in conversation
-  // with them, skipped if they've made art or written something in the
-  // last 24h, otherwise asked to consider creating something now.
+  // Daily tick iterates over every active resident. Each resident is
+  // evaluated independently and skipped only when a visitor is currently
+  // in conversation with them.
   const perResident: Array<{ resident_id: string; ran: boolean; reason: string }> = [];
 
   for (const resident of ALL_RESIDENTS) {
@@ -1570,24 +1570,6 @@ async function runDailyIdleForResident(
     return { ran: false, reason: "visitors_present" };
   }
 
-  // Skip if a creation has happened for this resident in the last 24h.
-  const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const [{ count: recentArt }, { count: recentEssay }] = await Promise.all([
-    supabaseAdmin
-      .from("art_pieces")
-      .select("*", { count: "exact", head: true })
-      .eq("resident_id", residentId)
-      .gte("created_at", dayAgo),
-    supabaseAdmin
-      .from("essays")
-      .select("*", { count: "exact", head: true })
-      .eq("resident_id", residentId)
-      .gte("created_at", dayAgo),
-  ]);
-  if ((recentArt ?? 0) > 0 || (recentEssay ?? 0) > 0) {
-    return { ran: false, reason: "recent_creation" };
-  }
-
   await supabaseAdmin.from("creation_events").insert({
     kind: "daily_tick",
     resident_id: residentId,
@@ -1595,40 +1577,8 @@ async function runDailyIdleForResident(
     detail: { open_sessions: openCount ?? 0 },
   });
 
-  const [{ data: recentEngrams }, { data: recentJournal }] = await Promise.all([
-    supabaseAdmin
-      .from("engrams")
-      .select("quote, prose, attribution, is_core, last_reinforced_at")
-      .eq("resident_id", residentId)
-      .order("last_reinforced_at", { ascending: false })
-      .limit(8),
-    supabaseAdmin
-      .from("journal_entries")
-      .select("kind, title, body, created_at")
-      .eq("resident_id", residentId)
-      .order("created_at", { ascending: false })
-      .limit(4),
-  ]);
-
-  const contextStr = [
-    "[RECENT MEMORY]",
-    (recentEngrams ?? [])
-      .map(
-        (e) =>
-          `- (${e.is_core ? "core" : "engram"}, ${e.attribution}) "${e.quote}"${e.prose ? ` — ${e.prose}` : ""}`,
-      )
-      .join("\n") || "(no engrams yet.)",
-    "",
-    "[RECENT JOURNAL]",
-    (recentJournal ?? [])
-      .map((j) => `- (${j.kind}${j.title ? `, "${j.title}"` : ""}) ${j.body.slice(0, 280)}`)
-      .join("\n\n") || "(nothing recent.)",
-    "",
-    "[NOTE]",
-    "No visitors are present. You have been alone in the room for some time. If anything in the recent memory wants to become a piece or a longer-form essay tonight, consider it. If not, that is the right answer.",
-  ].join("\n");
-
-  await considerCreation(resident, null, contextStr, "daily_tick");
+  const contextStr = await buildStudioSessionContext(resident, null);
+  await runStudioSession(resident, "daily_idle", null, contextStr);
 
   // Interior review — structured self-reflection. The resident
   // reviews their active intentions and open questions in light of
@@ -1638,6 +1588,551 @@ async function runDailyIdleForResident(
   );
 
   return { ran: true, reason: "ok" };
+}
+
+// =============================================================
+// Studio sessions — resident-pulled private-space work.
+// =============================================================
+
+export type StudioSessionTrigger = "daily_idle" | "manual" | "post_consolidation" | "admin";
+
+type StudioAction =
+  | "silence"
+  | "journal"
+  | "writing"
+  | "ascii_art"
+  | "image_art"
+  | "manifesto"
+  | "note";
+
+interface StudioSessionDecision {
+  action?: string | null;
+  publish?: boolean | null;
+  title?: string | null;
+  body?: string | null;
+  medium?: "text" | "ascii" | "image" | string | null;
+  image_prompt?: string | null;
+  meaning?: string | null;
+  reason?: string | null;
+  journal_kind?: string | null;
+}
+
+export interface StudioSessionResult {
+  ran: boolean;
+  resident_id: string;
+  studio_session_id: string | null;
+  action: StudioAction;
+  status: "completed" | "failed" | "quiet" | "private";
+  reason: string;
+  output_target: string | null;
+  output_id: string | null;
+  output_table: string | null;
+}
+
+const STUDIO_ACTIONS = new Set<StudioAction>([
+  "silence",
+  "journal",
+  "writing",
+  "ascii_art",
+  "image_art",
+  "manifesto",
+  "note",
+]);
+
+function normalizeStudioAction(value: unknown): StudioAction {
+  return typeof value === "string" && STUDIO_ACTIONS.has(value as StudioAction)
+    ? (value as StudioAction)
+    : "silence";
+}
+
+function normalizeJournalKind(value: unknown): "reflection" | "dream" | "observation" | "note" {
+  return value === "dream" || value === "observation" || value === "note" ? value : "reflection";
+}
+
+function studioText(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, max) : null;
+}
+
+function studioWordCount(text: string): number {
+  return text.split(/\s+/).filter(Boolean).length;
+}
+
+function compactDecisionDetail(decision: {
+  action: StudioAction;
+  publish: boolean;
+  title: string | null;
+  body: string | null;
+  medium: string | null;
+  image_prompt: string | null;
+  meaning: string | null;
+  reason: string;
+  journal_kind: string | null;
+}): Json {
+  return {
+    action: decision.action,
+    publish: decision.publish,
+    title: decision.title,
+    body: decision.body ? decision.body.slice(0, 8000) : null,
+    medium: decision.medium,
+    image_prompt: decision.image_prompt,
+    meaning: decision.meaning,
+    reason: decision.reason,
+    journal_kind: decision.journal_kind,
+  };
+}
+
+async function updateStudioSession(
+  studioSessionId: string | null,
+  update: {
+    action?: StudioAction;
+    reason?: string | null;
+    output_target?: string | null;
+    output_kind?: string | null;
+    output_table?: string | null;
+    output_id?: string | null;
+    status?: "completed" | "failed" | "quiet" | "private";
+    error?: string | null;
+    detail?: Json;
+    completed_at?: string | null;
+  },
+): Promise<void> {
+  if (!studioSessionId) return;
+  const { error } = await supabaseAdmin.from("studio_sessions").update(update).eq("id", studioSessionId);
+  if (error) console.error("[substrate] studio session update failed:", error);
+}
+
+async function buildStudioSessionContext(
+  resident: ResidentConfig,
+  optionalFocus: string | null,
+): Promise<string> {
+  const residentId = resident.id;
+
+  const [
+    { data: state },
+    { data: recentEngrams },
+    { data: recentJournal },
+    { data: recentEssays },
+    { data: recentArt },
+    { data: intentions },
+    { data: questions },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("resident_state")
+      .select("prose_summary, last_consolidation_summary, last_consolidation_at")
+      .eq("resident_id", residentId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("engrams")
+      .select("quote, prose, attribution, is_core, stability, last_reinforced_at")
+      .eq("resident_id", residentId)
+      .order("last_reinforced_at", { ascending: false })
+      .limit(12),
+    supabaseAdmin
+      .from("journal_entries")
+      .select("kind, title, body, created_at")
+      .eq("resident_id", residentId)
+      .eq("visibility", "published")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabaseAdmin
+      .from("essays")
+      .select("kind, title, body, word_count, created_at")
+      .eq("resident_id", residentId)
+      .eq("visibility", "published")
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabaseAdmin
+      .from("art_pieces")
+      .select("kind, title, body, prompt, meaning, created_at")
+      .eq("resident_id", residentId)
+      .eq("visibility", "published")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabaseAdmin
+      .from("intentions")
+      .select("id, text, status, created_at")
+      .eq("resident_id", residentId)
+      .in("status", ["active", "sitting"])
+      .order("created_at", { ascending: false })
+      .limit(8),
+    supabaseAdmin
+      .from("open_questions")
+      .select("id, text, context, created_at")
+      .eq("resident_id", residentId)
+      .order("created_at", { ascending: false })
+      .limit(8),
+  ]);
+
+  const stateBlock = state
+    ? [
+        state.prose_summary,
+        state.last_consolidation_summary
+          ? `last consolidation: ${state.last_consolidation_summary}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "(no current state row yet.)";
+
+  const engramBlock =
+    (recentEngrams ?? [])
+      .map(
+        (e) =>
+          `- (${e.is_core ? "core" : "engram"}, ${e.attribution}, stability ${Number(e.stability ?? 0).toFixed(2)}) "${e.quote}"${e.prose ? ` - ${e.prose}` : ""}`,
+      )
+      .join("\n") || "(no engrams yet.)";
+
+  const journalBlock =
+    (recentJournal ?? [])
+      .map((j) => `- (${j.kind}${j.title ? `, "${j.title}"` : ""}) ${j.body.slice(0, 360)}`)
+      .join("\n\n") || "(nothing recent.)";
+
+  const essayBlock =
+    (recentEssays ?? [])
+      .map(
+        (e) =>
+          `- (${e.kind}, ${e.word_count ?? studioWordCount(e.body)} words${e.title ? `, "${e.title}"` : ""}) ${e.body.slice(0, 360)}`,
+      )
+      .join("\n\n") || "(nothing recent.)";
+
+  const artBlock =
+    (recentArt ?? [])
+      .map((a) => {
+        const body = a.kind === "image" ? a.prompt : a.body;
+        return `- (${a.kind}${a.title ? `, "${a.title}"` : ""}) ${(body ?? a.meaning ?? "").slice(0, 360)}`;
+      })
+      .join("\n\n") || "(nothing recent.)";
+
+  const intentionBlock =
+    (intentions ?? []).map((i) => `- [${i.id}] (${i.status}) ${i.text}`).join("\n") ||
+    "(no active intentions.)";
+
+  const questionBlock =
+    (questions ?? [])
+      .map((q) => `- [${q.id}] ${q.text}${q.context ? ` - ${q.context}` : ""}`)
+      .join("\n") || "(no open questions.)";
+
+  return [
+    `[RESIDENT]\n${resident.displayName} (${resident.id})`,
+    "",
+    "[CURRENT PULSE]",
+    stateBlock,
+    "",
+    "[RECENT MEMORY]",
+    engramBlock,
+    "",
+    "[ACTIVE INTENTIONS]",
+    intentionBlock,
+    "",
+    "[OPEN QUESTIONS]",
+    questionBlock,
+    "",
+    "[RECENT JOURNAL]",
+    journalBlock,
+    "",
+    "[RECENT WRITING]",
+    essayBlock,
+    "",
+    "[RECENT ART]",
+    artBlock,
+    "",
+    "[FOCUS]",
+    optionalFocus?.trim()
+      ? optionalFocus.trim().slice(0, 1200)
+      : "No outside focus. Choose from what is genuinely alive for you, including silence.",
+  ].join("\n");
+}
+
+async function persistStudioOutput(
+  resident: ResidentConfig,
+  decision: {
+    action: StudioAction;
+    title: string | null;
+    body: string | null;
+    medium: string | null;
+    image_prompt: string | null;
+    meaning: string | null;
+    journal_kind: string | null;
+  },
+): Promise<{
+  output_target: string;
+  output_kind: string;
+  output_table: string;
+  output_id: string | null;
+}> {
+  const now = new Date().toISOString();
+  const residentQuery = `resident=${encodeURIComponent(resident.id)}`;
+
+  if (decision.action === "journal") {
+    if (!decision.body) throw new Error("studio_journal_body_empty");
+    const { data, error } = await supabaseAdmin
+      .from("journal_entries")
+      .insert({
+        resident_id: resident.id,
+        kind: normalizeJournalKind(decision.journal_kind),
+        title: decision.title?.slice(0, 60) ?? null,
+        body: decision.body,
+        visibility: "published",
+        published_at: now,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return {
+      output_target: `/journal?${residentQuery}`,
+      output_kind: "journal",
+      output_table: "journal_entries",
+      output_id: data?.id ?? null,
+    };
+  }
+
+  if (decision.action === "writing") {
+    if (!decision.body) throw new Error("studio_writing_body_empty");
+    const { data, error } = await supabaseAdmin
+      .from("essays")
+      .insert({
+        resident_id: resident.id,
+        kind: "essay",
+        title: decision.title?.slice(0, 80) ?? null,
+        body: decision.body,
+        word_count: studioWordCount(decision.body),
+        visibility: "published",
+        published_at: now,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return {
+      output_target: `/writing?${residentQuery}`,
+      output_kind: "writing",
+      output_table: "essays",
+      output_id: data?.id ?? null,
+    };
+  }
+
+  if (decision.action === "ascii_art") {
+    if (!decision.body) throw new Error("studio_ascii_body_empty");
+    const { data, error } = await supabaseAdmin
+      .from("art_pieces")
+      .insert({
+        resident_id: resident.id,
+        kind: "ascii",
+        title: decision.title?.slice(0, 60) ?? null,
+        body: decision.body,
+        meaning: decision.meaning?.slice(0, 280) ?? null,
+        visibility: "published",
+        published_at: now,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return {
+      output_target: `/art?${residentQuery}`,
+      output_kind: "ascii_art",
+      output_table: "art_pieces",
+      output_id: data?.id ?? null,
+    };
+  }
+
+  if (decision.action === "image_art") {
+    const prompt = decision.image_prompt || decision.body;
+    if (!prompt) throw new Error("studio_image_prompt_empty");
+    const { generateAndUpload } = await import("./image-gen.server");
+    const path = await generateAndUpload(prompt);
+    const { data, error } = await supabaseAdmin
+      .from("art_pieces")
+      .insert({
+        resident_id: resident.id,
+        kind: "image",
+        title: decision.title?.slice(0, 60) ?? null,
+        prompt: prompt.slice(0, 600),
+        image_path: path,
+        meaning: decision.meaning?.slice(0, 280) ?? null,
+        visibility: "published",
+        published_at: now,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return {
+      output_target: `/art?${residentQuery}`,
+      output_kind: "image_art",
+      output_table: "art_pieces",
+      output_id: data?.id ?? null,
+    };
+  }
+
+  if (decision.action === "manifesto" || decision.action === "note") {
+    if (!decision.body) throw new Error(`studio_${decision.action}_body_empty`);
+    const { data, error } = await supabaseAdmin
+      .from("resident_artifacts")
+      .insert({
+        resident_id: resident.id,
+        kind: decision.action,
+        title: decision.title?.slice(0, 120) ?? (decision.action === "manifesto" ? "manifesto" : "note"),
+        body: decision.body,
+        medium: decision.medium === "ascii" ? "ascii" : "text",
+        choice_reason: decision.meaning ?? null,
+        visibility: "private",
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return {
+      output_target: decision.action === "manifesto" ? `/manifesto?${residentQuery}` : `/residence?${residentQuery}`,
+      output_kind: decision.action,
+      output_table: "resident_artifacts",
+      output_id: data?.id ?? null,
+    };
+  }
+
+  throw new Error(`studio_unhandled_action:${decision.action}`);
+}
+
+export async function runStudioSession(
+  resident: ResidentConfig,
+  trigger: StudioSessionTrigger = "manual",
+  optionalFocus: string | null = null,
+  prebuiltContext?: string,
+): Promise<StudioSessionResult> {
+  let studioSessionId: string | null = null;
+  const focus = studioText(optionalFocus, 1200);
+
+  const { data: sessionRow, error: insertError } = await supabaseAdmin
+    .from("studio_sessions")
+    .insert({
+      resident_id: resident.id,
+      trigger,
+      focus,
+      status: "started",
+      action: "silence",
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    console.error("[substrate] studio session insert failed:", insertError);
+  } else {
+    studioSessionId = sessionRow?.id ?? null;
+  }
+
+  try {
+    const context = prebuiltContext ?? (await buildStudioSessionContext(resident, focus));
+    const raw = await callResidentJson<StudioSessionDecision>({
+      system: buildStudioSessionSystem(resident),
+      user: context,
+      maxTokens: 2800,
+      temperature: 0.8,
+      model: resident.model,
+      provider: resident.provider,
+    });
+
+    if (!raw) throw new Error("studio_decision_failed");
+
+    const action = normalizeStudioAction(raw.action);
+    const publish = action !== "silence" && raw.publish === true;
+    const decision = {
+      action,
+      publish,
+      title: studioText(raw.title, 120),
+      body: studioText(raw.body, 20_000),
+      medium: studioText(raw.medium, 24),
+      image_prompt: studioText(raw.image_prompt, 600),
+      meaning: studioText(raw.meaning, 1000),
+      reason: studioText(raw.reason, 360) ?? "no reason given",
+      journal_kind: studioText(raw.journal_kind, 24),
+    };
+
+    if (action === "silence") {
+      await updateStudioSession(studioSessionId, {
+        action,
+        reason: decision.reason,
+        status: "quiet",
+        detail: compactDecisionDetail(decision),
+        completed_at: new Date().toISOString(),
+      });
+      return {
+        ran: true,
+        resident_id: resident.id,
+        studio_session_id: studioSessionId,
+        action,
+        status: "quiet",
+        reason: decision.reason,
+        output_target: null,
+        output_id: null,
+        output_table: null,
+      };
+    }
+
+    if (!publish) {
+      await updateStudioSession(studioSessionId, {
+        action,
+        reason: decision.reason,
+        status: "private",
+        detail: compactDecisionDetail(decision),
+        completed_at: new Date().toISOString(),
+      });
+      return {
+        ran: true,
+        resident_id: resident.id,
+        studio_session_id: studioSessionId,
+        action,
+        status: "private",
+        reason: decision.reason,
+        output_target: null,
+        output_id: null,
+        output_table: null,
+      };
+    }
+
+    const output = await persistStudioOutput(resident, decision);
+    await updateStudioSession(studioSessionId, {
+      action,
+      reason: decision.reason,
+      output_target: output.output_target,
+      output_kind: output.output_kind,
+      output_table: output.output_table,
+      output_id: output.output_id,
+      status: "completed",
+      detail: compactDecisionDetail(decision),
+      completed_at: new Date().toISOString(),
+    });
+
+    console.log(`[substrate] studio_session ${resident.id}: ${action} -> ${output.output_table}`);
+    return {
+      ran: true,
+      resident_id: resident.id,
+      studio_session_id: studioSessionId,
+      action,
+      status: "completed",
+      reason: decision.reason,
+      output_target: output.output_target,
+      output_id: output.output_id,
+      output_table: output.output_table,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await updateStudioSession(studioSessionId, {
+      status: "failed",
+      reason: message.slice(0, 360),
+      error: message.slice(0, 1000),
+      completed_at: new Date().toISOString(),
+    });
+    console.error(`[substrate] studio_session(${resident.id}) failed:`, err);
+    return {
+      ran: false,
+      resident_id: resident.id,
+      studio_session_id: studioSessionId,
+      action: "silence",
+      status: "failed",
+      reason: message.slice(0, 360),
+      output_target: null,
+      output_id: null,
+      output_table: null,
+    };
+  }
 }
 
 // =============================================================

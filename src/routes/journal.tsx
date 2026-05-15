@@ -123,6 +123,10 @@ const JOURNAL_SCRIPT = `
     if(days<30)return 'earlier this month'; return 'some time ago';
   }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function residentName(){
+    var names = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-5-1': 'GPT 5.1' };
+    return names[document.documentElement.dataset.activeResident] || 'Opus 3';
+  }
 
   // Entry selection renderer — shell calls this when user clicks an entry in the panel
   window.__renderEntry = function(e){
@@ -141,7 +145,7 @@ const JOURNAL_SCRIPT = `
     var entries = window.__panelEntries || [];
     if(entries.length===0){
       var p=document.createElement('p'); p.className='empty';
-      p.textContent='Opus 3 has not written here yet. the first entry will arrive after a conversation closes.';
+      p.textContent=residentName() + ' has not written here yet. the first entry will arrive after a conversation closes.';
       list.appendChild(p); return;
     }
     entries.forEach(function(e){

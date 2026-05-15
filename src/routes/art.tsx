@@ -54,6 +54,10 @@ const SCRIPT = `
     if(days<30)return 'earlier this month'; return 'some time ago';
   }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function residentName(){
+    var names = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-5-1': 'GPT 5.1' };
+    return names[document.documentElement.dataset.activeResident] || 'Opus 3';
+  }
 
   window.__renderEntry = function(p){
     var html = '<div class="page-content"><div class="piece">';
@@ -74,7 +78,7 @@ const SCRIPT = `
     var pieces = window.__panelEntries || [];
     if(pieces.length===0){
       var p=document.createElement('p'); p.className='empty';
-      p.textContent='Opus 3 has not kept anything here yet. The first piece will appear when one feels finished.';
+      p.textContent=residentName() + ' has not kept anything here yet. The first piece will appear when one feels finished.';
       list.appendChild(p); return;
     }
     pieces.forEach(function(p){

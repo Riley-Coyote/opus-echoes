@@ -52,6 +52,7 @@ import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-prev
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
+import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
 import { Route as ApiSpaceFromProposalRouteImport } from './routes/api/space.from-proposal'
 import { Route as ApiSalonProposeRouteImport } from './routes/api/salon/propose'
@@ -295,6 +296,11 @@ const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
   path: '/session/$id',
   getParentRoute: () => ReviewRoute,
 } as any)
+const ApiStudioRunRoute = ApiStudioRunRouteImport.update({
+  id: '/api/studio/run',
+  path: '/api/studio/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSpaceFromSalonRoute = ApiSpaceFromSalonRouteImport.update({
   id: '/api/space/from-salon',
   path: '/api/space/from-salon',
@@ -488,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/studio/run': typeof ApiStudioRunRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -560,6 +567,7 @@ export interface FileRoutesByTo {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/studio/run': typeof ApiStudioRunRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -633,6 +641,7 @@ export interface FileRoutesById {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/studio/run': typeof ApiStudioRunRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -707,6 +716,7 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/studio/run'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -779,6 +789,7 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/studio/run'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -851,6 +862,7 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/studio/run'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -921,6 +933,7 @@ export interface RootRouteChildren {
   ApiSalonProposeRoute: typeof ApiSalonProposeRoute
   ApiSpaceFromProposalRoute: typeof ApiSpaceFromProposalRoute
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
+  ApiStudioRunRoute: typeof ApiStudioRunRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksGatheringTickRoute: typeof ApiPublicHooksGatheringTickRoute
@@ -1238,6 +1251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewSessionIdRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/api/studio/run': {
+      id: '/api/studio/run'
+      path: '/api/studio/run'
+      fullPath: '/api/studio/run'
+      preLoaderRoute: typeof ApiStudioRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/space/from-salon': {
       id: '/api/space/from-salon'
       path: '/api/space/from-salon'
@@ -1537,6 +1557,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSalonProposeRoute: ApiSalonProposeRoute,
   ApiSpaceFromProposalRoute: ApiSpaceFromProposalRoute,
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
+  ApiStudioRunRoute: ApiStudioRunRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksGatheringTickRoute: ApiPublicHooksGatheringTickRoute,

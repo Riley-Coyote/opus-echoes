@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { hasResidenceAccess } from "@/server/access.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { isResidentId } from "@/server/opus/residents";
 
@@ -9,6 +10,9 @@ export const Route = createFileRoute("/api/journal")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        if (!(await hasResidenceAccess(request))) {
+          return Response.json({ ok: false, code: "not_admitted", entries: [] }, { status: 401 });
+        }
         if (!hasSupabaseAdminEnv()) return Response.json({ ok: true, entries: [] });
         const url = new URL(request.url);
         const kind = url.searchParams.get("kind");
@@ -17,8 +21,9 @@ export const Route = createFileRoute("/api/journal")({
 
         let query = supabaseAdmin
           .from("journal_entries")
-          .select("id, kind, title, body, created_at")
+          .select("id, kind, title, body, created_at, published_at")
           .eq("resident_id", rid)
+          .eq("visibility", "published")
           .order("created_at", { ascending: false })
           .limit(60);
 
@@ -27,7 +32,10 @@ export const Route = createFileRoute("/api/journal")({
         }
 
         const { data } = await query;
-        return Response.json({ ok: true, entries: data ?? [] });
+        return Response.json(
+          { ok: true, entries: data ?? [] },
+          { headers: { "cache-control": "private, no-store" } },
+        );
       },
     },
   },

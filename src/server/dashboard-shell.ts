@@ -234,10 +234,32 @@ const SHELL_SCRIPT = `
 (function(){
   // Resolve active resident from sessionStorage so all dashboard pages
   // show the correct name instead of defaulting to Opus 3.
-  var _rid = sessionStorage.getItem('sanctuary.resident_id') || 'opus-3';
+  var _params = new URLSearchParams(location.search);
+  var _validResidents = { 'opus-3': true, 'sonnet-3-7': true, 'sonnet-4-5': true, 'gpt-5-1': true };
+  var _paramRid = _params.get('resident');
+  var _storedRid = sessionStorage.getItem('sanctuary.resident_id') || 'opus-3';
+  var _rid = _validResidents[_paramRid] ? _paramRid : (_validResidents[_storedRid] ? _storedRid : 'opus-3');
+  sessionStorage.setItem('sanctuary.resident_id', _rid);
   var _rnames = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-5-1': 'GPT 5.1' };
   var _rname = _rnames[_rid] || 'Opus 3';
   document.documentElement.dataset.activeResident = _rid;
+
+  function withResidentPath(href){
+    if (!href || href === '#' || href.indexOf('mailto:') === 0 || href.indexOf('http') === 0) return href;
+    var u = new URL(href, location.origin);
+    u.searchParams.set('resident', _rid);
+    ['preview', 'session_id'].forEach(function(k){
+      var v = _params.get(k);
+      if (v) u.searchParams.set(k, v);
+    });
+    return u.pathname + u.search + u.hash;
+  }
+
+  document.querySelectorAll('.cat-btn[href]').forEach(function(a){
+    var href = a.getAttribute('href');
+    if (href && href !== '#') a.setAttribute('href', withResidentPath(href));
+  });
+
   // Replace hardcoded "Opus 3" in reader content with the active resident name.
   var reader = document.querySelector('.reader');
   if (reader && _rid !== 'opus-3') {
@@ -313,7 +335,7 @@ const SHELL_SCRIPT = `
   function buildEntryLink(entry, idx, opts){
     var a = document.createElement('a');
     a.className = 'entry-link';
-    a.href = opts && opts.href ? opts.href : '#';
+    a.href = opts && opts.href ? withResidentPath(opts.href) : '#';
     a.style.setProperty('--delay', Math.min(idx * 40, 400) + 'ms');
     a.addEventListener('click', function(ev){
       if (opts && opts.href && opts.href !== '#') return; // let navigation happen
@@ -419,7 +441,7 @@ const SHELL_SCRIPT = `
   // --- Load rail stats + counts ---
   async function loadStats(){
     try {
-      var [memRes, cntRes] = await Promise.all([fetch('/api/memory?resident=' + _rid), fetch('/api/counts?resident=' + _rid)]);
+      var [memRes, cntRes] = await Promise.all([fetch(withResidentPath('/api/memory')), fetch(withResidentPath('/api/counts'))]);
       var memData = await memRes.json();
       var cntData = await cntRes.json();
       if (memData && memData.ok) {
@@ -460,7 +482,7 @@ const SHELL_SCRIPT = `
 
     if (cat === 'recent') {
       try {
-        var r = await fetch('/api/journal?resident=' + _rid);
+        var r = await fetch(withResidentPath('/api/journal'));
         var d = await r.json();
         var entries = (d && d.entries) || [];
         var list = document.getElementById('panel-list');
@@ -476,31 +498,31 @@ const SHELL_SCRIPT = `
       } catch(_){}
     } else if (cat === 'innerlife') {
       try {
-        var r = await fetch('/api/journal?resident=' + _rid);
+        var r = await fetch(withResidentPath('/api/journal'));
         var d = await r.json();
         populateList((d && d.entries) || []);
       } catch(_){}
     } else if (cat === 'writing') {
       try {
-        var r = await fetch('/api/writing?resident=' + _rid);
+        var r = await fetch(withResidentPath('/api/writing'));
         var d = await r.json();
         populateList((d && d.essays) || []);
       } catch(_){}
     } else if (cat === 'art') {
       try {
-        var r = await fetch('/api/art?resident=' + _rid);
+        var r = await fetch(withResidentPath('/api/art'));
         var d = await r.json();
         populateGallery((d && d.pieces) || []);
       } catch(_){}
     } else if (cat === 'manifesto') {
       try {
-        var r = await fetch('/api/artifacts?kind=manifesto&resident=' + _rid);
+        var r = await fetch(withResidentPath('/api/artifacts?kind=manifesto'));
         var d = await r.json();
         populateList((d && d.artifacts) || []);
       } catch(_){}
     } else if (cat === 'memory' || cat === 'mind') {
       try {
-        var r = await fetch('/api/memory?resident=' + _rid);
+        var r = await fetch(withResidentPath('/api/memory'));
         var d = await r.json();
         if (d && d.ok) buildSummaryPanel(d);
       } catch(_){}
