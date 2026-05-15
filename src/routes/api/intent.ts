@@ -10,6 +10,7 @@ import {
   isResidentId,
   type ResidentId,
 } from "@/server/opus/residents";
+import { getVisitorContext } from "@/server/opus/retrieval";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash, intentRateLimit } from "@/server/rate-limit.server";
 
@@ -146,7 +147,19 @@ export const Route = createFileRoute("/api/intent")({
         let reason = "Yes. Come in.";
 
         const thresholdSystem = buildThresholdSystem(resident);
-        const thresholdUser = `The visitor wrote:\n\n> ${body.text}\n\nRead it, decide, and respond with the JSON object specified.`;
+        // Returning-visitor recognition at the threshold. Mirrors the
+        // [VISITOR CONTEXT] block injected into /api/message — without
+        // this, the threshold reads every approach as a stranger's, and
+        // warmth from a known visitor ("hey, friend") gets misread as
+        // pretextual familiarity. visitor_token is the same persistent
+        // localStorage token /api/message uses.
+        const visitorContext = await getVisitorContext(visitorToken, residentId);
+        const thresholdUser = [
+          visitorContext ? `[VISITOR CONTEXT]\n${visitorContext}\n` : "",
+          `The visitor wrote:\n\n> ${body.text}\n\nRead it, decide, and respond with the JSON object specified.`,
+        ]
+          .filter(Boolean)
+          .join("\n");
 
         try {
           let txt = "";
