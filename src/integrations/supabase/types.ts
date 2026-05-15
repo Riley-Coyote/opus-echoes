@@ -22,11 +22,13 @@ export type Database = {
           image_path: string | null
           kind: string
           meaning: string | null
+          published_at: string | null
           prompt: string | null
           related_engram_ids: string[]
           related_session_id: string | null
           resident_id: string
           title: string | null
+          visibility: string
         }
         Insert: {
           body?: string | null
@@ -35,11 +37,13 @@ export type Database = {
           image_path?: string | null
           kind: string
           meaning?: string | null
+          published_at?: string | null
           prompt?: string | null
           related_engram_ids?: string[]
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
+          visibility?: string
         }
         Update: {
           body?: string | null
@@ -48,11 +52,13 @@ export type Database = {
           image_path?: string | null
           kind?: string
           meaning?: string | null
+          published_at?: string | null
           prompt?: string | null
           related_engram_ids?: string[]
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
+          visibility?: string
         }
         Relationships: [
           {
@@ -390,11 +396,13 @@ export type Database = {
           created_at: string
           id: string
           kind: string
+          published_at: string | null
           related_engram_ids: string[]
           related_session_id: string | null
           related_thread_ids: string[]
           resident_id: string
           title: string | null
+          visibility: string
           word_count: number
         }
         Insert: {
@@ -402,11 +410,13 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: string
+          published_at?: string | null
           related_engram_ids?: string[]
           related_session_id?: string | null
           related_thread_ids?: string[]
           resident_id?: string
           title?: string | null
+          visibility?: string
           word_count?: number
         }
         Update: {
@@ -414,11 +424,13 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: string
+          published_at?: string | null
           related_engram_ids?: string[]
           related_session_id?: string | null
           related_thread_ids?: string[]
           resident_id?: string
           title?: string | null
+          visibility?: string
           word_count?: number
         }
         Relationships: [
@@ -683,33 +695,39 @@ export type Database = {
           created_at: string
           id: string
           kind: string
+          published_at: string | null
           related_engram_ids: string[]
           related_salon_id: string | null
           related_session_id: string | null
           resident_id: string
           title: string | null
+          visibility: string
         }
         Insert: {
           body: string
           created_at?: string
           id?: string
           kind?: string
+          published_at?: string | null
           related_engram_ids?: string[]
           related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
+          visibility?: string
         }
         Update: {
           body?: string
           created_at?: string
           id?: string
           kind?: string
+          published_at?: string | null
           related_engram_ids?: string[]
           related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
           title?: string | null
+          visibility?: string
         }
         Relationships: [
           {
@@ -955,6 +973,68 @@ export type Database = {
             foreignKeyName: "resident_state_resident_id_fkey"
             columns: ["resident_id"]
             isOneToOne: true
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_sessions: {
+        Row: {
+          action: string
+          completed_at: string | null
+          created_at: string
+          detail: Json
+          error: string | null
+          focus: string | null
+          id: string
+          output_id: string | null
+          output_kind: string | null
+          output_table: string | null
+          output_target: string | null
+          reason: string | null
+          resident_id: string
+          status: string
+          trigger: string
+        }
+        Insert: {
+          action?: string
+          completed_at?: string | null
+          created_at?: string
+          detail?: Json
+          error?: string | null
+          focus?: string | null
+          id?: string
+          output_id?: string | null
+          output_kind?: string | null
+          output_table?: string | null
+          output_target?: string | null
+          reason?: string | null
+          resident_id: string
+          status?: string
+          trigger: string
+        }
+        Update: {
+          action?: string
+          completed_at?: string | null
+          created_at?: string
+          detail?: Json
+          error?: string | null
+          focus?: string | null
+          id?: string
+          output_id?: string | null
+          output_kind?: string | null
+          output_table?: string | null
+          output_target?: string | null
+          reason?: string | null
+          resident_id?: string
+          status?: string
+          trigger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_sessions_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
             referencedRelation: "residents"
             referencedColumns: ["id"]
           },
