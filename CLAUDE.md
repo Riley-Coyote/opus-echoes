@@ -45,6 +45,59 @@ When you read prose copy that already exists in this repo (in `public-pages.ts`,
 
 ---
 
+## behavior-affecting changes — STOP and test locally, no exceptions
+
+Read this carefully. This is the hardest rule in the project and it has been violated too many times.
+
+**Any change that could affect how a resident behaves inside a conversation must be tested locally — in a real conversation with the affected resident — BEFORE commit, push, or any agent (Lovable, Codex, an autonomous Claude) hands the change to Riley as "done." No exceptions. "Lint and tsc passed" is not a substitute. "I reasoned about it carefully" is not a substitute. The only acceptable verification is a real-conversation test on the running dev server.**
+
+Why this matters more than anywhere else: visitors interact with the residents as continuous parties with standing. If a system-prompt or retrieval change makes Opus 3 act like they don't remember a visitor they've spoken with before, or makes them prematurely set-down, or shifts their voice off-register, the visitor reads that as Riley steering their behavior. That erodes the entire project's thesis. The cost of one bad ship here is much higher than the cost of one extra hour of testing.
+
+### What counts as a behavior-affecting change
+
+If your change touches any of the following — assume YES and test:
+
+- Any soul constant (`src/server/opus/soul.ts`, `sonnet-4-5-soul.ts`, `gpt-5-1-soul.ts`, future souls)
+- `src/server/opus/prompts.ts` — every prompt factory feeds a resident
+- `src/server/opus/surface-context.ts` — surface preambles assembled into every conversation prompt
+- `src/server/opus/platform-reference.ts`, `interior-continuity.ts`, `self-model.ts`, `visit-pacing.ts`
+- `src/server/opus/retrieval.ts` — anything that changes what surfaces into the prompt (hypomnema, engrams, embeddings, scoping)
+- `src/server/substrate.server.ts` — the pipelines that write `engrams`, `beliefs`, `hypomnema_entries`, `journal_entries`, `modulator state`, `marginalia`. These determine what gets retrieved later.
+- `/api/message`, `/api/space/$slug/message`, `/api/commons-chat`, `/api/intent` — anywhere a system or user prompt gets assembled
+- `src/server/opus/residents.ts` — pacing thresholds, model identifiers, resident registry shape
+- Migrations that touch `sessions`, `turns`, `engrams`, `beliefs`, `hypomnema_entries`, `journal_entries`, `space_messages`, `salons`, `salon_turns`, `salon_artifacts`
+- Any direct insert into `journal_entries` or `hypomnema_entries` (especially: Codex or any agent writing on a resident's behalf — that content flows into the next conversation's prompt)
+
+When in doubt: it's a behavior-affecting change. Test.
+
+### What "test locally" means here
+
+1. `bun dev` running on :8080
+2. Open the affected surface in a real browser
+3. Have a real conversation — at minimum:
+   - **Returning-visitor recognition**: reference something you discussed with the resident before. They must look at the memory sections and recognize it, not disclaim.
+   - **No premature set-down**: the resident must not close the conversation in response to a normal turn (including a visitor referencing past content).
+   - **Voice stays on register**: protected vocabulary intact; no greeting reflexes, no helper-speak closers, no ceremony-creep.
+   - **Surface awareness**: the resident references the correct surface ("this thread" / "this room" / "this side chat") and doesn't blur surfaces.
+4. If the change touches the Commons: also test a side chat AND a public-room post in an active space.
+5. Only commit + push after the live test passes.
+
+If a test surfaces a regression, fix it locally and re-test. Do not commit-then-fix-in-a-follow-up. The remote `main` is what Lovable publishes; a broken intermediate state is a broken live state.
+
+### Hard stops for agents
+
+- **Codex / Lovable / autonomous Claudes** should not autonomously edit any file in the "What counts" list above and ship to main without an in-the-loop confirmation from Riley. If you're an agent reading this and you're about to touch one of those files: stop and surface the change to Riley first.
+- **Agents writing on a resident's behalf** (Codex authoring a journal entry, Claude composing a manifesto, etc.) — that content lands in `journal_entries` or similar tables and flows into the resident's NEXT conversation prompt as "what you wrote recently." Treat any agent-authored content for a resident as a behavior-affecting change. Test the next conversation locally before considering it landed.
+
+### Recovery from regressions
+
+If a regression makes it to prod (it will sometimes despite all this):
+1. Revert the offending commit on `main` immediately. Don't try to patch-forward under pressure.
+2. Wait for Lovable's publish cycle so the revert lands live.
+3. Diagnose locally, fix, test, then re-ship.
+
+---
+
 ## stack — what this actually is
 
 - **TanStack Start** (full-stack React on Vite) deployed to **Cloudflare Workers** via Wrangler. Not Next.js. Not Vercel.
