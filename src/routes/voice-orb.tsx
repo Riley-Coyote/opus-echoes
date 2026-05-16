@@ -483,7 +483,6 @@ function VoiceOrbPage() {
   return (
     <div ref={rootRef} style={pageStyle}>
       <style>{VOICE_ORB_ROUTE_CSS}</style>
-      <div className="voice-border-glow" aria-hidden="true" />
 
       {/* top labels */}
       <div style={topLabelsStyle}>
