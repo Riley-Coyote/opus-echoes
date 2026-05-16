@@ -1529,7 +1529,88 @@ ${VIEWPORT_GLOW_CSS}
 @media (max-width: 480px) {
   .empty-sphere { font-size: 7.5px; }
 }
+
+/* ── voice mode fullscreen overlay + amber perimeter glow ─────────
+   When voice mode is active, an iframe (/voice-orb) takes over the
+   viewport. The amber glow is a separate fixed element wrapping the
+   chat frame; its opacity and blur are driven by --voice-level (set
+   per-frame from the orb's onLevel callback) and a slow ramp class
+   for the 1.5s in / 1s out transition. The glow remains visible
+   under the orb iframe (the iframe sits above it) so the orb and
+   the room read as one connected instrument. */
+.voice-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 1500ms cubic-bezier(0.22, 1, 0.36, 1);
+  --voice-level: 0;
+  --voice-amber: 230, 170, 90;
+  background:
+    radial-gradient(ellipse 70% 60% at 0% 0%,
+      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
+      transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 0%,
+      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
+      transparent 60%),
+    radial-gradient(ellipse 70% 60% at 100% 0%,
+      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
+      transparent 60%),
+    radial-gradient(ellipse 50% 80% at 100% 50%,
+      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
+      transparent 60%),
+    radial-gradient(ellipse 70% 60% at 100% 100%,
+      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
+      transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 100%,
+      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
+      transparent 60%),
+    radial-gradient(ellipse 70% 60% at 0% 100%,
+      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
+      transparent 60%),
+    radial-gradient(ellipse 50% 80% at 0% 50%,
+      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
+      transparent 60%);
+  filter: blur(calc(28px + var(--voice-level) * 18px));
+  mix-blend-mode: screen;
+}
+body.voice-mode-active .voice-glow {
+  opacity: calc(0.55 + var(--voice-level) * 0.45);
+  transition: opacity 1500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+body.voice-mode-closing .voice-glow {
+  opacity: 0;
+  transition: opacity 1000ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.voice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #06070a;
+  border: 0;
+  display: none;
+  opacity: 0;
+  transition: opacity 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+body.voice-mode-active .voice-overlay {
+  display: block;
+  opacity: 1;
+}
+body.voice-mode-active {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-glow,
+  body.voice-mode-active .voice-glow,
+  body.voice-mode-closing .voice-glow {
+    transition: opacity 200ms linear;
+  }
+}
 `;
+
 
 /* ──────────────────────────────────────────────────────────────────
    Inline page script — session bootstrap, NDJSON streaming, adaptive
