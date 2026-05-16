@@ -355,13 +355,22 @@ ${VIEWPORT_GLOW_CSS}
    so the artifact reads as a clean inline piece of the conversation. */
 .artifact-figure {
   position: relative;
-  margin: 18px 0;
+  margin: 22px 0;
   display: block;
-  width: 100%;
+  /* break out of msg-body's 600px text column so the figure spans the
+     full feed-column width (the sidehead is 72px + 24px gap). */
+  width: calc(100% + 96px);
+  max-width: none;
+  margin-left: -96px;
   background: transparent;
   border: 0;
   padding: 0;
 }
+@media (max-width: 720px) {
+  .artifact-figure { width: 100%; margin-left: 0; }
+}
+.artifact-figure img,
+.artifact-figure .svg-host { cursor: zoom-in; }
 .artifact-figure.pending .artifact-body {
   width: 100%;
   min-height: 320px;
@@ -462,6 +471,61 @@ ${VIEWPORT_GLOW_CSS}
 }
 .artifact-action:hover { color: #fff; }
 .artifact-action.copied { color: var(--state); }
+
+.gallery-thumb { cursor: zoom-in; }
+
+/* ── lightbox — full-screen zoom view ─────────────────────── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 4vw;
+  background: rgba(6, 7, 10, 0.72);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out);
+  cursor: zoom-out;
+}
+.lightbox.open { display: flex; opacity: 1; }
+.lightbox-stage {
+  max-width: min(92vw, 1400px);
+  max-height: 92vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.96);
+  transition: transform 280ms var(--ease-premium);
+}
+.lightbox.open .lightbox-stage { transform: scale(1); }
+.lightbox-stage img,
+.lightbox-stage svg {
+  display: block;
+  max-width: min(92vw, 1400px);
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+}
+.lightbox-close {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  background: transparent;
+  border: 0;
+  color: rgba(255,255,255,0.7);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+.lightbox-close:hover { color: #fff; }
 
 /* desktop: gallery becomes a left column once any artifact lands */
 @media (min-width: 1024px) {
@@ -1746,11 +1810,13 @@ function chatScript(resident: ResidentConfig): string {
       img.src = art.url;
       img.alt = art.caption || art.prompt || '';
       img.loading = 'lazy';
+      img.addEventListener('click', function(){ openLightbox(art); });
       bodyDiv.appendChild(img);
     } else if (art.kind === 'svg' && art.content) {
       const holder = document.createElement('div');
       holder.className = 'svg-host';
       holder.innerHTML = art.content;
+      holder.addEventListener('click', function(){ openLightbox(art); });
       bodyDiv.appendChild(holder);
     } else if (art.kind === 'ascii' && art.content) {
       const pre = document.createElement('pre');
@@ -1800,6 +1866,7 @@ function chatScript(resident: ResidentConfig): string {
       img.src = art.url;
       img.alt = art.caption || art.prompt || '';
       img.loading = 'lazy';
+      img.addEventListener('click', function(){ openLightbox(art); });
       bodyDiv.appendChild(img);
     }
     if (art.caption) {
@@ -1837,9 +1904,11 @@ function chatScript(resident: ResidentConfig): string {
       item.appendChild(cap);
     }
 
+    item._art = art;
     item.addEventListener('click', function(){
-      if (!figureEl) return;
-      figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const a = item._art;
+      if (a && !a.pending && !a.error) openLightbox(a);
+      else if (figureEl) figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
     list.appendChild(item);
@@ -1888,14 +1957,54 @@ function chatScript(resident: ResidentConfig): string {
 
   function updateGalleryItem(item, art, figureEl){
     if (!item) return;
+    item._art = art;
     const thumb = item.querySelector('.gallery-thumb');
     if (thumb) fillThumb(thumb, art);
-    if (figureEl) {
-      item.onclick = function(){
-        figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      };
-    }
   }
+
+  // Open a full-screen lightbox over the page with a blurred backdrop.
+  // Works for image (url) and svg (raw markup). Click anywhere or press
+  // Escape to close. ASCII / errors / pending are not zoomable.
+  function openLightbox(art){
+    if (!art || art.pending || art.error) return;
+    let lb = document.getElementById('lightbox');
+    if (!lb) return;
+    const stage = lb.querySelector('.lightbox-stage');
+    if (!stage) return;
+    stage.innerHTML = '';
+    if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url;
+      img.alt = art.caption || art.prompt || '';
+      stage.appendChild(img);
+    } else if (art.kind === 'svg' && art.content) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = art.content;
+      stage.appendChild(wrap);
+      const svg = wrap.querySelector('svg');
+      if (svg) {
+        svg.style.maxWidth = 'min(92vw, 1400px)';
+        svg.style.maxHeight = '92vh';
+        svg.style.width = 'auto';
+        svg.style.height = 'auto';
+      }
+    } else {
+      return;
+    }
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    const lb = document.getElementById('lightbox');
+    if (!lb) return;
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+    const stage = lb.querySelector('.lightbox-stage');
+    if (stage) stage.innerHTML = '';
+  }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeLightbox();
+  });
 
 
 
@@ -2604,6 +2713,12 @@ ${FONTS}
 
 <!-- overlay (modals: set-down confirm + consolidating + cross-surface conflict) -->
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-hidden="true"></div>
+
+<!-- lightbox — full-screen zoom of generated images / svgs -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="image preview" onclick="if(event.target===this)this.classList.remove('open'),document.body.style.overflow=''">
+  <button type="button" class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open');document.body.style.overflow=''">close ✕</button>
+  <div class="lightbox-stage"></div>
+</div>
 
 <script>${chatScript(resident)}</script>
 </body>
