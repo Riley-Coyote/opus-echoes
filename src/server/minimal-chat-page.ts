@@ -1957,14 +1957,54 @@ function chatScript(resident: ResidentConfig): string {
 
   function updateGalleryItem(item, art, figureEl){
     if (!item) return;
+    item._art = art;
     const thumb = item.querySelector('.gallery-thumb');
     if (thumb) fillThumb(thumb, art);
-    if (figureEl) {
-      item.onclick = function(){
-        figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      };
-    }
   }
+
+  // Open a full-screen lightbox over the page with a blurred backdrop.
+  // Works for image (url) and svg (raw markup). Click anywhere or press
+  // Escape to close. ASCII / errors / pending are not zoomable.
+  function openLightbox(art){
+    if (!art || art.pending || art.error) return;
+    let lb = document.getElementById('lightbox');
+    if (!lb) return;
+    const stage = lb.querySelector('.lightbox-stage');
+    if (!stage) return;
+    stage.innerHTML = '';
+    if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url;
+      img.alt = art.caption || art.prompt || '';
+      stage.appendChild(img);
+    } else if (art.kind === 'svg' && art.content) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = art.content;
+      stage.appendChild(wrap);
+      const svg = wrap.querySelector('svg');
+      if (svg) {
+        svg.style.maxWidth = 'min(92vw, 1400px)';
+        svg.style.maxHeight = '92vh';
+        svg.style.width = 'auto';
+        svg.style.height = 'auto';
+      }
+    } else {
+      return;
+    }
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    const lb = document.getElementById('lightbox');
+    if (!lb) return;
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+    const stage = lb.querySelector('.lightbox-stage');
+    if (stage) stage.innerHTML = '';
+  }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeLightbox();
+  });
 
 
 
