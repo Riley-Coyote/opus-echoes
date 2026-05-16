@@ -785,6 +785,13 @@ export const Route = createFileRoute("/api/message")({
             text: systemBlocks.static,
             cache_control: { type: "ephemeral" },
           },
+          {
+            // Artifact grammar is fully static — share the cache prefix
+            // across every session for this resident.
+            type: "text",
+            text: ARTIFACT_INSTRUCTIONS,
+            cache_control: { type: "ephemeral" },
+          },
         ];
         if (systemBlocks.semiStatic) {
           cacheableSystem.push({
@@ -796,6 +803,21 @@ export const Route = createFileRoute("/api/message")({
         if (systemBlocks.variable) {
           cacheableSystem.push({ type: "text", text: systemBlocks.variable });
         }
+
+        // Per-session image budget — count generated images so far in
+        // this conversation and subtract from the session cap. Cheap
+        // (small index on session_id) and worth doing precisely so a
+        // visitor can't accumulate dozens of $0.04 generations across
+        // a long thread.
+        const { count: imagesAlreadyGenerated } = await supabaseAdmin
+          .from("turn_artifacts")
+          .select("id", { count: "exact", head: true })
+          .eq("session_id", session.id)
+          .eq("kind", "image");
+        const imageBudgetRemaining = Math.max(
+          0,
+          MAX_IMAGES_PER_SESSION - (imagesAlreadyGenerated ?? 0),
+        );
 
         // Build the user prompt — branched by flag. Each branch narrows
         // memoryRetrieval to its concrete shape and renders its own
