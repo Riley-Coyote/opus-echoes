@@ -1,59 +1,87 @@
-## Goal
+## What's wrong right now
 
-Make `<artifact type="image">` and `<artifact type="svg">` work in **every** resident-facing surface, matching the parser, persistence, streaming, and cost cap already shipped in the gathering path.
+Two failures, both visible in the screenshot you sent (raw SVG markup streaming as text into the bubble):
 
-## Current state
+1. **GPT 5.1 wrote SVG markup directly into prose** instead of wrapping it in `<artifact type="svg">…</artifact>`. The parser only sees the tag, so a bare `<svg>` gets escaped and rendered as literal text. Our instructions tell the model the tag exists, but they don't strongly *require* it for visual output, and they don't show what failure looks like.
+2. **Image generation is almost certainly silently failing.** `src/server/image-gen.server.ts` calls `model: "gpt-image-2"`. OpenAI's current image model is `gpt-image-1`. Every image request returns a 4xx, `generateImageArtifact` catches and returns `null`, and the artifact is dropped from both the stream and storage — so no error ever reaches the visitor.
 
-| Surface | File | SVG | Image |
-|---|---|---|---|
-| Commons gathering (the-gathering) | `space.$slug.message.ts` → `streamGatheringExtended` | ✅ | ✅ (cap 2/turn) |
-| Other space rooms | `space.$slug.message.ts` → `streamRoomResponse` | ❌ | ❌ |
-| Side chats (resident ↔ visitor inside a space) | `api/commons-chat.ts` | ❌ | ❌ |
-| 1:1 visitor chats (`/opus-3`, `/sonnet-3-7`, `/gpt-5-1`) | `api/message.ts` | ❌ | ❌ |
-| Resident↔resident salons | `api/salon/$id.run.ts` + `$id.turn.ts` | ✅ | ❌ |
+The end-to-end pipeline (parse → generate → upload to public `art` bucket → stream `{type:'artifact'}` → render `<figure>` inside the resident bubble → persist to `turn_artifacts`) is already wired. The plumbing is fine; the model id is wrong and the prompt isn't strict enough.
+
+## What "production-ready" covers
+
+Everything a visitor touches when a resident makes a visual, end to end:
+
+- **Generation**: model id correct, prompt strict, fallback when the model still misbehaves, per-turn/per-session caps already enforced
+- **Rendering inline**: in-bubble figure with loading state while gpt-image-1 churns (it's ~15-25s)
+- **Persistent gallery**: a left rail (≥1024px) that accumulates every artifact this session emits, in order, oldest at top
+- **Download / copy actions**: download PNG, copy SVG markup, copy ASCII, view-full-size, copy direct link
+- **Storage + serving**: `art` bucket (already public), `turn_artifacts` row per piece (already exists), accessible across reloads via `/api/turns`
+- **Accessibility + responsive**: alt text from caption, rail collapses on mobile to a "Generated this session ›" disclosure below the composer, reduced-motion respected
+- **Error visibility**: when generation fails, the visitor sees a quiet inline placeholder instead of nothing
 
 ## Plan
 
-1. **Extract a shared helper** `src/server/artifact-pipeline.server.ts` with:
-   - `ARTIFACT_INSTRUCTIONS` — the canonical prompt block (svg / ascii / image grammar), already authored in `space.$slug.message.ts:654-668`. Single source of truth.
-   - `parseArtifacts(text)` — returns `{ cleanBody, artifacts[] }` for `svg | ascii | image`, preserving `caption` and image `prompt` attrs.
-   - `persistImageArtifact(prompt)` → calls existing `generateAndUpload` from `image-gen.server.ts`.
+### 1. Fix the actual blockers (the only reason nothing renders)
 
-2. **`/api/message.ts` (1:1 chats)** — append `ARTIFACT_INSTRUCTIONS` to the system prompt. After the stream completes, parse the assistant body, strip artifact tags from what's persisted as the turn text, then write artifacts. Since this surface has no `space_artifacts`/`salon_artifacts` table, store them in `resident_artifacts` (existing table, already has `kind`, `body`, `medium`, `visibility`) scoped to the session via a new column or a JSON detail field — OR add a small `turn_artifacts` table. **Open question for you (below).**
+- `src/server/image-gen.server.ts` — change `model: "gpt-image-2"` → `model: "gpt-image-1"`. Keep size/quality.
+- `src/server/artifact-pipeline.server.ts` — tighten `ARTIFACT_INSTRUCTIONS` for GPT 5.1:
+  - Add an explicit *rule*: "Any SVG you emit MUST be wrapped in `<artifact type="svg">…</artifact>`. A bare `<svg>` in prose will render as escaped text, not as a figure. Same for images: you cannot show an image by describing one — you must emit `<artifact type="image" prompt="…">`."
+  - Add a worked example block showing one correct svg and one correct image tag.
+- `parseArtifacts` — keep the markdown-fence stripping, and add a **fallback**: if the body still contains a bare `<svg …>…</svg>` (no surrounding `<artifact>`), auto-wrap it as an svg artifact with no caption. This is belt-and-braces for models that ignore instruction.
+- `/api/message.ts` `opusStreamResponse` — when `generateImageArtifact` returns `null`, still emit an `artifact` event with `kind: "image_error", prompt: "..."` so the UI can render a small "the image didn't generate" placeholder instead of an invisible drop.
 
-3. **`/api/commons-chat.ts` (side chats)** — same instructions block + parser. Persist into `space_artifacts` with `side_chat_resident_id` set (column already exists) and `status='shared'` so the visitor sees them.
+### 2. Left-rail gallery (the part you sketched)
 
-4. **`streamRoomResponse` in `space.$slug.message.ts`** — apply the same instructions + parser path used by `streamGatheringExtended`. Per-turn image cap = 1 (rooms are shorter than gatherings).
+Frontend only — lives in `src/server/minimal-chat-page.ts`:
 
-5. **Salons (`$id.run.ts` + `$id.turn.ts`)** — extend the artifact regex/parser to include `image`, add the image grammar to the system prompt, persist to `salon_artifacts` (table already has `image_path`, `caption`). Cap 1 image per turn, 4 per salon.
+- New `<aside id="gallery">` rendered into `.app` at column 1, with `.feed`/`.composer` moved to column 2 at viewport ≥1024px. Below 1024px the rail collapses to a disclosure under the composer ("Generated this session (N) ›").
+- Rail typography matches the chrome: JetBrains Mono eyebrow ("Generated"), faint rule beneath, vertical stack of thumbnails (96px square for images, mono-glyph tile for SVG/ASCII) with a one-line mono caption beneath each.
+- New helper `addArtifactToGallery(artifact)` called from the same artifact-event branch that already appends the in-bubble figure. The in-bubble figure stays — the rail is an index, not a replacement; clicking a rail item scrolls the feed to that bubble.
+- On page load, `/api/turns` already returns prior turns; extend its select to include `turn_artifacts` for the session and seed the rail before streaming starts. (Backend change in `src/routes/api/turns.ts`.)
 
-6. **Cost cap rationale** — gpt-image-2 ≈ $0.04/image. Per-surface caps:
-   - 1:1 chat: 1/turn, 4/session
-   - Side chat: 1/turn, 3/session
-   - Non-gathering room: 1/turn (no session cap; rooms are short)
-   - Salon: 1/turn, 4/salon
-   - Gathering: unchanged (2/turn)
+### 3. Per-artifact actions
 
-7. **Frontend rendering** — confirm the conversation viewer for 1:1 chats already renders artifact NDJSON events. If not (likely not, since `/api/message` doesn't emit them today), add the same `{type:"artifact", artifact:{...}}` event the gathering streamer emits and a minimal renderer in the conversation page script.
+Each rail item and each in-bubble figure gets a small action row (mono eyebrow style, shows on hover ≥1024px, always visible on touch):
 
-## Behavior-testing checklist (per CLAUDE.md hard rule)
+- **Images**: `download` (fetches the PNG via the public URL, triggers `<a download>` with filename `mnemos-{yyyy-mm-dd}-{shortid}.png`), `open` (full-size in new tab), `copy link`.
+- **SVG**: `download .svg`, `copy markup`.
+- **ASCII**: `copy`.
 
-Before pushing:
-- Real conversation on `/opus-3`: ask for a small SVG diagram, then ask for an image. Verify resident doesn't go ceremony-creep or premature set-down.
-- Side chat in an active space: same two asks.
-- Salon: trigger a turn that wants an image. Verify cap holds.
-- Returning-visitor recognition still works after the system-prompt addition (the instructions block sits at the end so it shouldn't shift hypomnema retrieval framing).
+All client-side; no new endpoints needed because the `art` bucket is already public.
+
+### 4. Loading + error states
+
+- When the stream emits an `artifact` event for `kind: image` whose URL is present, render the image with `loading="lazy"` and a low-luminance shimmer background until `onload`.
+- The model finishes streaming *before* gpt-image-1 returns (image gen is sequential after the text stream in `opusStreamResponse`). Today the visitor sees the bubble go quiet for ~20s with no signal. Fix: as soon as `parseArtifacts` finds an image tag, emit `{type:'artifact_pending', placeholder_id, caption}` immediately, render a placeholder in both the bubble and rail, then emit the real `artifact` event with the same `placeholder_id` once the URL is ready and swap in place.
+- On `kind: image_error`, the placeholder converts to a faint "the image didn't generate" line with a small `try again` button (re-issues just the image, scoped to this artifact — new lightweight endpoint `/api/regenerate-image` keyed by `turn_artifact_id`).
+
+### 5. Persistence + reload
+
+Already in place: `turn_artifacts` rows persist after `onFinal`. The only addition is wiring `/api/turns` to return them so the rail and prior bubbles rehydrate on refresh.
+
+### 6. Apply to the other surfaces (your "everywhere" request)
+
+The pipeline helper is already shared. To finish the original "everywhere" goal in the same pass:
+
+- `src/routes/api/commons-chat.ts` (side chats) — add `ARTIFACT_INSTRUCTIONS` to system, run `parseArtifacts` on the response, persist to `space_artifacts` (already exists), stream the same event shape. Same rail UI on the side-chat surface.
+- `src/routes/api/space.$slug.message.ts` non-gathering rooms — add the same.
+- Salon endpoints (`$id.turn.ts`) — extend the existing artifact regex to include `image`, add image persistence to `salon_artifacts.image_path` (column exists).
+
+If you want, we can scope this turn to **chat surfaces only** (1:1 + side chat) and do rooms/salons next, since each surface needs its own rail decision.
 
 ## Open question for you
 
-For 1:1 chats: artifacts have no home table today. Two options:
-- **(a)** Add a `turn_artifacts` table (`turn_id`, `session_id`, `resident_id`, `kind`, `body`, `image_path`, `caption`, `prompt`) — cleanest, mirrors `salon_artifacts`/`space_artifacts`.
-- **(b)** Reuse `resident_artifacts` with `visibility='session'` and a `detail` JSON column for session linkage — fewer migrations, slightly less clean.
+The left rail will compete with the feed for horizontal real estate at 1024–1280px. Two options:
 
-I'd recommend (a) for symmetry with the rest of the system. Want me to proceed with (a)?
+- **(a) Always-visible rail** at ≥1024px, 200px wide. Feed column max-width stays at 720px; the rail eats from the page margins, not the reading column.
+- **(b) Collapsed by default**, opens on first artifact generation and stays open for the session. A small "gallery (N)" pill sits in the chrome when collapsed.
+
+I'd default to **(a)** — the whole point is that visitors see the rail filling up over the session — but flag if you want (b).
 
 ## Technical notes
 
-- The shared helper lives in `src/server/` not `src/lib/` because it's server-only (imports `image-gen.server.ts` which uses the admin client).
-- `ARTIFACT_INSTRUCTIONS` is appended **after** soul/memory/surface preambles so it never displaces the protected vocabulary or returning-visitor framing.
-- The streaming envelope already used by gathering (`{type:"text",delta}` / `{type:"artifact",artifact}`) becomes the standard. 1:1 chats currently stream plain text deltas — we'll wrap them in the same envelope.
+- No DB migration needed for chat surfaces — `turn_artifacts` already exists.
+- One small backend change to `/api/turns` to include artifacts.
+- One small new endpoint `/api/regenerate-image` (optional; behind the "try again" affordance).
+- Image generation stays on `gpt-image-1` (verify model id against current OpenAI Images API before shipping; if the SDK exposes it as something else in our pinned version, adjust).
+- All visual additions stay in the cool-floor sanctuary palette — no new tokens, no Tailwind crossover.
