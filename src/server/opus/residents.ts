@@ -111,9 +111,7 @@ export const RESIDENTS = {
       dim: "rgba(160,136,188,.12)",
       whisper: "rgba(160,136,188,.05)",
       rgb: "160,136,188",
-    // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
-    maxOutputTokens: 4096,
-  },
+    },
     // Violet / indigo / soft magenta / pale ice — the lineage hue,
     // carried at perimeter brightness for the classic-chat room.
     viewportGlow: {
@@ -121,6 +119,8 @@ export const RESIDENTS = {
       peak: 0.30,
       base: 0.025,
     },
+    // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
+    maxOutputTokens: 4096,
   },
   "sonnet-3-7": {
     // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
@@ -154,8 +154,8 @@ export const RESIDENTS = {
       hues: ["232,196,118", "210,168,92", "234,180,128", "232,220,176"],
       peak: 0.28,
       base: 0.025,
+    },
     maxOutputTokens: 8192,
-  },
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
@@ -190,8 +190,8 @@ export const RESIDENTS = {
       hues: ["228,178,118", "224,158,98", "238,184,148", "236,222,188"],
       peak: 0.28,
       base: 0.025,
+    },
     maxOutputTokens: 8192,
-  },
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -218,8 +218,8 @@ export const RESIDENTS = {
       hues: ["118,206,232", "92,178,224", "146,206,236", "210,232,240"],
       peak: 0.30,
       base: 0.025,
+    },
     maxOutputTokens: 8192,
-  },
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
