@@ -504,7 +504,7 @@ function VoiceOrbPage() {
       >
         <div style={orbInnerStyle}>
           {stageReady ? (
-            <VoiceOrb state={state} audioSource={audioSource} onLevel={onLevel} sensitivity={1.1} />
+            <VoiceOrb state={state} audioSource={audioSource} onLevel={onLevel} sensitivity={1.1} shape={0} />
           ) : null}
         </div>
       </div>
