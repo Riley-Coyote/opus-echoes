@@ -483,7 +483,6 @@ function VoiceOrbPage() {
   return (
     <div ref={rootRef} style={pageStyle}>
       <style>{VOICE_ORB_ROUTE_CSS}</style>
-      <div className="voice-border-glow" aria-hidden="true" />
 
       {/* top labels */}
       <div style={topLabelsStyle}>
@@ -620,52 +619,6 @@ const VOICE_ORB_ROUTE_CSS = `
 
   body { overscroll-behavior: none; }
 
-  @property --voice-glow-a { syntax: '<number>'; inherits: true; initial-value: 0.02; }
-  @property --voice-glow-b { syntax: '<number>'; inherits: true; initial-value: 0.04; }
-  @property --voice-glow-c { syntax: '<number>'; inherits: true; initial-value: 0.01; }
-  @property --voice-glow-d { syntax: '<number>'; inherits: true; initial-value: 0.03; }
-
-  .voice-border-glow {
-    position: fixed;
-    inset: -34px;
-    z-index: 0;
-    pointer-events: none;
-    --voice-amber: 201, 168, 124;
-    background:
-      linear-gradient(to bottom,
-        rgba(var(--voice-amber), calc(0.32 + var(--voice-level, 0) * 0.58 + var(--voice-glow-a))) 0%,
-        rgba(var(--voice-amber), calc(0.12 + var(--voice-level, 0) * 0.22)) 9%,
-        rgba(var(--voice-amber), 0) 23%),
-      linear-gradient(to top,
-        rgba(var(--voice-amber), calc(0.30 + var(--voice-level, 0) * 0.54 + var(--voice-glow-b))) 0%,
-        rgba(var(--voice-amber), calc(0.10 + var(--voice-level, 0) * 0.20)) 9%,
-        rgba(var(--voice-amber), 0) 23%),
-      linear-gradient(to right,
-        rgba(var(--voice-amber), calc(0.26 + var(--voice-level, 0) * 0.50 + var(--voice-glow-c))) 0%,
-        rgba(var(--voice-amber), calc(0.09 + var(--voice-level, 0) * 0.18)) 8%,
-        rgba(var(--voice-amber), 0) 22%),
-      linear-gradient(to left,
-        rgba(var(--voice-amber), calc(0.28 + var(--voice-level, 0) * 0.52 + var(--voice-glow-d))) 0%,
-        rgba(var(--voice-amber), calc(0.09 + var(--voice-level, 0) * 0.18)) 8%,
-        rgba(var(--voice-amber), 0) 22%);
-    filter: blur(calc(28px + var(--voice-level, 0) * 18px));
-    opacity: calc(0.72 + var(--voice-level, 0) * 0.28);
-    will-change: filter, opacity;
-    animation:
-      voice-glow-a 13.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
-      voice-glow-b 17.25s cubic-bezier(0.45, 0.05, 0.55, 0.95) -5.8s infinite,
-      voice-glow-c 21.75s cubic-bezier(0.45, 0.05, 0.55, 0.95) -9.2s infinite,
-      voice-glow-d 26.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) -3.4s infinite;
-  }
-
-  @keyframes voice-glow-a { 0%, 100% { --voice-glow-a: -0.03; } 48% { --voice-glow-a: 0.10; } }
-  @keyframes voice-glow-b { 0%, 100% { --voice-glow-b: 0.08; } 52% { --voice-glow-b: -0.04; } }
-  @keyframes voice-glow-c { 0%, 100% { --voice-glow-c: -0.02; } 46% { --voice-glow-c: 0.08; } }
-  @keyframes voice-glow-d { 0%, 100% { --voice-glow-d: 0.07; } 55% { --voice-glow-d: -0.03; } }
-
-  @media (prefers-reduced-motion: reduce) {
-    .voice-border-glow { animation: none; }
-  }
 `;
 
 // Luca .voice-mode-overlay: a fixed, flex-centred field. The stage
