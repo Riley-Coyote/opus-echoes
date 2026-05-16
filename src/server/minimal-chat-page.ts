@@ -587,6 +587,109 @@ ${VIEWPORT_GLOW_CSS}
 }
 .resident-mark:hover { color: var(--ink); }
 
+/* ── model selector — replaces the static resident label ─────
+   Trigger is visually identical to the prior .resident-mark: brand-dot
+   + name. Adds a chevron and opens a quiet popover listing every
+   resident, each with their perimeter-glow hue dot. */
+.resident-select { position: relative; }
+.resident-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+  letter-spacing: var(--track-tight);
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+  background: transparent;
+  border: 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.resident-select-trigger .brand-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--state-soft);
+  transform: translateY(-1px);
+  animation: brand-breathe 5.2s ease-in-out infinite;
+}
+.resident-select-trigger .chev {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--quiet);
+  transform: translateY(-1px);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.resident-select-trigger:hover { color: var(--ink); }
+.resident-select-trigger:hover .chev { color: var(--state-soft); }
+.resident-select[data-open="true"] .resident-select-trigger .chev { transform: translateY(0) rotate(180deg); color: var(--state-soft); }
+
+.resident-select-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 48px -16px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.25);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 30;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+}
+.resident-select[data-open="true"] .resident-select-pop {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+.resident-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 10px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--body);
+  letter-spacing: var(--track-tight);
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.resident-option:hover,
+.resident-option[data-focused="true"] {
+  background: var(--panel-2);
+  color: var(--ink);
+}
+.resident-option[data-active="true"] {
+  color: var(--ink);
+}
+.resident-option .hue-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+.resident-option .check {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--state-soft);
+  opacity: 0;
+}
+.resident-option[data-active="true"] .check { opacity: 1; }
+
 .chrome-end {
   display: inline-flex;
   align-items: center;
