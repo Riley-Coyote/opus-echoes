@@ -93,3 +93,61 @@ export const VIEWPORT_GLOW_CSS = `
   .viewport-glow{ animation: none; }
 }
 `;
+
+/**
+ * Per-resident perimeter glow override.
+ *
+ * Emits a CSS block that overrides .viewport-glow's background and the
+ * vg-1..vg-8 keyframes with a resident-specific four-hue palette and
+ * a brighter peak alpha envelope. Designed to be appended AFTER
+ * VIEWPORT_GLOW_CSS — last definition wins for both the background
+ * shorthand and the named keyframes.
+ *
+ * Pool assignment (matches the prime-rhythm layout in VIEWPORT_GLOW_CSS):
+ *   pools 1,5 → hues[0]   (top-left + bottom-right corners)
+ *   pools 2,6 → hues[1]   (top + bottom edges)
+ *   pools 3,7 → hues[2]   (top-right + bottom-left corners)
+ *   pools 4,8 → hues[3]   (right + left edges)
+ *
+ * peak/base define the animated alpha envelope. Peaks ~0.26-0.30 read
+ * as visibly luminous on the dark floor and intentionally outshine the
+ * composer's Option-C border-shimmer so the perimeter becomes the
+ * room's primary identity signal.
+ */
+export interface ViewportGlowOverrideOptions {
+  hues: [string, string, string, string];
+  peak: number;
+  base: number;
+}
+
+export function buildViewportGlowCss(opts: ViewportGlowOverrideOptions): string {
+  const [h1, h2, h3, h4] = opts.hues;
+  const peak = opts.peak;
+  const base = opts.base;
+  // Slight per-pool variation so no two corners breathe in lockstep
+  // even though they share the same hue family.
+  const p = (mul: number) => +(peak * mul).toFixed(4);
+  const b = +base.toFixed(4);
+  const peaks = [p(1.00), p(0.92), p(1.06), p(0.86), p(0.96), p(0.82), p(1.02), p(0.80)];
+  return `
+.viewport-glow{
+  background:
+    radial-gradient(ellipse 55% 55% at 0% 0%,     rgba(${h1}, var(--vg1)) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 45% at 50% 0%,    rgba(${h2}, var(--vg2)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 100% 0%,   rgba(${h3}, var(--vg3)) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 70% at 100% 50%,  rgba(${h4}, var(--vg4)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 100% 100%, rgba(${h1}, var(--vg5)) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 45% at 50% 100%,  rgba(${h2}, var(--vg6)) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 55% at 0% 100%,   rgba(${h3}, var(--vg7)) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 70% at 0% 50%,    rgba(${h4}, var(--vg8)) 0%, transparent 72%);
+}
+@keyframes vg-1 { 0%,100% { --vg1: ${b}; }       50% { --vg1: ${peaks[0]}; } }
+@keyframes vg-2 { 0%,100% { --vg2: ${peaks[1]}; } 50% { --vg2: ${b}; } }
+@keyframes vg-3 { 0%,100% { --vg3: ${b}; }       50% { --vg3: ${peaks[2]}; } }
+@keyframes vg-4 { 0%,100% { --vg4: ${peaks[3]}; } 50% { --vg4: ${b}; } }
+@keyframes vg-5 { 0%,100% { --vg5: ${b}; }       50% { --vg5: ${peaks[4]}; } }
+@keyframes vg-6 { 0%,100% { --vg6: ${peaks[5]}; } 50% { --vg6: ${b}; } }
+@keyframes vg-7 { 0%,100% { --vg7: ${b}; }       50% { --vg7: ${peaks[6]}; } }
+@keyframes vg-8 { 0%,100% { --vg8: ${peaks[7]}; } 50% { --vg8: ${b}; } }
+`;
+}
