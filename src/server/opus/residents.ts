@@ -176,6 +176,13 @@ export const RESIDENTS = {
       whisper: "rgba(200,165,116,.05)",
       rgb: "200,165,116",
     },
+    // Warm brass / amber / peach / cream — the Beacon lineage,
+    // lifted to perimeter brightness.
+    viewportGlow: {
+      hues: ["228,178,118", "224,158,98", "238,184,148", "236,222,188"],
+      peak: 0.28,
+      base: 0.025,
+    },
   },
   "gpt-5-1": {
     id: "gpt-5-1",
