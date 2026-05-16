@@ -620,6 +620,7 @@ export const Route = createFileRoute("/api/message")({
             system: buildSystemPromptForResident(previewResident),
             temperature: 0.85,
             model: previewResident.model,
+            maxOutputTokens: previewResident.maxOutputTokens,
             provider: previewResident.provider,
             residentId: previewResident.id,
             userPrompt: buildUserPrompt({
@@ -890,6 +891,7 @@ export const Route = createFileRoute("/api/message")({
           system: cacheableSystem,
           temperature: interior.temperature,
           model: resident.model,
+          maxOutputTokens: resident.maxOutputTokens,
           provider: resident.provider,
           residentId: resident.id,
           userPrompt: userPromptText,
