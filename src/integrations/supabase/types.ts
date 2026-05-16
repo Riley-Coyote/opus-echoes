@@ -1167,6 +1167,7 @@ export type Database = {
           last_active_at: string
           mode: string
           resident_id: string
+          umbrella_session_id: string | null
           visitor_token: string | null
         }
         Insert: {
@@ -1179,6 +1180,7 @@ export type Database = {
           last_active_at?: string
           mode?: string
           resident_id?: string
+          umbrella_session_id?: string | null
           visitor_token?: string | null
         }
         Update: {
@@ -1191,6 +1193,7 @@ export type Database = {
           last_active_at?: string
           mode?: string
           resident_id?: string
+          umbrella_session_id?: string | null
           visitor_token?: string | null
         }
         Relationships: [
@@ -1206,6 +1209,13 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_umbrella_session_id_fkey"
+            columns: ["umbrella_session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1654,6 +1664,7 @@ export type Database = {
           kind: string
           role: string
           session_id: string
+          speaker_resident_id: string | null
           tokens_in: number | null
           tokens_out: number | null
         }
@@ -1664,6 +1675,7 @@ export type Database = {
           kind?: string
           role: string
           session_id: string
+          speaker_resident_id?: string | null
           tokens_in?: number | null
           tokens_out?: number | null
         }
@@ -1674,6 +1686,7 @@ export type Database = {
           kind?: string
           role?: string
           session_id?: string
+          speaker_resident_id?: string | null
           tokens_in?: number | null
           tokens_out?: number | null
         }

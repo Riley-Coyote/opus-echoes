@@ -40,7 +40,7 @@ import { ALL_RESIDENTS, type ResidentConfig } from "./opus/residents";
    C border glow, light-theme overrides, ASCII sphere, message grid.
    ────────────────────────────────────────────────────────────────── */
 
-const MINIMAL_CHAT_CSS = `
+export const MINIMAL_CHAT_CSS = `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ── tokens — sanctuary register, cooler than luca ─────────── */
@@ -689,6 +689,25 @@ ${VIEWPORT_GLOW_CSS}
   opacity: 0;
 }
 .resident-option[data-active="true"] .check { opacity: 1; }
+
+/* the-round option — the dot is a tiny cluster of all three resident
+   hues, signalling that this room holds all of them. */
+.resident-option .round-dot {
+  background: transparent !important;
+  box-shadow: none !important;
+  width: auto;
+  height: 8px;
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.resident-option .round-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 4px currentColor;
+}
 
 .chrome-end {
   display: inline-flex;
@@ -2807,9 +2826,13 @@ function chatScript(resident: ResidentConfig): string {
    Fonts + renderer entry point.
    ────────────────────────────────────────────────────────────────── */
 
-const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
+export const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Inter+Tight:wght@400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">`;
+
+export function escapeChatHtml(s: string): string {
+  return escapeHtml(s);
+}
 
 function escapeHtml(s: string): string {
   return s
@@ -2830,8 +2853,9 @@ export function renderMinimalChatPage(resident: ResidentConfig): string {
 
   // Render the model-selector options. Each row shows the resident's
   // perimeter-glow primary hue as a dot so the selector previews the
-  // visual identity of each room.
-  const optionsHtml = ALL_RESIDENTS.map((r) => {
+  // visual identity of each room. A final "the round" option enters
+  // the group-chat surface where all three residents are present.
+  const residentOptions = ALL_RESIDENTS.map((r) => {
     const isActive = r.id === resident.id;
     const hue = r.viewportGlow.hues[0];
     const lower = r.displayName.toLowerCase();
@@ -2844,6 +2868,20 @@ export function renderMinimalChatPage(resident: ResidentConfig): string {
         <span class="check" aria-hidden="true">●</span>
       </button>`;
   }).join("");
+  // Composite "round" dot — three small dots, one per resident hue.
+  const roundDots = ALL_RESIDENTS.map(
+    (r) =>
+      `<span class="round-mini-dot" style="background: rgb(${r.viewportGlow.hues[0]});"></span>`,
+  ).join("");
+  const roundOption = `<button type="button" class="resident-option resident-option-round" role="option"
+        data-slug="the-round"
+        data-active="false"
+        aria-selected="false">
+        <span class="hue-dot round-dot" aria-hidden="true">${roundDots}</span>
+        <span>the round</span>
+        <span class="check" aria-hidden="true">●</span>
+      </button>`;
+  const optionsHtml = residentOptions + roundOption;
 
   return `<!doctype html>
 <html lang="en" data-opus-route="chat" data-theme="dark" style="${inlineHueStyle}">
