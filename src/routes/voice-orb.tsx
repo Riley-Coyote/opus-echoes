@@ -697,6 +697,7 @@ const topLabelsStyle: React.CSSProperties = {
   right: 0,
   textAlign: "center",
   pointerEvents: "none",
+  zIndex: 2,
 };
 const eyebrowStyle: React.CSSProperties = {
   fontSize: 11,
@@ -717,6 +718,7 @@ const stateLineStyle: React.CSSProperties = {
 // Definite size means the engine never measures 0 at mount.
 const orbWrapStyle = (interactive: boolean): React.CSSProperties => ({
   position: "relative",
+  zIndex: 2,
   width: "min(70vmin, 720px)",
   height: "min(70vmin, 720px)",
   flex: "0 0 auto",
@@ -737,6 +739,7 @@ const bottomBarStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  zIndex: 2,
   gap: 22,
 };
 const micBtnStyle = (active: boolean): React.CSSProperties => ({
