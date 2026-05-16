@@ -854,19 +854,47 @@ export const Route = createFileRoute("/api/message")({
           residentId: resident.id,
           userPrompt: userPromptText,
           pacing: pacingPreludeFromMetrics(visitMetrics, sessMode),
+          imageBudgetRemaining,
           onFinal: async (result) => {
-            await supabaseAdmin.from("turns").insert({
-              session_id: session.id,
-              role: "resident",
-              body: result.body,
-              kind: result.kind,
-              tokens_in: result.tokensIn,
-              tokens_out: result.tokensOut,
-            });
+            const { data: insertedTurn } = await supabaseAdmin
+              .from("turns")
+              .insert({
+                session_id: session.id,
+                role: "resident",
+                body: result.body,
+                kind: result.kind,
+                tokens_in: result.tokensIn,
+                tokens_out: result.tokensOut,
+              })
+              .select("id")
+              .maybeSingle();
             await supabaseAdmin
               .from("sessions")
               .update({ last_active_at: new Date().toISOString() })
               .eq("id", session.id);
+
+            // Persist any artifacts that came with the turn. Linked
+            // to the turn_id we just inserted so they can be hydrated
+            // when the conversation is rehydrated, exported, or shared.
+            if (insertedTurn?.id && result.artifacts.length > 0) {
+              const rows = result.artifacts.map((a) => ({
+                turn_id: insertedTurn.id,
+                session_id: session.id,
+                resident_id: resident.id,
+                kind: a.kind,
+                body: a.kind === "image" ? null : a.body,
+                image_path: a.imagePath,
+                caption: a.caption,
+                prompt: a.prompt,
+              }));
+              await supabaseAdmin
+                .from("turn_artifacts")
+                .insert(rows as never)
+                .then(({ error }) => {
+                  if (error)
+                    console.error("[turn_artifacts] insert failed:", error);
+                });
+            }
 
             // Live substrate observation — generates marginalia, and (when
             // SANCTUARY_ENABLE_HYPOMNEMA_WRITES is on) per-turn hypomnema
