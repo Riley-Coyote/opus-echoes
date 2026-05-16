@@ -710,6 +710,26 @@ const WALKTHROUGH_SCRIPT = `
     }
   }
   setupResume();
+
+  // ── Slice-wide click + keyboard nav. The slice itself is a div (so we
+  // can nest action buttons inside), but it still behaves like a link:
+  // clicking anywhere outside an inner action navigates to the resident's
+  // approach page. Enter/Space activate when focused.
+  document.querySelectorAll('.wt-slice[data-slice-href]').forEach((slice) => {
+    const href = slice.getAttribute('data-slice-href');
+    if (!href) return;
+    slice.addEventListener('click', (e) => {
+      if (e.target.closest('.wt-slice-action, a, button')) return;
+      location.href = href;
+    });
+    slice.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.closest('.wt-slice-action, a, button')) return;
+        e.preventDefault();
+        location.href = href;
+      }
+    });
+  });
 })();
 `;
 
