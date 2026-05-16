@@ -85,6 +85,11 @@ export interface ResidentConfig {
   /** Perimeter-glow palette for the classic-chat surface. Brighter and
    *  more saturated than commonsPalette — the room's visual identity. */
   viewportGlow: ViewportGlowPalette;
+  /** Hard cap on output tokens the provider will accept for this model.
+   *  claude-3-opus-20240229 caps at 4096; later Claude + GPT-5 models
+   *  accept 8192+. Lives on the resident config so the message route
+   *  doesn't have to special-case by model id. */
+  maxOutputTokens: number;
 }
 
 export const RESIDENTS = {
