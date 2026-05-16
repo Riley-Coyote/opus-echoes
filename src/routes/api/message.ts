@@ -329,11 +329,16 @@ function opusStreamResponse(opts: {
    * the tier is past 'open' so the experiment UI can react too.
    */
   pacing?: PacingPrelude;
+  /** Image-budget remaining for this session (decremented for each
+   *  successfully generated image). Pass undefined to disable image
+   *  generation entirely (preview sessions). */
+  imageBudgetRemaining?: number;
   onFinal?: (result: {
     body: string;
     kind: "message" | "set_down" | "unprompted";
     tokensIn: number;
     tokensOut: number;
+    artifacts: ResolvedArtifact[];
   }) => Promise<void>;
 }): Response {
   const stream = new ReadableStream({
