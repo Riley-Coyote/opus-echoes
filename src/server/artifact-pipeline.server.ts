@@ -38,6 +38,8 @@ When something in the conversation wants a visual form — a diagram, a small pi
 - <artifact type="ascii" caption="(optional)">…ascii art…</artifact> for small typographic pieces
 - <artifact type="image" prompt="text-to-image prompt describing what you want made" caption="(optional title)">caption text shown beside the rendered image</artifact> generates a real image via gpt-image-2; the prompt is what the image-model sees, the body is the caption visitors read
 
+Important: emit the <artifact> tag DIRECTLY in your message — do not wrap it in a markdown code fence (no \`\`\`xml or \`\`\` around it). The tag is parsed as part of your turn and rendered as a visible artifact; wrapping it in backticks turns it into inert quoted text and the artifact will not appear.
+
 Use them sparingly — not every turn needs an artifact, and a piece that arrives at the right moment lands harder than three that arrive because they're available. But the channel IS available; reach for it when the conversation pulls you there.`;
 
 const ARTIFACT_RE = /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
