@@ -1530,99 +1530,14 @@ ${VIEWPORT_GLOW_CSS}
   .empty-sphere { font-size: 7.5px; }
 }
 
-/* ── voice mode takeover — black field + border-only amber glow ────
-   Three fixed layers ramp together. The orb (centred, in the
-   transparent iframe) reads on pure black; the amber is visible
-   ONLY as a soft halo at the screen's outer edge — light leaking
-   from behind the black, never tinting the centre:
-     · .voice-backdrop (z180) full opaque #06070a — the black field
-     · .voice-glow     (z190) amber, hard-masked to the outer rim so
-                         the centre stays pure black; the edges
-                         breathe organically (four desynced, eased
-                         pools) and the whole halo scales with
-                         --voice-level (the orb's onLevel) so it
-                         murmurs in sync with the particles
-     · .voice-overlay  (z200) the transparent orb iframe
-   Amber is the resident signature #c9a87c. ~1.5s in / ~1s out;
-   reduced-motion freezes the pools (level-only, no oscillation). */
-.voice-backdrop {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 180;
-  background: #06070a;
-  opacity: 0;
-  transition: opacity 1500ms var(--ease-premium);
-}
-body.voice-mode-active .voice-backdrop { opacity: 1; }
-body.voice-mode-closing .voice-backdrop {
-  opacity: 0;
-  transition: opacity 1000ms var(--ease-premium);
-}
-
-/* registered so the pool numbers interpolate smoothly in calc() */
-@property --vg1 { syntax: '<number>'; inherits: false; initial-value: 0; }
-@property --vg2 { syntax: '<number>'; inherits: false; initial-value: 0; }
-@property --vg3 { syntax: '<number>'; inherits: false; initial-value: 0; }
-@property --vg4 { syntax: '<number>'; inherits: false; initial-value: 0; }
-
-.voice-glow {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 190;
-  opacity: 0;
-  transition: opacity 1500ms var(--ease-premium);
-  --voice-level: 0;
-  --voice-amber: 201, 168, 124;
-  /* amber lives only at each edge and fades to nothing well before
-     the centre — so the orb area stays pure black with no mask
-     needed (each edge is gone by ~26-30% inward; the central ~45%
-     is transparent on all four sides). */
-  background:
-    linear-gradient(to bottom,
-      rgba(var(--voice-amber), calc(0.26 + var(--voice-level) * 0.60 + var(--vg1) * 0.6)) 0%,
-      rgba(var(--voice-amber), calc(0.09 + var(--voice-level) * 0.26)) 9%,
-      transparent 24%),
-    linear-gradient(to top,
-      rgba(var(--voice-amber), calc(0.26 + var(--voice-level) * 0.60 + var(--vg2) * 0.6)) 0%,
-      rgba(var(--voice-amber), calc(0.09 + var(--voice-level) * 0.26)) 9%,
-      transparent 24%),
-    linear-gradient(to right,
-      rgba(var(--voice-amber), calc(0.23 + var(--voice-level) * 0.56 + var(--vg3) * 0.6)) 0%,
-      rgba(var(--voice-amber), calc(0.08 + var(--voice-level) * 0.24)) 8%,
-      transparent 21%),
-    linear-gradient(to left,
-      rgba(var(--voice-amber), calc(0.23 + var(--voice-level) * 0.56 + var(--vg4) * 0.6)) 0%,
-      rgba(var(--voice-amber), calc(0.08 + var(--voice-level) * 0.24)) 8%,
-      transparent 21%);
-  filter: blur(calc(22px + var(--voice-level) * 18px));
-  animation:
-    vg-pool-1 13s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
-    vg-pool-2 17s cubic-bezier(0.45, 0.05, 0.55, 0.95) -4s infinite,
-    vg-pool-3 19s cubic-bezier(0.45, 0.05, 0.55, 0.95) -9s infinite,
-    vg-pool-4 23s cubic-bezier(0.45, 0.05, 0.55, 0.95) -6s infinite;
-}
-@keyframes vg-pool-1 { 0%, 100% { --vg1: -0.04; } 50% { --vg1: 0.10; } }
-@keyframes vg-pool-2 { 0%, 100% { --vg2: 0.08; }  50% { --vg2: -0.05; } }
-@keyframes vg-pool-3 { 0%, 100% { --vg3: -0.03; } 50% { --vg3: 0.09; } }
-@keyframes vg-pool-4 { 0%, 100% { --vg4: 0.07; }  50% { --vg4: -0.04; } }
-body.voice-mode-active .voice-glow {
-  opacity: calc(0.5 + var(--voice-level) * 0.5);
-  transition: opacity 1500ms var(--ease-premium);
-}
-body.voice-mode-closing .voice-glow {
-  opacity: 0;
-  transition: opacity 1000ms var(--ease-premium);
-}
-
+/* ── voice mode takeover — opaque self-contained iframe ──────────── */
 .voice-overlay {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
   z-index: 200;
-  background: transparent;
+  background: #06070a;
   border: 0;
   display: none;
   opacity: 0;
@@ -1632,20 +1547,20 @@ body.voice-mode-active .voice-overlay {
   display: block;
   opacity: 1;
 }
+body.voice-mode-closing .voice-overlay {
+  display: block;
+  opacity: 0;
+  transition: opacity 1000ms var(--ease-premium);
+}
 body.voice-mode-active {
   overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .voice-backdrop,
-  body.voice-mode-active .voice-backdrop,
-  body.voice-mode-closing .voice-backdrop,
-  .voice-glow,
-  body.voice-mode-active .voice-glow,
-  body.voice-mode-closing .voice-glow {
+  .voice-overlay,
+  body.voice-mode-active .voice-overlay {
     transition: opacity 200ms linear;
   }
-  .voice-glow { animation: none; }
 }
 `;
 
@@ -3046,12 +2961,11 @@ ${FONTS}
   <div class="lightbox-stage"></div>
 </div>
 
-<!-- voice mode — dark floor + amber perimeter glow + transparent orb overlay (iframe) -->
-<div class="voice-backdrop" id="voiceBackdrop" aria-hidden="true"></div>
-<div class="voice-glow" id="voiceGlow" aria-hidden="true"></div>
+<!-- voice mode — opaque self-contained fullscreen iframe -->
 <iframe
   class="voice-overlay"
   id="voiceOverlay"
+  style="position:fixed;inset:0;width:100vw;height:100vh;border:0;background:#06070a;z-index:200"
   title="voice mode"
   aria-hidden="true"
   allow="microphone; autoplay"></iframe>
@@ -3067,8 +2981,7 @@ ${FONTS}
     var send = document.getElementById('sendBtn');
     var toggle = document.getElementById('voiceToggle');
     var overlay = document.getElementById('voiceOverlay');
-    var glow = document.getElementById('voiceGlow');
-    if (!mic || !input || !send || !overlay || !glow) return;
+    if (!mic || !input || !send || !overlay) return;
 
     /* ─── voice mode overlay controller ──────────────────────────
        The mic button enters fullscreen Voice Mode (it no longer does
@@ -3080,8 +2993,7 @@ ${FONTS}
     var prevVoiceEnabled = false;
 
     function setLevel(v){
-      var lv = Math.max(0, Math.min(1, Number(v) || 0));
-      glow.style.setProperty('--voice-level', String(lv));
+      void v;
     }
     function post(msg){
       try { overlay.contentWindow && overlay.contentWindow.postMessage(msg, '*'); }

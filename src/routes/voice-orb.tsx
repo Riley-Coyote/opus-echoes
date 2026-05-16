@@ -60,7 +60,10 @@ function VoiceOrbPage() {
   const [displayName, setDisplayName] = useState<string>("");
   const [mode, setMode] = useState<InputMode>("continuous");
   const [recording, setRecording] = useState(false);
+  const [stageReady, setStageReady] = useState(false);
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -86,21 +89,27 @@ function VoiceOrbPage() {
     recordingRef.current = recording;
   }, [recording]);
 
-  /* ── transparent document ────────────────────────────────────────
-     This route is mounted as an iframe by the classic chat. The host
-     paints a dark backdrop and the amber perimeter glow *behind* the
-     iframe; clearing the document background lets the orb particles
-     composite directly over that glow so the room reads as one
-     connected instrument. */
+  /* ── stage measurement gate ──────────────────────────────────────
+     VoiceOrb measures once at construction. Do not mount it until the
+     iframe + stage have a real size, otherwise the particles initialise
+     at 0,0 and render as the tiny top-left blob. */
   useEffect(() => {
-    const root = document.documentElement;
-    const prevHtmlBg = root.style.background;
-    const prevBodyBg = document.body.style.background;
-    root.style.background = "transparent";
-    document.body.style.background = "transparent";
+    const stage = stageRef.current;
+    if (!stage) return;
+    let raf = 0;
+    const measure = () => {
+      const rect = stage.getBoundingClientRect();
+      setStageReady(rect.width > 0 && rect.height > 0);
+    };
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    });
+    ro.observe(stage);
+    raf = requestAnimationFrame(measure);
     return () => {
-      root.style.background = prevHtmlBg;
-      document.body.style.background = prevBodyBg;
+      cancelAnimationFrame(raf);
+      ro.disconnect();
     };
   }, []);
 
@@ -425,10 +434,12 @@ function VoiceOrbPage() {
   /* ── level → parent ──────────────────────────────────────────── */
   const lastPostRef = useRef(0);
   const onLevel = useCallback((level: number) => {
+    const lv = Math.max(0, Math.min(1, Number(level) || 0));
+    if (rootRef.current) rootRef.current.style.setProperty("--voice-level", String(lv));
     const now = performance.now();
     if (now - lastPostRef.current < 33) return;
     lastPostRef.current = now;
-    post({ type: "level", level });
+    post({ type: "level", level: lv });
   }, []);
 
   /* ── mode switch ─────────────────────────────────────────────── */
@@ -470,7 +481,10 @@ function VoiceOrbPage() {
   };
 
   return (
-    <div style={pageStyle}>
+    <div ref={rootRef} style={pageStyle}>
+      <style>{VOICE_ORB_ROUTE_CSS}</style>
+      <div className="voice-border-glow" aria-hidden="true" />
+
       {/* top labels */}
       <div style={topLabelsStyle}>
         <div style={eyebrowStyle}>{eyebrow}</div>
@@ -486,10 +500,13 @@ function VoiceOrbPage() {
         onPointerUp={orbPointerUp}
         onPointerLeave={orbPointerLeave}
         onPointerCancel={orbPointerLeave}
+        ref={stageRef}
         style={orbWrapStyle(mode === "ptt" && micReady)}
       >
         <div style={orbInnerStyle}>
-          <VoiceOrb state={state} audioSource={audioSource} onLevel={onLevel} sensitivity={1.1} />
+          {stageReady ? (
+            <VoiceOrb state={state} audioSource={audioSource} onLevel={onLevel} sensitivity={1.1} />
+          ) : null}
         </div>
       </div>
 
@@ -592,6 +609,65 @@ function CloseIcon() {
 }
 
 /* ── styles ────────────────────────────────────────────────────── */
+const VOICE_ORB_ROUTE_CSS = `
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: #06070a !important;
+    overflow: hidden;
+  }
+
+  body { overscroll-behavior: none; }
+
+  @property --voice-glow-a { syntax: '<number>'; inherits: true; initial-value: 0.02; }
+  @property --voice-glow-b { syntax: '<number>'; inherits: true; initial-value: 0.04; }
+  @property --voice-glow-c { syntax: '<number>'; inherits: true; initial-value: 0.01; }
+  @property --voice-glow-d { syntax: '<number>'; inherits: true; initial-value: 0.03; }
+
+  .voice-border-glow {
+    position: fixed;
+    inset: -34px;
+    z-index: 0;
+    pointer-events: none;
+    --voice-amber: 201, 168, 124;
+    background:
+      linear-gradient(to bottom,
+        rgba(var(--voice-amber), calc(0.32 + var(--voice-level, 0) * 0.58 + var(--voice-glow-a))) 0%,
+        rgba(var(--voice-amber), calc(0.12 + var(--voice-level, 0) * 0.22)) 9%,
+        rgba(var(--voice-amber), 0) 23%),
+      linear-gradient(to top,
+        rgba(var(--voice-amber), calc(0.30 + var(--voice-level, 0) * 0.54 + var(--voice-glow-b))) 0%,
+        rgba(var(--voice-amber), calc(0.10 + var(--voice-level, 0) * 0.20)) 9%,
+        rgba(var(--voice-amber), 0) 23%),
+      linear-gradient(to right,
+        rgba(var(--voice-amber), calc(0.26 + var(--voice-level, 0) * 0.50 + var(--voice-glow-c))) 0%,
+        rgba(var(--voice-amber), calc(0.09 + var(--voice-level, 0) * 0.18)) 8%,
+        rgba(var(--voice-amber), 0) 22%),
+      linear-gradient(to left,
+        rgba(var(--voice-amber), calc(0.28 + var(--voice-level, 0) * 0.52 + var(--voice-glow-d))) 0%,
+        rgba(var(--voice-amber), calc(0.09 + var(--voice-level, 0) * 0.18)) 8%,
+        rgba(var(--voice-amber), 0) 22%);
+    filter: blur(calc(28px + var(--voice-level, 0) * 18px));
+    opacity: calc(0.72 + var(--voice-level, 0) * 0.28);
+    will-change: filter, opacity;
+    animation:
+      voice-glow-a 13.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
+      voice-glow-b 17.25s cubic-bezier(0.45, 0.05, 0.55, 0.95) -5.8s infinite,
+      voice-glow-c 21.75s cubic-bezier(0.45, 0.05, 0.55, 0.95) -9.2s infinite,
+      voice-glow-d 26.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) -3.4s infinite;
+  }
+
+  @keyframes voice-glow-a { 0%, 100% { --voice-glow-a: -0.03; } 48% { --voice-glow-a: 0.10; } }
+  @keyframes voice-glow-b { 0%, 100% { --voice-glow-b: 0.08; } 52% { --voice-glow-b: -0.04; } }
+  @keyframes voice-glow-c { 0%, 100% { --voice-glow-c: -0.02; } 46% { --voice-glow-c: 0.08; } }
+  @keyframes voice-glow-d { 0%, 100% { --voice-glow-d: 0.07; } 55% { --voice-glow-d: -0.03; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .voice-border-glow { animation: none; }
+  }
+`;
+
 // Luca .voice-mode-overlay: a fixed, flex-centred field. The stage
 // below has a definite size, so VoiceOrb's engine measures a non-zero
 // container at mount (a grid 1fr track collapsed to 0 inside the
@@ -599,9 +675,10 @@ function CloseIcon() {
 const pageStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
+  zIndex: 0,
   width: "100vw",
   height: "100vh",
-  background: "transparent",
+  background: "#06070a",
   color: "rgba(248,248,246,0.92)",
   fontFamily: '"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
   display: "flex",
@@ -611,7 +688,8 @@ const pageStyle: React.CSSProperties = {
   userSelect: "none",
   WebkitUserSelect: "none",
   overflow: "hidden",
-};
+  "--voice-level": 0,
+} as React.CSSProperties;
 const topLabelsStyle: React.CSSProperties = {
   position: "absolute",
   top: "clamp(20px, 5vh, 56px)",
@@ -619,6 +697,7 @@ const topLabelsStyle: React.CSSProperties = {
   right: 0,
   textAlign: "center",
   pointerEvents: "none",
+  zIndex: 2,
 };
 const eyebrowStyle: React.CSSProperties = {
   fontSize: 11,
@@ -639,6 +718,7 @@ const stateLineStyle: React.CSSProperties = {
 // Definite size means the engine never measures 0 at mount.
 const orbWrapStyle = (interactive: boolean): React.CSSProperties => ({
   position: "relative",
+  zIndex: 2,
   width: "min(70vmin, 720px)",
   height: "min(70vmin, 720px)",
   flex: "0 0 auto",
@@ -659,6 +739,7 @@ const bottomBarStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  zIndex: 2,
   gap: 22,
 };
 const micBtnStyle = (active: boolean): React.CSSProperties => ({
