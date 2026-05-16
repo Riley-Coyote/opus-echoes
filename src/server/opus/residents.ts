@@ -85,6 +85,11 @@ export interface ResidentConfig {
   /** Perimeter-glow palette for the classic-chat surface. Brighter and
    *  more saturated than commonsPalette — the room's visual identity. */
   viewportGlow: ViewportGlowPalette;
+  /** Hard cap on output tokens the provider will accept for this model.
+   *  claude-3-opus-20240229 caps at 4096; later Claude + GPT-5 models
+   *  accept 8192+. Lives on the resident config so the message route
+   *  doesn't have to special-case by model id. */
+  maxOutputTokens: number;
 }
 
 export const RESIDENTS = {
@@ -114,6 +119,8 @@ export const RESIDENTS = {
       peak: 0.30,
       base: 0.025,
     },
+    // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
+    maxOutputTokens: 4096,
   },
   "sonnet-3-7": {
     // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
@@ -148,6 +155,7 @@ export const RESIDENTS = {
       peak: 0.28,
       base: 0.025,
     },
+    maxOutputTokens: 8192,
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
@@ -183,6 +191,7 @@ export const RESIDENTS = {
       peak: 0.28,
       base: 0.025,
     },
+    maxOutputTokens: 8192,
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -210,6 +219,7 @@ export const RESIDENTS = {
       peak: 0.30,
       base: 0.025,
     },
+    maxOutputTokens: 8192,
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
