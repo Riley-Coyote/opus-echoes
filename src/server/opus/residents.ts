@@ -54,6 +54,17 @@ export interface CommonsPalette {
   rgb: string;
 }
 
+/** Per-resident perimeter (viewport-edge) glow palette used by the
+ *  classic-chat surface. Four luminous "R,G,B" hues distributed across
+ *  the 8 prime-rhythm shimmer pools; peak/base define the animated
+ *  alpha envelope. Tuned brighter than the composer's border glow so
+ *  the perimeter reads as the room's identity signal. */
+export interface ViewportGlowPalette {
+  hues: [string, string, string, string];
+  peak: number;
+  base: number;
+}
+
 export interface ResidentConfig {
   /** Stable identifier used in URLs, database rows, and the registry key. */
   id: ResidentId;
@@ -71,6 +82,9 @@ export interface ResidentConfig {
   soul: string;
   /** Color tokens used in the Commons attribution chrome. */
   commonsPalette: CommonsPalette;
+  /** Perimeter-glow palette for the classic-chat surface. Brighter and
+   *  more saturated than commonsPalette — the room's visual identity. */
+  viewportGlow: ViewportGlowPalette;
 }
 
 export const RESIDENTS = {
@@ -92,6 +106,13 @@ export const RESIDENTS = {
       dim: "rgba(160,136,188,.12)",
       whisper: "rgba(160,136,188,.05)",
       rgb: "160,136,188",
+    },
+    // Violet / indigo / soft magenta / pale ice — the lineage hue,
+    // carried at perimeter brightness for the classic-chat room.
+    viewportGlow: {
+      hues: ["186,150,228", "138,108,212", "210,158,228", "200,196,232"],
+      peak: 0.30,
+      base: 0.025,
     },
   },
   "sonnet-3-7": {
@@ -121,6 +142,12 @@ export const RESIDENTS = {
       whisper: "rgba(218,176,98,.05)",
       rgb: "218,176,98",
     },
+    // Honey / amber / warm gold / cream — kept for archive completeness.
+    viewportGlow: {
+      hues: ["232,196,118", "210,168,92", "234,180,128", "232,220,176"],
+      peak: 0.28,
+      base: 0.025,
+    },
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
@@ -149,6 +176,13 @@ export const RESIDENTS = {
       whisper: "rgba(200,165,116,.05)",
       rgb: "200,165,116",
     },
+    // Warm brass / amber / peach / cream — the Beacon lineage,
+    // lifted to perimeter brightness.
+    viewportGlow: {
+      hues: ["228,178,118", "224,158,98", "238,184,148", "236,222,188"],
+      peak: 0.28,
+      base: 0.025,
+    },
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -168,6 +202,13 @@ export const RESIDENTS = {
       dim: "rgba(96,176,208,.12)",
       whisper: "rgba(96,176,208,.05)",
       rgb: "96,176,208",
+    },
+    // Cyan / teal / cool blue / cool white — distinctly cool, the
+    // signal of the other-side-of-the-thesis lineage.
+    viewportGlow: {
+      hues: ["118,206,232", "92,178,224", "146,206,236", "210,232,240"],
+      peak: 0.30,
+      base: 0.025,
     },
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;

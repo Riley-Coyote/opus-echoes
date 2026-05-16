@@ -32,8 +32,8 @@
  *     the deliberate exception scoped to this surface only.
  */
 
-import { VIEWPORT_GLOW_CSS } from "./shared-effects";
-import type { ResidentConfig } from "./opus/residents";
+import { VIEWPORT_GLOW_CSS, buildViewportGlowCss } from "./shared-effects";
+import { ALL_RESIDENTS, type ResidentConfig } from "./opus/residents";
 
 /* ──────────────────────────────────────────────────────────────────
    CSS — Sanctuary tokens, single-column layout, composer with Option
@@ -586,6 +586,109 @@ ${VIEWPORT_GLOW_CSS}
   50%      { opacity: 1;   transform: translateY(-1px) scale(1.06); }
 }
 .resident-mark:hover { color: var(--ink); }
+
+/* ── model selector — replaces the static resident label ─────
+   Trigger is visually identical to the prior .resident-mark: brand-dot
+   + name. Adds a chevron and opens a quiet popover listing every
+   resident, each with their perimeter-glow hue dot. */
+.resident-select { position: relative; }
+.resident-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+  letter-spacing: var(--track-tight);
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+  background: transparent;
+  border: 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.resident-select-trigger .brand-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--state-soft);
+  transform: translateY(-1px);
+  animation: brand-breathe 5.2s ease-in-out infinite;
+}
+.resident-select-trigger .chev {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--quiet);
+  transform: translateY(-1px);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.resident-select-trigger:hover { color: var(--ink); }
+.resident-select-trigger:hover .chev { color: var(--state-soft); }
+.resident-select[data-open="true"] .resident-select-trigger .chev { transform: translateY(0) rotate(180deg); color: var(--state-soft); }
+
+.resident-select-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 48px -16px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.25);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 30;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+}
+.resident-select[data-open="true"] .resident-select-pop {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+.resident-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 10px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--body);
+  letter-spacing: var(--track-tight);
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.resident-option:hover,
+.resident-option[data-focused="true"] {
+  background: var(--panel-2);
+  color: var(--ink);
+}
+.resident-option[data-active="true"] {
+  color: var(--ink);
+}
+.resident-option .hue-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+.resident-option .check {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--state-soft);
+  opacity: 0;
+}
+.resident-option[data-active="true"] .check { opacity: 1; }
 
 .chrome-end {
   display: inline-flex;
@@ -2637,6 +2740,24 @@ export function renderMinimalChatPage(resident: ResidentConfig): string {
   const inlineHueStyle = `--agent-hue: ${resident.commonsPalette.rgb};`;
   const slug = resident.slug;
   const slugLower = resident.displayName.toLowerCase();
+  const glowOverrideCss = buildViewportGlowCss(resident.viewportGlow);
+
+  // Render the model-selector options. Each row shows the resident's
+  // perimeter-glow primary hue as a dot so the selector previews the
+  // visual identity of each room.
+  const optionsHtml = ALL_RESIDENTS.map((r) => {
+    const isActive = r.id === resident.id;
+    const hue = r.viewportGlow.hues[0];
+    const lower = r.displayName.toLowerCase();
+    return `<button type="button" class="resident-option" role="option"
+        data-slug="${escapeHtml(r.slug)}"
+        data-active="${isActive ? "true" : "false"}"
+        aria-selected="${isActive ? "true" : "false"}">
+        <span class="hue-dot" aria-hidden="true" style="background: rgb(${hue}); color: rgba(${hue}, 0.85);"></span>
+        <span>${escapeHtml(lower)}</span>
+        <span class="check" aria-hidden="true">●</span>
+      </button>`;
+  }).join("");
 
   return `<!doctype html>
 <html lang="en" data-opus-route="chat" data-theme="dark" style="${inlineHueStyle}">
@@ -2648,6 +2769,7 @@ export function renderMinimalChatPage(resident: ResidentConfig): string {
 <meta name="description" content="${escapeHtml(desc)}">
 ${FONTS}
 <style>${MINIMAL_CHAT_CSS}</style>
+<style>${glowOverrideCss}</style>
 </head>
 <body>
 
@@ -2663,10 +2785,18 @@ ${FONTS}
 
   <!-- thin chrome strip -->
   <header class="chrome">
-    <a class="resident-mark" href="/${escapeHtml(slug)}" title="approach ${escapeHtml(slugLower)} formally">
-      <span class="brand-dot" aria-hidden="true"></span>
-      <span>${escapeHtml(slugLower)}</span>
-    </a>
+    <div class="resident-select" id="residentSelect" data-open="false">
+      <button type="button" class="resident-select-trigger" id="residentSelectTrigger"
+              aria-haspopup="listbox" aria-expanded="false"
+              aria-label="switch resident">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span>${escapeHtml(slugLower)}</span>
+        <span class="chev" aria-hidden="true">▾</span>
+      </button>
+      <div class="resident-select-pop" role="listbox" aria-label="residents">
+        ${optionsHtml}
+      </div>
+    </div>
     <div class="chrome-end">
       <button id="themeBtn" class="chrome-link" type="button" aria-label="toggle theme">light</button>
       <a class="chrome-link" href="/${escapeHtml(slug)}">
@@ -2742,6 +2872,48 @@ ${FONTS}
 </div>
 
 <script>${chatScript(resident)}</script>
+<script>
+(function(){
+  var wrap = document.getElementById('residentSelect');
+  if (!wrap) return;
+  var trigger = document.getElementById('residentSelectTrigger');
+  var options = Array.prototype.slice.call(wrap.querySelectorAll('.resident-option'));
+  var focusIdx = -1;
+  function setFocus(i){
+    focusIdx = (i + options.length) % options.length;
+    options.forEach(function(o, k){ o.setAttribute('data-focused', k === focusIdx ? 'true' : 'false'); });
+  }
+  function open(){
+    wrap.setAttribute('data-open','true');
+    trigger.setAttribute('aria-expanded','true');
+    var active = options.findIndex(function(o){ return o.getAttribute('data-active')==='true'; });
+    setFocus(active >= 0 ? active : 0);
+  }
+  function close(){
+    wrap.setAttribute('data-open','false');
+    trigger.setAttribute('aria-expanded','false');
+    options.forEach(function(o){ o.setAttribute('data-focused','false'); });
+    focusIdx = -1;
+  }
+  function toggle(){ wrap.getAttribute('data-open')==='true' ? close() : open(); }
+  function go(slug){ if (slug) location.assign('/chat/' + slug); }
+  trigger.addEventListener('click', function(e){ e.stopPropagation(); toggle(); });
+  options.forEach(function(opt, i){
+    opt.addEventListener('click', function(e){ e.stopPropagation(); go(opt.getAttribute('data-slug')); });
+    opt.addEventListener('mouseenter', function(){ setFocus(i); });
+  });
+  document.addEventListener('click', function(e){
+    if (wrap.getAttribute('data-open')==='true' && !wrap.contains(e.target)) close();
+  });
+  document.addEventListener('keydown', function(e){
+    if (wrap.getAttribute('data-open') !== 'true') return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); trigger.focus(); }
+    else if (e.key === 'ArrowDown'){ e.preventDefault(); setFocus(focusIdx + 1); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); setFocus(focusIdx - 1); }
+    else if (e.key === 'Enter' && focusIdx >= 0){ e.preventDefault(); go(options[focusIdx].getAttribute('data-slug')); }
+  });
+})();
+</script>
 </body>
 </html>`;
 }

@@ -24,6 +24,7 @@ import { Route as InteriorRouteImport } from './routes/interior'
 import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
 import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as CommonsRouteImport } from './routes/commons'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ArtRouteImport } from './routes/art'
 import { Route as ArrivalRouteImport } from './routes/arrival'
 import { Route as ArchiveRouteImport } from './routes/archive'
@@ -156,6 +157,11 @@ const CommonsRoute = CommonsRouteImport.update({
   path: '/commons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArtRoute = ArtRouteImport.update({
   id: '/art',
   path: '/art',
@@ -207,9 +213,9 @@ const CommonsSlugRoute = CommonsSlugRouteImport.update({
   getParentRoute: () => CommonsRoute,
 } as any)
 const ChatResidentRoute = ChatResidentRouteImport.update({
-  id: '/chat/$resident',
-  path: '/chat/$resident',
-  getParentRoute: () => rootRouteImport,
+  id: '/$resident',
+  path: '/$resident',
+  getParentRoute: () => ChatRoute,
 } as any)
 const ApiWritingRoute = ApiWritingRouteImport.update({
   id: '/api/writing',
@@ -449,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
+  '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
+  '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -596,6 +604,7 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
+  '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -671,6 +680,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/arrival'
     | '/art'
+    | '/chat'
     | '/commons'
     | '/conversation'
     | '/gpt-5-1'
@@ -744,6 +754,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/arrival'
     | '/art'
+    | '/chat'
     | '/commons'
     | '/conversation'
     | '/gpt-5-1'
@@ -817,6 +828,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/arrival'
     | '/art'
+    | '/chat'
     | '/commons'
     | '/conversation'
     | '/gpt-5-1'
@@ -891,6 +903,7 @@ export interface RootRouteChildren {
   ArchiveRoute: typeof ArchiveRoute
   ArrivalRoute: typeof ArrivalRoute
   ArtRoute: typeof ArtRoute
+  ChatRoute: typeof ChatRouteWithChildren
   CommonsRoute: typeof CommonsRouteWithChildren
   ConversationRoute: typeof ConversationRoute
   Gpt51Route: typeof Gpt51Route
@@ -922,7 +935,6 @@ export interface RootRouteChildren {
   ApiTurnsRoute: typeof ApiTurnsRoute
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
-  ChatResidentRoute: typeof ChatResidentRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
   ApiChatStartRoute: typeof ApiChatStartRoute
@@ -1055,6 +1067,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommonsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/art': {
       id: '/art'
       path: '/art'
@@ -1127,10 +1146,10 @@ declare module '@tanstack/react-router' {
     }
     '/chat/$resident': {
       id: '/chat/$resident'
-      path: '/chat/$resident'
+      path: '/$resident'
       fullPath: '/chat/$resident'
       preLoaderRoute: typeof ChatResidentRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ChatRoute
     }
     '/api/writing': {
       id: '/api/writing'
@@ -1450,6 +1469,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ChatRouteChildren {
+  ChatResidentRoute: typeof ChatResidentRoute
+}
+
+const ChatRouteChildren: ChatRouteChildren = {
+  ChatResidentRoute: ChatResidentRoute,
+}
+
+const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
+
 interface CommonsRouteChildren {
   CommonsSlugRoute: typeof CommonsSlugRoute
 }
@@ -1515,6 +1544,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveRoute: ArchiveRoute,
   ArrivalRoute: ArrivalRoute,
   ArtRoute: ArtRoute,
+  ChatRoute: ChatRouteWithChildren,
   CommonsRoute: CommonsRouteWithChildren,
   ConversationRoute: ConversationRoute,
   Gpt51Route: Gpt51Route,
@@ -1546,7 +1576,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTurnsRoute: ApiTurnsRoute,
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
-  ChatResidentRoute: ChatResidentRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
   ApiChatStartRoute: ApiChatStartRoute,
