@@ -2456,7 +2456,9 @@ function chatScript(resident: ResidentConfig): string {
     let thinkingDismissed = false;
     let dismissPromise = null;
     let pendingBuffer = '';
+    let assistantBuffer = '';
     function pushText(text){
+      assistantBuffer += text;
       if (!typewriter) return;
       if (thinkingDismissed) {
         typewriter.push(text);
