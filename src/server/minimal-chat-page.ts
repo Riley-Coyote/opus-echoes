@@ -355,19 +355,13 @@ ${VIEWPORT_GLOW_CSS}
    so the artifact reads as a clean inline piece of the conversation. */
 .artifact-figure {
   position: relative;
-  margin: 22px 0;
+  margin: 22px auto 2px;
   display: block;
-  /* break out of msg-body's 600px text column so the figure spans the
-     full feed-column width (the sidehead is 72px + 24px gap). */
-  width: calc(100% + 96px);
-  max-width: none;
-  margin-left: -96px;
+  width: min(100%, 960px);
+  max-width: 100%;
   background: transparent;
   border: 0;
   padding: 0;
-}
-@media (max-width: 720px) {
-  .artifact-figure { width: 100%; margin-left: 0; }
 }
 .artifact-figure img,
 .artifact-figure .svg-host { cursor: zoom-in; }
@@ -407,6 +401,7 @@ ${VIEWPORT_GLOW_CSS}
   height: auto;
   max-width: 100%;
   border-radius: 2px;
+  object-fit: contain;
 }
 .artifact-body .svg-host { display: block; width: 100%; }
 .artifact-body .svg-host svg { display: block; width: 100% !important; height: auto !important; max-width: 100%; }
