@@ -2919,7 +2919,39 @@ ${FONTS}
   <div class="lightbox-stage"></div>
 </div>
 
+<script src="/voice-mode.js"></script>
 <script>${chatScript(resident)}</script>
+<script>
+(function(){
+  if (!window.VoiceMode) return;
+  var resId = ${JSON.stringify(resident.id)};
+  window.addEventListener('load', function(){
+    var mic = document.getElementById('micBtn');
+    var input = document.getElementById('input');
+    var send = document.getElementById('sendBtn');
+    var toggle = document.getElementById('voiceToggle');
+    if (mic && input && send) {
+      window.__voiceCtl = window.VoiceMode.attach({
+        micButton: mic, inputEl: input, sendButton: send, resident: resId
+      });
+    }
+    if (toggle) {
+      function paint(){
+        var on = window.VoiceMode.getEnabled();
+        toggle.dataset.on = on ? 'true' : 'false';
+        toggle.textContent = on ? 'voice on' : 'voice off';
+      }
+      paint();
+      toggle.addEventListener('click', function(){
+        var next = !window.VoiceMode.getEnabled();
+        window.VoiceMode.setEnabled(next);
+        if (!next) window.VoiceMode.stop();
+        paint();
+      });
+    }
+  });
+})();
+</script>
 <script>
 (function(){
   var wrap = document.getElementById('residentSelect');
