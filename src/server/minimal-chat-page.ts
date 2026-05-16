@@ -1776,6 +1776,35 @@ function chatScript(resident: ResidentConfig): string {
                 if (ev.kind === 'set_down') setDownFlag = true;
               } else if (ev.type === 'text') {
                 pushText(ev.text);
+              } else if (ev.type === 'artifact' && ev.artifact) {
+                try {
+                  const art = ev.artifact;
+                  const fig = document.createElement('figure');
+                  fig.setAttribute('style', 'margin:12px 0; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:8px');
+                  if (art.kind === 'image' && art.url) {
+                    const img = document.createElement('img');
+                    img.src = art.url; img.alt = art.caption || '';
+                    img.setAttribute('style', 'display:block; max-width:100%; height:auto; border-radius:4px');
+                    fig.appendChild(img);
+                  } else if (art.kind === 'svg' && art.content) {
+                    const holder = document.createElement('div');
+                    holder.innerHTML = art.content;
+                    fig.appendChild(holder);
+                  } else if (art.kind === 'ascii' && art.content) {
+                    const pre = document.createElement('pre');
+                    pre.textContent = art.content;
+                    pre.setAttribute('style', 'font-family:JetBrains Mono,monospace; font-size:12px; white-space:pre; overflow-x:auto; margin:0');
+                    fig.appendChild(pre);
+                  }
+                  if (art.caption) {
+                    const cap = document.createElement('figcaption');
+                    cap.textContent = art.caption;
+                    cap.setAttribute('style', 'margin-top:8px; font-family:JetBrains Mono,monospace; font-size:11px; color:rgba(200,200,210,.65)');
+                    fig.appendChild(cap);
+                  }
+                  const host = document.querySelector('.conversation') || document.body;
+                  host.appendChild(fig);
+                } catch(_){}
               } else if (ev.type === 'error') {
                 pushText('*' + (ev.message || 'something went wrong') + '*');
               }
