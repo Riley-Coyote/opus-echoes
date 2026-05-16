@@ -1607,6 +1607,45 @@ export type Database = {
           },
         ]
       }
+      turn_artifacts: {
+        Row: {
+          body: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          image_path: string | null
+          kind: string
+          prompt: string | null
+          resident_id: string
+          session_id: string
+          turn_id: string
+        }
+        Insert: {
+          body?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          kind: string
+          prompt?: string | null
+          resident_id: string
+          session_id: string
+          turn_id: string
+        }
+        Update: {
+          body?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          kind?: string
+          prompt?: string | null
+          resident_id?: string
+          session_id?: string
+          turn_id?: string
+        }
+        Relationships: []
+      }
       turns: {
         Row: {
           body: string
