@@ -2956,12 +2956,11 @@ ${FONTS}
   <div class="lightbox-stage"></div>
 </div>
 
-<!-- voice mode — dark floor + amber perimeter glow + transparent orb overlay (iframe) -->
-<div class="voice-backdrop" id="voiceBackdrop" aria-hidden="true"></div>
-<div class="voice-glow" id="voiceGlow" aria-hidden="true"></div>
+<!-- voice mode — opaque self-contained fullscreen iframe -->
 <iframe
   class="voice-overlay"
   id="voiceOverlay"
+  style="position:fixed;inset:0;width:100vw;height:100vh;border:0;background:#06070a;z-index:200"
   title="voice mode"
   aria-hidden="true"
   allow="microphone; autoplay"></iframe>
@@ -2977,8 +2976,7 @@ ${FONTS}
     var send = document.getElementById('sendBtn');
     var toggle = document.getElementById('voiceToggle');
     var overlay = document.getElementById('voiceOverlay');
-    var glow = document.getElementById('voiceGlow');
-    if (!mic || !input || !send || !overlay || !glow) return;
+    if (!mic || !input || !send || !overlay) return;
 
     /* ─── voice mode overlay controller ──────────────────────────
        The mic button enters fullscreen Voice Mode (it no longer does
@@ -2990,8 +2988,7 @@ ${FONTS}
     var prevVoiceEnabled = false;
 
     function setLevel(v){
-      var lv = Math.max(0, Math.min(1, Number(v) || 0));
-      glow.style.setProperty('--voice-level', String(lv));
+      void v;
     }
     function post(msg){
       try { overlay.contentWindow && overlay.contentWindow.postMessage(msg, '*'); }
