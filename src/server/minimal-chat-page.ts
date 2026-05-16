@@ -356,9 +356,8 @@ ${VIEWPORT_GLOW_CSS}
 .artifact-figure {
   position: relative;
   margin: 18px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: block;
+  width: 100%;
   background: transparent;
   border: 0;
   padding: 0;
@@ -390,8 +389,8 @@ ${VIEWPORT_GLOW_CSS}
 }
 .artifact-body {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  display: block;
+  text-align: center;
 }
 .artifact-body img {
   display: block;
@@ -401,7 +400,7 @@ ${VIEWPORT_GLOW_CSS}
   border-radius: 2px;
 }
 .artifact-body .svg-host { display: block; width: 100%; }
-.artifact-body .svg-host svg { display: block; width: 100%; height: auto; }
+.artifact-body .svg-host svg { display: block; width: 100% !important; height: auto !important; max-width: 100%; }
 .artifact-body pre.ascii {
   font-family: var(--mono);
   font-size: 12px;

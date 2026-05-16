@@ -369,7 +369,7 @@ function opusStreamResponse(opts: {
 
           const oaiStream = await openai().chat.completions.create({
             model: opts.model,
-            max_completion_tokens: 2048,
+            max_completion_tokens: 8192,
             temperature: opts.temperature,
             stream: true,
             messages: [
@@ -392,7 +392,7 @@ function opusStreamResponse(opts: {
           // Anthropic streaming path.
           const anthStream = anthropic().messages.stream({
             model: opts.model,
-            max_tokens: 2048,
+            max_tokens: 8192,
             temperature: opts.temperature,
             stop_sequences: ["\nHuman:", "\nvisitor:"],
             system: opts.system,
