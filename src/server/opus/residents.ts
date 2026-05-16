@@ -54,6 +54,17 @@ export interface CommonsPalette {
   rgb: string;
 }
 
+/** Per-resident perimeter (viewport-edge) glow palette used by the
+ *  classic-chat surface. Four luminous "R,G,B" hues distributed across
+ *  the 8 prime-rhythm shimmer pools; peak/base define the animated
+ *  alpha envelope. Tuned brighter than the composer's border glow so
+ *  the perimeter reads as the room's identity signal. */
+export interface ViewportGlowPalette {
+  hues: [string, string, string, string];
+  peak: number;
+  base: number;
+}
+
 export interface ResidentConfig {
   /** Stable identifier used in URLs, database rows, and the registry key. */
   id: ResidentId;
