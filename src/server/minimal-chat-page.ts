@@ -355,13 +355,22 @@ ${VIEWPORT_GLOW_CSS}
    so the artifact reads as a clean inline piece of the conversation. */
 .artifact-figure {
   position: relative;
-  margin: 18px 0;
+  margin: 22px 0;
   display: block;
-  width: 100%;
+  /* break out of msg-body's 600px text column so the figure spans the
+     full feed-column width (the sidehead is 72px + 24px gap). */
+  width: calc(100% + 96px);
+  max-width: none;
+  margin-left: -96px;
   background: transparent;
   border: 0;
   padding: 0;
 }
+@media (max-width: 720px) {
+  .artifact-figure { width: 100%; margin-left: 0; }
+}
+.artifact-figure img,
+.artifact-figure .svg-host { cursor: zoom-in; }
 .artifact-figure.pending .artifact-body {
   width: 100%;
   min-height: 320px;
