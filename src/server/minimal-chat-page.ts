@@ -690,6 +690,25 @@ ${VIEWPORT_GLOW_CSS}
 }
 .resident-option[data-active="true"] .check { opacity: 1; }
 
+/* the-round option — the dot is a tiny cluster of all three resident
+   hues, signalling that this room holds all of them. */
+.resident-option .round-dot {
+  background: transparent !important;
+  box-shadow: none !important;
+  width: auto;
+  height: 8px;
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.resident-option .round-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 4px currentColor;
+}
+
 .chrome-end {
   display: inline-flex;
   align-items: center;
