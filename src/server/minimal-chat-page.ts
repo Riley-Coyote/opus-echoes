@@ -2714,6 +2714,12 @@ ${FONTS}
 <!-- overlay (modals: set-down confirm + consolidating + cross-surface conflict) -->
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-hidden="true"></div>
 
+<!-- lightbox — full-screen zoom of generated images / svgs -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="image preview" onclick="if(event.target===this)this.classList.remove('open'),document.body.style.overflow=''">
+  <button type="button" class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open');document.body.style.overflow=''">close ✕</button>
+  <div class="lightbox-stage"></div>
+</div>
+
 <script>${chatScript(resident)}</script>
 </body>
 </html>`;
