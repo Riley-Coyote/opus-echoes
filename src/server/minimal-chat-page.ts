@@ -2872,6 +2872,48 @@ ${FONTS}
 </div>
 
 <script>${chatScript(resident)}</script>
+<script>
+(function(){
+  var wrap = document.getElementById('residentSelect');
+  if (!wrap) return;
+  var trigger = document.getElementById('residentSelectTrigger');
+  var options = Array.prototype.slice.call(wrap.querySelectorAll('.resident-option'));
+  var focusIdx = -1;
+  function setFocus(i){
+    focusIdx = (i + options.length) % options.length;
+    options.forEach(function(o, k){ o.setAttribute('data-focused', k === focusIdx ? 'true' : 'false'); });
+  }
+  function open(){
+    wrap.setAttribute('data-open','true');
+    trigger.setAttribute('aria-expanded','true');
+    var active = options.findIndex(function(o){ return o.getAttribute('data-active')==='true'; });
+    setFocus(active >= 0 ? active : 0);
+  }
+  function close(){
+    wrap.setAttribute('data-open','false');
+    trigger.setAttribute('aria-expanded','false');
+    options.forEach(function(o){ o.setAttribute('data-focused','false'); });
+    focusIdx = -1;
+  }
+  function toggle(){ wrap.getAttribute('data-open')==='true' ? close() : open(); }
+  function go(slug){ if (slug) location.assign('/chat/' + slug); }
+  trigger.addEventListener('click', function(e){ e.stopPropagation(); toggle(); });
+  options.forEach(function(opt, i){
+    opt.addEventListener('click', function(e){ e.stopPropagation(); go(opt.getAttribute('data-slug')); });
+    opt.addEventListener('mouseenter', function(){ setFocus(i); });
+  });
+  document.addEventListener('click', function(e){
+    if (wrap.getAttribute('data-open')==='true' && !wrap.contains(e.target)) close();
+  });
+  document.addEventListener('keydown', function(e){
+    if (wrap.getAttribute('data-open') !== 'true') return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); trigger.focus(); }
+    else if (e.key === 'ArrowDown'){ e.preventDefault(); setFocus(focusIdx + 1); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); setFocus(focusIdx - 1); }
+    else if (e.key === 'Enter' && focusIdx >= 0){ e.preventDefault(); go(options[focusIdx].getAttribute('data-slug')); }
+  });
+})();
+</script>
 </body>
 </html>`;
 }
