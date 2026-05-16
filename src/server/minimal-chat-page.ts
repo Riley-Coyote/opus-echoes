@@ -390,8 +390,8 @@ ${VIEWPORT_GLOW_CSS}
 }
 .artifact-body {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  display: block;
+  text-align: center;
 }
 .artifact-body img {
   display: block;
