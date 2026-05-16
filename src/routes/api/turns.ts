@@ -30,21 +30,45 @@ export const Route = createFileRoute("/api/turns")({
           return Response.json({ ok: false, code: "session_invalid" }, { status: 401 });
         }
         // Fetch turns regardless of closed state — the visitor should
-        // always be able to see their transcript.
-        const { data: turns } = await supabaseAdmin
-          .from("turns")
-          .select("id, role, body, kind, created_at")
-          .eq("session_id", sessionId)
-          .order("created_at", { ascending: true });
+        // always be able to see their transcript. Artifacts come back in
+        // parallel and the response groups them per turn_id so the
+        // client can render images / svg / ascii beside the right
+        // bubble on reload.
+        const [{ data: turns }, { data: artifactRows }] = await Promise.all([
+          supabaseAdmin
+            .from("turns")
+            .select("id, role, body, kind, created_at")
+            .eq("session_id", sessionId)
+            .order("created_at", { ascending: true }),
+          supabaseAdmin
+            .from("turn_artifacts")
+            .select("id, turn_id, kind, body, image_path, caption, prompt, created_at")
+            .eq("session_id", sessionId)
+            .order("created_at", { ascending: true }),
+        ]);
+
+        const supabaseUrl = process.env.SUPABASE_URL ?? "";
+        const artifacts = (artifactRows ?? []).map((a) => ({
+          id: a.id,
+          turn_id: a.turn_id,
+          kind: a.kind,
+          caption: a.caption,
+          prompt: a.prompt,
+          content: a.kind === "image" ? null : a.body,
+          url: a.image_path
+            ? `${supabaseUrl}/storage/v1/object/public/art/${a.image_path}`
+            : null,
+          created_at: a.created_at,
+        }));
 
         if (session.closed_at) {
           // 410 with turns included so the client can render read-only.
           return Response.json(
-            { ok: false, code: "session_closed", turns: turns ?? [] },
+            { ok: false, code: "session_closed", turns: turns ?? [], artifacts },
             { status: 410 },
           );
         }
-        return Response.json({ ok: true, turns: turns ?? [] });
+        return Response.json({ ok: true, turns: turns ?? [], artifacts });
       },
     },
   },
