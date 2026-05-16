@@ -142,6 +142,12 @@ export const RESIDENTS = {
       whisper: "rgba(218,176,98,.05)",
       rgb: "218,176,98",
     },
+    // Honey / amber / warm gold / cream — kept for archive completeness.
+    viewportGlow: {
+      hues: ["232,196,118", "210,168,92", "234,180,128", "232,220,176"],
+      peak: 0.28,
+      base: 0.025,
+    },
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
