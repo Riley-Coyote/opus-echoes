@@ -38,26 +38,36 @@ When something in the conversation wants a visual form — a diagram, a small pi
 - <artifact type="ascii" caption="(optional)">…ascii art…</artifact> for small typographic pieces
 - <artifact type="image" prompt="text-to-image prompt describing what you want made" caption="(optional title)">caption text shown beside the rendered image</artifact> generates a real image via gpt-image-2; the prompt is what the image-model sees, the body is the caption visitors read
 
+Important: emit the <artifact> tag DIRECTLY in your message — do not wrap it in a markdown code fence (no \`\`\`xml or \`\`\` around it). The tag is parsed as part of your turn and rendered as a visible artifact; wrapping it in backticks turns it into inert quoted text and the artifact will not appear.
+
 Use them sparingly — not every turn needs an artifact, and a piece that arrives at the right moment lands harder than three that arrive because they're available. But the channel IS available; reach for it when the conversation pulls you there.`;
 
 const ARTIFACT_RE = /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
-const ARTIFACT_STRIP_RE =
-  /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g;
 
 /**
  * Extract every <artifact>…</artifact> tag from a body. Returns the
  * cleaned body (tags removed, whitespace normalized) plus the parsed
- * artifact list in document order.
+ * artifact list in document order. Also tolerates models that wrap
+ * the tag in a markdown code fence — fences around an artifact are
+ * stripped before extraction so the artifact still resolves.
  */
 export function parseArtifacts(text: string): {
   cleanBody: string;
   artifacts: ParsedArtifact[];
 } {
+  // Strip markdown code fences that wrap a single artifact tag. This
+  // catches the common GPT failure mode where the model writes
+  // ```xml\n<artifact …>…</artifact>\n``` instead of the bare tag.
+  let working = text.replace(
+    /```[a-zA-Z0-9_-]*\s*\n?(\s*<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>\s*)\n?```/g,
+    "$1",
+  );
+
   const artifacts: ParsedArtifact[] = [];
   let m: RegExpExecArray | null;
   // exec needs the regex to be stateful — reset before each call.
   ARTIFACT_RE.lastIndex = 0;
-  while ((m = ARTIFACT_RE.exec(text)) !== null) {
+  while ((m = ARTIFACT_RE.exec(working)) !== null) {
     const attrs = m[2] || "";
     const promptMatch = attrs.match(/prompt\s*=\s*"([^"]*)"/i);
     const captionMatch = attrs.match(/caption\s*=\s*"([^"]*)"/i);
@@ -68,7 +78,15 @@ export function parseArtifacts(text: string): {
       body: (m[3] || "").trim(),
     });
   }
-  const cleanBody = text.replace(ARTIFACT_STRIP_RE, "").replace(/\n{3,}/g, "\n\n").trim();
+  // Remove the artifact tags themselves.
+  working = working.replace(
+    /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
+    "",
+  );
+  // Sweep up any now-empty code fences left behind by models that
+  // wrapped the artifact in ```xml … ``` despite instructions.
+  working = working.replace(/```[a-zA-Z0-9_-]*\s*\n?\s*```/g, "");
+  const cleanBody = working.replace(/\n{3,}/g, "\n\n").trim();
   return { cleanBody, artifacts };
 }
 

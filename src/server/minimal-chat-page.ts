@@ -1778,9 +1778,20 @@ function chatScript(resident: ResidentConfig): string {
                 pushText(ev.text);
               } else if (ev.type === 'artifact' && ev.artifact) {
                 try {
+                  // Make sure the thinking-block clears before the
+                  // figure mounts; otherwise the artifact lands next
+                  // to the dots and the bubble looks broken.
+                  if (!thinkingDismissed && residentRef) {
+                    if (!dismissPromise) {
+                      dismissPromise = dismissThinking(residentRef.bodyEl).then(function(){
+                        thinkingDismissed = true;
+                        if (pendingBuffer && typewriter) { typewriter.push(pendingBuffer); pendingBuffer = ''; }
+                      });
+                    }
+                  }
                   const art = ev.artifact;
                   const fig = document.createElement('figure');
-                  fig.setAttribute('style', 'margin:12px 0; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:8px');
+                  fig.setAttribute('style', 'margin:14px 0 10px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:rgba(255,255,255,.02)');
                   if (art.kind === 'image' && art.url) {
                     const img = document.createElement('img');
                     img.src = art.url; img.alt = art.caption || '';
@@ -1789,6 +1800,7 @@ function chatScript(resident: ResidentConfig): string {
                   } else if (art.kind === 'svg' && art.content) {
                     const holder = document.createElement('div');
                     holder.innerHTML = art.content;
+                    holder.setAttribute('style', 'display:block; max-width:100%');
                     fig.appendChild(holder);
                   } else if (art.kind === 'ascii' && art.content) {
                     const pre = document.createElement('pre');
@@ -1802,8 +1814,13 @@ function chatScript(resident: ResidentConfig): string {
                     cap.setAttribute('style', 'margin-top:8px; font-family:JetBrains Mono,monospace; font-size:11px; color:rgba(200,200,210,.65)');
                     fig.appendChild(cap);
                   }
-                  const host = document.querySelector('.conversation') || document.body;
+                  // Append inside the current resident message bubble,
+                  // not document.body, so the artifact appears in the
+                  // chat flow rather than off-screen below the chrome.
+                  const host = (residentRef && (residentRef.wrap || residentRef.bodyEl)) || document.body;
                   host.appendChild(fig);
+                  const feedEl = document.getElementById('feed');
+                  if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
                 } catch(_){}
               } else if (ev.type === 'error') {
                 pushText('*' + (ev.message || 'something went wrong') + '*');
