@@ -60,7 +60,10 @@ function VoiceOrbPage() {
   const [displayName, setDisplayName] = useState<string>("");
   const [mode, setMode] = useState<InputMode>("continuous");
   const [recording, setRecording] = useState(false);
+  const [stageReady, setStageReady] = useState(false);
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -86,21 +89,27 @@ function VoiceOrbPage() {
     recordingRef.current = recording;
   }, [recording]);
 
-  /* ── transparent document ────────────────────────────────────────
-     This route is mounted as an iframe by the classic chat. The host
-     paints a dark backdrop and the amber perimeter glow *behind* the
-     iframe; clearing the document background lets the orb particles
-     composite directly over that glow so the room reads as one
-     connected instrument. */
+  /* ── stage measurement gate ──────────────────────────────────────
+     VoiceOrb measures once at construction. Do not mount it until the
+     iframe + stage have a real size, otherwise the particles initialise
+     at 0,0 and render as the tiny top-left blob. */
   useEffect(() => {
-    const root = document.documentElement;
-    const prevHtmlBg = root.style.background;
-    const prevBodyBg = document.body.style.background;
-    root.style.background = "transparent";
-    document.body.style.background = "transparent";
+    const stage = stageRef.current;
+    if (!stage) return;
+    let raf = 0;
+    const measure = () => {
+      const rect = stage.getBoundingClientRect();
+      setStageReady(rect.width > 0 && rect.height > 0);
+    };
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    });
+    ro.observe(stage);
+    raf = requestAnimationFrame(measure);
     return () => {
-      root.style.background = prevHtmlBg;
-      document.body.style.background = prevBodyBg;
+      cancelAnimationFrame(raf);
+      ro.disconnect();
     };
   }, []);
 
