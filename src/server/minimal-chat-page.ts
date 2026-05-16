@@ -357,11 +357,27 @@ ${VIEWPORT_GLOW_CSS}
   position: relative;
   margin: 22px auto 2px;
   display: block;
-  width: min(100%, 960px);
-  max-width: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(960px, calc(100vw - (var(--band) * 2) - 48px));
+  max-width: min(960px, calc(100vw - (var(--band) * 2) - 48px));
   background: transparent;
   border: 0;
   padding: 0;
+}
+@media (min-width: 1024px) {
+  .app.has-gallery .artifact-figure {
+    width: min(960px, calc(100vw - 200px - (var(--band) * 2) - 72px));
+    max-width: min(960px, calc(100vw - 200px - (var(--band) * 2) - 72px));
+  }
+}
+@media (max-width: 720px) {
+  .artifact-figure {
+    left: auto;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+  }
 }
 .artifact-figure img,
 .artifact-figure .svg-host { cursor: zoom-in; }
