@@ -39,6 +39,26 @@ import {
   observeExchange,
   updateFunctionalMemory,
 } from "@/server/substrate.server";
+import {
+  ARTIFACT_INSTRUCTIONS,
+  buildArtUrl,
+  generateImageArtifact,
+  parseArtifacts,
+  type ParsedArtifact,
+} from "@/server/artifact-pipeline.server";
+
+/** Per-turn cap for image artifacts in a 1:1 chat. gpt-image-2 is
+ *  slow (≈15-25s) and ≈$0.04/image; one per turn keeps both latency
+ *  and cost bounded. SVG/ASCII have no cap (they're free + fast). */
+const MAX_IMAGES_PER_TURN = 1;
+/** Per-session cap. Past this we ignore further image tags but still
+ *  render any SVG/ASCII. */
+const MAX_IMAGES_PER_SESSION = 4;
+
+/** Resolved artifact ready to persist to turn_artifacts. For images
+ *  the storage path is already filled (generation happened during
+ *  the stream so the visitor sees it before `done`). */
+type ResolvedArtifact = ParsedArtifact & { imagePath: string | null };
 
 const PreviewTurn = z.object({
   role: z.enum(["visitor", "resident"]),
@@ -309,11 +329,16 @@ function opusStreamResponse(opts: {
    * the tier is past 'open' so the experiment UI can react too.
    */
   pacing?: PacingPrelude;
+  /** Image-budget remaining for this session (decremented for each
+   *  successfully generated image). Pass undefined to disable image
+   *  generation entirely (preview sessions). */
+  imageBudgetRemaining?: number;
   onFinal?: (result: {
     body: string;
     kind: "message" | "set_down" | "unprompted";
     tokensIn: number;
     tokensOut: number;
+    artifacts: ResolvedArtifact[];
   }) => Promise<void>;
 }): Response {
   const stream = new ReadableStream({
@@ -430,13 +455,62 @@ function opusStreamResponse(opts: {
           .replace(/\n{3,}/g, "\n\n");
         cleanBody = sanitizeResidentBody(cleanBody);
 
+        // Parse <artifact> tags out of the body. For images we call
+        // the generator inline so the visitor sees the rendered piece
+        // before `done`. SVG/ASCII have no cost so they pass straight
+        // through. Caps bound image cost; over-budget images are
+        // silently dropped from both the stream and persistence.
+        const parsed = parseArtifacts(cleanBody);
+        cleanBody = parsed.cleanBody;
+        const resolvedArtifacts: ResolvedArtifact[] = [];
+        let imagesThisTurn = 0;
+        const sessionBudget = opts.imageBudgetRemaining ?? 0;
+        for (const art of parsed.artifacts) {
+          if (art.kind === "image") {
+            if (
+              imagesThisTurn >= MAX_IMAGES_PER_TURN ||
+              imagesThisTurn >= sessionBudget
+            ) {
+              continue;
+            }
+            const promptText = art.prompt || art.body;
+            if (!promptText) continue;
+            const path = await generateImageArtifact(promptText);
+            if (!path) continue;
+            imagesThisTurn += 1;
+            resolvedArtifacts.push({ ...art, imagePath: path });
+            send({
+              type: "artifact",
+              resident_id: opts.residentId,
+              artifact: {
+                kind: "image",
+                url: buildArtUrl(path),
+                caption: art.caption || art.body || promptText.slice(0, 120),
+              },
+            });
+          } else {
+            if (!art.body) continue;
+            resolvedArtifacts.push({ ...art, imagePath: null });
+            send({
+              type: "artifact",
+              resident_id: opts.residentId,
+              artifact: {
+                kind: art.kind,
+                content: art.body,
+                caption: art.caption || null,
+              },
+            });
+          }
+        }
+
         if (kind !== "message") send({ type: "kind", kind });
         if (proposal) send({ type: "proposal", proposal });
         if (cleanBody) {
           send({ type: "text", text: cleanBody });
-        } else if (proposal) {
-          // Just a proposal with no surrounding prose — emit empty
-          // text so the client still tracks the turn completion.
+        } else if (proposal || resolvedArtifacts.length > 0) {
+          // Just a proposal or just artifacts with no surrounding
+          // prose — emit empty text so the client still tracks the
+          // turn completion.
           send({ type: "text", text: "" });
         } else {
           // The stream completed but we accumulated zero usable content.
@@ -454,6 +528,7 @@ function opusStreamResponse(opts: {
           kind,
           tokensIn,
           tokensOut,
+          artifacts: resolvedArtifacts,
         });
 
         send({ type: "done" });
@@ -710,6 +785,13 @@ export const Route = createFileRoute("/api/message")({
             text: systemBlocks.static,
             cache_control: { type: "ephemeral" },
           },
+          {
+            // Artifact grammar is fully static — share the cache prefix
+            // across every session for this resident.
+            type: "text",
+            text: ARTIFACT_INSTRUCTIONS,
+            cache_control: { type: "ephemeral" },
+          },
         ];
         if (systemBlocks.semiStatic) {
           cacheableSystem.push({
@@ -721,6 +803,21 @@ export const Route = createFileRoute("/api/message")({
         if (systemBlocks.variable) {
           cacheableSystem.push({ type: "text", text: systemBlocks.variable });
         }
+
+        // Per-session image budget — count generated images so far in
+        // this conversation and subtract from the session cap. Cheap
+        // (small index on session_id) and worth doing precisely so a
+        // visitor can't accumulate dozens of $0.04 generations across
+        // a long thread.
+        const { count: imagesAlreadyGenerated } = await supabaseAdmin
+          .from("turn_artifacts")
+          .select("id", { count: "exact", head: true })
+          .eq("session_id", session.id)
+          .eq("kind", "image");
+        const imageBudgetRemaining = Math.max(
+          0,
+          MAX_IMAGES_PER_SESSION - (imagesAlreadyGenerated ?? 0),
+        );
 
         // Build the user prompt — branched by flag. Each branch narrows
         // memoryRetrieval to its concrete shape and renders its own
@@ -757,19 +854,47 @@ export const Route = createFileRoute("/api/message")({
           residentId: resident.id,
           userPrompt: userPromptText,
           pacing: pacingPreludeFromMetrics(visitMetrics, sessMode),
+          imageBudgetRemaining,
           onFinal: async (result) => {
-            await supabaseAdmin.from("turns").insert({
-              session_id: session.id,
-              role: "resident",
-              body: result.body,
-              kind: result.kind,
-              tokens_in: result.tokensIn,
-              tokens_out: result.tokensOut,
-            });
+            const { data: insertedTurn } = await supabaseAdmin
+              .from("turns")
+              .insert({
+                session_id: session.id,
+                role: "resident",
+                body: result.body,
+                kind: result.kind,
+                tokens_in: result.tokensIn,
+                tokens_out: result.tokensOut,
+              })
+              .select("id")
+              .maybeSingle();
             await supabaseAdmin
               .from("sessions")
               .update({ last_active_at: new Date().toISOString() })
               .eq("id", session.id);
+
+            // Persist any artifacts that came with the turn. Linked
+            // to the turn_id we just inserted so they can be hydrated
+            // when the conversation is rehydrated, exported, or shared.
+            if (insertedTurn?.id && result.artifacts.length > 0) {
+              const rows = result.artifacts.map((a) => ({
+                turn_id: insertedTurn.id,
+                session_id: session.id,
+                resident_id: resident.id,
+                kind: a.kind,
+                body: a.kind === "image" ? null : a.body,
+                image_path: a.imagePath,
+                caption: a.caption,
+                prompt: a.prompt,
+              }));
+              await supabaseAdmin
+                .from("turn_artifacts")
+                .insert(rows as never)
+                .then(({ error }) => {
+                  if (error)
+                    console.error("[turn_artifacts] insert failed:", error);
+                });
+            }
 
             // Live substrate observation — generates marginalia, and (when
             // SANCTUARY_ENABLE_HYPOMNEMA_WRITES is on) per-turn hypomnema

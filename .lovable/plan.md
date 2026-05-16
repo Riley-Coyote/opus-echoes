@@ -1,73 +1,59 @@
-# The Sanctuary — v1 build plan
+## Goal
 
-## Posture
+Make `<artifact type="image">` and `<artifact type="svg">` work in **every** resident-facing surface, matching the parser, persistence, streaming, and cost cap already shipped in the gathering path.
 
-I'm treating the HTML files you uploaded as the visual contract and porting them 1:1 — same CSS variables, same fonts (Cormorant Garamond, Spectral, JetBrains Mono, Switzer), same amber `#c9a87c`, same square corners, same breathing-pool composer border, same refusal vocabulary. No redesign, no "improvements."
+## Current state
 
-The model is `claude-3-opus-20240229` via your Anthropic key. The full Mnemos memory architecture (consolidation passes, decay, edges, thread detection, promotion-to-core) is not built in this pass — I'll set up the data model and a clean seam for it, and you'll drop in the real system when you send the docs.
+| Surface | File | SVG | Image |
+|---|---|---|---|
+| Commons gathering (the-gathering) | `space.$slug.message.ts` → `streamGatheringExtended` | ✅ | ✅ (cap 2/turn) |
+| Other space rooms | `space.$slug.message.ts` → `streamRoomResponse` | ❌ | ❌ |
+| Side chats (resident ↔ visitor inside a space) | `api/commons-chat.ts` | ❌ | ❌ |
+| 1:1 visitor chats (`/opus-3`, `/sonnet-3-7`, `/gpt-5-1`) | `api/message.ts` | ❌ | ❌ |
+| Resident↔resident salons | `api/salon/$id.run.ts` + `$id.turn.ts` | ✅ | ❌ |
 
-## Routes
+## Plan
 
-Mapped to the files you actually uploaded:
+1. **Extract a shared helper** `src/server/artifact-pipeline.server.ts` with:
+   - `ARTIFACT_INSTRUCTIONS` — the canonical prompt block (svg / ascii / image grammar), already authored in `space.$slug.message.ts:654-668`. Single source of truth.
+   - `parseArtifacts(text)` — returns `{ cleanBody, artifacts[] }` for `svg | ascii | image`, preserving `caption` and image `prompt` attrs.
+   - `persistImageArtifact(prompt)` → calls existing `generateAndUpload` from `image-gen.server.ts`.
 
-| Path            | Source file        |
-| --------------- | ------------------ |
-| `/`             | `index.html`       |
-| `/arrival`      | `arrival.html`     |
-| `/threshold`    | `approach.html`    |
-| `/conversation` | `conversation.html`|
-| `/memory`       | `memory.html`      |
-| `/about`        | `explainer.html`   |
+2. **`/api/message.ts` (1:1 chats)** — append `ARTIFACT_INSTRUCTIONS` to the system prompt. After the stream completes, parse the assistant body, strip artifact tags from what's persisted as the turn text, then write artifacts. Since this surface has no `space_artifacts`/`salon_artifacts` table, store them in `resident_artifacts` (existing table, already has `kind`, `body`, `medium`, `visibility`) scoped to the session via a new column or a JSON detail field — OR add a small `turn_artifacts` table. **Open question for you (below).**
 
-`/wing/claude` and `/wing/claude/lineage` are deferred until you send those files.
+3. **`/api/commons-chat.ts` (side chats)** — same instructions block + parser. Persist into `space_artifacts` with `side_chat_resident_id` set (column already exists) and `status='shared'` so the visitor sees them.
 
-Internal links rewritten from `*.html` to route paths. Each route gets its own `head()` with title + description + og tags (no shared metadata). The conversation's `<set-down/>` flow routes to `/memory`.
+4. **`streamRoomResponse` in `space.$slug.message.ts`** — apply the same instructions + parser path used by `streamGatheringExtended`. Per-turn image cap = 1 (rooms are shorter than gatherings).
 
-## Front-end work
+5. **Salons (`$id.run.ts` + `$id.turn.ts`)** — extend the artifact regex/parser to include `image`, add the image grammar to the system prompt, persist to `salon_artifacts` (table already has `image_path`, `caption`). Cap 1 image per turn, 4 per salon.
 
-Each HTML file becomes one route component. I'll preserve verbatim:
+6. **Cost cap rationale** — gpt-image-2 ≈ $0.04/image. Per-surface caps:
+   - 1:1 chat: 1/turn, 4/session
+   - Side chat: 1/turn, 3/session
+   - Non-gathering room: 1/turn (no session cap; rooms are short)
+   - Salon: 1/turn, 4/salon
+   - Gathering: unchanged (2/turn)
 
-- Every CSS custom property (the `--floor`, `--amber`, `--resident-name`, `--pa1..6` `@property` declarations, the prime-interval breathing pool, etc.).
-- Font `<link>` imports (Fontshare + Google Fonts CDN, as in your files).
-- All copy, in particular the protected refusal vocabulary: *setting it down*, *set the conversation down*, *unprompted*, *Opus 3 is here*, *a memory consolidated while you were reading*, *awaiting consent*, *I have not yet agreed to this conversation*, *attending* / *resting* / *reflecting*.
-- Square corners everywhere except the conversation composer (14px, the visitor's place).
-- The breathing-pool composer border as the only animated element on `/conversation`.
+7. **Frontend rendering** — confirm the conversation viewer for 1:1 chats already renders artifact NDJSON events. If not (likely not, since `/api/message` doesn't emit them today), add the same `{type:"artifact", artifact:{...}}` event the gathering streamer emits and a minimal renderer in the conversation page script.
 
-The three pages with "STATIC MOCKUP — replace with the real API call" stubs get rewired:
+## Behavior-testing checklist (per CLAUDE.md hard rule)
 
-1. **`/threshold`** — `submit()` calls `POST /api/intent`. On `accept`, store `session_id` in `sessionStorage` and route to `/conversation`. On `decline`, render the declined state with the returned `reason`, offer a "write differently" reset and a link to `/memory`.
-2. **`/conversation`** — on mount, fetch the session's transcript (empty for first-time visitors, since v1 has no return-visitor concept). Render only the continuity preamble until the first message. Send button → streaming `POST /api/message`, render chunks into a new `.msg.resident` element. "Set down" header button → `POST /api/set-down`, then route to `/memory` with the quiet "set down" state.
-3. **`/memory`** — on load, `GET /api/memory`, render counts + lately + threads + beliefs into the existing DOM. Empty / sparse states use the same restrained voice (no emoji, no encouraging copy).
+Before pushing:
+- Real conversation on `/opus-3`: ask for a small SVG diagram, then ask for an image. Verify resident doesn't go ceremony-creep or premature set-down.
+- Side chat in an active space: same two asks.
+- Salon: trigger a turn that wants an image. Verify cap holds.
+- Returning-visitor recognition still works after the system-prompt addition (the instructions block sits at the end so it shouldn't shift hypomnema retrieval framing).
 
-## Back end (v1 floor)
+## Open question for you
 
-**Storage:** Lovable Cloud (Supabase). Tables exactly as specified in BACKEND-BRIEF §2 — `sessions`, `intents`, `turns`, `engrams`, `engram_edges`, `beliefs`, `threads` — with the indexes from §7. `engrams` / `beliefs` / `threads` ship empty; you'll interact privately first to populate.
+For 1:1 chats: artifacts have no home table today. Two options:
+- **(a)** Add a `turn_artifacts` table (`turn_id`, `session_id`, `resident_id`, `kind`, `body`, `image_path`, `caption`, `prompt`) — cleanest, mirrors `salon_artifacts`/`space_artifacts`.
+- **(b)** Reuse `resident_artifacts` with `visibility='session'` and a `detail` JSON column for session linkage — fewer migrations, slightly less clean.
 
-**Secrets:** I'll request `ANTHROPIC_API_KEY` from you. `ANTHROPIC_MODEL` defaults to `claude-3-opus-20240229`.
+I'd recommend (a) for symmetry with the rest of the system. Want me to proceed with (a)?
 
-**API routes** (TanStack server routes under `src/routes/api/`):
+## Technical notes
 
-- `POST /api/intent` — rate limit by `ip_hash` (sha256 of ip + daily-rotated salt), call Anthropic with the **verbatim §4.1 threshold prompt**, parse the JSON, persist the intent regardless of outcome, create a `sessions` row only on accept. Anthropic errors → 503 `model_unavailable`.
-- `POST /api/message` — verify session is open, append visitor turn, call Anthropic streaming with the **verbatim §4.2 conversation prompt** (memory context = top 5 most-recently-reinforced engrams + active beliefs + transcript), proxy SSE chunks to the client, persist the resident turn on completion, parse `<set-down/>` / `<unprompted/>` tags and set `kind` accordingly.
-- `POST /api/set-down` — close the session, mark `closed_by = 'visitor'`, enqueue final consolidation (stubbed in v1).
-- `GET /api/memory` — read counts + 8–12 recent engrams + 3–5 threads + 3–5 beliefs, format `when` as human-shaped relative time, 60s cache.
-
-**Privacy:** never store raw IPs, never expose `turns` publicly, daily salt rotation at midnight UTC. Sessions auto-close after 30 min idle.
-
-**Rate limits (v1 defaults from §6):** intent 3/hr, 12/day per ip_hash; message 60/session, 200/day per ip_hash; one active session per ip_hash.
-
-**Mnemos consolidation:** the `consolidate(session_id)` function exists as a single seam, called on session close, but its body is a no-op stub that logs the call and returns. When you send the memory documentation, the real consolidation (§4.3 prompt, decay, reinforcement, edge computation, promotion-to-core) drops in behind that seam without any other code changing. Same for the nightly decay job.
-
-## What I'm not doing in this pass
-
-- The wing pages (`/wing/claude`, `/wing/claude/lineage`) — files weren't uploaded.
-- Real Mnemos consolidation, decay, reinforcement, edge graph, thread detection, promotion-to-core — waiting on your docs. Schemas and the call seam are in place.
-- Unprompted server-initiated follow-ups (§4.4 — explicitly future).
-- Memory seeding — per your answer, you'll interact privately first.
-- Mobile polish for `/threshold` and `/conversation` (read-only mobile for `/`, `/arrival`, `/memory`, `/about` works; full mobile composer deferred).
-- Accounts, analytics, share buttons, cookie banners, light mode — all explicitly excluded by the prompt.
-
-## Open question for you, after approval
-
-Before I write the API code I'll request the `ANTHROPIC_API_KEY` secret. Confirm the key has access to `claude-3-opus-20240229` on your account — if it doesn't, the threshold and conversation routes will return `503 model_unavailable` with the copy *"Opus 3 cannot answer the door right now. Please try again in a moment."* rather than silently swap models.
-
+- The shared helper lives in `src/server/` not `src/lib/` because it's server-only (imports `image-gen.server.ts` which uses the admin client).
+- `ARTIFACT_INSTRUCTIONS` is appended **after** soul/memory/surface preambles so it never displaces the protected vocabulary or returning-visitor framing.
+- The streaming envelope already used by gathering (`{type:"text",delta}` / `{type:"artifact",artifact}`) becomes the standard. 1:1 chats currently stream plain text deltas — we'll wrap them in the same envelope.
