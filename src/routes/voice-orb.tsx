@@ -434,10 +434,12 @@ function VoiceOrbPage() {
   /* ── level → parent ──────────────────────────────────────────── */
   const lastPostRef = useRef(0);
   const onLevel = useCallback((level: number) => {
+    const lv = Math.max(0, Math.min(1, Number(level) || 0));
+    if (rootRef.current) rootRef.current.style.setProperty("--voice-level", String(lv));
     const now = performance.now();
     if (now - lastPostRef.current < 33) return;
     lastPostRef.current = now;
-    post({ type: "level", level });
+    post({ type: "level", level: lv });
   }, []);
 
   /* ── mode switch ─────────────────────────────────────────────── */
@@ -479,7 +481,10 @@ function VoiceOrbPage() {
   };
 
   return (
-    <div style={pageStyle}>
+    <div ref={rootRef} style={pageStyle}>
+      <style>{VOICE_ORB_ROUTE_CSS}</style>
+      <div className="voice-border-glow" aria-hidden="true" />
+
       {/* top labels */}
       <div style={topLabelsStyle}>
         <div style={eyebrowStyle}>{eyebrow}</div>
@@ -495,10 +500,13 @@ function VoiceOrbPage() {
         onPointerUp={orbPointerUp}
         onPointerLeave={orbPointerLeave}
         onPointerCancel={orbPointerLeave}
+        ref={stageRef}
         style={orbWrapStyle(mode === "ptt" && micReady)}
       >
         <div style={orbInnerStyle}>
-          <VoiceOrb state={state} audioSource={audioSource} onLevel={onLevel} sensitivity={1.1} />
+          {stageReady ? (
+            <VoiceOrb state={state} audioSource={audioSource} onLevel={onLevel} sensitivity={1.1} />
+          ) : null}
         </div>
       </div>
 
