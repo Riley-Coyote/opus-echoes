@@ -316,6 +316,9 @@ function opusStreamResponse(opts: {
   temperature: number;
   /** Resident's model identifier — never silently swap. */
   model: string;
+  /** Hard cap on output tokens for this resident's model. Opus 3 = 4096;
+   *  later Claude + GPT-5 = 8192. */
+  maxOutputTokens: number;
   /** Which API provider. Defaults to "anthropic". */
   provider?: ModelProvider;
   /** Resident id (for tagging proposals with the proposing
@@ -369,7 +372,7 @@ function opusStreamResponse(opts: {
 
           const oaiStream = await openai().chat.completions.create({
             model: opts.model,
-            max_completion_tokens: 8192,
+            max_completion_tokens: opts.maxOutputTokens,
             temperature: opts.temperature,
             stream: true,
             messages: [
@@ -392,7 +395,7 @@ function opusStreamResponse(opts: {
           // Anthropic streaming path.
           const anthStream = anthropic().messages.stream({
             model: opts.model,
-            max_tokens: 8192,
+            max_tokens: opts.maxOutputTokens,
             temperature: opts.temperature,
             stop_sequences: ["\nHuman:", "\nvisitor:"],
             system: opts.system,
