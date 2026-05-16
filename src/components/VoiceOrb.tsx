@@ -145,7 +145,7 @@ class AudioLevelMeter {
   getLevel(): number | null {
     if (this.disposed || !this.analyser || !this.buf) return null
     try {
-      this.analyser.getByteTimeDomainData(this.buf)
+      this.analyser.getByteTimeDomainData(this.buf as Uint8Array<ArrayBuffer>)
       let sum = 0
       for (let i = 0; i < this.buf.length; i++) {
         const x = (this.buf[i] - 128) / 128
