@@ -2345,6 +2345,57 @@ import * as THREE from "/vendor/three.module.js";
   // BOOT
   // ──────────────────────────────────────────────────────────────────────────
 
+  // ── Scene toggle ──────────────────────────────────────────────────────────
+  // The 3D presence layer is GPU-heavy. Visitors on warm machines hear the
+  // fans the moment they enter. The toggle lives bottom-right on approach +
+  // conversation; off-state hides the layer entirely (no WebGL boot) and
+  // swaps in a quiet radial gradient as the background.
+  const PRESENCE_PREF_KEY = "sanctuary.presence_enabled";
+  function presenceEnabled() {
+    try {
+      const v = localStorage.getItem(PRESENCE_PREF_KEY);
+      return v === null ? true : v !== "false";
+    } catch (_) { return true; }
+  }
+  function setPresenceEnabled(on) {
+    try { localStorage.setItem(PRESENCE_PREF_KEY, on ? "true" : "false"); } catch (_) {}
+  }
+  function mountSceneToggle(initialOn) {
+    if (document.querySelector(".presence-toggle")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "presence-toggle";
+    btn.setAttribute("aria-pressed", initialOn ? "true" : "false");
+    btn.setAttribute("aria-label", "Toggle ambient scene");
+    btn.title = initialOn ? "Scene on — click to quiet" : "Scene off — click to enable";
+    btn.innerHTML = '<span class="presence-toggle-dot" aria-hidden="true"></span><span class="presence-toggle-label">scene</span>';
+    btn.addEventListener("click", () => {
+      const next = !(btn.getAttribute("aria-pressed") === "true");
+      setPresenceEnabled(next);
+      // Reload — guarantees clean teardown of WebGL/rAF or clean boot.
+      location.reload();
+    });
+    document.body.appendChild(btn);
+  }
+  {
+    const route = routeKind();
+    const enabled = presenceEnabled();
+    document.documentElement.dataset.opusRoute = route;
+    document.documentElement.dataset.presenceEnabled = enabled ? "true" : "false";
+    const showToggle = route === "approach" || route === "conversation";
+    if (showToggle) {
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => mountSceneToggle(enabled));
+      } else {
+        mountSceneToggle(enabled);
+      }
+    }
+    if (!enabled && showToggle) {
+      // Skip the heavy presence boot entirely.
+      return;
+    }
+  }
+
   // Chooser mode: three-window landing page.
   const chooserCanvases = document.querySelectorAll("[data-chooser-panel]");
   if (chooserCanvases.length > 0) {
