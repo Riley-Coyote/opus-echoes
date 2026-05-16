@@ -3002,29 +3002,137 @@ ${FONTS}
 <!-- overlay (modals: set-down confirm + consolidating + cross-surface conflict) -->
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-hidden="true"></div>
 
-<!-- lightbox — full-screen zoom of generated images / svgs -->
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="image preview" onclick="if(event.target===this)this.classList.remove('open'),document.body.style.overflow=''">
-  <button type="button" class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open');document.body.style.overflow=''">close ✕</button>
-  <div class="lightbox-stage"></div>
-</div>
+
+<!-- voice mode — amber perimeter glow + fullscreen orb overlay (iframe) -->
+<div class="voice-glow" id="voiceGlow" aria-hidden="true"></div>
+<iframe
+  class="voice-overlay"
+  id="voiceOverlay"
+  title="voice mode"
+  aria-hidden="true"
+  allow="microphone; autoplay"></iframe>
 
 <script src="/voice-mode.js"></script>
 <script>${chatScript(resident)}</script>
 <script>
 (function(){
-  if (!window.VoiceMode) return;
   var resId = ${JSON.stringify(resident.id)};
   window.addEventListener('load', function(){
     var mic = document.getElementById('micBtn');
     var input = document.getElementById('input');
     var send = document.getElementById('sendBtn');
     var toggle = document.getElementById('voiceToggle');
-    if (mic && input && send) {
-      window.__voiceCtl = window.VoiceMode.attach({
-        micButton: mic, inputEl: input, sendButton: send, resident: resId
-      });
+    var overlay = document.getElementById('voiceOverlay');
+    var glow = document.getElementById('voiceGlow');
+    if (!mic || !input || !send || !overlay || !glow) return;
+
+    /* ─── voice mode overlay controller ──────────────────────────
+       The mic button enters fullscreen Voice Mode (it no longer does
+       push-to-talk — the orb itself is the PTT target). The amber
+       perimeter glow ramps in over ~1.5s and breathes with the orb's
+       reported audio level. End / Escape ramp it back out over ~1s. */
+    var ttsEl = null;
+    var lastFocus = null;
+
+    function setLevel(v){
+      var lv = Math.max(0, Math.min(1, Number(v) || 0));
+      glow.style.setProperty('--voice-level', String(lv));
     }
-    if (toggle) {
+    function post(msg){
+      try { overlay.contentWindow && overlay.contentWindow.postMessage(msg, '*'); }
+      catch(_){}
+    }
+    function open(){
+      if (document.body.classList.contains('voice-mode-active')) return;
+      lastFocus = document.activeElement;
+      document.body.classList.remove('voice-mode-closing');
+      document.body.classList.add('voice-mode-active');
+      overlay.setAttribute('aria-hidden','false');
+      // Lazy-load the iframe so the mic prompt only appears on entry.
+      if (!overlay.src) overlay.src = '/voice-orb?resident=' + encodeURIComponent(resId);
+      setTimeout(function(){ try { overlay.focus(); } catch(_){} }, 60);
+    }
+    function close(){
+      if (!document.body.classList.contains('voice-mode-active')) return;
+      document.body.classList.remove('voice-mode-active');
+      document.body.classList.add('voice-mode-closing');
+      overlay.setAttribute('aria-hidden','true');
+      post({ type: 'stop-tts' });
+      setLevel(0);
+      // After the ~1s ramp, drop the iframe so the mic is released.
+      setTimeout(function(){
+        document.body.classList.remove('voice-mode-closing');
+        try { overlay.src = 'about:blank'; overlay.removeAttribute('src'); } catch(_){}
+        if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch(_){} }
+      }, 1100);
+    }
+    function isOpen(){ return document.body.classList.contains('voice-mode-active'); }
+
+    window.VoiceOverlay = {
+      open: open,
+      close: close,
+      isOpen: isOpen,
+      setState: function(s){ if (isOpen()) post({ type: 'set-state', state: s }); },
+      speak: function(text){ if (isOpen() && text) post({ type: 'play-tts', text: String(text) }); }
+    };
+
+    /* messages from the orb iframe */
+    window.addEventListener('message', function(ev){
+      var d = ev && ev.data;
+      if (!d || d.source !== 'voice-orb') return;
+      switch (d.type) {
+        case 'ready':
+          post({ type: 'config', resident: resId });
+          post({ type: 'set-state', state: 'listening' });
+          break;
+        case 'level':
+          setLevel(d.level);
+          break;
+        case 'transcript':
+          if (d.text) {
+            var existing = input.value || '';
+            input.value = existing
+              ? existing.replace(/\\s+$/, '') + ' ' + d.text
+              : d.text;
+            try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch(_){}
+            setTimeout(function(){ if (!send.disabled) send.click(); }, 60);
+          }
+          break;
+        case 'tts-end':
+          post({ type: 'set-state', state: 'listening' });
+          break;
+        case 'close':
+        case 'mic-denied':
+          close();
+          break;
+      }
+    });
+
+    /* Escape closes voice mode (orb iframe also handles its own Esc). */
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && isOpen()) { e.preventDefault(); close(); }
+    });
+
+    /* Repurpose the mic button: open Voice Mode on click. */
+    var newMic = mic.cloneNode(true);
+    newMic.setAttribute('title', 'voice mode');
+    newMic.setAttribute('aria-label', 'enter voice mode');
+    mic.parentNode.replaceChild(newMic, mic);
+    newMic.addEventListener('click', function(e){
+      e.preventDefault();
+      open();
+    });
+
+    /* Bridge send → orb state (thinking) without touching send()
+       internals: when the send button is clicked while voice mode
+       is open, post 'thinking' so the orb shifts. The reply-text
+       handoff happens via the patched VoiceMode.speak below. */
+    send.addEventListener('click', function(){
+      if (isOpen()) post({ type: 'set-state', state: 'thinking' });
+    });
+
+    /* Wire the auxiliary TTS toggle (still useful in non-overlay mode). */
+    if (toggle && window.VoiceMode) {
       function paint(){
         var on = window.VoiceMode.getEnabled();
         toggle.dataset.on = on ? 'true' : 'false';
@@ -3038,9 +3146,22 @@ ${FONTS}
         paint();
       });
     }
+
+    /* Monkey-patch VoiceMode.speak: when overlay is open, route the
+       text to the orb (which fetches /api/voice/tts itself so the
+       audio plays inside the orb's context and feeds the particles).
+       Otherwise fall through to the original behavior. */
+    if (window.VoiceMode && typeof window.VoiceMode.speak === 'function') {
+      var origSpeak = window.VoiceMode.speak.bind(window.VoiceMode);
+      window.VoiceMode.speak = function(text, resident, opts){
+        if (isOpen()) { post({ type: 'play-tts', text: String(text || '') }); return; }
+        return origSpeak(text, resident, opts);
+      };
+    }
   });
 })();
 </script>
+
 <script>
 (function(){
   var wrap = document.getElementById('residentSelect');
