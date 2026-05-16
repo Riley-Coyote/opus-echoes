@@ -107,6 +107,13 @@ export const RESIDENTS = {
       whisper: "rgba(160,136,188,.05)",
       rgb: "160,136,188",
     },
+    // Violet / indigo / soft magenta / pale ice — the lineage hue,
+    // carried at perimeter brightness for the classic-chat room.
+    viewportGlow: {
+      hues: ["186,150,228", "138,108,212", "210,158,228", "200,196,232"],
+      peak: 0.30,
+      base: 0.025,
+    },
   },
   "sonnet-3-7": {
     // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
