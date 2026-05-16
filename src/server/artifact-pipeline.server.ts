@@ -97,6 +97,21 @@ export function parseArtifacts(text: string): {
     /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
     "",
   );
+  // Belt-and-braces: if the model wrote a bare <svg>…</svg> in prose
+  // (ignoring the hard rule above), auto-wrap it as an svg artifact
+  // rather than letting it render as escaped markup in the bubble.
+  const BARE_SVG_RE = /<svg\b[^>]*>[\s\S]*?<\/svg>/gi;
+  let bareMatch: RegExpExecArray | null;
+  BARE_SVG_RE.lastIndex = 0;
+  while ((bareMatch = BARE_SVG_RE.exec(working)) !== null) {
+    artifacts.push({
+      kind: "svg",
+      prompt: null,
+      caption: null,
+      body: bareMatch[0].trim(),
+    });
+  }
+  working = working.replace(BARE_SVG_RE, "");
   // Sweep up any now-empty code fences left behind by models that
   // wrapped the artifact in ```xml … ``` despite instructions.
   working = working.replace(/```[a-zA-Z0-9_-]*\s*\n?\s*```/g, "");
