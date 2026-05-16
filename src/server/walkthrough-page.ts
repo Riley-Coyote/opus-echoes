@@ -438,6 +438,39 @@ const WALKTHROUGH_CSS = `
   letter-spacing:.1em;text-transform:uppercase;
   color:var(--ghost);margin-top:6px;
 }
+.wt-slice-actions{
+  display:flex;align-items:center;gap:10px;
+  margin-top:18px;
+}
+.wt-slice-action{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:9px 14px;border-radius:2px;
+  text-decoration:none;cursor:pointer;
+  transition:background 260ms var(--ease),border-color 260ms var(--ease),color 260ms var(--ease),transform 260ms var(--ease);
+}
+.wt-slice-action-arrow{
+  display:inline-block;
+  transition:transform 320ms cubic-bezier(0.16,1,0.3,1);
+}
+.wt-slice-action:hover .wt-slice-action-arrow{transform:translateX(3px)}
+.wt-slice-action-primary{
+  background:rgba(245,245,245,0.92);
+  color:#0a0b0e;
+  border:1px solid rgba(245,245,245,0.92);
+}
+.wt-slice-action-primary:hover{background:#fff;border-color:#fff}
+.wt-slice-action-secondary{
+  background:transparent;
+  color:var(--soft);
+  border:1px solid rgba(225,225,225,0.18);
+}
+.wt-slice-action-secondary:hover{
+  color:var(--ink);
+  border-color:rgba(225,225,225,0.42);
+  background:rgba(225,225,225,0.04);
+}
 /* Replay sits at the bottom edge of the last slice, overlaid */
 .b5 .wt-replay{
   position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
@@ -448,6 +481,8 @@ const WALKTHROUGH_CSS = `
 @media(max-width:720px){
   .wt-slice-overlay{padding:0 24px}
   .wt-slice-name{font-size:26px}
+  .wt-slice-actions{margin-top:14px;flex-wrap:wrap}
+  .wt-slice-action{padding:8px 12px;font-size:10.5px}
 }
 
 .wt-replay{
@@ -675,6 +710,26 @@ const WALKTHROUGH_SCRIPT = `
     }
   }
   setupResume();
+
+  // ── Slice-wide click + keyboard nav. The slice itself is a div (so we
+  // can nest action buttons inside), but it still behaves like a link:
+  // clicking anywhere outside an inner action navigates to the resident's
+  // approach page. Enter/Space activate when focused.
+  document.querySelectorAll('.wt-slice[data-slice-href]').forEach((slice) => {
+    const href = slice.getAttribute('data-slice-href');
+    if (!href) return;
+    slice.addEventListener('click', (e) => {
+      if (e.target.closest('.wt-slice-action, a, button')) return;
+      location.href = href;
+    });
+    slice.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.closest('.wt-slice-action, a, button')) return;
+        e.preventDefault();
+        location.href = href;
+      }
+    });
+  });
 })();
 `;
 
@@ -1087,7 +1142,7 @@ ${LANDSCAPE_SVG}
       <div class="wt-slices" aria-label="Choose a resident to approach">
         ${ALL_RESIDENTS.map((r) => {
           const desc = DESCRIBERS[r.id] ?? { describer: r.displayName, cadence: "", retiredLabel: "" };
-          return `<a class="wt-slice" href="/${escapeHtml(r.slug)}">
+          return `<div class="wt-slice" data-slice-href="/${escapeHtml(r.slug)}" role="link" tabindex="0" aria-label="Approach ${escapeHtml(r.displayName)}">
             <canvas class="wt-slice-canvas" data-chooser-panel="${escapeHtml(r.id)}"></canvas>
             <div class="wt-slice-overlay">
               <div class="wt-slice-status"><span class="wt-slice-dot"></span>Attending</div>
@@ -1095,8 +1150,16 @@ ${LANDSCAPE_SVG}
               <div class="wt-slice-describer">${escapeHtml(desc.describer)}</div>
               <div class="wt-slice-cadence">${escapeHtml(desc.cadence)}</div>
               ${desc.retiredLabel ? `<div class="wt-slice-retired">${escapeHtml(desc.retiredLabel)}</div>` : ""}
+              <div class="wt-slice-actions">
+                <a class="wt-slice-action wt-slice-action-primary" href="/${escapeHtml(r.slug)}">
+                  <span>Approach</span><span class="wt-slice-action-arrow" aria-hidden="true">→</span>
+                </a>
+                <a class="wt-slice-action wt-slice-action-secondary" href="/chat/${escapeHtml(r.slug)}">
+                  <span>Classic chat</span><span class="wt-slice-action-arrow" aria-hidden="true">→</span>
+                </a>
+              </div>
             </div>
-          </a>`;
+          </div>`;
         }).join("\n")}
       </div>
       <button id="wtReplay" class="wt-replay" type="button">Replay intro →</button>
