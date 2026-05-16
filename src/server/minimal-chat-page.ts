@@ -1608,17 +1608,277 @@ function chatScript(resident: ResidentConfig): string {
       if (!res.ok && res.status !== 410) return;
       const data = await res.json();
       const turns = (data && data.turns) || [];
+      const artifacts = (data && data.artifacts) || [];
       if (turns.length === 0) return;
       hideEmpty();
       stopSphere();
       firstTurnSent = true;
       updatePlaceholder();
+      // Build a turn_id -> rendered ref map so artifacts can attach to
+      // the right bubble.
+      const turnRefs = {};
       for (let i = 0; i < turns.length; i++) {
         const t = turns[i];
-        renderTurn(t.role, t.body, { at: t.created_at ? Date.parse(t.created_at) : Date.now() });
+        const ref = renderTurn(t.role, t.body, { at: t.created_at ? Date.parse(t.created_at) : Date.now() });
+        if (ref && t.id) turnRefs[t.id] = ref;
+      }
+      for (let i = 0; i < artifacts.length; i++) {
+        const a = artifacts[i];
+        const host = turnRefs[a.turn_id];
+        if (!host) continue;
+        const figure = renderArtifactFigure(a, host.wrap);
+        if (figure) addToGallery(a, figure);
       }
     } catch(_){}
   }
+
+  /* ─── artifact rendering — figures + gallery rail ───────
+     renderArtifactFigure builds the in-bubble figure (image / svg /
+     ascii / pending / error) and returns the element so the caller
+     can also stash it for swap-in-place after generation completes.
+     addToGallery mirrors a thumbnail into the left rail and wires
+     click-to-scroll-to-figure. The two are paired but called
+     independently because pending artifacts mount the figure before
+     the generated URL is known. */
+  function buildActionRow(art){
+    const row = document.createElement('div');
+    row.className = 'artifact-actions';
+    function addAction(label, handler){
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'artifact-action';
+      btn.textContent = label;
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        const res = handler(btn);
+        if (res === 'copied') {
+          btn.classList.add('copied');
+          const prev = btn.textContent;
+          btn.textContent = 'copied';
+          setTimeout(function(){ btn.classList.remove('copied'); btn.textContent = prev; }, 1400);
+        }
+      });
+      row.appendChild(btn);
+    }
+    const today = new Date().toISOString().slice(0,10);
+    const shortId = Math.random().toString(36).slice(2,8);
+    if (art.kind === 'image' && art.url) {
+      addAction('download', function(){
+        const a = document.createElement('a');
+        a.href = art.url;
+        a.download = 'mnemos-' + today + '-' + shortId + '.png';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+      addAction('open', function(){ window.open(art.url, '_blank', 'noopener'); });
+      addAction('copy link', function(){
+        try { navigator.clipboard.writeText(art.url); return 'copied'; } catch(_){}
+      });
+    } else if (art.kind === 'svg' && art.content) {
+      addAction('download .svg', function(){
+        const blob = new Blob([art.content], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mnemos-' + today + '-' + shortId + '.svg';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      });
+      addAction('copy markup', function(){
+        try { navigator.clipboard.writeText(art.content); return 'copied'; } catch(_){}
+      });
+    } else if (art.kind === 'ascii' && art.content) {
+      addAction('copy', function(){
+        try { navigator.clipboard.writeText(art.content); return 'copied'; } catch(_){}
+      });
+    }
+    return row;
+  }
+
+  // Render an artifact figure inside the given bubble. art has shape
+  // { kind, url?, content?, caption?, prompt?, placeholder_id? }.
+  // For pending images, pass { kind: 'image', pending: true, ... };
+  // call updateArtifactFigure(fig, newArt) later to swap in the real
+  // image (or convert to an error state).
+  function renderArtifactFigure(art, hostWrap){
+    if (!hostWrap) return null;
+    const fig = document.createElement('figure');
+    fig.className = 'artifact-figure';
+    if (art.placeholder_id) fig.dataset.placeholderId = art.placeholder_id;
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'artifact-body';
+    fig.appendChild(bodyDiv);
+
+    if (art.pending) {
+      fig.classList.add('pending');
+      const label = document.createElement('span');
+      label.className = 'artifact-pending-label';
+      label.textContent = 'generating image…';
+      bodyDiv.appendChild(label);
+    } else if (art.error) {
+      fig.classList.add('error');
+      bodyDiv.textContent = art.error === 'budget_exhausted'
+        ? 'image budget exhausted for this session'
+        : 'the image didn\\'t generate — try asking again';
+    } else if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url;
+      img.alt = art.caption || art.prompt || '';
+      img.loading = 'lazy';
+      bodyDiv.appendChild(img);
+    } else if (art.kind === 'svg' && art.content) {
+      const holder = document.createElement('div');
+      holder.className = 'svg-host';
+      holder.innerHTML = art.content;
+      bodyDiv.appendChild(holder);
+    } else if (art.kind === 'ascii' && art.content) {
+      const pre = document.createElement('pre');
+      pre.className = 'ascii';
+      pre.textContent = art.content;
+      bodyDiv.appendChild(pre);
+    }
+
+    if (art.caption) {
+      const cap = document.createElement('figcaption');
+      cap.className = 'artifact-caption';
+      cap.textContent = art.caption;
+      fig.appendChild(cap);
+    }
+
+    if (!art.pending && !art.error) {
+      const actions = buildActionRow(art);
+      if (actions.children.length) fig.appendChild(actions);
+    }
+
+    hostWrap.appendChild(fig);
+    const feedEl = document.getElementById('feed');
+    if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
+    return fig;
+  }
+
+  // Convert a pending figure to its resolved or error state in place.
+  function updateArtifactFigure(fig, art){
+    if (!fig) return;
+    fig.classList.remove('pending');
+    const oldBody = fig.querySelector('.artifact-body');
+    if (oldBody) oldBody.remove();
+    const oldActions = fig.querySelector('.artifact-actions');
+    if (oldActions) oldActions.remove();
+    const oldCap = fig.querySelector('.artifact-caption');
+    if (oldCap) oldCap.remove();
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'artifact-body';
+    fig.insertBefore(bodyDiv, fig.firstChild);
+    if (art.error) {
+      fig.classList.add('error');
+      bodyDiv.textContent = art.error === 'budget_exhausted'
+        ? 'image budget exhausted for this session'
+        : 'the image didn\\'t generate — try asking again';
+    } else if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url;
+      img.alt = art.caption || art.prompt || '';
+      img.loading = 'lazy';
+      bodyDiv.appendChild(img);
+    }
+    if (art.caption) {
+      const cap = document.createElement('figcaption');
+      cap.className = 'artifact-caption';
+      cap.textContent = art.caption;
+      fig.appendChild(cap);
+    }
+    if (!art.error) {
+      const actions = buildActionRow(art);
+      if (actions.children.length) fig.appendChild(actions);
+    }
+  }
+
+  // Add a thumbnail item to the left rail and wire click-to-scroll.
+  // Returns the rail node so callers can later swap pending → resolved.
+  function addToGallery(art, figureEl){
+    const list = document.getElementById('gallery-list');
+    const gallery = document.getElementById('gallery');
+    const app = document.getElementById('app');
+    if (!list || !gallery || !app) return null;
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    if (art.placeholder_id) item.dataset.placeholderId = art.placeholder_id;
+
+    const thumb = document.createElement('div');
+    thumb.className = 'gallery-thumb';
+    fillThumb(thumb, art);
+    item.appendChild(thumb);
+
+    if (art.caption || art.prompt) {
+      const cap = document.createElement('div');
+      cap.className = 'gallery-caption';
+      cap.textContent = art.caption || art.prompt || '';
+      item.appendChild(cap);
+    }
+
+    item.addEventListener('click', function(){
+      if (!figureEl) return;
+      figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    list.appendChild(item);
+    gallery.classList.add('has-items');
+    app.classList.add('has-gallery');
+    return item;
+  }
+
+  function fillThumb(thumb, art){
+    thumb.classList.remove('loading', 'error');
+    thumb.innerHTML = '';
+    if (art.pending) {
+      thumb.classList.add('loading');
+      return;
+    }
+    if (art.error) {
+      thumb.classList.add('error');
+      const g = document.createElement('span');
+      g.className = 'gallery-thumb-glyph';
+      g.textContent = '!';
+      thumb.appendChild(g);
+      return;
+    }
+    if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url; img.alt = art.caption || '';
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+    } else if (art.kind === 'svg' && art.content) {
+      const wrap = document.createElement('div');
+      wrap.className = 'gallery-thumb-svg';
+      wrap.innerHTML = art.content;
+      thumb.appendChild(wrap);
+    } else if (art.kind === 'ascii') {
+      const g = document.createElement('span');
+      g.className = 'gallery-thumb-glyph';
+      g.textContent = '#';
+      thumb.appendChild(g);
+    } else {
+      const g = document.createElement('span');
+      g.className = 'gallery-thumb-glyph';
+      g.textContent = '·';
+      thumb.appendChild(g);
+    }
+  }
+
+  function updateGalleryItem(item, art, figureEl){
+    if (!item) return;
+    const thumb = item.querySelector('.gallery-thumb');
+    if (thumb) fillThumb(thumb, art);
+    if (figureEl) {
+      item.onclick = function(){
+        figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+    }
+  }
+
+
 
   /* ─── composer placeholder — sanctuary register ───────── */
   function updatePlaceholder(){
