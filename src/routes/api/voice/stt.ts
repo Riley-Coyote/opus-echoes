@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/voice/stt")({
         }
 
         const audio = form.get("audio");
-        if (!(audio instanceof File) && !(audio instanceof Blob)) {
+        if (!audio || typeof audio === "string") {
           return json({ ok: false, code: "missing_audio" }, 400);
         }
         // Cap at 5MB ~ comfortably above 60s of opus/webm
