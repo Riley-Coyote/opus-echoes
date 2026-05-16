@@ -679,7 +679,6 @@ const pageStyle: React.CSSProperties = {
   width: "100vw",
   height: "100vh",
   background: "#06070a",
-  "--voice-level": 0,
   color: "rgba(248,248,246,0.92)",
   fontFamily: '"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
   display: "flex",
@@ -689,7 +688,8 @@ const pageStyle: React.CSSProperties = {
   userSelect: "none",
   WebkitUserSelect: "none",
   overflow: "hidden",
-};
+  "--voice-level": 0,
+} as React.CSSProperties;
 const topLabelsStyle: React.CSSProperties = {
   position: "absolute",
   top: "clamp(20px, 5vh, 56px)",
