@@ -1904,9 +1904,11 @@ function chatScript(resident: ResidentConfig): string {
       item.appendChild(cap);
     }
 
+    item._art = art;
     item.addEventListener('click', function(){
-      if (!figureEl) return;
-      figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const a = item._art;
+      if (a && !a.pending && !a.error) openLightbox(a);
+      else if (figureEl) figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
     list.appendChild(item);
