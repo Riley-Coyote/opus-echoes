@@ -528,6 +528,7 @@ function opusStreamResponse(opts: {
           kind,
           tokensIn,
           tokensOut,
+          artifacts: resolvedArtifacts,
         });
 
         send({ type: "done" });
