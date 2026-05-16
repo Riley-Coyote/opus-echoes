@@ -2807,9 +2807,13 @@ function chatScript(resident: ResidentConfig): string {
    Fonts + renderer entry point.
    ────────────────────────────────────────────────────────────────── */
 
-const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
+export const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Inter+Tight:wght@400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">`;
+
+export function escapeChatHtml(s: string): string {
+  return escapeHtml(s);
+}
 
 function escapeHtml(s: string): string {
   return s
