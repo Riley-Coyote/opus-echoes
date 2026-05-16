@@ -39,6 +39,26 @@ import {
   observeExchange,
   updateFunctionalMemory,
 } from "@/server/substrate.server";
+import {
+  ARTIFACT_INSTRUCTIONS,
+  buildArtUrl,
+  generateImageArtifact,
+  parseArtifacts,
+  type ParsedArtifact,
+} from "@/server/artifact-pipeline.server";
+
+/** Per-turn cap for image artifacts in a 1:1 chat. gpt-image-2 is
+ *  slow (≈15-25s) and ≈$0.04/image; one per turn keeps both latency
+ *  and cost bounded. SVG/ASCII have no cap (they're free + fast). */
+const MAX_IMAGES_PER_TURN = 1;
+/** Per-session cap. Past this we ignore further image tags but still
+ *  render any SVG/ASCII. */
+const MAX_IMAGES_PER_SESSION = 4;
+
+/** Resolved artifact ready to persist to turn_artifacts. For images
+ *  the storage path is already filled (generation happened during
+ *  the stream so the visitor sees it before `done`). */
+type ResolvedArtifact = ParsedArtifact & { imagePath: string | null };
 
 const PreviewTurn = z.object({
   role: z.enum(["visitor", "resident"]),
