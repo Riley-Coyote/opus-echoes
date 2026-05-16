@@ -2645,6 +2645,12 @@ function chatScript(resident: ResidentConfig): string {
         if (dismissPromise) await dismissPromise;
         else if (residentRef) await dismissThinking(residentRef.bodyEl);
         if (typewriter) typewriter.flush();
+        // Speak the reply in the resident's voice if voice mode is on.
+        try {
+          if (window.VoiceMode && window.VoiceMode.getEnabled() && assistantBuffer.trim()) {
+            window.VoiceMode.speak(assistantBuffer.trim(), ${JSON.stringify(resident.id)});
+          }
+        } catch(_){}
         if (result.setDownFlag) {
           document.body.classList.add('set-down');
           await new Promise(function(resolve){ setTimeout(resolve, 1200); });
