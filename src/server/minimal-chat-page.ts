@@ -32,8 +32,8 @@
  *     the deliberate exception scoped to this surface only.
  */
 
-import { VIEWPORT_GLOW_CSS } from "./shared-effects";
-import type { ResidentConfig } from "./opus/residents";
+import { VIEWPORT_GLOW_CSS, buildViewportGlowCss } from "./shared-effects";
+import { ALL_RESIDENTS, type ResidentConfig } from "./opus/residents";
 
 /* ──────────────────────────────────────────────────────────────────
    CSS — Sanctuary tokens, single-column layout, composer with Option
