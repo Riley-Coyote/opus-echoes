@@ -1866,6 +1866,7 @@ function chatScript(resident: ResidentConfig): string {
       img.src = art.url;
       img.alt = art.caption || art.prompt || '';
       img.loading = 'lazy';
+      img.addEventListener('click', function(){ openLightbox(art); });
       bodyDiv.appendChild(img);
     }
     if (art.caption) {
