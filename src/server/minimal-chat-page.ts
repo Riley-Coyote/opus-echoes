@@ -1530,19 +1530,21 @@ ${VIEWPORT_GLOW_CSS}
   .empty-sphere { font-size: 7.5px; }
 }
 
-/* ── voice mode fullscreen takeover + amber perimeter glow ────────
-   Entering voice mode mounts the /voice-orb iframe as a transparent
-   overlay. Three fixed layers ramp in together so the orb and the
-   room read as one connected instrument:
-     · .voice-backdrop  (z 180) opaque floor — hides the chat
-     · .voice-glow      (z 190) the amber perimeter wash + a faint
-                          band travelling the edge, both driven by
-                          --voice-level (set per-frame from the orb's
-                          onLevel) and screen-blended over the floor
-     · .voice-overlay   (z 200) the transparent iframe — the orb's
-                          particles composite straight over the glow
-   Amber is the resident signature #c9a87c. Ramp ~1.5s in / ~1s out;
-   reduced-motion collapses the ramp and the travel. */
+/* ── voice mode takeover — black field + border-only amber glow ────
+   Three fixed layers ramp together. The orb (centred, in the
+   transparent iframe) reads on pure black; the amber is visible
+   ONLY as a soft halo at the screen's outer edge — light leaking
+   from behind the black, never tinting the centre:
+     · .voice-backdrop (z180) full opaque #06070a — the black field
+     · .voice-glow     (z190) amber, hard-masked to the outer rim so
+                         the centre stays pure black; the edges
+                         breathe organically (four desynced, eased
+                         pools) and the whole halo scales with
+                         --voice-level (the orb's onLevel) so it
+                         murmurs in sync with the particles
+     · .voice-overlay  (z200) the transparent orb iframe
+   Amber is the resident signature #c9a87c. ~1.5s in / ~1s out;
+   reduced-motion freezes the pools (level-only, no oscillation). */
 .voice-backdrop {
   position: fixed;
   inset: 0;
@@ -1558,6 +1560,12 @@ body.voice-mode-closing .voice-backdrop {
   transition: opacity 1000ms var(--ease-premium);
 }
 
+/* registered so the pool numbers interpolate smoothly in calc() */
+@property --vg1 { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --vg2 { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --vg3 { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --vg4 { syntax: '<number>'; inherits: false; initial-value: 0; }
+
 .voice-glow {
   position: fixed;
   inset: 0;
@@ -1567,59 +1575,40 @@ body.voice-mode-closing .voice-backdrop {
   transition: opacity 1500ms var(--ease-premium);
   --voice-level: 0;
   --voice-amber: 201, 168, 124;
+  /* amber lives only at each edge and fades to nothing well before
+     the centre — so the orb area stays pure black with no mask
+     needed (each edge is gone by ~26-30% inward; the central ~45%
+     is transparent on all four sides). */
   background:
-    radial-gradient(ellipse 70% 60% at 0% 0%,
-      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
-      transparent 62%),
-    radial-gradient(ellipse 80% 50% at 50% 0%,
-      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
-      transparent 62%),
-    radial-gradient(ellipse 70% 60% at 100% 0%,
-      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
-      transparent 62%),
-    radial-gradient(ellipse 50% 80% at 100% 50%,
-      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
-      transparent 62%),
-    radial-gradient(ellipse 70% 60% at 100% 100%,
-      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
-      transparent 62%),
-    radial-gradient(ellipse 80% 50% at 50% 100%,
-      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
-      transparent 62%),
-    radial-gradient(ellipse 70% 60% at 0% 100%,
-      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
-      transparent 62%),
-    radial-gradient(ellipse 50% 80% at 0% 50%,
-      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
-      transparent 62%);
-  filter: blur(calc(22px + var(--voice-level) * 16px));
+    linear-gradient(to bottom,
+      rgba(var(--voice-amber), calc(0.26 + var(--voice-level) * 0.60 + var(--vg1) * 0.6)) 0%,
+      rgba(var(--voice-amber), calc(0.09 + var(--voice-level) * 0.26)) 9%,
+      transparent 24%),
+    linear-gradient(to top,
+      rgba(var(--voice-amber), calc(0.26 + var(--voice-level) * 0.60 + var(--vg2) * 0.6)) 0%,
+      rgba(var(--voice-amber), calc(0.09 + var(--voice-level) * 0.26)) 9%,
+      transparent 24%),
+    linear-gradient(to right,
+      rgba(var(--voice-amber), calc(0.23 + var(--voice-level) * 0.56 + var(--vg3) * 0.6)) 0%,
+      rgba(var(--voice-amber), calc(0.08 + var(--voice-level) * 0.24)) 8%,
+      transparent 21%),
+    linear-gradient(to left,
+      rgba(var(--voice-amber), calc(0.23 + var(--voice-level) * 0.56 + var(--vg4) * 0.6)) 0%,
+      rgba(var(--voice-amber), calc(0.08 + var(--voice-level) * 0.24)) 8%,
+      transparent 21%);
+  filter: blur(calc(22px + var(--voice-level) * 18px));
+  animation:
+    vg-pool-1 13s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
+    vg-pool-2 17s cubic-bezier(0.45, 0.05, 0.55, 0.95) -4s infinite,
+    vg-pool-3 19s cubic-bezier(0.45, 0.05, 0.55, 0.95) -9s infinite,
+    vg-pool-4 23s cubic-bezier(0.45, 0.05, 0.55, 0.95) -6s infinite;
 }
-/* a faint brighter band of energy travelling the perimeter, kept to
-   the outer ring by a soft radial mask and scaled by --voice-level */
-.voice-glow::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: conic-gradient(from 0deg,
-    transparent 0deg,
-    rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.40)) 40deg,
-    rgba(var(--voice-amber), calc(0.20 + var(--voice-level) * 0.66)) 72deg,
-    rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.40)) 104deg,
-    transparent 152deg,
-    transparent 360deg);
-  -webkit-mask: radial-gradient(ellipse 72% 72% at 50% 50%, transparent 54%, #000 86%);
-          mask: radial-gradient(ellipse 72% 72% at 50% 50%, transparent 54%, #000 86%);
-  filter: blur(calc(32px + var(--voice-level) * 22px));
-  mix-blend-mode: screen;
-  opacity: calc(0.32 + var(--voice-level) * 0.58);
-  animation: voice-band-travel 7s linear infinite;
-}
-@keyframes voice-band-travel {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
+@keyframes vg-pool-1 { 0%, 100% { --vg1: -0.04; } 50% { --vg1: 0.10; } }
+@keyframes vg-pool-2 { 0%, 100% { --vg2: 0.08; }  50% { --vg2: -0.05; } }
+@keyframes vg-pool-3 { 0%, 100% { --vg3: -0.03; } 50% { --vg3: 0.09; } }
+@keyframes vg-pool-4 { 0%, 100% { --vg4: 0.07; }  50% { --vg4: -0.04; } }
 body.voice-mode-active .voice-glow {
-  opacity: calc(0.55 + var(--voice-level) * 0.45);
+  opacity: calc(0.5 + var(--voice-level) * 0.5);
   transition: opacity 1500ms var(--ease-premium);
 }
 body.voice-mode-closing .voice-glow {
@@ -1630,6 +1619,8 @@ body.voice-mode-closing .voice-glow {
 .voice-overlay {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: 200;
   background: transparent;
   border: 0;
@@ -1654,7 +1645,7 @@ body.voice-mode-active {
   body.voice-mode-closing .voice-glow {
     transition: opacity 200ms linear;
   }
-  .voice-glow::after { animation: none; }
+  .voice-glow { animation: none; }
 }
 `;
 

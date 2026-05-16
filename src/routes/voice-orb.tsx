@@ -592,22 +592,33 @@ function CloseIcon() {
 }
 
 /* ── styles ────────────────────────────────────────────────────── */
+// Luca .voice-mode-overlay: a fixed, flex-centred field. The stage
+// below has a definite size, so VoiceOrb's engine measures a non-zero
+// container at mount (a grid 1fr track collapsed to 0 inside the
+// iframe — that was the tiny top-left blob).
 const pageStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
+  width: "100vw",
+  height: "100vh",
   background: "transparent",
   color: "rgba(248,248,246,0.92)",
   fontFamily: '"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-  display: "grid",
-  gridTemplateRows: "auto 1fr auto",
-  alignItems: "stretch",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
   userSelect: "none",
   WebkitUserSelect: "none",
   overflow: "hidden",
 };
 const topLabelsStyle: React.CSSProperties = {
-  paddingTop: "clamp(20px, 5vh, 56px)",
+  position: "absolute",
+  top: "clamp(20px, 5vh, 56px)",
+  left: 0,
+  right: 0,
   textAlign: "center",
+  pointerEvents: "none",
 };
 const eyebrowStyle: React.CSSProperties = {
   fontSize: 11,
@@ -623,26 +634,28 @@ const stateLineStyle: React.CSSProperties = {
   color: "rgba(248,248,246,0.86)",
   fontWeight: 400,
 };
+// The stage = Luca .voice-mode-stage: a definite min(70vmin,720px)
+// square, flex-centred by pageStyle. Doubles as the PTT hit target.
+// Definite size means the engine never measures 0 at mount.
 const orbWrapStyle = (interactive: boolean): React.CSSProperties => ({
   position: "relative",
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  width: "min(70vmin, 720px)",
+  height: "min(70vmin, 720px)",
+  flex: "0 0 auto",
   cursor: interactive ? "pointer" : "default",
   touchAction: "none",
   outline: "none",
 });
-// Centered square so the orb reads at the Luca scale rather than
-// stretching edge-to-edge in the iframe.
 const orbInnerStyle: React.CSSProperties = {
   position: "relative",
-  width: "min(70vmin, 720px)",
-  height: "min(70vmin, 720px)",
+  width: "100%",
+  height: "100%",
 };
 const bottomBarStyle: React.CSSProperties = {
-  paddingBottom: "clamp(24px, 5vh, 56px)",
+  position: "absolute",
+  bottom: "clamp(24px, 5vh, 56px)",
+  left: 0,
+  right: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
