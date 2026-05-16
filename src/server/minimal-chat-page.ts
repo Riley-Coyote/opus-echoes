@@ -1810,11 +1810,13 @@ function chatScript(resident: ResidentConfig): string {
       img.src = art.url;
       img.alt = art.caption || art.prompt || '';
       img.loading = 'lazy';
+      img.addEventListener('click', function(){ openLightbox(art); });
       bodyDiv.appendChild(img);
     } else if (art.kind === 'svg' && art.content) {
       const holder = document.createElement('div');
       holder.className = 'svg-host';
       holder.innerHTML = art.content;
+      holder.addEventListener('click', function(){ openLightbox(art); });
       bodyDiv.appendChild(holder);
     } else if (art.kind === 'ascii' && art.content) {
       const pre = document.createElement('pre');
