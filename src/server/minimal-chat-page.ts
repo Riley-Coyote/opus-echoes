@@ -1547,6 +1547,11 @@ body.voice-mode-active .voice-overlay {
   display: block;
   opacity: 1;
 }
+body.voice-mode-closing .voice-overlay {
+  display: block;
+  opacity: 0;
+  transition: opacity 1000ms var(--ease-premium);
+}
 body.voice-mode-active {
   overflow: hidden;
 }
