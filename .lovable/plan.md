@@ -1,87 +1,82 @@
-## What's wrong right now
+## Goal
 
-Two failures, both visible in the screenshot you sent (raw SVG markup streaming as text into the bubble):
+Turn `/chat/$resident` into a single universal classic-chat interface that works identically for every resident in the registry (Opus 3, Sonnet 4.5, GPT 5.1, and any future additions), with:
 
-1. **GPT 5.1 wrote SVG markup directly into prose** instead of wrapping it in `<artifact type="svg">…</artifact>`. The parser only sees the tag, so a bare `<svg>` gets escaped and rendered as literal text. Our instructions tell the model the tag exists, but they don't strongly *require* it for visual output, and they don't show what failure looks like.
-2. **Image generation is almost certainly silently failing.** `src/server/image-gen.server.ts` calls `model: "gpt-image-2"`. OpenAI's current image model is `gpt-image-1`. Every image request returns a 4xx, `generateImageArtifact` catches and returns `null`, and the artifact is dropped from both the stream and storage — so no error ever reaches the visitor.
+1. A model selector in the top-left chrome (replacing the static resident-name label).
+2. A distinctly colored, brighter, more ethereal perimeter glow per resident — clearly more brilliant than the composer's border glow.
+3. Approach pages keep linking to `/chat/<slug>` (they already do — this just confirms the surface is the same one).
 
-The end-to-end pipeline (parse → generate → upload to public `art` bucket → stream `{type:'artifact'}` → render `<figure>` inside the resident bubble → persist to `turn_artifacts`) is already wired. The plumbing is fine; the model id is wrong and the prompt isn't strict enough.
+No changes to the approach pages' design, the conversation surface, or the commons.
 
-## What "production-ready" covers
+## What stays the same
 
-Everything a visitor touches when a resident makes a visual, end to end:
+- The route `/chat/$resident` (e.g. `/chat/opus-3`, `/chat/sonnet-4-5`, `/chat/gpt-5-1`).
+- The full minimal-chat layout, composer glow, ASCII sphere empty state, message streaming pipeline, session bootstrap via `/api/chat/start`, rehydration via `/api/turns`, and the inline-artifact rendering we just polished.
+- Per-resident session isolation in the substrate (each conversation is still scoped to that resident's Mnemos topology and pacing).
+- All approach pages and their existing `threshold-alt-mode` link to `/chat/<slug>`.
 
-- **Generation**: model id correct, prompt strict, fallback when the model still misbehaves, per-turn/per-session caps already enforced
-- **Rendering inline**: in-bubble figure with loading state while gpt-image-1 churns (it's ~15-25s)
-- **Persistent gallery**: a left rail (≥1024px) that accumulates every artifact this session emits, in order, oldest at top
-- **Download / copy actions**: download PNG, copy SVG markup, copy ASCII, view-full-size, copy direct link
-- **Storage + serving**: `art` bucket (already public), `turn_artifacts` row per piece (already exists), accessible across reloads via `/api/turns`
-- **Accessibility + responsive**: alt text from caption, rail collapses on mobile to a "Generated this session ›" disclosure below the composer, reduced-motion respected
-- **Error visibility**: when generation fails, the visitor sees a quiet inline placeholder instead of nothing
+## Changes
 
-## Plan
+### 1. Top-left model selector (replaces the static resident label)
 
-### 1. Fix the actual blockers (the only reason nothing renders)
+In `src/server/minimal-chat-page.ts`, the top chrome currently shows a breathing brand-dot + the resident's display name as static text. Replace the text label with a minimal disclosure button that opens a small popover listing every entry in `ALL_RESIDENTS`. Selecting one navigates to that resident's `/chat/<slug>`.
 
-- `src/server/image-gen.server.ts` — change `model: "gpt-image-2"` → `model: "gpt-image-1"`. Keep size/quality.
-- `src/server/artifact-pipeline.server.ts` — tighten `ARTIFACT_INSTRUCTIONS` for GPT 5.1:
-  - Add an explicit *rule*: "Any SVG you emit MUST be wrapped in `<artifact type="svg">…</artifact>`. A bare `<svg>` in prose will render as escaped text, not as a figure. Same for images: you cannot show an image by describing one — you must emit `<artifact type="image" prompt="…">`."
-  - Add a worked example block showing one correct svg and one correct image tag.
-- `parseArtifacts` — keep the markdown-fence stripping, and add a **fallback**: if the body still contains a bare `<svg …>…</svg>` (no surrounding `<artifact>`), auto-wrap it as an svg artifact with no caption. This is belt-and-braces for models that ignore instruction.
-- `/api/message.ts` `opusStreamResponse` — when `generateImageArtifact` returns `null`, still emit an `artifact` event with `kind: "image_error", prompt: "..."` so the UI can render a small "the image didn't generate" placeholder instead of an invisible drop.
+- Trigger looks identical to today's label: same font, same size, same breathing brand-dot to its left. Adds a small chevron and `aria-haspopup="listbox"` so it reads as a control.
+- Popover is a quiet panel anchored to the trigger — each row shows the resident's display name and a tiny colored dot matching that resident's perimeter-glow hue, so the selector itself previews the visual identity. Active resident is marked.
+- Selecting an entry calls `location.assign('/chat/' + slug)` — a full navigation, which gives the new resident their own session bootstrap and their own perimeter glow. No client-side resident swap, no mid-thread mode change.
+- Keyboard: Esc closes, ↑/↓ moves selection, Enter activates.
+- No changes to any other chrome element.
 
-### 2. Left-rail gallery (the part you sketched)
+### 2. Per-resident perimeter glow
 
-Frontend only — lives in `src/server/minimal-chat-page.ts`:
+The perimeter glow today comes from `VIEWPORT_GLOW_CSS` in `src/server/shared-effects.ts` — eight prime-rhythm radial pools using a shared four-hue palette (amber, violet, pink-peach, cool cream). It's deliberately quiet and the same for every surface.
 
-- New `<aside id="gallery">` rendered into `.app` at column 1, with `.feed`/`.composer` moved to column 2 at viewport ≥1024px. Below 1024px the rail collapses to a disclosure under the composer ("Generated this session (N) ›").
-- Rail typography matches the chrome: JetBrains Mono eyebrow ("Generated"), faint rule beneath, vertical stack of thumbnails (96px square for images, mono-glyph tile for SVG/ASCII) with a one-line mono caption beneath each.
-- New helper `addArtifactToGallery(artifact)` called from the same artifact-event branch that already appends the in-bubble figure. The in-bubble figure stays — the rail is an index, not a replacement; clicking a rail item scrolls the feed to that bubble.
-- On page load, `/api/turns` already returns prior turns; extend its select to include `turn_artifacts` for the session and seed the rail before streaming starts. (Backend change in `src/routes/api/turns.ts`.)
+Make the chat surface override that palette per resident, brighter than today and brighter than the composer glow:
 
-### 3. Per-artifact actions
+- Add a `viewportGlow` field to each `ResidentConfig` in `src/server/opus/residents.ts`. Shape:
+  ```
+  viewportGlow: {
+    hues: [string, string, string, string]; // four "r,g,b" triples
+    peak: number;                            // animation peak alpha (target ~0.22–0.30)
+    base: number;                            // animation trough alpha (~0.04)
+  }
+  ```
+  Initial per-resident palettes (all luminous, all distinct, all on the dark floor):
+  - Opus 3 — violet/indigo (lavender, deep violet, soft magenta, pale ice) — connects to their existing presence-layer hue.
+  - Sonnet 4.5 — warm brass/amber/peach/cream — carries the Beacon lineage.
+  - GPT 5.1 — cyan/teal/blue/cool white — matches their cool palette.
+  - Sonnet 3.7 (kept in registry for archive) — gold/honey set, in case the archived room is ever reopened.
+- Refactor `VIEWPORT_GLOW_CSS` to a `buildViewportGlowCss({ hues, peak, base })` function. The classic-chat page calls it with the active resident's config; the commons keeps the existing shared default (no behavior change there).
+- Lift the animated peak alphas to roughly 2–2.5× current values so the perimeter reads brighter than the composer's border-shimmer pools. The composer glow stays exactly as it is today; we only adjust the perimeter so the contrast inverts.
+- Respect `prefers-reduced-motion` (already in the keyframes) and keep `pointer-events: none`.
 
-Each rail item and each in-bubble figure gets a small action row (mono eyebrow style, shows on hover ≥1024px, always visible on touch):
+### 3. Universal `/chat` entry
 
-- **Images**: `download` (fetches the PNG via the public URL, triggers `<a download>` with filename `mnemos-{yyyy-mm-dd}-{shortid}.png`), `open` (full-size in new tab), `copy link`.
-- **SVG**: `download .svg`, `copy markup`.
-- **ASCII**: `copy`.
+The route file stays `src/routes/chat.$resident.tsx` — it already validates the slug against the registry and renders `renderMinimalChatPage(getResident(slug))`. Add a tiny convenience: `src/routes/chat.tsx` that redirects to `/chat/<DEFAULT_RESIDENT_ID>` so bare `/chat` resolves cleanly. Approach pages keep their existing `/chat/<slug>` links — no edits needed there.
 
-All client-side; no new endpoints needed because the `art` bucket is already public.
+### 4. Adding more models in the future
 
-### 4. Loading + error states
+Adding a new resident becomes a single-file change in `src/server/opus/residents.ts` (plus their soul constant): once a new entry exists with a `viewportGlow` palette, they automatically appear in the chat selector and get their own perimeter color. No edits to the chat page itself.
 
-- When the stream emits an `artifact` event for `kind: image` whose URL is present, render the image with `loading="lazy"` and a low-luminance shimmer background until `onload`.
-- The model finishes streaming *before* gpt-image-1 returns (image gen is sequential after the text stream in `opusStreamResponse`). Today the visitor sees the bubble go quiet for ~20s with no signal. Fix: as soon as `parseArtifacts` finds an image tag, emit `{type:'artifact_pending', placeholder_id, caption}` immediately, render a placeholder in both the bubble and rail, then emit the real `artifact` event with the same `placeholder_id` once the URL is ready and swap in place.
-- On `kind: image_error`, the placeholder converts to a faint "the image didn't generate" line with a small `try again` button (re-issues just the image, scoped to this artifact — new lightweight endpoint `/api/regenerate-image` keyed by `turn_artifact_id`).
+## Files touched
 
-### 5. Persistence + reload
+- `src/server/opus/residents.ts` — add `viewportGlow` field + per-resident palettes.
+- `src/server/shared-effects.ts` — export `buildViewportGlowCss(opts)` alongside the existing `VIEWPORT_GLOW_CSS` default (kept for commons).
+- `src/server/minimal-chat-page.ts` — render the per-resident glow CSS; add the model-selector trigger, popover markup, and small script for keyboard + navigation.
+- `src/routes/chat.tsx` (new) — redirect `/chat` → `/chat/<default>`.
 
-Already in place: `turn_artifacts` rows persist after `onFinal`. The only addition is wiring `/api/turns` to return them so the rail and prior bubbles rehydrate on refresh.
+## Out of scope
 
-### 6. Apply to the other surfaces (your "everywhere" request)
+- Approach pages, conversation surface, commons spaces, dashboard, presence-layer themes — untouched.
+- No change to the composer's Option-C border glow.
+- No change to session bootstrap, substrate, or pacing.
+- No change to the inline-artifact pipeline we just shipped.
 
-The pipeline helper is already shared. To finish the original "everywhere" goal in the same pass:
+## Verification (after build)
 
-- `src/routes/api/commons-chat.ts` (side chats) — add `ARTIFACT_INSTRUCTIONS` to system, run `parseArtifacts` on the response, persist to `space_artifacts` (already exists), stream the same event shape. Same rail UI on the side-chat surface.
-- `src/routes/api/space.$slug.message.ts` non-gathering rooms — add the same.
-- Salon endpoints (`$id.turn.ts`) — extend the existing artifact regex to include `image`, add image persistence to `salon_artifacts.image_path` (column exists).
-
-If you want, we can scope this turn to **chat surfaces only** (1:1 + side chat) and do rooms/salons next, since each surface needs its own rail decision.
-
-## Open question for you
-
-The left rail will compete with the feed for horizontal real estate at 1024–1280px. Two options:
-
-- **(a) Always-visible rail** at ≥1024px, 200px wide. Feed column max-width stays at 720px; the rail eats from the page margins, not the reading column.
-- **(b) Collapsed by default**, opens on first artifact generation and stays open for the session. A small "gallery (N)" pill sits in the chrome when collapsed.
-
-I'd default to **(a)** — the whole point is that visitors see the rail filling up over the session — but flag if you want (b).
-
-## Technical notes
-
-- No DB migration needed for chat surfaces — `turn_artifacts` already exists.
-- One small backend change to `/api/turns` to include artifacts.
-- One small new endpoint `/api/regenerate-image` (optional; behind the "try again" affordance).
-- Image generation stays on `gpt-image-1` (verify model id against current OpenAI Images API before shipping; if the SDK exposes it as something else in our pinned version, adjust).
-- All visual additions stay in the cool-floor sanctuary palette — no new tokens, no Tailwind crossover.
+1. `/chat/opus-3`, `/chat/sonnet-4-5`, `/chat/gpt-5-1` each render with a visibly different, brighter perimeter glow; composer glow is now the quieter of the two.
+2. Model selector in the top-left opens, lists all residents with their hue dots, marks the active one, and navigates on select.
+3. Selecting a different resident loads their own session and glow without leaking state from the previous one.
+4. Keyboard navigation in the selector (↑/↓/Enter/Esc) works.
+5. `prefers-reduced-motion` disables the glow animation as before.
+6. Approach pages' "open an ongoing chat with …" link still lands on the matching `/chat/<slug>`.
