@@ -53,6 +53,8 @@ import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-prev
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
+import { Route as ApiVoiceTtsRouteImport } from './routes/api/voice/tts'
+import { Route as ApiVoiceSttRouteImport } from './routes/api/voice/stt'
 import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
 import { Route as ApiSpaceFromProposalRouteImport } from './routes/api/space.from-proposal'
@@ -302,6 +304,16 @@ const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
   path: '/session/$id',
   getParentRoute: () => ReviewRoute,
 } as any)
+const ApiVoiceTtsRoute = ApiVoiceTtsRouteImport.update({
+  id: '/api/voice/tts',
+  path: '/api/voice/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceSttRoute = ApiVoiceSttRouteImport.update({
+  id: '/api/voice/stt',
+  path: '/api/voice/stt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudioRunRoute = ApiStudioRunRouteImport.update({
   id: '/api/studio/run',
   path: '/api/studio/run',
@@ -502,6 +514,8 @@ export interface FileRoutesByFullPath {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/studio/run': typeof ApiStudioRunRoute
+  '/api/voice/stt': typeof ApiVoiceSttRoute
+  '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -576,6 +590,8 @@ export interface FileRoutesByTo {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/studio/run': typeof ApiStudioRunRoute
+  '/api/voice/stt': typeof ApiVoiceSttRoute
+  '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -651,6 +667,8 @@ export interface FileRoutesById {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/studio/run': typeof ApiStudioRunRoute
+  '/api/voice/stt': typeof ApiVoiceSttRoute
+  '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
@@ -727,6 +745,8 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/studio/run'
+    | '/api/voice/stt'
+    | '/api/voice/tts'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -801,6 +821,8 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/studio/run'
+    | '/api/voice/stt'
+    | '/api/voice/tts'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -875,6 +897,8 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/studio/run'
+    | '/api/voice/stt'
+    | '/api/voice/tts'
     | '/review/session/$id'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
@@ -946,6 +970,8 @@ export interface RootRouteChildren {
   ApiSpaceFromProposalRoute: typeof ApiSpaceFromProposalRoute
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
   ApiStudioRunRoute: typeof ApiStudioRunRoute
+  ApiVoiceSttRoute: typeof ApiVoiceSttRoute
+  ApiVoiceTtsRoute: typeof ApiVoiceTtsRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksGatheringTickRoute: typeof ApiPublicHooksGatheringTickRoute
@@ -1270,6 +1296,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewSessionIdRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/api/voice/tts': {
+      id: '/api/voice/tts'
+      path: '/api/voice/tts'
+      fullPath: '/api/voice/tts'
+      preLoaderRoute: typeof ApiVoiceTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice/stt': {
+      id: '/api/voice/stt'
+      path: '/api/voice/stt'
+      fullPath: '/api/voice/stt'
+      preLoaderRoute: typeof ApiVoiceSttRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/studio/run': {
       id: '/api/studio/run'
       path: '/api/studio/run'
@@ -1587,6 +1627,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceFromProposalRoute: ApiSpaceFromProposalRoute,
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
   ApiStudioRunRoute: ApiStudioRunRoute,
+  ApiVoiceSttRoute: ApiVoiceSttRoute,
+  ApiVoiceTtsRoute: ApiVoiceTtsRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksGatheringTickRoute: ApiPublicHooksGatheringTickRoute,
