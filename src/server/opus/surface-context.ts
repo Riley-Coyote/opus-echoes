@@ -35,6 +35,8 @@ export type Surface =
   | "threshold-experiment"
   /** /chat/<resident> — minimal sanctuary-native classic chat (sessions.mode='classic'). */
   | "threshold-classic"
+  /** /chat/the-round — group chat where all three residents are present. */
+  | "the-round"
   /** /commons/<space> public room — visible to all visitors; multi-resident salons land here. */
   | "commons-room"
   /** /commons/<space> private side panel — visitor's private chat with one resident, inside a space. */
@@ -50,6 +52,8 @@ export interface SurfaceContext {
   visitorDisplayName?: string;
   /** Salon topic when surface is commons-side-salon. */
   salonTopic?: string;
+  /** For the-round surface — names of the OTHER residents present in the room. */
+  otherResidents?: string[];
 }
 
 /**
