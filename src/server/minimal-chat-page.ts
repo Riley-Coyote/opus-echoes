@@ -271,10 +271,9 @@ ${VIEWPORT_GLOW_CSS}
   grid-column: 1;
   grid-row: 2 / 4;
   overflow-y: auto;
-  padding: 0 16px 14px 4px;
+  padding: 0 18px 18px 18px;
   flex-direction: column;
-  gap: 14px;
-  border-right: 1px solid var(--rule);
+  gap: 18px;
   min-height: 0;
 }
 .gallery.has-items { display: flex; }
@@ -284,8 +283,7 @@ ${VIEWPORT_GLOW_CSS}
   letter-spacing: var(--track-folio);
   text-transform: uppercase;
   color: var(--quiet);
-  padding: 4px 2px 6px;
-  border-bottom: 1px solid var(--rule);
+  padding: 4px 2px 10px;
   flex-shrink: 0;
 }
 .gallery-list {
