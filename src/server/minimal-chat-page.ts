@@ -2888,6 +2888,9 @@ ${FONTS}
         </div>
         <div class="input-footer">
           <span class="input-footer-left">shift + enter for newline</span>
+          <button class="mic-btn" id="micBtn" type="button" aria-label="hold to speak" aria-pressed="false" title="hold to speak" data-state="idle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+          </button>
           <button class="send-btn" id="sendBtn" type="button" disabled aria-label="send">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
