@@ -356,9 +356,8 @@ ${VIEWPORT_GLOW_CSS}
 .artifact-figure {
   position: relative;
   margin: 18px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: block;
+  width: 100%;
   background: transparent;
   border: 0;
   padding: 0;
