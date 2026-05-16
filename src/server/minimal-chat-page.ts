@@ -2961,7 +2961,10 @@ ${FONTS}
   <div class="lightbox-stage"></div>
 </div>
 
-<!-- voice mode — opaque self-contained fullscreen iframe -->
+<!-- voice mode — opaque self-contained fullscreen iframe.
+     prefetch hint warms the route's bundle (React + three.js) on idle
+     so the orb appears within ~ms of the mic click, not seconds. -->
+<link rel="prefetch" href="/voice-orb?resident=${encodeURIComponent(resident.id)}" as="document">
 <iframe
   class="voice-overlay"
   id="voiceOverlay"
