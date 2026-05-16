@@ -1188,7 +1188,51 @@ ${VIEWPORT_GLOW_CSS}
   transform: none;
 }
 
-/* ── caption strip below composer ─────────────────────────── */
+/* ── voice mode — push-to-talk mic + TTS toggle ───────────── */
+.mic-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--rule-soft);
+  background: var(--panel-2); color: var(--body);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all var(--dur-fast) var(--ease-out);
+  flex-shrink: 0; margin-right: 6px;
+  touch-action: none;
+}
+.mic-btn svg { width: 12px; height: 12px; stroke-width: 1.8; }
+.mic-btn:hover:not(:disabled) {
+  background: var(--panel-3); color: var(--ink);
+  border-color: var(--rule-strong);
+}
+.mic-btn[data-state="requesting"] { opacity: 0.7; }
+.mic-btn[data-state="listening"] {
+  color: var(--state);
+  border-color: color-mix(in srgb, var(--state) 55%, var(--rule));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--state) 18%, transparent);
+  animation: mic-breath 1.6s ease-in-out infinite;
+}
+.mic-btn[data-state="transcribing"] {
+  opacity: 0.55;
+  animation: mic-pulse 1.1s ease-in-out infinite;
+}
+@keyframes mic-breath {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--state) 14%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--state) 24%, transparent); }
+}
+@keyframes mic-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.75; }
+}
+.voice-toggle {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--whisper); letter-spacing: var(--track-meta);
+  text-transform: uppercase; background: transparent;
+  border: none; cursor: pointer; padding: 2px 4px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.voice-toggle:hover { color: var(--body); }
+.voice-toggle[data-on="true"] { color: var(--state); }
+
+
 .caption {
   margin-top: 10px;
   padding: 0 6px;
