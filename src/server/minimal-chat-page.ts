@@ -472,6 +472,61 @@ ${VIEWPORT_GLOW_CSS}
 .artifact-action:hover { color: #fff; }
 .artifact-action.copied { color: var(--state); }
 
+.gallery-thumb { cursor: zoom-in; }
+
+/* ── lightbox — full-screen zoom view ─────────────────────── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 4vw;
+  background: rgba(6, 7, 10, 0.72);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out);
+  cursor: zoom-out;
+}
+.lightbox.open { display: flex; opacity: 1; }
+.lightbox-stage {
+  max-width: min(92vw, 1400px);
+  max-height: 92vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.96);
+  transition: transform 280ms var(--ease-premium);
+}
+.lightbox.open .lightbox-stage { transform: scale(1); }
+.lightbox-stage img,
+.lightbox-stage svg {
+  display: block;
+  max-width: min(92vw, 1400px);
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+}
+.lightbox-close {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  background: transparent;
+  border: 0;
+  color: rgba(255,255,255,0.7);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+.lightbox-close:hover { color: #fff; }
+
 /* desktop: gallery becomes a left column once any artifact lands */
 @media (min-width: 1024px) {
   .app.has-gallery {
