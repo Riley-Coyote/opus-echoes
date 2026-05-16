@@ -2238,7 +2238,13 @@ ${FONTS}
 
 <div class="viewport-glow" aria-hidden="true"></div>
 
-<div class="app">
+<div class="app" id="app">
+
+  <!-- gallery rail — left column at ≥1024px once artifacts exist -->
+  <aside class="gallery" id="gallery" aria-label="artifacts generated this session">
+    <div class="gallery-eyebrow">generated · this session</div>
+    <div class="gallery-list" id="gallery-list"></div>
+  </aside>
 
   <!-- thin chrome strip -->
   <header class="chrome">
