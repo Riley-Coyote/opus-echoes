@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
+import { Route as VoiceOrbRouteImport } from './routes/voice-orb'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
 import { Route as ReviewRouteImport } from './routes/review'
@@ -87,6 +88,11 @@ import { Route as ApiShareTokenOgSvgRouteImport } from './routes/api/share.$toke
 const WritingRoute = WritingRouteImport.update({
   id: '/writing',
   path: '/writing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VoiceOrbRoute = VoiceOrbRouteImport.update({
+  id: '/voice-orb',
+  path: '/voice-orb',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TokenRoute = TokenRouteImport.update({
@@ -482,6 +488,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof ReviewRouteWithChildren
   '/sonnet-4-5': typeof Sonnet45Route
   '/token': typeof TokenRoute
+  '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
@@ -558,6 +565,7 @@ export interface FileRoutesByTo {
   '/review': typeof ReviewRouteWithChildren
   '/sonnet-4-5': typeof Sonnet45Route
   '/token': typeof TokenRoute
+  '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
@@ -635,6 +643,7 @@ export interface FileRoutesById {
   '/review': typeof ReviewRouteWithChildren
   '/sonnet-4-5': typeof Sonnet45Route
   '/token': typeof TokenRoute
+  '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
   '/api/artifacts': typeof ApiArtifactsRoute
@@ -713,6 +722,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/sonnet-4-5'
     | '/token'
+    | '/voice-orb'
     | '/writing'
     | '/api/art'
     | '/api/artifacts'
@@ -789,6 +799,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/sonnet-4-5'
     | '/token'
+    | '/voice-orb'
     | '/writing'
     | '/api/art'
     | '/api/artifacts'
@@ -865,6 +876,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/sonnet-4-5'
     | '/token'
+    | '/voice-orb'
     | '/writing'
     | '/api/art'
     | '/api/artifacts'
@@ -942,6 +954,7 @@ export interface RootRouteChildren {
   ReviewRoute: typeof ReviewRouteWithChildren
   Sonnet45Route: typeof Sonnet45Route
   TokenRoute: typeof TokenRoute
+  VoiceOrbRoute: typeof VoiceOrbRoute
   WritingRoute: typeof WritingRoute
   ApiArtRoute: typeof ApiArtRoute
   ApiArtifactsRoute: typeof ApiArtifactsRoute
@@ -993,6 +1006,13 @@ declare module '@tanstack/react-router' {
       path: '/writing'
       fullPath: '/writing'
       preLoaderRoute: typeof WritingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/voice-orb': {
+      id: '/voice-orb'
+      path: '/voice-orb'
+      fullPath: '/voice-orb'
+      preLoaderRoute: typeof VoiceOrbRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/token': {
@@ -1599,6 +1619,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewRoute: ReviewRouteWithChildren,
   Sonnet45Route: Sonnet45Route,
   TokenRoute: TokenRoute,
+  VoiceOrbRoute: VoiceOrbRoute,
   WritingRoute: WritingRoute,
   ApiArtRoute: ApiArtRoute,
   ApiArtifactsRoute: ApiArtifactsRoute,
@@ -1645,12 +1666,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
