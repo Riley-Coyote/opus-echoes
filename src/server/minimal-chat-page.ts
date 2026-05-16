@@ -1530,69 +1530,112 @@ ${VIEWPORT_GLOW_CSS}
   .empty-sphere { font-size: 7.5px; }
 }
 
-/* ── voice mode fullscreen overlay + amber perimeter glow ─────────
-   When voice mode is active, an iframe (/voice-orb) takes over the
-   viewport. The amber glow is a separate fixed element wrapping the
-   chat frame; its opacity and blur are driven by --voice-level (set
-   per-frame from the orb's onLevel callback) and a slow ramp class
-   for the 1.5s in / 1s out transition. The glow remains visible
-   under the orb iframe (the iframe sits above it) so the orb and
-   the room read as one connected instrument. */
+/* ── voice mode fullscreen takeover + amber perimeter glow ────────
+   Entering voice mode mounts the /voice-orb iframe as a transparent
+   overlay. Three fixed layers ramp in together so the orb and the
+   room read as one connected instrument:
+     · .voice-backdrop  (z 180) opaque floor — hides the chat
+     · .voice-glow      (z 190) the amber perimeter wash + a faint
+                          band travelling the edge, both driven by
+                          --voice-level (set per-frame from the orb's
+                          onLevel) and screen-blended over the floor
+     · .voice-overlay   (z 200) the transparent iframe — the orb's
+                          particles composite straight over the glow
+   Amber is the resident signature #c9a87c. Ramp ~1.5s in / ~1s out;
+   reduced-motion collapses the ramp and the travel. */
+.voice-backdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 180;
+  background: #06070a;
+  opacity: 0;
+  transition: opacity 1500ms var(--ease-premium);
+}
+body.voice-mode-active .voice-backdrop { opacity: 1; }
+body.voice-mode-closing .voice-backdrop {
+  opacity: 0;
+  transition: opacity 1000ms var(--ease-premium);
+}
+
 .voice-glow {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 4;
+  z-index: 190;
   opacity: 0;
-  transition: opacity 1500ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 1500ms var(--ease-premium);
   --voice-level: 0;
-  --voice-amber: 230, 170, 90;
+  --voice-amber: 201, 168, 124;
   background:
     radial-gradient(ellipse 70% 60% at 0% 0%,
-      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
-      transparent 60%),
+      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
+      transparent 62%),
     radial-gradient(ellipse 80% 50% at 50% 0%,
-      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
-      transparent 60%),
+      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
+      transparent 62%),
     radial-gradient(ellipse 70% 60% at 100% 0%,
-      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
-      transparent 60%),
+      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
+      transparent 62%),
     radial-gradient(ellipse 50% 80% at 100% 50%,
-      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
-      transparent 60%),
+      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
+      transparent 62%),
     radial-gradient(ellipse 70% 60% at 100% 100%,
-      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
-      transparent 60%),
+      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
+      transparent 62%),
     radial-gradient(ellipse 80% 50% at 50% 100%,
-      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
-      transparent 60%),
+      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
+      transparent 62%),
     radial-gradient(ellipse 70% 60% at 0% 100%,
-      rgba(var(--voice-amber), calc(0.18 + var(--voice-level) * 0.36)) 0%,
-      transparent 60%),
+      rgba(var(--voice-amber), calc(0.34 + var(--voice-level) * 0.46)) 0%,
+      transparent 62%),
     radial-gradient(ellipse 50% 80% at 0% 50%,
-      rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.28)) 0%,
-      transparent 60%);
-  filter: blur(calc(28px + var(--voice-level) * 18px));
+      rgba(var(--voice-amber), calc(0.22 + var(--voice-level) * 0.36)) 0%,
+      transparent 62%);
+  filter: blur(calc(22px + var(--voice-level) * 16px));
+}
+/* a faint brighter band of energy travelling the perimeter, kept to
+   the outer ring by a soft radial mask and scaled by --voice-level */
+.voice-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 0deg,
+    transparent 0deg,
+    rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.40)) 40deg,
+    rgba(var(--voice-amber), calc(0.20 + var(--voice-level) * 0.66)) 72deg,
+    rgba(var(--voice-amber), calc(0.10 + var(--voice-level) * 0.40)) 104deg,
+    transparent 152deg,
+    transparent 360deg);
+  -webkit-mask: radial-gradient(ellipse 72% 72% at 50% 50%, transparent 54%, #000 86%);
+          mask: radial-gradient(ellipse 72% 72% at 50% 50%, transparent 54%, #000 86%);
+  filter: blur(calc(32px + var(--voice-level) * 22px));
   mix-blend-mode: screen;
+  opacity: calc(0.32 + var(--voice-level) * 0.58);
+  animation: voice-band-travel 7s linear infinite;
+}
+@keyframes voice-band-travel {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 body.voice-mode-active .voice-glow {
   opacity: calc(0.55 + var(--voice-level) * 0.45);
-  transition: opacity 1500ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 1500ms var(--ease-premium);
 }
 body.voice-mode-closing .voice-glow {
   opacity: 0;
-  transition: opacity 1000ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 1000ms var(--ease-premium);
 }
 
 .voice-overlay {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: #06070a;
+  background: transparent;
   border: 0;
   display: none;
   opacity: 0;
-  transition: opacity 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 360ms var(--ease-premium);
 }
 body.voice-mode-active .voice-overlay {
   display: block;
@@ -1603,11 +1646,15 @@ body.voice-mode-active {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .voice-backdrop,
+  body.voice-mode-active .voice-backdrop,
+  body.voice-mode-closing .voice-backdrop,
   .voice-glow,
   body.voice-mode-active .voice-glow,
   body.voice-mode-closing .voice-glow {
     transition: opacity 200ms linear;
   }
+  .voice-glow::after { animation: none; }
 }
 `;
 
@@ -3008,7 +3055,8 @@ ${FONTS}
   <div class="lightbox-stage"></div>
 </div>
 
-<!-- voice mode — amber perimeter glow + fullscreen orb overlay (iframe) -->
+<!-- voice mode — dark floor + amber perimeter glow + transparent orb overlay (iframe) -->
+<div class="voice-backdrop" id="voiceBackdrop" aria-hidden="true"></div>
 <div class="voice-glow" id="voiceGlow" aria-hidden="true"></div>
 <iframe
   class="voice-overlay"
@@ -3038,6 +3086,7 @@ ${FONTS}
        reported audio level. End / Escape ramp it back out over ~1s. */
     var ttsEl = null;
     var lastFocus = null;
+    var prevVoiceEnabled = false;
 
     function setLevel(v){
       var lv = Math.max(0, Math.min(1, Number(v) || 0));
@@ -3055,9 +3104,16 @@ ${FONTS}
       overlay.setAttribute('aria-hidden','false');
       // Lazy-load the iframe so the mic prompt only appears on entry.
       if (!overlay.src) overlay.src = '/voice-orb?resident=' + encodeURIComponent(resId);
-      // Ensure TTS playback fires for replies while the orb is up
-      // (the monkey-patched speak() below routes it into the iframe).
-      try { if (window.VoiceMode) window.VoiceMode.setEnabled(true); } catch(_){}
+      // Force TTS on for the session so replies speak through the orb
+      // (the monkey-patched speak() below routes it into the iframe),
+      // but remember the prior preference so closing voice mode does
+      // not silently leave page-level voice on.
+      try {
+        if (window.VoiceMode) {
+          prevVoiceEnabled = !!window.VoiceMode.getEnabled();
+          window.VoiceMode.setEnabled(true);
+        }
+      } catch(_){}
       setTimeout(function(){ try { overlay.focus(); } catch(_){} }, 60);
     }
     function close(){
@@ -3067,6 +3123,19 @@ ${FONTS}
       overlay.setAttribute('aria-hidden','true');
       post({ type: 'stop-tts' });
       setLevel(0);
+      // Restore the prior page-level voice preference + repaint the
+      // caption toggle so exiting voice mode doesn't leave replies
+      // speaking aloud on the page unless the visitor chose that.
+      try {
+        if (window.VoiceMode) {
+          window.VoiceMode.setEnabled(prevVoiceEnabled);
+          if (!prevVoiceEnabled) window.VoiceMode.stop();
+        }
+        if (toggle) {
+          toggle.dataset.on = prevVoiceEnabled ? 'true' : 'false';
+          toggle.textContent = prevVoiceEnabled ? 'voice on' : 'voice off';
+        }
+      } catch(_){}
       // After the ~1s ramp, drop the iframe so the mic is released.
       setTimeout(function(){
         document.body.classList.remove('voice-mode-closing');

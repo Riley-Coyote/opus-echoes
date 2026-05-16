@@ -76,9 +76,33 @@ function VoiceOrbPage() {
   const speechSeenRef = useRef(false);
   const silenceStartRef = useRef<number>(0);
 
-  useEffect(() => { modeRef.current = mode; }, [mode]);
-  useEffect(() => { stateRef.current = state; }, [state]);
-  useEffect(() => { recordingRef.current = recording; }, [recording]);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+  useEffect(() => {
+    recordingRef.current = recording;
+  }, [recording]);
+
+  /* ── transparent document ────────────────────────────────────────
+     This route is mounted as an iframe by the classic chat. The host
+     paints a dark backdrop and the amber perimeter glow *behind* the
+     iframe; clearing the document background lets the orb particles
+     composite directly over that glow so the room reads as one
+     connected instrument. */
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevHtmlBg = root.style.background;
+    const prevBodyBg = document.body.style.background;
+    root.style.background = "transparent";
+    document.body.style.background = "transparent";
+    return () => {
+      root.style.background = prevHtmlBg;
+      document.body.style.background = prevBodyBg;
+    };
+  }, []);
 
   /* ── acquire mic on mount ────────────────────────────────────── */
   useEffect(() => {
@@ -104,7 +128,13 @@ function VoiceOrbPage() {
       if (s) s.getTracks().forEach((t) => t.stop());
       mediaStreamRef.current = null;
       const ctx = vadCtxRef.current;
-      if (ctx) { try { void ctx.close(); } catch { /* noop */ } }
+      if (ctx) {
+        try {
+          void ctx.close();
+        } catch {
+          /* noop */
+        }
+      }
       vadCtxRef.current = null;
       if (vadRafRef.current) cancelAnimationFrame(vadRafRef.current);
     };
@@ -117,7 +147,14 @@ function VoiceOrbPage() {
     let mime = "";
     const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
     for (const m of candidates) {
-      try { if (MediaRecorder.isTypeSupported(m)) { mime = m; break; } } catch { /* noop */ }
+      try {
+        if (MediaRecorder.isTypeSupported(m)) {
+          mime = m;
+          break;
+        }
+      } catch {
+        /* noop */
+      }
     }
     const rec = mime
       ? new MediaRecorder(mediaStreamRef.current, { mimeType: mime })
@@ -133,7 +170,9 @@ function VoiceOrbPage() {
         setState("listening");
         if (modeRef.current === "continuous") {
           // small delay then restart
-          setTimeout(() => { startRecording(); }, 120);
+          setTimeout(() => {
+            startRecording();
+          }, 120);
         }
         return;
       }
@@ -149,13 +188,17 @@ function VoiceOrbPage() {
         } else {
           setState("listening");
           if (modeRef.current === "continuous") {
-            setTimeout(() => { startRecording(); }, 120);
+            setTimeout(() => {
+              startRecording();
+            }, 120);
           }
         }
       } catch {
         setState("listening");
         if (modeRef.current === "continuous") {
-          setTimeout(() => { startRecording(); }, 120);
+          setTimeout(() => {
+            startRecording();
+          }, 120);
         }
       }
     };
@@ -167,20 +210,28 @@ function VoiceOrbPage() {
       // reset VAD bookkeeping
       speechSeenRef.current = false;
       silenceStartRef.current = 0;
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }, [micReady]);
 
   const stopRecording = useCallback(() => {
     if (!recordingRef.current) return;
     const rec = recorderRef.current;
     recorderRef.current = null;
-    try { if (rec && rec.state !== "inactive") rec.stop(); } catch { /* noop */ }
+    try {
+      if (rec && rec.state !== "inactive") rec.stop();
+    } catch {
+      /* noop */
+    }
   }, []);
 
   /* ── VAD loop for continuous mode ────────────────────────────── */
   useEffect(() => {
     if (!micReady || !mediaStreamRef.current) return;
-    const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     vadCtxRef.current = ctx;
     const src = ctx.createMediaStreamSource(mediaStreamRef.current);
@@ -191,7 +242,7 @@ function VoiceOrbPage() {
     vadAnalyserRef.current = an;
     const buf = new Uint8Array(an.fftSize);
 
-    const SPEECH_RMS = 0.035;     // threshold above which we consider speech
+    const SPEECH_RMS = 0.035; // threshold above which we consider speech
     const SILENCE_HOLD_MS = 1400; // silence after speech → commit
 
     function tick() {
@@ -225,7 +276,11 @@ function VoiceOrbPage() {
     vadRafRef.current = requestAnimationFrame(tick);
     return () => {
       if (vadRafRef.current) cancelAnimationFrame(vadRafRef.current);
-      try { void ctx.close(); } catch { /* noop */ }
+      try {
+        void ctx.close();
+      } catch {
+        /* noop */
+      }
       vadCtxRef.current = null;
       vadAnalyserRef.current = null;
     };
@@ -251,7 +306,10 @@ function VoiceOrbPage() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ resident, text }),
         });
-        if (!res.ok) { post({ type: "tts-end" }); return; }
+        if (!res.ok) {
+          post({ type: "tts-end" });
+          return;
+        }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         if (lastTtsUrlRef.current) URL.revokeObjectURL(lastTtsUrlRef.current);
@@ -263,14 +321,20 @@ function VoiceOrbPage() {
           setAudioEl(null);
           setState("listening");
           if (modeRef.current === "continuous") {
-            setTimeout(() => { startRecording(); }, 200);
+            setTimeout(() => {
+              startRecording();
+            }, 200);
           }
         };
         a.onended = onDone;
         a.onerror = onDone;
         setAudioEl(a);
         setState("speaking");
-        try { await a.play(); } catch { /* autoplay may fail */ }
+        try {
+          await a.play();
+        } catch {
+          /* autoplay may fail */
+        }
       } catch {
         post({ type: "tts-end" });
       }
@@ -290,7 +354,13 @@ function VoiceOrbPage() {
           void playTts(data.text);
           break;
         case "stop-tts":
-          if (audioEl) { try { audioEl.pause(); } catch { /* noop */ } }
+          if (audioEl) {
+            try {
+              audioEl.pause();
+            } catch {
+              /* noop */
+            }
+          }
           setAudioEl(null);
           setState("listening");
           break;
@@ -307,7 +377,13 @@ function VoiceOrbPage() {
 
   /* ── close ───────────────────────────────────────────────────── */
   const close = useCallback(() => {
-    if (audioEl) { try { audioEl.pause(); } catch { /* noop */ } }
+    if (audioEl) {
+      try {
+        audioEl.pause();
+      } catch {
+        /* noop */
+      }
+    }
     if (recordingRef.current) stopRecording();
     post({ type: "close" });
   }, [audioEl, stopRecording]);
@@ -315,7 +391,11 @@ function VoiceOrbPage() {
   /* ── keyboard: Esc closes, Space = PTT in ptt mode ───────────── */
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { e.preventDefault(); close(); return; }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+        return;
+      }
       if (modeRef.current === "ptt" && e.code === "Space" && !e.repeat && !recordingRef.current) {
         e.preventDefault();
         startRecording();
@@ -352,18 +432,24 @@ function VoiceOrbPage() {
   }, []);
 
   /* ── mode switch ─────────────────────────────────────────────── */
-  const switchMode = useCallback((next: InputMode) => {
-    if (next === mode) return;
-    if (recordingRef.current) stopRecording();
-    setMode(next);
-    setState("listening");
-  }, [mode, stopRecording]);
+  const switchMode = useCallback(
+    (next: InputMode) => {
+      if (next === mode) return;
+      if (recordingRef.current) stopRecording();
+      setMode(next);
+      setState("listening");
+    },
+    [mode, stopRecording],
+  );
 
   const stateLabel =
-    state === "listening" ? "Listening…"
-    : state === "thinking" ? "Thinking…"
-    : state === "speaking" ? "Speaking…"
-    : "Voice mode";
+    state === "listening"
+      ? "Listening…"
+      : state === "thinking"
+        ? "Thinking…"
+        : state === "speaking"
+          ? "Speaking…"
+          : "Voice mode";
 
   const eyebrow = displayName ? displayName.toUpperCase() : residentLabel(resident);
 
@@ -402,12 +488,9 @@ function VoiceOrbPage() {
         onPointerCancel={orbPointerLeave}
         style={orbWrapStyle(mode === "ptt" && micReady)}
       >
-        <VoiceOrb
-          state={state}
-          audioSource={audioSource}
-          onLevel={onLevel}
-          sensitivity={1.1}
-        />
+        <div style={orbInnerStyle}>
+          <VoiceOrb state={state} audioSource={audioSource} onLevel={onLevel} sensitivity={1.1} />
+        </div>
       </div>
 
       {/* bottom controls */}
@@ -416,8 +499,22 @@ function VoiceOrbPage() {
         <button
           type="button"
           aria-label={mode === "ptt" ? "hold to speak" : "microphone"}
-          onPointerDown={mode === "ptt" ? (e) => { e.preventDefault(); startRecording(); } : undefined}
-          onPointerUp={mode === "ptt" ? (e) => { e.preventDefault(); stopRecording(); } : undefined}
+          onPointerDown={
+            mode === "ptt"
+              ? (e) => {
+                  e.preventDefault();
+                  startRecording();
+                }
+              : undefined
+          }
+          onPointerUp={
+            mode === "ptt"
+              ? (e) => {
+                  e.preventDefault();
+                  stopRecording();
+                }
+              : undefined
+          }
           onPointerLeave={mode === "ptt" ? () => stopRecording() : undefined}
           style={micBtnStyle(recording)}
         >
@@ -447,12 +544,7 @@ function VoiceOrbPage() {
         </div>
 
         {/* end / close — red circular */}
-        <button
-          type="button"
-          aria-label="end voice mode"
-          onClick={close}
-          style={endBtnStyle}
-        >
+        <button type="button" aria-label="end voice mode" onClick={close} style={endBtnStyle}>
           <CloseIcon />
         </button>
       </div>
@@ -463,7 +555,17 @@ function VoiceOrbPage() {
 /* ── icons ─────────────────────────────────────────────────────── */
 function MicIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <rect x="9" y="2" width="6" height="12" rx="3" />
       <path d="M5 11a7 7 0 0 0 14 0" />
       <path d="M12 18v3" />
@@ -472,8 +574,19 @@ function MicIcon() {
 }
 function CloseIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M6 6l12 12" /><path d="M18 6L6 18" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 6l12 12" />
+      <path d="M18 6L6 18" />
     </svg>
   );
 }
@@ -482,7 +595,7 @@ function CloseIcon() {
 const pageStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "#06070a",
+  background: "transparent",
   color: "rgba(248,248,246,0.92)",
   fontFamily: '"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
   display: "grid",
@@ -514,11 +627,20 @@ const orbWrapStyle = (interactive: boolean): React.CSSProperties => ({
   position: "relative",
   width: "100%",
   height: "100%",
-  display: "block",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   cursor: interactive ? "pointer" : "default",
   touchAction: "none",
   outline: "none",
 });
+// Centered square so the orb reads at the Luca scale rather than
+// stretching edge-to-edge in the iframe.
+const orbInnerStyle: React.CSSProperties = {
+  position: "relative",
+  width: "min(70vmin, 720px)",
+  height: "min(70vmin, 720px)",
+};
 const bottomBarStyle: React.CSSProperties = {
   paddingBottom: "clamp(24px, 5vh, 56px)",
   display: "flex",
@@ -531,8 +653,8 @@ const micBtnStyle = (active: boolean): React.CSSProperties => ({
   height: 44,
   borderRadius: "50%",
   border: "1px solid rgba(255,255,255,0.14)",
-  background: active ? "rgba(230,170,90,0.18)" : "rgba(255,255,255,0.04)",
-  color: active ? "rgba(244,210,150,0.95)" : "rgba(248,248,246,0.78)",
+  background: active ? "rgba(201,168,124,0.18)" : "rgba(255,255,255,0.04)",
+  color: active ? "rgba(224,201,158,0.95)" : "rgba(248,248,246,0.78)",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
