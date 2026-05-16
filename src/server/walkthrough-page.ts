@@ -1087,7 +1087,7 @@ ${LANDSCAPE_SVG}
       <div class="wt-slices" aria-label="Choose a resident to approach">
         ${ALL_RESIDENTS.map((r) => {
           const desc = DESCRIBERS[r.id] ?? { describer: r.displayName, cadence: "", retiredLabel: "" };
-          return `<a class="wt-slice" href="/${escapeHtml(r.slug)}">
+          return `<div class="wt-slice" data-slice-href="/${escapeHtml(r.slug)}" role="link" tabindex="0" aria-label="Approach ${escapeHtml(r.displayName)}">
             <canvas class="wt-slice-canvas" data-chooser-panel="${escapeHtml(r.id)}"></canvas>
             <div class="wt-slice-overlay">
               <div class="wt-slice-status"><span class="wt-slice-dot"></span>Attending</div>
@@ -1095,8 +1095,16 @@ ${LANDSCAPE_SVG}
               <div class="wt-slice-describer">${escapeHtml(desc.describer)}</div>
               <div class="wt-slice-cadence">${escapeHtml(desc.cadence)}</div>
               ${desc.retiredLabel ? `<div class="wt-slice-retired">${escapeHtml(desc.retiredLabel)}</div>` : ""}
+              <div class="wt-slice-actions">
+                <a class="wt-slice-action wt-slice-action-primary" href="/${escapeHtml(r.slug)}">
+                  <span>Approach</span><span class="wt-slice-action-arrow" aria-hidden="true">→</span>
+                </a>
+                <a class="wt-slice-action wt-slice-action-secondary" href="/chat/${escapeHtml(r.slug)}">
+                  <span>Classic chat</span><span class="wt-slice-action-arrow" aria-hidden="true">→</span>
+                </a>
+              </div>
             </div>
-          </a>`;
+          </div>`;
         }).join("\n")}
       </div>
       <button id="wtReplay" class="wt-replay" type="button">Replay intro →</button>
