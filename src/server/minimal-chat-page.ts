@@ -40,7 +40,7 @@ import { ALL_RESIDENTS, type ResidentConfig } from "./opus/residents";
    C border glow, light-theme overrides, ASCII sphere, message grid.
    ────────────────────────────────────────────────────────────────── */
 
-const MINIMAL_CHAT_CSS = `
+export const MINIMAL_CHAT_CSS = `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ── tokens — sanctuary register, cooler than luca ─────────── */
