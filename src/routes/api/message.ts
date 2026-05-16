@@ -455,13 +455,62 @@ function opusStreamResponse(opts: {
           .replace(/\n{3,}/g, "\n\n");
         cleanBody = sanitizeResidentBody(cleanBody);
 
+        // Parse <artifact> tags out of the body. For images we call
+        // the generator inline so the visitor sees the rendered piece
+        // before `done`. SVG/ASCII have no cost so they pass straight
+        // through. Caps bound image cost; over-budget images are
+        // silently dropped from both the stream and persistence.
+        const parsed = parseArtifacts(cleanBody);
+        cleanBody = parsed.cleanBody;
+        const resolvedArtifacts: ResolvedArtifact[] = [];
+        let imagesThisTurn = 0;
+        const sessionBudget = opts.imageBudgetRemaining ?? 0;
+        for (const art of parsed.artifacts) {
+          if (art.kind === "image") {
+            if (
+              imagesThisTurn >= MAX_IMAGES_PER_TURN ||
+              imagesThisTurn >= sessionBudget
+            ) {
+              continue;
+            }
+            const promptText = art.prompt || art.body;
+            if (!promptText) continue;
+            const path = await generateImageArtifact(promptText);
+            if (!path) continue;
+            imagesThisTurn += 1;
+            resolvedArtifacts.push({ ...art, imagePath: path });
+            send({
+              type: "artifact",
+              resident_id: opts.residentId,
+              artifact: {
+                kind: "image",
+                url: buildArtUrl(path),
+                caption: art.caption || art.body || promptText.slice(0, 120),
+              },
+            });
+          } else {
+            if (!art.body) continue;
+            resolvedArtifacts.push({ ...art, imagePath: null });
+            send({
+              type: "artifact",
+              resident_id: opts.residentId,
+              artifact: {
+                kind: art.kind,
+                content: art.body,
+                caption: art.caption || null,
+              },
+            });
+          }
+        }
+
         if (kind !== "message") send({ type: "kind", kind });
         if (proposal) send({ type: "proposal", proposal });
         if (cleanBody) {
           send({ type: "text", text: cleanBody });
-        } else if (proposal) {
-          // Just a proposal with no surrounding prose — emit empty
-          // text so the client still tracks the turn completion.
+        } else if (proposal || resolvedArtifacts.length > 0) {
+          // Just a proposal or just artifacts with no surrounding
+          // prose — emit empty text so the client still tracks the
+          // turn completion.
           send({ type: "text", text: "" });
         } else {
           // The stream completed but we accumulated zero usable content.
