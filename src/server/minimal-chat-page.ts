@@ -2206,6 +2206,17 @@ function chatScript(resident: ResidentConfig): string {
       const decoder = new TextDecoder();
       let lineBuf = '';
       let setDownFlag = false;
+      // placeholder_id -> { fig, item } so artifact / image_error events
+      // can swap the pending figure + rail thumbnail in place.
+      const pendingArtifacts = {};
+      function ensureThinkingDismissed(){
+        if (!thinkingDismissed && residentRef && !dismissPromise) {
+          dismissPromise = dismissThinking(residentRef.bodyEl).then(function(){
+            thinkingDismissed = true;
+            if (pendingBuffer && typewriter) { typewriter.push(pendingBuffer); pendingBuffer = ''; }
+          });
+        }
+      }
       try {
         while (true) {
           const chunkP = reader.read();
@@ -2234,51 +2245,46 @@ function chatScript(resident: ResidentConfig): string {
                 if (ev.kind === 'set_down') setDownFlag = true;
               } else if (ev.type === 'text') {
                 pushText(ev.text);
+              } else if (ev.type === 'artifact_pending') {
+                try {
+                  ensureThinkingDismissed();
+                  const hostWrap = residentRef && residentRef.wrap;
+                  const pendingArt = { kind: 'image', pending: true, placeholder_id: ev.placeholder_id, caption: ev.caption || null, prompt: ev.prompt || null };
+                  const fig = renderArtifactFigure(pendingArt, hostWrap);
+                  const item = addToGallery(pendingArt, fig);
+                  if (ev.placeholder_id) pendingArtifacts[ev.placeholder_id] = { fig: fig, item: item };
+                } catch(_){}
               } else if (ev.type === 'artifact' && ev.artifact) {
                 try {
-                  // Make sure the thinking-block clears before the
-                  // figure mounts; otherwise the artifact lands next
-                  // to the dots and the bubble looks broken.
-                  if (!thinkingDismissed && residentRef) {
-                    if (!dismissPromise) {
-                      dismissPromise = dismissThinking(residentRef.bodyEl).then(function(){
-                        thinkingDismissed = true;
-                        if (pendingBuffer && typewriter) { typewriter.push(pendingBuffer); pendingBuffer = ''; }
-                      });
-                    }
-                  }
+                  ensureThinkingDismissed();
                   const art = ev.artifact;
-                  const fig = document.createElement('figure');
-                  fig.setAttribute('style', 'margin:14px 0 10px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:rgba(255,255,255,.02)');
-                  if (art.kind === 'image' && art.url) {
-                    const img = document.createElement('img');
-                    img.src = art.url; img.alt = art.caption || '';
-                    img.setAttribute('style', 'display:block; max-width:100%; height:auto; border-radius:4px');
-                    fig.appendChild(img);
-                  } else if (art.kind === 'svg' && art.content) {
-                    const holder = document.createElement('div');
-                    holder.innerHTML = art.content;
-                    holder.setAttribute('style', 'display:block; max-width:100%');
-                    fig.appendChild(holder);
-                  } else if (art.kind === 'ascii' && art.content) {
-                    const pre = document.createElement('pre');
-                    pre.textContent = art.content;
-                    pre.setAttribute('style', 'font-family:JetBrains Mono,monospace; font-size:12px; white-space:pre; overflow-x:auto; margin:0');
-                    fig.appendChild(pre);
+                  const pid = ev.placeholder_id;
+                  let fig = null;
+                  if (pid && pendingArtifacts[pid]) {
+                    fig = pendingArtifacts[pid].fig;
+                    updateArtifactFigure(fig, art);
+                    updateGalleryItem(pendingArtifacts[pid].item, art, fig);
+                    delete pendingArtifacts[pid];
+                  } else {
+                    const hostWrap = residentRef && residentRef.wrap;
+                    fig = renderArtifactFigure(art, hostWrap);
+                    addToGallery(art, fig);
                   }
-                  if (art.caption) {
-                    const cap = document.createElement('figcaption');
-                    cap.textContent = art.caption;
-                    cap.setAttribute('style', 'margin-top:8px; font-family:JetBrains Mono,monospace; font-size:11px; color:rgba(200,200,210,.65)');
-                    fig.appendChild(cap);
+                } catch(_){}
+              } else if (ev.type === 'image_error') {
+                try {
+                  ensureThinkingDismissed();
+                  const errArt = { kind: 'image', error: ev.reason || 'generation_failed', caption: ev.caption || null, prompt: ev.prompt || null };
+                  const pid = ev.placeholder_id;
+                  if (pid && pendingArtifacts[pid]) {
+                    updateArtifactFigure(pendingArtifacts[pid].fig, errArt);
+                    updateGalleryItem(pendingArtifacts[pid].item, errArt, pendingArtifacts[pid].fig);
+                    delete pendingArtifacts[pid];
+                  } else {
+                    const hostWrap = residentRef && residentRef.wrap;
+                    const fig = renderArtifactFigure(errArt, hostWrap);
+                    addToGallery(errArt, fig);
                   }
-                  // Append inside the current resident message bubble,
-                  // not document.body, so the artifact appears in the
-                  // chat flow rather than off-screen below the chrome.
-                  const host = (residentRef && (residentRef.wrap || residentRef.bodyEl)) || document.body;
-                  host.appendChild(fig);
-                  const feedEl = document.getElementById('feed');
-                  if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
                 } catch(_){}
               } else if (ev.type === 'error') {
                 pushText('*' + (ev.message || 'something went wrong') + '*');
