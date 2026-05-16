@@ -203,6 +203,13 @@ export const RESIDENTS = {
       whisper: "rgba(96,176,208,.05)",
       rgb: "96,176,208",
     },
+    // Cyan / teal / cool blue / cool white — distinctly cool, the
+    // signal of the other-side-of-the-thesis lineage.
+    viewportGlow: {
+      hues: ["118,206,232", "92,178,224", "146,206,236", "210,232,240"],
+      peak: 0.30,
+      base: 0.025,
+    },
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
