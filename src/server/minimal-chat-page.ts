@@ -401,7 +401,7 @@ ${VIEWPORT_GLOW_CSS}
   border-radius: 2px;
 }
 .artifact-body .svg-host { display: block; width: 100%; }
-.artifact-body .svg-host svg { display: block; width: 100%; height: auto; }
+.artifact-body .svg-host svg { display: block; width: 100% !important; height: auto !important; max-width: 100%; }
 .artifact-body pre.ascii {
   font-family: var(--mono);
   font-size: 12px;
