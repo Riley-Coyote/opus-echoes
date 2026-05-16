@@ -14,8 +14,8 @@
   contain: strict;
   opacity: 1;
   transition:
-    opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 1800ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 1800ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .opus-presence-layer[hidden] {
@@ -201,11 +201,12 @@ html[data-opus-route="conversation"] .opus-presence-layer {
   box-shadow: none;
 }
 
-/* Quiet fallback background when the scene is off. A still, dark radial
-   gradient — no animation, no chroma — that holds the page weight without
-   burning a single GPU cycle. */
-html[data-presence-enabled="false"][data-opus-route="approach"]::before,
-html[data-presence-enabled="false"][data-opus-route="conversation"]::before {
+/* Quiet fallback background. A still, dark radial gradient — no animation,
+   no chroma — that holds the page weight without burning a GPU cycle.
+   Painted as an ::before so it can crossfade against the WebGL canvas
+   while the toggle transitions between states. */
+html[data-opus-route="approach"]::before,
+html[data-opus-route="conversation"]::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -219,9 +220,73 @@ html[data-presence-enabled="false"][data-opus-route="conversation"]::before {
       rgba(4, 5, 8, 1) 100%
     ),
     #06070a;
+  opacity: 0;
+  transition: opacity 1800ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* When the scene is off (steady state), the gradient is the background. */
+html[data-presence-enabled="false"][data-opus-route="approach"]::before,
+html[data-presence-enabled="false"][data-opus-route="conversation"]::before {
+  opacity: 1;
 }
 html[data-presence-enabled="false"] .opus-presence-layer {
-  display: none !important;
+  /* Keep it in the layout tree so the transition out can play; the JS
+     boot path also bails out, so there is nothing rendering inside. */
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Transition states (driven by the toggle button) ─────────────────────
+   "leaving"  → fade WebGL out, fade gradient in.
+   "entering" → fade gradient in over the just-loaded scene, then reload
+                lets the scene's own opacity transition carry it back.
+   The blur on the leaving canvas gives a soft, photographic dissolve. */
+html[data-presence-transition="leaving"] .opus-presence-layer,
+html[data-presence-transition="leaving"] .opus-presence-canvas {
+  opacity: 0 !important;
+  filter: blur(14px) saturate(0.55) brightness(0.85) !important;
+}
+html[data-presence-transition="leaving"][data-opus-route="approach"]::before,
+html[data-presence-transition="leaving"][data-opus-route="conversation"]::before,
+html[data-presence-transition="entering"][data-opus-route="approach"]::before,
+html[data-presence-transition="entering"][data-opus-route="conversation"]::before {
+  opacity: 1;
+}
+html[data-presence-transition="entering"] .opus-presence-layer {
+  /* Hold the layer dim until the reload swaps in the real scene; the
+     scene then fades up on its own via .opus-presence-canvas's transition. */
+  opacity: 0;
+}
+
+/* Toggle button breathes softly while the transition plays. */
+.presence-toggle[data-busy="true"] {
+  pointer-events: none;
+  opacity: 1;
+  animation: presence-toggle-pulse 1800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes presence-toggle-pulse {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,255,0.0); }
+  35%  { transform: scale(1.04); box-shadow: 0 0 22px 0 rgba(255,255,255,0.10); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,255,0.0); }
+}
+.presence-toggle[data-busy="true"] .presence-toggle-dot {
+  animation: presence-dot-pulse 1800ms ease-in-out both;
+}
+@keyframes presence-dot-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%      { transform: scale(1.4);  opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-opus-route="approach"]::before,
+  html[data-opus-route="conversation"]::before,
+  .opus-presence-layer {
+    transition-duration: 400ms;
+  }
+  .presence-toggle[data-busy="true"],
+  .presence-toggle[data-busy="true"] .presence-toggle-dot {
+    animation: none;
+  }
 }
 
 @media (max-width: 540px) {

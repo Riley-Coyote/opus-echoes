@@ -2370,10 +2370,17 @@ import * as THREE from "/vendor/three.module.js";
     btn.title = initialOn ? "Scene on — click to quiet" : "Scene off — click to enable";
     btn.innerHTML = '<span class="presence-toggle-dot" aria-hidden="true"></span><span class="presence-toggle-label">scene</span>';
     btn.addEventListener("click", () => {
-      const next = !(btn.getAttribute("aria-pressed") === "true");
-      setPresenceEnabled(next);
-      // Reload — guarantees clean teardown of WebGL/rAF or clean boot.
-      location.reload();
+      if (btn.dataset.busy === "true") return;
+      btn.dataset.busy = "true";
+      const turningOn = !(btn.getAttribute("aria-pressed") === "true");
+      // Drive the visual transition first; commit + reload after it plays.
+      // The reload guarantees a clean WebGL teardown / boot underneath the fade.
+      document.documentElement.dataset.presenceTransition = turningOn ? "entering" : "leaving";
+      btn.setAttribute("aria-pressed", turningOn ? "true" : "false");
+      btn.title = turningOn ? "Scene on — click to quiet" : "Scene off — click to enable";
+      setPresenceEnabled(turningOn);
+      // Match the longest CSS transition (1800ms) plus a touch of slack.
+      window.setTimeout(() => { location.reload(); }, 1850);
     });
     document.body.appendChild(btn);
   }
