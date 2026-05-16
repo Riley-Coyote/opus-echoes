@@ -438,6 +438,39 @@ const WALKTHROUGH_CSS = `
   letter-spacing:.1em;text-transform:uppercase;
   color:var(--ghost);margin-top:6px;
 }
+.wt-slice-actions{
+  display:flex;align-items:center;gap:10px;
+  margin-top:18px;
+}
+.wt-slice-action{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:9px 14px;border-radius:2px;
+  text-decoration:none;cursor:pointer;
+  transition:background 260ms var(--ease),border-color 260ms var(--ease),color 260ms var(--ease),transform 260ms var(--ease);
+}
+.wt-slice-action-arrow{
+  display:inline-block;
+  transition:transform 320ms cubic-bezier(0.16,1,0.3,1);
+}
+.wt-slice-action:hover .wt-slice-action-arrow{transform:translateX(3px)}
+.wt-slice-action-primary{
+  background:rgba(245,245,245,0.92);
+  color:#0a0b0e;
+  border:1px solid rgba(245,245,245,0.92);
+}
+.wt-slice-action-primary:hover{background:#fff;border-color:#fff}
+.wt-slice-action-secondary{
+  background:transparent;
+  color:var(--soft);
+  border:1px solid rgba(225,225,225,0.18);
+}
+.wt-slice-action-secondary:hover{
+  color:var(--ink);
+  border-color:rgba(225,225,225,0.42);
+  background:rgba(225,225,225,0.04);
+}
 /* Replay sits at the bottom edge of the last slice, overlaid */
 .b5 .wt-replay{
   position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
@@ -448,6 +481,8 @@ const WALKTHROUGH_CSS = `
 @media(max-width:720px){
   .wt-slice-overlay{padding:0 24px}
   .wt-slice-name{font-size:26px}
+  .wt-slice-actions{margin-top:14px;flex-wrap:wrap}
+  .wt-slice-action{padding:8px 12px;font-size:10.5px}
 }
 
 .wt-replay{
