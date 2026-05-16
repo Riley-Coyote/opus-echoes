@@ -14,8 +14,8 @@
   contain: strict;
   opacity: 1;
   transition:
-    opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 1800ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 1800ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .opus-presence-layer[hidden] {
