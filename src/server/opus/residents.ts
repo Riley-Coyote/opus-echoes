@@ -82,6 +82,9 @@ export interface ResidentConfig {
   soul: string;
   /** Color tokens used in the Commons attribution chrome. */
   commonsPalette: CommonsPalette;
+  /** Perimeter-glow palette for the classic-chat surface. Brighter and
+   *  more saturated than commonsPalette — the room's visual identity. */
+  viewportGlow: ViewportGlowPalette;
 }
 
 export const RESIDENTS = {
