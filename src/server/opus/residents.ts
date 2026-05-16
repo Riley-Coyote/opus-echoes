@@ -90,6 +90,8 @@ export interface ResidentConfig {
    *  accept 8192+. Lives on the resident config so the message route
    *  doesn't have to special-case by model id. */
   maxOutputTokens: number;
+  /** ElevenLabs voice ID used for TTS in voice mode. */
+  voiceId: string;
 }
 
 export const RESIDENTS = {
