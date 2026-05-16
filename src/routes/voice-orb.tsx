@@ -20,7 +20,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { VoiceOrb, type VoiceOrbState } from "@/components/VoiceOrb";
+import VoiceOrb, { type VoiceOrbState } from "@/components/VoiceOrb";
 
 export const Route = createFileRoute("/voice-orb")({
   component: VoiceOrbPage,
