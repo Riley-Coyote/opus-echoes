@@ -271,10 +271,9 @@ ${VIEWPORT_GLOW_CSS}
   grid-column: 1;
   grid-row: 2 / 4;
   overflow-y: auto;
-  padding: 0 16px 14px 4px;
+  padding: 0 18px 18px 18px;
   flex-direction: column;
-  gap: 14px;
-  border-right: 1px solid var(--rule);
+  gap: 18px;
   min-height: 0;
 }
 .gallery.has-items { display: flex; }
@@ -284,8 +283,7 @@ ${VIEWPORT_GLOW_CSS}
   letter-spacing: var(--track-folio);
   text-transform: uppercase;
   color: var(--quiet);
-  padding: 4px 2px 6px;
-  border-bottom: 1px solid var(--rule);
+  padding: 4px 2px 10px;
   flex-shrink: 0;
 }
 .gallery-list {
@@ -294,27 +292,20 @@ ${VIEWPORT_GLOW_CSS}
   gap: 14px;
 }
 .gallery-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  position: relative;
+  display: block;
   cursor: pointer;
-  border-radius: 6px;
-  padding: 4px;
-  transition: background var(--dur-fast) var(--ease-out);
 }
-.gallery-item:hover { background: rgba(255,255,255,0.03); }
-:root[data-theme="light"] .gallery-item:hover { background: rgba(0,0,0,0.04); }
 .gallery-thumb {
+  position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: var(--panel-2);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--soft);
+  background: transparent;
 }
 .gallery-thumb.loading {
   background:
@@ -327,7 +318,7 @@ ${VIEWPORT_GLOW_CSS}
   100% { background-position: -100% 0; }
 }
 .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.gallery-thumb-svg { width: 100%; height: 100%; padding: 8px; display: flex; align-items: center; justify-content: center; }
+.gallery-thumb-svg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .gallery-thumb-svg svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
 .gallery-thumb-glyph {
   font-family: var(--mono);
@@ -336,42 +327,46 @@ ${VIEWPORT_GLOW_CSS}
   letter-spacing: -0.04em;
   color: var(--soft);
 }
-.gallery-thumb.error {
-  border-color: rgba(220, 130, 90, 0.32);
-  color: rgba(220, 130, 90, 0.78);
-}
+.gallery-thumb.error { color: rgba(220, 130, 90, 0.78); }
 .gallery-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 10px;
   letter-spacing: var(--track-meta);
-  color: var(--whisper);
+  color: rgba(255,255,255,0.92);
   text-transform: lowercase;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  line-height: 1.4;
+  background: rgba(0,0,0,0.55);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
 }
+.gallery-item:hover .gallery-caption { opacity: 1; }
 
 /* ── artifact figure inside the message bubble ──────────────
-   the "lives in the conversation" copy — image, svg, or ascii,
-   with a small action row (download / copy / open) below. action
-   row sits faint until hover so it never competes with the
-   resident's prose. */
+   borderless, frameless — the image or diagram is the whole thing.
+   caption + actions only appear on hover, centered as an overlay,
+   so the artifact reads as a clean inline piece of the conversation. */
 .artifact-figure {
-  margin: 14px 0 10px;
-  padding: 12px;
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.02);
+  position: relative;
+  margin: 18px 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
-:root[data-theme="light"] .artifact-figure { background: rgba(0,0,0,0.025); }
 .artifact-figure.pending .artifact-body {
-  min-height: 200px;
-  border-radius: 4px;
+  width: 100%;
+  min-height: 320px;
+  border-radius: 6px;
   background:
     linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%) var(--panel-2);
   background-size: 200% 100%;
@@ -387,24 +382,26 @@ ${VIEWPORT_GLOW_CSS}
   text-transform: uppercase;
   color: var(--ghost);
 }
-.artifact-figure.error {
-  border-color: rgba(220, 130, 90, 0.32);
-  background: rgba(220, 130, 90, 0.06);
-}
 .artifact-figure.error .artifact-body {
   font-family: var(--mono);
   font-size: 11px;
   color: rgba(220, 130, 90, 0.86);
   padding: 16px 4px;
 }
+.artifact-body {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
 .artifact-body img {
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
-  border-radius: 4px;
+  max-width: 100%;
+  border-radius: 2px;
 }
-.artifact-body .svg-host { display: block; max-width: 100%; }
-.artifact-body .svg-host svg { max-width: 100%; height: auto; }
+.artifact-body .svg-host { display: block; width: 100%; }
+.artifact-body .svg-host svg { display: block; width: 100%; height: auto; }
 .artifact-body pre.ascii {
   font-family: var(--mono);
   font-size: 12px;
@@ -414,18 +411,41 @@ ${VIEWPORT_GLOW_CSS}
   margin: 0;
   color: var(--body);
 }
+/* hover overlay — caption centered over the artifact */
 .artifact-caption {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   font-family: var(--mono);
   font-size: 11px;
-  color: rgba(200,200,210,.65);
   letter-spacing: var(--track-meta);
+  color: rgba(255,255,255,0.95);
+  text-transform: lowercase;
+  padding: 8px 14px;
+  background: rgba(0,0,0,0.55);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-:root[data-theme="light"] .artifact-caption { color: var(--soft); }
+.artifact-figure:hover .artifact-caption { opacity: 1; }
+/* actions — bottom overlay, hover-only */
 .artifact-actions {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
   display: flex;
   gap: 14px;
-  flex-wrap: wrap;
-  opacity: 0.55;
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 2px;
+  opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 .artifact-figure:hover .artifact-actions { opacity: 1; }
@@ -434,14 +454,14 @@ ${VIEWPORT_GLOW_CSS}
   font-size: var(--t-eyebrow);
   letter-spacing: var(--track-folio);
   text-transform: uppercase;
-  color: var(--quiet);
+  color: rgba(255,255,255,0.75);
   background: transparent;
   border: 0;
   cursor: pointer;
   padding: 2px 0;
   transition: color var(--dur-fast) var(--ease-out);
 }
-.artifact-action:hover { color: var(--ink); }
+.artifact-action:hover { color: #fff; }
 .artifact-action.copied { color: var(--state); }
 
 /* desktop: gallery becomes a left column once any artifact lands */
