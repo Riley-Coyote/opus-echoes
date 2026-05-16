@@ -2961,7 +2961,10 @@ ${FONTS}
   <div class="lightbox-stage"></div>
 </div>
 
-<!-- voice mode — opaque self-contained fullscreen iframe -->
+<!-- voice mode — opaque self-contained fullscreen iframe.
+     prefetch hint warms the route's bundle (React + three.js) on idle
+     so the orb appears within ~ms of the mic click, not seconds. -->
+<link rel="prefetch" href="/voice-orb?resident=${encodeURIComponent(resident.id)}" as="document">
 <iframe
   class="voice-overlay"
   id="voiceOverlay"
@@ -3127,15 +3130,27 @@ ${FONTS}
       });
     }
 
-    /* Monkey-patch VoiceMode.speak: when overlay is open, route the
-       text to the orb (which fetches /api/voice/tts itself so the
-       audio plays inside the orb's context and feeds the particles).
-       Otherwise fall through to the original behavior. */
+    /* Wrap VoiceMode.speak so that when the overlay is open, the parent
+       page still plays the TTS audio (it has user-activation from the
+       mic click — the iframe loses activation across postMessage, so
+       audio.play() there is silently blocked after the STT round-trip).
+       We just post 'set-state' to the orb so its visual driver swaps to
+       the speaking pose, and 'tts-end' when playback finishes. */
     if (window.VoiceMode && typeof window.VoiceMode.speak === 'function') {
       var origSpeak = window.VoiceMode.speak.bind(window.VoiceMode);
-      window.VoiceMode.speak = function(text, resident, opts){
-        if (isOpen()) { post({ type: 'play-tts', text: String(text || '') }); return; }
-        return origSpeak(text, resident, opts);
+      window.VoiceMode.speak = function(text, residentId, opts){
+        if (!isOpen()) return origSpeak(text, residentId, opts);
+        var wrapped = Object.assign({}, opts || {}, {
+          onStart: function(){
+            try { (opts && opts.onStart) && opts.onStart(); } catch(_){}
+            post({ type: 'set-state', state: 'speaking' });
+          },
+          onEnd: function(){
+            try { (opts && opts.onEnd) && opts.onEnd(); } catch(_){}
+            post({ type: 'set-state', state: 'listening' });
+          },
+        });
+        return origSpeak(text, residentId || resId, wrapped);
       };
     }
   });
