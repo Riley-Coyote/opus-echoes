@@ -3055,6 +3055,9 @@ ${FONTS}
       overlay.setAttribute('aria-hidden','false');
       // Lazy-load the iframe so the mic prompt only appears on entry.
       if (!overlay.src) overlay.src = '/voice-orb?resident=' + encodeURIComponent(resId);
+      // Ensure TTS playback fires for replies while the orb is up
+      // (the monkey-patched speak() below routes it into the iframe).
+      try { if (window.VoiceMode) window.VoiceMode.setEnabled(true); } catch(_){}
       setTimeout(function(){ try { overlay.focus(); } catch(_){} }, 60);
     }
     function close(){
