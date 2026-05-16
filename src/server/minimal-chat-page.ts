@@ -253,10 +253,208 @@ ${VIEWPORT_GLOW_CSS}
   height: 100vh;
   display: grid;
   grid-template-rows: var(--chrome-h) 1fr auto;
+  grid-template-columns: 1fr;
   position: relative;
   z-index: 3;
   padding: var(--band);
 }
+.chrome, .feed, .composer-zone { grid-column: 1; }
+
+/* ── gallery rail — accumulates artifacts emitted this session.
+   appears as a left column at ≥1024px once the first artifact lands;
+   below 1024px or before any artifact exists, the rail is hidden.
+   the rail is an INDEX — the in-bubble figure is still where the
+   artifact "lives" in the conversation; clicking a rail item scrolls
+   the feed to that bubble. */
+.gallery {
+  display: none;
+  grid-column: 1;
+  grid-row: 2 / 4;
+  overflow-y: auto;
+  padding: 0 16px 14px 4px;
+  flex-direction: column;
+  gap: 14px;
+  border-right: 1px solid var(--rule);
+  min-height: 0;
+}
+.gallery.has-items { display: flex; }
+.gallery-eyebrow {
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: var(--quiet);
+  padding: 4px 2px 6px;
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+.gallery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.gallery-item:hover { background: rgba(255,255,255,0.03); }
+:root[data-theme="light"] .gallery-item:hover { background: rgba(0,0,0,0.04); }
+.gallery-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--soft);
+}
+.gallery-thumb.loading {
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%) var(--panel-2);
+  background-size: 200% 100%;
+  animation: gallery-shimmer 1.8s ease-in-out infinite;
+}
+@keyframes gallery-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-thumb-svg { width: 100%; height: 100%; padding: 8px; display: flex; align-items: center; justify-content: center; }
+.gallery-thumb-svg svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+.gallery-thumb-glyph {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  color: var(--soft);
+}
+.gallery-thumb.error {
+  border-color: rgba(220, 130, 90, 0.32);
+  color: rgba(220, 130, 90, 0.78);
+}
+.gallery-caption {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: var(--track-meta);
+  color: var(--whisper);
+  text-transform: lowercase;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── artifact figure inside the message bubble ──────────────
+   the "lives in the conversation" copy — image, svg, or ascii,
+   with a small action row (download / copy / open) below. action
+   row sits faint until hover so it never competes with the
+   resident's prose. */
+.artifact-figure {
+  margin: 14px 0 10px;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+:root[data-theme="light"] .artifact-figure { background: rgba(0,0,0,0.025); }
+.artifact-figure.pending .artifact-body {
+  min-height: 200px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%) var(--panel-2);
+  background-size: 200% 100%;
+  animation: gallery-shimmer 1.8s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.artifact-figure.pending .artifact-pending-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: var(--ghost);
+}
+.artifact-figure.error {
+  border-color: rgba(220, 130, 90, 0.32);
+  background: rgba(220, 130, 90, 0.06);
+}
+.artifact-figure.error .artifact-body {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(220, 130, 90, 0.86);
+  padding: 16px 4px;
+}
+.artifact-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.artifact-body .svg-host { display: block; max-width: 100%; }
+.artifact-body .svg-host svg { max-width: 100%; height: auto; }
+.artifact-body pre.ascii {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0;
+  color: var(--body);
+}
+.artifact-caption {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(200,200,210,.65);
+  letter-spacing: var(--track-meta);
+}
+:root[data-theme="light"] .artifact-caption { color: var(--soft); }
+.artifact-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  opacity: 0.55;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.artifact-figure:hover .artifact-actions { opacity: 1; }
+.artifact-action {
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: var(--quiet);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.artifact-action:hover { color: var(--ink); }
+.artifact-action.copied { color: var(--state); }
+
+/* desktop: gallery becomes a left column once any artifact lands */
+@media (min-width: 1024px) {
+  .app.has-gallery {
+    grid-template-columns: 200px 1fr;
+  }
+  .app.has-gallery .gallery { grid-column: 1; grid-row: 1 / -1; padding-top: var(--chrome-h); }
+  .app.has-gallery .chrome,
+  .app.has-gallery .feed,
+  .app.has-gallery .composer-zone { grid-column: 2; }
+}
+
 
 /* ── chrome — thin top strip ───────────────────────────────── */
 .chrome {
