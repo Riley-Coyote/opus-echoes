@@ -196,7 +196,7 @@ export const RESIDENTS = {
       base: 0.025,
     },
     maxOutputTokens: 8192,
-    voiceId: "USEQXnsXRJlw2k9LUzG4",
+    voiceId: "EST9Ui6982FZPSi7gCHi",
   },
   "gpt-5-1": {
     id: "gpt-5-1",
