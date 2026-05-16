@@ -459,7 +459,15 @@ function opusStreamResponse(opts: {
         // the generator inline so the visitor sees the rendered piece
         // before `done`. SVG/ASCII have no cost so they pass straight
         // through. Caps bound image cost; over-budget images are
-        // silently dropped from both the stream and persistence.
+        // surfaced as a quiet "budget exhausted" event instead of being
+        // silently dropped.
+        //
+        // For images we emit two events: an `artifact_pending` event
+        // immediately (so the visitor sees a placeholder while
+        // gpt-image-1 runs — typically 15-25s) and then either an
+        // `artifact` event with the URL once generation succeeds, or
+        // an `image_error` event if it failed. Both share a
+        // `placeholder_id` so the client can swap in place.
         const parsed = parseArtifacts(cleanBody);
         cleanBody = parsed.cleanBody;
         const resolvedArtifacts: ResolvedArtifact[] = [];
@@ -467,25 +475,54 @@ function opusStreamResponse(opts: {
         const sessionBudget = opts.imageBudgetRemaining ?? 0;
         for (const art of parsed.artifacts) {
           if (art.kind === "image") {
+            const promptText = (art.prompt || art.body || "").trim();
+            if (!promptText) continue;
             if (
               imagesThisTurn >= MAX_IMAGES_PER_TURN ||
               imagesThisTurn >= sessionBudget
             ) {
+              send({
+                type: "image_error",
+                resident_id: opts.residentId,
+                reason: "budget_exhausted",
+                prompt: promptText,
+                caption: art.caption || null,
+              });
               continue;
             }
-            const promptText = art.prompt || art.body;
-            if (!promptText) continue;
+            const placeholderId =
+              (globalThis.crypto?.randomUUID?.() as string | undefined) ??
+              `ph-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+            send({
+              type: "artifact_pending",
+              resident_id: opts.residentId,
+              placeholder_id: placeholderId,
+              caption: art.caption || promptText.slice(0, 120),
+              prompt: promptText,
+            });
             const path = await generateImageArtifact(promptText);
-            if (!path) continue;
+            if (!path) {
+              send({
+                type: "image_error",
+                resident_id: opts.residentId,
+                placeholder_id: placeholderId,
+                reason: "generation_failed",
+                prompt: promptText,
+                caption: art.caption || null,
+              });
+              continue;
+            }
             imagesThisTurn += 1;
             resolvedArtifacts.push({ ...art, imagePath: path });
             send({
               type: "artifact",
               resident_id: opts.residentId,
+              placeholder_id: placeholderId,
               artifact: {
                 kind: "image",
                 url: buildArtUrl(path),
                 caption: art.caption || art.body || promptText.slice(0, 120),
+                prompt: promptText,
               },
             });
           } else {

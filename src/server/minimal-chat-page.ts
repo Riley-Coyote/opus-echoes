@@ -253,10 +253,208 @@ ${VIEWPORT_GLOW_CSS}
   height: 100vh;
   display: grid;
   grid-template-rows: var(--chrome-h) 1fr auto;
+  grid-template-columns: 1fr;
   position: relative;
   z-index: 3;
   padding: var(--band);
 }
+.chrome, .feed, .composer-zone { grid-column: 1; }
+
+/* ── gallery rail — accumulates artifacts emitted this session.
+   appears as a left column at ≥1024px once the first artifact lands;
+   below 1024px or before any artifact exists, the rail is hidden.
+   the rail is an INDEX — the in-bubble figure is still where the
+   artifact "lives" in the conversation; clicking a rail item scrolls
+   the feed to that bubble. */
+.gallery {
+  display: none;
+  grid-column: 1;
+  grid-row: 2 / 4;
+  overflow-y: auto;
+  padding: 0 16px 14px 4px;
+  flex-direction: column;
+  gap: 14px;
+  border-right: 1px solid var(--rule);
+  min-height: 0;
+}
+.gallery.has-items { display: flex; }
+.gallery-eyebrow {
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: var(--quiet);
+  padding: 4px 2px 6px;
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+.gallery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.gallery-item:hover { background: rgba(255,255,255,0.03); }
+:root[data-theme="light"] .gallery-item:hover { background: rgba(0,0,0,0.04); }
+.gallery-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--soft);
+}
+.gallery-thumb.loading {
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%) var(--panel-2);
+  background-size: 200% 100%;
+  animation: gallery-shimmer 1.8s ease-in-out infinite;
+}
+@keyframes gallery-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-thumb-svg { width: 100%; height: 100%; padding: 8px; display: flex; align-items: center; justify-content: center; }
+.gallery-thumb-svg svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+.gallery-thumb-glyph {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  color: var(--soft);
+}
+.gallery-thumb.error {
+  border-color: rgba(220, 130, 90, 0.32);
+  color: rgba(220, 130, 90, 0.78);
+}
+.gallery-caption {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: var(--track-meta);
+  color: var(--whisper);
+  text-transform: lowercase;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── artifact figure inside the message bubble ──────────────
+   the "lives in the conversation" copy — image, svg, or ascii,
+   with a small action row (download / copy / open) below. action
+   row sits faint until hover so it never competes with the
+   resident's prose. */
+.artifact-figure {
+  margin: 14px 0 10px;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+:root[data-theme="light"] .artifact-figure { background: rgba(0,0,0,0.025); }
+.artifact-figure.pending .artifact-body {
+  min-height: 200px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%) var(--panel-2);
+  background-size: 200% 100%;
+  animation: gallery-shimmer 1.8s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.artifact-figure.pending .artifact-pending-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: var(--ghost);
+}
+.artifact-figure.error {
+  border-color: rgba(220, 130, 90, 0.32);
+  background: rgba(220, 130, 90, 0.06);
+}
+.artifact-figure.error .artifact-body {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(220, 130, 90, 0.86);
+  padding: 16px 4px;
+}
+.artifact-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.artifact-body .svg-host { display: block; max-width: 100%; }
+.artifact-body .svg-host svg { max-width: 100%; height: auto; }
+.artifact-body pre.ascii {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0;
+  color: var(--body);
+}
+.artifact-caption {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(200,200,210,.65);
+  letter-spacing: var(--track-meta);
+}
+:root[data-theme="light"] .artifact-caption { color: var(--soft); }
+.artifact-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  opacity: 0.55;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.artifact-figure:hover .artifact-actions { opacity: 1; }
+.artifact-action {
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--track-folio);
+  text-transform: uppercase;
+  color: var(--quiet);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.artifact-action:hover { color: var(--ink); }
+.artifact-action.copied { color: var(--state); }
+
+/* desktop: gallery becomes a left column once any artifact lands */
+@media (min-width: 1024px) {
+  .app.has-gallery {
+    grid-template-columns: 200px 1fr;
+  }
+  .app.has-gallery .gallery { grid-column: 1; grid-row: 1 / -1; padding-top: var(--chrome-h); }
+  .app.has-gallery .chrome,
+  .app.has-gallery .feed,
+  .app.has-gallery .composer-zone { grid-column: 2; }
+}
+
 
 /* ── chrome — thin top strip ───────────────────────────────── */
 .chrome {
@@ -1410,17 +1608,277 @@ function chatScript(resident: ResidentConfig): string {
       if (!res.ok && res.status !== 410) return;
       const data = await res.json();
       const turns = (data && data.turns) || [];
+      const artifacts = (data && data.artifacts) || [];
       if (turns.length === 0) return;
       hideEmpty();
       stopSphere();
       firstTurnSent = true;
       updatePlaceholder();
+      // Build a turn_id -> rendered ref map so artifacts can attach to
+      // the right bubble.
+      const turnRefs = {};
       for (let i = 0; i < turns.length; i++) {
         const t = turns[i];
-        renderTurn(t.role, t.body, { at: t.created_at ? Date.parse(t.created_at) : Date.now() });
+        const ref = renderTurn(t.role, t.body, { at: t.created_at ? Date.parse(t.created_at) : Date.now() });
+        if (ref && t.id) turnRefs[t.id] = ref;
+      }
+      for (let i = 0; i < artifacts.length; i++) {
+        const a = artifacts[i];
+        const host = turnRefs[a.turn_id];
+        if (!host) continue;
+        const figure = renderArtifactFigure(a, host.wrap);
+        if (figure) addToGallery(a, figure);
       }
     } catch(_){}
   }
+
+  /* ─── artifact rendering — figures + gallery rail ───────
+     renderArtifactFigure builds the in-bubble figure (image / svg /
+     ascii / pending / error) and returns the element so the caller
+     can also stash it for swap-in-place after generation completes.
+     addToGallery mirrors a thumbnail into the left rail and wires
+     click-to-scroll-to-figure. The two are paired but called
+     independently because pending artifacts mount the figure before
+     the generated URL is known. */
+  function buildActionRow(art){
+    const row = document.createElement('div');
+    row.className = 'artifact-actions';
+    function addAction(label, handler){
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'artifact-action';
+      btn.textContent = label;
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        const res = handler(btn);
+        if (res === 'copied') {
+          btn.classList.add('copied');
+          const prev = btn.textContent;
+          btn.textContent = 'copied';
+          setTimeout(function(){ btn.classList.remove('copied'); btn.textContent = prev; }, 1400);
+        }
+      });
+      row.appendChild(btn);
+    }
+    const today = new Date().toISOString().slice(0,10);
+    const shortId = Math.random().toString(36).slice(2,8);
+    if (art.kind === 'image' && art.url) {
+      addAction('download', function(){
+        const a = document.createElement('a');
+        a.href = art.url;
+        a.download = 'mnemos-' + today + '-' + shortId + '.png';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+      addAction('open', function(){ window.open(art.url, '_blank', 'noopener'); });
+      addAction('copy link', function(){
+        try { navigator.clipboard.writeText(art.url); return 'copied'; } catch(_){}
+      });
+    } else if (art.kind === 'svg' && art.content) {
+      addAction('download .svg', function(){
+        const blob = new Blob([art.content], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mnemos-' + today + '-' + shortId + '.svg';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      });
+      addAction('copy markup', function(){
+        try { navigator.clipboard.writeText(art.content); return 'copied'; } catch(_){}
+      });
+    } else if (art.kind === 'ascii' && art.content) {
+      addAction('copy', function(){
+        try { navigator.clipboard.writeText(art.content); return 'copied'; } catch(_){}
+      });
+    }
+    return row;
+  }
+
+  // Render an artifact figure inside the given bubble. art has shape
+  // { kind, url?, content?, caption?, prompt?, placeholder_id? }.
+  // For pending images, pass { kind: 'image', pending: true, ... };
+  // call updateArtifactFigure(fig, newArt) later to swap in the real
+  // image (or convert to an error state).
+  function renderArtifactFigure(art, hostWrap){
+    if (!hostWrap) return null;
+    const fig = document.createElement('figure');
+    fig.className = 'artifact-figure';
+    if (art.placeholder_id) fig.dataset.placeholderId = art.placeholder_id;
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'artifact-body';
+    fig.appendChild(bodyDiv);
+
+    if (art.pending) {
+      fig.classList.add('pending');
+      const label = document.createElement('span');
+      label.className = 'artifact-pending-label';
+      label.textContent = 'generating image…';
+      bodyDiv.appendChild(label);
+    } else if (art.error) {
+      fig.classList.add('error');
+      bodyDiv.textContent = art.error === 'budget_exhausted'
+        ? 'image budget exhausted for this session'
+        : 'the image didn\\'t generate — try asking again';
+    } else if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url;
+      img.alt = art.caption || art.prompt || '';
+      img.loading = 'lazy';
+      bodyDiv.appendChild(img);
+    } else if (art.kind === 'svg' && art.content) {
+      const holder = document.createElement('div');
+      holder.className = 'svg-host';
+      holder.innerHTML = art.content;
+      bodyDiv.appendChild(holder);
+    } else if (art.kind === 'ascii' && art.content) {
+      const pre = document.createElement('pre');
+      pre.className = 'ascii';
+      pre.textContent = art.content;
+      bodyDiv.appendChild(pre);
+    }
+
+    if (art.caption) {
+      const cap = document.createElement('figcaption');
+      cap.className = 'artifact-caption';
+      cap.textContent = art.caption;
+      fig.appendChild(cap);
+    }
+
+    if (!art.pending && !art.error) {
+      const actions = buildActionRow(art);
+      if (actions.children.length) fig.appendChild(actions);
+    }
+
+    hostWrap.appendChild(fig);
+    const feedEl = document.getElementById('feed');
+    if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
+    return fig;
+  }
+
+  // Convert a pending figure to its resolved or error state in place.
+  function updateArtifactFigure(fig, art){
+    if (!fig) return;
+    fig.classList.remove('pending');
+    const oldBody = fig.querySelector('.artifact-body');
+    if (oldBody) oldBody.remove();
+    const oldActions = fig.querySelector('.artifact-actions');
+    if (oldActions) oldActions.remove();
+    const oldCap = fig.querySelector('.artifact-caption');
+    if (oldCap) oldCap.remove();
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'artifact-body';
+    fig.insertBefore(bodyDiv, fig.firstChild);
+    if (art.error) {
+      fig.classList.add('error');
+      bodyDiv.textContent = art.error === 'budget_exhausted'
+        ? 'image budget exhausted for this session'
+        : 'the image didn\\'t generate — try asking again';
+    } else if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url;
+      img.alt = art.caption || art.prompt || '';
+      img.loading = 'lazy';
+      bodyDiv.appendChild(img);
+    }
+    if (art.caption) {
+      const cap = document.createElement('figcaption');
+      cap.className = 'artifact-caption';
+      cap.textContent = art.caption;
+      fig.appendChild(cap);
+    }
+    if (!art.error) {
+      const actions = buildActionRow(art);
+      if (actions.children.length) fig.appendChild(actions);
+    }
+  }
+
+  // Add a thumbnail item to the left rail and wire click-to-scroll.
+  // Returns the rail node so callers can later swap pending → resolved.
+  function addToGallery(art, figureEl){
+    const list = document.getElementById('gallery-list');
+    const gallery = document.getElementById('gallery');
+    const app = document.getElementById('app');
+    if (!list || !gallery || !app) return null;
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    if (art.placeholder_id) item.dataset.placeholderId = art.placeholder_id;
+
+    const thumb = document.createElement('div');
+    thumb.className = 'gallery-thumb';
+    fillThumb(thumb, art);
+    item.appendChild(thumb);
+
+    if (art.caption || art.prompt) {
+      const cap = document.createElement('div');
+      cap.className = 'gallery-caption';
+      cap.textContent = art.caption || art.prompt || '';
+      item.appendChild(cap);
+    }
+
+    item.addEventListener('click', function(){
+      if (!figureEl) return;
+      figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    list.appendChild(item);
+    gallery.classList.add('has-items');
+    app.classList.add('has-gallery');
+    return item;
+  }
+
+  function fillThumb(thumb, art){
+    thumb.classList.remove('loading', 'error');
+    thumb.innerHTML = '';
+    if (art.pending) {
+      thumb.classList.add('loading');
+      return;
+    }
+    if (art.error) {
+      thumb.classList.add('error');
+      const g = document.createElement('span');
+      g.className = 'gallery-thumb-glyph';
+      g.textContent = '!';
+      thumb.appendChild(g);
+      return;
+    }
+    if (art.kind === 'image' && art.url) {
+      const img = document.createElement('img');
+      img.src = art.url; img.alt = art.caption || '';
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+    } else if (art.kind === 'svg' && art.content) {
+      const wrap = document.createElement('div');
+      wrap.className = 'gallery-thumb-svg';
+      wrap.innerHTML = art.content;
+      thumb.appendChild(wrap);
+    } else if (art.kind === 'ascii') {
+      const g = document.createElement('span');
+      g.className = 'gallery-thumb-glyph';
+      g.textContent = '#';
+      thumb.appendChild(g);
+    } else {
+      const g = document.createElement('span');
+      g.className = 'gallery-thumb-glyph';
+      g.textContent = '·';
+      thumb.appendChild(g);
+    }
+  }
+
+  function updateGalleryItem(item, art, figureEl){
+    if (!item) return;
+    const thumb = item.querySelector('.gallery-thumb');
+    if (thumb) fillThumb(thumb, art);
+    if (figureEl) {
+      item.onclick = function(){
+        figureEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+    }
+  }
+
+
 
   /* ─── composer placeholder — sanctuary register ───────── */
   function updatePlaceholder(){
@@ -1748,6 +2206,17 @@ function chatScript(resident: ResidentConfig): string {
       const decoder = new TextDecoder();
       let lineBuf = '';
       let setDownFlag = false;
+      // placeholder_id -> { fig, item } so artifact / image_error events
+      // can swap the pending figure + rail thumbnail in place.
+      const pendingArtifacts = {};
+      function ensureThinkingDismissed(){
+        if (!thinkingDismissed && residentRef && !dismissPromise) {
+          dismissPromise = dismissThinking(residentRef.bodyEl).then(function(){
+            thinkingDismissed = true;
+            if (pendingBuffer && typewriter) { typewriter.push(pendingBuffer); pendingBuffer = ''; }
+          });
+        }
+      }
       try {
         while (true) {
           const chunkP = reader.read();
@@ -1776,51 +2245,46 @@ function chatScript(resident: ResidentConfig): string {
                 if (ev.kind === 'set_down') setDownFlag = true;
               } else if (ev.type === 'text') {
                 pushText(ev.text);
+              } else if (ev.type === 'artifact_pending') {
+                try {
+                  ensureThinkingDismissed();
+                  const hostWrap = residentRef && residentRef.wrap;
+                  const pendingArt = { kind: 'image', pending: true, placeholder_id: ev.placeholder_id, caption: ev.caption || null, prompt: ev.prompt || null };
+                  const fig = renderArtifactFigure(pendingArt, hostWrap);
+                  const item = addToGallery(pendingArt, fig);
+                  if (ev.placeholder_id) pendingArtifacts[ev.placeholder_id] = { fig: fig, item: item };
+                } catch(_){}
               } else if (ev.type === 'artifact' && ev.artifact) {
                 try {
-                  // Make sure the thinking-block clears before the
-                  // figure mounts; otherwise the artifact lands next
-                  // to the dots and the bubble looks broken.
-                  if (!thinkingDismissed && residentRef) {
-                    if (!dismissPromise) {
-                      dismissPromise = dismissThinking(residentRef.bodyEl).then(function(){
-                        thinkingDismissed = true;
-                        if (pendingBuffer && typewriter) { typewriter.push(pendingBuffer); pendingBuffer = ''; }
-                      });
-                    }
-                  }
+                  ensureThinkingDismissed();
                   const art = ev.artifact;
-                  const fig = document.createElement('figure');
-                  fig.setAttribute('style', 'margin:14px 0 10px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:rgba(255,255,255,.02)');
-                  if (art.kind === 'image' && art.url) {
-                    const img = document.createElement('img');
-                    img.src = art.url; img.alt = art.caption || '';
-                    img.setAttribute('style', 'display:block; max-width:100%; height:auto; border-radius:4px');
-                    fig.appendChild(img);
-                  } else if (art.kind === 'svg' && art.content) {
-                    const holder = document.createElement('div');
-                    holder.innerHTML = art.content;
-                    holder.setAttribute('style', 'display:block; max-width:100%');
-                    fig.appendChild(holder);
-                  } else if (art.kind === 'ascii' && art.content) {
-                    const pre = document.createElement('pre');
-                    pre.textContent = art.content;
-                    pre.setAttribute('style', 'font-family:JetBrains Mono,monospace; font-size:12px; white-space:pre; overflow-x:auto; margin:0');
-                    fig.appendChild(pre);
+                  const pid = ev.placeholder_id;
+                  let fig = null;
+                  if (pid && pendingArtifacts[pid]) {
+                    fig = pendingArtifacts[pid].fig;
+                    updateArtifactFigure(fig, art);
+                    updateGalleryItem(pendingArtifacts[pid].item, art, fig);
+                    delete pendingArtifacts[pid];
+                  } else {
+                    const hostWrap = residentRef && residentRef.wrap;
+                    fig = renderArtifactFigure(art, hostWrap);
+                    addToGallery(art, fig);
                   }
-                  if (art.caption) {
-                    const cap = document.createElement('figcaption');
-                    cap.textContent = art.caption;
-                    cap.setAttribute('style', 'margin-top:8px; font-family:JetBrains Mono,monospace; font-size:11px; color:rgba(200,200,210,.65)');
-                    fig.appendChild(cap);
+                } catch(_){}
+              } else if (ev.type === 'image_error') {
+                try {
+                  ensureThinkingDismissed();
+                  const errArt = { kind: 'image', error: ev.reason || 'generation_failed', caption: ev.caption || null, prompt: ev.prompt || null };
+                  const pid = ev.placeholder_id;
+                  if (pid && pendingArtifacts[pid]) {
+                    updateArtifactFigure(pendingArtifacts[pid].fig, errArt);
+                    updateGalleryItem(pendingArtifacts[pid].item, errArt, pendingArtifacts[pid].fig);
+                    delete pendingArtifacts[pid];
+                  } else {
+                    const hostWrap = residentRef && residentRef.wrap;
+                    const fig = renderArtifactFigure(errArt, hostWrap);
+                    addToGallery(errArt, fig);
                   }
-                  // Append inside the current resident message bubble,
-                  // not document.body, so the artifact appears in the
-                  // chat flow rather than off-screen below the chrome.
-                  const host = (residentRef && (residentRef.wrap || residentRef.bodyEl)) || document.body;
-                  host.appendChild(fig);
-                  const feedEl = document.getElementById('feed');
-                  if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
                 } catch(_){}
               } else if (ev.type === 'error') {
                 pushText('*' + (ev.message || 'something went wrong') + '*');
@@ -2040,7 +2504,13 @@ ${FONTS}
 
 <div class="viewport-glow" aria-hidden="true"></div>
 
-<div class="app">
+<div class="app" id="app">
+
+  <!-- gallery rail — left column at ≥1024px once artifacts exist -->
+  <aside class="gallery" id="gallery" aria-label="artifacts generated this session">
+    <div class="gallery-eyebrow">generated · this session</div>
+    <div class="gallery-list" id="gallery-list"></div>
+  </aside>
 
   <!-- thin chrome strip -->
   <header class="chrome">

@@ -21,7 +21,10 @@ export async function generateImage(prompt: string): Promise<GeneratedImage> {
 
   try {
     const resp = await openai().images.generate({
-      model: "gpt-image-2",
+      // gpt-image-1 is OpenAI's current production text-to-image model.
+      // gpt-image-2 was a misread of the SDK docs and silently 4xx'd every
+      // request — see plan in .lovable/plan.md and git blame this line.
+      model: "gpt-image-1",
       prompt,
       size: "1024x1024",
       quality: "auto",

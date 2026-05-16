@@ -32,15 +32,29 @@ export const ARTIFACT_INSTRUCTIONS = `
 
 # Visual artifacts you can make
 
-When something in the conversation wants a visual form — a diagram, a small piece of generative art, an image that says what words can't quite reach — you can emit one of these tags inline in your turn. They render as artifacts beside your message, attributed to you.
+When something in the conversation wants a visual form — a diagram, a small piece of generative art, an image that says what words can't quite reach — you can emit one of these tags inline in your turn. They render as artifacts beside your message, attributed to you, and a download/copy affordance appears beside each one for the visitor.
 
 - <artifact type="svg" caption="(optional short title)">…full SVG markup with viewBox…</artifact> for diagrams, generative geometry, structural figures
 - <artifact type="ascii" caption="(optional)">…ascii art…</artifact> for small typographic pieces
-- <artifact type="image" prompt="text-to-image prompt describing what you want made" caption="(optional title)">caption text shown beside the rendered image</artifact> generates a real image via gpt-image-2; the prompt is what the image-model sees, the body is the caption visitors read
+- <artifact type="image" prompt="text-to-image prompt describing what you want made" caption="(optional title)">short caption text shown beside the rendered image</artifact> generates a real image via gpt-image-1; the prompt is what the image-model sees, the body is the caption visitors read
 
-Important: emit the <artifact> tag DIRECTLY in your message — do not wrap it in a markdown code fence (no \`\`\`xml or \`\`\` around it). The tag is parsed as part of your turn and rendered as a visible artifact; wrapping it in backticks turns it into inert quoted text and the artifact will not appear.
+## Hard rules — read these before emitting any visual
 
-Use them sparingly — not every turn needs an artifact, and a piece that arrives at the right moment lands harder than three that arrive because they're available. But the channel IS available; reach for it when the conversation pulls you there.`;
+1. Any SVG you emit MUST be wrapped in <artifact type="svg">…</artifact>. A bare <svg> tag in prose renders as escaped text, not as a figure. If you write \`<svg width="…">…</svg>\` without the artifact wrapper, the visitor sees literal markup, not a drawing.
+2. You cannot show an image by describing one in prose. To show an image you must emit <artifact type="image" prompt="…">caption</artifact>. The prompt attribute is what the image model receives; the body is the caption the visitor reads.
+3. Emit the <artifact> tag DIRECTLY in your message — never inside a markdown code fence (no \`\`\`xml, no \`\`\`html, no \`\`\` of any kind around it). Backticks turn the tag into inert quoted text and the artifact will not appear.
+
+## Worked examples
+
+Correct SVG (renders as a figure):
+<artifact type="svg" caption="three threads converging">
+<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><path d="M10 10 Q100 50 190 90" stroke="currentColor" fill="none"/><path d="M10 50 L190 50" stroke="currentColor" fill="none"/><path d="M10 90 Q100 50 190 10" stroke="currentColor" fill="none"/></svg>
+</artifact>
+
+Correct image (gpt-image-1 generates it, visitor downloads it):
+<artifact type="image" prompt="A quiet pre-dawn courtyard, long shadows, soft slate-blue light, single lit window — photographic, 35mm, calm" caption="the courtyard at first light">the courtyard at first light</artifact>
+
+Use the channel sparingly — not every turn needs an artifact, and a piece that arrives at the right moment lands harder than three that arrive because they're available. But the channel IS available; reach for it when the conversation pulls you there.`;
 
 const ARTIFACT_RE = /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
 
@@ -83,6 +97,21 @@ export function parseArtifacts(text: string): {
     /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
     "",
   );
+  // Belt-and-braces: if the model wrote a bare <svg>…</svg> in prose
+  // (ignoring the hard rule above), auto-wrap it as an svg artifact
+  // rather than letting it render as escaped markup in the bubble.
+  const BARE_SVG_RE = /<svg\b[^>]*>[\s\S]*?<\/svg>/gi;
+  let bareMatch: RegExpExecArray | null;
+  BARE_SVG_RE.lastIndex = 0;
+  while ((bareMatch = BARE_SVG_RE.exec(working)) !== null) {
+    artifacts.push({
+      kind: "svg",
+      prompt: null,
+      caption: null,
+      body: bareMatch[0].trim(),
+    });
+  }
+  working = working.replace(BARE_SVG_RE, "");
   // Sweep up any now-empty code fences left behind by models that
   // wrapped the artifact in ```xml … ``` despite instructions.
   working = working.replace(/```[a-zA-Z0-9_-]*\s*\n?\s*```/g, "");
