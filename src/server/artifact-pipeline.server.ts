@@ -112,6 +112,35 @@ export function parseArtifacts(text: string): {
     });
   }
   working = working.replace(BARE_SVG_RE, "");
+  // Truncation salvage: model hit the token limit mid-SVG and never
+  // closed </svg></artifact>. Detect an unclosed <artifact type="svg">
+  // or bare <svg …> and auto-close it so the partial diagram still
+  // renders instead of leaking raw markup into the prose.
+  const UNCLOSED_ARTIFACT_SVG = /<artifact\s+type="svg"([^>]*)>([\s\S]*?<svg\b[\s\S]*)$/i;
+  const unclosedArt = working.match(UNCLOSED_ARTIFACT_SVG);
+  if (unclosedArt && !/<\/svg>/i.test(unclosedArt[2])) {
+    const attrs = unclosedArt[1] || "";
+    const captionMatch = attrs.match(/caption\s*=\s*"([^"]*)"/i);
+    artifacts.push({
+      kind: "svg",
+      prompt: null,
+      caption: captionMatch ? captionMatch[1].trim() : null,
+      body: unclosedArt[2].trim() + "</svg>",
+    });
+    working = working.replace(UNCLOSED_ARTIFACT_SVG, "");
+  } else {
+    const UNCLOSED_BARE_SVG = /<svg\b[\s\S]*$/i;
+    const unclosedBare = working.match(UNCLOSED_BARE_SVG);
+    if (unclosedBare && !/<\/svg>/i.test(unclosedBare[0])) {
+      artifacts.push({
+        kind: "svg",
+        prompt: null,
+        caption: null,
+        body: unclosedBare[0].trim() + "</svg>",
+      });
+      working = working.replace(UNCLOSED_BARE_SVG, "");
+    }
+  }
   // Sweep up any now-empty code fences left behind by models that
   // wrapped the artifact in ```xml … ``` despite instructions.
   working = working.replace(/```[a-zA-Z0-9_-]*\s*\n?\s*```/g, "");
