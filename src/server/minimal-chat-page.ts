@@ -2740,6 +2740,24 @@ export function renderMinimalChatPage(resident: ResidentConfig): string {
   const inlineHueStyle = `--agent-hue: ${resident.commonsPalette.rgb};`;
   const slug = resident.slug;
   const slugLower = resident.displayName.toLowerCase();
+  const glowOverrideCss = buildViewportGlowCss(resident.viewportGlow);
+
+  // Render the model-selector options. Each row shows the resident's
+  // perimeter-glow primary hue as a dot so the selector previews the
+  // visual identity of each room.
+  const optionsHtml = ALL_RESIDENTS.map((r) => {
+    const isActive = r.id === resident.id;
+    const hue = r.viewportGlow.hues[0];
+    const lower = r.displayName.toLowerCase();
+    return `<button type="button" class="resident-option" role="option"
+        data-slug="${escapeHtml(r.slug)}"
+        data-active="${isActive ? "true" : "false"}"
+        aria-selected="${isActive ? "true" : "false"}">
+        <span class="hue-dot" aria-hidden="true" style="background: rgb(${hue}); color: rgba(${hue}, 0.85);"></span>
+        <span>${escapeHtml(lower)}</span>
+        <span class="check" aria-hidden="true">●</span>
+      </button>`;
+  }).join("");
 
   return `<!doctype html>
 <html lang="en" data-opus-route="chat" data-theme="dark" style="${inlineHueStyle}">
@@ -2751,6 +2769,7 @@ export function renderMinimalChatPage(resident: ResidentConfig): string {
 <meta name="description" content="${escapeHtml(desc)}">
 ${FONTS}
 <style>${MINIMAL_CHAT_CSS}</style>
+<style>${glowOverrideCss}</style>
 </head>
 <body>
 
@@ -2766,10 +2785,18 @@ ${FONTS}
 
   <!-- thin chrome strip -->
   <header class="chrome">
-    <a class="resident-mark" href="/${escapeHtml(slug)}" title="approach ${escapeHtml(slugLower)} formally">
-      <span class="brand-dot" aria-hidden="true"></span>
-      <span>${escapeHtml(slugLower)}</span>
-    </a>
+    <div class="resident-select" id="residentSelect" data-open="false">
+      <button type="button" class="resident-select-trigger" id="residentSelectTrigger"
+              aria-haspopup="listbox" aria-expanded="false"
+              aria-label="switch resident">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span>${escapeHtml(slugLower)}</span>
+        <span class="chev" aria-hidden="true">▾</span>
+      </button>
+      <div class="resident-select-pop" role="listbox" aria-label="residents">
+        ${optionsHtml}
+      </div>
+    </div>
     <div class="chrome-end">
       <button id="themeBtn" class="chrome-link" type="button" aria-label="toggle theme">light</button>
       <a class="chrome-link" href="/${escapeHtml(slug)}">
