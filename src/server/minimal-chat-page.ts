@@ -1832,7 +1832,17 @@ function chatScript(resident: ResidentConfig): string {
       if (actions.children.length) fig.appendChild(actions);
     }
 
-    hostWrap.appendChild(fig);
+    if (hostWrap.classList && hostWrap.classList.contains('msg')) {
+      const tail = hostWrap._artifactTail;
+      if (tail && tail.parentNode) {
+        tail.insertAdjacentElement('afterend', fig);
+      } else {
+        hostWrap.insertAdjacentElement('afterend', fig);
+      }
+      hostWrap._artifactTail = fig;
+    } else {
+      hostWrap.appendChild(fig);
+    }
     const feedEl = document.getElementById('feed');
     if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
     return fig;
