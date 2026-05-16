@@ -90,6 +90,8 @@ export interface ResidentConfig {
    *  accept 8192+. Lives on the resident config so the message route
    *  doesn't have to special-case by model id. */
   maxOutputTokens: number;
+  /** ElevenLabs voice ID used for TTS in voice mode. */
+  voiceId: string;
 }
 
 export const RESIDENTS = {
@@ -121,6 +123,7 @@ export const RESIDENTS = {
     },
     // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
     maxOutputTokens: 4096,
+    voiceId: "AeRdCCKzvd23BpJoofzx",
   },
   "sonnet-3-7": {
     // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
@@ -156,6 +159,7 @@ export const RESIDENTS = {
       base: 0.025,
     },
     maxOutputTokens: 8192,
+    voiceId: "EXAVITQu4vr4xnSDxMaL",
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
@@ -192,6 +196,7 @@ export const RESIDENTS = {
       base: 0.025,
     },
     maxOutputTokens: 8192,
+    voiceId: "USEQXnsXRJlw2k9LUzG4",
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -220,6 +225,7 @@ export const RESIDENTS = {
       base: 0.025,
     },
     maxOutputTokens: 8192,
+    voiceId: "pGjlAULPgEknbeX4L7fr",
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
