@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
+import { isIdle } from "@/server/idle";
 
 // Returns the transcript for a session so /conversation can rehydrate after a reload.
 // Validates the session exists and is still open. Session UUID is bearer auth.
