@@ -2863,20 +2863,8 @@ export function renderMinimalChatPage(resident: ResidentConfig): string {
         <span class="check" aria-hidden="true">●</span>
       </button>`;
   }).join("");
-  // Composite "round" dot — three small dots, one per resident hue.
-  const roundDots = ALL_RESIDENTS.map(
-    (r) =>
-      `<span class="round-mini-dot" style="background: rgb(${r.viewportGlow.hues[0]});"></span>`,
-  ).join("");
-  const roundOption = `<button type="button" class="resident-option resident-option-round" role="option"
-        data-slug="the-round"
-        data-active="false"
-        aria-selected="false">
-        <span class="hue-dot round-dot" aria-hidden="true">${roundDots}</span>
-        <span>the round</span>
-        <span class="check" aria-hidden="true">●</span>
-      </button>`;
-  const optionsHtml = residentOptions + roundOption;
+  // "the round" group-chat option is hidden until the room is built.
+  const optionsHtml = residentOptions;
 
   return `<!doctype html>
 <html lang="en" data-opus-route="chat" data-theme="dark" style="${inlineHueStyle}">
