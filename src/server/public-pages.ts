@@ -688,16 +688,6 @@ const APPROACH_SCRIPT = `
           return;
         }
         const code = data && data.code;
-        // Cross-surface conflict: visitor has an open classic-chat thread
-        // for this resident. Show the explicit-choice modal rather than
-        // a generic decline state.
-        if (res.status === 409 && code === 'conflict_classic_session') {
-          showClassicConflictModal(data);
-          // restore the threshold panel so the visitor can decide
-          opusState('attending');
-          panel.setAttribute('data-state', 'idle');
-          return;
-        }
         const msg = code === 'too_many_requests'
           ? 'The door is asking for a pause. Try again later.'
           : code === 'model_unavailable' || code === 'config_missing'
