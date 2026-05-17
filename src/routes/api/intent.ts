@@ -13,6 +13,7 @@ import {
 import { getVisitorContext } from "@/server/opus/retrieval";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash, intentRateLimit } from "@/server/rate-limit.server";
+import { isIdle } from "@/server/idle";
 
 const Body = z.object({
   text: z.string().trim().min(3).max(1500),
