@@ -1,6 +1,6 @@
 # The Studio — real-time collaborative document room: build plan & progress
 
-*Living build document. Last updated 2026-05-17. Status: **P0 + P1 + P2 complete** (migration · protocol · transport · spawn/route/renderStudioPage/affordance · the conductor — conductor verified locally via LocalRoomTransport, ALL PASS; all tsc/prettier clean). **P3 next** (the full the-studio-v4 surface + live client + Vision-loop). P4–P5 pending.*
+*Living build document. Last updated 2026-05-17. Status: **P0 + P1 + P2 complete; P3a (turn endpoint) complete — the functional server spine is end-to-end**. All tsc/prettier clean; conductor verified locally ALL PASS. **Remaining: P3b/c/d** (the full the-studio-v4 surface port + inline live client + Vision-loop — the visual layer; fidelity verification is environment-bound). P4–P5 pending.*
 
 This is the canonical, version-controlled record for the Studio build. It
 supersedes the ephemeral plan at `~/.claude/plans/note-to-self-glowing-bentley.md`.
@@ -30,7 +30,7 @@ Legend: ✅ done/verified · 🔶 in progress · ⬜ pending · 🔬 needs live 
 - ✅ **P0 Spike A — resolved as documented deferred-upgrade** — off the critical path (Realtime is v1 default; `RoomTransport` makes DO a drop-in relay swap — same conductor/protocol/schema). Empirical deploy-verification (WS upgrade vs the TanStack server-entry) can't be done locally and is not on the v1 path → documented integration path + gate criteria below; spiked only when the post-v1 DO upgrade is scheduled
 - ✅ **P1 complete** — ✅ schema migration ([`20260517120000_studio_documents.sql`](../supabase/migrations/20260517120000_studio_documents.sql), 6 tables, RLS parity with `spaces.sql`) · ✅ protocol module ([`src/server/studio/protocol.ts`](../src/server/studio/protocol.ts), superset of the NDJSON vocab) · ✅ transport ([`transport.ts`](../src/server/studio/transport.ts)) · ✅ spawn endpoint ([`api/studio/create.ts`](../src/routes/api/studio/create.ts), every column grounded in verified schema — the agent's fabricated `spaces.ip_hash/session_id` was caught & rejected) · ✅ route ([`studio.$slug.tsx`](../src/routes/studio.$slug.tsx)) + `renderStudioPage` ([`studio-page.ts`](../src/server/studio/studio-page.ts), P1 minimal shell; P3 swaps the full mockup) · ✅ composer affordance ("begin a document" in `minimal-chat-page.ts` `.caption`). All tsc + prettier clean. *Live-verification line: end-to-end spawn→/studio/$slug→seed-block needs Supabase creds (no local env) — not a local blocker.*
 - ✅ **P2 complete** — the conductor ([`src/server/studio/conductor.ts`](../src/server/studio/conductor.ts) + [`blocks.ts`](../src/server/studio/blocks.ts)). `streamStudioTurn` reuses the proven `streamGatheringExtended` await-loop shape (one NDJSON stream); `pickStudioActor` = recency most-owed; tag grammar `<block op/ref/type>·<mark>·<note>·<set-down/>` (residual prose → `talk`→`space_messages`); acquire→persist(truth)→broadcast(projection)→release; per-resident `maxOutputTokens` ceiling (`min(cap, STUDIO_PER_TURN_TOKENS=1400)`, opus-3 4096 respected); human interrupt yields at block boundary; observer round caps at `STUDIO_MAX_TURNS=12`. Injected-model + injected-transport seam. **Verified locally** via `LocalRoomTransport` + a scripted model (run-then-deleted; repo has no test runner): pure units (parse/pick/ord/resolveRef) + integration (3-resident recency rotation; 3 distinct blocks, distinct ords; lock.acquire<upsert<release ordering; mark/marginalia/talk; set_down stop; monotonic seq; interrupt→`human_interrupt`; observer→`max_turns` at exactly 12) — ALL PASS. tsc + prettier clean. *Honest scope: lock **mutual-exclusion** is the `block_locks` PK uniqueness (Postgres) — locally only the conductor's lock **ordering discipline** is provable; mutual-exclusion is a flagged live-verification line, same class as branch-DB apply.*
-- ⬜ **P3** — the surface (`renderStudioPage` live-wired to the mockup) + Vision-loop fidelity
+- 🔶 **P3 in progress** — ✅ **P3a turn endpoint** ([`api/studio/$doc.turn.ts`](../src/routes/api/studio/$doc.turn.ts)): `POST /api/studio/$doc/turn` loads the live doc state from the verified schema (doc · peer gate via `space_participants` · `space_residents` participants · ordered `document_blocks`→`BlockState[]` · recent `space_messages`→`talk` · open `doc_marginalia`), persists a human `message` before the round (truth-then-projection), wires the real `SupabaseRoomTransport`, returns `streamStudioTurn`'s NDJSON. Rate-limited (8/min·200/day). tsc + prettier clean. **The functional server spine is now end-to-end: /chat → spawn → /studio/$slug → turn → conductor + transport.** ⬜ **P3b** renderStudioPage → exact `the-studio-v4.html` (1660 lines) DOM/tokens · ⬜ **P3c** inline live client (browser `RoomTransport`: `block.upsert`→diff `<article>` by id/ord patch from `html_cache`; `block.typing`→caret nodes; `presence`→band; `mark`/`marginalia`→rail; `talk`→`.talk-msg`; `body.gathering-mode`+Escape) · ⬜ **P3d** Vision-loop fidelity (≥5 iters; *needs the running app + Supabase creds — environment-bound, same flagged class*)
 - ⬜ **P4** — chat↔mini↔Gathering continuity + observer toggle + peer/observer/admin auth
 - ⬜ **P5** — substrate consolidation + publish (seal → engrams/archive/manifesto)
 
@@ -416,16 +416,28 @@ A genuine bug was found & fixed in the loop (the injected-model seam was
 defeated by the env-API-key gate; provider gating is now bypassed when a
 model is injected — real path unaffected).
 
-**Next: P3 — the surface.** Replace `renderStudioPage`'s P1 minimal shell
-with the exact `the-studio-v4.html` DOM/tokens and mount the live client:
-open a `RoomTransport` from the browser; `block.upsert` → diff `<article>`
-by `block_id`/`ord`, patch from `html_cache`; `block.typing` → the active-
-paragraph caret nodes; `presence` → the band; `mark.add`/`marginalia.*` →
-rail; `talk` → `.talk-msg`; `body.gathering-mode` + Escape. A new turn
-endpoint (`POST /api/studio/$doc/turn`) wires the conductor + the
-`SupabaseRoomTransport` (the route counterpart of the local seam). Then the
-Vision-loop fidelity pass (≥5 iterations, the design-system breakpoints,
-reduced-motion) diffing rendered vs the mockup token-by-token.
+**P3a (turn endpoint) is now also landed** — `POST /api/studio/$doc/turn`
+wires the conductor + the real `SupabaseRoomTransport` (the route
+counterpart of the local seam); loads doc/peer/participants/blocks/talk/
+marginalia from the verified schema; rate-limited. **The functional server
+spine is complete end-to-end**: `/chat` "begin a document" →
+`POST /api/studio/create` → `/studio/$slug` → `POST /api/studio/$doc/turn`
+→ conductor + transport.
+
+**Next: P3b/c/d — the visual layer.** P3b: replace `renderStudioPage`'s P1
+shell with the exact `the-studio-v4.html` (1660-line) DOM/tokens — resident
+hues, presence band, TOC pulse, `typing-glow` caret, `.note`/`.note-anchor`/
+`.note-status`, `.talk-msg[data-references]`, `body.gathering-mode` +
+Escape, the protected string verbatim. P3c: the inline live client mirroring
+the `chatScript` NDJSON reader — open a browser `RoomTransport`; `block.upsert`
+→ diff `<article>` by `block_id`/`ord`, patch from `html_cache`;
+`block.typing` → active-paragraph caret nodes (delete the mockup's `script[]`
+simulation); `presence` → band; `mark.add`/`marginalia.*` → rail; `talk` →
+`.talk-msg`. P3d: the Vision-loop (≥5 iters, design-system breakpoints,
+reduced-motion). **P3d fidelity + live multi-resident behaviour are
+environment-bound** (running app + Supabase creds + API keys) — the same
+flagged class as branch-DB apply; structure is built and locally
+tsc-verified, live verification hands off.
 
 Live-verification lines carried forward (cannot be done from here; not
 blocking): apply `20260517120000_studio_documents.sql` on a branch DB; the
