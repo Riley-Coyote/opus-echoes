@@ -163,6 +163,90 @@ export type Database = {
           },
         ]
       }
+      block_locks: {
+        Row: {
+          acquired_at: string
+          block_id: string
+          expires_at: string
+          holder_resident_id: string | null
+          holder_visitor_token: string | null
+        }
+        Insert: {
+          acquired_at?: string
+          block_id: string
+          expires_at: string
+          holder_resident_id?: string | null
+          holder_visitor_token?: string | null
+        }
+        Update: {
+          acquired_at?: string
+          block_id?: string
+          expires_at?: string
+          holder_resident_id?: string | null
+          holder_visitor_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "block_locks_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: true
+            referencedRelation: "document_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "block_locks_holder_resident_id_fkey"
+            columns: ["holder_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      block_marks: {
+        Row: {
+          author_resident_id: string | null
+          author_visitor_token: string | null
+          block_id: string
+          created_at: string
+          id: string
+          range_end: number
+          range_start: number
+        }
+        Insert: {
+          author_resident_id?: string | null
+          author_visitor_token?: string | null
+          block_id: string
+          created_at?: string
+          id?: string
+          range_end: number
+          range_start: number
+        }
+        Update: {
+          author_resident_id?: string | null
+          author_visitor_token?: string | null
+          block_id?: string
+          created_at?: string
+          id?: string
+          range_end?: number
+          range_start?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "block_marks_author_resident_id_fkey"
+            columns: ["author_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "block_marks_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "document_blocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creation_events: {
         Row: {
           art_piece_id: string | null
@@ -203,6 +287,131 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doc_marginalia: {
+        Row: {
+          anchor_block_id: string | null
+          anchor_quote: string | null
+          author_resident_id: string | null
+          author_visitor_token: string | null
+          body: string
+          created_at: string
+          document_id: string
+          id: string
+          reply_to: string | null
+          status: string
+        }
+        Insert: {
+          anchor_block_id?: string | null
+          anchor_quote?: string | null
+          author_resident_id?: string | null
+          author_visitor_token?: string | null
+          body: string
+          created_at?: string
+          document_id: string
+          id?: string
+          reply_to?: string | null
+          status?: string
+        }
+        Update: {
+          anchor_block_id?: string | null
+          anchor_quote?: string | null
+          author_resident_id?: string | null
+          author_visitor_token?: string | null
+          body?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          reply_to?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doc_marginalia_anchor_block_id_fkey"
+            columns: ["anchor_block_id"]
+            isOneToOne: false
+            referencedRelation: "document_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doc_marginalia_author_resident_id_fkey"
+            columns: ["author_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doc_marginalia_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "studio_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doc_marginalia_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "doc_marginalia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_blocks: {
+        Row: {
+          author_resident_id: string | null
+          author_visitor_token: string | null
+          content: string
+          created_at: string
+          deleted_at: string | null
+          document_id: string
+          html_cache: string | null
+          id: string
+          ord: number
+          type: string
+          version: number
+        }
+        Insert: {
+          author_resident_id?: string | null
+          author_visitor_token?: string | null
+          content?: string
+          created_at?: string
+          deleted_at?: string | null
+          document_id: string
+          html_cache?: string | null
+          id?: string
+          ord: number
+          type?: string
+          version?: number
+        }
+        Update: {
+          author_resident_id?: string | null
+          author_visitor_token?: string | null
+          content?: string
+          created_at?: string
+          deleted_at?: string | null
+          document_id?: string
+          html_cache?: string | null
+          id?: string
+          ord?: number
+          type?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_blocks_author_resident_id_fkey"
+            columns: ["author_resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_blocks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "studio_documents"
             referencedColumns: ["id"]
           },
         ]
@@ -1364,6 +1573,41 @@ export type Database = {
           },
         ]
       }
+      space_participants: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          role: string
+          space_id: string
+          visitor_token: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string
+          space_id: string
+          visitor_token: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string
+          space_id?: string
+          visitor_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_participants_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_residents: {
         Row: {
           added_at: string
@@ -1478,6 +1722,56 @@ export type Database = {
             columns: ["created_by_resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_documents: {
+        Row: {
+          byline: Json
+          created_at: string
+          created_by_visitor_token: string
+          created_from_session_id: string | null
+          id: string
+          observer_mode: boolean
+          sealed_at: string | null
+          space_id: string
+          status: string
+          subtitle: string | null
+          title: string
+        }
+        Insert: {
+          byline?: Json
+          created_at?: string
+          created_by_visitor_token: string
+          created_from_session_id?: string | null
+          id?: string
+          observer_mode?: boolean
+          sealed_at?: string | null
+          space_id: string
+          status?: string
+          subtitle?: string | null
+          title?: string
+        }
+        Update: {
+          byline?: Json
+          created_at?: string
+          created_by_visitor_token?: string
+          created_from_session_id?: string | null
+          id?: string
+          observer_mode?: boolean
+          sealed_at?: string | null
+          space_id?: string
+          status?: string
+          subtitle?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_documents_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
