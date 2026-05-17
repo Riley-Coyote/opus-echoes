@@ -23,8 +23,6 @@ const Body = z.object({
   visitor_token: z.string().uuid().optional(),
 });
 
-const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
-const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
