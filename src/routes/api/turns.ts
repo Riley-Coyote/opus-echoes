@@ -22,13 +22,25 @@ export const Route = createFileRoute("/api/turns")({
         // daily-rotating salt and inconsistent Cloudflare headers caused
         // legitimate visitors to get locked out after midnight UTC or when
         // proxy chains shifted.
-        const { data: session } = await supabaseAdmin
+        const { data: session } = (await supabaseAdmin
           .from("sessions")
-          .select("id, closed_at")
+          .select("id, closed_at, last_active_at, mode")
           .eq("id", sessionId)
-          .maybeSingle();
+          .maybeSingle()) as unknown as {
+          data: { id: string; closed_at: string | null; last_active_at: string; mode: string | null } | null;
+        };
         if (!session) {
           return Response.json({ ok: false, code: "session_invalid" }, { status: 401 });
+        }
+        // Defensive idle-close on rehydration — if the cron sweep hasn't
+        // reached this session yet, close it now so the client renders
+        // the read-only "set down" state instead of treating it as live.
+        if (!session.closed_at && isIdle(session.last_active_at, session.mode)) {
+          await supabaseAdmin
+            .from("sessions")
+            .update({ closed_at: new Date().toISOString(), closed_by: "idle" })
+            .eq("id", session.id);
+          session.closed_at = new Date().toISOString();
         }
         // Fetch turns regardless of closed state — the visitor should
         // always be able to see their transcript. Artifacts come back in
