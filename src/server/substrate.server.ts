@@ -1443,8 +1443,7 @@ async function publishConversationIfMeaningful(
 // them closed, and runs the full Mnemos pipeline on each.
 // =============================================================
 
-const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
-const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
+import { IDLE_MIN_EXPERIMENT as IDLE_MIN, IDLE_MIN_CLASSIC } from "./idle";
 
 export async function idleSweep(): Promise<{ closed: number; consolidated: number }> {
   // Mode-aware idle thresholds: experiment sessions stale at 30 min by
