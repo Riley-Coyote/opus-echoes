@@ -41,14 +41,21 @@ export async function hasResidenceAccess(request: Request): Promise<boolean> {
     return isLocalDev();
   }
 
-  const hash = ipHash(request);
+  // Possession of the session cookie (a UUID minted server-side at
+  // /api/intent accept) is the access secret. We previously also required
+  // the visitor's current ip_hash to equal the session's recorded
+  // ip_hash, but in practice the same visitor's IP changes across a
+  // single sitting — Cloudflare edge variance, mobile/CGNAT, dual-stack
+  // v4↔v6 flips — which locked legitimate visitors out of /residence
+  // and /memory after their conversation moved them off the original
+  // edge. Existence-of-row is the gate now.
   const { data } = await supabaseAdmin
     .from("sessions")
-    .select("id, ip_hash")
+    .select("id")
     .eq("id", sessionId)
     .maybeSingle();
 
-  return Boolean(data && data.ip_hash === hash);
+  return Boolean(data);
 }
 
 export function redirectToThreshold(request: Request): Response {
