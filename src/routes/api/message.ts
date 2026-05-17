@@ -72,8 +72,6 @@ const Body = z.object({
   preview_turns: z.array(PreviewTurn).max(24).optional(),
 });
 
-const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
-const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
 
 /** Shape of the NDJSON pacing event emitted before the first text token. */
 type PacingPrelude = {
