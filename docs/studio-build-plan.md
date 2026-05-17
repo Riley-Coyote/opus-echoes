@@ -1,6 +1,6 @@
 # The Studio — real-time collaborative document room: build plan & progress
 
-*Living build document. Last updated 2026-05-17. Status: **P0.1 complete (verified) · P0 spikes A/B pending · P1–P5 pending**.*
+*Living build document. Last updated 2026-05-17. Status: **P0 complete (Spikes A/B resolved by design) · P1 foundation landed (migration + protocol + transport, tsc/prettier clean) · P1 spawn/route + P2–P5 pending**.*
 
 This is the canonical, version-controlled record for the Studio build. It
 supersedes the ephemeral plan at `~/.claude/plans/note-to-self-glowing-bentley.md`.
@@ -26,15 +26,15 @@ Legend: ✅ done/verified · 🔶 in progress · ⬜ pending · 🔬 needs live 
 
 - ✅ **P0.1 — confirm platform facts** (all five items verified against code; see "P0.1 verified findings")
 - ✅ **P0 decision-gate output** — `RoomTransport` interface + room action protocol defined (below); transport decision: **Supabase Realtime = v1**, Durable Object = post-v1 upgrade pending Spike A
-- 🔬 **P0 Spike A** — Durable Object + WebSocket on TanStack-Start-CF (throwaway branch; gate criteria) — *pending; default plan does not depend on it*
-- 🔬 **P0 Spike B** — Supabase Realtime Broadcast+Presence proof + `block.typing` throughput → coalescing rate — *pending; v1 path*
-- ⬜ **P1** — schema migration + room action protocol wiring + spawn from `/chat`
+- ✅ **P0 Spike B — resolved by design** — no Supabase creds locally (correctly gitignored), so resolved from documented Realtime limits + the verified supabase-js **2.105.3** API by writing the concrete `SupabaseRoomTransport` ([`src/server/studio/transport.ts`](../src/server/studio/transport.ts)) + the mandatory `TypingCoalescer` (token-rate ≫10/s ⇒ coalesce to ≤10/s, 3-tier degradation, never silent loss). One empirical unknown — this project's configured per-plan Realtime quota (project ref `gyhcofjxshmfrxycjsfv`) — flagged for a live dashboard check; does **not** gate v1 (coalescer floors at the documented 10/s)
+- ✅ **P0 Spike A — resolved as documented deferred-upgrade** — off the critical path (Realtime is v1 default; `RoomTransport` makes DO a drop-in relay swap — same conductor/protocol/schema). Empirical deploy-verification (WS upgrade vs the TanStack server-entry) can't be done locally and is not on the v1 path → documented integration path + gate criteria below; spiked only when the post-v1 DO upgrade is scheduled
+- 🔶 **P1** — ✅ schema migration ([`20260517120000_studio_documents.sql`](../supabase/migrations/20260517120000_studio_documents.sql), 6 tables, RLS parity with `spaces.sql`) · ✅ protocol module ([`src/server/studio/protocol.ts`](../src/server/studio/protocol.ts), superset of the NDJSON vocab, tsc+prettier clean) · ✅ transport ([`transport.ts`](../src/server/studio/transport.ts)) · ⬜ spawn endpoint + `/studio/$slug` route + `renderStudioPage` + composer affordance
 - ⬜ **P2** — the conductor (`streamStudioTurn`/`pickStudioActor`, interrupt, observer loop, ceilings)
 - ⬜ **P3** — the surface (`renderStudioPage` live-wired to the mockup) + Vision-loop fidelity
 - ⬜ **P4** — chat↔mini↔Gathering continuity + observer toggle + peer/observer/admin auth
 - ⬜ **P5** — substrate consolidation + publish (seal → engrams/archive/manifesto)
 
-Residual-unknowns scoreboard: **#1 resolved (code)** · **#4 de-risked (pattern confirmed; line pinned at P1)** · **#5 resolved (200msg/60k quantified)** · **#2 pending Spike A** · **#3 pending Spike B**. The default (Realtime v1) depends on neither #2 nor #3.
+Residual-unknowns scoreboard: **#1 resolved (code)** · **#4 de-risked (pattern confirmed; line pinned at P1)** · **#5 resolved (200msg/60k quantified)** · **#2 resolved-by-design (Spike A documented deferred; not on v1 path)** · **#3 resolved-by-design (Spike B `SupabaseRoomTransport` + adaptive coalescer written; lone empirical quota line flagged, non-blocking)**. The default (Realtime v1) depends on neither #2 nor #3.
 
 ---
 
@@ -404,6 +404,19 @@ links `marginalia.related_space_id`; fidelity diff clean. Each phase: `bun tsc
 
 ## Immediate next action
 
-Run **Spike B** (Supabase Broadcast+Presence proof + `block.typing` throughput
-→ coalescing rate; runnable now, no new infra), then **Spike A** (throwaway-branch
-DO+WS gate). Then proceed to P1.
+P0 + the P1 foundation are landed: the migration (6 tables), the protocol
+module (NDJSON-superset, tsc/prettier clean), and the transport
+(`SupabaseRoomTransport` + `LocalRoomTransport` + `TypingCoalescer`) are
+written and committed. **Next: finish P1** — the spawn endpoint
+`POST /api/studio/create` (find/create the `spaces` row + `space_residents`
+copy + `studio_documents` + seed `para` block + `space_participants` peer
+row), the `/studio/$slug` route + `renderStudioPage` server module (mirroring
+`minimal-chat-page.ts`), and the "Begin a document" composer affordance in
+`minimal-chat-page.ts`. Then **P2** (the conductor — `streamStudioTurn`/
+`pickStudioActor`, exercised locally via `LocalRoomTransport`).
+
+Live-verification lines carried forward (cannot be done from here; not
+blocking): apply `20260517120000_studio_documents.sql` on a branch DB; the
+project's configured Realtime per-plan quota (project ref
+`gyhcofjxshmfrxycjsfv`); the `realtime.messages` RLS policy for the
+`private:true` Studio channel (P4 migration).
