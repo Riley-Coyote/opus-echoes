@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEFAULT_RESIDENT_ID, getResident, isResidentId } from "@/server/opus/residents";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
+import { isIdle } from "@/server/idle";
 
 // Classic-chat session bootstrap. Skips the threshold model call —
 // classic mode is opt-in by the visitor reaching /chat/<resident>, not
@@ -23,8 +24,6 @@ const Body = z.object({
   visitor_token: z.string().uuid().optional(),
 });
 
-const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
-const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -53,65 +52,41 @@ export const Route = createFileRoute("/api/chat/start")({
         const hash = ipHash(request);
         const visitorToken = body.visitor_token ?? null;
 
-        // ─── find existing open session for this pair, if any ────
-        // Look across both modes — we need to detect cross-surface
-        // conflicts as well as same-mode resumes. visitor_token preferred
-        // (persistent across visits); ip_hash fallback for visitors without
-        // one. The new `mode` column tells us which surface owns the
-        // session.
+        // ─── find existing open CLASSIC session for this pair, if any ───
+        // Only consider classic-mode sessions. A live or stale experiment
+        // session no longer blocks classic chat — the two surfaces coexist.
+        // visitor_token preferred (persistent across visits); ip_hash
+        // fallback for visitors without one.
         const lookup = visitorToken
           ? supabaseAdmin
               .from("sessions")
               .select("id, last_active_at, mode")
               .eq("visitor_token", visitorToken)
               .eq("resident_id", residentId)
+              .eq("mode", "classic")
               .is("closed_at", null)
           : supabaseAdmin
               .from("sessions")
               .select("id, last_active_at, mode")
               .eq("ip_hash", hash)
               .eq("resident_id", residentId)
+              .eq("mode", "classic")
               .is("closed_at", null);
-        // Cast through unknown — `mode` is part of the new schema but
-        // the generated supabase types lag until Lovable regenerates
-        // after the migration applies.
         type OpenSession = { id: string; last_active_at: string; mode?: string };
         const { data: openSessions } = (await lookup) as unknown as {
           data: OpenSession[] | null;
         };
 
-        const now = Date.now();
         let activeClassic: OpenSession | null = null;
-        let activeExperiment: OpenSession | null = null;
         for (const session of (openSessions ?? []) as OpenSession[]) {
-          const mode = session.mode ?? "experiment";
-          const idleCutoffMs = (mode === "classic" ? IDLE_MIN_CLASSIC : IDLE_MIN) * 60 * 1000;
-          const idleMs = now - new Date(session.last_active_at).getTime();
-          if (idleMs > idleCutoffMs) {
+          if (isIdle(session.last_active_at, session.mode ?? "classic")) {
             await supabaseAdmin
               .from("sessions")
               .update({ closed_at: new Date().toISOString(), closed_by: "idle" })
               .eq("id", session.id);
             continue;
           }
-          if (mode === "classic" && !activeClassic) activeClassic = session;
-          else if (mode === "experiment" && !activeExperiment) activeExperiment = session;
-        }
-
-        // Cross-surface conflict: visitor has an experiment session open.
-        // Don't auto-merge — surface this to the client so they can choose.
-        if (activeExperiment && !activeClassic) {
-          return jsonResp(
-            {
-              ok: false,
-              code: "conflict_experiment_session",
-              resident_id: residentId,
-              existing_mode: "experiment",
-              existing_session_id: activeExperiment.id,
-              experiment_url: `/${resident.slug}`,
-            },
-            409,
-          );
+          if (!activeClassic) activeClassic = session;
         }
 
         // Same-surface resume.

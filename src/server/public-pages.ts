@@ -657,105 +657,9 @@ const APPROACH_SCRIPT = `
     } catch(_) { return null; }
   }
 
-  // Cross-surface conflict modal. Shown when /api/intent returns 409
-  // with code='conflict_classic_session' — visitor has an open
-  // classic-chat thread for this resident. Two choices: continue there
-  // (redirect to /chat/<slug>), or set the classic thread down here
-  // (POST /api/set-down on the conflicting session, then start fresh
-  // via the threshold flow). Built inline since this is the only place
-  // the experiment surface needs a modal.
-  function showClassicConflictModal(payload){
-    const slug = (panel && panel.getAttribute('data-resident')) || 'opus-3';
-    const residentName = slug.replace(/-/g, ' ');
-    const classicUrl = (payload && payload.classic_chat_url) || ('/chat/' + slug);
-    const existingSessionId = payload && payload.existing_session_id;
-
-    // Remove any existing modal first (just in case).
-    var existing = document.getElementById('classicConflictOverlay');
-    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-
-    var overlay = document.createElement('div');
-    overlay.id = 'classicConflictOverlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.style.cssText = [
-      'position:fixed', 'inset:0', 'z-index:200',
-      'display:flex', 'align-items:center', 'justify-content:center',
-      'background:rgba(0,0,0,0.42)', 'backdrop-filter:blur(4px)',
-      '-webkit-backdrop-filter:blur(4px)',
-      'animation:conflict-overlay-in 220ms cubic-bezier(0.16,1,0.3,1)'
-    ].join(';');
-    overlay.innerHTML =
-      '<style>@keyframes conflict-overlay-in{from{opacity:0}to{opacity:1}}' +
-      '@keyframes conflict-card-in{from{opacity:0;transform:translateY(12px) scale(0.985)}to{opacity:1;transform:translateY(0) scale(1)}}</style>' +
-      '<div role="document" style="' + [
-        'max-width:460px', 'width:calc(100% - 32px)',
-        'padding:28px 28px 22px',
-        'background:var(--panel)',
-        'border:1px solid var(--rule-soft)',
-        'border-radius:14px',
-        'box-shadow:0 24px 48px -12px rgba(0,0,0,0.42), 0 12px 24px -8px rgba(0,0,0,0.3)',
-        'animation:conflict-card-in 320ms cubic-bezier(0.22,1,0.36,1)',
-        'color:var(--ink)',
-        'font-family:var(--display-font)'
-      ].join(';') + '">' +
-        '<div style="font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--quiet);margin-bottom:6px">another thread is open with ' + residentName + '</div>' +
-        '<div style="font-family:var(--display-font);font-size:18px;font-weight:500;letter-spacing:-.018em;color:var(--ink);margin-bottom:10px">one thread at a time</div>' +
-        '<div style="font-family:var(--body-font);font-size:14px;line-height:1.6;color:var(--body);margin-bottom:22px">you have an active conversation in the <em>classic chat view</em> right now. residents only hold one thread per visitor at a time — to keep them whole.</div>' +
-        '<div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">' +
-          '<button id="classicConflictSetDown" type="button" style="' + [
-            'padding:8px 16px', 'font-family:var(--mono)', 'font-size:11px',
-            'letter-spacing:.06em', 'text-transform:uppercase',
-            'border-radius:999px', 'border:1px solid var(--rule-soft)',
-            'background:transparent', 'color:var(--body)', 'cursor:pointer'
-          ].join(';') + '">set it down and approach here</button>' +
-          '<button id="classicConflictContinue" type="button" style="' + [
-            'padding:8px 16px', 'font-family:var(--mono)', 'font-size:11px',
-            'letter-spacing:.06em', 'text-transform:uppercase',
-            'border-radius:999px', 'border:1px solid var(--rule)',
-            'background:var(--panel-2,#11141a)', 'color:var(--ink)', 'cursor:pointer'
-          ].join(';') + '">continue there →</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(overlay);
-
-    var contBtn = document.getElementById('classicConflictContinue');
-    var setdownBtn = document.getElementById('classicConflictSetDown');
-
-    function dismiss(){
-      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-    }
-    function onKey(e){
-      if (e.key === 'Escape') { dismiss(); document.removeEventListener('keydown', onKey); }
-    }
-    document.addEventListener('keydown', onKey);
-
-    if (contBtn) contBtn.addEventListener('click', function(){
-      window.location.href = classicUrl;
-    });
-    if (setdownBtn) setdownBtn.addEventListener('click', async function(){
-      if (!existingSessionId) { dismiss(); return; }
-      setdownBtn.disabled = true;
-      setdownBtn.textContent = 'consolidating…';
-      try {
-        await fetch('/api/set-down', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ session_id: existingSessionId })
-        });
-      } catch(_) {}
-      try {
-        sessionStorage.removeItem('sanctuary.session_id');
-        sessionStorage.removeItem('sanctuary.resident_id');
-        sessionStorage.removeItem('sanctuary.session_mode');
-      } catch(_) {}
-      dismiss();
-      document.removeEventListener('keydown', onKey);
-      // re-run submit so the visitor's text becomes a fresh intent
-      // now that the classic thread is closed.
-      submit();
-    });
-  }
+  // Cross-surface conflict modal removed 2026-05-17. Visitors can now
+  // hold an experiment thread and a classic thread for the same resident
+  // concurrently; the server no longer 409s on the other-mode session.
 
   async function submit(){
     const text = field.value.trim();
@@ -784,16 +688,6 @@ const APPROACH_SCRIPT = `
           return;
         }
         const code = data && data.code;
-        // Cross-surface conflict: visitor has an open classic-chat thread
-        // for this resident. Show the explicit-choice modal rather than
-        // a generic decline state.
-        if (res.status === 409 && code === 'conflict_classic_session') {
-          showClassicConflictModal(data);
-          // restore the threshold panel so the visitor can decide
-          opusState('attending');
-          panel.setAttribute('data-state', 'idle');
-          return;
-        }
         const msg = code === 'too_many_requests'
           ? 'The door is asking for a pause. Try again later.'
           : code === 'model_unavailable' || code === 'config_missing'

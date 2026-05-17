@@ -34,6 +34,7 @@ import {
 } from "@/server/opus/residents";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
+import { idleCutoffMsForMode } from "@/server/idle";
 import {
   consolidateSession,
   observeExchange,
@@ -71,8 +72,6 @@ const Body = z.object({
   preview_turns: z.array(PreviewTurn).max(24).optional(),
 });
 
-const IDLE_MIN = Number(process.env.SESSION_IDLE_TIMEOUT_MIN ?? 30);
-const IDLE_MIN_CLASSIC = Number(process.env.SESSION_IDLE_TIMEOUT_MIN_CLASSIC ?? 43200); // 30 days
 
 /** Shape of the NDJSON pacing event emitted before the first text token. */
 type PacingPrelude = {
@@ -688,9 +687,8 @@ export const Route = createFileRoute("/api/message")({
         // experiment sessions stay at the original 30-minute threshold.
         const sessMode: SessionMode =
           (session as { mode?: string }).mode === "classic" ? "classic" : "experiment";
-        const idleMinForMode = sessMode === "classic" ? IDLE_MIN_CLASSIC : IDLE_MIN;
         const idleMs = Date.now() - new Date(session.last_active_at).getTime();
-        if (idleMs > idleMinForMode * 60 * 1000) {
+        if (idleMs > idleCutoffMsForMode(sessMode)) {
           await supabaseAdmin
             .from("sessions")
             .update({ closed_at: new Date().toISOString(), closed_by: "idle" })

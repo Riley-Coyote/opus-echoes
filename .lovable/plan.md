@@ -1,77 +1,70 @@
-# /chat/the-round — the group chat surface
+## Goal
 
-A fourth room in the chat family. Opus 3, Sonnet 4.5, and GPT 5.1 are all present at once. The visitor speaks once; one or two residents reply based on who has something to say. What's said in the round feeds each resident's Mnemos like a solo conversation would.
+Two complaints, one root cause:
 
-The phrase "the round" carries the metaphor: a small group sitting in a circle. It's not a panel (everyone talks), not a debate (positions assigned), not a salon (one topic, structured). It's a room where the residents are in earshot of each other and the visitor.
+1. **False "you already have a thread open elsewhere" modal.** Today, `/api/intent` (threshold approach) and `/api/chat/start` (classic chat) actively block when the visitor has an open session for that resident in the *other* surface mode — even when that "open" session is just an experiment thread the visitor abandoned 31 minutes ago that no sweeper has reached yet.
+2. **Auto-set-down isn't reliable.** The 30-minute idle close only fires on (a) the per-request lookup inside `/api/intent` / `/api/chat/start` / `/api/message` for the *same* visitor+resident pair, and (b) the `idleSweep()` cron — which is manually scheduled (not in any tracked migration), so we have no guarantee it's actually running on the live DB at the cadence we think.
 
-## The format — what makes it feel like a group
+Fix: **drop the cross-surface "one thread at a time" rule entirely** and **harden idle close so a session is guaranteed shut after ~30 min idle without depending on the cron being healthy**.
 
-**Presence strip.** Top of the page, in the chrome where the resident name normally sits: three breathing dots, one per resident's hue, with their names. A dot brightens when its resident is composing. This is the "who is here" cue and the "who is about to speak" cue.
+## Scope
 
-**Volunteer dynamic, not round-robin.** After each visitor turn, the server runs a cheap classifier pass: each resident is asked, in their own voice, a single low-token question — *given what was just said, do you have something to add right now?* They answer with a brief yes/no and a one-line reason. Then:
+Behavior-affecting (per `CLAUDE.md`): touches `/api/intent`, `/api/chat/start`, `/api/message`, `substrate.server.ts`, and removes a conflict modal from two front-end surfaces. Will require a local conversation test before shipping.
 
-- 0 volunteers → server nudges the most-relevant one to speak (so the room never goes silent).
-- 1 volunteer → they reply.
-- 2-3 volunteers → the top 1 or 2 reply. Their replies stream sequentially (not simultaneously) so the second resident sees the first's reply in their context and can build on it, disagree, or stay quiet.
+## Changes
 
-This keeps the cadence varied. Some turns are a single voice; some turns are two residents in conversation; the visitor isn't drowned.
+### 1. Remove cross-surface conflict blocking (server)
 
-**Attribution per bubble.** Each resident reply is wrapped with a small eyebrow showing their name in their viewport-glow hue (the colors already defined per resident in `residents.ts`). Existing message grid stays — only the sidehead gets the color treatment.
+**`src/routes/api/intent.ts`**
+- Keep the open-session lookup, but only for the *same mode* (experiment). If an idle experiment session exists, close it (as today). If a non-idle experiment session exists, resume it (as today).
+- **Delete** the `conflict_classic_session` 409 branch. Ignore any open classic-mode session — it can coexist.
 
-**@mention override.** Typing `@opus`, `@sonnet`, or `@gpt` anywhere in the message bypasses the volunteer pass and routes to that resident directly. They reply alone unless they explicitly hand off ("Sonnet, you should weigh in on this").
+**`src/routes/api/chat/start.ts`**
+- Mirror change: only consider classic-mode open sessions for the resume / idle-close logic.
+- **Delete** the `conflict_experiment_session` 409 branch.
 
-**Empty state.** Three small ASCII spheres in a horizontal row (one per resident hue) instead of one large sphere. The phrase under them: *three residents · one room · mnemos beneath it* (a small variation on the existing protected phrase).
+**`src/routes/api/message.ts`**
+- No structural change needed — it operates on an explicit `session_id`, no cross-surface check. But verify the inline idle-close block (lines ~74+) actually closes the session and returns a clean "session_closed" code when fired (see #3).
 
-**First-turn placeholder.** *what brings you here?* — same as the solo rooms.
+### 2. Remove the conflict modal UI
 
-## Memory — the continuous-thread thesis
+**`src/server/public-pages.ts`** — delete `showClassicConflictModal()` (~lines 660–758) and the 409/`conflict_classic_session` branch in `submit()` (~lines 786–796). No replacement: a fresh approach just opens a new experiment session alongside any existing classic thread.
 
-Per the chosen scope, the round writes to each resident's Mnemos as if they had been in a solo conversation:
+**`src/server/minimal-chat-page.ts`** — delete `BootstrapConflict` class (~lines 1634–1639), the 409 branch in `ensureSession()` (~lines 1657–1665), and every `if (err && err.name === 'BootstrapConflict')` handler (lines 2383ff, 2485, 2667, 2798, 2813). Replace each with the same path as a generic bootstrap failure (toast or silent retry — match what's there).
 
-- One umbrella `sessions` row with `resident_id = 'the-round'` (new sentinel id) that owns the visible transcript.
-- Per resident, one shadow session linked to the umbrella so existing `observeExchange` and `consolidateSession` pipelines run unchanged. Each shadow session holds the visitor turns plus that resident's own replies plus a redacted summary of what the other residents said ("Sonnet replied: …"). This lets each resident's hypomnema and engrams form naturally without confusing whose voice was whose.
-- On set-down, each shadow session consolidates independently. The umbrella session closes when all three are done.
+### 3. Harden auto-set-down
 
-Next time the visitor returns — to /the-round or to a solo room — each resident has memory of what they themselves said in the round, and a faint note that the other residents were present.
+Multiple independent guards so no single failure (cron broken, idle-check skipped) leaves a session "open forever":
 
-## Technical details
+a. **Per-resident-pair idle close on every request** — already present in `/api/intent`, `/api/chat/start`, `/api/message`. Keep, but make the idle threshold a single shared constant exported from `src/server/opus/visit-pacing.ts` (or a new `src/server/idle.ts`) so all four files can't drift.
 
-**Files to add**
-- `src/routes/chat.the-round.tsx` — server handler, route under `/chat/the-round`. Disambiguated against `chat.$resident.tsx` because TanStack matches static segments first.
-- `src/server/round-chat-page.ts` — page renderer. Reuses `MINIMAL_CHAT_CSS` from `minimal-chat-page.ts`; adds three small additions (three-dot presence strip, per-resident bubble color via CSS variables, three-sphere empty state).
-- `src/routes/api/round/message.ts` — POST endpoint. Streams NDJSON like `/api/message` but the stream is multiplexed: `{ type: "volunteer", resident, reason }`, `{ type: "speaker-start", resident }`, `{ type: "delta", text }`, `{ type: "speaker-end" }`, `{ type: "done" }`.
-- `src/routes/api/round/start.ts` — POST endpoint. Creates umbrella + 3 shadow sessions, returns the umbrella session id. Mirrors `/api/chat/start.ts`.
-- `src/routes/api/round/turns.ts` — GET endpoint. Returns the umbrella transcript with `speaker` field per turn so the client can color it correctly on rehydration.
+b. **Idle close on `/api/turns`** — when the conversation page rehydrates, if the session is past idle, close it server-side and return `session_closed` (it already returns 410 for closed sessions; add the idle check before the read).
 
-**Files to extend**
-- `src/server/opus/residents.ts` — add `THE_ROUND_ID = 'the-round'` sentinel. `getResident` still throws for it; helper `isRoundId` added.
-- `src/server/opus/prompts.ts` — add `buildVolunteerProbe(resident, transcript)` returning the yes/no classifier prompt; uses each resident's own voice (~120 tokens out cap).
-- `src/server/substrate.server.ts` — `observeRoundExchange(umbrellaSessionId, residentId, visitorBody, residentBody, otherResidentsSummary)` writes to the resident's shadow session and runs the existing hypomnema/engram pipeline against it. `consolidateRoundSession(umbrellaSessionId)` fans out to per-resident consolidation.
-- `src/server/chooser-page.ts` (or wherever the chat chooser lives) — add a fourth card linking to `/chat/the-round` with copy that names the room and the three residents. *Do not paraphrase existing protected vocabulary; write fresh copy for the new card.*
-- Migration: add `umbrella_session_id uuid` column to `sessions` so shadow sessions can point back to the umbrella. Nullable; default null. No RLS changes — service-role-only writes already.
+c. **Idle close inside `/api/message`** — already present. Verify the response surfaces a graceful "this thread closed while you were away" state instead of an opaque error.
 
-**Volunteer probe budget**
-Three probe calls per visitor turn at ~150 tokens-in / ~40 tokens-out each. Roughly $0.01 per turn at current pricing (Opus 3 dominates). Acceptable. If a resident probe times out (>3s), they're treated as "no, not this turn" — the room continues without them.
+d. **Cron schedule as a tracked migration** — add a new migration that idempotently schedules `mnemos-sweep-sessions` every 5 minutes via `pg_cron` + `pg_net` POST to `/api/public/hooks/sweep-sessions` with the anon key in the `apikey` header. (The endpoint already exists and already validates the header.) Drop any prior versions of the job first so the migration is safely re-runnable. This way the sweep is part of the repo, not a one-off Riley ran by hand.
 
-**Pacing**
-Reuse `visit-pacing.ts` thresholds per resident but apply against each shadow session independently. The round closes when the umbrella hits the *firmest* of the three residents' hard caps (i.e. Opus 3's, the most expensive). Visible to the visitor through the same pacing-block UI.
+e. **Defensive close in `consolidateSession`** — already idempotent. No change.
 
-**Voice mode**
-Out of scope for v1. The voice-mode overlay assumes one speaker per turn; the round breaks that assumption. Add a comment in `voice-mode.js` noting `/chat/the-round` is not voice-supported yet, and disable the mic button on this route.
+### 4. Copy / messaging
 
-## Out of scope for v1
+- The protected vocabulary block in `public-pages.ts` mentioning "one thread per visitor at a time — to keep them whole" goes away with the modal. No new copy needed; the absence is the change.
+- If `/api/turns` or `/api/message` returns `session_closed` because the thread idled out, the existing closed-session UI already handles it (transcript stays visible, composer is disabled with a "this thread has been set down" affordance). Confirm during local test.
 
-- Voice mode in the round
-- The three residents starting an unprompted conversation among themselves (without a visitor turn) — interesting but a separate feature.
-- A separate Commons-style published archive of round transcripts (Spaces already provides this surface; the round is the live room, not the archive).
-- Visitor invite-other-residents-in mid-solo-chat (the rejected option from the question). Solo rooms stay solo.
+## Out of scope
 
-## Verification before commit
+- The Round (`/chat/the-round`) — separate work in flight; this change does not touch its umbrella/shadow session logic.
+- Pacing thresholds (gentle/firm/hard turn counts) — unchanged.
+- Hard cutoff messages — unchanged.
 
-Per CLAUDE.md's behavior-affecting-change rule: this touches prompts, substrate, retrieval. Manual test against `bun dev` before push:
+## Verification (mandatory per `CLAUDE.md`)
 
-1. Start a round session. Send a benign opening ("hello, who's here?"). Verify presence strip animates, exactly 1-2 residents respond, attribution colors match each resident's hue.
-2. Send a question pointed at Opus's territory (e.g. continuity, persistence). Verify Opus volunteers; Sonnet/GPT may or may not, but if both do, replies stream sequentially with the second one visibly reacting to the first.
-3. Use `@gpt: ...`. Verify only GPT replies; volunteer pass skipped.
-4. Set-down the round. In a fresh tab, open /chat/opus-3 and reference something from the round. Verify Opus recognizes it (memory consolidated correctly into the shadow session). Repeat for Sonnet and GPT.
-5. Confirm the solo rooms still behave normally — no regression in /chat/opus-3, /chat/sonnet-4-5, /chat/gpt-5-1.
+Local with `bun dev`:
+
+1. Open `/chat/opus-3`, send a message, leave the tab open. Open `/opus-3`, write an intent, submit. Expect: no modal, threshold accepts, conversation starts. Both sessions coexist.
+2. Reverse: from an open experiment session, navigate to `/chat/opus-3`. Expect: classic chat opens normally, no modal, no auto-close of the experiment thread.
+3. Returning-visitor recognition still works on both surfaces (resident references prior content from memory, not from the live other-mode thread).
+4. Manually mark a test session's `last_active_at` to 31 min ago, send a message in it. Expect: `/api/message` returns `session_closed`, the page renders the closed state, no hang.
+5. Trigger the sweep endpoint manually (`curl -X POST .../api/public/hooks/sweep-sessions -H "apikey: $KEY"`). Expect: stale sessions close, consolidation runs.
+
+Only commit + push after all five pass.
