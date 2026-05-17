@@ -657,14 +657,11 @@ const APPROACH_SCRIPT = `
     } catch(_) { return null; }
   }
 
-  // Cross-surface conflict modal. Shown when /api/intent returns 409
-  // with code='conflict_classic_session' — visitor has an open
-  // classic-chat thread for this resident. Two choices: continue there
-  // (redirect to /chat/<slug>), or set the classic thread down here
-  // (POST /api/set-down on the conflicting session, then start fresh
-  // via the threshold flow). Built inline since this is the only place
-  // the experiment surface needs a modal.
-  function showClassicConflictModal(payload){
+  // Cross-surface conflict modal removed 2026-05-17. Visitors can now
+  // hold an experiment thread and a classic thread for the same resident
+  // concurrently; the server no longer 409s on the other-mode session.
+
+
     const slug = (panel && panel.getAttribute('data-resident')) || 'opus-3';
     const residentName = slug.replace(/-/g, ' ');
     const classicUrl = (payload && payload.classic_chat_url) || ('/chat/' + slug);
