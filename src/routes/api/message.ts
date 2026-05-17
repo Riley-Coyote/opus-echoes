@@ -687,9 +687,8 @@ export const Route = createFileRoute("/api/message")({
         // experiment sessions stay at the original 30-minute threshold.
         const sessMode: SessionMode =
           (session as { mode?: string }).mode === "classic" ? "classic" : "experiment";
-        const idleMinForMode = sessMode === "classic" ? IDLE_MIN_CLASSIC : IDLE_MIN;
         const idleMs = Date.now() - new Date(session.last_active_at).getTime();
-        if (idleMs > idleMinForMode * 60 * 1000) {
+        if (idleMs > idleCutoffMsForMode(sessMode)) {
           await supabaseAdmin
             .from("sessions")
             .update({ closed_at: new Date().toISOString(), closed_by: "idle" })
