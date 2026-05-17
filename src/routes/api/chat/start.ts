@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEFAULT_RESIDENT_ID, getResident, isResidentId } from "@/server/opus/residents";
-import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
+import { isIdle } from "@/server/idle";
 
 // Classic-chat session bootstrap. Skips the threshold model call —
 // classic mode is opt-in by the visitor reaching /chat/<resident>, not
