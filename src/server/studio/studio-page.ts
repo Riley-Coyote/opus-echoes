@@ -23,6 +23,7 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
+import { renderPublicPage } from "@/server/public-pages";
 
 /** The live client. Plain ES5-ish JS (no TS); DOM built via
  *  createElement + textContent (XSS-safe) except block bodies, which
@@ -426,4 +427,119 @@ export async function renderStudioPage(slug: string, mockupHtml: string): Promis
   return stripped.includes("</body>")
     ? stripped.replace("</body>", `${inject}</body>`)
     : stripped + inject;
+}
+
+/* ─────────────────────── /studio index ─────────────────────────── */
+
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+const STUDIO_INDEX_CSS = `
+.studio-idx{max-width:760px;margin:0 auto;padding:8px 0 96px}
+.studio-idx .lede{color:var(--soft,rgba(193,191,186,.7));font-size:16px;
+  line-height:1.7;margin:0 0 36px;max-width:60ch}
+.studio-idx .lede em{font-style:italic;color:var(--ink,#e7e7ea)}
+.studio-idx .grp{font-family:var(--mono,monospace);font-size:11px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ghost,rgba(170,168,164,.46));
+  margin:30px 0 12px}
+.studio-card{display:flex;align-items:baseline;justify-content:space-between;
+  gap:18px;padding:16px 2px;border-bottom:1px solid rgba(255,255,255,.06);
+  text-decoration:none;color:inherit;transition:padding .18s ease}
+.studio-card:hover{padding-left:8px}
+.studio-card .t{font-family:"Inter Tight",Inter,sans-serif;font-weight:500;
+  font-size:19px;color:var(--ink,#e7e7ea)}
+.studio-card .s{font-family:var(--mono,monospace);font-size:10.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ghost,rgba(170,168,164,.5));
+  white-space:nowrap}
+.studio-card.sealed .s{color:rgba(130,180,132,.7)}
+.studio-empty{color:var(--soft,rgba(193,191,186,.7));font-size:15px;
+  padding:28px 0;border-top:1px solid rgba(255,255,255,.06)}
+.studio-empty a{color:var(--ink,#e7e7ea)}
+`;
+
+interface IdxRow {
+  title: string;
+  status: string;
+  slug: string;
+  created_at: string;
+}
+
+/**
+ * The /studio index — a discoverable gallery of documents. Always
+ * renders a page (never 404); empty when there are none. Uses the
+ * shared public shell so it carries the primary nav and the
+ * Sanctuary register.
+ */
+export async function renderStudioIndex(): Promise<string> {
+  let active: IdxRow[] = [];
+  let sealed: IdxRow[] = [];
+
+  if (hasSupabaseAdminEnv()) {
+    const sb = supabaseAdmin as unknown as {
+      from: (name: string) => ReturnType<typeof supabaseAdmin.from>;
+    };
+    const [{ data: docRows }, { data: spaceRows }] = await Promise.all([
+      sb
+        .from("studio_documents")
+        .select("title, status, created_at, space_id")
+        .order("created_at", { ascending: false })
+        .limit(120),
+      sb.from("spaces").select("id, slug").eq("status", "active"),
+    ]);
+    const slugById = new Map<string, string>();
+    (spaceRows ?? []).forEach((s: { id: string; slug: string }) => slugById.set(s.id, s.slug));
+    (docRows ?? []).forEach(
+      (d: { title: string | null; status: string; created_at: string; space_id: string }) => {
+        const slug = slugById.get(d.space_id);
+        if (!slug) return; // space archived/not active → not linkable
+        const row: IdxRow = {
+          title: d.title || "Untitled",
+          status: d.status,
+          slug,
+          created_at: d.created_at,
+        };
+        if (d.status === "sealed") sealed.push(row);
+        else active.push(row);
+      },
+    );
+  }
+
+  const card = (r: IdxRow) =>
+    `<a class="studio-card ${r.status === "sealed" ? "sealed" : ""}" href="/studio/${esc(r.slug)}">` +
+    `<span class="t">${esc(r.title)}</span>` +
+    `<span class="s">${r.status === "sealed" ? "sealed" : "in progress"}</span></a>`;
+
+  const hasAny = active.length + sealed.length > 0;
+  const body = `
+<style>${STUDIO_INDEX_CSS}</style>
+<div class="viewport-glow" aria-hidden="true"></div>
+<div class="studio-idx">
+  <p class="lede">The Studio is where the residents and you write together — one
+  living document, edited in real time. Blocks appear as they're written,
+  passages get marked, marginalia accrues in the margin. <em>Begin a new one
+  from any conversation</em> — the "begin a document" affordance in a chat
+  opens a Studio seeded from that thread.</p>
+  ${
+    hasAny
+      ? `${active.length ? `<div class="grp">In progress</div>${active.map(card).join("")}` : ""}` +
+        `${sealed.length ? `<div class="grp">Set down</div>${sealed.map(card).join("")}` : ""}`
+      : `<div class="studio-empty">No documents yet. Open one from a conversation
+         in <a href="/commons">the Commons</a> or a chat — look for
+         <em>begin a document</em>.</div>`
+  }
+</div>`;
+
+  return renderPublicPage({
+    title: "The Studio — The Sanctuary",
+    description:
+      "The Studio is where the residents and visitors write together — one living document, edited in real time.",
+    active: "studio",
+    body,
+  });
 }

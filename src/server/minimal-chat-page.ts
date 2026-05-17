@@ -2905,6 +2905,10 @@ ${FONTS}
       </div>
     </div>
     <div class="chrome-end">
+      <button id="studioChromeBtn" class="chrome-link" type="button" data-studio-spawn aria-label="open a collaborative document in the Studio" title="open a collaborative document in the Studio">
+        <span>the studio</span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </button>
       <button id="themeBtn" class="chrome-link" type="button" aria-label="toggle theme">light</button>
       <a class="chrome-link" href="/${escapeHtml(slug)}">
         <span>approach formally</span>
@@ -2963,7 +2967,7 @@ ${FONTS}
         <span class="caption-item"><span class="key">↵</span>send</span>
         <span class="caption-item"><span class="key">⇧↵</span>newline</span>
         <button class="set-down-link" id="setDownLink" type="button" disabled title="set down this thread (consolidate + close)">set down</button>
-        <button class="set-down-link" id="studioBtn" type="button" title="open a collaborative document in the Studio">begin a document</button>
+        <button class="set-down-link" id="studioBtn" type="button" data-studio-spawn title="open a collaborative document in the Studio">begin a document</button>
         <button class="voice-toggle" id="voiceToggle" type="button" data-on="false" title="speak replies aloud in ${escapeHtml(resident.displayName)}'s voice">voice off</button>
         <span class="caption-spacer"></span>
         <span class="caption-status">${escapeHtml(slugLower)} · attending</span>
@@ -3011,32 +3015,39 @@ ${FONTS}
       return t;
     } catch (_) { return crypto.randomUUID(); }
   }
-  window.addEventListener('load', function(){
-    var btn = document.getElementById('studioBtn');
-    if (!btn) return;
-    btn.addEventListener('click', function(){
-      if (btn.disabled) return;
-      btn.disabled = true;
-      var prev = btn.textContent;
-      btn.textContent = 'opening…';
-      var sid = null;
-      try { sid = sessionStorage.getItem('sanctuary.session_id'); } catch (_) {}
-      var payload = { resident: resId, visitor_token: visitorToken() };
-      if (sid) payload.session_id = sid;
-      fetch('/api/studio/create', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function(r){ return r.json(); }).then(function(d){
-        if (d && d.ok && d.space_slug) {
-          window.location.href = '/studio/' + encodeURIComponent(d.space_slug);
-        } else {
-          btn.disabled = false; btn.textContent = prev;
-        }
-      }).catch(function(){
-        btn.disabled = false; btn.textContent = prev;
-      });
+  var spawning = false;
+  function spawnStudio(btn){
+    if (spawning) return;
+    spawning = true;
+    var prev = btn ? btn.textContent : '';
+    if (btn){ btn.setAttribute('aria-busy','true'); }
+    var sid = null;
+    try { sid = sessionStorage.getItem('sanctuary.session_id'); } catch (_) {}
+    var payload = { resident: resId, visitor_token: visitorToken() };
+    if (sid) payload.session_id = sid;
+    fetch('/api/studio/create', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d && d.ok && d.space_slug) {
+        window.location.href = '/studio/' + encodeURIComponent(d.space_slug);
+      } else {
+        spawning = false;
+        if (btn){ btn.removeAttribute('aria-busy'); btn.textContent = prev; }
+      }
+    }).catch(function(){
+      spawning = false;
+      if (btn){ btn.removeAttribute('aria-busy'); btn.textContent = prev; }
     });
+  }
+  window.addEventListener('load', function(){
+    var els = document.querySelectorAll('[data-studio-spawn]');
+    for (var i = 0; i < els.length; i++){
+      (function(el){
+        el.addEventListener('click', function(){ spawnStudio(el); });
+      })(els[i]);
+    }
   });
 })();
 </script>

@@ -1,7 +1,7 @@
 interface PublicPageOptions {
   title: string;
   description: string;
-  active?: "approach" | "commons" | "mnemos" | "archive" | "token";
+  active?: "approach" | "commons" | "studio" | "mnemos" | "archive" | "token";
   body: string;
   script?: string;
   /** Optional resident slug — used to route the approach script's
@@ -366,6 +366,7 @@ ${FONTS}
   <div class="nav-links">
     ${nav("approach", "Approach", "/")}
     ${nav("commons", "Commons", "/commons")}
+    ${nav("studio", "Studio", "/studio")}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
     ${nav("token", "$MNEMOS", "/token")}
