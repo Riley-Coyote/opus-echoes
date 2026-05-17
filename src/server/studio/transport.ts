@@ -96,15 +96,21 @@ export class SupabaseRoomTransport implements RoomTransport {
     selfActor: { kind: PresenceMeta["actor_kind"]; id: string },
   ) {
     this.meta = selfActor;
-    // private:true → realtime.messages RLS gates the channel (P4
-    // adds the policy). self:false → the originator already has its
-    // own frames inline on its NDJSON stream; ack:true → a
-    // rate-limited send rejects so the caller can degrade.
+    // v1: private=false so the channel works at first Publish WITHOUT
+    // a realtime.messages RLS policy. This is safe — a Studio's
+    // content is already public-read-when-space-active (spaces RLS)
+    // and nothing staged/private is ever broadcast. P4 HARDENS this
+    // to private:true + the matching realtime.messages RLS policy
+    // (the only reason it isn't here: shipping a channel that
+    // silently fails to subscribe is worse than a documented v1
+    // boundary). self:false → the originator already has its frames
+    // inline on its NDJSON stream; ack:true → a rate-limited send
+    // rejects so the caller can degrade.
     this.channel = client.channel(studioChannelName(docId), {
       config: {
         broadcast: { self: false, ack: true },
         presence: { key: `${selfActor.kind}:${selfActor.id}` },
-        private: true,
+        private: false,
       },
     });
   }

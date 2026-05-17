@@ -435,9 +435,12 @@ verbatim. The full system is built end-to-end.
 **Next:**
 1. **P3d Vision-loop** — environment-bound: needs the running app +
    Supabase creds + API keys to render real data and iterate ≥5×. Hands off.
-2. **P4** — auth/observer/`realtime.messages` RLS migration (the
-   `private:true` Studio channel) + observer-mode toggle + cross-request
-   interrupt (presence-driven).
+2. **P4** — harden the Realtime channel from v1 `private:false` →
+   `private:true` + the matching `realtime.messages` RLS migration;
+   observer-mode toggle; cross-request interrupt (presence-driven).
+   *(v1 ships `private:false` so the channel works at first Publish
+   with no RLS — safe: Studio content is already public-read-when-
+   space-active and nothing staged/private is broadcast.)*
 3. **P5** — seal → `space_artifacts(kind=markdown)` + `consolidateSession`
    + `observeSpaceExchange` + `marginalia.related_space_id`.
 4. **One pre-live step (the only Lovable/Supabase hand-off):** apply the
