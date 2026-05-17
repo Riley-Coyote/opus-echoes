@@ -2963,6 +2963,7 @@ ${FONTS}
         <span class="caption-item"><span class="key">↵</span>send</span>
         <span class="caption-item"><span class="key">⇧↵</span>newline</span>
         <button class="set-down-link" id="setDownLink" type="button" disabled title="set down this thread (consolidate + close)">set down</button>
+        <button class="set-down-link" id="studioBtn" type="button" title="open a collaborative document in the Studio">begin a document</button>
         <button class="voice-toggle" id="voiceToggle" type="button" data-on="false" title="speak replies aloud in ${escapeHtml(resident.displayName)}'s voice">voice off</button>
         <span class="caption-spacer"></span>
         <span class="caption-status">${escapeHtml(slugLower)} · attending</span>
@@ -2996,6 +2997,49 @@ ${FONTS}
 
 <script src="/voice-mode.js"></script>
 <script>${chatScript(resident)}</script>
+<script>
+(function(){
+  /* "begin a document" → spawn a Studio, then navigate into it.
+     Reuses the same identity keys chatScript owns (sanctuary.
+     visitor_token in localStorage, sanctuary.session_id in
+     sessionStorage) so there is no divergent identity. */
+  var resId = ${JSON.stringify(resident.id)};
+  function visitorToken(){
+    try {
+      var t = localStorage.getItem('sanctuary.visitor_token');
+      if (!t) { t = crypto.randomUUID(); localStorage.setItem('sanctuary.visitor_token', t); }
+      return t;
+    } catch (_) { return crypto.randomUUID(); }
+  }
+  window.addEventListener('load', function(){
+    var btn = document.getElementById('studioBtn');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+      if (btn.disabled) return;
+      btn.disabled = true;
+      var prev = btn.textContent;
+      btn.textContent = 'opening…';
+      var sid = null;
+      try { sid = sessionStorage.getItem('sanctuary.session_id'); } catch (_) {}
+      var payload = { resident: resId, visitor_token: visitorToken() };
+      if (sid) payload.session_id = sid;
+      fetch('/api/studio/create', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(r){ return r.json(); }).then(function(d){
+        if (d && d.ok && d.space_slug) {
+          window.location.href = '/studio/' + encodeURIComponent(d.space_slug);
+        } else {
+          btn.disabled = false; btn.textContent = prev;
+        }
+      }).catch(function(){
+        btn.disabled = false; btn.textContent = prev;
+      });
+    });
+  });
+})();
+</script>
 <script>
 (function(){
   var resId = ${JSON.stringify(resident.id)};

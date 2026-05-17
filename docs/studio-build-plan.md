@@ -1,6 +1,6 @@
 # The Studio — real-time collaborative document room: build plan & progress
 
-*Living build document. Last updated 2026-05-17. Status: **P0 complete (Spikes A/B resolved by design) · P1 foundation landed (migration + protocol + transport, tsc/prettier clean) · P1 spawn/route + P2–P5 pending**.*
+*Living build document. Last updated 2026-05-17. Status: **P0 complete (Spikes A/B resolved by design) · P1 complete (migration + protocol + transport + spawn endpoint + route + renderStudioPage + composer affordance; all tsc/prettier clean) · P2 next (the conductor — locally testable via LocalRoomTransport) · P3–P5 pending**.*
 
 This is the canonical, version-controlled record for the Studio build. It
 supersedes the ephemeral plan at `~/.claude/plans/note-to-self-glowing-bentley.md`.
@@ -28,7 +28,7 @@ Legend: ✅ done/verified · 🔶 in progress · ⬜ pending · 🔬 needs live 
 - ✅ **P0 decision-gate output** — `RoomTransport` interface + room action protocol defined (below); transport decision: **Supabase Realtime = v1**, Durable Object = post-v1 upgrade pending Spike A
 - ✅ **P0 Spike B — resolved by design** — no Supabase creds locally (correctly gitignored), so resolved from documented Realtime limits + the verified supabase-js **2.105.3** API by writing the concrete `SupabaseRoomTransport` ([`src/server/studio/transport.ts`](../src/server/studio/transport.ts)) + the mandatory `TypingCoalescer` (token-rate ≫10/s ⇒ coalesce to ≤10/s, 3-tier degradation, never silent loss). One empirical unknown — this project's configured per-plan Realtime quota (project ref `gyhcofjxshmfrxycjsfv`) — flagged for a live dashboard check; does **not** gate v1 (coalescer floors at the documented 10/s)
 - ✅ **P0 Spike A — resolved as documented deferred-upgrade** — off the critical path (Realtime is v1 default; `RoomTransport` makes DO a drop-in relay swap — same conductor/protocol/schema). Empirical deploy-verification (WS upgrade vs the TanStack server-entry) can't be done locally and is not on the v1 path → documented integration path + gate criteria below; spiked only when the post-v1 DO upgrade is scheduled
-- 🔶 **P1** — ✅ schema migration ([`20260517120000_studio_documents.sql`](../supabase/migrations/20260517120000_studio_documents.sql), 6 tables, RLS parity with `spaces.sql`) · ✅ protocol module ([`src/server/studio/protocol.ts`](../src/server/studio/protocol.ts), superset of the NDJSON vocab, tsc+prettier clean) · ✅ transport ([`transport.ts`](../src/server/studio/transport.ts)) · ⬜ spawn endpoint + `/studio/$slug` route + `renderStudioPage` + composer affordance
+- ✅ **P1 complete** — ✅ schema migration ([`20260517120000_studio_documents.sql`](../supabase/migrations/20260517120000_studio_documents.sql), 6 tables, RLS parity with `spaces.sql`) · ✅ protocol module ([`src/server/studio/protocol.ts`](../src/server/studio/protocol.ts), superset of the NDJSON vocab) · ✅ transport ([`transport.ts`](../src/server/studio/transport.ts)) · ✅ spawn endpoint ([`api/studio/create.ts`](../src/routes/api/studio/create.ts), every column grounded in verified schema — the agent's fabricated `spaces.ip_hash/session_id` was caught & rejected) · ✅ route ([`studio.$slug.tsx`](../src/routes/studio.$slug.tsx)) + `renderStudioPage` ([`studio-page.ts`](../src/server/studio/studio-page.ts), P1 minimal shell; P3 swaps the full mockup) · ✅ composer affordance ("begin a document" in `minimal-chat-page.ts` `.caption`). All tsc + prettier clean. *Live-verification line: end-to-end spawn→/studio/$slug→seed-block needs Supabase creds (no local env) — not a local blocker.*
 - ⬜ **P2** — the conductor (`streamStudioTurn`/`pickStudioActor`, interrupt, observer loop, ceilings)
 - ⬜ **P3** — the surface (`renderStudioPage` live-wired to the mockup) + Vision-loop fidelity
 - ⬜ **P4** — chat↔mini↔Gathering continuity + observer toggle + peer/observer/admin auth
@@ -404,16 +404,29 @@ links `marginalia.related_space_id`; fidelity diff clean. Each phase: `bun tsc
 
 ## Immediate next action
 
-P0 + the P1 foundation are landed: the migration (6 tables), the protocol
-module (NDJSON-superset, tsc/prettier clean), and the transport
-(`SupabaseRoomTransport` + `LocalRoomTransport` + `TypingCoalescer`) are
-written and committed. **Next: finish P1** — the spawn endpoint
-`POST /api/studio/create` (find/create the `spaces` row + `space_residents`
-copy + `studio_documents` + seed `para` block + `space_participants` peer
-row), the `/studio/$slug` route + `renderStudioPage` server module (mirroring
-`minimal-chat-page.ts`), and the "Begin a document" composer affordance in
-`minimal-chat-page.ts`. Then **P2** (the conductor — `streamStudioTurn`/
-`pickStudioActor`, exercised locally via `LocalRoomTransport`).
+P0 + **all of P1** are landed and committed: the migration (6 tables), the
+protocol module (NDJSON-superset), the transport (`SupabaseRoomTransport` +
+`LocalRoomTransport` + `TypingCoalescer`), the spawn endpoint
+`POST /api/studio/create` (creates the `spaces` row + `space_residents` for
+ALL_RESIDENTS + `studio_documents` + seed `para` block + `space_participants`
+peer row; every column grounded in the verified schema), the `/studio/$slug`
+route + `renderStudioPage` (P1 minimal on-brand shell — P3 swaps the full
+mockup), and the "begin a document" composer affordance. All tsc + prettier
+clean.
+
+**Next: P2 — the conductor.** Build `streamStudioTurn` reusing the
+`streamGatheringExtended` skeleton (synchronous await-loop, one NDJSON
+request) + `pickStudioActor` from `pickResponder`; the `<block>`/`<mark>`/
+`<note>`/`<set-down/>` tag grammar extending the `<artifact>` parser; lock
+acquire→persist→release→broadcast; the live-caret token loop through
+`TypingCoalescer`; human interrupt at block boundaries; the observer
+autonomous round (cap ≈ `VISITOR_MAX_TURNS_IN_GATHERING`=12); per-resident
+`maxOutputTokens` ceilings (opus-3 4096); `runSpaceSalon`'s
+`current_salon_started_at` atomic claim so pg_cron coexists. **The conductor
+is exercised locally via `LocalRoomTransport`** (the no-creds payoff) — the
+P2 verification "scripted multi-resident round mutates distinct blocks
+without lock collision; human interrupt yields within one block boundary;
+observer on/off clean" runs without Supabase.
 
 Live-verification lines carried forward (cannot be done from here; not
 blocking): apply `20260517120000_studio_documents.sql` on a branch DB; the
