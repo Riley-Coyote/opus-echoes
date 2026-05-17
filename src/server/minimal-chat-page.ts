@@ -1654,15 +1654,10 @@ function chatScript(resident: ResidentConfig): string {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ resident: RESIDENT_ID, visitor_token: getVisitorToken() })
     });
-    if (res.status === 409) {
-      // Cross-surface conflict — visitor has an open experiment session
-      // for this resident. The server returns the existing session id
-      // and the experiment surface url; surface this to the caller so
-      // it can prompt the visitor explicitly.
-      let payload = null;
-      try { payload = await res.json(); } catch(_){}
-      throw new BootstrapConflict(payload || { code: 'conflict_experiment_session' });
-    }
+    // Cross-surface conflict (409) retired 2026-05-17 — visitors can now
+    // hold an experiment thread and a classic thread for the same resident
+    // concurrently. Any non-OK status now falls through to bootstrap_failed.
+
     if (!res.ok) throw new Error('bootstrap_failed');
     const data = await res.json();
     if (!data.ok || !data.session_id) throw new Error('bootstrap_failed');
