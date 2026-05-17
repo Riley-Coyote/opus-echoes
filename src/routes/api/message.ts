@@ -34,6 +34,7 @@ import {
 } from "@/server/opus/residents";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
+import { idleCutoffMsForMode } from "@/server/idle";
 import {
   consolidateSession,
   observeExchange,
