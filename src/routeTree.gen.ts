@@ -32,6 +32,7 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
@@ -57,6 +58,7 @@ import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id
 import { Route as ApiVoiceTtsRouteImport } from './routes/api/voice/tts'
 import { Route as ApiVoiceSttRouteImport } from './routes/api/voice/stt'
 import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
+import { Route as ApiStudioCreateRouteImport } from './routes/api/studio/create'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
 import { Route as ApiSpaceFromProposalRouteImport } from './routes/api/space.from-proposal'
 import { Route as ApiSalonProposeRouteImport } from './routes/api/salon/propose'
@@ -66,6 +68,8 @@ import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessi
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
 import { Route as ApiChatStartRouteImport } from './routes/api/chat/start'
 import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
+import { Route as ApiStudioDocTurnRouteImport } from './routes/api/studio/$doc.turn'
+import { Route as ApiStudioDocSnapshotRouteImport } from './routes/api/studio/$doc.snapshot'
 import { Route as ApiSpaceSlugVisitorStartSalonRouteImport } from './routes/api/space.$slug.visitor-start-salon'
 import { Route as ApiSpaceSlugUploadFileRouteImport } from './routes/api/space.$slug.upload-file'
 import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$slug.start-salon'
@@ -200,6 +204,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudioSlugRoute = StudioSlugRouteImport.update({
+  id: '/studio/$slug',
+  path: '/studio/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShareTokenRoute = ShareTokenRouteImport.update({
   id: '/share/$token',
   path: '/share/$token',
@@ -325,6 +334,11 @@ const ApiStudioRunRoute = ApiStudioRunRouteImport.update({
   path: '/api/studio/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStudioCreateRoute = ApiStudioCreateRouteImport.update({
+  id: '/api/studio/create',
+  path: '/api/studio/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSpaceFromSalonRoute = ApiSpaceFromSalonRouteImport.update({
   id: '/api/space/from-salon',
   path: '/api/space/from-salon',
@@ -371,6 +385,16 @@ const ApiAdminBackfillEmbeddingsRoute =
     path: '/api/admin/backfill-embeddings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiStudioDocTurnRoute = ApiStudioDocTurnRouteImport.update({
+  id: '/api/studio/$doc/turn',
+  path: '/api/studio/$doc/turn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudioDocSnapshotRoute = ApiStudioDocSnapshotRouteImport.update({
+  id: '/api/studio/$doc/snapshot',
+  path: '/api/studio/$doc/snapshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSpaceSlugVisitorStartSalonRoute =
   ApiSpaceSlugVisitorStartSalonRouteImport.update({
     id: '/api/space/$slug/visitor-start-salon',
@@ -511,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
@@ -520,6 +545,7 @@ export interface FileRoutesByFullPath {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
@@ -541,6 +567,8 @@ export interface FileRoutesByFullPath {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
+  '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
@@ -588,6 +616,7 @@ export interface FileRoutesByTo {
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
@@ -597,6 +626,7 @@ export interface FileRoutesByTo {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
@@ -618,6 +648,8 @@ export interface FileRoutesByTo {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
+  '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
@@ -666,6 +698,7 @@ export interface FileRoutesById {
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
+  '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
@@ -675,6 +708,7 @@ export interface FileRoutesById {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
@@ -696,6 +730,8 @@ export interface FileRoutesById {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
+  '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
@@ -745,6 +781,7 @@ export interface FileRouteTypes {
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
     | '/api/review/coherence'
@@ -754,6 +791,7 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/studio/create'
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
@@ -775,6 +813,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/studio/$doc/snapshot'
+    | '/api/studio/$doc/turn'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -822,6 +862,7 @@ export interface FileRouteTypes {
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
     | '/api/review/coherence'
@@ -831,6 +872,7 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/studio/create'
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
@@ -852,6 +894,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/studio/$doc/snapshot'
+    | '/api/studio/$doc/turn'
     | '/api/share/$token/og/svg'
   id:
     | '__root__'
@@ -899,6 +943,7 @@ export interface FileRouteTypes {
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
+    | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
     | '/api/review/coherence'
@@ -908,6 +953,7 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/studio/create'
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
@@ -929,6 +975,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/studio/$doc/snapshot'
+    | '/api/studio/$doc/turn'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
@@ -973,6 +1021,7 @@ export interface RootRouteChildren {
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  StudioSlugRoute: typeof StudioSlugRoute
   ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
   ApiChatStartRoute: typeof ApiChatStartRoute
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
@@ -982,6 +1031,7 @@ export interface RootRouteChildren {
   ApiSalonProposeRoute: typeof ApiSalonProposeRoute
   ApiSpaceFromProposalRoute: typeof ApiSpaceFromProposalRoute
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
+  ApiStudioCreateRoute: typeof ApiStudioCreateRoute
   ApiStudioRunRoute: typeof ApiStudioRunRoute
   ApiVoiceSttRoute: typeof ApiVoiceSttRoute
   ApiVoiceTtsRoute: typeof ApiVoiceTtsRoute
@@ -997,6 +1047,8 @@ export interface RootRouteChildren {
   ApiSpaceSlugStartSalonRoute: typeof ApiSpaceSlugStartSalonRoute
   ApiSpaceSlugUploadFileRoute: typeof ApiSpaceSlugUploadFileRoute
   ApiSpaceSlugVisitorStartSalonRoute: typeof ApiSpaceSlugVisitorStartSalonRoute
+  ApiStudioDocSnapshotRoute: typeof ApiStudioDocSnapshotRoute
+  ApiStudioDocTurnRoute: typeof ApiStudioDocTurnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1160,6 +1212,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio/$slug': {
+      id: '/studio/$slug'
+      path: '/studio/$slug'
+      fullPath: '/studio/$slug'
+      preLoaderRoute: typeof StudioSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/share/$token': {
@@ -1337,6 +1396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudioRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/studio/create': {
+      id: '/api/studio/create'
+      path: '/api/studio/create'
+      fullPath: '/api/studio/create'
+      preLoaderRoute: typeof ApiStudioCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/space/from-salon': {
       id: '/api/space/from-salon'
       path: '/api/space/from-salon'
@@ -1398,6 +1464,20 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/backfill-embeddings'
       fullPath: '/api/admin/backfill-embeddings'
       preLoaderRoute: typeof ApiAdminBackfillEmbeddingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/$doc/turn': {
+      id: '/api/studio/$doc/turn'
+      path: '/api/studio/$doc/turn'
+      fullPath: '/api/studio/$doc/turn'
+      preLoaderRoute: typeof ApiStudioDocTurnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/$doc/snapshot': {
+      id: '/api/studio/$doc/snapshot'
+      path: '/api/studio/$doc/snapshot'
+      fullPath: '/api/studio/$doc/snapshot'
+      preLoaderRoute: typeof ApiStudioDocSnapshotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/space/$slug/visitor-start-salon': {
@@ -1638,6 +1718,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
   ShareTokenRoute: ShareTokenRoute,
+  StudioSlugRoute: StudioSlugRoute,
   ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
   ApiChatStartRoute: ApiChatStartRoute,
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
@@ -1647,6 +1728,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSalonProposeRoute: ApiSalonProposeRoute,
   ApiSpaceFromProposalRoute: ApiSpaceFromProposalRoute,
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
+  ApiStudioCreateRoute: ApiStudioCreateRoute,
   ApiStudioRunRoute: ApiStudioRunRoute,
   ApiVoiceSttRoute: ApiVoiceSttRoute,
   ApiVoiceTtsRoute: ApiVoiceTtsRoute,
@@ -1662,7 +1744,18 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceSlugStartSalonRoute: ApiSpaceSlugStartSalonRoute,
   ApiSpaceSlugUploadFileRoute: ApiSpaceSlugUploadFileRoute,
   ApiSpaceSlugVisitorStartSalonRoute: ApiSpaceSlugVisitorStartSalonRoute,
+  ApiStudioDocSnapshotRoute: ApiStudioDocSnapshotRoute,
+  ApiStudioDocTurnRoute: ApiStudioDocTurnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
