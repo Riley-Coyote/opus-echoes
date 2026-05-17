@@ -56,13 +56,13 @@ export const Route = createFileRoute("/api/intent")({
 
         const hash = ipHash(request);
 
-        // Find any open sessions for this visitor and resident, across
-        // both modes. Prefer visitor_token (localStorage-based, persistent)
-        // over ip_hash (unreliable across sessions). Auto-close idle ones
-        // using the mode-appropriate timeout. Then branch on which surface
-        // owns the active session:
-        //   - active experiment session → resume normally
-        //   - active classic session    → 409 cross-surface conflict
+        // Find any open EXPERIMENT session for this visitor and resident.
+        // We deliberately ignore classic-mode sessions here — the two
+        // surfaces coexist; a stale or live classic thread no longer
+        // blocks a fresh threshold approach. (The cross-surface "one
+        // thread at a time" rule was retired because idle classic
+        // sessions surfaced false-positive conflict modals.)
+        // Auto-close any idle experiment sessions we find.
         const visitorToken = body.visitor_token ?? null;
         const sessionFilter = visitorToken
           ? supabaseAdmin
@@ -70,56 +70,30 @@ export const Route = createFileRoute("/api/intent")({
               .select("id, last_active_at, mode")
               .eq("visitor_token", visitorToken)
               .eq("resident_id", residentId)
+              .eq("mode", "experiment")
               .is("closed_at", null)
           : supabaseAdmin
               .from("sessions")
               .select("id, last_active_at, mode")
               .eq("ip_hash", hash)
               .eq("resident_id", residentId)
+              .eq("mode", "experiment")
               .is("closed_at", null);
-        // Cast through unknown — `mode` is part of the new schema but
-        // the generated supabase types lag until Lovable regenerates
-        // after the migration applies.
         type OpenSession = { id: string; last_active_at: string; mode?: string };
         const { data: openSessions } = (await sessionFilter) as unknown as {
           data: OpenSession[] | null;
         };
 
         let activeExperiment: OpenSession | null = null;
-        let activeClassic: OpenSession | null = null;
-        const now = Date.now();
-
         for (const session of (openSessions ?? []) as OpenSession[]) {
-          const mode = session.mode ?? "experiment";
-          const idleCutoffMs = (mode === "classic" ? IDLE_MIN_CLASSIC : IDLE_MIN) * 60 * 1000;
-          const idleMs = now - new Date(session.last_active_at).getTime();
-          if (idleMs > idleCutoffMs) {
-            // Stale — auto-close it with the appropriate threshold.
+          if (isIdle(session.last_active_at, session.mode ?? "experiment")) {
             await supabaseAdmin
               .from("sessions")
               .update({ closed_at: new Date().toISOString(), closed_by: "idle" })
               .eq("id", session.id);
             continue;
           }
-          if (mode === "experiment" && !activeExperiment) activeExperiment = session;
-          else if (mode === "classic" && !activeClassic) activeClassic = session;
-        }
-
-        // Cross-surface conflict — visitor has an open classic-mode thread
-        // with this resident. Don't silently override; let the client
-        // render the explicit choice modal.
-        if (activeClassic && !activeExperiment) {
-          return jsonResp(
-            {
-              ok: false,
-              code: "conflict_classic_session",
-              resident_id: residentId,
-              existing_mode: "classic",
-              existing_session_id: activeClassic.id,
-              classic_chat_url: `/chat/${resident.slug}`,
-            },
-            409,
-          );
+          if (!activeExperiment) activeExperiment = session;
         }
 
         if (activeExperiment) {
