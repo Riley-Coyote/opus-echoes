@@ -440,9 +440,10 @@ export interface StudioTurnOpts {
   maxTurns: number;
   /** Injected relay. Supabase in the route, Local in the test. */
   transport: RoomTransport;
-  /** Polled between turns AND at block boundaries — true ⇒ finish the
-   *  current block, then yield the floor to the human. */
-  shouldInterrupt: () => boolean;
+  /** Polled between turns — true ⇒ stop the round and yield the
+   *  floor to the human. May be sync (local test) or async (the
+   *  route re-queries the durable observer_mode signal). */
+  shouldInterrupt: () => boolean | Promise<boolean>;
   /** Token-stream override. Defaults to the real model call; a
    *  scripted fn here lets the whole conductor (pick/parse/lock/
    *  interrupt/observer) run locally with no Supabase, no API keys —
@@ -489,7 +490,12 @@ export function streamStudioTurn(opts: StudioTurnOpts): Response {
         let passes = 0;
 
         for (let turn = 0; turn < opts.maxTurns; turn++) {
-          if (opts.shouldInterrupt()) {
+          // Polled between turns. Async so the route can re-query the
+          // durable signal (studio_documents.observer_mode flipping
+          // off mid-autonomous-round = the human reclaiming the floor).
+          // `await` of a sync boolean is the value — back-compatible
+          // with the local test's sync stubs.
+          if (await opts.shouldInterrupt()) {
             stop = "human_interrupt";
             break;
           }

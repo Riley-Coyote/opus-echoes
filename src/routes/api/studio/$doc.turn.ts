@@ -92,12 +92,15 @@ export const Route = createFileRoute("/api/studio/$doc/turn")({
 
         const { data: doc } = await sb
           .from("studio_documents")
-          .select("id, space_id, status")
+          .select("id, space_id, status, observer_mode")
           .eq("id", docId)
           .eq("status", "active")
           .maybeSingle();
         if (!doc) return jsonResp({ ok: false, code: "doc_not_found" }, 404);
         const spaceId = doc.space_id as string;
+        // The persisted toggle is authoritative; the request body is
+        // only an initial hint (e.g. the first turn before any toggle).
+        const observerMode = (doc.observer_mode as boolean) || !!body.observer;
 
         // Peer gate: the visitor must be a participant of this space.
         const { data: participant } = await sb
@@ -203,11 +206,25 @@ export const Route = createFileRoute("/api/studio/$doc/turn")({
           talk,
           openMarginalia,
           visitorToken: body.visitor_token,
-          maxTurns: body.observer ? STUDIO_MAX_TURNS : 4,
+          // Observer = a long autonomous resident round; otherwise a
+          // short human-paced round.
+          maxTurns: observerMode ? STUDIO_MAX_TURNS : 4,
           transport,
-          // Cross-request interrupt signalling is P4 (presence-driven).
-          // The conductor supports it; v1 rounds are short + bounded.
-          shouldInterrupt: () => false,
+          // Cross-request interrupt: only an autonomous (observer)
+          // round can be reclaimed mid-flight. Between turns, re-query
+          // the durable observer_mode; if the human has flipped it OFF
+          // the conductor finishes its block and yields the floor.
+          // Short human-paced rounds don't poll (nothing to reclaim).
+          shouldInterrupt: observerMode
+            ? async () => {
+                const { data } = await sb
+                  .from("studio_documents")
+                  .select("observer_mode")
+                  .eq("id", docId)
+                  .maybeSingle();
+                return data ? !(data.observer_mode as boolean) : false;
+              }
+            : () => false,
         });
       },
     },

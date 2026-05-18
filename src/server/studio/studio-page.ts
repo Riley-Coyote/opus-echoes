@@ -323,22 +323,28 @@ const STUDIO_CLIENT = String.raw`
     (snap.residents||[]).forEach(function(r){ setPresence(r,'Reading'); });
     (snap.marginalia||[]).forEach(function(n){ addNote(n,false); });
     (snap.talk||[]).forEach(function(t){ addTalk(t.is_visitor?null:t.resident_id, t.body, null); });
+    mountObserverToggle();
+    observer = !!(snap.doc && snap.doc.observer_mode);
+    applyObserverUI();
+    if(observer) autoRound();
   }
 
   /* ── drive a turn through the real NDJSON stream ── */
   var running=false;
-  function runTurn(message){
-    if(running) return; running=true;
+  function runTurn(message, onDone){
+    if(running){ if(onDone) onDone(); return; }
+    running=true;
+    function done(){ running=false; if(onDone) onDone(); }
     var payload={ visitor_token: visitorToken() };
     if(message) payload.message=message;
     fetch('/api/studio/'+encodeURIComponent(docId)+'/turn',{
       method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(payload)
     }).then(function(res){
-      if(!res.ok || !res.body){ running=false; return; }
+      if(!res.ok || !res.body){ done(); return; }
       var reader=res.body.getReader(), dec=new TextDecoder(), buf='';
       function pump(){
         return reader.read().then(function(r){
-          if(r.done){ running=false; return; }
+          if(r.done){ done(); return; }
           buf+=dec.decode(r.value,{stream:true});
           var lines=buf.split('\n'); buf=lines.pop();
           lines.forEach(function(ln){
@@ -349,7 +355,62 @@ const STUDIO_CLIENT = String.raw`
         });
       }
       return pump();
-    }).catch(function(){ running=false; });
+    }).catch(function(){ done(); });
+  }
+
+  /* ── observer mode — the human watches; the residents work the
+       room amongst themselves. Durable on studio_documents.observer_
+       mode (the conductor also polls it as the yield signal). When
+       observing, the human's write affordances are suppressed and
+       the client keeps re-triggering bounded autonomous rounds;
+       turning it off stops the loop AND makes the in-flight round
+       yield (the conductor sees observer_mode flip). ── */
+  var observer=false;
+  function writeEls(){
+    return [].slice.call(document.querySelectorAll(
+      '.talk-composer .talk-input input, .talk-composer .talk-input .send,'+
+      ' .gathering-overlay .input-shell textarea, .gathering-overlay .input-shell .send'));
+  }
+  function applyObserverUI(){
+    document.body.classList.toggle('studio-observing', observer);
+    writeEls().forEach(function(el){
+      if(observer){ el.setAttribute('disabled','true'); }
+      else { el.removeAttribute('disabled'); }
+    });
+    var t=document.getElementById('studioObserverToggle');
+    if(t){
+      t.textContent = observer ? 'observing — join in' : 'let them work · observe';
+      t.setAttribute('aria-pressed', observer ? 'true' : 'false');
+    }
+    var lbl=document.querySelector('.talk-composer-meta .label');
+    if(lbl && !lbl.getAttribute('data-orig')) lbl.setAttribute('data-orig', lbl.textContent||'');
+    if(lbl) lbl.textContent = observer
+      ? 'the residents have the room — you are watching'
+      : (lbl.getAttribute('data-orig') || 'Drop a note into the room');
+  }
+  function autoRound(){
+    if(!observer) return;
+    runTurn(null, function(){ if(observer) setTimeout(autoRound, 3000); });
+  }
+  function setObserver(on){
+    fetch('/api/studio/'+encodeURIComponent(docId)+'/observer',{
+      method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({ visitor_token: visitorToken(), observer: !!on })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if(d && d.ok){ observer=!!d.observer; applyObserverUI(); if(observer) autoRound(); }
+    }).catch(function(){});
+  }
+  function mountObserverToggle(){
+    var meta=document.querySelector('.talk-composer-meta');
+    if(!meta || document.getElementById('studioObserverToggle')) return;
+    var btn=document.createElement('button');
+    btn.id='studioObserverToggle'; btn.type='button';
+    btn.className='set-down-link studio-observer-toggle';
+    btn.style.cssText='font-family:var(--mono,monospace);font-size:9.5px;'+
+      'letter-spacing:.16em;text-transform:uppercase;color:var(--soft,#9a9a93);'+
+      'background:transparent;border:0;cursor:pointer;padding:4px 0';
+    btn.addEventListener('click',function(){ setObserver(!observer); });
+    meta.appendChild(btn);
   }
 
   /* ── gathering-mode toggle (verbatim) ── */

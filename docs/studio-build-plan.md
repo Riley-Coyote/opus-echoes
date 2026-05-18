@@ -435,12 +435,22 @@ verbatim. The full system is built end-to-end.
 **Next:**
 1. **P3d Vision-loop** — environment-bound: needs the running app +
    Supabase creds + API keys to render real data and iterate ≥5×. Hands off.
-2. **P4** — harden the Realtime channel from v1 `private:false` →
-   `private:true` + the matching `realtime.messages` RLS migration;
-   observer-mode toggle; cross-request interrupt (presence-driven).
-   *(v1 ships `private:false` so the channel works at first Publish
-   with no RLS — safe: Studio content is already public-read-when-
-   space-active and nothing staged/private is broadcast.)*
+2. **P4** — ✅ **observer toggle + cross-request interrupt** (done,
+   no new migration — reuses the applied `studio_documents.observer_mode`
+   as BOTH the durable mode flag AND the yield signal): `POST
+   /api/studio/$doc/observer` (peer-gated) flips it; `$doc/turn` reads
+   the persisted value (authoritative) → long autonomous round vs short
+   human-paced, and passes a real async `shouldInterrupt` that polls
+   `observer_mode` so flipping observe-OFF mid-round makes the conductor
+   finish its block and yield; the client injects an on-brand toggle,
+   suppresses write affordances while observing, and re-triggers bounded
+   autonomous rounds (the models work the room while the human watches).
+   tsc/prettier clean, client JS syntax-verified. ⬜ **P4.1 remaining**
+   (env-bound): harden v1 `private:false` → `private:true` + the
+   `realtime.messages` RLS migration. *(v1 `private:false` is safe —
+   Studio content is already public-read-when-space-active; nothing
+   staged/private is broadcast. The flip is silent-break-if-wrong and
+   needs live verification → deferred + flagged, per the hand-off rule.)*
 3. **P5** — seal → `space_artifacts(kind=markdown)` + `consolidateSession`
    + `observeSpaceExchange` + `marginalia.related_space_id`.
 4. **One pre-live step (the only Lovable/Supabase hand-off):** apply the
