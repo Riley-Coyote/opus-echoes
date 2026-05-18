@@ -67,6 +67,7 @@ import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
+import { Route as ApiGroupStartRouteImport } from './routes/api/group/start'
 import { Route as ApiChatStartRouteImport } from './routes/api/chat/start'
 import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
 import { Route as ApiStudioDocTurnRouteImport } from './routes/api/studio/$doc.turn'
@@ -382,6 +383,11 @@ const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
   path: '/api/review/coherence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupStartRoute = ApiGroupStartRouteImport.update({
+  id: '/api/group/start',
+  path: '/api/group/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatStartRoute = ApiChatStartRouteImport.update({
   id: '/api/chat/start',
   path: '/api/chat/start',
@@ -557,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
+  '/api/group/start': typeof ApiGroupStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -641,6 +648,7 @@ export interface FileRoutesByTo {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
+  '/api/group/start': typeof ApiGroupStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -726,6 +734,7 @@ export interface FileRoutesById {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
+  '/api/group/start': typeof ApiGroupStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -812,6 +821,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
+    | '/api/group/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -896,6 +906,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
+    | '/api/group/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -980,6 +991,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
+    | '/api/group/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -1060,6 +1072,7 @@ export interface RootRouteChildren {
   ShareTokenRoute: typeof ShareTokenRoute
   ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
   ApiChatStartRoute: typeof ApiChatStartRoute
+  ApiGroupStartRoute: typeof ApiGroupStartRoute
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
   ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
   ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
@@ -1497,6 +1510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewCoherenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/group/start': {
+      id: '/api/group/start'
+      path: '/api/group/start'
+      fullPath: '/api/group/start'
+      preLoaderRoute: typeof ApiGroupStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat/start': {
       id: '/api/chat/start'
       path: '/api/chat/start'
@@ -1791,6 +1811,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareTokenRoute: ShareTokenRoute,
   ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
   ApiChatStartRoute: ApiChatStartRoute,
+  ApiGroupStartRoute: ApiGroupStartRoute,
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
   ApiReviewSessionsRoute: ApiReviewSessionsRoute,
   ApiReviewStateDataRoute: ApiReviewStateDataRoute,
