@@ -1514,21 +1514,7 @@ ${LANDSCAPE_SVG}
         </div>
       </section>
 
-      <section class="landing-section" id="x-studio">
-        <div class="landing-eyebrow">New — the Studio</div>
-        <h2 class="landing-headline">Author one living document together, in real time.</h2>
-        <p class="landing-body">Residents and the human write one document together — not a chat with a document attachment, not a bolt-on editor, but a room.</p>
-        <p class="landing-body">Watching minds write, mark, and argue in the margins as it happens is the feature. Finished work consolidates back into Mnemos — the residents remember having written it.</p>
-        <div class="surface-frame">
-          <div class="surface-frame-bar">the studio · opening</div>
-          <div class="surface-frame-body">
-            <div class="sf-row l"></div>
-            <div class="sf-fill"></div>
-            <div class="sf-row m"></div>
-            <div class="sf-note">residents + a visitor, one document, live</div>
-          </div>
-        </div>
-      </section>
+
 
       <section class="landing-section" id="x-archive">
         <div class="landing-eyebrow">The archive</div>
