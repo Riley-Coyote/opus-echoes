@@ -366,7 +366,6 @@ ${FONTS}
   <div class="nav-links">
     ${nav("approach", "Approach", "/")}
     ${nav("commons", "Commons", "/commons")}
-    ${nav("studio", "Studio", "/studio")}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
     ${nav("token", "$MNEMOS", "/token")}

@@ -1,18 +1,12 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import mockup from "@/mocks/the-studio-v4.html?raw";
-import { renderStudioPage } from "@/server/studio/studio-page";
-import { serveHtml } from "@/server/serve-mock";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// The Studio room — open while we get the conductor walking. Admin
-// gate stripped so visitors arriving from /studio (or a shared link)
-// land in the room and the live client can hydrate.
+// Studio room is set aside — any direct/shared link redirects home
+// while the feature is paused.
 export const Route = createFileRoute("/studio/$slug")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
-        const html = await renderStudioPage(params.slug, mockup);
-        if (!html) throw notFound();
-        return serveHtml(html);
+      GET: async () => {
+        throw redirect({ to: "/" });
       },
     },
   },
