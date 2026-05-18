@@ -562,8 +562,8 @@ const WALKTHROUGH_CSS = `
 
 /* ── footer ───────────────────────────────────────────────────── */
 .landing-foot{
-  margin-top:var(--s-7);
-  padding-top:var(--s-6);
+  margin-top:var(--s-5);
+  padding-top:var(--s-4);
   border-top:1px solid var(--rule-soft);
   display:flex;align-items:baseline;justify-content:space-between;
   gap:var(--s-5);
