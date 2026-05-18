@@ -38,6 +38,7 @@ import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
 import { Route as CommonsSlugRouteImport } from './routes/commons.$slug'
+import { Route as ChatTheRoundRouteImport } from './routes/chat.the-round'
 import { Route as ChatResidentRouteImport } from './routes/chat.$resident'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
@@ -240,6 +241,11 @@ const CommonsSlugRoute = CommonsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => CommonsRoute,
+} as any)
+const ChatTheRoundRoute = ChatTheRoundRouteImport.update({
+  id: '/the-round',
+  path: '/the-round',
+  getParentRoute: () => ChatRoute,
 } as any)
 const ChatResidentRoute = ChatResidentRouteImport.update({
   id: '/$resident',
@@ -574,6 +580,7 @@ export interface FileRoutesByFullPath {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
+  '/chat/the-round': typeof ChatTheRoundRoute
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -662,6 +669,7 @@ export interface FileRoutesByTo {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
+  '/chat/the-round': typeof ChatTheRoundRoute
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -751,6 +759,7 @@ export interface FileRoutesById {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
+  '/chat/the-round': typeof ChatTheRoundRoute
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -841,6 +850,7 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/chat/$resident'
+    | '/chat/the-round'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
@@ -929,6 +939,7 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/chat/$resident'
+    | '/chat/the-round'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
@@ -1017,6 +1028,7 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/chat/$resident'
+    | '/chat/the-round'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
@@ -1345,6 +1357,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/commons/$slug'
       preLoaderRoute: typeof CommonsSlugRouteImport
       parentRoute: typeof CommonsRoute
+    }
+    '/chat/the-round': {
+      id: '/chat/the-round'
+      path: '/the-round'
+      fullPath: '/chat/the-round'
+      preLoaderRoute: typeof ChatTheRoundRouteImport
+      parentRoute: typeof ChatRoute
     }
     '/chat/$resident': {
       id: '/chat/$resident'
@@ -1750,10 +1769,12 @@ declare module '@tanstack/react-router' {
 
 interface ChatRouteChildren {
   ChatResidentRoute: typeof ChatResidentRoute
+  ChatTheRoundRoute: typeof ChatTheRoundRoute
 }
 
 const ChatRouteChildren: ChatRouteChildren = {
   ChatResidentRoute: ChatResidentRoute,
+  ChatTheRoundRoute: ChatTheRoundRoute,
 }
 
 const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
