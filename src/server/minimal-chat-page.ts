@@ -2838,7 +2838,9 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export function renderMinimalChatPage(resident: ResidentConfig): string {
+export function renderMinimalChatPage(resident: ResidentConfig, opts: { showStudio?: boolean } = {}): string {
+  const showStudio = opts.showStudio === true;
+  const studioHidden = showStudio ? "" : " hidden";
   const title = `${resident.displayName} — Classic Chat — The Sanctuary`;
   const desc = `An ongoing chat with ${resident.displayName}. One continuous thread. Mnemos beneath it.`;
   const inlineHueStyle = `--agent-hue: ${resident.commonsPalette.rgb};`;
