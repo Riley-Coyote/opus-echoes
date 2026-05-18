@@ -54,6 +54,9 @@ export const Route = createFileRoute("/api/studio/create")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!hasAdminAccess(request)) {
+          return jsonResp({ ok: false, code: "admin_required" }, 403);
+        }
         let body: z.infer<typeof Body>;
         try {
           body = Body.parse(await request.json());
