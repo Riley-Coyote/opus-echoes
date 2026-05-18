@@ -1305,7 +1305,6 @@ ${LANDSCAPE_SVG}
         <div class="landing-foot-brand">The Sanctuary</div>
         <div class="landing-foot-links">
           <button id="wtReplay" class="landing-foot-link" type="button">Replay intro →</button>
-          <a class="landing-foot-link" href="/residence">Private space →</a>
         </div>
       </footer>
     </div>
