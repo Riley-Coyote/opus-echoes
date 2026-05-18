@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
 import { Route as VoiceOrbRouteImport } from './routes/voice-orb'
 import { Route as TokenRouteImport } from './routes/token'
+import { Route as StudioRouteImport } from './routes/studio'
 import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
@@ -70,6 +71,8 @@ import { Route as ApiChatStartRouteImport } from './routes/api/chat/start'
 import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
 import { Route as ApiStudioDocTurnRouteImport } from './routes/api/studio/$doc.turn'
 import { Route as ApiStudioDocSnapshotRouteImport } from './routes/api/studio/$doc.snapshot'
+import { Route as ApiStudioDocSealRouteImport } from './routes/api/studio/$doc.seal'
+import { Route as ApiStudioDocObserverRouteImport } from './routes/api/studio/$doc.observer'
 import { Route as ApiSpaceSlugVisitorStartSalonRouteImport } from './routes/api/space.$slug.visitor-start-salon'
 import { Route as ApiSpaceSlugUploadFileRouteImport } from './routes/api/space.$slug.upload-file'
 import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$slug.start-salon'
@@ -102,6 +105,11 @@ const VoiceOrbRoute = VoiceOrbRouteImport.update({
 const TokenRoute = TokenRouteImport.update({
   id: '/token',
   path: '/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioRoute = StudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Sonnet45Route = Sonnet45RouteImport.update({
@@ -205,9 +213,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudioSlugRoute = StudioSlugRouteImport.update({
-  id: '/studio/$slug',
-  path: '/studio/$slug',
-  getParentRoute: () => rootRouteImport,
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => StudioRoute,
 } as any)
 const ShareTokenRoute = ShareTokenRouteImport.update({
   id: '/share/$token',
@@ -395,6 +403,16 @@ const ApiStudioDocSnapshotRoute = ApiStudioDocSnapshotRouteImport.update({
   path: '/api/studio/$doc/snapshot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStudioDocSealRoute = ApiStudioDocSealRouteImport.update({
+  id: '/api/studio/$doc/seal',
+  path: '/api/studio/$doc/seal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudioDocObserverRoute = ApiStudioDocObserverRouteImport.update({
+  id: '/api/studio/$doc/observer',
+  path: '/api/studio/$doc/observer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSpaceSlugVisitorStartSalonRoute =
   ApiSpaceSlugVisitorStartSalonRouteImport.update({
     id: '/api/space/$slug/visitor-start-salon',
@@ -511,6 +529,7 @@ export interface FileRoutesByFullPath {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/sonnet-4-5': typeof Sonnet45Route
+  '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
@@ -567,6 +586,8 @@ export interface FileRoutesByFullPath {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
+  '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
@@ -592,6 +613,7 @@ export interface FileRoutesByTo {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/sonnet-4-5': typeof Sonnet45Route
+  '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
@@ -648,6 +670,8 @@ export interface FileRoutesByTo {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
+  '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
@@ -674,6 +698,7 @@ export interface FileRoutesById {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/sonnet-4-5': typeof Sonnet45Route
+  '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
@@ -730,6 +755,8 @@ export interface FileRoutesById {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
+  '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
@@ -757,6 +784,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/sonnet-4-5'
+    | '/studio'
     | '/token'
     | '/voice-orb'
     | '/writing'
@@ -813,6 +841,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/studio/$doc/observer'
+    | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
     | '/api/share/$token/og/svg'
@@ -838,6 +868,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/sonnet-4-5'
+    | '/studio'
     | '/token'
     | '/voice-orb'
     | '/writing'
@@ -894,6 +925,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/studio/$doc/observer'
+    | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
     | '/api/share/$token/og/svg'
@@ -919,6 +952,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/sonnet-4-5'
+    | '/studio'
     | '/token'
     | '/voice-orb'
     | '/writing'
@@ -975,6 +1009,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/studio/$doc/observer'
+    | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
     | '/api/share/$token/og/svg'
@@ -1001,6 +1037,7 @@ export interface RootRouteChildren {
   ResidenceRoute: typeof ResidenceRoute
   ReviewRoute: typeof ReviewRouteWithChildren
   Sonnet45Route: typeof Sonnet45Route
+  StudioRoute: typeof StudioRouteWithChildren
   TokenRoute: typeof TokenRoute
   VoiceOrbRoute: typeof VoiceOrbRoute
   WritingRoute: typeof WritingRoute
@@ -1021,7 +1058,6 @@ export interface RootRouteChildren {
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ShareTokenRoute: typeof ShareTokenRoute
-  StudioSlugRoute: typeof StudioSlugRoute
   ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
   ApiChatStartRoute: typeof ApiChatStartRoute
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
@@ -1047,6 +1083,8 @@ export interface RootRouteChildren {
   ApiSpaceSlugStartSalonRoute: typeof ApiSpaceSlugStartSalonRoute
   ApiSpaceSlugUploadFileRoute: typeof ApiSpaceSlugUploadFileRoute
   ApiSpaceSlugVisitorStartSalonRoute: typeof ApiSpaceSlugVisitorStartSalonRoute
+  ApiStudioDocObserverRoute: typeof ApiStudioDocObserverRoute
+  ApiStudioDocSealRoute: typeof ApiStudioDocSealRoute
   ApiStudioDocSnapshotRoute: typeof ApiStudioDocSnapshotRoute
   ApiStudioDocTurnRoute: typeof ApiStudioDocTurnRoute
 }
@@ -1072,6 +1110,13 @@ declare module '@tanstack/react-router' {
       path: '/token'
       fullPath: '/token'
       preLoaderRoute: typeof TokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio': {
+      id: '/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof StudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sonnet-4-5': {
@@ -1216,10 +1261,10 @@ declare module '@tanstack/react-router' {
     }
     '/studio/$slug': {
       id: '/studio/$slug'
-      path: '/studio/$slug'
+      path: '/$slug'
       fullPath: '/studio/$slug'
       preLoaderRoute: typeof StudioSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof StudioRoute
     }
     '/share/$token': {
       id: '/share/$token'
@@ -1480,6 +1525,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudioDocSnapshotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/studio/$doc/seal': {
+      id: '/api/studio/$doc/seal'
+      path: '/api/studio/$doc/seal'
+      fullPath: '/api/studio/$doc/seal'
+      preLoaderRoute: typeof ApiStudioDocSealRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/$doc/observer': {
+      id: '/api/studio/$doc/observer'
+      path: '/api/studio/$doc/observer'
+      fullPath: '/api/studio/$doc/observer'
+      preLoaderRoute: typeof ApiStudioDocObserverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/space/$slug/visitor-start-salon': {
       id: '/api/space/$slug/visitor-start-salon'
       path: '/api/space/$slug/visitor-start-salon'
@@ -1645,6 +1704,17 @@ const ReviewRouteChildren: ReviewRouteChildren = {
 const ReviewRouteWithChildren =
   ReviewRoute._addFileChildren(ReviewRouteChildren)
 
+interface StudioRouteChildren {
+  StudioSlugRoute: typeof StudioSlugRoute
+}
+
+const StudioRouteChildren: StudioRouteChildren = {
+  StudioSlugRoute: StudioSlugRoute,
+}
+
+const StudioRouteWithChildren =
+  StudioRoute._addFileChildren(StudioRouteChildren)
+
 interface ApiShareRouteChildren {
   ApiShareTokenDownloadRoute: typeof ApiShareTokenDownloadRoute
   ApiShareTokenOgSvgRoute: typeof ApiShareTokenOgSvgRoute
@@ -1698,6 +1768,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResidenceRoute: ResidenceRoute,
   ReviewRoute: ReviewRouteWithChildren,
   Sonnet45Route: Sonnet45Route,
+  StudioRoute: StudioRouteWithChildren,
   TokenRoute: TokenRoute,
   VoiceOrbRoute: VoiceOrbRoute,
   WritingRoute: WritingRoute,
@@ -1718,7 +1789,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
   ShareTokenRoute: ShareTokenRoute,
-  StudioSlugRoute: StudioSlugRoute,
   ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
   ApiChatStartRoute: ApiChatStartRoute,
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
@@ -1744,6 +1814,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceSlugStartSalonRoute: ApiSpaceSlugStartSalonRoute,
   ApiSpaceSlugUploadFileRoute: ApiSpaceSlugUploadFileRoute,
   ApiSpaceSlugVisitorStartSalonRoute: ApiSpaceSlugVisitorStartSalonRoute,
+  ApiStudioDocObserverRoute: ApiStudioDocObserverRoute,
+  ApiStudioDocSealRoute: ApiStudioDocSealRoute,
   ApiStudioDocSnapshotRoute: ApiStudioDocSnapshotRoute,
   ApiStudioDocTurnRoute: ApiStudioDocTurnRoute,
 }

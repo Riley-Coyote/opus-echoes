@@ -2838,7 +2838,9 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export function renderMinimalChatPage(resident: ResidentConfig): string {
+export function renderMinimalChatPage(resident: ResidentConfig, opts: { showStudio?: boolean } = {}): string {
+  const showStudio = opts.showStudio === true;
+  const studioHidden = showStudio ? "" : " hidden";
   const title = `${resident.displayName} — Classic Chat — The Sanctuary`;
   const desc = `An ongoing chat with ${resident.displayName}. One continuous thread. Mnemos beneath it.`;
   const inlineHueStyle = `--agent-hue: ${resident.commonsPalette.rgb};`;
@@ -2905,7 +2907,7 @@ ${FONTS}
       </div>
     </div>
     <div class="chrome-end">
-      <button id="studioChromeBtn" class="chrome-link" type="button" data-studio-spawn aria-label="open a collaborative document in the Studio" title="open a collaborative document in the Studio">
+      <button id="studioChromeBtn" class="chrome-link" type="button" data-studio-spawn aria-label="open a collaborative document in the Studio" title="open a collaborative document in the Studio"${studioHidden}>
         <span>the studio</span>
         <span class="arrow" aria-hidden="true">→</span>
       </button>
@@ -2967,7 +2969,7 @@ ${FONTS}
         <span class="caption-item"><span class="key">↵</span>send</span>
         <span class="caption-item"><span class="key">⇧↵</span>newline</span>
         <button class="set-down-link" id="setDownLink" type="button" disabled title="set down this thread (consolidate + close)">set down</button>
-        <button class="set-down-link" id="studioBtn" type="button" data-studio-spawn title="open a collaborative document in the Studio">begin a document</button>
+        <button class="set-down-link" id="studioBtn" type="button" data-studio-spawn title="open a collaborative document in the Studio"${studioHidden}>begin a document</button>
         <button class="voice-toggle" id="voiceToggle" type="button" data-on="false" title="speak replies aloud in ${escapeHtml(resident.displayName)}'s voice">voice off</button>
         <span class="caption-spacer"></span>
         <span class="caption-status">${escapeHtml(slugLower)} · attending</span>
