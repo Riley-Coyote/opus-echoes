@@ -516,12 +516,13 @@ const WALKTHROUGH_CSS = `
 }
 .landing-card-ctas{
   margin-top:auto;padding-top:var(--s-4);
-  display:flex;flex-direction:column;gap:var(--s-2);
+  display:flex;flex-direction:column;gap:var(--s-3);
 }
-/* Real buttons — same idiom as .wt-resume-continue (1px rule border,
-   6px radius, mono uppercase, restrained green-soft hover). Two per
-   card; a quiet primary/secondary so they read as actions, not
-   labels, without breaking the monochrome restraint. */
+/* Actual buttons: a visible 1px border (--rule-strong, not the
+   near-invisible --rule-soft the card uses), a faint surface so each
+   has a button body, 6px radius, mono uppercase. Quiet primary /
+   secondary. Stays monochrome + restrained — the green --state shows
+   only on hover; no gradients, no glow, no new colours. */
 .landing-card-cta{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   width:100%;
@@ -529,27 +530,30 @@ const WALKTHROUGH_CSS = `
   letter-spacing:.14em;text-transform:uppercase;
   color:var(--soft);
   text-decoration:none;
-  background:transparent;
-  border:1px solid var(--rule-soft);
+  background:rgba(255,255,255,.025);
+  border:1px solid var(--rule-strong);
   border-radius:6px;
-  padding:10px 14px;
+  padding:11px 16px;
   cursor:pointer;
-  transition:color .22s var(--ease),border-color .22s var(--ease),background .22s var(--ease);
+  transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease);
 }
-/* primary: the formal door — a touch more present, never loud */
+/* primary — the formal door: a filled (still faint) surface + ink
+   text so the hierarchy reads without a blatant white block. */
 .landing-card-cta:first-child{
   color:var(--ink);
-  border-color:var(--rule);
+  background:rgba(255,255,255,.065);
+  border-color:var(--rule-strong);
 }
 .landing-card-cta:hover,
 .landing-card-cta:focus-visible{
   color:var(--ink);
   border-color:var(--state-soft);
-  background:var(--state-whisper);
+  background:rgba(130,180,132,.12);
+  outline:none;
 }
 .landing-card-cta .arrow{
   display:inline-block;
-  transition:transform .22s var(--ease);
+  transition:transform .2s var(--ease);
 }
 .landing-card-cta:hover .arrow,
 .landing-card-cta:focus-visible .arrow{transform:translateX(3px)}
