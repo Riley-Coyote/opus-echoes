@@ -25,7 +25,6 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { hasAdminAccess } from "@/server/access.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import {
