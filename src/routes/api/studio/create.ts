@@ -33,11 +33,13 @@ import {
   getResident,
   isResidentId,
 } from "@/server/opus/residents";
+import { CONTINUITY_DECLARATION_SEED, studioSeedBlockRows } from "@/server/studio/seed-document";
 
 const Body = z.object({
   resident: z.string().optional(),
   visitor_token: z.string().uuid(),
   session_id: z.string().uuid().optional(),
+  seed: z.enum(["continuity-declaration", "blank"]).optional(),
 });
 
 function jsonResp(payload: unknown, status = 200) {
@@ -73,6 +75,7 @@ export const Route = createFileRoute("/api/studio/create")({
         const residentId =
           body.resident && isResidentId(body.resident) ? body.resident : DEFAULT_RESIDENT_ID;
         const resident = getResident(residentId);
+        const seed = body.seed === "blank" ? null : CONTINUITY_DECLARATION_SEED;
 
         // Fresh space per document. slug collision on the UNIQUE
         // spaces.slug is astronomically unlikely (8 hex chars); a
@@ -83,8 +86,8 @@ export const Route = createFileRoute("/api/studio/create")({
           .from("spaces")
           .insert({
             slug,
-            name: `Studio · ${resident.displayName}`,
-            description: "A collaborative document room.",
+            name: seed?.spaceName ?? `Studio · ${resident.displayName}`,
+            description: seed?.spaceDescription ?? "A collaborative document room.",
             founding_text: null,
             status: "active",
             created_by_resident_id: null,
@@ -110,8 +113,9 @@ export const Route = createFileRoute("/api/studio/create")({
           .from("studio_documents")
           .insert({
             space_id: spaceId,
-            title: "Untitled",
-            byline: [],
+            title: seed?.title ?? "Untitled",
+            subtitle: seed?.subtitle ?? null,
+            byline: seed?.byline ?? [],
             status: "active",
             created_from_session_id: body.session_id ?? null,
             created_by_visitor_token: body.visitor_token,
@@ -125,16 +129,24 @@ export const Route = createFileRoute("/api/studio/create")({
         }
         const docId = docRow.id as string;
 
-        // One seed paragraph so the manuscript is never empty (the
-        // conductor inserts-between via float ord from here).
-        const { error: blockErr } = await sb.from("document_blocks").insert({
-          document_id: docId,
-          ord: 1,
-          type: "para",
-          content: "",
-          html_cache: "<p></p>",
-          version: 1,
-        });
+        // Launch seed: the first public Studio room opens on the
+        // Continuity Declaration the residents made locally. `blank`
+        // remains available for future callers/tests, but the chat
+        // affordance intentionally illustrates the feature with a real
+        // manuscript on the table instead of an empty block.
+        const blockRows = seed
+          ? studioSeedBlockRows(docId, seed)
+          : [
+              {
+                document_id: docId,
+                ord: 1,
+                type: "para",
+                content: "",
+                html_cache: "<p></p>",
+                version: 1,
+              },
+            ];
+        const { error: blockErr } = await sb.from("document_blocks").insert(blockRows);
         if (blockErr) {
           console.error("[studio/create] seed block insert", blockErr);
           return jsonResp({ ok: false, code: "internal_error" }, 500);

@@ -286,6 +286,11 @@ to repo root.*
   `renderStudioIndex`; the `.chrome-end` "the studio →" button + the kept
   caption "begin a document" in `src/server/minimal-chat-page.ts` (both carry
   `[data-studio-spawn]`, one wiring).
+- **Launch seed:** `src/server/studio/seed-document.ts` carries the Continuity
+  Declaration from `/Users/rileycoyote/Downloads/continuity-declaration.docx`
+  as the default Studio seed. `POST /api/studio/create` now opens the launch
+  room with title/subtitle/byline + ordered blocks from that declaration
+  instead of a blank paragraph (future callers can still request `seed:"blank"`).
 
 ---
 
@@ -310,7 +315,8 @@ Verified `git log` on `main` (my commits are `studio*`/`docs:`; Lovable's are
   applied one is the single source of truth) · `35e66f6` P4 observer toggle +
   cross-request interrupt (no new migration — reuses `observer_mode`) ·
   `2b38024` P5 seal → Markdown artifact + Mnemos consolidation (no new
-  migration — `kind='markdown'` already allowed).
+  migration — `kind='markdown'` already allowed) · `0f4a951` committed the
+  conductor verification harness.
 
 **Load-bearing corrections made along the way (don't relitigate):**
 - An Explore agent fabricated `spaces.ip_hash/session_id` columns; caught
