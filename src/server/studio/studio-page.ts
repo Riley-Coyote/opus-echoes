@@ -195,6 +195,13 @@ const STUDIO_CLIENT = String.raw`
     var lt=document.getElementById('last-touched'); if(lt) lt.textContent='just now';
     if (refs) pulse(refs);
   }
+  function addStudioNotice(text){
+    var ss=document.getElementById('talkStream');
+    var gs=document.getElementById('gStream');
+    var notice = '[studio] ' + text;
+    if (ss){ ss.appendChild(talkMsgEl('talk-msg', null, notice, null)); ss.scrollTop=ss.scrollHeight; }
+    if (gs){ gs.appendChild(talkMsgEl('g-msg', null, notice, null)); }
+  }
   var typingEls = {}; // actorId -> [el,...]
   function showTyping(rid){
     var arr=[];
@@ -344,7 +351,14 @@ const STUDIO_CLIENT = String.raw`
     fetch('/api/studio/'+encodeURIComponent(docId)+'/turn',{
       method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(payload)
     }).then(function(res){
-      if(!res.ok || !res.body){ done(); return; }
+      if(!res.ok || !res.body){
+        res.text().then(function(t){
+          var code='unavailable';
+          try{ var j=JSON.parse(t); code=j.code||code; }catch(_){}
+          addStudioNotice('the room did not answer ('+code+').');
+        }).finally(done);
+        return;
+      }
       var reader=res.body.getReader(), dec=new TextDecoder(), buf='';
       function pump(){
         return reader.read().then(function(r){
@@ -353,13 +367,18 @@ const STUDIO_CLIENT = String.raw`
           var lines=buf.split('\n'); buf=lines.pop();
           lines.forEach(function(ln){
             if(!ln.trim()) return;
-            try{ var f=JSON.parse(ln); if(f.kind==='action'&&f.envelope) applyEnvelope(f.envelope); }catch(_){}
+            try{
+              var f=JSON.parse(ln);
+              if(f.kind==='action'&&f.envelope) applyEnvelope(f.envelope);
+              else if(f.kind==='stream.error') addStudioNotice(f.message || 'the conductor could not complete the turn.');
+              else if(f.kind==='stream.done' && !f.turns) addStudioNotice('the conductor finished without a resident turn ('+(f.reason||'no_turn')+').');
+            }catch(_){}
           });
           return pump();
         });
       }
       return pump();
-    }).catch(function(){ done(); });
+    }).catch(function(){ addStudioNotice('the room did not answer.'); done(); });
   }
 
   /* ── observer mode — the human watches; the residents work the

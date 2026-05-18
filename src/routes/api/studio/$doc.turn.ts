@@ -31,7 +31,10 @@ import { ipHash } from "@/server/rate-limit.server";
 import { streamStudioTurn, STUDIO_MAX_TURNS, type TalkMsg } from "@/server/studio/conductor";
 import type { BlockState, BlockType } from "@/server/studio/blocks";
 import { isBlockType } from "@/server/studio/blocks";
-import { backfillContinuityDeclarationSeed } from "@/server/studio/seed-document";
+import {
+  backfillContinuityDeclarationSeed,
+  ensureStudioParticipant,
+} from "@/server/studio/seed-document";
 import { SupabaseRoomTransport } from "@/server/studio/transport";
 
 const Body = z.object({
@@ -103,15 +106,15 @@ export const Route = createFileRoute("/api/studio/$doc/turn")({
         // only an initial hint (e.g. the first turn before any toggle).
         const observerMode = (doc.observer_mode as boolean) || !!body.observer;
 
-        // Peer gate: the visitor must be a participant of this space.
-        const { data: participant } = await sb
-          .from("space_participants")
-          .select("role")
-          .eq("space_id", spaceId)
-          .eq("visitor_token", body.visitor_token)
-          .maybeSingle();
-        if (!participant) {
-          return jsonResp({ ok: false, code: "not_a_participant" }, 403);
+        // Public active Studio rooms are joinable: reading the room
+        // should be enough to let the visitor drop a note and trigger
+        // the resident conductor. Older builds only recorded the
+        // creator token, which made everyone else silently fail here.
+        try {
+          await ensureStudioParticipant(sb, spaceId, body.visitor_token);
+        } catch (err) {
+          console.error("[studio/turn] participant join failed", err);
+          return jsonResp({ ok: false, code: "participant_unavailable" }, 500);
         }
 
         const [{ data: spaceRow }, { data: residentRows }] = await Promise.all([

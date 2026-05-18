@@ -34,6 +34,7 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { isResidentId, type ResidentId } from "@/server/opus/residents";
 import { consolidateSession, observeSpaceExchange } from "@/server/substrate.server";
 import { type BlockType, isBlockType } from "@/server/studio/blocks";
+import { ensureStudioParticipant } from "@/server/studio/seed-document";
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -97,14 +98,11 @@ export const Route = createFileRoute("/api/studio/$doc/seal")({
         }
         const spaceId = doc.space_id as string;
 
-        const { data: participant } = await sb
-          .from("space_participants")
-          .select("role")
-          .eq("space_id", spaceId)
-          .eq("visitor_token", body.visitor_token)
-          .maybeSingle();
-        if (!participant) {
-          return jsonResp({ ok: false, code: "not_a_participant" }, 403);
+        try {
+          await ensureStudioParticipant(sb, spaceId, body.visitor_token);
+        } catch (err) {
+          console.error("[studio/seal] participant join failed", err);
+          return jsonResp({ ok: false, code: "participant_unavailable" }, 500);
         }
 
         const [{ data: blockRows }, { data: residentRows }] = await Promise.all([

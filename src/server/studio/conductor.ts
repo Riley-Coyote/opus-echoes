@@ -54,7 +54,7 @@ import {
   resolveRef,
 } from "./blocks";
 import { CONDUCTOR_ACTOR, makeEnvelope, type RoomAction, type RoomActor } from "./protocol";
-import { type RoomTransport, TYPING_DEGRADE_AFTER_FAILS, TypingCoalescer } from "./transport";
+import { type RoomTransport, TypingCoalescer } from "./transport";
 
 /** A line in the Studio talk rail (space_messages projection). */
 export interface TalkMsg {
@@ -471,9 +471,10 @@ export function streamStudioTurn(opts: StudioTurnOpts): Response {
       let seq = 0;
       const blocks: BlockState[] = opts.blocks.map((b) => ({ ...b })).sort((a, b) => a.ord - b.ord);
       const recency: ResidentId[] = [];
-      let typingFails = 0;
-
-      // Persist (durable) → broadcast → mirror to the originator.
+      // Persist (durable) → mirror to the originator → broadcast
+      // best-effort. Realtime is a projection, not the authority; the
+      // initiating browser must never wait on channel subscription
+      // health before seeing the resident's turn.
       const emit = async (actor: RoomActor, action: RoomAction) => {
         const env = makeEnvelope({
           doc_id: opts.docId,
@@ -481,8 +482,11 @@ export function streamStudioTurn(opts: StudioTurnOpts): Response {
           actor,
           action,
         });
-        const ok = await opts.transport.broadcast(env).catch(() => false);
-        send({ kind: "action", envelope: env, relayed: ok });
+        send({ kind: "action", envelope: env, relayed: null });
+        void opts.transport.broadcast(env).catch((err) => {
+          console.error("[studio] realtime relay failed:", err);
+          return false;
+        });
       };
 
       try {
@@ -562,23 +566,12 @@ export function streamStudioTurn(opts: StudioTurnOpts): Response {
             }
             continue;
           }
-          // Drain any buffered caret (best-effort; never blocks the
-          // durable path). Degrade silently after sustained failure.
-          if (typingFails < TYPING_DEGRADE_AFTER_FAILS) {
-            for (const t of coalescer.flush()) {
-              const ok = await opts.transport
-                .broadcast(
-                  makeEnvelope({
-                    doc_id: opts.docId,
-                    seq: ++seq,
-                    actor: { kind: "resident", id: resident.id },
-                    action: { type: "block.typing", block_id: t.block_id, delta: t.delta },
-                  }),
-                )
-                .catch(() => false);
-              typingFails = ok ? 0 : typingFails + 1;
-            }
-          }
+          // The model's raw stream includes the tag grammar, so we do
+          // not project pending token deltas into the manuscript. The
+          // visible liveness signal is turn.begin/turn.end in Studio
+          // talk; durable block/marginalia/talk actions land after the
+          // grammar is parsed.
+          coalescer.flush();
 
           const parsed = parseStudioTurn(buffer);
 

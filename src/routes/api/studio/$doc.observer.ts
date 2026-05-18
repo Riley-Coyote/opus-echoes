@@ -19,6 +19,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
+import { ensureStudioParticipant } from "@/server/studio/seed-document";
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -59,14 +60,11 @@ export const Route = createFileRoute("/api/studio/$doc/observer")({
           .maybeSingle();
         if (!doc) return jsonResp({ ok: false, code: "doc_not_found" }, 404);
 
-        const { data: participant } = await sb
-          .from("space_participants")
-          .select("role")
-          .eq("space_id", doc.space_id as string)
-          .eq("visitor_token", body.visitor_token)
-          .maybeSingle();
-        if (!participant) {
-          return jsonResp({ ok: false, code: "not_a_participant" }, 403);
+        try {
+          await ensureStudioParticipant(sb, doc.space_id as string, body.visitor_token);
+        } catch (err) {
+          console.error("[studio/observer] participant join failed", err);
+          return jsonResp({ ok: false, code: "participant_unavailable" }, 500);
         }
 
         const { error } = await sb

@@ -19,6 +19,7 @@ import {
   studioSeedBlockRows,
 } from "../src/server/studio/seed-document";
 import { LocalRoomTransport } from "../src/server/studio/transport";
+import type { RoomTransport, PresenceMeta } from "../src/server/studio/transport";
 import type { ResidentConfig, ResidentId } from "../src/server/opus/residents";
 
 type ActionFrame = Extract<StudioStreamFrame, { kind: "action" }>;
@@ -281,6 +282,30 @@ async function assertInterruptAndObserverCap(): Promise<void> {
   );
 }
 
+async function assertRealtimeRelayDoesNotBlockOriginator(): Promise<void> {
+  const stalledTransport: RoomTransport = {
+    broadcast: async () => new Promise<boolean>(() => {}),
+    subscribe: () => () => {},
+    presence: async (_meta: PresenceMeta) => {},
+    presenceState: () => ({}),
+    close: async () => {},
+  };
+
+  const frames = await collect(
+    streamStudioTurn(
+      baseOpts({
+        transport: stalledTransport,
+        streamTokens: async () =>
+          '<block op="insert-after" ref="end" type="para">this still reaches the originator.</block>',
+      }),
+    ),
+  );
+  const types = actionTypes(actions(frames));
+  assert(types.includes("turn.begin"), "originator sees turn.begin without realtime");
+  assert(types.includes("block.upsert"), "originator sees durable actions without realtime");
+  assert.equal(done(frames).reason, "max_turns");
+}
+
 async function main(): Promise<void> {
   assertActorSelection();
   assertParsing();
@@ -290,6 +315,7 @@ async function main(): Promise<void> {
   await assertLockDiscipline();
   await assertMarksNotesTalkAndSetDown();
   await assertInterruptAndObserverCap();
+  await assertRealtimeRelayDoesNotBlockOriginator();
   console.log("verify-studio: all invariants passed");
 }
 

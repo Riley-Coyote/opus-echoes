@@ -275,3 +275,27 @@ export async function backfillContinuityDeclarationSeed(
     blocks: (seededBlocks ?? []) as StudioSeedBlockRow[],
   };
 }
+
+export async function ensureStudioParticipant(
+  supabase: SupabaseAdminLike,
+  spaceId: string,
+  visitorToken: string,
+): Promise<boolean> {
+  const { data: existing, error: readErr } = await supabase
+    .from("space_participants")
+    .select("role")
+    .eq("space_id", spaceId)
+    .eq("visitor_token", visitorToken)
+    .maybeSingle();
+  if (readErr) throw readErr;
+  if (existing) return true;
+
+  const { error: insertErr } = await supabase.from("space_participants").insert({
+    space_id: spaceId,
+    visitor_token: visitorToken,
+    role: "peer",
+    display_name: null,
+  });
+  if (insertErr) throw insertErr;
+  return true;
+}
