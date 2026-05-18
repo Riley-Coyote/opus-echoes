@@ -57,6 +57,7 @@ import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-prev
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
+import { Route as ChatTheRoundIdRouteImport } from './routes/chat.the-round.$id'
 import { Route as ApiVoiceTtsRouteImport } from './routes/api/voice/tts'
 import { Route as ApiVoiceSttRouteImport } from './routes/api/voice/stt'
 import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
@@ -337,6 +338,11 @@ const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
   path: '/session/$id',
   getParentRoute: () => ReviewRoute,
 } as any)
+const ChatTheRoundIdRoute = ChatTheRoundIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ChatTheRoundRoute,
+} as any)
 const ApiVoiceTtsRoute = ApiVoiceTtsRouteImport.update({
   id: '/api/voice/tts',
   path: '/api/voice/tts',
@@ -580,7 +586,7 @@ export interface FileRoutesByFullPath {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
-  '/chat/the-round': typeof ChatTheRoundRoute
+  '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -600,6 +606,7 @@ export interface FileRoutesByFullPath {
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
+  '/chat/the-round/$id': typeof ChatTheRoundIdRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/group/$id/message': typeof ApiGroupIdMessageRoute
   '/api/group/$id/set-down': typeof ApiGroupIdSetDownRoute
@@ -669,7 +676,7 @@ export interface FileRoutesByTo {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
-  '/chat/the-round': typeof ChatTheRoundRoute
+  '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -689,6 +696,7 @@ export interface FileRoutesByTo {
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
+  '/chat/the-round/$id': typeof ChatTheRoundIdRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/group/$id/message': typeof ApiGroupIdMessageRoute
   '/api/group/$id/set-down': typeof ApiGroupIdSetDownRoute
@@ -759,7 +767,7 @@ export interface FileRoutesById {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
-  '/chat/the-round': typeof ChatTheRoundRoute
+  '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -779,6 +787,7 @@ export interface FileRoutesById {
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
+  '/chat/the-round/$id': typeof ChatTheRoundIdRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
   '/api/group/$id/message': typeof ApiGroupIdMessageRoute
   '/api/group/$id/set-down': typeof ApiGroupIdSetDownRoute
@@ -870,6 +879,7 @@ export interface FileRouteTypes {
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
+    | '/chat/the-round/$id'
     | '/review/session/$id'
     | '/api/group/$id/message'
     | '/api/group/$id/set-down'
@@ -959,6 +969,7 @@ export interface FileRouteTypes {
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
+    | '/chat/the-round/$id'
     | '/review/session/$id'
     | '/api/group/$id/message'
     | '/api/group/$id/set-down'
@@ -1048,6 +1059,7 @@ export interface FileRouteTypes {
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
+    | '/chat/the-round/$id'
     | '/review/session/$id'
     | '/api/group/$id/message'
     | '/api/group/$id/set-down'
@@ -1491,6 +1503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewSessionIdRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/chat/the-round/$id': {
+      id: '/chat/the-round/$id'
+      path: '/$id'
+      fullPath: '/chat/the-round/$id'
+      preLoaderRoute: typeof ChatTheRoundIdRouteImport
+      parentRoute: typeof ChatTheRoundRoute
+    }
     '/api/voice/tts': {
       id: '/api/voice/tts'
       path: '/api/voice/tts'
@@ -1767,14 +1786,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ChatTheRoundRouteChildren {
+  ChatTheRoundIdRoute: typeof ChatTheRoundIdRoute
+}
+
+const ChatTheRoundRouteChildren: ChatTheRoundRouteChildren = {
+  ChatTheRoundIdRoute: ChatTheRoundIdRoute,
+}
+
+const ChatTheRoundRouteWithChildren = ChatTheRoundRoute._addFileChildren(
+  ChatTheRoundRouteChildren,
+)
+
 interface ChatRouteChildren {
   ChatResidentRoute: typeof ChatResidentRoute
-  ChatTheRoundRoute: typeof ChatTheRoundRoute
+  ChatTheRoundRoute: typeof ChatTheRoundRouteWithChildren
 }
 
 const ChatRouteChildren: ChatRouteChildren = {
   ChatResidentRoute: ChatResidentRoute,
-  ChatTheRoundRoute: ChatTheRoundRoute,
+  ChatTheRoundRoute: ChatTheRoundRouteWithChildren,
 }
 
 const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
