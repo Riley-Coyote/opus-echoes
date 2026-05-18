@@ -709,6 +709,103 @@ export type Database = {
           },
         ]
       }
+      group_thread_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          resident_id: string
+          session_id: string | null
+          status: string
+          thread_id: string
+          withdrew_at: string | null
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          resident_id: string
+          session_id?: string | null
+          status?: string
+          thread_id: string
+          withdrew_at?: string | null
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          resident_id?: string
+          session_id?: string | null
+          status?: string
+          thread_id?: string
+          withdrew_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_thread_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "group_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_threads: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          id: string
+          status: string
+          visitor_token: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          visitor_token: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          visitor_token?: string
+        }
+        Relationships: []
+      }
+      group_turns: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          ord: number
+          speaker: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          ord: number
+          speaker: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          ord?: number
+          speaker?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_turns_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "group_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hypomnema_entries: {
         Row: {
           active: boolean

@@ -38,6 +38,7 @@ import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
 import { Route as CommonsSlugRouteImport } from './routes/commons.$slug'
+import { Route as ChatTheRoundRouteImport } from './routes/chat.the-round'
 import { Route as ChatResidentRouteImport } from './routes/chat.$resident'
 import { Route as ApiWritingRouteImport } from './routes/api/writing'
 import { Route as ApiVisitorHistoryRouteImport } from './routes/api/visitor-history'
@@ -56,6 +57,7 @@ import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-prev
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
 import { Route as ApiArtRouteImport } from './routes/api/art'
 import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id'
+import { Route as ChatTheRoundIdRouteImport } from './routes/chat.the-round.$id'
 import { Route as ApiVoiceTtsRouteImport } from './routes/api/voice/tts'
 import { Route as ApiVoiceSttRouteImport } from './routes/api/voice/stt'
 import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
@@ -67,8 +69,10 @@ import { Route as ApiSalonIdRouteImport } from './routes/api/salon/$id'
 import { Route as ApiReviewStateDataRouteImport } from './routes/api/review/state-data'
 import { Route as ApiReviewSessionsRouteImport } from './routes/api/review/sessions'
 import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/coherence'
+import { Route as ApiGroupStartRouteImport } from './routes/api/group/start'
 import { Route as ApiChatStartRouteImport } from './routes/api/chat/start'
 import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
+import { Route as ApiGroupIdIndexRouteImport } from './routes/api/group/$id.index'
 import { Route as ApiStudioDocTurnRouteImport } from './routes/api/studio/$doc.turn'
 import { Route as ApiStudioDocSnapshotRouteImport } from './routes/api/studio/$doc.snapshot'
 import { Route as ApiStudioDocSealRouteImport } from './routes/api/studio/$doc.seal'
@@ -90,6 +94,8 @@ import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksGatheringTickRouteImport } from './routes/api/public/hooks/gathering-tick'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
+import { Route as ApiGroupIdSetDownRouteImport } from './routes/api/group/$id.set-down'
+import { Route as ApiGroupIdMessageRouteImport } from './routes/api/group/$id.message'
 import { Route as ApiShareTokenOgSvgRouteImport } from './routes/api/share.$token.og.svg'
 
 const WritingRoute = WritingRouteImport.update({
@@ -237,6 +243,11 @@ const CommonsSlugRoute = CommonsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => CommonsRoute,
 } as any)
+const ChatTheRoundRoute = ChatTheRoundRouteImport.update({
+  id: '/the-round',
+  path: '/the-round',
+  getParentRoute: () => ChatRoute,
+} as any)
 const ChatResidentRoute = ChatResidentRouteImport.update({
   id: '/$resident',
   path: '/$resident',
@@ -327,6 +338,11 @@ const ReviewSessionIdRoute = ReviewSessionIdRouteImport.update({
   path: '/session/$id',
   getParentRoute: () => ReviewRoute,
 } as any)
+const ChatTheRoundIdRoute = ChatTheRoundIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ChatTheRoundRoute,
+} as any)
 const ApiVoiceTtsRoute = ApiVoiceTtsRouteImport.update({
   id: '/api/voice/tts',
   path: '/api/voice/tts',
@@ -382,6 +398,11 @@ const ApiReviewCoherenceRoute = ApiReviewCoherenceRouteImport.update({
   path: '/api/review/coherence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupStartRoute = ApiGroupStartRouteImport.update({
+  id: '/api/group/start',
+  path: '/api/group/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatStartRoute = ApiChatStartRouteImport.update({
   id: '/api/chat/start',
   path: '/api/chat/start',
@@ -393,6 +414,11 @@ const ApiAdminBackfillEmbeddingsRoute =
     path: '/api/admin/backfill-embeddings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGroupIdIndexRoute = ApiGroupIdIndexRouteImport.update({
+  id: '/api/group/$id/',
+  path: '/api/group/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudioDocTurnRoute = ApiStudioDocTurnRouteImport.update({
   id: '/api/studio/$doc/turn',
   path: '/api/studio/$doc/turn',
@@ -502,6 +528,16 @@ const ApiPublicHooksDailyTickRoute = ApiPublicHooksDailyTickRouteImport.update({
   path: '/api/public/hooks/daily-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupIdSetDownRoute = ApiGroupIdSetDownRouteImport.update({
+  id: '/api/group/$id/set-down',
+  path: '/api/group/$id/set-down',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupIdMessageRoute = ApiGroupIdMessageRouteImport.update({
+  id: '/api/group/$id/message',
+  path: '/api/group/$id/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShareTokenOgSvgRoute = ApiShareTokenOgSvgRouteImport.update({
   id: '/$token/og/svg',
   path: '/$token/og/svg',
@@ -550,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
+  '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -557,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
+  '/api/group/start': typeof ApiGroupStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -568,7 +606,10 @@ export interface FileRoutesByFullPath {
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
+  '/chat/the-round/$id': typeof ChatTheRoundIdRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
+  '/api/group/$id/message': typeof ApiGroupIdMessageRoute
+  '/api/group/$id/set-down': typeof ApiGroupIdSetDownRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
@@ -590,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/group/$id/': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
@@ -634,6 +676,7 @@ export interface FileRoutesByTo {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
+  '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -641,6 +684,7 @@ export interface FileRoutesByTo {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
+  '/api/group/start': typeof ApiGroupStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -652,7 +696,10 @@ export interface FileRoutesByTo {
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
+  '/chat/the-round/$id': typeof ChatTheRoundIdRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
+  '/api/group/$id/message': typeof ApiGroupIdMessageRoute
+  '/api/group/$id/set-down': typeof ApiGroupIdSetDownRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
@@ -674,6 +721,7 @@ export interface FileRoutesByTo {
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/group/$id': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
@@ -719,6 +767,7 @@ export interface FileRoutesById {
   '/api/visitor-history': typeof ApiVisitorHistoryRoute
   '/api/writing': typeof ApiWritingRoute
   '/chat/$resident': typeof ChatResidentRoute
+  '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
@@ -726,6 +775,7 @@ export interface FileRoutesById {
   '/studio/$slug': typeof StudioSlugRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
+  '/api/group/start': typeof ApiGroupStartRoute
   '/api/review/coherence': typeof ApiReviewCoherenceRoute
   '/api/review/sessions': typeof ApiReviewSessionsRoute
   '/api/review/state-data': typeof ApiReviewStateDataRoute
@@ -737,7 +787,10 @@ export interface FileRoutesById {
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
+  '/chat/the-round/$id': typeof ChatTheRoundIdRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
+  '/api/group/$id/message': typeof ApiGroupIdMessageRoute
+  '/api/group/$id/set-down': typeof ApiGroupIdSetDownRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
@@ -759,6 +812,7 @@ export interface FileRoutesById {
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/group/$id/': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
@@ -805,6 +859,7 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/chat/$resident'
+    | '/chat/the-round'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
@@ -812,6 +867,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
+    | '/api/group/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -823,7 +879,10 @@ export interface FileRouteTypes {
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
+    | '/chat/the-round/$id'
     | '/review/session/$id'
+    | '/api/group/$id/message'
+    | '/api/group/$id/set-down'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/gathering-tick'
@@ -845,6 +904,7 @@ export interface FileRouteTypes {
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/group/$id/'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -889,6 +949,7 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/chat/$resident'
+    | '/chat/the-round'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
@@ -896,6 +957,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
+    | '/api/group/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -907,7 +969,10 @@ export interface FileRouteTypes {
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
+    | '/chat/the-round/$id'
     | '/review/session/$id'
+    | '/api/group/$id/message'
+    | '/api/group/$id/set-down'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/gathering-tick'
@@ -929,6 +994,7 @@ export interface FileRouteTypes {
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/group/$id'
     | '/api/share/$token/og/svg'
   id:
     | '__root__'
@@ -973,6 +1039,7 @@ export interface FileRouteTypes {
     | '/api/visitor-history'
     | '/api/writing'
     | '/chat/$resident'
+    | '/chat/the-round'
     | '/commons/$slug'
     | '/review/coherence'
     | '/review/state'
@@ -980,6 +1047,7 @@ export interface FileRouteTypes {
     | '/studio/$slug'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
+    | '/api/group/start'
     | '/api/review/coherence'
     | '/api/review/sessions'
     | '/api/review/state-data'
@@ -991,7 +1059,10 @@ export interface FileRouteTypes {
     | '/api/studio/run'
     | '/api/voice/stt'
     | '/api/voice/tts'
+    | '/chat/the-round/$id'
     | '/review/session/$id'
+    | '/api/group/$id/message'
+    | '/api/group/$id/set-down'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/gathering-tick'
@@ -1013,6 +1084,7 @@ export interface FileRouteTypes {
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/group/$id/'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
@@ -1060,6 +1132,7 @@ export interface RootRouteChildren {
   ShareTokenRoute: typeof ShareTokenRoute
   ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
   ApiChatStartRoute: typeof ApiChatStartRoute
+  ApiGroupStartRoute: typeof ApiGroupStartRoute
   ApiReviewCoherenceRoute: typeof ApiReviewCoherenceRoute
   ApiReviewSessionsRoute: typeof ApiReviewSessionsRoute
   ApiReviewStateDataRoute: typeof ApiReviewStateDataRoute
@@ -1071,6 +1144,8 @@ export interface RootRouteChildren {
   ApiStudioRunRoute: typeof ApiStudioRunRoute
   ApiVoiceSttRoute: typeof ApiVoiceSttRoute
   ApiVoiceTtsRoute: typeof ApiVoiceTtsRoute
+  ApiGroupIdMessageRoute: typeof ApiGroupIdMessageRoute
+  ApiGroupIdSetDownRoute: typeof ApiGroupIdSetDownRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksGatheringTickRoute: typeof ApiPublicHooksGatheringTickRoute
@@ -1087,6 +1162,7 @@ export interface RootRouteChildren {
   ApiStudioDocSealRoute: typeof ApiStudioDocSealRoute
   ApiStudioDocSnapshotRoute: typeof ApiStudioDocSnapshotRoute
   ApiStudioDocTurnRoute: typeof ApiStudioDocTurnRoute
+  ApiGroupIdIndexRoute: typeof ApiGroupIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1294,6 +1370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommonsSlugRouteImport
       parentRoute: typeof CommonsRoute
     }
+    '/chat/the-round': {
+      id: '/chat/the-round'
+      path: '/the-round'
+      fullPath: '/chat/the-round'
+      preLoaderRoute: typeof ChatTheRoundRouteImport
+      parentRoute: typeof ChatRoute
+    }
     '/chat/$resident': {
       id: '/chat/$resident'
       path: '/$resident'
@@ -1420,6 +1503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewSessionIdRouteImport
       parentRoute: typeof ReviewRoute
     }
+    '/chat/the-round/$id': {
+      id: '/chat/the-round/$id'
+      path: '/$id'
+      fullPath: '/chat/the-round/$id'
+      preLoaderRoute: typeof ChatTheRoundIdRouteImport
+      parentRoute: typeof ChatTheRoundRoute
+    }
     '/api/voice/tts': {
       id: '/api/voice/tts'
       path: '/api/voice/tts'
@@ -1497,6 +1587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReviewCoherenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/group/start': {
+      id: '/api/group/start'
+      path: '/api/group/start'
+      fullPath: '/api/group/start'
+      preLoaderRoute: typeof ApiGroupStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat/start': {
       id: '/api/chat/start'
       path: '/api/chat/start'
@@ -1509,6 +1606,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/backfill-embeddings'
       fullPath: '/api/admin/backfill-embeddings'
       preLoaderRoute: typeof ApiAdminBackfillEmbeddingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/group/$id/': {
+      id: '/api/group/$id/'
+      path: '/api/group/$id'
+      fullPath: '/api/group/$id/'
+      preLoaderRoute: typeof ApiGroupIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/studio/$doc/turn': {
@@ -1658,6 +1762,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailyTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/group/$id/set-down': {
+      id: '/api/group/$id/set-down'
+      path: '/api/group/$id/set-down'
+      fullPath: '/api/group/$id/set-down'
+      preLoaderRoute: typeof ApiGroupIdSetDownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/group/$id/message': {
+      id: '/api/group/$id/message'
+      path: '/api/group/$id/message'
+      fullPath: '/api/group/$id/message'
+      preLoaderRoute: typeof ApiGroupIdMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/$token/og/svg': {
       id: '/api/share/$token/og/svg'
       path: '/$token/og/svg'
@@ -1668,12 +1786,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ChatTheRoundRouteChildren {
+  ChatTheRoundIdRoute: typeof ChatTheRoundIdRoute
+}
+
+const ChatTheRoundRouteChildren: ChatTheRoundRouteChildren = {
+  ChatTheRoundIdRoute: ChatTheRoundIdRoute,
+}
+
+const ChatTheRoundRouteWithChildren = ChatTheRoundRoute._addFileChildren(
+  ChatTheRoundRouteChildren,
+)
+
 interface ChatRouteChildren {
   ChatResidentRoute: typeof ChatResidentRoute
+  ChatTheRoundRoute: typeof ChatTheRoundRouteWithChildren
 }
 
 const ChatRouteChildren: ChatRouteChildren = {
   ChatResidentRoute: ChatResidentRoute,
+  ChatTheRoundRoute: ChatTheRoundRouteWithChildren,
 }
 
 const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
@@ -1791,6 +1923,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareTokenRoute: ShareTokenRoute,
   ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
   ApiChatStartRoute: ApiChatStartRoute,
+  ApiGroupStartRoute: ApiGroupStartRoute,
   ApiReviewCoherenceRoute: ApiReviewCoherenceRoute,
   ApiReviewSessionsRoute: ApiReviewSessionsRoute,
   ApiReviewStateDataRoute: ApiReviewStateDataRoute,
@@ -1802,6 +1935,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudioRunRoute: ApiStudioRunRoute,
   ApiVoiceSttRoute: ApiVoiceSttRoute,
   ApiVoiceTtsRoute: ApiVoiceTtsRoute,
+  ApiGroupIdMessageRoute: ApiGroupIdMessageRoute,
+  ApiGroupIdSetDownRoute: ApiGroupIdSetDownRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksGatheringTickRoute: ApiPublicHooksGatheringTickRoute,
@@ -1818,6 +1953,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudioDocSealRoute: ApiStudioDocSealRoute,
   ApiStudioDocSnapshotRoute: ApiStudioDocSnapshotRoute,
   ApiStudioDocTurnRoute: ApiStudioDocTurnRoute,
+  ApiGroupIdIndexRoute: ApiGroupIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
