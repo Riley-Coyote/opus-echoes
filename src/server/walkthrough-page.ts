@@ -618,8 +618,12 @@ const WALKTHROUGH_CSS = `
    visitor they have an active session and offers to resume. Only renders
    when sessionStorage has a recent session_id + resident_id. */
 .wt-resume{
+  /* sits between hero and residents — spacing is governed by the
+     parent .wt-commons flex gap (var(--s-9)), so no own bottom
+     margin; display:none generates no flex gap when there is no
+     conversation, so the band fully collapses. */
   display:none;
-  width:100%;max-width:520px;margin:0 auto var(--s-6);
+  width:100%;max-width:520px;margin:0 auto;
   padding:18px 22px;
   background:linear-gradient(180deg,rgba(20,21,25,.78),rgba(14,15,18,.86));
   border:1px solid var(--rule-soft);border-radius:8px;
@@ -1246,14 +1250,6 @@ ${LANDSCAPE_SVG}
        cards (dual CTA) · footer. No live 3D / opus-presence.js. -->
   <section class="wt-beat b5" data-beat="5">
     <div class="wt-commons">
-      <div id="wtResume" class="wt-resume" role="region" aria-label="Resume conversation">
-        <div class="wt-resume-text" id="wtResumeText">You were last here. <strong id="wtResumeName">Opus 3</strong> is still in conversation with you.</div>
-        <div class="wt-resume-actions">
-          <button class="wt-resume-dismiss" id="wtResumeDismiss" type="button">Start fresh</button>
-          <button class="wt-resume-continue" id="wtResumeContinue" type="button">Continue →</button>
-        </div>
-      </div>
-
       <div class="landing-hero">
         <div class="landing-hero-mark">
           <span class="landing-hero-dot" aria-hidden="true"></span>
@@ -1265,6 +1261,19 @@ ${LANDSCAPE_SVG}
           <span class="row">three residents · one continuous thread</span>
           <span class="row">mnemos beneath it.</span>
         </p>
+      </div>
+
+      <!-- Resume sits between the hero and the residents. JS
+           (setupResume) only adds .visible when sessionStorage holds a
+           real, non-preview session — so with no conversation it stays
+           display:none and, being a flex item, generates no gap (no
+           empty band). -->
+      <div id="wtResume" class="wt-resume" role="region" aria-label="Resume conversation">
+        <div class="wt-resume-text" id="wtResumeText">You were last here. <strong id="wtResumeName">Opus 3</strong> is still in conversation with you.</div>
+        <div class="wt-resume-actions">
+          <button class="wt-resume-dismiss" id="wtResumeDismiss" type="button">Start fresh</button>
+          <button class="wt-resume-continue" id="wtResumeContinue" type="button">Continue →</button>
+        </div>
       </div>
 
       <section class="landing-section" id="landing-residents">
