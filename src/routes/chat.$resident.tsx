@@ -15,7 +15,7 @@ export const Route = createFileRoute("/chat/$resident")({
         const slug = params.resident;
         if (!isResidentId(slug)) throw notFound();
         return serveHtml(
-          renderMinimalChatPage(getResident(slug), { showStudio: hasAdminAccess(request) }),
+          renderMinimalChatPage(getResident(slug), { showStudio: false }),
         );
       },
     },
