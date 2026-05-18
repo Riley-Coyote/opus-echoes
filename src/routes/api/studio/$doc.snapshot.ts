@@ -14,6 +14,7 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { isResidentId } from "@/server/opus/residents";
 import { isBlockType, renderBlockHtml, type BlockType } from "@/server/studio/blocks";
 import { backfillContinuityDeclarationSeed } from "@/server/studio/seed-document";
+import { isLocalStudioDoc, localStudioSnapshot } from "@/server/studio/local-studio";
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -26,6 +27,10 @@ export const Route = createFileRoute("/api/studio/$doc/snapshot")({
   server: {
     handlers: {
       GET: async ({ params }) => {
+        if (isLocalStudioDoc(params.doc)) {
+          return jsonResp(localStudioSnapshot());
+        }
+
         if (!hasSupabaseAdminEnv()) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }

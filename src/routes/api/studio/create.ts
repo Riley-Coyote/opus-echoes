@@ -34,6 +34,11 @@ import {
   isResidentId,
 } from "@/server/opus/residents";
 import { CONTINUITY_DECLARATION_SEED, studioSeedBlockRows } from "@/server/studio/seed-document";
+import {
+  LOCAL_STUDIO_DOC_ID,
+  LOCAL_STUDIO_SLUG,
+  resetLocalStudio,
+} from "@/server/studio/local-studio";
 
 const Body = z.object({
   resident: z.string().optional(),
@@ -62,7 +67,13 @@ export const Route = createFileRoute("/api/studio/create")({
         }
 
         if (!hasSupabaseAdminEnv()) {
-          return jsonResp({ ok: false, code: "config_missing" }, 503);
+          resetLocalStudio();
+          return jsonResp({
+            ok: true,
+            local: true,
+            space_slug: LOCAL_STUDIO_SLUG,
+            doc_id: LOCAL_STUDIO_DOC_ID,
+          });
         }
 
         // Dynamic-table escape hatch — the same cast getSpaceBySlug

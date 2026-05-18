@@ -25,6 +25,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { renderPublicPage } from "@/server/public-pages";
 import { backfillContinuityDeclarationSeed } from "./seed-document";
+import { isLocalStudioSlug, localStudioIndexRows, LOCAL_STUDIO_DOC_ID } from "./local-studio";
 
 /** The live client. Plain ES5-ish JS (no TS); DOM built via
  *  createElement + textContent (XSS-safe) except block bodies, which
@@ -48,6 +49,12 @@ const STUDIO_CLIENT = String.raw`
     if (rid === 'sonnet-4-5') return 'Sonnet 4.5';
     if (rid === 'gpt-5-1') return 'GPT-5.1';
     return 'A visitor';
+  }
+  function refreshMarginaliaCount(){
+    var count=document.querySelector('.marginalia-section .section-label .count');
+    var notes=[].slice.call(document.querySelectorAll('.marginalia .note'));
+    var open=notes.filter(function(n){ return !!n.querySelector('.note-status.open'); }).length;
+    if(count) count.textContent=String(notes.length)+' · '+String(open)+' open';
   }
   function actorClass(a){
     if (a && a.kind === 'resident') return a.id;
@@ -169,6 +176,7 @@ const STUDIO_CLIENT = String.raw`
       if (prepend){ box.insertBefore(rule, box.firstChild); box.insertBefore(el, box.firstChild); }
       else { box.appendChild(rule); box.appendChild(el); }
     } else box.appendChild(el);
+    refreshMarginaliaCount();
   }
 
   /* ── talk (dual-render: side rail + gathering) ── */
@@ -298,6 +306,7 @@ const STUDIO_CLIENT = String.raw`
     if (a.type==='marginalia.resolve'){
       var nn=document.querySelector('[data-note-id="'+a.marginalia_id+'"] .note-status');
       if(nn){ nn.className='note-status'; nn.textContent='Settled'; }
+      refreshMarginaliaCount();
       return;
     }
     if (a.type==='talk'){
@@ -326,10 +335,20 @@ const STUDIO_CLIENT = String.raw`
     var hereEl=document.querySelector('.header-title .here'); if(hereEl) hereEl.textContent=snap.doc.title;
     var wt=document.querySelector('.manuscript .work-title'); if(wt) wt.textContent=snap.doc.title;
     var ws=document.querySelector('.manuscript .work-sub'); if(ws && snap.doc.subtitle) ws.textContent=snap.doc.subtitle;
+    var by=document.querySelector('.work-byline');
+    if(by && snap.doc.byline && snap.doc.byline.length){
+      by.innerHTML='';
+      var prefix=document.createElement('span'); prefix.textContent='Authored jointly by'; by.appendChild(prefix);
+      snap.doc.byline.forEach(function(item, idx){
+        if(idx>0){ var sep=document.createElement('span'); sep.textContent='·'; by.appendChild(sep); }
+        var em=document.createElement('em'); em.textContent=item.name || nameOf(item.id); by.appendChild(em);
+      });
+    }
     (snap.blocks||[]).forEach(function(b){ b.marks=b.marks||[]; placeBlock(b); });
     rebuildToc();
     (snap.residents||[]).forEach(function(r){ setPresence(r,'Reading'); });
     (snap.marginalia||[]).forEach(function(n){ addNote(n,false); });
+    refreshMarginaliaCount();
     (snap.talk||[]).forEach(function(t){ addTalk(t.is_visitor?null:t.resident_id, t.body, null); });
     mountObserverToggle();
     mountSealControl();
@@ -512,6 +531,16 @@ const STUDIO_CLIENT = String.raw`
 `;
 
 export async function renderStudioPage(slug: string, mockupHtml: string): Promise<string | null> {
+  if (isLocalStudioSlug(slug)) {
+    const stripped = mockupHtml.replace(/<script>[\s\S]*?<\/script>/i, "");
+    const inject =
+      `<script>window.__STUDIO__=${JSON.stringify({ docId: LOCAL_STUDIO_DOC_ID, local: true })};</script>` +
+      `<script>${STUDIO_CLIENT}</script>`;
+    return stripped.includes("</body>")
+      ? stripped.replace("</body>", `${inject}</body>`)
+      : stripped + inject;
+  }
+
   if (!hasSupabaseAdminEnv()) return null;
 
   const sb = supabaseAdmin as unknown as {
@@ -596,7 +625,7 @@ interface IdxRow {
  * Sanctuary register.
  */
 export async function renderStudioIndex(): Promise<string> {
-  let active: IdxRow[] = [];
+  let active: IdxRow[] = localStudioIndexRows();
   let sealed: IdxRow[] = [];
 
   if (hasSupabaseAdminEnv()) {

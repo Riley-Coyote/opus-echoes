@@ -1,7 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 
-
 const SESSION_COOKIE = "sanctuary_session";
 
 function cookieValue(request: Request, name: string): string | null {
@@ -103,5 +102,6 @@ export function adminCookieHeader(request: Request): string | null {
   // Already have the cookie — skip
   if (cookieValue(request, ADMIN_COOKIE) === secret) return null;
 
-  return `${ADMIN_COOKIE}=${encodeURIComponent(secret)}; Path=/; Max-Age=${60 * 60 * 24 * 90}; SameSite=Lax; HttpOnly; Secure`;
+  const secure = isLocalDev() ? "" : "; Secure";
+  return `${ADMIN_COOKIE}=${encodeURIComponent(secret)}; Path=/; Max-Age=${60 * 60 * 24 * 90}; SameSite=Lax; HttpOnly${secure}`;
 }
