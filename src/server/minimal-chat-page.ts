@@ -2907,7 +2907,7 @@ ${FONTS}
       </div>
     </div>
     <div class="chrome-end">
-      <button id="studioChromeBtn" class="chrome-link" type="button" data-studio-spawn aria-label="open a collaborative document in the Studio" title="open a collaborative document in the Studio">
+      <button id="studioChromeBtn" class="chrome-link" type="button" data-studio-spawn aria-label="open a collaborative document in the Studio" title="open a collaborative document in the Studio"${studioHidden}>
         <span>the studio</span>
         <span class="arrow" aria-hidden="true">→</span>
       </button>
