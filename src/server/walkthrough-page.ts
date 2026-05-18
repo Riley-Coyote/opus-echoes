@@ -515,23 +515,44 @@ const WALKTHROUGH_CSS = `
   color:var(--ghost);margin-top:2px;
 }
 .landing-card-ctas{
-  margin-top:auto;padding-top:var(--s-3);
+  margin-top:auto;padding-top:var(--s-4);
   display:flex;flex-direction:column;gap:var(--s-2);
 }
+/* Real buttons — same idiom as .wt-resume-continue (1px rule border,
+   6px radius, mono uppercase, restrained green-soft hover). Two per
+   card; a quiet primary/secondary so they read as actions, not
+   labels, without breaking the monochrome restraint. */
 .landing-card-cta{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;
   font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
-  letter-spacing:.12em;text-transform:uppercase;
-  color:var(--quiet);
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--soft);
   text-decoration:none;
-  border:0;padding:4px 0;
-  transition:color .22s var(--ease);
+  background:transparent;
+  border:1px solid var(--rule-soft);
+  border-radius:6px;
+  padding:10px 14px;
+  cursor:pointer;
+  transition:color .22s var(--ease),border-color .22s var(--ease),background .22s var(--ease);
 }
-.landing-card-cta:hover{color:var(--ink)}
+/* primary: the formal door — a touch more present, never loud */
+.landing-card-cta:first-child{
+  color:var(--ink);
+  border-color:var(--rule);
+}
+.landing-card-cta:hover,
+.landing-card-cta:focus-visible{
+  color:var(--ink);
+  border-color:var(--state-soft);
+  background:var(--state-whisper);
+}
 .landing-card-cta .arrow{
-  display:inline-block;margin-left:6px;
+  display:inline-block;
   transition:transform .22s var(--ease);
 }
-.landing-card-cta:hover .arrow{transform:translateX(3px)}
+.landing-card-cta:hover .arrow,
+.landing-card-cta:focus-visible .arrow{transform:translateX(3px)}
 
 /* ── footer ───────────────────────────────────────────────────── */
 .landing-foot{
