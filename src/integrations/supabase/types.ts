@@ -714,7 +714,7 @@ export type Database = {
           id: string
           joined_at: string
           resident_id: string
-          session_id: string
+          session_id: string | null
           status: string
           thread_id: string
           withdrew_at: string | null
@@ -723,7 +723,7 @@ export type Database = {
           id?: string
           joined_at?: string
           resident_id: string
-          session_id: string
+          session_id?: string | null
           status?: string
           thread_id: string
           withdrew_at?: string | null
@@ -732,7 +732,7 @@ export type Database = {
           id?: string
           joined_at?: string
           resident_id?: string
-          session_id?: string
+          session_id?: string | null
           status?: string
           thread_id?: string
           withdrew_at?: string | null
