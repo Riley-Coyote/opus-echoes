@@ -20,7 +20,6 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ensureStudioParticipant } from "@/server/studio/seed-document";
-import { isLocalStudioDoc, setLocalStudioObserver } from "@/server/studio/local-studio";
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -44,10 +43,6 @@ export const Route = createFileRoute("/api/studio/$doc/observer")({
         } catch {
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
-        if (isLocalStudioDoc(params.doc)) {
-          return jsonResp(setLocalStudioObserver(body.observer));
-        }
-
         if (!hasSupabaseAdminEnv()) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }

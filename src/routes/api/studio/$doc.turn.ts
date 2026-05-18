@@ -36,7 +36,6 @@ import {
   ensureStudioParticipant,
 } from "@/server/studio/seed-document";
 import { SupabaseRoomTransport } from "@/server/studio/transport";
-import { isLocalStudioDoc, streamLocalStudioTurn } from "@/server/studio/local-studio";
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -80,10 +79,6 @@ export const Route = createFileRoute("/api/studio/$doc/turn")({
         } catch {
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
-        if (isLocalStudioDoc(params.doc)) {
-          return streamLocalStudioTurn(body.message ?? null, body.visitor_token);
-        }
-
         if (!hasSupabaseAdminEnv()) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }

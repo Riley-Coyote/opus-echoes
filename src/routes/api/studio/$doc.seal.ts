@@ -35,7 +35,6 @@ import { isResidentId, type ResidentId } from "@/server/opus/residents";
 import { consolidateSession, observeSpaceExchange } from "@/server/substrate.server";
 import { type BlockType, isBlockType } from "@/server/studio/blocks";
 import { ensureStudioParticipant } from "@/server/studio/seed-document";
-import { isLocalStudioDoc, sealLocalStudio } from "@/server/studio/local-studio";
 
 const Body = z.object({
   visitor_token: z.string().trim().min(8).max(128),
@@ -77,10 +76,6 @@ export const Route = createFileRoute("/api/studio/$doc/seal")({
         } catch {
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
-        if (isLocalStudioDoc(params.doc)) {
-          return jsonResp(sealLocalStudio());
-        }
-
         if (!hasSupabaseAdminEnv()) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
