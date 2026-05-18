@@ -324,9 +324,12 @@ const STUDIO_CLIENT = String.raw`
     (snap.marginalia||[]).forEach(function(n){ addNote(n,false); });
     (snap.talk||[]).forEach(function(t){ addTalk(t.is_visitor?null:t.resident_id, t.body, null); });
     mountObserverToggle();
+    mountSealControl();
     observer = !!(snap.doc && snap.doc.observer_mode);
     applyObserverUI();
-    if(observer) autoRound();
+    sealed = !!(snap.doc && snap.doc.status === 'sealed');
+    applySealedUI();
+    if(observer && !sealed) autoRound();
   }
 
   /* ── drive a turn through the real NDJSON stream ── */
@@ -410,6 +413,41 @@ const STUDIO_CLIENT = String.raw`
       'letter-spacing:.16em;text-transform:uppercase;color:var(--soft,#9a9a93);'+
       'background:transparent;border:0;cursor:pointer;padding:4px 0';
     btn.addEventListener('click',function(){ setObserver(!observer); });
+    meta.appendChild(btn);
+  }
+
+  /* ── seal — set the document down (→ markdown artifact +
+       Mnemos consolidation, server-side). ── */
+  var sealed=false;
+  function applySealedUI(){
+    if(!sealed) return;
+    var v=document.querySelector('.band-meta .val'); if(v) v.textContent='set down';
+    writeEls().forEach(function(el){ el.setAttribute('disabled','true'); });
+    var ot=document.getElementById('studioObserverToggle'); if(ot) ot.setAttribute('disabled','true');
+    var sb2=document.getElementById('studioSealBtn');
+    if(sb2){ sb2.textContent='set down'; sb2.setAttribute('disabled','true'); }
+  }
+  function sealDoc(){
+    if(sealed) return;
+    if(!window.confirm('Set this document down? It consolidates into Mnemos and the room freezes.')) return;
+    fetch('/api/studio/'+encodeURIComponent(docId)+'/seal',{
+      method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({ visitor_token: visitorToken() })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if(d && d.ok && d.sealed){ sealed=true; observer=false; applySealedUI(); }
+    }).catch(function(){});
+  }
+  function mountSealControl(){
+    var meta=document.querySelector('.talk-composer-meta');
+    if(!meta || document.getElementById('studioSealBtn')) return;
+    var btn=document.createElement('button');
+    btn.id='studioSealBtn'; btn.type='button';
+    btn.className='set-down-link studio-seal-btn';
+    btn.style.cssText='font-family:var(--mono,monospace);font-size:9.5px;'+
+      'letter-spacing:.16em;text-transform:uppercase;color:var(--soft,#9a9a93);'+
+      'background:transparent;border:0;cursor:pointer;padding:4px 0;margin-left:14px';
+    btn.textContent='set it down';
+    btn.addEventListener('click',sealDoc);
     meta.appendChild(btn);
   }
 

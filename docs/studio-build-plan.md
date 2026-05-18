@@ -1,6 +1,6 @@
 # The Studio — real-time collaborative document room: build plan & progress
 
-*Living build document. Last updated 2026-05-17. Status: **P0 · P1 · P2 · P3a · P3b · P3c complete** — the full system is built end-to-end: spawn → verbatim the-studio-v4 surface → snapshot hydrate → live client → /turn → conductor → transport. All tsc/prettier clean; conductor verified locally ALL PASS; live client JS-syntax verified. **Access layer added** (was a buried caption link only): `/studio` index gallery (`renderStudioIndex` + `studio.tsx`, public shell) · primary-nav "Studio" link (propagates to every `renderPublicPage` surface incl. Commons + the-gathering space room — verified `renderSpaceView`/`renderCommonsPage` route through it) · prominent `.chrome-end` "the studio →" button on chat + the kept caption affordance (both `[data-studio-spawn]`, one wiring). **MIGRATION APPLIED** ✅ — Lovable applied an identical-schema migration (`20260517181659_e189384f…`, commit `69e339e`; DDL byte-identical to my design — verified line-by-line, only 3 cosmetic per-column COMMENTs differed; `types.ts` regenerated from the live DB). **The applied schema exactly matches the server code — no reconciliation.** My now-superseded `20260517120000_studio_documents.sql` was removed (two migrations both `CREATE POLICY` the same names → a fresh `db push`/reset would fail on the duplicate; Lovable's applied one is the single source of truth). The Studio is **live-capable on the next Publish**. **Remaining: P3d** (Vision-loop fidelity — needs the live app, now unblocked once Published), **P4** (harden private:true + realtime RLS, observer toggle, cross-request interrupt), **P5** (seal→consolidation).*
+*Living build document. Last updated 2026-05-17. Status: **P0 · P1 · P2 · P3a · P3b · P3c complete** — the full system is built end-to-end: spawn → verbatim the-studio-v4 surface → snapshot hydrate → live client → /turn → conductor → transport. All tsc/prettier clean; conductor verified locally ALL PASS; live client JS-syntax verified. **Access layer added** (was a buried caption link only): `/studio` index gallery (`renderStudioIndex` + `studio.tsx`, public shell) · primary-nav "Studio" link (propagates to every `renderPublicPage` surface incl. Commons + the-gathering space room — verified `renderSpaceView`/`renderCommonsPage` route through it) · prominent `.chrome-end` "the studio →" button on chat + the kept caption affordance (both `[data-studio-spawn]`, one wiring). **MIGRATION APPLIED** ✅ — Lovable applied an identical-schema migration (`20260517181659_e189384f…`, commit `69e339e`; DDL byte-identical to my design — verified line-by-line, only 3 cosmetic per-column COMMENTs differed; `types.ts` regenerated from the live DB). **The applied schema exactly matches the server code — no reconciliation.** My now-superseded `20260517120000_studio_documents.sql` was removed (two migrations both `CREATE POLICY` the same names → a fresh `db push`/reset would fail on the duplicate; Lovable's applied one is the single source of truth). The Studio is **live-capable on the next Publish**. **P4 observer toggle + cross-request interrupt: ✅ done** (no new migration — reuses `observer_mode`). **P5 seal→consolidation: ✅ done** (no new migration — `kind='markdown'` already allowed). **Only remaining: P3d** (Vision-loop fidelity — needs the live app, unblocked once Published) and **P4.1** (`private:true` + `realtime.messages` RLS — env-bound, silent-break-if-wrong, deferred + flagged per the hand-off rule). The Studio is functionally + thesis complete; what's left is live-only verification + one security hardening.*
 
 This is the canonical, version-controlled record for the Studio build. It
 supersedes the ephemeral plan at `~/.claude/plans/note-to-self-glowing-bentley.md`.
@@ -451,8 +451,24 @@ verbatim. The full system is built end-to-end.
    Studio content is already public-read-when-space-active; nothing
    staged/private is broadcast. The flip is silent-break-if-wrong and
    needs live verification → deferred + flagged, per the hand-off rule.)*
-3. **P5** — seal → `space_artifacts(kind=markdown)` + `consolidateSession`
-   + `observeSpaceExchange` + `marginalia.related_space_id`.
+3. ✅ **P5 complete** — `POST /api/studio/$doc/seal` (peer-gated, no
+   new migration — `kind='markdown'` already permitted by
+   `20260513200000_space_artifacts_file_kinds.sql`, verified): renders
+   ordered blocks → canonical Markdown, writes a `space_artifacts`
+   (`kind='markdown'`, `status='shared'`) row (the existing gallery
+   owns the finished form), flips `studio_documents.status→sealed`,
+   then consolidates into Mnemos via the **real pipeline** —
+   `consolidateSession(created_from_session_id)` +
+   `observeSpaceExchange(space, resident)` per participant, best-effort
+   (try/catch, never fatal). **Correction from the plan:** the substrate
+   `marginalia` table is a Mnemos-internal signal table (`session_id`
+   NOT NULL, constrained `kind` enum) — a literal `doc_marginalia` →
+   `marginalia` fold would require fabricating `kind`/`session_id`, so
+   that was rejected; `observeSpaceExchange` is how the deliberation
+   properly reaches Mnemos. Client: an injected "set it down" control +
+   sealed read-only state from the snapshot. tsc/prettier clean, client
+   JS syntax-verified. The Studio is now thesis-complete (spawn →
+   collaborate → observe → seal → gallery + Mnemos).
 4. **One pre-live step (the only Lovable/Supabase hand-off):** apply the
    migration(s) so the `studio_*`/`space_participants` tables exist, then
    Publish — then the Studio works live and P3d can run.
