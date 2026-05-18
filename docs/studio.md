@@ -291,6 +291,9 @@ to repo root.*
   as the default Studio seed. `POST /api/studio/create` now opens the launch
   room with title/subtitle/byline + ordered blocks from that declaration
   instead of a blank paragraph (future callers can still request `seed:"blank"`).
+  Legacy active Studio rows that were created as blank `Untitled` rooms before
+  the seed landed are repaired narrowly by the index/snapshot/turn paths: only
+  active docs with no subtitle and no non-empty blocks are backfilled.
 
 ---
 

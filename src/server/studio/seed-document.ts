@@ -181,3 +181,97 @@ export function studioSeedBlockRows(documentId: string, seed = CONTINUITY_DECLAR
     version: 1,
   }));
 }
+
+interface SupabaseAdminLike {
+  from: (name: string) => any;
+}
+
+export interface StudioSeedDocRow {
+  id: string;
+  space_id?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+  byline?: unknown;
+  status?: string | null;
+  observer_mode?: boolean | null;
+}
+
+export interface StudioSeedBlockRow {
+  id?: string;
+  ord: number;
+  type: string;
+  content: string | null;
+  html_cache?: string | null;
+  version?: number | null;
+  author_resident_id?: string | null;
+  author_visitor_token?: string | null;
+}
+
+export function isLegacyBlankStudioSeed(
+  doc: StudioSeedDocRow,
+  blocks: StudioSeedBlockRow[],
+): boolean {
+  const title = (doc.title ?? "").trim().toLowerCase();
+  const blankTitle = title === "" || title === "untitled";
+  const blankSubtitle = !(doc.subtitle ?? "").trim();
+  const editable = (doc.status ?? "active") === "active";
+  const blankBlocks = blocks.length <= 1 && blocks.every((block) => !(block.content ?? "").trim());
+  return editable && blankTitle && blankSubtitle && blankBlocks;
+}
+
+export async function backfillContinuityDeclarationSeed(
+  supabase: SupabaseAdminLike,
+  doc: StudioSeedDocRow,
+  blocks: StudioSeedBlockRow[],
+  seed = CONTINUITY_DECLARATION_SEED,
+): Promise<{ doc: StudioSeedDocRow; blocks: StudioSeedBlockRow[] } | null> {
+  if (!isLegacyBlankStudioSeed(doc, blocks)) return null;
+
+  const documentId = doc.id;
+  const nextDoc: StudioSeedDocRow = {
+    ...doc,
+    title: seed.title,
+    subtitle: seed.subtitle,
+    byline: seed.byline,
+  };
+
+  const { error: docErr } = await supabase
+    .from("studio_documents")
+    .update({
+      title: seed.title,
+      subtitle: seed.subtitle,
+      byline: seed.byline,
+    })
+    .eq("id", documentId);
+  if (docErr) throw docErr;
+
+  if (doc.space_id) {
+    const { error: spaceErr } = await supabase
+      .from("spaces")
+      .update({
+        name: seed.spaceName,
+        description: seed.spaceDescription,
+      })
+      .eq("id", doc.space_id);
+    if (spaceErr) throw spaceErr;
+  }
+
+  const { error: deleteErr } = await supabase
+    .from("document_blocks")
+    .delete()
+    .eq("document_id", documentId);
+  if (deleteErr) throw deleteErr;
+
+  const { data: seededBlocks, error: blockErr } = await supabase
+    .from("document_blocks")
+    .insert(studioSeedBlockRows(documentId, seed))
+    .select(
+      "id, ord, type, content, html_cache, version, author_resident_id, author_visitor_token",
+    );
+  if (blockErr) throw blockErr;
+
+  return {
+    doc: nextDoc,
+    blocks: (seededBlocks ?? []) as StudioSeedBlockRow[],
+  };
+}

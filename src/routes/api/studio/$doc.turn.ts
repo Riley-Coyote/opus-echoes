@@ -31,6 +31,7 @@ import { ipHash } from "@/server/rate-limit.server";
 import { streamStudioTurn, STUDIO_MAX_TURNS, type TalkMsg } from "@/server/studio/conductor";
 import type { BlockState, BlockType } from "@/server/studio/blocks";
 import { isBlockType } from "@/server/studio/blocks";
+import { backfillContinuityDeclarationSeed } from "@/server/studio/seed-document";
 import { SupabaseRoomTransport } from "@/server/studio/transport";
 
 const Body = z.object({
@@ -92,7 +93,7 @@ export const Route = createFileRoute("/api/studio/$doc/turn")({
 
         const { data: doc } = await sb
           .from("studio_documents")
-          .select("id, space_id, status, observer_mode")
+          .select("id, space_id, title, subtitle, byline, status, observer_mode")
           .eq("id", docId)
           .eq("status", "active")
           .maybeSingle();
@@ -121,12 +122,39 @@ export const Route = createFileRoute("/api/studio/$doc/turn")({
           .map((r: { resident_id: string }) => r.resident_id)
           .filter(isResidentId);
 
-        const { data: blockRows } = await sb
+        let { data: blockRows } = await sb
           .from("document_blocks")
           .select("id, ord, type, content, version, author_resident_id, author_visitor_token")
           .eq("document_id", docId)
           .is("deleted_at", null)
           .order("ord", { ascending: true });
+        const backfill = await backfillContinuityDeclarationSeed(
+          sb,
+          doc as {
+            id: string;
+            space_id: string;
+            title: string | null;
+            subtitle: string | null;
+            byline: unknown;
+            status: string;
+            observer_mode: boolean;
+          },
+          (blockRows ?? []) as Array<{
+            id: string;
+            ord: number;
+            type: string;
+            content: string | null;
+            version: number | null;
+            author_resident_id: string | null;
+            author_visitor_token: string | null;
+          }>,
+        ).catch((err) => {
+          console.error("[studio/turn] continuity seed backfill", err);
+          return null;
+        });
+        if (backfill) {
+          blockRows = backfill.blocks as typeof blockRows;
+        }
         const blocks: BlockState[] = (blockRows ?? []).map(
           (r: {
             id: string;

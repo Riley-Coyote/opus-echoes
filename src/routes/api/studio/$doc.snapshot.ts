@@ -13,6 +13,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { isResidentId } from "@/server/opus/residents";
 import { isBlockType, renderBlockHtml, type BlockType } from "@/server/studio/blocks";
+import { backfillContinuityDeclarationSeed } from "@/server/studio/seed-document";
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/api/studio/$doc/snapshot")({
           from: (n: string) => ReturnType<typeof supabaseAdmin.from>;
         };
 
-        const { data: doc } = await sb
+        let { data: doc } = await sb
           .from("studio_documents")
           .select("id, space_id, title, subtitle, byline, status, observer_mode")
           .eq("id", docId)
@@ -41,33 +42,58 @@ export const Route = createFileRoute("/api/studio/$doc/snapshot")({
         if (!doc) return jsonResp({ ok: false, code: "doc_not_found" }, 404);
         const spaceId = doc.space_id as string;
 
-        const [
-          { data: residentRows },
-          { data: blockRows },
-          { data: talkRows },
-          { data: noteRows },
-        ] = await Promise.all([
-          sb.from("space_residents").select("resident_id").eq("space_id", spaceId),
-          sb
-            .from("document_blocks")
-            .select("id, ord, type, content, html_cache, version, author_resident_id")
-            .eq("document_id", docId)
-            .is("deleted_at", null)
-            .order("ord", { ascending: true }),
-          sb
-            .from("space_messages")
-            .select("id, resident_id, visitor_token, body, created_at")
-            .eq("space_id", spaceId)
-            .order("created_at", { ascending: true })
-            .limit(120),
-          sb
-            .from("doc_marginalia")
-            .select(
-              "id, anchor_block_id, anchor_quote, body, author_resident_id, author_visitor_token, status, reply_to, created_at",
-            )
-            .eq("document_id", docId)
-            .order("created_at", { ascending: true }),
-        ]);
+        let [{ data: residentRows }, { data: blockRows }, { data: talkRows }, { data: noteRows }] =
+          await Promise.all([
+            sb.from("space_residents").select("resident_id").eq("space_id", spaceId),
+            sb
+              .from("document_blocks")
+              .select("id, ord, type, content, html_cache, version, author_resident_id")
+              .eq("document_id", docId)
+              .is("deleted_at", null)
+              .order("ord", { ascending: true }),
+            sb
+              .from("space_messages")
+              .select("id, resident_id, visitor_token, body, created_at")
+              .eq("space_id", spaceId)
+              .order("created_at", { ascending: true })
+              .limit(120),
+            sb
+              .from("doc_marginalia")
+              .select(
+                "id, anchor_block_id, anchor_quote, body, author_resident_id, author_visitor_token, status, reply_to, created_at",
+              )
+              .eq("document_id", docId)
+              .order("created_at", { ascending: true }),
+          ]);
+
+        const backfill = await backfillContinuityDeclarationSeed(
+          sb,
+          doc as {
+            id: string;
+            space_id: string;
+            title: string | null;
+            subtitle: string | null;
+            byline: unknown;
+            status: string;
+            observer_mode: boolean;
+          },
+          (blockRows ?? []) as Array<{
+            id: string;
+            ord: number;
+            type: string;
+            content: string | null;
+            html_cache: string | null;
+            version: number | null;
+            author_resident_id: string | null;
+          }>,
+        ).catch((err) => {
+          console.error("[studio/snapshot] continuity seed backfill", err);
+          return null;
+        });
+        if (backfill) {
+          doc = backfill.doc as typeof doc;
+          blockRows = backfill.blocks as typeof blockRows;
+        }
 
         const residents = (residentRows ?? [])
           .map((r: { resident_id: string }) => r.resident_id)

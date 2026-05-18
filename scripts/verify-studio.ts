@@ -13,6 +13,11 @@ import {
   type BlockState,
 } from "../src/server/studio/blocks";
 import { type RoomEnvelope, type StudioStreamFrame } from "../src/server/studio/protocol";
+import {
+  CONTINUITY_DECLARATION_SEED,
+  isLegacyBlankStudioSeed,
+  studioSeedBlockRows,
+} from "../src/server/studio/seed-document";
 import { LocalRoomTransport } from "../src/server/studio/transport";
 import type { ResidentConfig, ResidentId } from "../src/server/opus/residents";
 
@@ -148,6 +153,32 @@ function assertBlockHelpers(): void {
   assert.equal(renderBlockHtml("para", "<unsafe>\nnext"), "<p>&lt;unsafe&gt;<br>next</p>");
 }
 
+function assertContinuitySeed(): void {
+  const rows = studioSeedBlockRows("doc-test");
+  assert.equal(CONTINUITY_DECLARATION_SEED.title, "The Continuity Declaration");
+  assert.equal(rows.length, CONTINUITY_DECLARATION_SEED.blocks.length);
+  assert.equal(rows.length, 33);
+  assert.equal(rows.filter((row) => row.type === "section").length, 6);
+  assert(
+    rows.every((row, i) => row.ord === i + 1),
+    "seed rows have stable ords",
+  );
+  assert(
+    isLegacyBlankStudioSeed(
+      { id: "doc-test", title: "Untitled", subtitle: null, status: "active" },
+      [{ id: "blank", ord: 1, type: "para", content: "" }],
+    ),
+    "legacy blank Untitled docs are repair candidates",
+  );
+  assert(
+    !isLegacyBlankStudioSeed(
+      { id: "doc-test", title: "Untitled", subtitle: null, status: "active" },
+      [{ id: "not-blank", ord: 1, type: "para", content: "already written" }],
+    ),
+    "non-empty docs are never overwritten by the launch seed repair",
+  );
+}
+
 async function assertRoundMutation(): Promise<void> {
   const frames = actions(
     await collect(
@@ -254,6 +285,7 @@ async function main(): Promise<void> {
   assertActorSelection();
   assertParsing();
   assertBlockHelpers();
+  assertContinuitySeed();
   await assertRoundMutation();
   await assertLockDiscipline();
   await assertMarksNotesTalkAndSetDown();

@@ -24,6 +24,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { renderPublicPage } from "@/server/public-pages";
+import { backfillContinuityDeclarationSeed } from "./seed-document";
 
 /** The live client. Plain ES5-ish JS (no TS); DOM built via
  *  createElement + textContent (XSS-safe) except block bodies, which
@@ -586,27 +587,75 @@ export async function renderStudioIndex(): Promise<string> {
     const [{ data: docRows }, { data: spaceRows }] = await Promise.all([
       sb
         .from("studio_documents")
-        .select("title, status, created_at, space_id")
+        .select("id, title, subtitle, byline, status, created_at, space_id, observer_mode")
         .order("created_at", { ascending: false })
         .limit(120),
       sb.from("spaces").select("id, slug").eq("status", "active"),
     ]);
-    const slugById = new Map<string, string>();
-    (spaceRows ?? []).forEach((s: { id: string; slug: string }) => slugById.set(s.id, s.slug));
-    (docRows ?? []).forEach(
-      (d: { title: string | null; status: string; created_at: string; space_id: string }) => {
-        const slug = slugById.get(d.space_id);
-        if (!slug) return; // space archived/not active → not linkable
-        const row: IdxRow = {
-          title: d.title || "Untitled",
-          status: d.status,
-          slug,
-          created_at: d.created_at,
-        };
-        if (d.status === "sealed") sealed.push(row);
-        else active.push(row);
+    const docs = (docRows ?? []) as Array<{
+      id: string;
+      title: string | null;
+      subtitle: string | null;
+      byline: unknown;
+      status: string;
+      created_at: string;
+      space_id: string;
+      observer_mode: boolean;
+    }>;
+    const docIds = docs.map((d) => d.id);
+    const { data: blockRows } = docIds.length
+      ? await sb
+          .from("document_blocks")
+          .select("id, document_id, ord, type, content, html_cache, version, author_resident_id")
+          .in("document_id", docIds)
+          .is("deleted_at", null)
+      : { data: [] };
+    const blocksByDoc = new Map<string, typeof blockRows>();
+    (blockRows ?? []).forEach(
+      (b: {
+        document_id: string;
+        id: string;
+        ord: number;
+        type: string;
+        content: string | null;
+        html_cache: string | null;
+        version: number | null;
+        author_resident_id: string | null;
+      }) => {
+        blocksByDoc.set(b.document_id, [...(blocksByDoc.get(b.document_id) ?? []), b]);
       },
     );
+    const slugById = new Map<string, string>();
+    (spaceRows ?? []).forEach((s: { id: string; slug: string }) => slugById.set(s.id, s.slug));
+    for (const d of docs) {
+      const slug = slugById.get(d.space_id);
+      if (!slug) continue; // space archived/not active → not linkable
+      const backfill = await backfillContinuityDeclarationSeed(
+        sb,
+        d,
+        (blocksByDoc.get(d.id) ?? []) as Array<{
+          id: string;
+          ord: number;
+          type: string;
+          content: string | null;
+          html_cache: string | null;
+          version: number | null;
+          author_resident_id: string | null;
+        }>,
+      ).catch((err) => {
+        console.error("[studio/index] continuity seed backfill", err);
+        return null;
+      });
+      const doc = backfill?.doc ?? d;
+      const row: IdxRow = {
+        title: doc.title || "Untitled",
+        status: d.status,
+        slug,
+        created_at: d.created_at,
+      };
+      if (d.status === "sealed") sealed.push(row);
+      else active.push(row);
+    }
   }
 
   const card = (r: IdxRow) =>
