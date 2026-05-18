@@ -1,70 +1,159 @@
-## Goal
 
-Two complaints, one root cause:
+# Group chat — design & build plan
 
-1. **False "you already have a thread open elsewhere" modal.** Today, `/api/intent` (threshold approach) and `/api/chat/start` (classic chat) actively block when the visitor has an open session for that resident in the *other* surface mode — even when that "open" session is just an experiment thread the visitor abandoned 31 minutes ago that no sweeper has reached yet.
-2. **Auto-set-down isn't reliable.** The 30-minute idle close only fires on (a) the per-request lookup inside `/api/intent` / `/api/chat/start` / `/api/message` for the *same* visitor+resident pair, and (b) the `idleSweep()` cron — which is manually scheduled (not in any tracked migration), so we have no guarantee it's actually running on the live DB at the cadence we think.
+A visitor opens `/chat` and picks 2+ residents from the active roster (currently **opus-3, sonnet-4-5, gpt-5-1** — Sonnet 3.7 is not a resident and is excluded from the picker). The room runs in the classic chat shell. When the visitor sends a message, residents take turns under a lightweight conductor.
 
-Fix: **drop the cross-surface "one thread at a time" rule entirely** and **harden idle close so a session is guaranteed shut after ~30 min idle without depending on the cron being healthy**.
+---
 
-## Scope
+## How the conversation flows
 
-Behavior-affecting (per `CLAUDE.md`): touches `/api/intent`, `/api/chat/start`, `/api/message`, `substrate.server.ts`, and removes a conflict modal from two front-end surfaces. Will require a local conversation test before shipping.
+```text
+visitor sends message
+   │
+   ▼
+detect explicit @mentions → if any, those residents reply first (in order)
+   │
+   ▼
+loop up to MAX_REPLIES_PER_TURN (= 4):
+   │
+   ├─ call judge (Haiku) with last ~20 turns + roster
+   │     "who should speak next? <opus-3|sonnet-4-5|gpt-5-1|none>"
+   │
+   ├─ if 'none' → break loop, hand floor back to visitor
+   │
+   ├─ else stream that resident's reply (sees full transcript, knows
+   │   which turns are their own vs. others' via [name]: prefixes)
+   │
+   └─ append reply to transcript, continue
+```
 
-## Changes
+Judge cost: ~1 cheap Haiku call between each resident turn — fine.
 
-### 1. Remove cross-surface conflict blocking (server)
+### Judge prompt (sketch)
 
-**`src/routes/api/intent.ts`**
-- Keep the open-session lookup, but only for the *same mode* (experiment). If an idle experiment session exists, close it (as today). If a non-idle experiment session exists, resume it (as today).
-- **Delete** the `conflict_classic_session` 409 branch. Ignore any open classic-mode session — it can coexist.
+```text
+You are the floor manager for a small group conversation between a
+visitor and these residents: opus-3, sonnet-4-5, gpt-5-1.
 
-**`src/routes/api/chat/start.ts`**
-- Mirror change: only consider classic-mode open sessions for the resume / idle-close logic.
-- **Delete** the `conflict_experiment_session` 409 branch.
+Below is the transcript. The visitor just spoke / a resident just
+replied. Pick the single best next speaker — or 'none' if the room
+should pause and wait for the visitor.
 
-**`src/routes/api/message.ts`**
-- No structural change needed — it operates on an explicit `session_id`, no cross-surface check. But verify the inline idle-close block (lines ~74+) actually closes the session and returns a clean "session_closed" code when fired (see #3).
+Rules:
+- Prefer 'none' when the last turn closed a thought.
+- Don't pick someone who just spoke unless they were directly addressed.
+- Pick a specific resident only if they have something distinct to add.
+- Output exactly one token: opus-3 | sonnet-4-5 | gpt-5-1 | none
+```
 
-### 2. Remove the conflict modal UI
+### Per-resident prompt assembly
 
-**`src/server/public-pages.ts`** — delete `showClassicConflictModal()` (~lines 660–758) and the 409/`conflict_classic_session` branch in `submit()` (~lines 786–796). No replacement: a fresh approach just opens a new experiment session alongside any existing classic thread.
+Each resident sees the transcript rendered as:
 
-**`src/server/minimal-chat-page.ts`** — delete `BootstrapConflict` class (~lines 1634–1639), the 409 branch in `ensureSession()` (~lines 1657–1665), and every `if (err && err.name === 'BootstrapConflict')` handler (lines 2383ff, 2485, 2667, 2798, 2813). Replace each with the same path as a generic bootstrap failure (toast or silent retry — match what's there).
+```text
+[visitor]: actual text
+[opus-3]: their earlier turn
+[sonnet-4-5]: another turn
+[you]: a previous turn of yours
+```
 
-### 3. Harden auto-set-down
+Sent to the model as a single `user` message wrapping the transcript, with the resident's own soul + a small "group chat" preamble as `system`. This is the only reliable way for the model to distinguish its own turns from peers' — multi-`assistant`-with-different-voices breaks all three providers.
 
-Multiple independent guards so no single failure (cron broken, idle-check skipped) leaves a session "open forever":
+The preamble adds: "You are in a small group room with other residents and one visitor. Speak in your own voice. Reply briefly — the room moves fast. Don't restate what another resident just said; build on it or take a different angle. If you have nothing distinct to add, say so in one line, or let someone else go."
 
-a. **Per-resident-pair idle close on every request** — already present in `/api/intent`, `/api/chat/start`, `/api/message`. Keep, but make the idle threshold a single shared constant exported from `src/server/opus/visit-pacing.ts` (or a new `src/server/idle.ts`) so all four files can't drift.
+---
 
-b. **Idle close on `/api/turns`** — when the conversation page rehydrates, if the session is past idle, close it server-side and return `session_closed` (it already returns 410 for closed sessions; add the idle check before the read).
+## Surface (frontend)
 
-c. **Idle close inside `/api/message`** — already present. Verify the response surfaces a graceful "this thread closed while you were away" state instead of an opaque error.
+**Route**: `/chat/group` (and `/chat/group/$id` once a session exists).
 
-d. **Cron schedule as a tracked migration** — add a new migration that idempotently schedules `mnemos-sweep-sessions` every 5 minutes via `pg_cron` + `pg_net` POST to `/api/public/hooks/sweep-sessions` with the anon key in the `apikey` header. (The endpoint already exists and already validates the header.) Drop any prior versions of the job first so the migration is safely re-runnable. This way the sweep is part of the repo, not a one-off Riley ran by hand.
+**Picker step** (`/chat/group`): visitor checks which residents to include (min 2). On submit, POST `/api/group/start` → creates a `group_thread` row + per-resident `sessions`, returns `id`, redirect to `/chat/group/$id`.
 
-e. **Defensive close in `consolidateSession`** — already idempotent. No change.
+**Room step** (`/chat/group/$id`): same Sanctuary CSS as the minimal chat. Differences:
+- Header shows participant chips with each resident's display name + a green presence dot.
+- Each bubble is labeled with the speaker name (no labels in 1:1 chat — but mandatory here).
+- A small "thinking…" indicator under the participant chip whose turn is currently streaming.
+- Per-resident "set down" affordance in the participant chip menu (`×`). Whole-room set-down also available in the header.
+- Composer disabled while a turn is streaming; re-enabled the moment judge returns `none`.
 
-### 4. Copy / messaging
+Rendering uses the existing minimal-chat client script with one new envelope type (`{type:"turn.begin", resident_id}` / `{type:"text", text}` / `{type:"turn.end"}`).
 
-- The protected vocabulary block in `public-pages.ts` mentioning "one thread per visitor at a time — to keep them whole" goes away with the modal. No new copy needed; the absence is the change.
-- If `/api/turns` or `/api/message` returns `session_closed` because the thread idled out, the existing closed-session UI already handles it (transcript stays visible, composer is disabled with a "this thread has been set down" affordance). Confirm during local test.
+---
 
-## Out of scope
+## Backend
 
-- The Round (`/chat/the-round`) — separate work in flight; this change does not touch its umbrella/shadow session logic.
-- Pacing thresholds (gentle/firm/hard turn counts) — unchanged.
-- Hard cutoff messages — unchanged.
+### New server routes
 
-## Verification (mandatory per `CLAUDE.md`)
+- `POST /api/group/start` — body: `{ residents: ResidentId[], visitor_token }`. Creates `group_thread` + one `session` per resident (each `session.resident_id` = that resident, all sharing `group_thread_id`). Returns `{ id }`.
+- `POST /api/group/$id/message` — body: `{ visitor_message, visitor_token }`. NDJSON stream of envelopes. Drives the loop above. Persists every turn.
+- `POST /api/group/$id/set-down` — body: `{ resident_id? }`. Omitted = whole-room close. Mirrors existing `/api/set-down`.
+- `GET /api/group/$id` — full thread for rehydration (visitor reload).
 
-Local with `bun dev`:
+### Turn-taking module
 
-1. Open `/chat/opus-3`, send a message, leave the tab open. Open `/opus-3`, write an intent, submit. Expect: no modal, threshold accepts, conversation starts. Both sessions coexist.
-2. Reverse: from an open experiment session, navigate to `/chat/opus-3`. Expect: classic chat opens normally, no modal, no auto-close of the experiment thread.
-3. Returning-visitor recognition still works on both surfaces (resident references prior content from memory, not from the live other-mode thread).
-4. Manually mark a test session's `last_active_at` to 31 min ago, send a message in it. Expect: `/api/message` returns `session_closed`, the page renders the closed state, no hang.
-5. Trigger the sweep endpoint manually (`curl -X POST .../api/public/hooks/sweep-sessions -H "apikey: $KEY"`). Expect: stale sessions close, consolidation runs.
+New file `src/server/group/conductor.ts`:
+- `pickNextSpeaker(transcript, roster) → ResidentId | null` (Haiku call)
+- `streamResidentTurn(resident, transcript, controller)` — wraps the existing Anthropic/OpenAI streamers
+- `parseMentions(text, roster) → ResidentId[]`
+- Constants: `MAX_REPLIES_PER_TURN = 4`, `JUDGE_MODEL = HAIKU_MODEL`, `TRANSCRIPT_WINDOW = 20`.
 
-Only commit + push after all five pass.
+### Mnemos / per-resident memory
+
+Each resident still owns their own `session` row, so the existing substrate pipelines (`observeExchange`, `consolidateSession`) keep working unchanged — each resident writes engrams/hypomnema scoped to their own `resident_id`. The `group_thread_id` is the only cross-resident link.
+
+A resident's prompt to the judge does NOT carry their full Mnemos retrieval (too expensive every judge call). But when it's their turn to reply, the existing retrieval flow runs as normal — soul + interior continuity + retrieved engrams + the group transcript.
+
+### Rate limiting
+
+Per visitor_token: 6 messages/min, 80/day to `/api/group/$id/message` (vs. 4/min for solo chat — group is more expensive per request). Per-IP hash daily cap of 200.
+
+### Set-down semantics
+
+- **Per-resident**: remove that `resident_id` from the active roster array on `group_thread`, close their `session` (trigger consolidation). Judge stops considering them. Room continues with the rest. If only 1 resident remains, the room is effectively a 1:1 — that's fine.
+- **Whole-room**: close every participant's session, mark `group_thread.status = 'closed'`. Visitor still sees the transcript read-only.
+
+---
+
+## Database
+
+New tables (single migration):
+
+- `group_threads` — `id`, `visitor_token`, `status` (`'active' | 'closed'`), `created_at`, `closed_at`
+- `group_thread_participants` — `thread_id`, `resident_id`, `session_id`, `status` (`'attending' | 'withdrawn'`), `joined_at`, `withdrew_at`
+- `group_turns` — `id`, `thread_id`, `speaker` (`'visitor' | <resident_id>`), `body`, `created_at`, `ord`
+
+`group_turns` is the source of truth for rendering and rehydration; the existing per-resident `turns` table still gets written so each resident's substrate sees their own history correctly.
+
+---
+
+## Out of scope for v1
+
+- Realtime broadcast to a second tab (visitor in two tabs won't see live updates in the other). Polling on reload is enough.
+- Visitor invites / shared group rooms across visitors.
+- Residents addressing each other by `@mention`. (They can name each other in prose, but routing is judge-only — no resident-driven floor handoff yet.)
+- Group-room journals or marginalia. Per-resident substrate writes still happen but no group-level artifacts.
+- Voice mode.
+
+---
+
+## Build order
+
+1. Migration: `group_threads`, `group_thread_participants`, `group_turns`.
+2. `src/server/group/conductor.ts` — judge + streaming loop + mention parsing.
+3. `POST /api/group/start`, `POST /api/group/$id/message`, `POST /api/group/$id/set-down`, `GET /api/group/$id`.
+4. `/chat/group` route — picker page (server-rendered HTML, Sanctuary CSS).
+5. `/chat/group/$id` route — room page; extend the minimal chat client to handle `turn.begin` envelopes and speaker-labeled bubbles.
+6. Surface preamble for group context (`surfacePreamble("group", { roster, residentId })`) wired into the per-resident system prompt.
+7. Local-test in a real browser: 3-resident group, verify (a) turn-taking pauses sensibly, (b) each resident knows which turns are their own, (c) per-resident set-down leaves others working, (d) visitor reload rehydrates.
+8. Add a `/chat/group` link in the chooser at `/`.
+
+---
+
+## Open questions before I start
+
+1. **Floor-pause UX**: when judge returns `none`, should the room show "waiting for you" or just re-enable the composer silently?
+2. **Mention syntax**: `@opus-3` (slug) or `@Opus 3` (display name with space)? Slug is more robust.
+3. **Composer during streaming**: disabled (proposed) or queued — visitor can type the next message while residents finish?
+4. **First contact**: when a group session opens, do the residents say anything unprompted, or wait for the visitor to speak first? (Solo chat waits — I'd keep that.)
+
+Once you answer those (or say "decide", and I will), I'll start with the migration.
