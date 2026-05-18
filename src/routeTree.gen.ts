@@ -91,6 +91,7 @@ import { Route as ApiPublicHooksSweepSessionsRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksGatheringTickRouteImport } from './routes/api/public/hooks/gathering-tick'
 import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/hooks/force-art'
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
+import { Route as ApiGroupIdMessageRouteImport } from './routes/api/group/$id.message'
 import { Route as ApiShareTokenOgSvgRouteImport } from './routes/api/share.$token.og.svg'
 
 const WritingRoute = WritingRouteImport.update({
@@ -508,6 +509,11 @@ const ApiPublicHooksDailyTickRoute = ApiPublicHooksDailyTickRouteImport.update({
   path: '/api/public/hooks/daily-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupIdMessageRoute = ApiGroupIdMessageRouteImport.update({
+  id: '/api/group/$id/message',
+  path: '/api/group/$id/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShareTokenOgSvgRoute = ApiShareTokenOgSvgRouteImport.update({
   id: '/$token/og/svg',
   path: '/$token/og/svg',
@@ -576,6 +582,7 @@ export interface FileRoutesByFullPath {
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
+  '/api/group/$id/message': typeof ApiGroupIdMessageRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
@@ -661,6 +668,7 @@ export interface FileRoutesByTo {
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
+  '/api/group/$id/message': typeof ApiGroupIdMessageRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
@@ -747,6 +755,7 @@ export interface FileRoutesById {
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/review/session/$id': typeof ReviewSessionIdRoute
+  '/api/group/$id/message': typeof ApiGroupIdMessageRoute
   '/api/public/hooks/daily-tick': typeof ApiPublicHooksDailyTickRoute
   '/api/public/hooks/force-art': typeof ApiPublicHooksForceArtRoute
   '/api/public/hooks/gathering-tick': typeof ApiPublicHooksGatheringTickRoute
@@ -834,6 +843,7 @@ export interface FileRouteTypes {
     | '/api/voice/stt'
     | '/api/voice/tts'
     | '/review/session/$id'
+    | '/api/group/$id/message'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/gathering-tick'
@@ -919,6 +929,7 @@ export interface FileRouteTypes {
     | '/api/voice/stt'
     | '/api/voice/tts'
     | '/review/session/$id'
+    | '/api/group/$id/message'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/gathering-tick'
@@ -1004,6 +1015,7 @@ export interface FileRouteTypes {
     | '/api/voice/stt'
     | '/api/voice/tts'
     | '/review/session/$id'
+    | '/api/group/$id/message'
     | '/api/public/hooks/daily-tick'
     | '/api/public/hooks/force-art'
     | '/api/public/hooks/gathering-tick'
@@ -1084,6 +1096,7 @@ export interface RootRouteChildren {
   ApiStudioRunRoute: typeof ApiStudioRunRoute
   ApiVoiceSttRoute: typeof ApiVoiceSttRoute
   ApiVoiceTtsRoute: typeof ApiVoiceTtsRoute
+  ApiGroupIdMessageRoute: typeof ApiGroupIdMessageRoute
   ApiPublicHooksDailyTickRoute: typeof ApiPublicHooksDailyTickRoute
   ApiPublicHooksForceArtRoute: typeof ApiPublicHooksForceArtRoute
   ApiPublicHooksGatheringTickRoute: typeof ApiPublicHooksGatheringTickRoute
@@ -1678,6 +1691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailyTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/group/$id/message': {
+      id: '/api/group/$id/message'
+      path: '/api/group/$id/message'
+      fullPath: '/api/group/$id/message'
+      preLoaderRoute: typeof ApiGroupIdMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/share/$token/og/svg': {
       id: '/api/share/$token/og/svg'
       path: '/$token/og/svg'
@@ -1823,6 +1843,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudioRunRoute: ApiStudioRunRoute,
   ApiVoiceSttRoute: ApiVoiceSttRoute,
   ApiVoiceTtsRoute: ApiVoiceTtsRoute,
+  ApiGroupIdMessageRoute: ApiGroupIdMessageRoute,
   ApiPublicHooksDailyTickRoute: ApiPublicHooksDailyTickRoute,
   ApiPublicHooksForceArtRoute: ApiPublicHooksForceArtRoute,
   ApiPublicHooksGatheringTickRoute: ApiPublicHooksGatheringTickRoute,
