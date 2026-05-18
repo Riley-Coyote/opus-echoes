@@ -70,6 +70,7 @@ import { Route as ApiReviewCoherenceRouteImport } from './routes/api/review/cohe
 import { Route as ApiGroupStartRouteImport } from './routes/api/group/start'
 import { Route as ApiChatStartRouteImport } from './routes/api/chat/start'
 import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
+import { Route as ApiGroupIdIndexRouteImport } from './routes/api/group/$id.index'
 import { Route as ApiStudioDocTurnRouteImport } from './routes/api/studio/$doc.turn'
 import { Route as ApiStudioDocSnapshotRouteImport } from './routes/api/studio/$doc.snapshot'
 import { Route as ApiStudioDocSealRouteImport } from './routes/api/studio/$doc.seal'
@@ -401,6 +402,11 @@ const ApiAdminBackfillEmbeddingsRoute =
     path: '/api/admin/backfill-embeddings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGroupIdIndexRoute = ApiGroupIdIndexRouteImport.update({
+  id: '/api/group/$id/',
+  path: '/api/group/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudioDocTurnRoute = ApiStudioDocTurnRouteImport.update({
   id: '/api/studio/$doc/turn',
   path: '/api/studio/$doc/turn',
@@ -611,6 +617,7 @@ export interface FileRoutesByFullPath {
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/group/$id/': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesByTo {
@@ -698,6 +705,7 @@ export interface FileRoutesByTo {
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/group/$id': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRoutesById {
@@ -786,6 +794,7 @@ export interface FileRoutesById {
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/group/$id/': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
 }
 export interface FileRouteTypes {
@@ -875,6 +884,7 @@ export interface FileRouteTypes {
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/group/$id/'
     | '/api/share/$token/og/svg'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -962,6 +972,7 @@ export interface FileRouteTypes {
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/group/$id'
     | '/api/share/$token/og/svg'
   id:
     | '__root__'
@@ -1049,6 +1060,7 @@ export interface FileRouteTypes {
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/group/$id/'
     | '/api/share/$token/og/svg'
   fileRoutesById: FileRoutesById
 }
@@ -1126,6 +1138,7 @@ export interface RootRouteChildren {
   ApiStudioDocSealRoute: typeof ApiStudioDocSealRoute
   ApiStudioDocSnapshotRoute: typeof ApiStudioDocSnapshotRoute
   ApiStudioDocTurnRoute: typeof ApiStudioDocTurnRoute
+  ApiGroupIdIndexRoute: typeof ApiGroupIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1557,6 +1570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminBackfillEmbeddingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/group/$id/': {
+      id: '/api/group/$id/'
+      path: '/api/group/$id'
+      fullPath: '/api/group/$id/'
+      preLoaderRoute: typeof ApiGroupIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/studio/$doc/turn': {
       id: '/api/studio/$doc/turn'
       path: '/api/studio/$doc/turn'
@@ -1881,6 +1901,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudioDocSealRoute: ApiStudioDocSealRoute,
   ApiStudioDocSnapshotRoute: ApiStudioDocSnapshotRoute,
   ApiStudioDocTurnRoute: ApiStudioDocTurnRoute,
+  ApiGroupIdIndexRoute: ApiGroupIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
