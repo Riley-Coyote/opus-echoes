@@ -413,12 +413,14 @@ const WALKTHROUGH_CSS = `
   transform:translateY(-6px);
 }
 .landing-hero-title{
-  font-family:var(--display);font-weight:var(--w-regular);
+  /* large + airy: Inter Tight Light at display size, calmer off-white
+     (not stark --ink), no green halo. sophistication from weight +
+     breath, per the design system. */
+  font-family:var(--display);font-weight:var(--w-light);
   font-size:clamp(48px,8vw,128px);
-  letter-spacing:-.022em;line-height:1;
-  color:var(--ink);
+  letter-spacing:-.008em;line-height:1;
+  color:var(--body);
   margin:0;
-  text-shadow:0 0 96px var(--state-dim);
 }
 .landing-hero-rule{
   width:140px;height:1px;
