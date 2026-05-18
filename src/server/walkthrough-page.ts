@@ -392,13 +392,13 @@ const WALKTHROUGH_CSS = `
    this is the fix for the cut-off "continue conversation" card). */
 .wt-beat.b5{
   align-items:flex-start;
-  padding-top:96px;padding-bottom:var(--s-10);
+  padding-top:72px;padding-bottom:var(--s-6);
 }
 
 /* ── hero ─────────────────────────────────────────────────────── */
 .landing-hero{
   text-align:center;
-  padding:var(--s-7) 0 var(--s-8);
+  padding:var(--s-5) 0 var(--s-6);
   display:flex;flex-direction:column;align-items:center;gap:var(--s-4);
 }
 .landing-hero-mark{
