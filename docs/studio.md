@@ -1,13 +1,13 @@
 # The Studio — canonical source of truth
 
-*Last updated 2026-05-17. **The single source of truth for The Studio.** Keep
+*Last updated 2026-05-18. **The single source of truth for The Studio.** Keep
 it current with every Studio change. Status: **fully built across P0–P5 + an
 access layer, pushed to `main` (`8d1b299` → `2b38024`); the migration is
 applied (Lovable `69e339e`); live-capable on the next Lovable Publish.** It is
-`tsc`/prettier clean and the conductor is locally verified, **but it has never
-run against the live DB + models — it is built, not proven.** Remaining: P3d
-(Vision-loop fidelity) and P4.1 (`private:true` + `realtime.messages` RLS),
-both environment-bound.*
+`tsc`/prettier clean and the conductor is locally verified by the committed
+`scripts/verify-studio.ts` harness, **but it has never run against the live DB
+and models — it is built, not proven.** Remaining: P3d (Vision-loop fidelity) and
+P4.1 (`private:true` + `realtime.messages` RLS), both environment-bound.*
 
 ---
 
@@ -331,11 +331,12 @@ Verified `git log` on `main` (my commits are `studio*`/`docs:`; Lovable's are
 - `bun tsc --noEmit` clean across the project after every Studio commit
   (`strict: true`).
 - Per-file `prettier` clean on every file authored.
-- The conductor end-to-end via `LocalRoomTransport` + a scripted model
-  (run-then-deleted; the repo has no test runner): recency rotation, tag
-  parse, `ordAfter`/`resolveRef`, lock `acquire<upsert<release` ordering
-  discipline, `<set-down/>` stop, monotonic `seq`, human-interrupt yield,
-  observer cap at exactly `STUDIO_MAX_TURNS=12` — **ALL PASS**.
+- The conductor end-to-end via committed `scripts/verify-studio.ts`
+  (`LocalRoomTransport` + a scripted model; no Supabase, no API keys): recency
+  rotation, tag parse, `ordAfter`/`resolveRef`, lock
+  `acquire<upsert<release` ordering discipline, `mark.add`/`marginalia.add`/
+  `talk`, `<set-down/>` stop, monotonic `seq`, human-interrupt yield, observer
+  cap at exactly `STUDIO_MAX_TURNS=12` — **ALL PASS** on 2026-05-18.
 - The ~22KB inline client parses (`new Function()` syntax check).
 - The applied migration's DDL diffed byte-identical to the design.
 
@@ -393,17 +394,17 @@ After Publish, in priority order:
 
 ---
 
-## 9. Regression protection (documented — Codex builds the harness)
+## 9. Regression protection (documented — harness built)
 
 The repo has **no test runner** and `package.json` has no `test` script.
 `bun tsc --noEmit` is the real gate. Discipline that protects the Studio:
 
 - **The `tsc` gate**: `bun tsc --noEmit` must stay clean (`strict:true`,
   `@/*`→`./src/*`) after any change. Non-negotiable.
-- **Build `scripts/verify-studio.ts`** (the harness, to implement): drive
-  `streamStudioTurn` with `LocalRoomTransport` + an **injected scripted model**
-  (the `streamTokens` seam on `StudioTurnOpts`) and **no Supabase / no API
-  keys**. Assert the invariants:
+- **`scripts/verify-studio.ts`**: drive `streamStudioTurn` with
+  `LocalRoomTransport` + an **injected scripted model** (the `streamTokens`
+  seam on `StudioTurnOpts`) and **no Supabase / no API keys**. Assert the
+  invariants:
   - `pickStudioActor` recency rotation (empty→first; owed-most next; all-spoke→
     longest-ago);
   - `parseStudioTurn` parses `<block op/ref/type>`, `<mark>`, `<note>`,
@@ -417,9 +418,6 @@ The repo has **no test runner** and `package.json` has no `test` script.
   - `shouldInterrupt` → `human_interrupt`; observer cap → `max_turns` at
     exactly `STUDIO_MAX_TURNS`.
   Run it (`bun run scripts/verify-studio.ts`) before and after Studio changes.
-  *(I ran exactly this harness this session run-then-deleted — ALL PASS — but
-  did not commit it per scope. It is straightforward to reconstruct from the
-  exports in `conductor.ts`/`blocks.ts`/`transport.ts`.)*
 - **Invariants / Definition of Done** for any Studio change: tsc clean;
   per-file prettier clean; the harness passes; durable actions persist
   **before** broadcast; the conductor stays the single resident-lock writer;
