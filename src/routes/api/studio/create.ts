@@ -120,7 +120,7 @@ export const Route = createFileRoute("/api/studio/create")({
             status: "active",
             created_from_session_id: body.session_id ?? null,
             created_by_visitor_token: body.visitor_token,
-            observer_mode: false,
+            observer_mode: true,
           })
           .select("id")
           .single();
