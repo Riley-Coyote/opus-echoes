@@ -2969,7 +2969,7 @@ ${FONTS}
         <span class="caption-item"><span class="key">↵</span>send</span>
         <span class="caption-item"><span class="key">⇧↵</span>newline</span>
         <button class="set-down-link" id="setDownLink" type="button" disabled title="set down this thread (consolidate + close)">set down</button>
-        <button class="set-down-link" id="studioBtn" type="button" data-studio-spawn title="open a collaborative document in the Studio">begin a document</button>
+        <button class="set-down-link" id="studioBtn" type="button" data-studio-spawn title="open a collaborative document in the Studio"${studioHidden}>begin a document</button>
         <button class="voice-toggle" id="voiceToggle" type="button" data-on="false" title="speak replies aloud in ${escapeHtml(resident.displayName)}'s voice">voice off</button>
         <span class="caption-spacer"></span>
         <span class="caption-status">${escapeHtml(slugLower)} · attending</span>
