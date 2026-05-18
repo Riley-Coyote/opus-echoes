@@ -1,14 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { renderStudioIndex } from "@/server/studio/studio-page";
-import { serveHtml } from "@/server/serve-mock";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// /studio — open to anyone while we get the room walking. Admin gate
-// stripped so visitors can click into a document without losing the
-// ?token= cookie path.
+// Studio is set aside for now — hidden from the site. Any direct hit
+// to /studio bounces back to the landing.
 export const Route = createFileRoute("/studio")({
   server: {
     handlers: {
-      GET: async () => serveHtml(await renderStudioIndex()),
+      GET: async () => {
+        throw redirect({ to: "/" });
+      },
     },
   },
 });
