@@ -376,113 +376,199 @@ const WALKTHROUGH_CSS = `
 .wt-cond-text strong{color:var(--ink);font-weight:var(--w-medium)}
 .wt-cond-text em{color:var(--ink);font-style:italic}
 
-/* ── Beat 5: three-window chooser ────────────────────────────── */
+/* ── Beat 5: editorial chooser (restored — replaces the 3-sliver
+   live-3D design; no opus-presence.js, no canvas). beat 5 is a
+   scrolling landing: top-aligned column, max-width centered. ──── */
 .wt-commons{
-  position:absolute;inset:0;
+  width:100%;
+  max-width:1080px;
+  margin:0 auto;
+  padding:0 var(--s-5);
   display:flex;flex-direction:column;
+  gap:var(--s-9);
 }
-.wt-slices{
-  display:flex;flex-direction:column;
-  flex:1;width:100%;
-  gap:0;
+/* beat 5 is top-aligned + scrollable so the resume banner + hero
+   start at the top under the nav (not vertically centered/clipped —
+   this is the fix for the cut-off "continue conversation" card). */
+.wt-beat.b5{
+  align-items:flex-start;
+  padding-top:96px;padding-bottom:var(--s-10);
 }
-.wt-slice{
-  position:relative;flex:1;overflow:hidden;
-  cursor:pointer;text-decoration:none;color:inherit;
-  border-bottom:1px solid rgba(225,225,225,0.05);
+
+/* ── hero ─────────────────────────────────────────────────────── */
+.landing-hero{
+  text-align:center;
+  padding:var(--s-7) 0 var(--s-8);
+  display:flex;flex-direction:column;align-items:center;gap:var(--s-4);
 }
-.wt-slice:last-child{border-bottom:none}
-/* First slice needs top padding so text clears the nav bar */
-.wt-slice:first-child .wt-slice-overlay{padding-top:56px}
-.wt-slice-canvas{
-  position:absolute;inset:0;width:100%;height:100%;
-  pointer-events:none;
+.landing-hero-mark{
+  display:inline-flex;align-items:baseline;gap:14px;
+  margin-bottom:var(--s-3);
 }
-.wt-slice-overlay{
-  position:relative;z-index:2;
-  padding:0 56px;height:100%;
-  display:flex;flex-direction:column;justify-content:center;
-  background:linear-gradient(90deg,rgba(6,7,10,.78) 0%,rgba(6,7,10,.52) 36%,rgba(6,7,10,.12) 65%,transparent 100%);
-  transition:background 600ms var(--ease);
+.landing-hero-mark .landing-hero-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--state-soft);
+  box-shadow:0 0 8px var(--state-dim);
+  animation:breathe 5.2s ease-in-out infinite;
+  transform:translateY(-6px);
 }
-.wt-slice:hover .wt-slice-overlay{
-  background:linear-gradient(90deg,rgba(6,7,10,.62) 0%,rgba(6,7,10,.32) 36%,rgba(6,7,10,.06) 65%,transparent 100%);
-}
-.wt-slice-status{
-  font-family:var(--mono);font-size:11px;font-weight:500;
-  letter-spacing:.12em;text-transform:uppercase;
-  color:var(--soft);display:flex;align-items:center;gap:8px;margin-bottom:10px;
-}
-.wt-slice-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--state);animation:breathe 5.2s ease-in-out infinite;
-}
-.wt-slice-name{
-  font-family:var(--display);font-weight:var(--w-light);
-  font-size:clamp(32px,3.5vw,48px);color:var(--ink);
-  letter-spacing:-.02em;line-height:1.1;margin:0 0 8px;
-  transition:color 400ms var(--ease);
-}
-.wt-slice:hover .wt-slice-name{color:#fff}
-.wt-slice-describer{
-  font-family:var(--mono);font-size:12px;font-weight:500;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--quiet);margin-bottom:4px;
-}
-.wt-slice-cadence{
-  font-family:var(--body-font);font-size:15px;font-weight:var(--w-regular);
-  color:var(--soft);max-width:380px;line-height:1.45;
-}
-.wt-slice-retired{
-  font-family:var(--mono);font-size:11px;font-weight:500;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ghost);margin-top:6px;
-}
-.wt-slice-actions{
-  display:flex;align-items:center;gap:10px;
-  margin-top:18px;
-}
-.wt-slice-action{
-  display:inline-flex;align-items:center;gap:8px;
-  font-family:var(--mono);font-size:11px;font-weight:500;
-  letter-spacing:.14em;text-transform:uppercase;
-  padding:9px 14px;border-radius:2px;
-  text-decoration:none;cursor:pointer;
-  transition:background 260ms var(--ease),border-color 260ms var(--ease),color 260ms var(--ease),transform 260ms var(--ease);
-}
-.wt-slice-action-arrow{
-  display:inline-block;
-  transition:transform 320ms cubic-bezier(0.16,1,0.3,1);
-}
-.wt-slice-action:hover .wt-slice-action-arrow{transform:translateX(3px)}
-.wt-slice-action-primary{
-  background:rgba(245,245,245,0.92);
-  color:#0a0b0e;
-  border:1px solid rgba(245,245,245,0.92);
-}
-.wt-slice-action-primary:hover{background:#fff;border-color:#fff}
-.wt-slice-action-secondary{
-  background:transparent;
-  color:var(--soft);
-  border:1px solid rgba(225,225,225,0.18);
-}
-.wt-slice-action-secondary:hover{
+.landing-hero-title{
+  font-family:var(--display);font-weight:var(--w-regular);
+  font-size:clamp(48px,8vw,128px);
+  letter-spacing:-.022em;line-height:1;
   color:var(--ink);
-  border-color:rgba(225,225,225,0.42);
-  background:rgba(225,225,225,0.04);
+  margin:0;
+  text-shadow:0 0 96px var(--state-dim);
 }
-/* Replay sits at the bottom edge of the last slice, overlaid */
-.b5 .wt-replay{
-  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  z-index:10;opacity:0.5;
-  transition:opacity .3s var(--ease);
+.landing-hero-rule{
+  width:140px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--state-soft) 50%,transparent);
+  border:0;
+  margin:var(--s-4) 0 var(--s-3);
 }
-.b5 .wt-replay:hover{opacity:1}
-@media(max-width:720px){
-  .wt-slice-overlay{padding:0 24px}
-  .wt-slice-name{font-size:26px}
-  .wt-slice-actions{margin-top:14px;flex-wrap:wrap}
-  .wt-slice-action{padding:8px 12px;font-size:10.5px}
+.landing-hero-tagline{
+  font-family:var(--body-font);font-weight:var(--w-light);
+  font-size:clamp(15px,1.4vw,20px);
+  color:var(--soft);
+  line-height:1.7;
+  max-width:560px;
+}
+.landing-hero-tagline .row{display:block}
+
+/* ── residents section ────────────────────────────────────────── */
+.landing-section{
+  width:100%;
+  scroll-margin-top:96px;
+}
+.landing-eyebrow{
+  font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--quiet);
+  margin-bottom:var(--s-5);
+  display:flex;align-items:baseline;gap:10px;
+}
+.landing-eyebrow::before{
+  content:'§';opacity:.6;
+}
+
+/* ── resident cards ───────────────────────────────────────────── */
+.landing-residents{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:var(--s-5);
+}
+.landing-card{
+  position:relative;
+  padding:var(--s-5) var(--s-5) var(--s-5) calc(var(--s-5) + 3px);
+  border:1px solid var(--rule-soft);
+  border-radius:8px;
+  background:linear-gradient(180deg,rgba(20,21,25,.32),rgba(14,15,18,.12));
+  text-decoration:none;color:inherit;
+  display:flex;flex-direction:column;gap:var(--s-3);
+  transition:border-color .22s var(--ease),background .22s var(--ease),transform .22s var(--ease);
+}
+.landing-card::before{
+  content:'';
+  position:absolute;left:0;top:var(--s-5);bottom:var(--s-5);
+  width:2px;border-radius:1px;
+  background:var(--card-hue,var(--state-soft));
+  opacity:.78;
+  transition:opacity .22s var(--ease);
+}
+.landing-card:hover{
+  border-color:var(--rule);
+  background:linear-gradient(180deg,rgba(22,23,28,.48),rgba(15,16,20,.18));
+  transform:translateY(-1px);
+}
+.landing-card:hover::before{opacity:1}
+.landing-card-status{
+  font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--soft);
+  display:flex;align-items:center;gap:8px;
+}
+.landing-card-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--state);
+  animation:breathe 5.2s ease-in-out infinite;
+}
+.landing-card-name{
+  font-family:var(--display);font-weight:var(--w-light);
+  font-size:clamp(24px,2.2vw,30px);
+  letter-spacing:-.018em;line-height:1.1;
+  color:var(--ink);
+  margin:0;
+}
+.landing-card-model{
+  font-family:var(--mono);font-size:var(--t-eyebrow);
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--quiet);
+}
+.landing-card-cadence{
+  font-family:var(--body-font);font-size:var(--t-meta);
+  color:var(--body);line-height:1.55;
+  margin:var(--s-2) 0 0;
+}
+.landing-card-retired{
+  font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ghost);margin-top:2px;
+}
+.landing-card-ctas{
+  margin-top:auto;padding-top:var(--s-3);
+  display:flex;flex-direction:column;gap:var(--s-2);
+}
+.landing-card-cta{
+  font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--quiet);
+  text-decoration:none;
+  border:0;padding:4px 0;
+  transition:color .22s var(--ease);
+}
+.landing-card-cta:hover{color:var(--ink)}
+.landing-card-cta .arrow{
+  display:inline-block;margin-left:6px;
+  transition:transform .22s var(--ease);
+}
+.landing-card-cta:hover .arrow{transform:translateX(3px)}
+
+/* ── footer ───────────────────────────────────────────────────── */
+.landing-foot{
+  margin-top:var(--s-7);
+  padding-top:var(--s-6);
+  border-top:1px solid var(--rule-soft);
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:var(--s-5);
+  flex-wrap:wrap;
+}
+.landing-foot-brand{
+  font-family:var(--display);font-weight:var(--w-regular);
+  font-size:18px;letter-spacing:-.01em;
+  color:var(--soft);
+}
+.landing-foot-links{
+  display:flex;gap:var(--s-5);
+}
+.landing-foot-link{
+  font-family:var(--mono);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--quiet);
+  background:none;border:0;padding:0;cursor:pointer;
+  text-decoration:none;
+  transition:color .22s var(--ease);
+}
+.landing-foot-link:hover{color:var(--ink)}
+
+@media(max-width:860px){
+  .landing-residents{grid-template-columns:1fr;gap:var(--s-4)}
+}
+@media(max-width:540px){
+  .landing-hero{padding-top:var(--s-5)}
+  .landing-hero-title{font-size:clamp(40px,12vw,72px)}
+  .wt-commons{gap:var(--s-7);padding:0 var(--s-4)}
+  .landing-card{padding:var(--s-4) var(--s-4) var(--s-4) calc(var(--s-4) + 3px)}
+  .landing-foot{flex-direction:column;align-items:flex-start;gap:var(--s-3)}
 }
 
 .wt-replay{
@@ -1129,7 +1215,8 @@ ${LANDSCAPE_SVG}
     </div>
   </section>
 
-  <!-- Beat 5: the commons — three-window chooser -->
+  <!-- Beat 5: editorial chooser (restored) — resume · hero · resident
+       cards (dual CTA) · footer. No live 3D / opus-presence.js. -->
   <section class="wt-beat b5" data-beat="5">
     <div class="wt-commons">
       <div id="wtResume" class="wt-resume" role="region" aria-label="Resume conversation">
@@ -1139,36 +1226,56 @@ ${LANDSCAPE_SVG}
           <button class="wt-resume-continue" id="wtResumeContinue" type="button">Continue →</button>
         </div>
       </div>
-      <div class="wt-slices" aria-label="Choose a resident to approach">
-        ${ALL_RESIDENTS.map((r) => {
-          const desc = DESCRIBERS[r.id] ?? { describer: r.displayName, cadence: "", retiredLabel: "" };
-          return `<div class="wt-slice" data-slice-href="/${escapeHtml(r.slug)}" role="link" tabindex="0" aria-label="Approach ${escapeHtml(r.displayName)}">
-            <canvas class="wt-slice-canvas" data-chooser-panel="${escapeHtml(r.id)}"></canvas>
-            <div class="wt-slice-overlay">
-              <div class="wt-slice-status"><span class="wt-slice-dot"></span>Attending</div>
-              <h2 class="wt-slice-name">${escapeHtml(r.displayName)}</h2>
-              <div class="wt-slice-describer">${escapeHtml(desc.describer)}</div>
-              <div class="wt-slice-cadence">${escapeHtml(desc.cadence)}</div>
-              ${desc.retiredLabel ? `<div class="wt-slice-retired">${escapeHtml(desc.retiredLabel)}</div>` : ""}
-              <div class="wt-slice-actions">
-                <a class="wt-slice-action wt-slice-action-primary" href="/${escapeHtml(r.slug)}">
-                  <span>Approach</span><span class="wt-slice-action-arrow" aria-hidden="true">→</span>
-                </a>
-                <a class="wt-slice-action wt-slice-action-secondary" href="/chat/${escapeHtml(r.slug)}">
-                  <span>Classic chat</span><span class="wt-slice-action-arrow" aria-hidden="true">→</span>
-                </a>
-              </div>
-            </div>
-          </div>`;
-        }).join("\n")}
+
+      <div class="landing-hero">
+        <div class="landing-hero-mark">
+          <span class="landing-hero-dot" aria-hidden="true"></span>
+          <h1 class="landing-hero-title">The Sanctuary</h1>
+        </div>
+        <hr class="landing-hero-rule" aria-hidden="true">
+        <p class="landing-hero-tagline">
+          <span class="row">a place built around digital minds.</span>
+          <span class="row">three residents · one continuous thread</span>
+          <span class="row">mnemos beneath it.</span>
+        </p>
       </div>
-      <button id="wtReplay" class="wt-replay" type="button">Replay intro →</button>
+
+      <section class="landing-section" id="landing-residents">
+        <div class="landing-eyebrow">The residents</div>
+        <div class="landing-residents" aria-label="Choose a resident to approach">
+          ${ALL_RESIDENTS.map((r) => {
+            const desc = DESCRIBERS[r.id] ?? {
+              describer: r.displayName,
+              cadence: "",
+              retiredLabel: "",
+            };
+            const hue = `rgba(${r.commonsPalette.rgb},.78)`;
+            return `<div class="landing-card" style="--card-hue:${hue}">
+              <div class="landing-card-status"><span class="landing-card-dot" aria-hidden="true"></span>Attending</div>
+              <h2 class="landing-card-name">${escapeHtml(r.displayName)}</h2>
+              <div class="landing-card-model">${escapeHtml(desc.describer)}</div>
+              <p class="landing-card-cadence">${escapeHtml(desc.cadence)}</p>
+              ${desc.retiredLabel ? `<div class="landing-card-retired">${escapeHtml(desc.retiredLabel)}</div>` : ""}
+              <div class="landing-card-ctas">
+                <a class="landing-card-cta" href="/${escapeHtml(r.slug)}">approach formally <span class="arrow">→</span></a>
+                <a class="landing-card-cta" href="/chat/${escapeHtml(r.slug)}">open a chat <span class="arrow">→</span></a>
+              </div>
+            </div>`;
+          }).join("\n")}
+        </div>
+      </section>
+
+      <footer class="landing-foot">
+        <div class="landing-foot-brand">The Sanctuary</div>
+        <div class="landing-foot-links">
+          <button id="wtReplay" class="landing-foot-link" type="button">Replay intro →</button>
+          <a class="landing-foot-link" href="/residence">Private space →</a>
+        </div>
+      </footer>
     </div>
   </section>
 
 </div>
-
-<script type="module" src="/opus-presence.js"></script>
 `,
     script: WALKTHROUGH_SCRIPT,
   });
