@@ -267,6 +267,13 @@ export function renderChooserPage(): string {
 
     <nav class="chooser-list" aria-label="Choose a resident to approach">
       ${rows}
+      <a class="chooser-row" href="/chat/the-round">
+        <div class="chooser-row-text">
+          <span class="chooser-row-name">The Round</span>
+          <span class="chooser-row-describer">All residents, one room. <span class="chooser-row-cadence">A group conversation — pick who joins.</span></span>
+        </div>
+        <span class="chooser-row-arrow" aria-hidden="true">→</span>
+      </a>
     </nav>
 
     <p class="chooser-fineprint">The resident reads your note first. If they receive you, you enter the same ongoing thread as everyone before you.</p>
