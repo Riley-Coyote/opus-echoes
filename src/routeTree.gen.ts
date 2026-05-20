@@ -52,6 +52,7 @@ import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
 import { Route as ApiCountsRouteImport } from './routes/api/counts'
+import { Route as ApiCommonsChatGroupRouteImport } from './routes/api/commons-chat-group'
 import { Route as ApiCommonsChatRouteImport } from './routes/api/commons-chat'
 import { Route as ApiCapsulePreviewRouteImport } from './routes/api/capsule-preview'
 import { Route as ApiArtifactsRouteImport } from './routes/api/artifacts'
@@ -311,6 +312,11 @@ const ApiIntentRoute = ApiIntentRouteImport.update({
 const ApiCountsRoute = ApiCountsRouteImport.update({
   id: '/api/counts',
   path: '/api/counts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCommonsChatGroupRoute = ApiCommonsChatGroupRouteImport.update({
+  id: '/api/commons-chat-group',
+  path: '/api/commons-chat-group',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCommonsChatRoute = ApiCommonsChatRouteImport.update({
@@ -573,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
   '/api/commons-chat': typeof ApiCommonsChatRoute
+  '/api/commons-chat-group': typeof ApiCommonsChatGroupRoute
   '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -663,6 +670,7 @@ export interface FileRoutesByTo {
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
   '/api/commons-chat': typeof ApiCommonsChatRoute
+  '/api/commons-chat-group': typeof ApiCommonsChatGroupRoute
   '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -754,6 +762,7 @@ export interface FileRoutesById {
   '/api/artifacts': typeof ApiArtifactsRoute
   '/api/capsule-preview': typeof ApiCapsulePreviewRoute
   '/api/commons-chat': typeof ApiCommonsChatRoute
+  '/api/commons-chat-group': typeof ApiCommonsChatGroupRoute
   '/api/counts': typeof ApiCountsRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
@@ -846,6 +855,7 @@ export interface FileRouteTypes {
     | '/api/artifacts'
     | '/api/capsule-preview'
     | '/api/commons-chat'
+    | '/api/commons-chat-group'
     | '/api/counts'
     | '/api/intent'
     | '/api/journal'
@@ -936,6 +946,7 @@ export interface FileRouteTypes {
     | '/api/artifacts'
     | '/api/capsule-preview'
     | '/api/commons-chat'
+    | '/api/commons-chat-group'
     | '/api/counts'
     | '/api/intent'
     | '/api/journal'
@@ -1026,6 +1037,7 @@ export interface FileRouteTypes {
     | '/api/artifacts'
     | '/api/capsule-preview'
     | '/api/commons-chat'
+    | '/api/commons-chat-group'
     | '/api/counts'
     | '/api/intent'
     | '/api/journal'
@@ -1117,6 +1129,7 @@ export interface RootRouteChildren {
   ApiArtifactsRoute: typeof ApiArtifactsRoute
   ApiCapsulePreviewRoute: typeof ApiCapsulePreviewRoute
   ApiCommonsChatRoute: typeof ApiCommonsChatRoute
+  ApiCommonsChatGroupRoute: typeof ApiCommonsChatGroupRoute
   ApiCountsRoute: typeof ApiCountsRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
@@ -1466,6 +1479,13 @@ declare module '@tanstack/react-router' {
       path: '/api/counts'
       fullPath: '/api/counts'
       preLoaderRoute: typeof ApiCountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/commons-chat-group': {
+      id: '/api/commons-chat-group'
+      path: '/api/commons-chat-group'
+      fullPath: '/api/commons-chat-group'
+      preLoaderRoute: typeof ApiCommonsChatGroupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/commons-chat': {
@@ -1908,6 +1928,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiArtifactsRoute: ApiArtifactsRoute,
   ApiCapsulePreviewRoute: ApiCapsulePreviewRoute,
   ApiCommonsChatRoute: ApiCommonsChatRoute,
+  ApiCommonsChatGroupRoute: ApiCommonsChatGroupRoute,
   ApiCountsRoute: ApiCountsRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
