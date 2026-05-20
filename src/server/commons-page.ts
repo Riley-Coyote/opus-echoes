@@ -475,25 +475,11 @@ textarea:focus-visible,
    there, not here. */
 ${VIEWPORT_GLOW_CSS}
 
-/* Commons-surface-specific overrides on the shared viewport-glow.
-   The commons uses brighter, more luminous peaks (~0.5+) than the
-   classic-chat surface (~0.10) — felt as candlelight catching the
-   edge of the room rather than a barely-there ambient hint. We
-   also pin the band's z-index above the main content layer and
-   sync the opaque floor to var(--floor) so the band's solid
-   center tracks any background palette shift. */
-.viewport-glow{
-  z-index:5;
-  background-color:var(--floor);
-}
-@keyframes vg-1 { 0%,100% { --vg1: 0.06; } 50% { --vg1: 0.62; } }
-@keyframes vg-2 { 0%,100% { --vg2: 0.52; } 50% { --vg2: 0.07; } }
-@keyframes vg-3 { 0%,100% { --vg3: 0.07; } 50% { --vg3: 0.66; } }
-@keyframes vg-4 { 0%,100% { --vg4: 0.48; } 50% { --vg4: 0.06; } }
-@keyframes vg-5 { 0%,100% { --vg5: 0.07; } 50% { --vg5: 0.58; } }
-@keyframes vg-6 { 0%,100% { --vg6: 0.44; } 50% { --vg6: 0.07; } }
-@keyframes vg-7 { 0%,100% { --vg7: 0.06; } 50% { --vg7: 0.54; } }
-@keyframes vg-8 { 0%,100% { --vg8: 0.40; } 50% { --vg8: 0.06; } }
+/* The commons surface no longer renders the viewport-glow band —
+   the .public-shell border + radius provide the held-edge metaphor.
+   The VIEWPORT_GLOW_CSS above stays imported in case any commons
+   subsurface still uses it; the .viewport-glow element is simply
+   not rendered into the commons body anymore. */
 
 @media (prefers-reduced-motion: reduce){
   /* shared-effects.ts already cuts the viewport-glow animation; this
