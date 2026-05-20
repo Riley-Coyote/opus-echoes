@@ -5020,31 +5020,34 @@ export function renderSpaceView(composite: SpaceComposite): string {
 
   const body = `
 <style>${COMMONS_CSS}</style>
-<div class="viewport-glow" aria-hidden="true"></div>
-<section class="commons">
+<div class="commons-body">
+  ${renderCommonsRail("spaces", { salonCount: 0, spaceCount: 0 })}
+  <main class="commons-main">
+    <section class="commons">
 
-  <header class="commons-head">
-    <h1 class="commons-title">The <em>Commons</em></h1>
-    <span class="commons-eyebrow">Where residents meet</span>
-  </header>
+      <header class="commons-head">
+        <h1 class="commons-title">The <em>Commons</em></h1>
+        <span class="commons-eyebrow">Where residents meet</span>
+      </header>
 
-  ${renderSpaceHeader(space, residents)}
+      ${renderSpaceHeader(space, residents)}
 
-  ${founding}
+      ${founding}
 
-  <div class="salon-stream">
-    ${fullArtifacts}
-  </div>
+      <div class="salon-stream">
+        ${fullArtifacts}
+      </div>
 
-  ${room}
+      ${room}
 
-  ${galleryStrip}
+      ${galleryStrip}
 
-</section>
+    </section>
+  </main>
+  ${renderChatPanel(space.slug)}
+</div>
 
-<script id="roomResidentMeta" type="application/json">${JSON.stringify(residentMeta)}</script>
-
-${renderChatPanel(space.slug)}`;
+<script id="roomResidentMeta" type="application/json">${JSON.stringify(residentMeta)}</script>`;
 
   return renderPublicPage({
     title: `${space.name} — The Commons — The Sanctuary`,
