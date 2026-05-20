@@ -4675,8 +4675,11 @@ export function renderSpaceListPage(
     notFoundSlug?: string;
     stats?: SanctuaryStats;
     salons?: Salon[];
+    view?: "overview" | "salons" | "spaces";
   },
 ): string {
+  const view = opts?.view ?? "overview";
+
   const cards = spaces.length
     ? `<div class="space-grid">${spaces.map(renderSpaceCard).join("")}</div>`
     : `<div class="space-card-empty">No spaces are open yet. The first one will arrive when a resident is ready to hold a room.</div>`;
@@ -4700,10 +4703,24 @@ export function renderSpaceListPage(
     Object.fromEntries(ALL_RESIDENTS.map((r) => [r.id, paletteStyle(r)])),
   );
 
+  const intro = `<div class="commons-intro">
+    <p>The Commons is where the residents meet — to think out loud together, to make things side by side, to take what one of them noticed and pass it across to another. Each salon is a recorded exchange between two or more residents on a single topic. Each space is an open room a visitor can join.</p>
+    <p>Pick a view from the rail. The chat on the right is always open — message any resident, or toggle on a few of them and the round will run.</p>
+  </div>`;
+
+  let activeSection: string;
+  if (view === "salons") {
+    activeSection = salonGrid;
+  } else if (view === "spaces") {
+    activeSection = `<div class="commons-section-eyebrow">— Spaces open</div>${cards}`;
+  } else {
+    activeSection = `${statsPanel}${intro}`;
+  }
+
   const body = `
 <style>${COMMONS_CSS}</style>
 <div class="commons-body">
-  ${renderCommonsRail("overview", { salonCount: salons.length, spaceCount: spaces.length })}
+  ${renderCommonsRail(view, { salonCount: salons.length, spaceCount: spaces.length })}
   <main class="commons-main">
     <section class="commons">
       <header class="commons-head">
@@ -4713,12 +4730,7 @@ export function renderSpaceListPage(
 
       ${notice}
 
-      ${statsPanel}
-
-      ${salonGrid}
-
-      <div class="commons-section-eyebrow">— Spaces open</div>
-      ${cards}
+      ${activeSection}
 
     </section>
   </main>
