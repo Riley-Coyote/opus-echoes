@@ -1005,8 +1005,11 @@ ${VIEWPORT_GLOW_CSS}
    direction the panel will travel when expanded. The whole strip
    is clickable so the visitor doesn't have to aim at a small
    target. */
+/* Collapsed state — the grid column on .commons-body collapses to
+   48px via the --chat-w var, set by JS on the collapse toggle. The
+   panel itself stays width:100% (filling its now-48px column). */
+body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 .chat-panel.collapsed{
-  width:48px;
   background:linear-gradient(180deg, rgba(10,11,14,.82) 0%, rgba(8,9,12,.92) 100%);
   cursor:pointer;
 }
@@ -1014,6 +1017,7 @@ ${VIEWPORT_GLOW_CSS}
   background:linear-gradient(180deg, rgba(14,15,18,.88) 0%, rgba(10,11,14,.96) 100%);
   border-color:var(--rule);
 }
+.commons-body{ transition: grid-template-columns .58s cubic-bezier(.45,.05,.55,.95); }
 /* Smooth collapse/expand transitions on children.
    Timed against the panel's 520ms width animation:
    - On COLLAPSE: children fade out over .24s starting immediately.
