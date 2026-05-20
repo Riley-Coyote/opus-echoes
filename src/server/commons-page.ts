@@ -119,6 +119,97 @@ const COMMONS_CSS = `
   transition:color .26s cubic-bezier(.22,1,.36,1);
 }
 
+/* ====================================================================
+   THREE-PANE COMMONS LAYOUT
+   The .public-shell body grid: rail | main | chat. Rail and chat are
+   fixed widths (chat is var-driven so it can be dragged). Main fills
+   the rest and is the only scrollable region; the shell stays static.
+   ==================================================================== */
+.commons-body{
+  display:grid;
+  grid-template-columns:220px minmax(0, 1fr) var(--chat-w, 380px);
+  height:100%;
+  min-height:0;
+}
+.commons-rail{
+  border-right:1px solid var(--rule-soft);
+  padding:18px 12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:18px;
+  overflow-y:auto;
+  background:rgba(0,0,0,.18);
+}
+.commons-rail .rail-section-title{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--ghost);
+  padding:0 10px 8px;
+}
+.rail-nav{ display:flex; flex-direction:column; gap:2px; }
+.rail-item{
+  display:grid;
+  grid-template-columns:18px 1fr auto;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:8px;
+  color:var(--quiet);
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  text-decoration:none;
+  transition:color .22s var(--ease), background .22s var(--ease);
+}
+.rail-item:hover{ color:var(--soft); background:rgba(255,255,255,.03); }
+.rail-item.active{ color:var(--ink); background:rgba(255,255,255,.05); }
+.rail-item.active .rail-icon{ color:var(--state); }
+.rail-icon{ display:flex; align-items:center; justify-content:center; color:var(--quiet); }
+.rail-icon svg{ width:16px; height:16px; }
+.rail-count{ color:var(--ghost); font-size:10px; letter-spacing:.08em; }
+.rail-foot{
+  padding:10px 12px;
+  border-top:1px solid var(--rule-soft);
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ghost);
+}
+.commons-main{
+  overflow-y:auto;
+  padding:32px 40px 48px;
+  scrollbar-gutter:stable;
+  min-width:0;
+}
+.commons-main > .commons{ padding:0; }
+@media (max-width: 1100px){
+  .commons-body{
+    grid-template-columns:56px minmax(0, 1fr) var(--chat-w, 320px);
+  }
+  .rail-item{ grid-template-columns:18px; gap:0; padding:9px 0; justify-items:center; }
+  .rail-label, .rail-count, .commons-rail .rail-section-title, .rail-foot{ display:none; }
+}
+@media (max-width: 820px){
+  .commons-body{ grid-template-columns:1fr; grid-template-rows:1fr auto; }
+  .commons-rail{
+    order:2;
+    flex-direction:row;
+    justify-content:space-around;
+    border-right:0;
+    border-top:1px solid var(--rule-soft);
+    padding:8px 6px;
+    overflow-x:auto;
+  }
+  .rail-nav{ flex-direction:row; gap:6px; }
+  .rail-foot{ display:none; }
+  .commons-main{ order:1; padding:20px 18px 28px; }
+}
+
 /* Custom text selection across the commons surface — uses a
    whispery state-accent tint instead of the browser default blue,
    keeping the monochrome composure intact. */
