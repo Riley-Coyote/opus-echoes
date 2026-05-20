@@ -281,25 +281,17 @@ textarea:focus-visible,
 @property --csh7 { syntax: '<number>'; initial-value: 0.09; inherits: false; }
 @property --csh8 { syntax: '<number>'; initial-value: 0.05; inherits: false; }
 
+/* .commons is the content column inside .commons-main. The grid
+   on .commons-body already reserves the chat panel's track, so no
+   margin-right or max-width tricks are needed here. */
 .commons{
   display:grid;
   grid-template-columns:minmax(0,1fr);
   gap:var(--s-6);
   padding-bottom:calc(var(--s-9) + var(--safe-inset));
-  /* leave room for the fixed chat panel on the right at wider viewports */
-  padding-right:0;
-  padding-left:var(--safe-inset);
-  max-width:calc(760px + var(--safe-inset));
-  /* Animate margin-right in sync with the chat panel's width
-     transition. Same duration + easing as the panel so they
-     glide together. */
-  transition:margin-right .58s cubic-bezier(.45,.05,.55,.95);
-}
-@media(min-width:1180px){
-  .commons{
-    margin-right:calc(380px + var(--safe-inset));
-    padding-right:var(--s-6);
-  }
+  width:100%;
+  max-width:880px;
+  margin:0 auto;
 }
 
 .commons-head{
