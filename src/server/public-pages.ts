@@ -361,6 +361,7 @@ ${FONTS}
 <body>
 <div class="page-veil" id="pageVeil" aria-hidden="true"></div>
 <div class="atmo-grain" aria-hidden="true"></div>
+<div class="public-shell" data-route="${opts.active ?? "public"}">
 <nav class="public-nav" aria-label="Primary">
   <a class="brand" href="/"><span class="brand-name">The Sanctuary</span><span class="brand-dot" aria-hidden="true"></span></a>
   <div class="nav-links">
@@ -375,6 +376,7 @@ ${FONTS}
 <main class="page">
 ${opts.body}
 </main>
+</div>
 <script>${PAGE_TRANSITION_SCRIPT}</script>
 ${opts.script ? `<script>${opts.script}</script>` : ""}
 </body>

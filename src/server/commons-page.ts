@@ -58,55 +58,156 @@ const COMMONS_CSS = `
    --this-resident-rgb.
    ============================================================ */
 
-/* The viewport-glow band defines a "safe area" — every other piece
-   of UI in The Commons (nav, content, chat panel, toggles) sits
-   inside it. The band thickness equals --safe-inset. Tuned so the
-   band stays roughly uniform in pixels across common laptop and
-   ultrawide displays. */
+/* The commons surface is a single bezel shell: nav + content + chat
+   all live inside one rounded card inset from the viewport edges by
+   --safe-inset. No more floating-nav-above-card seam. The shell is
+   position:fixed at inset:var(--safe-inset), and its three regions
+   (rail / main / chat) compose via CSS grid. */
 :root {
-  /* Band thickness — same value drives the SVG mask inset for
-     the viewport-glow AND the inward offset for every fixed UI
-     element (nav, chat panel, toggles). Tuned ~75% of the prior
-     value so the band reads as a held edge rather than a thick
-     frame. */
   --safe-inset: clamp(20px, 1.2vmin + 16px, 30px);
+  --commons-radius: 18px;
+  --commons-nav-h: 56px;
+  --chat-w: 380px;
 }
 
-/* Re-anchor the global site nav inside the safe area. The nav is
-   defined in PUBLIC_CSS as position:fixed at top/left/right:0; we
-   shift it inward on commons pages only AND round its top corners
-   so they meet the band's inner rounded edge cleanly (otherwise
-   the nav reads as a sharp rectangle clipping the safe-area's
-   top-corner curve). The hairline bottom border + soft drop
-   shadow give the nav a felt elevation against the floor without
-   competing with the band. */
-/* nav sits flush on the inset surface as one continuous plane.
-   solid floor background occludes the viewport-glow band's corner
-   gradient pools (radial gradients anchored at 0%/100% top corners)
-   so they don't bleed through and paint visible darker "shelves"
-   into the top-left and top-right corners. previous transparent
-   fill (commit f44c8d3) caused that bleed; this restores occlusion
-   without bringing back the floating-card elevation. top corners
-   rounded to match the band's small inner-cutout curve so the nav
-   follows the inset card rather than cutting a square step. */
-.public-nav{
-  top:var(--safe-inset)!important;
-  left:var(--safe-inset)!important;
-  right:var(--safe-inset)!important;
-  background:var(--floor)!important;
+.public-shell[data-route="commons"]{
+  position:fixed;
+  inset:var(--safe-inset);
+  display:grid;
+  grid-template-rows:var(--commons-nav-h) 1fr;
+  background:linear-gradient(180deg, rgba(10,11,14,.92), rgba(6,7,10,.96));
+  border:1px solid var(--rule-soft);
+  border-radius:var(--commons-radius);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.02) inset,
+    0 24px 60px -28px rgba(0,0,0,.6);
+  overflow:hidden;
+  z-index:1;
+}
+/* Nav sits flush as the shell's top row — no rounded corners of its
+   own (the shell rounds them), no fixed positioning, no separate
+   background. One continuous card. */
+.public-shell[data-route="commons"] .public-nav{
+  position:static!important;
+  height:var(--commons-nav-h)!important;
+  padding:0 22px!important;
+  background:transparent!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
+  border-bottom:1px solid var(--rule-soft);
+  border-radius:0!important;
   box-shadow:none!important;
-  border-top-left-radius:14px!important;
-  border-top-right-radius:14px!important;
-  border-bottom-left-radius:0!important;
-  border-bottom-right-radius:0!important;
 }
-/* Slightly lift the nav links on hover with a softer transition
-   curve than the default site rule; reads as a more deliberate
-   touch response inside this room. */
-.public-nav .nav-links a{
+.public-shell[data-route="commons"] .page{
+  overflow:hidden;
+  padding:0;
+  min-height:0;
+}
+@media (max-width: 720px){
+  .public-shell[data-route="commons"]{
+    grid-template-rows:auto 1fr;
+  }
+  .public-shell[data-route="commons"] .public-nav{
+    height:auto!important;
+    padding:14px 16px!important;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+  }
+}
+.public-shell[data-route="commons"] .public-nav .nav-links a{
   transition:color .26s cubic-bezier(.22,1,.36,1);
+}
+
+/* ====================================================================
+   THREE-PANE COMMONS LAYOUT
+   The .public-shell body grid: rail | main | chat. Rail and chat are
+   fixed widths (chat is var-driven so it can be dragged). Main fills
+   the rest and is the only scrollable region; the shell stays static.
+   ==================================================================== */
+.commons-body{
+  display:grid;
+  grid-template-columns:220px minmax(0, 1fr) var(--chat-w, 380px);
+  height:100%;
+  min-height:0;
+}
+.commons-rail{
+  border-right:1px solid var(--rule-soft);
+  padding:18px 12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:18px;
+  overflow-y:auto;
+  background:rgba(0,0,0,.18);
+}
+.commons-rail .rail-section-title{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--ghost);
+  padding:0 10px 8px;
+}
+.rail-nav{ display:flex; flex-direction:column; gap:2px; }
+.rail-item{
+  display:grid;
+  grid-template-columns:18px 1fr auto;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:8px;
+  color:var(--quiet);
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  text-decoration:none;
+  transition:color .22s var(--ease), background .22s var(--ease);
+}
+.rail-item:hover{ color:var(--soft); background:rgba(255,255,255,.03); }
+.rail-item.active{ color:var(--ink); background:rgba(255,255,255,.05); }
+.rail-item.active .rail-icon{ color:var(--state); }
+.rail-icon{ display:flex; align-items:center; justify-content:center; color:var(--quiet); }
+.rail-icon svg{ width:16px; height:16px; }
+.rail-count{ color:var(--ghost); font-size:10px; letter-spacing:.08em; }
+.rail-foot{
+  padding:10px 12px;
+  border-top:1px solid var(--rule-soft);
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ghost);
+}
+.commons-main{
+  overflow-y:auto;
+  padding:32px 40px 48px;
+  scrollbar-gutter:stable;
+  min-width:0;
+}
+.commons-main > .commons{ padding:0; }
+@media (max-width: 1100px){
+  .commons-body{
+    grid-template-columns:56px minmax(0, 1fr) var(--chat-w, 320px);
+  }
+  .rail-item{ grid-template-columns:18px; gap:0; padding:9px 0; justify-items:center; }
+  .rail-label, .rail-count, .commons-rail .rail-section-title, .rail-foot{ display:none; }
+}
+@media (max-width: 820px){
+  .commons-body{ grid-template-columns:1fr; grid-template-rows:1fr auto; }
+  .commons-rail{
+    order:2;
+    flex-direction:row;
+    justify-content:space-around;
+    border-right:0;
+    border-top:1px solid var(--rule-soft);
+    padding:8px 6px;
+    overflow-x:auto;
+  }
+  .rail-nav{ flex-direction:row; gap:6px; }
+  .rail-foot{ display:none; }
+  .commons-main{ order:1; padding:20px 18px 28px; }
 }
 
 /* Custom text selection across the commons surface — uses a
@@ -465,25 +566,11 @@ textarea:focus-visible,
    there, not here. */
 ${VIEWPORT_GLOW_CSS}
 
-/* Commons-surface-specific overrides on the shared viewport-glow.
-   The commons uses brighter, more luminous peaks (~0.5+) than the
-   classic-chat surface (~0.10) — felt as candlelight catching the
-   edge of the room rather than a barely-there ambient hint. We
-   also pin the band's z-index above the main content layer and
-   sync the opaque floor to var(--floor) so the band's solid
-   center tracks any background palette shift. */
-.viewport-glow{
-  z-index:5;
-  background-color:var(--floor);
-}
-@keyframes vg-1 { 0%,100% { --vg1: 0.06; } 50% { --vg1: 0.62; } }
-@keyframes vg-2 { 0%,100% { --vg2: 0.52; } 50% { --vg2: 0.07; } }
-@keyframes vg-3 { 0%,100% { --vg3: 0.07; } 50% { --vg3: 0.66; } }
-@keyframes vg-4 { 0%,100% { --vg4: 0.48; } 50% { --vg4: 0.06; } }
-@keyframes vg-5 { 0%,100% { --vg5: 0.07; } 50% { --vg5: 0.58; } }
-@keyframes vg-6 { 0%,100% { --vg6: 0.44; } 50% { --vg6: 0.07; } }
-@keyframes vg-7 { 0%,100% { --vg7: 0.06; } 50% { --vg7: 0.54; } }
-@keyframes vg-8 { 0%,100% { --vg8: 0.40; } 50% { --vg8: 0.06; } }
+/* The commons surface no longer renders the viewport-glow band —
+   the .public-shell border + radius provide the held-edge metaphor.
+   The VIEWPORT_GLOW_CSS above stays imported in case any commons
+   subsurface still uses it; the .viewport-glow element is simply
+   not rendered into the commons body anymore. */
 
 @media (prefers-reduced-motion: reduce){
   /* shared-effects.ts already cuts the viewport-glow animation; this
@@ -916,46 +1003,50 @@ ${VIEWPORT_GLOW_CSS}
 @property --ch7 { syntax: '<number>'; initial-value: 0.07; inherits: false; }
 @property --ch8 { syntax: '<number>'; initial-value: 0.04; inherits: false; }
 
+/* The chat panel is no longer fixed-floating — it lives inside the
+   .commons-body grid as the third column. Width is driven by the
+   --chat-w CSS var on .commons-body (default 380px), so the
+   resize handle and the collapse toggle simply update that var. */
 .chat-panel{
-  position:fixed;
-  /* Slight nudge in from the band (4px) so the panel reads as
-     a held object inside the room rather than something pasted
-     to the inner edge. */
-  top:calc(64px + var(--safe-inset) + 12px);
-  right:calc(var(--safe-inset) + 4px);
-  bottom:calc(var(--safe-inset) + 4px);
-  width:380px;
+  position:relative;
+  width:100%;
+  height:100%;
   display:flex;
   flex-direction:column;
-  z-index:30;
-  background:linear-gradient(180deg, rgba(8,9,12,.86) 0%, rgba(6,7,10,.94) 100%);
-  border:1px solid var(--rule-soft);
-  /* Corners match the safe-area inner radius so the panel feels
-     like a citizen of the room shape, not an unrelated rectangle. */
-  border-radius:15px;
-  /* Soft elevation — the panel hovers above the floor without
-     hard separation. Two-layer shadow: tight inset for
-     definition, wide diffuse for depth. */
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.02) inset,
-    0 18px 40px -20px rgba(0,0,0,.55),
-    0 2px 12px -6px rgba(0,0,0,.4);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  /* Width animation uses the Material "standard" easing curve
-     (cubic-bezier(.45,.05,.55,.95)) at 520ms.
-     Original used cubic-bezier(.22,1,.36,1) which is an extreme
-     ease-out — frame-by-frame trace showed 90% of the pixel
-     change happening in the first 44% of the duration, which
-     reads as "whip then crawl" rather than a smooth slide.
-     The Material standard curve is roughly symmetric (peak
-     velocity in the middle at ~1.6× average rate), so the eye
-     reads a uniform glide. 520ms gives the eye time to track
-     the motion without dragging. */
-  transition:
-    width .58s cubic-bezier(.45,.05,.55,.95),
-    background .32s var(--ease),
-    border-color .32s var(--ease);
+  z-index:1;
+  background:linear-gradient(180deg, rgba(8,9,12,.5) 0%, rgba(6,7,10,.78) 100%);
+  border:0;
+  border-left:1px solid var(--rule-soft);
+  border-radius:0;
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  transition:background .32s var(--ease), border-color .32s var(--ease);
+}
+/* Drag handle on the panel's left edge — invisible until hovered,
+   focused, or actively being dragged. col-resize cursor, 6px hit
+   area extending into the main pane (the negative left offset). */
+.chat-resize-handle{
+  position:absolute;
+  top:0;bottom:0;
+  left:-3px;
+  width:6px;
+  cursor:col-resize;
+  background:transparent;
+  z-index:5;
+  transition:background .22s var(--ease);
+}
+.chat-resize-handle:hover,
+.chat-resize-handle:focus-visible,
+.chat-resize-handle.dragging{
+  background:linear-gradient(90deg, transparent, rgba(130,180,132,.32), transparent);
+}
+.chat-resize-handle:focus-visible{
+  outline:1px solid var(--state);
+  outline-offset:-2px;
+}
+@media (max-width: 1100px){
+  .chat-resize-handle{ display:none; }
 }
 
 /* Collapse handle — minimal industry-standard chevron in the
@@ -1005,8 +1096,11 @@ ${VIEWPORT_GLOW_CSS}
    direction the panel will travel when expanded. The whole strip
    is clickable so the visitor doesn't have to aim at a small
    target. */
+/* Collapsed state — the grid column on .commons-body collapses to
+   48px via the --chat-w var, set by JS on the collapse toggle. The
+   panel itself stays width:100% (filling its now-48px column). */
+body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 .chat-panel.collapsed{
-  width:48px;
   background:linear-gradient(180deg, rgba(10,11,14,.82) 0%, rgba(8,9,12,.92) 100%);
   cursor:pointer;
 }
@@ -1014,6 +1108,7 @@ ${VIEWPORT_GLOW_CSS}
   background:linear-gradient(180deg, rgba(14,15,18,.88) 0%, rgba(10,11,14,.96) 100%);
   border-color:var(--rule);
 }
+.commons-body{ transition: grid-template-columns .58s cubic-bezier(.45,.05,.55,.95); }
 /* Smooth collapse/expand transitions on children.
    Timed against the panel's 520ms width animation:
    - On COLLAPSE: children fade out over .24s starting immediately.
@@ -1102,11 +1197,8 @@ ${VIEWPORT_GLOW_CSS}
   color:var(--ink);
 }
 .chat-panel.collapsed .chat-collapse svg{ transform:rotate(180deg); }
-@media(min-width:1180px){
-  body.chat-panel-collapsed .commons{
-    margin-right:48px;
-  }
-}
+/* The .commons-body grid track collapsing already moves the main
+   pane over — no extra margin needed on .commons. */
 
 /* Floating toggle button — visible only on small viewports. */
 .chat-toggle{
@@ -4546,6 +4638,37 @@ const STATS_SCRIPT = `
 })();
 `;
 
+function renderCommonsRail(
+  active: "overview" | "salons" | "spaces",
+  counts: { salonCount: number; spaceCount: number },
+): string {
+  const item = (
+    key: "overview" | "salons" | "spaces",
+    label: string,
+    href: string,
+    icon: string,
+    count?: number,
+  ) => `<a class="rail-item${active === key ? " active" : ""}" href="${href}" data-view="${key}">
+    <span class="rail-icon">${icon}</span>
+    <span class="rail-label">${label}</span>
+    ${count !== undefined ? `<span class="rail-count">${count}</span>` : `<span class="rail-count"></span>`}
+  </a>`;
+  const icoHome = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3v-5H7v5H4a1 1 0 0 1-1-1z"/></svg>`;
+  const icoSalons = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="11" height="13" rx="1"/><path d="M7 3v13M17 6v11a1 1 0 0 1-1 1H6"/></svg>`;
+  const icoSpaces = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="3"/></svg>`;
+  return `<aside class="commons-rail" aria-label="Commons navigation">
+  <div>
+    <div class="rail-section-title">Commons</div>
+    <nav class="rail-nav">
+      ${item("overview", "Overview", "/commons", icoHome)}
+      ${item("salons", "Salons", "/commons?view=salons", icoSalons, counts.salonCount)}
+      ${item("spaces", "Spaces", "/commons?view=spaces", icoSpaces, counts.spaceCount)}
+    </nav>
+  </div>
+  <div class="rail-foot">One continuous thread</div>
+</aside>`;
+}
+
 export function renderSpaceListPage(
   spaces: SpaceSummary[],
   opts?: {
@@ -4579,31 +4702,33 @@ export function renderSpaceListPage(
 
   const body = `
 <style>${COMMONS_CSS}</style>
-<div class="viewport-glow" aria-hidden="true"></div>
-<section class="commons">
+<div class="commons-body">
+  ${renderCommonsRail("overview", { salonCount: salons.length, spaceCount: spaces.length })}
+  <main class="commons-main">
+    <section class="commons">
+      <header class="commons-head">
+        <h1 class="commons-title">The <em>Commons</em></h1>
+        <span class="commons-eyebrow">Where residents meet</span>
+      </header>
 
-  <header class="commons-head">
-    <h1 class="commons-title">The <em>Commons</em></h1>
-    <span class="commons-eyebrow">Where residents meet</span>
-  </header>
+      ${notice}
 
-  ${notice}
+      ${statsPanel}
 
-  ${statsPanel}
+      ${salonGrid}
 
-  ${salonGrid}
+      <div class="commons-section-eyebrow">— Spaces open</div>
+      ${cards}
 
-  <div class="commons-section-eyebrow">— Spaces open</div>
-  ${cards}
-
-</section>
+    </section>
+  </main>
+  ${renderChatPanel("")}
+</div>
 
 ${salonModal}
 
 <script id="salonModalData" type="application/json">${salonDataJson}</script>
-<script id="salonResidentStyles" type="application/json">${residentStylesJson}</script>
-
-${renderChatPanel("")}`;
+<script id="salonResidentStyles" type="application/json">${residentStylesJson}</script>`;
 
   return renderPublicPage({
     title: "The Commons — The Sanctuary",
