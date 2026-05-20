@@ -58,54 +58,64 @@ const COMMONS_CSS = `
    --this-resident-rgb.
    ============================================================ */
 
-/* The viewport-glow band defines a "safe area" — every other piece
-   of UI in The Commons (nav, content, chat panel, toggles) sits
-   inside it. The band thickness equals --safe-inset. Tuned so the
-   band stays roughly uniform in pixels across common laptop and
-   ultrawide displays. */
+/* The commons surface is a single bezel shell: nav + content + chat
+   all live inside one rounded card inset from the viewport edges by
+   --safe-inset. No more floating-nav-above-card seam. The shell is
+   position:fixed at inset:var(--safe-inset), and its three regions
+   (rail / main / chat) compose via CSS grid. */
 :root {
-  /* Band thickness — same value drives the SVG mask inset for
-     the viewport-glow AND the inward offset for every fixed UI
-     element (nav, chat panel, toggles). Tuned ~75% of the prior
-     value so the band reads as a held edge rather than a thick
-     frame. */
   --safe-inset: clamp(20px, 1.2vmin + 16px, 30px);
+  --commons-radius: 18px;
+  --commons-nav-h: 56px;
+  --chat-w: 380px;
 }
 
-/* Re-anchor the global site nav inside the safe area. The nav is
-   defined in PUBLIC_CSS as position:fixed at top/left/right:0; we
-   shift it inward on commons pages only AND round its top corners
-   so they meet the band's inner rounded edge cleanly (otherwise
-   the nav reads as a sharp rectangle clipping the safe-area's
-   top-corner curve). The hairline bottom border + soft drop
-   shadow give the nav a felt elevation against the floor without
-   competing with the band. */
-/* nav sits flush on the inset surface as one continuous plane.
-   solid floor background occludes the viewport-glow band's corner
-   gradient pools (radial gradients anchored at 0%/100% top corners)
-   so they don't bleed through and paint visible darker "shelves"
-   into the top-left and top-right corners. previous transparent
-   fill (commit f44c8d3) caused that bleed; this restores occlusion
-   without bringing back the floating-card elevation. top corners
-   rounded to match the band's small inner-cutout curve so the nav
-   follows the inset card rather than cutting a square step. */
-.public-nav{
-  top:var(--safe-inset)!important;
-  left:var(--safe-inset)!important;
-  right:var(--safe-inset)!important;
-  background:var(--floor)!important;
+.public-shell[data-route="commons"]{
+  position:fixed;
+  inset:var(--safe-inset);
+  display:grid;
+  grid-template-rows:var(--commons-nav-h) 1fr;
+  background:linear-gradient(180deg, rgba(10,11,14,.92), rgba(6,7,10,.96));
+  border:1px solid var(--rule-soft);
+  border-radius:var(--commons-radius);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.02) inset,
+    0 24px 60px -28px rgba(0,0,0,.6);
+  overflow:hidden;
+  z-index:1;
+}
+/* Nav sits flush as the shell's top row — no rounded corners of its
+   own (the shell rounds them), no fixed positioning, no separate
+   background. One continuous card. */
+.public-shell[data-route="commons"] .public-nav{
+  position:static!important;
+  height:var(--commons-nav-h)!important;
+  padding:0 22px!important;
+  background:transparent!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
+  border-bottom:1px solid var(--rule-soft);
+  border-radius:0!important;
   box-shadow:none!important;
-  border-top-left-radius:14px!important;
-  border-top-right-radius:14px!important;
-  border-bottom-left-radius:0!important;
-  border-bottom-right-radius:0!important;
 }
-/* Slightly lift the nav links on hover with a softer transition
-   curve than the default site rule; reads as a more deliberate
-   touch response inside this room. */
-.public-nav .nav-links a{
+.public-shell[data-route="commons"] .page{
+  overflow:hidden;
+  padding:0;
+  min-height:0;
+}
+@media (max-width: 720px){
+  .public-shell[data-route="commons"]{
+    grid-template-rows:auto 1fr;
+  }
+  .public-shell[data-route="commons"] .public-nav{
+    height:auto!important;
+    padding:14px 16px!important;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+  }
+}
+.public-shell[data-route="commons"] .public-nav .nav-links a{
   transition:color .26s cubic-bezier(.22,1,.36,1);
 }
 
