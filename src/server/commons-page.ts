@@ -3530,7 +3530,135 @@ const CHAT_PANEL_SCRIPT = `
   setActiveResident(activeResident);
   resizeField();
 })();
+
+/* Resize handle + roster chip toggling. Standalone IIFE so the main
+   chat IIFE stays focused on send/stream logic. The group send path
+   (POST /api/commons-chat-group with the active roster) is wired in
+   a follow-up — for now chips just record membership in localStorage
+   and the existing single-resident send path runs against the
+   currently-active resident. */
+(function initShellExtras(){
+  const panel = document.getElementById('commonsChatPanel');
+  if (!panel) return;
+  const body = document.querySelector('.commons-body');
+
+  // ── Resize handle ──────────────────────────────────────────────
+  const handle = panel.querySelector('.chat-resize-handle');
+  if (handle && body) {
+    const KEY = 'sanctuary.commons.chat-w';
+    const MIN = 320, MAX = 640, DEFAULT = 380;
+    try {
+      const stored = parseInt(localStorage.getItem(KEY) || '0', 10);
+      if (stored >= MIN && stored <= MAX) body.style.setProperty('--chat-w', stored + 'px');
+    } catch(_){}
+
+    let dragging = false, startX = 0, startW = 0;
+    function currentW(){
+      const v = parseInt(getComputedStyle(body).getPropertyValue('--chat-w'), 10);
+      return isFinite(v) ? v : DEFAULT;
+    }
+    function onMove(e){
+      if (!dragging) return;
+      const x = e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      const dx = startX - x;
+      const w = Math.max(MIN, Math.min(MAX, startW + dx));
+      body.style.setProperty('--chat-w', w + 'px');
+    }
+    function onUp(){
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('touchmove', onMove);
+      try { localStorage.setItem(KEY, String(currentW())); } catch(_){}
+    }
+    function onDown(e){
+      // Don't drag-resize when collapsed.
+      if (panel.classList.contains('collapsed')) return;
+      dragging = true;
+      startX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      startW = currentW();
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('touchmove', onMove, { passive: true });
+      document.addEventListener('mouseup', onUp, { once: true });
+      document.addEventListener('touchend', onUp, { once: true });
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    handle.addEventListener('mousedown', onDown);
+    handle.addEventListener('touchstart', onDown, { passive: false });
+    handle.addEventListener('keydown', function(e){
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const step = e.shiftKey ? 48 : 16;
+      const w = Math.max(MIN, Math.min(MAX, currentW() + (e.key === 'ArrowLeft' ? step : -step)));
+      body.style.setProperty('--chat-w', w + 'px');
+      try { localStorage.setItem(KEY, String(w)); } catch(_){}
+      e.preventDefault();
+    });
+  }
+
+  // ── Roster chips ───────────────────────────────────────────────
+  const chips = Array.from(panel.querySelectorAll('.chat-roster-chip'));
+  const modeLabel = panel.querySelector('.chat-mode-label');
+  const modeCount = panel.querySelector('.chat-mode-count');
+  const ROSTER_KEY = 'sanctuary.commons-chat-roster.v1';
+
+  function loadRoster(){
+    try {
+      const raw = localStorage.getItem(ROSTER_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return new Set(arr);
+      }
+    } catch(_){}
+    return new Set(chips.map(function(c){ return c.dataset.resident; }));
+  }
+  function saveRoster(set){
+    try { localStorage.setItem(ROSTER_KEY, JSON.stringify(Array.from(set))); } catch(_){}
+  }
+
+  const roster = loadRoster();
+
+  function syncChips(){
+    chips.forEach(function(c){
+      const on = roster.has(c.dataset.resident);
+      c.classList.toggle('on', on);
+      c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (modeLabel) {
+      if (roster.size <= 1) modeLabel.textContent = 'Talk with';
+      else modeLabel.textContent = 'The round';
+    }
+    if (modeCount) {
+      modeCount.textContent = roster.size >= 2 ? '· ' + roster.size + ' in' : '';
+    }
+    // Expose roster size on the panel so future send-path code can
+    // branch without re-reading localStorage.
+    panel.dataset.rosterSize = String(roster.size);
+  }
+
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      const id = chip.dataset.resident;
+      if (!id) return;
+      if (roster.has(id)) {
+        if (roster.size <= 1) return; // require at least one
+        roster.delete(id);
+      } else {
+        roster.add(id);
+      }
+      saveRoster(roster);
+      syncChips();
+    });
+  });
+
+  syncChips();
+})();
 `;
+
 
 /* ════════════════════════════════════════════════════════════════
    ROOM_SCRIPT — the live multi-participant thread inside a space.
