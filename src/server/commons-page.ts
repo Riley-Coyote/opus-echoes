@@ -1420,6 +1420,90 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 }
 .chat-resident-option-name{ flex:1; }
 
+/* Roster chip strip — replaces the resident picker as the primary
+   selection control. Each chip is a toggle for one resident's
+   membership in the round. When exactly one chip is on the panel
+   falls back to the 1:1 /api/commons-chat path; ≥2 on triggers
+   the group endpoint. Off chips read as quiet outlines; on chips
+   adopt their resident's hue in the dot. */
+.chat-roster{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:10px;
+}
+.chat-roster-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 9px;
+  background:transparent;
+  border:1px solid var(--rule-soft);
+  border-radius:999px;
+  color:var(--quiet);
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:color .22s var(--ease), background .22s var(--ease), border-color .22s var(--ease);
+}
+.chat-roster-chip:hover{ color:var(--soft); border-color:var(--rule); }
+.chat-roster-chip .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.18);
+  transition:background .22s var(--ease), box-shadow .22s var(--ease);
+}
+.chat-roster-chip.on{
+  color:var(--ink);
+  border-color:var(--rule);
+  background:rgba(255,255,255,.035);
+}
+.chat-roster-chip.on .dot{
+  background:var(--this-resident, var(--state));
+  box-shadow:0 0 8px 0 color-mix(in oklab, var(--this-resident, var(--state)) 55%, transparent);
+}
+.chat-mode-count{
+  margin-left:8px;
+  color:var(--ghost);
+  font-size:9px;
+  letter-spacing:.18em;
+}
+.chat-mode-count:empty{ display:none; }
+
+/* Per-bubble attribution row — always rendered above resident
+   replies in the panel. In group mode it's the only thing
+   identifying who's speaking; in 1:1 it's harmless redundancy. */
+.msg-attrib{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--soft);
+  margin-bottom:5px;
+}
+.msg-attrib .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--this-resident, var(--state));
+}
+
+/* Overview view intro — quiet prose that sits beneath the stats
+   panel on the default Commons landing. */
+.commons-intro{
+  max-width:60ch;
+  margin-top:var(--s-6);
+  font-family:var(--body-font);
+  color:var(--soft);
+  line-height:1.65;
+}
+.commons-intro p{ margin:0 0 var(--s-4); }
+.commons-intro p:last-child{ margin-bottom:0; }
+
+
+
 .chat-stream{
   flex:1;
   overflow-y:auto;
