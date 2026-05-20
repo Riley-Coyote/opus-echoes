@@ -4243,8 +4243,8 @@ export function renderCommonsPage(opts: RenderCommonsOptions): string {
 
   const body = `
 <style>${COMMONS_CSS}</style>
-<div class="viewport-glow" aria-hidden="true"></div>
 <section class="commons">
+
 
   <header class="commons-head">
     <h1 class="commons-title">The <em>Commons</em></h1>
