@@ -912,46 +912,50 @@ ${VIEWPORT_GLOW_CSS}
 @property --ch7 { syntax: '<number>'; initial-value: 0.07; inherits: false; }
 @property --ch8 { syntax: '<number>'; initial-value: 0.04; inherits: false; }
 
+/* The chat panel is no longer fixed-floating — it lives inside the
+   .commons-body grid as the third column. Width is driven by the
+   --chat-w CSS var on .commons-body (default 380px), so the
+   resize handle and the collapse toggle simply update that var. */
 .chat-panel{
-  position:fixed;
-  /* Slight nudge in from the band (4px) so the panel reads as
-     a held object inside the room rather than something pasted
-     to the inner edge. */
-  top:calc(64px + var(--safe-inset) + 12px);
-  right:calc(var(--safe-inset) + 4px);
-  bottom:calc(var(--safe-inset) + 4px);
-  width:380px;
+  position:relative;
+  width:100%;
+  height:100%;
   display:flex;
   flex-direction:column;
-  z-index:30;
-  background:linear-gradient(180deg, rgba(8,9,12,.86) 0%, rgba(6,7,10,.94) 100%);
-  border:1px solid var(--rule-soft);
-  /* Corners match the safe-area inner radius so the panel feels
-     like a citizen of the room shape, not an unrelated rectangle. */
-  border-radius:15px;
-  /* Soft elevation — the panel hovers above the floor without
-     hard separation. Two-layer shadow: tight inset for
-     definition, wide diffuse for depth. */
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.02) inset,
-    0 18px 40px -20px rgba(0,0,0,.55),
-    0 2px 12px -6px rgba(0,0,0,.4);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  /* Width animation uses the Material "standard" easing curve
-     (cubic-bezier(.45,.05,.55,.95)) at 520ms.
-     Original used cubic-bezier(.22,1,.36,1) which is an extreme
-     ease-out — frame-by-frame trace showed 90% of the pixel
-     change happening in the first 44% of the duration, which
-     reads as "whip then crawl" rather than a smooth slide.
-     The Material standard curve is roughly symmetric (peak
-     velocity in the middle at ~1.6× average rate), so the eye
-     reads a uniform glide. 520ms gives the eye time to track
-     the motion without dragging. */
-  transition:
-    width .58s cubic-bezier(.45,.05,.55,.95),
-    background .32s var(--ease),
-    border-color .32s var(--ease);
+  z-index:1;
+  background:linear-gradient(180deg, rgba(8,9,12,.5) 0%, rgba(6,7,10,.78) 100%);
+  border:0;
+  border-left:1px solid var(--rule-soft);
+  border-radius:0;
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  transition:background .32s var(--ease), border-color .32s var(--ease);
+}
+/* Drag handle on the panel's left edge — invisible until hovered,
+   focused, or actively being dragged. col-resize cursor, 6px hit
+   area extending into the main pane (the negative left offset). */
+.chat-resize-handle{
+  position:absolute;
+  top:0;bottom:0;
+  left:-3px;
+  width:6px;
+  cursor:col-resize;
+  background:transparent;
+  z-index:5;
+  transition:background .22s var(--ease);
+}
+.chat-resize-handle:hover,
+.chat-resize-handle:focus-visible,
+.chat-resize-handle.dragging{
+  background:linear-gradient(90deg, transparent, rgba(130,180,132,.32), transparent);
+}
+.chat-resize-handle:focus-visible{
+  outline:1px solid var(--state);
+  outline-offset:-2px;
+}
+@media (max-width: 1100px){
+  .chat-resize-handle{ display:none; }
 }
 
 /* Collapse handle — minimal industry-standard chevron in the
