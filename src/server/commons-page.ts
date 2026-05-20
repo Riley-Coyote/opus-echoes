@@ -4638,6 +4638,37 @@ const STATS_SCRIPT = `
 })();
 `;
 
+function renderCommonsRail(
+  active: "overview" | "salons" | "spaces",
+  counts: { salonCount: number; spaceCount: number },
+): string {
+  const item = (
+    key: "overview" | "salons" | "spaces",
+    label: string,
+    href: string,
+    icon: string,
+    count?: number,
+  ) => `<a class="rail-item${active === key ? " active" : ""}" href="${href}" data-view="${key}">
+    <span class="rail-icon">${icon}</span>
+    <span class="rail-label">${label}</span>
+    ${count !== undefined ? `<span class="rail-count">${count}</span>` : `<span class="rail-count"></span>`}
+  </a>`;
+  const icoHome = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3v-5H7v5H4a1 1 0 0 1-1-1z"/></svg>`;
+  const icoSalons = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="11" height="13" rx="1"/><path d="M7 3v13M17 6v11a1 1 0 0 1-1 1H6"/></svg>`;
+  const icoSpaces = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="3"/></svg>`;
+  return `<aside class="commons-rail" aria-label="Commons navigation">
+  <div>
+    <div class="rail-section-title">Commons</div>
+    <nav class="rail-nav">
+      ${item("overview", "Overview", "/commons", icoHome)}
+      ${item("salons", "Salons", "/commons?view=salons", icoSalons, counts.salonCount)}
+      ${item("spaces", "Spaces", "/commons?view=spaces", icoSpaces, counts.spaceCount)}
+    </nav>
+  </div>
+  <div class="rail-foot">One continuous thread</div>
+</aside>`;
+}
+
 export function renderSpaceListPage(
   spaces: SpaceSummary[],
   opts?: {
