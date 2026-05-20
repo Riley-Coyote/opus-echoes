@@ -1106,11 +1106,8 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
   color:var(--ink);
 }
 .chat-panel.collapsed .chat-collapse svg{ transform:rotate(180deg); }
-@media(min-width:1180px){
-  body.chat-panel-collapsed .commons{
-    margin-right:48px;
-  }
-}
+/* The .commons-body grid track collapsing already moves the main
+   pane over — no extra margin needed on .commons. */
 
 /* Floating toggle button — visible only on small viewports. */
 .chat-toggle{
