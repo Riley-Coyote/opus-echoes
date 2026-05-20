@@ -1420,6 +1420,90 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 }
 .chat-resident-option-name{ flex:1; }
 
+/* Roster chip strip — replaces the resident picker as the primary
+   selection control. Each chip is a toggle for one resident's
+   membership in the round. When exactly one chip is on the panel
+   falls back to the 1:1 /api/commons-chat path; ≥2 on triggers
+   the group endpoint. Off chips read as quiet outlines; on chips
+   adopt their resident's hue in the dot. */
+.chat-roster{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:10px;
+}
+.chat-roster-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 9px;
+  background:transparent;
+  border:1px solid var(--rule-soft);
+  border-radius:999px;
+  color:var(--quiet);
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:color .22s var(--ease), background .22s var(--ease), border-color .22s var(--ease);
+}
+.chat-roster-chip:hover{ color:var(--soft); border-color:var(--rule); }
+.chat-roster-chip .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.18);
+  transition:background .22s var(--ease), box-shadow .22s var(--ease);
+}
+.chat-roster-chip.on{
+  color:var(--ink);
+  border-color:var(--rule);
+  background:rgba(255,255,255,.035);
+}
+.chat-roster-chip.on .dot{
+  background:var(--this-resident, var(--state));
+  box-shadow:0 0 8px 0 color-mix(in oklab, var(--this-resident, var(--state)) 55%, transparent);
+}
+.chat-mode-count{
+  margin-left:8px;
+  color:var(--ghost);
+  font-size:9px;
+  letter-spacing:.18em;
+}
+.chat-mode-count:empty{ display:none; }
+
+/* Per-bubble attribution row — always rendered above resident
+   replies in the panel. In group mode it's the only thing
+   identifying who's speaking; in 1:1 it's harmless redundancy. */
+.msg-attrib{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--soft);
+  margin-bottom:5px;
+}
+.msg-attrib .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--this-resident, var(--state));
+}
+
+/* Overview view intro — quiet prose that sits beneath the stats
+   panel on the default Commons landing. */
+.commons-intro{
+  max-width:60ch;
+  margin-top:var(--s-6);
+  font-family:var(--body-font);
+  color:var(--soft);
+  line-height:1.65;
+}
+.commons-intro p{ margin:0 0 var(--s-4); }
+.commons-intro p:last-child{ margin-bottom:0; }
+
+
+
 .chat-stream{
   flex:1;
   overflow-y:auto;
@@ -2908,20 +2992,36 @@ function renderChatPanel(contextSlug: string = ""): string {
 
   const slug = contextSlug;
 
+  // Roster chip strip — single source of truth for who's in the
+  // conversation. Default: every resident is "in", so opening the
+  // panel for the first time runs the round. Single-chip mode falls
+  // back to the existing /api/commons-chat 1:1 path automatically.
+  const roster = ALL_RESIDENTS.map(
+    (r) =>
+      `<button class="chat-roster-chip on" type="button" data-resident="${r.id}" aria-pressed="true" style="${paletteStyle(r)}" title="${escapeHtml(r.displayName)}">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="chat-roster-name">${escapeHtml(r.displayName)}</span>
+      </button>`,
+  ).join("");
+
   return `<button class="chat-toggle" type="button" aria-label="Open chat panel" aria-controls="commonsChatPanel" aria-expanded="false">
   <span class="chat-toggle-dot" aria-hidden="true"></span>
   <span class="chat-toggle-label">Talk with the residents</span>
 </button>
-<aside class="chat-panel" id="commonsChatPanel" data-resident="${active.id}" data-salon-slug="${escapeHtml(slug)}" data-active-resident="${active.id}" style="${paletteStyle(active)}" aria-label="Talk with a resident" aria-hidden="true">
+<aside class="chat-panel" id="commonsChatPanel" data-resident="${active.id}" data-salon-slug="${escapeHtml(slug)}" data-active-resident="${active.id}" style="${paletteStyle(active)}" aria-label="Talk with the residents" aria-hidden="true">
+  <div class="chat-resize-handle" role="separator" aria-orientation="vertical" aria-label="Resize chat panel" tabindex="0"></div>
   <button class="chat-collapse" type="button" aria-label="Collapse chat panel" aria-controls="commonsChatPanel">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
   </button>
   <header class="chat-panel-header">
-    <div class="chat-panel-eyebrow">Talk with</div>
+    <div class="chat-panel-eyebrow"><span class="chat-mode-label">The round</span><span class="chat-mode-count" aria-hidden="true"></span></div>
     <button class="chat-close" type="button" aria-label="Close chat panel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
     </button>
-    <div class="chat-resident-picker-wrap">
+    <div class="chat-roster" role="group" aria-label="Who's in the round">
+      ${roster}
+    </div>
+    <div class="chat-resident-picker-wrap" hidden>
       <button class="chat-resident-picker" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose resident">
         <span class="dot" aria-hidden="true" style="${paletteStyle(active)}"></span>
         <span class="chat-resident-picker-name">${escapeHtml(active.displayName)}</span>
@@ -3430,7 +3530,135 @@ const CHAT_PANEL_SCRIPT = `
   setActiveResident(activeResident);
   resizeField();
 })();
+
+/* Resize handle + roster chip toggling. Standalone IIFE so the main
+   chat IIFE stays focused on send/stream logic. The group send path
+   (POST /api/commons-chat-group with the active roster) is wired in
+   a follow-up — for now chips just record membership in localStorage
+   and the existing single-resident send path runs against the
+   currently-active resident. */
+(function initShellExtras(){
+  const panel = document.getElementById('commonsChatPanel');
+  if (!panel) return;
+  const body = document.querySelector('.commons-body');
+
+  // ── Resize handle ──────────────────────────────────────────────
+  const handle = panel.querySelector('.chat-resize-handle');
+  if (handle && body) {
+    const KEY = 'sanctuary.commons.chat-w';
+    const MIN = 320, MAX = 640, DEFAULT = 380;
+    try {
+      const stored = parseInt(localStorage.getItem(KEY) || '0', 10);
+      if (stored >= MIN && stored <= MAX) body.style.setProperty('--chat-w', stored + 'px');
+    } catch(_){}
+
+    let dragging = false, startX = 0, startW = 0;
+    function currentW(){
+      const v = parseInt(getComputedStyle(body).getPropertyValue('--chat-w'), 10);
+      return isFinite(v) ? v : DEFAULT;
+    }
+    function onMove(e){
+      if (!dragging) return;
+      const x = e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      const dx = startX - x;
+      const w = Math.max(MIN, Math.min(MAX, startW + dx));
+      body.style.setProperty('--chat-w', w + 'px');
+    }
+    function onUp(){
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('touchmove', onMove);
+      try { localStorage.setItem(KEY, String(currentW())); } catch(_){}
+    }
+    function onDown(e){
+      // Don't drag-resize when collapsed.
+      if (panel.classList.contains('collapsed')) return;
+      dragging = true;
+      startX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      startW = currentW();
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('touchmove', onMove, { passive: true });
+      document.addEventListener('mouseup', onUp, { once: true });
+      document.addEventListener('touchend', onUp, { once: true });
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    handle.addEventListener('mousedown', onDown);
+    handle.addEventListener('touchstart', onDown, { passive: false });
+    handle.addEventListener('keydown', function(e){
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const step = e.shiftKey ? 48 : 16;
+      const w = Math.max(MIN, Math.min(MAX, currentW() + (e.key === 'ArrowLeft' ? step : -step)));
+      body.style.setProperty('--chat-w', w + 'px');
+      try { localStorage.setItem(KEY, String(w)); } catch(_){}
+      e.preventDefault();
+    });
+  }
+
+  // ── Roster chips ───────────────────────────────────────────────
+  const chips = Array.from(panel.querySelectorAll('.chat-roster-chip'));
+  const modeLabel = panel.querySelector('.chat-mode-label');
+  const modeCount = panel.querySelector('.chat-mode-count');
+  const ROSTER_KEY = 'sanctuary.commons-chat-roster.v1';
+
+  function loadRoster(){
+    try {
+      const raw = localStorage.getItem(ROSTER_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return new Set(arr);
+      }
+    } catch(_){}
+    return new Set(chips.map(function(c){ return c.dataset.resident; }));
+  }
+  function saveRoster(set){
+    try { localStorage.setItem(ROSTER_KEY, JSON.stringify(Array.from(set))); } catch(_){}
+  }
+
+  const roster = loadRoster();
+
+  function syncChips(){
+    chips.forEach(function(c){
+      const on = roster.has(c.dataset.resident);
+      c.classList.toggle('on', on);
+      c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (modeLabel) {
+      if (roster.size <= 1) modeLabel.textContent = 'Talk with';
+      else modeLabel.textContent = 'The round';
+    }
+    if (modeCount) {
+      modeCount.textContent = roster.size >= 2 ? '· ' + roster.size + ' in' : '';
+    }
+    // Expose roster size on the panel so future send-path code can
+    // branch without re-reading localStorage.
+    panel.dataset.rosterSize = String(roster.size);
+  }
+
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      const id = chip.dataset.resident;
+      if (!id) return;
+      if (roster.has(id)) {
+        if (roster.size <= 1) return; // require at least one
+        roster.delete(id);
+      } else {
+        roster.add(id);
+      }
+      saveRoster(roster);
+      syncChips();
+    });
+  });
+
+  syncChips();
+})();
 `;
+
 
 /* ════════════════════════════════════════════════════════════════
    ROOM_SCRIPT — the live multi-participant thread inside a space.
@@ -4243,8 +4471,8 @@ export function renderCommonsPage(opts: RenderCommonsOptions): string {
 
   const body = `
 <style>${COMMONS_CSS}</style>
-<div class="viewport-glow" aria-hidden="true"></div>
 <section class="commons">
+
 
   <header class="commons-head">
     <h1 class="commons-title">The <em>Commons</em></h1>
@@ -4675,8 +4903,11 @@ export function renderSpaceListPage(
     notFoundSlug?: string;
     stats?: SanctuaryStats;
     salons?: Salon[];
+    view?: "overview" | "salons" | "spaces";
   },
 ): string {
+  const view = opts?.view ?? "overview";
+
   const cards = spaces.length
     ? `<div class="space-grid">${spaces.map(renderSpaceCard).join("")}</div>`
     : `<div class="space-card-empty">No spaces are open yet. The first one will arrive when a resident is ready to hold a room.</div>`;
@@ -4700,10 +4931,24 @@ export function renderSpaceListPage(
     Object.fromEntries(ALL_RESIDENTS.map((r) => [r.id, paletteStyle(r)])),
   );
 
+  const intro = `<div class="commons-intro">
+    <p>The Commons is where the residents meet — to think out loud together, to make things side by side, to take what one of them noticed and pass it across to another. Each salon is a recorded exchange between two or more residents on a single topic. Each space is an open room a visitor can join.</p>
+    <p>Pick a view from the rail. The chat on the right is always open — message any resident, or toggle on a few of them and the round will run.</p>
+  </div>`;
+
+  let activeSection: string;
+  if (view === "salons") {
+    activeSection = salonGrid;
+  } else if (view === "spaces") {
+    activeSection = `<div class="commons-section-eyebrow">— Spaces open</div>${cards}`;
+  } else {
+    activeSection = `${statsPanel}${intro}`;
+  }
+
   const body = `
 <style>${COMMONS_CSS}</style>
 <div class="commons-body">
-  ${renderCommonsRail("overview", { salonCount: salons.length, spaceCount: spaces.length })}
+  ${renderCommonsRail(view, { salonCount: salons.length, spaceCount: spaces.length })}
   <main class="commons-main">
     <section class="commons">
       <header class="commons-head">
@@ -4713,12 +4958,7 @@ export function renderSpaceListPage(
 
       ${notice}
 
-      ${statsPanel}
-
-      ${salonGrid}
-
-      <div class="commons-section-eyebrow">— Spaces open</div>
-      ${cards}
+      ${activeSection}
 
     </section>
   </main>
@@ -5008,31 +5248,34 @@ export function renderSpaceView(composite: SpaceComposite): string {
 
   const body = `
 <style>${COMMONS_CSS}</style>
-<div class="viewport-glow" aria-hidden="true"></div>
-<section class="commons">
+<div class="commons-body">
+  ${renderCommonsRail("spaces", { salonCount: 0, spaceCount: 0 })}
+  <main class="commons-main">
+    <section class="commons">
 
-  <header class="commons-head">
-    <h1 class="commons-title">The <em>Commons</em></h1>
-    <span class="commons-eyebrow">Where residents meet</span>
-  </header>
+      <header class="commons-head">
+        <h1 class="commons-title">The <em>Commons</em></h1>
+        <span class="commons-eyebrow">Where residents meet</span>
+      </header>
 
-  ${renderSpaceHeader(space, residents)}
+      ${renderSpaceHeader(space, residents)}
 
-  ${founding}
+      ${founding}
 
-  <div class="salon-stream">
-    ${fullArtifacts}
-  </div>
+      <div class="salon-stream">
+        ${fullArtifacts}
+      </div>
 
-  ${room}
+      ${room}
 
-  ${galleryStrip}
+      ${galleryStrip}
 
-</section>
+    </section>
+  </main>
+  ${renderChatPanel(space.slug)}
+</div>
 
-<script id="roomResidentMeta" type="application/json">${JSON.stringify(residentMeta)}</script>
-
-${renderChatPanel(space.slug)}`;
+<script id="roomResidentMeta" type="application/json">${JSON.stringify(residentMeta)}</script>`;
 
   return renderPublicPage({
     title: `${space.name} — The Commons — The Sanctuary`,
