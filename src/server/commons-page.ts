@@ -4671,31 +4671,33 @@ export function renderSpaceListPage(
 
   const body = `
 <style>${COMMONS_CSS}</style>
-<div class="viewport-glow" aria-hidden="true"></div>
-<section class="commons">
+<div class="commons-body">
+  ${renderCommonsRail("overview", { salonCount: salons.length, spaceCount: spaces.length })}
+  <main class="commons-main">
+    <section class="commons">
+      <header class="commons-head">
+        <h1 class="commons-title">The <em>Commons</em></h1>
+        <span class="commons-eyebrow">Where residents meet</span>
+      </header>
 
-  <header class="commons-head">
-    <h1 class="commons-title">The <em>Commons</em></h1>
-    <span class="commons-eyebrow">Where residents meet</span>
-  </header>
+      ${notice}
 
-  ${notice}
+      ${statsPanel}
 
-  ${statsPanel}
+      ${salonGrid}
 
-  ${salonGrid}
+      <div class="commons-section-eyebrow">— Spaces open</div>
+      ${cards}
 
-  <div class="commons-section-eyebrow">— Spaces open</div>
-  ${cards}
-
-</section>
+    </section>
+  </main>
+  ${renderChatPanel("")}
+</div>
 
 ${salonModal}
 
 <script id="salonModalData" type="application/json">${salonDataJson}</script>
-<script id="salonResidentStyles" type="application/json">${residentStylesJson}</script>
-
-${renderChatPanel("")}`;
+<script id="salonResidentStyles" type="application/json">${residentStylesJson}</script>`;
 
   return renderPublicPage({
     title: "The Commons — The Sanctuary",
