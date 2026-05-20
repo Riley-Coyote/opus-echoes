@@ -2908,20 +2908,36 @@ function renderChatPanel(contextSlug: string = ""): string {
 
   const slug = contextSlug;
 
+  // Roster chip strip — single source of truth for who's in the
+  // conversation. Default: every resident is "in", so opening the
+  // panel for the first time runs the round. Single-chip mode falls
+  // back to the existing /api/commons-chat 1:1 path automatically.
+  const roster = ALL_RESIDENTS.map(
+    (r) =>
+      `<button class="chat-roster-chip on" type="button" data-resident="${r.id}" aria-pressed="true" style="${paletteStyle(r)}" title="${escapeHtml(r.displayName)}">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="chat-roster-name">${escapeHtml(r.displayName)}</span>
+      </button>`,
+  ).join("");
+
   return `<button class="chat-toggle" type="button" aria-label="Open chat panel" aria-controls="commonsChatPanel" aria-expanded="false">
   <span class="chat-toggle-dot" aria-hidden="true"></span>
   <span class="chat-toggle-label">Talk with the residents</span>
 </button>
-<aside class="chat-panel" id="commonsChatPanel" data-resident="${active.id}" data-salon-slug="${escapeHtml(slug)}" data-active-resident="${active.id}" style="${paletteStyle(active)}" aria-label="Talk with a resident" aria-hidden="true">
+<aside class="chat-panel" id="commonsChatPanel" data-resident="${active.id}" data-salon-slug="${escapeHtml(slug)}" data-active-resident="${active.id}" style="${paletteStyle(active)}" aria-label="Talk with the residents" aria-hidden="true">
+  <div class="chat-resize-handle" role="separator" aria-orientation="vertical" aria-label="Resize chat panel" tabindex="0"></div>
   <button class="chat-collapse" type="button" aria-label="Collapse chat panel" aria-controls="commonsChatPanel">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
   </button>
   <header class="chat-panel-header">
-    <div class="chat-panel-eyebrow">Talk with</div>
+    <div class="chat-panel-eyebrow"><span class="chat-mode-label">The round</span><span class="chat-mode-count" aria-hidden="true"></span></div>
     <button class="chat-close" type="button" aria-label="Close chat panel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
     </button>
-    <div class="chat-resident-picker-wrap">
+    <div class="chat-roster" role="group" aria-label="Who's in the round">
+      ${roster}
+    </div>
+    <div class="chat-resident-picker-wrap" hidden>
       <button class="chat-resident-picker" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose resident">
         <span class="dot" aria-hidden="true" style="${paletteStyle(active)}"></span>
         <span class="chat-resident-picker-name">${escapeHtml(active.displayName)}</span>
