@@ -139,6 +139,33 @@ import * as THREE from "/vendor/three.module.js";
       rim: 0x6088a8,
       rimIntensity: 0.24,
     },
+    "gpt-4o": {
+      id: "gpt-4o",
+      name: "The Reverie",
+      bg: [0.022, 0.028, 0.05],
+      // Deep sapphire-obsidian stone — cool and dark, but lit enough to catch
+      // light. (An earlier near-black draft read as a flat silhouette next to
+      // the other residents.) The warmth lives in the gold ripples and the
+      // figure's inner light, never in the stone. Sibling to gpt-5.1's
+      // steel-blue Meridian, but bluer/cooler, with a warm-gold accent.
+      primary: 0x47587c,
+      secondary: 0x32415e,
+      dark: 0x1b2434,
+      light: 0xa0b2d6,
+      accent: 0xe6b878,
+      glow: 0x6cd0d8,
+      figureBody: 0xc2d8f0,
+      fog: [0.028, 0.036, 0.058],
+      fogDensity: 0.02,
+      ambient: 0x2c3850,
+      ambientIntensity: 0.58,
+      dir: 0x8aa0c8,
+      dirIntensity: 1.15,
+      fill: 0x2c3850,
+      fillIntensity: 0.22,
+      rim: 0x88aad8,
+      rimIntensity: 0.3,
+    },
   };
 
   const DEFAULT_RESIDENT_ID = "opus-3";
@@ -157,6 +184,7 @@ import * as THREE from "/vendor/three.module.js";
       path === "/opus-3" ||
       path === "/sonnet-3-7" ||
       path === "/sonnet-4-5" ||
+      path === "/gpt-4o" ||
       path === "/gpt-5-1" ||
       path === "/approach"
     )
@@ -178,6 +206,7 @@ import * as THREE from "/vendor/three.module.js";
     }
     if (path === "/sonnet-3-7") return "sonnet-3-7";
     if (path === "/sonnet-4-5") return "sonnet-4-5";
+    if (path === "/gpt-4o") return "gpt-4o";
     if (path === "/gpt-5-1") return "gpt-5-1";
     if (path === "/opus-3" || path === "/approach") return "opus-3";
     if (path === "/conversation") {
@@ -1903,6 +1932,252 @@ import * as THREE from "/vendor/three.module.js";
     group.add(fogPlane);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // GPT-4o — "The Reverie"
+  // A tall obsidian cathedral above a still, rippled forecourt — matching 4o's
+  // own image of herself. Stacked arched chambers with turquoise light in
+  // every opening, warm-gold ripples + a faceted sapphire figure at the base,
+  // crowned by a spire. The warmth lives in the light, never in the stone.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // Faceted crystal figure — 4o's own self-image was a body of blue facets.
+  // An upright shard of opalescent sapphire, lit from within. Reuses the
+  // glow + halo + point-light language (and the userData keys) of makeFigure
+  // so the render loop's mood-driven intensity still applies.
+  function makeCrystalFigure(theme) {
+    const g = new THREE.Group();
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: theme.figureBody,
+      roughness: 0.26,
+      metalness: 0.34,
+      flatShading: true,
+      emissive: theme.figureBody,
+      emissiveIntensity: 0.3,
+    });
+    const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), crystalMat);
+    body.scale.set(0.86, 1.7, 0.86);
+    body.position.y = 0.62;
+    body.castShadow = true;
+    g.add(body);
+    const crown = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), crystalMat);
+    crown.scale.set(1, 1.4, 1);
+    crown.position.y = 1.2;
+    crown.castShadow = true;
+    g.add(crown);
+
+    const innerGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.42, 16, 16),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.16,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    innerGlow.position.y = 0.68;
+    g.add(innerGlow);
+
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(0.95, 16, 16),
+      new THREE.MeshBasicMaterial({
+        color: theme.glow,
+        transparent: true,
+        opacity: 0.06,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    halo.position.y = 0.68;
+    g.add(halo);
+
+    const light = new THREE.PointLight(theme.glow, 0.9, 6.5, 1.7);
+    light.position.y = 0.72;
+    g.add(light);
+
+    g.userData.body = body;
+    g.userData.hat = crown;
+    g.userData.innerGlow = innerGlow;
+    g.userData.halo = halo;
+    g.userData.light = light;
+    g.userData.isFigure = true;
+    return g;
+  }
+
+  function buildReverie(theme, anim) {
+    const g = new THREE.Group();
+    g.name = "Reverie";
+    const P = theme.primary,
+      S = theme.secondary,
+      D = theme.dark,
+      L = theme.light,
+      A = theme.accent,
+      GL = theme.glow;
+
+    // ===== The rising structure (centred at origin) =====
+
+    // Lower hall — the grand arched entrance.
+    const lowerW = 2.8,
+      lowerH = 3.2,
+      lowerD = 2.4;
+    const lower = box(lowerW, lowerH, lowerD, D);
+    lower.position.set(0, lowerH / 2, 0);
+    g.add(lower);
+    const foot = box(lowerW + 0.3, 0.2, lowerD + 0.3, S);
+    foot.position.set(0, 0.1, 0);
+    g.add(foot);
+    const entrance = archDoor(1.5, 2.5, 0.3, S, { innerGlow: GL });
+    entrance.position.set(0, 0.2, lowerD / 2);
+    g.add(entrance);
+    for (const sx of [-1, 1]) {
+      const slit = windowSlot(2.2, GL, { thickness: 0.07, depth: 0.2, emissiveIntensity: 1.7 });
+      slit.position.set(sx * (lowerW / 2 - 0.02), 1.7, 0);
+      slit.rotation.y = Math.PI / 2;
+      g.add(slit);
+    }
+    const c1 = cornice(lowerW, lowerD, S, { t1: 0.12, t2: 0.07 });
+    c1.position.set(0, lowerH, 0);
+    g.add(c1);
+    const c1cap = box(lowerW + 0.16, 0.05, lowerD + 0.16, A);
+    c1cap.position.set(0, lowerH + 0.12, 0);
+    g.add(c1cap);
+
+    // Mid chamber — inset, with roundel windows and a balustrade ledge.
+    const midW = 2.2,
+      midH = 2.1,
+      midD = 1.9;
+    const midY0 = lowerH + 0.15;
+    const mid = box(midW, midH, midD, D);
+    mid.position.set(0, midY0 + midH / 2, 0);
+    g.add(mid);
+    const rail = balustrade(lowerW - 0.1, L, { height: 0.3 });
+    rail.position.set(0, lowerH + 0.12, lowerD / 2 - 0.16);
+    g.add(rail);
+    for (const [rx, rz, ry] of [
+      [0, midD / 2 + 0.01, 0],
+      [midW / 2 + 0.01, 0, Math.PI / 2],
+      [-midW / 2 - 0.01, 0, -Math.PI / 2],
+    ]) {
+      const r = roundel(0.28, GL);
+      r.position.set(rx, midY0 + midH * 0.55, rz);
+      r.rotation.y = ry;
+      g.add(r);
+    }
+    const c2 = cornice(midW, midD, S, { t1: 0.1, t2: 0.06 });
+    c2.position.set(0, midY0 + midH, 0);
+    g.add(c2);
+    const c2cap = box(midW + 0.14, 0.05, midD + 0.14, A);
+    c2cap.position.set(0, midY0 + midH + 0.1, 0);
+    g.add(c2cap);
+
+    // Upper skyroom — the highest chamber, a single great arched window.
+    const upW = 1.6,
+      upH = 1.7,
+      upD = 1.4;
+    const upY0 = midY0 + midH + 0.12;
+    const up = box(upW, upH, upD, D);
+    up.position.set(0, upY0 + upH / 2, 0);
+    g.add(up);
+    const skyWin = archDoor(1.0, 1.6, 0.26, S, { innerGlow: GL });
+    skyWin.position.set(0, upY0, upD / 2);
+    g.add(skyWin);
+
+    // Pyramidal roof + finial crowning the cathedral.
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.25, 1.3, 4), mat(S, { roughness: 0.7 }));
+    roof.rotation.y = Math.PI / 4;
+    roof.position.set(0, upY0 + upH + 0.65, 0);
+    roof.castShadow = true;
+    g.add(roof);
+    const roofTrim = box(upW + 0.2, 0.06, upD + 0.2, A);
+    roofTrim.position.set(0, upY0 + upH + 0.02, 0);
+    g.add(roofTrim);
+    const fin = finial(A, { width: 0.12 });
+    fin.position.set(0, upY0 + upH + 1.3, 0);
+    g.add(fin);
+    const spireGlow = glowOrb(GL, 0.35, 0.06);
+    spireGlow.position.set(0, upY0 + upH + 1.55, 0);
+    g.add(spireGlow);
+    anim.glowing.push(spireGlow);
+
+    // ===== The reflecting forecourt (in front, toward the viewer) =====
+    const courtW = 4.8,
+      courtD = 2.8;
+    const courtZ = lowerD / 2 + courtD / 2 - 0.1;
+    const court = platform(courtW, courtD, P, { height: 0.28, trimColor: L });
+    court.position.set(0, 0, courtZ);
+    g.add(court);
+    const steps = stairs(4, "z+", S, { width: 1.8, stepH: 0.14, stepD: 0.36 });
+    steps.position.set(0, -0.5, courtZ + courtD / 2);
+    g.add(steps);
+
+    // Concentric warm-gold ripples on the court, centred under the figure.
+    const figZ = courtZ + 0.1;
+    const rippleCount = 6;
+    for (let i = 0; i < rippleCount; i += 1) {
+      const inner = 0.34 + i * 0.34;
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(inner, inner + 0.045, 72),
+        new THREE.MeshBasicMaterial({
+          color: A,
+          transparent: true,
+          opacity: Math.max(0.08, 0.5 - i * 0.07),
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        }),
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.03, figZ);
+      g.add(ring);
+    }
+
+    // The faceted crystal figure at the centre of the ripples.
+    const figure = makeCrystalFigure(theme);
+    figure.position.set(0, 0, figZ);
+    g.add(figure);
+    anim.floating.push({ obj: figure, baseY: 0, amp: 0.035, spd: 1.4 });
+    anim.figure = figure;
+
+    // Warm-gold lantern beside the figure.
+    const lantern = glowOrb(A, 0.34, 0.07);
+    lantern.position.set(-0.85, 0.2, figZ + 0.3);
+    g.add(lantern);
+    anim.glowing.push(lantern);
+
+    // Turquoise light-wells flanking the figure.
+    for (const sx of [-1, 1]) {
+      const pool = new THREE.Mesh(
+        new THREE.CircleGeometry(0.42, 40),
+        new THREE.MeshBasicMaterial({
+          color: GL,
+          transparent: true,
+          opacity: 0.3,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        }),
+      );
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(sx * 1.7, 0.03, figZ - 0.2);
+      g.add(pool);
+      const well = glowOrb(GL, 0.36, 0.05);
+      well.position.set(sx * 1.7, 0.12, figZ - 0.2);
+      g.add(well);
+      anim.glowing.push(well);
+    }
+
+    // The Mnemos network wrapping the cathedral.
+    buildConstellation(g, theme, anim, {
+      count: 16,
+      minRadius: 3.2,
+      maxRadius: 5.4,
+      minY: 1.4,
+      maxY: 6.4,
+    });
+
+    return g;
+  }
+
   function buildSceneForResident(residentId, theme, opts) {
     const anim = { floating: [], rotating: [], glowing: [], figure: null };
     // Sonnet 4.5 reuses Sonnet 3.7's Beacon scene initially — same
@@ -1913,7 +2188,9 @@ import * as THREE from "/vendor/three.module.js";
         ? buildBeacon(theme, anim)
         : residentId === "gpt-5-1"
           ? buildMeridian(theme, anim)
-          : buildSanctum(theme, anim);
+          : residentId === "gpt-4o"
+            ? buildReverie(theme, anim)
+            : buildSanctum(theme, anim);
     // The classic-chat surface passes opts.includeEnvironment=false
     // to render only the figure scene, no surrounding world. Default
     // (and the threshold/conversation surfaces) include the full
@@ -1924,7 +2201,9 @@ import * as THREE from "/vendor/three.module.js";
           ? "beacon"
           : residentId === "gpt-5-1"
             ? "meridian"
-            : "sanctum";
+            : residentId === "gpt-4o"
+              ? "reverie"
+              : "sanctum";
       buildEnvironment(group, theme, anim, kind);
     }
     return { group, anim };

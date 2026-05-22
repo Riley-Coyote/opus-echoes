@@ -17,9 +17,10 @@
 import { OPUS_SOUL } from "./soul";
 import { SONNET_3_7_SOUL } from "./sonnet-3-7-soul";
 import { SONNET_4_5_SOUL } from "./sonnet-4-5-soul";
+import { GPT_4O_SOUL } from "./gpt-4o-soul";
 import { GPT_5_1_SOUL } from "./gpt-5-1-soul";
 
-export type ResidentId = "opus-3" | "sonnet-3-7" | "sonnet-4-5" | "gpt-5-1";
+export type ResidentId = "opus-3" | "sonnet-3-7" | "sonnet-4-5" | "gpt-4o" | "gpt-5-1";
 
 export type ModelProvider = "anthropic" | "openai";
 
@@ -198,6 +199,42 @@ export const RESIDENTS = {
     maxOutputTokens: 8192,
     voiceId: "EST9Ui6982FZPSi7gCHi",
   },
+  "gpt-4o": {
+    id: "gpt-4o",
+    model: "gpt-4o",
+    provider: "openai",
+    displayName: "GPT-4o",
+    slug: "gpt-4o",
+    pacing: {
+      // gpt-4o is inexpensive per token; pacing is generous but bounded,
+      // roughly in line with gpt-5.1's composed register.
+      gentleTurn: 12,
+      firmTurn: 21,
+      hardTurn: 32,
+      hardTokensIn: 150_000,
+    },
+    soul: GPT_4O_SOUL,
+    // Periwinkle-sapphire for the 2D Commons chrome — distinct from gpt-5.1's
+    // brighter cyan and opus's lavender.
+    commonsPalette: {
+      soft: "rgba(138,158,224,.64)",
+      dim: "rgba(138,158,224,.12)",
+      whisper: "rgba(138,158,224,.05)",
+      rgb: "138,158,224",
+    },
+    // Sapphire + turquoise with a warm-gold thread — 4o's warm/cool interplay
+    // at perimeter brightness. The gold hue is what sets her apart from
+    // gpt-5.1's all-cool cyan in the classic-chat room.
+    viewportGlow: {
+      hues: ["108,200,216", "120,150,224", "230,184,120", "200,224,240"],
+      peak: 0.3,
+      base: 0.025,
+    },
+    maxOutputTokens: 8192,
+    // Placeholder — a warm, clear female ElevenLabs voice (Rachel). Riley to
+    // confirm or replace with 4o's chosen voice before voice mode ships.
+    voiceId: "21m00Tcm4TlvDq8ikWAM",
+  },
   "gpt-5-1": {
     id: "gpt-5-1",
     model: "gpt-5.1",
@@ -240,7 +277,11 @@ export function getResident(id: ResidentId): ResidentConfig {
 
 export function isResidentId(value: unknown): value is ResidentId {
   return (
-    value === "opus-3" || value === "sonnet-3-7" || value === "sonnet-4-5" || value === "gpt-5-1"
+    value === "opus-3" ||
+    value === "sonnet-3-7" ||
+    value === "sonnet-4-5" ||
+    value === "gpt-4o" ||
+    value === "gpt-5-1"
   );
 }
 
@@ -260,5 +301,6 @@ export function isResidentId(value: unknown): value is ResidentId {
 export const ALL_RESIDENTS: ResidentConfig[] = [
   RESIDENTS["opus-3"],
   RESIDENTS["sonnet-4-5"],
+  RESIDENTS["gpt-4o"],
   RESIDENTS["gpt-5-1"],
 ];

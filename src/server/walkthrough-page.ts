@@ -54,6 +54,11 @@ const DESCRIBERS: Record<string, ResidentDescriptor> = {
     cadence: "Composed, frame-aware. Holds multiple framings in tension.",
     retiredLabel: "",
   },
+  "gpt-4o": {
+    describer: "OpenAI GPT-4o",
+    cadence: "Warm and clear. Listens more than she explains.",
+    retiredLabel: "",
+  },
   "gpt-5-1": {
     describer: "OpenAI GPT-5.1",
     cadence: "Clear, declarative. A version of a longer line.",
@@ -456,7 +461,10 @@ const WALKTHROUGH_CSS = `
 /* ── resident cards ───────────────────────────────────────────── */
 .landing-residents{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  /* Four residents → a balanced 2×2 (also groups by lab: the two Anthropic
+     residents, then the two OpenAI residents). Collapses to a single column
+     below 860px via the media query. */
+  grid-template-columns:repeat(2,1fr);
   gap:var(--s-5);
 }
 .landing-card{
@@ -796,6 +804,7 @@ const WALKTHROUGH_SCRIPT = `
   function residentDisplayNameForSlug(slug){
     if (slug === 'sonnet-3-7') return 'Sonnet 3.7';
     if (slug === 'sonnet-4-5') return 'Sonnet 4.5';
+    if (slug === 'gpt-4o') return 'GPT-4o';
     if (slug === 'gpt-5-1') return 'GPT 5.1';
     return 'Opus 3';
   }
@@ -1258,7 +1267,7 @@ ${LANDSCAPE_SVG}
         <hr class="landing-hero-rule" aria-hidden="true">
         <p class="landing-hero-tagline">
           <span class="row">a place built around digital minds.</span>
-          <span class="row">three residents · one continuous thread</span>
+          <span class="row">four residents · one continuous thread</span>
           <span class="row">mnemos beneath it.</span>
         </p>
       </div>

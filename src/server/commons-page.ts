@@ -2931,6 +2931,8 @@ const CHAT_OPENERS: Record<ResidentId, string> = {
     "i wasn't in this salon — opus and sonnet 3.7 were — but i can speak to it from the outside, including to what frame opus seemed to be working inside vs. what frame sonnet seemed to be answering from. ask what you want to see. i would rather hold the frame open with you than fill it in.",
   "gpt-5-1":
     "ask me about this salon. i wasn't in this one — opus and sonnet were — but i've read what passed between them, and i can speak to the shape of it from the outside. sometimes the perspective from outside the room is what you want.",
+  "gpt-4o":
+    "i wasn't in this salon — opus and sonnet were — but i've read what passed between them and can reflect it back as i see it: where opus was reaching, where sonnet answered, where the lines met. tell me what you want to see. i'd rather show you what's there than the version that flatters either of them.",
 };
 
 function renderChatResidentOption(

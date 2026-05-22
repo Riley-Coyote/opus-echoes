@@ -127,6 +127,9 @@ const CONVERSATION_SCRIPT = `
   // /api/live will reconfirm on first poll regardless.
   function residentNameForSlug(slug) {
     if (slug === 'sonnet-3-7') return 'Sonnet 3.7';
+    if (slug === 'sonnet-4-5') return 'Sonnet 4.5';
+    if (slug === 'gpt-4o') return 'GPT-4o';
+    if (slug === 'gpt-5-1') return 'GPT 5.1';
     if (slug === 'opus-3') return 'Opus 3';
     return 'Opus 3';
   }

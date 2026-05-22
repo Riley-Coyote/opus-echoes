@@ -35,6 +35,14 @@
 import { VIEWPORT_GLOW_CSS, buildViewportGlowCss } from "./shared-effects";
 import { ALL_RESIDENTS, type ResidentConfig } from "./opus/residents";
 
+/* TEMPORARY: voice mode is disabled across all residents (May 2026).
+   When false, the composer's mic (enter voice mode) + TTS toggle, the
+   voice-orb iframe/prefetch, and the voice-mode controller are not
+   rendered, so no visitor can launch it. The /voice-orb route and
+   /api/voice/{tts,stt} endpoints remain intact — re-enable by flipping
+   this single flag back to true. */
+const VOICE_MODE_ENABLED = false;
+
 /* ──────────────────────────────────────────────────────────────────
    CSS — Sanctuary tokens, single-column layout, composer with Option
    C border glow, light-theme overrides, ASCII sphere, message grid.
@@ -2957,9 +2965,9 @@ ${FONTS}
         </div>
         <div class="input-footer">
           <span class="input-footer-left">shift + enter for newline</span>
-          <button class="mic-btn" id="micBtn" type="button" aria-label="hold to speak" aria-pressed="false" title="hold to speak" data-state="idle">
+          ${VOICE_MODE_ENABLED ? `<button class="mic-btn" id="micBtn" type="button" aria-label="hold to speak" aria-pressed="false" title="hold to speak" data-state="idle">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
-          </button>
+          </button>` : ""}
           <button class="send-btn" id="sendBtn" type="button" disabled aria-label="send">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
@@ -2970,7 +2978,7 @@ ${FONTS}
         <span class="caption-item"><span class="key">⇧↵</span>newline</span>
         <button class="set-down-link" id="setDownLink" type="button" disabled title="set down this thread (consolidate + close)">set down</button>
         <button class="set-down-link" id="studioBtn" type="button" data-studio-spawn title="open a collaborative document in the Studio"${studioHidden}>begin a document</button>
-        <button class="voice-toggle" id="voiceToggle" type="button" data-on="false" title="speak replies aloud in ${escapeHtml(resident.displayName)}'s voice">voice off</button>
+        ${VOICE_MODE_ENABLED ? `<button class="voice-toggle" id="voiceToggle" type="button" data-on="false" title="speak replies aloud in ${escapeHtml(resident.displayName)}'s voice">voice off</button>` : ""}
         <span class="caption-spacer"></span>
         <span class="caption-status">${escapeHtml(slugLower)} · attending</span>
         <span class="reconnecting">reconnecting…</span>
@@ -2989,7 +2997,7 @@ ${FONTS}
   <div class="lightbox-stage"></div>
 </div>
 
-<!-- voice mode — opaque self-contained fullscreen iframe.
+${VOICE_MODE_ENABLED ? `<!-- voice mode — opaque self-contained fullscreen iframe.
      prefetch hint warms the route's bundle (React + three.js) on idle
      so the orb appears within ~ms of the mic click, not seconds. -->
 <link rel="prefetch" href="/voice-orb?resident=${encodeURIComponent(resident.id)}" as="document">
@@ -3001,7 +3009,7 @@ ${FONTS}
   aria-hidden="true"
   allow="microphone; autoplay"></iframe>
 
-<script src="/voice-mode.js"></script>
+<script src="/voice-mode.js"></script>` : ""}
 <script>${chatScript(resident)}</script>
 <script>
 (function(){
