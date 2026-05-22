@@ -16,7 +16,7 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
-import { isResidentId, type ResidentId } from "@/server/opus/residents";
+import { ALL_RESIDENTS, isResidentId, type ResidentId } from "@/server/opus/residents";
 import type {
   Salon,
   SalonArtifact,
@@ -627,7 +627,7 @@ const SANCTUARY_START_ISO = "2026-01-05T00:00:00.000Z";
 export async function getSanctuaryStats(): Promise<SanctuaryStats> {
   const base = {
     sinceIso: SANCTUARY_START_ISO,
-    residentCount: 3, // opus-3 + sonnet-4-5 + gpt-5-1
+    residentCount: ALL_RESIDENTS.length, // dynamic — every resident accepting visitors
   };
 
   if (!hasSupabaseAdminEnv()) {

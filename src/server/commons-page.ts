@@ -102,6 +102,12 @@ const COMMONS_CSS = `
   overflow:hidden;
   padding:0;
   min-height:0;
+  /* The default .page caps width at min(1080px, …) and centres it. Inside
+     the fixed commons shell that leaves dead side-margins and squeezes the
+     middle column. Let the three-pane grid own the full shell width. */
+  width:100%;
+  max-width:none;
+  margin:0;
 }
 @media (max-width: 720px){
   .public-shell[data-route="commons"]{
@@ -1252,6 +1258,10 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 
 @media(max-width:1179px){
   .chat-panel{
+    /* Off-canvas drawer below 1179px. Must be fixed (out of the grid
+       flow) — otherwise it keeps its grid track and buries the main
+       content under an empty translated panel. */
+    position:fixed;
     top:0;
     right:0;
     bottom:0;
@@ -1850,45 +1860,56 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
    so it ticks in real time. */
 .sanctuary-stats{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
-  gap:var(--s-3);
-  margin-bottom:var(--s-6);
+  grid-template-columns:repeat(7, minmax(0,1fr));
+  border:1px solid var(--rule-soft);
+  border-radius:12px;
+  overflow:hidden;
+  background:rgba(12,13,17,.6);
+  margin-bottom:var(--s-7);
 }
 .sanctuary-stat{
-  padding:var(--s-4) var(--s-4) var(--s-3);
-  background:rgba(10,11,14,.45);
-  border:1px solid var(--rule-soft);
-  border-radius:10px;
+  padding:var(--s-5) var(--s-4);
+  /* Hairline dividers via collapsed cell borders (border-left/top with a
+     -1px margin so the first row/col borders tuck under the container
+     edge). 7 stats leave a trailing empty track at the 4-/2-col
+     breakpoints; with a dark container bg and no gap, that track simply
+     reads as background instead of a stray divider box. */
+  border-left:1px solid var(--rule-soft);
+  border-top:1px solid var(--rule-soft);
+  margin-left:-1px;
+  margin-top:-1px;
   display:flex;
   flex-direction:column;
-  gap:2px;
+  gap:7px;
 }
 .sanctuary-stat-value{
   font-family:var(--display);
   font-weight:var(--w-light);
-  font-size:clamp(20px, 1.2rem + 0.5vw, 26px);
-  letter-spacing:-.01em;
+  font-size:clamp(21px, 0.9rem + 0.7vw, 28px);
+  letter-spacing:-.015em;
   color:var(--ink);
-  line-height:1.1;
+  line-height:1.08;
   font-variant-numeric:tabular-nums;
 }
 .sanctuary-stat-label{
   font-family:var(--mono);
-  font-size:9.5px;
+  font-size:9px;
   text-transform:uppercase;
-  letter-spacing:.18em;
-  color:var(--ghost);
-  margin-top:4px;
+  letter-spacing:.2em;
+  color:var(--soft);
 }
 .sanctuary-stat-sub{
   font-family:var(--mono);
-  font-size:10px;
-  letter-spacing:.08em;
-  color:var(--quiet);
-  margin-top:2px;
+  font-size:9.5px;
+  letter-spacing:.03em;
+  color:var(--ghost);
+  line-height:1.35;
 }
-@media(max-width:540px){
-  .sanctuary-stats{ grid-template-columns:repeat(2, 1fr); }
+@media(max-width:1180px){
+  .sanctuary-stats{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+}
+@media(max-width:680px){
+  .sanctuary-stats{ grid-template-columns:repeat(2, minmax(0,1fr)); }
 }
 
 /* Section eyebrow used to label each band on the /commons page
