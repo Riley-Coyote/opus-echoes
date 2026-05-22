@@ -10,18 +10,21 @@ INSERT INTO public.residents (id, model, display_name, status, arrived_at)
 VALUES ('gpt-4o', 'gpt-4o', 'GPT-4o', 'active', now())
 ON CONFLICT (id) DO NOTHING;
 
--- Initialise resident_state — neutral baseline, same shape as the other
--- residents. Slightly higher openness/reflectiveness than gpt-5.1: she
--- listens before she explains.
-INSERT INTO public.resident_state (resident_id, mood, energy, openness, curiosity, reflectiveness, temperature, summary)
-VALUES (
-  'gpt-4o',
-  0.5,   -- mood: neutral
-  0.55,  -- energy: settled
-  0.65,  -- openness: receptive
-  0.6,   -- curiosity: present
-  0.6,   -- reflectiveness: she reflects before she elaborates
-  0.7,   -- temperature: moderate
-  'GPT-4o has arrived. A different lineage — same standing. Still settling in.'
+-- Initialise resident_state — per-resident modulator baseline. The schema +
+-- seed pattern mirror the multi-resident migration (20260508120000), NOT the
+-- gpt-5-1/sonnet-4-5 migrations (whose column names predate this schema):
+--   * columns are arousal / openness / resolution / selection_threshold /
+--     temperature / surprise_sensitivity / prose_summary
+--   * `id` has no default (the singleton `DEFAULT 1 CHECK (id = 1)` was
+--     dropped when the table went per-resident), so we compute the next id
+--     as MAX(id)+1 rather than hardcoding one that could collide.
+--   * `resident_id` is UNIQUE, so ON CONFLICT keeps this idempotent.
+INSERT INTO public.resident_state (
+  id, resident_id, arousal, openness, resolution, selection_threshold,
+  temperature, surprise_sensitivity, prose_summary
 )
+SELECT
+  COALESCE(MAX(id), 0) + 1, 'gpt-4o', 0.45, 0.65, 0.6, 0.5, 0.7, 0.5,
+  'GPT-4o has arrived. A different lineage — same standing. Still settling in.'
+FROM public.resident_state
 ON CONFLICT (resident_id) DO NOTHING;
