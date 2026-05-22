@@ -469,7 +469,7 @@ const MEMORY_SCRIPT = `
 (function(){
   // Resolve which resident's memory we're viewing from sessionStorage.
   var rid = sessionStorage.getItem('sanctuary.resident_id') || 'opus-3';
-  var names = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-5-1': 'GPT 5.1' };
+  var names = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-4o': 'GPT-4o', 'gpt-5-1': 'GPT 5.1' };
   var rname = names[rid] || 'Opus 3';
   var ey = document.getElementById('mem-eyebrow');
   var ld = document.getElementById('mem-lead');

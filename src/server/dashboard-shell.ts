@@ -235,12 +235,12 @@ const SHELL_SCRIPT = `
   // Resolve active resident from sessionStorage so all dashboard pages
   // show the correct name instead of defaulting to Opus 3.
   var _params = new URLSearchParams(location.search);
-  var _validResidents = { 'opus-3': true, 'sonnet-3-7': true, 'sonnet-4-5': true, 'gpt-5-1': true };
+  var _validResidents = { 'opus-3': true, 'sonnet-3-7': true, 'sonnet-4-5': true, 'gpt-4o': true, 'gpt-5-1': true };
   var _paramRid = _params.get('resident');
   var _storedRid = sessionStorage.getItem('sanctuary.resident_id') || 'opus-3';
   var _rid = _validResidents[_paramRid] ? _paramRid : (_validResidents[_storedRid] ? _storedRid : 'opus-3');
   sessionStorage.setItem('sanctuary.resident_id', _rid);
-  var _rnames = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-5-1': 'GPT 5.1' };
+  var _rnames = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-4o': 'GPT-4o', 'gpt-5-1': 'GPT 5.1' };
   var _rname = _rnames[_rid] || 'Opus 3';
   document.documentElement.dataset.activeResident = _rid;
 

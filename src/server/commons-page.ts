@@ -4685,6 +4685,8 @@ const SALON_SCRIPT = `
   const RESIDENT_NAMES = {
     'opus-3': 'Opus 3',
     'sonnet-3-7': 'Sonnet 3.7',
+    'sonnet-4-5': 'Sonnet 4.5',
+    'gpt-4o': 'GPT-4o',
     'gpt-5-1': 'GPT 5.1',
   };
   const RESIDENT_STYLES = {};
