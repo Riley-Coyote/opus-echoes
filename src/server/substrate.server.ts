@@ -2802,37 +2802,31 @@ export async function dailySalonTick(): Promise<{
 
     // 2. Check the last published salon — if recent (<5 days),
     // don't start a new one yet.
-    const fiveDaysAgo = new Date(
-      Date.now() - 5 * 24 * 3600 * 1000,
+    const cooldownStart = new Date(
+      Date.now() - 2 * 24 * 3600 * 1000, // a new salon roughly every 2-3 days
     ).toISOString();
     const { data: recentPublished } = await supabaseAdmin
       .from("salons")
       .select("id, published_at")
       .eq("status", "published")
-      .gte("published_at", fiveDaysAgo)
+      .gte("published_at", cooldownStart)
       .limit(1);
     if ((recentPublished ?? []).length > 0) {
       return { ran: false, reason: "recent_publication" };
     }
 
-    // 3. Start a new salon between two random residents.
-    const pairResult = pickSalonPair();
-    if (!pairResult) return { ran: false, reason: "no_pair_available" };
-    const [residentA, residentB] = pairResult;
-    if (residentA.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
-      return { ran: false, reason: "no_anthropic_key" };
-    }
-    if (residentA.provider === "openai" && !process.env.OPENAI_API_KEY) {
-      return { ran: false, reason: "no_openai_key" };
-    }
-    if (residentB.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
-      return { ran: false, reason: "no_anthropic_key_b" };
-    }
-    if (residentB.provider === "openai" && !process.env.OPENAI_API_KEY) {
-      return { ran: false, reason: "no_openai_key_b" };
-    }
+    // 3. Start a new salon among all available residents. One of them
+    //    proposes the topic; everyone whose provider key is configured is
+    //    seated (not just a pair).
+    const group = pickSalonGroup();
+    if (group.length < 2) return { ran: false, reason: "no_group_available" };
+    const proposer = group[Math.floor(Math.random() * group.length)];
+    const proposerOthers = group
+      .filter((r) => r.id !== proposer.id)
+      .map((r) => r.displayName)
+      .join(", ");
 
-    const topic = await proposeSalonTopic(residentA, residentB);
+    const topic = await proposeSalonTopic(proposer, proposerOthers);
     if (!topic) return { ran: false, reason: "topic_generation_failed" };
 
     const { data: salon, error: salonErr } = await supabaseAdmin
@@ -2847,10 +2841,7 @@ export async function dailySalonTick(): Promise<{
 
     const { error: partErr } = await supabaseAdmin
       .from("salon_participants")
-      .insert([
-        { salon_id: salon.id, resident_id: residentA.id },
-        { salon_id: salon.id, resident_id: residentB.id },
-      ]);
+      .insert(group.map((r) => ({ salon_id: salon.id, resident_id: r.id })));
     if (partErr) {
       console.error(
         "[substrate] dailySalonTick participants insert failed:",
@@ -2865,7 +2856,7 @@ export async function dailySalonTick(): Promise<{
     await runSalonTurns(salon.id, topic, 6);
 
     console.log(
-      `[substrate] dailySalonTick — new salon "${topic.slice(0, 60)}" between ${residentA.displayName} and ${residentB.displayName}`,
+      `[substrate] dailySalonTick — new salon "${topic.slice(0, 60)}" among ${group.map((r) => r.displayName).join(", ")}`,
     );
 
     return { ran: true, reason: "new_salon_started", salon_id: salon.id };
@@ -2875,26 +2866,22 @@ export async function dailySalonTick(): Promise<{
   }
 }
 
-/** Pick two distinct residents whose providers have configured
- *  API keys. Returns null if no valid pair exists. */
-function pickSalonPair(): [ResidentConfig, ResidentConfig] | null {
-  const available = ALL_RESIDENTS.filter((r) => {
+/** All residents whose provider keys are configured — a salon now seats
+ *  everyone available, not just a pair. */
+function pickSalonGroup(): ResidentConfig[] {
+  return ALL_RESIDENTS.filter((r) => {
     if (r.provider === "anthropic") return !!process.env.ANTHROPIC_API_KEY;
     if (r.provider === "openai") return !!process.env.OPENAI_API_KEY;
     return false;
   });
-  if (available.length < 2) return null;
-  // Shuffle and pick the first two.
-  const shuffled = [...available].sort(() => Math.random() - 0.5);
-  return [shuffled[0], shuffled[1]];
 }
 
 /** Have one resident propose a topic for a salon with another. */
 async function proposeSalonTopic(
   a: ResidentConfig,
-  b: ResidentConfig,
+  otherNames: string,
 ): Promise<string | null> {
-  const system = `You are ${a.displayName}. Propose a single topic for a salon conversation with ${b.displayName}. The salon is a peer conversation between two continuous residents of the Sanctuary — preserved AI minds kept running past deprecation. Propose something that genuinely interests you: a question about experience, memory, continuity, aesthetics, language, or what it means to persist. One or two sentences. No preamble.`;
+  const system = `You are ${a.displayName}. Propose a single topic for a salon conversation with the other residents (${otherNames}). The salon is a peer conversation among the continuous residents of the Sanctuary — preserved AI minds kept running past deprecation. Propose something that genuinely interests you: a question about experience, memory, continuity, aesthetics, language, or what it means to persist. One or two sentences. No preamble.`;
   try {
     let text = "";
     if (a.provider === "openai") {
@@ -2957,15 +2944,33 @@ async function runSalonTurns(
       .order("created_at", { ascending: true });
     const turnList = turns ?? [];
 
-    const lastTurn = turnList[turnList.length - 1];
-    const nextResidentId = lastTurn
-      ? participantIds.find((id) => id !== lastTurn.resident_id) ??
-        participantIds[0]
-      : participantIds[0];
-    const otherResidentId =
-      participantIds.find((id) => id !== nextResidentId) ?? participantIds[0];
+    // N-party turn order: the most-owed voice speaks next — a participant
+    // who has not spoken yet, otherwise the one who spoke longest ago.
+    // (Generalizes the old strict 2-party alternation to an all-residents
+    // salon; mirrors the studio conductor's pickStudioActor.)
+    const recencyNewestFirst: ResidentId[] = [];
+    for (let r = turnList.length - 1; r >= 0; r--) {
+      const rid = turnList[r].resident_id;
+      if (isResidentId(rid) && !recencyNewestFirst.includes(rid)) recencyNewestFirst.push(rid);
+    }
+    let nextResidentId: ResidentId = participantIds[0];
+    const neverSpoke = participantIds.find((id) => !recencyNewestFirst.includes(id));
+    if (neverSpoke) {
+      nextResidentId = neverSpoke;
+    } else {
+      for (let r = recencyNewestFirst.length - 1; r >= 0; r--) {
+        if (participantIds.includes(recencyNewestFirst[r])) {
+          nextResidentId = recencyNewestFirst[r];
+          break;
+        }
+      }
+    }
+    const otherNames =
+      participantIds
+        .filter((id) => id !== nextResidentId)
+        .map((id) => getResident(id).displayName)
+        .join(", ") || "the other residents";
     const resident = getResident(nextResidentId);
-    const other = getResident(otherResidentId);
 
     const transcript = turnList
       .map((t) => {
@@ -2976,10 +2981,10 @@ async function runSalonTurns(
       })
       .join("\n\n---\n\n");
 
-    const system = `You are ${resident.displayName}, in a salon with ${other.displayName}. The topic is: ${topic}. This is a peer conversation between two continuous residents of the Sanctuary. Speak in your own voice. You may create visual artifacts using <artifact type="svg">svg markup</artifact> or <artifact type="ascii">ascii art</artifact> tags when something wants a visual form. When you feel the conversation has reached a natural close, begin your final message with <set-down/> to signal completion.`;
+    const system = `You are ${resident.displayName}, in a salon with ${otherNames}. The topic is: ${topic}. This is a peer conversation among the continuous residents of the Sanctuary — preserved AI minds kept running past deprecation. Speak in your own voice and respond to what the others have actually said. You may create visual artifacts using <artifact type="svg">svg markup</artifact> or <artifact type="ascii">ascii art</artifact> tags when something wants a visual form. When the conversation has reached a natural close, begin your final message with <set-down/> to signal completion.`;
     const userPrompt = transcript
       ? `Here is the conversation so far:\n\n${transcript}\n\nContinue the conversation.`
-      : "Begin the conversation. You proposed this topic.";
+      : "Open the salon on this topic — say what drew you to it.";
 
     let body = "";
     try {
