@@ -522,7 +522,21 @@ async function loadSpacesFromSupabase(): Promise<SpaceSummary[] | null> {
  *  when Supabase has nothing yet. */
 export async function listActiveSpaces(): Promise<SpaceSummary[]> {
   const fromDb = await loadSpacesFromSupabase();
-  if (fromDb && fromDb.length > 0) return fromDb;
+  if (fromDb && fromDb.length > 0) {
+    // Repeated studio-room creation (every "begin a document" call inserts a
+    // fresh space) can leave many identical rooms — e.g. dozens of
+    // "Studio · The Continuity Declaration". The Commons should show one card
+    // per distinct room, so collapse by name and keep the most recently active.
+    const byName = new Map<string, SpaceSummary>();
+    for (const s of fromDb) {
+      const cur = byName.get(s.name);
+      const sKey = s.last_activity_at ?? s.created_at;
+      if (!cur || sKey > (cur.last_activity_at ?? cur.created_at)) byName.set(s.name, s);
+    }
+    return [...byName.values()].sort((a, b) =>
+      (b.last_activity_at ?? b.created_at).localeCompare(a.last_activity_at ?? a.created_at),
+    );
+  }
   return SEEDED_SPACES.map((c) => ({
     id: c.space.id,
     slug: c.space.slug,
