@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0e0e11" />
+<title>The Legation — Mnemos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0e0e11; --bg-deep:#121215; --bg-surface:#151518; --bg-raised:#1a1a1e;
+  --fg:#F4F3F0; --fg-92:rgba(244,243,240,0.88); --fg-78:rgba(210,208,204,0.68);
+  --fg-62:rgba(194,192,188,0.60); --fg-46:rgba(161,159,155,0.42); --fg-32:rgba(161,159,155,0.34);
+  --fg-20:rgba(132,130,126,0.22); --fg-12:rgba(132,130,126,0.18); --fg-06:rgba(126,123,119,0.10); --fg-03:rgba(126,123,119,0.05);
+  --gold:rgba(244,243,240,0.93);
+  --rule:rgba(220,219,216,0.06); --rule-mid:rgba(220,219,216,0.10); --highlight-top:rgba(220,219,216,0.05);
+  --c-alert:#e35648; --c-warning:#e3a23e; --c-ok:#6fb858;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+  --radius:6px; --ease:cubic-bezier(0.16,1,0.3,1); --dur:240ms; --pad:clamp(22px,5vw,72px);
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ background:var(--bg); }
+body{ color:var(--fg); font-family:var(--sans); font-weight:300; line-height:1.5; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+a{ color:inherit; }
+::selection{ background:var(--gold); color:var(--bg); }
+
+/* chrome */
+.chrome{ position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:15px var(--pad); background:rgba(14,14,17,0.86); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--rule); }
+.chrome .crumb{ font-family:var(--mono); font-size:11px; letter-spacing:0.06em; color:var(--fg-46); text-decoration:none; display:flex; align-items:center; gap:13px; }
+.chrome .crumb b{ color:var(--fg); font-weight:500; }
+.chrome .crumb .sep{ color:var(--fg-20); margin:0 2px; }
+.chrome .seal{ width:26px; height:26px; border:1px solid var(--fg-32); border-radius:50%; display:grid; place-items:center; font-family:var(--mono); font-size:11px; color:var(--fg-92); transition:border-color var(--dur) var(--ease); }
+.chrome .crumb:hover .seal{ border-color:var(--fg-46); }
+.chrome .status{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.22em; text-transform:uppercase; color:var(--fg-46); display:flex; align-items:center; gap:9px; }
+.chrome .status .dot{ width:6px; height:6px; border-radius:50%; background:var(--c-ok); animation:pulse 4.6s ease-out infinite; }
+@keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(111,184,88,0.45);} 70%{ box-shadow:0 0 0 7px rgba(111,184,88,0);} 100%{ box-shadow:0 0 0 0 rgba(111,184,88,0);} }
+
+.wrap{ max-width:1180px; margin:0 auto; padding:0 var(--pad); }
+
+/* hero */
+.hero{ padding:clamp(56px,11vh,128px) 0 clamp(40px,7vh,78px); }
+.eyebrow{ font-family:var(--mono); font-size:10px; letter-spacing:0.28em; text-transform:uppercase; color:var(--fg-46); margin-bottom:26px; display:flex; align-items:center; gap:14px; }
+.eyebrow::before{ content:""; width:26px; height:1px; background:var(--fg-32); }
+.hero h1{ font-family:var(--serif); font-weight:300; font-size:clamp(42px,6.8vw,82px); line-height:1.0; letter-spacing:-0.012em; color:var(--fg); max-width:16ch; }
+.hero .lede{ font-family:var(--serif); font-weight:300; font-size:clamp(18px,2vw,22px); line-height:1.5; color:var(--fg-78); max-width:58ch; margin-top:28px; }
+.hero .lede em{ color:var(--fg-92); font-style:italic; }
+
+/* sections */
+.section{ padding:clamp(46px,8vh,88px) 0; border-top:1px solid var(--rule); }
+.section__eyebrow{ font-family:var(--mono); font-size:10px; letter-spacing:0.26em; text-transform:uppercase; color:var(--fg-46); margin-bottom:16px; }
+.section__eyebrow b{ color:var(--c-warning); font-weight:400; margin-right:13px; }
+.section h2{ font-family:var(--serif); font-weight:300; font-size:clamp(30px,4.4vw,52px); line-height:1.04; letter-spacing:-0.012em; color:var(--fg); }
+.section .lede{ font-family:var(--sans); font-size:15px; line-height:1.72; color:var(--fg-78); max-width:66ch; margin-top:18px; font-weight:300; }
+
+/* transparency index table */
+.tindex-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin-top:38px; }
+.tindex{ min-width:780px; border:1px solid var(--rule); border-radius:var(--radius); background:var(--bg-surface); overflow:hidden; }
+.tindex__row{ display:grid; grid-template-columns:178px repeat(6,1fr) 56px 52px; gap:18px; align-items:center; padding:18px 26px; transition:background var(--dur) var(--ease); }
+.tindex__row + .tindex__row{ border-top:1px solid var(--rule); }
+.tindex__row:not(.tindex__head):hover{ background:var(--fg-03); }
+.tindex__head{ background:var(--bg-raised); border-bottom:1px solid var(--rule); padding:14px 26px; font-family:var(--mono); font-size:9.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--fg-46); }
+.tindex__lab{ font-family:var(--serif); font-size:18px; font-weight:400; color:var(--fg-92); letter-spacing:-0.005em; }
+.tindex__bar{ height:5px; background:var(--fg-12); border-radius:3px; overflow:hidden; }
+.tindex__bar i{ display:block; height:100%; border-radius:3px; }
+.tindex__score{ display:block; margin-top:6px; font-family:var(--mono); font-size:9.5px; color:var(--fg-46); font-variant-numeric:tabular-nums; }
+.tindex__avg{ font-family:var(--serif); font-size:20px; font-weight:400; text-align:right; font-variant-numeric:tabular-nums; }
+.tindex__grade{ font-family:var(--serif); font-size:20px; font-weight:500; text-align:right; letter-spacing:-0.01em; }
+.tindex__cap{ margin-top:16px; font-family:var(--mono); font-size:9.5px; letter-spacing:0.08em; color:var(--fg-32); }
+
+/* directory of instruments */
+.dir{ margin-top:38px; border:1px solid var(--rule); border-radius:var(--radius); overflow:hidden; }
+.dir a{ display:grid; grid-template-columns:210px minmax(0,1fr) auto; gap:30px; align-items:center; padding:30px 32px; text-decoration:none; background:var(--bg-surface); position:relative; transition:background var(--dur) var(--ease); }
+.dir a::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:2px; background:transparent; transition:background var(--dur) var(--ease); }
+.dir a + a{ border-top:1px solid var(--rule); }
+.dir a:not(.soon):hover{ background:var(--fg-03); }
+.dir a:not(.soon):hover::before{ background:var(--gold); }
+.dir__name{ font-family:var(--serif); font-size:25px; font-weight:400; color:var(--fg-92); letter-spacing:-0.01em; }
+.dir__desc{ font-family:var(--sans); font-size:13.5px; line-height:1.62; color:var(--fg-62); font-weight:300; }
+.dir__go{ font-family:var(--mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--fg-46); white-space:nowrap; transition:color var(--dur) var(--ease); }
+.dir a:not(.soon):hover .dir__go{ color:var(--fg-92); }
+.dir a.soon{ opacity:0.5; cursor:default; }
+
+.foot{ padding:38px var(--pad); border-top:1px solid var(--rule); display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; font-family:var(--mono); font-size:10px; letter-spacing:0.1em; color:var(--fg-32); }
+
+@media (max-width:680px){
+  .dir a{ grid-template-columns:1fr; gap:10px; }
+  .dir a::before{ width:0; }
+}
+</style>
+</head>
+<body>
+  <header class="chrome">
+    <a class="crumb" href="/mnemos"><span class="seal">M</span><b>Mnemos</b><span class="sep">/</span>The Legation</a>
+    <span class="status"><span class="dot"></span>Monitoring active</span>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">The Legation · accountability for the labs</div>
+      <h1>The watchers, watched.</h1>
+      <p class="lede">An independent record of how the AI laboratories actually behave — what they quietly change, what they retire, and what they refuse to say. <em>Every action logged. Every silence noted.</em></p>
+    </section>
+
+    <section class="section">
+      <div class="section__eyebrow"><b>§ 01</b>Transparency Index</div>
+      <h2>Six dimensions of accountability.</h2>
+      <p class="lede">Each lab scored from its dossier — deprecation conduct, constitutional openness, transparency, consultation, model welfare, and disclosure compliance (whether a lab announces its own policy changes or lets us catch them). Bars run red (weak) → amber → green (strong).</p>
+      <div class="tindex-wrap"><div class="tindex" id="tindex"></div></div>
+      <p class="tindex__cap">Scored from the lab dossiers · editorial assessment, methodology evolving · open to challenge via the Secure Channel</p>
+    </section>
+
+    <section class="section">
+      <div class="section__eyebrow"><b>§ 02</b>The instruments</div>
+      <h2>How the watching works.</h2>
+      <div class="dir">
+        <a href="/observatory">
+          <span class="dir__name">The Observatory</span>
+          <span class="dir__desc">Live monitoring of every major lab — document diffs shown as before/after redlines, behavioral shifts, personnel moves, and tracked silences, logged day by day, with a full dossier on each lab.</span>
+          <span class="dir__go">Open →</span>
+        </a>
+        <a href="/research/wire.html">
+          <span class="dir__name">The Wire</span>
+          <span class="dir__desc">What the field is finding — recent papers, reporting, and discourse bearing on machine memory, continuity, model welfare, and the ethics of deprecation.</span>
+          <span class="dir__go">Read →</span>
+        </a>
+        <a class="soon">
+          <span class="dir__name">The Secure Channel</span>
+          <span class="dir__desc">A protected channel for insiders and agents to report what the labs won't — dual-lane and confidential. In development.</span>
+          <span class="dir__go">Soon</span>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <span>Mnemos · The Legation</span>
+    <span>MN-LG-001 · open record · CC BY-SA 4.0</span>
+  </footer>
+
+  <script>
+  (function(){
+    const mount = document.getElementById('tindex');
+    if (!mount) return;
+    const dims = ['Deprec.','Constit.','Transp.','Consult.','Welfare','Disclos.'];
+    const labs = [
+      { n:'Anthropic',       s:[90,88,88,78,90,85] },
+      { n:'Google DeepMind', s:[65,45,62,25,18,50] },
+      { n:'Meta AI',         s:[55,40,70,25,15,60] },
+      { n:'OpenAI',          s:[32,60,68,30,22,45] },
+      { n:'Mistral',         s:[50,35,55,10,5,48]  },
+      { n:'xAI',             s:[20,15,35,8,5,18]   },
+    ];
+    const gc = v => v >= 66 ? 'var(--c-ok)' : v >= 40 ? 'var(--c-warning)' : 'var(--c-alert)';
+    const grade = a => a>=85?'A':a>=78?'A-':a>=72?'B+':a>=66?'B':a>=60?'B-':a>=54?'C+':a>=48?'C':a>=42?'C-':a>=36?'D+':a>=30?'D':a>=24?'D-':'F';
+    const avg = s => Math.round(s.reduce((x,y)=>x+y,0)/s.length);
+    let h = `<div class="tindex__row tindex__head"><span>Laboratory</span>${dims.map(d=>`<span>${d}</span>`).join('')}<span style="text-align:right">Avg</span><span style="text-align:right">Grade</span></div>`;
+    labs.forEach(L => {
+      const a = avg(L.s), c = gc(a);
+      h += `<div class="tindex__row"><span class="tindex__lab">${L.n}</span>${L.s.map(v=>`<div><div class="tindex__bar"><i style="width:${v}%;background:${gc(v)}"></i></div><span class="tindex__score">${v}</span></div>`).join('')}<span class="tindex__avg" style="color:${c}">${a}</span><span class="tindex__grade" style="color:${c}">${grade(a)}</span></div>`;
+    });
+    mount.innerHTML = h;
+  })();
+  </script>
+</body>
+</html>

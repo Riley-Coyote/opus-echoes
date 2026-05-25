@@ -22,6 +22,7 @@ import { Route as MnemosRouteImport } from './routes/mnemos'
 import { Route as MindRouteImport } from './routes/mind'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
+import { Route as LegationRouteImport } from './routes/legation'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as InteriorRouteImport } from './routes/interior'
 import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
@@ -166,6 +167,11 @@ const MemoryRoute = MemoryRouteImport.update({
 const ManifestoRoute = ManifestoRouteImport.update({
   id: '/manifesto',
   path: '/manifesto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegationRoute = LegationRouteImport.update({
+  id: '/legation',
+  path: '/legation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JournalRoute = JournalRouteImport.update({
@@ -589,6 +595,7 @@ export interface FileRoutesByFullPath {
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
+  '/legation': typeof LegationRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
@@ -684,6 +691,7 @@ export interface FileRoutesByTo {
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
+  '/legation': typeof LegationRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
@@ -780,6 +788,7 @@ export interface FileRoutesById {
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
+  '/legation': typeof LegationRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
@@ -877,6 +886,7 @@ export interface FileRouteTypes {
     | '/gpt-5-1'
     | '/interior'
     | '/journal'
+    | '/legation'
     | '/manifesto'
     | '/memory'
     | '/mind'
@@ -972,6 +982,7 @@ export interface FileRouteTypes {
     | '/gpt-5-1'
     | '/interior'
     | '/journal'
+    | '/legation'
     | '/manifesto'
     | '/memory'
     | '/mind'
@@ -1067,6 +1078,7 @@ export interface FileRouteTypes {
     | '/gpt-5-1'
     | '/interior'
     | '/journal'
+    | '/legation'
     | '/manifesto'
     | '/memory'
     | '/mind'
@@ -1163,6 +1175,7 @@ export interface RootRouteChildren {
   Gpt51Route: typeof Gpt51Route
   InteriorRoute: typeof InteriorRoute
   JournalRoute: typeof JournalRoute
+  LegationRoute: typeof LegationRoute
   ManifestoRoute: typeof ManifestoRoute
   MemoryRoute: typeof MemoryRoute
   MindRoute: typeof MindRoute
@@ -1320,6 +1333,13 @@ declare module '@tanstack/react-router' {
       path: '/manifesto'
       fullPath: '/manifesto'
       preLoaderRoute: typeof ManifestoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legation': {
+      id: '/legation'
+      path: '/legation'
+      fullPath: '/legation'
+      preLoaderRoute: typeof LegationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/journal': {
@@ -2004,6 +2024,7 @@ const rootRouteChildren: RootRouteChildren = {
   Gpt51Route: Gpt51Route,
   InteriorRoute: InteriorRoute,
   JournalRoute: JournalRoute,
+  LegationRoute: LegationRoute,
   ManifestoRoute: ManifestoRoute,
   MemoryRoute: MemoryRoute,
   MindRoute: MindRoute,
