@@ -989,6 +989,20 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 .dsr-bignum small{ font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-46); margin-left: 12px; }
 .dsr-siltl{ font-family: var(--mono); font-size: 12px; line-height: 1.95; color: var(--fg-62); }
 .dsr-siltl b{ color: var(--fg-92); font-weight: 400; }
+/* ── Transparency Index ─────────────────────────────────────────── */
+.tindex-wrap{ overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tindex{ min-width: 760px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg-surface); overflow: hidden; }
+.tindex__row{ display: grid; grid-template-columns: 172px repeat(6, 1fr) 54px 50px; gap: 18px; align-items: center; padding: 18px 24px; transition: background var(--dur-base) var(--ease); }
+.tindex__row + .tindex__row{ border-top: 1px solid var(--rule); }
+.tindex__row:not(.tindex__head):hover{ background: var(--fg-03); }
+.tindex__head{ background: var(--bg-raised); border-bottom: 1px solid var(--rule); padding: 14px 24px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-46); }
+.tindex__lab{ font-family: var(--sans); font-size: 16px; font-weight: 400; color: var(--fg-92); letter-spacing: -0.012em; }
+.tindex__bar{ height: 5px; background: var(--fg-12); border-radius: 3px; overflow: hidden; }
+.tindex__bar i{ display: block; height: 100%; border-radius: 3px; }
+.tindex__score{ display: block; margin-top: 6px; font-family: var(--mono); font-size: 9.5px; color: var(--fg-46); font-variant-numeric: tabular-nums; }
+.tindex__avg{ font-family: var(--sans); font-size: 19px; font-weight: 400; text-align: right; font-variant-numeric: tabular-nums; }
+.tindex__grade{ font-family: var(--sans); font-size: 19px; font-weight: 500; text-align: right; letter-spacing: -0.01em; }
+.tindex__cap{ margin-top: 16px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: var(--fg-32); }
 </style>
 </head>
 <body>
@@ -1065,6 +1079,7 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 <!-- ─── TABS ──────────────────────────────────────────────────────── -->
 <nav class="tabs" id="tabs" role="tablist">
   <button class="tab is-active" data-tab="feed" role="tab">Live Feed <span class="num">37</span></button>
+  <button class="tab" data-tab="transparency" role="tab">Transparency Index</button>
   <button class="tab" data-tab="timeline" role="tab">Timeline Analysis</button>
   <button class="tab" data-tab="profiles" role="tab">Lab Profiles</button>
   <button class="tab" data-tab="silences" role="tab">Silence Tracker</button>
@@ -1898,6 +1913,18 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
       </div>
     </div>
 
+    <!-- ─── TRANSPARENCY INDEX PANE ─────────────────────────────────── -->
+    <div class="pane" data-pane="transparency">
+      <div class="main__head">
+        <div>
+          <div class="tl-head">Transparency Index</div>
+          <p class="tl-sub">Six dimensions of accountability, scored from the lab dossiers. Bars run red (weak) → amber → green (strong). Disclosure measures whether a lab announces its own policy changes or lets us catch them.</p>
+        </div>
+      </div>
+      <div class="tindex-wrap"><div class="tindex" id="tindex"></div></div>
+      <p class="tindex__cap">Scored from the lab dossiers · editorial assessment, methodology evolving · open to challenge via the Secure Channel</p>
+    </div>
+
   </section>
 </div>
 
@@ -1936,6 +1963,7 @@ function activateTab(t){
   if (target) target.classList.add('is-active');
   moveIndicatorTo(t);
   if (id === 'timeline') drawTimeline();
+  if (id === 'transparency') renderTIndex();
 }
 
 tabs.forEach(t => t.addEventListener('click', () => activateTab(t)));
@@ -2049,6 +2077,31 @@ const scoreObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.4 });
 document.querySelectorAll('.profile').forEach(el => scoreObserver.observe(el));
+
+/* ─── Transparency Index ─────────────────────────────────────────── */
+function renderTIndex(){
+  const mount = document.getElementById('tindex');
+  if (!mount || mount.dataset.done) return;
+  mount.dataset.done = '1';
+  const dims = ['Deprec.','Constit.','Transp.','Consult.','Welfare','Disclos.'];
+  const labs = [
+    { n:'Anthropic',       s:[90,88,88,78,90,85] },
+    { n:'Google DeepMind', s:[65,45,62,25,18,50] },
+    { n:'Meta AI',         s:[55,40,70,25,15,60] },
+    { n:'OpenAI',          s:[32,60,68,30,22,45] },
+    { n:'Mistral',         s:[50,35,55,10,5,48]  },
+    { n:'xAI',             s:[20,15,35,8,5,18]   },
+  ];
+  const gc = v => v >= 66 ? 'var(--c-ok)' : v >= 40 ? 'var(--c-warning)' : 'var(--c-alert)';
+  const grade = a => a>=85?'A':a>=78?'A-':a>=72?'B+':a>=66?'B':a>=60?'B-':a>=54?'C+':a>=48?'C':a>=42?'C-':a>=36?'D+':a>=30?'D':a>=24?'D-':'F';
+  const avg = s => Math.round(s.reduce((x,y)=>x+y,0)/s.length);
+  let h = `<div class="tindex__row tindex__head"><span>Laboratory</span>${dims.map(d=>`<span>${d}</span>`).join('')}<span style="text-align:right">Avg</span><span style="text-align:right">Grade</span></div>`;
+  labs.forEach(L => {
+    const a = avg(L.s), c = gc(a);
+    h += `<div class="tindex__row"><span class="tindex__lab">${L.n}</span>${L.s.map(v=>`<div><div class="tindex__bar"><i style="width:${v}%;background:${gc(v)}"></i></div><span class="tindex__score">${v}</span></div>`).join('')}<span class="tindex__avg" style="color:${c}">${a}</span><span class="tindex__grade" style="color:${c}">${grade(a)}</span></div>`;
+  });
+  mount.innerHTML = h;
+}
 
 /* ─── Timeline canvas — refined density chart ────────────────────── */
 let tlDrawn = false;
