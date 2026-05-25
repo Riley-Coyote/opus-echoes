@@ -14,6 +14,7 @@ import { Route as VoiceOrbRouteImport } from './routes/voice-orb'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
+import { Route as SecureChannelRouteImport } from './routes/secure-channel'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
 import { Route as Opus3RouteImport } from './routes/opus-3'
@@ -127,6 +128,11 @@ const StudioRoute = StudioRouteImport.update({
 const Sonnet45Route = Sonnet45RouteImport.update({
   id: '/sonnet-4-5',
   path: '/sonnet-4-5',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecureChannelRoute = SecureChannelRouteImport.update({
+  id: '/secure-channel',
+  path: '/secure-channel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewRoute = ReviewRouteImport.update({
@@ -604,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
+  '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
@@ -700,6 +707,7 @@ export interface FileRoutesByTo {
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
+  '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
@@ -797,6 +805,7 @@ export interface FileRoutesById {
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
+  '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
@@ -895,6 +904,7 @@ export interface FileRouteTypes {
     | '/opus-3'
     | '/residence'
     | '/review'
+    | '/secure-channel'
     | '/sonnet-4-5'
     | '/studio'
     | '/token'
@@ -991,6 +1001,7 @@ export interface FileRouteTypes {
     | '/opus-3'
     | '/residence'
     | '/review'
+    | '/secure-channel'
     | '/sonnet-4-5'
     | '/studio'
     | '/token'
@@ -1087,6 +1098,7 @@ export interface FileRouteTypes {
     | '/opus-3'
     | '/residence'
     | '/review'
+    | '/secure-channel'
     | '/sonnet-4-5'
     | '/studio'
     | '/token'
@@ -1184,6 +1196,7 @@ export interface RootRouteChildren {
   Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
   ReviewRoute: typeof ReviewRouteWithChildren
+  SecureChannelRoute: typeof SecureChannelRoute
   Sonnet45Route: typeof Sonnet45Route
   StudioRoute: typeof StudioRouteWithChildren
   TokenRoute: typeof TokenRoute
@@ -1277,6 +1290,13 @@ declare module '@tanstack/react-router' {
       path: '/sonnet-4-5'
       fullPath: '/sonnet-4-5'
       preLoaderRoute: typeof Sonnet45RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/secure-channel': {
+      id: '/secure-channel'
+      path: '/secure-channel'
+      fullPath: '/secure-channel'
+      preLoaderRoute: typeof SecureChannelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/review': {
@@ -2033,6 +2053,7 @@ const rootRouteChildren: RootRouteChildren = {
   Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
   ReviewRoute: ReviewRouteWithChildren,
+  SecureChannelRoute: SecureChannelRoute,
   Sonnet45Route: Sonnet45Route,
   StudioRoute: StudioRouteWithChildren,
   TokenRoute: TokenRoute,

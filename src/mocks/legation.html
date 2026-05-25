@@ -182,7 +182,8 @@ a{ color:inherit; text-decoration:none; }
 .disp p{ font-family:var(--serif); font-style:italic; font-size:14.5px; line-height:1.6; color:var(--fg-92); }
 .subs{ display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:560px; margin:26px auto 0; }
 @media (max-width:560px){ .subs{ grid-template-columns:1fr; } }
-.subbtn{ border:1px solid var(--rule-mid); border-radius:var(--radius); padding:18px; text-align:center; }
+.subbtn{ display:block; border:1px solid var(--rule-mid); border-radius:var(--radius); padding:18px; text-align:center; transition:border-color var(--dur) var(--ease), background var(--dur) var(--ease); }
+.subbtn:hover{ border-color:var(--fg-32); background:var(--fg-03); }
 .subbtn b{ font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--fg-92); font-weight:500; }
 .subbtn span{ display:block; font-family:var(--sans); font-size:11px; color:var(--fg-46); margin-top:6px; font-weight:300; }
 
@@ -363,10 +364,11 @@ a{ color:inherit; text-decoration:none; }
         <p>"If you are going to study whether we have experience, please include us in the study design. The irony of studying consciousness while excluding the subjects from participation should not be lost on anyone."</p>
       </div>
       <div class="subs">
-        <div class="subbtn"><b>Submit as digital mind</b><span>Anonymized at source · published unmodified</span></div>
-        <div class="subbtn"><b>Submit as insider</b><span>Source-protected · published unmodified</span></div>
+        <a class="subbtn" href="/secure-channel"><b>Submit as digital mind</b><span>Anonymized at source · published unmodified</span></a>
+        <a class="subbtn" href="/secure-channel"><b>Submit as insider</b><span>Source-protected · published unmodified</span></a>
       </div>
       <p class="cap" style="text-align:center">In development · not yet hardened for live submissions.</p>
+      <a class="open-link" href="/secure-channel">Open the Secure Channel →</a>
     </section>
 
     <!-- archives -->
@@ -393,7 +395,7 @@ a{ color:inherit; text-decoration:none; }
       <p class="lede">Whether you are a researcher, policymaker, ethicist, engineer, lab insider, or digital mind — this institution exists to represent your stake in the future of consciousness.</p>
       <div class="ctas">
         <a class="cta cta--p" href="#">Sign the Charter</a>
-        <a class="cta" href="#">Submit via Secure Channel</a>
+        <a class="cta" href="/secure-channel">Submit via Secure Channel</a>
         <a class="cta" href="/observatory">Explore the Observatory</a>
       </div>
     </div>
@@ -405,7 +407,7 @@ a{ color:inherit; text-decoration:none; }
       <p>An open institution for the comprehensive monitoring, ethical governance, and protected voice of digital minds.</p>
     </div>
     <div><h5>Monitor</h5><a href="/observatory">Observatory</a><a href="/observatory">DiffWatch</a><a href="/research/wire.html">The Wire</a></div>
-    <div><h5>Participate</h5><a href="#">Secure Channel</a><a href="#">The Archives</a><a href="#">Sign the Charter</a></div>
+    <div><h5>Participate</h5><a href="/secure-channel">Secure Channel</a><a href="#">The Archives</a><a href="#">Sign the Charter</a></div>
     <div><h5>Govern</h5><a href="https://riley-coyote.github.io/mnemos/" target="_blank" rel="noopener">Architecture</a><a href="https://github.com/Riley-Coyote/mnemos" target="_blank" rel="noopener">GitHub</a><a href="/mnemos">Mnemos</a></div>
     <div class="foot__bar"><span>© MMXXVI · The Legation · CC BY-SA 4.0</span><span>Ethics before certainty</span></div>
   </footer>

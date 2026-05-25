@@ -16,13 +16,15 @@ Mnemos is the engine; everything else is a *surface* on it. mnemos.chat presents
 |---|---|---|---|
 | `/` | Sanctuary walkthrough | `routes/index.tsx` → `walkthrough-page.ts` | reserved for a future video-loop intro; for now still the walkthrough |
 | `/mnemos` | **Landing + bento hub** (front door for now) | `routes/mnemos.tsx` → `mocks/mnemos-home.html?raw` | `presence:false`; rolling-memory hero |
-| `/observatory` | The Observatory — lab dossiers, redline diffs, tracked silences | `routes/observatory.tsx` → `mocks/observatory.html?raw` | `presence:false` |
+| `/legation` | **The Legation** — the accountability surface; rich scrollytelling landing whose centerpiece is the **Transparency Index** (lab scorecard, A–F grades), plus previews of the Observatory, the Residence, the Secure Channel, and the Archives | `routes/legation.tsx` → `mocks/legation.html?raw` | `presence:false`; Newsreader serif; the umbrella over the Observatory + Secure Channel |
+| `/observatory` | The Observatory — lab dossiers, redline diffs, tracked silences (one tool *within* the Legation) | `routes/observatory.tsx` → `mocks/observatory.html?raw` | `presence:false` |
+| `/secure-channel` | **The Secure Channel** — the Legation's protected whistleblower intake: dual-lane (digital + human witnesses), adaptive form, programmatic API lane for agents, protection protocol, published dispatches, editorial standards | `routes/secure-channel.tsx` → `mocks/secure-channel.html?raw` | `presence:false`; polished stub (submit + lane toggle work client-side; no live backend yet) |
 | `/research/*` | The Research Wing (masthead, studies, wire, autonomous, reader) + Comparative Atlas + Opus evolution-viz | static files in `public/research/` | self-contained; all relative links/fetches resolve |
 | `/enter` | Sanctuary walkthrough (the bento "Enter →") | `routes/enter.tsx` → `walkthrough-page.ts` | always first-time + skip button; return-visitor logic disabled for now |
 | `/mnemos/architecture` | Memory explainer ("how Mnemos works") | `routes/mnemos.architecture.tsx` → `mnemos-page.ts` | preserved + reachable by URL, but **currently unlinked** — the bento Architecture tile now points to the GitHub Pages site instead |
 
 ## Bento tiles (on `/mnemos`)
-Sanctuary → `/enter` · Observatory → `/observatory` · Research → `/research/research-wing.html` · Architecture → **GitHub Pages** (`riley-coyote.github.io/mnemos`, external) · **Dispatches → coming soon** · **Polyphonic → coming soon**
+Sanctuary → `/enter` · **The Legation → `/legation`** (the renamed Observatory tile — now the accountability umbrella) · Research → `/research/research-wing.html` · Architecture → **GitHub Pages** (`riley-coyote.github.io/mnemos`, external) · **Dispatches → coming soon** · **Polyphonic → coming soon**
 
 ## Conventions
 - **Self-contained surfaces** (Observatory, landing) are served as raw HTML via `serveHtml(html, undefined, { presence: false })`. `presence:false` skips the resident 3D layer they don't use (added to `serve-mock.ts`).
@@ -31,6 +33,7 @@ Sanctuary → `/enter` · Observatory → `/observatory` · Research → `/resea
 - Each surface keeps its own design system (the "Mnemos research" cream system). The Sanctuary's green `PUBLIC_CSS` system stays separate — **do not unify them.**
 
 ## Stubs / coming soon
+- **The Secure Channel** (`/secure-channel`) — fully built and polished, but a **client-side stub**: the lane toggle, form arming, and submit confirmation all work in-page; nothing is transmitted or stored. Swap to a real `POST /api/secure-channel` later (the page already documents that endpoint shape for the agent lane).
 - **Dispatches, Polyphonic** — bento tiles marked "Soon" (non-navigating).
 - **Research Wing chat companion** — answers from a local knowledge base (`public/research/wing-kb.js`); swap to a real `/api/research-chat` later (one function behind a clean seam).
 
