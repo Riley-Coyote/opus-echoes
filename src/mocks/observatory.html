@@ -56,6 +56,13 @@
   --amber-glow:    var(--gold-glow);
   --amber-bg:      var(--gold-bg);
 
+  /* semantic accent — color used ONLY where it carries meaning (diffs, severity, scores) */
+  --c-alert:    #cf6a57;          /* critical · removed */
+  --c-alert-bg: rgba(207,106,87,0.10);
+  --c-warning:  #cf9a52;          /* high · caution */
+  --c-ok:       #7faa6b;          /* added · sound */
+  --c-ok-bg:    rgba(127,170,107,0.10);
+
   /* tier 2 semantic — surgical use only */
   --green:  #4ade80; --green-soft:  rgba(74,222,128,.10);  --green-dim:  rgba(74,222,128,.05);
   --red:    #f87171; --red-soft:    rgba(248,113,113,.10); --red-dim:    rgba(248,113,113,.05);
@@ -477,9 +484,9 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 }
 .event:hover{ background: var(--fg-03); }
 .event:hover::before{ box-shadow: 0 0 12px var(--fg-12); }
-.event--critical::before{ background: var(--amber); }
-.event--critical:hover::before{ box-shadow: 0 0 14px var(--amber-glow); }
-.event--high::before{    background: var(--fg-46); }
+.event--critical::before{ background: var(--c-alert); }
+.event--critical:hover::before{ box-shadow: 0 0 14px rgba(207,106,87,0.4); }
+.event--high::before{    background: var(--c-warning); }
 .event--medium::before{  background: var(--fg-32); }
 .event--low::before,
 .event--info::before{    background: var(--fg-12); }
@@ -527,10 +534,10 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
   font-weight: 500;
 }
 .event__sev--critical{
-  background: var(--amber); color: var(--bg); border-color: var(--amber);
+  background: var(--c-alert); color: var(--bg); border-color: var(--c-alert);
 }
 .event__sev--high{
-  color: var(--fg); border-color: var(--fg-46);
+  color: var(--c-warning); border-color: rgba(207,154,82,0.5);
 }
 .event__sev--medium{ color: var(--fg-78); border-color: var(--fg-20); }
 .event__sev--low{    color: var(--fg-62); border-color: var(--fg-12); }
@@ -967,10 +974,11 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 .rl__line{ display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 9px 16px; white-space: pre-wrap; word-break: break-word; }
 .rl__line + .rl__line{ border-top: 1px solid var(--rule); }
 .rl__mark{ color: var(--fg-32); text-align: center; }
-.rl__line--del{ color: var(--fg-46); background: var(--fg-03); }
-.rl__line--del .rl__text{ text-decoration: line-through; text-decoration-color: var(--fg-20); }
-.rl__line--add{ color: var(--fg-92); box-shadow: inset 2px 0 0 var(--amber); }
-.rl__line--add .rl__mark{ color: var(--amber); }
+.rl__line--del{ color: var(--c-alert); background: var(--c-alert-bg); }
+.rl__line--del .rl__text{ text-decoration: line-through; text-decoration-color: rgba(207,106,87,0.45); }
+.rl__line--del .rl__mark{ color: var(--c-alert); }
+.rl__line--add{ color: var(--c-ok); background: var(--c-ok-bg); box-shadow: inset 2px 0 0 var(--c-ok); }
+.rl__line--add .rl__mark{ color: var(--c-ok); }
 .rl__line--ctx{ color: var(--fg-62); }
 
 .dsr-link{ display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-62); text-decoration: none; border: 1px solid var(--rule-mid); border-radius: 4px; padding: 9px 14px; transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease); }
@@ -1665,7 +1673,7 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
       </div>
       <div class="tl-plate"><canvas id="tlCanvas"></canvas></div>
       <div class="tl-legend">
-        <span><i class="sw" style="background:var(--amber)"></i>Unannounced · Critical / High</span>
+        <span><i class="sw" style="background:var(--c-alert)"></i>Unannounced · Critical / High</span>
         <span><i class="sw" style="background:var(--fg-78)"></i>Unannounced · Other</span>
         <span><i class="sw" style="background:var(--fg-32)"></i>Disclosed</span>
         <span><i class="sw" style="background:var(--fg-06); border:1px solid var(--rule-mid)"></i>No activity</span>
@@ -1903,7 +1911,7 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 <script>
 (() => {
 
-const AMBER = '#C9A87C';
+const AMBER = '#C9A87C', ALERT = '#cf6a57';
 function rgbaFg(a){ return `rgba(244,243,240,${a})`; }
 
 /* ─── Tab indicator slide ────────────────────────────────────────── */
@@ -2158,7 +2166,7 @@ function drawTimeline(){
         const bw = dayW * 0.56;
 
         let color = rgbaFg(0.32);     // disclosed
-        if (d.type === 'crit')   color = AMBER;
+        if (d.type === 'crit')   color = ALERT;
         else if (d.type === 'unann') color = rgbaFg(0.78);
 
         ctx.fillStyle = color;
