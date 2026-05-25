@@ -57,11 +57,11 @@
   --amber-bg:      var(--gold-bg);
 
   /* semantic accent — color used ONLY where it carries meaning (diffs, severity, scores) */
-  --c-alert:    #cf6a57;          /* critical · removed */
-  --c-alert-bg: rgba(207,106,87,0.10);
-  --c-warning:  #cf9a52;          /* high · caution */
-  --c-ok:       #7faa6b;          /* added · sound */
-  --c-ok-bg:    rgba(127,170,107,0.10);
+  --c-alert:    #e35648;          /* critical · removed */
+  --c-alert-bg: rgba(227,86,72,0.13);
+  --c-warning:  #e3a23e;          /* high · caution */
+  --c-ok:       #6fb858;          /* added · sound */
+  --c-ok-bg:    rgba(111,184,88,0.13);
 
   /* tier 2 semantic — surgical use only */
   --green:  #4ade80; --green-soft:  rgba(74,222,128,.10);  --green-dim:  rgba(74,222,128,.05);
@@ -485,7 +485,7 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 .event:hover{ background: var(--fg-03); }
 .event:hover::before{ box-shadow: 0 0 12px var(--fg-12); }
 .event--critical::before{ background: var(--c-alert); }
-.event--critical:hover::before{ box-shadow: 0 0 14px rgba(207,106,87,0.4); }
+.event--critical:hover::before{ box-shadow: 0 0 14px rgba(227,86,72,0.45); }
 .event--high::before{    background: var(--c-warning); }
 .event--medium::before{  background: var(--fg-32); }
 .event--low::before,
@@ -537,7 +537,7 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
   background: var(--c-alert); color: var(--bg); border-color: var(--c-alert);
 }
 .event__sev--high{
-  color: var(--c-warning); border-color: rgba(207,154,82,0.5);
+  color: var(--c-warning); border-color: rgba(227,162,62,0.5);
 }
 .event__sev--medium{ color: var(--fg-78); border-color: var(--fg-20); }
 .event__sev--low{    color: var(--fg-62); border-color: var(--fg-12); }
@@ -975,7 +975,7 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 .rl__line + .rl__line{ border-top: 1px solid var(--rule); }
 .rl__mark{ color: var(--fg-32); text-align: center; }
 .rl__line--del{ color: var(--c-alert); background: var(--c-alert-bg); }
-.rl__line--del .rl__text{ text-decoration: line-through; text-decoration-color: rgba(207,106,87,0.45); }
+.rl__line--del .rl__text{ text-decoration: line-through; text-decoration-color: rgba(227,86,72,0.5); }
 .rl__line--del .rl__mark{ color: var(--c-alert); }
 .rl__line--add{ color: var(--c-ok); background: var(--c-ok-bg); box-shadow: inset 2px 0 0 var(--c-ok); }
 .rl__line--add .rl__mark{ color: var(--c-ok); }
@@ -1911,7 +1911,7 @@ button{ background: none; border: 0; color: inherit; font: inherit; cursor: poin
 <script>
 (() => {
 
-const AMBER = '#C9A87C', ALERT = '#cf6a57';
+const AMBER = '#C9A87C', ALERT = '#e35648';
 function rgbaFg(a){ return `rgba(244,243,240,${a})`; }
 
 /* ─── Tab indicator slide ────────────────────────────────────────── */
