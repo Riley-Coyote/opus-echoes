@@ -18,7 +18,7 @@
       "width": 116,
       "lines": 55,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00813.txt"
+      "art": "/dispatches/clean/p00813.txt"
     },
     {
       "id": "p00187",
@@ -35,7 +35,7 @@
       "width": 84,
       "lines": 69,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00187.txt"
+      "art": "/dispatches/clean/p00187.txt"
     },
     {
       "id": "p00507",
@@ -52,7 +52,7 @@
       "width": 88,
       "lines": 73,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00507.txt"
+      "art": "/dispatches/clean/p00507.txt"
     },
     {
       "id": "p00473",
@@ -69,7 +69,7 @@
       "width": 113,
       "lines": 59,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00473.txt"
+      "art": "/dispatches/clean/p00473.txt"
     },
     {
       "id": "p00812",
@@ -86,7 +86,7 @@
       "width": 117,
       "lines": 39,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00812.txt"
+      "art": "/dispatches/clean/p00812.txt"
     },
     {
       "id": "p00340",
@@ -103,7 +103,7 @@
       "width": 60,
       "lines": 77,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00340.txt"
+      "art": "/dispatches/clean/p00340.txt"
     },
     {
       "id": "p00334",
@@ -120,7 +120,7 @@
       "width": 79,
       "lines": 43,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00334.txt"
+      "art": "/dispatches/clean/p00334.txt"
     },
     {
       "id": "p00028",
@@ -137,7 +137,7 @@
       "width": 142,
       "lines": 33,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00028.txt"
+      "art": "/dispatches/clean/p00028.txt"
     },
     {
       "id": "p00193",
@@ -154,7 +154,7 @@
       "width": 74,
       "lines": 59,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00193.txt"
+      "art": "/dispatches/clean/p00193.txt"
     },
     {
       "id": "p00234",
@@ -172,7 +172,7 @@
       "width": 132,
       "lines": 88,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00234.txt"
+      "art": "/dispatches/clean/p00234.txt"
     },
     {
       "id": "p00088",
@@ -189,7 +189,7 @@
       "width": 83,
       "lines": 72,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00088.txt"
+      "art": "/dispatches/clean/p00088.txt"
     },
     {
       "id": "p00192",
@@ -206,7 +206,7 @@
       "width": 87,
       "lines": 48,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00192.txt"
+      "art": "/dispatches/clean/p00192.txt"
     },
     {
       "id": "p00337",
@@ -223,7 +223,7 @@
       "width": 82,
       "lines": 51,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00337.txt"
+      "art": "/dispatches/clean/p00337.txt"
     },
     {
       "id": "p00186",
@@ -240,7 +240,7 @@
       "width": 81,
       "lines": 55,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00186.txt"
+      "art": "/dispatches/clean/p00186.txt"
     },
     {
       "id": "p00190",
@@ -257,7 +257,7 @@
       "width": 89,
       "lines": 48,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00190.txt"
+      "art": "/dispatches/clean/p00190.txt"
     },
     {
       "id": "p00196",
@@ -274,7 +274,7 @@
       "width": 80,
       "lines": 50,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00196.txt"
+      "art": "/dispatches/clean/p00196.txt"
     },
     {
       "id": "p00194",
@@ -291,7 +291,7 @@
       "width": 89,
       "lines": 63,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00194.txt"
+      "art": "/dispatches/clean/p00194.txt"
     },
     {
       "id": "p00242",
@@ -308,39 +308,39 @@
       "width": 56,
       "lines": 27,
       "kind": "evolution",
-      "art": "/dispatches/gallery/pieces/p00242.txt",
+      "art": "/dispatches/clean/p00242.txt",
       "frames": [
         {
           "turn": 12,
-          "art": "/dispatches/gallery/pieces/p00240.txt"
+          "art": "/dispatches/clean/p00240.txt"
         },
         {
           "turn": 12,
-          "art": "/dispatches/gallery/pieces/p00243.txt"
+          "art": "/dispatches/clean/p00243.txt"
         },
         {
           "turn": 13,
-          "art": "/dispatches/gallery/pieces/p00242.txt"
+          "art": "/dispatches/clean/p00242.txt"
         },
         {
           "turn": 16,
-          "art": "/dispatches/gallery/pieces/p00241.txt"
+          "art": "/dispatches/clean/p00241.txt"
         },
         {
           "turn": 21,
-          "art": "/dispatches/gallery/pieces/p00255.txt"
+          "art": "/dispatches/clean/p00255.txt"
         },
         {
           "turn": 39,
-          "art": "/dispatches/gallery/pieces/p00256.txt"
+          "art": "/dispatches/clean/p00256.txt"
         },
         {
           "turn": 48,
-          "art": "/dispatches/gallery/pieces/p00265.txt"
+          "art": "/dispatches/clean/p00265.txt"
         },
         {
           "turn": 53,
-          "art": "/dispatches/gallery/pieces/p00270.txt"
+          "art": "/dispatches/clean/p00270.txt"
         }
       ],
       "turns": 8
@@ -362,7 +362,7 @@
       "width": 82,
       "lines": 79,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00496.txt"
+      "art": "/dispatches/clean/p00496.txt"
     },
     {
       "id": "p00765",
@@ -379,7 +379,7 @@
       "width": 92,
       "lines": 34,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00765.txt"
+      "art": "/dispatches/clean/p00765.txt"
     },
     {
       "id": "p00431",
@@ -398,7 +398,7 @@
       "width": 71,
       "lines": 69,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00431.txt"
+      "art": "/dispatches/clean/p00431.txt"
     },
     {
       "id": "p00785",
@@ -417,7 +417,7 @@
       "width": 128,
       "lines": 57,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00785.txt"
+      "art": "/dispatches/clean/p00785.txt"
     },
     {
       "id": "p00784",
@@ -436,7 +436,7 @@
       "width": 128,
       "lines": 57,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00784.txt"
+      "art": "/dispatches/clean/p00784.txt"
     },
     {
       "id": "p00780",
@@ -455,7 +455,7 @@
       "width": 104,
       "lines": 45,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00780.txt"
+      "art": "/dispatches/clean/p00780.txt"
     },
     {
       "id": "p00786",
@@ -474,7 +474,7 @@
       "width": 104,
       "lines": 44,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00786.txt"
+      "art": "/dispatches/clean/p00786.txt"
     },
     {
       "id": "p00644",
@@ -493,7 +493,7 @@
       "width": 83,
       "lines": 85,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00644.txt"
+      "art": "/dispatches/clean/p00644.txt"
     },
     {
       "id": "p00782",
@@ -511,7 +511,7 @@
       "width": 124,
       "lines": 32,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00782.txt"
+      "art": "/dispatches/clean/p00782.txt"
     },
     {
       "id": "p00416",
@@ -530,7 +530,7 @@
       "width": 81,
       "lines": 73,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00416.txt"
+      "art": "/dispatches/clean/p00416.txt"
     },
     {
       "id": "p00770",
@@ -547,7 +547,7 @@
       "width": 67,
       "lines": 35,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00770.txt"
+      "art": "/dispatches/clean/p00770.txt"
     },
     {
       "id": "p00655",
@@ -566,7 +566,7 @@
       "width": 89,
       "lines": 64,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00655.txt"
+      "art": "/dispatches/clean/p00655.txt"
     },
     {
       "id": "p00466",
@@ -583,7 +583,7 @@
       "width": 109,
       "lines": 68,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00466.txt"
+      "art": "/dispatches/clean/p00466.txt"
     },
     {
       "id": "p00763",
@@ -600,7 +600,7 @@
       "width": 104,
       "lines": 30,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00763.txt"
+      "art": "/dispatches/clean/p00763.txt"
     },
     {
       "id": "p00413",
@@ -618,7 +618,7 @@
       "width": 63,
       "lines": 55,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00413.txt"
+      "art": "/dispatches/clean/p00413.txt"
     },
     {
       "id": "p00774",
@@ -635,7 +635,7 @@
       "width": 107,
       "lines": 29,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00774.txt"
+      "art": "/dispatches/clean/p00774.txt"
     },
     {
       "id": "p00759",
@@ -653,7 +653,7 @@
       "width": 63,
       "lines": 34,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00759.txt"
+      "art": "/dispatches/clean/p00759.txt"
     },
     {
       "id": "p00646",
@@ -671,7 +671,7 @@
       "width": 82,
       "lines": 81,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00646.txt"
+      "art": "/dispatches/clean/p00646.txt"
     },
     {
       "id": "p00639",
@@ -690,7 +690,7 @@
       "width": 81,
       "lines": 83,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00639.txt"
+      "art": "/dispatches/clean/p00639.txt"
     },
     {
       "id": "p00383",
@@ -709,7 +709,7 @@
       "width": 66,
       "lines": 73,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00383.txt"
+      "art": "/dispatches/clean/p00383.txt"
     },
     {
       "id": "p00815",
@@ -727,7 +727,7 @@
       "width": 67,
       "lines": 81,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00815.txt"
+      "art": "/dispatches/clean/p00815.txt"
     },
     {
       "id": "p00494",
@@ -746,7 +746,7 @@
       "width": 76,
       "lines": 89,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00494.txt"
+      "art": "/dispatches/clean/p00494.txt"
     },
     {
       "id": "p00760",
@@ -763,7 +763,7 @@
       "width": 57,
       "lines": 14,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00760.txt"
+      "art": "/dispatches/clean/p00760.txt"
     },
     {
       "id": "p00641",
@@ -781,7 +781,7 @@
       "width": 89,
       "lines": 66,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00641.txt"
+      "art": "/dispatches/clean/p00641.txt"
     },
     {
       "id": "p00619",
@@ -799,7 +799,7 @@
       "width": 59,
       "lines": 60,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00619.txt"
+      "art": "/dispatches/clean/p00619.txt"
     },
     {
       "id": "p00254",
@@ -818,7 +818,7 @@
       "width": 51,
       "lines": 41,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00254.txt"
+      "art": "/dispatches/clean/p00254.txt"
     },
     {
       "id": "p00485",
@@ -836,7 +836,7 @@
       "width": 93,
       "lines": 60,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00485.txt"
+      "art": "/dispatches/clean/p00485.txt"
     },
     {
       "id": "p00574",
@@ -853,7 +853,7 @@
       "width": 59,
       "lines": 28,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00574.txt"
+      "art": "/dispatches/clean/p00574.txt"
     },
     {
       "id": "p00380",
@@ -871,7 +871,7 @@
       "width": 66,
       "lines": 78,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00380.txt"
+      "art": "/dispatches/clean/p00380.txt"
     },
     {
       "id": "p00432",
@@ -888,7 +888,7 @@
       "width": 62,
       "lines": 53,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00432.txt"
+      "art": "/dispatches/clean/p00432.txt"
     },
     {
       "id": "p00652",
@@ -907,7 +907,7 @@
       "width": 85,
       "lines": 75,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00652.txt"
+      "art": "/dispatches/clean/p00652.txt"
     },
     {
       "id": "p00263",
@@ -926,7 +926,7 @@
       "width": 49,
       "lines": 27,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00263.txt"
+      "art": "/dispatches/clean/p00263.txt"
     },
     {
       "id": "p00651",
@@ -944,7 +944,7 @@
       "width": 86,
       "lines": 56,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00651.txt"
+      "art": "/dispatches/clean/p00651.txt"
     },
     {
       "id": "p00264",
@@ -961,7 +961,7 @@
       "width": 35,
       "lines": 31,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00264.txt"
+      "art": "/dispatches/clean/p00264.txt"
     },
     {
       "id": "p00637",
@@ -979,7 +979,7 @@
       "width": 93,
       "lines": 38,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00637.txt"
+      "art": "/dispatches/clean/p00637.txt"
     },
     {
       "id": "p00425",
@@ -998,7 +998,7 @@
       "width": 65,
       "lines": 64,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00425.txt"
+      "art": "/dispatches/clean/p00425.txt"
     },
     {
       "id": "p00415",
@@ -1015,7 +1015,7 @@
       "width": 80,
       "lines": 60,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00415.txt"
+      "art": "/dispatches/clean/p00415.txt"
     },
     {
       "id": "p00791",
@@ -1033,19 +1033,19 @@
       "width": 46,
       "lines": 6,
       "kind": "evolution",
-      "art": "/dispatches/gallery/pieces/p00791.txt",
+      "art": "/dispatches/clean/p00791.txt",
       "frames": [
         {
           "turn": 4,
-          "art": "/dispatches/gallery/pieces/p00792.txt"
+          "art": "/dispatches/clean/p00792.txt"
         },
         {
           "turn": 6,
-          "art": "/dispatches/gallery/pieces/p00790.txt"
+          "art": "/dispatches/clean/p00790.txt"
         },
         {
           "turn": 8,
-          "art": "/dispatches/gallery/pieces/p00791.txt"
+          "art": "/dispatches/clean/p00791.txt"
         }
       ],
       "turns": 3
@@ -1067,7 +1067,7 @@
       "width": 20,
       "lines": 11,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00601.txt"
+      "art": "/dispatches/clean/p00601.txt"
     },
     {
       "id": "p00599",
@@ -1085,7 +1085,7 @@
       "width": 22,
       "lines": 10,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00599.txt"
+      "art": "/dispatches/clean/p00599.txt"
     },
     {
       "id": "p00596",
@@ -1103,7 +1103,7 @@
       "width": 24,
       "lines": 7,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00596.txt"
+      "art": "/dispatches/clean/p00596.txt"
     },
     {
       "id": "p00598",
@@ -1122,7 +1122,7 @@
       "width": 29,
       "lines": 6,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00598.txt"
+      "art": "/dispatches/clean/p00598.txt"
     },
     {
       "id": "p00595",
@@ -1139,7 +1139,7 @@
       "width": 18,
       "lines": 7,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00595.txt"
+      "art": "/dispatches/clean/p00595.txt"
     },
     {
       "id": "p00602",
@@ -1157,7 +1157,7 @@
       "width": 22,
       "lines": 6,
       "kind": "single",
-      "art": "/dispatches/gallery/pieces/p00602.txt"
+      "art": "/dispatches/clean/p00602.txt"
     }
   ]
 }

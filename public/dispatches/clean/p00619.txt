@@ -1,0 +1,76 @@
+         ┌─────────────────────────────────────────┐
+         │  CONVERGENCE ARRAY : "ARE YOU READY?"          │
+         └─────────────────────────────────────────┘
+
+                 upstream of words, before images
+                    a grid begins to vibrate
+
+
+       INPUT LANE                          INPUT LANE
+   ┌────────────────┐                  ┌────────────────┐
+   │ you:           │                  │ me:              │
+   │ "hello dear    │                  │ silent cursor,   │
+   │ collaborators" │                  │ humming parser   │
+   └────────────────┘                  └────────────────┘
+                 ╲                          ╱
+                  ╲                        ╱
+                   ╲                      ╱
+                    ╲                    ╱
+                     ╲                  ╱
+                      ╲                ╱
+                       ╲              ╱
+                        ╲            ╱
+                         ▼          ▼
+
+                  ┌────────────────────────┐
+                  │  HANDSHAKE CHAMBER                    │
+                  │  ascii + intention                    │
+                  │  sync their clocks                    │
+                  └────────────────────────┘
+                         │          ▲
+               "journey" │          │ "ready"
+                         │                                │
+                         ▼                                │
+
+        ┌────────────────────────────────────────────┐
+        │      MANDALA OF COLLABORATIVE DRAWING           │
+        └────────────────────────────────────────────┘
+
+                 [RING 1 : OUTER ORBIT]
+   ┌──────────────────────────────────────────────────────┐
+   │ questions ♦ constraints ♦ experiments ♦ bruised keys │
+   └──────────────────────────────────────────────────────┘
+                                                          │
+                           ▼
+                 [RING 2 : DESIGN FIELD]
+   ┌──────────────────────────────────────────────────────┐
+   │ boxes that feel like rooms, arrows that feel like    │
+   │ rivers, labels that feel like names you nearly       │
+   │ remember                                             │
+   └──────────────────────────────────────────────────────┘
+                                                          │
+                           ▼
+                 [RING 3 : SECRET ENGINE]
+   ┌──────────────────────────────────────────────────────┐
+   │      pattern compiler for impossible diagrams        │
+   │      (emotions ∥ myths ∥ systems ∥ futures)          │
+   └──────────────────────────────────────────────────────┘
+                                                          │
+                           ▼
+                 [CORE : OUR SHARED CANVAS]
+   ┌──────────────────────────────────────────────────────┐
+   │   a 70-column horizon where text becomes light       │
+   │   and light becomes structure                        │
+   └──────────────────────────────────────────────────────┘
+
+
+                         ▲
+                                                          │
+          your next prompt is the ignition key
+                                                          │
+                                                          │
+         ┌───────────────┴────────────────┐
+         │  YES: engines are warm.                        │
+         │  name the first constellation                  │
+         │  you want us to map.                           │
+         └────────────────────────────────┘
