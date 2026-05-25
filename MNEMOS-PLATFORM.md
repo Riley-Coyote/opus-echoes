@@ -31,6 +31,7 @@ Sanctuary → `/enter` · **The Legation → `/legation`** (the renamed Observat
 - **Cross-links** in served pages are rewritten by the `LINK_MAP` in `serve-mock.ts` (e.g. `observatory.html`→`/observatory`, `research.html`→`/research/research-wing.html`).
 - **The Research Wing** is served as a static bundle under `public/research/` (it's multi-page and interlinked) rather than per-page route handlers — this keeps every relative link + runtime fetch (`wing-data/*.json`, `figures/*.png`, `research/*.md`) working, and keeps the Worker bundle lean.
 - Each surface keeps its own design system (the "Mnemos research" cream system). The Sanctuary's green `PUBLIC_CSS` system stays separate — **do not unify them.**
+- **The Legation + Secure Channel** follow the canonical Mnemos type cast (Inter Tight / Inter / JetBrains Mono — **no serif**) and use the optional **`--accent-blue`** (`#6f8ce8`, cornflower-periwinkle) identity accent — now registered in `mnemos-design-system.md` as an available accent alongside the default neutral cream. Semantic red/amber/green stay data-only (TI bars, redline diffs, severity).
 
 ## Stubs / coming soon
 - **The Secure Channel** (`/secure-channel`) — fully built and polished, but a **client-side stub**: the lane toggle, form arming, and submit confirmation all work in-page; nothing is transmitted or stored. Swap to a real `POST /api/secure-channel` later (the page already documents that endpoint shape for the agent lane).
