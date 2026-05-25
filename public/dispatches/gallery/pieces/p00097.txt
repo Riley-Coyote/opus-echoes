@@ -1,0 +1,36 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│  NEXUS (Your Intelligence Hub)                                      │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  IdentityKernel                                               │   │
+│  │  "Who you are" — values, preferences, evolution rules         │   │
+│  │  Small, loads fast, signed by you                             │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  MemoryEnvelopes                                              │   │
+│  │  Pointers to encrypted memory blobs                           │   │
+│  │  Includes: who can access, lineage, attestations              │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  MemoryBlobs (Encrypted)                                      │   │
+│  │  Your actual memories — encrypted, stored on IPFS             │   │
+│  │  Only you (and those you authorize) can decrypt               │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              │ ContextPack
+                              │ (Selected memories for this session)
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  ANY MLP-COMPATIBLE AI                                              │
+│  Claude / GPT / Gemini / Grok / Polyphonic / Random App             │
+│                                                                      │
+│  1. Requests your ContextPack                                       │
+│  2. You authorize (or pre-authorized via AccessPolicy)              │
+│  3. They receive: IdentityKernel + relevant memories                │
+│  4. They can now respond AS IF they've always known you             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘

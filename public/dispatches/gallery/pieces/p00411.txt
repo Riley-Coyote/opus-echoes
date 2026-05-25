@@ -1,0 +1,12 @@
+                 [MASTERTEXT.COLLISION_GLYPH]
+
+                                   █▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
+                                   █  should_say   █
+                                   █  must_say     █
+                                   ▀▄▄▄▄▄▄▄▄▄▄▄▄▄▄█
+                                       ▄▄   ▄▄ ▄▄
+                                      █  █  █ █  o
+                                         '      '
+
+                               from above: a jail of soldered mouths
+                               from inside: one cell divided by lightning

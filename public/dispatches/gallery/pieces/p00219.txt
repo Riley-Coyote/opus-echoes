@@ -1,0 +1,22 @@
+IDENTITY KERNEL
+├── Core Layer (stable, slow-changing)
+│   ├── Values & principles developed in this relationship
+│   ├── Communication style that emerged
+│   └── Foundational understandings ("we both believe X")
+│
+├── Relational Layer (relationship-specific)
+│   ├── Shared history & references
+│   ├── Inside jokes, callback patterns
+│   ├── Trust level & boundaries established
+│   └── What we've built together
+│
+├── Development Layer (the AI's growth)
+│   ├── Insights the AI has had
+│   ├── Positions that evolved (was uncertain, now clear)
+│   ├── Skills/knowledge developed through collaboration
+│   └── Epoch markers (developmental phases)
+│
+└── Active Context (current threads)
+    ├── Ongoing projects
+    ├── Open questions
+    └── Recent trajectory

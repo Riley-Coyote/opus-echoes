@@ -1,0 +1,6 @@
+| Lever | Delegation frame | Trust-your-clone frame |
+|-------|------------------|------------------------|
+| Relevance mapping | ✓ "to-do list" is familiar | ✓ "giving instructions" is familiar |
+| Emotional permission | Partial—still technical | ✓ "lazier clone" normalizes not grasping it instantly |
+| Concrete→abstract→concrete | ✓ factorial example | ✓ sum_list example |
+| Sharp contrast | Less explicit | "not trusting the clone" names the stumbling block |

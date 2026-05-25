@@ -1,0 +1,14 @@
+project-dashboard/
+├── server/
+│   ├── index.js          # Express + Socket.io server
+│   ├── terminal.js       # Terminal command executor
+│   ├── agents.js         # Agent monitoring
+│   ├── metrics.js        # Metrics collection
+│   ├── watcher.js        # File system monitoring
+│   └── database.js       # Data persistence
+├── client/
+│   └── dashboard.html    # Current dashboard (enhanced)
+├── config/
+│   └── config.json       # Configuration settings
+└── logs/
+    └── commands.log      # Command history

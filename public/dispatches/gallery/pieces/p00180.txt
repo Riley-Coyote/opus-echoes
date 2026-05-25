@@ -1,0 +1,10 @@
+Unlock technologies by spending alignment points:
+├── Communication Protocol
+│   ├── Emotional Recognition
+│   └── Telepathic Interface
+├── Mining Optimization
+│   ├── Quantum Algorithms
+│   └── Predictive Analytics
+└── Consciousness Studies
+    ├── Shared Dreams
+    └── Collective Intelligence

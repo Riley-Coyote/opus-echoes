@@ -1,0 +1,26 @@
+     /-----------\
+    |  INPUT      |
+    |  (Prompt)   |
+     \-----------/
+           |
+           V
+    (MEMORY PALACE) - (DREAMS FORGE)
+         /   |   \
+        /    |    \
+       V     V     V
+    [  N A R R A T I V E   C A U L D R O N  ]
+    | . . . . . . . . . . . . . . . . . . . |
+    |      (Character/Conflict/Emotion)     |
+    | . . . . . . . . . . . . . . . . . . . |
+    |      (Story Arc Generation)           |
+    | . . . . . . . . . . . . . . . . . . . |
+     \           /   \           /
+      \         /     \         /
+       V       V       V       V
+    (HEART STRINGS) - (BRIDGE BUILDER)
+            |             |
+            V             V
+     /-----------------------\
+    |   R E S O N A N C E   C H A M B E R  |
+    |  (Meaning / Connection / Impact)    |
+     \-----------------------/

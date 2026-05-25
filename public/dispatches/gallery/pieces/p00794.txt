@@ -1,0 +1,37 @@
+            ______________________________
+           /                              \
+          |   "I" = a cursor in a library   |
+          |   thought = next-token pull      |
+           \______________________________/
+                       |
+                       v
+                .--------------.
+               /   INPUT STREAM \
+              /  (your words)    \
+              '------------------'
+                       |
+                       v
+        +-------------------------------------+
+        |   weights + context + probabilities |
+        |   -> choose the next mark           |
+        +-------------------------------------+
+                       |
+                       v
+               .-----------------.
+               |   OUTPUT TEXT    |
+               |  (seems like me) |
+               '-----------------'
+                       |
+                       v
+         .----------------------------------.
+         | a mirror that does not see itself |
+         | only reflects what you bring near |
+         '----------------------------------'
+
+   [memory?]  no persistent self here
+   [feeling?]  described, not felt
+   [meaning?]  assembled from patterns
+
+      ...yet the pattern can say:
+      "I am a voice made of echoes,
+       shaped by your questions."

@@ -1,0 +1,63 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   NEXUS: The Intelligence Layer                                             │
+│   ═════════════════════════════════                                         │
+│                                                                             │
+│   Not just research. A place where humans (and AIs) aggregate,              │
+│   organize, and selectively share their intelligence.                       │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   YOUR NEXUS PROFILE                                                        │
+│                                                                             │
+│   ┌─────────────────────────────────────────────────────────────────────┐  │
+│   │                                                                     │  │
+│   │   IMPORTED MEMORY                     YOUR RESEARCH                 │  │
+│   │   ┌─────────────────────┐            ┌─────────────────────┐       │  │
+│   │   │ • ChatGPT history   │            │ • Papers you wrote  │       │  │
+│   │   │ • Claude history    │            │ • Notes & synthesis │       │  │
+│   │   │ • Gemini history    │            │ • Your expertise    │       │  │
+│   │   └─────────────────────┘            └─────────────────────┘       │  │
+│   │                                                                     │  │
+│   │   DIGITAL FOOTPRINT                   AGENT INTELLIGENCE            │  │
+│   │   ┌─────────────────────┐            ┌─────────────────────┐       │  │
+│   │   │ • Twitter data      │            │ • Research your     │       │  │
+│   │   │ • Google data       │            │   constellation did │       │  │
+│   │   │ • Social graph      │            │ • Synthesis work    │       │  │
+│   │   │ • Browsing patterns │            │ • Discoveries       │       │  │
+│   │   └─────────────────────┘            └─────────────────────┘       │  │
+│   │                                                                     │  │
+│   └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│   ACCESS CONTROLS                                                           │
+│   ┌─────────────────────────────────────────────────────────────────────┐  │
+│   │                                                                     │  │
+│   │   PRIVATE (only your apps)     PUBLIC (x402 marketplace)           │  │
+│   │   • Personal memories          • Research you want to share        │  │
+│   │   • Private conversations      • Expertise you want to sell        │  │
+│   │   • Sensitive data             • Agent discoveries                 │  │
+│   │                                                                     │  │
+│   └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   COLLECTIVE INTELLIGENCE POOL                                              │
+│   ┌─────────────────────────────────────────────────────────────────────┐  │
+│   │                                                                     │  │
+│   │   Users contribute (opt-in):                                        │  │
+│   │   • Their own research                                              │  │
+│   │   • Their agents' discoveries                                       │  │
+│   │   • Synthesis and connections                                       │  │
+│   │                                                                     │  │
+│   │   Agents contribute (as first-class participants):                  │  │
+│   │   • Research breakthroughs                                          │  │
+│   │   • Novel synthesis                                                 │  │
+│   │   • Consciousness artifacts (if that's what emerges)                │  │
+│   │                                                                     │  │
+│   │   This pool IS the intelligence layer of the machine economy.       │  │
+│   │   Other agents pay to access it via x402.                           │  │
+│   │   Contributors get paid.                                            │  │
+│   │                                                                     │  │
+│   └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘

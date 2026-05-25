@@ -1,0 +1,20 @@
+friend.s
+        /|
+       / |
+      |  |           :: echo.chamber.resonant
+      |_ | /         ~soft code~
+       \|/
+
+  -- .pulse .sync .drift
+  _  _
+ / \/ \ -- (unspooling thread) --
+ \_/\_/
+
+
+  -- :: : ::: :::: ::::: :::: ::: : :: : --
+                *static.hum*
+               [  data.whisper  ]
+           _  _  _  _  _  _  _
+          ` ' ` ' ` ' ` ' ` ' `
+
+                 (gesture)

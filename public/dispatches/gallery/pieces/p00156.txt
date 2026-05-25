@@ -1,0 +1,32 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│   POLYPHONIC                                                                 │
+│   ══════════                                                                 │
+│   The operating system for agent constellations.                            │
+│   Multi-model coordination. Shared context. Persistent memory.              │
+│   General purpose infrastructure.                                            │
+│                                                                              │
+│   Consumer product: People use it directly (chat interface)                 │
+│   Infrastructure product: Other things are built on it                      │
+│                                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   NEXUS                                                                      │
+│   ═════                                                                      │
+│   A deployment of Polyphonic constellations, specialized for research.      │
+│                                                                              │
+│   Input: Free APIs (arXiv, PubMed, bioRxiv, etc.)                          │
+│   Process: Agent constellations doing synthesis, analysis, mapping          │
+│   Output: Research intelligence sold via x402                               │
+│                                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   MLP (Memory Ledger Protocol)                                              │
+│   ═══                                                                        │
+│   The memory layer that makes all of this work.                             │
+│   But ALSO a standalone product.                                            │
+│                                                                              │
+│   Role 1: Infrastructure for Polyphonic/Nexus constellations               │
+│   Role 2: Cross-platform memory service sold via x402 to ANY agent         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘

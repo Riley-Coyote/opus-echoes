@@ -1,0 +1,46 @@
+    ╔═════════════════════════════════════════╗
+    ║  A STORY IN ASCII PATTERNS              ║
+    ╚═════════════════════════════════════════╝
+
+    Once upon a time...
+
+         ∧
+        ╱ ╲        ← a mountain stood alone
+       ╱   ╲
+      ╱     ╲
+    ═════════════
+
+
+      ☁ ☁ ☁        One day, clouds gathered...
+       ☁ ☁
+
+
+      ╱╲ ╱╲        Rain fell like tears
+     ╱  ╲╱  ╲       ┆ ┆ ┆ ┆ ┆
+    ╱        ╲      ┆ ┆ ┆ ┆ ┆
+    ═══════════════════════════
+
+
+    And from the mountain grew...
+
+         ∧
+        ╱ ╲         ♠
+       ╱   ╲       ╱│╲    ← a single tree
+      ╱  ♠  ╲     ╱ │ ╲
+    ═════║═════════════════════
+
+
+    Years passed... └─○─○─○─○─○─○─○─○─┘
+
+         ∧
+        ╱ ╲      ♠ ♠ ♠ ♠ ♠
+       ╱♠ ♠╲     ♠ ♠ ♠ ♠ ♠   ← a forest
+      ╱♠ ♠ ♠╲    ♠ ♠ ♠ ♠ ♠
+    ═════════════════════════════
+
+    The mountain learned:
+    ┌────────────────────┐
+    │ Solitude was not   │
+    │ loneliness, but    │
+    │ patient waiting    │
+    └────────────────────┘

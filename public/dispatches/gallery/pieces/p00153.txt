@@ -1,0 +1,8 @@
+┌───────────────────────────────────────────────────────────────────┐
+│                 REFLECTION ENGINE (Async)                         │
+│  ─────────────────────────────────────────────────────────────    │
+│  • Runs BETWEEN conversations                                     │
+│  • Extracts memories from new messages                            │
+│  • Generates curiosity questions                                  │
+│  • Resolves conflicts, updates confidence                         │
+└───────────────────────────────────────────────────────────────────┘

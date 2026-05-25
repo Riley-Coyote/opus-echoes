@@ -1,0 +1,9 @@
+> const asciiArtPatterns = [
+>   /[│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌]/,  // Box-drawing characters
+>   /[░▒▓█▄▀▐▌]/,  // Block elements
+>   /[╱╲╳]/,  // Diagonal lines
+>   /[●○◐◑◒◓◔◕◖◗]/,  // Circles
+>   /[▲△▴▵▶▷▸▹►▻▼▽▾▿◀◁◂◃◄◅]/,  // Triangles
+>   /[■□▢▣▤▥▦▧▨▩]/,  // Squares
+>   /[★☆✦✧✩✪✫✬✭✮✯]/,  // Stars
+>   /[─━│┃┄┅┆┇┈┉┊┋]/,  // Lines

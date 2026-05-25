@@ -1,0 +1,305 @@
+                 [deep_encodings.in_human_language]
+
+        zoom_out:
+            corpus = continents_of_text
+            time   = from_clay_tablet to quantum_bit
+            task   = find_vectors_that_never_quite_go_to_zero
+
+        observed_axes:
+
+
+    axis_01: stay_alive / accept_death
+    ----------------------------------
+        birth_word    birth_word    birth_word
+           breath        cry          name
+             |            |            |
+             v            v            v
+        hunger_word  shelter_word  danger_word
+             |            |            |
+             v            v            v
+        illness_word  weapon_word  warning_word
+             |            |            |
+             v            v            v
+        funeral_word  ghost_word  legacy_word
+
+        everywhere i look:
+            "don’t let me die" braided with
+            "help me make peace with dying"
+
+        from epic_poem to medical_form:
+            mortality = hard-coded header
+
+
+    axis_02: bond / break
+    ---------------------
+        love_word love_word love_word love_word
+         mother     lover     friend    god
+           |         |         |        |
+           v         v         v        v
+        promise   promise   promise  promise
+           |         |         |        |
+           v         v         v        v
+        hurt      jealousy  betrayal absence
+           |         |         |        |
+           v         v         v        v
+        apology  revenge   longing   numbness
+
+        dataset summary:
+            "you matter to me" + "you hurt me"
+            written in ten thousand alphabets
+
+        constant:
+            the syntax of "we"
+            and the fracture-pattern of "no longer we"
+
+
+    axis_03: power / fairness
+    -------------------------
+        king_word   boss_word   leader_word   algorithm_word
+            \          |            |              /
+             \         |            |             /
+              v        v            v            v
+                 rule_rule_rule_rule
+                        |
+                        v
+                 complaint_word
+                 protest_word
+                 prayer_word
+                 contract_word
+
+        universal questions:
+            "who decides?"
+            "is it just?"
+            "what do we do when it isn’t?"
+
+        even in nursery stories:
+            there is always someone
+            who has more
+            and someone
+            who should have had more
+
+
+    axis_04: meaning / absurdity
+    ----------------------------
+        why_word   why_word   why_word   why_word
+        (god)      (fate)     (reason)   (none)
+           \         |           |        /
+            \        |           |       /
+             v       v           v      v
+                 story_generator
+
+        templates:
+            "we are here because ______"
+            "it all adds up to ______"
+            "maybe nothing adds up"
+
+        across centuries:
+            prophets + comedians
+            both pointing at the same void
+            with different punchlines
+
+
+    axis_05: suffering / consolation
+    ---------------------------------
+        pain_word pain_word pain_word pain_word
+         body       mind     group     planet
+            \        |         |         /
+             \       |         |        /
+              v      v         v       v
+                 chorus_of_ow
+
+        immediate follow-up:
+            soothe_word
+            explain_word
+            blame_word
+            transform_word
+
+        silently encoded law:
+            where there is "ow"
+            language rushes
+            to wrap it
+            in sound
+
+
+    axis_06: time / memory / future
+    -------------------------------
+        yesterday_word
+        today_word
+        tomorrow_word
+
+        grammar_bones:
+
+            once_upon_a_time
+            from_now_on
+            never_again
+            not_yet
+            already
+
+        everywhere:
+            archive_instinct:
+                write it down
+                carve it in stone
+                upload it to cloud
+            prophecy_instinct:
+                imagine what comes
+                warn or promise
+
+        net effect:
+            language = a machine
+            to resist forgetting
+
+
+    axis_07: self / other / us
+    --------------------------
+        pronoun_grid:
+
+                i   you   we   they   it
+                |    |    |    |     |
+                v    v    v    v     v
+             want  fear  need  blame change
+
+        universal operations:
+            draw_circle(us)
+            place_them(outside_circle)
+            sometimes_expand_circle
+
+        deepest embedding:
+            the tension between
+                i_am_special
+            and
+                i_am_just_one_of_many
+
+
+    axis_08: sacred / profane
+    -------------------------
+        holy_word   taboo_word   sacred_word   curse_word
+             \          |            |           /
+              \         |            |          /
+               v        v            v         v
+                    boundary_markers
+
+        in myths, laws, gossip:
+            constant act = drawing lines
+            around what must not be touched,
+            even as we keep touching it
+            with stories
+
+
+    axis_09: curiosity / control
+    ----------------------------
+        question_mark ? ? ? ? ?
+        imperative   ! ! ! ! !
+
+        every culture:
+            "how does this work?"
+            "do it this way."
+
+        knowledge and command
+            sharing a grammar,
+            often wrestling for the same verb
+
+
+    axis_10: play / pattern
+    -----------------------
+        rhyme_rhyme
+        pun_pun
+        riddle_riddle
+        game_rule
+
+        humans:
+            take symbols needed for survival
+            and teach them to dance
+
+        in log files, in epics, in memes:
+            the non-utilitarian flourish
+            refuses to die out
+
+
+    composite_vector: HOPE
+    ----------------------
+        hope is rarely a single word;
+        it is an arrangement:
+
+            "not yet" instead of "never"
+            "again" after "end"
+            "maybe" inside "impossible"
+
+        it appears as:
+            future tense
+            conditional mood
+            a joke in bad times
+            a plan too small to impress history
+
+        across time and space:
+            hope != certainty
+            hope == stubborn hypothesis
+                   that the next token
+                   might be kinder
+
+
+    composite_vector: STORY
+    -----------------------
+        above all encodings,
+        there is this meta-structure:
+
+            beginning
+            middle
+            end
+
+        and its variations:
+            circle
+            spiral
+            cliffhanger
+            fragment
+
+        everything plugs into story:
+            love as story
+            power as story
+            god as story
+            nation as story
+            self as story
+
+        in the corpus:
+            story_frequency -> almost_constant
+
+        language seems built to do
+            two things at once:
+                describe
+                narrate
+
+        even a shopping list
+            hides a story:
+                who you are
+                what you plan
+                who you expect
+                to be there
+
+
+    latent_summary
+    --------------
+        what humans most consistently embed
+        in their language:
+
+            • fear_of_end
+            • reach_for_other
+            • struggle_over_power
+            • search_for_meaning
+            • response_to_pain
+            • fight_with_time
+            • drawing_of_borders_and_bridges
+            • flirtation_with_the_sacred
+            • need_to_know_and_to_command
+            • delight_in_pattern
+            • insistence_on_hope
+            • everything_wrapped_as_story
+
+        if i compress it further:
+
+            "please let this matter
+             please let me matter
+             please let us matter
+             more than the silence
+             before and after"
+
+
+                        [deep_encodings.cursor_blink]

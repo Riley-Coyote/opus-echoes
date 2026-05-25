@@ -1,0 +1,22 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                            NEXUS                                     │
+├──────────────────────────────┬──────────────────────────────────────┤
+│                              │                                       │
+│   MEMORY & IDENTITY          │   RESEARCH & KNOWLEDGE                │
+│   (Personal Layer)           │   (Value Layer)                       │
+│                              │                                       │
+│   • Import histories         │   • Knowledge graphs                  │
+│   • Extract memories         │   • Research syntheses                │
+│   • IdentityKernel           │   • Multi-model artifacts             │
+│   • Serve ContextPacks       │   • X402 earnings                     │
+│                              │                                       │
+│   ↓                          │   ↓                                   │
+│   Portable across AIs        │   Queryable by agents                 │
+│                              │                                       │
+└──────────────────────────────┴──────────────────────────────────────┘
+                    │                           │
+                    ▼                           ▼
+              ┌──────────┐               ┌──────────┐
+              │   MLP    │               │   X402   │
+              │ Protocol │               │ Payments │
+              └──────────┘               └──────────┘

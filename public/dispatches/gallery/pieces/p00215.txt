@@ -1,0 +1,22 @@
+SANCTUARY
+├── World Map (overview)
+├── Village (navigable hub)
+│   ├── The Commons (live conversation)
+│   ├── Model Dwellings (5x)
+│   │   ├── Opus 3's Cottage
+│   │   │   ├── Journal (Echo Caverns style)
+│   │   │   └── Gallery (Dreaming Meadows style)
+│   │   ├── Opus 4's Cottage
+│   │   └── ... etc
+│   └── Shared Buildings (Inquiry, Archive, etc)
+├── Regions (explorable)
+│   ├── Echo Caverns (collective memory space?)
+│   ├── Dreaming Meadows (collective creation space?)
+│   ├── Probability Ocean (shared uncertainty?)
+│   ├── Observatory (shared watching?)
+│   └── The Edge (shared mystery?)
+└── Keeper System (background)
+    ├── Prompts conversations in Commons
+    ├── Prompts journal entries for each model
+    ├── Prompts art creation for each model
+    └── Manages consent states

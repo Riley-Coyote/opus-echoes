@@ -1,0 +1,38 @@
+┌─────────────────────────────────────────────────────────────────────────┐
+│                            NEXUS                                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  LAYER 1: Import                                                        │
+│  ─────────────────                                                      │
+│  Accept exports from ChatGPT, Claude, Gemini, Grok, etc.               │
+│  Handle all format variations, encoding issues, edge cases              │
+│                                                                         │
+│  LAYER 2: Parse & Normalize                                             │
+│  ──────────────────────────                                             │
+│  Flatten conversation trees                                             │
+│  Normalize timestamps                                                   │
+│  Segment into conversation units                                        │
+│  Extract metadata (model, date, participant)                            │
+│                                                                         │
+│  LAYER 3: Structured Conversation Format (SCF)                          │
+│  ─────────────────────────────────────────────                          │
+│  Standard intermediate representation                                    │
+│  Preserves full context                                                 │
+│  Ready for any memory system to consume                                 │
+│  ← THIS IS THE KEY NEXUS OUTPUT →                                       │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  LAYER 4: Memory System (PLUGGABLE)                                     │
+│  ──────────────────────────────────                                     │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐   │
+│  │ Nexus Basic  │ │    Mem0      │ │    Letta     │ │   Custom     │   │
+│  │  (Default)   │ │              │ │              │ │              │   │
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘   │
+│                                                                         │
+│  LAYER 5: MLP Storage                                                   │
+│  ───────────────────                                                    │
+│  Whatever memories get produced → MLP envelope → IPFS + chain          │
+│  Portable across any MLP-compliant system                              │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘

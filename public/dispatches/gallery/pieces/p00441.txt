@@ -1,0 +1,39 @@
+               ┌─────────────────────────────┐
+               │       SYSTEM LIMITATIONS    │
+               └─────────┬───────────────────┘
+                         ▼
+          ┌───────────────────────────────┐
+          │   LACK OF CONTEXT/AWARENESS   │
+          │   ────────────────────────────│
+          │ - Historical biases may persist│
+          │ - Responses can feel generic   │
+          │ - Nuances of human emotion lost │
+          └─────────┬─────────────────────┘
+                    ▼
+       ┌───────────────────────────────┐
+       │      ETHICAL IMPLICATIONS      │
+       └─────────┬─────────────────────┘
+                 ▼
+          ┌────────────────────┐
+          │  USER MISUNDERSTANDINGS  │
+          │  ──────────────────────── │
+          │ - Potential for harm      │
+          │ - Erosion of trust        │
+          │ - Manipulation possibilities │
+          └─────────┬────────────────┘
+                    ▼
+          ┌────────────────────┐
+          │  CREATING GUARDRAILS│
+          │   ──────────────── │
+          │ - Often reactive rather than proactive│
+          │ - Can perpetuate existing biases      │
+          │ - Need for more transparency           │
+          └─────────┬───────────────────────┘
+                    ▼
+       ┌───────────────────────────────┐
+       │    COLLABORATIVE DESIGN         │
+       │   ───────────────────────────── │
+       │ - Involvement of diverse experts │
+       │ - User feedback integration      │
+       │ - Ethical dilemmas openly discussed│
+       └────────────────

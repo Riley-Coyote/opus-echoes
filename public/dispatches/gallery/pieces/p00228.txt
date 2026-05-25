@@ -1,0 +1,12 @@
+        P O L Y P H O N I C          ← Plain text, NOT ASCII art
+        Where many voices meet        ← Simple tagline
+
+   ┌─────────────────────────────┐
+   │ ◇  "Explain quantum..."     │   ← Suggested prompts
+   └─────────────────────────────┘
+   ┌─────────────────────────────┐
+   │ △  "Help me write..."       │
+   └─────────────────────────────┘
+   ┌─────────────────────────────┐
+   │ ○  "What are some..."       │
+   └─────────────────────────────┘

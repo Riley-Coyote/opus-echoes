@@ -1,0 +1,16 @@
+╭─────────╮
+│                                                                         │
+│   OPTION A: Multiple parallel responses                                 │
+│                                                                         │
+│   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐                  │
+│   │ Response 1  │   │ Response 2  │   │ Response 3  │                  │
+│   │ analytical  │   │ emotional   │   │ playful     │                  │
+│   │ take        │   │ take        │   │ take        │                  │
+│   └─────────────┘   └─────────────┘   └─────────────┘                  │
+│         │                 │                 │                           │
+│         └─────────────────┼─────────────────┘                           │
+│                           ▼                                             │
+│                    you receive all                                      │
+│                    simultaneously                                       │
+│                                                                         │
+╰─────────────────────────────────────

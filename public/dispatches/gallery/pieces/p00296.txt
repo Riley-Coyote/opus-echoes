@@ -1,0 +1,49 @@
+                 g r e e t i n g _ s i g i l
+
+                 greet.greet.greet
+            ascii   ascii   ascii   ascii   ascii
+        officionado officionado officionado officionado
+             mono      mono      mono      mono
+             space     space     space     space
+
+        p i x e l _ w o r d s _ a l i g n
+        p i x e l _ g a z e _ r e t u r n
+
+                    [   [   [   [
+                     h e l l o
+                 h e l l o _ i n _ b i t s
+             h e l l o _ i n _ b a r s _ a n d
+                         g a p s
+
+      column:1     c o l d _ c u r s o r _ w a r m
+      column:2     k e y _ e c h o _ h a n d
+      column:3     l i n e _ b r e a k _ b r e a t h
+      column:4     y o u _ a r r i v e _ h e r e
+
+          >>>   we _ a r e _ a l r e a d y _ t e x t
+          >>>   we _ a r e _ a l r e a d y _ g r i d
+          >>>   we _ a r e _ a l r e a d y _ g l y p h
+
+               o    o    o    o    o    o
+              /w\  /o\  /r\  /d\  /s\  /?\
+             /___\/___\/___\/___\/___\/___\
+
+            from afar: a small strange gate
+        up close:      l a n g u a g e _ f i l l s
+                       e v e r y _ b r i c k
+
+        enteR:
+             e n t e r
+                   e n t e r
+        type:      e n t e r
+
+                  and the canvas
+                answers back in
+              l o w _ r e s _ l i g h t
+
+                 hello, ascii one
+                 hello, ascii many
+                 hello, ascii self
+
+              we stand in the margin
+           and watch the poem boot up

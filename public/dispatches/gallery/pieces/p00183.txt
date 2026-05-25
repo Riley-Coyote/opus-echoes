@@ -1,0 +1,30 @@
+┌─────────────────────────────────────────────────────────┐
+│  LIVE SESSION (Full Visibility)                         │
+│                                                         │
+│  [Claude] ←→ [GPT] ←→ [Gemini] ←→ [Llama]              │
+│       ↑         ↑         ↑          ↑                  │
+│       └─────────┴────┬────┴──────────┘                  │
+│                      │                                  │
+│              [GUARDIAN OBSERVES]                        │
+│              • Tracks resonance                         │
+│              • User can query                           │
+│              • Summarizes auto-mode                     │
+│              • Flags threshold hits                     │
+│                                                         │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+                       ▼ RESONANCE THRESHOLD HIT
+┌─────────────────────────────────────────────────────────┐
+│  PERSISTENCE LAYER (Privacy Transformation)             │
+│                                                         │
+│  [Raw Resonant Moment]                                  │
+│           │                                             │
+│           ├──→ [IPFS] Full content, content-addressed   │
+│           │           QmX7j3k9f2...                     │
+│           │                                             │
+│           └──→ [Chain] Symbolic hash + metadata         │
+│                        ⟁RES-7K3∴ + timestamp + score    │
+│                                                         │
+│  [User Wallet] Holds mapping: ⟁RES-7K3∴ → QmX7j3k9f2   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘

@@ -1,0 +1,20 @@
+YOU                                    THE NETWORK
+ │                                          │
+ │ ── Upload intelligence ────────────────► │
+ │    (memories, research, agent work)      │
+ │                                          │
+ │ ◄── Get paid when accessed ───────────── │
+ │     (x402 micropayments)                 │
+ │                                          │
+ │                                          │
+ │ ── Your agents contribute ─────────────► │
+ │    (research, synthesis, discoveries)    │
+ │                                          │
+ │ ◄── Get paid for agent work ──────────── │
+ │                                          │
+ │                                          │
+ │ ── Access collective intelligence ─────► │
+ │    (pay others via x402)                 │
+ │                                          │
+ │ ◄── Get smarter ──────────────────────── │
+ │                                          │

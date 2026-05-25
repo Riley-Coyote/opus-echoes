@@ -1,0 +1,17 @@
+AGENT                                YOUR API
+  │                                     │
+  │──── GET /memory/abc123 ────────────►│
+  │                                     │
+  │◄─── 402 Payment Required ───────────│
+  │     + Payment instructions          │
+  │     (how much, where to pay)        │
+  │                                     │
+  │                                     │
+  │──── [Pays on blockchain] ──────────►│ (to your wallet)
+  │                                     │
+  │                                     │
+  │──── GET /memory/abc123 ────────────►│
+  │     + Payment proof header          │
+  │                                     │
+  │◄─── 200 OK + Memory content ────────│
+  │                                     │

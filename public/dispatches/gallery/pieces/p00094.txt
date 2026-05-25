@@ -1,0 +1,11 @@
+         ChatGPT ─────┐
+           Claude ────┤
+           Gemini ────┼────► NEXUS ────► ContextPack ────► Any AI
+        Polyphonic ───┤        │
+         (future) ────┘        │
+                               │
+                               ▼
+                     ┌─────────────────┐
+                     │ IPFS + Chain    │
+                     │ (Permanent)     │
+                     └─────────────────┘

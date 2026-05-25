@@ -1,0 +1,22 @@
+┌─────────────────────────────────────────────────────────────────┐
+│  KNOWLEDGE GRAPH                          [Explore] [Build] [Export]
+│  247 nodes · 1,847 connections
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  When node selected:                                            │
+│  ┌─────────────────────────┐                                   │
+│  │ Quantum Coherence       │                                   │
+│  │ Science · Biology       │                                   │
+│  │                         │                                   │
+│  │ Sources:                │                                   │
+│  │ • 23 Claude convos      │                                   │
+│  │ • 12 GPT convos         │                                   │
+│  │ • 8 Polyphonic sessions │                                   │
+│  │                         │                                   │
+│  │ [View Sources]          │  ← Click to see actual convos     │
+│  │ [Edit Memory]           │  ← Correct if wrong               │
+│  │ [Start Research]        │  ← Seed a Polyphonic session      │
+│  │ [Add to Export]         │  ← Build an X402 asset            │
+│  └─────────────────────────┘                                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘

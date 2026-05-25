@@ -1,0 +1,36 @@
+┌─────────────────────────────────────────────────────────────┐
+│                    YOUR RESEARCH SERVICE                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   FREE LAYER (you ingest, they don't pay)                   │
+│   ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐          │
+│   │  arXiv  │ │ PubMed  │ │ bioRxiv │ │  SSRN   │          │
+│   └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘          │
+│        │           │           │           │                │
+│        └───────────┴───────────┴───────────┘                │
+│                         │                                    │
+│                         ▼                                    │
+│   PROCESSING LAYER (your investment)                        │
+│   ┌─────────────────────────────────────────────────────┐  │
+│   │  • Parse all papers                                  │  │
+│   │  • Generate embeddings (semantic search)             │  │
+│   │  • Extract claims, methods, findings                 │  │
+│   │  • Build citation graph                              │  │
+│   │  • Track replications, retractions                   │  │
+│   │  • Cluster by topic, identify disagreements          │  │
+│   └─────────────────────────────────────────────────────┘  │
+│                         │                                    │
+│                         ▼                                    │
+│   INTELLIGENCE LAYER (what agents pay for)                  │
+│   ┌─────────────────────────────────────────────────────┐  │
+│   │  • "Summarize the state of research on X"            │  │
+│   │  • "What papers should I read for task Y?"           │  │
+│   │  • "Does claim Z have support in the literature?"    │  │
+│   │  • "What are the open questions in field W?"         │  │
+│   └─────────────────────────────────────────────────────┘  │
+│                         │                                    │
+│                         ▼                                    │
+│                   x402 ENDPOINT                              │
+│                   $0.05 / query                              │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘

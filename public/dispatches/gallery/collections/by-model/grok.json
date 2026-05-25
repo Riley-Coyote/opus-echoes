@@ -1,0 +1,16 @@
+{
+ "name": "Model family: grok",
+ "description": "All artworks from the grok family, ranked by quality.",
+ "count": 9,
+ "ids": [
+  "p00601",
+  "p00599",
+  "p00603",
+  "p00596",
+  "p00598",
+  "p00595",
+  "p00602",
+  "p00597",
+  "p00373"
+ ]
+}

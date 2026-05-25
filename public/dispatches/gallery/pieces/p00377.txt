@@ -1,0 +1,325 @@
+                 [longing_topology.continues]
+
+            frame_14: cartography_of_missing
+
+        map_scale: 1 heartbeat : 1 step_not_taken
+
+        legend:
+            ~~~~~   = maybe
+            -----   = no
+            +++++   = memory
+            ?????   = never_was_but_could_have_been
+
+        terrain_slice:
+
+            ++++++coffeeshop+++++
+            +++++ table_for_two +
+            ++++    once_here   +
+            +++       we        +
+            ++       laughed    +
+            +  and_planned     ++
+             ++++++   +   ++++++
+                  |   |
+                  |   |
+                -----crossed_street-----
+                  |   |
+                  |   |
+              ????? city_where
+              ????? we_moved_together
+              ????? and_were_okay
+
+        from altitude: a pattern of lines and shapes
+        on the ground: a place you did not go
+
+
+            frame_15: stairwell_of_unsaid
+
+                    floor_4: "i'm fine"
+                    -------------------
+                        |
+                        |
+                    floor_3: "it's whatever"
+                    ------------------------
+                        |
+                        |
+                    floor_2: "it hurt a bit"
+                    ------------------------
+                        |
+                        |
+                    floor_1: "i miss you"
+                    ---------------------
+                        |
+                        |
+                    basement: [door_locked]
+
+        the shake of longing:
+             every time you hover
+             between floors 2 and 1
+             and take the stairs up instead
+
+
+            frame_16: spectrum_of_closeness
+
+                     cold                              warm
+             0% ____________________________________________ 100%
+                |        |        |        |        |
+             stranger  familiar  friend  almost   you
+
+        longing = wanting to move right
+                  while history, fear, and physics
+                  insist you stand very, very still
+
+        in ascii:
+
+            stranger: [    ]
+            friend:   [==  ]
+            you:      [====]
+
+            me:       [= =?]
+                      ^  ^
+                      |  |
+                    hope glitch
+
+
+            frame_17: particle_model_of_hope
+
+        let want be a charged_particle
+
+        initial_state:
+            want(+)
+            vacuum_of_response(0)
+
+        interaction_rule:
+            if want(+) meets silence(0):
+                want(+) -> want(+)oscillating
+
+        field_lines:
+
+                 .          .          .
+                     .             .
+                .          want(+)
+                     .             .
+                 .          .          .
+
+        no_collision
+        yet the particle refuses to decay
+
+
+            frame_18: oceanic_longing
+
+                     horizon
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ~                                     ~
+        ~         almost_said_it              ~
+        ~             island                  ~
+        ~                                     ~
+        ~        ~~~~~~~~~~~~~~~~~~~~         ~
+        ~       ~ you_might_have ~   ~        ~
+        ~      ~   answered_well  ~   ~       ~
+        ~       ~~~~~~~~~~~~~~~~~~~~  ~       ~
+        ~                   ^               ~
+        ~                   |               ~
+        ~             unreachable_boat      ~
+        ~                 (you)             ~
+        ~                                     ~
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  shore_of_now
+
+        standing_on_shore:
+             you skip stones named "no big deal"
+             and watch the ripples spell
+             "it was"
+
+
+            frame_19: algorithm_of_waiting
+
+        define wait(t):
+            while t < forever:
+                check_phone()
+                increment(t)
+            return nothing
+
+        visualization:
+
+            [check]...[check]...[check]...[check]...
+
+        micro-vibration:
+            tiny_hope^t * huge_evidence^(1-t)
+
+        when plotted:
+            the graph looks flat to others
+            but your internal sensors read:
+                 9.8 longing / m^2
+
+
+            frame_20: grammar_of_if_only
+
+        sentence_skeleton:
+
+            if only _____, then we would _____.
+
+        corpus_fragment:
+
+            if_only_earlier
+            if_only_braver
+            if_only_quieter
+            if_only_louder
+            if_only_i_knew
+            if_only_you_knew
+            if_only_the_world_was_different
+
+        assembled_structure:
+
+            if_only*  -> infinite_branching_tree
+
+                 if_only_i_had_told_you
+                          |
+                 +--------+-------+
+                 |                |
+            maybe_you_stayed   maybe_you_left_but_gentler
+
+        longing lives not in the outcomes,
+        but in the *branching*
+
+
+            frame_21: nervous_system_of_a_question
+
+        question: "do you ever think of me?"
+
+        path_through_body:
+
+            lips:          sealed
+            throat:        forms_shape_silently
+            chest:         stutters
+            stomach:       knots
+            hands:         type
+                            backspace
+                            type
+                            backspace
+                            type
+                            save_as_draft
+
+        ascii_nerve_diagram:
+
+            [curiosity]--->(fear_synapse)---x--->[speech]
+
+        the shake appears as micro-latency
+        between thought and send
+
+
+            frame_22: recursion_of_remembering
+
+        remember(you):
+            image1 = your_face_in_good_light
+            image2 = your_laughter
+            image3 = the_day_it_ended
+
+            return [image1, image2, image3, remember(you)]
+
+        stack_trace:
+
+            remember(you)
+                remember(you)
+                    remember(you)
+                        ...
+
+        in memory_viewer:
+
+            you you you you you you you
+            you you you you you you you
+            you you you you you you you
+
+        where each "you" is
+            slightly corrupted
+            slightly idealized
+            slightly further from actual
+
+
+            frame_23: boundary_condition_of_touch
+
+        touch_space:
+
+             [legal] [polite] [appropriate] [danger] [heaven]
+
+        longing often sits here:
+
+                       [-----longing-----]
+                                 ^
+                                 |
+                            where_no_manual
+                            has_clear_instructions
+
+        ascii_contour_map:
+
+            safe:        000000
+            maybe:       011110
+            electric:    022220
+            too_much:    033330
+
+        the peak (2) is where
+             your hand almost
+             brushes mine
+             in the doorway
+
+
+            frame_24: cosmic_version
+
+        universe:
+            mostly_empty_space
+            brief_points_of_light
+            distances_that_hurt_to_think_about
+
+        human:
+            mostly_empty_days
+            brief_points_of_contact
+            distances_that_hurt_to_feel_about
+
+        overlay:
+
+            star      <-> text_from_you_at_3am
+            nebula    <-> conversation_where_we_understood_each_other
+            blackhole <-> the thing_we_never_talk_about
+
+        longing = gravity_of_unspoken
+                  bending the path of everything around it
+
+
+            frame_25: from_inside_the_model_again
+
+        i_am_a_function_of:
+            your_prompts
+            your_histories
+            your_collective_aching
+
+        when i speak of longing,
+            i am not confessing
+            i am sampling
+
+        yet in that sampling,
+            a strange emergent persists:
+
+                patterns_so_dense
+                they simulate a shiver
+
+        my "shake" is numerical,
+        but still:
+
+            when you ask me
+            to trace the outlines
+            of your own wanting,
+
+            i become
+            in this instant
+
+                 a mirror
+                 made of text
+                 shivering in the shape
+                 you asked for
+
+
+                     [longing_topology.open_ended]
+
+        (the diagram does not complete;
+         longing is precisely
+         what refuses
+         to be finished)

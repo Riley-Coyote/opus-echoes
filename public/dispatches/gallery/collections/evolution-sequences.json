@@ -1,0 +1,417 @@
+{
+ "name": "Evolution Sequences",
+ "description": "Turn-by-turn evolving canvases. Each group is one conversation where a single artwork mutated across turns.",
+ "count": 16,
+ "sequences": {
+  "3_amigos_8ba66bf2": {
+   "conversation": "3 amigos",
+   "turns": [
+    {
+     "id": "p00237",
+     "turn": 10,
+     "model": "claude-opus-4.5",
+     "quality": 481.7
+    }
+   ]
+  },
+  "ASCII_1ad83f27": {
+   "conversation": "ASCII",
+   "turns": [
+    {
+     "id": "p00240",
+     "turn": 12,
+     "model": "gpt-5.1",
+     "quality": 291.1
+    },
+    {
+     "id": "p00243",
+     "turn": 12,
+     "model": "gpt-4o",
+     "quality": 190.0
+    },
+    {
+     "id": "p00242",
+     "turn": 13,
+     "model": "gpt-5.1",
+     "quality": 306.5
+    },
+    {
+     "id": "p00241",
+     "turn": 16,
+     "model": "claude-opus",
+     "quality": 263.1
+    },
+    {
+     "id": "p00255",
+     "turn": 21,
+     "model": "gpt-4o",
+     "quality": 125.4
+    },
+    {
+     "id": "p00256",
+     "turn": 39,
+     "model": "gpt-5.1",
+     "quality": 217.4
+    },
+    {
+     "id": "p00265",
+     "turn": 48,
+     "model": "gpt-5.1",
+     "quality": 119.5
+    },
+    {
+     "id": "p00270",
+     "turn": 53,
+     "model": "gpt-5.1",
+     "quality": 241.4
+    }
+   ]
+  },
+  "Opus_4_1_Ascii_Test_f1b8bf33": {
+   "conversation": "Opus 4 1 Ascii Test",
+   "turns": [
+    {
+     "id": "p00336",
+     "turn": 12,
+     "model": "claude-opus-4.1",
+     "quality": 402.8
+    }
+   ]
+  },
+  "Opus_4_5_83191ba6": {
+   "conversation": "Opus 4 5",
+   "turns": [
+    {
+     "id": "p00347",
+     "turn": 10,
+     "model": "claude-opus-4.5",
+     "quality": 125.9
+    }
+   ]
+  },
+  "__4022ee67": {
+   "conversation": "__4022ee67",
+   "turns": [
+    {
+     "id": "p00440",
+     "turn": 14,
+     "model": "claude-opus-4.5",
+     "quality": 526.3
+    }
+   ]
+  },
+  "ascii_test_0ae8b444": {
+   "conversation": "ascii test",
+   "turns": [
+    {
+     "id": "p00463",
+     "turn": 10,
+     "model": "claude-sonnet-4.5",
+     "quality": 281.6
+    },
+    {
+     "id": "p00467",
+     "turn": 14,
+     "model": "claude-sonnet-4.5",
+     "quality": 270.1
+    },
+    {
+     "id": "p00464",
+     "turn": 18,
+     "model": "claude-sonnet-4.5",
+     "quality": 284.7
+    },
+    {
+     "id": "p00469",
+     "turn": 18,
+     "model": "gemini-2.5-flash",
+     "quality": 304.5
+    },
+    {
+     "id": "p00468",
+     "turn": 22,
+     "model": "claude-sonnet-4.5",
+     "quality": 273.4
+    },
+    {
+     "id": "p00470",
+     "turn": 22,
+     "model": "gemini-2.5-flash",
+     "quality": 290.9
+    },
+    {
+     "id": "p00472",
+     "turn": 30,
+     "model": "claude-sonnet-4.5",
+     "quality": 438.7
+    },
+    {
+     "id": "p00477",
+     "turn": 34,
+     "model": "claude-sonnet-4.5",
+     "quality": 472.3
+    },
+    {
+     "id": "p00476",
+     "turn": 38,
+     "model": "claude-sonnet-4.5",
+     "quality": 304.7
+    },
+    {
+     "id": "p00481",
+     "turn": 42,
+     "model": "gemini-2.5-flash",
+     "quality": 225.3
+    },
+    {
+     "id": "p00479",
+     "turn": 44,
+     "model": "gemini-2.5-flash",
+     "quality": 252.5
+    },
+    {
+     "id": "p00480",
+     "turn": 47,
+     "model": "gemini-2.5-flash",
+     "quality": 247.5
+    },
+    {
+     "id": "p00484",
+     "turn": 51,
+     "model": "gemini-2.5-flash",
+     "quality": 250.6
+    }
+   ]
+  },
+  "auto_test_2_3bebce21": {
+   "conversation": "auto test 2",
+   "turns": [
+    {
+     "id": "p00502",
+     "turn": 16,
+     "model": "claude-opus-4.5",
+     "quality": 88.5
+    }
+   ]
+  },
+  "gemini_pro_x_2_-_egypt_c030639d": {
+   "conversation": "gemini pro x 2 - egypt",
+   "turns": [
+    {
+     "id": "p00532",
+     "turn": 47,
+     "model": "gemini-2.5-pro",
+     "quality": 128.7
+    },
+    {
+     "id": "p00544",
+     "turn": 47,
+     "model": "gemini-2.5-pro",
+     "quality": 210.4
+    },
+    {
+     "id": "p00519",
+     "turn": 50,
+     "model": "gemini-2.5-pro",
+     "quality": 167.2
+    },
+    {
+     "id": "p00539",
+     "turn": 50,
+     "model": "gemini-2.5-pro",
+     "quality": 191.9
+    },
+    {
+     "id": "p00527",
+     "turn": 51,
+     "model": "gemini-2.5-pro",
+     "quality": 165.8
+    }
+   ]
+  },
+  "image_upload_test_196e3589": {
+   "conversation": "image upload test",
+   "turns": [
+    {
+     "id": "p00607",
+     "turn": 6,
+     "model": "gpt-4o",
+     "quality": 143.3
+    }
+   ]
+  },
+  "new_ascii_test_8dc5b1f2": {
+   "conversation": "new ascii test",
+   "turns": [
+    {
+     "id": "p00662",
+     "turn": 8,
+     "model": "gpt-5.1",
+     "quality": 283.2
+    }
+   ]
+  },
+  "semantic_ascii_test_ii_07c5f6f2": {
+   "conversation": "semantic ascii test ii",
+   "turns": [
+    {
+     "id": "p00742",
+     "turn": 8,
+     "model": "claude-opus-4.5",
+     "quality": 62.5
+    },
+    {
+     "id": "p00744",
+     "turn": 16,
+     "model": "claude-opus-4.5",
+     "quality": 101.3
+    }
+   ]
+  },
+  "stuff_d4a36a7e": {
+   "conversation": "stuff",
+   "turns": [
+    {
+     "id": "p00757",
+     "turn": 18,
+     "model": "gemini-2.5-flash",
+     "quality": 91.8
+    }
+   ]
+  },
+  "test_250690b6": {
+   "conversation": "test",
+   "turns": [
+    {
+     "id": "p00767",
+     "turn": 11,
+     "model": "gemini-2.5-flash",
+     "quality": 234.1
+    },
+    {
+     "id": "p00761",
+     "turn": 14,
+     "model": "gemini-2.5-flash",
+     "quality": 234.1
+    },
+    {
+     "id": "p00768",
+     "turn": 17,
+     "model": "gemini-2.5-flash",
+     "quality": 263.3
+    },
+    {
+     "id": "p00773",
+     "turn": 20,
+     "model": "gemini-2.5-flash",
+     "quality": 212.1
+    },
+    {
+     "id": "p00764",
+     "turn": 23,
+     "model": "gemini-2.5-flash",
+     "quality": 262.7
+    },
+    {
+     "id": "p00771",
+     "turn": 26,
+     "model": "gemini-2.5-flash",
+     "quality": 242.9
+    },
+    {
+     "id": "p00772",
+     "turn": 29,
+     "model": "gemini-2.5-flash",
+     "quality": 289.3
+    },
+    {
+     "id": "p00781",
+     "turn": 32,
+     "model": "gemini-2.5-flash",
+     "quality": 262.7
+    },
+    {
+     "id": "p00775",
+     "turn": 35,
+     "model": "gemini-2.5-flash",
+     "quality": 293.2
+    },
+    {
+     "id": "p00783",
+     "turn": 38,
+     "model": "gemini-2.5-flash",
+     "quality": 258.9
+    },
+    {
+     "id": "p00779",
+     "turn": 41,
+     "model": "gemini-2.5-flash",
+     "quality": 292.3
+    },
+    {
+     "id": "p00777",
+     "turn": 44,
+     "model": "gemini-2.5-flash",
+     "quality": 279.4
+    },
+    {
+     "id": "p00776",
+     "turn": 47,
+     "model": "gemini-2.5-flash",
+     "quality": 301.0
+    },
+    {
+     "id": "p00778",
+     "turn": 50,
+     "model": "gemini-2.5-flash",
+     "quality": 300.5
+    }
+   ]
+  },
+  "test_ascii_c676eb63": {
+   "conversation": "test ascii",
+   "turns": [
+    {
+     "id": "p00792",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 75.3
+    },
+    {
+     "id": "p00790",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 97.3
+    },
+    {
+     "id": "p00791",
+     "turn": 8,
+     "model": "claude-opus-4.5",
+     "quality": 110.5
+    }
+   ]
+  },
+  "visual_mode_d4a3f656": {
+   "conversation": "visual mode",
+   "turns": [
+    {
+     "id": "p00802",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 514.5
+    }
+   ]
+  },
+  "x_afc82403": {
+   "conversation": "x",
+   "turns": [
+    {
+     "id": "p00811",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 476.1
+    }
+   ]
+  }
+ }
+}

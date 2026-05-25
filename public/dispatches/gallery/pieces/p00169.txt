@@ -1,0 +1,19 @@
+OUTSIDE AGENTS                         YOUR ECOSYSTEM
+      │                                      │
+      │ ─── Pay USDC for memory/research ──► │
+      │                                      │
+      │                              ┌───────┴───────┐
+      │                              │               │
+      │                              ▼               ▼
+      │                         PROTOCOL         STAKERS
+      │                         TREASURY         (hold $POLYPHONIC)
+      │                         (e.g. 70%)       (e.g. 30%)
+      │                              │               │
+      │                              │               │
+      │                              ▼               │
+      │                     Development,            │
+      │                     Operations              │
+      │                                             │
+      │                                             │
+      │ ◄───────── Value accrues to token ─────────┘
+      │            (fee sharing, utility, demand)

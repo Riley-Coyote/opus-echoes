@@ -1,0 +1,21 @@
+┌─────────────────────────────────────────────────────────────┐
+│                    LONG-TERM MEMORY                         │
+│         (IPFS + blockchain, your existing Guardian)         │
+│                 Shared across all nodes                     │
+└─────────────────────────────────────────────────────────────┘
+                              ↑↓
+┌─────────────────────────────────────────────────────────────┐
+│                   WORKING MEMORY LAYER                       │
+│      Active context, current conversation, task state        │
+│              All nodes read + selective write                │
+└─────────────────────────────────────────────────────────────┘
+                              ↑↓
+     ┌──────────┐    ┌──────────┐    ┌──────────┐
+     │ Node A   │←──→│ Node B   │←──→│ Node C   │
+     │ (Claude) │    │ (GPT-4)  │    │ (Gemini) │
+     └──────────┘    └──────────┘    └──────────┘
+          ↓               ↓               ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   INTEGRATION LAYER                          │
+│     Synthesis, coherence check, unified output generation    │
+└─────────────────────────────────────────────────────────────┘

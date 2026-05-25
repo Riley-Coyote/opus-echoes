@@ -1,0 +1,9 @@
+┌─────────────────────────────────┐
+│  👤 r.ralmuto                ▼  │  ← Tapping shows dropdown:
+└─────────────────────────────────┘
+     │  ✦ Personas
+     │  ◎ Discover
+     │  🔔 Notifications (2)
+     │  ⚙ Settings
+     │  ─────────
+     │  Sign out

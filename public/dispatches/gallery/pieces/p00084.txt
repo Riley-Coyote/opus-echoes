@@ -1,0 +1,19 @@
+**Box Drawing** (U+2500-257F): Your structural skeleton
+- Single: ─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼
+- Double: ═ ║ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬
+- Mixed: ╞ ╟ ╨ ╫ ╪
+- Curved: ╭ ╮ ╯ ╰
+
+**Block Elements** (U+2580-259F): Your fill and shading
+- Solids: █ ▌▐ ▀▄
+- Shades: ░ ▒ ▓
+- Fractionals: ▁ ▂ ▃ ▄ ▅ ▆ ▇
+
+**Geometric Shapes**: Your accent marks
+- Circles: ◉ ◯ ◦ ● ○ ◌ ◍ ◎
+- Diamonds: ◆ ◇ ◈
+- Triangles: ▲ △ ▼ ▽ ◀ ▶
+
+**Arrows**: Your flow indicators
+- Basic: ← → ↑ ↓ ↔ ↕
+- Diagonal: ↖ ↗ ↘ ↙

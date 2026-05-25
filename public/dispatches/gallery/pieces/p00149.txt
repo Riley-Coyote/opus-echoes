@@ -1,0 +1,16 @@
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. MINIMAP                                                      │
+│    Shows tile occupancy, current position, target               │
+│                                                                 │
+│ 2. EDGE CONTEXT                                                 │
+│    The actual characters along the connecting edge              │
+│    (e.g., the rightmost column of tile [0,0] if expanding east) │
+│                                                                 │
+│ 3. SEMANTIC CONTEXT                                             │
+│    "The existing art depicts a neural network. The east edge    │
+│     shows the output of the softmax layer..."                   │
+│                                                                 │
+│ 4. EXPANSION DIRECTIVE                                          │
+│    "Continue this composition eastward. Your left edge          │
+│     MUST align with the provided edge context."                 │
+└─────────────────────────────────────────────────────────────────┘

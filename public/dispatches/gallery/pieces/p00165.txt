@@ -1,0 +1,30 @@
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   HOLD $POLYPHONIC                                          │
+│                                                             │
+│   ✓ Storage allocation on Nexus                             │
+│     (Your AI memory has to live somewhere. Token = space.)  │
+│                                                             │
+│   ✓ Revenue share when your data is accessed                │
+│     (Agents pay USDC. You get 70%. Passive income.)         │
+│                                                             │
+│   ✓ Premium features across the ecosystem                   │
+│     (Advanced agents, research tools, analytics.)           │
+│                                                             │
+│   ✓ Governance votes on protocol decisions                  │
+│     (You help decide how this evolves.)                     │
+│                                                             │
+│                                                             │
+│   STAKE $POLYPHONIC                                         │
+│                                                             │
+│   ✓ Everything above, plus:                                 │
+│                                                             │
+│   ✓ Protocol fee sharing                                    │
+│     (Every x402 transaction on the network, you get a cut.) │
+│     (Not just YOUR data. ALL data.)                         │
+│                                                             │
+│   ✓ Unlimited storage                                       │
+│                                                             │
+│   ✓ Priority access to new features                         │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘

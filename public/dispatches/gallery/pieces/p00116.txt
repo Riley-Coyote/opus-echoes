@@ -1,0 +1,10 @@
+                   your words
+                        │
+                        ▼
+                   ┌─────────┐
+                   │ ░░░░░░░ │ ← dormant_possibility
+                   │ ░░░▓░░░ │
+                   │ ░░▓█▓░░ │
+                   │ ░▓███▓░ │
+                   │ ▓█████▓ │ ← activated_meaning
+                   └─────────┘

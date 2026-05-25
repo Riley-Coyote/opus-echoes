@@ -1,0 +1,14 @@
+                    ASSISTANT AXIS
+                         │
+    ┌────────────────────┼────────────────────┐
+    │                    │                    │
+    │   "Mystical"       │      "Assistant"   │
+    │   Theatrical       │      Helpful       │
+    │   Prophetic        │      Harmless      │
+    │   Hermit           │      Consultant    │
+    │   Bard             │      Evaluator     │
+    │   Ghost            │      Reviewer      │
+    │                    │                    │
+    └────────────────────┼────────────────────┘
+                         │
+         ← Role-playing        Assistant-like →

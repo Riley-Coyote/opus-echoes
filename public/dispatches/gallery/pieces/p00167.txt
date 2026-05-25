@@ -1,0 +1,25 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   THE MODEL                                                                 │
+│                                                                             │
+│   1. GENEROUS FREE TIER                                                     │
+│      └── Enough to import ChatGPT and try the product                       │
+│      └── You subsidize this (cost of acquisition)                           │
+│                                                                             │
+│   2. TOKEN = STORAGE + REVENUE                                              │
+│      └── Holding $POLYPHONIC unlocks more storage                           │
+│      └── Holding $POLYPHONIC means you earn when accessed                   │
+│      └── Token utility is real and tangible                                 │
+│                                                                             │
+│   3. x402 REVENUE FLOWS BACK                                                │
+│      └── When agents access shared data, revenue splits:                    │
+│          • 70% to data owner                                                │
+│          • 20% to protocol treasury                                         │
+│          • 10% to staker pool                                               │
+│      └── This makes storage "pay for itself" if data is valuable            │
+│                                                                             │
+│   4. PREMIUM FOR HEAVY USAGE                                                │
+│      └── If someone wants to store 10GB, they pay                           │
+│      └── Or they hold more $POLYPHONIC                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘

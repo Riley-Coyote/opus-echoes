@@ -1,0 +1,15 @@
+┌────────────────────────────────────────────────────────────────┐
+│  Every prompt now includes:                                    │
+│                                                                │
+│  1. MINIMAP - Shows what tiles exist and where                 │
+│        -1   0   1                                              │
+│     ┌───┬───┬───┐                                              │
+│  -1 │   │ ■ │   │                                              │
+│     ├───┼───┼───┤                                              │
+│   0 │ ■ │ ◉ │ → │  ← "You are here, expand there"              │
+│     └───┴───┴───┘                                              │
+│                                                                │
+│  2. COORDINATES - Tile [1, 0] being generated                  │
+│                                                                │
+│  3. EDGE CONTEXT - Exact characters to connect to              │
+└────────────────────────────────────────────────────────────────┘

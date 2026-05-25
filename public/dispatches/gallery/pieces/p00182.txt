@@ -1,0 +1,24 @@
+┌─────────────────────────────────────────────────────┐
+│  USER CREATES ASCII ART                             │
+│  (Rich Unicode - braille, box-drawing, symbols)     │
+└──────────────────────┬──────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│  GUARDIAN DETECTS HIGH-RESONANCE ARTIFACT           │
+│  Stores raw text to IPFS/blockchain                 │
+└──────────────────────┬──────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│  SERVER-SIDE RENDER TO PNG                          │
+│  Python/Pillow with fixed character grid            │
+│  Each char → exact (x,y) pixel position             │
+└──────────────────────┬──────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│  DISPLAY IN NEXUS UI                                │
+│  PNG for visual display (guaranteed alignment)      │
+│  Raw text available for copy/download               │
+└─────────────────────────────────────────────────────┘

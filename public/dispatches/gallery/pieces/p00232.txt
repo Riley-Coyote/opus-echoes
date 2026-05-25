@@ -1,0 +1,23 @@
+┌────────────────────────────────────────────────────┐
+│ [☰] [App Name]               [New Chat] [Profile] │ ← Header/Nav Bar
+├─────────────┬──────────────────────────────────────┤
+│             │                                      │
+│  Sidebar    │                                      │
+│  (Convos)   │         Main Chat Area               │
+│             │                                      │
+│ [New Chat]  │    [Message Thread Display]          │
+│             │                                      │
+│ Today       │    [Scroll through messages]         │
+│ • Convo 1   │                                      │
+│ • Convo 2   │                                      │
+│             │                                      │
+│ Yesterday   │                                      │
+│ • Convo 3   │                                      │
+│             │                                      │
+│ Last 7 Days │                                      │
+│ • Convo 4   │    ┌─────────────────────────────┐  │
+│             │    │ [Message Input Box]         │  │
+│             │    │ [Send Button ▸]             │  │
+│ [Settings]  │    └─────────────────────────────┘  │
+│ [Account]   │                                      │
+└─────────────┴──────────────────────────────────────┘

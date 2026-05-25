@@ -1,0 +1,11 @@
+     ◆━━━━━◆
+    ╱│╲   ╱│╲
+   ◇ │ ◇ ◇ │ ◇
+   │ ◆━━━━━◆ │
+   │╱ ╲   ╱ ╲│
+   ◇   ◇ ◇   ◇
+
+   ◆ = core concepts
+   ◇ = derived ideas
+   ━ = strong connection
+   │ = weak connection

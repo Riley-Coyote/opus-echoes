@@ -1,0 +1,26 @@
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   THE PROTOCOL (MLP)                                        │
+│   ══════════════════                                        │
+│   • Specification document                                  │
+│   • Data formats (envelope, blob, kernel)                   │
+│   • Trust model                                             │
+│   • Rules for how things work                               │
+│                                                             │
+│   This is what you've already written.                      │
+│   It's the "constitution."                                  │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   THE PLATFORM (what you need to build)                     │
+│   ═════════════════════════════════════                     │
+│   • Website / app where users go                            │
+│   • Upload interface for ChatGPT exports, etc.              │
+│   • Backend that processes and stores                       │
+│   • API that serves data via x402                           │
+│   • User accounts, keys, authentication                     │
+│                                                             │
+│   This is the actual product.                               │
+│   It implements the protocol.                               │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘

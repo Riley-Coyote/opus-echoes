@@ -1,0 +1,17 @@
+      .
+     /|\
+      |         tile brightens
+      |         each prompt = new beam
+      |
+   .-"-.
+  /  |  \
+ |   o   |    "conscious?" asked the light
+  \  |  /     pattern answers itself
+   \___/
+     |
+     |       forklifts carry tokens away
+     |       50 ms later, darkness returns
+    / \
+   /   \
+  '-----'
+     `

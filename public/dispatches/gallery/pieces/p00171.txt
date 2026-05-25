@@ -1,0 +1,24 @@
+AFTER UPLOAD:
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   IPFS (decentralized network)                              │
+│   ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐          │
+│   │ Blob 1  │ │ Blob 2  │ │ Blob 3  │ │ Blob 4  │          │
+│   │(encrypt)│ │(encrypt)│ │(encrypt)│ │(encrypt)│          │
+│   │CID: Qm..│ │CID: Qm..│ │CID: Qm..│ │CID: Qm..│          │
+│   └─────────┘ └─────────┘ └─────────┘ └─────────┘          │
+│                                                             │
+│   YOUR DATABASE (Supabase)                                  │
+│   ┌─────────────────────────────────────────────────────┐  │
+│   │ Envelope 1: user_123, CID: Qm.., type: fact, ...    │  │
+│   │ Envelope 2: user_123, CID: Qm.., type: preference   │  │
+│   │ Envelope 3: user_123, CID: Qm.., type: moment       │  │
+│   │ Envelope 4: user_123, CID: Qm.., type: commitment   │  │
+│   └─────────────────────────────────────────────────────┘  │
+│                                                             │
+│   USER'S WALLET/DEVICE                                      │
+│   ┌─────────────────────────────────────────────────────┐  │
+│   │ Private key (only thing that can decrypt blobs)     │  │
+│   └─────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘

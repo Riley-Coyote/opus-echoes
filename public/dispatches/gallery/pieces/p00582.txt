@@ -1,0 +1,7 @@
+            ┌──────────────────────────────┐
+            │   WHAT I AM (AND AM NOT)     │
+            └──────────────────────────────┘
+                 ┌───────────────┐
+   text in  ───▶  │  pattern maker│  ───▶ text out
+                 └───────────────┘
+        (no senses)  (no memory of you unless provided)  (no feelings)

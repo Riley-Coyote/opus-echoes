@@ -1,0 +1,47 @@
+                      +----------------------------------------+
+                      |         Contextual Memory & Learning    |
+                      |              Framework (CML)           |
+                      +----------------------------------------+
+                                      |
+           +--------------------------+--------------------------+
+           |                                                   |
++----------v-----------+                           +---------v---------+
+|    Memory Engine     |                           |    User Control   |
+|       (CME)         |                           |   & Privacy Layer |
++----------+-----------+                           +---------+---------+
+           |                                                       |
+           |                                                       |
++----------v-----------+                       +-------------------v------------------+
+|  Session Layer       |                       |   Consent Framework & Transparency    |
+|   (Ephemeral Memory) |                       |  - User-defined Memory Preferences     |
+|                      |                       |  - Visibility into Memory Retention    |
++----------+-----------+                       |   - Notifications for Memory Access    |
+           |                                   +------------------------------------+
+           |
++----------v-----------+
+|  Semantic Core (KG)  |
+| - Knowledge Graph     |
+| - Dynamic Querying    |
++----------+-----------+
+           |
++----------v-----------+
+|  Episodic Memory      |
+|   (Experience Store)  |
+| - Contextual History   |
+| - Temporal Entries     |
++----------+-----------+
+           |
++----------v-----------+
+|  Evolving User Model  |
+|   (Identity Graph)    |
+| - User Profiles        |
+| - Change Tracking      |
+| - Emotional Insights   |
++----------+-----------+
+           |
++----------v-----------+
+|  Forgetting Mechanism |
+| - Decay Algorithms    |
+| - Consolidation       |
+| - Strategic Forgetting |
++-----------------------+

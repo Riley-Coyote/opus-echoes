@@ -1,0 +1,14 @@
+┌─────────────────────────────────┐
+│  ← Back         Conversations   │
+│                                 │
+│  + New Conversation             │
+│                                 │
+│  Continue where you left off →  │
+│                                 │
+│  TODAY                          │
+│  ├─ New Conversation   5h ago   │
+│  └─ New Conversation   6h ago   │
+│                                 │
+│  YESTERDAY                      │
+│  └─ ...                         │
+└─────────────────────────────────┘

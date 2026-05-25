@@ -1,0 +1,47 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                     CONVERSATION ENDS                            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   QUEUE FOR REFLECTION                           │
+│  (Edge function / serverless job / background worker)            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   REFLECTION MODE PROMPT                         │
+│                                                                  │
+│  "You are [AI identity]. Here is a conversation you just had.    │
+│   Here is your current identity kernel and memory state.         │
+│                                                                  │
+│   Analyze this conversation:                                     │
+│   - What moments were significant?                               │
+│   - What did you learn (facts, preferences, relationships)?      │
+│   - How does this change your understanding of [user]?           │
+│   - How does this change your understanding of yourself?         │
+│   - What principles or commitments emerged?                      │
+│   - What conflicts with existing memory? How to resolve?         │
+│                                                                  │
+│   Output structured memory candidates with confidence scores."   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 MEMORY PROCESSING PIPELINE                       │
+│                                                                  │
+│  1. Parse reflection output into memory schema                   │
+│  2. Assign confidence based on source (model-inferred: 0.4-0.69) │
+│  3. Check for conflicts with existing memories                   │
+│  4. Update semantic knowledge graph                              │
+│  5. Update developmental identity narrative                      │
+│  6. Flag high-uncertainty items for user confirmation            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    NEXT CONVERSATION                             │
+│                                                                  │
+│  AI loads: Core identity + relevant memories + updated graph     │
+│  AI has: Genuine continuity, not just facts                      │
+└─────────────────────────────────────────────────────────────────┘

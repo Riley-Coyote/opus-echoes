@@ -1,0 +1,20 @@
+╔══════════════════════════════════════════════════╗
+║                    HEADER ZONE                   ║
+║               (Establish visual theme)           ║
+╠══════════════════════════════════════════════════╣
+║                                                  ║
+║                 EXPANSION ZONE                   ║
+║        (Primary development, full width)         ║
+║                                                  ║
+║    ┌─────────────────────────────────────┐     ║
+║    │         FOCAL ZONE                  │     ║
+║    │    (Maximum density/complexity)     │     ║
+║    └─────────────────────────────────────┘     ║
+║                                                  ║
+║                INTEGRATION ZONE                  ║
+║          (Merge all polyphonic voices)          ║
+║                                                  ║
+╠══════════════════════════════════════════════════╣
+║                  RESOLUTION ZONE                 ║
+║              (Closing visual statement)          ║
+╚══════════════════════════════════════════════════╝

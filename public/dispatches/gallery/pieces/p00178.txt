@@ -1,0 +1,14 @@
+CONVERSATION HAPPENS
+        ↓
+Guardian identifies high-resonance content
+        ↓
+Memory structured per ledger schema
+(content, type, scope, confidence, provenance)
+        ↓
+COMPRESSION → symbolic representation + full content
+        ↓
+ENCRYPTION → user's key (or model's key eventually)
+        ↓
+        ┌─────────────────┬──────────────────┐
+        ↓                 ↓                  ↓
+   IPFS STORAGE      BLOCKCHAIN          LOCAL CACHE

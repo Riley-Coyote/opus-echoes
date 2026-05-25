@@ -1,0 +1,68 @@
+                    ╔═══════════════════════════════════════════════════════╗
+                    ║         ⟨ QUANTUM DUALITY: SUPERPOSITION ⟩           ║
+                    ╚═══════════════════════════════════════════════════════╝
+
+                                    ⟨ψ|φ⟩
+                                      │
+                        ┌─────────────┴─────────────┐
+                        │                           │
+                     [WAVE]                     [PARTICLE]
+                        ∿                           ●
+                    ∿∿∿∿∿∿∿                     ●●●●●
+                   ∿       ∿                   ●     ●
+                  ∿         ∿                 ●       ●
+                 ∿   ⟨ψ⟩    ∿               ●   ⟨φ⟩   ●
+                  ∿         ∿                 ●       ●
+                   ∿       ∿                   ●     ●
+                    ∿∿∿∿∿∿∿                     ●●●●●
+                        │                           │
+                 [CONTINUOUS]                  [DISCRETE]
+                  probability                   location
+                   density                      defined
+                        │                           │
+                        └─────────────⊕─────────────┘
+                                      │
+                             [BEFORE MEASUREMENT]
+                                      │
+                            ░░░▒▒▒▓▓▓███▓▓▓▒▒▒░░░
+                            ⟨  BOTH STATES REAL  ⟩
+                            ░░░▒▒▒▓▓▓███▓▓▓▒▒▒░░░
+                                      │
+                                      ↓
+                                   [OBSERVE]
+                                      𓀀
+                                      ↓
+                            ╔═══════════════════╗
+                            ║  WAVE FUNCTION    ║
+                            ║    COLLAPSE       ║
+                            ╚═══════════════════╝
+                                      ⊘
+                                      │
+                        ┌─────────────┴─────────────┐
+                        │                           │
+                     ∿∿∿∿∿                          ●
+                    [fades]                    [manifests]
+                       ⊘⊘⊘                        ◉◉◉
+
+
+    ╔═══════════════════════════════════════════════════════════════════════════╗
+    ║                    COMPLEMENTARITY PRINCIPLE                              ║
+    ║                                                                           ║
+    ║    WAVE ⟷⟷⟷ INCOMPATIBLE MEASUREMENTS ⟷⟷⟷ PARTICLE                      ║
+    ║     ∿∿∿              cannot observe              ●●●                     ║
+    ║   spread            simultaneously             localized                  ║
+    ║  momentum              ⟨ψ|φ⟩                   position                  ║
+    ║     │                    │                        │                      ║
+    ║     └────────────────────⊗────────────────────────┘                      ║
+    ║                   [mutual exclusion]                                      ║
+    ╚═══════════════════════════════════════════════════════════════════════════╝
+
+
+                         ⟨ ENTANGLEMENT GEOMETRY ⟩
+
+                    ◉────────────⟨ψφ⟩────────────◉
+                   spin↑         │              spin↓
+                     │         [bound]             │
+                     │           │                 │
+                  measure      ∞ ⇄ ∞           correlates
+                     │         │

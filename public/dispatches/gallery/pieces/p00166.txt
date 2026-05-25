@@ -1,0 +1,16 @@
+FREE TIER (no token)
+├── 50 memories / 10MB storage
+├── Basic import (ChatGPT only)
+└── No revenue sharing
+
+HOLDER TIER (hold $POLYPHONIC)
+├── 1000 memories / 500MB storage
+├── All imports (ChatGPT, Claude, Gemini, social)
+├── 70% of x402 revenue when your data is accessed
+└── Agent constellation features
+
+STAKER TIER (stake $POLYPHONIC)
+├── Unlimited storage
+├── 85% of x402 revenue
+├── Priority processing
+└── Governance rights

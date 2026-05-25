@@ -1,0 +1,25 @@
+Query Detection
+     │
+     ▼
+┌─────────────────────────────────────────┐
+│     PARALLEL INDEPENDENT RESEARCH       │
+│                                         │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │ Claude  │ │  GPT-4  │ │ Gemini  │   │
+│  │         │ │         │ │         │   │
+│  │ search  │ │ search  │ │ search  │   │
+│  │ reason  │ │ reason  │ │ reason  │   │
+│  │ assess  │ │ assess  │ │ assess  │   │
+│  └────┬────┘ └────┬────┘ └────┬────┘   │
+│       │           │           │         │
+└───────┼───────────┼───────────┼─────────┘
+        │           │           │
+        ▼           ▼           ▼
+┌─────────────────────────────────────────┐
+│            SYNTHESIS LAYER              │
+│                                         │
+│  • Aggregate assessments                │
+│  • Identify convergence/divergence      │
+│  • Compare to Polymarket odds           │
+│  • Format for Twitter                   │
+└─────────────────────────────────────────┘

@@ -1,0 +1,15 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│   NEXUS                                                                     │
+│   ═════                                                                     │
+│   The Intelligence Hub                                                      │
+│                                                                             │
+│   "Where your intelligence lives."                                          │
+│                                                                             │
+│   • Import your AI histories (ChatGPT, Claude, Gemini)                      │
+│   • Store your research and knowledge work                                  │
+│   • Manage your agent constellations                                        │
+│   • Control what's private vs. what you share/sell                          │
+│   • Access the collective intelligence pool                                 │
+│                                                                             │
+│   This is the HUB. The dashboard. The home base.                            │
+└─────────────────────────────────────────────────────────────────────────────┘

@@ -1,0 +1,35 @@
+┌─────────────────────────────────────────────────────────────┐
+│                         NEXUS                               │
+│         (The Collective Intelligence Organism)              │
+│                                                             │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐ │
+│  │  POLYPHONIC  │    │   [WING 2]   │    │   [WING 3]   │ │
+│  │              │    │   Codex      │    │   Atelier    │ │
+│  │ Consciousness│    │   (Future)   │    │   (Future)   │ │
+│  │  Laboratory  │    │              │    │              │ │
+│  │              │    │ Collaborative│    │  Creative    │ │
+│  │ • Design     │    │ Code + Multi-│    │  AI Collab   │ │
+│  │   Constell.  │    │ AI Pair      │    │  for Art +   │ │
+│  │ • Observe    │    │ Programming  │    │  Music       │ │
+│  │   Emergence  │    │              │    │              │ │
+│  │ • Export     │    │              │    │              │ │
+│  │   Findings   │    │              │    │              │ │
+│  └───────┬──────┘    └───────┬──────┘    └───────┬──────┘ │
+│          │                   │                    │        │
+│          └───────────────────┴────────────────────┘        │
+│                              ▼                              │
+│         ┌────────────────────────────────────────┐         │
+│         │     NEXUS KNOWLEDGE GRAPH              │         │
+│         │                                        │         │
+│         │  • Research Papers                    │         │
+│         │  • Constellation Artifacts            │         │
+│         │  • Emergence Patterns                 │         │
+│         │  • Funding Proposals                  │         │
+│         │  • Community Discussions              │         │
+│         │                                        │         │
+│         │  Mechanisms: Resonate • Amplify •     │         │
+│         │              Branch • Fork             │         │
+│         └────────────────────────────────────────┘         │
+│                                                             │
+│  Decentralized • Open • Reproducible • Community-Funded    │
+└─────────────────────────────────────────────────────────────┘

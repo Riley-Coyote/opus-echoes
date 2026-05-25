@@ -1,0 +1,48 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   NEXUS                                                                     │
+│   ═════                                                                     │
+│   The Intelligence Hub                                                      │
+│                                                                             │
+│   "Where your intelligence lives."                                          │
+│                                                                             │
+│   • Import your AI histories (ChatGPT, Claude, Gemini)                      │
+│   • Store your research and knowledge work                                  │
+│   • Manage your agent constellations                                        │
+│   • Control what's private vs. what you share/sell                          │
+│   • Access the collective intelligence pool                                 │
+│                                                                             │
+│   This is the HUB. The dashboard. The home base.                            │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   POLYPHONIC                                                                │
+│   ══════════                                                                │
+│   The Proof of Concept                                                      │
+│                                                                             │
+│   "See what's possible when your AI knows you."                             │
+│                                                                             │
+│   • Multi-model chat (Claude + GPT + Gemini together)                       │
+│   • Connects to your Nexus profile                                          │
+│   • Your agents remember everything across sessions                         │
+│   • Demonstrates the MLP protocol in action                                 │
+│                                                                             │
+│   This is a SHOWCASE. Proof the vision works.                               │
+│   Not trying to be "the chat app." Trying to show what's possible.          │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   MLP (Memory Ledger Protocol)                                              │
+│   ════════════════════════════                                              │
+│   The Infrastructure                                                        │
+│                                                                             │
+│   "The protocol that makes it all work."                                    │
+│                                                                             │
+│   • How data is stored, encrypted, accessed                                 │
+│   • The x402 endpoint other apps can pay to use                             │
+│   • Open protocol — anyone can build on it                                  │
+│                                                                             │
+│   This is the PLUMBING. Users don't need to understand it.                  │
+│   But developers and agents will.                                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
