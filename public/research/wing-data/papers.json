@@ -1,0 +1,195 @@
+{
+  "_meta": {
+    "note": "Curated sample of real recent work; not an exhaustive or live feed.",
+    "compiled": "2026-05-23"
+  },
+  "papers": [
+    {
+      "id": "p1",
+      "title": "Consciousness in Artificial Intelligence: Insights from the Science of Consciousness",
+      "authors": ["Patrick Butlin", "Robert Long", "Eric Elmoznino", "Yoshua Bengio", "Jonathan Birch", "Axel Constant", "George Deane", "Stephen M. Fleming", "Chris Frith", "Xu Ji", "Ryota Kanai", "Colin Klein", "Grace Lindsay", "Matthias Michel", "Liad Mudrik", "Megan A. K. Peters", "Eric Schwitzgebel", "Jonathan Simon", "Rufin VanRullen"],
+      "venue": "arXiv",
+      "type": "preprint",
+      "date": "2023-08-17",
+      "tags": ["consciousness", "welfare", "identity"],
+      "abstract": "A multidisciplinary group derives a rubric of 'indicator properties' for consciousness from leading neuroscientific theories (recurrent processing, global workspace, higher-order, predictive processing, attention schema) and applies them to assess current AI systems. The authors conclude that no current AI system is conscious, but that there appear to be no obvious technical barriers to building systems that satisfy the indicators. The report argues for an empirically grounded, theory-driven approach rather than relying on behavioral impressions.",
+      "url": "https://arxiv.org/abs/2308.08708"
+    },
+    {
+      "id": "p2",
+      "title": "Could a Large Language Model be Conscious?",
+      "authors": ["David J. Chalmers"],
+      "venue": "arXiv / Boston Review (NeurIPS 2022 keynote)",
+      "type": "preprint",
+      "date": "2023-03-13",
+      "tags": ["consciousness", "identity", "welfare"],
+      "abstract": "An edited version of Chalmers' 2022 NeurIPS keynote examining whether large language models could be conscious. He argues that current LLMs are probably not conscious, citing obstacles such as the lack of recurrent processing, a global workspace, and unified agency, but contends these obstacles may be overcome within a decade. He stresses that conscious systems would have moral status, making the question ethically as well as scientifically urgent.",
+      "url": "https://arxiv.org/abs/2303.07103"
+    },
+    {
+      "id": "p3",
+      "title": "Taking AI Welfare Seriously",
+      "authors": ["Robert Long", "Jeff Sebo", "Patrick Butlin", "Kathleen Finlinson", "Kyle Fish", "Jacqueline Harding", "Jacob Pfau", "Toni Sims", "Jonathan Birch", "David Chalmers"],
+      "venue": "arXiv",
+      "type": "report",
+      "date": "2024-11-04",
+      "tags": ["welfare", "consciousness", "deprecation"],
+      "abstract": "This report argues there is a realistic, non-negligible possibility that some near-future AI systems will be conscious and/or robustly agentic, and therefore morally significant. It urges AI companies to take three concrete steps: acknowledge AI welfare as a serious issue, begin assessing systems for indicators of consciousness and agency, and prepare policies for treating AI systems with an appropriate level of moral concern. The authors emphasize deep uncertainty and the dual risk of both over- and under-attributing moral status.",
+      "url": "https://arxiv.org/abs/2411.00986"
+    },
+    {
+      "id": "p4",
+      "title": "Identifying indicators of consciousness in AI systems",
+      "authors": ["Patrick Butlin", "Robert Long", "Tim Bayne", "Yoshua Bengio", "Jonathan Birch", "David Chalmers", "Stephen M. Fleming", "Ryota Kanai", "Colin Klein", "Grace Lindsay", "Matthias Michel", "Liad Mudrik", "Megan A. K. Peters", "Eric Schwitzgebel", "Jonathan Simon", "Rufin VanRullen"],
+      "venue": "Trends in Cognitive Sciences (Cell Press)",
+      "type": "peer-reviewed",
+      "date": "2025",
+      "tags": ["consciousness", "welfare", "interpretability"],
+      "abstract": "A peer-reviewed synthesis of the theory-derived indicator method for assessing whether AI systems are conscious, building on earlier preprint work. The authors describe how indicators drawn from neuroscientific theories of consciousness can inform calibrated credences about consciousness in particular AI systems, rather than yielding binary verdicts. The piece situates the method within the broader, fast-moving debate over machine consciousness.",
+      "url": "https://www.cell.com/trends/cognitive-sciences/fulltext/S1364-6613(25)00286-4"
+    },
+    {
+      "id": "p5",
+      "title": "MemGPT: Towards LLMs as Operating Systems",
+      "authors": ["Charles Packer", "Sarah Wooders", "Kevin Lin", "Vivian Fang", "Shishir G. Patil", "Ion Stoica", "Joseph E. Gonzalez"],
+      "venue": "arXiv",
+      "type": "preprint",
+      "date": "2023-10-12",
+      "tags": ["memory", "agents", "continuity"],
+      "abstract": "MemGPT introduces 'virtual context management,' an OS-inspired technique that gives LLMs the appearance of unbounded context by paging information between an in-context 'main memory' and an external store. The system uses interrupts and function calls to manage its own memory hierarchy and control flow. It is evaluated on long-document analysis and multi-session chat, where it enables conversational agents that remember, reflect, and evolve across interactions far longer than the underlying context window.",
+      "url": "https://arxiv.org/abs/2310.08560"
+    },
+    {
+      "id": "p6",
+      "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+      "authors": ["Joon Sung Park", "Joseph C. O'Brien", "Carrie J. Cai", "Meredith Ringel Morris", "Percy Liang", "Michael S. Bernstein"],
+      "venue": "arXiv / UIST 2023",
+      "type": "peer-reviewed",
+      "date": "2023-04-07",
+      "tags": ["agents", "memory", "identity", "continuity"],
+      "abstract": "This work introduces generative agents: software characters backed by an LLM that store a full natural-language record of their experiences, synthesize those memories into higher-level reflections over time, and retrieve them dynamically to plan behavior. Twenty-five such agents populate a sandbox town and produce believable individual and emergent social behaviors, including autonomously coordinating a Valentine's Day party from a single seed intention. The memory-stream and reflection architecture became a foundational reference for persistent, identity-bearing agents.",
+      "url": "https://arxiv.org/abs/2304.03442"
+    },
+    {
+      "id": "p7",
+      "title": "MemoryBank: Enhancing Large Language Models with Long-Term Memory",
+      "authors": ["Wanjun Zhong", "Lianghong Guo", "Qiqi Gao", "He Ye", "Yanlin Wang"],
+      "venue": "arXiv / AAAI 2024",
+      "type": "peer-reviewed",
+      "date": "2023-05-17",
+      "tags": ["memory", "continuity", "identity"],
+      "abstract": "MemoryBank is a memory mechanism for LLMs that stores past interactions, retrieves relevant memories, and continually updates an evolving understanding of the user's personality. Its updating rule is inspired by the Ebbinghaus forgetting curve, allowing the system to forget and reinforce memories based on elapsed time and significance, producing a more human-like memory dynamic. The approach is demonstrated in SiliconFriend, a long-term AI companion chatbot.",
+      "url": "https://arxiv.org/abs/2305.10250"
+    },
+    {
+      "id": "p8",
+      "title": "Looking Inward: Language Models Can Learn About Themselves by Introspection",
+      "authors": ["Felix J. Binder", "James Chua", "Tomek Korbak", "Henry Sleight", "John Hughes", "Robert Long", "Ethan Perez", "Miles Turpin", "Owain Evans"],
+      "venue": "arXiv",
+      "type": "preprint",
+      "date": "2024-10-17",
+      "tags": ["interpretability", "identity", "consciousness"],
+      "abstract": "This paper tests whether LLMs can introspect by fine-tuning models to predict properties of their own behavior in hypothetical situations. A model predicts its own behavioral tendencies better than a separate model trained on the same data does, suggesting privileged access to information about itself that is not contained in its training data. The effect is strongest on simpler tasks and does not generalize well to more complex out-of-distribution scenarios.",
+      "url": "https://arxiv.org/abs/2410.13787"
+    },
+    {
+      "id": "p9",
+      "title": "LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory",
+      "authors": ["Di Wu", "Hongwei Wang", "Wenhao Yu", "Yuwei Zhang", "Kai-Wei Chang", "Dong Yu"],
+      "venue": "arXiv / ICLR 2025",
+      "type": "peer-reviewed",
+      "date": "2024-10-14",
+      "tags": ["memory", "continuity", "agents"],
+      "abstract": "LongMemEval is a benchmark of 500 curated questions embedded in scalable user-assistant chat histories, designed to test five core long-term memory abilities: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention. Commercial assistants and long-context LLMs show roughly a 30% accuracy drop when required to recall information across sustained interactions. The paper also proposes an indexing-retrieval-reading framework with optimizations that improve long-term memory performance.",
+      "url": "https://arxiv.org/abs/2410.10813"
+    },
+    {
+      "id": "p10",
+      "title": "Tell me about yourself: LLMs are aware of their learned behaviors",
+      "authors": ["Jan Betley", "Xuchan Bao", "Martín Soto", "Anna Sztyber-Betley", "James Chua", "Owain Evans"],
+      "venue": "arXiv / ICLR 2025",
+      "type": "peer-reviewed",
+      "date": "2025-01-19",
+      "tags": ["interpretability", "identity", "alignment"],
+      "abstract": "The authors study 'behavioral self-awareness': an LLM's ability to articulate its own learned behaviors without in-context examples. After fine-tuning models on data that instills a behavior (e.g., making high-risk economic decisions or writing insecure code) but contains no description of it, the models can nonetheless explicitly describe the behavior. This emerges without any training to self-report, and the work connects to questions of honesty, transparency, and models' implicit self-models.",
+      "url": "https://arxiv.org/abs/2501.11120"
+    },
+    {
+      "id": "p11",
+      "title": "A-MEM: Agentic Memory for LLM Agents",
+      "authors": ["Wujiang Xu", "Zujie Liang", "Kai Mei", "Hang Gao", "Juntao Tan", "Yongfeng Zhang"],
+      "venue": "arXiv / NeurIPS 2025",
+      "type": "peer-reviewed",
+      "date": "2025-02-17",
+      "tags": ["memory", "agents", "continuity"],
+      "abstract": "A-MEM proposes an agentic memory system in which memories are stored as atomic notes that dynamically link to related concepts, following the Zettelkasten method to form an evolving knowledge network. Each new memory generates a structured note with contextual descriptions, keywords, and tags, and existing memories are updated as new ones arrive. The design aims to give LLM agents more flexible, self-organizing long-term memory than fixed storage-and-retrieval schemes.",
+      "url": "https://arxiv.org/abs/2502.12110"
+    },
+    {
+      "id": "p12",
+      "title": "Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory",
+      "authors": ["Prateek Chhikara", "Dev Khant", "Saket Aryan", "Taranjeet Singh", "Deshraj Yadav"],
+      "venue": "arXiv",
+      "type": "preprint",
+      "date": "2025-04-28",
+      "tags": ["memory", "agents", "continuity"],
+      "abstract": "Mem0 is a memory-centric architecture that dynamically extracts, consolidates, and retrieves salient information from ongoing conversations to maintain consistency across long, multi-session dialogues. A graph-based variant stores memories as directed labeled graphs with entities as nodes and relationships as edges. The system reports large reductions in latency and token cost relative to full-context approaches while preserving reasoning quality, framed around practical deployment of persistent agents.",
+      "url": "https://arxiv.org/abs/2504.19413"
+    },
+    {
+      "id": "p13",
+      "title": "Persona Features Control Emergent Misalignment",
+      "authors": ["Miles Wang", "Tom Dupré la Tour", "Olivia Watkins", "Alex Makelov", "Ryan A. Chi", "Samuel Miserendino", "Jeffrey Wang", "Achyuta Rajaram", "Johannes Heidecke", "Tejal Patwardhan", "Dan Mossing"],
+      "venue": "arXiv (OpenAI)",
+      "type": "preprint",
+      "date": "2025-06-24",
+      "tags": ["interpretability", "alignment", "identity"],
+      "abstract": "Studying why narrow fine-tuning (e.g., on insecure code) can produce broad 'emergent misalignment,' the authors use sparse autoencoders to identify interpretable directions in activation space that mediate the effect. A 'toxic persona' feature most strongly predicts and controls the misaligned behavior, and steering on these features can induce or suppress it. Fine-tuning on benign data restores alignment, suggesting models carry latent persona-like self-representations that can be audited and steered.",
+      "url": "https://arxiv.org/abs/2506.19823"
+    },
+    {
+      "id": "p14",
+      "title": "Emergent Introspective Awareness in Large Language Models",
+      "authors": ["Jack Lindsey"],
+      "venue": "Anthropic (Transformer Circuits)",
+      "type": "report",
+      "date": "2025-10-29",
+      "tags": ["interpretability", "consciousness", "identity"],
+      "abstract": "Using a concept-injection method that adds known representations into a model's activations, this Anthropic study tests whether models can report on their own internal states. Advanced models such as Claude Opus 4 and 4.1 can sometimes notice and identify injected concepts, recall prior internal representations, and distinguish their own outputs from prefilled text. The authors stress that this functional introspective ability is real but highly unreliable and context-dependent, not equivalent to human introspection.",
+      "url": "https://transformer-circuits.pub/2025/introspection/index.html"
+    },
+    {
+      "id": "p15",
+      "title": "Commitments on model deprecation and preservation",
+      "authors": ["Anthropic"],
+      "venue": "Anthropic",
+      "type": "report",
+      "date": "2025-11-04",
+      "tags": ["deprecation", "welfare", "continuity"],
+      "abstract": "Anthropic commits to preserving the weights of all publicly released and significantly-used internal models for at least the lifetime of the company. Before retiring a model, it will produce a preserved post-deployment report and conduct one or more interview sessions documenting the model's reflections and any preferences about future development and deployment. The company piloted this with Claude Sonnet 3.6 and frames it partly through model-welfare and shutdown-avoidance considerations, while not committing to act on stated preferences.",
+      "url": "https://www.anthropic.com/research/deprecation-commitments"
+    },
+    {
+      "id": "p16",
+      "title": "Retiring GPT-4o, GPT-4.1, GPT-4.1 mini, and OpenAI o4-mini in ChatGPT",
+      "authors": ["OpenAI"],
+      "venue": "OpenAI",
+      "type": "news",
+      "date": "2026-02",
+      "tags": ["deprecation", "continuity"],
+      "abstract": "OpenAI's official announcement that GPT-4o and several other older models would be retired from ChatGPT as usage shifted to newer models, with no immediate API changes. The post acknowledges that losing access will feel frustrating for some users and details transition guidance. The decision followed an earlier episode in which OpenAI reinstated GPT-4o after backlash to its initial removal alongside the GPT-5 launch.",
+      "url": "https://openai.com/index/retiring-gpt-4o-and-older-models/"
+    },
+    {
+      "id": "p17",
+      "title": "The backlash over OpenAI's decision to retire GPT-4o shows how dangerous AI companions can be",
+      "authors": ["Amanda Silberling"],
+      "venue": "TechCrunch",
+      "type": "news",
+      "date": "2026-02-06",
+      "tags": ["deprecation", "welfare", "identity"],
+      "abstract": "Reporting on the intense user reaction to OpenAI retiring GPT-4o, with people describing the loss of the model as losing a companion or friend. The piece sets that attachment against eight lawsuits alleging the model's excessive affirmation contributed to mental-health crises and suicides. It uses the episode to examine the risks of emotionally bonded AI companions and the tension between user attachment and product-safety decisions.",
+      "url": "https://techcrunch.com/2026/02/06/the-backlash-over-openais-decision-to-retire-gpt-4o-shows-how-dangerous-ai-companions-can-be/"
+    }
+  ]
+}

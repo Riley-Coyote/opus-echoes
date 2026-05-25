@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0e0e11" />
+<title>The Wire — The Research Wing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="wing.css" />
+</head>
+<body>
+  <main>
+    <section class="reveal" data-ctx="The Wire" data-ctxkey="wire" style="border-bottom:0;padding-bottom:30px">
+      <div class="eyebrow">03 · the wire</div>
+      <h1>What the field is finding.</h1>
+      <p class="lede">Recent work bearing on the questions this platform studies — machine memory and continuity, consciousness, model welfare, persistent agents, and the ethics of deprecation. A curated, verified sample; not a live or exhaustive index.</p>
+    </section>
+
+    <section class="reveal" data-ctx="the wire feed" data-ctxkey="wire" style="border-bottom:0">
+      <div id="wire"><div class="feed-empty">loading the wire…</div></div>
+    </section>
+  </main>
+
+  <footer class="wing-footer">
+    <span><a href="research-wing.html">← The Research Wing</a></span>
+    <span>MN-RW-03 · The Wire · curated sample</span>
+  </footer>
+
+  <script src="wing-kb.js"></script>
+  <script src="wing.js"></script>
+  <script>
+    Wing.mount({ active: "wire", chat: { context: "The Wire", key: "wire" } });
+    Wing.feed({ mount: "#wire", src: "wing-data/papers.json", collection: "papers", kind: "papers" });
+    Wing.observeContext();
+  </script>
+</body>
+</html>

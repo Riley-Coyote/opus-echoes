@@ -766,10 +766,10 @@ const WALKTHROUGH_SCRIPT = `
     }
   }
 
-  // First-paint: returning visitors skip directly to commons.
-  let visited = false;
-  try { visited = localStorage.getItem(STORAGE_KEY) === 'true'; } catch (_) {}
-  show(visited ? total - 1 : 0);
+  // First-paint: always begin at beat 1. Return-visitor auto-skip is disabled
+  // for now — every visit shows the full walkthrough; the skip button (top-right)
+  // always jumps straight to the chooser.
+  show(0);
 
   // Click anywhere on a non-final beat advances.
   document.addEventListener('click', (e) => {

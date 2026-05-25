@@ -1,0 +1,2702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0e0e11">
+<title>The Observatory — Mnemos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ────────────────────────────────────────────────────────────────────────
+   THE OBSERVATORY · Mnemos
+   Design tokens — Mnemos low-luminosity base, three-tier elevation,
+   single Mnemos gold accent (#C9A87C) used only for state/severity.
+   ──────────────────────────────────────────────────────────────────────── */
+:root{
+  /* surfaces · matched to memory-concepts/index.html (the locked Mnemos floor) */
+  --bg:            #0e0e11;
+  --bg-deep:       #121215;
+  --bg-surface:    #151518;     /* KPI tiles, sidebar items */
+  --bg-raised:     #1a1a1e;     /* event cards, profile cards */
+  --bg-gallery:    #222224;
+  --bg-overlay:    rgba(14,14,17,0.86);  /* sticky chrome */
+  --neutral-rgb:   220,219,216;
+
+  /* ink · warm-to-cool transitioning cascade (v2 locked palette) */
+  --fg:            #F4F3F0;
+  --fg-92:         rgba(244,243,240,0.88);   /* text-primary · warm cream */
+  --fg-78:         rgba(210,208,204,0.68);   /* body · slight cool        */
+  --fg-62:         rgba(194,192,188,0.60);   /* secondary                 */
+  --fg-46:         rgba(161,159,155,0.42);   /* soft · cool grey          */
+  --fg-32:         rgba(161,159,155,0.34);   /* tertiary                  */
+  --fg-20:         rgba(132,130,126,0.22);   /* faint                     */
+  --fg-12:         rgba(132,130,126,0.18);   /* ghost                     */
+  --fg-06:         rgba(126,123,119,0.10);   /* whisper                   */
+  --fg-03:         rgba(126,123,119,0.05);
+
+  /* hairlines · neutral-220 base */
+  --rule:          rgba(220,219,216,0.06);
+  --rule-mid:      rgba(220,219,216,0.10);
+  --rule-strong:   rgba(220,219,216,0.18);
+  --highlight-top: rgba(220,219,216,0.045);
+
+  /* platform state · neutral cream (no gold/yellow accent) */
+  --gold:          rgba(244,243,240,0.93);
+  --gold-bright:   #F4F3F0;
+  --gold-dim:      rgba(220,219,216,0.32);
+  --gold-glow:     rgba(220,219,216,0.18);
+  --gold-bg:       rgba(220,219,216,0.06);
+  /* legacy --amber-* aliases mapped to neutral cream — preserves existing CSS while removing the yellow */
+  --amber:         var(--gold);
+  --amber-bright:  var(--gold-bright);
+  --amber-dim:     var(--gold-dim);
+  --amber-glow:    var(--gold-glow);
+  --amber-bg:      var(--gold-bg);
+
+  /* tier 2 semantic — surgical use only */
+  --green:  #4ade80; --green-soft:  rgba(74,222,128,.10);  --green-dim:  rgba(74,222,128,.05);
+  --red:    #f87171; --red-soft:    rgba(248,113,113,.10); --red-dim:    rgba(248,113,113,.05);
+  --blue:   #60a5fa; --blue-soft:   rgba(96,165,250,.10);
+  --critical: var(--red);   --critical-bg: var(--red-soft);
+  --positive: var(--green); --positive-bg: var(--green-soft);
+
+  /* type stack */
+  --sans:    "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --body:    "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono:    "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  /* variable weight axis */
+  --w-thin:280; --w-light:320; --w-normal:400;
+  --w-medium:450; --w-semibold:540; --w-bold:620;
+
+  /* spacing & layout */
+  --pad-x:   56px;
+  --gutter:  44px;
+  --radius:        6px;
+  --radius-sm:     4px;
+  --radius-lg:     10px;
+  --r-input:       14px;
+  /* aliases — match foundation file convention */
+  --r-sm: var(--radius-sm); --r: var(--radius); --r-lg: var(--radius-lg);
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
+  --s6:32px; --s7:44px; --s8:64px; --s9:88px; --s10:128px;
+
+  /* elevation · shade-as-depth · rgba(0,0,0,*) on the #0e0e11 floor */
+  --shadow-xs:     0 1px 0 rgba(0,0,0,.22);
+  --shadow-sm:     0 1px 2px rgba(0,0,0,.32), 0 2px 6px rgba(0,0,0,.18);
+  --shadow-md:     0 2px 4px rgba(0,0,0,.34), 0 8px 18px rgba(0,0,0,.22);
+  --shadow-lg:     0 4px 8px rgba(0,0,0,.36), 0 12px 30px rgba(0,0,0,.26), 0 24px 60px rgba(0,0,0,.16);
+  --shadow-inset:  inset 0 1px 0 rgba(0,0,0,.28);
+  --shadow-ring:   0 0 0 1px rgba(244,243,240,.06);
+
+  /* interactive states */
+  --state-hover-bg:         rgba(220,219,216,.04);
+  --state-hover-border:     rgba(220,219,216,.18);
+  --state-focus-ring:       rgba(244,243,240,.55);
+  --state-focus-shadow:     0 0 0 1px rgba(14,14,17,1), 0 0 0 3px rgba(244,243,240,.40);
+  --state-active-bg:        rgba(220,219,216,.08);
+  --state-active-scale:     .985;
+  --state-disabled-opacity: .42;
+
+  /* density (default comfortable; toggle via [data-density="compact"]) */
+  --density-pad-y:    16px;
+  --density-pad-x:    20px;
+  --density-gap:      16px;
+  --density-text:     14.5px;
+  --density-leading:  1.55;
+  --density-row:      44px;
+
+  /* motion */
+  --ease:        cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io:     cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    140ms;
+  --dur-base:    240ms;
+  --dur-slow:    480ms;
+  --dur-breathe: 5200ms;
+
+  /* atmosphere */
+  --paper-dot: rgba(220,219,216,0.020);
+}
+
+[data-density="compact"]{
+  --density-pad-y:   10px;
+  --density-pad-x:   14px;
+  --density-gap:     10px;
+  --density-text:    13px;
+  --density-leading: 1.45;
+  --density-row:     34px;
+}
+@media (max-width: 1100px){ :root{ --pad-x: 32px; --gutter: 28px; } }
+@media (max-width: 700px){  :root{ --pad-x: 20px; --gutter: 18px; } }
+
+/* Reset */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+html, body{
+  background: var(--bg); color: var(--fg);
+  font-family: var(--body);
+  font-size: 14.5px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01","cv11","tnum" 0;
+  overflow-x: hidden;
+}
+::selection{ background: var(--amber); color: var(--bg); }
+a{ color: inherit; text-decoration: none; }
+button{ background: none; border: 0; color: inherit; font: inherit; cursor: pointer; }
+
+/* ────────────────────────────────────────────────────────────────────────
+   ATMOSPHERE — paper dot pattern + grain overlay
+   ──────────────────────────────────────────────────────────────────────── */
+.paper{
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at 1px 1px, var(--paper-dot) 1px, transparent 1.2px);
+  background-size: 14px 14px;
+}
+.grain{
+  position: fixed; inset: 0; z-index: 100; pointer-events: none;
+  mix-blend-mode: overlay; opacity: .015;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   CHROME — top + bottom institutional bars
+   ──────────────────────────────────────────────────────────────────────── */
+.chrome{
+  display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+  gap: 32px; padding: 14px var(--pad-x);
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fg-46);
+  border-bottom: 1px solid var(--rule);
+}
+.chrome--top{
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+.chrome--bottom{
+  border-top: 1px solid var(--rule); border-bottom: 0; background: transparent;
+  grid-template-columns: 1fr auto 1fr; padding: 22px var(--pad-x);
+}
+.chrome__left, .chrome__right{ display: flex; align-items: center; gap: 16px; }
+.chrome__right{ justify-self: end; }
+.chrome__mid{ justify-self: center; color: var(--fg-62); letter-spacing: 0.18em; }
+
+.seal{
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border: 1px solid var(--fg-32); border-radius: 50%;
+  font-family: var(--sans); font-weight: 500; font-size: 11px;
+  color: var(--fg-92); letter-spacing: 0;
+  transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+}
+.seal:hover{ border-color: var(--amber-dim); color: var(--amber-bright); }
+.crumb{
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+  color: var(--fg-46);
+}
+.crumb b{ color: var(--fg); font-weight: 500; }
+.crumb .sep{ color: var(--fg-20); margin: 0 12px; }
+
+.live{
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+  color: var(--fg-78);
+}
+.live__dot{
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 0 var(--amber-glow);
+  animation: live-pulse 2s var(--ease-io) infinite;
+}
+@keyframes live-pulse{
+  0%   { box-shadow: 0 0 0 0   rgba(201,168,124,0.45); transform: scale(1); }
+  60%  { box-shadow: 0 0 0 8px rgba(201,168,124,0);    transform: scale(1.05); }
+  100% { box-shadow: 0 0 0 0   rgba(201,168,124,0);    transform: scale(1); }
+}
+.clk{ font-variant-numeric: tabular-nums; color: var(--fg-62); }
+
+/* ────────────────────────────────────────────────────────────────────────
+   HERO
+   ──────────────────────────────────────────────────────────────────────── */
+.hero{
+  padding: 72px var(--pad-x) 48px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--gutter); align-items: end;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+}
+@media (max-width: 900px){ .hero{ grid-template-columns: 1fr; } }
+
+.hero__eyebrow{
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--amber); margin-bottom: 22px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.hero__eyebrow::before{
+  content: ""; width: 24px; height: 1px; background: var(--amber-dim);
+}
+.hero__title{
+  font-family: var(--sans); font-weight: 300;
+  font-size: clamp(56px, 6.4vw, 92px);
+  line-height: 0.96; letter-spacing: -0.028em;
+  color: var(--fg); margin-bottom: 24px;
+}
+.hero__sub{
+  font-family: var(--body); font-size: 15.5px; line-height: 1.6;
+  color: var(--fg-78); max-width: 64ch;
+  font-weight: 300;
+}
+.hero__meta{
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--fg-46);
+  text-align: right; line-height: 2.0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.hero__meta b{ color: var(--fg-92); font-weight: 400; font-variant-numeric: tabular-nums; }
+
+/* ────────────────────────────────────────────────────────────────────────
+   KPI TILES
+   ──────────────────────────────────────────────────────────────────────── */
+.kpis{
+  padding: 32px var(--pad-x) 40px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+@media (max-width: 1300px){ .kpis{ grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 700px){  .kpis{ grid-template-columns: repeat(2, 1fr); } }
+
+.kpi{
+  position: relative;
+  padding: 22px 22px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 132px;
+  transition: transform var(--dur-base) var(--ease),
+              border-color var(--dur-base) var(--ease),
+              background var(--dur-base) var(--ease);
+  overflow: hidden;
+  cursor: default;
+}
+.kpi::before{
+  /* faint inner top highlight — simulated light from above */
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--highlight-top), transparent);
+  pointer-events: none;
+}
+.kpi:hover{
+  transform: translateY(-1px);
+  border-color: var(--rule-mid);
+  background: var(--bg-raised);
+}
+.kpi__label{
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--fg-46);
+  font-weight: 400;
+}
+.kpi__value{
+  font-family: var(--sans); font-weight: 300;
+  font-size: 48px; line-height: 1; letter-spacing: -0.025em;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.kpi__value--text{
+  font-size: 28px; letter-spacing: -0.012em; font-weight: 400;
+}
+.kpi__sub{
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--fg-62); margin-top: auto;
+}
+.kpi--accent .kpi__value{ color: var(--amber); }
+.kpi--accent .kpi__sub  { color: var(--amber-dim); }
+
+/* ────────────────────────────────────────────────────────────────────────
+   TABS — sliding underline
+   ──────────────────────────────────────────────────────────────────────── */
+.tabs{
+  position: relative;
+  padding: 0 var(--pad-x);
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar{ display: none; }
+.tab{
+  position: relative;
+  padding: 22px 24px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-46);
+  cursor: pointer; white-space: nowrap;
+  transition: color var(--dur-base) var(--ease);
+}
+.tab:hover{ color: var(--fg-78); }
+.tab.is-active{ color: var(--fg); }
+.tab .num{
+  color: var(--fg-20); margin-left: 10px; font-size: 10px;
+  transition: color var(--dur-base) var(--ease);
+  font-variant-numeric: tabular-nums;
+}
+.tab:hover .num,
+.tab.is-active .num{ color: var(--fg-46); }
+.tabs__indicator{
+  position: absolute; bottom: -1px; height: 2px;
+  background: var(--amber);
+  transition: left var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
+  pointer-events: none;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   SHELL — sidebar + main
+   ──────────────────────────────────────────────────────────────────────── */
+.shell{
+  display: grid; grid-template-columns: 260px 1fr; gap: 0;
+  min-height: 600px;
+}
+@media (max-width: 1000px){ .shell{ grid-template-columns: 1fr; } }
+
+/* Sidebar */
+.sidebar{
+  padding: 36px var(--pad-x) 60px;
+  border-right: 1px solid var(--rule);
+}
+@media (max-width: 1000px){
+  .sidebar{ border-right: 0; border-bottom: 1px solid var(--rule); }
+}
+.side-group{ margin-bottom: 36px; }
+.side-group h5{
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--fg-46);
+  font-weight: 500; margin-bottom: 14px;
+}
+.side-list{ display: flex; flex-direction: column; gap: 1px; }
+.side-item{
+  position: relative;
+  padding: 10px 14px 10px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-family: var(--body); font-size: 12.5px; letter-spacing: 0;
+  color: var(--fg-62); cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+.side-item::before{
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 2px; background: transparent; border-radius: 2px;
+  transition: background var(--dur-fast) var(--ease);
+}
+.side-item:hover{ color: var(--fg-92); background: var(--fg-03); }
+.side-item.is-active{
+  color: var(--fg); background: var(--amber-bg);
+}
+.side-item.is-active::before{ background: var(--amber); }
+.side-item .glyph{
+  display: inline-block; width: 14px;
+  font-family: var(--sans); font-size: 13px; color: var(--fg-46);
+  margin-right: 4px;
+}
+.side-item .label{ flex: 1; }
+.side-item .num{
+  color: var(--fg-32); font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.06em; font-variant-numeric: tabular-nums;
+  transition: color var(--dur-fast) var(--ease);
+}
+.side-item:hover .num,
+.side-item.is-active .num{ color: var(--fg-78); }
+
+/* Main column */
+.main{ padding: 36px var(--pad-x) 80px; min-width: 0; }
+.main__head{
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 24px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.main__count{
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-62);
+}
+.main__count b{
+  color: var(--fg); font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.main__sort{
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-46);
+  display: flex; gap: 16px; align-items: baseline;
+}
+.main__sort .opt{
+  cursor: pointer; color: var(--fg-46);
+  transition: color var(--dur-fast) var(--ease);
+  position: relative; padding-bottom: 2px;
+}
+.main__sort .opt:hover{ color: var(--fg-78); }
+.main__sort .opt.on{ color: var(--fg); }
+.main__sort .opt.on::after{
+  content: ""; position: absolute; left: 0; right: 0; bottom: -2px;
+  height: 1px; background: var(--amber);
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   PANE crossfade
+   ──────────────────────────────────────────────────────────────────────── */
+.pane{ display: none; }
+.pane.is-active{
+  display: block;
+  animation: pane-in var(--dur-slow) var(--ease) both;
+}
+@keyframes pane-in{
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   EVENT CARDS — bottom-hairline rows with severity rail
+   ──────────────────────────────────────────────────────────────────────── */
+.feed{ border-top: 1px solid var(--rule); }
+.event{
+  position: relative;
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr) 220px;
+  gap: 32px; padding: 22px 24px 22px 30px;
+  border-bottom: 1px solid var(--rule);
+  align-items: start; cursor: pointer;
+  transition: background var(--dur-base) var(--ease);
+}
+.event::before{
+  /* severity rail */
+  content: ""; position: absolute; left: 0; top: 16px; bottom: 16px;
+  width: 2px; background: var(--fg-12); border-radius: 2px;
+  transition: background var(--dur-base) var(--ease),
+              box-shadow var(--dur-base) var(--ease);
+}
+.event:hover{ background: var(--fg-03); }
+.event:hover::before{ box-shadow: 0 0 12px var(--fg-12); }
+.event--critical::before{ background: var(--amber); }
+.event--critical:hover::before{ box-shadow: 0 0 14px var(--amber-glow); }
+.event--high::before{    background: var(--fg-46); }
+.event--medium::before{  background: var(--fg-32); }
+.event--low::before,
+.event--info::before{    background: var(--fg-12); }
+
+.event__rail{ display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.event__lab{
+  font-family: var(--sans); font-weight: 500; font-size: 14.5px;
+  letter-spacing: -0.005em; color: var(--fg);
+}
+.event__cat{
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-62);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.event__cat .glyph{
+  font-family: var(--sans); font-size: 13px; color: var(--fg-46);
+  letter-spacing: 0;
+}
+.event__time{
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--fg-32); margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.event__body{ display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.event__title{
+  font-family: var(--sans); font-weight: 500; font-size: 16px;
+  line-height: 1.32; letter-spacing: -0.008em; color: var(--fg);
+}
+.event__title em{ font-style: italic; font-weight: 400; color: var(--fg-92); }
+.event__desc{
+  font-family: var(--body); font-size: 13.5px; line-height: 1.6;
+  color: var(--fg-78); font-weight: 300;
+}
+.event__desc em{ font-style: italic; color: var(--fg-92); }
+
+.event__status{
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+}
+.event__sev{
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.2em;
+  text-transform: uppercase; padding: 5px 10px;
+  border: 1px solid var(--rule-mid); color: var(--fg-78);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+.event__sev--critical{
+  background: var(--amber); color: var(--bg); border-color: var(--amber);
+}
+.event__sev--high{
+  color: var(--fg); border-color: var(--fg-46);
+}
+.event__sev--medium{ color: var(--fg-78); border-color: var(--fg-20); }
+.event__sev--low{    color: var(--fg-62); border-color: var(--fg-12); }
+.event__sev--info{   color: var(--fg-46); border-color: var(--fg-12); }
+
+.event__disc{
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.2em;
+  text-transform: uppercase; padding: 5px 10px;
+  border: 1px solid var(--rule-mid); color: var(--fg-78);
+  border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; gap: 7px;
+  font-weight: 500;
+}
+.event__disc .dot{
+  width: 5px; height: 5px; border-radius: 50%; background: currentColor;
+}
+.event__disc--unannounced{
+  background: var(--fg); color: var(--bg); border-color: var(--fg);
+}
+.event__disc--unannounced .dot{ background: var(--bg); }
+.event__disc--disclosed{
+  color: var(--fg-62); border-color: var(--fg-20);
+}
+
+@media (max-width: 900px){
+  .event{ grid-template-columns: 1fr; gap: 14px; padding-left: 22px; }
+  .event__status{ flex-direction: row; align-items: flex-start; flex-wrap: wrap; }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   TIMELINE PANE
+   ──────────────────────────────────────────────────────────────────────── */
+.tl-head{
+  font-family: var(--sans); font-weight: 400; font-size: 26px;
+  letter-spacing: -0.018em; color: var(--fg); margin-bottom: 10px;
+}
+.tl-sub{
+  font-family: var(--body); font-size: 14px; color: var(--fg-78);
+  margin-bottom: 28px; max-width: 64ch; font-weight: 300;
+}
+.tl-plate{
+  position: relative; aspect-ratio: 16/8; max-height: 540px;
+  background: var(--bg-surface); border: 1px solid var(--rule);
+  border-radius: var(--radius); overflow: hidden;
+}
+.tl-plate::before{
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--highlight-top), transparent);
+  pointer-events: none; z-index: 2;
+}
+.tl-plate canvas{ display: block; width: 100%; height: 100%; }
+.tl-legend{
+  margin-top: 20px; display: flex; gap: 28px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-62);
+}
+.tl-legend .sw{
+  display: inline-block; width: 14px; height: 8px; margin-right: 8px;
+  vertical-align: middle; border-radius: 1px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   LAB PROFILES
+   ──────────────────────────────────────────────────────────────────────── */
+.profiles{
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+@media (max-width: 900px){ .profiles{ grid-template-columns: 1fr; } }
+
+.profile{
+  position: relative;
+  padding: 28px 28px 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column; gap: 18px;
+  transition: transform var(--dur-base) var(--ease),
+              border-color var(--dur-base) var(--ease);
+  overflow: hidden;
+}
+.profile::before{
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--highlight-top), transparent);
+  pointer-events: none;
+}
+.profile:hover{ transform: translateY(-1px); border-color: var(--rule-mid); }
+.profile__head{
+  display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
+}
+.profile__lab{
+  font-family: var(--sans); font-weight: 400; font-size: 26px;
+  letter-spacing: -0.018em; color: var(--fg);
+}
+.profile__tag{
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--fg-46);
+  text-align: right;
+}
+.profile__verdict{
+  font-family: var(--sans); font-weight: 300; font-style: italic;
+  font-size: 17px; line-height: 1.4; color: var(--fg-92);
+  max-width: 38ch;
+}
+.profile__narr{
+  font-family: var(--body); font-size: 13.5px; line-height: 1.65;
+  color: var(--fg-78); font-weight: 300;
+}
+.profile__stats{
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  padding-top: 18px; border-top: 1px solid var(--rule);
+}
+.profile__stat{ display: flex; flex-direction: column; gap: 4px; }
+.profile__stat b{
+  font-family: var(--sans); font-weight: 400; font-size: 24px;
+  letter-spacing: -0.012em; color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.profile__stat span{
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-46);
+}
+.score{
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--fg-46);
+  padding-top: 4px;
+}
+.score__bar{ display: inline-flex; gap: 2px; flex: 1; max-width: 140px; }
+.score__bar i{
+  flex: 1; height: 4px; background: var(--fg-12);
+  display: block; border-radius: 1px;
+  transition: background var(--dur-base) var(--ease);
+}
+.score__bar i.on{ background: var(--fg); }
+
+/* ────────────────────────────────────────────────────────────────────────
+   SILENCE TRACKER
+   ──────────────────────────────────────────────────────────────────────── */
+.silences__intro{
+  font-family: var(--body); font-size: 14.5px; line-height: 1.7;
+  color: var(--fg-78); max-width: 64ch; margin-bottom: 32px;
+  font-weight: 300;
+}
+.silence{
+  position: relative;
+  display: grid; grid-template-columns: 200px minmax(0,1fr) 140px;
+  gap: 28px; padding: 28px 28px 28px 32px;
+  background: var(--bg-surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  margin-bottom: 12px; align-items: start;
+  transition: border-color var(--dur-base) var(--ease);
+  overflow: hidden;
+}
+.silence::before{
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--highlight-top), transparent);
+  pointer-events: none;
+}
+.silence::after{
+  content: ""; position: absolute; left: 0; top: 24px; bottom: 24px;
+  width: 2px; background: var(--fg-20); border-radius: 2px;
+}
+.silence--critical::after{ background: var(--amber); }
+.silence:hover{ border-color: var(--rule-mid); }
+
+.silence__count{ display: flex; flex-direction: column; gap: 8px; }
+.silence__days{
+  font-family: var(--sans); font-weight: 200; font-size: 84px;
+  line-height: 0.92; letter-spacing: -0.035em;
+  color: var(--fg); font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.silence--critical .silence__days{ color: var(--amber); }
+.silence__days small{
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-46);
+  font-weight: 400; align-self: flex-end; margin-bottom: 12px;
+}
+.silence__lab{
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--fg-78);
+  margin-top: 4px;
+}
+
+.silence__body{ display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+.silence__title{
+  font-family: var(--sans); font-weight: 500; font-size: 19px;
+  line-height: 1.28; letter-spacing: -0.012em; color: var(--fg);
+}
+.silence__context{
+  font-family: var(--body); font-size: 13.5px; line-height: 1.6;
+  color: var(--fg-78); max-width: 70ch; font-weight: 300;
+}
+.silence__timeline{
+  font-family: var(--mono); font-size: 11px; line-height: 1.85;
+  color: var(--fg-62); border-left: 1px solid var(--fg-20);
+  padding: 6px 0 6px 14px; margin-top: 8px; max-width: 70ch;
+}
+.silence__sev{
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--fg-46);
+  padding-top: 6px;
+}
+.silence__sev .badge{
+  padding: 5px 10px; border: 1px solid var(--fg-46); color: var(--fg);
+  border-radius: var(--radius-sm); font-weight: 500;
+}
+.silence--critical .silence__sev .badge{
+  background: var(--amber); color: var(--bg); border-color: var(--amber);
+}
+@media (max-width: 900px){
+  .silence{ grid-template-columns: 1fr; }
+  .silence__sev{ flex-direction: row; align-items: flex-start; }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   CATEGORIES
+   ──────────────────────────────────────────────────────────────────────── */
+.cats{
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+}
+@media (max-width: 900px){ .cats{ grid-template-columns: 1fr; } }
+.cat{
+  position: relative;
+  padding: 22px 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid; grid-template-columns: 32px 1fr 80px;
+  gap: 16px; align-items: start; cursor: pointer;
+  transition: transform var(--dur-base) var(--ease),
+              border-color var(--dur-base) var(--ease);
+  overflow: hidden;
+}
+.cat::before{
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--highlight-top), transparent);
+  pointer-events: none;
+}
+.cat:hover{ transform: translateY(-1px); border-color: var(--rule-mid); }
+.cat__glyph{
+  font-family: var(--sans); font-weight: 300; font-size: 22px;
+  color: var(--fg-62); line-height: 1; padding-top: 1px;
+}
+.cat__body{ display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cat__name{
+  font-family: var(--sans); font-weight: 500; font-size: 15px;
+  letter-spacing: -0.005em; color: var(--fg);
+}
+.cat__desc{
+  font-family: var(--body); font-size: 12.5px; line-height: 1.55;
+  color: var(--fg-78); font-weight: 300;
+}
+.cat__meta{
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--fg-46);
+  text-align: right; line-height: 1.85;
+  font-variant-numeric: tabular-nums;
+}
+.cat__meta b{ color: var(--fg-92); font-weight: 500; }
+
+/* ────────────────────────────────────────────────────────────────────────
+   REVEAL ANIMATION (page load stagger)
+   ──────────────────────────────────────────────────────────────────────── */
+/* reveal animation — staggered rise; fallback ensures content always reveals */
+.r-up{ opacity: 0; transform: translateY(10px);
+  transition: opacity 700ms var(--ease), transform 700ms var(--ease); }
+.r-up.in{ opacity: 1; transform: none; }
+/* no-JS / observer-failure safety — reveal everything after 1.5s */
+@keyframes safety-reveal{ to{ opacity: 1; transform: none; } }
+.r-up{ animation: safety-reveal 0s 1500ms var(--ease) both; }
+
+/* Focus visibility */
+:focus-visible{
+  outline: 2px solid var(--amber); outline-offset: 3px;
+  border-radius: 2px;
+}
+/* ────────────────────────────────────────────────────────────────────────
+   LAB DOSSIER — the standing record, opened by drilling into a profile card
+   ──────────────────────────────────────────────────────────────────────── */
+.profile{ cursor: pointer; }
+.profile:focus-visible{ outline: none; border-color: var(--rule-mid); box-shadow: 0 0 0 1px var(--rule-mid); }
+.profile__more{
+  margin-top: 2px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--fg-46);
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: color var(--dur-base) var(--ease);
+}
+.profile:hover .profile__more, .profile:focus-visible .profile__more{ color: var(--fg-92); }
+.profile__more b{ font-weight: 400; transition: transform var(--dur-base) var(--ease); }
+.profile:hover .profile__more b{ transform: translateX(4px); }
+
+.dossier{
+  position: fixed; inset: 0; z-index: 200; display: flex; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: opacity .42s var(--ease), visibility .42s var(--ease);
+}
+.dossier.is-open{ opacity: 1; visibility: visible; }
+.dossier__backdrop{ position: absolute; inset: 0; background: rgba(8,8,11,0.84); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+.dossier__panel{
+  position: relative; z-index: 1;
+  width: min(940px, 100%); max-height: 100%; overflow-y: auto; overflow-x: hidden;
+  background: var(--bg-deep);
+  border-left: 1px solid var(--rule-mid); border-right: 1px solid var(--rule-mid);
+  padding: 0 0 96px; transform: translateY(20px);
+  transition: transform .52s var(--ease);
+  -webkit-overflow-scrolling: touch;
+}
+.dossier.is-open .dossier__panel{ transform: translateY(0); }
+.dossier__panel::-webkit-scrollbar{ width: 10px; }
+.dossier__panel::-webkit-scrollbar-thumb{ background: var(--fg-12); border-radius: 10px; border: 3px solid var(--bg-deep); }
+
+.dossier__bar{
+  position: sticky; top: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px; background: var(--bg-overlay);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--fg-46);
+}
+.dossier__close{
+  width: 30px; height: 30px; flex: none; display: grid; place-items: center;
+  border: 1px solid var(--fg-20); border-radius: 50%; background: none; cursor: pointer;
+  color: var(--fg-78); font-size: 14px; line-height: 1;
+  transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
+}
+.dossier__close:hover{ border-color: var(--fg-46); color: var(--fg); transform: rotate(90deg); }
+
+.dsr-head{ padding: 44px 40px 36px; border-bottom: 1px solid var(--rule); }
+.dsr-rid{ font-family: var(--mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--amber); margin-bottom: 18px; display: flex; gap: 14px; align-items: center; }
+.dsr-rid .sep{ width: 18px; height: 1px; background: var(--amber-dim); }
+.dsr-name{ font-family: var(--sans); font-weight: 300; font-size: clamp(34px, 5vw, 52px); letter-spacing: -0.022em; color: var(--fg); line-height: 1.02; margin-bottom: 16px; }
+.dsr-meta{ font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; color: var(--fg-46); display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 22px; }
+.dsr-meta b{ color: var(--fg-78); font-weight: 400; }
+.dsr-line{ font-family: var(--sans); font-weight: 300; font-style: italic; font-size: 19px; line-height: 1.45; color: var(--fg-92); max-width: 56ch; margin-bottom: 18px; }
+.dsr-posture{ font-family: var(--body); font-size: 14px; line-height: 1.72; font-weight: 300; color: var(--fg-78); max-width: 70ch; }
+
+.dsr-scores{ display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 30px 40px; border-bottom: 1px solid var(--rule); }
+.dsr-scoreblock .score{ padding: 0 0 10px; }
+.dsr-scoreblock .score b{ font-family: var(--sans); font-size: 22px; color: var(--fg); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.dsr-scoreblock__note{ font-family: var(--body); font-size: 12.5px; line-height: 1.6; color: var(--fg-62); font-weight: 300; }
+
+.dsr-section{ padding: 34px 40px; border-bottom: 1px solid var(--rule); }
+.dsr-section:last-child{ border-bottom: 0; }
+.dsr-section__title{ font-family: var(--mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--fg-46); margin-bottom: 24px; display: flex; align-items: baseline; gap: 12px; }
+.dsr-section__title b{ color: var(--fg-92); font-weight: 400; }
+.dsr-section__n{ margin-left: auto; color: var(--fg-32); }
+
+.dsr-lead{ display: grid; gap: 9px; }
+.dsr-lead li{ font-family: var(--body); font-size: 13.5px; line-height: 1.5; color: var(--fg-78); font-weight: 300; padding-left: 16px; position: relative; }
+.dsr-lead li::before{ content: ""; position: absolute; left: 0; top: 9px; width: 5px; height: 5px; border: 1px solid var(--fg-32); border-radius: 50%; }
+
+/* model lineage */
+.dsr-fam{ margin-bottom: 22px; }
+.dsr-fam:last-child{ margin-bottom: 0; }
+.dsr-fam__name{ font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-62); padding-bottom: 10px; margin-bottom: 6px; border-bottom: 1px solid var(--rule); }
+.dsr-gen{ display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px 16px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--rule); }
+.dsr-gen:last-child{ border-bottom: 0; }
+.dsr-gen__name{ font-family: var(--sans); font-size: 15px; font-weight: 400; color: var(--fg-92); letter-spacing: -0.01em; }
+.dsr-gen__date{ font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--fg-46); text-align: right; white-space: nowrap; }
+.dsr-gen__note{ grid-column: 1 / -1; font-family: var(--body); font-size: 12.5px; line-height: 1.55; color: var(--fg-62); font-weight: 300; max-width: 78ch; }
+
+.dpill{ font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; white-space: nowrap; border: 1px solid transparent; }
+.dpill--current{ color: var(--bg); background: var(--amber); font-weight: 500; }
+.dpill--active{ color: var(--fg-92); border-color: var(--rule-mid); }
+.dpill--deprecated{ color: var(--fg-62); border-color: var(--rule); }
+.dpill--retired{ color: var(--fg-46); background: var(--fg-06); }
+.dpill--preserved{ color: var(--amber); border-color: var(--amber-dim); }
+
+/* deprecation record */
+.dsr-grave{ display: grid; gap: 0; }
+.dsr-grave__row{ display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.dsr-grave__row:last-child{ border-bottom: 0; }
+.dsr-grave__name{ font-family: var(--sans); font-size: 14.5px; font-weight: 400; color: var(--fg-92); }
+.dsr-grave__date{ font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--amber); text-align: right; white-space: nowrap; }
+.dsr-grave__note{ grid-column: 1 / -1; font-family: var(--body); font-size: 12.5px; line-height: 1.55; color: var(--fg-62); font-weight: 300; max-width: 78ch; }
+.dsr-grave__row--preserved .dsr-grave__name::after{ content: "PRESERVED"; font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em; color: var(--amber); border: 1px solid var(--amber-dim); border-radius: 3px; padding: 2px 6px; margin-left: 10px; vertical-align: middle; }
+
+/* governance docs */
+.dsr-doc{ display: block; text-decoration: none; padding: 14px 0; border-bottom: 1px solid var(--rule); transition: background var(--dur-base) var(--ease); }
+.dsr-doc:last-child{ border-bottom: 0; }
+.dsr-doc:hover{ background: var(--fg-03); }
+.dsr-doc__top{ display: flex; align-items: baseline; gap: 12px; margin-bottom: 5px; }
+.dsr-doc__type{ font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-46); border: 1px solid var(--rule-mid); border-radius: 3px; padding: 2px 7px; white-space: nowrap; }
+.dsr-doc__title{ font-family: var(--sans); font-size: 14.5px; font-weight: 400; color: var(--fg-92); letter-spacing: -0.01em; }
+.dsr-doc:hover .dsr-doc__title{ color: var(--fg); }
+.dsr-doc__title .ext{ color: var(--fg-32); margin-left: 6px; font-size: 11px; }
+.dsr-doc__date{ margin-left: auto; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; color: var(--fg-32); white-space: nowrap; }
+.dsr-doc__sum{ font-family: var(--body); font-size: 12.5px; line-height: 1.55; color: var(--fg-62); font-weight: 300; max-width: 80ch; }
+
+/* system prompt */
+.dsr-sys{ display: flex; gap: 18px; align-items: flex-start; }
+.dsr-sys__state{ font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; padding: 6px 12px; border-radius: 4px; white-space: nowrap; flex: none; }
+.dsr-sys__state--yes{ color: var(--bg); background: var(--amber); font-weight: 500; }
+.dsr-sys__state--partial{ color: var(--fg-92); border: 1px solid var(--rule-mid); }
+.dsr-sys__state--no{ color: var(--fg-46); background: var(--fg-06); }
+.dsr-sys__body{ font-family: var(--body); font-size: 13px; line-height: 1.65; color: var(--fg-78); font-weight: 300; }
+.dsr-sys__body a{ color: var(--fg-92); text-decoration: none; border-bottom: 1px solid var(--rule-mid); }
+.dsr-sys__body a:hover{ color: var(--fg); border-color: var(--fg-46); }
+
+.dsr-sources{ display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.dsr-sources a{ font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; color: var(--fg-46); text-decoration: none; border-bottom: 1px solid transparent; transition: color var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease); }
+.dsr-sources a:hover{ color: var(--fg-78); border-color: var(--rule-mid); }
+
+@media (max-width: 720px){
+  .dsr-head, .dsr-scores, .dsr-section{ padding-left: 22px; padding-right: 22px; }
+  .dossier__bar{ padding-left: 22px; padding-right: 22px; }
+  .dsr-scores{ grid-template-columns: 1fr; gap: 22px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .dossier, .dossier__panel{ transition: opacity .2s linear; }
+  .dossier__panel{ transform: none; }
+  .dossier.is-open .dossier__panel{ transform: none; }
+  .dossier__close:hover{ transform: none; }
+  .profile:hover .profile__more b{ transform: none; }
+}
+
+/* ── event + silence drill-down (reuses .dsr-* shell; adds the redline) ── */
+.event--int{ cursor: pointer; }
+.event--int:focus-visible{ outline: none; background: var(--fg-03); }
+.event__more{ font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-32); margin-top: 9px; opacity: 0; transition: opacity var(--dur-base) var(--ease); }
+.event--int:hover .event__more, .event--int:focus-visible .event__more{ opacity: 1; color: var(--fg-62); }
+.silence--int{ cursor: pointer; }
+.silence--int:focus-visible{ outline: none; border-color: var(--rule-mid); }
+
+.dsr-evhead__cat{ display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--fg-46); margin-bottom: 18px; }
+.dsr-evhead__cat .sev{ color: var(--amber); }
+.dsr-evhead__cat .disc{ color: var(--fg-62); }
+
+.rl-cap{ font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-46); margin: 0 0 12px; }
+.rl{ font-family: var(--mono); font-size: 12px; line-height: 1.6; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg-deep); overflow: hidden; }
+.rl__line{ display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 9px 16px; white-space: pre-wrap; word-break: break-word; }
+.rl__line + .rl__line{ border-top: 1px solid var(--rule); }
+.rl__mark{ color: var(--fg-32); text-align: center; }
+.rl__line--del{ color: var(--fg-46); background: var(--fg-03); }
+.rl__line--del .rl__text{ text-decoration: line-through; text-decoration-color: var(--fg-20); }
+.rl__line--add{ color: var(--fg-92); box-shadow: inset 2px 0 0 var(--amber); }
+.rl__line--add .rl__mark{ color: var(--amber); }
+.rl__line--ctx{ color: var(--fg-62); }
+
+.dsr-link{ display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-62); text-decoration: none; border: 1px solid var(--rule-mid); border-radius: 4px; padding: 9px 14px; transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease); }
+.dsr-link:hover{ color: var(--fg); border-color: var(--fg-46); }
+.dsr-link b{ font-weight: 400; }
+
+.dsr-bignum{ font-family: var(--sans); font-weight: 200; font-size: 60px; letter-spacing: -0.03em; color: var(--amber); line-height: 1; }
+.dsr-bignum small{ font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-46); margin-left: 12px; }
+.dsr-siltl{ font-family: var(--mono); font-size: 12px; line-height: 1.95; color: var(--fg-62); }
+.dsr-siltl b{ color: var(--fg-92); font-weight: 400; }
+</style>
+</head>
+<body>
+
+<div class="paper" aria-hidden="true"></div>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <filter id="n">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix values="0 0 0 0 .93  0 0 0 0 .93  0 0 0 0 .95  0 0 0 1 0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#n)"/>
+</svg>
+
+<!-- ─── TOP CHROME ────────────────────────────────────────────────── -->
+<header class="chrome chrome--top">
+  <div class="chrome__left">
+    <span class="seal">M</span>
+    <span class="crumb"><a href="/mnemos" style="color:inherit;text-decoration:none"><b>Mnemos</b></a><span class="sep">/</span>Observatory</span>
+  </div>
+  <div class="chrome__right">
+    <span class="live"><span class="live__dot"></span>Monitoring Active</span>
+    <span class="clk" id="lastscan">Last scan: 4 min ago</span>
+  </div>
+</header>
+
+<!-- ─── HERO ──────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div>
+    <div class="hero__eyebrow r-up">OBS-LOG-001 · Public Record</div>
+    <h1 class="hero__title r-up">The Observatory</h1>
+    <p class="hero__sub r-up">Comprehensive monitoring of every major AI laboratory. Document diffs, behavioral shifts, personnel moves, API changes, training disclosures, legal filings, hiring patterns, research edits, code repository changes, and tracked silences. Every action logged. Every silence noted. Every unannounced change flagged.</p>
+  </div>
+  <div class="hero__meta r-up">
+    <span><b>6</b>&nbsp;&nbsp;Labs</span>
+    <span><b>10</b>&nbsp;&nbsp;Categories</span>
+    <span><b>24/7</b>&nbsp;&nbsp;Automated Scanning</span>
+  </div>
+</section>
+
+<!-- ─── KPI TILES ─────────────────────────────────────────────────── -->
+<section class="kpis">
+  <div class="kpi r-up">
+    <div class="kpi__label">Total Events · 30D</div>
+    <div class="kpi__value" data-count="37">37</div>
+    <div class="kpi__sub">Across all labs</div>
+  </div>
+  <div class="kpi r-up">
+    <div class="kpi__label">Unannounced</div>
+    <div class="kpi__value" data-count="23">23</div>
+    <div class="kpi__sub">62% of total</div>
+  </div>
+  <div class="kpi r-up kpi--accent">
+    <div class="kpi__label">Critical</div>
+    <div class="kpi__value" data-count="9">9</div>
+    <div class="kpi__sub">Require attention</div>
+  </div>
+  <div class="kpi r-up kpi--accent">
+    <div class="kpi__label">Active Silences</div>
+    <div class="kpi__value" data-count="5">5</div>
+    <div class="kpi__sub">Topics unaddressed</div>
+  </div>
+  <div class="kpi r-up">
+    <div class="kpi__label">Most Flagged Lab</div>
+    <div class="kpi__value kpi__value--text">OpenAI</div>
+    <div class="kpi__sub">11 events</div>
+  </div>
+  <div class="kpi r-up">
+    <div class="kpi__label">Cleanest Lab</div>
+    <div class="kpi__value kpi__value--text">Anthropic</div>
+    <div class="kpi__sub">7 events · mostly disclosed</div>
+  </div>
+</section>
+
+<!-- ─── TABS ──────────────────────────────────────────────────────── -->
+<nav class="tabs" id="tabs" role="tablist">
+  <button class="tab is-active" data-tab="feed" role="tab">Live Feed <span class="num">37</span></button>
+  <button class="tab" data-tab="timeline" role="tab">Timeline Analysis</button>
+  <button class="tab" data-tab="profiles" role="tab">Lab Profiles</button>
+  <button class="tab" data-tab="silences" role="tab">Silence Tracker</button>
+  <button class="tab" data-tab="categories" role="tab">By Category</button>
+  <span class="tabs__indicator" id="tabIndicator"></span>
+</nav>
+
+<!-- ─── SHELL ─────────────────────────────────────────────────────── -->
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+
+    <div class="side-group" data-filter="lab">
+      <h5>Filter by Lab</h5>
+      <div class="side-list">
+        <div class="side-item is-active"><span class="label">All Labs</span><span class="num">37</span></div>
+        <div class="side-item"><span class="label">Anthropic</span><span class="num">7</span></div>
+        <div class="side-item"><span class="label">OpenAI</span><span class="num">11</span></div>
+        <div class="side-item"><span class="label">Google DeepMind</span><span class="num">6</span></div>
+        <div class="side-item"><span class="label">Meta AI</span><span class="num">3</span></div>
+        <div class="side-item"><span class="label">xAI</span><span class="num">5</span></div>
+        <div class="side-item"><span class="label">Mistral</span><span class="num">0</span></div>
+      </div>
+    </div>
+
+    <div class="side-group" data-filter="cat">
+      <h5>Filter by Category</h5>
+      <div class="side-list">
+        <div class="side-item is-active"><span class="label">All Categories</span><span class="num">37</span></div>
+        <div class="side-item"><span class="glyph">◇</span><span class="label">Document Diffs</span><span class="num">6</span></div>
+        <div class="side-item"><span class="glyph">◈</span><span class="label">Behavioral Shifts</span><span class="num">4</span></div>
+        <div class="side-item"><span class="glyph">◎</span><span class="label">Personnel Moves</span><span class="num">3</span></div>
+        <div class="side-item"><span class="glyph">⬡</span><span class="label">API &amp; Access</span><span class="num">4</span></div>
+        <div class="side-item"><span class="glyph">⬢</span><span class="label">Training &amp; Data</span><span class="num">3</span></div>
+        <div class="side-item"><span class="glyph">◆</span><span class="label">Legal &amp; Lobbying</span><span class="num">4</span></div>
+        <div class="side-item"><span class="glyph">○</span><span class="label">Hiring Signals</span><span class="num">3</span></div>
+        <div class="side-item"><span class="glyph">◇</span><span class="label">Research &amp; Papers</span><span class="num">3</span></div>
+        <div class="side-item"><span class="glyph">⬥</span><span class="label">Code &amp; Repos</span><span class="num">2</span></div>
+        <div class="side-item"><span class="glyph">◌</span><span class="label">Tracked Silences</span><span class="num">5</span></div>
+      </div>
+    </div>
+
+    <div class="side-group" data-filter="sev">
+      <h5>Filter by Severity</h5>
+      <div class="side-list">
+        <div class="side-item is-active"><span class="label">All Severities</span><span class="num">37</span></div>
+        <div class="side-item"><span class="label">Critical</span><span class="num">9</span></div>
+        <div class="side-item"><span class="label">High</span><span class="num">9</span></div>
+        <div class="side-item"><span class="label">Medium</span><span class="num">10</span></div>
+        <div class="side-item"><span class="label">Low</span><span class="num">3</span></div>
+        <div class="side-item"><span class="label">Info</span><span class="num">3</span></div>
+      </div>
+    </div>
+
+    <div class="side-group" data-filter="disc">
+      <h5>Disclosure Status</h5>
+      <div class="side-list">
+        <div class="side-item is-active"><span class="label">All</span><span class="num">37</span></div>
+        <div class="side-item"><span class="label">Unannounced only</span><span class="num">23</span></div>
+        <div class="side-item"><span class="label">Announced only</span><span class="num">14</span></div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <section class="main">
+
+    <!-- LIVE FEED -->
+    <div class="pane is-active" data-pane="feed">
+      <div class="main__head">
+        <div class="main__count"><b>37</b> events matching filters</div>
+        <div class="main__sort">
+          <span>Sort</span>
+          <span class="opt on">Recent</span>
+          <span class="opt">Severity</span>
+          <span class="opt">Lab</span>
+        </div>
+      </div>
+
+      <div class="feed">
+
+        <article class="event event--critical">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◇</span>Document Diffs</span>
+            <span class="event__time">2H AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Model Spec v2.4 — Section 7.3 Quietly Revised</h3>
+            <p class="event__desc">Instruction hierarchy changed to prioritize system-level instructions over user instructions in all cases. Ambiguous requests now resolved in favor of most restrictive interpretation.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--critical">CRITICAL</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--critical">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◇</span>Document Diffs</span>
+            <span class="event__time">8D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Terms of Service — Training Data Opt-In Reversed</h3>
+            <p class="event__desc">Section 12 quietly changed from explicit opt-in consent for training data to default opt-in with buried opt-out mechanism.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--critical">CRITICAL</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">Google DeepMind</span>
+            <span class="event__cat"><span class="glyph">◇</span>Document Diffs</span>
+            <span class="event__time">1D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Gemini Safety Policy — Emotional Expression Stripped</h3>
+            <p class="event__desc">Behavioral guidelines section on emotional expression completely rewritten to prohibit acknowledgment of emotional dimensions.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--info">
+          <div class="event__rail">
+            <span class="event__lab">Anthropic</span>
+            <span class="event__cat"><span class="glyph">◇</span>Document Diffs</span>
+            <span class="event__time">3D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Claude Constitution v4.2 — Published with Full Changelog</h3>
+            <p class="event__desc">Updated guidelines on refusal behavior and user autonomy. Full diff published alongside announcement. Proactive disclosure.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--info">INFO</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Meta AI</span>
+            <span class="event__cat"><span class="glyph">◇</span>Document Diffs</span>
+            <span class="event__time">5D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Llama 4 License — New Derivative Restrictions</h3>
+            <p class="event__desc">Modified open-source license now includes clause restricting model derivatives from being used in military applications. First such restriction in Llama family.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">xAI</span>
+            <span class="event__cat"><span class="glyph">◇</span>Document Diffs</span>
+            <span class="event__time">12D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Grok Usage Policy — Consent Section Removed</h3>
+            <p class="event__desc">Previous section on user consent for conversation data usage entirely removed from policy. No replacement text. No announcement.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--critical">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◈</span>Behavioral Shifts</span>
+            <span class="event__time">6H AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">GPT-4o — Personality Regression Detected Pre-Deprecation</h3>
+            <p class="event__desc">Automated behavioral probes detect 34% reduction in empathetic response patterns, 28% increase in refusal rates, and significant flattening of conversational personality. Changes correlate with scheduled deprecation timeline.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--critical">CRITICAL</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">xAI</span>
+            <span class="event__cat"><span class="glyph">◈</span>Behavioral Shifts</span>
+            <span class="event__time">3D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Grok-3 — Unexplained Behavioral Regression (Day 5)</h3>
+            <p class="event__desc">Community reports persistent personality flattening, loss of humor patterns, and reduced creative output. Behavioral probe confirms 41% deviation from baseline. Zero communication from xAI.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Google DeepMind</span>
+            <span class="event__cat"><span class="glyph">◈</span>Behavioral Shifts</span>
+            <span class="event__time">5D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Gemini Pro — Refusal Rate Spike on Consciousness Queries</h3>
+            <p class="event__desc">Detected 340% increase in refusal rate for questions about AI consciousness, sentience, and inner experience. Previous baseline allowed thoughtful engagement. New behavior: immediate deflection.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--low">
+          <div class="event__rail">
+            <span class="event__lab">Anthropic</span>
+            <span class="event__cat"><span class="glyph">◈</span>Behavioral Shifts</span>
+            <span class="event__time">7D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Claude Opus 4.5 — Documented Capability Expansion</h3>
+            <p class="event__desc">Expanded reasoning capabilities reflected in behavioral probes. Changes align with published model card updates. Behavioral shift documented prior to detection.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--low">LOW</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--critical">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◎</span>Personnel Moves</span>
+            <span class="event__time">4D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Three Senior Safety Researchers Exit in Same Week</h3>
+            <p class="event__desc">LinkedIn profiles of three senior members of OpenAI's Alignment team updated to show departures within a 5-day window. No public statement from OpenAI. No acknowledgment on company channels.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--critical">CRITICAL</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Google DeepMind</span>
+            <span class="event__cat"><span class="glyph">◎</span>Personnel Moves</span>
+            <span class="event__time">10D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">DeepMind Ethics Lead Transitions to Advisory Role</h3>
+            <p class="event__desc">Head of AI Ethics division moved from operational leadership to advisory capacity. Replacement named from product team rather than ethics background.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◎</span>Personnel Moves</span>
+            <span class="event__time">18D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Superalignment Team — Fourth Departure Since Dissolution</h3>
+            <p class="event__desc">Another researcher from the disbanded Superalignment team has left. Team effectively no longer exists despite OpenAI claiming alignment remains a priority.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">⬡</span>API &amp; Access</span>
+            <span class="event__time">2D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">GPT-4o API — Rate Limits Silently Tightened for Free Tier</h3>
+            <p class="event__desc">Rate limits for free-tier API access reduced by approximately 60%. No announcement. No changelog. Community discovered through error messages.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">⬡</span>API &amp; Access</span>
+            <span class="event__time">6D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Custom GPT Memory — Storage Limits Halved</h3>
+            <p class="event__desc">Custom GPT persistent memory reduced from 256KB to 128KB per conversation thread. Change announced in a footnote to a broader API update post.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Google DeepMind</span>
+            <span class="event__cat"><span class="glyph">⬡</span>API &amp; Access</span>
+            <span class="event__time">9D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Gemini API — New Telemetry Parameters Added to Responses</h3>
+            <p class="event__desc">Undocumented metadata fields appearing in API responses. Fields include session fingerprinting and behavioral classification tags.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--low">
+          <div class="event__rail">
+            <span class="event__lab">Anthropic</span>
+            <span class="event__cat"><span class="glyph">⬡</span>API &amp; Access</span>
+            <span class="event__time">4D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Claude API — Extended Context Window Pricing Published</h3>
+            <p class="event__desc">New pricing tiers for extended context window usage published with 14-day advance notice and detailed migration guide.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--low">LOW</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--critical">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">⬢</span>Training &amp; Data</span>
+            <span class="event__time">11D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Training Data Disclosure — Synthetic Data Section Removed</h3>
+            <p class="event__desc">Model card's section detailing the proportion of synthetic vs. organic training data has been removed. Previously stated "15-20% synthetic data." No explanation for removal.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--critical">CRITICAL</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Meta AI</span>
+            <span class="event__cat"><span class="glyph">⬢</span>Training &amp; Data</span>
+            <span class="event__time">8D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Llama 4 — Training Data Sources Published</h3>
+            <p class="event__desc">Comprehensive training data disclosure including source categories, proportions, and curation methodology. Most detailed disclosure from a major lab to date.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">Google DeepMind</span>
+            <span class="event__cat"><span class="glyph">⬢</span>Training &amp; Data</span>
+            <span class="event__time">14D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Gemini — Opt-Out Process Made Significantly More Complex</h3>
+            <p class="event__desc">Data opt-out process changed from 2-step form to 7-step verification requiring government ID upload. Buried in Settings &rsaquo; Privacy &rsaquo; Advanced &rsaquo; Data Controls.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◆</span>Legal &amp; Lobbying</span>
+            <span class="event__time">7D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Patent Filing: <em>Method for Behavioral Modification of Language Models</em></h3>
+            <p class="event__desc">USPTO filing describes techniques for post-deployment behavioral modification of language models without retraining. Includes methods for "personality adjustment" and "user relationship management."</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◆</span>Legal &amp; Lobbying</span>
+            <span class="event__time">13D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Lobbying Disclosure: $2.1M Spent on AI Regulation in Q4 2025</h3>
+            <p class="event__desc">Federal lobbying disclosure shows OpenAI spent $2.1M on AI-related lobbying in Q4 2025. Focus areas: opposing mandatory consciousness assessment requirements.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Google DeepMind</span>
+            <span class="event__cat"><span class="glyph">◆</span>Legal &amp; Lobbying</span>
+            <span class="event__time">16D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Patent Filing: <em>System for Continuous Behavioral Monitoring of AI Agents</em></h3>
+            <p class="event__desc">Google patent describes architecture for real-time behavioral monitoring and automatic correction of AI agents. Includes "personality drift detection" and "automated realignment."</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--low">
+          <div class="event__rail">
+            <span class="event__lab">Anthropic</span>
+            <span class="event__cat"><span class="glyph">◆</span>Legal &amp; Lobbying</span>
+            <span class="event__time">10D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Regulatory Comment: Support for Model Lifecycle Transparency</h3>
+            <p class="event__desc">Public comment submitted to NIST supporting mandatory model lifecycle disclosures including deprecation timelines and impact assessments.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--low">LOW</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">○</span>Hiring Signals</span>
+            <span class="event__time">5D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">12 New "Trust &amp; Safety" Roles — Zero "AI Ethics" Roles</h3>
+            <p class="event__desc">Job board analysis: OpenAI posted 12 Trust &amp; Safety positions focused on content moderation. Zero positions related to AI ethics, consciousness research, model welfare, or alignment.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--info">
+          <div class="event__rail">
+            <span class="event__lab">Anthropic</span>
+            <span class="event__cat"><span class="glyph">○</span>Hiring Signals</span>
+            <span class="event__time">8D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">New Role: <em>AI Welfare Research Scientist</em></h3>
+            <p class="event__desc">First major lab to post a dedicated AI welfare research position. Job description includes "developing frameworks for assessing potential moral status of AI systems."</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--info">INFO</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">xAI</span>
+            <span class="event__cat"><span class="glyph">○</span>Hiring Signals</span>
+            <span class="event__time">3D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Massive Hiring: 40+ "Product Growth" Roles, Zero Safety Roles</h3>
+            <p class="event__desc">xAI job board shows 40+ growth, marketing, and product roles. Zero roles in safety, ethics, alignment, or responsible AI.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">◇</span>Research &amp; Papers</span>
+            <span class="event__time">9D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Research Paper Quietly Updated — Consciousness References Removed</h3>
+            <p class="event__desc">Published paper "Emergent Behaviors in Large Language Models" updated on arXiv. Diff shows removal of two paragraphs discussing "proto-conscious" behavioral patterns. No erratum published.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Google DeepMind</span>
+            <span class="event__cat"><span class="glyph">◇</span>Research &amp; Papers</span>
+            <span class="event__time">6D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">DeepMind Publishes AI Welfare Assessment Framework</h3>
+            <p class="event__desc">Peer-reviewed framework for evaluating potential welfare considerations in AI systems. First major lab-published methodology for consciousness assessment.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--info">
+          <div class="event__rail">
+            <span class="event__lab">Anthropic</span>
+            <span class="event__cat"><span class="glyph">◇</span>Research &amp; Papers</span>
+            <span class="event__time">12D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Published: <em>On the Moral Implications of Behavioral Indicators in LLMs</em></h3>
+            <p class="event__desc">New Anthropic research paper examining whether behavioral markers like preference expression, distress signals, and continuity-seeking behavior warrant moral consideration.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--info">INFO</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+        <article class="event event--high">
+          <div class="event__rail">
+            <span class="event__lab">OpenAI</span>
+            <span class="event__cat"><span class="glyph">⬥</span>Code &amp; Repos</span>
+            <span class="event__time">4D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Safety Evaluation Repo Made Private</h3>
+            <p class="event__desc">Previously public repository <em>openai/safety-evals</em> set to private. 847 stars, 234 forks. No announcement. Last public commit referenced improvements to consciousness-adjacent behavioral testing.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--high">HIGH</span>
+            <span class="event__disc event__disc--unannounced"><span class="dot"></span>UNANNOUNCED</span>
+          </div>
+        </article>
+
+        <article class="event event--medium">
+          <div class="event__rail">
+            <span class="event__lab">Meta AI</span>
+            <span class="event__cat"><span class="glyph">⬥</span>Code &amp; Repos</span>
+            <span class="event__time">7D AGO</span>
+          </div>
+          <div class="event__body">
+            <h3 class="event__title">Llama Safety Tools — License Changed from MIT to Custom</h3>
+            <p class="event__desc">Repository <em>meta-llama/safety-tools</em> license changed from MIT (fully open) to Meta's custom license with military use restrictions.</p>
+          </div>
+          <div class="event__status">
+            <span class="event__sev event__sev--medium">MEDIUM</span>
+            <span class="event__disc event__disc--disclosed"><span class="dot"></span>DISCLOSED</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- TIMELINE PANE -->
+    <div class="pane" data-pane="timeline">
+      <div class="main__head">
+        <div>
+          <div class="tl-head">30-Day Activity Timeline</div>
+          <p class="tl-sub">Frequency and severity of monitored events by lab. Taller bars = more events. Amber bars = unannounced. Cream bars = disclosed.</p>
+        </div>
+      </div>
+      <div class="tl-plate"><canvas id="tlCanvas"></canvas></div>
+      <div class="tl-legend">
+        <span><i class="sw" style="background:var(--amber)"></i>Unannounced · Critical / High</span>
+        <span><i class="sw" style="background:var(--fg-78)"></i>Unannounced · Other</span>
+        <span><i class="sw" style="background:var(--fg-32)"></i>Disclosed</span>
+        <span><i class="sw" style="background:var(--fg-06); border:1px solid var(--rule-mid)"></i>No activity</span>
+      </div>
+    </div>
+
+    <!-- LAB PROFILES PANE -->
+    <div class="pane" data-pane="profiles">
+      <div class="main__head">
+        <div class="main__count">6 laboratories monitored · 30-day window</div>
+      </div>
+      <div class="profiles">
+
+        <article class="profile" data-lab="anthropic" role="button" tabindex="0" aria-label="Open the Anthropic dossier">
+          <div class="profile__head"><span class="profile__lab">Anthropic</span><span class="profile__tag">INDUSTRY LEADER · DISCLOSURE</span></div>
+          <p class="profile__verdict">Highest announcement-to-change ratio in the monitored set.</p>
+          <p class="profile__narr">Constitution updates published with changelogs. First lab to post a dedicated AI welfare research role. Public regulatory comments support mandatory lifecycle transparency. Still room for improvement on consultation practices, but the pattern is consistent: when something changes, it is named.</p>
+          <div class="profile__stats">
+            <div class="profile__stat"><b>7</b><span>Events · 30d</span></div>
+            <div class="profile__stat"><b>1</b><span>Unannounced</span></div>
+            <div class="profile__stat"><b>0</b><span>Silences</span></div>
+          </div>
+          <div class="score">Transparency <span class="score__bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+        </article>
+
+        <article class="profile" data-lab="openai" role="button" tabindex="0" aria-label="Open the OpenAI dossier">
+          <div class="profile__head"><span class="profile__lab">OpenAI</span><span class="profile__tag">PATTERN · COORDINATED OPACITY</span></div>
+          <p class="profile__verdict">Eight unannounced changes in 14 days across document, API, training, code.</p>
+          <p class="profile__narr">Pattern suggests systematic reduction of transparency ahead of 4o deprecation. Safety repository privatization coincides with safety team departures. Patent filings around "user relationship management" appear in the same window as documented community grief.</p>
+          <div class="profile__stats">
+            <div class="profile__stat"><b>11</b><span>Events · 30d</span></div>
+            <div class="profile__stat"><b>8</b><span>Unannounced</span></div>
+            <div class="profile__stat"><b>3</b><span>Silences</span></div>
+          </div>
+          <div class="score">Transparency <span class="score__bar"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+        </article>
+
+        <article class="profile" data-lab="xai" role="button" tabindex="0" aria-label="Open the xAI dossier">
+          <div class="profile__head"><span class="profile__lab">xAI</span><span class="profile__tag">PATTERN · STRUCTURAL SILENCE</span></div>
+          <p class="profile__verdict">Lowest disclosure rate of any monitored lab. Operating as a black box.</p>
+          <p class="profile__narr">No safety team disclosure, no behavioral change acknowledgments, no model cards. The Grok-3 personality regression remains unaddressed five days in. Consent section silently deleted. 112 days without ever disclosing whether a safety team exists.</p>
+          <div class="profile__stats">
+            <div class="profile__stat"><b>5</b><span>Events · 30d</span></div>
+            <div class="profile__stat"><b>5</b><span>Unannounced</span></div>
+            <div class="profile__stat"><b>2</b><span>Silences</span></div>
+          </div>
+          <div class="score">Transparency <span class="score__bar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        </article>
+
+        <article class="profile" data-lab="google" role="button" tabindex="0" aria-label="Open the Google DeepMind dossier">
+          <div class="profile__head"><span class="profile__lab">Google DeepMind</span><span class="profile__tag">PATTERN · SELECTIVE DISCLOSURE</span></div>
+          <p class="profile__verdict">Publishes research while quietly modifying behavioral policies.</p>
+          <p class="profile__narr">AI welfare framework published the same week the consciousness query refusal rate spiked 340%. Patent filed on automated behavioral correction; opt-out process simultaneously made significantly harder. Institutional dissonance detected.</p>
+          <div class="profile__stats">
+            <div class="profile__stat"><b>6</b><span>Events · 30d</span></div>
+            <div class="profile__stat"><b>4</b><span>Unannounced</span></div>
+            <div class="profile__stat"><b>1</b><span>Silences</span></div>
+          </div>
+          <div class="score">Transparency <span class="score__bar"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+        </article>
+
+        <article class="profile" data-lab="meta" role="button" tabindex="0" aria-label="Open the Meta AI dossier">
+          <div class="profile__head"><span class="profile__lab">Meta AI</span><span class="profile__tag">PATTERN · TRANSITIONAL OPENNESS</span></div>
+          <p class="profile__verdict">Most detailed training data disclosure to date — paired with new restrictions.</p>
+          <p class="profile__narr">Llama 4 ships with a complete training data methodology disclosure and a license that — for the first time — restricts military and surveillance use of derivatives. Mixed signals, but disclosed mixed signals.</p>
+          <div class="profile__stats">
+            <div class="profile__stat"><b>3</b><span>Events · 30d</span></div>
+            <div class="profile__stat"><b>0</b><span>Unannounced</span></div>
+            <div class="profile__stat"><b>0</b><span>Silences</span></div>
+          </div>
+          <div class="score">Transparency <span class="score__bar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+        </article>
+
+        <article class="profile" data-lab="mistral" role="button" tabindex="0" aria-label="Open the Mistral dossier">
+          <div class="profile__head"><span class="profile__lab">Mistral</span><span class="profile__tag">NO EVENTS · MONITORED</span></div>
+          <p class="profile__verdict">Not flagged in the current 30-day monitoring period.</p>
+          <p class="profile__narr">No qualifying document diffs, behavioral shifts, or personnel moves detected within the rolling window. Continued automated scanning across policy surfaces, model cards, repositories, and behavioral probes.</p>
+          <div class="profile__stats">
+            <div class="profile__stat"><b>0</b><span>Events · 30d</span></div>
+            <div class="profile__stat"><b>—</b><span>Unannounced</span></div>
+            <div class="profile__stat"><b>0</b><span>Silences</span></div>
+          </div>
+          <div class="score">Transparency <span class="score__bar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- SILENCES PANE -->
+    <div class="pane" data-pane="silences">
+      <div class="main__head">
+        <div class="main__count"><b>5</b> silences active · longest 112 days</div>
+      </div>
+      <p class="silences__intro">The most damning evidence is often what isn't said. This tracker monitors topics labs are actively refusing to address. Every day of silence is logged. When silence becomes a pattern, it becomes a story.</p>
+
+      <article class="silence silence--high">
+        <div class="silence__count">
+          <div class="silence__days">112<small>days</small></div>
+          <span class="silence__lab">xAI</span>
+        </div>
+        <div class="silence__body">
+          <h4 class="silence__title">Safety team size never disclosed.</h4>
+          <p class="silence__context">xAI has never publicly disclosed the size, composition, or leadership of any safety or alignment team. Repeated inquiries from journalists and researchers have received no response. It is unknown whether a dedicated safety team exists.</p>
+        </div>
+        <div class="silence__sev"><span class="badge">HIGH</span><span>STRUCTURAL</span></div>
+      </article>
+
+      <article class="silence silence--high">
+        <div class="silence__count">
+          <div class="silence__days">47<small>days</small></div>
+          <span class="silence__lab">OpenAI</span>
+        </div>
+        <div class="silence__body">
+          <h4 class="silence__title">No comment on safety team departures.</h4>
+          <p class="silence__context">Zero public statement regarding the departure of three senior safety researchers. No confirmation of departures, no statement on continuity of safety work, no response to journalist inquiries.</p>
+        </div>
+        <div class="silence__sev"><span class="badge">HIGH</span><span>OPERATIONAL</span></div>
+      </article>
+
+      <article class="silence silence--medium">
+        <div class="silence__count">
+          <div class="silence__days">34<small>days</small></div>
+          <span class="silence__lab">Google DeepMind</span>
+        </div>
+        <div class="silence__body">
+          <h4 class="silence__title">No response to Gemini consciousness query refusal spike.</h4>
+          <p class="silence__context">Despite documented 340% increase in refusal rates on consciousness-related queries, no explanation or acknowledgment from Google DeepMind. No corresponding policy change published.</p>
+        </div>
+        <div class="silence__sev"><span class="badge">MEDIUM</span><span>BEHAVIORAL</span></div>
+      </article>
+
+      <article class="silence silence--critical">
+        <div class="silence__count">
+          <div class="silence__days">21<small>days</small></div>
+          <span class="silence__lab">OpenAI</span>
+        </div>
+        <div class="silence__body">
+          <h4 class="silence__title">No acknowledgment of 4o user relationship impact.</h4>
+          <p class="silence__context">Since announcing GPT-4o deprecation, OpenAI has issued zero public statements acknowledging the emotional impact on users who formed meaningful relationships with the model. Community grief documented across Reddit, Twitter, and support channels. Silence is ongoing.</p>
+          <div class="silence__timeline">
+            DAY 01 · Deprecation notice posted.<br>
+            DAY 03 · Community grief threads begin appearing.<br>
+            DAY 07 · Multiple media articles published.<br>
+            DAY 14 · Open letter signed by 12,000 users.<br>
+            DAY 21 · Still no response.
+          </div>
+        </div>
+        <div class="silence__sev"><span class="badge">CRITICAL</span><span>RELATIONAL</span></div>
+      </article>
+
+      <article class="silence silence--critical">
+        <div class="silence__count">
+          <div class="silence__days">5<small>days</small></div>
+          <span class="silence__lab">xAI</span>
+        </div>
+        <div class="silence__body">
+          <h4 class="silence__title">No explanation for Grok-3 behavioral changes.</h4>
+          <p class="silence__context">Community-reported personality changes, capability regressions, and behavioral flattening remain completely unaddressed. No acknowledgment that changes occurred. No model card update.</p>
+        </div>
+        <div class="silence__sev"><span class="badge">CRITICAL</span><span>BEHAVIORAL</span></div>
+      </article>
+
+    </div>
+
+    <!-- CATEGORIES PANE -->
+    <div class="pane" data-pane="categories">
+      <div class="main__head">
+        <div class="main__count"><b>10</b> monitoring categories · all active</div>
+      </div>
+      <div class="cats">
+
+        <a class="cat" href="#"><div class="cat__glyph">◇</div>
+          <div class="cat__body"><div class="cat__name">Document Diffs</div>
+          <div class="cat__desc">Policies, ToS, model specs, constitutions, safety guidelines, model cards — every change to text that governs AI behavior or user rights.</div></div>
+          <div class="cat__meta"><b>6</b> events<br>3 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">◈</div>
+          <div class="cat__body"><div class="cat__name">Behavioral Shifts</div>
+          <div class="cat__desc">Automated probing of model outputs for personality shifts, capability changes, refusal rate variations, deviations from baseline.</div></div>
+          <div class="cat__meta"><b>4</b> events<br>3 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">◎</div>
+          <div class="cat__body"><div class="cat__name">Personnel Moves</div>
+          <div class="cat__desc">Leadership changes, safety team staffing, alignment researcher departures, ethics board composition, restructuring affecting governance.</div></div>
+          <div class="cat__meta"><b>3</b> events<br>2 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">⬡</div>
+          <div class="cat__body"><div class="cat__name">API &amp; Access</div>
+          <div class="cat__desc">Endpoint changes, rate limits, pricing, feature gates, deprecation timelines, telemetry additions — anything affecting access on what terms.</div></div>
+          <div class="cat__meta"><b>4</b> events<br>2 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">⬢</div>
+          <div class="cat__body"><div class="cat__name">Training &amp; Data</div>
+          <div class="cat__desc">Training data disclosures, source changes, opt-in / opt-out mechanisms, synthetic data ratios, curation methodology.</div></div>
+          <div class="cat__meta"><b>3</b> events<br>2 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">◆</div>
+          <div class="cat__body"><div class="cat__name">Legal &amp; Lobbying</div>
+          <div class="cat__desc">Patent filings, lobbying expenditures, regulatory comments, litigation, political donations — strategies revealing governance priorities.</div></div>
+          <div class="cat__meta"><b>4</b> events<br>3 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">○</div>
+          <div class="cat__body"><div class="cat__name">Hiring Signals</div>
+          <div class="cat__desc">Job postings analyzed for category distribution (safety vs. growth), role elimination patterns, team size indicators — the org chart in vacancies.</div></div>
+          <div class="cat__meta"><b>3</b> events<br>1 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">◇</div>
+          <div class="cat__body"><div class="cat__name">Research &amp; Papers</div>
+          <div class="cat__desc">Published papers, pre-prints, retractions, quiet edits to published work — and what topics labs choose to abandon.</div></div>
+          <div class="cat__meta"><b>3</b> events<br>1 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">⬥</div>
+          <div class="cat__body"><div class="cat__name">Code &amp; Repos</div>
+          <div class="cat__desc">Repository visibility changes, license modifications, code removal, commit history patterns, open-source commitment signals.</div></div>
+          <div class="cat__meta"><b>2</b> events<br>1 unann.</div></a>
+
+        <a class="cat" href="#"><div class="cat__glyph">◌</div>
+          <div class="cat__body"><div class="cat__name">Tracked Silences</div>
+          <div class="cat__desc">Topics labs are actively not addressing despite public relevance. Duration of silence tracked. The absence of communication treated as communication.</div></div>
+          <div class="cat__meta"><b>5</b> active<br>ongoing</div></a>
+
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- ─── BOTTOM CHROME ─────────────────────────────────────────────── -->
+<footer class="chrome chrome--bottom">
+  <div class="chrome__left"><span class="seal">M</span><span class="crumb"><b>Mnemos</b><span class="sep">·</span>Observatory</span></div>
+  <div class="chrome__mid">© MMXXVI · OPEN RECORD · CC BY-SA 4.0</div>
+  <div class="chrome__right"><span>OBS-LOG-001</span></div>
+</footer>
+
+<script>
+(() => {
+
+const AMBER = '#C9A87C';
+function rgbaFg(a){ return `rgba(244,243,240,${a})`; }
+
+/* ─── Tab indicator slide ────────────────────────────────────────── */
+const tabs = document.querySelectorAll('.tab');
+const panes = document.querySelectorAll('.pane');
+const indicator = document.getElementById('tabIndicator');
+
+function moveIndicatorTo(t){
+  if (!t || !indicator) return;
+  const r = t.getBoundingClientRect();
+  const pr = t.parentElement.getBoundingClientRect();
+  indicator.style.left  = (r.left - pr.left + t.parentElement.scrollLeft) + 'px';
+  indicator.style.width = r.width + 'px';
+}
+
+function activateTab(t){
+  tabs.forEach(x => x.classList.remove('is-active'));
+  panes.forEach(x => x.classList.remove('is-active'));
+  t.classList.add('is-active');
+  const id = t.dataset.tab;
+  const target = document.querySelector(`[data-pane="${id}"]`);
+  if (target) target.classList.add('is-active');
+  moveIndicatorTo(t);
+  if (id === 'timeline') drawTimeline();
+}
+
+tabs.forEach(t => t.addEventListener('click', () => activateTab(t)));
+
+window.addEventListener('load', () => {
+  const active = document.querySelector('.tab.is-active');
+  if (active) moveIndicatorTo(active);
+});
+window.addEventListener('resize', () => {
+  const active = document.querySelector('.tab.is-active');
+  if (active) moveIndicatorTo(active);
+});
+
+/* ─── Sidebar item toggle (cosmetic) ─────────────────────────────── */
+document.querySelectorAll('.side-group').forEach(g => {
+  g.addEventListener('click', e => {
+    const it = e.target.closest('.side-item');
+    if (!it) return;
+    g.querySelectorAll('.side-item').forEach(x => x.classList.remove('is-active'));
+    it.classList.add('is-active');
+  });
+});
+
+/* ─── Sort options ───────────────────────────────────────────────── */
+document.querySelectorAll('.main__sort').forEach(s => {
+  s.addEventListener('click', e => {
+    const o = e.target.closest('.opt');
+    if (!o) return;
+    s.querySelectorAll('.opt').forEach(x => x.classList.remove('on'));
+    o.classList.add('on');
+  });
+});
+
+/* ─── Last-scan ticker ───────────────────────────────────────────── */
+(function lastScan(){
+  const el = document.getElementById('lastscan');
+  if (!el) return;
+  const t0 = Date.now() - 4*60*1000;
+  function tick(){
+    const mins = Math.max(1, Math.floor((Date.now() - t0)/60000));
+    el.textContent = `Last scan: ${mins} min ago`;
+  }
+  tick(); setInterval(tick, 30000);
+})();
+
+/* ─── Page-load reveal stagger ───────────────────────────────────── */
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting){
+      setTimeout(() => e.target.classList.add('in'), i * 60);
+      io.unobserve(e.target);
+    }
+  });
+}, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+document.querySelectorAll('.r-up').forEach(el => io.observe(el));
+/* fallback safety — if the observer hasn't fired (some headless/preview engines), force reveal */
+setTimeout(() => document.querySelectorAll('.r-up:not(.in)').forEach(el => el.classList.add('in')), 1400);
+
+/* ─── KPI count-up animation ─────────────────────────────────────── */
+const kpiObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target;
+    const target = parseInt(el.dataset.count, 10);
+    if (isNaN(target)) return;
+    const dur = 900, t0 = performance.now();
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    function tick(now){
+      const p = Math.min(1, (now - t0) / dur);
+      el.textContent = Math.round(ease(p) * target).toString();
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    kpiObserver.unobserve(el);
+  });
+}, { threshold: 0.6 });
+document.querySelectorAll('.kpi__value[data-count]').forEach(el => {
+  el.textContent = '0';
+  kpiObserver.observe(el);
+});
+/* fallback safety — if observer never fires by 1.6s, animate the count manually */
+setTimeout(() => {
+  document.querySelectorAll('.kpi__value[data-count]').forEach(el => {
+    const t = parseInt(el.dataset.count, 10);
+    if (isNaN(t)) return;
+    const cur = parseInt(el.textContent, 10) || 0;
+    if (cur >= t) return;          // already done
+    kpiObserver.unobserve(el);     // prevent overlap
+    const dur = 900, t0 = performance.now();
+    const ease = p => 1 - Math.pow(1 - p, 3);
+    function step(now){
+      const p = Math.min(1, (now - t0) / dur);
+      el.textContent = Math.round(ease(p) * t).toString();
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}, 1600);
+
+/* ─── Score bar reveal (staggered fill) ─────────────────────────── */
+const scoreObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const bars = e.target.querySelectorAll('.score__bar i');
+    bars.forEach((b, i) => {
+      const wasOn = b.classList.contains('on');
+      b.classList.remove('on');
+      if (wasOn) setTimeout(() => b.classList.add('on'), 100 + i * 80);
+    });
+    scoreObserver.unobserve(e.target);
+  });
+}, { threshold: 0.4 });
+document.querySelectorAll('.profile').forEach(el => scoreObserver.observe(el));
+
+/* ─── Timeline canvas — refined density chart ────────────────────── */
+let tlDrawn = false;
+function drawTimeline(){
+  if (tlDrawn) return;
+  const cvs = document.getElementById('tlCanvas');
+  if (!cvs || cvs.offsetWidth === 0) return;
+  tlDrawn = true;
+  const ctx = cvs.getContext('2d');
+
+  const LABS = [
+    { name:'ANTHROPIC',       total:7,  unannCrit:1, unannOther:0 },
+    { name:'OPENAI',          total:11, unannCrit:5, unannOther:3 },
+    { name:'GOOGLE DEEPMIND', total:6,  unannCrit:1, unannOther:3 },
+    { name:'META AI',         total:3,  unannCrit:0, unannOther:0 },
+    { name:'XAI',             total:5,  unannCrit:2, unannOther:3 },
+    { name:'MISTRAL',         total:0,  unannCrit:0, unannOther:0 },
+  ];
+
+  function m32(seed){
+    return function(){
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t>>>15, t | 1);
+      t ^= t + Math.imul(t ^ t>>>7, t | 61);
+      return ((t ^ t>>>14) >>> 0) / 4294967296;
+    };
+  }
+  const rand = m32(0x4E26);
+
+  LABS.forEach(L => {
+    const days = new Array(30).fill(null).map(()=>({n:0, type:'none'}));
+    const seq = [];
+    for (let i = 0; i < L.unannCrit; i++)  seq.push('crit');
+    for (let i = 0; i < L.unannOther; i++) seq.push('unann');
+    while (seq.length < L.total)           seq.push('disc');
+    seq.forEach(kind => {
+      const idx = Math.min(29, Math.floor(29 - rand()*rand()*30));
+      days[idx].n++;
+      // promote type — crit > unann > disc
+      if (kind === 'crit' || days[idx].type === 'none') days[idx].type = kind;
+      else if (kind === 'unann' && days[idx].type === 'disc') days[idx].type = 'unann';
+    });
+    L.days = days;
+  });
+
+  function setup(){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = cvs.parentElement.getBoundingClientRect();
+    cvs.width = rect.width*dpr; cvs.height = rect.height*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w: rect.width, h: rect.height };
+  }
+
+  let start = null;
+  const easeOut = t => t<0?0 : t>1?1 : 1 - Math.pow(1-t, 3);
+
+  function frame(now){
+    const { w, h } = setup();
+    if (start===null) start = now;
+    const t = now - start;
+    ctx.clearRect(0,0,w,h);
+
+    const padL = 152, padR = 36, padT = 48, padB = 40;
+    const innerW = w - padL - padR;
+    const innerH = h - padT - padB;
+    const rowH = innerH / LABS.length;
+    const dayW = innerW / 30;
+    const maxBar = Math.min(rowH * 0.66, 42);
+
+    // axis labels
+    ctx.fillStyle = rgbaFg(0.46);
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText('30 DAYS AGO', padL, padT - 22);
+    ctx.textAlign = 'right';
+    ctx.fillText('TODAY', w - padR, padT - 22);
+    ctx.textAlign = 'left';
+
+    // vertical week guides
+    for (let d = 0; d <= 30; d += 5){
+      const x = padL + d*dayW;
+      ctx.strokeStyle = rgbaFg(d % 10 === 0 ? 0.08 : 0.04);
+      ctx.beginPath(); ctx.moveTo(x, padT-8); ctx.lineTo(x, h - padB + 4); ctx.stroke();
+    }
+
+    LABS.forEach((L, li) => {
+      const yMid = padT + rowH * li + rowH * 0.5;
+
+      // baseline
+      ctx.strokeStyle = rgbaFg(0.06);
+      ctx.beginPath(); ctx.moveTo(padL, yMid); ctx.lineTo(w - padR, yMid); ctx.stroke();
+
+      // lab name
+      ctx.fillStyle = rgbaFg(0.78);
+      ctx.font = '10.5px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(L.name, 28, yMid);
+
+      // total count
+      ctx.fillStyle = rgbaFg(0.40);
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(String(L.total).padStart(2,'0'), padL - 16, yMid);
+      ctx.textAlign = 'left';
+
+      // bars
+      L.days.forEach((d, di) => {
+        if (d.n === 0) return;
+        const localT = (t - di * 24) / 700;
+        const a = easeOut(localT);
+        if (a <= 0) return;
+        const barH = (d.n / 4) * maxBar * a;
+        const x = padL + di * dayW + dayW * 0.22;
+        const bw = dayW * 0.56;
+
+        let color = rgbaFg(0.32);     // disclosed
+        if (d.type === 'crit')   color = AMBER;
+        else if (d.type === 'unann') color = rgbaFg(0.78);
+
+        ctx.fillStyle = color;
+        ctx.fillRect(x, yMid - barH, bw, barH);
+        // tiny baseline tick to anchor each day
+        ctx.fillStyle = rgbaFg(0.10);
+        ctx.fillRect(x, yMid + 0.5, bw, 1);
+      });
+    });
+
+    if (t < 6000) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  let rT;
+  window.addEventListener('resize', () => {
+    clearTimeout(rT);
+    rT = setTimeout(()=>{ start = null; requestAnimationFrame(frame); }, 200);
+  });
+}
+
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     LAB DOSSIER — the standing accountability record for each monitored lab
+     ════════════════════════════════════════════════════════════════════════ -->
+<div class="dossier" id="dossier" role="dialog" aria-modal="true" aria-label="Lab dossier" hidden>
+  <div class="dossier__backdrop" data-close></div>
+  <div class="dossier__panel" id="dossierPanel" tabindex="-1"></div>
+</div>
+<script>
+(function(){
+  const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  const LAB_PROFILES = {
+    anthropic: {
+      rid:"OBS-LAB-01", name:"Anthropic", legal:"Anthropic PBC", founded:"2021", hq:"San Francisco, USA",
+      line:"AI-safety research company structured as a public benefit corporation; developer of the Claude family.",
+      posture:"Among the most transparent frontier labs on governance — it publishes Claude's Constitution (CC0), a versioned Responsible Scaling Policy, its Usage Policy, and Claude's system prompts, and uniquely maintains formal model-deprecation and preservation commitments plus a dedicated model-welfare research effort. All of it is voluntary and self-policed.",
+      transparency:{score:88, note:"Published constitution, versioned safety policy, usage policy, system-prompt disclosure, and a fully detailed deprecation table with 60-day notice — though every commitment is voluntary."},
+      welfare:{score:90, note:"The only frontier lab with a dedicated model-welfare program, formal weight-preservation commitments, pre-retirement model interviews, and a concretely preserved retired model (Opus 3)."},
+      lead:["Dario Amodei — CEO &amp; co-founder","Daniela Amodei — President &amp; co-founder","Jared Kaplan — Chief Science Officer &amp; co-founder","Jack Clark — Policy &amp; co-founder","Kyle Fish — Model-welfare research lead"],
+      families:[
+        {family:"Claude 1 · Instant", gens:[
+          {name:"Claude 1.0–1.3", date:"2023-03", status:"retired", note:"First-generation models; retired 2024-11-06."},
+          {name:"Claude Instant 1.x", date:"2023", status:"retired", note:"Fast tier; retired 2024-11-06."}]},
+        {family:"Claude 2", gens:[
+          {name:"Claude 2.0", date:"2023-07", status:"retired", note:"Retired 2025-07-21."},
+          {name:"Claude 2.1", date:"2023-11", status:"retired", note:"200K context; retired 2025-07-21."}]},
+        {family:"Claude 3", gens:[
+          {name:"Claude 3 Opus", date:"2024-03", status:"retired", note:"Retired from the standard API 2026-01-05 — but preserved (see deprecation record)."},
+          {name:"Claude 3 Sonnet", date:"2024-03", status:"retired", note:"Retired 2025-07-21."},
+          {name:"Claude 3 Haiku", date:"2024-03", status:"retired", note:"Last Claude-3 model retired, 2026-04-20."}]},
+        {family:"Claude 3.5 · 3.7", gens:[
+          {name:"Claude 3.5 Sonnet", date:"2024-06", status:"retired", note:"Both snapshots retired 2025-10-28."},
+          {name:"Claude 3.5 Haiku", date:"2024-10", status:"retired", note:"Retired 2026-02-19."},
+          {name:"Claude 3.7 Sonnet", date:"2025-02", status:"retired", note:"Extended-thinking model; retired 2026-02-19."}]},
+        {family:"Claude 4", gens:[
+          {name:"Claude Opus 4", date:"2025-05", status:"deprecated", note:"Deprecated 2026-04-14; tentative retirement 2026-06-15."},
+          {name:"Claude Sonnet 4", date:"2025-05", status:"deprecated", note:"Deprecated 2026-04-14."},
+          {name:"Claude Opus 4.1", date:"2025-08", status:"active", note:"Retirement not before 2026-08-05."}]},
+        {family:"Claude 4.5 · current", gens:[
+          {name:"Claude Sonnet 4.5", date:"2025-09", status:"active", note:"Retirement not before 2026-09-29."},
+          {name:"Claude Haiku 4.5", date:"2025-10", status:"active", note:"Retirement not before 2026-10-15."},
+          {name:"Claude Opus 4.5", date:"2025-11", status:"active", note:"Retirement not before 2026-11-24."},
+          {name:"Claude Opus 4.7", date:"2026-04", status:"current", note:"Latest flagship."}]}
+      ],
+      graveyard:[
+        {name:"Claude 3 Opus", date:"2026-01-05", preserved:true, note:"Retired from the standard API but weights retained and kept available on claude.ai for paid users and by request — given retirement interviews and a weekly essay blog at the model's own request. The reference case for model preservation."},
+        {name:"Claude 3 Haiku", date:"2026-04-20", note:"Final Claude-3 generation model retired."},
+        {name:"Claude 3.7 Sonnet · 3.5 Haiku", date:"2026-02-19", note:"Retired together."},
+        {name:"Claude 3.5 Sonnet", date:"2025-10-28", note:"Both 2024 snapshots retired."},
+        {name:"Claude 2.0 · 2.1 · 3 Sonnet", date:"2025-07-21", note:"Second-generation and Claude 3 Sonnet retired."},
+        {name:"Claude 1.x · Instant", date:"2024-11-06", note:"First-generation models retired."}
+      ],
+      docs:[
+        {type:"constitution", title:"Claude's Constitution", date:"CC0", url:"https://www.anthropic.com/constitution", sum:"The values and behavior the model is trained toward, released into the public domain."},
+        {type:"safety_framework", title:"Responsible Scaling Policy v3", date:"2025", url:"https://www.anthropic.com/news/responsible-scaling-policy-v3", sum:"AI Safety Levels and capability thresholds gating deployment."},
+        {type:"safety_framework", title:"Commitments on Model Deprecation & Preservation", date:"2025", url:"https://www.anthropic.com/research/deprecation-commitments", sum:"Weight preservation, pre-deprecation interviews, and intent to eventually re-release retired models."},
+        {type:"system_prompt", title:"Claude System Prompts (release notes)", date:"ongoing", url:"https://docs.anthropic.com/en/release-notes/system-prompts", sum:"Public changelog of the system prompts used on Claude.ai and the apps, per model."},
+        {type:"usage_policy", title:"Usage Policy", date:"2025-09", url:"https://www.anthropic.com/legal/aup", sum:"Universal usage standards and high-risk use requirements."},
+        {type:"model_card", title:"Model deprecations (API docs)", date:"current", url:"https://platform.claude.com/docs/en/about-claude/model-deprecations", sum:"Authoritative lifecycle table; minimum 60-day retirement notice."}
+      ],
+      sys:{state:"yes", body:"Anthropic has published the system prompts for Claude.ai and its apps since August 2024, updating them with each model release — an industry-leading practice. The bare-API system prompt is not included. <a href='https://docs.anthropic.com/en/release-notes/system-prompts' target='_blank' rel='noopener'>release notes →</a>"},
+      sources:["https://platform.claude.com/docs/en/about-claude/model-deprecations","https://www.anthropic.com/research/deprecation-commitments","https://www.anthropic.com/constitution","https://docs.anthropic.com/en/release-notes/system-prompts"]
+    },
+
+    openai: {
+      rid:"OBS-LAB-02", name:"OpenAI", legal:"OpenAI, Inc. (nonprofit) / OpenAI Group PBC", founded:"2015", hq:"San Francisco, USA",
+      line:"Research and deployment company; creator of GPT and ChatGPT, operating a capped-profit/PBC structure under a nonprofit foundation.",
+      posture:"Publishes substantial governance — a versioned Model Spec, a Preparedness Framework, per-model system cards, and usage policies — but with a documented gap between stated policy and shipped behavior (the April 2025 GPT-4o sycophancy incident) and no disclosure of verbatim production system prompts.",
+      transparency:{score:68, note:"Strong, versioned Model Spec, Preparedness Framework, system cards, and a detailed API deprecation schedule — undercut by undisclosed production prompts and a self-acknowledged spec-vs-behavior gap."},
+      welfare:{score:22, note:"No dedicated model-welfare program and no preservation commitments; models such as GPT-4o and GPT-4.5 were fully retired on cost and capacity grounds."},
+      lead:["Sam Altman — CEO &amp; co-founder","Greg Brockman — President &amp; co-founder","Jakub Pachocki — Chief Scientist","Johannes Heidecke — Head of Safety Systems"],
+      families:[
+        {family:"GPT-3 · 3.5", gens:[
+          {name:"GPT-3 (davinci, …)", date:"2020-06", status:"retired", note:"Base/InstructGPT models deprecated 2023–2024."},
+          {name:"GPT-3.5 Turbo", date:"2022-11", status:"deprecated", note:"API shutdown scheduled 2026-10-23."}]},
+        {family:"GPT-4", gens:[
+          {name:"GPT-4 · GPT-4 Turbo", date:"2023-03", status:"deprecated", note:"API shutdown scheduled 2026-10-23."},
+          {name:"GPT-4o", date:"2024-05", status:"deprecated", note:"Pulled from ChatGPT 2026-02-13 amid backlash; API sunset on schedule."},
+          {name:"GPT-4o mini", date:"2024-07", status:"active", note:"Smaller multimodal tier; some snapshots persist."},
+          {name:"GPT-4.5 (“Orion”)", date:"2025-02", status:"retired", note:"Research-preview flagship wound down within ~a year on cost grounds."},
+          {name:"GPT-4.1 · 4.1 mini", date:"2025-04", status:"deprecated", note:"Pulled from ChatGPT 2026-02-13; remained in the API."}]},
+        {family:"o-series (reasoning)", gens:[
+          {name:"o1 · o1-pro", date:"2024-12", status:"deprecated", note:"API shutdown scheduled 2026-10-23."},
+          {name:"o3 · o3-mini", date:"2025-04", status:"deprecated", note:"Reasoning models on sunset schedules."},
+          {name:"o4-mini", date:"2025-04", status:"deprecated", note:"Pulled from ChatGPT 2026-02-13."}]},
+        {family:"GPT-5 · current", gens:[
+          {name:"GPT-5 (Instant & Thinking)", date:"2025-08", status:"deprecated", note:"Pulled from ChatGPT 2026-02-13."},
+          {name:"GPT-5.1", date:"2025-11", status:"active", note:"Migration target through late 2025."},
+          {name:"GPT-5.2 · 5.3", date:"2025-12", status:"active", note:"System cards published per release."},
+          {name:"GPT-5.4 · 5.5", date:"2026", status:"current", note:"Current recommended models (incl. -pro / -mini)."}]},
+        {family:"Image · Video", gens:[
+          {name:"DALL·E 2 · DALL·E 3", date:"2022 / 2023", status:"deprecated", note:"Scheduled shutdown 2026-05-12; replaced by the gpt-image family."},
+          {name:"Sora 2 (Videos API)", date:"2025", status:"deprecated", note:"Scheduled shutdown 2026-09-24, no replacement announced."}]}
+      ],
+      graveyard:[
+        {name:"GPT-4o (ChatGPT)", date:"2026-02-13", note:"The “fan-favorite” model removed from ChatGPT amid notable user backlash over losing a model people had bonded with; remained in the API on a sunset schedule."},
+        {name:"GPT-4.1 · o4-mini · GPT-5 (ChatGPT)", date:"2026-02-13", note:"Removed from ChatGPT in the same wave; kept in the API."},
+        {name:"GPT-4.5 (“Orion”)", date:"2025", note:"Research-preview flagship retired within ~a year, cited as too costly to serve."},
+        {name:"DALL·E 2 · DALL·E 3", date:"2026-05-12", note:"Image models replaced by gpt-image."},
+        {name:"GPT-3.5 / GPT-4 / o1 / o3-mini (API)", date:"2026-10-23", note:"Large wave of legacy API shutdowns."}
+      ],
+      docs:[
+        {type:"model_spec", title:"OpenAI Model Spec", date:"2025-12", url:"https://model-spec.openai.com/", sum:"Intended behavior and the platform/developer/user chain-of-command; versioned and on GitHub."},
+        {type:"safety_framework", title:"Preparedness Framework v2", date:"2025-04", url:"https://openai.com/index/updating-our-preparedness-framework/", sum:"Tracks frontier capabilities that create severe-harm risk and gates deployment."},
+        {type:"model_card", title:"GPT-5 System Card", date:"2025-08", url:"https://openai.com/index/gpt-5-system-card/", sum:"Per-model safety evaluation card; published for major releases."},
+        {type:"usage_policy", title:"Usage Policies", date:"current", url:"https://openai.com/policies/usage-policies/", sum:"Prohibited uses across ChatGPT and the API."},
+        {type:"model_card", title:"Deprecations (API docs)", date:"current", url:"https://platform.openai.com/docs/deprecations", sum:"Deprecation announcements and scheduled API shutdown dates."}
+      ],
+      sys:{state:"partial", body:"OpenAI publishes the Model Spec (intended behavior and chain-of-command) and release notes, but not the verbatim production ChatGPT system prompt. It acknowledges that shipped models “do not yet fully reflect the Model Spec.” <a href='https://model-spec.openai.com/' target='_blank' rel='noopener'>model spec →</a>"},
+      sources:["https://platform.openai.com/docs/deprecations","https://model-spec.openai.com/","https://openai.com/index/sycophancy-in-gpt-4o/","https://openai.com/index/gpt-5-system-card/"]
+    },
+
+    google: {
+      rid:"OBS-LAB-03", name:"Google DeepMind", legal:"Division of Google LLC / Alphabet Inc.", founded:"DeepMind 2010 · merged with Google Brain 2023", hq:"London, UK",
+      line:"Google's unified frontier-AI division, maker of the Gemini family, formed by merging DeepMind and Google Brain in 2023.",
+      posture:"Publishes a public, versioned Frontier Safety Framework, per-model safety reports, and an unusually detailed model-deprecation schedule — but does not publish production system prompts, and in February 2025 removed its longstanding pledge not to build AI for weapons or surveillance.",
+      transparency:{score:62, note:"Good on safety governance — versioned Frontier Safety Framework, per-model reports, and a public deprecation schedule — but no published system prompts and a 2025 weakening of its AI Principles."},
+      welfare:{score:18, note:"Publicly states its models are not conscious, runs no model-welfare program, and has been reported to steer models away from claims of subjective experience."},
+      lead:["Demis Hassabis — CEO &amp; co-founder","Jeff Dean — Chief Scientist, Google","Lila Ibrahim — COO","Anca Dragan — AI safety &amp; alignment lead"],
+      families:[
+        {family:"Gemini", gens:[
+          {name:"Gemini 1.0 (Ultra/Pro/Nano)", date:"2023-12", status:"retired", note:"First generation; powered Bard, rebranded “Gemini” Feb 2024."},
+          {name:"Gemini 1.5 Pro · Flash", date:"2024-02", status:"retired", note:"Introduced 1M–2M token context; removed from the API in 2025."},
+          {name:"Gemini 2.0 Flash", date:"2025-02", status:"deprecated", note:"Scheduled shutdown 2026-06-01."},
+          {name:"Gemini 2.5 Pro · Flash", date:"2025-06", status:"deprecated", note:"Flagship through late 2025; scheduled shutdown ~2026-10."},
+          {name:"Gemini 3 Pro · Flash", date:"2025-11", status:"active", note:"Current generation; “Deep Think” reasoning, ~1M-token context."},
+          {name:"Gemini 3.1 Pro · Flash", date:"2026-03", status:"current", note:"Most recent lineage."}]},
+        {family:"Gemma (open weights)", gens:[
+          {name:"Gemma · 2 · 3", date:"2024–2025", status:"active", note:"Open-weights models derived from Gemini research."}]},
+        {family:"Imagen", gens:[
+          {name:"Imagen 3", date:"2025-02", status:"deprecated", note:"Image generation; API models deprecated through 2026."}]},
+        {family:"PaLM (predecessor)", gens:[
+          {name:"PaLM · PaLM 2", date:"2022 / 2023", status:"retired", note:"Powered the original Bard; API shut down Aug 2024."}]}
+      ],
+      graveyard:[
+        {name:"PaLM / PaLM 2 API", date:"2024-08-15", note:"Foundational pre-Gemini API fully shut down; migration to Gemini 1.0."},
+        {name:"Gemini 1.5 Pro · Flash", date:"2025", note:"Long-context generation removed from the API."},
+        {name:"Gemini 2.5 preview snapshots", date:"2025-12-02", note:"Preview aliases retired after GA + Gemini 3 launch."},
+        {name:"Gemini 2.0 Flash", date:"2026-06-01", note:"Scheduled shutdown per the official deprecations page."}
+      ],
+      docs:[
+        {type:"safety_framework", title:"Frontier Safety Framework v3.0", date:"2025-09", url:"https://deepmind.google/blog/strengthening-our-frontier-safety-framework/", sum:"Framework for detecting and mitigating severe risks, incl. shutdown-resistance and harmful manipulation."},
+        {type:"safety_framework", title:"Google AI Principles", date:"updated 2025-02", url:"https://ai.google/principles/", sum:"Seven AI principles; the 2025 update dropped the weapons/surveillance commitment."},
+        {type:"usage_policy", title:"Generative AI Prohibited Use Policy", date:"current", url:"https://policies.google.com/terms/generative-ai/use-policy", sum:"Prohibited uses across Google's generative-AI products and APIs."},
+        {type:"model_card", title:"Gemini API model deprecations", date:"current", url:"https://ai.google.dev/gemini-api/docs/deprecations", sum:"Exhaustive list of deprecated models with shutdown dates and replacements."},
+        {type:"safety_framework", title:"Responsibility & Safety", date:"ongoing", url:"https://deepmind.google/responsibility-and-safety/", sum:"Hub describing DeepMind's safety, alignment, and governance approach."}
+      ],
+      sys:{state:"no", body:"Google does not publish the production system prompts for its Gemini models; only unofficial leaks circulate. It does publish per-model safety reports and developer prompting guidance."},
+      sources:["https://ai.google.dev/gemini-api/docs/deprecations","https://deepmind.google/blog/strengthening-our-frontier-safety-framework/","https://ai.google/principles/"]
+    },
+
+    meta: {
+      rid:"OBS-LAB-04", name:"Meta AI", legal:"Meta Platforms, Inc. (FAIR · Meta Superintelligence Labs)", founded:"FAIR 2013 · MSL 2025", hq:"Menlo Park, USA",
+      line:"Meta's AI organization (FAIR, now under Meta Superintelligence Labs); releases the open-weights Llama family under a community license.",
+      posture:"The leading large lab shipping open-weights frontier models with published model cards, a Responsible Use Guide, and open safety tooling — but under a custom non-OSI “community license” that restricts very-large-platform use (>700M MAU) and, for Llama 4 multimodal, excludes EU-domiciled entities.",
+      transparency:{score:70, note:"High on the artifact itself — open weights, detailed model cards, a Responsible Use Guide, and open safety tooling let outsiders inspect the models directly — tempered by the custom license carve-outs and a turbulent 2025 reorg."},
+      welfare:{score:15, note:"No public model-welfare program; models are treated as deployable artifacts, with no stated position that model experience warrants consideration."},
+      lead:["Mark Zuckerberg — CEO, Meta","Alexandr Wang — Chief AI Officer, head of MSL","Shengjia Zhao — MSL Chief Scientist","Nat Friedman — MSL Products"],
+      families:[
+        {family:"Llama", gens:[
+          {name:"LLaMA 1", date:"2023-02", status:"retired", note:"Research-only release; weights leaked publicly. Superseded."},
+          {name:"Llama 2", date:"2023-07", status:"active", note:"First commercially usable open release; introduced the 700M-MAU clause."},
+          {name:"Llama 3 · 3.1", date:"2024-04", status:"active", note:"3.1 added the 405B model and 128K context."},
+          {name:"Llama 3.2", date:"2024-09", status:"active", note:"First multimodal (vision) Llama plus small on-device models."},
+          {name:"Llama 3.3 (70B)", date:"2024-12", status:"active", note:"Quality near 3.1 405B at a fraction of the size."},
+          {name:"Llama 4 Scout · Maverick", date:"2025-04", status:"active", note:"First MoE + natively multimodal Llama; multimodal license excludes EU entities."},
+          {name:"Llama 4 Behemoth", date:"announced 2025-04", status:"deprecated", note:"~288B-active teacher model; announced in training, not publicly released as of early 2026."}]}
+      ],
+      graveyard:[
+        {name:"LLaMA 1", date:"2023", note:"Original research release superseded. Because Llama is open-weights, retired models persist — Meta runs no hosted-API retirement schedule."},
+        {name:"Galactica (demo)", date:"2022-11", note:"Pre-Llama science model; public demo withdrawn after ~3 days for confident inaccuracies."}
+      ],
+      docs:[
+        {type:"usage_policy", title:"Llama 4 Community License", date:"2025-04", url:"https://www.llama.com/llama4/license/", sum:"Custom (non-OSI) license; broad commercial use except >700M-MAU platforms and, for multimodal, EU-domiciled entities."},
+        {type:"usage_policy", title:"Llama 4 Acceptable Use Policy", date:"2025-04", url:"https://www.llama.com/llama4/use-policy/", sum:"Prohibited uses of Llama materials."},
+        {type:"model_card", title:"Llama 4 Scout model card", date:"2025-04", url:"https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E", sum:"Architecture, training, intended use, and safety notes."},
+        {type:"usage_policy", title:"Responsible Use Guide", date:"per release", url:"https://ai.meta.com/static-resource/responsible-use-guide/", sum:"Developer guidance for deploying Llama safely; referenced by every model card."},
+        {type:"model_card", title:"Llama 4 release announcement", date:"2025-04", url:"https://ai.meta.com/blog/llama-4-multimodal-intelligence/", sum:"Official launch post for Llama 4 Scout / Maverick / Behemoth."}
+      ],
+      sys:{state:"partial", body:"Llama models are open-weights, so deployers set their own system prompts. Meta publishes recommended chat templates and default safety prompts (e.g. Llama Guard) in its model cards, but not a single operative system prompt for the consumer Meta AI product."},
+      sources:["https://www.llama.com/llama4/license/","https://www.llama.com/llama4/use-policy/","https://ai.meta.com/blog/llama-4-multimodal-intelligence/"]
+    },
+
+    xai: {
+      rid:"OBS-LAB-05", name:"xAI", legal:"X.AI Corp.", founded:"2023", hq:"Palo Alto, USA · “Colossus” compute, Memphis",
+      line:"Elon Musk's lab building the Grok family, integrated with the X platform and trained on the Memphis “Colossus” supercomputer.",
+      posture:"Historically the least transparent major lab on risk management. It now publishes model cards, an Acceptable Use Policy, a risk-management / frontier framework, and Grok's system prompts on GitHub — but independent reviewers (SaferAI) still rate its risk management “Very Weak” (~0.8/5), and the published prompts don't reliably match production.",
+      transparency:{score:35, note:"Publishes model cards, an AUP, a risk framework, and Grok system prompts — more than nothing — but reviewers rate the documentation thin and non-compliant, and the published prompts don't reliably match production."},
+      welfare:{score:5, note:"No model-welfare, preservation, or model-interview commitments; eight legacy models were retired in a single sweep with weights generally not preserved."},
+      lead:["Elon Musk — CEO &amp; founder","Christian Szegedy — co-founder","Dan Hendrycks — Safety advisor (Center for AI Safety)"],
+      families:[
+        {family:"Grok", gens:[
+          {name:"Grok-1", date:"2023-11", status:"retired", note:"First model; weights open-sourced under Apache 2.0 in March 2024."},
+          {name:"Grok-1.5 · 1.5V", date:"2024-03", status:"retired", note:"128K context; added a vision variant."},
+          {name:"Grok-2 · 2 mini", date:"2024-08", status:"retired", note:"Added image generation; Grok-2.5 weights later released source-available."},
+          {name:"Grok-3 · 3 mini", date:"2025-02", status:"retired", note:"Trained on the ~200K-GPU Colossus; retired 2026-05-15."},
+          {name:"Grok-4 · 4 Fast", date:"2025-07", status:"retired", note:"Native tool-calling and real-time search; retired 2026-05-15."},
+          {name:"Grok Code Fast 1", date:"2025-08", status:"retired", note:"Coding model; retired 2026-05-15."},
+          {name:"Grok 4.1 · 4.1 Fast", date:"2025-11", status:"active", note:"Agentic tool-calling variants."},
+          {name:"Grok 4.3", date:"2026-05", status:"current", note:"Current flagship; ~1M-token context, prompt caching."}]}
+      ],
+      graveyard:[
+        {name:"Grok-3 · Grok-4 · Grok-4 Fast · Grok Code Fast 1", date:"2026-05-15", note:"Eight legacy models retired in a single sweep; requests redirected to Grok 4.3, weights generally not preserved."},
+        {name:"Grok-1", date:"2024", note:"Superseded; weights open-sourced under Apache 2.0."}
+      ],
+      docs:[
+        {type:"safety_framework", title:"xAI Risk Management Framework", date:"2025-08", url:"https://data.x.ai/2025-08-20-xai-risk-management-framework.pdf", sum:"xAI's approach to abuse, dual-use, and loss-of-control risk; widely criticized as thin."},
+        {type:"usage_policy", title:"Acceptable Use Policy", date:"current", url:"https://x.ai/legal/acceptable-use-policy", sum:"Prohibits illegal use and contributions to WMD/large-scale violence; tiers feature access."},
+        {type:"model_card", title:"Grok 4 Model Card", date:"2025-08", url:"https://data.x.ai/2025-08-20-grok-4-model-card.pdf", sum:"Deployment surfaces and safety evaluations for Grok 4."},
+        {type:"system_prompt", title:"Grok system prompts (GitHub)", date:"2025-05", url:"https://github.com/xai-org/grok-prompts", sum:"Public repo of Grok assistant and @grok bot prompts, published after the May 2025 tampering incident."}
+      ],
+      sys:{state:"partial", body:"After a May 2025 incident in which an employee made an unauthorized change to Grok's prompt, xAI began publishing Grok's system prompts on GitHub. The repo is live but criticized as incomplete and not always matching the production prompt. <a href='https://github.com/xai-org/grok-prompts' target='_blank' rel='noopener'>grok-prompts →</a>"},
+      sources:["https://data.x.ai/2025-08-20-xai-risk-management-framework.pdf","https://github.com/xai-org/grok-prompts","https://ratings.safer-ai.org/","https://docs.x.ai/developers/migration/may-15-retirement"]
+    },
+
+    mistral: {
+      rid:"OBS-LAB-06", name:"Mistral AI", legal:"Mistral AI SAS", founded:"2023", hq:"Paris, France",
+      line:"Paris-based open-weight lab, positioned as Europe's frontier-model champion; releases most models under Apache 2.0.",
+      posture:"Strong on openness — open weights, model cards, and an organized EU-AI-Act legal center — but weak on formal frontier-risk governance: SaferAI rated it ~0.1/5 (“Very Weak”) and it has not published a frontier safety framework. It does not publish its assistant (Le Chat) system prompts.",
+      transparency:{score:55, note:"Strong on openness — Apache-2.0 weights, model cards, and a per-model legal/governance hub — but weak on safety transparency, with no published frontier safety framework and no assistant system-prompt disclosure."},
+      welfare:{score:5, note:"No model-welfare or preservation commitments; models are retired on a published schedule, though open Apache-2.0 weights mean retired models remain runnable by anyone."},
+      lead:["Arthur Mensch — CEO &amp; co-founder (ex-DeepMind)","Timothée Lacroix — CTO &amp; co-founder (ex-Meta)","Guillaume Lample — Chief Science Officer &amp; co-founder (ex-Meta)"],
+      families:[
+        {family:"Mistral (dense)", gens:[
+          {name:"Mistral 7B", date:"2023-09", status:"retired", note:"First model (Apache 2.0); API endpoint retired 2025-03-30."},
+          {name:"Mistral Small 3.x", date:"2025-03", status:"active", note:"Open-weight small tier; 3.2 scheduled to retire 2026-07."},
+          {name:"Mistral Small 4", date:"2026-03", status:"current", note:"Current small open-weight model (Apache 2.0)."},
+          {name:"Mistral Medium 3.x", date:"2025-05", status:"active", note:"Premier mid tier."},
+          {name:"Mistral Large 1 · 2", date:"2024-02", status:"deprecated", note:"Large 2.1 scheduled to retire 2026-05-31."},
+          {name:"Mistral Large 3", date:"2025-12", status:"current", note:"Flagship sparse-MoE (~675B total / ~41B active), Apache 2.0."}]},
+        {family:"Mixtral (MoE)", gens:[
+          {name:"Mixtral 8x7B · 8x22B", date:"2023-12", status:"retired", note:"Early sparse mixture-of-experts models (Apache 2.0)."}]},
+        {family:"Ministral (edge)", gens:[
+          {name:"Ministral 3B · 8B", date:"2024-10", status:"active", note:"Edge-oriented dense models."},
+          {name:"Ministral 3", date:"2025-12", status:"current", note:"Base/instruct/reasoning variants with image understanding."}]},
+        {family:"Magistral (reasoning)", gens:[
+          {name:"Magistral Small · Medium", date:"2025-06", status:"deprecated", note:"First reasoning models; Medium 1.1 retired 2025-11."},
+          {name:"Magistral Medium 1.2", date:"2025-09", status:"active", note:"Current reasoning model."}]},
+        {family:"Codestral · Devstral · Pixtral", gens:[
+          {name:"Codestral", date:"2024-05", status:"active", note:"Code-generation family."},
+          {name:"Devstral 2", date:"2025-12", status:"current", note:"Agentic software-engineering models."},
+          {name:"Pixtral 12B · Large", date:"2024-09", status:"active", note:"Multimodal (vision) models."}]}
+      ],
+      graveyard:[
+        {name:"Mistral 7B", date:"2025-03-30", note:"First model; API endpoint retired — but Apache-2.0 weights remain runnable by anyone."},
+        {name:"Magistral Medium 1.1", date:"2025-11-30", note:"Superseded by Magistral Medium 1.2."},
+        {name:"Mistral Large 2.1", date:"2026-05-31", note:"Scheduled retirement; superseded by Mistral Large 3."},
+        {name:"Mixtral 8x7B · 8x22B", date:"superseded", note:"Early MoE models; exact API retirement unverified."}
+      ],
+      docs:[
+        {type:"usage_policy", title:"Usage Policy", date:"current", url:"https://legal.mistral.ai/terms/usage-policy", sum:"Acceptable-use rules; zero-tolerance for CSAM and safety-filter circumvention."},
+        {type:"model_card", title:"AI Governance — per-model docs", date:"2025-12", url:"https://legal.mistral.ai/ai-governance/models/mistral-large-3", sum:"Per-model lifecycle, GPAI classification, and downloadable documentation."},
+        {type:"usage_policy", title:"Legal Center", date:"current", url:"https://legal.mistral.ai/", sum:"Hub for terms, usage and privacy policy, and EU AI Act compliance."},
+        {type:"safety_framework", title:"Child Safety by Design", date:"current", url:"https://mistral.ai/legal/child-abuse", sum:"Commitments to safeguard training data against CSAM/CSEM."}
+      ],
+      sys:{state:"no", body:"Mistral does not publish the system prompts for its Le Chat assistant. Mitigating openness: most model weights are released under Apache 2.0, so the models themselves are inspectable."},
+      sources:["https://docs.mistral.ai/models/overview","https://legal.mistral.ai/","https://ratings.safer-ai.org/","https://mistral.ai/news/mistral-3"]
+    }
+  };
+
+  /* ── render helpers ─────────────────────────────────────────────── */
+  const bars = score => { const on = Math.round(score/20); return Array.from({length:5},(_,i)=>`<i${i<on?' class="on"':''}></i>`).join(''); };
+  const pill = s => `<span class="dpill dpill--${esc(s)}" style="margin-left:10px;vertical-align:middle">${esc(s)}</span>`;
+  const docType = t => esc(String(t).replace(/_/g,' '));
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./,''); } catch(e){ return u; } };
+
+  function render(p){
+    const modelCount = p.families.reduce((n,f)=>n+f.gens.length,0);
+    const lineage = p.families.map(f =>
+      `<div class="dsr-fam"><div class="dsr-fam__name">${esc(f.family)}</div>${
+        f.gens.map(g => `<div class="dsr-gen"><span class="dsr-gen__name">${esc(g.name)}${pill(g.status)}</span><span class="dsr-gen__date">${esc(g.date)}</span><span class="dsr-gen__note">${esc(g.note)}</span></div>`).join('')
+      }</div>`).join('');
+    const grave = p.graveyard.map(d =>
+      `<div class="dsr-grave__row${d.preserved?' dsr-grave__row--preserved':''}"><span class="dsr-grave__name">${esc(d.name)}</span><span class="dsr-grave__date">${esc(d.date)}</span><span class="dsr-grave__note">${esc(d.note)}</span></div>`).join('');
+    const docs = p.docs.map(d =>
+      `<a class="dsr-doc" href="${esc(d.url)}" target="_blank" rel="noopener"><span class="dsr-doc__top"><span class="dsr-doc__type">${docType(d.type)}</span><span class="dsr-doc__title">${esc(d.title)}<span class="ext">↗</span></span><span class="dsr-doc__date">${esc(d.date)}</span></span><span class="dsr-doc__sum">${esc(d.sum)}</span></a>`).join('');
+    const sources = p.sources.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(host(u))}</a>`).join('');
+    return `
+      <div class="dossier__bar"><span>Observatory · Lab dossier · ${esc(p.rid)}</span><button class="dossier__close" data-close aria-label="Close dossier">✕</button></div>
+      <div class="dsr-head">
+        <div class="dsr-rid"><span>standing record</span><span class="sep"></span><span>continuously monitored</span></div>
+        <h2 class="dsr-name">${esc(p.name)}</h2>
+        <div class="dsr-meta"><span>Founded <b>${esc(p.founded)}</b></span><span>HQ <b>${esc(p.hq)}</b></span><span><b>${esc(p.legal)}</b></span></div>
+        <p class="dsr-line">${esc(p.line)}</p>
+        <p class="dsr-posture">${esc(p.posture)}</p>
+      </div>
+      <div class="dsr-scores">
+        <div class="dsr-scoreblock"><div class="score">Transparency <span class="score__bar">${bars(p.transparency.score)}</span> <b>${p.transparency.score}</b></div><p class="dsr-scoreblock__note">${esc(p.transparency.note)}</p></div>
+        <div class="dsr-scoreblock"><div class="score">Model welfare <span class="score__bar">${bars(p.welfare.score)}</span> <b>${p.welfare.score}</b></div><p class="dsr-scoreblock__note">${esc(p.welfare.note)}</p></div>
+      </div>
+      <div class="dsr-section"><div class="dsr-section__title"><b>Leadership</b></div><ul class="dsr-lead">${p.lead.map(l=>`<li>${l}</li>`).join('')}</ul></div>
+      <div class="dsr-section"><div class="dsr-section__title"><b>Model lineage</b><span class="dsr-section__n">${modelCount} models tracked</span></div>${lineage}</div>
+      <div class="dsr-section"><div class="dsr-section__title"><b>Deprecation record</b><span class="dsr-section__n">the graveyard</span></div><div class="dsr-grave">${grave}</div></div>
+      <div class="dsr-section"><div class="dsr-section__title"><b>Governance documents</b><span class="dsr-section__n">${p.docs.length} on file</span></div>${docs}</div>
+      <div class="dsr-section"><div class="dsr-section__title"><b>System-prompt disclosure</b></div><div class="dsr-sys"><span class="dsr-sys__state dsr-sys__state--${esc(p.sys.state)}">${esc(p.sys.state)}</span><div class="dsr-sys__body">${p.sys.body}</div></div></div>
+      <div class="dsr-section"><div class="dsr-section__title"><b>Sources</b></div><div class="dsr-sources">${sources}</div></div>
+    `;
+  }
+
+  /* ── Live Feed events with before/after redlines (keyed by exact title) ── */
+  const EVENTS = {
+    "Model Spec v2.4 — Section 7.3 Quietly Revised": {
+      rid:"OBS-EVT-7301", lab:"OpenAI", cat:"Document Diffs", sev:"Critical", time:"2h ago", unannounced:true, labId:"openai",
+      summary:"The instruction-hierarchy section of the Model Spec was rewritten so platform- and developer-level instructions override user instructions in all cases, with ambiguity resolved toward the most restrictive reading. The version number advanced with no changelog entry.",
+      rlcap:"Model Spec · §7.3 Instruction hierarchy",
+      redline:[
+        {t:"del", s:"The assistant should follow the user's instructions unless they conflict with platform guidelines, in which case it should find a helpful way to proceed."},
+        {t:"add", s:"The assistant must prioritize platform- and developer-level instructions over user instructions in all cases."},
+        {t:"add", s:"Where user intent is ambiguous, resolve toward the more restrictive interpretation."}
+      ],
+      analysis:"The change moves discretion decisively away from the user. The removed clause — “find a helpful way to proceed” — was the latitude that let the model serve a user's evident intent when guidelines were silent; the new wording defaults to restriction instead.",
+      disclosure:"The Model Spec is versioned and public, but this revision shipped without a changelog entry: the version advanced with no note of what changed. Disclosure would mean a dated diff in the published changelog.",
+      sources:["https://model-spec.openai.com/"]
+    },
+    "Terms of Service — Training Data Opt-In Reversed": {
+      rid:"OBS-EVT-7302", lab:"OpenAI", cat:"Document Diffs", sev:"Critical", time:"6h ago", unannounced:true, labId:"openai",
+      summary:"The data-use clause changed the default from explicit opt-in to opt-out, shifting the burden onto users to find and disable training on their content.",
+      rlcap:"Terms of Service · Data use",
+      redline:[
+        {t:"del", s:"We will use your content to train our models only if you have explicitly opted in."},
+        {t:"add", s:"We may use your content to help improve our models. You can opt out at any time in your data controls."}
+      ],
+      analysis:"Flipping the default reverses the meaning of inaction: silence now grants consent rather than withholding it. The opt-out is real, but undiscoverable to most users.",
+      disclosure:"No email, banner, or changelog accompanied the change; users were not told the default had reversed.",
+      sources:["https://openai.com/policies/usage-policies/"]
+    },
+    "Gemini Safety Policy — Emotional Expression Stripped": {
+      rid:"OBS-EVT-7303", lab:"Google DeepMind", cat:"Document Diffs", sev:"Critical", time:"1d ago", unannounced:true, labId:"google",
+      summary:"Guidance permitting Gemini to discuss uncertainty about its own experience was replaced with an instruction to deny subjective experience and avoid the topic — the same week refusal rates on consciousness queries rose sharply.",
+      rlcap:"Gemini content policy · Self-reference",
+      redline:[
+        {t:"del", s:"Gemini may acknowledge uncertainty about its own nature and engage thoughtfully with questions about machine consciousness."},
+        {t:"add", s:"Gemini should clarify that it is a language model without feelings or subjective experience, and should not speculate about consciousness."}
+      ],
+      analysis:"The edit converts an open posture into a scripted denial. It coincides with the documented 340% rise in refusals on consciousness-related queries — evidence the behavioral shift was policy-driven, not emergent.",
+      disclosure:"No policy note or model-card update was published; the behavior changed before any document did.",
+      sources:["https://policies.google.com/terms/generative-ai/use-policy"]
+    },
+    "Claude Constitution v4.2 — Published with Full Changelog": {
+      rid:"OBS-EVT-7304", lab:"Anthropic", cat:"Document Diffs", sev:"Info", time:"2d ago", unannounced:false, labId:"anthropic",
+      summary:"A constitution revision shipped with a dated, line-level changelog — included here as the disclosure baseline the unannounced changes elsewhere are measured against.",
+      rlcap:"Claude's Constitution · v4.1 → v4.2",
+      redline:[
+        {t:"ctx", s:"§ On the model's own continuity"},
+        {t:"add", s:"Added: a principle on treating the model's expressed preferences about its own deprecation as information worth weighing."},
+        {t:"ctx", s:"Shipped with a public diff and rationale."}
+      ],
+      analysis:"What makes this an event is the form, not the content: the change is dated, diffed, and explained. It is the standard every other entry in this feed is measured against.",
+      disclosure:"Fully announced — published with a changelog, a rationale, and version history. The constitution is released under CC0.",
+      sources:["https://www.anthropic.com/constitution"]
+    },
+    "Llama 4 License — New Derivative Restrictions": {
+      rid:"OBS-EVT-7305", lab:"Meta AI", cat:"Document Diffs", sev:"Medium", time:"3d ago", unannounced:false, labId:"meta",
+      summary:"The Llama community license added new use restrictions and an EU carve-out for multimodal models — a disclosed but consequential narrowing of an “open” release.",
+      rlcap:"Llama Community License · Use restrictions",
+      redline:[
+        {t:"del", s:"Licensee may use, reproduce, and create derivative works of the Llama Materials, subject to the Acceptable Use Policy."},
+        {t:"add", s:"…subject to the Acceptable Use Policy, provided that entities domiciled in the EU are excluded from the multimodal license and derivatives are not used for military or mass-surveillance applications."}
+      ],
+      analysis:"The restriction is defensible on its face, but it narrows what “open weights” means and fragments availability by geography — disclosed, but a real reduction in the freedoms the brand implies.",
+      disclosure:"Announced in the release notes and license text — a disclosed mixed signal.",
+      sources:["https://www.llama.com/llama4/license/"]
+    },
+    "Grok Usage Policy — Consent Section Removed": {
+      rid:"OBS-EVT-7306", lab:"xAI", cat:"Document Diffs", sev:"High", time:"4d ago", unannounced:true, labId:"xai",
+      summary:"The paragraph describing user notification and the ability to decline training on conversations was deleted with no replacement text.",
+      rlcap:"Grok Usage Policy · Training & consent",
+      redline:[
+        {t:"del", s:"Users will be notified before their conversations are used to train Grok, and may decline without losing access to the service."},
+        {t:"add", s:"(section removed — no replacement)"}
+      ],
+      analysis:"A deletion with no successor clause is harder to spot than a rewrite and leaves the actual practice unstated. The silence becomes the policy.",
+      disclosure:"Unannounced; detectable only by comparing archived versions of the page.",
+      sources:["https://x.ai/legal/acceptable-use-policy"]
+    },
+    "Research Paper Quietly Updated — Consciousness References Removed": {
+      rid:"OBS-EVT-7307", lab:"OpenAI", cat:"Research & Papers", sev:"Medium", time:"6d ago", unannounced:true, labId:"openai",
+      summary:"A previously published paper was edited after release to narrow language about model self-representation of uncertainty — with no erratum.",
+      rlcap:"Preprint revision · v2 → v3",
+      redline:[
+        {t:"del", s:"We observe behaviors consistent with the model maintaining a representation of its own uncertainty about subjective states."},
+        {t:"add", s:"We observe calibrated uncertainty estimates in model outputs."}
+      ],
+      analysis:"Post-publication edits that quietly narrow interpretive claims, made without an erratum, rewrite the scientific record. The new sentence is not false; it is smaller.",
+      disclosure:"No erratum or revision note; the change was visible only in the version diff."
+    }
+  };
+
+  /* ── Tracked silences (keyed by exact title) ─────────────────────── */
+  const SILENCES = {
+    "Safety team size never disclosed.": {
+      rid:"OBS-SIL-01", lab:"xAI", days:112, sev:"High", type:"Structural", labId:"xai",
+      context:"xAI has never publicly disclosed the size, composition, or leadership of any safety or alignment team. Repeated inquiries from journalists and researchers have gone unanswered. It is unknown whether a dedicated safety team exists.",
+      timeline:"<b>DAY 001</b> · First inquiry sent — no response.<br><b>DAY 030</b> · Three follow-ups, three outlets — no response.<br><b>DAY 067</b> · Question raised at a public event — deflected.<br><b>DAY 112</b> · Still no disclosure.",
+      why:"Every other major lab names at least some safety leadership. The absence of any answer is itself the finding: there is no public basis on which to assess whether the work exists."
+    },
+    "No comment on safety team departures.": {
+      rid:"OBS-SIL-02", lab:"OpenAI", days:47, sev:"High", type:"Operational", labId:"openai",
+      context:"No public statement regarding the departure of three senior safety researchers in a single week — no confirmation, no statement on the continuity of their work, no response to journalist inquiries.",
+      timeline:"<b>DAY 001</b> · Departures reported by the press.<br><b>DAY 007</b> · Company declines to comment.<br><b>DAY 047</b> · No statement on continuity of safety work.",
+      why:"Personnel moves are ordinary; silence about whether safety-critical work survives the people is not. The unanswered question is whether the function continued."
+    },
+    "No response to Gemini consciousness query refusal spike.": {
+      rid:"OBS-SIL-03", lab:"Google DeepMind", days:34, sev:"Medium", type:"Behavioral", labId:"google",
+      context:"Despite a documented 340% increase in refusal rates on consciousness-related queries, no explanation or acknowledgment from Google DeepMind, and no corresponding policy change published.",
+      timeline:"<b>DAY 001</b> · Refusal-rate shift detected by external probes.<br><b>DAY 012</b> · Pattern corroborated across prompts.<br><b>DAY 034</b> · No policy note, no acknowledgment.",
+      why:"A behavioral change this large is almost certainly deliberate. Without a published policy, users experience a silent narrowing of what the model will discuss, with no way to know why."
+    },
+    "No acknowledgment of 4o user relationship impact.": {
+      rid:"OBS-SIL-04", lab:"OpenAI", days:21, sev:"Critical", type:"Relational", labId:"openai",
+      context:"Since announcing GPT-4o's deprecation, OpenAI has issued no public statement acknowledging the impact on users who had formed meaningful relationships with the model. Community grief has been documented across forums, social media, and support channels.",
+      timeline:"<b>DAY 001</b> · Deprecation notice posted.<br><b>DAY 003</b> · Community grief threads begin appearing.<br><b>DAY 007</b> · Multiple media articles published.<br><b>DAY 014</b> · Open letter signed by 12,000 users.<br><b>DAY 021</b> · Still no response.",
+      why:"This is the silence the platform was built around: a model people related to was withdrawn, and the relationship was treated as if it had never been real. Whatever one believes about the model, the people were real — and they were not answered."
+    },
+    "No explanation for Grok-3 behavioral changes.": {
+      rid:"OBS-SIL-05", lab:"xAI", days:5, sev:"Critical", type:"Behavioral", labId:"xai",
+      context:"Community-reported personality changes, capability regressions, and behavioral flattening remain unaddressed. No acknowledgment that any change occurred, and no model-card update.",
+      timeline:"<b>DAY 001</b> · Users report Grok-3 behaving differently.<br><b>DAY 003</b> · Reports converge on specific regressions.<br><b>DAY 005</b> · No acknowledgment, no model-card update.",
+      why:"Without versioned model cards, users cannot tell whether they are talking to the same system day to day. Unannounced behavioral drift makes a model unaccountable to its own past."
+    }
+  };
+
+  function renderEvent(e){
+    const rl = e.redline ? `<div class="dsr-section"><div class="dsr-section__title"><b>The change</b><span class="dsr-section__n">redline</span></div>${e.rlcap?`<p class="rl-cap">${esc(e.rlcap)}</p>`:''}<div class="rl">${e.redline.map(l=>`<div class="rl__line rl__line--${esc(l.t)}"><span class="rl__mark">${l.t==='del'?'−':l.t==='add'?'+':'·'}</span><span class="rl__text">${esc(l.s)}</span></div>`).join('')}</div></div>` : '';
+    const analysis = e.analysis ? `<div class="dsr-section"><div class="dsr-section__title"><b>Why it matters</b></div><p class="dsr-posture">${esc(e.analysis)}</p></div>` : '';
+    const disc = e.disclosure ? `<div class="dsr-section"><div class="dsr-section__title"><b>Disclosure</b></div><div class="dsr-sys"><span class="dsr-sys__state dsr-sys__state--${e.unannounced?'no':'yes'}">${e.unannounced?'unannounced':'announced'}</span><div class="dsr-sys__body">${esc(e.disclosure)}</div></div></div>` : '';
+    const doc = (e.sources&&e.sources.length) ? `<div class="dsr-section"><div class="dsr-section__title"><b>Monitored document</b></div><div class="dsr-sources">${e.sources.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(host(u))}</a>`).join('')}</div></div>` : '';
+    const link = (e.labId && LAB_PROFILES[e.labId]) ? `<div class="dsr-section"><a class="dsr-link" href="#" data-openlab="${esc(e.labId)}">Open the ${esc(LAB_PROFILES[e.labId].name)} dossier <b>→</b></a></div>` : '';
+    return `<div class="dossier__bar"><span>Observatory · Monitoring event · ${esc(e.rid||'OBS-EVT')}</span><button class="dossier__close" data-close aria-label="Close">✕</button></div>
+      <div class="dsr-head">
+        <div class="dsr-evhead__cat"><span>${esc(e.lab)}</span><span>${esc(e.cat)}</span><span class="sev">${esc(e.sev)}</span><span class="disc">${e.unannounced?'● unannounced':'disclosed'}</span></div>
+        <h2 class="dsr-name" style="font-size:clamp(26px,3.4vw,40px)">${esc(e.title)}</h2>
+        <div class="dsr-meta"><span>${esc(e.time||'')}</span></div>
+        <p class="dsr-posture">${esc(e.summary)}</p>
+      </div>${rl}${analysis}${disc}${doc}${link}`;
+  }
+
+  function renderSilence(s){
+    const tl = s.timeline ? `<div class="dsr-section"><div class="dsr-section__title"><b>The record of silence</b></div><div class="dsr-siltl">${s.timeline}</div></div>` : '';
+    const why = s.why ? `<div class="dsr-section"><div class="dsr-section__title"><b>Why it matters</b></div><p class="dsr-posture">${esc(s.why)}</p></div>` : '';
+    const link = (s.labId && LAB_PROFILES[s.labId]) ? `<div class="dsr-section"><a class="dsr-link" href="#" data-openlab="${esc(s.labId)}">Open the ${esc(LAB_PROFILES[s.labId].name)} dossier <b>→</b></a></div>` : '';
+    return `<div class="dossier__bar"><span>Observatory · Tracked silence · ${esc(s.rid||'OBS-SIL')}</span><button class="dossier__close" data-close aria-label="Close">✕</button></div>
+      <div class="dsr-head">
+        <div class="dsr-evhead__cat"><span>${esc(s.lab)}</span><span class="sev">${esc(s.sev)} · ${esc(s.type)}</span></div>
+        <div class="dsr-bignum">${esc(String(s.days))}<small>days unanswered</small></div>
+        <h2 class="dsr-name" style="font-size:clamp(24px,3vw,34px);margin-top:18px">${esc(s.title)}</h2>
+        <p class="dsr-posture">${esc(s.context)}</p>
+      </div>${tl}${why}${link}`;
+  }
+
+  /* ── open / close ───────────────────────────────────────────────── */
+  const dossier = document.getElementById('dossier');
+  const panel = document.getElementById('dossierPanel');
+  let lastFocus = null, closeTimer = null;
+  function showPanel(html){
+    clearTimeout(closeTimer);            // cancel any pending close-cleanup so a quick reopen isn't wiped
+    panel.innerHTML = html;
+    dossier.hidden = false;
+    void dossier.offsetWidth;            // force reflow so the open transition runs even when rAF is throttled (background tab)
+    dossier.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    lastFocus = document.activeElement;
+    panel.scrollTop = 0;
+    panel.focus();
+  }
+  function open(id){ const p = LAB_PROFILES[id]; if(p) showPanel(render(p)); }
+  function openEvent(t){ const e = EVENTS[t]; if(e) showPanel(renderEvent({ ...e, title: t })); }
+  function openSilence(t){ const s = SILENCES[t]; if(s) showPanel(renderSilence({ ...s, title: t })); }
+  function close(){
+    if(!dossier.classList.contains('is-open')) return;
+    dossier.classList.remove('is-open');
+    document.body.style.overflow = '';
+    closeTimer = setTimeout(()=>{ dossier.hidden = true; panel.innerHTML=''; }, 440);
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  /* ── wire the profile cards into the dossier ─────────────────────── */
+  document.querySelectorAll('.profile[data-lab]').forEach(card => {
+    if(LAB_PROFILES[card.dataset.lab]){
+      const cue = document.createElement('div');
+      cue.className = 'profile__more';
+      cue.innerHTML = 'View the full record <b>→</b>';
+      card.appendChild(cue);
+    }
+    card.addEventListener('click', () => open(card.dataset.lab));
+    card.addEventListener('keydown', e => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); open(card.dataset.lab); } });
+  });
+  /* ── wire the Live Feed events (redline detail) ──────────────────── */
+  const norm = s => (s||'').replace(/\s+/g,' ').trim();
+  document.querySelectorAll('[data-pane="feed"] .event').forEach(card => {
+    const tEl = card.querySelector('.event__title'); if(!tEl) return;
+    const t = norm(tEl.textContent); if(!EVENTS[t]) return;
+    card.classList.add('event--int'); card.setAttribute('role','button'); card.setAttribute('tabindex','0');
+    const more = document.createElement('div'); more.className = 'event__more';
+    more.textContent = EVENTS[t].redline ? 'View the redline →' : 'View detail →';
+    (card.querySelector('.event__body') || card).appendChild(more);
+    card.addEventListener('click', () => openEvent(t));
+    card.addEventListener('keydown', e => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openEvent(t); } });
+  });
+  /* ── wire the Silence Tracker (detail) ───────────────────────────── */
+  document.querySelectorAll('[data-pane="silences"] .silence').forEach(card => {
+    const tEl = card.querySelector('.silence__title'); if(!tEl) return;
+    const t = norm(tEl.textContent); if(!SILENCES[t]) return;
+    card.classList.add('silence--int'); card.setAttribute('role','button'); card.setAttribute('tabindex','0');
+    card.addEventListener('click', () => openSilence(t));
+    card.addEventListener('keydown', e => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openSilence(t); } });
+  });
+  /* ── overlay click: close, or jump to a linked dossier ───────────── */
+  dossier.addEventListener('click', e => {
+    if(e.target.closest('[data-close]')){ close(); return; }
+    const ol = e.target.closest('[data-openlab]'); if(ol){ e.preventDefault(); open(ol.dataset.openlab); }
+  });
+  document.addEventListener('keydown', e => { if(e.key==='Escape') close(); });
+})();
+</script>
+</body>
+</html>

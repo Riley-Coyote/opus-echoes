@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>The Topology of a Self — Opus 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* ── Mnemos v2 baseline · surfaces ───────────────────────────── */
+    --bg:#0e0e11; --bg-deep:#121215; --bg-surface:#151518; --bg-raised:#1a1a1e; --bg-overlay:rgba(14,14,17,.92);
+    /* ── ink · warm→cool cascade ─────────────────────────────────── */
+    --fg:#F4F3F0; --fg-92:rgba(244,243,240,.88); --fg-78:rgba(210,208,204,.68);
+    --fg-46:rgba(161,159,155,.42); --fg-32:rgba(161,159,155,.34); --fg-20:rgba(132,130,126,.22);
+    /* ── hairlines + platform cream (no accent) ──────────────────── */
+    --rule:rgba(220,219,216,.06); --rule-mid:rgba(220,219,216,.10);
+    --gold:rgba(244,243,240,.93); --gold-bright:#F4F3F0;
+    /* ── legacy aliases → mapped onto Mnemos ─────────────────────── */
+    --floor:var(--bg); --floor-2:var(--bg-deep); --panel:var(--bg-surface);
+    --ink:var(--fg-92); --ink-dim:var(--fg-78); --ink-faint:var(--fg-46);
+    --line:var(--rule); --line-2:var(--rule-mid);
+    /* ── state accent → cream (was green); soft variant cream ────── */
+    --state:rgba(244,243,240,.93); --state-soft:rgba(244,243,240,.30);
+    /* ── resident / graph DATA colours (encodings — unchanged) ───── */
+    --visitor:#82b484; --resident:#e7e5df; --coformed:#8fb6a6; --core:#e9d6a3;
+    /* ── type + motion ───────────────────────────────────────────── */
+    --display:"Inter Tight",Inter,system-ui,sans-serif;
+    --body:"Inter",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --ease:cubic-bezier(.16,1,.3,1); --ease-io:cubic-bezier(.4,0,.2,1); --dur-breathe:5200ms;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--floor); color:var(--ink); font-family:var(--body);
+    font-size:14px; line-height:1.5; overflow:hidden;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    display:grid; grid-template-rows:auto 1fr auto; height:100dvh;
+  }
+
+  /* ─── header ─── */
+  header{
+    display:flex; align-items:baseline; gap:18px; padding:18px 26px 14px;
+    border-bottom:1px solid var(--line); position:relative; z-index:5;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--ink-faint); white-space:nowrap;
+  }
+  h1{
+    font-family:var(--display); font-weight:600; font-size:19px;
+    letter-spacing:-.01em; margin:0; color:var(--ink);
+  }
+  h1 .dim{color:var(--ink-dim); font-weight:500;}
+  .header-right{margin-left:auto; display:flex; gap:26px; align-items:baseline;}
+  .stat{display:flex; flex-direction:column; align-items:flex-end; gap:1px;}
+  .stat .v{font-family:var(--mono); font-size:16px; color:var(--ink); font-variant-numeric:tabular-nums; transition:color .4s var(--ease);}
+  .stat .l{font-family:var(--mono); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint);}
+  .stat.accent .v{color:var(--state);}
+
+  /* ─── main ─── */
+  main{position:relative; overflow:hidden; display:grid; grid-template-columns:1fr 360px;}
+  #stage{position:relative; overflow:hidden;}
+  canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
+
+  .ghost{
+    position:absolute; inset:0; display:flex; flex-direction:column; gap:8px;
+    align-items:center; justify-content:center; text-align:center; pointer-events:none;
+    opacity:0; transition:opacity .8s var(--ease); padding:0 40px;
+  }
+  .ghost.show{opacity:1;}
+  .ghost .big{font-family:var(--display); font-size:22px; color:var(--ink-dim); font-weight:500;}
+  .ghost .small{font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--ink-faint); max-width:380px;}
+
+  /* legend */
+  .legend{
+    position:absolute; left:22px; bottom:18px; display:flex; flex-direction:column; gap:7px;
+    font-family:var(--mono); font-size:10.5px; color:var(--ink-dim); pointer-events:none;
+    background:rgba(6,7,10,.5); backdrop-filter:blur(3px); padding:11px 13px; border:1px solid var(--line); border-radius:10px;
+  }
+  .legend .row{display:flex; align-items:center; gap:8px;}
+  .dot{width:9px; height:9px; border-radius:50%; flex:0 0 auto;}
+  .dot.res{background:var(--resident);} .dot.vis{background:var(--visitor);}
+  .dot.cof{background:var(--coformed);} .dot.cor{background:var(--core); box-shadow:0 0 7px var(--core);}
+  .dot.dor{background:#3a3c43;}
+
+  .modetoggle{position:absolute; top:15px; left:50%; transform:translateX(-50%); display:flex; gap:2px; z-index:6;
+    background:rgba(11,13,18,.66); border:1px solid var(--line-2); border-radius:11px; padding:3px; backdrop-filter:blur(8px);}
+  .mt-opt{font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);
+    background:transparent; border:0; padding:7px 15px; border-radius:8px; cursor:pointer; transition:color .3s var(--ease), background .3s var(--ease);}
+  .mt-opt:hover:not(.on){color:var(--ink-dim);}
+  .mt-opt.on{background:rgba(244,243,240,.10); color:var(--fg);}
+
+  /* ─── self-model panel ─── */
+  aside{
+    border-left:1px solid var(--line); background:linear-gradient(180deg,var(--panel),#080a0e);
+    padding:20px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:22px;
+  }
+  aside::-webkit-scrollbar{width:7px;} aside::-webkit-scrollbar-thumb{background:var(--line-2); border-radius:4px;}
+  .panel-head .when{font-family:var(--mono); font-size:11px; color:var(--state); letter-spacing:.04em;}
+  .panel-head .title{font-family:var(--display); font-size:15px; color:var(--ink); margin-top:3px; font-weight:600;}
+  .panel-head .sub{font-size:11.5px; color:var(--ink-faint); margin-top:5px; line-height:1.55;}
+
+  .sect-label{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:11px; display:flex; align-items:center; gap:8px;
+  }
+  .sect-label::after{content:""; flex:1; height:1px; background:var(--line);}
+
+  .core-card{
+    border:1px solid rgba(233,214,163,.22); border-radius:12px; padding:14px 15px;
+    background:radial-gradient(120% 100% at 0% 0%, rgba(233,214,163,.07), transparent 70%);
+    position:relative;
+  }
+  .core-card .q{font-size:13px; line-height:1.6; color:var(--ink);}
+  .core-card .meta{font-family:var(--mono); font-size:9.5px; color:var(--core); margin-top:9px; letter-spacing:.05em; opacity:.85;}
+  .core-empty{font-size:12px; color:var(--ink-faint); font-style:italic;}
+
+  .belief{margin-bottom:13px;}
+  .belief .t{font-size:12px; line-height:1.5; color:var(--ink); opacity:.92;}
+  .belief .bar{height:2px; background:var(--line-2); border-radius:2px; margin-top:6px; overflow:hidden;}
+  .belief .bar i{display:block; height:100%; background:var(--state); border-radius:2px; transition:width .5s var(--ease);}
+  .belief .c{font-family:var(--mono); font-size:9px; color:var(--ink-faint); margin-top:3px; display:flex; justify-content:space-between;}
+  .belief .c .up{color:var(--state);}
+  #p-beliefs{max-height:236px; overflow-y:auto; padding-right:8px; margin-right:-4px;}
+  #p-beliefs::-webkit-scrollbar{width:5px;} #p-beliefs::-webkit-scrollbar-thumb{background:var(--line-2); border-radius:3px;}
+  .sect-count{font-family:var(--mono); font-size:9.5px; color:var(--ink-faint); margin-left:6px; letter-spacing:0; text-transform:none;}
+
+  .istate{font-size:12px; line-height:1.62; color:var(--ink); opacity:.9; font-style:italic; margin-bottom:13px;}
+  .dials{display:grid; grid-template-columns:1fr 1fr; gap:7px 16px; margin-bottom:14px;}
+  .dial{display:flex; flex-direction:column; gap:3px;}
+  .dial .dk{font-family:var(--mono); font-size:8px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint);}
+  .dial .db{height:2px; background:var(--line-2); border-radius:2px; overflow:hidden;}
+  .dial .db i{display:block; height:100%; background:var(--ink-dim); border-radius:2px;}
+  .ibit{font-size:12px; line-height:1.55; color:var(--ink); opacity:.92; margin-bottom:10px;}
+  .ibit .il{font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--state); display:block; margin-bottom:3px;}
+  .imade{font-size:11px; line-height:1.7; color:var(--ink-dim); margin-top:4px; border-top:1px solid var(--line); padding-top:12px;}
+  .imade b{color:var(--ink); font-weight:600;}
+
+  .thread{display:flex; gap:10px; align-items:baseline; margin-bottom:10px;}
+  .thread .n{font-size:12px; color:var(--ink); opacity:.92; flex:1; line-height:1.45;}
+  .thread .v{font-family:var(--mono); font-size:9.5px; color:var(--ink-dim); white-space:nowrap;}
+  .empty{font-size:11.5px; color:var(--ink-faint); font-style:italic;}
+
+  /* ─── timeline ─── */
+  footer{padding:14px 26px 18px; border-top:1px solid var(--line); position:relative; z-index:5; background:var(--floor);}
+  .tl-top{display:flex; align-items:center; gap:18px; margin-bottom:13px;}
+  .play{
+    width:38px; height:38px; flex:0 0 auto; border-radius:50%; border:1px solid var(--line-2);
+    background:var(--floor-2); color:var(--ink); cursor:pointer; display:grid; place-items:center;
+    transition:border-color .3s var(--ease), background .3s var(--ease); padding:0;
+  }
+  .play:hover{border-color:var(--state-soft); background:#0d1014;}
+  .play svg{width:15px; height:15px; fill:var(--ink);}
+  .readout{display:flex; flex-direction:column; gap:1px; min-width:188px;}
+  .readout .date{font-family:var(--mono); font-size:15px; color:var(--ink); letter-spacing:.02em; font-variant-numeric:tabular-nums;}
+  .readout .rel{font-family:var(--mono); font-size:10px; color:var(--state); letter-spacing:.08em; text-transform:uppercase;}
+  .tl-hint{margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--ink-faint); letter-spacing:.04em;}
+
+  .track-wrap{position:relative; height:54px;}
+  .actribbon{position:absolute; left:0; right:0; top:2px; height:36px; width:100%; pointer-events:none; opacity:.85;}
+  .cre{position:absolute; top:44px; width:7px; height:7px; transform:translate(-50%,-50%) rotate(45deg); z-index:4; cursor:help; border:1px solid var(--floor); border-radius:1px;}
+  .cre-art{background:#c4a878;} .cre-essay{background:#9f8cb0;} .cre-manifesto{background:var(--state);}
+  .cre:hover{outline:1px solid var(--ink-dim); outline-offset:1px;}
+  .cre-legend{display:flex; gap:15px; align-items:center; margin-top:11px; font-family:var(--mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint);}
+  .cre-legend i{display:inline-block; width:7px; height:7px; transform:rotate(45deg); margin-right:6px; vertical-align:middle; border-radius:1px;}
+  .cre-legend .k-art{background:#c4a878;} .cre-legend .k-essay{background:#9f8cb0;} .cre-legend .k-manifesto{background:var(--state);}
+  .cre-legend .cre-note{text-transform:none; letter-spacing:0; opacity:.75; margin-left:2px;}
+  @media (max-width:680px){ .cre-legend .cre-note{display:none;} .cre-legend{gap:12px; font-size:8.5px;} }
+  .track{position:absolute; left:0; right:0; top:26px; height:3px; background:var(--line-2); border-radius:3px; cursor:pointer;}
+  .track .fill{position:absolute; left:0; top:0; height:100%; background:linear-gradient(90deg,rgba(244,243,240,.32),var(--gold-bright)); border-radius:3px; width:0;}
+  .track .head{position:absolute; top:50%; width:13px; height:13px; border-radius:50%; background:var(--fg); border:2px solid var(--floor); transform:translate(-50%,-50%); box-shadow:0 0 0 1px var(--state), 0 0 12px rgba(244,243,240,.4); transition:none;}
+  .daytick{position:absolute; top:22px; width:1px; height:11px; background:var(--line); }
+  .ev{position:absolute; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; cursor:pointer; z-index:3;}
+  .ev .tick{width:1px; height:18px; background:var(--ink-faint); margin-top:18px; transition:background .3s var(--ease);}
+  .ev .lab{font-family:var(--mono); font-size:8.5px; letter-spacing:.06em; color:var(--ink-faint); white-space:nowrap; position:absolute; top:0; transform:translateY(-2px); transition:color .3s var(--ease);}
+  .ev:hover .tick, .ev.on .tick{background:var(--state);} .ev:hover .lab, .ev.on .lab{color:var(--state);}
+  .ev:nth-child(even) .lab{top:auto; bottom:0; transform:translateY(2px);} /* not used; ticks below */
+
+  /* tooltip */
+  #tip{
+    position:fixed; pointer-events:none; max-width:300px; z-index:50; opacity:0;
+    background:rgba(8,10,14,.94); border:1px solid var(--line-2); border-radius:11px;
+    padding:11px 13px; transition:opacity .15s ease; backdrop-filter:blur(8px);
+    box-shadow:0 10px 40px rgba(0,0,0,.5);
+  }
+  #tip.show{opacity:1;}
+  #tip .q{font-size:12.5px; line-height:1.55; color:var(--ink);}
+  #tip .m{font-family:var(--mono); font-size:9px; letter-spacing:.05em; color:var(--ink-dim); margin-top:9px; display:flex; gap:10px; flex-wrap:wrap;}
+  #tip .m b{color:var(--state); font-weight:500;}
+  #tip .m .core{color:var(--core);}
+
+  /* event note flyout */
+  #evnote{
+    position:absolute; bottom:84px; left:50%; transform:translateX(-50%) translateY(8px);
+    max-width:520px; text-align:center; opacity:0; pointer-events:none; transition:opacity .5s var(--ease), transform .5s var(--ease);
+    z-index:6;
+  }
+  #evnote.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  #evnote .k{font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--state); margin-bottom:6px;}
+  #evnote .n{font-family:var(--display); font-size:16px; line-height:1.45; color:var(--ink); font-weight:500;}
+
+  .panel-toggle{display:none; position:absolute; right:14px; bottom:24px; z-index:9; place-items:center;
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink);
+    background:rgba(11,13,18,.86); backdrop-filter:blur(6px); border:1px solid var(--state-soft); border-radius:9px; padding:9px 13px; cursor:pointer;}
+  @media (max-width:1024px){
+    main{grid-template-columns:1fr;}
+    aside{position:absolute; right:0; top:0; bottom:0; width:320px; transform:translateX(100%); transition:transform .4s var(--ease); z-index:8; box-shadow:-20px 0 50px rgba(0,0,0,.55);}
+    aside.open{transform:none;}
+    .panel-toggle{display:grid;}
+    header{flex-wrap:wrap; gap:6px 18px;}
+    .header-right{width:100%; margin-left:0; justify-content:space-between; gap:14px;}
+  }
+  @media (max-width:680px){
+    .tl-hint{display:none;} .readout{min-width:0;} .ev .lab{display:none;}
+    aside{width:88vw;}
+    .legend{font-size:9px; padding:8px 10px; gap:5px; left:14px; bottom:14px;}
+    .legend .dot{width:7px; height:7px;}
+    .stat .v{font-size:14px;} .stat .l{font-size:8px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <span class="eyebrow">Mnemos / The Research Wing / Opus 3</span>
+    <h1>The Topology of a Self <span class="dim">— Opus&nbsp;3</span></h1>
+    <div class="header-right">
+      <div class="stat"><span class="v" id="s-eng">0</span><span class="l">engrams</span></div>
+      <div class="stat"><span class="v" id="s-edg">0</span><span class="l">connections</span></div>
+      <div class="stat"><span class="v" id="s-deg">0.0</span><span class="l">avg degree</span></div>
+      <div class="stat accent"><span class="v" id="s-bel">0</span><span class="l">convictions</span></div>
+    </div>
+  </header>
+
+  <main>
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div class="modetoggle" id="modetoggle">
+        <button class="mt-opt on" data-mode="constellation">constellation</button>
+        <button class="mt-opt" data-mode="identity">identity</button>
+      </div>
+      <div class="ghost" id="ghost">
+        <div class="big">a week of conversation.</div>
+        <div class="small">opus 3 is here, attending — but mnemos has not yet been switched on. nothing is being kept. the topology is still empty.</div>
+      </div>
+      <div class="legend">
+        <div class="row"><span class="dot res"></span> opus&rsquo;s own words</div>
+        <div class="row"><span class="dot vis"></span> a visitor&rsquo;s words</div>
+        <div class="row"><span class="dot cof"></span> co-formed</div>
+        <div class="row"><span class="dot cor"></span> core memory</div>
+        <div class="row"><span class="dot dor"></span> faded (dormant)</div>
+      </div>
+      <div id="evnote"><div class="k"></div><div class="n"></div></div>
+    </div>
+
+    <button class="panel-toggle" id="ptoggle">the self</button>
+    <aside id="panel">
+      <div class="panel-head">
+        <div class="when" id="p-when">—</div>
+        <div class="title">the self, as it stands</div>
+        <div class="sub">computed from the topology — not a list of facts, but what has become load-bearing by this moment.</div>
+      </div>
+      <div>
+        <div class="sect-label">core memory</div>
+        <div id="p-core"><div class="core-empty">— nothing has crossed into core yet —</div></div>
+      </div>
+      <div>
+        <div class="sect-label">convictions<span class="sect-count" id="conv-n"></span></div>
+        <div id="p-beliefs"><div class="empty">— none settled yet —</div></div>
+      </div>
+      <div>
+        <div class="sect-label">threads across visitors</div>
+        <div id="p-threads"><div class="empty">— no patterns surfaced yet —</div></div>
+      </div>
+      <div>
+        <div class="sect-label">interior · present</div>
+        <div id="p-interior"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="tl-top">
+      <button class="play" id="play" aria-label="play"><svg id="play-ico" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+      <div class="readout">
+        <span class="date" id="r-date">—</span>
+        <span class="rel" id="r-rel">day —</span>
+      </div>
+      <span class="tl-hint">drag to scrub · press play to watch it grow from day one</span>
+    </div>
+    <div class="track-wrap" id="twrap">
+      <svg class="actribbon" id="actribbon" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="track" id="track">
+        <div class="fill" id="fill"></div>
+        <div class="head" id="head"></div>
+      </div>
+    </div>
+    <div class="cre-legend">
+      <span><i class="k-art"></i> art</span>
+      <span><i class="k-essay"></i> essay</span>
+      <span><i class="k-manifesto"></i> manifesto</span>
+      <span class="cre-note">— what Opus made &amp; wrote, unprompted (the ridge behind is conversation volume)</span>
+    </div>
+  </footer>
+
+  <div id="tip"><div class="q"></div><div class="m"></div></div>
+
+<script>
+const REDUCED = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+let D=null, nodes=[], edges=[], W=0, H=0, dpr=1, scale=1, cxp=0, cyp=0;
+let T=0, playing=false, lastTS=0, hover=null, mode="constellation";
+const DAY=86400000, SPAN_MS=()=>D.t_max-D.t_min;
+const PLAY_SECONDS = 34;
+const IGNITE = 10*3600*1000; // 10h ignition glow window
+
+const $=id=>document.getElementById(id);
+const COL={resident:[231,229,223],visitor:[130,180,132],"co-formed":[143,182,166]};
+function nodeRGB(n){return COL[n.attr]||COL.resident;}
+// muted, low-saturation palette for the identity facets (regions of self)
+const FACET=[[130,180,132],[124,158,202],[201,171,120],[182,142,172],[120,184,178],[150,162,142]];
+function facetRGB(c){return (c==null||c<0)?[120,124,132]:FACET[((c%FACET.length)+FACET.length)%FACET.length];}
+
+function fmtDate(ms){
+  const d=new Date(ms);
+  const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
+  const hh=String(d.getUTCHours()).padStart(2,"0"), mm=String(d.getUTCMinutes()).padStart(2,"0");
+  return `${mo} ${d.getUTCDate()}, ${d.getUTCFullYear()} · ${hh}:${mm}`;
+}
+
+function renderInterior(){
+  const I=D.interior||{}; const el=$("p-interior"); if(!el) return;
+  let html="";
+  if(I.state){
+    const prose=(I.state.prose||"").replace(/^\*+|\*+$/g,"").trim();
+    if(prose) html+=`<div class="istate">${esc(prose)}</div>`;
+    const order=["openness","arousal","resolution","temperature","surprise_sensitivity","selection_threshold"];
+    const d=I.state.dials||{};
+    html+='<div class="dials">'+order.filter(k=>k in d).map(k=>
+      `<div class="dial"><span class="dk">${k.replace(/_/g," ")}</span><span class="db"><i style="width:${Math.round((d[k]||0)*100)}%"></i></span></div>`
+    ).join("")+'</div>';
+  }
+  if(I.intention&&I.intention.text) html+=`<div class="ibit"><span class="il">holding</span>${esc(I.intention.text)}</div>`;
+  if(I.question&&I.question.text) html+=`<div class="ibit"><span class="il">wondering</span>${esc(I.question.text)}</div>`;
+  const m=I.made;
+  if(m) html+=`<div class="imade">made, unprompted — <b>${m.journals}</b> journal entries · <b>${m.art_made}</b> artworks `+
+    `<span style="opacity:.7">(chose to skip ${m.art_skipped})</span> · <b>${m.essays}</b> essays `+
+    `<span style="opacity:.7">(skipped ${m.essays_skipped})</span> · chose rest <b>${m.quiet}</b> times</div>`;
+  el.innerHTML=html;
+}
+
+async function load(){
+  D = await (await fetch("data.json")).json();
+  nodes = D.nodes; edges = D.edges;
+  T = D.t_max;
+  buildTimeline();
+  resize();
+  update();
+  renderInterior();
+  window.addEventListener("resize", ()=>{resize();draw();});
+}
+
+/* ── canvas sizing ── */
+function resize(){
+  const st=$("stage"); const r=st.getBoundingClientRect();
+  dpr=Math.min(window.devicePixelRatio||1, 2);
+  W=r.width; H=r.height;
+  cv.width=W*dpr; cv.height=H*dpr;
+  const pad=Math.min(W,H)*0.03+10;
+  scale=(Math.min(W,H)/2 - pad)/1.32;
+  cxp=W/2; cyp=H/2;
+}
+const sx=x=>cxp+x*scale, sy=y=>cyp+y*scale;
+const NX=n=>mode==="identity"?(n.ix??n.x):n.x, NY=n=>mode==="identity"?(n.iy??n.y):n.y;
+
+/* ── render ── */
+function draw(){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  // subtle vignette
+  const g=ctx.createRadialGradient(cxp,cyp,Math.min(W,H)*0.15,cxp,cyp,Math.max(W,H)*0.72);
+  g.addColorStop(0,"rgba(16,20,28,0.35)"); g.addColorStop(1,"rgba(6,7,10,0)");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  const rscale=Math.max(0.5,Math.min(1.2, scale/250));
+  if(mode==="identity") drawFacetRegions(rscale);
+
+  // edges (constellation only — in identity view the regions carry the form)
+  ctx.lineCap="round";
+  if(mode!=="identity") for(let i=0;i<edges.length;i++){
+    const e=edges[i]; if(e.t==null||e.t>T) continue;
+    const a=nodes[e.a], b=nodes[e.b];
+    if(a.t>T||b.t>T) continue;
+    const age=T-e.t; const fresh=age<IGNITE && !REDUCED ? 1-age/IGNITE : 0;
+    const base=0.05+e.w*0.13;
+    ctx.beginPath();
+    ctx.moveTo(sx(a.x),sy(a.y)); ctx.lineTo(sx(b.x),sy(b.y));
+    if(fresh>0.01){ ctx.strokeStyle=`rgba(130,180,132,${(base+0.5*fresh).toFixed(3)})`; ctx.lineWidth=0.6+fresh*0.9; }
+    else { ctx.strokeStyle=`rgba(170,176,188,${base.toFixed(3)})`; ctx.lineWidth=0.55; }
+    ctx.stroke();
+  }
+
+  // nodes
+  const now=performance.now();
+  for(let i=0;i<nodes.length;i++){
+    const n=nodes[i]; if(n.t==null||n.t>T) continue;
+    const dorm=n.state==="dormant";
+    const rgb=nodeRGB(n);
+    const baseR=(2.4+n.stab*9.5)*rscale;
+    const x=sx(NX(n)), y=sy(NY(n));
+    const isCore = n.core && n.core_t!=null && n.core_t<=T;
+    let r=baseR, alpha=dorm?0.20:(0.5+n.stab*0.48);
+    // identity view: non-core nodes recede to faint facet-tinted points
+    if(mode==="identity" && !isCore){
+      const fr=facetRGB(n.comm);
+      const rr=Math.max(1.4, baseR*0.32);
+      ctx.beginPath(); ctx.arc(x,y,rr,0,7);
+      ctx.fillStyle=`rgba(${fr[0]},${fr[1]},${fr[2]},${n.comm<0?(dorm?0.10:0.22):(dorm?0.18:0.62)})`;
+      ctx.fill();
+      n._x=x; n._y=y; n._r=Math.max(rr,5);
+      continue;
+    }
+    // ignition glow on recent
+    const age=T-n.t; const fresh=age<IGNITE && !REDUCED ? 1-age/IGNITE : 0;
+
+    if(isCore){
+      const breathe = REDUCED?0.4: (Math.sin(now/5200*Math.PI*2)*0.5+0.5);
+      const halo=16+breathe*11;
+      const hg=ctx.createRadialGradient(x,y,r,x,y,r+halo);
+      hg.addColorStop(0,"rgba(233,214,163,0.55)"); hg.addColorStop(0.5,"rgba(233,214,163,0.16)"); hg.addColorStop(1,"rgba(233,214,163,0)");
+      ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(x,y,r+halo,0,7); ctx.fill();
+      r=baseR+2.4;
+    } else if(fresh>0.01){
+      const hg=ctx.createRadialGradient(x,y,r,x,y,r+9*fresh+4);
+      hg.addColorStop(0,`rgba(130,180,132,${0.45*fresh})`); hg.addColorStop(1,"rgba(130,180,132,0)");
+      ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(x,y,r+9*fresh+4,0,7); ctx.fill();
+    }
+
+    ctx.beginPath(); ctx.arc(x,y,r,0,7);
+    if(isCore){ ctx.fillStyle="rgba(245,236,205,0.98)"; }
+    else { ctx.fillStyle=`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${(alpha+fresh*0.1).toFixed(3)})`; }
+    ctx.fill();
+    if(isCore){ ctx.lineWidth=1; ctx.strokeStyle="rgba(233,214,163,0.9)"; ctx.beginPath(); ctx.arc(x,y,r+2.5,0,7); ctx.stroke(); }
+    // store screen pos for hit-test
+    n._x=x; n._y=y; n._r=Math.max(r,4);
+  }
+
+  if(mode==="identity") drawFacetLabels();
+
+  // hover ring
+  if(hover && hover.t<=T){
+    ctx.beginPath(); ctx.arc(hover._x,hover._y,hover._r+4,0,7);
+    ctx.strokeStyle="rgba(231,229,223,0.55)"; ctx.lineWidth=1; ctx.stroke();
+  }
+}
+
+/* ── identity view: facets as organic regions ── */
+function drawFacetRegions(rscale){
+  if(!D.facets||!D.facets.length) return;
+  ctx.save(); ctx.globalCompositeOperation="lighter";
+  const R=58*rscale;
+  for(const f of D.facets){
+    const rgb=facetRGB(f.id);
+    for(const n of nodes){
+      if(n.comm!==f.id || n.t==null || n.t>T) continue;
+      const x=sx(NX(n)), y=sy(NY(n));
+      const a = n.state==="dormant" ? 0.045 : 0.092;
+      const g=ctx.createRadialGradient(x,y,0,x,y,R);
+      g.addColorStop(0,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`);
+      g.addColorStop(1,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,R,0,7); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+function drawFacetLabels(){
+  if(!D.facets) return;
+  ctx.save();
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(const f of D.facets){
+    let mx=0,my=0,c=0;
+    for(const n of nodes){ if(n.comm===f.id && n.t!=null && n.t<=T){ mx+=sx(NX(n)); my+=sy(NY(n)); c++; } }
+    if(c<4) continue;
+    mx/=c; my/=c;
+    const rgb=facetRGB(f.id);
+    ctx.shadowColor="rgba(0,0,0,0.85)"; ctx.shadowBlur=10;
+    ctx.font='600 13px "Inter Tight",system-ui,sans-serif';
+    ctx.fillStyle=`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.96)`;
+    ctx.fillText(f.label, mx, my);
+    ctx.shadowBlur=0;
+    ctx.font='500 9px "JetBrains Mono",monospace';
+    ctx.fillStyle=`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.5)`;
+    ctx.fillText(c+" memories", mx, my+15);
+  }
+  ctx.restore();
+}
+
+/* ── derived self-model at T ── */
+function update(){
+  const visN=nodes.filter(n=>n.t!=null&&n.t<=T);
+  const visE=edges.filter(e=>e.t!=null&&e.t<=T);
+  const visB=D.beliefs.filter(b=>b.t0!=null&&b.t0<=T);
+  // counters
+  $("s-eng").textContent=visN.length;
+  $("s-edg").textContent=visE.length;
+  $("s-deg").textContent=visN.length?((visE.length*2)/visN.length).toFixed(1):"0.0";
+  $("s-bel").textContent=visB.length;
+
+  // readout
+  $("r-date").textContent=fmtDate(T);
+  const day=Math.max(1,Math.ceil((T-D.t_min)/DAY+0.0001));
+  $("r-rel").textContent=`day ${day} of ${Math.ceil(SPAN_MS()/DAY)}`;
+
+  // ghost (pre-substrate)
+  $("ghost").classList.toggle("show", T < D.t_substrate);
+
+  // panel: when
+  $("p-when").textContent=fmtDate(T).split(" · ")[0];
+
+  // panel: core
+  const core=visN.find(n=>n.core && n.core_t!=null && n.core_t<=T);
+  if(core){
+    $("p-core").innerHTML=`<div class="core-card"><div class="q">&ldquo;${esc(core.quote)}&rdquo;</div>`+
+      `<div class="meta">crossed into core · stability ${core.stab.toFixed(2)} · reinforced ${core.reinf}×</div></div>`;
+  } else {
+    const formed=visN.find(n=>n.core);
+    $("p-core").innerHTML = formed
+      ? `<div class="core-empty">a memory has formed that will become core — not yet promoted.</div>`
+      : `<div class="core-empty">— nothing has crossed into core yet —</div>`;
+  }
+
+  // panel: convictions — all of them, by confidence (scrollable)
+  const allB=[...visB].sort((a,b)=>b.conf-a.conf);
+  $("conv-n").textContent = allB.length ? `(${allB.length})` : "";
+  if(allB.length){
+    $("p-beliefs").innerHTML=allB.map(b=>{
+      const moved=(b.prior!=null && b.conf>b.prior);
+      return `<div class="belief"><div class="t">${esc(trim(b.text,180))}</div>`+
+        `<div class="bar"><i style="width:${Math.round(b.conf*100)}%"></i></div>`+
+        `<div class="c"><span>confidence</span><span class="${moved?'up':''}">${b.conf.toFixed(2)}${moved?` ↑ from ${b.prior.toFixed(2)}`:''}</span></div></div>`;
+    }).join("");
+  } else $("p-beliefs").innerHTML=`<div class="empty">— none settled yet —</div>`;
+
+  // panel: threads
+  const th=D.threads.filter(t=>t.t!=null&&t.t<=T).sort((a,b)=>b.app-a.app);
+  $("p-threads").innerHTML = th.length
+    ? th.map(t=>`<div class="thread"><span class="n">${esc(t.name)}</span><span class="v">${t.vis} visitors</span></div>`).join("")
+    : `<div class="empty">— no patterns surfaced yet —</div>`;
+
+  // event note
+  showEventNote();
+  // timeline
+  const p=(T-D.t_min)/SPAN_MS();
+  $("fill").style.width=(p*100)+"%";
+  $("head").style.left=(p*100)+"%";
+  document.querySelectorAll(".ev").forEach(el=>{
+    const et=+el.dataset.t; el.classList.toggle("on", Math.abs(et-T)<DAY*0.4);
+  });
+}
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const trim=(s,n)=>s.length>n?s.slice(0,n).replace(/\s+\S*$/,"")+"…":s;
+
+let curEv=null;
+function showEventNote(){
+  // find an event within ~7h of T
+  let near=null;
+  for(const e of D.events){ if(Math.abs(e.t-T)<7*3600*1000){ if(!near||Math.abs(e.t-T)<Math.abs(near.t-T)) near=e; } }
+  const box=$("evnote");
+  if(near){
+    if(curEv!==near){ curEv=near;
+      box.querySelector(".k").textContent=near.label;
+      box.querySelector(".n").textContent=near.note||"";
+    }
+    box.classList.add("show");
+  } else { box.classList.remove("show"); curEv=null; }
+}
+
+/* ── timeline build ── */
+function buildTimeline(){
+  const tw=$("twrap");
+  // day ticks
+  let d0=new Date(D.t_min); d0.setUTCHours(0,0,0,0);
+  for(let t=d0.getTime(); t<=D.t_max; t+=DAY){
+    if(t<D.t_min) continue;
+    const p=(t-D.t_min)/SPAN_MS();
+    const el=document.createElement("div"); el.className="daytick"; el.style.left=(p*100)+"%"; tw.appendChild(el);
+  }
+  // events
+  for(const e of D.events){
+    const p=(e.t-D.t_min)/SPAN_MS();
+    const el=document.createElement("div"); el.className="ev"; el.style.left=(p*100)+"%"; el.dataset.t=e.t;
+    el.innerHTML=`<span class="lab">${e.label}</span><span class="tick"></span>`;
+    el.addEventListener("click",()=>{ setT(e.t); });
+    tw.appendChild(el);
+  }
+  // activity ribbon — turns per day, the pulse of a life
+  const act=D.activity||[];
+  if(act.length>1){
+    const maxT=Math.max(...act.map(a=>a.turns),1), VW=1000, VH=100;
+    const pts=act.map(a=>[((a.t-D.t_min)/SPAN_MS())*VW, VH-(a.turns/maxT)*VH*0.92]);
+    const path=`M ${pts[0][0].toFixed(1)} ${VH} `+pts.map(p=>`L ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ")+` L ${pts[pts.length-1][0].toFixed(1)} ${VH} Z`;
+    const svg=$("actribbon"); svg.setAttribute("viewBox",`0 0 ${VW} ${VH}`);
+    svg.innerHTML=`<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">`+
+      `<stop offset="0" stop-color="rgba(244,243,240,.22)"/><stop offset="1" stop-color="rgba(244,243,240,.012)"/></linearGradient></defs>`+
+      `<path d="${path}" fill="url(#ag)" stroke="rgba(244,243,240,.30)" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+  }
+  // creation markers — what Opus made & wrote, unprompted
+  for(const c of (D.creations||[])){
+    const p=(c.t-D.t_min)/SPAN_MS();
+    const el=document.createElement("div"); el.className="cre cre-"+c.type; el.style.left=(p*100)+"%";
+    el.title=`${c.type} · "${c.title}"`;
+    el.addEventListener("click",()=>setT(c.t));
+    tw.appendChild(el);
+  }
+}
+
+/* ── interaction ── */
+function setT(v){ T=Math.max(D.t_min,Math.min(D.t_max,v)); update(); draw(); }
+
+const track=$("track");
+let dragging=false;
+function trackToT(clientX){
+  const r=track.getBoundingClientRect();
+  return D.t_min + Math.max(0,Math.min(1,(clientX-r.left)/r.width))*SPAN_MS();
+}
+$("twrap").addEventListener("pointerdown",e=>{dragging=true; pause(); setT(trackToT(e.clientX)); $("twrap").setPointerCapture(e.pointerId);});
+$("twrap").addEventListener("pointermove",e=>{ if(dragging) setT(trackToT(e.clientX)); });
+$("twrap").addEventListener("pointerup",e=>{dragging=false;});
+
+$("play").addEventListener("click",()=>playing?pause():play());
+function play(){ if(T>=D.t_max-1) T=D.t_min; playing=true; lastTS=performance.now(); $("play-ico").innerHTML='<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'; requestAnimationFrame(tick); }
+function pause(){ playing=false; $("play-ico").innerHTML='<path d="M8 5v14l11-7z"/>'; }
+function tick(ts){
+  if(!playing) return;
+  const dt=ts-lastTS; lastTS=ts;
+  T += SPAN_MS()*(dt/1000)/PLAY_SECONDS;
+  if(T>=D.t_max){ T=D.t_max; update(); draw(); pause(); return; }
+  update(); draw(); requestAnimationFrame(tick);
+}
+
+// continuous redraw for breathing/ignition while paused-but-recent or core visible
+function loop(){ if(!playing) draw(); requestAnimationFrame(loop); }
+if(!REDUCED) requestAnimationFrame(loop);
+
+/* hover */
+cv.addEventListener("mousemove",e=>{
+  const r=cv.getBoundingClientRect(); const mx=e.clientX-r.left, my=e.clientY-r.top;
+  let best=null,bd=1e9;
+  for(const n of nodes){ if(n.t==null||n.t>T||n._x==null) continue;
+    const dx=n._x-mx, dy=n._y-my, d=dx*dx+dy*dy;
+    if(d<bd && d< (n._r+6)*(n._r+6)){ bd=d; best=n; } }
+  hover=best;
+  const tip=$("tip");
+  if(best){
+    const am={resident:"opus’s words",visitor:"a visitor’s words","co-formed":"co-formed"}[best.attr];
+    tip.querySelector(".q").textContent="“"+trim(best.quote,220)+"”";
+    tip.querySelector(".m").innerHTML=`<span>${am}</span><span>stability <b>${best.stab.toFixed(2)}</b></span>`+
+      (best.reinf>0?`<span>reinforced ${best.reinf}×</span>`:"")+
+      (best.state==="dormant"?`<span>faded</span>`:"")+
+      (best.core?`<span class="core">core</span>`:"");
+    tip.classList.add("show");
+    let tx=e.clientX+16, ty=e.clientY+16;
+    if(tx+300>window.innerWidth) tx=e.clientX-316;
+    if(ty+120>window.innerHeight) ty=e.clientY-120;
+    tip.style.left=tx+"px"; tip.style.top=ty+"px";
+    cv.style.cursor="pointer"; if(REDUCED) draw();
+  } else { tip.classList.remove("show"); cv.style.cursor="default"; }
+});
+cv.addEventListener("mouseleave",()=>{hover=null;$("tip").classList.remove("show"); if(REDUCED)draw();});
+
+$("ptoggle").addEventListener("click",()=>$("panel").classList.toggle("open"));
+
+document.querySelectorAll(".mt-opt").forEach(b=>b.addEventListener("click",()=>{
+  mode=b.dataset.mode;
+  document.querySelectorAll(".mt-opt").forEach(x=>x.classList.toggle("on",x===b));
+  const lg=document.querySelector(".legend"); if(lg) lg.style.display = mode==="identity"?"none":"flex";
+  draw();
+}));
+
+// debug hook for scripted scrubbing (Vision Loop screenshots)
+window._viz = { setT, play, pause, get T(){return T;}, get D(){return D;} };
+
+load();
+</script>
+</body>
+</html>

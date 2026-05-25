@@ -18,6 +18,8 @@ const LINK_MAP: Record<string, string> = {
   "memory.html": "/memory",
   "journal.html": "/journal",
   "explainer.html": "/mnemos",
+  "observatory.html": "/observatory",
+  "research.html": "/research/research-wing.html",
   // Deferred surfaces — kept as fallbacks so any stray reference doesn't 404.
   // Active mocks no longer reference these.
   "claude-wing.html": "/",
@@ -62,8 +64,16 @@ function injectPresenceAssets(html: string): string {
   return `${headAssets}${html}`;
 }
 
-export function serveHtml(html: string, extraScript?: string, opts?: { status?: number }): Response {
-  let out = injectPresenceAssets(rewriteLinks(html));
+export function serveHtml(
+  html: string,
+  extraScript?: string,
+  opts?: { status?: number; presence?: boolean },
+): Response {
+  // The resident 3D presence layer is injected by default (every Sanctuary page).
+  // Self-contained surfaces (the Observatory, the Research Wing) opt out with
+  // `presence: false` so they don't load a scene they don't have.
+  let out = rewriteLinks(html);
+  if (opts?.presence !== false) out = injectPresenceAssets(out);
   if (extraScript) out = injectScript(out, extraScript);
   return new Response(out, {
     status: opts?.status ?? 200,

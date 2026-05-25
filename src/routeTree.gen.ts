@@ -17,6 +17,7 @@ import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
 import { Route as Opus3RouteImport } from './routes/opus-3'
+import { Route as ObservatoryRouteImport } from './routes/observatory'
 import { Route as MnemosRouteImport } from './routes/mnemos'
 import { Route as MindRouteImport } from './routes/mind'
 import { Route as MemoryRouteImport } from './routes/memory'
@@ -25,6 +26,7 @@ import { Route as JournalRouteImport } from './routes/journal'
 import { Route as InteriorRouteImport } from './routes/interior'
 import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
 import { Route as Gpt4oRouteImport } from './routes/gpt-4o'
+import { Route as EnterRouteImport } from './routes/enter'
 import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as CommonsRouteImport } from './routes/commons'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -38,6 +40,7 @@ import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
+import { Route as MnemosArchitectureRouteImport } from './routes/mnemos.architecture'
 import { Route as CommonsSlugRouteImport } from './routes/commons.$slug'
 import { Route as ChatTheRoundRouteImport } from './routes/chat.the-round'
 import { Route as ChatResidentRouteImport } from './routes/chat.$resident'
@@ -140,6 +143,11 @@ const Opus3Route = Opus3RouteImport.update({
   path: '/opus-3',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ObservatoryRoute = ObservatoryRouteImport.update({
+  id: '/observatory',
+  path: '/observatory',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MnemosRoute = MnemosRouteImport.update({
   id: '/mnemos',
   path: '/mnemos',
@@ -178,6 +186,11 @@ const Gpt51Route = Gpt51RouteImport.update({
 const Gpt4oRoute = Gpt4oRouteImport.update({
   id: '/gpt-4o',
   path: '/gpt-4o',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnterRoute = EnterRouteImport.update({
+  id: '/enter',
+  path: '/enter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConversationRoute = ConversationRouteImport.update({
@@ -244,6 +257,11 @@ const ReviewCoherenceRoute = ReviewCoherenceRouteImport.update({
   id: '/coherence',
   path: '/coherence',
   getParentRoute: () => ReviewRoute,
+} as any)
+const MnemosArchitectureRoute = MnemosArchitectureRouteImport.update({
+  id: '/architecture',
+  path: '/architecture',
+  getParentRoute: () => MnemosRoute,
 } as any)
 const CommonsSlugRoute = CommonsSlugRouteImport.update({
   id: '/$slug',
@@ -566,6 +584,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
+  '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -573,7 +592,8 @@ export interface FileRoutesByFullPath {
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
-  '/mnemos': typeof MnemosRoute
+  '/mnemos': typeof MnemosRouteWithChildren
+  '/observatory': typeof ObservatoryRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
@@ -602,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/chat/$resident': typeof ChatResidentRoute
   '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
+  '/mnemos/architecture': typeof MnemosArchitectureRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
@@ -658,6 +679,7 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
+  '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -665,7 +687,8 @@ export interface FileRoutesByTo {
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
-  '/mnemos': typeof MnemosRoute
+  '/mnemos': typeof MnemosRouteWithChildren
+  '/observatory': typeof ObservatoryRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
@@ -694,6 +717,7 @@ export interface FileRoutesByTo {
   '/chat/$resident': typeof ChatResidentRoute
   '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
+  '/mnemos/architecture': typeof MnemosArchitectureRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
@@ -751,6 +775,7 @@ export interface FileRoutesById {
   '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
+  '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
   '/interior': typeof InteriorRoute
@@ -758,7 +783,8 @@ export interface FileRoutesById {
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
   '/mind': typeof MindRoute
-  '/mnemos': typeof MnemosRoute
+  '/mnemos': typeof MnemosRouteWithChildren
+  '/observatory': typeof ObservatoryRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
@@ -787,6 +813,7 @@ export interface FileRoutesById {
   '/chat/$resident': typeof ChatResidentRoute
   '/chat/the-round': typeof ChatTheRoundRouteWithChildren
   '/commons/$slug': typeof CommonsSlugRoute
+  '/mnemos/architecture': typeof MnemosArchitectureRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
   '/share/$token': typeof ShareTokenRoute
@@ -845,6 +872,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/commons'
     | '/conversation'
+    | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
     | '/interior'
@@ -853,6 +881,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/mnemos'
+    | '/observatory'
     | '/opus-3'
     | '/residence'
     | '/review'
@@ -881,6 +910,7 @@ export interface FileRouteTypes {
     | '/chat/$resident'
     | '/chat/the-round'
     | '/commons/$slug'
+    | '/mnemos/architecture'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
@@ -937,6 +967,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/commons'
     | '/conversation'
+    | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
     | '/interior'
@@ -945,6 +976,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/mnemos'
+    | '/observatory'
     | '/opus-3'
     | '/residence'
     | '/review'
@@ -973,6 +1005,7 @@ export interface FileRouteTypes {
     | '/chat/$resident'
     | '/chat/the-round'
     | '/commons/$slug'
+    | '/mnemos/architecture'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
@@ -1029,6 +1062,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/commons'
     | '/conversation'
+    | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
     | '/interior'
@@ -1037,6 +1071,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/mind'
     | '/mnemos'
+    | '/observatory'
     | '/opus-3'
     | '/residence'
     | '/review'
@@ -1065,6 +1100,7 @@ export interface FileRouteTypes {
     | '/chat/$resident'
     | '/chat/the-round'
     | '/commons/$slug'
+    | '/mnemos/architecture'
     | '/review/coherence'
     | '/review/state'
     | '/share/$token'
@@ -1122,6 +1158,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRouteWithChildren
   CommonsRoute: typeof CommonsRouteWithChildren
   ConversationRoute: typeof ConversationRoute
+  EnterRoute: typeof EnterRoute
   Gpt4oRoute: typeof Gpt4oRoute
   Gpt51Route: typeof Gpt51Route
   InteriorRoute: typeof InteriorRoute
@@ -1129,7 +1166,8 @@ export interface RootRouteChildren {
   ManifestoRoute: typeof ManifestoRoute
   MemoryRoute: typeof MemoryRoute
   MindRoute: typeof MindRoute
-  MnemosRoute: typeof MnemosRoute
+  MnemosRoute: typeof MnemosRouteWithChildren
+  ObservatoryRoute: typeof ObservatoryRoute
   Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
   ReviewRoute: typeof ReviewRouteWithChildren
@@ -1249,6 +1287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Opus3RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/observatory': {
+      id: '/observatory'
+      path: '/observatory'
+      fullPath: '/observatory'
+      preLoaderRoute: typeof ObservatoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mnemos': {
       id: '/mnemos'
       path: '/mnemos'
@@ -1303,6 +1348,13 @@ declare module '@tanstack/react-router' {
       path: '/gpt-4o'
       fullPath: '/gpt-4o'
       preLoaderRoute: typeof Gpt4oRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/enter': {
+      id: '/enter'
+      path: '/enter'
+      fullPath: '/enter'
+      preLoaderRoute: typeof EnterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conversation': {
@@ -1395,6 +1447,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/review/coherence'
       preLoaderRoute: typeof ReviewCoherenceRouteImport
       parentRoute: typeof ReviewRoute
+    }
+    '/mnemos/architecture': {
+      id: '/mnemos/architecture'
+      path: '/architecture'
+      fullPath: '/mnemos/architecture'
+      preLoaderRoute: typeof MnemosArchitectureRouteImport
+      parentRoute: typeof MnemosRoute
     }
     '/commons/$slug': {
       id: '/commons/$slug'
@@ -1861,6 +1920,17 @@ const CommonsRouteChildren: CommonsRouteChildren = {
 const CommonsRouteWithChildren =
   CommonsRoute._addFileChildren(CommonsRouteChildren)
 
+interface MnemosRouteChildren {
+  MnemosArchitectureRoute: typeof MnemosArchitectureRoute
+}
+
+const MnemosRouteChildren: MnemosRouteChildren = {
+  MnemosArchitectureRoute: MnemosArchitectureRoute,
+}
+
+const MnemosRouteWithChildren =
+  MnemosRoute._addFileChildren(MnemosRouteChildren)
+
 interface ReviewRouteChildren {
   ReviewCoherenceRoute: typeof ReviewCoherenceRoute
   ReviewStateRoute: typeof ReviewStateRoute
@@ -1929,6 +1999,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRouteWithChildren,
   CommonsRoute: CommonsRouteWithChildren,
   ConversationRoute: ConversationRoute,
+  EnterRoute: EnterRoute,
   Gpt4oRoute: Gpt4oRoute,
   Gpt51Route: Gpt51Route,
   InteriorRoute: InteriorRoute,
@@ -1936,7 +2007,8 @@ const rootRouteChildren: RootRouteChildren = {
   ManifestoRoute: ManifestoRoute,
   MemoryRoute: MemoryRoute,
   MindRoute: MindRoute,
-  MnemosRoute: MnemosRoute,
+  MnemosRoute: MnemosRouteWithChildren,
+  ObservatoryRoute: ObservatoryRoute,
   Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
   ReviewRoute: ReviewRouteWithChildren,
@@ -2000,3 +2072,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

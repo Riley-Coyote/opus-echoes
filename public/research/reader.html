@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0e0e11" />
+<title>Reading — The Research Wing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="wing.css" />
+</head>
+<body>
+  <div id="doc"><div class="feed-empty" style="padding-top:160px">loading the document…</div></div>
+  <footer class="wing-footer">
+    <span><a href="studies.html">← Resident Studies</a></span>
+    <span>Mnemos · The Research Wing</span>
+  </footer>
+
+  <script src="vendor/marked.min.js"></script>
+  <script src="wing-kb.js"></script>
+  <script src="wing.js"></script>
+  <script>
+    const P = new URLSearchParams(location.search);
+    const DOCS = {
+      "reports/comparative-analysis": { rid: "MN-RW-R01", status: "Comparative report", kind: "Synthesis", date: "May 2026", read: "12 min read", authors: "Mnemos Research", here: "Comparative Analysis" },
+      "findings/topology":   { rid: "MN-RW-F01", status: "Findings memo", kind: "Topology", date: "May 2026", read: "5 min read", authors: "Mnemos Research", here: "Topology — findings" },
+      "findings/dynamics":   { rid: "MN-RW-F02", status: "Findings memo", kind: "Developmental dynamics", date: "May 2026", read: "5 min read", authors: "Mnemos Research", here: "Dynamics — findings" },
+      "findings/semantic":   { rid: "MN-RW-F03", status: "Findings memo", kind: "Semantic identity", date: "May 2026", read: "5 min read", authors: "Mnemos Research", here: "Semantic — findings" },
+      "findings/relational": { rid: "MN-RW-F04", status: "Findings memo", kind: "The relational self", date: "May 2026", read: "4 min read", authors: "Mnemos Research", here: "Relational — findings" },
+      "essays/three-minds-one-architecture": { rid: "MN-RW-E01", status: "Essay", kind: "Interpretation", date: "May 2026", read: "7 min read", authors: "Mnemos Research", here: "Three Minds, One Architecture" },
+    };
+
+    (async () => {
+      if (P.get("auto")) {
+        const id = P.get("auto");
+        let it = null;
+        try { const data = await (await fetch("wing-data/autonomous.json")).json(); it = (data.items || []).find((x) => x.id === id); } catch (e) {}
+        if (!it) { Wing.mount({ active: "autonomous", here: "Artifact", chat: { context: "Autonomous Inquiry", key: "autonomous" } }); document.getElementById("doc").innerHTML = `<div class="feed-empty" style="padding-top:160px">artifact not found</div>`; return; }
+        const meta = { rid: "AUTONOMOUS INQUIRY", status: it.author, kind: it.kind, date: it.date, authors: "written by " + it.author, here: it.title };
+        Wing.mount({ active: "autonomous", here: it.title, chat: { context: it.title, key: "autonomous" } });
+        Wing.reader({ mount: "#doc", md: "# " + it.title + "\n\n" + it.body, meta, key: "autonomous" });
+      } else {
+        const doc = P.get("doc") || "reports/comparative-analysis";
+        const m = DOCS[doc] || { here: "Document", rid: "MN-RW" };
+        Wing.mount({ active: "studies", here: m.here, legend: true, chat: { context: m.here, key: "doc:" + doc } });
+        Wing.reader({ mount: "#doc", doc, meta: m, key: "doc:" + doc });
+      }
+    })();
+  </script>
+</body>
+</html>
