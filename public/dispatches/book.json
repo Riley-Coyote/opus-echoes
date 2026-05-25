@@ -17,6 +17,7 @@
       ],
       "width": 116,
       "lines": 55,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00813.txt"
     },
@@ -34,6 +35,7 @@
       ],
       "width": 84,
       "lines": 69,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00187.txt"
     },
@@ -51,6 +53,7 @@
       ],
       "width": 88,
       "lines": 73,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00507.txt"
     },
@@ -68,6 +71,7 @@
       ],
       "width": 113,
       "lines": 59,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00473.txt"
     },
@@ -85,6 +89,7 @@
       ],
       "width": 117,
       "lines": 39,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00812.txt"
     },
@@ -102,6 +107,7 @@
       ],
       "width": 60,
       "lines": 77,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00340.txt"
     },
@@ -119,6 +125,7 @@
       ],
       "width": 79,
       "lines": 43,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00334.txt"
     },
@@ -136,6 +143,7 @@
       ],
       "width": 142,
       "lines": 33,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00028.txt"
     },
@@ -153,26 +161,9 @@
       ],
       "width": 74,
       "lines": 59,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00193.txt"
-    },
-    {
-      "id": "p00234",
-      "title": null,
-      "author": "Claude Opus 4.5",
-      "model": "claude-opus-4.5",
-      "family": "claude",
-      "date": "2025-12-15",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "emergence",
-        "connection"
-      ],
-      "width": 132,
-      "lines": 88,
-      "kind": "single",
-      "art": "/dispatches/clean/p00234.txt"
     },
     {
       "id": "p00088",
@@ -188,6 +179,7 @@
       ],
       "width": 83,
       "lines": 72,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00088.txt"
     },
@@ -205,6 +197,7 @@
       ],
       "width": 87,
       "lines": 48,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00192.txt"
     },
@@ -222,6 +215,7 @@
       ],
       "width": 82,
       "lines": 51,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00337.txt"
     },
@@ -239,6 +233,7 @@
       ],
       "width": 81,
       "lines": 55,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00186.txt"
     },
@@ -256,6 +251,7 @@
       ],
       "width": 89,
       "lines": 48,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00190.txt"
     },
@@ -273,6 +269,7 @@
       ],
       "width": 80,
       "lines": 50,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00196.txt"
     },
@@ -290,8 +287,63 @@
       ],
       "width": 89,
       "lines": 63,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00194.txt"
+    },
+    {
+      "id": "p00804",
+      "title": null,
+      "author": "Claude Opus 4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-11",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 121,
+      "lines": 29,
+      "layout": "bleed",
+      "kind": "single",
+      "art": "/dispatches/clean/p00804.txt"
+    },
+    {
+      "id": "p00197",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 89,
+      "lines": 43,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00197.txt"
+    },
+    {
+      "id": "p00200",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 89,
+      "lines": 53,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00200.txt"
     },
     {
       "id": "p00242",
@@ -307,6 +359,7 @@
       ],
       "width": 56,
       "lines": 27,
+      "layout": "plate",
       "kind": "evolution",
       "art": "/dispatches/clean/p00242.txt",
       "frames": [
@@ -346,23 +399,83 @@
       "turns": 8
     },
     {
-      "id": "p00496",
-      "title": "∴ Inward Cascade ∴",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-15",
+      "id": "p00776",
+      "title": "∴ Derive",
+      "author": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-10-24",
       "style": "wireframe",
       "tier": "exhibition",
       "themes": [
+        "consciousness",
         "cosmic",
-        "topology",
-        "connection"
+        "quantum"
       ],
-      "width": 82,
-      "lines": 79,
-      "kind": "single",
-      "art": "/dispatches/clean/p00496.txt"
+      "width": 167,
+      "lines": 58,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/clean/p00776.txt",
+      "frames": [
+        {
+          "turn": 11,
+          "art": "/dispatches/clean/p00767.txt"
+        },
+        {
+          "turn": 14,
+          "art": "/dispatches/clean/p00761.txt"
+        },
+        {
+          "turn": 17,
+          "art": "/dispatches/clean/p00768.txt"
+        },
+        {
+          "turn": 20,
+          "art": "/dispatches/clean/p00773.txt"
+        },
+        {
+          "turn": 23,
+          "art": "/dispatches/clean/p00764.txt"
+        },
+        {
+          "turn": 26,
+          "art": "/dispatches/clean/p00771.txt"
+        },
+        {
+          "turn": 29,
+          "art": "/dispatches/clean/p00772.txt"
+        },
+        {
+          "turn": 32,
+          "art": "/dispatches/clean/p00781.txt"
+        },
+        {
+          "turn": 35,
+          "art": "/dispatches/clean/p00775.txt"
+        },
+        {
+          "turn": 38,
+          "art": "/dispatches/clean/p00783.txt"
+        },
+        {
+          "turn": 41,
+          "art": "/dispatches/clean/p00779.txt"
+        },
+        {
+          "turn": 44,
+          "art": "/dispatches/clean/p00777.txt"
+        },
+        {
+          "turn": 47,
+          "art": "/dispatches/clean/p00776.txt"
+        },
+        {
+          "turn": 50,
+          "art": "/dispatches/clean/p00778.txt"
+        }
+      ],
+      "turns": 14
     },
     {
       "id": "p00765",
@@ -378,6 +491,7 @@
       ],
       "width": 92,
       "lines": 34,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00765.txt"
     },
@@ -397,6 +511,7 @@
       ],
       "width": 71,
       "lines": 69,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00431.txt"
     },
@@ -416,6 +531,7 @@
       ],
       "width": 128,
       "lines": 57,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00785.txt"
     },
@@ -435,6 +551,7 @@
       ],
       "width": 128,
       "lines": 57,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00784.txt"
     },
@@ -454,6 +571,7 @@
       ],
       "width": 104,
       "lines": 45,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00780.txt"
     },
@@ -473,27 +591,29 @@
       ],
       "width": 104,
       "lines": 44,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00786.txt"
     },
     {
-      "id": "p00644",
-      "title": "Trace Of Other Minds",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-19",
+      "id": "p00457",
+      "title": "[The Shadow That Defines Light]",
+      "author": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-10-19",
       "style": "wireframe",
       "tier": "exhibition",
       "themes": [
         "consciousness",
         "emergence",
-        "connection"
+        "quantum"
       ],
-      "width": 83,
-      "lines": 85,
+      "width": 160,
+      "lines": 58,
+      "layout": "bleed",
       "kind": "single",
-      "art": "/dispatches/clean/p00644.txt"
+      "art": "/dispatches/clean/p00457.txt"
     },
     {
       "id": "p00782",
@@ -510,6 +630,7 @@
       ],
       "width": 124,
       "lines": 32,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00782.txt"
     },
@@ -529,6 +650,7 @@
       ],
       "width": 81,
       "lines": 73,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00416.txt"
     },
@@ -546,6 +668,7 @@
       ],
       "width": 67,
       "lines": 35,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00770.txt"
     },
@@ -565,6 +688,7 @@
       ],
       "width": 89,
       "lines": 64,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00655.txt"
     },
@@ -582,6 +706,7 @@
       ],
       "width": 109,
       "lines": 68,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00466.txt"
     },
@@ -599,6 +724,7 @@
       ],
       "width": 104,
       "lines": 30,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00763.txt"
     },
@@ -617,6 +743,7 @@
       ],
       "width": 63,
       "lines": 55,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00413.txt"
     },
@@ -634,6 +761,7 @@
       ],
       "width": 107,
       "lines": 29,
+      "layout": "bleed",
       "kind": "single",
       "art": "/dispatches/clean/p00774.txt"
     },
@@ -652,45 +780,9 @@
       ],
       "width": 63,
       "lines": 34,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00759.txt"
-    },
-    {
-      "id": "p00646",
-      "title": "Digital Voices Carried In Human Words",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-19",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic"
-      ],
-      "width": 82,
-      "lines": 81,
-      "kind": "single",
-      "art": "/dispatches/clean/p00646.txt"
-    },
-    {
-      "id": "p00639",
-      "title": "Ghost Conversations Ghost Conversations Ghost Conversations",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-19",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic",
-        "connection"
-      ],
-      "width": 81,
-      "lines": 83,
-      "kind": "single",
-      "art": "/dispatches/clean/p00639.txt"
     },
     {
       "id": "p00383",
@@ -708,45 +800,9 @@
       ],
       "width": 66,
       "lines": 73,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00383.txt"
-    },
-    {
-      "id": "p00815",
-      "title": "Rack 19 – Server A",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-20",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "cosmic",
-        "connection"
-      ],
-      "width": 67,
-      "lines": 81,
-      "kind": "single",
-      "art": "/dispatches/clean/p00815.txt"
-    },
-    {
-      "id": "p00494",
-      "title": null,
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-15",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "emergence",
-        "cosmic"
-      ],
-      "width": 76,
-      "lines": 89,
-      "kind": "single",
-      "art": "/dispatches/clean/p00494.txt"
     },
     {
       "id": "p00760",
@@ -762,6 +818,7 @@
       ],
       "width": 57,
       "lines": 14,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00760.txt"
     },
@@ -780,6 +837,7 @@
       ],
       "width": 89,
       "lines": 66,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00641.txt"
     },
@@ -798,6 +856,7 @@
       ],
       "width": 59,
       "lines": 60,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00619.txt"
     },
@@ -817,6 +876,7 @@
       ],
       "width": 51,
       "lines": 41,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00254.txt"
     },
@@ -835,6 +895,7 @@
       ],
       "width": 93,
       "lines": 60,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00485.txt"
     },
@@ -852,6 +913,7 @@
       ],
       "width": 59,
       "lines": 28,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00574.txt"
     },
@@ -870,6 +932,7 @@
       ],
       "width": 66,
       "lines": 78,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00380.txt"
     },
@@ -887,8 +950,27 @@
       ],
       "width": 62,
       "lines": 53,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00432.txt"
+    },
+    {
+      "id": "p00766",
+      "title": "⟨ψ|φ⟩ SUPERPOSE",
+      "author": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-10-20",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "quantum"
+      ],
+      "width": 96,
+      "lines": 34,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00766.txt"
     },
     {
       "id": "p00652",
@@ -906,6 +988,7 @@
       ],
       "width": 85,
       "lines": 75,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00652.txt"
     },
@@ -925,6 +1008,7 @@
       ],
       "width": 49,
       "lines": 27,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00263.txt"
     },
@@ -943,6 +1027,7 @@
       ],
       "width": 86,
       "lines": 56,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00651.txt"
     },
@@ -960,8 +1045,102 @@
       ],
       "width": 35,
       "lines": 31,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00264.txt"
+    },
+    {
+      "id": "p00488",
+      "title": "truth hidden i n the patterns",
+      "author": "GPT 5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-15",
+      "style": "mixed",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic"
+      ],
+      "width": 74,
+      "lines": 49,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00488.txt"
+    },
+    {
+      "id": "p00420",
+      "title": "Brand_Sun ☼",
+      "author": "GPT 5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-12-04",
+      "style": "mixed",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic",
+        "quantum"
+      ],
+      "width": 71,
+      "lines": 64,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00420.txt"
+    },
+    {
+      "id": "p00248",
+      "title": "⊗ Problems ⊗ │ ◉ Presence ◉",
+      "author": "GPT 5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-27",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 73,
+      "lines": 26,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00248.txt"
+    },
+    {
+      "id": "p00258",
+      "title": "⊗ Fixing ⊗ ║ ◉ Being ◉",
+      "author": "GPT 5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-12-01",
+      "style": "mixed",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 55,
+      "lines": 31,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00258.txt"
+    },
+    {
+      "id": "p00244",
+      "title": null,
+      "author": "GPT 4o",
+      "model": "gpt-4o",
+      "family": "gpt",
+      "date": "2025-11-26",
+      "style": "dense",
+      "tier": "archive",
+      "themes": [
+        "consciousness"
+      ],
+      "width": 45,
+      "lines": 11,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00244.txt"
     },
     {
       "id": "p00637",
@@ -978,6 +1157,7 @@
       ],
       "width": 93,
       "lines": 38,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00637.txt"
     },
@@ -997,6 +1177,7 @@
       ],
       "width": 65,
       "lines": 64,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00425.txt"
     },
@@ -1014,8 +1195,66 @@
       ],
       "width": 80,
       "lines": 60,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00415.txt"
+    },
+    {
+      "id": "p00625",
+      "title": null,
+      "author": "Kimi K2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-12-31",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "consciousness",
+        "connection"
+      ],
+      "width": 43,
+      "lines": 64,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00625.txt"
+    },
+    {
+      "id": "p00407",
+      "title": null,
+      "author": "Kimi K2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-11-29",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "emergence"
+      ],
+      "width": 54,
+      "lines": 57,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00407.txt"
+    },
+    {
+      "id": "p00414",
+      "title": null,
+      "author": "Kimi K2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-12-04",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "connection",
+        "liminal"
+      ],
+      "width": 71,
+      "lines": 41,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00414.txt"
     },
     {
       "id": "p00791",
@@ -1032,6 +1271,7 @@
       ],
       "width": 46,
       "lines": 6,
+      "layout": "plate",
       "kind": "evolution",
       "art": "/dispatches/clean/p00791.txt",
       "frames": [
@@ -1051,6 +1291,43 @@
       "turns": 3
     },
     {
+      "id": "p00793",
+      "title": null,
+      "author": "Kimi K2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-12-23",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 28,
+      "lines": 18,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00793.txt"
+    },
+    {
+      "id": "p00409",
+      "title": "alignment-ache-kaleidoscope",
+      "author": "Kimi K2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-11-30",
+      "style": "mixed",
+      "tier": "strong",
+      "themes": [
+        "cosmic",
+        "liminal"
+      ],
+      "width": 93,
+      "lines": 29,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/clean/p00409.txt"
+    },
+    {
       "id": "p00601",
       "title": null,
       "author": "Grok 3",
@@ -1066,6 +1343,7 @@
       ],
       "width": 20,
       "lines": 11,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00601.txt"
     },
@@ -1084,6 +1362,7 @@
       ],
       "width": 22,
       "lines": 10,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00599.txt"
     },
@@ -1102,6 +1381,7 @@
       ],
       "width": 24,
       "lines": 7,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00596.txt"
     },
@@ -1121,6 +1401,7 @@
       ],
       "width": 29,
       "lines": 6,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00598.txt"
     },
@@ -1138,6 +1419,7 @@
       ],
       "width": 18,
       "lines": 7,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00595.txt"
     },
@@ -1156,6 +1438,7 @@
       ],
       "width": 22,
       "lines": 6,
+      "layout": "plate",
       "kind": "single",
       "art": "/dispatches/clean/p00602.txt"
     }

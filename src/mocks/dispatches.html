@@ -57,6 +57,17 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 /* spine */
 .book::after{ content:""; position:absolute; top:0; bottom:0; left:50%; width:48px; transform:translateX(-50%);
   background:linear-gradient(90deg,transparent,rgba(28,27,24,0.05),transparent); pointer-events:none; }
+/* full-bleed movement — the giants span the spread, reading as a caption band */
+.book.isbleed{ grid-template-columns:minmax(0,1fr); }
+.book.isbleed::after{ display:none; }
+.bleed{ grid-column:1/-1; min-width:0; display:flex; flex-direction:column; min-height:0; padding:clamp(22px,3.4vh,46px) clamp(28px,4vw,76px); }
+.bleed .plate--full{ flex:1 1 auto; min-height:0; min-width:0; overflow:hidden; }
+.bleedcap{ flex:none; min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:24px; align-items:baseline; margin-top:18px; padding-top:14px; border-top:1px solid var(--rule-soft); }
+.bleedcap .bc-l{ font-family:var(--display); font-weight:400; font-size:17px; color:var(--ink); letter-spacing:-0.01em; }
+.bleedcap .bc-l b{ font-family:var(--mono); font-size:11px; font-weight:400; color:var(--ink-46); margin-right:12px; }
+.bleedcap .bc-c{ font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-46); text-align:center; }
+.bleedcap .bc-r{ font-family:var(--mono); font-size:10px; letter-spacing:0.08em; color:var(--ink-32); text-align:right; }
+@media (max-width:920px){ .bleedcap{ grid-template-columns:1fr; gap:6px; text-align:left; } .bleedcap .bc-c,.bleedcap .bc-r{ text-align:left; } }
 
 .leaf{ min-width:0; padding:clamp(26px,4vh,54px) clamp(28px,4.4vw,72px); display:flex; flex-direction:column; overflow:hidden; }
 .leaf--text{ justify-content:flex-start; }
@@ -67,9 +78,11 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 .zone.prev{ left:0; } .zone.next{ right:0; }
 
 /* ── left leaf: the catalog entry + the reading ── */
-.entry{ width:100%; max-width:var(--measure); }
-.entry .num{ font-family:var(--display); font-weight:300; font-size:clamp(48px,5.2vw,78px); line-height:0.9;
-  letter-spacing:-0.02em; color:var(--ink-20); margin-bottom:18px; font-variant-numeric:tabular-nums; }
+.entry{ width:100%; max-width:var(--measure); flex:1 1 auto; display:flex; flex-direction:column; }
+.entry__top{ flex:0 0 auto; }
+.entry__foot{ margin-top:auto; padding-top:40px; }
+.entry .num{ font-family:var(--display); font-weight:200; font-size:clamp(72px,8vw,132px); line-height:0.78;
+  letter-spacing:-0.03em; color:var(--ink-12); margin:0; font-variant-numeric:tabular-nums; }
 .entry .eyebrow{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
 .entry .title{ font-family:var(--display); font-weight:400; font-size:clamp(26px,2.7vw,36px); line-height:1.08;
   letter-spacing:-0.015em; color:var(--ink); text-wrap:balance; }
@@ -130,7 +143,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 .nav .ix b{ color:var(--ink); font-weight:500; }
 
 @media (max-width:920px){
-  .book{ grid-template-columns:1fr; overflow-y:auto; }
+  .book{ grid-template-columns:minmax(0,1fr); overflow-y:auto; }
   .book::after{ display:none; }
   .leaf{ overflow:visible; }
   .leaf--art{ order:-1; min-height:46vh; }
@@ -208,7 +221,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
     }
 
     function renderCover(){
-      nav.classList.add('hidden');
+      nav.classList.add('hidden'); book.classList.remove('isbleed');
       pnoL.textContent=''; pnoR.textContent='i'; headR.textContent='a typographic study';
       book.innerHTML='<section class="cover">'
         +'<div class="ce">A Mnemos study</div>'
@@ -227,34 +240,55 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       var pl=n*2, pr=n*2+1;
       pnoL.textContent=pl; pnoR.textContent=pr; headR.textContent=p.author||'';
       var isEvo = !!(p.frames && p.frames.length>1);
+      var isBleed = (p.layout==='bleed') && !isEvo;
+      book.classList.toggle('isbleed', isBleed);
+      var num=rn(n);
       var sp=['<b>'+esc(p.author||'')+'</b>'];
       if(p.date) sp.push('<span>'+esc(fmtDate(p.date))+'</span>');
       if(p.style) sp.push('<span>'+esc(p.style)+'</span>');
       if(p.width&&p.lines) sp.push('<span>'+p.width+' &times; '+p.lines+'</span>');
       sp.push('<span>'+(isEvo?'evolution &middot; '+p.frames.length+' turns':esc(p.tier||'ascii'))+'</span>');
       var specs=sp.join('');
-      var tagsHtml=(p.themes&&p.themes.length)?'<div class="tags">'+p.themes.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div>':'';
-      var noteHtml=p.note?'<div class="note"><span class="lbl">the model’s note</span><p>'+esc(p.note)+'</p></div>':'';
-      var essayHtml=p.essay?'<div class="essay">'+p.essay.split('\n\n').map(function(par){return '<p>'+esc(par)+'</p>';}).join('')+'</div>':'';
-      var rightInner = isEvo
-        ? '<div class="plate"><div class="art" id="art"></div></div><div class="evo" id="evo"><div class="turn" id="evoturn"></div><div class="ticks" id="evoticks"></div><button class="play" id="evoplay">&#8635; replay</button></div>'
-        : '<div class="plate"><div class="art" id="art"></div></div><div class="fig">fig. '+(roman[n-1]||n)+' &middot; <b>'+esc(p.title||'')+'</b></div>';
-      book.innerHTML='<span class="zone prev" data-go="prev"></span>'
-        +'<article class="leaf leaf--text"><div class="entry">'
-          +'<div class="num">'+(roman[n-1]||n)+'</div>'
-          +'<div class="eyebrow">'+(isEvo?'Evolution &middot; '+p.frames.length+' turns':'Dispatch '+(n<10?'0':'')+n)+'</div>'
-          +'<h2 class="title">'+esc(p.title||'untitled')+'</h2>'
-          +'<div class="specs">'+specs+'</div>'
-          +tagsHtml
-          +(p.dek?'<p class="dek">'+esc(p.dek)+'</p>':'')
-          +noteHtml+essayHtml
-        +'</div></article>'
-        +'<article class="leaf leaf--art">'+rightInner+'</article>'
-        +'<span class="zone next" data-go="next"></span>';
+      if(isBleed){
+        var meta=[p.author]; if(p.date)meta.push(fmtDate(p.date)); if(p.style)meta.push(p.style);
+        if(p.width&&p.lines)meta.push(p.width+' × '+p.lines); if(p.tier)meta.push(p.tier);
+        book.innerHTML='<span class="zone prev" data-go="prev"></span>'
+          +'<div class="bleed">'
+            +'<div class="plate plate--full"><div class="art" id="art"></div></div>'
+            +'<div class="bleedcap">'
+              +'<span class="bc-l"><b>'+num+'</b>'+esc(p.title||'untitled')+'</span>'
+              +'<span class="bc-c">'+esc(meta.join('   ·   '))+'</span>'
+              +'<span class="bc-r">'+esc((p.themes||[]).join(' · '))+'</span>'
+            +'</div>'
+          +'</div>'
+          +'<span class="zone next" data-go="next"></span>';
+        showStatic(p);
+      } else {
+        var tagsHtml=(p.themes&&p.themes.length)?'<div class="tags">'+p.themes.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div>':'';
+        var noteHtml=p.note?'<div class="note"><span class="lbl">the model’s note</span><p>'+esc(p.note)+'</p></div>':'';
+        var essayHtml=p.essay?'<div class="essay">'+p.essay.split('\n\n').map(function(par){return '<p>'+esc(par)+'</p>';}).join('')+'</div>':'';
+        var rightInner = isEvo
+          ? '<div class="plate"><div class="art" id="art"></div></div><div class="evo" id="evo"><div class="turn" id="evoturn"></div><div class="ticks" id="evoticks"></div><button class="play" id="evoplay">&#8635; replay</button></div>'
+          : '<div class="plate"><div class="art" id="art"></div></div><div class="fig">fig. '+num+' &middot; <b>'+esc(p.title||'untitled')+'</b></div>';
+        book.innerHTML='<span class="zone prev" data-go="prev"></span>'
+          +'<article class="leaf leaf--text"><div class="entry">'
+            +'<div class="entry__top">'
+              +'<div class="eyebrow">'+(isEvo?'Evolution &middot; '+p.frames.length+' turns':'Dispatch '+(n<10?'0':'')+n)+'</div>'
+              +'<h2 class="title">'+esc(p.title||'untitled')+'</h2>'
+              +'<div class="specs">'+specs+'</div>'
+              +tagsHtml
+              +(p.dek?'<p class="dek">'+esc(p.dek)+'</p>':'')
+              +noteHtml+essayHtml
+            +'</div>'
+            +'<div class="entry__foot"><div class="num">'+num+'</div></div>'
+          +'</div></article>'
+          +'<article class="leaf leaf--art">'+rightInner+'</article>'
+          +'<span class="zone next" data-go="next"></span>';
+        if(isEvo) setupEvolution(p); else showStatic(p);
+      }
       ixEl.innerHTML='<b>'+n+'</b> / '+DOC.pieces.length;
       prevB.disabled=false; nextB.disabled=(n>=DOC.pieces.length);
       book.querySelectorAll('.zone').forEach(function(z){ z.addEventListener('click', function(){ z.dataset.go==='next'?go(idx+1):go(idx-1); }); });
-      if(isEvo) setupEvolution(p); else showStatic(p);
     }
     function showStatic(p){
       var token=++rtok;
