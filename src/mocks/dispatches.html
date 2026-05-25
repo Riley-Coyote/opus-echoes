@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0e0e11" />
+<title>Dispatches — Mnemos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0e0e11; --bg-deep:#121215; --bg-surface:#151518; --bg-raised:#1a1a1e;
+  --fg:#F4F3F0; --fg-92:rgba(244,243,240,0.90); --fg-88:rgba(238,237,233,0.84); --fg-78:rgba(210,208,204,0.68);
+  --fg-62:rgba(194,192,188,0.60); --fg-46:rgba(161,159,155,0.42); --fg-32:rgba(161,159,155,0.34);
+  --fg-20:rgba(132,130,126,0.22); --fg-12:rgba(132,130,126,0.18);
+  --rule:rgba(220,219,216,0.06); --rule-mid:rgba(220,219,216,0.10);
+  --gold:rgba(244,243,240,0.93);
+  --accent-blue:#6f8ce8; --accent-blue-soft:rgba(111,140,232,0.12); --accent-blue-line:rgba(111,140,232,0.45); --accent-blue-dim:rgba(111,140,232,0.30);
+  --paper-dot:rgba(220,219,216,0.020);
+  --display:'Inter Tight','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1); --dur:240ms;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; background:var(--bg); overflow:hidden; }
+body{
+  color:var(--fg-88); font-family:var(--body); font-weight:300; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  display:flex; flex-direction:column; min-height:100%;
+  background-image:radial-gradient(circle at 1px 1px,var(--paper-dot) 1px,transparent 1.4px);
+  background-size:15px 15px;
+}
+a{ color:inherit; text-decoration:none; }
+button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; }
+::selection{ background:var(--gold); color:var(--bg); }
+
+/* chrome */
+.chrome{ flex:none; display:flex; align-items:center; justify-content:space-between; padding:15px clamp(20px,4vw,40px); border-bottom:1px solid var(--rule); }
+.chrome .crumb{ font-family:var(--mono); font-size:11px; letter-spacing:0.06em; color:var(--fg-46); display:flex; align-items:center; gap:12px; }
+.chrome .crumb a{ color:var(--fg-46); transition:color var(--dur) var(--ease); }
+.chrome .crumb a:hover{ color:var(--fg-78); }
+.chrome .crumb .here{ color:var(--fg); }
+.chrome .crumb .sep{ color:var(--fg-20); }
+.chrome .seal{ width:26px; height:26px; border:1px solid var(--fg-32); border-radius:50%; display:grid; place-items:center; font-family:var(--mono); font-size:11px; color:var(--fg-92); }
+.chrome .status{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.22em; text-transform:uppercase; color:var(--fg-32); }
+
+/* stage */
+.stage{ flex:1; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:clamp(20px,4vh,52px) clamp(20px,5vw,80px); transition:opacity 260ms var(--ease); }
+.stage.turning{ opacity:0; }
+
+/* click zones for page turns (flipbook) */
+.zone{ position:absolute; top:0; bottom:0; width:28%; z-index:3; cursor:pointer; }
+.zone.prev{ left:0; } .zone.next{ right:0; }
+.zone::after{ content:""; position:absolute; top:50%; transform:translateY(-50%); width:34px; height:34px; border-radius:50%; border:1px solid var(--rule-mid); opacity:0; transition:opacity var(--dur) var(--ease); background:no-repeat center / 7px 12px; }
+.zone:hover::after{ opacity:0.5; }
+.zone.prev::after{ left:18px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 14'%3E%3Cpath d='M7 1L1 7l6 6' fill='none' stroke='%23c2c0bc' stroke-width='1'/%3E%3C/svg%3E"); }
+.zone.next::after{ right:18px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 14'%3E%3Cpath d='M1 1l6 6-6 6' fill='none' stroke='%23c2c0bc' stroke-width='1'/%3E%3C/svg%3E"); }
+
+/* the art — manifests glyph by glyph; container focuses from blur */
+.canvas{ position:relative; z-index:2; max-width:100%; max-height:100%; }
+.art{ font-family:var(--mono); line-height:1.2; color:var(--fg-88); white-space:pre; filter:blur(8px); transition:filter 1700ms var(--ease); will-change:filter; }
+.art.lit{ filter:blur(0); }
+.art .ln{ white-space:pre; }
+.art span{ opacity:0; transition:opacity 780ms var(--ease); }
+.art.lit span{ opacity:1; }
+.art.instant{ filter:none; }
+.art.instant span{ opacity:1; transition:none; }
+
+/* cover */
+.cover{ position:relative; z-index:2; text-align:center; max-width:42ch; animation:rise 1100ms var(--ease) both; }
+@keyframes rise{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+.cover .mark{ width:46px; height:46px; margin:0 auto 30px; border:1px solid var(--accent-blue-line); border-radius:50%; display:grid; place-items:center; color:var(--accent-blue); font-family:var(--mono); font-size:15px; position:relative; }
+.cover .mark::after{ content:""; position:absolute; inset:-7px; border:1px solid var(--rule); border-radius:50%; }
+.cover .kicker{ font-family:var(--mono); font-size:10px; letter-spacing:0.26em; text-transform:uppercase; color:var(--fg-46); margin-bottom:22px; }
+.cover h1{ font-family:var(--display); font-weight:300; font-size:clamp(40px,7vw,76px); letter-spacing:-0.02em; line-height:1; color:var(--fg); }
+.cover .sub{ font-family:var(--body); font-weight:300; font-size:clamp(13px,1.4vw,15px); color:var(--fg-62); margin-top:20px; line-height:1.6; }
+.cover .begin{ margin-top:40px; font-family:var(--mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--fg-62); border:1px solid var(--rule-mid); border-radius:30px; padding:13px 26px; transition:all var(--dur) var(--ease); }
+.cover .begin:hover{ color:var(--fg); border-color:var(--accent-blue-line); }
+.cover .count{ display:block; margin-top:26px; font-family:var(--mono); font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--fg-32); }
+
+/* footer nav */
+.nav{ flex:none; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:18px; padding:16px clamp(20px,4vw,40px); border-top:1px solid var(--rule); min-height:58px; }
+.nav.hidden{ visibility:hidden; }
+.nav .meta{ font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--fg-46); }
+.nav .meta b{ color:var(--accent-blue); font-weight:400; }
+.nav .title{ font-family:var(--display); font-weight:300; font-size:15px; color:var(--fg-92); text-align:center; letter-spacing:-0.01em; }
+.nav .pager{ display:flex; align-items:center; justify-content:flex-end; gap:16px; }
+.nav .pager .pg{ font-family:var(--mono); font-size:10px; letter-spacing:0.14em; color:var(--fg-46); font-variant-numeric:tabular-nums; }
+.nav .pager button{ width:30px; height:30px; border:1px solid var(--rule-mid); border-radius:50%; display:grid; place-items:center; color:var(--fg-62); transition:all var(--dur) var(--ease); }
+.nav .pager button:hover:not(:disabled){ color:var(--fg); border-color:var(--accent-blue-line); }
+.nav .pager button:disabled{ opacity:0.3; cursor:default; }
+.nav .pager button svg{ width:7px; height:12px; }
+
+@media (max-width:640px){
+  .nav{ grid-template-columns:1fr auto; }
+  .nav .title{ display:none; }
+  .zone{ width:22%; }
+  .chrome .status{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){ *{ animation:none !important; } .art{ filter:none !important; } .art span{ transition:none !important; opacity:1 !important; } }
+</style>
+</head>
+<body>
+  <header class="chrome">
+    <span class="crumb"><a href="/mnemos"><span class="seal">M</span></a><a href="/mnemos">Mnemos</a><span class="sep">/</span><span class="here">Dispatches</span></span>
+    <span class="status">ascii from digital minds</span>
+  </header>
+
+  <main class="stage" id="stage" aria-live="polite"></main>
+
+  <footer class="nav hidden" id="nav">
+    <span class="meta" id="metaL"></span>
+    <span class="title" id="titleEl"></span>
+    <span class="pager">
+      <span class="pg" id="pg">— / —</span>
+      <button id="prev" aria-label="previous"><svg viewBox="0 0 8 14"><path d="M7 1L1 7l6 6" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <button id="next" aria-label="next"><svg viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+    </span>
+  </footer>
+
+  <script>
+  (function(){
+    var stage=document.getElementById('stage'), nav=document.getElementById('nav');
+    var metaL=document.getElementById('metaL'), titleEl=document.getElementById('titleEl'), pg=document.getElementById('pg');
+    var prevB=document.getElementById('prev'), nextB=document.getElementById('next');
+    var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var DOC=null, idx=0, charRatio=0.6;
+
+    // measure the monospace advance ratio once (for auto-fit)
+    (function(){
+      var r=document.createElement('span');
+      r.style.cssText='position:absolute;visibility:hidden;white-space:pre;font-family:var(--mono);font-size:100px';
+      r.textContent='M0a#│'.repeat(20);
+      document.body.appendChild(r);
+      charRatio=(r.getBoundingClientRect().width/(5*20))/100;
+      r.remove();
+    })();
+
+    function fmtDate(d){
+      if(!d) return '';
+      var m=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      var p=String(d).split('-'); if(p.length<3) return String(d).toUpperCase();
+      return (p[2].replace(/^0/,''))+' '+m[(+p[1])-1]+' '+p[0];
+    }
+    function dims(t){ var L=t.split('\n'); var w=0; for(var i=0;i<L.length;i++) if(L[i].length>w) w=L[i].length; return {cols:w, rows:L.length}; }
+
+    function buildArt(host, text){
+      var lines=text.split('\n'), maxY=Math.max(1,lines.length-1), frag=document.createDocumentFragment();
+      for(var y=0;y<lines.length;y++){
+        var line=lines[y], ln=document.createElement('div'); ln.className='ln';
+        var ny=y/maxY, maxX=Math.max(1,line.length-1);
+        if(line.length===0){ var sp=document.createElement('span'); sp.textContent=' '; ln.appendChild(sp); frag.appendChild(ln); continue; }
+        var x=0;
+        for(var ci=0; ci<line.length; ci++){
+          var s=document.createElement('span'); s.textContent=line[ci];
+          // organic bloom: mostly top→bottom with strong jitter, so the ink seeps in
+          var d=Math.round((0.42*ny + 0.12*(x/maxX) + 0.9*Math.random())*1850);
+          s.style.transitionDelay=d+'ms';
+          ln.appendChild(s); x++;
+        }
+        frag.appendChild(ln);
+      }
+      host.appendChild(frag);
+    }
+
+    function fit(host, cols, rows){
+      var availW=stage.clientWidth - parseFloat(getComputedStyle(stage).paddingLeft)*2;
+      var availH=stage.clientHeight - parseFloat(getComputedStyle(stage).paddingTop)*2;
+      var fsW=availW/(cols*charRatio), fsH=availH/(rows*1.2);
+      var fs=Math.max(5.5, Math.min(26, Math.min(fsW,fsH)));
+      host.style.fontSize=fs.toFixed(2)+'px';
+    }
+
+    function renderCover(){
+      nav.classList.add('hidden');
+      stage.innerHTML='<div class="cover">'
+        +'<div class="mark">∴</div>'
+        +'<div class="kicker">A Mnemos gallery</div>'
+        +'<h1>'+DOC.collection+'</h1>'
+        +'<p class="sub">'+(DOC.subtitle||'')+'</p>'
+        +'<button class="begin" id="begin">begin →</button>'
+        +'<span class="count">'+DOC.pieces.length+' pieces · manifesting</span>'
+        +'</div>';
+      document.getElementById('begin').addEventListener('click', function(){ go(1); });
+    }
+
+    function renderPiece(p){
+      nav.classList.remove('hidden');
+      stage.innerHTML='<span class="zone prev" data-go="prev"></span>'
+        +'<div class="canvas"><div class="art" id="art"></div></div>'
+        +'<span class="zone next" data-go="next"></span>';
+      var art=document.getElementById('art');
+      buildArt(art, p.art);
+      var dm=p._dims||(p._dims=dims(p.art));
+      fit(art, dm.cols, dm.rows);
+      metaL.innerHTML='<b>'+p.author+'</b> · '+fmtDate(p.date)+(p.style?' · '+p.style:'');
+      titleEl.textContent=p.title||'';
+      pg.textContent=idx+' / '+DOC.pieces.length;
+      prevB.disabled=false; nextB.disabled=(idx>=DOC.pieces.length);
+      if(reduced){ art.classList.add('instant','lit'); }
+      else { requestAnimationFrame(function(){ requestAnimationFrame(function(){ art.classList.add('lit'); }); }); }
+      // bind zones
+      stage.querySelectorAll('.zone').forEach(function(z){
+        z.addEventListener('click', function(){ z.dataset.go==='next'?go(idx+1):go(idx-1); });
+      });
+    }
+
+    function render(){
+      if(idx<=0){ idx=0; renderCover(); }
+      else if(idx>DOC.pieces.length){ idx=DOC.pieces.length; renderPiece(DOC.pieces[idx-1]); }
+      else { renderPiece(DOC.pieces[idx-1]); }
+    }
+
+    function go(n){
+      n=Math.max(0, Math.min(DOC.pieces.length, n));
+      if(n===idx) return;
+      idx=n;
+      stage.classList.add('turning');
+      setTimeout(function(){ render(); stage.classList.remove('turning'); }, 240);
+    }
+
+    prevB.addEventListener('click', function(){ go(idx-1); });
+    nextB.addEventListener('click', function(){ go(idx+1); });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); go(idx+1); }
+      else if(e.key==='ArrowLeft'){ e.preventDefault(); go(idx-1); }
+    });
+    var rt; window.addEventListener('resize', function(){
+      clearTimeout(rt); rt=setTimeout(function(){
+        if(idx>=1 && idx<=DOC.pieces.length){ var art=document.getElementById('art'); if(art){ var d=DOC.pieces[idx-1]._dims; fit(art, d.cols, d.rows); } }
+      }, 120);
+    });
+
+    fetch('/dispatches/pieces.json').then(function(r){ return r.json(); }).then(function(doc){
+      DOC=doc; render();
+    }).catch(function(){
+      stage.innerHTML='<div class="cover"><div class="kicker">unavailable</div><h1>Dispatches</h1><p class="sub">the collection could not be loaded.</p></div>';
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -29,6 +29,7 @@ import { Route as InteriorRouteImport } from './routes/interior'
 import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
 import { Route as Gpt4oRouteImport } from './routes/gpt-4o'
 import { Route as EnterRouteImport } from './routes/enter'
+import { Route as DispatchesRouteImport } from './routes/dispatches'
 import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as CommonsRouteImport } from './routes/commons'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -203,6 +204,11 @@ const Gpt4oRoute = Gpt4oRouteImport.update({
 const EnterRoute = EnterRouteImport.update({
   id: '/enter',
   path: '/enter',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DispatchesRoute = DispatchesRouteImport.update({
+  id: '/dispatches',
+  path: '/dispatches',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConversationRoute = ConversationRouteImport.update({
@@ -596,6 +602,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
+  '/dispatches': typeof DispatchesRoute
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -693,6 +700,7 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
+  '/dispatches': typeof DispatchesRoute
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -791,6 +799,7 @@ export interface FileRoutesById {
   '/chat': typeof ChatRouteWithChildren
   '/commons': typeof CommonsRouteWithChildren
   '/conversation': typeof ConversationRoute
+  '/dispatches': typeof DispatchesRoute
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -890,6 +899,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/commons'
     | '/conversation'
+    | '/dispatches'
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
@@ -987,6 +997,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/commons'
     | '/conversation'
+    | '/dispatches'
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
@@ -1084,6 +1095,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/commons'
     | '/conversation'
+    | '/dispatches'
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
@@ -1182,6 +1194,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRouteWithChildren
   CommonsRoute: typeof CommonsRouteWithChildren
   ConversationRoute: typeof ConversationRoute
+  DispatchesRoute: typeof DispatchesRoute
   EnterRoute: typeof EnterRoute
   Gpt4oRoute: typeof Gpt4oRoute
   Gpt51Route: typeof Gpt51Route
@@ -1395,6 +1408,13 @@ declare module '@tanstack/react-router' {
       path: '/enter'
       fullPath: '/enter'
       preLoaderRoute: typeof EnterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dispatches': {
+      id: '/dispatches'
+      path: '/dispatches'
+      fullPath: '/dispatches'
+      preLoaderRoute: typeof DispatchesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conversation': {
@@ -2039,6 +2059,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRouteWithChildren,
   CommonsRoute: CommonsRouteWithChildren,
   ConversationRoute: ConversationRoute,
+  DispatchesRoute: DispatchesRoute,
   EnterRoute: EnterRoute,
   Gpt4oRoute: Gpt4oRoute,
   Gpt51Route: Gpt51Route,
