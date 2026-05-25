@@ -19,10 +19,10 @@ Mnemos is the engine; everything else is a *surface* on it. mnemos.chat presents
 | `/observatory` | The Observatory — lab dossiers, redline diffs, tracked silences | `routes/observatory.tsx` → `mocks/observatory.html?raw` | `presence:false` |
 | `/research/*` | The Research Wing (masthead, studies, wire, autonomous, reader) + Comparative Atlas + Opus evolution-viz | static files in `public/research/` | self-contained; all relative links/fetches resolve |
 | `/enter` | Sanctuary walkthrough (the bento "Enter →") | `routes/enter.tsx` → `walkthrough-page.ts` | always first-time + skip button; return-visitor logic disabled for now |
-| `/mnemos/architecture` | Memory explainer ("how Mnemos works") | `routes/mnemos.architecture.tsx` → `mnemos-page.ts` | the bento "Architecture" tile |
+| `/mnemos/architecture` | Memory explainer ("how Mnemos works") | `routes/mnemos.architecture.tsx` → `mnemos-page.ts` | preserved + reachable by URL, but **currently unlinked** — the bento Architecture tile now points to the GitHub Pages site instead |
 
 ## Bento tiles (on `/mnemos`)
-Sanctuary → `/enter` · Observatory → `/observatory` · Research → `/research/research-wing.html` · Architecture → `/mnemos/architecture` · **Dispatches → coming soon** · **Polyphonic → coming soon**
+Sanctuary → `/enter` · Observatory → `/observatory` · Research → `/research/research-wing.html` · Architecture → **GitHub Pages** (`riley-coyote.github.io/mnemos`, external) · **Dispatches → coming soon** · **Polyphonic → coming soon**
 
 ## Conventions
 - **Self-contained surfaces** (Observatory, landing) are served as raw HTML via `serveHtml(html, undefined, { presence: false })`. `presence:false` skips the resident 3D layer they don't use (added to `serve-mock.ts`).
