@@ -19,7 +19,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { anthropic } from "@/server/anthropic.server";
-import { openai } from "@/server/openai.server";
+import { openrouter } from "@/server/openai.server";
 import {
   ALL_RESIDENTS,
   getResident,
@@ -447,7 +447,7 @@ async function streamOneResidentTurn(opts: {
 
   let buffer = "";
   if (opts.resident.provider === "openai") {
-    const oaiStream = await openai().chat.completions.create({
+    const oaiStream = await openrouter().chat.completions.create({
       model: opts.resident.model,
       max_completion_tokens: 1024,
       temperature: 0.85,

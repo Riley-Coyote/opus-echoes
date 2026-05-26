@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { anthropic } from "@/server/anthropic.server";
-import { openai } from "@/server/openai.server";
+import { openrouter } from "@/server/openai.server";
 import type { ModelProvider } from "@/server/opus/residents";
 import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
 import { sanctuarySurfacePreamble } from "@/server/opus/surface-context";
@@ -369,7 +369,7 @@ function opusStreamResponse(opts: {
               ? opts.system
               : opts.system.map((b) => b.text).join("\n\n");
 
-          const oaiStream = await openai().chat.completions.create({
+          const oaiStream = await openrouter().chat.completions.create({
             model: opts.model,
             max_completion_tokens: opts.maxOutputTokens,
             temperature: opts.temperature,

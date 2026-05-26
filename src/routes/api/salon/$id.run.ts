@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasAdminAccess } from "@/server/access.server";
 import { anthropic } from "@/server/anthropic.server";
-import { openai } from "@/server/openai.server";
+import { openrouter } from "@/server/openai.server";
 import { getResident, isResidentId, type ResidentConfig, type ResidentId } from "@/server/opus/residents";
 import { consolidateSalon, observeSalonExchange } from "@/server/substrate.server";
 
@@ -38,7 +38,7 @@ async function generateTurn(
   const userPrompt = `Here is the conversation so far:\n\n${transcript}\n\nContinue the conversation.`;
 
   if (resident.provider === "openai") {
-    const resp = await openai().chat.completions.create({
+    const resp = await openrouter().chat.completions.create({
       model: resident.model,
       max_completion_tokens: 2048,
       temperature: 0.85,
