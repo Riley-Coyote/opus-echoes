@@ -34,7 +34,7 @@
  */
 
 import { anthropic } from "@/server/anthropic.server";
-import { openai } from "@/server/openai.server";
+import { openrouter } from "@/server/openai.server";
 import {
   getResident,
   isResidentId,
@@ -273,7 +273,7 @@ async function streamActorTokens(
   const maxTokens = Math.min(resident.maxOutputTokens, STUDIO_PER_TURN_TOKENS);
   let buffer = "";
   if (resident.provider === "openai") {
-    const stream = await openai().chat.completions.create({
+    const stream = await openrouter().chat.completions.create({
       model: resident.model,
       max_completion_tokens: maxTokens,
       temperature: 0.85,
@@ -512,7 +512,7 @@ export function streamStudioTurn(opts: StudioTurnOpts): Response {
           const providerOk =
             !!opts.streamTokens ||
             (resident.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
-            (resident.provider === "openai" && !!process.env.OPENAI_API_KEY);
+            (resident.provider === "openai" && !!process.env.OPENROUTER_API_KEY);
           if (!providerOk) {
             recency.unshift(actorId);
             continue;

@@ -22,7 +22,7 @@
  */
 
 import { anthropic, HAIKU_MODEL } from "@/server/anthropic.server";
-import { openai } from "@/server/openai.server";
+import { openrouter } from "@/server/openai.server";
 import {
   getResident,
   isResidentId,
@@ -195,7 +195,7 @@ Your reply (you do not announce yourself, just speak):`;
   let assembled = "";
 
   if (resident.provider === "openai") {
-    const stream = await openai().chat.completions.create({
+    const stream = await openrouter().chat.completions.create({
       model: resident.model,
       max_completion_tokens: MAX_OUT,
       temperature: 0.85,

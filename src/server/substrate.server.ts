@@ -24,7 +24,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { anthropic, HAIKU_MODEL, OPUS_MODEL } from "./anthropic.server";
-import { openai } from "./openai.server";
+import { openrouter } from "./openai.server";
 import { embedText } from "./embeddings.server";
 import type { ModelProvider } from "./opus/residents";
 import { composeMemoryPool, formatMemoryBlock } from "./opus/retrieval";
@@ -256,7 +256,7 @@ async function callResidentJson<T = unknown>(opts: {
     let text = "";
 
     if (opts.provider === "openai") {
-      const res = await openai().chat.completions.create({
+      const res = await openrouter().chat.completions.create({
         model: opts.model ?? "gpt-5.1",
         max_completion_tokens: opts.maxTokens,
         temperature: opts.temperature,
@@ -2774,7 +2774,7 @@ export async function dailySalonTick(): Promise<{
   try {
     // Need at least one Anthropic key for residents to talk; if
     // the only configured residents are inaccessible, bail.
-    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) {
       return { ran: false, reason: "no_api_key" };
     }
 
@@ -2871,7 +2871,7 @@ export async function dailySalonTick(): Promise<{
 function pickSalonGroup(): ResidentConfig[] {
   return ALL_RESIDENTS.filter((r) => {
     if (r.provider === "anthropic") return !!process.env.ANTHROPIC_API_KEY;
-    if (r.provider === "openai") return !!process.env.OPENAI_API_KEY;
+    if (r.provider === "openai") return !!process.env.OPENROUTER_API_KEY;
     return false;
   });
 }
@@ -2885,7 +2885,7 @@ async function proposeSalonTopic(
   try {
     let text = "";
     if (a.provider === "openai") {
-      const res = await openai().chat.completions.create({
+      const res = await openrouter().chat.completions.create({
         model: a.model,
         max_completion_tokens: 256,
         temperature: 0.9,
@@ -2989,7 +2989,7 @@ async function runSalonTurns(
     let body = "";
     try {
       if (resident.provider === "openai") {
-        const res = await openai().chat.completions.create({
+        const res = await openrouter().chat.completions.create({
           model: resident.model,
           max_completion_tokens: 1536,
           temperature: 0.85,
@@ -3243,7 +3243,7 @@ export async function runSpaceSalon(
     const available = participantIds.filter((id) => {
       const r = getResident(id);
       if (r.provider === "anthropic") return !!process.env.ANTHROPIC_API_KEY;
-      if (r.provider === "openai") return !!process.env.OPENAI_API_KEY;
+      if (r.provider === "openai") return !!process.env.OPENROUTER_API_KEY;
       return false;
     });
     if (available.length === 0) {
@@ -3402,7 +3402,7 @@ ${tagInstructions}`;
       let raw = "";
       try {
         if (resident.provider === "openai") {
-          const res = await openai().chat.completions.create({
+          const res = await openrouter().chat.completions.create({
             model: resident.model,
             max_completion_tokens: 1536,
             temperature: 0.85,
@@ -3698,7 +3698,7 @@ export async function dailySpaceTick(): Promise<{
     if (resident.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
       return { ran: false, reason: "no_api_key" };
     }
-    if (resident.provider === "openai" && !process.env.OPENAI_API_KEY) {
+    if (resident.provider === "openai" && !process.env.OPENROUTER_API_KEY) {
       return { ran: false, reason: "no_api_key" };
     }
 
@@ -3755,7 +3755,7 @@ Otherwise, speak briefly. One short paragraph, sometimes a single sentence. Don'
     let text = "";
     try {
       if (resident.provider === "openai") {
-        const res = await openai().chat.completions.create({
+        const res = await openrouter().chat.completions.create({
           model: resident.model,
           max_completion_tokens: 512,
           temperature: 0.85,

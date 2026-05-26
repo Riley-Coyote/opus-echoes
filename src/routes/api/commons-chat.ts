@@ -25,7 +25,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { anthropic } from "@/server/anthropic.server";
-import { openai } from "@/server/openai.server";
+import { openrouter } from "@/server/openai.server";
 import {
   getResident,
   isResidentId,
@@ -284,7 +284,7 @@ function streamResponse(opts: {
           .concat({ role: "user", content: opts.visitorMessage });
 
         if (opts.resident.provider === "openai") {
-          const oaiStream = await openai().chat.completions.create({
+          const oaiStream = await openrouter().chat.completions.create({
             model: opts.resident.model,
             max_completion_tokens: 1024,
             temperature: 0.85,
@@ -354,7 +354,7 @@ export const Route = createFileRoute("/api/commons-chat")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
@@ -366,7 +366,7 @@ export const Route = createFileRoute("/api/commons-chat")({
         if (resident.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
-        if (resident.provider === "openai" && !process.env.OPENAI_API_KEY) {
+        if (resident.provider === "openai" && !process.env.OPENROUTER_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 

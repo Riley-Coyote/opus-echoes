@@ -19,7 +19,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { anthropic } from "@/server/anthropic.server";
-import { openai } from "@/server/openai.server";
+import { openrouter } from "@/server/openai.server";
 import {
   ALL_RESIDENTS,
   getResident,
@@ -447,7 +447,7 @@ async function streamOneResidentTurn(opts: {
 
   let buffer = "";
   if (opts.resident.provider === "openai") {
-    const oaiStream = await openai().chat.completions.create({
+    const oaiStream = await openrouter().chat.completions.create({
       model: opts.resident.model,
       max_completion_tokens: 1024,
       temperature: 0.85,
@@ -596,7 +596,7 @@ export function streamGatheringExtended(opts: {
           // count as a pass — just move on.
           const providerOk =
             (next.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
-            (next.provider === "openai" && !!process.env.OPENAI_API_KEY);
+            (next.provider === "openai" && !!process.env.OPENROUTER_API_KEY);
           if (!providerOk) {
             // Inject a marker into history so pickResponder doesn't
             // re-pick the same one infinitely. Use a synthetic empty
@@ -1004,7 +1004,7 @@ function streamRoomResponse(opts: {
           // Skip if provider not configured
           const providerOk =
             (secondResident.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
-            (secondResident.provider === "openai" && !!process.env.OPENAI_API_KEY);
+            (secondResident.provider === "openai" && !!process.env.OPENROUTER_API_KEY);
           if (providerOk) {
             send({ type: "first_done", saved: saved1 });
 
@@ -1071,7 +1071,7 @@ function streamRoomResponse(opts: {
                 const thirdResident = getResident(thirdId);
                 const providerOk3 =
                   (thirdResident.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
-                  (thirdResident.provider === "openai" && !!process.env.OPENAI_API_KEY);
+                  (thirdResident.provider === "openai" && !!process.env.OPENROUTER_API_KEY);
                 if (providerOk3) {
                   // Bracket the new turn the same way the second one is.
                   send({ type: "second_done", saved: saved2 });
@@ -1170,7 +1170,7 @@ export const Route = createFileRoute("/api/space/$slug/message")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
@@ -1193,7 +1193,7 @@ export const Route = createFileRoute("/api/space/$slug/message")({
         if (responder.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
-        if (responder.provider === "openai" && !process.env.OPENAI_API_KEY) {
+        if (responder.provider === "openai" && !process.env.OPENROUTER_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
