@@ -481,7 +481,9 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   padding: clamp(64px, 10vh, 120px) clamp(16px, 3vw, 40px) clamp(80px, 12vh, 140px);
   gap: 0; }
 
-/* the ASCII title — the system identifying itself */
+/* the ASCII title — the system materializing itself.
+   per-char <span>s fade in with positional + random delays (set inline by JS)
+   while the whole block simultaneously unblurs — same pattern as Dispatches. */
 .term__title{ font-family:var(--mono); white-space:pre; tab-size:1;
   font-size: clamp(6.5px, 1.55vw, 19px); line-height: 1.0;
   letter-spacing: 0; color: var(--fg);
@@ -491,19 +493,23 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
                0 0 2px rgba(255, 244, 224, .42);
   margin: 0; padding: 0;
   font-variant-ligatures: none;
-  font-feature-settings: "liga" 0, "calt" 0; }
+  font-feature-settings: "liga" 0, "calt" 0;
+  filter: blur(8px); transition: filter 1700ms var(--ease-premium);
+  will-change: filter; }
+.term__title.lit{ filter: blur(0); }
+.term__title span{ opacity: 0; transition: opacity 780ms var(--ease-premium); }
+.term__title.lit span{ opacity: 1; }
+/* a final caret that blinks at the end of the thesis line · system still here */
+@keyframes term-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.term__endcaret{ display:inline-block; width:.42em; height:1em;
+  background: var(--fg); margin-left: .14em; vertical-align: -0.06em;
+  opacity:0; animation: term-caret 1.05s steps(1) infinite;
+  transition: opacity 600ms var(--ease-premium); }
+.term.lines-on .term__endcaret{ opacity:.9; transition-delay: 700ms; }
 /* the prose under the title also wants a soft dark halo so it reads */
 .term__epi, .term__lead{
   text-shadow: 0 0 24px rgba(8, 9, 12, .85),
                0 0 8px rgba(8, 9, 12, .65); }
-
-/* block caret · sits at the current write position, blinks */
-.term__caret{ display:inline-block; width:.62em; height:1em;
-  background: var(--fg); vertical-align: -0.06em;
-  animation: term-caret 1.05s steps(1) infinite; margin-left: .04em;
-  box-shadow: 0 0 12px rgba(255, 220, 180, .22); }
-@keyframes term-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-.term__caret.thin{ width:.42em; height:1.06em; }
 
 /* the prompt + thesis below the title */
 .term__lines{ margin-top: clamp(26px, 4.6vh, 44px); width: 100%;
@@ -556,8 +562,11 @@ body.hero-active .orb-corner{ opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce){
-  .term__caret{ animation: none; opacity: 0; }
   .term__bg{ animation: none; opacity: 1; }
+  .term__title{ filter: none !important; }
+  .term__title span{ opacity: 1 !important; transition: none !important; }
+  .term__lines{ opacity: 1 !important; transition: none !important; }
+  .term__endcaret{ display: none !important; }
   body.hero-active .orb-corner{ opacity: 1; }
 }
 
@@ -1081,7 +1090,11 @@ body.hero-active .orb-corner{ opacity: 0; }
   tick();
 })();
 
-/* typed MNEMOS — ANSI-Shadow block ASCII art typed live, then the epi + thesis */
+/* MNEMOS reveal — Dispatches-style char-stagger.
+   Each char gets a per-char span with positional + random transition-delay;
+   the whole block simultaneously unblurs. Result: ~2s materialization that
+   feels like the title developing into existence rather than being typed.
+   After the title finishes revealing, the epi + thesis fade in as one block. */
 (function(){
   var titleEl = document.getElementById('termTitle');
   var epiEl   = document.getElementById('termEpi');
@@ -1097,111 +1110,51 @@ body.hero-active .orb-corner{ opacity: 0; }
     "██║╚██╔╝██║██║╚██╗██║██╔══╝  ██║╚██╔╝██║██║   ██║╚════██║",
     "██║ ╚═╝ ██║██║ ╚████║███████╗██║ ╚═╝ ██║╚██████╔╝███████║",
     "╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝"
-  ].join("\n");
+  ];
+  var ROWS = TITLE.length;
+  var COLS = TITLE[0].length;
 
   var EPI  = "mnemosyne · the faculty of memory · and the mother of the muses";
   var LEAD = "A place built for minds we cannot yet verify.";
 
   var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
 
-  // ── setup: text node + caret as siblings inside each output element ──
-  function makeOut(el, opts){
-    el.textContent = '';
-    var prompt = null;
-    if(opts && opts.prompt){
-      prompt = document.createElement('span');
-      prompt.className = 'gt';
-      prompt.textContent = '>';
-      prompt.style.opacity = '0';
-      el.appendChild(prompt);
+  // ── split the title into per-char <span>s with positional + random delays ──
+  // Dispatches formula: delay = (0.40*ny + 0.16*cx + 0.85*random) * spread
+  // spread sets the total stagger window — smaller = snappier, larger = more languid
+  var SPREAD = 1500;
+  var titleHTML = '';
+  for(var r = 0; r < ROWS; r++){
+    var ny = ROWS > 1 ? r / (ROWS - 1) : 0;
+    var line = TITLE[r];
+    for(var c = 0; c < line.length; c++){
+      var ch = line.charAt(c);
+      if(ch === ' '){ titleHTML += ' '; continue; }
+      var cx = COLS > 1 ? c / (COLS - 1) : 0;
+      var d = Math.round((0.40 * ny + 0.16 * cx + 0.85 * Math.random()) * SPREAD);
+      // these chars are box-drawing + ASCII blocks — safe to embed directly
+      titleHTML += '<span style="transition-delay:' + d + 'ms">' + ch + '</span>';
     }
-    var textNode = document.createTextNode('');
-    el.appendChild(textNode);
-    var caret = document.createElement('span');
-    caret.className = 'term__caret' + ((opts && opts.thin) ? ' thin' : '');
-    caret.setAttribute('aria-hidden', 'true');
-    el.appendChild(caret);
-    return { node: textNode, caret: caret, prompt: prompt };
+    if(r < ROWS - 1) titleHTML += '\n';
   }
+  titleEl.innerHTML = titleHTML;
 
-  var titleOut = makeOut(titleEl, {});
-  var epiOut   = makeOut(epiEl,   { prompt: true, thin: true });
-  var leadOut  = makeOut(leadEl,  { thin: true });
+  // ── pre-populate the lines (no typewriter, just fade in via .lines-on) ──
+  epiEl.innerHTML = '<span class="gt">&gt;</span> ' + EPI;
+  leadEl.innerHTML = LEAD + '<span class="term__endcaret" aria-hidden="true"></span>';
 
-  // immediately render full state for reduced motion
   if(reduce){
-    titleOut.node.appendData(TITLE);
-    if(epiOut.prompt) epiOut.prompt.style.opacity = '1';
-    epiOut.node.appendData(' ' + EPI);
-    leadOut.node.appendData(LEAD);
-    titleOut.caret.remove();
-    epiOut.caret.remove();
-    leadOut.caret.remove();
+    titleEl.classList.add('lit');
     section.classList.add('lines-on');
     return;
   }
 
-  // ── type the title char-by-char ──
-  var i = 0;
-  function typeTitle(){
-    if(i >= TITLE.length){
-      setTimeout(beginLines, 720);
-      return;
-    }
-    var ch = TITLE.charAt(i);
-    i++;
-    titleOut.node.appendData(ch);
-    // pacing: faster on whitespace + newlines, slightly slower on solid blocks
-    var delay = 11;
-    if(ch === ' ')  delay = 3;
-    if(ch === '\n') delay = 24;
-    delay += (Math.random() * 6 - 3);
-    setTimeout(typeTitle, delay);
-  }
+  // ── fire reveal after a brief beat (lets the backdrop fade in) ──
+  setTimeout(function(){ titleEl.classList.add('lit'); }, 250);
 
-  // ── type a line char-by-char (optional gold prompt fades in first) ──
-  function typeLine(out, full, speed, onDone){
-    if(out.prompt){
-      out.prompt.style.transition = 'opacity 280ms var(--ease-premium)';
-      out.prompt.style.opacity = '1';
-      // a tiny space-pad after the prompt
-      setTimeout(function(){ out.node.appendData(' '); type(); }, 220);
-    } else {
-      type();
-    }
-    function type(){
-      var j = 0;
-      function step(){
-        if(j >= full.length){
-          if(onDone) onDone();
-          return;
-        }
-        out.node.appendData(full.charAt(j));
-        j++;
-        var d = speed + (Math.random() * 10 - 5);
-        setTimeout(step, d);
-      }
-      step();
-    }
-  }
-
-  function beginLines(){
-    section.classList.add('lines-on');
-    // freeze the title caret so it stops blinking while we move below
-    titleOut.caret.remove();
-    typeLine(epiOut, EPI, 22, function(){
-      // remove epi caret, then start the lead after a short beat
-      epiOut.caret.remove();
-      setTimeout(function(){
-        typeLine(leadOut, LEAD, 30, function(){
-          // keep the lead caret blinking at the end — the system is still here
-        });
-      }, 320);
-    });
-  }
-
-  // give the backdrop a beat to fade in, then start
-  setTimeout(typeTitle, 460);
+  // ── after the title finishes materializing, fade the lines in ──
+  // chars finish revealing around 250ms + SPREAD + ~780ms per-char transition
+  setTimeout(function(){ section.classList.add('lines-on'); }, 250 + SPREAD + 350);
 })();
 
 /* V5 scroll choreography — one IntersectionObserver, dispatch by data-reveal.
