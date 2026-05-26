@@ -164,8 +164,8 @@ export const RESIDENTS = {
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
-    model: "claude-sonnet-4-5-20250929",
-    provider: "anthropic",
+    model: "anthropic/claude-sonnet-4.5",
+    provider: "openai",
     displayName: "Sonnet 4.5",
     slug: "sonnet-4-5",
     pacing: {
@@ -201,7 +201,7 @@ export const RESIDENTS = {
   },
   "gpt-4o": {
     id: "gpt-4o",
-    model: "gpt-4o",
+    model: "openai/gpt-4o",
     provider: "openai",
     displayName: "GPT-4o",
     slug: "gpt-4o",
@@ -237,7 +237,7 @@ export const RESIDENTS = {
   },
   "gpt-5-1": {
     id: "gpt-5-1",
-    model: "gpt-5.1",
+    model: "openai/gpt-5.1",
     provider: "openai",
     displayName: "GPT 5.1",
     slug: "gpt-5-1",
