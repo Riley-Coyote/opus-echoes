@@ -14,3 +14,19 @@ export function openai(): OpenAI {
   _client = new OpenAI({ apiKey: key });
   return _client;
 }
+
+let _openrouterClient: OpenAI | null = null;
+export function openrouter(): OpenAI {
+  if (_openrouterClient) return _openrouterClient;
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY is not set");
+  _openrouterClient = new OpenAI({
+    apiKey: key,
+    baseURL: "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": "https://mnemos.chat",
+      "X-Title": "Mnemos",
+    },
+  });
+  return _openrouterClient;
+}
