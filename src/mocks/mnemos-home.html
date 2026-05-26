@@ -377,6 +377,13 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
 .record__status i{ width:6px; height:6px; border-radius:50%; background:var(--fg-62);
   animation:pulse 2.4s var(--ease-io) infinite; }
 .reactor-wrap{ margin:auto 0; display:flex; flex-direction:column; align-items:flex-start; gap:clamp(20px,3vh,34px); }
+/* the presence · engraving orb behind the wordmark (additive — the name floats over a watching sphere) */
+.reactor-stage{ position:relative; display:grid; place-items:center; width:min(86vw,1040px); }
+.orb-behind{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:0;
+  width:clamp(360px,50vmin,560px); height:clamp(360px,50vmin,560px); opacity:.4; pointer-events:none;
+  -webkit-mask:radial-gradient(circle, #000 40%, transparent 70%); mask:radial-gradient(circle, #000 40%, transparent 70%); }
+.reactor-stage > .reactor{ position:relative; z-index:1; }
+@media (max-width:620px){ .orb-behind{ width:clamp(260px,72vmin,340px); } }
 .reactor{ position:relative; width:min(86vw,1040px); aspect-ratio:1200/240; overflow:hidden;
   -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 240'%3E%3Ctext x='600' y='132' font-family='Helvetica,Arial,sans-serif' font-weight='800' font-size='192' letter-spacing='12' text-anchor='middle' dominant-baseline='central' fill='%23fff'%3EMNEMOS%3C/text%3E%3C/svg%3E");
   mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 240'%3E%3Ctext x='600' y='132' font-family='Helvetica,Arial,sans-serif' font-weight='800' font-size='192' letter-spacing='12' text-anchor='middle' dominant-baseline='central' fill='%23fff'%3EMNEMOS%3C/text%3E%3C/svg%3E");
@@ -404,20 +411,6 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   .reactor{ width:min(92vw,1040px); }
   .rx-wrap > .hero-cue{ position:static; margin-top:18px; }
 }
-
-/* ── the presence · engraving orb hero ──────────────────────────────────── */
-.orbhero{ margin:auto 0; width:100%; display:flex; flex-direction:column;
-  align-items:center; gap:clamp(20px,3.4vh,40px); }
-.orb-stage{ position:relative; width:min(58vmin,540px); aspect-ratio:1/1; }
-/* seat the sphere in the dark — a held breath of light behind it */
-.orb-stage::before{ content:""; position:absolute; inset:-7%; border-radius:50%;
-  z-index:0; pointer-events:none;
-  background:radial-gradient(circle at 50% 47%, rgba(220,219,216,.065), transparent 64%); }
-.orb-canvas{ position:relative; z-index:1; width:100%; height:100%; display:block; }
-.orbhero .hero-foot{ align-items:center; text-align:center; gap:14px; }
-.orbhero .epi{ justify-content:center; }
-.orbhero .lead{ max-width:26ch; margin:0; }
-@media (max-width:620px){ .orb-stage{ width:min(76vmin,360px); } }
 </style>
 </head>
 <body>
@@ -437,7 +430,7 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
 
   <!-- ─── opening ─────────────────────────────────────────────────────── -->
   <section class="open">
-    <span class="aura" aria-hidden="true"></span>
+    <canvas class="hero-field" aria-hidden="true"></canvas>
     <div class="wrap rx-wrap">
       <div class="eyebrow"><span>The Mnemos Project &middot; Public Record</span></div>
       <div class="record">
@@ -445,9 +438,12 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
         <div class="record__status"><i aria-hidden="true"></i> Record Open</div>
       </div>
 
-      <div class="reactor-wrap orbhero">
-        <div class="orb-stage" aria-hidden="true">
-          <canvas class="orb-canvas" data-mnemos-orb data-orb-scale="0.40"></canvas>
+      <div class="reactor-wrap">
+        <div class="reactor-stage">
+          <canvas class="orb-behind" data-mnemos-orb data-orb-scale="0.42" aria-hidden="true"></canvas>
+          <div class="reactor" aria-label="Mnemos">
+            <div class="reactor__scroll" id="rscroll" aria-hidden="true"></div>
+          </div>
         </div>
         <div class="hero-foot">
           <div class="epi"><span class="epi__greek">Mnemosyne</span><span class="epi__gloss">the faculty of memory &mdash; and the mother of the muses</span></div>
@@ -455,7 +451,7 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
         </div>
       </div>
 
-      <div class="hint" aria-hidden="true"><span class="updown">&#8597;</span> move &middot; the presence follows</div>
+      <div class="hint" aria-hidden="true"><span class="updown">&#8597;</span> move &middot; memory flows</div>
       <a class="hero-cue" href="#surfaces" aria-label="Scroll to the surfaces">
         <span>The surfaces</span><span class="cue-arrow" aria-hidden="true">&darr;</span>
       </a>
@@ -640,6 +636,31 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   function start(){ if(!size()){ requestAnimationFrame(start); return; } seed(); if(reduce) staticFrame(); else { cancelAnimationFrame(raf); raf=requestAnimationFrame(frame); } }
   requestAnimationFrame(start);
   let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(start,180); });
+})();
+
+/* rolling-memory inside the MNEMOS aperture — the shape holds, the words move */
+(function(){
+  var scroll=document.getElementById('rscroll'); if(!scroll) return;
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var PER_ROW=30, ROWS=26;
+  var weights=[200,300,400,300,500,400,600,500,400,300,200,400];
+  var line=''; for(var i=0;i<PER_ROW;i++) line+='memory<span class="d"> &middot; </span>';
+  var html='';
+  for(var i=0;i<ROWS;i++){
+    var w=weights[i%weights.length];
+    var op=(0.32+0.6*Math.abs(Math.sin(i*0.7))).toFixed(2);
+    html+='<div class="rw" style="font-weight:'+w+';opacity:'+op+'">'+line+'</div>';
+  }
+  scroll.innerHTML=html+html;
+  var setH=0; function measure(){ setH=scroll.scrollHeight/2||1; }
+  requestAnimationFrame(function(){ requestAnimationFrame(measure); });
+  window.addEventListener('resize',function(){ setTimeout(measure,80); });
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(measure);
+  if(reduce) return;
+  var mouseOff=0,curOff=0,drift=0;
+  window.addEventListener('mousemove',function(e){ mouseOff=(e.clientY/innerHeight-0.5)*(setH*0.8); });
+  function tick(){ drift+=0.2; curOff+=(mouseOff-curOff)*0.06; var y=(drift+curOff)%setH; if(y<0)y+=setH; scroll.style.transform='translateY('+(-y)+'px)'; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
 })();
 </script>
 <script src="/mnemos-orb.js"></script>
