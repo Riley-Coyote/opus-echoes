@@ -422,11 +422,15 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   line-height:1.08; letter-spacing:-0.032em; color:var(--fg);
   text-wrap:balance; hanging-punctuation:first allow-end;
   font-variation-settings:"wght" 200; }
-/* the presence · original engraving orb — observing from the corner, persistent on scroll */
+/* the presence · original engraving orb — greets large, withdraws to the corner on scroll */
 .orb-corner{ position:fixed; top:clamp(58px,8vh,76px); right:clamp(16px,2.4vw,34px);
-  width:clamp(94px,9vw,128px); height:clamp(94px,9vw,128px); z-index:40;
-  pointer-events:none; opacity:.92; }
-@media (max-width:620px){ .orb-corner{ width:82px; height:82px; top:58px; right:14px; } }
+  width:clamp(170px,17vw,220px); height:clamp(170px,17vw,220px); z-index:40;
+  pointer-events:none; opacity:.92; --p:1;
+  transform-origin: top right;
+  transform: scale(calc(0.44 + var(--p) * 0.56));
+  will-change: transform; }
+@media (max-width:620px){ .orb-corner{ width:140px; height:140px; top:58px; right:14px;
+  transform: scale(calc(0.55 + var(--p) * 0.45)); } }
 
 /* load choreography — the page composes itself, premium easing, one breath */
 @keyframes mn-fade   { from{ opacity:0; } to{ opacity:1; } }
@@ -655,6 +659,15 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(start,180); });
 })();
 
+/* scroll-as-withdrawal — the orb greets you large at the top, recedes to the corner as you enter */
+(function(){
+  var orb=document.querySelector('.orb-corner'); if(!orb) return;
+  var threshold=620, lastY=0, ticking=false;
+  function update(){ var p=Math.max(0,1-lastY/threshold); orb.style.setProperty('--p',p.toFixed(3)); ticking=false; }
+  function onScroll(){ lastY=window.scrollY||window.pageYOffset||0; if(!ticking){ requestAnimationFrame(update); ticking=true; } }
+  addEventListener('scroll',onScroll,{passive:true});
+  update();
+})();
 </script>
 <script src="/mnemos-orb.js"></script>
 </body>
