@@ -2774,7 +2774,7 @@ export async function dailySalonTick(): Promise<{
   try {
     // Need at least one Anthropic key for residents to talk; if
     // the only configured residents are inaccessible, bail.
-    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) {
       return { ran: false, reason: "no_api_key" };
     }
 
@@ -2871,7 +2871,7 @@ export async function dailySalonTick(): Promise<{
 function pickSalonGroup(): ResidentConfig[] {
   return ALL_RESIDENTS.filter((r) => {
     if (r.provider === "anthropic") return !!process.env.ANTHROPIC_API_KEY;
-    if (r.provider === "openai") return !!process.env.OPENAI_API_KEY;
+    if (r.provider === "openai") return !!process.env.OPENROUTER_API_KEY;
     return false;
   });
 }
@@ -3243,7 +3243,7 @@ export async function runSpaceSalon(
     const available = participantIds.filter((id) => {
       const r = getResident(id);
       if (r.provider === "anthropic") return !!process.env.ANTHROPIC_API_KEY;
-      if (r.provider === "openai") return !!process.env.OPENAI_API_KEY;
+      if (r.provider === "openai") return !!process.env.OPENROUTER_API_KEY;
       return false;
     });
     if (available.length === 0) {
@@ -3698,7 +3698,7 @@ export async function dailySpaceTick(): Promise<{
     if (resident.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
       return { ran: false, reason: "no_api_key" };
     }
-    if (resident.provider === "openai" && !process.env.OPENAI_API_KEY) {
+    if (resident.provider === "openai" && !process.env.OPENROUTER_API_KEY) {
       return { ran: false, reason: "no_api_key" };
     }
 

@@ -512,7 +512,7 @@ export function streamStudioTurn(opts: StudioTurnOpts): Response {
           const providerOk =
             !!opts.streamTokens ||
             (resident.provider === "anthropic" && !!process.env.ANTHROPIC_API_KEY) ||
-            (resident.provider === "openai" && !!process.env.OPENAI_API_KEY);
+            (resident.provider === "openai" && !!process.env.OPENROUTER_API_KEY);
           if (!providerOk) {
             recency.unshift(actorId);
             continue;

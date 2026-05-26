@@ -636,7 +636,7 @@ export const Route = createFileRoute("/api/message")({
         // surface later as error events in the stream.
         if (
           !hasSupabaseAdminEnv() ||
-          (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY)
+          (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY)
         ) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }

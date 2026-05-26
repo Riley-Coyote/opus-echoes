@@ -354,7 +354,7 @@ export const Route = createFileRoute("/api/commons-chat")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
@@ -366,7 +366,7 @@ export const Route = createFileRoute("/api/commons-chat")({
         if (resident.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
-        if (resident.provider === "openai" && !process.env.OPENAI_API_KEY) {
+        if (resident.provider === "openai" && !process.env.OPENROUTER_API_KEY) {
           return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
