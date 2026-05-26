@@ -427,6 +427,17 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   width:clamp(94px,9vw,128px); height:clamp(94px,9vw,128px); z-index:40;
   pointer-events:none; opacity:.92; }
 @media (max-width:620px){ .orb-corner{ width:82px; height:82px; top:58px; right:14px; } }
+
+/* load choreography — the page composes itself, premium easing, one breath */
+@keyframes mn-fade   { from{ opacity:0; } to{ opacity:1; } }
+@keyframes mn-rise   { from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+@keyframes mn-thread { from{ width:0; } to{ width:26px; } }
+
+.eyebrow::before{ animation: mn-thread 700ms var(--ease-premium) 240ms both; }
+.eyebrow > span{ animation: mn-fade 600ms var(--ease-premium) 460ms both; }
+.hero-type .epi{ animation: mn-rise 760ms var(--ease-premium) 820ms both; }
+.hero-lead{ animation: mn-rise 1100ms var(--ease-premium) 1080ms both; }
+.hint, .rx-wrap > .hero-cue{ animation: mn-fade 700ms var(--ease-premium) 1900ms both; }
 </style>
 </head>
 <body>
