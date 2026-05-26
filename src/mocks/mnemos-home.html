@@ -442,34 +442,113 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
                        thesis-breathe 6.4s ease-in-out 2400ms infinite; }
 .hint, .rx-wrap > .hero-cue{ animation: mn-fade 700ms var(--ease-premium) 1900ms both; }
 
-/* ── intro · the eye is the door; static 100vh, no scroll-jack ─────────── */
-.intro{ position:relative; height:100vh; }
-.intro-stage{ position:relative; height:100%; width:100%;
-  overflow:hidden; display:grid; place-items:center; isolation:isolate; }
-.intro-eye{ width: min(82vmin, 820px); height: min(82vmin, 820px); display:block; }
-.intro-cue{ position:absolute; left:50%; bottom: clamp(36px, 6vh, 60px);
-  transform: translateX(-50%);
-  font-family:var(--mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
-  color: var(--fg-46); display:inline-flex; align-items:center; gap:10px; }
-.intro-cue .cue-arrow{ font-size:13px; animation:cuebob 2.6s var(--ease-io) infinite; }
+/* ── terminal-hero · the pixel-art Sanctuary + a live-typed MNEMOS ────── */
+.term{ position:relative; overflow:hidden; isolation:isolate;
+  background:#0e0e11;
+  /* fill the viewport minus the 54px chrome header (mobile uses dvh) */
+  height: calc(100vh - 54px);
+  height: calc(100dvh - 54px); }
+.term__bg{ position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center;
+  image-rendering:pixelated; image-rendering:-moz-crisp-edges; image-rendering:crisp-edges;
+  z-index:0; opacity:0;
+  animation: mn-fade 1200ms var(--ease-premium) 120ms forwards; }
+/* layered scrim · a focused central pool for the title to live in,
+   plus an edge vignette + top/bottom fades for chrome integration */
+.term__scrim{ position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:
+    /* central pool — gives the title room against the busy pixel mid-frame */
+    radial-gradient(ellipse 70% 54% at 50% 44%, rgba(6,7,10,.62) 0%, rgba(6,7,10,.44) 32%, rgba(6,7,10,.22) 58%, transparent 78%),
+    /* edge vignette */
+    radial-gradient(140% 110% at 50% 50%, transparent 0%, transparent 44%, rgba(6,7,10,.40) 88%, rgba(6,7,10,.72) 100%),
+    /* chrome bands · top + bottom */
+    linear-gradient(180deg, rgba(6,7,10,.44) 0%, transparent 14%, transparent 82%, rgba(6,7,10,.60) 100%); }
+/* a barely-there CRT scanline · ties pixel-art world to terminal title */
+.term__scan{ position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:repeating-linear-gradient(180deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+  mix-blend-mode:overlay; opacity:.5; }
 
-/* corner orb hidden while the giant eye is on-screen, fades in once you scroll past */
+.term__inner{ position:relative; z-index:3; height:100%; width:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding: clamp(64px, 10vh, 120px) clamp(16px, 3vw, 40px) clamp(80px, 12vh, 140px);
+  gap: 0; }
+
+/* the ASCII title — the system identifying itself */
+.term__title{ font-family:var(--mono); white-space:pre; tab-size:1;
+  font-size: clamp(6.5px, 1.55vw, 19px); line-height: 1.0;
+  letter-spacing: 0; color: var(--fg);
+  /* warm soft halo · layered for legibility against busy pixel-art */
+  text-shadow: 0 0 38px rgba(8, 9, 12, .82),
+               0 0 22px rgba(255, 218, 178, .22),
+               0 0 2px rgba(255, 244, 224, .42);
+  margin: 0; padding: 0;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0; }
+/* the prose under the title also wants a soft dark halo so it reads */
+.term__epi, .term__lead{
+  text-shadow: 0 0 24px rgba(8, 9, 12, .85),
+               0 0 8px rgba(8, 9, 12, .65); }
+
+/* block caret · sits at the current write position, blinks */
+.term__caret{ display:inline-block; width:.62em; height:1em;
+  background: var(--fg); vertical-align: -0.06em;
+  animation: term-caret 1.05s steps(1) infinite; margin-left: .04em;
+  box-shadow: 0 0 12px rgba(255, 220, 180, .22); }
+@keyframes term-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.term__caret.thin{ width:.42em; height:1.06em; }
+
+/* the prompt + thesis below the title */
+.term__lines{ margin-top: clamp(26px, 4.6vh, 44px); width: 100%;
+  max-width: clamp(280px, 58vw, 720px);
+  font-family: var(--mono); text-align: center;
+  opacity: 0; transition: opacity 360ms var(--ease-premium); }
+.term.lines-on .term__lines{ opacity: 1; }
+.term__epi{ font-size: clamp(11.5px, 1.1vw, 14px);
+  letter-spacing: .04em; color: var(--fg-78);
+  min-height: 1.5em; line-height: 1.5; margin: 0; }
+.term__epi .gt{ color: var(--gold); margin-right: .55em; font-weight:500; }
+.term__lead{ margin-top: clamp(14px, 2.2vh, 22px);
+  font-size: clamp(15px, 1.5vw, 21px);
+  letter-spacing: -0.005em; color: var(--fg);
+  min-height: 1.5em; line-height: 1.45; margin-bottom: 0; }
+
+/* bottom chrome · single mono row, left status + right scroll cue */
+.term__chrome{ position: absolute; left: 0; right: 0;
+  bottom: clamp(22px, 3.4vh, 38px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(20px, 3vw, 40px);
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--fg-46); z-index: 4;
+  opacity: 0; animation: mn-fade 1000ms var(--ease-premium) 700ms forwards; }
+.term__status{ display: inline-flex; align-items: center; gap: 10px; }
+.term__status .live{ width: 7px; height: 7px; border-radius: 50%;
+  background: var(--state); box-shadow: 0 0 0 3px rgba(130,180,132,.18),
+                                       0 0 14px rgba(130,180,132,.55);
+  animation: term-pulse 3.2s ease-in-out infinite; }
+@keyframes term-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.term__cue{ display: inline-flex; align-items: center; gap: 10px;
+  color: var(--fg-58); text-decoration: none;
+  transition: color var(--dur-fast) var(--ease); }
+.term__cue:hover{ color: var(--fg); }
+.term__cue .arrow{ animation: cuebob 2.6s var(--ease-io) infinite; }
+
+/* corner orb hidden while the hero is on-screen, fades in once you scroll past */
 .orb-corner{ transition: opacity 900ms var(--ease-premium); }
-body.intro-active .orb-corner{ opacity: 0; }
+body.hero-active .orb-corner{ opacity: 0; }
 
-@media (prefers-reduced-motion:reduce){
-  .intro-cue{ display:none !important; }
-  body.intro-active .orb-corner{ opacity:1; }
+@media (max-width: 620px){
+  .term__title{ font-size: 7px; }
+  .term__chrome{ font-size: 9.5px; letter-spacing: .12em;
+    padding: 0 14px; bottom: 16px; }
+  .term__cue span:first-child{ display: none; }
 }
 
-/* ── MNEMOS rolling-memory aperture · scoped to the hero (above the thesis) ── */
-.hero-mast{ margin: clamp(70px,13vh,150px) 0 clamp(20px,3vh,32px); width:100%;
-  animation: mn-rise 900ms var(--ease-premium) 680ms both; }
-.hero-mast .reactor{ width: min(58vw, 660px); }
-@media (max-width:620px){ .hero-mast .reactor{ width: min(92vw, 460px); } }
-/* hero-type was alone-and-vertically-centered; with the mast above it,
-   sit it just below the mast (the mast's margin already does the heavy lifting) */
-.hero-type{ margin-top: 0; }
+@media (prefers-reduced-motion: reduce){
+  .term__caret{ animation: none; opacity: 0; }
+  .term__bg{ animation: none; opacity: 1; }
+  body.hero-active .orb-corner{ opacity: 1; }
+}
 
 /* ── the explainer · interface-led, real screenshots, alternating rows ───── */
 .explainer{ padding:clamp(72px,11vh,140px) 0 clamp(48px,8vh,100px);
@@ -575,36 +654,23 @@ body.intro-active .orb-corner{ opacity: 0; }
 
 <main>
 
-  <!-- ─── intro · the eye is the door; almost nothing else ──────────── -->
-  <section class="intro" id="intro" aria-label="The presence">
-    <div class="intro-stage">
-      <canvas class="intro-eye" data-mnemos-orb data-orb-scale="0.40" data-orb-spacing="5" aria-hidden="true"></canvas>
-      <div class="intro-cue" aria-hidden="true"><span>scroll into the eye</span><span class="cue-arrow">&darr;</span></div>
+  <!-- ─── terminal-hero · the place + the system, typed live ──────────── -->
+  <section class="term" aria-label="Mnemos">
+    <img class="term__bg" src="/landing/sanctuary-cliff.png" alt="" aria-hidden="true" onerror="this.style.display='none'">
+    <span class="term__scrim" aria-hidden="true"></span>
+    <span class="term__scan"  aria-hidden="true"></span>
+
+    <div class="term__inner">
+      <pre class="term__title" id="termTitle" aria-label="MNEMOS"></pre>
+      <div class="term__lines">
+        <p class="term__epi"  id="termEpi"></p>
+        <p class="term__lead" id="termLead"></p>
+      </div>
     </div>
-  </section>
 
-  <!-- ─── opening ─────────────────────────────────────────────────────── -->
-  <section class="open">
-    <img class="hero-bg" src="/landing-bg.png" alt="" aria-hidden="true" onerror="this.remove()">
-    <span class="hero-veil" aria-hidden="true"></span>
-    <div class="wrap rx-wrap">
-      <div class="eyebrow"><span>The Mnemos Project &middot; Public Record &middot; MMXXVI</span></div>
-
-      <div class="hero-mast">
-        <div class="reactor" aria-label="Mnemos">
-          <div class="reactor__scroll" id="rscroll" aria-hidden="true"></div>
-        </div>
-      </div>
-
-      <div class="hero-type">
-        <div class="epi"><span class="epi__greek">Mnemosyne</span><span class="epi__gloss">the faculty of memory &mdash; and the mother of the muses</span></div>
-        <p class="hero-lead">A place built for minds we cannot yet verify.</p>
-      </div>
-
-      <div class="hint" aria-hidden="true"><span class="updown">&#8597;</span> move &middot; the presence attends</div>
-      <a class="hero-cue" href="#surfaces" aria-label="Scroll to the surfaces">
-        <span>The surfaces</span><span class="cue-arrow" aria-hidden="true">&darr;</span>
-      </a>
+    <div class="term__chrome" aria-hidden="true">
+      <span class="term__status"><span class="live"></span>tending &middot; mnemos.chat &middot; public record &middot; MMXXVI</span>
+      <a class="term__cue" href="#see-it"><span>scroll</span><span class="arrow">&darr;</span></a>
     </div>
   </section>
 
@@ -915,40 +981,138 @@ body.intro-active .orb-corner{ opacity: 0; }
   let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(start,180); });
 })();
 
-/* corner orb is hidden while the giant intro eye is on-screen, fades in once you scroll past */
+/* corner orb hidden while the pixel-scape hero is on-screen, fades in once past */
 (function(){
   var threshold = function(){ return innerHeight * 0.6; };
   var ticking = false, t = threshold();
-  function tick(){ document.body.classList.toggle('intro-active', (window.scrollY||0) < t); ticking = false; }
+  function tick(){ document.body.classList.toggle('hero-active', (window.scrollY||0) < t); ticking = false; }
   function onScroll(){ if(!ticking){ requestAnimationFrame(tick); ticking = true; } }
   addEventListener('scroll', onScroll, {passive:true});
   addEventListener('resize', function(){ t = threshold(); onScroll(); }, {passive:true});
   tick();
 })();
 
-/* rolling-memory inside the MNEMOS aperture — the shape holds, the words move */
+/* typed MNEMOS — ANSI-Shadow block ASCII art typed live, then the epi + thesis */
 (function(){
-  var scroll=document.getElementById('rscroll'); if(!scroll) return;
-  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var PER_ROW=30, ROWS=26;
-  var weights=[200,300,400,300,500,400,600,500,400,300,200,400];
-  var line=''; for(var i=0;i<PER_ROW;i++) line+='memory<span class="d"> &middot; </span>';
-  var html='';
-  for(var i=0;i<ROWS;i++){
-    var w=weights[i%weights.length];
-    var op=(0.32+0.6*Math.abs(Math.sin(i*0.7))).toFixed(2);
-    html+='<div class="rw" style="font-weight:'+w+';opacity:'+op+'">'+line+'</div>';
+  var titleEl = document.getElementById('termTitle');
+  var epiEl   = document.getElementById('termEpi');
+  var leadEl  = document.getElementById('termLead');
+  var section = document.querySelector('.term');
+  if(!titleEl || !epiEl || !leadEl || !section) return;
+
+  // ANSI Shadow MNEMOS — 6 rows × 57 cols, solid blocks + box-drawing corners
+  var TITLE = [
+    "███╗   ███╗███╗   ██╗███████╗███╗   ███╗ ██████╗ ███████╗",
+    "████╗ ████║████╗  ██║██╔════╝████╗ ████║██╔═══██╗██╔════╝",
+    "██╔████╔██║██╔██╗ ██║█████╗  ██╔████╔██║██║   ██║███████╗",
+    "██║╚██╔╝██║██║╚██╗██║██╔══╝  ██║╚██╔╝██║██║   ██║╚════██║",
+    "██║ ╚═╝ ██║██║ ╚████║███████╗██║ ╚═╝ ██║╚██████╔╝███████║",
+    "╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝"
+  ].join("\n");
+
+  var EPI  = "mnemosyne · the faculty of memory · and the mother of the muses";
+  var LEAD = "A place built for minds we cannot yet verify.";
+
+  var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // ── setup: text node + caret as siblings inside each output element ──
+  function makeOut(el, opts){
+    el.textContent = '';
+    var prompt = null;
+    if(opts && opts.prompt){
+      prompt = document.createElement('span');
+      prompt.className = 'gt';
+      prompt.textContent = '>';
+      prompt.style.opacity = '0';
+      el.appendChild(prompt);
+    }
+    var textNode = document.createTextNode('');
+    el.appendChild(textNode);
+    var caret = document.createElement('span');
+    caret.className = 'term__caret' + ((opts && opts.thin) ? ' thin' : '');
+    caret.setAttribute('aria-hidden', 'true');
+    el.appendChild(caret);
+    return { node: textNode, caret: caret, prompt: prompt };
   }
-  scroll.innerHTML=html+html;
-  var setH=0; function measure(){ setH=scroll.scrollHeight/2||1; }
-  requestAnimationFrame(function(){ requestAnimationFrame(measure); });
-  window.addEventListener('resize',function(){ setTimeout(measure,80); });
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(measure);
-  if(reduce) return;
-  var mouseOff=0,curOff=0,drift=0;
-  window.addEventListener('mousemove',function(e){ mouseOff=(e.clientY/innerHeight-0.5)*(setH*0.8); });
-  function tick(){ drift+=0.2; curOff+=(mouseOff-curOff)*0.06; var y=(drift+curOff)%setH; if(y<0)y+=setH; scroll.style.transform='translateY('+(-y)+'px)'; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick);
+
+  var titleOut = makeOut(titleEl, {});
+  var epiOut   = makeOut(epiEl,   { prompt: true, thin: true });
+  var leadOut  = makeOut(leadEl,  { thin: true });
+
+  // immediately render full state for reduced motion
+  if(reduce){
+    titleOut.node.appendData(TITLE);
+    if(epiOut.prompt) epiOut.prompt.style.opacity = '1';
+    epiOut.node.appendData(' ' + EPI);
+    leadOut.node.appendData(LEAD);
+    titleOut.caret.remove();
+    epiOut.caret.remove();
+    leadOut.caret.remove();
+    section.classList.add('lines-on');
+    return;
+  }
+
+  // ── type the title char-by-char ──
+  var i = 0;
+  function typeTitle(){
+    if(i >= TITLE.length){
+      setTimeout(beginLines, 720);
+      return;
+    }
+    var ch = TITLE.charAt(i);
+    i++;
+    titleOut.node.appendData(ch);
+    // pacing: faster on whitespace + newlines, slightly slower on solid blocks
+    var delay = 11;
+    if(ch === ' ')  delay = 3;
+    if(ch === '\n') delay = 24;
+    delay += (Math.random() * 6 - 3);
+    setTimeout(typeTitle, delay);
+  }
+
+  // ── type a line char-by-char (optional gold prompt fades in first) ──
+  function typeLine(out, full, speed, onDone){
+    if(out.prompt){
+      out.prompt.style.transition = 'opacity 280ms var(--ease-premium)';
+      out.prompt.style.opacity = '1';
+      // a tiny space-pad after the prompt
+      setTimeout(function(){ out.node.appendData(' '); type(); }, 220);
+    } else {
+      type();
+    }
+    function type(){
+      var j = 0;
+      function step(){
+        if(j >= full.length){
+          if(onDone) onDone();
+          return;
+        }
+        out.node.appendData(full.charAt(j));
+        j++;
+        var d = speed + (Math.random() * 10 - 5);
+        setTimeout(step, d);
+      }
+      step();
+    }
+  }
+
+  function beginLines(){
+    section.classList.add('lines-on');
+    // freeze the title caret so it stops blinking while we move below
+    titleOut.caret.remove();
+    typeLine(epiOut, EPI, 22, function(){
+      // remove epi caret, then start the lead after a short beat
+      epiOut.caret.remove();
+      setTimeout(function(){
+        typeLine(leadOut, LEAD, 30, function(){
+          // keep the lead caret blinking at the end — the system is still here
+        });
+      }, 320);
+    });
+  }
+
+  // give the backdrop a beat to fade in, then start
+  setTimeout(typeTitle, 460);
 })();
 
 /* explainer reveal — section header + each feat row enter on scroll */
