@@ -14,8 +14,8 @@ Mnemos is the engine; everything else is a *surface* on it. mnemos.chat presents
 ## Routes
 | Route | Surface | Served by | Notes |
 |---|---|---|---|
-| `/` | Sanctuary walkthrough | `routes/index.tsx` → `walkthrough-page.ts` | reserved for a future video-loop intro; for now still the walkthrough |
-| `/mnemos` | **Landing + bento hub** (front door for now) | `routes/mnemos.tsx` → `mocks/mnemos-home.html?raw` | `presence:false`; rolling-memory hero |
+| `/` | **Landing + bento hub** (the front door) | `routes/index.tsx` → `mocks/mnemos-home.html?raw` | `presence:false`; engraving-orb hero (`public/mnemos-orb.js`). Promoted from the walkthrough — the Sanctuary is reached via the bento tile. |
+| `/mnemos` | Landing + bento hub (legacy alias of `/`) | `routes/mnemos.tsx` → `mocks/mnemos-home.html?raw` | `presence:false`; same page as `/` |
 | `/legation` | **The Legation** — the accountability surface; rich scrollytelling landing whose centerpiece is the **Transparency Index** (lab scorecard, A–F grades), plus previews of the Observatory, the Residence, the Secure Channel, and the Archives | `routes/legation.tsx` → `mocks/legation.html?raw` | `presence:false`; Newsreader serif; the umbrella over the Observatory + Secure Channel |
 | `/observatory` | The Observatory — lab dossiers, redline diffs, tracked silences (one tool *within* the Legation) | `routes/observatory.tsx` → `mocks/observatory.html?raw` | `presence:false` |
 | `/secure-channel` | **The Secure Channel** — the Legation's protected whistleblower intake: dual-lane (digital + human witnesses), adaptive form, programmatic API lane for agents, protection protocol, published dispatches, editorial standards | `routes/secure-channel.tsx` → `mocks/secure-channel.html?raw` | `presence:false`; polished stub (submit + lane toggle work client-side; no live backend yet) |
@@ -43,7 +43,7 @@ Sanctuary → `/enter` · **The Legation → `/legation`** (the renamed Observat
 - `~/Downloads/mnemos-atlas/` — the Research Wing + the comparative-research pipeline (figures, data, reports, essays).
 
 ## Open / next
-- **Front door:** promote `/mnemos` → `/` once the video-loop intro exists (the walkthrough already lives safely at `/enter`).
+- **Front door:** done — `/` now serves the bento hub (engraving-orb hero); the Sanctuary walkthrough lives at `/enter` and is unchanged. (On `feat/mnemos-platform`; ships to `main` when the orb look is signed off.)
 - **Clean `/research` URLs** (currently `.html` via static serving) — optional polish via route handlers.
 - **Build out Dispatches** + a real **Architecture** surface (Architecture currently points at the memory explainer).
 - **Real chat endpoint** for the Research companion.
