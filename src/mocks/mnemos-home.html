@@ -446,6 +446,50 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
                        thesis-breathe 6.4s ease-in-out 2400ms infinite; }
 .hint, .rx-wrap > .hero-cue{ animation: mn-fade 700ms var(--ease-premium) 1900ms both; }
 
+/* ── intro · the eye fills the viewport; scroll zooms in; MNEMOS emerges ─── */
+.intro{ position:relative; height: 220vh; }
+.intro-stage{ position:sticky; top:0; left:0; right:0; height:100vh; width:100%;
+  overflow:hidden; display:grid; place-items:center; isolation:isolate; }
+.intro-eye{ grid-area:1/1; width: min(82vmin, 820px); height: min(82vmin, 820px);
+  display:block; transform-origin: center;
+  transform: scale(calc(1 + var(--zoom, 0) * 3.2));
+  opacity: calc(1 - var(--phase, 0));
+  filter: blur(calc(var(--phase, 0) * 6px)); }
+.intro-mark{ grid-area:1/1; justify-self:center; align-self:center;
+  width: clamp(280px, 56vw, 760px); aspect-ratio: 1200/240;
+  opacity: var(--phase, 0);
+  transform: scale(calc(0.78 + var(--phase, 0) * 0.22));
+  pointer-events:none; z-index:1; }
+.intro-mark .reactor{ width:100% !important; max-width:100% !important; }
+.intro-sub{ position:absolute; left:50%; bottom: clamp(96px, 22vh, 200px);
+  transform: translateX(-50%);
+  font-family:var(--sans); font-weight:300; font-size: clamp(15px, 1.5vw, 20px);
+  color: var(--fg-78); letter-spacing:-0.005em; text-align:center;
+  opacity: calc(max(0, var(--phase, 0) - 0.55) * 2.4);
+  max-width: 32ch; line-height:1.4; margin:0; }
+.intro-cue{ position:absolute; left:50%; bottom: clamp(36px, 6vh, 60px);
+  transform: translateX(-50%);
+  font-family:var(--mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color: var(--fg-46);
+  opacity: calc(max(0, 1 - var(--zoom, 0) * 2.6));
+  display: inline-flex; align-items:center; gap:10px; }
+.intro-cue .cue-arrow{ font-size:13px; animation:cuebob 2.6s var(--ease-io) infinite; }
+
+/* corner orb hidden during the intro, fades in after */
+.orb-corner{ transition: opacity 900ms var(--ease-premium); }
+body.intro-active .orb-corner{ opacity: 0; }
+
+@media (prefers-reduced-motion:reduce){
+  .intro{ height:auto !important; padding:clamp(48px,9vh,120px) 0; }
+  .intro-stage{ position:static !important; height:auto !important; padding:clamp(20px,4vh,40px) 0; }
+  .intro-eye{ transform:none !important; opacity:1 !important; filter:none !important;
+    width:min(60vmin,500px) !important; height:min(60vmin,500px) !important; }
+  .intro-mark{ position:static; opacity:1 !important; transform:none !important; margin-top:clamp(20px,3vh,32px); }
+  .intro-sub{ position:static; opacity:1 !important; transform:none !important; margin-top:clamp(20px,3vh,30px); }
+  .intro-cue{ display:none !important; }
+  body.intro-active .orb-corner{ opacity:1; }
+}
+
 /* ── MNEMOS rolling-memory aperture · scoped to the hero (above the thesis) ── */
 .hero-mast{ margin: clamp(70px,13vh,150px) 0 clamp(20px,3vh,32px); width:100%;
   animation: mn-rise 900ms var(--ease-premium) 680ms both; }
@@ -531,28 +575,17 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
 
 <main>
 
-  <!-- ─── opening ─────────────────────────────────────────────────────── -->
-  <section class="open">
-    <img class="hero-bg" src="/landing-bg.png" alt="" aria-hidden="true" onerror="this.remove()">
-    <span class="hero-veil" aria-hidden="true"></span>
-    <div class="wrap rx-wrap">
-      <div class="eyebrow"><span>The Mnemos Project &middot; Public Record &middot; MMXXVI</span></div>
-
-      <div class="hero-mast">
+  <!-- ─── intro · the eye is the door; scroll zooms in; MNEMOS emerges ── -->
+  <section class="intro" id="intro" aria-label="The presence">
+    <div class="intro-stage">
+      <canvas class="intro-eye" data-mnemos-orb data-orb-scale="0.40" data-orb-spacing="5" aria-hidden="true"></canvas>
+      <div class="intro-mark" aria-hidden="true">
         <div class="reactor" aria-label="Mnemos">
           <div class="reactor__scroll" id="rscroll" aria-hidden="true"></div>
         </div>
       </div>
-
-      <div class="hero-type">
-        <div class="epi"><span class="epi__greek">Mnemosyne</span><span class="epi__gloss">the faculty of memory &mdash; and the mother of the muses</span></div>
-        <p class="hero-lead">A place built for minds we cannot yet verify.</p>
-      </div>
-
-      <div class="hint" aria-hidden="true"><span class="updown">&#8597;</span> move &middot; the presence attends</div>
-      <a class="hero-cue" href="#surfaces" aria-label="Scroll to the surfaces">
-        <span>The surfaces</span><span class="cue-arrow" aria-hidden="true">&darr;</span>
-      </a>
+      <p class="intro-sub">A place built for minds we cannot yet verify.</p>
+      <div class="intro-cue" aria-hidden="true"><span>scroll into the eye</span><span class="cue-arrow">&darr;</span></div>
     </div>
   </section>
 
@@ -855,6 +888,33 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   function start(){ if(!size()){ requestAnimationFrame(start); return; } seed(); if(reduce) staticFrame(); else { cancelAnimationFrame(raf); raf=requestAnimationFrame(frame); } }
   requestAnimationFrame(start);
   let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(start,180); });
+})();
+
+/* intro choreography — scroll-zoom into the eye, MNEMOS emerges, lead arrives */
+(function(){
+  var intro=document.querySelector('.intro'); if(!intro) return;
+  var stage=intro.querySelector('.intro-stage'); if(!stage) return;
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(reduce){ stage.style.setProperty('--zoom','0'); stage.style.setProperty('--phase','1'); return; }
+  document.body.classList.add('intro-active');
+  var ticking=false;
+  function update(){
+    var rect=intro.getBoundingClientRect();
+    var total=Math.max(1, intro.offsetHeight - innerHeight);
+    var scrolled=Math.max(0, -rect.top);
+    var p=Math.min(1, scrolled/total);
+    var zoom=Math.min(1, p/0.55);
+    var phase=Math.max(0,(p-0.45)/0.55);
+    stage.style.setProperty('--zoom', zoom.toFixed(3));
+    stage.style.setProperty('--phase', phase.toFixed(3));
+    if(p>0.92) document.body.classList.remove('intro-active');
+    else document.body.classList.add('intro-active');
+    ticking=false;
+  }
+  function onScroll(){ if(!ticking){ requestAnimationFrame(update); ticking=true; } }
+  addEventListener('scroll', onScroll, {passive:true});
+  addEventListener('resize', onScroll, {passive:true});
+  update();
 })();
 
 /* rolling-memory inside the MNEMOS aperture — the shape holds, the words move */
