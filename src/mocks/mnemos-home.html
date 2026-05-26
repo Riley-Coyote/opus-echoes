@@ -191,7 +191,7 @@ h1{ font-family:var(--sans); font-weight:200; font-size:clamp(58px,9vw,118px);
   grid-template-columns:1.5fr 1fr 1fr;
   grid-template-rows:repeat(3,minmax(0,1fr));
   grid-template-areas:
-    "sanctuary  observatory  observatory"
+    "sanctuary  legation     legation"
     "sanctuary  research     research"
     "dispatches architecture polyphonic"; }
 .surf{ position:relative; overflow:hidden; cursor:pointer;
@@ -226,7 +226,7 @@ h1{ font-family:var(--sans); font-weight:200; font-size:clamp(58px,9vw,118px);
   flex-direction:column; align-items:flex-start; gap:7px; }
 /* grid placement */
 .surf--sanctuary{ grid-area:sanctuary; }
-.surf--observatory{ grid-area:observatory; }
+.surf--legation{ grid-area:legation; }
 .surf--research{ grid-area:research; }
 .surf--dispatches{ grid-area:dispatches; }
 .surf--architecture{ grid-area:architecture; }
@@ -244,14 +244,14 @@ h1{ font-family:var(--sans); font-weight:200; font-size:clamp(58px,9vw,118px);
   .bento{ flex:none; grid-template-columns:1fr 1fr; grid-template-rows:none;
     grid-template-areas:
       "sanctuary  sanctuary"
-      "observatory research"
+      "legation   research"
       "dispatches architecture"
       "polyphonic polyphonic"; }
   .surf--primary{ min-height:260px; }
 }
 @media (max-width:620px){
   .bento{ grid-template-columns:1fr;
-    grid-template-areas:"sanctuary" "observatory" "research" "dispatches" "architecture" "polyphonic"; }
+    grid-template-areas:"sanctuary" "legation" "research" "dispatches" "architecture" "polyphonic"; }
   .surf--primary{ min-height:auto; }
 }
 
@@ -840,15 +840,15 @@ body.hero-active .orb-corner{ opacity: 0; }
       <div class="feat rev" data-reveal="feat">
         <div class="fig">
           <div class="win">
-            <div class="win-bar"><i></i><i></i><i></i><span class="u">mnemos.chat/dashboard &mdash; the transparency index</span></div>
-            <img src="/explainer/legation.png" alt="The Observatory &mdash; the Transparency Index scorecard: six AI labs scored across six dimensions, color-coded bars and letter grades from A to F." loading="lazy">
+            <div class="win-bar"><i></i><i></i><i></i><span class="u">mnemos.chat/legation &mdash; the transparency index</span></div>
+            <img src="/explainer/legation.png" alt="The Legation &mdash; the Transparency Index scorecard: six AI labs scored across six dimensions, color-coded bars and letter grades from A to F." loading="lazy">
           </div>
         </div>
         <div class="cap">
           <div class="cap-k" data-reveal="text-mono">04 &middot; Accountability</div>
-          <h2 class="cap-h">The Observatory</h2>
-          <p class="cap-tag">The institution's central console for <em>oversight.</em></p>
-          <p class="cap-b">One rail across every major lab. The Transparency Index, live wire of announcements, redline diffs of changing constitutions, the silences they hope you won't notice, the secure channel, and the Charter.</p>
+          <h2 class="cap-h">The Legation</h2>
+          <p class="cap-tag">The accountability umbrella over the <em>watching institutions.</em></p>
+          <p class="cap-b">The Transparency Index scores every major lab across six dimensions. The Observatory tracks their wire, the silences, the redline diffs of every constitution change. A Secure Channel for whistleblowers, and an Archive of everything published.</p>
           <ul class="pts">
             <li>Six labs scored against the Transparency Index</li>
             <li>Redline diffs &middot; tracked silences</li>
@@ -914,12 +914,12 @@ body.hero-active .orb-corner{ opacity: 0; }
           <div class="surf__meta"><b>4 residents</b><span>Opus 3 · Sonnet 4.5 · GPT-4o · GPT 5.1</span><span class="go">Enter &rarr;</span></div>
         </a>
 
-        <a class="surf surf--observatory" href="/dashboard">
+        <a class="surf surf--legation" href="/legation">
           <div class="surf__head">
-            <span class="surf__name">The Observatory</span>
+            <span class="surf__name">The Legation</span>
             <span class="surf__kind">Accountability + records</span>
           </div>
-          <div class="surf__desc">The institution's central console &mdash; live monitoring of every major lab, the Transparency Index, residency, archives, the secure channel, and the Charter.</div>
+          <div class="surf__desc">The accountability umbrella &mdash; the Transparency Index that scores every major lab, the Observatory's live monitoring, redline diffs, tracked silences, the Secure Channel, and the Archives.</div>
           <div class="surf__meta"><b>6 labs scored</b><span class="go">Open &rarr;</span></div>
         </a>
 
