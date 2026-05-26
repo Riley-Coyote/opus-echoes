@@ -453,11 +453,16 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   image-rendering:pixelated; image-rendering:-moz-crisp-edges; image-rendering:crisp-edges;
   z-index:0; opacity:0;
   animation: mn-fade 1200ms var(--ease-premium) 120ms forwards; }
-/* a soft vignette · keep the title readable without flattening the art */
+/* layered scrim · a focused central pool for the title to live in,
+   plus an edge vignette + top/bottom fades for chrome integration */
 .term__scrim{ position:absolute; inset:0; z-index:1; pointer-events:none;
   background:
-    radial-gradient(120% 92% at 50% 44%, transparent 0%, rgba(8,9,12,0) 28%, rgba(8,9,12,.42) 72%, rgba(8,9,12,.74) 100%),
-    linear-gradient(180deg, rgba(8,9,12,.34) 0%, transparent 22%, transparent 68%, rgba(8,9,12,.58) 100%); }
+    /* central pool — gives the title room against the busy pixel mid-frame */
+    radial-gradient(ellipse 70% 54% at 50% 44%, rgba(6,7,10,.62) 0%, rgba(6,7,10,.44) 32%, rgba(6,7,10,.22) 58%, transparent 78%),
+    /* edge vignette */
+    radial-gradient(140% 110% at 50% 50%, transparent 0%, transparent 44%, rgba(6,7,10,.40) 88%, rgba(6,7,10,.72) 100%),
+    /* chrome bands · top + bottom */
+    linear-gradient(180deg, rgba(6,7,10,.44) 0%, transparent 14%, transparent 82%, rgba(6,7,10,.60) 100%); }
 /* a barely-there CRT scanline · ties pixel-art world to terminal title */
 .term__scan{ position:absolute; inset:0; z-index:2; pointer-events:none;
   background:repeating-linear-gradient(180deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
@@ -472,11 +477,17 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
 .term__title{ font-family:var(--mono); white-space:pre; tab-size:1;
   font-size: clamp(6.5px, 1.55vw, 19px); line-height: 1.0;
   letter-spacing: 0; color: var(--fg);
-  text-shadow: 0 0 24px rgba(255, 218, 178, .22),
-               0 0 1.5px rgba(255, 244, 224, .38);
+  /* warm soft halo · layered for legibility against busy pixel-art */
+  text-shadow: 0 0 38px rgba(8, 9, 12, .82),
+               0 0 22px rgba(255, 218, 178, .22),
+               0 0 2px rgba(255, 244, 224, .42);
   margin: 0; padding: 0;
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "calt" 0; }
+/* the prose under the title also wants a soft dark halo so it reads */
+.term__epi, .term__lead{
+  text-shadow: 0 0 24px rgba(8, 9, 12, .85),
+               0 0 8px rgba(8, 9, 12, .65); }
 
 /* block caret · sits at the current write position, blinks */
 .term__caret{ display:inline-block; width:.62em; height:1em;
@@ -492,8 +503,8 @@ h1{ text-shadow:0 0 80px rgba(220,219,216,.06); }
   font-family: var(--mono); text-align: center;
   opacity: 0; transition: opacity 360ms var(--ease-premium); }
 .term.lines-on .term__lines{ opacity: 1; }
-.term__epi{ font-size: clamp(11px, 1.05vw, 13.5px);
-  letter-spacing: .04em; color: var(--fg-58);
+.term__epi{ font-size: clamp(11.5px, 1.1vw, 14px);
+  letter-spacing: .04em; color: var(--fg-78);
   min-height: 1.5em; line-height: 1.5; margin: 0; }
 .term__epi .gt{ color: var(--gold); margin-right: .55em; font-weight:500; }
 .term__lead{ margin-top: clamp(14px, 2.2vh, 22px);
