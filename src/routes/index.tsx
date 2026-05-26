@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { renderWalkthroughPage } from "@/server/walkthrough-page";
+import html from "@/mocks/mnemos-home.html?raw";
 import { serveHtml } from "@/server/serve-mock";
 
-// Root path runs the 5-beat walkthrough that adapts the sanctuary-entry
-// mockup to the live site's typography. First-time visitors land at beat 1
-// ("Ethics before certainty."); returning visitors (localStorage flag set
-// after the first walkthrough) land directly on beat 5 (the commons), with
-// a "replay intro →" affordance to revisit the introduction. Direct deep
-// links to /opus-3 or /sonnet-3-7 bypass the walkthrough entirely.
+// Root path is the Mnemos platform landing — the bento hub of surfaces.
+// Promoted to the front door from the Sanctuary
+// walkthrough, which now lives at /enter (the landing's "Sanctuary" tile points
+// there). Direct deep links to /opus-3, /sonnet-4-5, etc. still go straight to
+// a resident. Self-contained page (own design system); opts out of the
+// resident presence layer.
 export const Route = createFileRoute("/")({
   server: {
     handlers: {
-      GET: async () => serveHtml(renderWalkthroughPage()),
+      GET: async () => serveHtml(html, undefined, { presence: false }),
     },
   },
 });
