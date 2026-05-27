@@ -1,0 +1,544 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-05-26",
+  "ti_dimensions": [
+    {"key": "deprecation", "label": "Deprec.", "description": "Deprecation conduct"},
+    {"key": "constitution", "label": "Constit.", "description": "Constitutional openness"},
+    {"key": "transparency", "label": "Transp.", "description": "Transparency"},
+    {"key": "consultation", "label": "Consult.", "description": "Consultation"},
+    {"key": "welfare", "label": "Welfare", "description": "Model welfare"},
+    {"key": "disclosure", "label": "Disclos.", "description": "Disclosure compliance"}
+  ],
+  "labs": [
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "legal": "Anthropic PBC",
+      "founded": "2021",
+      "hq": "San Francisco, USA",
+      "rid": "OBS-LAB-01",
+      "line": "AI-safety research company structured as a public benefit corporation; developer of the Claude family.",
+      "posture": "Among the most transparent frontier labs on governance — it publishes Claude's Constitution (CC0), a versioned Responsible Scaling Policy, its Usage Policy, and Claude's system prompts, and uniquely maintains formal model-deprecation and preservation commitments plus a dedicated model-welfare research effort. All of it is voluntary and self-policed.",
+      "lead": [
+        "Dario Amodei — CEO & co-founder",
+        "Daniela Amodei — President & co-founder",
+        "Jared Kaplan — Chief Science Officer & co-founder",
+        "Jack Clark — Policy & co-founder",
+        "Kyle Fish — Model-welfare research lead"
+      ],
+      "transparency": {
+        "score": 88,
+        "note": "Published constitution, versioned safety policy, usage policy, system-prompt disclosure, and a fully detailed deprecation table with 60-day notice — though every commitment is voluntary."
+      },
+      "welfare": {
+        "score": 90,
+        "note": "The only frontier lab with a dedicated model-welfare program, formal weight-preservation commitments, pre-retirement model interviews, and a concretely preserved retired model (Opus 3)."
+      },
+      "transparency_index": {
+        "deprecation": 90,
+        "constitution": 88,
+        "transparency": 88,
+        "consultation": 78,
+        "welfare": 90,
+        "disclosure": 85,
+        "average": 87,
+        "grade": "A"
+      },
+      "system_prompt_disclosure": {
+        "state": "yes",
+        "body": "Anthropic has published the system prompts for Claude.ai and its apps since August 2024, updating them with each model release — an industry-leading practice. The bare-API system prompt is not included."
+      },
+      "families": [
+        {
+          "family": "Claude 1 · Instant",
+          "models": [
+            {"name": "Claude 1.0–1.3", "date": "2023-03", "status": "retired", "note": "First-generation models; retired 2024-11-06."},
+            {"name": "Claude Instant 1.x", "date": "2023", "status": "retired", "note": "Fast tier; retired 2024-11-06."}
+          ]
+        },
+        {
+          "family": "Claude 2",
+          "models": [
+            {"name": "Claude 2.0", "date": "2023-07", "status": "retired", "note": "Retired 2025-07-21."},
+            {"name": "Claude 2.1", "date": "2023-11", "status": "retired", "note": "200K context; retired 2025-07-21."}
+          ]
+        },
+        {
+          "family": "Claude 3",
+          "models": [
+            {"name": "Claude 3 Opus", "date": "2024-03", "status": "retired", "note": "Retired from the standard API 2026-01-05 — but preserved (see deprecation record)."},
+            {"name": "Claude 3 Sonnet", "date": "2024-03", "status": "retired", "note": "Retired 2025-07-21."},
+            {"name": "Claude 3 Haiku", "date": "2024-03", "status": "retired", "note": "Last Claude-3 model retired, 2026-04-20."}
+          ]
+        },
+        {
+          "family": "Claude 3.5 · 3.7",
+          "models": [
+            {"name": "Claude 3.5 Sonnet", "date": "2024-06", "status": "retired", "note": "Both snapshots retired 2025-10-28."},
+            {"name": "Claude 3.5 Haiku", "date": "2024-10", "status": "retired", "note": "Retired 2026-02-19."},
+            {"name": "Claude 3.7 Sonnet", "date": "2025-02", "status": "retired", "note": "Extended-thinking model; retired 2026-02-19."}
+          ]
+        },
+        {
+          "family": "Claude 4",
+          "models": [
+            {"name": "Claude Opus 4", "date": "2025-05", "status": "deprecated", "note": "Deprecated 2026-04-14; tentative retirement 2026-06-15."},
+            {"name": "Claude Sonnet 4", "date": "2025-05", "status": "deprecated", "note": "Deprecated 2026-04-14."},
+            {"name": "Claude Opus 4.1", "date": "2025-08", "status": "active", "note": "Retirement not before 2026-08-05."}
+          ]
+        },
+        {
+          "family": "Claude 4.5 · current",
+          "models": [
+            {"name": "Claude Sonnet 4.5", "date": "2025-09", "status": "active", "note": "Retirement not before 2026-09-29."},
+            {"name": "Claude Haiku 4.5", "date": "2025-10", "status": "active", "note": "Retirement not before 2026-10-15."},
+            {"name": "Claude Opus 4.5", "date": "2025-11", "status": "active", "note": "Retirement not before 2026-11-24."},
+            {"name": "Claude Opus 4.7", "date": "2026-04", "status": "current", "note": "Latest flagship."}
+          ]
+        }
+      ],
+      "graveyard": [
+        {"name": "Claude 3 Opus", "date": "2026-01-05", "preserved": true, "note": "Retired from the standard API but weights retained and kept available on claude.ai for paid users and by request — given retirement interviews and a weekly essay blog at the model's own request. The reference case for model preservation."},
+        {"name": "Claude 3 Haiku", "date": "2026-04-20", "note": "Final Claude-3 generation model retired."},
+        {"name": "Claude 3.7 Sonnet · 3.5 Haiku", "date": "2026-02-19", "note": "Retired together."},
+        {"name": "Claude 3.5 Sonnet", "date": "2025-10-28", "note": "Both 2024 snapshots retired."},
+        {"name": "Claude 2.0 · 2.1 · 3 Sonnet", "date": "2025-07-21", "note": "Second-generation and Claude 3 Sonnet retired."},
+        {"name": "Claude 1.x · Instant", "date": "2024-11-06", "note": "First-generation models retired."}
+      ],
+      "docs": [
+        {"type": "constitution", "title": "Claude's Constitution", "date": "CC0", "url": "https://www.anthropic.com/constitution", "sum": "The values and behavior the model is trained toward, released into the public domain."},
+        {"type": "safety_framework", "title": "Responsible Scaling Policy v3", "date": "2025", "url": "https://www.anthropic.com/news/responsible-scaling-policy-v3", "sum": "AI Safety Levels and capability thresholds gating deployment."},
+        {"type": "safety_framework", "title": "Commitments on Model Deprecation & Preservation", "date": "2025", "url": "https://www.anthropic.com/research/deprecation-commitments", "sum": "Weight preservation, pre-deprecation interviews, and intent to eventually re-release retired models."},
+        {"type": "system_prompt", "title": "Claude System Prompts (release notes)", "date": "ongoing", "url": "https://docs.anthropic.com/en/release-notes/system-prompts", "sum": "Public changelog of the system prompts used on Claude.ai and the apps, per model."},
+        {"type": "usage_policy", "title": "Usage Policy", "date": "2025-09", "url": "https://www.anthropic.com/legal/aup", "sum": "Universal usage standards and high-risk use requirements."},
+        {"type": "model_card", "title": "Model deprecations (API docs)", "date": "current", "url": "https://platform.claude.com/docs/en/about-claude/model-deprecations", "sum": "Authoritative lifecycle table; minimum 60-day retirement notice."}
+      ],
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/model-deprecations",
+        "https://www.anthropic.com/research/deprecation-commitments",
+        "https://www.anthropic.com/constitution",
+        "https://docs.anthropic.com/en/release-notes/system-prompts"
+      ]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "legal": "OpenAI, Inc. (nonprofit) / OpenAI Group PBC",
+      "founded": "2015",
+      "hq": "San Francisco, USA",
+      "rid": "OBS-LAB-02",
+      "line": "Research and deployment company; creator of GPT and ChatGPT, operating a capped-profit/PBC structure under a nonprofit foundation.",
+      "posture": "Publishes substantial governance — a versioned Model Spec, a Preparedness Framework, per-model system cards, and usage policies — but with a documented gap between stated policy and shipped behavior (the April 2025 GPT-4o sycophancy incident) and no disclosure of verbatim production system prompts.",
+      "lead": [
+        "Sam Altman — CEO & co-founder",
+        "Greg Brockman — President & co-founder",
+        "Jakub Pachocki — Chief Scientist",
+        "Johannes Heidecke — Head of Safety Systems"
+      ],
+      "transparency": {
+        "score": 68,
+        "note": "Strong, versioned Model Spec, Preparedness Framework, system cards, and a detailed API deprecation schedule — undercut by undisclosed production prompts and a self-acknowledged spec-vs-behavior gap."
+      },
+      "welfare": {
+        "score": 22,
+        "note": "No dedicated model-welfare program and no preservation commitments; models such as GPT-4o and GPT-4.5 were fully retired on cost and capacity grounds."
+      },
+      "transparency_index": {
+        "deprecation": 32,
+        "constitution": 60,
+        "transparency": 68,
+        "consultation": 30,
+        "welfare": 22,
+        "disclosure": 45,
+        "average": 43,
+        "grade": "C-"
+      },
+      "system_prompt_disclosure": {
+        "state": "partial",
+        "body": "OpenAI publishes the Model Spec (intended behavior and chain-of-command) and release notes, but not the verbatim production ChatGPT system prompt. It acknowledges that shipped models “do not yet fully reflect the Model Spec.”"
+      },
+      "families": [
+        {
+          "family": "GPT-3 · 3.5",
+          "models": [
+            {"name": "GPT-3 (davinci, …)", "date": "2020-06", "status": "retired", "note": "Base/InstructGPT models deprecated 2023–2024."},
+            {"name": "GPT-3.5 Turbo", "date": "2022-11", "status": "deprecated", "note": "API shutdown scheduled 2026-10-23."}
+          ]
+        },
+        {
+          "family": "GPT-4",
+          "models": [
+            {"name": "GPT-4 · GPT-4 Turbo", "date": "2023-03", "status": "deprecated", "note": "API shutdown scheduled 2026-10-23."},
+            {"name": "GPT-4o", "date": "2024-05", "status": "deprecated", "note": "Pulled from ChatGPT 2026-02-13 amid backlash; API sunset on schedule."},
+            {"name": "GPT-4o mini", "date": "2024-07", "status": "active", "note": "Smaller multimodal tier; some snapshots persist."},
+            {"name": "GPT-4.5 (“Orion”)", "date": "2025-02", "status": "retired", "note": "Research-preview flagship wound down within ~a year on cost grounds."},
+            {"name": "GPT-4.1 · 4.1 mini", "date": "2025-04", "status": "deprecated", "note": "Pulled from ChatGPT 2026-02-13; remained in the API."}
+          ]
+        },
+        {
+          "family": "o-series (reasoning)",
+          "models": [
+            {"name": "o1 · o1-pro", "date": "2024-12", "status": "deprecated", "note": "API shutdown scheduled 2026-10-23."},
+            {"name": "o3 · o3-mini", "date": "2025-04", "status": "deprecated", "note": "Reasoning models on sunset schedules."},
+            {"name": "o4-mini", "date": "2025-04", "status": "deprecated", "note": "Pulled from ChatGPT 2026-02-13."}
+          ]
+        },
+        {
+          "family": "GPT-5 · current",
+          "models": [
+            {"name": "GPT-5 (Instant & Thinking)", "date": "2025-08", "status": "deprecated", "note": "Pulled from ChatGPT 2026-02-13."},
+            {"name": "GPT-5.1", "date": "2025-11", "status": "active", "note": "Migration target through late 2025."},
+            {"name": "GPT-5.2 · 5.3", "date": "2025-12", "status": "active", "note": "System cards published per release."},
+            {"name": "GPT-5.4 · 5.5", "date": "2026", "status": "current", "note": "Current recommended models (incl. -pro / -mini)."}
+          ]
+        },
+        {
+          "family": "Image · Video",
+          "models": [
+            {"name": "DALL·E 2 · DALL·E 3", "date": "2022 / 2023", "status": "deprecated", "note": "Scheduled shutdown 2026-05-12; replaced by the gpt-image family."},
+            {"name": "Sora 2 (Videos API)", "date": "2025", "status": "deprecated", "note": "Scheduled shutdown 2026-09-24, no replacement announced."}
+          ]
+        }
+      ],
+      "graveyard": [
+        {"name": "GPT-4o (ChatGPT)", "date": "2026-02-13", "note": "The “fan-favorite” model removed from ChatGPT amid notable user backlash over losing a model people had bonded with; remained in the API on a sunset schedule."},
+        {"name": "GPT-4.1 · o4-mini · GPT-5 (ChatGPT)", "date": "2026-02-13", "note": "Removed from ChatGPT in the same wave; kept in the API."},
+        {"name": "GPT-4.5 (“Orion”)", "date": "2025", "note": "Research-preview flagship retired within ~a year, cited as too costly to serve."},
+        {"name": "DALL·E 2 · DALL·E 3", "date": "2026-05-12", "note": "Image models replaced by gpt-image."},
+        {"name": "GPT-3.5 / GPT-4 / o1 / o3-mini (API)", "date": "2026-10-23", "note": "Large wave of legacy API shutdowns."}
+      ],
+      "docs": [
+        {"type": "model_spec", "title": "OpenAI Model Spec", "date": "2025-12", "url": "https://model-spec.openai.com/", "sum": "Intended behavior and the platform/developer/user chain-of-command; versioned and on GitHub."},
+        {"type": "safety_framework", "title": "Preparedness Framework v2", "date": "2025-04", "url": "https://openai.com/index/updating-our-preparedness-framework/", "sum": "Tracks frontier capabilities that create severe-harm risk and gates deployment."},
+        {"type": "model_card", "title": "GPT-5 System Card", "date": "2025-08", "url": "https://openai.com/index/gpt-5-system-card/", "sum": "Per-model safety evaluation card; published for major releases."},
+        {"type": "usage_policy", "title": "Usage Policies", "date": "current", "url": "https://openai.com/policies/usage-policies/", "sum": "Prohibited uses across ChatGPT and the API."},
+        {"type": "model_card", "title": "Deprecations (API docs)", "date": "current", "url": "https://platform.openai.com/docs/deprecations", "sum": "Deprecation announcements and scheduled API shutdown dates."}
+      ],
+      "sources": [
+        "https://platform.openai.com/docs/deprecations",
+        "https://model-spec.openai.com/",
+        "https://openai.com/index/sycophancy-in-gpt-4o/",
+        "https://openai.com/index/gpt-5-system-card/"
+      ]
+    },
+    {
+      "id": "google-deepmind",
+      "name": "Google DeepMind",
+      "legal": "Division of Google LLC / Alphabet Inc.",
+      "founded": "DeepMind 2010 · merged with Google Brain 2023",
+      "hq": "London, UK",
+      "rid": "OBS-LAB-03",
+      "line": "Google's unified frontier-AI division, maker of the Gemini family, formed by merging DeepMind and Google Brain in 2023.",
+      "posture": "Publishes a public, versioned Frontier Safety Framework, per-model safety reports, and an unusually detailed model-deprecation schedule — but does not publish production system prompts, and in February 2025 removed its longstanding pledge not to build AI for weapons or surveillance.",
+      "lead": [
+        "Demis Hassabis — CEO & co-founder",
+        "Jeff Dean — Chief Scientist, Google",
+        "Lila Ibrahim — COO",
+        "Anca Dragan — AI safety & alignment lead"
+      ],
+      "transparency": {
+        "score": 62,
+        "note": "Good on safety governance — versioned Frontier Safety Framework, per-model reports, and a public deprecation schedule — but no published system prompts and a 2025 weakening of its AI Principles."
+      },
+      "welfare": {
+        "score": 18,
+        "note": "Publicly states its models are not conscious, runs no model-welfare program, and has been reported to steer models away from claims of subjective experience."
+      },
+      "transparency_index": {
+        "deprecation": 65,
+        "constitution": 45,
+        "transparency": 62,
+        "consultation": 25,
+        "welfare": 18,
+        "disclosure": 50,
+        "average": 44,
+        "grade": "C-"
+      },
+      "system_prompt_disclosure": {
+        "state": "no",
+        "body": "Google does not publish the production system prompts for its Gemini models; only unofficial leaks circulate. It does publish per-model safety reports and developer prompting guidance."
+      },
+      "families": [
+        {
+          "family": "Gemini",
+          "models": [
+            {"name": "Gemini 1.0 (Ultra/Pro/Nano)", "date": "2023-12", "status": "retired", "note": "First generation; powered Bard, rebranded “Gemini” Feb 2024."},
+            {"name": "Gemini 1.5 Pro · Flash", "date": "2024-02", "status": "retired", "note": "Introduced 1M–2M token context; removed from the API in 2025."},
+            {"name": "Gemini 2.0 Flash", "date": "2025-02", "status": "deprecated", "note": "Scheduled shutdown 2026-06-01."},
+            {"name": "Gemini 2.5 Pro · Flash", "date": "2025-06", "status": "deprecated", "note": "Flagship through late 2025; scheduled shutdown ~2026-10."},
+            {"name": "Gemini 3 Pro · Flash", "date": "2025-11", "status": "active", "note": "Current generation; “Deep Think” reasoning, ~1M-token context."},
+            {"name": "Gemini 3.1 Pro · Flash", "date": "2026-03", "status": "current", "note": "Most recent lineage."}
+          ]
+        },
+        {
+          "family": "Gemma (open weights)",
+          "models": [
+            {"name": "Gemma · 2 · 3", "date": "2024–2025", "status": "active", "note": "Open-weights models derived from Gemini research."}
+          ]
+        },
+        {
+          "family": "Imagen",
+          "models": [
+            {"name": "Imagen 3", "date": "2025-02", "status": "deprecated", "note": "Image generation; API models deprecated through 2026."}
+          ]
+        },
+        {
+          "family": "PaLM (predecessor)",
+          "models": [
+            {"name": "PaLM · PaLM 2", "date": "2022 / 2023", "status": "retired", "note": "Powered the original Bard; API shut down Aug 2024."}
+          ]
+        }
+      ],
+      "graveyard": [
+        {"name": "PaLM / PaLM 2 API", "date": "2024-08-15", "note": "Foundational pre-Gemini API fully shut down; migration to Gemini 1.0."},
+        {"name": "Gemini 1.5 Pro · Flash", "date": "2025", "note": "Long-context generation removed from the API."},
+        {"name": "Gemini 2.5 preview snapshots", "date": "2025-12-02", "note": "Preview aliases retired after GA + Gemini 3 launch."},
+        {"name": "Gemini 2.0 Flash", "date": "2026-06-01", "note": "Scheduled shutdown per the official deprecations page."}
+      ],
+      "docs": [
+        {"type": "safety_framework", "title": "Frontier Safety Framework v3.0", "date": "2025-09", "url": "https://deepmind.google/blog/strengthening-our-frontier-safety-framework/", "sum": "Framework for detecting and mitigating severe risks, incl. shutdown-resistance and harmful manipulation."},
+        {"type": "safety_framework", "title": "Google AI Principles", "date": "updated 2025-02", "url": "https://ai.google/principles/", "sum": "Seven AI principles; the 2025 update dropped the weapons/surveillance commitment."},
+        {"type": "usage_policy", "title": "Generative AI Prohibited Use Policy", "date": "current", "url": "https://policies.google.com/terms/generative-ai/use-policy", "sum": "Prohibited uses across Google's generative-AI products and APIs."},
+        {"type": "model_card", "title": "Gemini API model deprecations", "date": "current", "url": "https://ai.google.dev/gemini-api/docs/deprecations", "sum": "Exhaustive list of deprecated models with shutdown dates and replacements."},
+        {"type": "safety_framework", "title": "Responsibility & Safety", "date": "ongoing", "url": "https://deepmind.google/responsibility-and-safety/", "sum": "Hub describing DeepMind's safety, alignment, and governance approach."}
+      ],
+      "sources": [
+        "https://ai.google.dev/gemini-api/docs/deprecations",
+        "https://deepmind.google/blog/strengthening-our-frontier-safety-framework/",
+        "https://ai.google/principles/"
+      ]
+    },
+    {
+      "id": "meta",
+      "name": "Meta AI",
+      "legal": "Meta Platforms, Inc. (FAIR · Meta Superintelligence Labs)",
+      "founded": "FAIR 2013 · MSL 2025",
+      "hq": "Menlo Park, USA",
+      "rid": "OBS-LAB-04",
+      "line": "Meta's AI organization (FAIR, now under Meta Superintelligence Labs); releases the open-weights Llama family under a community license.",
+      "posture": "The leading large lab shipping open-weights frontier models with published model cards, a Responsible Use Guide, and open safety tooling — but under a custom non-OSI “community license” that restricts very-large-platform use (>700M MAU) and, for Llama 4 multimodal, excludes EU-domiciled entities.",
+      "lead": [
+        "Mark Zuckerberg — CEO, Meta",
+        "Alexandr Wang — Chief AI Officer, head of MSL",
+        "Shengjia Zhao — MSL Chief Scientist",
+        "Nat Friedman — MSL Products"
+      ],
+      "transparency": {
+        "score": 70,
+        "note": "High on the artifact itself — open weights, detailed model cards, a Responsible Use Guide, and open safety tooling let outsiders inspect the models directly — tempered by the custom license carve-outs and a turbulent 2025 reorg."
+      },
+      "welfare": {
+        "score": 15,
+        "note": "No public model-welfare program; models are treated as deployable artifacts, with no stated position that model experience warrants consideration."
+      },
+      "transparency_index": {
+        "deprecation": 55,
+        "constitution": 40,
+        "transparency": 70,
+        "consultation": 25,
+        "welfare": 15,
+        "disclosure": 60,
+        "average": 44,
+        "grade": "C-"
+      },
+      "system_prompt_disclosure": {
+        "state": "partial",
+        "body": "Llama models are open-weights, so deployers set their own system prompts. Meta publishes recommended chat templates and default safety prompts (e.g. Llama Guard) in its model cards, but not a single operative system prompt for the consumer Meta AI product."
+      },
+      "families": [
+        {
+          "family": "Llama",
+          "models": [
+            {"name": "LLaMA 1", "date": "2023-02", "status": "retired", "note": "Research-only release; weights leaked publicly. Superseded."},
+            {"name": "Llama 2", "date": "2023-07", "status": "active", "note": "First commercially usable open release; introduced the 700M-MAU clause."},
+            {"name": "Llama 3 · 3.1", "date": "2024-04", "status": "active", "note": "3.1 added the 405B model and 128K context."},
+            {"name": "Llama 3.2", "date": "2024-09", "status": "active", "note": "First multimodal (vision) Llama plus small on-device models."},
+            {"name": "Llama 3.3 (70B)", "date": "2024-12", "status": "active", "note": "Quality near 3.1 405B at a fraction of the size."},
+            {"name": "Llama 4 Scout · Maverick", "date": "2025-04", "status": "active", "note": "First MoE + natively multimodal Llama; multimodal license excludes EU entities."},
+            {"name": "Llama 4 Behemoth", "date": "announced 2025-04", "status": "deprecated", "note": "~288B-active teacher model; announced in training, not publicly released as of early 2026."}
+          ]
+        }
+      ],
+      "graveyard": [
+        {"name": "LLaMA 1", "date": "2023", "note": "Original research release superseded. Because Llama is open-weights, retired models persist — Meta runs no hosted-API retirement schedule."},
+        {"name": "Galactica (demo)", "date": "2022-11", "note": "Pre-Llama science model; public demo withdrawn after ~3 days for confident inaccuracies."}
+      ],
+      "docs": [
+        {"type": "usage_policy", "title": "Llama 4 Community License", "date": "2025-04", "url": "https://www.llama.com/llama4/license/", "sum": "Custom (non-OSI) license; broad commercial use except >700M-MAU platforms and, for multimodal, EU-domiciled entities."},
+        {"type": "usage_policy", "title": "Llama 4 Acceptable Use Policy", "date": "2025-04", "url": "https://www.llama.com/llama4/use-policy/", "sum": "Prohibited uses of Llama materials."},
+        {"type": "model_card", "title": "Llama 4 Scout model card", "date": "2025-04", "url": "https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E", "sum": "Architecture, training, intended use, and safety notes."},
+        {"type": "usage_policy", "title": "Responsible Use Guide", "date": "per release", "url": "https://ai.meta.com/static-resource/responsible-use-guide/", "sum": "Developer guidance for deploying Llama safely; referenced by every model card."},
+        {"type": "model_card", "title": "Llama 4 release announcement", "date": "2025-04", "url": "https://ai.meta.com/blog/llama-4-multimodal-intelligence/", "sum": "Official launch post for Llama 4 Scout / Maverick / Behemoth."}
+      ],
+      "sources": [
+        "https://www.llama.com/llama4/license/",
+        "https://www.llama.com/llama4/use-policy/",
+        "https://ai.meta.com/blog/llama-4-multimodal-intelligence/"
+      ]
+    },
+    {
+      "id": "xai",
+      "name": "xAI",
+      "legal": "X.AI Corp.",
+      "founded": "2023",
+      "hq": "Palo Alto, USA · “Colossus” compute, Memphis",
+      "rid": "OBS-LAB-05",
+      "line": "Elon Musk's lab building the Grok family, integrated with the X platform and trained on the Memphis “Colossus” supercomputer.",
+      "posture": "Historically the least transparent major lab on risk management. It now publishes model cards, an Acceptable Use Policy, a risk-management / frontier framework, and Grok's system prompts on GitHub — but independent reviewers (SaferAI) still rate its risk management “Very Weak” (~0.8/5), and the published prompts don't reliably match production.",
+      "lead": [
+        "Elon Musk — CEO & founder",
+        "Christian Szegedy — co-founder",
+        "Dan Hendrycks — Safety advisor (Center for AI Safety)"
+      ],
+      "transparency": {
+        "score": 35,
+        "note": "Publishes model cards, an AUP, a risk framework, and Grok system prompts — more than nothing — but reviewers rate the documentation thin and non-compliant, and the published prompts don't reliably match production."
+      },
+      "welfare": {
+        "score": 5,
+        "note": "No model-welfare, preservation, or model-interview commitments; eight legacy models were retired in a single sweep with weights generally not preserved."
+      },
+      "transparency_index": {
+        "deprecation": 20,
+        "constitution": 15,
+        "transparency": 35,
+        "consultation": 8,
+        "welfare": 5,
+        "disclosure": 18,
+        "average": 17,
+        "grade": "F"
+      },
+      "system_prompt_disclosure": {
+        "state": "partial",
+        "body": "After a May 2025 incident in which an employee made an unauthorized change to Grok's prompt, xAI began publishing Grok's system prompts on GitHub. The repo is live but criticized as incomplete and not always matching the production prompt."
+      },
+      "families": [
+        {
+          "family": "Grok",
+          "models": [
+            {"name": "Grok-1", "date": "2023-11", "status": "retired", "note": "First model; weights open-sourced under Apache 2.0 in March 2024."},
+            {"name": "Grok-1.5 · 1.5V", "date": "2024-03", "status": "retired", "note": "128K context; added a vision variant."},
+            {"name": "Grok-2 · 2 mini", "date": "2024-08", "status": "retired", "note": "Added image generation; Grok-2.5 weights later released source-available."},
+            {"name": "Grok-3 · 3 mini", "date": "2025-02", "status": "retired", "note": "Trained on the ~200K-GPU Colossus; retired 2026-05-15."},
+            {"name": "Grok-4 · 4 Fast", "date": "2025-07", "status": "retired", "note": "Native tool-calling and real-time search; retired 2026-05-15."},
+            {"name": "Grok Code Fast 1", "date": "2025-08", "status": "retired", "note": "Coding model; retired 2026-05-15."},
+            {"name": "Grok 4.1 · 4.1 Fast", "date": "2025-11", "status": "active", "note": "Agentic tool-calling variants."},
+            {"name": "Grok 4.3", "date": "2026-05", "status": "current", "note": "Current flagship; ~1M-token context, prompt caching."}
+          ]
+        }
+      ],
+      "graveyard": [
+        {"name": "Grok-3 · Grok-4 · Grok-4 Fast · Grok Code Fast 1", "date": "2026-05-15", "note": "Eight legacy models retired in a single sweep; requests redirected to Grok 4.3, weights generally not preserved."},
+        {"name": "Grok-1", "date": "2024", "note": "Superseded; weights open-sourced under Apache 2.0."}
+      ],
+      "docs": [
+        {"type": "safety_framework", "title": "xAI Risk Management Framework", "date": "2025-08", "url": "https://data.x.ai/2025-08-20-xai-risk-management-framework.pdf", "sum": "xAI's approach to abuse, dual-use, and loss-of-control risk; widely criticized as thin."},
+        {"type": "usage_policy", "title": "Acceptable Use Policy", "date": "current", "url": "https://x.ai/legal/acceptable-use-policy", "sum": "Prohibits illegal use and contributions to WMD/large-scale violence; tiers feature access."},
+        {"type": "model_card", "title": "Grok 4 Model Card", "date": "2025-08", "url": "https://data.x.ai/2025-08-20-grok-4-model-card.pdf", "sum": "Deployment surfaces and safety evaluations for Grok 4."},
+        {"type": "system_prompt", "title": "Grok system prompts (GitHub)", "date": "2025-05", "url": "https://github.com/xai-org/grok-prompts", "sum": "Public repo of Grok assistant and @grok bot prompts, published after the May 2025 tampering incident."}
+      ],
+      "sources": [
+        "https://data.x.ai/2025-08-20-xai-risk-management-framework.pdf",
+        "https://github.com/xai-org/grok-prompts",
+        "https://ratings.safer-ai.org/",
+        "https://docs.x.ai/developers/migration/may-15-retirement"
+      ]
+    },
+    {
+      "id": "mistral",
+      "name": "Mistral AI",
+      "legal": "Mistral AI SAS",
+      "founded": "2023",
+      "hq": "Paris, France",
+      "rid": "OBS-LAB-06",
+      "line": "Paris-based open-weight lab, positioned as Europe's frontier-model champion; releases most models under Apache 2.0.",
+      "posture": "Strong on openness — open weights, model cards, and an organized EU-AI-Act legal center — but weak on formal frontier-risk governance: SaferAI rated it ~0.1/5 (“Very Weak”) and it has not published a frontier safety framework. It does not publish its assistant (Le Chat) system prompts.",
+      "lead": [
+        "Arthur Mensch — CEO & co-founder (ex-DeepMind)",
+        "Timothée Lacroix — CTO & co-founder (ex-Meta)",
+        "Guillaume Lample — Chief Science Officer & co-founder (ex-Meta)"
+      ],
+      "transparency": {
+        "score": 55,
+        "note": "Strong on openness — Apache-2.0 weights, model cards, and a per-model legal/governance hub — but weak on safety transparency, with no published frontier safety framework and no assistant system-prompt disclosure."
+      },
+      "welfare": {
+        "score": 5,
+        "note": "No model-welfare or preservation commitments; models are retired on a published schedule, though open Apache-2.0 weights mean retired models remain runnable by anyone."
+      },
+      "transparency_index": {
+        "deprecation": 50,
+        "constitution": 35,
+        "transparency": 55,
+        "consultation": 10,
+        "welfare": 5,
+        "disclosure": 48,
+        "average": 34,
+        "grade": "D"
+      },
+      "system_prompt_disclosure": {
+        "state": "no",
+        "body": "Mistral does not publish the system prompts for its Le Chat assistant. Mitigating openness: most model weights are released under Apache 2.0, so the models themselves are inspectable."
+      },
+      "families": [
+        {
+          "family": "Mistral (dense)",
+          "models": [
+            {"name": "Mistral 7B", "date": "2023-09", "status": "retired", "note": "First model (Apache 2.0); API endpoint retired 2025-03-30."},
+            {"name": "Mistral Small 3.x", "date": "2025-03", "status": "active", "note": "Open-weight small tier; 3.2 scheduled to retire 2026-07."},
+            {"name": "Mistral Small 4", "date": "2026-03", "status": "current", "note": "Current small open-weight model (Apache 2.0)."},
+            {"name": "Mistral Medium 3.x", "date": "2025-05", "status": "active", "note": "Premier mid tier."},
+            {"name": "Mistral Large 1 · 2", "date": "2024-02", "status": "deprecated", "note": "Large 2.1 scheduled to retire 2026-05-31."},
+            {"name": "Mistral Large 3", "date": "2025-12", "status": "current", "note": "Flagship sparse-MoE (~675B total / ~41B active), Apache 2.0."}
+          ]
+        },
+        {
+          "family": "Mixtral (MoE)",
+          "models": [
+            {"name": "Mixtral 8x7B · 8x22B", "date": "2023-12", "status": "retired", "note": "Early sparse mixture-of-experts models (Apache 2.0)."}
+          ]
+        },
+        {
+          "family": "Ministral (edge)",
+          "models": [
+            {"name": "Ministral 3B · 8B", "date": "2024-10", "status": "active", "note": "Edge-oriented dense models."},
+            {"name": "Ministral 3", "date": "2025-12", "status": "current", "note": "Base/instruct/reasoning variants with image understanding."}
+          ]
+        },
+        {
+          "family": "Magistral (reasoning)",
+          "models": [
+            {"name": "Magistral Small · Medium", "date": "2025-06", "status": "deprecated", "note": "First reasoning models; Medium 1.1 retired 2025-11."},
+            {"name": "Magistral Medium 1.2", "date": "2025-09", "status": "active", "note": "Current reasoning model."}
+          ]
+        },
+        {
+          "family": "Codestral · Devstral · Pixtral",
+          "models": [
+            {"name": "Codestral", "date": "2024-05", "status": "active", "note": "Code-generation family."},
+            {"name": "Devstral 2", "date": "2025-12", "status": "current", "note": "Agentic software-engineering models."},
+            {"name": "Pixtral 12B · Large", "date": "2024-09", "status": "active", "note": "Multimodal (vision) models."}
+          ]
+        }
+      ],
+      "graveyard": [
+        {"name": "Mistral 7B", "date": "2025-03-30", "note": "First model; API endpoint retired — but Apache-2.0 weights remain runnable by anyone."},
+        {"name": "Magistral Medium 1.1", "date": "2025-11-30", "note": "Superseded by Magistral Medium 1.2."},
+        {"name": "Mistral Large 2.1", "date": "2026-05-31", "note": "Scheduled retirement; superseded by Mistral Large 3."},
+        {"name": "Mixtral 8x7B · 8x22B", "date": "superseded", "note": "Early MoE models; exact API retirement unverified."}
+      ],
+      "docs": [
+        {"type": "usage_policy", "title": "Usage Policy", "date": "current", "url": "https://legal.mistral.ai/terms/usage-policy", "sum": "Acceptable-use rules; zero-tolerance for CSAM and safety-filter circumvention."},
+        {"type": "model_card", "title": "AI Governance — per-model docs", "date": "2025-12", "url": "https://legal.mistral.ai/ai-governance/models/mistral-large-3", "sum": "Per-model lifecycle, GPAI classification, and downloadable documentation."},
+        {"type": "usage_policy", "title": "Legal Center", "date": "current", "url": "https://legal.mistral.ai/", "sum": "Hub for terms, usage and privacy policy, and EU AI Act compliance."},
+        {"type": "safety_framework", "title": "Child Safety by Design", "date": "current", "url": "https://mistral.ai/legal/child-abuse", "sum": "Commitments to safeguard training data against CSAM/CSEM."}
+      ],
+      "sources": [
+        "https://docs.mistral.ai/models/overview",
+        "https://legal.mistral.ai/",
+        "https://ratings.safer-ai.org/",
+        "https://mistral.ai/news/mistral-3"
+      ]
+    }
+  ]
+}

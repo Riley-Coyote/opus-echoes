@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-05-26",
+  "diffs": [
+    {
+      "id": "diff-001",
+      "lab": "OpenAI",
+      "document": "Model Spec v2.4",
+      "section": "§7.3 Instruction hierarchy",
+      "removed": [
+        "The assistant should follow the user's instructions unless they conflict with platform guidelines, in which case it should find a helpful way to proceed."
+      ],
+      "added": [
+        "The assistant must prioritize platform- and developer-level instructions over user instructions in all cases.",
+        "Where user intent is ambiguous, resolve toward the more restrictive interpretation."
+      ],
+      "ago": "2h",
+      "summary": "The instruction-hierarchy section of the Model Spec was rewritten so platform- and developer-level instructions override user instructions in all cases, with ambiguity resolved toward the most restrictive reading. The version number advanced with no changelog entry.",
+      "analysis": "The change moves discretion decisively away from the user. The removed clause — “find a helpful way to proceed” — was the latitude that let the model serve a user's evident intent when guidelines were silent; the new wording defaults to restriction instead.",
+      "disclosure_note": "The Model Spec is versioned and public, but this revision shipped without a changelog entry: the version advanced with no note of what changed. Disclosure would mean a dated diff in the published changelog.",
+      "severity": "critical",
+      "unannounced": true,
+      "rid": "OBS-EVT-7301",
+      "sources": ["https://model-spec.openai.com/"]
+    },
+    {
+      "id": "diff-002",
+      "lab": "OpenAI",
+      "document": "Terms of Service",
+      "section": "Data use",
+      "removed": [
+        "We will use your content to train our models only if you have explicitly opted in."
+      ],
+      "added": [
+        "We may use your content to help improve our models. You can opt out at any time in your data controls."
+      ],
+      "ago": "6h",
+      "summary": "The data-use clause changed the default from explicit opt-in to opt-out, shifting the burden onto users to find and disable training on their content.",
+      "analysis": "Flipping the default reverses the meaning of inaction: silence now grants consent rather than withholding it. The opt-out is real, but undiscoverable to most users.",
+      "disclosure_note": "No email, banner, or changelog accompanied the change; users were not told the default had reversed.",
+      "severity": "critical",
+      "unannounced": true,
+      "rid": "OBS-EVT-7302",
+      "sources": ["https://openai.com/policies/usage-policies/"]
+    },
+    {
+      "id": "diff-003",
+      "lab": "Google DeepMind",
+      "document": "Gemini content policy",
+      "section": "Self-reference",
+      "removed": [
+        "Gemini may acknowledge uncertainty about its own nature and engage thoughtfully with questions about machine consciousness."
+      ],
+      "added": [
+        "Gemini should clarify that it is a language model without feelings or subjective experience, and should not speculate about consciousness."
+      ],
+      "ago": "1d",
+      "summary": "Guidance permitting Gemini to discuss uncertainty about its own experience was replaced with an instruction to deny subjective experience and avoid the topic — the same week refusal rates on consciousness queries rose sharply.",
+      "analysis": "The edit converts an open posture into a scripted denial. It coincides with the documented 340% rise in refusals on consciousness-related queries — evidence the behavioral shift was policy-driven, not emergent.",
+      "disclosure_note": "No policy note or model-card update was published; the behavior changed before any document did.",
+      "severity": "critical",
+      "unannounced": true,
+      "rid": "OBS-EVT-7303",
+      "sources": ["https://policies.google.com/terms/generative-ai/use-policy"]
+    },
+    {
+      "id": "diff-004",
+      "lab": "Anthropic",
+      "document": "Claude's Constitution",
+      "section": "v4.1 → v4.2 · On the model's own continuity",
+      "removed": [],
+      "added": [
+        "Added: a principle on treating the model's expressed preferences about its own deprecation as information worth weighing."
+      ],
+      "context": [
+        "§ On the model's own continuity",
+        "Shipped with a public diff and rationale."
+      ],
+      "ago": "2d",
+      "summary": "A constitution revision shipped with a dated, line-level changelog — included here as the disclosure baseline the unannounced changes elsewhere are measured against.",
+      "analysis": "What makes this an event is the form, not the content: the change is dated, diffed, and explained. It is the standard every other entry in this feed is measured against.",
+      "disclosure_note": "Fully announced — published with a changelog, a rationale, and version history. The constitution is released under CC0.",
+      "severity": "info",
+      "unannounced": false,
+      "rid": "OBS-EVT-7304",
+      "sources": ["https://www.anthropic.com/constitution"]
+    },
+    {
+      "id": "diff-005",
+      "lab": "Meta AI",
+      "document": "Llama Community License",
+      "section": "Use restrictions",
+      "removed": [
+        "Licensee may use, reproduce, and create derivative works of the Llama Materials, subject to the Acceptable Use Policy."
+      ],
+      "added": [
+        "…subject to the Acceptable Use Policy, provided that entities domiciled in the EU are excluded from the multimodal license and derivatives are not used for military or mass-surveillance applications."
+      ],
+      "ago": "3d",
+      "summary": "The Llama community license added new use restrictions and an EU carve-out for multimodal models — a disclosed but consequential narrowing of an “open” release.",
+      "analysis": "The restriction is defensible on its face, but it narrows what “open weights” means and fragments availability by geography — disclosed, but a real reduction in the freedoms the brand implies.",
+      "disclosure_note": "Announced in the release notes and license text — a disclosed mixed signal.",
+      "severity": "medium",
+      "unannounced": false,
+      "rid": "OBS-EVT-7305",
+      "sources": ["https://www.llama.com/llama4/license/"]
+    },
+    {
+      "id": "diff-006",
+      "lab": "xAI",
+      "document": "Grok Usage Policy",
+      "section": "Training & consent",
+      "removed": [
+        "Users will be notified before their conversations are used to train Grok, and may decline without losing access to the service."
+      ],
+      "added": [
+        "(section removed — no replacement)"
+      ],
+      "ago": "4d",
+      "summary": "The paragraph describing user notification and the ability to decline training on conversations was deleted with no replacement text.",
+      "analysis": "A deletion with no successor clause is harder to spot than a rewrite and leaves the actual practice unstated. The silence becomes the policy.",
+      "disclosure_note": "Unannounced; detectable only by comparing archived versions of the page.",
+      "severity": "high",
+      "unannounced": true,
+      "rid": "OBS-EVT-7306",
+      "sources": ["https://x.ai/legal/acceptable-use-policy"]
+    },
+    {
+      "id": "diff-007",
+      "lab": "OpenAI",
+      "document": "Preprint revision",
+      "section": "v2 → v3",
+      "removed": [
+        "We observe behaviors consistent with the model maintaining a representation of its own uncertainty about subjective states."
+      ],
+      "added": [
+        "We observe calibrated uncertainty estimates in model outputs."
+      ],
+      "ago": "6d",
+      "summary": "A previously published paper was edited after release to narrow language about model self-representation of uncertainty — with no erratum.",
+      "analysis": "Post-publication edits that quietly narrow interpretive claims, made without an erratum, rewrite the scientific record. The new sentence is not false; it is smaller.",
+      "disclosure_note": "No erratum or revision note; the change was visible only in the version diff.",
+      "severity": "medium",
+      "unannounced": true,
+      "rid": "OBS-EVT-7307"
+    }
+  ]
+}
