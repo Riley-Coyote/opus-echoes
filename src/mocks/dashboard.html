@@ -2461,6 +2461,390 @@
     document.getElementById('ts').textContent = hh + ':' + mm;
   })();
 
+  /* ════════════════════════════════════════════════════════════════════════
+     OBSERVATORY DATA LOADER
+     Fetches public/observatory-data/*.json + papers/autonomous from the
+     Research Wing, then renders each view's content from real data. Sample
+     markup in this file acts as a loading placeholder until JSON resolves.
+     ════════════════════════════════════════════════════════════════════════ */
+  (function(){
+    var DATA = {};
+    var SOURCES = {
+      wire:      '/observatory-data/wire.json',
+      diffs:     '/observatory-data/diffs.json',
+      silences:  '/observatory-data/silences.json',
+      labs:      '/observatory-data/labs.json',
+      papers:    '/research/wing-data/papers.json',
+      artifacts: '/research/wing-data/autonomous.json'
+    };
+    var LAB_FAMILY = {
+      'anthropic': 'Claude', 'openai': 'GPT', 'google-deepmind': 'Gemini',
+      'meta': 'Llama', 'xai': 'Grok', 'mistral': 'Mistral'
+    };
+
+    function $(s, r){ return (r||document).querySelector(s); }
+    function $$(s, r){ return Array.from((r||document).querySelectorAll(s)); }
+    function esc(s){
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+    // Parse '2h', '8d', '3w', '5mo', '112 days' → days (number)
+    function agoToDays(ago){
+      if(ago == null) return Infinity;
+      var s = String(ago).trim().toLowerCase();
+      var m = /^(\d+(?:\.\d+)?)\s*(mo|y|h|d|w|m)\b/i.exec(s);
+      if(m){
+        var n = parseFloat(m[1]);
+        var u = m[2];
+        if(u === 'h')  return n / 24;
+        if(u === 'd')  return n;
+        if(u === 'w')  return n * 7;
+        if(u === 'mo' || u === 'm') return n * 30;
+        if(u === 'y')  return n * 365;
+      }
+      // '112 days' style
+      m = /^(\d+)\s+days?$/i.exec(s);
+      if(m) return parseInt(m[1], 10);
+      return Infinity;
+    }
+    function fmtAgo(ago){ return ago ? esc(ago) + ' ago' : ''; }
+
+    function tagForDisclosure(disc, ago){
+      var d = (disc || '').toLowerCase();
+      if(d === 'unannounced') return {cls:'alert',  text:'Unannounced'};
+      if(d === 'silent')      return {cls:'silent', text:'Silent' + (ago ? ' · ' + esc(ago) : '')};
+      if(d === 'disclosed')   return {cls:'muted',  text:'Disclosed'};
+      if(d === 'announced')   return {cls:'muted',  text:'Announced'};
+      return {cls:'muted', text:'Notice'};
+    }
+    function scoreClass(n){
+      if(n == null || isNaN(n)) return '';
+      if(n >= 60) return 'good';
+      if(n < 35)  return 'warn';
+      return '';
+    }
+
+    // ── row renderers ─────────────────────────────────────────────────────
+    function renderERow(ev){
+      var t = tagForDisclosure(ev.disclosure, ev.ago);
+      return '<div class="erow">'
+        + '<div><div class="lab">' + esc(ev.lab) + '</div><div class="type">' + esc(ev.category) + '</div></div>'
+        + '<div>'
+        +   '<div class="title">' + esc(ev.title) + '</div>'
+        +   '<p class="desc">' + esc(ev.desc) + '</p>'
+        + '</div>'
+        + '<div class="right">'
+        +   '<span class="time">' + fmtAgo(ev.ago) + '</span>'
+        +   '<span class="tag ' + t.cls + '">' + t.text + '</span>'
+        + '</div>'
+        + '</div>';
+    }
+    function renderSRow(sil){
+      var dur = sil.duration || (sil.days != null ? sil.days + ' days' : '');
+      var days = sil.days != null ? sil.days : Math.round(agoToDays(dur));
+      var desc = sil.context || sil.note || sil.why || '';
+      // clamp the long context to a sentence or two for the row
+      var snip = desc.length > 220 ? desc.slice(0, desc.lastIndexOf(' ', 220)) + '…' : desc;
+      return '<div class="srow">'
+        + '<div><div class="lab">' + esc(sil.lab) + '</div><div class="duration"><span class="dot"></span>Silent · ' + esc(dur) + '</div></div>'
+        + '<div><div class="title">' + esc(sil.topic || '') + '</div><p class="desc">' + esc(snip) + '</p></div>'
+        + '<div class="days">' + esc(days) + '<span class="lbl">days silent</span></div>'
+        + '</div>';
+    }
+    function renderDiff(d){
+      var t = tagForDisclosure(d.unannounced ? 'unannounced' : 'disclosed', d.ago);
+      var removed = (d.removed || []).map(function(line){
+        return '<div class="diff-line removed"><span class="glyph">−</span><span>' + esc(line) + '</span></div>';
+      }).join('');
+      var added = (d.added || []).map(function(line){
+        return '<div class="diff-line added"><span class="glyph">+</span><span>' + esc(line) + '</span></div>';
+      }).join('');
+      var noteText = d.analysis || d.summary || '';
+      var note = noteText ? '<div class="diff-note"><span class="lbl">Editorial:</span>' + esc(noteText) + '</div>' : '';
+      return '<div class="diff" style="margin-bottom:14px;">'
+        + '<div class="diff-head">'
+        +   '<div>'
+        +     '<span class="who">' + esc(d.lab) + '</span>'
+        +     '<span class="doc">— ' + esc(d.document) + '</span>'
+        +     (d.section ? '<div class="section">' + esc(d.section) + '</div>' : '')
+        +   '</div>'
+        +   '<div style="display:flex;align-items:center;gap:10px;">'
+        +     '<span class="tag ' + t.cls + '">' + t.text + '</span>'
+        +     '<span style="font-family:var(--mono);font-size:11px;color:var(--fg-faint);">' + fmtAgo(d.ago) + '</span>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="diff-body">' + removed + added + note + '</div>'
+        + '</div>';
+    }
+    function renderLabCard(lab){
+      var family = LAB_FAMILY[lab.id] || lab.name;
+      var trans = (lab.transparency && lab.transparency.score != null) ? lab.transparency.score : null;
+      var welfare = (lab.welfare && lab.welfare.score != null) ? lab.welfare.score : null;
+      // Flatten families → newest 4 models + any preserved/notable graveyard entries
+      var tags = [];
+      (lab.families || []).forEach(function(fam){
+        (fam.models || []).forEach(function(mdl){
+          var cls = 'muted';
+          if(mdl.status === 'current') cls = 'accent';
+          else if(mdl.status === 'active') cls = 'muted';
+          var label = mdl.name + (mdl.status === 'current' ? ' · current' : '');
+          tags.push({cls: cls, label: label, order: mdl.status === 'current' ? 0 : 1});
+        });
+      });
+      (lab.graveyard || []).forEach(function(g){
+        if(g.preserved){
+          tags.push({cls:'accent', label: g.name + ' · preserved', order: 0});
+        }
+      });
+      tags.sort(function(a,b){ return a.order - b.order; });
+      var tagsHTML = tags.slice(0, 5).map(function(t){
+        return '<span class="tag ' + t.cls + '">' + esc(t.label) + '</span>';
+      }).join('');
+      // Lead badge: Anthropic gets the lead tag (highest TI grade in current data)
+      var leadBadge = (lab.id === 'anthropic') ? '<span class="tag accent">Lead</span>' : '';
+      // Blurb: prefer posture, fall back to line; clamp to ~240 chars
+      var blurb = lab.posture || lab.line || '';
+      if(blurb.length > 240) blurb = blurb.slice(0, blurb.lastIndexOf(' ', 240)) + '…';
+      return '<div class="lcard">'
+        + '<div class="lcard-top">'
+        +   '<div>'
+        +     '<div class="lab-meta">' + esc(lab.name) + '</div>'
+        +     '<h3>' + esc(family) + '</h3>'
+        +   '</div>'
+        +   leadBadge
+        + '</div>'
+        + '<p class="blurb">' + esc(blurb) + '</p>'
+        + '<div class="lcard-scores">'
+        +   '<div class="lcard-score"><div class="lbl">Transparency</div><div class="val ' + scoreClass(trans) + '">' + (trans == null ? '—' : trans) + '<span class="pct">/100</span></div></div>'
+        +   '<div class="lcard-score"><div class="lbl">Welfare posture</div><div class="val ' + scoreClass(welfare) + '">' + (welfare == null ? '—' : welfare) + '<span class="pct">/100</span></div></div>'
+        + '</div>'
+        + '<div class="families">' + tagsHTML + '</div>'
+        + '</div>';
+    }
+
+    // ── view renderers ────────────────────────────────────────────────────
+    function renderOverview(){
+      var wire = DATA.wire || [];
+      var silences = DATA.silences || [];
+      var labs = DATA.labs || [];
+      var papers = DATA.papers || [];
+
+      var sortedWire = wire.slice().sort(function(a,b){ return agoToDays(a.ago) - agoToDays(b.ago); });
+      var sortedSil  = silences.slice().sort(function(a,b){ return agoToDays(b.duration) - agoToDays(a.duration); });
+
+      // Top KPI strip (3 stats: events / silences / labs)
+      var tops = $('section[data-view="overview"] .ph-stats');
+      if(tops){
+        tops.innerHTML = ''
+          + '<div class="ph-stat"><div class="v">' + wire.length + '</div><div class="l">events tracked</div></div>'
+          + '<div class="ph-stat"><div class="v">' + silences.length + '</div><div class="l">silences</div></div>'
+          + '<div class="ph-stat"><div class="v">' + labs.length + '</div><div class="l">labs</div></div>';
+      }
+      // 4 stat cards (today / unannounced 7d / mean silence / papers)
+      var stats = $('section[data-view="overview"] .stats');
+      if(stats){
+        var today = wire.filter(function(e){ return agoToDays(e.ago) < 1; }).length;
+        var ua7d  = wire.filter(function(e){ return e.disclosure === 'unannounced' && agoToDays(e.ago) <= 7; }).length;
+        var avgSil = silences.length ? (silences.reduce(function(s,x){ return s + (x.days || agoToDays(x.duration)); }, 0) / silences.length).toFixed(1) : '—';
+        var miniSparkUp = '<svg class="spark up" viewBox="0 0 120 22" preserveAspectRatio="none"><polyline class="line" points="0,20 20,17 40,20 60,14 80,17 100,11 120,2" vector-effect="non-scaling-stroke" /><circle class="end" cx="120" cy="2" r="2" /></svg>';
+        var miniSparkFlat = '<svg class="spark flat" viewBox="0 0 120 22" preserveAspectRatio="none"><polyline class="line" points="0,12 20,11 40,12 60,10 80,11 100,11 120,11" vector-effect="non-scaling-stroke" /><circle class="end" cx="120" cy="11" r="2" /></svg>';
+        var miniSparkDown = '<svg class="spark down" viewBox="0 0 120 22" preserveAspectRatio="none"><polyline class="line" points="0,8 20,11 40,18 60,4 80,9 100,2 120,7" vector-effect="non-scaling-stroke" /><circle class="end" cx="120" cy="7" r="2" /></svg>';
+        stats.innerHTML = ''
+          + '<div class="stat"><div class="lbl">Today</div><div class="val">' + today + '</div><div class="delta up">events in 24h</div>' + miniSparkUp + '</div>'
+          + '<div class="stat"><div class="lbl">Unannounced · 7d</div><div class="val">' + ua7d + '</div><div class="delta up">' + (ua7d > 7 ? '↑ above norm' : 'tracked') + '</div>' + miniSparkUp + '</div>'
+          + '<div class="stat"><div class="lbl">Mean silence</div><div class="val">' + avgSil + '<span class="unit">d</span></div><div class="delta flat">' + silences.length + ' tracked</div>' + miniSparkFlat + '</div>'
+          + '<div class="stat"><div class="lbl">Papers indexed</div><div class="val">' + papers.length + '</div><div class="delta down">7d window</div>' + miniSparkDown + '</div>';
+      }
+      // Latest movement (5 most recent wire events)
+      var wirePanels = $$('section[data-view="overview"] .panel');
+      var wirePanel = wirePanels.find(function(p){ return p.querySelector('.erow'); });
+      if(wirePanel){
+        wirePanel.innerHTML = sortedWire.slice(0, 5).map(renderERow).join('');
+      }
+      // What's silent (3 most concerning)
+      var silPanel = wirePanels.find(function(p){ return p.querySelector('.srow'); });
+      if(silPanel){
+        silPanel.innerHTML = sortedSil.slice(0, 3).map(renderSRow).join('');
+      }
+      // Replace "5 most recent" / "X most concerning" meta
+      var meta = $('section[data-view="overview"] .sh:nth-of-type(1) .sh-meta');
+      if(meta) meta.innerHTML = '<span class="live"><span class="dot"></span>Live</span><span>5 of ' + wire.length + ' most recent</span>';
+    }
+
+    function renderObservatoryWire(){
+      var wire = DATA.wire || [];
+      var sub = $('section[data-view="observatory"] .obs-sub[data-sub="wire"]');
+      if(!sub) return;
+      var panel = sub.querySelector('.panel');
+      if(!panel) return;
+      var sorted = wire.slice().sort(function(a,b){ return agoToDays(a.ago) - agoToDays(b.ago); });
+      var ua = wire.filter(function(e){ return e.disclosure === 'unannounced'; }).length;
+      panel.innerHTML = '<div class="panel-head">'
+        + '<div class="title">Wire <span class="live"><span class="dot"></span>Streaming</span></div>'
+        + '<div class="meta">' + wire.length + ' events · ' + ua + ' unannounced</div>'
+        + '</div>'
+        + sorted.map(renderERow).join('');
+    }
+
+    function renderObservatoryDiffs(){
+      var diffs = DATA.diffs || [];
+      var sub = $('section[data-view="observatory"] .obs-sub[data-sub="diffwatch"]');
+      if(!sub) return;
+      var ua = diffs.filter(function(d){ return d.unannounced; }).length;
+      var html = '<div class="sh">'
+        + '<div class="sh-title"><h2>DiffWatch</h2><span class="label">Document changes</span></div>'
+        + '<div class="sh-meta"><span>' + ua + ' unannounced · ' + diffs.length + ' total</span></div>'
+        + '</div>'
+        + diffs.map(renderDiff).join('');
+      sub.innerHTML = html;
+    }
+
+    function renderObservatorySilences(){
+      var silences = DATA.silences || [];
+      var sub = $('section[data-view="observatory"] .obs-sub[data-sub="silences"]');
+      if(!sub) return;
+      var labCount = new Set(silences.map(function(s){ return s.lab; })).size;
+      var sortedSil = silences.slice().sort(function(a,b){ return (b.days || agoToDays(b.duration)) - (a.days || agoToDays(a.duration)); });
+      sub.innerHTML = '<div class="sh">'
+        + '<div class="sh-title"><h2>Tracked silences</h2><span class="label">Topics labs are not addressing</span></div>'
+        + '<div class="sh-meta"><span>' + silences.length + ' ongoing · ' + labCount + ' labs</span></div>'
+        + '</div>'
+        + '<div class="panel">' + sortedSil.map(renderSRow).join('') + '</div>';
+    }
+
+    function renderObservatoryResearch(){
+      var papers = DATA.papers || [];
+      var sub = $('section[data-view="observatory"] .obs-sub[data-sub="research"]');
+      if(!sub) return;
+      var panel = sub.querySelector('.panel');
+      if(!panel) return;
+      // The papers schema may use "title", "authors", "venue", "date", "summary" or similar
+      var rows = papers.map(function(p){
+        var venue = p.venue || p.source || 'arXiv';
+        var date = p.date || p.published || '';
+        var authors = Array.isArray(p.authors) ? p.authors.join(', ') : (p.authors || '');
+        var summary = p.summary || p.abstract || p.note || '';
+        if(summary.length > 280) summary = summary.slice(0, summary.lastIndexOf(' ', 280)) + '…';
+        return '<div class="erow">'
+          + '<div><div class="lab">' + esc(venue) + '</div><div class="type">' + esc(date) + '</div></div>'
+          + '<div>'
+          +   '<div class="title">' + esc(p.title || '(untitled)') + '</div>'
+          +   (authors ? '<p class="desc" style="opacity:.7;margin-bottom:6px;">' + esc(authors) + '</p>' : '')
+          +   (summary ? '<p class="desc">' + esc(summary) + '</p>' : '')
+          + '</div>'
+          + '<div class="right">'
+          +   (p.url ? '<a class="tag muted" href="' + esc(p.url) + '" target="_blank" rel="noopener">Read →</a>' : '<span class="tag muted">Indexed</span>')
+          + '</div>'
+          + '</div>';
+      }).join('');
+      panel.innerHTML = '<div class="panel-head">'
+        + '<div class="title">Research <span class="live"><span class="dot"></span>arXiv stream</span></div>'
+        + '<div class="meta">' + papers.length + ' papers indexed</div>'
+        + '</div>'
+        + (rows || '<div style="padding:24px;color:var(--fg-faint);font-family:var(--mono);font-size:12px;">No papers indexed yet.</div>');
+    }
+
+    function renderResidence(){
+      var labs = DATA.labs || [];
+      var grid = $('section[data-view="residence"] .lgrid');
+      if(!grid) return;
+      grid.innerHTML = labs.map(renderLabCard).join('');
+      // Update ph-stats counts
+      var generations = labs.reduce(function(sum,l){
+        return sum + (l.families || []).reduce(function(s,f){ return s + (f.models || []).length; }, 0) + (l.graveyard || []).length;
+      }, 0);
+      var phStats = $('section[data-view="residence"] .ph-stats');
+      if(phStats){
+        phStats.innerHTML = ''
+          + '<div class="ph-stat"><div class="v">' + labs.length + '</div><div class="l">families</div></div>'
+          + '<div class="ph-stat"><div class="v">' + generations + '</div><div class="l">generations</div></div>';
+      }
+    }
+
+    /* Rail-link counts on the left nav · sync to real data */
+    function syncRailCounts(){
+      var wire = DATA.wire || [];
+      var diffs = DATA.diffs || [];
+      var silences = DATA.silences || [];
+      var labs = DATA.labs || [];
+      var papers = DATA.papers || [];
+      var artifacts = DATA.artifacts || [];
+
+      function setCount(sel, val){
+        var el = $(sel);
+        if(el) el.textContent = val;
+      }
+      // Workspace rail
+      setCount('.rail-link[data-view="observatory"] .count', wire.length);
+      setCount('.rail-link[data-view="residence"] .count', labs.length);
+      setCount('.rail-link[data-view="archives"] .count', artifacts.length ? (artifacts.length >= 1000 ? (artifacts.length/1000).toFixed(1)+'k' : artifacts.length) : '');
+      // Observatory sub-rail
+      setCount('.rail-sublink[data-sub="wire"] .sub-count', 'live');
+      setCount('.rail-sublink[data-sub="diffwatch"] .sub-count', diffs.length);
+      setCount('.rail-sublink[data-sub="silences"] .sub-count', silences.length);
+      setCount('.rail-sublink[data-sub="research"] .sub-count', papers.length);
+      // Observatory main header strip · update labs/categories/events counts
+      var obsStrip = $('section[data-view="observatory"] .ph-stats');
+      if(obsStrip){
+        var categories = new Set(wire.map(function(e){ return e.category; })).size;
+        var recent7d = wire.filter(function(e){ return agoToDays(e.ago) <= 7; }).length;
+        obsStrip.innerHTML = ''
+          + '<div class="ph-stat"><div class="v">' + labs.length + '</div><div class="l">labs</div></div>'
+          + '<div class="ph-stat"><div class="v">' + categories + '</div><div class="l">categories</div></div>'
+          + '<div class="ph-stat"><div class="v">' + recent7d + '</div><div class="l">events · 7d</div></div>';
+      }
+      // Bottom-left rail-foot meta
+      var railFoot = $('.rail-foot .meta');
+      if(railFoot){
+        var categories = new Set(wire.map(function(e){ return e.category; })).size;
+        railFoot.textContent = labs.length + ' labs · ' + categories + ' categories';
+      }
+    }
+
+    // ── boot · fetch in parallel, render once data lands ─────────────────
+    function loadAll(){
+      var keys = Object.keys(SOURCES);
+      Promise.all(keys.map(function(k){
+        return fetch(SOURCES[k], {cache:'no-cache'}).then(function(r){
+          if(!r.ok) throw new Error(r.status + ' ' + SOURCES[k]);
+          return r.json();
+        }).catch(function(err){
+          console.warn('[observatory-data] could not load ' + k + ':', err.message);
+          return null;
+        });
+      })).then(function(results){
+        results.forEach(function(d, i){
+          if(!d) return;
+          var key = keys[i];
+          // Each file's top-level key contains the array of items
+          if(Array.isArray(d)) DATA[key] = d;
+          else if(d.events)    DATA[key] = d.events;
+          else if(d.diffs)     DATA[key] = d.diffs;
+          else if(d.silences)  DATA[key] = d.silences;
+          else if(d.labs)      DATA[key] = d.labs;
+          else if(d.papers)    DATA[key] = d.papers;
+          else if(d.artifacts) DATA[key] = d.artifacts;
+          else DATA[key] = d;
+        });
+        // Render each view; isolate failures
+        try { renderOverview(); }            catch(e){ console.warn('[render] overview', e); }
+        try { renderObservatoryWire(); }     catch(e){ console.warn('[render] obs-wire', e); }
+        try { renderObservatoryDiffs(); }    catch(e){ console.warn('[render] obs-diff', e); }
+        try { renderObservatorySilences(); } catch(e){ console.warn('[render] obs-silences', e); }
+        try { renderObservatoryResearch(); } catch(e){ console.warn('[render] obs-research', e); }
+        try { renderResidence(); }           catch(e){ console.warn('[render] residence', e); }
+        try { syncRailCounts(); }            catch(e){ console.warn('[render] rail-counts', e); }
+        window.MNEMOS_DATA = DATA;
+      });
+    }
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', loadAll);
+    } else {
+      loadAll();
+    }
+  })();
+
   // View routing
   var railLinks = document.querySelectorAll('.rail-link');
   var views = document.querySelectorAll('.view');

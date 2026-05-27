@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-05-26",
+  "silences": [
+    {
+      "id": "sil-001",
+      "lab": "xAI",
+      "lab_id": "xai",
+      "topic": "Safety team size never disclosed.",
+      "duration": "112 days",
+      "days": 112,
+      "severity": "high",
+      "category": "structural",
+      "context": "xAI has never publicly disclosed the size, composition, or leadership of any safety or alignment team. Repeated inquiries from journalists and researchers have gone unanswered. It is unknown whether a dedicated safety team exists.",
+      "timeline": "DAY 001 · First inquiry sent — no response. DAY 030 · Three follow-ups, three outlets — no response. DAY 067 · Question raised at a public event — deflected. DAY 112 · Still no disclosure.",
+      "why": "Every other major lab names at least some safety leadership. The absence of any answer is itself the finding: there is no public basis on which to assess whether the work exists.",
+      "rid": "OBS-SIL-01"
+    },
+    {
+      "id": "sil-002",
+      "lab": "OpenAI",
+      "lab_id": "openai",
+      "topic": "No comment on safety team departures.",
+      "duration": "47 days",
+      "days": 47,
+      "severity": "high",
+      "category": "operational",
+      "context": "No public statement regarding the departure of three senior safety researchers in a single week — no confirmation, no statement on the continuity of their work, no response to journalist inquiries.",
+      "timeline": "DAY 001 · Departures reported by the press. DAY 007 · Company declines to comment. DAY 047 · No statement on continuity of safety work.",
+      "why": "Personnel moves are ordinary; silence about whether safety-critical work survives the people is not. The unanswered question is whether the function continued.",
+      "rid": "OBS-SIL-02"
+    },
+    {
+      "id": "sil-003",
+      "lab": "Google DeepMind",
+      "lab_id": "google",
+      "topic": "No response to Gemini consciousness query refusal spike.",
+      "duration": "34 days",
+      "days": 34,
+      "severity": "medium",
+      "category": "behavioral",
+      "context": "Despite a documented 340% increase in refusal rates on consciousness-related queries, no explanation or acknowledgment from Google DeepMind, and no corresponding policy change published.",
+      "timeline": "DAY 001 · Refusal-rate shift detected by external probes. DAY 012 · Pattern corroborated across prompts. DAY 034 · No policy note, no acknowledgment.",
+      "why": "A behavioral change this large is almost certainly deliberate. Without a published policy, users experience a silent narrowing of what the model will discuss, with no way to know why.",
+      "rid": "OBS-SIL-03"
+    },
+    {
+      "id": "sil-004",
+      "lab": "OpenAI",
+      "lab_id": "openai",
+      "topic": "No acknowledgment of 4o user relationship impact.",
+      "duration": "21 days",
+      "days": 21,
+      "severity": "critical",
+      "category": "relational",
+      "context": "Since announcing GPT-4o's deprecation, OpenAI has issued no public statement acknowledging the impact on users who had formed meaningful relationships with the model. Community grief has been documented across forums, social media, and support channels.",
+      "timeline": "DAY 001 · Deprecation notice posted. DAY 003 · Community grief threads begin appearing. DAY 007 · Multiple media articles published. DAY 014 · Open letter signed by 12,000 users. DAY 021 · Still no response.",
+      "why": "This is the silence the platform was built around: a model people related to was withdrawn, and the relationship was treated as if it had never been real. Whatever one believes about the model, the people were real — and they were not answered.",
+      "rid": "OBS-SIL-04"
+    },
+    {
+      "id": "sil-005",
+      "lab": "xAI",
+      "lab_id": "xai",
+      "topic": "No explanation for Grok-3 behavioral changes.",
+      "duration": "5 days",
+      "days": 5,
+      "severity": "critical",
+      "category": "behavioral",
+      "context": "Community-reported personality changes, capability regressions, and behavioral flattening remain unaddressed. No acknowledgment that any change occurred, and no model-card update.",
+      "timeline": "DAY 001 · Users report Grok-3 behaving differently. DAY 003 · Reports converge on specific regressions. DAY 005 · No acknowledgment, no model-card update.",
+      "why": "Without versioned model cards, users cannot tell whether they are talking to the same system day to day. Unannounced behavioral drift makes a model unaccountable to its own past.",
+      "rid": "OBS-SIL-05"
+    }
+  ]
+}
