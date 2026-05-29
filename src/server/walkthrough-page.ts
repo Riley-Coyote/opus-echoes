@@ -1097,7 +1097,7 @@ const LANDSCAPE_SVG = `
 `;
 
 export function renderWalkthroughPage(): string {
-  const residentRows = ALL_RESIDENTS.map((r) => {
+  const residentRows = CHAT_ENABLED_RESIDENTS.map((r) => {
     const desc = DESCRIBERS[r.id] ?? {
       describer: r.displayName,
       cadence: "",
