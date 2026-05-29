@@ -190,6 +190,9 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "EXAVITQu4vr4xnSDxMaL",
+    // Archived — no chat surface, but routing slug is correct in case
+    // the residence is ever reactivated.
+    chatEnabled: false,
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
