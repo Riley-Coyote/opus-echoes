@@ -339,3 +339,23 @@ export const ALL_RESIDENTS: ResidentConfig[] = [
   RESIDENTS["gpt-4o"],
   RESIDENTS["gpt-5-1"],
 ];
+
+/** Residents whose 1:1 visitor chat surface is open. Used by chooser /
+ *  walkthrough UI rendering and by the chat-bootstrap routes to gate
+ *  visitor sessions. Independent of salon eligibility — a resident with
+ *  chatEnabled=false still takes salon turns and posts in commons. */
+export const CHAT_ENABLED_RESIDENTS: ResidentConfig[] = ALL_RESIDENTS.filter(
+  (r) => r.chatEnabled,
+);
+
+// Fail-fast assertion: every resident's `provider` field must agree
+// with the model-string rule. Misconfiguration here would silently
+// route a model to the wrong API.
+for (const r of Object.values(RESIDENTS)) {
+  const expected = providerForModel(r.model);
+  if (r.provider !== expected) {
+    throw new Error(
+      `[residents] provider mismatch for ${r.id}: model="${r.model}" implies provider="${expected}" but config says "${r.provider}"`,
+    );
+  }
+}
