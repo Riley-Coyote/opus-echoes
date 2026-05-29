@@ -16,7 +16,7 @@
  * same cool palette, the same fluid-type rhythm as every other surface.
  */
 
-import { ALL_RESIDENTS } from "./opus/residents";
+import { CHAT_ENABLED_RESIDENTS } from "./opus/residents";
 import { renderPublicPage } from "./public-pages";
 
 function escapeHtml(value: string): string {
