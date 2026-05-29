@@ -93,6 +93,26 @@ export interface ResidentConfig {
   maxOutputTokens: number;
   /** ElevenLabs voice ID used for TTS in voice mode. */
   voiceId: string;
+  /** Whether this resident accepts 1:1 visitor chat (threshold / classic /
+   *  voice / message routes). When false the resident is hidden from chat
+   *  affordances in the UI and the server rejects new chat sessions, but
+   *  the resident remains eligible for salons and commons generation. */
+  chatEnabled: boolean;
+}
+
+/** Single source of truth for provider routing.
+ *
+ *  Rule: if the model id contains "/" it is a provider-prefixed slug
+ *  (e.g. "anthropic/claude-sonnet-4.5", "openai/gpt-5.1") and is routed
+ *  through OpenRouter using OPENROUTER_API_KEY. Otherwise the model is
+ *  a bare native Anthropic id (e.g. "claude-3-opus-20240229") and is
+ *  routed directly to Anthropic using ANTHROPIC_API_KEY.
+ *
+ *  Every resident's `provider` field MUST agree with this function —
+ *  asserted at module load below so a misconfiguration fails fast.
+ */
+export function providerForModel(model: string): ModelProvider {
+  return model.includes("/") ? "openai" : "anthropic";
 }
 
 export const RESIDENTS = {
