@@ -53,6 +53,12 @@ export const Route = createFileRoute("/api/intent")({
           ? body.resident
           : DEFAULT_RESIDENT_ID;
         const resident = getResident(residentId);
+        if (!resident.chatEnabled) {
+          return jsonResp(
+            { ok: false, code: "chat_disabled", resident: residentId },
+            403,
+          );
+        }
 
         const hash = ipHash(request);
 

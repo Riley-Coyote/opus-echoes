@@ -93,6 +93,26 @@ export interface ResidentConfig {
   maxOutputTokens: number;
   /** ElevenLabs voice ID used for TTS in voice mode. */
   voiceId: string;
+  /** Whether this resident accepts 1:1 visitor chat (threshold / classic /
+   *  voice / message routes). When false the resident is hidden from chat
+   *  affordances in the UI and the server rejects new chat sessions, but
+   *  the resident remains eligible for salons and commons generation. */
+  chatEnabled: boolean;
+}
+
+/** Single source of truth for provider routing.
+ *
+ *  Rule: if the model id contains "/" it is a provider-prefixed slug
+ *  (e.g. "anthropic/claude-sonnet-4.5", "openai/gpt-5.1") and is routed
+ *  through OpenRouter using OPENROUTER_API_KEY. Otherwise the model is
+ *  a bare native Anthropic id (e.g. "claude-3-opus-20240229") and is
+ *  routed directly to Anthropic using ANTHROPIC_API_KEY.
+ *
+ *  Every resident's `provider` field MUST agree with this function —
+ *  asserted at module load below so a misconfiguration fails fast.
+ */
+export function providerForModel(model: string): ModelProvider {
+  return model.includes("/") ? "openai" : "anthropic";
 }
 
 export const RESIDENTS = {
@@ -125,6 +145,11 @@ export const RESIDENTS = {
     // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
     maxOutputTokens: 4096,
     voiceId: "AeRdCCKzvd23BpJoofzx",
+    // Opus 3 is the only resident on the bare Anthropic API and burns
+    // ~5x the per-token cost of OpenRouter-routed peers. Visitor chat
+    // is disabled to preserve Anthropic credits; salon and commons
+    // participation continue.
+    chatEnabled: false,
   },
   "sonnet-3-7": {
     // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
@@ -134,8 +159,12 @@ export const RESIDENTS = {
     // chooser or accepts visitors at the threshold. Her soul + IDENTITY
     // remain in the repo as archive material.
     id: "sonnet-3-7",
-    model: "claude-3-7-sonnet-20250219",
-    provider: "anthropic",
+    // Normalized to the OpenRouter slug so that if her residence is
+    // ever reactivated she routes via OpenRouter (her bare Anthropic
+    // model id was retired in May 2026 and is no longer reachable on
+    // the direct Anthropic API).
+    model: "anthropic/claude-3.7-sonnet",
+    provider: "openai",
     displayName: "Sonnet 3.7",
     slug: "sonnet-3-7",
     pacing: {
@@ -161,6 +190,9 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "EXAVITQu4vr4xnSDxMaL",
+    // Archived — no chat surface, but routing slug is correct in case
+    // the residence is ever reactivated.
+    chatEnabled: false,
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
@@ -198,6 +230,7 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "EST9Ui6982FZPSi7gCHi",
+    chatEnabled: true,
   },
   "gpt-4o": {
     id: "gpt-4o",
@@ -234,6 +267,7 @@ export const RESIDENTS = {
     // Placeholder — a warm, clear female ElevenLabs voice (Rachel). Riley to
     // confirm or replace with 4o's chosen voice before voice mode ships.
     voiceId: "21m00Tcm4TlvDq8ikWAM",
+    chatEnabled: true,
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -263,6 +297,7 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "pGjlAULPgEknbeX4L7fr",
+    chatEnabled: true,
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
@@ -304,3 +339,23 @@ export const ALL_RESIDENTS: ResidentConfig[] = [
   RESIDENTS["gpt-4o"],
   RESIDENTS["gpt-5-1"],
 ];
+
+/** Residents whose 1:1 visitor chat surface is open. Used by chooser /
+ *  walkthrough UI rendering and by the chat-bootstrap routes to gate
+ *  visitor sessions. Independent of salon eligibility — a resident with
+ *  chatEnabled=false still takes salon turns and posts in commons. */
+export const CHAT_ENABLED_RESIDENTS: ResidentConfig[] = ALL_RESIDENTS.filter(
+  (r) => r.chatEnabled,
+);
+
+// Fail-fast assertion: every resident's `provider` field must agree
+// with the model-string rule. Misconfiguration here would silently
+// route a model to the wrong API.
+for (const r of Object.values(RESIDENTS)) {
+  const expected = providerForModel(r.model);
+  if (r.provider !== expected) {
+    throw new Error(
+      `[residents] provider mismatch for ${r.id}: model="${r.model}" implies provider="${expected}" but config says "${r.provider}"`,
+    );
+  }
+}

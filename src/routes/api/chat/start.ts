@@ -49,6 +49,12 @@ export const Route = createFileRoute("/api/chat/start")({
 
         const residentId = isResidentId(body.resident) ? body.resident : DEFAULT_RESIDENT_ID;
         const resident = getResident(residentId);
+        if (!resident.chatEnabled) {
+          return jsonResp(
+            { ok: false, code: "chat_disabled", resident: residentId },
+            403,
+          );
+        }
         const hash = ipHash(request);
         const visitorToken = body.visitor_token ?? null;
 

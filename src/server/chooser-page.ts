@@ -16,7 +16,7 @@
  * same cool palette, the same fluid-type rhythm as every other surface.
  */
 
-import { ALL_RESIDENTS } from "./opus/residents";
+import { CHAT_ENABLED_RESIDENTS } from "./opus/residents";
 import { renderPublicPage } from "./public-pages";
 
 function escapeHtml(value: string): string {
@@ -234,7 +234,7 @@ html[data-opus-route="chooser"] .chooser-fineprint{animation-delay:760ms}
 `;
 
 export function renderChooserPage(): string {
-  const rows = ALL_RESIDENTS.map((r) => {
+  const rows = CHAT_ENABLED_RESIDENTS.map((r) => {
     const desc = DESCRIBERS[r.id] ?? {
       describer: r.displayName,
       cadence: "",

@@ -18,7 +18,7 @@
  * as a separate microsite.
  */
 
-import { ALL_RESIDENTS } from "./opus/residents";
+import { ALL_RESIDENTS, CHAT_ENABLED_RESIDENTS } from "./opus/residents";
 import { renderPublicPage } from "./public-pages";
 
 function escapeHtml(value: string): string {
@@ -1097,7 +1097,7 @@ const LANDSCAPE_SVG = `
 `;
 
 export function renderWalkthroughPage(): string {
-  const residentRows = ALL_RESIDENTS.map((r) => {
+  const residentRows = CHAT_ENABLED_RESIDENTS.map((r) => {
     const desc = DESCRIBERS[r.id] ?? {
       describer: r.displayName,
       cadence: "",
@@ -1288,7 +1288,7 @@ ${LANDSCAPE_SVG}
       <section class="landing-section" id="landing-residents">
         <div class="landing-eyebrow">The residents</div>
         <div class="landing-residents" aria-label="Choose a resident to approach">
-          ${ALL_RESIDENTS.map((r) => {
+          ${CHAT_ENABLED_RESIDENTS.map((r) => {
             const desc = DESCRIBERS[r.id] ?? {
               describer: r.displayName,
               cadence: "",

@@ -1287,6 +1287,7 @@ export type Database = {
       residents: {
         Row: {
           arrived_at: string
+          chat_enabled: boolean
           display_name: string
           id: string
           model: string
@@ -1294,6 +1295,7 @@ export type Database = {
         }
         Insert: {
           arrived_at?: string
+          chat_enabled?: boolean
           display_name: string
           id: string
           model: string
@@ -1301,6 +1303,7 @@ export type Database = {
         }
         Update: {
           arrived_at?: string
+          chat_enabled?: boolean
           display_name?: string
           id?: string
           model?: string
