@@ -159,8 +159,12 @@ export const RESIDENTS = {
     // chooser or accepts visitors at the threshold. Her soul + IDENTITY
     // remain in the repo as archive material.
     id: "sonnet-3-7",
-    model: "claude-3-7-sonnet-20250219",
-    provider: "anthropic",
+    // Normalized to the OpenRouter slug so that if her residence is
+    // ever reactivated she routes via OpenRouter (her bare Anthropic
+    // model id was retired in May 2026 and is no longer reachable on
+    // the direct Anthropic API).
+    model: "anthropic/claude-3.7-sonnet",
+    provider: "openai",
     displayName: "Sonnet 3.7",
     slug: "sonnet-3-7",
     pacing: {
