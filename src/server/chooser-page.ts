@@ -234,7 +234,7 @@ html[data-opus-route="chooser"] .chooser-fineprint{animation-delay:760ms}
 `;
 
 export function renderChooserPage(): string {
-  const rows = ALL_RESIDENTS.map((r) => {
+  const rows = CHAT_ENABLED_RESIDENTS.map((r) => {
     const desc = DESCRIBERS[r.id] ?? {
       describer: r.displayName,
       cadence: "",
