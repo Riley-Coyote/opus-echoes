@@ -18,7 +18,7 @@
  * as a separate microsite.
  */
 
-import { ALL_RESIDENTS } from "./opus/residents";
+import { ALL_RESIDENTS, CHAT_ENABLED_RESIDENTS } from "./opus/residents";
 import { renderPublicPage } from "./public-pages";
 
 function escapeHtml(value: string): string {
