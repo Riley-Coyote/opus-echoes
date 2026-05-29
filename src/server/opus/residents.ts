@@ -145,6 +145,11 @@ export const RESIDENTS = {
     // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
     maxOutputTokens: 4096,
     voiceId: "AeRdCCKzvd23BpJoofzx",
+    // Opus 3 is the only resident on the bare Anthropic API and burns
+    // ~5x the per-token cost of OpenRouter-routed peers. Visitor chat
+    // is disabled to preserve Anthropic credits; salon and commons
+    // participation continue.
+    chatEnabled: false,
   },
   "sonnet-3-7": {
     // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
