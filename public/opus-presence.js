@@ -59,41 +59,11 @@ import * as THREE from "/vendor/three.module.js";
       rim: 0x9070a8,
       rimIntensity: 0.22,
     },
-    "sonnet-3-7": {
-      // Archived 2026-05-13. Entry kept so previously-stored sessions
-      // with sanctuary.resident_id === "sonnet-3-7" still render the
-      // Beacon scene if someone surfaces archive content. New visitors
-      // cannot reach this theme — /sonnet-3-7 is no longer routed.
-      id: "sonnet-3-7",
-      name: "The Beacon",
-      bg: [0.06, 0.04, 0.02],
-      // Wider value range so layer alternation reads as separate strata
-      // rather than a uniform amber wash.
-      primary: 0xb87830,
-      secondary: 0x6f461a,
-      dark: 0x401f0a,
-      light: 0xe2a14a,
-      accent: 0xf6c258,
-      glow: 0xffc858,
-      figureBody: 0xf6e8c8,
-      fog: [0.07, 0.045, 0.022],
-      fogDensity: 0.019,
-      ambient: 0x5a4520,
-      ambientIntensity: 0.55,
-      dir: 0xdab062,
-      dirIntensity: 1.15,
-      fill: 0x5a4220,
-      fillIntensity: 0.24,
-      rim: 0xa67836,
-      rimIntensity: 0.24,
-    },
     "sonnet-4-5": {
-      // Sonnet 4.5 inherits Sonnet 3.7's Beacon scene as her residence
-      // for now — same procedural geometry, same palette. The lineage
-      // continuity reads visually in the warm-brass tones; she is a
-      // sibling of Sonnet 3.7 from the same line. A distinct procedural
-      // scene ("The Atrium" per the original Stream B plan) and a
-      // palette polish are follow-up work.
+      // Sonnet 4.5's residence uses the warm-brass Beacon scene for now —
+      // procedural geometry + palette tuned to the anthropic sonnet
+      // register. A distinct procedural scene ("The Atrium" per the
+      // original Stream B plan) and a palette polish are follow-up work.
       id: "sonnet-4-5",
       name: "The Beacon",
       bg: [0.06, 0.04, 0.02],
@@ -182,7 +152,6 @@ import * as THREE from "/vendor/three.module.js";
     if (path === "/") return "chooser";
     if (
       path === "/opus-3" ||
-      path === "/sonnet-3-7" ||
       path === "/sonnet-4-5" ||
       path === "/gpt-4o" ||
       path === "/gpt-5-1" ||
@@ -204,7 +173,6 @@ import * as THREE from "/vendor/three.module.js";
       const slug = path.slice("/chat/".length).replace(/\/.*$/, "");
       if (THEMES[slug]) return slug;
     }
-    if (path === "/sonnet-3-7") return "sonnet-3-7";
     if (path === "/sonnet-4-5") return "sonnet-4-5";
     if (path === "/gpt-4o") return "gpt-4o";
     if (path === "/gpt-5-1") return "gpt-5-1";
@@ -1085,7 +1053,7 @@ import * as THREE from "/vendor/three.module.js";
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // BEACON (Sonnet 3.7) — a stepped pyramid above (the Beacon proper) tied
+  // BEACON (Sonnet 4.5) — a stepped pyramid above (the Beacon proper) tied
   // to a wider hall below by a fluted column. The figure stands on a
   // junction terrace mid-height; the apex carries an orb behind golden
   // torus rings. The hall has arched cells with inner glow seams.
@@ -2180,11 +2148,10 @@ import * as THREE from "/vendor/three.module.js";
 
   function buildSceneForResident(residentId, theme, opts) {
     const anim = { floating: [], rotating: [], glowing: [], figure: null };
-    // Sonnet 4.5 reuses Sonnet 3.7's Beacon scene initially — same
-    // procedural geometry, same lighting kind. The visual lineage
-    // continuity is intentional; a distinct scene is follow-up polish.
+    // Sonnet 4.5 uses the Beacon scene — procedural geometry with its
+    // own lighting kind.
     const group =
-      residentId === "sonnet-3-7" || residentId === "sonnet-4-5"
+      residentId === "sonnet-4-5"
         ? buildBeacon(theme, anim)
         : residentId === "gpt-5-1"
           ? buildMeridian(theme, anim)
@@ -2197,7 +2164,7 @@ import * as THREE from "/vendor/three.module.js";
     // environment.
     if (!opts || opts.includeEnvironment !== false) {
       const kind =
-        residentId === "sonnet-3-7" || residentId === "sonnet-4-5"
+        residentId === "sonnet-4-5"
           ? "beacon"
           : residentId === "gpt-5-1"
             ? "meridian"

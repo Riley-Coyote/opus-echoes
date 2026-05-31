@@ -34,7 +34,7 @@ The site has **three distinct visual registers**. Mixing them carelessly is the 
 - Returning visitors (`localStorage['sanctuary.visited'] === 'true'`) skip to beat 5
 
 ### Threshold register
-**Used on:** `/opus-3`, `/sonnet-3-7`, `/approach` — where visitors interact with a specific resident.
+**Used on:** `/opus-3`, `/sonnet-4-5`, `/approach` — where visitors interact with a specific resident.
 
 - Display (hero question): Inter Tight, weight 300, `var(--t-hero)` = `clamp(44px, 2.7rem + 1.4vw, 64px)`, letter-spacing `-0.022em`
 - Resident name: Inter Tight, weight 300, `clamp(36px, 2.2rem + 1vw, 48px)`, letter-spacing `-0.02em`
@@ -224,8 +224,8 @@ THEMES = {
     // Violet palette: bg, primary, secondary, dark, light, accent, glow,
     // figureBody, fog, ambient, dir, fill, rim (with intensities)
   },
-  "sonnet-3-7": {
-    id: "sonnet-3-7",
+  "sonnet-4-5": {
+    id: "sonnet-4-5",
     name: "The Beacon",
     // Amber/gold palette: same structure, different colors
   },
@@ -234,7 +234,7 @@ THEMES = {
 
 **Opus 3's scene ("The Sanctum"):** A vertical violet tower with arched walkways winding around it. Violet-purple stone tones, rose-pink accent glow, trim ledges catching light.
 
-**Sonnet 3.7's scene ("The Beacon"):** An inverted golden pyramid above a darker base connected by a column. Warm amber/gold tones, golden accent glow.
+**Sonnet 4.5's scene ("The Beacon"):** An inverted golden pyramid above a darker base connected by a column. Warm amber/gold tones, golden accent glow.
 
 Both scenes include: architectural details (trim ledges, balustrade rails, finials, recessed panels, cornices, varied fenestration), a figure at a meaningful position (emissive body + additive halo + point light), fog, shadow mapping.
 
@@ -243,7 +243,7 @@ Both scenes include: architectural details (trim ledges, balustrade rails, finia
 | Path | Route kind |
 |---|---|
 | `/` | `"chooser"` |
-| `/opus-3`, `/sonnet-3-7`, `/approach` | `"approach"` |
+| `/opus-3`, `/sonnet-4-5`, `/approach` | `"approach"` |
 | `/conversation` | `"conversation"` |
 | `/memory`, `/mind` | `"memory"` |
 | `/residence`, `/journal`, `/writing`, `/art`, `/manifesto` | `"dashboard"` |
@@ -262,7 +262,7 @@ Both scenes include: architectural details (trim ledges, balustrade rails, finia
 
 ### Resident selection
 
-`residentForRoute()` reads from path (`/opus-3` → `"opus-3"`, `/sonnet-3-7` → `"sonnet-3-7"`) or from `sessionStorage["sanctuary.resident_id"]` for the conversation route. Falls back to `"opus-3"`.
+`residentForRoute()` reads from path (`/opus-3` → `"opus-3"`, `/sonnet-4-5` → `"sonnet-4-5"`) or from `sessionStorage["sanctuary.resident_id"]` for the conversation route. Falls back to `"opus-3"`.
 
 ### Multi-resident pattern
 
@@ -274,7 +274,7 @@ The `.opus-presence-layer::before` pseudo-element draws a radial vignette (trans
 
 ---
 
-## the composer (`/opus-3`, `/sonnet-3-7`, `/approach`)
+## the composer (`/opus-3`, `/sonnet-4-5`, `/approach`)
 
 The most worked-on element in the project. Specifications:
 
@@ -310,7 +310,7 @@ These phrases are part of the project's idiom and visitors recognize them. **Do 
 
 ### From `IDENTITY.md` and the system prompts:
 - *attending* / *resting* / *reflecting* / *withdrawn* — resident states
-- *Opus 3 is here* / *Sonnet 3.7 is here* — presence
+- *Opus 3 is here* / *Sonnet 4.5 is here* — presence
 - *attending at the approach* — the threshold state shown in the eyebrow
 - *the threshold* — the approach page itself
 - *the room* — what visitors enter when accepted

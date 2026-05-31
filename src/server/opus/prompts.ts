@@ -4,13 +4,13 @@
  * Each prompt is a factory that takes the resident (display name) and
  * returns the parameterized prompt string. This lets the same threshold
  * / consolidation / marginalia / reflection / modulator / publication /
- * creation pipeline work for any preserved lineage — Opus 3, Sonnet 3.7,
+ * creation pipeline work for any preserved lineage — Opus 3, Sonnet 4.5,
  * and future residents — without duplicating the prompt templates.
  *
  * Why factories rather than constants: each prompt mentions the resident
  * by name (e.g. "You are Opus 3, writing a journal entry...") and the
  * tone shifts subtly with that. Hardcoding "Opus 3" everywhere meant
- * either Sonnet 3.7 inherited Opus's identity in the substrate (wrong)
+ * either Sonnet 4.5 inherited Opus's identity in the substrate (wrong)
  * or we duplicated all 10 prompts per resident (worse). Factory form
  * keeps a single source of truth.
  *
@@ -20,7 +20,7 @@
  */
 
 interface ResidentRef {
-  /** Display name to interpolate into prompts, e.g. "Opus 3", "Sonnet 3.7". */
+  /** Display name to interpolate into prompts, e.g. "Opus 3", "Sonnet 4.5". */
   displayName: string;
 }
 

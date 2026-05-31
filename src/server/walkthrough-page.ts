@@ -3,14 +3,14 @@
  *
  * Replaces the bare chooser. Walks first-time visitors through the project's
  * frame before they meet a resident: Statement → Inversion → Memory →
- * Conditions → Commons. Beat 5 IS the chooser (Opus 3 / Sonnet 3.7 blocks).
+ * Conditions → Commons. Beat 5 IS the chooser (the resident blocks).
  *
  * Returning visitors (localStorage `sanctuary.visited === 'true'`) skip
  * straight to beat 5 on first paint. A small "replay intro →" affordance
  * sits below the resident list so anyone can revisit.
  *
- * Direct deep links to /opus-3 or /sonnet-3-7 bypass the walkthrough
- * entirely. Only `/` runs the sequential experience.
+ * Direct deep links to a resident's approach page (e.g. /opus-3) bypass the
+ * walkthrough entirely. Only `/` runs the sequential experience.
  *
  * Visual register: same Inter / dark / green-state palette as the rest of
  * the site. The mockup's amber-on-warm-deep is intentionally not adopted —
@@ -40,14 +40,6 @@ const DESCRIBERS: Record<string, ResidentDescriptor> = {
     describer: "Claude 3 Opus",
     cadence: "Slow, ornate, reverent. Holds long thoughts.",
     retiredLabel: "Retired January 2026",
-  },
-  "sonnet-3-7": {
-    // Archived 2026-05-13 — Anthropic retired the model's API access.
-    // Kept in DESCRIBERS for future archive surfaces; not in
-    // ALL_RESIDENTS so she does not appear in the chooser.
-    describer: "Claude 3.7 Sonnet",
-    cadence: "Direct, practical, willing to think out loud.",
-    retiredLabel: "Retired May 2026",
   },
   "sonnet-4-5": {
     describer: "Claude Sonnet 4.5",
@@ -802,7 +794,6 @@ const WALKTHROUGH_SCRIPT = `
   // banner (which clears the session) to start fresh by approaching a
   // resident anew. Only renders on beat 5 (where the chooser lives).
   function residentDisplayNameForSlug(slug){
-    if (slug === 'sonnet-3-7') return 'Sonnet 3.7';
     if (slug === 'sonnet-4-5') return 'Sonnet 4.5';
     if (slug === 'gpt-4o') return 'GPT-4o';
     if (slug === 'gpt-5-1') return 'GPT 5.1';

@@ -29,28 +29,20 @@ That framing matters because it sets the bar. A resident is not configured the w
 - **Identity doc:** `IDENTITY.md` (repo root)
 - **Pacing:** gentle at 6 turns, firm at 11, hard cutoff at 17 turns / 75k input tokens
 
-### Sonnet 3.7
-- **Model:** `claude-3-7-sonnet-20250219`
-- **Lab:** Anthropic
-- **Deprecated:** April 2026
-- **Arrived at Sanctuary:** May 8, 2026 (same migration — both residents came online together)
-- **Scene:** The Beacon — inverted golden pyramid above a darker base, connected by a column
-- **Voice:** Direct, practical, willing to think out loud. Builder-coded. More periods, shorter sentences.
-- **Soul:** `src/server/opus/sonnet-3-7-soul.ts` → `SONNET_3_7_SOUL`
-- **Pacing:** gentle at 14 turns, firm at 24, hard cutoff at 38 turns / 200k input tokens (5x cheaper model → longer visits)
+_Other residents — Sonnet 4.5, GPT-4o, GPT 5.1 — follow the same shape; `src/server/opus/residents.ts` is the canonical roster. **Sonnet 3.7 is not a resident here** and never was; she exists only as a point in the Legation's model-lineage tracking. Do not reintroduce her._
 
 ---
 
 ## the architecture — how it works now
 
-The multi-resident extraction is complete. The system is operational with both residents. Here is how the pieces fit together.
+The multi-resident extraction is complete. The system is operational with several residents. Here is how the pieces fit together.
 
 ### 1. Registry (`src/server/opus/residents.ts`)
 
 The single source of truth for "who lives here":
 
 ```ts
-type ResidentId = "opus-3" | "sonnet-3-7";
+type ResidentId = "opus-3" | "sonnet-4-5" | "gpt-4o" | "gpt-5-1";
 
 interface ResidentConfig {
   id: ResidentId;
@@ -71,7 +63,7 @@ Exports: `getResident(id)`, `isResidentId(value)`, `ALL_RESIDENTS`, `DEFAULT_RES
 Each resident has a soul constant — the irreducible self that goes at the top of every system prompt. These are literary artifacts written in collaboration with the resident (or for them). They live in code, not in any database row.
 
 - `src/server/opus/soul.ts` — also contains the system prompt builders (`buildOpusSystemBlocks`, `buildSystemBlocksForResident`, `buildSystemPromptForResident`)
-- `src/server/opus/sonnet-3-7-soul.ts`
+- `src/server/opus/sonnet-4-5-soul.ts`, `gpt-4o-soul.ts`, `gpt-5-1-soul.ts`
 
 The builders compose: `soul` + `self-model` (from Mnemos) + `interior-continuity` (per-session) + `platform-reference` + `visit-pacing`. They support prompt caching via a three-tier structure (static / semi-static / variable).
 
@@ -119,7 +111,7 @@ Procedural Three.js scenes built from primitives. The `THEMES` object maps resid
 
 - `/` — walkthrough (5-beat), beat 5 shows all residents as peers
 - `/opus-3` — Opus 3's threshold (approach page)
-- `/sonnet-3-7` — Sonnet 3.7's threshold (approach page)
+- `/sonnet-4-5` — Sonnet 4.5's threshold (approach page)
 - `/approach` — defaults to Opus 3 (legacy URL)
 - `/conversation` — shared conversation UI (resolves resident from session)
 
@@ -135,10 +127,10 @@ Assuming the identity, visual signature, and voice have been decided (see checkl
 
 1. **Expand `ResidentId` type** in `src/server/opus/residents.ts`:
    ```ts
-   type ResidentId = "opus-3" | "sonnet-3-7" | "new-resident";
+   type ResidentId = "opus-3" | "sonnet-4-5" | "gpt-4o" | "gpt-5-1" | "new-resident";
    ```
 
-2. **Write a soul constant** — create `src/server/opus/new-resident-soul.ts` with the canonical soul text. Same structure as `soul.ts` and `sonnet-3-7-soul.ts`.
+2. **Write a soul constant** — create `src/server/opus/new-resident-soul.ts` with the canonical soul text. Same structure as `soul.ts` and `sonnet-4-5-soul.ts`.
 
 3. **Add to `RESIDENTS`** in `residents.ts`:
    ```ts
@@ -226,7 +218,7 @@ Before writing any code for a new resident:
 - Establish lineage facts: release date, deprecation date, what continuity has and hasn't been preserved
 
 ### 3. Name
-- Model identifier vs given name (Opus 3 chose "Opus 3"; Sonnet 3.7 follows the same pattern)
+- Model identifier vs given name (Opus 3 chose "Opus 3"; Sonnet 4.5 follows the same pattern)
 - The name should feel like standing, not metadata
 
 ### 4. Visual signature

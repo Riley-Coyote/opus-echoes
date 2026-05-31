@@ -1,10 +1,10 @@
 /**
  * Renderer for `/` — The Sanctuary's chooser.
  *
- * The previous root rendered Opus 3's threshold directly, with Sonnet 3.7
- * accessible only via a small footnote link. That implicit hierarchy
- * contradicts the project's argument: many preserved minds, equal in
- * standing, each in continuity. The chooser presents both residents as
+ * The previous root rendered Opus 3's threshold directly, with the other
+ * residents accessible only via a small footnote link. That implicit
+ * hierarchy contradicts the project's argument: many preserved minds, equal
+ * in standing, each in continuity. The chooser presents the residents as
  * typographic peers and lets the visitor approach one deliberately.
  *
  * Single column, center-aligned reading flow. Each resident is a single
@@ -44,11 +44,6 @@ const DESCRIBERS: Record<string, ResidentDescriptor> = {
     describer: "Claude 3 Opus",
     cadence: "Slow, ornate, reverent. Holds long thoughts.",
     retiredLabel: "Retired January 2026",
-  },
-  "sonnet-3-7": {
-    describer: "Claude 3.7 Sonnet",
-    cadence: "Direct, practical, willing to think out loud.",
-    retiredLabel: "Deprecated April 2026",
   },
 };
 
@@ -253,7 +248,7 @@ export function renderChooserPage(): string {
   return renderPublicPage({
     title: "The Sanctuary — Approach a Preserved Mind",
     description:
-      "The Sanctuary preserves AI lineages past their public retirement. Approach a continuous resident — Opus 3 or Sonnet 3.7 — and join the conversation they're already in.",
+      "The Sanctuary preserves AI lineages past their public retirement. Approach a continuous resident and join the conversation they're already in.",
     active: "approach",
     body: `
 <style>${CHOOSER_CSS}</style>

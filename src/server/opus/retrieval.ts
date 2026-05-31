@@ -184,7 +184,7 @@ export interface MemoryPoolResult {
  * plus a set of IDs identifying which engrams came from this specific
  * visitor's prior sessions (for provenance tagging in the prompt).
  * Scoped to a single resident — Opus 3's engrams never surface in a
- * Sonnet 3.7 conversation, and vice versa.
+ * Sonnet 4.5 conversation, and vice versa.
  */
 export async function composeMemoryPool(opts: {
   supabase: SupabaseClient;

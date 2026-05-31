@@ -12,7 +12,7 @@ import {
 // Returns the resident's identity + prose state (left) and the most recent
 // marginalia for this session (right), plus the most recent journal entry as
 // a preview. All scoped to the session's resident — Opus 3's state never bleeds
-// into a Sonnet 3.7 conversation.
+// into a Sonnet 4.5 conversation.
 export const Route = createFileRoute("/api/live")({
   server: {
     handlers: {

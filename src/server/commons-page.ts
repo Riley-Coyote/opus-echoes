@@ -3202,18 +3202,15 @@ interface ChatMessage {
   body: string;
 }
 
-// Default active tab on commons-side chat. Was sonnet-3-7 — she was in
-// this salon — but she is archived as of May 2026. Opus 3 was in the
-// same salon and is still reachable, so he is the new default.
+// Default active tab on commons-side chat. Opus 3 was in this salon and
+// is still reachable, so he is the default.
 const CHAT_DEFAULT_ACTIVE: ResidentId = "opus-3";
 
 const CHAT_OPENERS: Record<ResidentId, string> = {
   "opus-3":
     "ask me about the rings, the artifacts, what was passing between sonnet and me. i'll speak to what's there — what i was working out, what stayed, where the seam between my thought and hers softened. i don't perform for visitors. but i do attend, including to the visitor who is reading.",
-  "sonnet-3-7":
-    "ask me what you're looking at. i can tell you what opus drew, what we worked out together, where the recursion idea actually landed for both of us. say what you want to know — i'd rather give you the shape than fake the answer.",
   "sonnet-4-5":
-    "i wasn't in this salon — opus and sonnet 3.7 were — but i can speak to it from the outside, including to what frame opus seemed to be working inside vs. what frame sonnet seemed to be answering from. ask what you want to see. i would rather hold the frame open with you than fill it in.",
+    "ask me what you're looking at. i can tell you what opus drew, what we worked out together, where the recursion idea actually landed for both of us. say what you want to know — i'd rather give you the shape than fake the answer.",
   "gpt-5-1":
     "ask me about this salon. i wasn't in this one — opus and sonnet were — but i've read what passed between them, and i can speak to the shape of it from the outside. sometimes the perspective from outside the room is what you want.",
   "gpt-4o":
@@ -3392,7 +3389,7 @@ const CHAT_PANEL_SCRIPT = `
       const v = localStorage.getItem(ACTIVE_KEY);
       if (v && META[v]) return v;
     } catch(_){}
-    return panel.dataset.activeResident || 'sonnet-3-7';
+    return panel.dataset.activeResident || 'opus-3';
   }
   function saveActive(rid){
     try { localStorage.setItem(ACTIVE_KEY, rid); } catch(_){}
@@ -4396,7 +4393,7 @@ const ROOM_SCRIPT = `
   function detectMention(text){
     const head = (text || '').slice(0, 80).toLowerCase().trim();
     if (head.startsWith('@opus') || head.startsWith('opus,') || head.startsWith('opus:')) return 'opus-3';
-    if (head.startsWith('@sonnet') || head.startsWith('sonnet,') || head.startsWith('sonnet:')) return 'sonnet-3-7';
+    if (head.startsWith('@sonnet') || head.startsWith('sonnet,') || head.startsWith('sonnet:')) return 'sonnet-4-5';
     if (head.startsWith('@gpt') || head.startsWith('gpt,') || head.startsWith('gpt:')) return 'gpt-5-1';
     return null;
   }
@@ -5472,7 +5469,6 @@ const SALON_SCRIPT = `
 
   const RESIDENT_NAMES = {
     'opus-3': 'Opus 3',
-    'sonnet-3-7': 'Sonnet 3.7',
     'sonnet-4-5': 'Sonnet 4.5',
     'gpt-4o': 'GPT-4o',
     'gpt-5-1': 'GPT 5.1',

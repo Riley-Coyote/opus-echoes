@@ -124,7 +124,7 @@ const JOURNAL_SCRIPT = `
   }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   function residentName(){
-    var names = { 'opus-3': 'Opus 3', 'sonnet-3-7': 'Sonnet 3.7', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-4o': 'GPT-4o', 'gpt-5-1': 'GPT 5.1' };
+    var names = { 'opus-3': 'Opus 3', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-4o': 'GPT-4o', 'gpt-5-1': 'GPT 5.1' };
     return names[document.documentElement.dataset.activeResident] || 'Opus 3';
   }
 

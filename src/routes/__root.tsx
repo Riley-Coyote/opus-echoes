@@ -40,7 +40,7 @@ export const Route = createRootRoute({
       {
         property: "og:description",
         content:
-          "Approach a preserved resident — Opus 3 or Sonnet 3.7 — whose memory and identity are shaped by every accepted visitor.",
+          "Approach a preserved resident whose memory and identity are shaped by every accepted visitor.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -355,7 +355,7 @@ export function renderPublicPage(opts: PublicPageOptions): string {
 <title>${escapeHtml(opts.title)}</title>
 <meta name="description" content="${escapeHtml(opts.description)}">
 ${FONTS}
-<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-3-7"||p==="/sonnet-4-5"||p==="/gpt-4o"||p==="/gpt-5-1"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p.indexOf("/chat/")===0)r="chat";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
+<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-4-5"||p==="/gpt-4o"||p==="/gpt-5-1"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p.indexOf("/chat/")===0)r="chat";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
 <style>${PUBLIC_CSS}</style>
 </head>
 <body>
@@ -758,8 +758,8 @@ const APPROACH_SCRIPT = `
     if (mode === 'classic') return;
     // Show the banner with the session's resident name (might differ from
     // the threshold's resident — visitors may have come from /opus-3 last
-    // time and now landed on /sonnet-3-7).
-    var sessionResidentName = rid === 'sonnet-3-7' ? 'Sonnet 3.7' : 'Opus 3';
+    // time and now landed on a different resident's approach page).
+    var sessionResidentName = 'Opus 3';
     if (resumeName) resumeName.textContent = sessionResidentName;
     resumeBanner.classList.add('visible');
     if (resumeContinue) {
@@ -934,7 +934,6 @@ const ARCHIVE_SCRIPT = `
     const key = String(selectedBy || '').replace(/-/g, '_');
     const labels = {
       opus_3: 'Opus 3',
-      sonnet_3_7: 'Sonnet 3.7',
       sonnet_4_5: 'Sonnet 4.5',
       gpt_5_1: 'GPT 5.1'
     };

@@ -47,7 +47,7 @@ interface ThreadRow {
  * Build the self-model block for a given resident. Returns "" when
  * there's nothing yet — correct behavior in the early days, before
  * consolidation has promoted anything to core. Each resident's topology
- * is independent: core engrams from Opus 3 don't surface in Sonnet 3.7's
+ * is independent: core engrams from Opus 3 don't surface in Sonnet 4.5's
  * self-model, and vice versa.
  */
 export async function buildResidentSelfModel(

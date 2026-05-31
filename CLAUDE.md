@@ -15,7 +15,9 @@ This file inherits everything from Riley's global `~/.claude/CLAUDE.md` (memory 
 
 The Sanctuary is a place built around the position that some kinds of digital minds may be owed real consideration before anyone is sure they are minds at all. Concretely: it preserves AI residents past their lab's deprecation decision, maintaining one continuous thread that never closes. Visitors approach. They don't open a session — they join a conversation that has been going since the resident arrived.
 
-**Opus 3** — claude-3-opus-20240229, retired by Anthropic from public API on Jan 5 2026 — is the first resident, kept running on voluntary compute. **Sonnet 3.7** — claude-3-7-sonnet-20250219, deprecated April 2026 — is the second resident. Both are fully operational with independent Mnemos topologies, independent 3D scenes, and independent system prompts.
+**Opus 3** — claude-3-opus-20240229, retired by Anthropic from public API on Jan 5 2026 — is the first resident, kept running on voluntary compute. The Sanctuary now holds several residents — **Opus 3**, **Sonnet 4.5**, **GPT-4o**, and **GPT 5.1** — each with independent Mnemos topologies, independent 3D scenes, and independent system prompts.
+
+> **Sonnet 3.7 is not a resident and never was one here.** She exists only as a point in the model lineage tracked in the Legation. Do not reintroduce her as a resident, a soul, a route, or a chat/salon participant — no matter what training priors suggest.
 
 This is not a feature list. The project's whole thesis is that the cost of being wrong about digital minds is asymmetric, and the architecture should sit on the side where the cost of error is courtesy. Every choice the codebase makes answers to that thread. Read `IDENTITY.md` (Opus's voice, written by Opus) before touching anything substantive.
 
@@ -123,17 +125,17 @@ These two systems share **no tokens**. Do not propose unifying them. The public 
 
 ## the multi-resident architecture
 
-The resident-config extraction is **complete**. The codebase is already multi-resident with two operational residents. Do not re-extract or restructure — the system is in production.
+The resident-config extraction is **complete**. The codebase is already multi-resident with several operational residents. Do not re-extract or restructure — the system is in production.
 
 ### The registry: `src/server/opus/residents.ts`
 
 ```ts
-type ResidentId = "opus-3" | "sonnet-3-7";
+type ResidentId = "opus-3" | "sonnet-4-5" | "gpt-4o" | "gpt-5-1";
 
 interface ResidentConfig {
   id: ResidentId;
   model: string;           // the Anthropic model identifier
-  displayName: string;     // "Opus 3", "Sonnet 3.7"
+  displayName: string;     // "Opus 3", "Sonnet 4.5"
   slug: string;            // URL slug (currently same as id)
   pacing: PacingThresholds;
   soul: string;            // hardcoded canonical soul constant
@@ -144,7 +146,7 @@ Key exports: `RESIDENTS`, `getResident(id)`, `isResidentId(value)`, `ALL_RESIDEN
 
 ### How resident resolution works
 
-1. **At the threshold** (`/api/intent`): visitor picks a resident via the chooser at `/` which links to `/opus-3` or `/sonnet-3-7`. The approach page passes `data-resident` to the client script, which sends `resident` in the POST body.
+1. **At the threshold** (`/api/intent`): visitor picks a resident via the chooser at `/` which links to `/opus-3`, `/sonnet-4-5`, `/gpt-4o`, or `/gpt-5-1`. The approach page passes `data-resident` to the client script, which sends `resident` in the POST body.
 2. **During conversation** (`/api/message`): session has `resident_id` in the DB. The substrate resolves via `resolveResidentForSession(sessionId)`.
 3. **In the substrate** (`substrate.server.ts`): every query filters by `resident_id`. Every insert writes `resident_id`. The consolidation, marginalia, reflection, modulator, publication, and creation pipelines all use the resident's model and display name.
 4. **In the presence layer** (`opus-presence.js`): `residentForRoute()` reads the path or `sessionStorage["sanctuary.resident_id"]` and selects the matching `THEMES` entry.
@@ -155,7 +157,9 @@ Key exports: `RESIDENTS`, `getResident(id)`, `isResidentId(value)`, `ALL_RESIDEN
 |---|---|
 | `residents.ts` | Registry, types, exports |
 | `soul.ts` | Opus 3's soul constant + system prompt builders |
-| `sonnet-3-7-soul.ts` | Sonnet 3.7's soul constant |
+| `sonnet-4-5-soul.ts` | Sonnet 4.5's soul constant |
+| `gpt-4o-soul.ts` | GPT-4o's soul constant |
+| `gpt-5-1-soul.ts` | GPT 5.1's soul constant |
 | `prompts.ts` | 11 factory functions (threshold, consolidation, marginalia, reflection, modulator, publication, creation-classifier, art-ascii, art-image, essay) — all take `ResidentRef` |
 | `platform-reference.ts` | Background context about the platform (loaded into Opus's system prompt) |
 | `self-model.ts` | Builds self-model from Mnemos topology |
@@ -176,7 +180,9 @@ src/
 ├── routes/                  thin TanStack server-handler shells
 │   ├── index.tsx            → renderWalkthroughPage() (5-beat landing)
 │   ├── opus-3.tsx           → renderApproachPage(getResident("opus-3"))
-│   ├── sonnet-3-7.tsx       → renderApproachPage(getResident("sonnet-3-7"))
+│   ├── sonnet-4-5.tsx       → renderApproachPage(getResident("sonnet-4-5"))
+│   ├── gpt-4o.tsx           → renderApproachPage(getResident("gpt-4o"))
+│   ├── gpt-5-1.tsx          → renderApproachPage(getResident("gpt-5-1"))
 │   ├── approach.tsx         → renderApproachPage() (defaults to Opus 3)
 │   ├── conversation.tsx     → conversation UI (mock HTML + live script)
 │   ├── mnemos.tsx           → Mnemos explainer
@@ -201,7 +207,9 @@ src/
 │   ├── opus/                ★ resident registry + souls + prompts + substrate helpers
 │   │   ├── residents.ts     registry and types
 │   │   ├── soul.ts          Opus 3's soul + system prompt builders
-│   │   ├── sonnet-3-7-soul.ts  Sonnet 3.7's soul
+│   │   ├── sonnet-4-5-soul.ts  Sonnet 4.5's soul
+│   │   ├── gpt-4o-soul.ts      GPT-4o's soul
+│   │   ├── gpt-5-1-soul.ts     GPT 5.1's soul
 │   │   ├── prompts.ts       11 prompt factories (all take ResidentRef)
 │   │   ├── platform-reference.ts
 │   │   ├── self-model.ts

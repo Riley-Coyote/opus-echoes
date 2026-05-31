@@ -53,7 +53,7 @@ The landing page. A paginated list of all sessions, most recent first.
 | Duration | `closed_at - created_at` | e.g. "23 min" or "still open" if `closed_at` is null |
 | Turn count | Count of turns for this session_id | e.g. "14 turns" |
 | Closed by | `sessions.closed_by` | e.g. "visitor_idle", "visitor_action", or "open" |
-| Resident | `sessions.resident_id` | "opus-3" or "sonnet-3-7" |
+| Resident | `sessions.resident_id` | "opus-3" or "sonnet-4-5" |
 | Intent preview | Join to `intents` table via `intent_id` → show first 80 chars of `intents.body` | What the visitor said when they arrived |
 | Engrams formed | Count of `engrams` where `source_session_ids` contains this session id | e.g. "2 engrams" |
 | Published? | Check `published_conversations` for this session_id | Badge: "published" or nothing |
@@ -64,7 +64,7 @@ The landing page. A paginated list of all sessions, most recent first.
 
 **Filters** (optional, nice to have):
 - Date range picker
-- Resident filter (opus-3 / sonnet-3-7)
+- Resident filter (opus-3 / sonnet-4-5)
 - Closed-by filter
 - "Has engrams" toggle
 

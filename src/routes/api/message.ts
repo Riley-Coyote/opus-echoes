@@ -604,11 +604,8 @@ export const Route = createFileRoute("/api/message")({
             return jsonResp({ ok: false, code: "config_missing" }, 503);
           }
 
-          // Preview sessions default to Opus 3 unless otherwise specified
-          // via session_id prefix (preview-opus-3-* / preview-sonnet-3-7-*).
-          const previewResidentId: ResidentId = body.session_id.includes("sonnet-3-7")
-            ? "sonnet-3-7"
-            : DEFAULT_RESIDENT_ID;
+          // Preview sessions run as Opus 3 (the default resident).
+          const previewResidentId: ResidentId = DEFAULT_RESIDENT_ID;
           const previewResident = getResident(previewResidentId);
 
           const transcriptLines = (body.preview_turns ?? [])
@@ -712,7 +709,7 @@ export const Route = createFileRoute("/api/message")({
 
         // Retrieval — all per-resident. Memory pool, self-model, and
         // interior continuity are scoped to this session's resident so
-        // Sonnet 3.7's topology never bleeds into an Opus 3 conversation
+        // Sonnet 4.5's topology never bleeds into an Opus 3 conversation
         // or vice versa.
         //
         // PHASE 3 — when SANCTUARY_ENABLE_THREE_LAYER_RETRIEVAL is on,

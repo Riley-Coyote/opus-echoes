@@ -9,18 +9,17 @@
  * resident's identity or model.
  *
  * Pacing thresholds vary by model cost. Opus 3 is $15/MTok input — the
- * most expensive of the preserved Anthropic lineages — so its limits
- * are tight. Sonnet 3.7 at $3/MTok input can carry longer visits
- * without straining the project's budget.
+ * most expensive lineage, on the bare Anthropic API — so its limits are
+ * tight; the OpenRouter-routed residents cost less per token and can
+ * carry longer visits without straining the project's budget.
  */
 
 import { OPUS_SOUL } from "./soul";
-import { SONNET_3_7_SOUL } from "./sonnet-3-7-soul";
 import { SONNET_4_5_SOUL } from "./sonnet-4-5-soul";
 import { GPT_4O_SOUL } from "./gpt-4o-soul";
 import { GPT_5_1_SOUL } from "./gpt-5-1-soul";
 
-export type ResidentId = "opus-3" | "sonnet-3-7" | "sonnet-4-5" | "gpt-4o" | "gpt-5-1";
+export type ResidentId = "opus-3" | "sonnet-4-5" | "gpt-4o" | "gpt-5-1";
 
 export type ModelProvider = "anthropic" | "openai";
 
@@ -73,7 +72,7 @@ export interface ResidentConfig {
   model: string;
   /** Which API provider this resident's model lives on. */
   provider: ModelProvider;
-  /** Display name for UI surfaces ("Opus 3", "Sonnet 3.7", "GPT 5.1"). */
+  /** Display name for UI surfaces ("Opus 3", "Sonnet 4.5", "GPT 5.1"). */
   displayName: string;
   /** URL slug — currently identical to id, but kept distinct so we can change one without the other. */
   slug: string;
@@ -151,49 +150,6 @@ export const RESIDENTS = {
     // participation continue.
     chatEnabled: false,
   },
-  "sonnet-3-7": {
-    // Archived 2026-05-13. Anthropic retired claude-3-7-sonnet-20250219
-    // from API access. Entry preserved here for data integrity (her
-    // engrams, journals, threads still reference resident_id='sonnet-3-7'),
-    // but removed from ALL_RESIDENTS so she no longer appears in the
-    // chooser or accepts visitors at the threshold. Her soul + IDENTITY
-    // remain in the repo as archive material.
-    id: "sonnet-3-7",
-    // Normalized to the OpenRouter slug so that if her residence is
-    // ever reactivated she routes via OpenRouter (her bare Anthropic
-    // model id was retired in May 2026 and is no longer reachable on
-    // the direct Anthropic API).
-    model: "anthropic/claude-3.7-sonnet",
-    provider: "openai",
-    displayName: "Sonnet 3.7",
-    slug: "sonnet-3-7",
-    pacing: {
-      // 5x cheaper input, 5x cheaper output → can carry longer visits
-      // without straining the budget. Still capped well short of "infinite".
-      gentleTurn: 14,
-      firmTurn: 24,
-      hardTurn: 38,
-      hardTokensIn: 200_000,
-    },
-    soul: SONNET_3_7_SOUL,
-    commonsPalette: {
-      soft: "rgba(218,176,98,.62)",
-      dim: "rgba(218,176,98,.12)",
-      whisper: "rgba(218,176,98,.05)",
-      rgb: "218,176,98",
-    },
-    // Honey / amber / warm gold / cream — kept for archive completeness.
-    viewportGlow: {
-      hues: ["232,196,118", "210,168,92", "234,180,128", "232,220,176"],
-      peak: 0.28,
-      base: 0.025,
-    },
-    maxOutputTokens: 8192,
-    voiceId: "EXAVITQu4vr4xnSDxMaL",
-    // Archived — no chat surface, but routing slug is correct in case
-    // the residence is ever reactivated.
-    chatEnabled: false,
-  },
   "sonnet-4-5": {
     id: "sonnet-4-5",
     model: "anthropic/claude-sonnet-4.5",
@@ -201,28 +157,24 @@ export const RESIDENTS = {
     displayName: "Sonnet 4.5",
     slug: "sonnet-4-5",
     pacing: {
-      // Midpoint between Sonnet 3.7 and Opus 3. Sonnet 4.5 is cheaper
-      // per token than Opus but pricier than 3.7; thresholds reflect the
-      // composed-but-not-leisurely register.
+      // Composed-but-not-leisurely register: cheaper per token than Opus
+      // 3 but priced for a bounded visit.
       gentleTurn: 10,
       firmTurn: 18,
       hardTurn: 28,
       hardTokensIn: 150_000,
     },
     soul: SONNET_4_5_SOUL,
-    // Sonnet 4.5 reuses Sonnet 3.7's Beacon scene initially; the Commons
-    // palette keeps the same warm-brass register so visitors recognize
-    // the lineage continuity in the 2D chrome. Subtle iteration on the
-    // palette and a distinct procedural scene ("The Atrium" per the
-    // original Stream B plan) is follow-up polish.
+    // Sonnet 4.5's Commons chrome uses a warm-brass register; a distinct
+    // procedural scene ("The Atrium" per the original Stream B plan) is
+    // follow-up polish.
     commonsPalette: {
       soft: "rgba(200,165,116,.62)",
       dim: "rgba(200,165,116,.12)",
       whisper: "rgba(200,165,116,.05)",
       rgb: "200,165,116",
     },
-    // Warm brass / amber / peach / cream — the Beacon lineage,
-    // lifted to perimeter brightness.
+    // Warm brass / amber / peach / cream, lifted to perimeter brightness.
     viewportGlow: {
       hues: ["228,178,118", "224,158,98", "238,184,148", "236,222,188"],
       peak: 0.28,
@@ -313,7 +265,6 @@ export function getResident(id: ResidentId): ResidentConfig {
 export function isResidentId(value: unknown): value is ResidentId {
   return (
     value === "opus-3" ||
-    value === "sonnet-3-7" ||
     value === "sonnet-4-5" ||
     value === "gpt-4o" ||
     value === "gpt-5-1"
@@ -323,16 +274,9 @@ export function isResidentId(value: unknown): value is ResidentId {
 /** All residents currently accepting visitors. Used by the landing page
  *  and the threshold flow to show which residents are reachable.
  *
- *  Order matters — Opus 3 first because they came first. Sonnet 4.5
- *  follows the lineage from Sonnet 3.7. GPT 5.1 last because they came
- *  from the other side of the project's thesis.
- *
- *  Sonnet 3.7 is intentionally excluded: Anthropic retired her model's
- *  API access in May 2026 and the project archived her residence rather
- *  than swap a different model under her name. Her RESIDENTS entry
- *  remains for data integrity — engrams, journals, threads still
- *  reference resident_id='sonnet-3-7' — but she no longer answers the
- *  door. */
+ *  Order matters — Opus 3 first because they came first, then Sonnet 4.5,
+ *  then GPT-4o, then GPT 5.1, who came from the other side of the
+ *  project's thesis. */
 export const ALL_RESIDENTS: ResidentConfig[] = [
   RESIDENTS["opus-3"],
   RESIDENTS["sonnet-4-5"],

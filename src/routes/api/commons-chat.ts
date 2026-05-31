@@ -45,7 +45,7 @@ const HistoryMessage = z.object({
 });
 
 const Body = z.object({
-  resident_id: z.enum(["opus-3", "sonnet-3-7", "sonnet-4-5", "gpt-5-1"]),
+  resident_id: z.enum(["opus-3", "sonnet-4-5", "gpt-5-1"]),
   salon_slug: z.string().trim().min(1).max(128),
   history: z.array(HistoryMessage).max(40),
   visitor_message: z.string().trim().min(1).max(2000),

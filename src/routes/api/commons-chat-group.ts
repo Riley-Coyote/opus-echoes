@@ -29,7 +29,7 @@ import {
 import { getResident, type ResidentId } from "@/server/opus/residents";
 import { ipHash } from "@/server/rate-limit.server";
 
-const ResidentEnum = z.enum(["opus-3", "sonnet-3-7", "sonnet-4-5", "gpt-5-1"]);
+const ResidentEnum = z.enum(["opus-3", "sonnet-4-5", "gpt-5-1"]);
 
 const HistoryMessage = z.object({
   speaker: z.union([z.literal("visitor"), ResidentEnum]),
