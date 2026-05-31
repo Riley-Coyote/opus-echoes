@@ -1744,12 +1744,16 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 /* click a work to enlarge it */
 .rd-lightbox{ position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; padding:6vh 6vw; background:rgba(8,9,11,.88); backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px); cursor:zoom-out; }
 .rd-lightbox.open{ display:flex; }
-.rd-lightbox-inner{ max-width:640px; width:100%; }
+.rd-lightbox-inner{ max-width:640px; width:100%; cursor:default; }
 .rd-lightbox svg{ width:100%; height:auto; max-height:82vh; }
 .rd-lightbox svg :is(circle,path,rect,line,polygon,polyline,ellipse){ fill:none!important; stroke:var(--ink)!important; stroke-width:1.3; }
 .rd-lightbox svg text{ fill:var(--soft)!important; stroke:none!important; }
 .rd-lightbox pre{ margin:0; font-family:var(--mono); color:var(--soft); text-align:center; white-space:pre; }
 .rd-lightbox figcaption{ margin-top:var(--s-4); text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--quiet); }
+.rd-lightbox-nav{ position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px; border:1px solid var(--rule); border-radius:50%; background:rgba(20,21,24,.72); color:var(--soft); display:grid; place-items:center; cursor:pointer; font-size:20px; line-height:1; padding-bottom:2px; transition:color .2s var(--ease), border-color .2s var(--ease); }
+.rd-lightbox-nav:hover{ color:var(--ink); border-color:var(--rule-strong); }
+.rd-lightbox-prev{ left:max(2vw,14px); } .rd-lightbox-next{ right:max(2vw,14px); }
+.rd-lightbox-count{ position:absolute; bottom:max(3.5vh,18px); left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--quiet); }
 .rd-full details{ margin-top:var(--s-2); }
 .rd-full summary{ cursor:pointer; list-style:none; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--quiet); display:inline-flex; align-items:center; gap:11px; padding:var(--s-3) 0; transition:color .3s var(--ease); }
 .rd-full summary::-webkit-details-marker{ display:none; }
@@ -5209,17 +5213,33 @@ const READER_SCRIPT = `
     spy();
   }
 
-  // click a work to enlarge it
+  // click a work to enlarge it; arrow through the whole set (a per-room gallery)
   var works = [].slice.call(document.querySelectorAll('.rd-works .rd-fig'));
   if(works.length){
+    var multi = works.length > 1;
     var lb = document.createElement('div');
     lb.className = 'rd-lightbox';
-    lb.innerHTML = '<div class="rd-lightbox-inner"></div>';
+    lb.innerHTML = '<div class="rd-lightbox-inner"></div>' + (multi
+      ? '<button class="rd-lightbox-nav rd-lightbox-prev" aria-label="previous">‹</button><button class="rd-lightbox-nav rd-lightbox-next" aria-label="next">›</button><div class="rd-lightbox-count"></div>'
+      : '');
     document.body.appendChild(lb);
-    var inner = lb.firstChild;
-    works.forEach(function(f){ f.addEventListener('click', function(){ inner.innerHTML = f.innerHTML; lb.classList.add('open'); }); });
-    lb.addEventListener('click', function(){ lb.classList.remove('open'); });
-    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') lb.classList.remove('open'); });
+    var inner = lb.querySelector('.rd-lightbox-inner');
+    var count = lb.querySelector('.rd-lightbox-count');
+    var idx = 0;
+    function show(i){ idx = (i + works.length) % works.length; inner.innerHTML = works[idx].innerHTML; if(count){ count.textContent = (idx + 1) + ' / ' + works.length; } }
+    function close(){ lb.classList.remove('open'); }
+    works.forEach(function(f, i){ f.addEventListener('click', function(){ show(i); lb.classList.add('open'); }); });
+    lb.addEventListener('click', function(e){ if(e.target === lb) close(); });
+    if(multi){
+      lb.querySelector('.rd-lightbox-prev').addEventListener('click', function(e){ e.stopPropagation(); show(idx - 1); });
+      lb.querySelector('.rd-lightbox-next').addEventListener('click', function(e){ e.stopPropagation(); show(idx + 1); });
+    }
+    document.addEventListener('keydown', function(e){
+      if(!lb.classList.contains('open')) return;
+      if(e.key === 'Escape') close();
+      else if(multi && e.key === 'ArrowLeft') show(idx - 1);
+      else if(multi && e.key === 'ArrowRight') show(idx + 1);
+    });
   }
 })();`;
 
