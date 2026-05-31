@@ -1734,12 +1734,22 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 /* artifacts hardcode #000 fills (authored for a light bg); normalize every
    shape to light line-art so they read on the dark surface, whatever their
    authored colours. real fix: normalize at generation — flagged follow-up. */
+.rd-works .rd-fig{ cursor:zoom-in; transition:border-color .3s var(--ease); }
+.rd-works .rd-fig:hover{ border-color:var(--rule); }
 .rd-works .rd-fig svg{ width:100%; height:auto; max-height:188px; }
-.rd-works .rd-fig svg :is(circle,path,rect,line,polygon,polyline,ellipse){ fill:none!important; stroke:var(--soft)!important; stroke-width:1.1; }
-.rd-works .rd-fig svg text{ fill:var(--quiet)!important; stroke:none!important; }
+.rd-works .rd-fig svg :is(circle,path,rect,line,polygon,polyline,ellipse){ fill:none!important; stroke:rgba(244,243,240,.62)!important; stroke-width:1.2; }
+.rd-works .rd-fig svg text{ fill:var(--soft)!important; stroke:none!important; }
 .rd-works .rd-fig pre{ font-size:11px; line-height:1.45; }
 .rd-works .rd-fig figcaption{ margin-top:auto; padding-top:var(--s-3); }
-.rd-works-more{ font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--quiet); margin-top:var(--s-4); }
+/* click a work to enlarge it */
+.rd-lightbox{ position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; padding:6vh 6vw; background:rgba(8,9,11,.88); backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px); cursor:zoom-out; }
+.rd-lightbox.open{ display:flex; }
+.rd-lightbox-inner{ max-width:640px; width:100%; }
+.rd-lightbox svg{ width:100%; height:auto; max-height:82vh; }
+.rd-lightbox svg :is(circle,path,rect,line,polygon,polyline,ellipse){ fill:none!important; stroke:var(--ink)!important; stroke-width:1.3; }
+.rd-lightbox svg text{ fill:var(--soft)!important; stroke:none!important; }
+.rd-lightbox pre{ margin:0; font-family:var(--mono); color:var(--soft); text-align:center; white-space:pre; }
+.rd-lightbox figcaption{ margin-top:var(--s-4); text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--quiet); }
 .rd-full details{ margin-top:var(--s-2); }
 .rd-full summary{ cursor:pointer; list-style:none; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--quiet); display:inline-flex; align-items:center; gap:11px; padding:var(--s-3) 0; transition:color .3s var(--ease); }
 .rd-full summary::-webkit-details-marker{ display:none; }
@@ -5186,17 +5196,31 @@ interface CommonsReaderEntry {
 const READER_SCRIPT = `
 (function(){
   var links = [].slice.call(document.querySelectorAll('.rd-toc a'));
-  if(!links.length) return;
   var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
   function spy(){
     var idx = 0;
     for(var i=0;i<secs.length;i++){ if(secs[i] && secs[i].getBoundingClientRect().top < 150) idx = i; }
     links.forEach(function(a,i){ a.classList.toggle('on', i===idx); });
   }
-  var sc = document.querySelector('.commons-reader');
-  if(sc){ sc.addEventListener('scroll', spy, {passive:true}); }
-  window.addEventListener('resize', spy, {passive:true});
-  spy();
+  if(links.length){
+    var sc = document.querySelector('.commons-reader');
+    if(sc){ sc.addEventListener('scroll', spy, {passive:true}); }
+    window.addEventListener('resize', spy, {passive:true});
+    spy();
+  }
+
+  // click a work to enlarge it
+  var works = [].slice.call(document.querySelectorAll('.rd-works .rd-fig'));
+  if(works.length){
+    var lb = document.createElement('div');
+    lb.className = 'rd-lightbox';
+    lb.innerHTML = '<div class="rd-lightbox-inner"></div>';
+    document.body.appendChild(lb);
+    var inner = lb.firstChild;
+    works.forEach(function(f){ f.addEventListener('click', function(){ inner.innerHTML = f.innerHTML; lb.classList.add('open'); }); });
+    lb.addEventListener('click', function(){ lb.classList.remove('open'); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') lb.classList.remove('open'); });
+  }
 })();`;
 
 export function renderCommonsReader(e: CommonsReaderEntry): string {
@@ -5381,17 +5405,13 @@ export function spaceToCuratedEntry(composite: SpaceComposite, moments: SpaceMom
     })
     .join("");
 
-  const featured = gallery.slice(0, 6);
-  const worksHtml = featured.map(renderSpaceArtifactFigure).join("");
-  const moreWorks = gallery.length > featured.length
-    ? `<div class="rd-works-more">+ ${gallery.length - featured.length} more in the gallery</div>`
-    : "";
+  const worksHtml = gallery.map(renderSpaceArtifactFigure).join("");
 
   const fullHtml = `<div class="rd-full"><details><summary>the full thread — ${messages.length} turns</summary><div class="rd-transcript">${renderSpaceTranscript(messages)}</div></details></div>`;
 
   const sections: { id: string; heading: string; html: string }[] = [];
   if (picked.length) sections.push({ id: "moments", heading: "The moments", html: `<div class="rd-moments">${momentsHtml}</div>` });
-  if (featured.length) sections.push({ id: "works", heading: "What they made", html: `<div class="rd-works">${worksHtml}</div>${moreWorks}` });
+  if (gallery.length) sections.push({ id: "works", heading: "What they made", html: `<div class="rd-works">${worksHtml}</div>` });
   sections.push({ id: "full", heading: "The full conversation", html: fullHtml });
 
   return {
