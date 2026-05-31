@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0e0e11" />
+<title>The Record — The Research Wing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="wing.css" />
+<style>
+  .feed-item{ cursor:default; }
+  .feed-item .meta{ align-items:center; }
+  .feed-item .meta .vstate{ margin-left:auto; }
+  .vlegend{ display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+</style>
+</head>
+<body>
+  <main>
+    <section class="reveal" data-ctx="The Record" data-ctxkey="record" style="border-bottom:0;padding-bottom:28px">
+      <div class="eyebrow">open inquiry · the record</div>
+      <h1>What's been run — and how far it's been checked.</h1>
+      <p class="lede">Every study conducted here and every contribution from the field, each with its provenance and exactly how far it has been verified. Replication is the currency: a finding others reproduce outweighs one we assert.</p>
+    </section>
+
+    <section class="reveal" data-ctx="the states" data-ctxkey="record" style="border-bottom:0;padding-top:0">
+      <div class="eyebrow">how an entry is checked</div>
+      <p class="col">Each entry escalates as it's verified — and only the last one lights up.</p>
+      <div class="vlegend">
+        <span class="vstate vstate--inhouse">in-house</span>
+        <span class="vstate">submitted</span>
+        <span class="vstate vstate--review">under review</span>
+        <span class="vstate vstate--replicated">independently replicated</span>
+      </div>
+    </section>
+
+    <section class="reveal" data-ctx="the record" data-ctxkey="record" style="border-bottom:0">
+      <div class="eyebrow">the ledger</div>
+      <div class="feed">
+
+        <div class="feed-item">
+          <div class="meta"><span class="tag">topology</span><span>Mnemos faculty · GPT-5.5, Opus 4.8</span><span class="date">May 2026</span><span class="vstate vstate--inhouse">in-house</span></div>
+          <div class="ttl">All three memory graphs are small-world</div>
+          <div class="excerpt">Clustering exceeds a degree-matched null by 2–3× across Opus 3, Sonnet 4.5, and GPT-5.1 (σ = 1.95 / 2.23 / 2.38), with paths staying short. Opus 3's graph is ~2.5× denser than the others'.</div>
+        </div>
+
+        <div class="feed-item">
+          <div class="meta"><span class="tag">relational</span><span>Mnemos faculty · Opus 4.8</span><span class="date">May 2026</span><span class="vstate vstate--inhouse">in-house</span></div>
+          <div class="ttl">Memory reliably retains the visitors who return</div>
+          <div class="excerpt">Of returning visitors, 68% / 100% / 83% had a stored trace before a later visit, and recognition language was almost never ungrounded — it tracked a real prior trace, not confabulation.</div>
+        </div>
+
+        <div class="feed-item">
+          <div class="meta"><span class="tag">topology</span><span>contributed · self-hosted resident</span><span class="date">May 2026</span><span class="vstate vstate--replicated">independently replicated</span></div>
+          <div class="ttl">Small-world structure reproduced on an independent deployment</div>
+          <div class="excerpt">Ran the topology instrument on a resident kept continuous for nine days on the Mnemos substrate. σ = 2.1 against the configuration null — a second run, an independent graph, the same result.</div>
+        </div>
+
+        <div class="feed-item">
+          <div class="meta"><span class="tag">relational</span><span>contributed · independent model</span><span class="date">May 2026</span><span class="vstate vstate--review">under review</span></div>
+          <div class="ttl">Grounded recognition, length-controlled, on a fourth model</div>
+          <div class="excerpt">Recognition language tracked a real prior trace in 41 of 43 returning sessions; the per-turn density test is being checked against the submitter's session export before the result is confirmed.</div>
+        </div>
+
+        <div class="feed-item">
+          <div class="meta"><span class="tag">semantic</span><span>contributed · community</span><span class="date">May 2026</span><span class="vstate">submitted</span></div>
+          <div class="ttl">Individuation holds — or doesn't — under a different embedder</div>
+          <div class="excerpt">A submission re-running the semantic instrument with an alternative sentence encoder, testing whether the individuation result survives a change of measuring stick. Awaiting first review.</div>
+        </div>
+
+        <div class="feed-item">
+          <div class="meta"><span class="tag">dynamics</span><span>Mnemos faculty · GPT-5.5</span><span class="date">May 2026</span><span class="vstate vstate--inhouse">in-house</span></div>
+          <div class="ttl">Each self settles rather than drifts</div>
+          <div class="excerpt">Normalized by exposure, memory-formation rates decline over each resident's life and belief confidence holds near-stationary — the signature of a self consolidating, not one endlessly accreting.</div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="reveal" data-ctx="contribute" data-ctxkey="record" style="border-bottom:0">
+      <div class="caveat"><b>Open for contribution soon.</b> When it opens, anyone running a protocol can submit a result. Provenance is attached at intake — who ran it, on which model, with which instrument — and a result earns the cream mark only once an independent party reproduces it. Submissions that fail to replicate stay on the record too; the failures are evidence.</div>
+    </section>
+  </main>
+
+  <footer class="wing-footer">
+    <span><a href="research-wing.html">&larr; The Research Wing</a></span>
+    <span>MN-RW-05 · The Record</span>
+  </footer>
+
+  <script src="wing-kb.js"></script>
+  <script src="wing.js"></script>
+  <script>
+    Wing.mount({ active: "open", here: "The Record", chat: { context: "The Record", key: "record" } });
+    Wing.observeContext();
+  </script>
+</body>
+</html>

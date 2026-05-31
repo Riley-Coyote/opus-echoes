@@ -137,6 +137,17 @@ figure.imgerr::after{content:"figure unavailable"; font-family:var(--mono); font
 .tag .dot{width:6px; height:6px; border-radius:50%; background:var(--fg-46)}
 .tag.t-opus .dot{background:var(--res-opus)} .tag.t-sonnet .dot{background:var(--res-sonnet)} .tag.t-gpt .dot{background:var(--res-gpt)}
 
+/* ── provenance & verification · the expansion's one new shared primitive ──
+   resident colours stay DATA-only; verification is marked in CREAM. the only
+   state that "lights up" is independently-replicated — the cream seal. */
+.vstate{ display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  padding:3px 9px; border-radius:var(--r-sm); border:1px solid var(--rule-mid); color:var(--fg-62); white-space:nowrap; }
+.vstate::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--fg-32); flex:none; }
+.vstate--inhouse::before{ background:var(--fg-62); }
+.vstate--review::before{ background:var(--fg-78); }
+.vstate--replicated{ background:var(--gold-bright); color:var(--bg); border-color:var(--gold-bright); font-weight:600; }
+.vstate--replicated::before{ content:"✓"; width:auto; height:auto; border-radius:0; background:none; font-size:10px; line-height:1; color:var(--bg); }
+
 /* ── domain directory (masthead) ─────────────────────────────────── */
 .directory{display:grid; grid-template-columns:1fr; gap:0; margin-top:8px; border-top:1px solid var(--rule)}
 .dir-card{display:grid; grid-template-columns:64px 1fr auto; gap:0 28px; align-items:start; padding:34px 8px; border-bottom:1px solid var(--rule);

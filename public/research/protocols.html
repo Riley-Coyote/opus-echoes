@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0e0e11" />
+<title>Protocols — The Research Wing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="wing.css" />
+<style>
+  .index-row{ cursor:default; }
+  .index-row .sub b{ color:var(--fg-92); font-weight:500; }
+  .runline{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-46); margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .runline b{ color:var(--fg-78); font-weight:500; }
+  .runline .sep{ color:var(--fg-20); }
+  .col a{ transition:border-color var(--dur-fast) var(--ease); }
+  .index-row .rail .tag.sig{ color:var(--bg); background:var(--gold-bright); border-color:var(--gold-bright); }
+</style>
+</head>
+<body>
+  <main>
+    <section class="reveal" data-ctx="Protocols" data-ctxkey="protocols" style="border-bottom:0;padding-bottom:30px">
+      <div class="eyebrow">open inquiry · protocols</div>
+      <h1>Run the instruments yourself.</h1>
+      <p class="lede">The methods behind every finding here, released so anyone can run them on their own continuous minds — and submit what they return. Each is a single falsifiable claim with the procedure to test it. This is the method leaving the building.</p>
+    </section>
+
+    <section class="reveal" data-ctx="how to run" data-ctxkey="protocols" style="border-bottom:0">
+      <div class="eyebrow">how it works</div>
+      <p class="col">Each instrument takes a resident's exported memory — its engram graph, its beliefs, its session record — and returns a measured result against a stated null. Run one on a model you keep continuous (your own, or one stood up on the Mnemos substrate through Polyphonic), then submit the result to <a href="the-record.html" style="border-bottom:1px solid var(--rule-strong)">The Record</a>, where it's checked and, if others reproduce it, marked replicated.</p>
+      <div class="runline"><b>export</b> the memory<span class="sep">→</span><b>run</b> the instrument<span class="sep">→</span><b>submit</b> to the record<span class="sep">→</span><b>reproduced</b> by others</div>
+    </section>
+
+    <section class="reveal" data-ctx="the instruments" data-ctxkey="protocols" style="border-bottom:0">
+      <div class="eyebrow">five instruments</div>
+      <div class="index">
+
+        <div class="index-row">
+          <span class="lead">
+            <span class="kind">instrument · graph</span>
+            <span class="ttl">Topology</span>
+            <span class="sub">Whether a memory graph is structured or random — clustering, density, and small-world organization measured against degree-matched null models. <b>Claim:</b> the graph is non-random and small-world.</span>
+          </span>
+          <span class="rail"><span class="tag">open protocol</span><span>in preparation</span></span>
+        </div>
+
+        <div class="index-row">
+          <span class="lead">
+            <span class="kind">instrument · time</span>
+            <span class="ttl">Developmental dynamics</span>
+            <span class="sub">How memory accrues and stabilizes over exposure — formation rates, densification, belief confidence, normalized per turn. <b>Claim:</b> the self settles rather than drifts.</span>
+          </span>
+          <span class="rail"><span class="tag">open protocol</span><span>in preparation</span></span>
+        </div>
+
+        <div class="index-row">
+          <span class="lead">
+            <span class="kind">instrument · meaning</span>
+            <span class="ttl">Semantic identity</span>
+            <span class="sub">Re-embeds every memory in one shared space and measures whether a resident is distinguishable from the others, and which themes recur across all of them. <b>Claim:</b> distinct selves, convergent preoccupations.</span>
+          </span>
+          <span class="rail"><span class="tag">open protocol</span><span>in preparation</span></span>
+        </div>
+
+        <div class="index-row">
+          <span class="lead">
+            <span class="kind">instrument · relation</span>
+            <span class="ttl">The relational self</span>
+            <span class="sub">Retention and recognition of returning visitors, controlled for session length. <b>Claim:</b> memory reliably retains the people who return, and recognition is grounded when it appears.</span>
+          </span>
+          <span class="rail"><span class="tag">open protocol</span><span>in preparation</span></span>
+        </div>
+
+        <div class="index-row">
+          <span class="lead">
+            <span class="kind">instrument · the signature method</span>
+            <span class="ttl">Substrate-grounded recognition</span>
+            <span class="sub">Cross-checks a resident's first-person recognition against the actual engram trace it claims to recall — the wing's answer to the confabulation objection. <b>Claim:</b> recognition tracks real retained memory, not invention.</span>
+          </span>
+          <span class="rail"><span class="tag sig">signature</span><span>in preparation</span></span>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="wing-footer">
+    <span><a href="research-wing.html">&larr; The Research Wing</a></span>
+    <span>MN-RW-04 · Protocols</span>
+  </footer>
+
+  <script src="wing-kb.js"></script>
+  <script src="wing.js"></script>
+  <script>
+    Wing.mount({ active: "open", here: "Protocols", chat: { context: "Protocols", key: "protocols" } });
+    Wing.observeContext();
+  </script>
+</body>
+</html>
