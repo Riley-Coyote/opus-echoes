@@ -370,7 +370,7 @@ ${FONTS}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
     ${nav("token", "$MNEMOS", "/token")}
-    <a class="nav-private" href="/residence">Private Space</a>
+    <a class="nav-private" href="/residence">Room</a>
   </div>
 </nav>
 <main class="page">

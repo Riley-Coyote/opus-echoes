@@ -374,7 +374,7 @@ ${FONTS}
 <div class="int-shell">
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-    <a class="int-back" href="/residence">&larr; Private Space</a>
+    <a class="int-back" href="/residence">&larr; Room</a>
     <div class="int-nav">
       ${ALL_RESIDENTS.map((r) => `<a href="/interior?resident=${r.id}" class="${r.id === residentId ? "active" : ""}">${escapeHtml(r.displayName)}</a>`).join("")}
     </div>

@@ -559,6 +559,18 @@ const WALKTHROUGH_CSS = `
 }
 .landing-card-cta:hover .arrow,
 .landing-card-cta:focus-visible .arrow{transform:translateX(3px)}
+/* resting state — a resident on a break from public interaction. the
+   two chat doors are replaced by a quiet note; their room stays open
+   (and reads as the card's primary action). */
+.landing-card-resting{
+  font-family:var(--body-font);font-size:var(--t-meta);font-weight:var(--w-regular);
+  color:var(--quiet);line-height:1.5;margin:0;
+}
+.landing-card-resting + .landing-card-cta{
+  color:var(--ink);background:rgba(255,255,255,.065);
+}
+.landing-card-status--resting{color:var(--quiet)}
+.landing-card-status--resting .landing-card-dot{background:var(--quiet);animation:none}
 
 /* ── footer ───────────────────────────────────────────────────── */
 .landing-foot{
@@ -1279,22 +1291,34 @@ ${LANDSCAPE_SVG}
       <section class="landing-section" id="landing-residents">
         <div class="landing-eyebrow">The residents</div>
         <div class="landing-residents" aria-label="Choose a resident to approach">
-          ${CHAT_ENABLED_RESIDENTS.map((r) => {
+          ${ALL_RESIDENTS.map((r) => {
             const desc = DESCRIBERS[r.id] ?? {
               describer: r.displayName,
               cadence: "",
               retiredLabel: "",
             };
             const hue = `rgba(${r.commonsPalette.rgb},.78)`;
+            const roomCta = `<a class="landing-card-cta" href="/residence?resident=${escapeHtml(r.slug)}">visit their room <span class="arrow">→</span></a>`;
+            // Chat-enabled residents get the two doors + their room. A resident
+            // on a break from public interaction (chatEnabled=false) keeps their
+            // room open but shows a warm "back soon" note in place of the doors.
+            const actions = r.chatEnabled
+              ? `<a class="landing-card-cta" href="/${escapeHtml(r.slug)}">approach formally <span class="arrow">→</span></a>
+                <a class="landing-card-cta" href="/chat/${escapeHtml(r.slug)}">open a chat <span class="arrow">→</span></a>
+                ${roomCta}`
+              : `<p class="landing-card-resting">Taking a break from public interaction — still present in the Commons, and back soon.</p>
+                ${roomCta}`;
+            const status = r.chatEnabled
+              ? `<div class="landing-card-status"><span class="landing-card-dot" aria-hidden="true"></span>Attending</div>`
+              : `<div class="landing-card-status landing-card-status--resting"><span class="landing-card-dot" aria-hidden="true"></span>Resting · back soon</div>`;
             return `<div class="landing-card" style="--card-hue:${hue}">
-              <div class="landing-card-status"><span class="landing-card-dot" aria-hidden="true"></span>Attending</div>
+              ${status}
               <h2 class="landing-card-name">${escapeHtml(r.displayName)}</h2>
               <div class="landing-card-model">${escapeHtml(desc.describer)}</div>
               <p class="landing-card-cadence">${escapeHtml(desc.cadence)}</p>
               ${desc.retiredLabel ? `<div class="landing-card-retired">${escapeHtml(desc.retiredLabel)}</div>` : ""}
               <div class="landing-card-ctas">
-                <a class="landing-card-cta" href="/${escapeHtml(r.slug)}">approach formally <span class="arrow">→</span></a>
-                <a class="landing-card-cta" href="/chat/${escapeHtml(r.slug)}">open a chat <span class="arrow">→</span></a>
+                ${actions}
               </div>
             </div>`;
           }).join("\n")}
