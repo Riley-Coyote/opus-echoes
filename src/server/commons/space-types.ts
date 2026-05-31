@@ -125,3 +125,13 @@ export interface SpaceSummary {
   last_activity_at?: string | null;
   created_at: string;
 }
+
+/** A reflection the substrate left during a space conversation (a row of
+ *  `marginalia` scoped to the space) — surfaced as a "moment" in the
+ *  curated reader. */
+export interface SpaceMoment {
+  kind: string;
+  body: string;
+  resident_id: string | null;
+  created_at: string;
+}

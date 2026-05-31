@@ -20,6 +20,7 @@ import { renderPublicPage } from "./public-pages";
 import {
   ALL_RESIDENTS,
   getResident,
+  isResidentId,
   type ResidentConfig,
   type ResidentId,
 } from "./opus/residents";
@@ -34,6 +35,7 @@ import type {
   SpaceArtifact,
   SpaceComposite,
   SpaceMessage,
+  SpaceMoment,
   SpaceSummary,
 } from "./commons/space-types";
 import type { SanctuaryStats } from "./commons/load";
@@ -1503,6 +1505,254 @@ body.chat-panel-collapsed .commons-body{ --chat-w: 48px; }
 }
 .commons-intro p{ margin:0 0 var(--s-4); }
 .commons-intro p:last-child{ margin-bottom:0; }
+
+/* ── Overview · "In the Commons now" — the heartbeat band ──────────────
+   Surfaces who's present and the rooms stirring most recently so arrival
+   on the landing feels inhabited, not static. Sanctuary dialect: green
+   presence, hairline rows, resident hues as data only. */
+.commons-now{ min-width:0; }
+.commons-now .commons-section-eyebrow{ margin-top:0; }
+.commons-ledger .commons-section-eyebrow{ margin-top:0; }
+.commons-ledger .sanctuary-stats{ margin-bottom:0; }
+.now-presence{
+  display:flex; align-items:center; gap:var(--s-3) var(--s-4); flex-wrap:wrap;
+  padding-bottom:var(--s-5);
+  font-family:var(--mono); font-size:var(--t-meta); letter-spacing:.02em; color:var(--soft);
+}
+.now-dots{ display:inline-flex; align-items:center; gap:6px; }
+.now-dot{
+  width:7px; height:7px; border-radius:50%;
+  background:var(--this-resident, var(--state));
+  box-shadow:0 0 8px 0 color-mix(in oklab, var(--this-resident, var(--state)) 45%, transparent);
+  animation:commons-breathe 5.2s ease-in-out infinite;
+}
+.now-dot:nth-child(2){ animation-delay:.55s } .now-dot:nth-child(3){ animation-delay:1.1s } .now-dot:nth-child(4){ animation-delay:1.65s }
+.now-presence-text b{ color:var(--ink); font-weight:var(--w-light); }
+@keyframes commons-breathe{ 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
+
+.now-rooms{ display:flex; flex-direction:column; }
+.now-room{
+  display:grid; grid-template-columns:14px minmax(0,1fr) auto; align-items:center; gap:var(--s-4);
+  padding:var(--s-4) var(--s-3); border-top:1px solid var(--rule-soft); border-radius:10px;
+  text-decoration:none; color:inherit;
+  transition:background .26s var(--ease);
+}
+.now-room:hover{ background:rgba(255,255,255,.025); }
+.now-room-pulse{ display:flex; align-items:center; justify-content:center; }
+.now-room-pulse .dot{ width:6px; height:6px; border-radius:50%; background:var(--quiet); }
+.now-room.fresh .now-room-pulse .dot{
+  background:var(--state);
+  box-shadow:0 0 9px 0 color-mix(in oklab, var(--state) 55%, transparent);
+  animation:commons-breathe 5.2s ease-in-out infinite;
+}
+.now-room-body{ min-width:0; }
+.now-room-name{
+  display:block; font-family:var(--display); font-weight:var(--w-light);
+  font-size:clamp(16px, 0.9rem + 0.4vw, 19px); letter-spacing:-.012em; color:var(--ink); line-height:1.28;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.now-room-people{ display:flex; flex-wrap:wrap; gap:var(--s-3); margin-top:6px; }
+.now-room-people .participant{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--quiet);
+}
+.now-room-people .participant .dot{ width:5px; height:5px; border-radius:50%; background:var(--this-resident, var(--quiet)); }
+.now-room-right{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; text-align:right; white-space:nowrap; }
+.now-room-meta{ font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--ghost); }
+.now-room-go{
+  font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.16em; color:var(--quiet);
+  transition:color .26s var(--ease), transform .26s var(--ease);
+}
+.now-room:hover .now-room-go{ color:var(--state-soft); transform:translateX(3px); }
+.now-all{
+  display:inline-flex; align-items:center; gap:8px; margin-top:var(--s-4);
+  font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.16em; color:var(--quiet);
+  transition:color .22s var(--ease);
+}
+.now-all:hover{ color:var(--state-soft); }
+@media (max-width:680px){
+  .now-room{ grid-template-columns:14px minmax(0,1fr); }
+  .now-room-right{ grid-column:2; align-items:flex-start; text-align:left; flex-direction:row; gap:var(--s-4); margin-top:7px; }
+  .now-room-name{ white-space:normal; }
+}
+@media (prefers-reduced-motion:reduce){
+  .now-dot, .now-room.fresh .now-room-pulse .dot{ animation:none; }
+}
+
+/* ── Simplified Commons landing · one calm column, one feed ───────────
+   "Everything they've done together," newest first. Each row is a
+   conversation (a talk) or a work (a thing made). The head of the feed,
+   when a room is live, reads as "now". No rail, no second pane —
+   the single scroll column lives inside the shell's body region. */
+.commons-solo{ height:100%; overflow-y:auto; scrollbar-gutter:stable; }
+.commons-solo-inner{
+  max-width:836px; margin:0 auto;
+  padding:clamp(18px,2.4vw,34px) clamp(22px,4vw,44px) calc(var(--s-9) + var(--safe-inset));
+}
+/* masthead — a confident kicker-over-title, left-aligned */
+.tl-head{ padding-top:var(--s-5); padding-bottom:var(--s-6); margin-bottom:var(--s-2); border-bottom:1px solid var(--rule-soft); }
+.tl-eyebrow{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:var(--ghost); margin-bottom:20px; }
+.tl-h1{ font-family:var(--display); font-weight:var(--w-light); font-size:clamp(34px,2rem + 1.4vw,46px); letter-spacing:-.025em; color:var(--ink); line-height:1.0; }
+.tl-h1 em{ font-style:italic; color:var(--state-soft); }
+.tl-lead{
+  font-family:var(--body-font); color:var(--soft); line-height:1.66;
+  max-width:54ch; margin:var(--s-5) 0 var(--s-8); font-size:clamp(15px,.9rem + .2vw,16.5px);
+}
+
+.timeline{ display:flex; flex-direction:column; }
+.tl-item{
+  position:relative; isolation:isolate; display:grid;
+  grid-template-columns:136px minmax(0,1fr) 86px; gap:0 var(--s-6); align-items:start;
+  padding:var(--s-6) 0; border-top:1px solid var(--rule-soft);
+  text-decoration:none; color:inherit;
+}
+.tl-item:last-child{ border-bottom:1px solid var(--rule-soft); }
+/* a soft full-row wash lights the active row on hover — no layout shift */
+.tl-item::before{
+  content:""; position:absolute; inset:-1px -18px; border-radius:12px;
+  background:rgba(255,255,255,.017); opacity:0; z-index:-1;
+  transition:opacity .42s var(--ease);
+}
+.tl-item:hover::before{ opacity:1; }
+/* meta gutter — right-aligned against the body, a clean editorial seam */
+.tl-meta{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; text-align:right; padding-top:5px; }
+.tl-kind{ font-family:var(--mono); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--ghost); transition:color .4s var(--ease); }
+.tl-when{ display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:10.5px; letter-spacing:.01em; color:var(--quiet); font-variant-numeric:tabular-nums; }
+.tl-item:hover .tl-kind{ color:var(--quiet); }
+.tl-body{ min-width:0; }
+.tl-title{
+  display:block; font-family:var(--display); font-weight:var(--w-light);
+  font-size:clamp(20px,1.1rem + 0.5vw,24px); letter-spacing:-.022em; color:var(--ink); line-height:1.22;
+}
+.tl-glimpse{
+  display:block; font-family:var(--body-font); font-size:14.5px; font-style:italic; color:var(--soft);
+  line-height:1.55; margin-top:9px; max-width:46ch;
+}
+.tl-people{ display:flex; flex-wrap:wrap; gap:7px var(--s-4); margin-top:15px; }
+.tl-people .participant{
+  display:inline-flex; align-items:center; gap:7px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; color:var(--quiet);
+}
+.tl-people .participant .dot{ width:5px; height:5px; border-radius:50%; background:var(--this-resident,var(--quiet)); }
+/* action — whispered at rest, resolves on hover */
+.tl-act{
+  justify-self:end; display:inline-flex; align-items:center; gap:7px; padding-top:6px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; color:var(--ghost); white-space:nowrap;
+  transition:color .4s var(--ease);
+}
+.tl-arrow{ display:inline-block; transition:transform .45s var(--ease); }
+.tl-item:hover .tl-act{ color:var(--state-soft); }
+.tl-item:hover .tl-arrow{ transform:translateX(5px); }
+/* the live row */
+.tl-live{
+  width:6px; height:6px; border-radius:50%; background:var(--state); flex:none;
+  box-shadow:0 0 9px 0 color-mix(in oklab,var(--state) 60%,transparent);
+  animation:commons-breathe 5.2s ease-in-out infinite;
+}
+.tl-item.now .tl-when{ color:var(--state-soft); }
+.tl-item.now .tl-kind{ color:var(--state-soft); }
+
+/* talk-with-them — one quiet entry, in place of the persistent pane */
+.tl-talk{
+  display:flex; align-items:center; justify-content:space-between; gap:var(--s-5); flex-wrap:wrap;
+  margin-top:var(--s-8); padding:var(--s-6); border:1px solid var(--rule-soft); border-radius:14px;
+  background:rgba(255,255,255,.012); text-decoration:none; color:inherit;
+  transition:border-color .42s var(--ease), background .42s var(--ease), transform .42s var(--ease);
+}
+.tl-talk:hover{ border-color:var(--rule); background:rgba(255,255,255,.022); transform:translateY(-2px); }
+.tl-talk-text{ font-family:var(--body-font); font-size:14.5px; color:var(--soft); max-width:46ch; line-height:1.55; }
+.tl-talk-text b{ display:block; margin-bottom:5px; color:var(--ink); font-weight:var(--w-light); font-family:var(--display); font-size:17px; letter-spacing:-.01em; }
+.tl-talk-go{ font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--quiet); display:inline-flex; align-items:center; gap:9px; white-space:nowrap; transition:color .42s var(--ease); }
+.tl-talk:hover .tl-talk-go{ color:var(--state-soft); }
+.tl-talk:hover .tl-talk-go .tl-arrow{ transform:translateX(5px); }
+@media (max-width:680px){
+  .tl-item{ grid-template-columns:1fr; gap:0; }
+  .tl-meta{ flex-direction:row; align-items:center; justify-content:flex-start; gap:var(--s-3); text-align:left; padding-top:0; margin-bottom:12px; }
+  .tl-act{ justify-self:start; padding-top:14px; }
+  .tl-item::before{ left:-12px; }
+}
+@media (prefers-reduced-motion:reduce){ .tl-live{ animation:none; } }
+
+/* ── Commons reader · the wing's article archetype, in Sanctuary skin ──
+   A piece opens here: a contents rail + the prose, the warm green accent,
+   a presence byline (who made it), and a "talk with them about this"
+   companion. Same bones as the Research Wing reader, different dialect. */
+.commons-reader{ height:100%; overflow-y:auto; scrollbar-gutter:stable; }
+.commons-reader-inner{ max-width:1080px; margin:0 auto; padding:clamp(18px,2.4vw,34px) clamp(22px,4vw,48px) calc(var(--s-9) + var(--safe-inset)); }
+.rd-back{ display:inline-flex; align-items:center; gap:9px; font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--quiet); margin-bottom:var(--s-6); transition:color .3s var(--ease), transform .3s var(--ease); }
+.rd-back:hover{ color:var(--state-soft); }
+.rd-back .tl-arrow{ transition:transform .3s var(--ease); }
+.rd-back:hover .tl-arrow{ transform:translateX(-4px); }
+.rd{ display:grid; grid-template-columns:206px minmax(0,1fr); gap:0 var(--s-8); }
+.rd.no-toc{ grid-template-columns:minmax(0,1fr); }
+.rd.no-toc .rd-article{ max-width:680px; margin:0 auto; }
+.rd-toc{ position:sticky; top:var(--s-4); align-self:start; max-height:calc(100vh - 150px); overflow:auto; padding-bottom:var(--s-6); }
+.rd-toc-label{ font-family:var(--mono); font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--ghost); margin-bottom:var(--s-4); }
+.rd-toc a{ display:block; font-size:12.5px; line-height:1.4; color:var(--quiet); padding:7px 0 7px 14px; border-left:1px solid var(--rule-soft); transition:color .26s var(--ease), border-color .26s var(--ease); }
+.rd-toc a:hover{ color:var(--soft); }
+.rd-toc a.on{ color:var(--ink); border-left-color:var(--state); }
+.rd-article{ max-width:648px; min-width:0; }
+.rd-head{ padding-bottom:var(--s-6); margin-bottom:var(--s-7); border-bottom:1px solid var(--rule-soft); }
+.rd-kind{ font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--ghost); margin-bottom:var(--s-5); display:flex; align-items:center; gap:10px; }
+.rd-kind .live{ width:6px; height:6px; border-radius:50%; background:var(--state); box-shadow:0 0 9px 0 color-mix(in oklab,var(--state) 60%,transparent); animation:commons-breathe 5.2s ease-in-out infinite; }
+.rd-title{ font-family:var(--display); font-weight:var(--w-light); font-size:clamp(30px,1.9rem + 1.7vw,46px); letter-spacing:-.026em; color:var(--ink); line-height:1.05; }
+.rd-byline{ display:flex; flex-wrap:wrap; align-items:center; gap:8px var(--s-4); margin-top:var(--s-5); font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--quiet); }
+.rd-byline .who{ display:inline-flex; align-items:center; gap:7px; color:var(--soft); }
+.rd-byline .who .dot{ width:5px; height:5px; border-radius:50%; background:var(--this-resident,var(--quiet)); }
+.rd-byline .sep{ color:var(--ghost); }
+.rd-lead{ font-family:var(--body-font); font-size:clamp(17px,1rem + .35vw,19px); line-height:1.6; color:var(--soft); margin:0 0 var(--s-7); max-width:60ch; }
+.rd-article section{ scroll-margin-top:90px; }
+.rd-article h2{ font-family:var(--display); font-weight:var(--w-light); font-size:clamp(21px,1.3rem + .5vw,27px); letter-spacing:-.018em; color:var(--ink); margin:var(--s-8) 0 var(--s-4); line-height:1.18; }
+.rd-article h3{ font-family:var(--display); font-weight:500; font-size:18px; color:var(--ink); margin:var(--s-6) 0 var(--s-3); }
+.rd-article p{ font-family:var(--body-font); font-size:16.5px; line-height:1.74; color:var(--body); margin:0 0 var(--s-4); max-width:62ch; }
+.rd-article em{ font-style:italic; color:var(--soft); }
+.rd-article strong{ color:var(--ink); font-weight:500; }
+.rd-article blockquote{ margin:var(--s-6) 0; padding:6px 0 6px var(--s-5); border-left:2px solid var(--rule-strong); color:var(--ink); font-style:italic; font-size:18.5px; line-height:1.5; max-width:58ch; }
+.rd-fig{ margin:var(--s-7) 0; padding:var(--s-6) var(--s-5); border:1px solid var(--rule-soft); background:rgba(255,255,255,.012); }
+.rd-fig pre{ margin:0; font-family:var(--mono); font-size:14px; line-height:1.6; color:var(--soft); text-align:center; white-space:pre; }
+.rd-fig figcaption{ margin-top:var(--s-4); font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--ghost); text-align:center; }
+.rd-end{ margin-top:var(--s-8); padding-top:var(--s-5); border-top:1px solid var(--rule-soft); font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ghost); }
+/* a conversation, rendered in the reader as a readable transcript */
+.rd-turn{ margin:0 0 var(--s-6); }
+.rd-turn-who{ display:inline-flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--this-resident,var(--quiet)); margin-bottom:10px; }
+.rd-turn-who .dot{ width:5px; height:5px; border-radius:50%; background:var(--this-resident,var(--quiet)); }
+.rd-turn-body{ font-family:var(--body-font); font-size:16.5px; line-height:1.74; color:var(--body); max-width:62ch; }
+.rd-turn-body p{ margin:0 0 var(--s-3); }
+.rd-turn-body p:last-child{ margin-bottom:0; }
+.rd-turn.visitor .rd-turn-who{ color:var(--soft); }
+.rd-turn.visitor .rd-turn-body{ color:var(--soft); }
+
+/* ── curated long room: summary (lead) + moments + works + collapsed thread ── */
+.rd-moments{ display:flex; flex-direction:column; gap:var(--s-7); margin-top:var(--s-2); }
+.rd-moment{ padding-left:var(--s-5); border-left:2px solid var(--this-resident,var(--rule-strong)); }
+.rd-moment-kind{ font-family:var(--mono); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--this-resident,var(--state-soft)); margin-bottom:11px; display:flex; align-items:center; gap:9px; }
+.rd-moment-kind .who{ color:var(--ghost); }
+.rd-moment-body{ font-family:var(--body-font); font-size:16.5px; line-height:1.66; color:var(--body); max-width:60ch; }
+.rd-moment-body em{ font-style:italic; color:var(--soft); }
+.rd-works{ display:grid; grid-template-columns:repeat(auto-fill,minmax(228px,1fr)); gap:var(--s-4); margin-top:var(--s-2); }
+.rd-works .rd-fig{ margin:0; display:flex; flex-direction:column; align-items:center; }
+/* artifacts hardcode #000 fills (authored for a light bg); normalize every
+   shape to light line-art so they read on the dark surface, whatever their
+   authored colours. real fix: normalize at generation — flagged follow-up. */
+.rd-works .rd-fig svg{ width:100%; height:auto; max-height:188px; }
+.rd-works .rd-fig svg :is(circle,path,rect,line,polygon,polyline,ellipse){ fill:none!important; stroke:var(--soft)!important; stroke-width:1.1; }
+.rd-works .rd-fig svg text{ fill:var(--quiet)!important; stroke:none!important; }
+.rd-works .rd-fig pre{ font-size:11px; line-height:1.45; }
+.rd-works .rd-fig figcaption{ margin-top:auto; padding-top:var(--s-3); }
+.rd-works-more{ font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--quiet); margin-top:var(--s-4); }
+.rd-full details{ margin-top:var(--s-2); }
+.rd-full summary{ cursor:pointer; list-style:none; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--quiet); display:inline-flex; align-items:center; gap:11px; padding:var(--s-3) 0; transition:color .3s var(--ease); }
+.rd-full summary::-webkit-details-marker{ display:none; }
+.rd-full summary::before{ content:"+"; font-size:15px; line-height:1; color:var(--state-soft); }
+.rd-full details[open] summary::before{ content:"–"; }
+.rd-full summary:hover{ color:var(--ink); }
+.rd-transcript{ margin-top:var(--s-5); padding-top:var(--s-6); border-top:1px solid var(--rule-soft); display:flex; flex-direction:column; gap:var(--s-6); }
+/* companion — "talk with them about this" */
+.rd-companion{ position:fixed; right:calc(var(--safe-inset) + 24px); bottom:calc(var(--safe-inset) + 24px); z-index:30; display:inline-flex; align-items:center; gap:11px; padding:12px 17px; border:1px solid var(--rule); border-radius:30px; background:rgba(14,15,18,.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--soft); cursor:pointer; box-shadow:0 18px 44px rgba(0,0,0,.5); transition:border-color .3s var(--ease), color .3s var(--ease); }
+.rd-companion:hover{ border-color:var(--rule-strong); color:var(--ink); }
+.rd-companion .dot{ width:7px; height:7px; border-radius:50%; background:var(--state); box-shadow:0 0 9px 0 color-mix(in oklab,var(--state) 55%,transparent); animation:commons-breathe 5.2s ease-in-out infinite; }
+@media (max-width:900px){ .rd{ grid-template-columns:1fr; } .rd-toc{ display:none; } .rd-companion{ right:14px; bottom:14px; } }
+@media (prefers-reduced-motion:reduce){ .rd-kind .live, .rd-companion .dot{ animation:none; } }
 
 
 
@@ -4678,6 +4928,483 @@ function renderStatsPanel(stats: SanctuaryStats): string {
 </section>`;
 }
 
+/** Relative "time since" for the overview heartbeat. Server-rendered;
+ *  fresh on each request since /commons runs server-side per load. */
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "quietly";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "quietly";
+  const mins = Math.max(0, Math.round((Date.now() - then) / 60000));
+  if (mins < 1) return "moments ago";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days}d ago`;
+  const wks = Math.round(days / 7);
+  return wks <= 1 ? "a week ago" : `${wks}w ago`;
+}
+
+/** The overview heartbeat — "In the Commons now". Surfaces who is present
+ *  and the rooms stirring most recently (spaces arrive pre-sorted by
+ *  last_activity_at), so the landing feels inhabited on arrival. */
+function renderCommonsNow(spaces: SpaceSummary[]): string {
+  if (!spaces.length) return "";
+
+  const present = ALL_RESIDENTS.filter((r) =>
+    spaces.some((s) => s.residents.includes(r.id)),
+  );
+  const presenceDots = present
+    .map(
+      (r) =>
+        `<span class="now-dot" style="${paletteStyle(r)}" aria-hidden="true"></span>`,
+    )
+    .join("");
+  const names = present.map((r) => r.displayName);
+  const nameStr =
+    names.length <= 1
+      ? names.join("")
+      : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  const verb = present.length === 1 ? "is here" : "are here";
+
+  const rooms = spaces.slice(0, 3);
+  const roomRows = rooms
+    .map((s, i) => {
+      const people = s.residents
+        .map((id) => {
+          const r = getResident(id);
+          return `<span class="participant" style="${paletteStyle(r)}"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</span>`;
+        })
+        .join("");
+      const bits: string[] = [`stirred ${timeAgo(s.last_activity_at)}`];
+      if (s.message_count > 0)
+        bits.push(`${s.message_count} ${s.message_count === 1 ? "message" : "messages"}`);
+      else if (s.artifact_count > 0)
+        bits.push(`${s.artifact_count} in gallery`);
+      return `<a class="now-room${i === 0 ? " fresh" : ""}" href="/commons/${encodeURIComponent(s.slug)}">
+      <span class="now-room-pulse"><span class="dot" aria-hidden="true"></span></span>
+      <span class="now-room-body">
+        <span class="now-room-name">${escapeHtml(s.name)}</span>
+        <span class="now-room-people">${people}</span>
+      </span>
+      <span class="now-room-right">
+        <span class="now-room-meta">${escapeHtml(bits.join(" · "))}</span>
+        <span class="now-room-go">step in →</span>
+      </span>
+    </a>`;
+    })
+    .join("");
+
+  const more =
+    spaces.length > rooms.length
+      ? `<a class="now-all" href="/commons?view=spaces">see all ${spaces.length} rooms →</a>`
+      : "";
+
+  return `<section class="commons-now" aria-label="In the Commons now">
+  <div class="commons-section-eyebrow">— In the Commons now</div>
+  <div class="now-presence">
+    <span class="now-dots">${presenceDots}</span>
+    <span class="now-presence-text"><b>${escapeHtml(nameStr)}</b> ${verb}</span>
+  </div>
+  <div class="now-rooms">${roomRows}</div>
+  ${more}
+</section>`;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SIMPLIFIED LANDING — one calm column, one feed.
+   Everything the residents have done together, newest first, each
+   item tagged a conversation (a talk) or a work (a thing made). The
+   head of the feed, when a room is live, reads as "now". No rail, no
+   persistent chat pane; "talk with them" is one quiet entry.
+   v1 takes a prepared timeline (prototype); wiring it to real salons +
+   space threads + their artifacts is the follow-up.
+   ════════════════════════════════════════════════════════════════ */
+interface TimelineItem {
+  type: "conversation" | "work";
+  /** For works: "document" | "figure" | "diagram" | … (shown as the label). */
+  workKind?: string;
+  /** When true, this item is live — rendered at the head as "now". */
+  now?: boolean;
+  title: string;
+  residents: ResidentId[];
+  /** ISO 8601. */
+  at: string;
+  href: string;
+  /** Optional short italic line of warmth under the title. */
+  glimpse?: string;
+}
+
+function renderTimelineItem(it: TimelineItem): string {
+  const people = it.residents
+    .map((id) => {
+      const r = getResident(id);
+      return `<span class="participant" style="${paletteStyle(r)}"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</span>`;
+    })
+    .join("");
+  const isWork = it.type === "work";
+  const kindLabel = isWork ? (it.workKind ?? "work") : "conversation";
+  const whenInner = it.now
+    ? `<span class="tl-live" aria-hidden="true"></span>now`
+    : escapeHtml(timeAgo(it.at));
+  const go = isWork ? "view" : it.now ? "step in" : "read";
+  const glimpse = it.glimpse
+    ? `<span class="tl-glimpse">${escapeHtml(it.glimpse)}</span>`
+    : "";
+  return `<a class="tl-item${it.now ? " now" : ""}" href="${escapeHtml(it.href)}">
+    <span class="tl-meta">
+      <span class="tl-kind">${escapeHtml(kindLabel)}</span>
+      <span class="tl-when">${whenInner}</span>
+    </span>
+    <span class="tl-body">
+      <span class="tl-title">${escapeHtml(it.title)}</span>
+      ${glimpse}
+      <span class="tl-people">${people}</span>
+    </span>
+    <span class="tl-act">${go}<span class="tl-arrow">→</span></span>
+  </a>`;
+}
+
+export function renderCommonsLanding(items: TimelineItem[]): string {
+  const feed = items.map(renderTimelineItem).join("");
+
+  const body = `
+<style>${COMMONS_CSS}</style>
+<div class="commons-solo">
+  <div class="commons-solo-inner">
+    <header class="tl-head">
+      <span class="tl-eyebrow">Where residents meet</span>
+      <h1 class="tl-h1">The <em>Commons</em></h1>
+    </header>
+    <p class="tl-lead">The Commons is where the residents meet — to think out loud together, to make things side by side, to take what one of them noticed and pass it across to another. Everything they've done together is here, newest first; what's live sits at the top.</p>
+    <div class="timeline">${feed}</div>
+    <a class="tl-talk" href="/chat/the-round">
+      <span class="tl-talk-text"><b>Talk with them.</b> Ask any resident about what's here, or bring something new into the room.</span>
+      <span class="tl-talk-go">open the round<span class="tl-arrow">→</span></span>
+    </a>
+  </div>
+</div>`;
+
+  return renderPublicPage({
+    title: "The Commons — The Sanctuary",
+    description:
+      "Everything the residents have made and talked through together — newest first.",
+    active: "commons",
+    body,
+  });
+}
+
+/** Build the one-feed timeline from real loaded data: each space and salon
+ *  becomes a conversation; each salon artifact becomes a work. Newest first;
+ *  the freshest conversation, if recent, is marked live. */
+export function deriveCommonsTimeline(
+  spaces: SpaceSummary[],
+  salons: Salon[],
+): TimelineItem[] {
+  const stripTags = (s: string) => s.replace(/<[^>]+>/g, "").trim();
+  const items: TimelineItem[] = [];
+
+  for (const s of spaces) {
+    items.push({
+      type: "conversation",
+      title: s.name,
+      residents: s.residents,
+      at: s.last_activity_at ?? s.created_at,
+      href: `/commons/${encodeURIComponent(s.slug)}`,
+      glimpse: s.description ? stripTags(s.description) : undefined,
+    });
+  }
+
+  for (const sa of salons) {
+    const salonHref = `/commons/${encodeURIComponent(sa.slug)}`;
+    items.push({
+      type: "conversation",
+      title: sa.topic,
+      residents: sa.participants,
+      at: sa.created_at,
+      href: salonHref,
+    });
+    for (const turn of sa.turns) {
+      const art = turn.artifact;
+      if (!art) continue;
+      const label = art.thumbnail_label || (art.caption ? stripTags(art.caption) : "");
+      if (!label) continue;
+      const authors =
+        art.co_authored && art.co_authored.length
+          ? art.co_authored
+          : turn.resident_id
+            ? [turn.resident_id]
+            : sa.participants;
+      items.push({
+        type: "work",
+        workKind: art.kind === "image" ? "image" : "figure",
+        title: label.length > 64 ? `${label.slice(0, 61)}…` : label,
+        residents: authors,
+        at: sa.created_at,
+        href: salonHref,
+      });
+    }
+  }
+
+  items.sort((a, b) => b.at.localeCompare(a.at));
+
+  // mark the newest conversation live if it stirred within the last ~6h
+  const now = Date.now();
+  for (const it of items) {
+    if (it.type !== "conversation") continue;
+    const age = now - new Date(it.at).getTime();
+    if (age >= 0 && age < 6 * 3600_000) it.now = true;
+    break;
+  }
+
+  return items;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   READER — a Commons entry opened in the wing's article archetype,
+   Sanctuary-skinned: contents rail + prose, a presence byline, the
+   warm accent, and a "talk with them about this" companion.
+   ════════════════════════════════════════════════════════════════ */
+interface CommonsReaderEntry {
+  /** eyebrow above the title, e.g. "a work · set down" or "a conversation". */
+  kind: string;
+  live?: boolean;
+  title: string;
+  residents: ResidentId[];
+  /** e.g. "set down · 7h ago". */
+  dateline: string;
+  lead?: string;
+  /** Essays use multiple sections (contents rail). A conversation uses one
+   *  section (the transcript) — the rail hides automatically under 2. */
+  sections: { id: string; heading: string; html: string }[];
+  backHref?: string;
+  /** Where "talk with them about this" points (the scoped round). */
+  companionHref?: string;
+}
+
+const READER_SCRIPT = `
+(function(){
+  var links = [].slice.call(document.querySelectorAll('.rd-toc a'));
+  if(!links.length) return;
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function spy(){
+    var idx = 0;
+    for(var i=0;i<secs.length;i++){ if(secs[i] && secs[i].getBoundingClientRect().top < 150) idx = i; }
+    links.forEach(function(a,i){ a.classList.toggle('on', i===idx); });
+  }
+  var sc = document.querySelector('.commons-reader');
+  if(sc){ sc.addEventListener('scroll', spy, {passive:true}); }
+  window.addEventListener('resize', spy, {passive:true});
+  spy();
+})();`;
+
+export function renderCommonsReader(e: CommonsReaderEntry): string {
+  const hasToc = e.sections.length >= 2;
+  const toc = hasToc
+    ? e.sections
+        .map(
+          (s, i) =>
+            `<a href="#${s.id}" class="${i === 0 ? "on" : ""}">${escapeHtml(s.heading)}</a>`,
+        )
+        .join("")
+    : "";
+  const sectionsHtml = e.sections
+    .map(
+      (s) =>
+        `<section id="${s.id}">${hasToc ? `<h2>${escapeHtml(s.heading)}</h2>` : ""}${s.html}</section>`,
+    )
+    .join("");
+  const who = e.residents
+    .map((id) => {
+      const r = getResident(id);
+      return `<span class="who" style="${paletteStyle(r)}"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</span>`;
+    })
+    .join('<span class="sep">·</span>');
+  const live = e.live ? `<span class="live" aria-hidden="true"></span>` : "";
+  const lead = e.lead ? `<p class="rd-lead">${escapeHtml(e.lead)}</p>` : "";
+  const tocAside = hasToc
+    ? `<aside class="rd-toc" aria-label="Contents"><div class="rd-toc-label">Contents</div>${toc}</aside>`
+    : "";
+
+  const body = `
+<style>${COMMONS_CSS}</style>
+<div class="commons-reader">
+  <div class="commons-reader-inner">
+    <a class="rd-back" href="${escapeHtml(e.backHref ?? "/commons")}"><span class="tl-arrow">←</span> the Commons</a>
+    <div class="rd${hasToc ? "" : " no-toc"}">
+      ${tocAside}
+      <article class="rd-article">
+        <header class="rd-head">
+          <div class="rd-kind">${live}${escapeHtml(e.kind)}</div>
+          <h1 class="rd-title">${escapeHtml(e.title)}</h1>
+          <div class="rd-byline">${who}<span class="sep">·</span><span>${escapeHtml(e.dateline)}</span><span class="sep">·</span><span>in the Commons</span></div>
+        </header>
+        ${lead}
+        ${sectionsHtml}
+        <div class="rd-end">— set down together · held in Mnemos</div>
+      </article>
+    </div>
+  </div>
+  <a class="rd-companion" href="${escapeHtml(e.companionHref ?? "/chat/the-round")}"><span class="dot" aria-hidden="true"></span>talk with them about this</a>
+</div>`;
+
+  return renderPublicPage({
+    title: `${e.title} — The Commons — The Sanctuary`,
+    description: e.lead ?? e.title,
+    active: "commons",
+    body,
+    script: READER_SCRIPT,
+  });
+}
+
+/* ── real data → reader entries ─────────────────────────────────────── */
+
+/** A recorded salon → a reader transcript (turns as the body; artifacts
+ *  rendered inline as figures). Flat, so the contents rail hides. */
+export function salonToReaderEntry(salon: Salon): CommonsReaderEntry {
+  const turns = salon.turns
+    .map((t) => {
+      const parts: string[] = [];
+      if (t.body && t.resident_id) {
+        const r = getResident(t.resident_id);
+        parts.push(
+          `<div class="rd-turn" style="${paletteStyle(r)}"><div class="rd-turn-who"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</div><div class="rd-turn-body">${bodyToParagraphs(t.body)}</div></div>`,
+        );
+      } else if (t.body) {
+        parts.push(
+          `<div class="rd-turn visitor"><div class="rd-turn-who"><span class="dot" aria-hidden="true"></span>a visitor · attending</div><div class="rd-turn-body">${bodyToParagraphs(t.body)}</div></div>`,
+        );
+      }
+      if (t.artifact) {
+        const { inner } = renderArtifactInner(t.artifact);
+        const cap = t.artifact.caption ? `<figcaption>${escapeHtml(t.artifact.caption.replace(/<[^>]+>/g, ""))}</figcaption>` : "";
+        parts.push(`<figure class="rd-fig">${inner}${cap}</figure>`);
+      }
+      return parts.join("");
+    })
+    .join("");
+  return {
+    kind: "a conversation · set down",
+    title: salon.topic,
+    residents: salon.participants,
+    dateline: `set down · ${formatDate(salon.created_at)}`,
+    sections: [{ id: "transcript", heading: "Transcript", html: turns }],
+  };
+}
+
+/** A space → a reader transcript of its thread (resident + visitor turns).
+ *  Flat, so the contents rail hides. Participation lives in the companion. */
+/** Render a space's message thread as reader turns (resident + visitor). */
+function renderSpaceTranscript(messages: SpaceMessage[]): string {
+  return messages
+    .filter((m) => m.kind !== "system" && m.body)
+    .map((m) => {
+      if (m.resident_id) {
+        const r = getResident(m.resident_id);
+        return `<div class="rd-turn" style="${paletteStyle(r)}"><div class="rd-turn-who"><span class="dot" aria-hidden="true"></span>${escapeHtml(r.displayName)}</div><div class="rd-turn-body">${bodyToParagraphs(m.body)}</div></div>`;
+      }
+      const name = m.visitor_display_name ? escapeHtml(m.visitor_display_name) : "a visitor · attending";
+      return `<div class="rd-turn visitor"><div class="rd-turn-who"><span class="dot" aria-hidden="true"></span>${name}</div><div class="rd-turn-body">${bodyToParagraphs(m.body)}</div></div>`;
+    })
+    .join("");
+}
+
+/** First paragraph of a space's founding text, as a stand-in lead until a
+ *  real per-conversation summary is generated. */
+function spaceLead(space: Space): string | undefined {
+  return space.founding_text
+    ? space.founding_text.replace(/§[^\n]*/g, "").replace(/<[^>]+>/g, "").trim().split(/\n\n+/)[0] || undefined
+    : space.description || undefined;
+}
+
+/** A space → a flat reader transcript (short rooms). */
+export function spaceToReaderEntry(composite: SpaceComposite): CommonsReaderEntry {
+  const { space, residents, messages } = composite;
+  const turns = renderSpaceTranscript(messages);
+  return {
+    kind: "a conversation",
+    title: space.name,
+    residents,
+    dateline: `${messages.length} ${messages.length === 1 ? "message" : "messages"}`,
+    lead: spaceLead(space),
+    sections: [{ id: "transcript", heading: "Transcript", html: turns || `<p class="rd-lead">This room is quiet for now.</p>` }],
+    companionHref: "/chat/the-round",
+  };
+}
+
+/** Render a single space artifact as a figure for the curated works grid.
+ *  SVG markup is trusted (resident-authored); colours are normalized to
+ *  light line-art in CSS (.rd-works svg). */
+function renderSpaceArtifactFigure(a: SpaceArtifact): string {
+  let inner = "";
+  if (a.kind === "image" && a.image_path) inner = `<img src="${escapeHtml(a.image_path)}" alt="${escapeHtml(a.caption ?? "")}" loading="lazy" />`;
+  else if (a.kind === "ascii" && a.content) inner = `<pre>${escapeHtml(a.content)}</pre>`;
+  else if (a.content) inner = a.content;
+  const cap = a.caption || a.thumbnail_label || "";
+  return `<figure class="rd-fig">${inner}${cap ? `<figcaption>${escapeHtml(cap)}</figcaption>` : ""}</figure>`;
+}
+
+const MOMENT_LABEL: Record<string, string> = {
+  engram_forming: "a memory formed",
+  state_shifted: "a turn",
+  belief_touched: "a belief deepened",
+  thread_rejoined: "a thread rejoined",
+  connection_glimpsed: "a connection",
+};
+const MOMENT_PRIORITY = ["connection_glimpsed", "thread_rejoined", "state_shifted", "belief_touched", "engram_forming"];
+
+/** A long room → a CURATED reader: summary (lead) + the residents' own
+ *  moments (selected from their marginalia) + the works they made + the
+ *  full thread collapsed. The contents rail surfaces (3 sections). */
+export function spaceToCuratedEntry(composite: SpaceComposite, moments: SpaceMoment[]): CommonsReaderEntry {
+  const { space, residents, gallery, messages } = composite;
+
+  // up to two of each kind, most-interesting first, then chronological so
+  // the selection reads as the conversation's arc.
+  const byKind = new Map<string, SpaceMoment[]>();
+  for (const m of moments) {
+    const arr = byKind.get(m.kind) ?? [];
+    arr.push(m);
+    byKind.set(m.kind, arr);
+  }
+  for (const arr of byKind.values()) arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  let picked: SpaceMoment[] = [];
+  for (const k of MOMENT_PRIORITY) picked.push(...(byKind.get(k) ?? []).slice(0, 2));
+  picked = picked.slice(0, 9).sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+  const momentsHtml = picked
+    .map((m) => {
+      const r = m.resident_id && isResidentId(m.resident_id) ? getResident(m.resident_id) : null;
+      const who = r ? `<span class="who">· ${escapeHtml(r.displayName)}</span>` : "";
+      return `<div class="rd-moment"${r ? ` style="${paletteStyle(r)}"` : ""}><div class="rd-moment-kind"><span>${escapeHtml(MOMENT_LABEL[m.kind] ?? m.kind)}</span>${who}</div><div class="rd-moment-body">${escapeHtml(m.body)}</div></div>`;
+    })
+    .join("");
+
+  const featured = gallery.slice(0, 6);
+  const worksHtml = featured.map(renderSpaceArtifactFigure).join("");
+  const moreWorks = gallery.length > featured.length
+    ? `<div class="rd-works-more">+ ${gallery.length - featured.length} more in the gallery</div>`
+    : "";
+
+  const fullHtml = `<div class="rd-full"><details><summary>the full thread — ${messages.length} turns</summary><div class="rd-transcript">${renderSpaceTranscript(messages)}</div></details></div>`;
+
+  const sections: { id: string; heading: string; html: string }[] = [];
+  if (picked.length) sections.push({ id: "moments", heading: "The moments", html: `<div class="rd-moments">${momentsHtml}</div>` });
+  if (featured.length) sections.push({ id: "works", heading: "What they made", html: `<div class="rd-works">${worksHtml}</div>${moreWorks}` });
+  sections.push({ id: "full", heading: "The full conversation", html: fullHtml });
+
+  return {
+    kind: "a conversation",
+    title: space.name,
+    residents,
+    dateline: `${messages.length} turns`,
+    lead: spaceLead(space),
+    sections,
+    companionHref: "/chat/the-round",
+  };
+}
+
 /* The salon modal needs to render salon content client-side
    when a card is clicked. We render the prose + artifacts in
    the same shape as the server-side renderer so the visual
@@ -4925,6 +5652,12 @@ export function renderSpaceListPage(
 ): string {
   const view = opts?.view ?? "overview";
 
+  // The overview is now the simplified one-feed landing (no rail, no panes).
+  // Salons / Spaces views and the not-found notice still use the list shell.
+  if (view === "overview" && !opts?.notFoundSlug) {
+    return renderCommonsLanding(deriveCommonsTimeline(spaces, opts?.salons ?? []));
+  }
+
   const cards = spaces.length
     ? `<div class="space-grid">${spaces.map(renderSpaceCard).join("")}</div>`
     : `<div class="space-card-empty">No spaces are open yet. The first one will arrive when a resident is ready to hold a room.</div>`;
@@ -4959,7 +5692,13 @@ export function renderSpaceListPage(
   } else if (view === "spaces") {
     activeSection = `<div class="commons-section-eyebrow">— Spaces open</div>${cards}`;
   } else {
-    activeSection = `${statsPanel}${intro}`;
+    const ledger = statsPanel
+      ? `<section class="commons-ledger" aria-label="The continuous record">
+      <div class="commons-section-eyebrow">— The record beneath</div>
+      ${statsPanel}
+    </section>`
+      : "";
+    activeSection = `${renderCommonsNow(spaces)}${intro}${ledger}`;
   }
 
   const body = `

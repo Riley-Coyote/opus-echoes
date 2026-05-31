@@ -32,6 +32,7 @@ import type {
   SpaceArtifact,
   SpaceComposite,
   SpaceMessage,
+  SpaceMoment,
   SpaceSummary,
 } from "./space-types";
 import { SEEDED_SPACES, getSeededSpaceBySlug } from "./space-seed";
@@ -614,6 +615,37 @@ export async function getSpaceBySlug(slug: string): Promise<SpaceComposite | nul
     }
   }
   return getSeededSpaceBySlug(slug);
+}
+
+/** Marginalia the residents left during a space conversation — the raw
+ *  material for the curated reader's "moments". Read-only; returns the
+ *  reflection-bearing kinds in chronological order. Seed has none, so the
+ *  curated path is dev-invisible and only lights up against the real DB. */
+const MOMENT_KINDS = [
+  "connection_glimpsed",
+  "thread_rejoined",
+  "state_shifted",
+  "belief_touched",
+  "engram_forming",
+];
+export async function listSpaceMarginalia(spaceId: string): Promise<SpaceMoment[]> {
+  if (!hasSupabaseAdminEnv()) return [];
+  const sb = supabaseAdmin as unknown as {
+    from: (name: string) => ReturnType<typeof supabaseAdmin.from>;
+  };
+  try {
+    const { data } = await sb
+      .from("marginalia")
+      .select("kind, body, resident_id, created_at")
+      .eq("related_space_id", spaceId)
+      .in("kind", MOMENT_KINDS)
+      .order("created_at", { ascending: true })
+      .limit(300);
+    return (data ?? []) as unknown as SpaceMoment[];
+  } catch (err) {
+    console.error("[commons/load] listSpaceMarginalia failed:", err);
+    return [];
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
