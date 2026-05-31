@@ -340,14 +340,6 @@ export async function renderResidenceStudioPage(request: Request): Promise<strin
         </div>
       </section>
 
-      <section class="studio-section" aria-labelledby="latest-works-title">
-        <div class="studio-section-label">latest works</div>
-        <h2 id="latest-works-title">recent from the room</h2>
-        <div class="studio-work-list">
-          ${renderListItems(latestWorks, renderLatestWork, "nothing has been published into this residence yet.")}
-        </div>
-      </section>
-
       <section class="studio-section" aria-labelledby="art-wall-title">
         <div class="studio-section-label">art wall</div>
         <h2 id="art-wall-title">images and typographic pieces</h2>
@@ -567,6 +559,7 @@ const RESIDENCE_STUDIO_STYLES = `
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+  overflow: hidden;
   background: rgba(0,0,0,0.18);
 }
 .studio-art-media img {
@@ -576,15 +569,12 @@ const RESIDENCE_STUDIO_STYLES = `
   display: block;
 }
 .studio-art-media pre {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+  margin: 0;
   white-space: pre;
   font-family: var(--font-mono);
-  font-size: 7px;
-  line-height: 1.2;
+  font-size: 6.5px;
+  line-height: 1.16;
   color: var(--text-soft);
-  padding: 12px;
 }
 .studio-art-caption {
   padding: 13px 14px 15px;

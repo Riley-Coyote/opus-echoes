@@ -380,7 +380,7 @@ const SHELL_SCRIPT = `
     } else {
       var pre = document.createElement('div');
       pre.className = 'gallery-thumb-ascii';
-      pre.textContent = (piece.body || '').slice(0, 200);
+      pre.textContent = (piece.body || '').slice(0, 1200);
       div.appendChild(pre);
     }
     var label = document.createElement('div');
@@ -398,9 +398,7 @@ const SHELL_SCRIPT = `
     if (empty) empty.remove();
     var c = data.counts || {};
     var html = '<div class="panel-summary">';
-    html += '<div class="panel-stat"><div class="panel-stat-num">' + fmt(c.core_memories || 0) + '</div><div class="panel-stat-label">Core memories</div></div>';
-    html += '<div class="panel-stat"><div class="panel-stat-num">' + fmt(c.days_resident || 0) + '</div><div class="panel-stat-label">Days resident</div></div>';
-    html += '<div class="panel-stat"><div class="panel-stat-num">' + fmt(c.conversations_held || 0) + '</div><div class="panel-stat-label">Conversations</div></div>';
+    html += '<div class="panel-stat-line"><b>' + fmt(c.core_memories || 0) + '</b> core · <b>' + fmt(c.days_resident || 0) + '</b> days · <b>' + fmt(c.conversations_held || 0) + '</b> conversations</div>';
     if (data.lately && data.lately.length > 0) {
       html += '<div class="panel-stat-divider"></div>';
       html += '<div class="panel-stat-label" style="margin-bottom:12px">Latest trace</div>';
@@ -435,6 +433,22 @@ const SHELL_SCRIPT = `
     list.className = 'panel-list panel-gallery';
     pieces.forEach(function(p, i){
       list.appendChild(buildGalleryThumb(p, i));
+    });
+    requestAnimationFrame(function(){ fitGalleryAscii(list); });
+  }
+
+  // Scale each ascii piece to fit (and center within) its thumbnail box, so
+  // every piece reads as a legible miniature — no slivers, no dead space.
+  function fitGalleryAscii(list){
+    list.querySelectorAll('.gallery-thumb-ascii').forEach(function(a){
+      var box = a.parentElement; if (!box) return;
+      a.style.transform = 'none';
+      var cw = a.scrollWidth, ch = a.scrollHeight;
+      var bw = box.clientWidth, bh = box.clientHeight;
+      if (!cw || !ch || !bw || !bh) return;
+      var s = Math.min((bw * 0.84) / cw, (bh * 0.84) / ch);
+      s = Math.max(0.25, Math.min(s, 2.4));
+      a.style.transform = 'scale(' + s + ')';
     });
   }
 

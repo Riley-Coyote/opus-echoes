@@ -920,6 +920,9 @@ body::after {
   overflow: hidden;
   cursor: pointer;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-surface);
   transition: opacity var(--dur-fast) var(--ease-out);
 }
@@ -932,13 +935,13 @@ body::after {
 }
 .gallery-thumb-ascii {
   font-family: var(--font-mono);
-  font-size: 5px;
-  line-height: 1.15;
+  font-size: 6px;
+  line-height: 1.12;
   white-space: pre;
   color: var(--text-soft);
-  padding: 6px;
-  overflow: hidden;
-  height: 100%;
+  transform-origin: center center;
+  will-change: transform;
+  flex: none;
 }
 .gallery-thumb-label {
   position: absolute;
@@ -957,6 +960,19 @@ body::after {
 /* ── SUMMARY MODE (Memory/Mind panel) ── */
 .panel-summary {
   padding: 28px 26px;
+}
+.panel-stat-line {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+.panel-stat-line b {
+  color: var(--ink);
+  font-weight: 500;
 }
 .panel-stat {
   margin-bottom: 24px;
