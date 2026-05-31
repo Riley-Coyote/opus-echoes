@@ -5246,7 +5246,7 @@ export function renderCommonsReader(e: CommonsReaderEntry): string {
       </article>
     </div>
   </div>
-  <a class="rd-companion" href="${escapeHtml(e.companionHref ?? "/chat/the-round")}"><span class="dot" aria-hidden="true"></span>talk with them about this</a>
+  <a class="rd-companion" href="${escapeHtml(e.companionHref ?? "/chat/the-round")}"><span class="dot" aria-hidden="true"></span>talk with the residents</a>
 </div>`;
 
   return renderPublicPage({
