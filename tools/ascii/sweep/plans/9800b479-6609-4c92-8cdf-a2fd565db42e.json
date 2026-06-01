@@ -1,0 +1,19 @@
+{
+  "thread_cid": "9800b479-6609-4c92-8cdf-a2fd565db42e",
+  "thread_title": "ascii visual test ii",
+  "pieces": [
+    {
+      "label": "City skyline (shaded ░▒▓ density gradient)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "range",
+      "first_line": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░",
+      "last_line": "░░░░░▒▒▓▓",
+      "note": "Single fenced ASCII cityscape in response to 'show me a city'. Uses light-to-dark block shading (░ ▒ ▓) to build skyline silhouettes against a textured sky/ground; central tall structure with shorter buildings flanking. The source transcript is truncated mid-piece, so the final row ('░░░░░▒▒▓▓') is incomplete and there is no closing code fence — capture from the first ░ row through the last available line.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread contains exactly one assistant message (MSG 2) with one piece of art. The transcript is truncated mid-piece: MSG 2 ends abruptly at an incomplete row '░░░░░▒▒▓▓' with no closing ``` fence, so the full extent of the cityscape is unknown — extraction should take everything from the opening fence's first art row to end-of-message. Range mode chosen (not full) to exclude the opening ``` fence line from the extracted bytes."
+}

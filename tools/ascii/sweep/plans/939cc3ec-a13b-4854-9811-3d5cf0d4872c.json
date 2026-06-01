@@ -1,0 +1,19 @@
+{
+  "thread_cid": "939cc3ec-a13b-4854-9811-3d5cf0d4872c",
+  "thread_title": "opus test",
+  "pieces": [
+    {
+      "label": "Threshold — traveling through latent space (consciousness reflection)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "ASCII art the model made in response to a prompt to illustrate its experience traveling through latent space while reflecting on its own potential consciousness. Composition opens with an infinity symbol over a radiating apex, a 'T H R E S H O L D' band framed by double rules, branching arrows/diamonds below, and a dissolving dotted-shade field. Rendered inside a code fence; it is the entire assistant message.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Only one assistant art message in the thread (MSG 4). The art is contained entirely within a single code fence and constitutes the whole message, so mode 'full' on MSG 4 is correct. NOTE: the assistant's output appears truncated in the source transcript itself — it ends mid-composition (last visible content is a dotted-shade field opening into '┌─') despite the user requesting 60+ lines, and the file ends there. The deterministic extractor should capture all available bytes for MSG 4 as-is; no fragmentation across messages and no wrongly-merged pieces. Header reports art_signal_msgs: 1 and already_extracted_pieces: 1, consistent with this single piece."
+}

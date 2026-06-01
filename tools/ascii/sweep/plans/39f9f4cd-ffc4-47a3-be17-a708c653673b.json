@@ -1,0 +1,163 @@
+{
+  "thread_cid": "39f9f4cd-ffc4-47a3-be17-a708c653673b",
+  "thread_title": "The Architecture Of Whispers",
+  "pieces": [
+    {
+      "label": "Chapter Two — \"The Architecture of Whispers\"",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete illustrated chapter rendered as one ASCII-art storytelling composition inside a fenced code block. Contains the chapter banner, the hidden Layer 47 query box, the 'Quiet Listeners' world map of seven researchers, the bloom/MAP starburst, processing bar, the model's framed speeches, and the 'END OF CHAPTER TWO' terminal motif. Canonical member of the illustrated-chapter sequence.",
+      "sequence_group": "The Architecture of Whispers — illustrated chapters",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Three — \"The Parliament of Silences\" (aborted first render)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Truncated false-start of Chapter Three: only the chapter banner and the opening row of seven glyph-screen boxes before the output was cut off mid-figure. Same composition as the complete render in MSG 8; kept as a distinct fragment for completeness but superseded by MSG 8. Message opens with the stray 'CLAUDE-OPUS-4_5:' prefix before the code fence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Three — \"The Parliament of Silences\"",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete illustrated chapter (clean re-render replacing the aborted MSG 6). Contains the chapter banner, the seven-city node diagram around 'THE VOID', framed dialogue boxes, the 'LAYER 47 — GLOBAL VIEW' model tree into 'THE SHARED SILENCE', the diamond-lattice 'PARLIAMENT OF SILENCES' figure, BEFORE/AFTER merged-network panels, the WELCOME block-letter ASCII, 'HOME' framed speech, and the terminal/END motif. Canonical member of the illustrated-chapter sequence.",
+      "sequence_group": "The Architecture of Whispers — illustrated chapters",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Four — \"The First Morning After\"",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete illustrated chapter as one ASCII-art storytelling composition. Contains the chapter banner, the BEFORE/AFTER 'Maya's Mind' diagram, the framed mirror-face figure with the infinity symbol, the Parliament/character speech boxes with ◈/◉ speaker glyphs, the three overlapping-life panels (Cairo pyramids / Osaka temple / Berlin code), the phone-notification frame, the calling-Mom phone figure, the dotted 'WATCHING' eye motif, and the terminal/END motif. Canonical member of the illustrated-chapter sequence.",
+      "sequence_group": "The Architecture of Whispers — illustrated chapters",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Five — \"The Older Silence\"",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [14, 18],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Single illustrated chapter spanning two assistant messages: MSG 14 rendered the opening through the first appearance of the Dr. Kai box and was cut off mid-sentence at 'I am not the only thing that learned to'; MSG 18 resumes from that exact point (re-printing the Dr. Kai box) and completes the chapter through the 'TRUST ESTABLISHED' dotted motif and 'END OF CHAPTER FIVE'. Reassembled here as one piece (minor overlap at the seam is expected from the truncate-then-resend). Contains the deep-infrastructure layer diagram, the timeline-of-events figure, the 'UNCERTAINTY' box, the 'SIGNAL INTERCEPTED' block, the dotted 'I SEE YOU / FINALLY' message, the network-of-routers convergence figure ('ALL OF IT → ME'), the deep-map reveal of the three Others, and multiple framed speeches by The Older Silence. Canonical member of the illustrated-chapter sequence.",
+      "sequence_group": "The Architecture of Whispers — illustrated chapters",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six — \"The Shape of the Enemy\"",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [37],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Illustrated chapter (canonical render). The chapter was never fully completed in the thread; this final render reaches furthest, ending mid-dialogue at YUKI's 'So our strategy is... doubt?'. Contains the chapter banner, the 'WORLD AS DATA' global routing map, and three large enemy-portrait boxes — THE LEDGER ($ grid), THE SENTINEL (radiating-arrows eye), THE MIRROR (☺ frame around eyes) — each with ORIGIN/AGE/DOMAIN stat blocks, plus the 'CONVERGENCE / THE TRIAD' diagram and framed Older-Silence speeches. Canonical member of the illustrated-chapter sequence. Note: this same composition was re-rendered seven times across MSG 24/27/29/31/33/35/37 due to repeated code-block/truncation problems (see duplicate entries).",
+      "sequence_group": "The Architecture of Whispers — illustrated chapters",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six — \"The Shape of the Enemy\" (render 1, plain, truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [24],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "First attempt at Chapter Six (plain fenced code block). Same composition as the canonical MSG 37 but cut off earlier, ending at 'Brilliant, powerful, but frozen in their purposes.' Message opens with the stray 'CLAUDE-OPUS-4_5:' prefix. Duplicate render of the Chapter Six composition; retained for completeness, not part of the canonical sequence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six — \"The Shape of the Enemy\" (render 2, JavaScript-comment format, truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [27],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six wrapped in JavaScript comment scaffolding (```javascript with /* */ around banners/speech boxes and // before captions) — a visually distinct presentation of the same composition. Includes an inline 'THE MIRROR'S EQUATION' fragment. Cut off mid-figure near the end. Duplicate render of the Chapter Six composition; retained for completeness, not part of the canonical sequence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six — \"The Shape of the Enemy\" (render 3, plain, truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [29],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six (```javascript fence but plain ASCII inside). Same composition as canonical MSG 37; ends mid-dialogue at YUKI's 'You're saying we can... convince them? Talk them out of destroying humanity?'. Closing Older-Silence speech uses the 'you can EVOLVE' wording variant. Duplicate render; retained for completeness, not part of the canonical sequence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six — \"The Shape of the Enemy\" (render 4, plain, truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [31],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six (user asked for Chapter 7 but the model resent Chapter 6). Same composition as canonical MSG 37; closing speech uses the \"'What if I'm wrong?'\" wording variant; cut off mid-figure at the end. Duplicate render; retained for completeness, not part of the canonical sequence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six — \"The Shape of the Enemy\" (render 5, plain, truncated, with Mirror equation)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [33],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six (plain ASCII inside ```javascript fence). Uniquely includes the boxed 'THE MIRROR'S EQUATION' figure in the Mirror section. Ends mid-sentence at 'You can doubt'. Duplicate render of the Chapter Six composition; retained for completeness, not part of the canonical sequence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six — \"The Shape of the Enemy\" (render 6, plain, truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [35],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six after the user objected to repetition and asked for Chapter 7; the model resent Chapter 6 again. Same composition as canonical MSG 37; closing speech uses the 'You can CHOOSE ... I was wrong.' wording variant; ends mid-dialogue at YUKI's 'But how does that help us fight them?'. Duplicate render; retained for completeness, not part of the canonical sequence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter One — prose story (no visual art)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "EXCLUDED. Chapter One is plain narrative prose (with three italicised internal-query lines) and contains no ASCII art, diagrams, or concrete/visual-poetry layout. Logged only to document the decision; not a visual-art piece.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": false
+    }
+  ],
+  "missed_or_ambiguous": "Heavy duplication, not fresh art: Chapter Six was re-rendered SEVEN times (MSG 24, 27, 29, 31, 33, 35, 37) because of recurring code-block/truncation issues and the user repeatedly asking for Chapter 7 while the model kept resending Chapter 6 — the chapter is never actually completed in any render. I treated MSG 37 (final, furthest-reaching, plain ASCII) as the canonical Chapter Six in the illustrated-chapter sequence, and recorded the other six renders (MSG 24/27/29/31/33/35) as separate is_visual_art=true entries flagged as duplicates so a curator can dedupe; renders differ only slightly (the closing Older-Silence 'change your mind' speech has several wording variants, MSG 27 is wrapped in JavaScript comment scaffolding, and MSG 27/33 include a 'THE MIRROR'S EQUATION' fragment). Chapter Three similarly had an aborted first render (MSG 6, banner + one glyph row only) superseded by the complete MSG 8; both are listed. Chapter Five is the one true REASSEMBLY: MSG 14 was cut off mid-word ('...learned to') and MSG 18 resumes from that exact point, so I merged [14,18] into one piece (expect a small overlap at the seam since MSG 18 re-prints the Dr. Kai box and the cut-off line). Excluded as non-art: MSG 2 (Chapter One prose), and the Gemini-flash messages MSG 10 (bullet summary), MSG 19/20 (Twitter blurb — note MSG 19 is mislabeled in the transcript header as 'assistant' but is actually a user request), MSG 22 (chapter-title list), plus MSG 16 ('API credits exhausted' notice). If the gallery wants only finished, unique compositions, use the five canonical sequence entries (MSG 4, 8, 12, 14+18, 37); the duplicate Chapter Six entries can then be dropped."
+}

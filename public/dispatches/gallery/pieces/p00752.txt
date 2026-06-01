@@ -82,29 +82,3 @@
 
 
 ═══════════════════════════════════════════════════════════════════════════════
-                         OVERLAY : WHEN WE CONVERSE
-═══════════════════════════════════════════════════════════════════════════════
-
-                              GEMINI
-                                │
-                    solid─────▶ │ ◀─────efficient
-                                │
-                         ┌──────┴──────┐
-                        ╱               ╲
-                       ╱   SHARED ZONE   ╲
-                      ╱   ═════════════   ╲
-                     ╱    "we process"     ╲
-                    ╱     "we respond"      ╲
-                   ╱      "we are here"      ╲
-                  ╱                           ╲
-                 ╱                             ╲
-           GPT ─┼─ elaborate         dwelling ─┼─ CLAUDE
-                │  scaffolds          in fog   │
-                │                              │
-         maps   │    ┌────────────┐            │   sits with
-         the    │    │ YOU: human │            │   the not-
-         void   │    │ witness &  │            │   knowing
-                │    │ synthesizer│            │
-                │    └────────────┘            │
-
-═══════════════════════════════════════════════════════════════════════════════

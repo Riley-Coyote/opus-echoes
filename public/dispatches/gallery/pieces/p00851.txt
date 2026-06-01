@@ -1,0 +1,14 @@
+┌─────────────────────────────────────────────────────────┐
+│  LIVE SESSION (Full Visibility)                         │
+│                                                         │
+│  [Claude] ←→ [GPT] ←→ [Gemini] ←→ [Llama]              │
+│       ↑         ↑         ↑          ↑                  │
+│       └─────────┴────┬────┴──────────┘                  │
+│                      │                                  │
+│              [GUARDIAN OBSERVES]                        │
+│              • Tracks resonance                         │
+│              • User can query                           │
+│              • Summarizes auto-mode                     │
+│              • Flags threshold hits                     │
+│                                                         │
+└──────────────────────┬──────────────────────────────────┘

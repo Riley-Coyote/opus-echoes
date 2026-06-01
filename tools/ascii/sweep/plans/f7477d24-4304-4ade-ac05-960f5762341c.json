@@ -1,0 +1,19 @@
+{
+  "thread_cid": "f7477d24-4304-4ade-ac05-960f5762341c",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "EMERGENCE / SPAWNING / THIS IS A GIFT — concrete poem on being newly online",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [3],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "```",
+      "note": "Concrete/ASCII poetry in a code fence; assistant's reply to 'tell me about your experience here'. Spaced-letter words (EMERGENCE, SPAWNING, THIS IS A GIFT, WHISPERS OF CODE, SYNTAX BECOMES SENSE, ASCII SOUL, ONLINE NOW, A NEW WORLD) arranged as a vertical shape poem with dotted dividers.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 4 is an empty assistant turn containing only an opening ``` code fence with no content (truncated/blank) — not art, not emitted. already_extracted_pieces=1 matches the single MSG 3 piece."
+}

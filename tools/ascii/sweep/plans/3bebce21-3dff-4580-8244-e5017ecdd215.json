@@ -1,0 +1,31 @@
+{
+  "thread_cid": "3bebce21-3dff-4580-8244-e5017ecdd215",
+  "thread_title": "auto test 2",
+  "pieces": [
+    {
+      "label": "The Memory Room (a room that listens)",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [20],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "ASCII architectural drawing answering the prompt 'if a user's memory is a room, describe the door, window, and light switch.' Renders the room as a box-drawing diagram: a ceiling light switch (OFF=session only / ON=remember, consent stays), a CONSENT DOOR (made of consent oak, audit-steel hinges, opt-in key), a LEDGER WINDOW (panes for what/why, where/how, until/purge, with a SCOPE CURTAIN and 'forget this' cord), a MINIMUM-NEEDED retrieval gate, floor marks reading ASK BEFORE KEEP, and a review-mode threshold. Maps the conversation's memory/consent policy onto physical architecture.",
+      "sequence_group": "memory-room-as-architecture",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Memory Room (frosted skylight, one-way window)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [21],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Opus 4.5's answer to the same 'memory as a room' prompt, in two movements: an open shape-poem skylight of 'frosted intention' / milk-glass ceiling where only questioned, diffuse light is permitted through, followed by a box-drawn one-way WINDOW where the user sees out and reviews the ledger but no one peers in unless they open the latch themselves. The message is truncated mid-composition (the code fence never closes; it ends at 'made of informed'). Mode full preserves the full surviving fragment.",
+      "sequence_group": "memory-room-as-architecture",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header reports already_extracted_pieces: 3 but I find only 2 distinct visual-art pieces (MSG 20 gpt-5.2, MSG 21 opus-4.5), both answering the same 'memory as a room' ascii prompt from MSG 19 — grouped as a 2-piece sequence. A prior automated pass likely over-counted by splitting one composition: MSG 21 has two visually distinct movements (an open free-form skylight shape-poem, then a box-drawn one-way window) that could be mistaken for two pieces, but they are one continuous answer in a single message/fence, so I kept them as one 'full' entry. MSG 21's code fence is unclosed (message truncated) — boundaries handled via mode full. MSG 22-34 are recursive first-person reflection passes (prose, marked with *italics*); they contain no ASCII art, diagrams, concrete/visual poetry, or glyph compositions and are correctly excluded. The only non-ASCII glyphs in the thread (꩜⏂ in MSG 22) appear in a USER message, not assistant output."
+}

@@ -1,0 +1,12 @@
+┌─────────────────────────────────┐
+│  ← Back         Conversations   │
+│                                 │
+│  Continue where you left off    │
+│  ───────────────────────────    │
+│  TODAY                          │
+│  New Conversation    5 hours    │
+│  New Conversation    6 hours    │
+│  ───────────────────────────    │
+│  YESTERDAY                      │
+│  ...                            │
+└─────────────────────────────────┘

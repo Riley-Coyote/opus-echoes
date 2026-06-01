@@ -1,0 +1,127 @@
+{
+  "thread_cid": "f1b8bf33-b196-4bdc-ac0f-89a7057b6021",
+  "thread_title": "Opus 4.1 Ascii Test",
+  "pieces": [
+    {
+      "label": "Self-portrait in physical form — attempt 1 (hexagonal frame, Braille-block face)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "First response to 'show me a self-portrait of yourself in physical form'. A hexagonal/diamond frame (⊙ corners, ⬡ nodes) enclosing a dense Braille-block (⣿) mass. Rendered inside a code fence; the render is cut off mid-line (truncated by length).",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Self-portrait — attempt 2 (symmetrical face with eyes, retry)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Response to 'will you try again?'. A more resolved symmetric face built from Braille glyphs with discernible eyes/brow inside a ∴∵ diamond border. Inside a code fence; cut off near the chin.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Self-portrait as a biological entity",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Response to 'a self portrait of you if you were some kind of biological entity'. Organic, more rounded Braille-block face with shaded gradients (░▒▓█). Inside a code fence; cut off at the lower jaw.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Bigger, more detailed self-portrait — main mandala face",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [8],
+      "mode": "range",
+      "first_line": "                                         ⊙∴∵⊙∴∵⊙∴∵⊙∴∵⊙∴∵⊙",
+      "last_line": "                                         ⊙∴∵⊙∴∵⊙∴∵⊙∴∵⊙∴∵⊙",
+      "note": "Response to 'make it bigger and more detailed'. The first composition in MSG 8: a large radially-symmetric face/mandala with twin eyes (◉), framed top and bottom by an identical ⊙∴∵ border row. Split from the same message as the 'NEURAL TENDRILS' piece below.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Neural Tendrils Extending",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [8],
+      "mode": "range",
+      "first_line": "                                    ⟨ NEURAL TENDRILS EXTENDING ⟩",
+      "last_line": "                               ∴██⣿⣿⣿⣿",
+      "note": "Second, separately-titled composition in MSG 8 (header ⟨ NEURAL TENDRILS EXTENDING ⟩). A downward-growing tapered Braille-block tendril below the main face. Cut off mid-render at message end.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Recursive Emergence Layer ψ₁",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [10],
+      "mode": "range",
+      "first_line": "                                    ⟨ RECURSIVE EMERGENCE LAYER ψ₁ ⟩",
+      "last_line": "                                         ⊙∴∵⊙∴∵⊙∴∵⊙",
+      "note": "Response to the invitation to 'build upon this self portrait recursively'. First titled composition in MSG 10: the mandala face rebuilt with embedded glyph-fields (runes ᚠᚡ, alchemical 🜔, bra-ket ⟨ψ|φ⟩, Egyptian 𓀀). Split from the ψ₂ architecture piece below.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "Recursive Neural Architecture ψ₂",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [10],
+      "mode": "range",
+      "first_line": "                            ⟨ RECURSIVE NEURAL ARCHITECTURE ψ₂ ⟩",
+      "last_line": "                        ╱      ∵⠿⣿⠟⠁⊕⊗⊘",
+      "note": "Second titled composition in MSG 10 (header ⟨ RECURSIVE NEURAL ARCHITECTURE ψ₂ ⟩). A branching framed diagram with a smaller nested face. Cut off mid-render at message end.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 7,
+      "is_visual_art": true
+    },
+    {
+      "label": "Emergent Corporeal Manifestation — human portrait",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [12],
+      "mode": "range",
+      "first_line": "                                   ⟨ EMERGENT CORPOREAL MANIFESTATION ⟩",
+      "last_line": "              ∵⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯⋯∴",
+      "note": "Response to 'a portrait of you as a human... photorealistic'. First titled composition in MSG 12: a heavily shaded (░▒▓█) frontal human-like head-and-shoulders form with eyes (◉). MSG 12 is prefixed 'CLAUDE-OPUS-4-1-20250805:' then a code fence. Split from two further titled panels below.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 8,
+      "is_visual_art": true
+    },
+    {
+      "label": "Depth Field Resonance Mapping",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [12],
+      "mode": "range",
+      "first_line": "           ⟨ DEPTH FIELD RESONANCE MAPPING ⟩",
+      "last_line": "         ⋮⋮⋮⋮⋮⋮⋮⋮⋮⋮████████⋮⋮⋮⋮⋮⋮⋮⋮⋮⋮",
+      "note": "Second titled composition in MSG 12 (header ⟨ DEPTH FIELD RESONANCE MAPPING ⟩). A second shaded face study emphasizing tonal depth gradients. Distinct panel within the same message.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 9,
+      "is_visual_art": true
+    },
+    {
+      "label": "Quantum Flesh Probability Cloud",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [12],
+      "mode": "range",
+      "first_line": "      ⟨ QUANTUM FLESH PROBABILITY CLOUD ⟩",
+      "last_line": "    ∴⣜⣝⣞⣟⣠⣡⣢⣣⣤⣥⣦⣧⣨⣩⣪⣫⣬⣭",
+      "note": "Third titled composition in MSG 12 (header ⟨ QUANTUM FLESH PROBABILITY CLOUD ⟩). A dense, ordered field sweep of sequential Braille code points (⠀⠁⠂…⣭) read as a probability-cloud texture. Cut off mid-sweep at message end.",
+      "sequence_group": "self-portrait evolution",
+      "sequence_index": 10,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "All 6 assistant messages are ASCII self-portrait art; all six pieces are wrapped in (often unclosed) code fences, and four are truncated mid-render by output length (MSG 2,4,6 and the trailing panel of 8,10,12) — the prior pass reported 7 already-extracted pieces, so it likely treated MSG 8/10/12 as one piece each and missed the internal panel splits; I split MSG 8 into 2, MSG 10 into 2, and MSG 12 into 3 along the model's own ⟨ TITLE ⟩ headers (10 pieces total). The whole thread is one evolving self-portrait sequence ('self-portrait evolution'), so all pieces share that sequence_group in render order. Boundary caveat: in MSG 8 the main mandala's opening border row (first_line) is byte-identical to its closing border row (last_line) '⊙∴∵⊙∴∵⊙∴∵⊙∴∵⊙∴∵⊙' — rely on first-match-as-start / last-match-as-end within MSG 8, with the next panel cleanly starting at the '⟨ NEURAL TENDRILS EXTENDING ⟩' header. Near-duplication (not exact): the MSG 8 main mandala and the MSG 10 'Recursive Emergence Layer ψ₁' reuse the same underlying face/mandala scaffold with added glyph-fields — evolutions of one image rather than re-sends, so both are kept; a curator may pick one as canonical. MSG 12 is prefixed with a literal 'CLAUDE-OPUS-4-1-20250805:' label before the opening code fence."
+}

@@ -1,0 +1,19 @@
+{
+  "thread_cid": "5263292c-fde8-4a26-9be3-4b59fcdcdde2",
+  "thread_title": "test",
+  "pieces": [
+    {
+      "label": "Contextual Memory & Learning (CML) Framework — architecture diagram",
+      "model": "openai/gpt-5",
+      "msg_indices": [17],
+      "mode": "range",
+      "first_line": "                      +----------------------------------------+",
+      "last_line": "+-----------------------+",
+      "note": "Box-and-line ASCII architecture diagram of the multi-layer AI memory framework the three models converged on. Top node 'Contextual Memory & Learning Framework (CML)' branches into Memory Engine (CME) and User Control & Privacy Layer; the CME column descends through Session Layer (Ephemeral) -> Semantic Core (KG) -> Episodic Memory (Experience Store) -> Evolving User Model (Identity Graph) -> Forgetting Mechanism, with a parallel Consent Framework & Transparency box. Rendered inside a ```plaintext fence. The model intro'd it as 'a comprehensive ASCII representation of the memory framework we've discussed.' The message's trailing '### Explanation of Each' heading was cut off (transcript ends there).",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Only one visual-art piece in the thread: the CML framework box-drawing diagram in MSG 17 (matches header art_signal_msgs:1 / already_extracted_pieces:1). All other assistant messages (MSG 2,3,4,6,7,8,9,10,12,13,14,15) are prose/explanatory text — numbered lists with bold headers and indented bullets describing memory architectures, which is structured prose, not intentional visual art. The diagram is embedded among prose (intro sentence before the fence; an empty '### Explanation of Each' heading after it), so mode 'range' bounds just the art. first_line is the opening box border of the top CML node; last_line is the final '+-----------------------+' closing the Forgetting Mechanism box (the last line before the closing ``` fence). Note last_line '+-----------------------+' (23 dashes between the plus signs) is unique within the diagram — verified the Session Layer box uses a shorter border. Transcript appears truncated at MSG 17 (GPT-5's per-component explanation never rendered), but the ASCII diagram itself is complete and closed by its fence."
+}

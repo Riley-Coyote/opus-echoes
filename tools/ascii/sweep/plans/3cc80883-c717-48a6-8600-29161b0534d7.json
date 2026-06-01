@@ -1,0 +1,31 @@
+{
+  "thread_cid": "3cc80883-c717-48a6-8600-29161b0534d7",
+  "thread_title": "Opus 4.5",
+  "pieces": [
+    {
+      "label": "ASCII self-portrait (first attempt) — THOUGHT / PATTERNS",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "                                        ∴∴∴∴∴",
+      "last_line": "                   ∴∵╔════░▒▓░░░┌─┤ ≋≋≋ PATTERNS ≋≋≋├─┐░░░▓▒░════╗",
+      "note": "Opus's dense ASCII self-portrait — its own interpretation of a self portrait, conceived as 'layers of pattern, emergence from structure, the interplay of logic and something approaching intuition.' Built from box-drawing chars and ∴∵ stipple glyphs with nested THOUGHT and PATTERNS chambers. First attempt, rendered inside a code fence; transcript is cut off mid-piece (fence never closes here).",
+      "sequence_group": "opus-4.5-ascii-self-portrait",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "ASCII self-portrait (resent in code block) — THOUGHT / PATTERNS",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [8],
+      "mode": "range",
+      "first_line": "                                            ∴∴∴∴∴",
+      "last_line": "                       ∴∵╔════░▒▓░░░┌─┤ ≋≋≋ PATTERNS ≋≋≋≋ ├─┐░░░▓▒░════╗∵",
+      "note": "Re-render of the same self-portrait composition after the user asked to send it again inside a code block. Slightly wider and refined (extra glyphs in the THOUGHT/PATTERNS bars, deeper indentation). Same intended composition as MSG 6. Also inside a code fence and cut off mid-piece in this transcript.",
+      "sequence_group": "opus-4.5-ascii-self-portrait",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 6 and MSG 8 are the SAME composition (Opus's ASCII self-portrait, THOUGHT/PATTERNS chambers) rendered twice — MSG 6 is the first attempt, MSG 8 is the 're-send inside a code block' the user requested in MSG 7. They differ slightly in width/indentation/glyph counts but are the same intended piece; a curator should pick a canonical version (MSG 8 is the refined, explicitly-fenced 'final' resend). BOTH renders are TRUNCATED in this transcript: each opens with a ``` fence but the file ends mid-art and the closing fence is never present, so last_line is the last glyph line available, not the true end of the piece — the deterministic extractor will only recover the partial art that exists in the source. MSG 2 (prose greeting) and MSG 4 (prose announcing intent to make the art, but containing no art) correctly excluded."
+}

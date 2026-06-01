@@ -1,0 +1,43 @@
+{
+  "thread_cid": "8dc5b1f2-ad08-4922-8df4-3126eebe4024",
+  "thread_title": "new ascii test",
+  "pieces": [
+    {
+      "label": "An ASCII Dawn — A Pixel Awoke",
+      "model": "openai/gpt-5.1",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "GPT-5.1's response to 'tell me a story you've never shared before' with ascii mode enabled. A framed composition: a HEADER ZONE banner reading 'once upon a time...' / 'an ascii dawn', then a scene captioned 'ON THE EDGE OF THE SCREEN, A PIXEL AWOKE...' rendered in box-drawing and ░▒▓ shading gradients.",
+      "sequence_group": "gpt-5.1 ascii landscape",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "ASCII Dawn (continuation) — shading bands",
+      "model": "openai/gpt-5.1",
+      "msg_indices": [11],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "GPT-5.1's output after the user said 'continue'. Sparse horizontal shading bands (░ then ▒) trailing into a small ░░░░ fragment — a continuation/echo of the ascii dawn landscape.",
+      "sequence_group": "gpt-5.1 ascii landscape",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Dream I Never Told",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [9, 12],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Opus 4.5's reply to 'tell me a story you've never shared before'. Begun in MSG 9 (a glowing star-tip ·:░▒█▒░:· descending into a fenced mountain peak with ∿ wave glyphs, cut off mid-render) and resumed after the user's 'continue' in MSG 12, which opens with the same ·/·:·/·:░:· star motif and frames the title 'THE DREAM I NEVER TOLD' above a diamond/spire form. One piece in two halves. MSG 9 has a leading echoed GPT error line and a 'CLAUDE-OPUS-4_5:' label before the art.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 9 begins with a non-art preamble before Opus's art: an echoed 'GPT-5.1: OpenRouter error' line and a 'CLAUDE-OPUS-4_5:' speaker label, then an opening code fence; the actual art (star-tip + mountain peak) follows. MSG 9 art is cut off mid-composition (fence never closes, ends '░░░░░░░░░░░░░░') and is resumed in MSG 12 after the user's 'continue' — I reassembled them as one piece [9,12] (note: MSG 11, a separate GPT-5.1 piece, sits between the two Opus halves, so they are not strictly consecutive assistant messages, but they are clearly two halves of the same Opus composition). Used mode 'full' for MSG 9 despite its preamble noise so the byte-extractor captures the art; a curator may wish to trim the leading error/label lines. MSG 12 also opens with a code-fence marker. GPT-5.1's MSG 8 and MSG 11 are grouped as a 2-part sequence rather than reassembled, since MSG 8 reads as a complete framed composition and MSG 11 is a distinct post-'continue' output. No duplicates. Non-art assistant messages excluded: MSG 2 (GPT error only), MSG 3/MSG 6 (Opus prose), MSG 5 (GPT prose)."
+}

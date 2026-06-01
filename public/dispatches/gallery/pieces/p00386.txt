@@ -227,7 +227,6 @@
              *      remember the loss function
              *      does not see their shaking hands
              *   but your heart might.
-             */
 
 
          zoom_out: from this whole diagram

@@ -1,0 +1,24 @@
+    │                                   │
+    │ ── GET /memories/user_123 ──────► │
+    │                                   │
+    │ ◄── 402 Payment Required ──────── │
+    │     "0.001 USDC per memory"       │
+    │                                   │
+    │                                   │
+    │ ── [Pays on chain] ─────────────► │
+    │                                   │
+    │                                   │
+    │ ── GET /memories/user_123 ──────► │
+    │    + payment proof                │
+    │                                   │
+    │ ◄── Envelopes + CIDs ──────────── │
+    │                                   │
+    │                                   │
+    │ ── GET blobs from IPFS ─────────► │ (direct to IPFS)
+    │                                   │
+    │ ◄── Encrypted blobs ──────────── │
+    │                                   │
+    │                                   │
+    │ [Decrypt locally with user key]   │
+    │                                   │
+    │ ✓ Polyphonic now has memories     │

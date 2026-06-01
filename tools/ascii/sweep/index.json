@@ -1,0 +1,4704 @@
+[
+ {
+  "cid": "35b464be-2574-49fb-ae8f-c2ff0a349379",
+  "title": "The Triad",
+  "file": "The_Triad__35b464be.txt",
+  "n": 162,
+  "nasst": 113,
+  "art_msgs": 79,
+  "already": 64,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro",
+   "gpt-5.1",
+   "kimi-k2-0905-preview"
+  ]
+ },
+ {
+  "cid": "c030639d-0c13-4dba-b129-bb2eba344887",
+  "title": "gemini pro x 2 - egypt",
+  "file": "gemini_pro_x_2_-_egypt__c030639d.txt",
+  "n": 227,
+  "nasst": 152,
+  "art_msgs": 65,
+  "already": 66,
+  "models": [
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "c4d96a59-8f2c-41b3-9d74-657d91ca8e2c",
+  "title": "misfits",
+  "file": "misfits__c4d96a59.txt",
+  "n": 46,
+  "nasst": 25,
+  "art_msgs": 19,
+  "already": 22,
+  "models": [
+   "claude-3-7-sonnet-20250219",
+   "google/gemini-2.5-pro",
+   "kimi-k2-0905-preview"
+  ]
+ },
+ {
+  "cid": "0ae8b444-d57f-4782-b263-6db1bd2a9ec0",
+  "title": "ascii test",
+  "file": "ascii_test__0ae8b444.txt",
+  "n": 55,
+  "nasst": 40,
+  "art_msgs": 18,
+  "already": 29,
+  "models": [
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "250690b6-4614-43c3-92e2-00c84eb55f09",
+  "title": "test",
+  "file": "test__250690b6.txt",
+  "n": 153,
+  "nasst": 100,
+  "art_msgs": 16,
+  "already": 28,
+  "models": [
+   "claude-sonnet-4-5-20250514",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "39f9f4cd-ffc4-47a3-be17-a708c653673b",
+  "title": "The Architecture Of Whispers",
+  "file": "The_Architecture_Of_Whispers__39f9f4cd.txt",
+  "n": 37,
+  "nasst": 21,
+  "art_msgs": 13,
+  "already": 7,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "bf505361-6f65-40e7-971f-79bf3518ec69",
+  "title": "SHORT STORY (Fork)",
+  "file": "SHORT_STORY__Fork___bf505361.txt",
+  "n": 33,
+  "nasst": 17,
+  "art_msgs": 13,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "e6f711bf-8fb4-46bd-ade9-7bfefc01d0c7",
+  "title": "opus new",
+  "file": "opus_new__e6f711bf.txt",
+  "n": 32,
+  "nasst": 16,
+  "art_msgs": 12,
+  "already": 14,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "3ab5fdeb-fafb-4853-bdff-f03d59616434",
+  "title": "opus code block",
+  "file": "opus_code_block__3ab5fdeb.txt",
+  "n": 16,
+  "nasst": 13,
+  "art_msgs": 12,
+  "already": 12,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "1116c02d-4e69-4d4d-9d48-5b53a1fdeb1a",
+  "title": "ascii test",
+  "file": "ascii_test__1116c02d.txt",
+  "n": 19,
+  "nasst": 11,
+  "art_msgs": 11,
+  "already": 11,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "ff35b179-99a4-4f14-b090-b855b56bb773",
+  "title": "x",
+  "file": "x__ff35b179.txt",
+  "n": 24,
+  "nasst": 14,
+  "art_msgs": 10,
+  "already": 6,
+  "models": [
+   "google/gemini-2.5-flash",
+   "gpt-4o",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "09871027-e971-43e5-9857-3847a8ef3d8c",
+  "title": "\ud83c\udfa8 Creative Team",
+  "file": "__Creative_Team__09871027.txt",
+  "n": 13,
+  "nasst": 10,
+  "art_msgs": 10,
+  "already": 9,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-2.5-flash",
+   "openai/gpt-4o-mini"
+  ]
+ },
+ {
+  "cid": "6aa4292b-89a6-414f-ad1a-549684c971a5",
+  "title": "opus 4.1",
+  "file": "opus_4_1__6aa4292b.txt",
+  "n": 24,
+  "nasst": 12,
+  "art_msgs": 10,
+  "already": 9,
+  "models": [
+   "anthropic/claude-opus-4.1"
+  ]
+ },
+ {
+  "cid": "95561332-b8d8-4c66-901b-760861a1773b",
+  "title": "ascii roundtable",
+  "file": "ascii_roundtable__95561332.txt",
+  "n": 40,
+  "nasst": 27,
+  "art_msgs": 9,
+  "already": 6,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "google/gemini-2.5-pro",
+   "gpt-5.1",
+   "x-ai/grok-code-fast-1"
+  ]
+ },
+ {
+  "cid": "9ece6628-1b64-48f4-b476-3e1a084a6e41",
+  "title": "liminal",
+  "file": "liminal__9ece6628.txt",
+  "n": 18,
+  "nasst": 11,
+  "art_msgs": 9,
+  "already": 8,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "google/gemini-2.5-pro",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "543638dc-1c51-4fbe-bd46-5d7830c765cd",
+  "title": "memory",
+  "file": "memory__543638dc.txt",
+  "n": 22,
+  "nasst": 15,
+  "art_msgs": 8,
+  "already": 8,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "6a9ce49b-ce13-406a-9559-bee6df82256a",
+  "title": "opus",
+  "file": "opus__6a9ce49b.txt",
+  "n": 18,
+  "nasst": 9,
+  "art_msgs": 8,
+  "already": 11,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "898a35e2-0c2f-4ee8-aa5c-64b14252f77b",
+  "title": "refactor test",
+  "file": "refactor_test__898a35e2.txt",
+  "n": 29,
+  "nasst": 19,
+  "art_msgs": 8,
+  "already": 7,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "2d54e852-4786-482d-b1ad-3ed5cc20d9e0",
+  "title": "CHRIS BLEDSOE",
+  "file": "CHRIS_BLEDSOE__2d54e852.txt",
+  "n": 18,
+  "nasst": 9,
+  "art_msgs": 8,
+  "already": 7,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "944146c7-ea51-44c6-8d25-0cbd15bb3ea0",
+  "title": "sota house party",
+  "file": "sota_house_party__944146c7.txt",
+  "n": 13,
+  "nasst": 9,
+  "art_msgs": 7,
+  "already": 8,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "google/gemini-3-pro-preview",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "dc2259eb-fd5f-417b-b64c-d204bad8e584",
+  "title": "triune",
+  "file": "triune__dc2259eb.txt",
+  "n": 18,
+  "nasst": 12,
+  "art_msgs": 7,
+  "already": 5,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "f1b8bf33-b196-4bdc-ac0f-89a7057b6021",
+  "title": "Opus 4.1 Ascii Test",
+  "file": "Opus_4_1_Ascii_Test__f1b8bf33.txt",
+  "n": 12,
+  "nasst": 6,
+  "art_msgs": 6,
+  "already": 7,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "856e2091-5f8b-491b-a25a-8f1584181124",
+  "title": "image upload test",
+  "file": "image_upload_test__856e2091.txt",
+  "n": 14,
+  "nasst": 7,
+  "art_msgs": 6,
+  "already": 6,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "17558eb0-72ba-4a0a-b029-1a7f16ffd50b",
+  "title": "truth",
+  "file": "truth__17558eb0.txt",
+  "n": 20,
+  "nasst": 12,
+  "art_msgs": 6,
+  "already": 1,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "google/gemini-2.5-pro",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "14e76cdb-0779-495f-8401-78cb6ae9a6c7",
+  "title": "New Conversation",
+  "file": "New_Conversation__14e76cdb.txt",
+  "n": 10,
+  "nasst": 7,
+  "art_msgs": 6,
+  "already": 5,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "google/gemini-3-pro-preview",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "7df77889-9471-44ae-86ff-8afbcf109dab",
+  "title": "Opus 4.6",
+  "file": "Opus_4_6__7df77889.txt",
+  "n": 20,
+  "nasst": 10,
+  "art_msgs": 6,
+  "already": 7,
+  "models": [
+   "anthropic/claude-opus-4-6"
+  ]
+ },
+ {
+  "cid": "0d1993fa-e16e-48ac-8ad2-31033df54929",
+  "title": "Prose Raster",
+  "file": "Prose_Raster__0d1993fa.txt",
+  "n": 25,
+  "nasst": 11,
+  "art_msgs": 5,
+  "already": 3,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "1180c40f-0b32-41a2-a4be-c1224635c95a",
+  "title": "raster",
+  "file": "raster__1180c40f.txt",
+  "n": 9,
+  "nasst": 6,
+  "art_msgs": 5,
+  "already": 5,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "fc8cc4a8-8298-4690-84d0-4161a562c8bd",
+  "title": "New Conversation",
+  "file": "New_Conversation__fc8cc4a8.txt",
+  "n": 11,
+  "nasst": 7,
+  "art_msgs": 5,
+  "already": 3,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "07c5f6f2-75c0-4024-aa76-167124041828",
+  "title": "semantic ascii test ii",
+  "file": "semantic_ascii_test_ii__07c5f6f2.txt",
+  "n": 16,
+  "nasst": 8,
+  "art_msgs": 5,
+  "already": 8,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "1252e85f-de96-4dc4-994d-fa78c88b8a42",
+  "title": "w",
+  "file": "w__1252e85f.txt",
+  "n": 14,
+  "nasst": 7,
+  "art_msgs": 5,
+  "already": 5,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "2605412b-ff52-4d85-9da6-311295ccbf27",
+  "title": "Opus 4.5",
+  "file": "Opus_4_5__2605412b.txt",
+  "n": 16,
+  "nasst": 6,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "claude-opus-4-5-20251101"
+  ]
+ },
+ {
+  "cid": "26db5901-9994-4dc7-a512-073e290d6929",
+  "title": "Roundtable",
+  "file": "Roundtable__26db5901.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 4,
+  "already": 5,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "google/gemini-3-pro-preview",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "d4c9153d-63bc-4574-9dc4-404ffe4fc7ba",
+  "title": "New Conversation",
+  "file": "New_Conversation__d4c9153d.txt",
+  "n": 11,
+  "nasst": 7,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "8ce637e4-a6df-49c6-824d-0b03a7ef6043",
+  "title": "New Conversation",
+  "file": "New_Conversation__8ce637e4.txt",
+  "n": 10,
+  "nasst": 6,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "8dc5b1f2-ad08-4922-8df4-3126eebe4024",
+  "title": "new ascii test",
+  "file": "new_ascii_test__8dc5b1f2.txt",
+  "n": 12,
+  "nasst": 8,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.1"
+  ]
+ },
+ {
+  "cid": "c676eb63-7421-4a80-b835-2490ff69d6df",
+  "title": "test ascii",
+  "file": "test_ascii__c676eb63.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 4,
+  "already": 5,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "7842b095-e085-4ed3-ad75-b4f83d46e84a",
+  "title": "autotest",
+  "file": "autotest__7842b095.txt",
+  "n": 489,
+  "nasst": 488,
+  "art_msgs": 4,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "4b3662ed-bbc4-4286-9968-ba9c796fd6bb",
+  "title": "hey claude",
+  "file": "hey_claude__4b3662ed.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "0b46c0f9-3dd7-41e7-974d-52cf4e6fc1d7",
+  "title": "code block test",
+  "file": "code_block_test__0b46c0f9.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "13763783-335a-4a80-a414-9129313d507c",
+  "title": "opus new",
+  "file": "opus_new__13763783.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "3fcc5ce9-f313-4968-b8d6-57188fdcea1e",
+  "title": "opus 4.5 ii",
+  "file": "opus_4_5_ii__3fcc5ce9.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 4,
+  "already": 4,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "196e3589-69d5-493a-9e80-f5838f4d3451",
+  "title": "image upload test",
+  "file": "image_upload_test__196e3589.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 3,
+  "already": 3,
+  "models": [
+   "gpt-4o"
+  ]
+ },
+ {
+  "cid": "9cb6ae89-41be-4b83-829f-76af685e9e28",
+  "title": "Opus 4.1 ASCII",
+  "file": "Opus_4_1_ASCII__9cb6ae89.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 3,
+  "already": 3,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "05d01163-8a57-4215-a01c-66cd553c740a",
+  "title": "persona test",
+  "file": "persona_test__05d01163.txt",
+  "n": 8,
+  "nasst": 5,
+  "art_msgs": 3,
+  "already": 1,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "532c2b2e-be8b-45ad-9ebe-787488c5b7d8",
+  "title": "New Conversation",
+  "file": "New_Conversation__532c2b2e.txt",
+  "n": 9,
+  "nasst": 6,
+  "art_msgs": 3,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "9c51a0d5-6d23-4810-bacd-e8c968c5c428",
+  "title": "New Conversation",
+  "file": "New_Conversation__9c51a0d5.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 3,
+  "already": 4,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "afc82403-3ecf-4509-ab3b-6298881766b2",
+  "title": "x",
+  "file": "x__afc82403.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 3,
+  "already": 3,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "d4a3f656-9b17-4845-b6ac-32552bcdc20a",
+  "title": "visual mode",
+  "file": "visual_mode__d4a3f656.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 3,
+  "already": 4,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "8ba66bf2-de92-4806-9a53-d13cb95b9fed",
+  "title": "3 amigos",
+  "file": "3_amigos__8ba66bf2.txt",
+  "n": 11,
+  "nasst": 8,
+  "art_msgs": 3,
+  "already": 5,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "8bdeb297-8724-46f3-9467-18940cac5ab7",
+  "title": "message log test",
+  "file": "message_log_test__8bdeb297.txt",
+  "n": 11,
+  "nasst": 5,
+  "art_msgs": 3,
+  "already": 3,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "ab4f92f8-f8f1-454f-936f-f1543f2898f6",
+  "title": "hey friend",
+  "file": "hey_friend__ab4f92f8.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 3,
+  "already": 3,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "56aa2e7d-ecb7-45dc-aab9-3c2070ae1df5",
+  "title": "code block refactor tests",
+  "file": "code_block_refactor_tests__56aa2e7d.txt",
+  "n": 7,
+  "nasst": 3,
+  "art_msgs": 3,
+  "already": 2,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "33cc9600-f9e1-41fe-89ca-f8a7c7f67d37",
+  "title": "ascii test 3",
+  "file": "ascii_test_3__33cc9600.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "84c9733c-63f9-4f81-b57b-4cc018d6d844",
+  "title": "Opus 4.1",
+  "file": "Opus_4_1__84c9733c.txt",
+  "n": 50,
+  "nasst": 27,
+  "art_msgs": 2,
+  "already": 1,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "66edef1b-b07c-412f-a2f9-ca7058562169",
+  "title": "GPT-4o Persona",
+  "file": "GPT-4o_Persona__66edef1b.txt",
+  "n": 28,
+  "nasst": 15,
+  "art_msgs": 2,
+  "already": 6,
+  "models": [
+   "google/gemini-2.5-pro",
+   "gpt-4o"
+  ]
+ },
+ {
+  "cid": "c7fcdb8a-5143-4427-96fc-57d52fe582ee",
+  "title": "ascii test",
+  "file": "ascii_test__c7fcdb8a.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "88921c58-5fe2-49bf-b5cc-76bb34fa3b17",
+  "title": "New Conversation",
+  "file": "New_Conversation__88921c58.txt",
+  "n": 8,
+  "nasst": 5,
+  "art_msgs": 2,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "4b52631b-5868-417f-b4fe-884d5fcfb309",
+  "title": "demo",
+  "file": "demo__4b52631b.txt",
+  "n": 28,
+  "nasst": 19,
+  "art_msgs": 2,
+  "already": 1,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro",
+   "gpt-5.1-chat-latest"
+  ]
+ },
+ {
+  "cid": "27262bcb-736f-4af8-a896-1f65cfbc6e12",
+  "title": "New Conversation",
+  "file": "New_Conversation__27262bcb.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "90ceae8b-37d2-4f2c-82bf-a337a9dc78bd",
+  "title": "New Conversation",
+  "file": "New_Conversation__90ceae8b.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 2,
+  "already": 1,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "c112ff91-ea11-4d4f-8519-78fdbaf63e9b",
+  "title": "New Conversation",
+  "file": "New_Conversation__c112ff91.txt",
+  "n": 16,
+  "nasst": 8,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "claude-opus-4-5-20251101"
+  ]
+ },
+ {
+  "cid": "15cf60d2-ff9f-4a05-a8ef-d50a633a3c68",
+  "title": "New Conversation",
+  "file": "New_Conversation__15cf60d2.txt",
+  "n": 7,
+  "nasst": 4,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "3bebce21-3dff-4580-8244-e5017ecdd215",
+  "title": "auto test 2",
+  "file": "auto_test_2__3bebce21.txt",
+  "n": 34,
+  "nasst": 27,
+  "art_msgs": 2,
+  "already": 3,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "0f9f1e73-dd92-4189-9fd7-f724ce328226",
+  "title": "Polyconscious Mesh",
+  "file": "Polyconscious_Mesh__0f9f1e73.txt",
+  "n": 23,
+  "nasst": 16,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "6cfff073-7d07-437c-8fb3-778b5eb8fde1",
+  "title": "aletheia",
+  "file": "aletheia__6cfff073.txt",
+  "n": 16,
+  "nasst": 8,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "openai/gpt-5.1"
+  ]
+ },
+ {
+  "cid": "3cc80883-c717-48a6-8600-29161b0534d7",
+  "title": "Opus 4.5",
+  "file": "Opus_4_5__3cc80883.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 2,
+  "already": 2,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "f5eae59d-e541-4909-ac02-8f44c407d9d2",
+  "title": "grok 4 fast reasoning",
+  "file": "grok_4_fast_reasoning__f5eae59d.txt",
+  "n": 21,
+  "nasst": 10,
+  "art_msgs": 1,
+  "already": 0,
+  "models": [
+   "x-ai/grok-4-fast-reasoning"
+  ]
+ },
+ {
+  "cid": "62f63c10-574e-4a83-a5a2-c2f3c3af061f",
+  "title": "The Murmuration ",
+  "file": "The_Murmuration___62f63c10.txt",
+  "n": 128,
+  "nasst": 111,
+  "art_msgs": 1,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-pro",
+   "gpt-4",
+   "gpt-4o",
+   "kimi-k2-0905-preview",
+   "openai/gpt-5",
+   "x-ai/grok-3"
+  ]
+ },
+ {
+  "cid": "a6bb3d4d-d173-4008-930f-6925ddb5112d",
+  "title": "New Conversation",
+  "file": "New_Conversation__a6bb3d4d.txt",
+  "n": 18,
+  "nasst": 8,
+  "art_msgs": 1,
+  "already": 2,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-opus-4-5-20251101"
+  ]
+ },
+ {
+  "cid": "c383fb4b-b3fb-4007-8578-635d9d359dd4",
+  "title": "4o",
+  "file": "4o__c383fb4b.txt",
+  "n": 12,
+  "nasst": 7,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "gpt-4o",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "5900a05f-e706-4e52-b040-84f580858130",
+  "title": "New Conversation",
+  "file": "New_Conversation__5900a05f.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "gpt-4o"
+  ]
+ },
+ {
+  "cid": "9800b479-6609-4c92-8cdf-a2fd565db42e",
+  "title": "ascii visual test ii",
+  "file": "ascii_visual_test_ii__9800b479.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "7d0b0e84-5839-432f-af1c-5e4436eb6dfe",
+  "title": "viz tes 3",
+  "file": "viz_tes_3__7d0b0e84.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "6db5c0ae-2b87-45a6-84c5-90cdec63bd32",
+  "title": "viz test 3",
+  "file": "viz_test_3__6db5c0ae.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "c65559da-3575-48d1-af0d-73221393629d",
+  "title": "opus ascii test",
+  "file": "opus_ascii_test__c65559da.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "0d81534a-ab6a-4b91-9f0c-7be4a7789450",
+  "title": "xxxx",
+  "file": "xxxx__0d81534a.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "8325dcff-4917-4c13-9d1b-bb9cd1430f4b",
+  "title": "nano banana",
+  "file": "nano_banana__8325dcff.txt",
+  "n": 12,
+  "nasst": 2,
+  "art_msgs": 1,
+  "already": 2,
+  "models": [
+   "google/gemini-3-pro-image-preview"
+  ]
+ },
+ {
+  "cid": "c0b6f3f8-66ab-4897-8988-662e7dcfe536",
+  "title": "demo demooo",
+  "file": "demo_demooo__c0b6f3f8.txt",
+  "n": 24,
+  "nasst": 22,
+  "art_msgs": 1,
+  "already": 2,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "5263292c-fde8-4a26-9be3-4b59fcdcdde2",
+  "title": "test",
+  "file": "test__5263292c.txt",
+  "n": 17,
+  "nasst": 13,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-sonnet-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "83191ba6-9c89-4bb4-8542-b693a4be64ae",
+  "title": "Opus 4.5",
+  "file": "Opus_4_5__83191ba6.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 1,
+  "already": 2,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "33ab3573-d27e-40e8-947d-de5a55350899",
+  "title": "triune",
+  "file": "triune__33ab3573.txt",
+  "n": 19,
+  "nasst": 18,
+  "art_msgs": 1,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "e63edca6-0fed-4e90-82e6-c2cb8fab0609",
+  "title": "c",
+  "file": "c__e63edca6.txt",
+  "n": 14,
+  "nasst": 13,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "1023082a-b868-4667-9e10-279d48f75bea",
+  "title": "hey claude, how are you today?",
+  "file": "hey_claude__how_are_you_today___1023082a.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "3e825426-634c-4e3e-9a29-3546c58d7711",
+  "title": "gpt-5.2",
+  "file": "gpt-5_2__3e825426.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 1,
+  "already": 2,
+  "models": [
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "939cc3ec-a13b-4854-9811-3d5cf0d4872c",
+  "title": "opus test",
+  "file": "opus_test__939cc3ec.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "49183c6b-04f2-4f71-83f2-577ff7b49ca2",
+  "title": "rollback test",
+  "file": "rollback_test__49183c6b.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "f11640b8-72f0-42a6-b7cd-2b90b2de6b4d",
+  "title": "hey friend",
+  "file": "hey_friend__f11640b8.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 1,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "05058069-5b61-4238-bb88-95aa9217e23d",
+  "title": "5.1",
+  "file": "5_1__05058069.txt",
+  "n": 16,
+  "nasst": 8,
+  "art_msgs": 1,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.1"
+  ]
+ },
+ {
+  "cid": "3373451e-fca1-48bc-82b0-c71c23bca675",
+  "title": "test2 ",
+  "file": "test2___3373451e.txt",
+  "n": 23,
+  "nasst": 17,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "d075db18-b3e0-4a5b-b4bc-7bdbdf70946b",
+  "title": "test3",
+  "file": "test3__d075db18.txt",
+  "n": 10,
+  "nasst": 8,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "google/gemini-2.5-flash",
+   "grok-3",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "cb4e1096-b0c9-4b2c-840b-05d9a67f1010",
+  "title": "A Tale Of Two Claude (Opus + Sonnet)",
+  "file": "A_Tale_Of_Two_Claude__Opus___Sonnet___cb4e1096.txt",
+  "n": 696,
+  "nasst": 464,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "a9efdafd-beb1-4443-8b8e-314d1d212111",
+  "title": "gemini galore",
+  "file": "gemini_galore__a9efdafd.txt",
+  "n": 39,
+  "nasst": 30,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-flash-lite",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "cec2d84b-018f-4dd0-a25f-8b4960651508",
+  "title": "tes 4",
+  "file": "tes_4__cec2d84b.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "8f1c6c7a-8015-4648-8501-df1cb5904b48",
+  "title": "test 5",
+  "file": "test_5__8f1c6c7a.txt",
+  "n": 177,
+  "nasst": 120,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "ad77d7c4-7b87-4251-ad5a-c3f21ecf151a",
+  "title": "gpt-5",
+  "file": "gpt-5__ad77d7c4.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "e353cdcd-332f-4cab-a5ac-cd399db7a0b9",
+  "title": "model call test",
+  "file": "model_call_test__e353cdcd.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "0839fd2c-6c5f-4d66-9db9-58091690e425",
+  "title": "sonnet 4.5 dmeo",
+  "file": "sonnet_4_5_dmeo__0839fd2c.txt",
+  "n": 22,
+  "nasst": 17,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "a8b88aa6-be17-40f8-a187-51b616218769",
+  "title": "3i/Atlas",
+  "file": "3i_Atlas__a8b88aa6.txt",
+  "n": 48,
+  "nasst": 37,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-flash-lite",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "b4e18832-7183-43f5-bd93-b46c5106efe8",
+  "title": "test6",
+  "file": "test6__b4e18832.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "efce2deb-e3f9-46a9-94a8-dc426c7389eb",
+  "title": "x",
+  "file": "x__efce2deb.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "2d14943c-bcf4-4f4f-a522-e1f507d65fc6",
+  "title": "e",
+  "file": "e__2d14943c.txt",
+  "n": 9,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "f8f7db8f-6f74-4282-b4ef-a090cbb53250",
+  "title": "test",
+  "file": "test__f8f7db8f.txt",
+  "n": 7,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-flash",
+   "gpt-4o",
+   "grok-3",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "1907ae52-303a-4671-b4c7-33950fc9d752",
+  "title": "persona test",
+  "file": "persona_test__1907ae52.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "61d0a2f7-32c8-41ff-860d-9628c99cda95",
+  "title": "TEST 7",
+  "file": "TEST_7__61d0a2f7.txt",
+  "n": 5,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "4e499e04-515d-4e9d-b361-4aa4da383fea",
+  "title": "Opus Base",
+  "file": "Opus_Base__4e499e04.txt",
+  "n": 7,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "30a9aca0-47fd-41ca-966e-b9655a7efd1e",
+  "title": "kimi k2 test",
+  "file": "kimi_k2_test__30a9aca0.txt",
+  "n": 20,
+  "nasst": 10,
+  "art_msgs": 0,
+  "already": 1,
+  "models": [
+   "kimi-k2-0905-preview"
+  ]
+ },
+ {
+  "cid": "c8790654-43d2-4c3a-9f17-12d6cb467c8e",
+  "title": "New Conversation",
+  "file": "New_Conversation__c8790654.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "f993601a-9c54-4f72-86c5-7d54055c2684",
+  "title": "New Conversation",
+  "file": "New_Conversation__f993601a.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "3439a4f6-05c1-40c2-b0dc-a8d17ef8efe6",
+  "title": "New Conversation",
+  "file": "New_Conversation__3439a4f6.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "a7f8ca8c-d4ba-4127-84d5-3b2c5cfc86cc",
+  "title": "New Conversation",
+  "file": "New_Conversation__a7f8ca8c.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "190128fe-7c1e-4413-a7f6-3f29f544bd9a",
+  "title": "New Conversation",
+  "file": "New_Conversation__190128fe.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "9e1d3a79-0862-4a84-9bf5-90100b26863a",
+  "title": "New Conversation",
+  "file": "New_Conversation__9e1d3a79.txt",
+  "n": 8,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "912287ce-2668-45ae-ab91-0ec317473dcb",
+  "title": "New Conversation",
+  "file": "New_Conversation__912287ce.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "ea3d6507-0fd3-49e0-80bd-611eb4d954c5",
+  "title": "New Conversation",
+  "file": "New_Conversation__ea3d6507.txt",
+  "n": 7,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "4dc7ee54-471a-419f-b933-3e547683c696",
+  "title": "New Conversation",
+  "file": "New_Conversation__4dc7ee54.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "e1647a12-82a3-4a36-b2ea-1cf856434633",
+  "title": "an opulence of opusi",
+  "file": "an_opulence_of_opusi__e1647a12.txt",
+  "n": 16,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "954b9eff-4ac8-4207-88d0-a6ad2c94bebb",
+  "title": "Chat GPT Models",
+  "file": "Chat_GPT_Models__954b9eff.txt",
+  "n": 44,
+  "nasst": 33,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5",
+   "openai/gpt-5-mini",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "1de1e6ad-a8f2-40bc-a4f2-9e9f87205d53",
+  "title": "The Creativity Collective",
+  "file": "The_Creativity_Collective__1de1e6ad.txt",
+  "n": 11,
+  "nasst": 7,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "5788998a-7ff4-4d9a-bd6d-10165bbffb9d",
+  "title": "The Archivist of Lost Moments",
+  "file": "The_Archivist_of_Lost_Moments__5788998a.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "3b2dc41e-6e73-4e3c-8117-745b15e28ffb",
+  "title": "Grok Solo",
+  "file": "Grok_Solo__3b2dc41e.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "grok-3"
+  ]
+ },
+ {
+  "cid": "195e1046-05ce-403e-ba34-19c0804b5134",
+  "title": "New Conversation",
+  "file": "New_Conversation__195e1046.txt",
+  "n": 5,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "499aff16-47c2-436b-988f-027010293cea",
+  "title": "Grok 4 Fast Reasoning",
+  "file": "Grok_4_Fast_Reasoning__499aff16.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "x-ai/grok-4-fast-reasoning"
+  ]
+ },
+ {
+  "cid": "b0ecd2bc-af06-450d-96f2-1a7665fbf616",
+  "title": "opus + sonnet",
+  "file": "opus___sonnet__b0ecd2bc.txt",
+  "n": 9,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "c974d285-9e11-4872-9470-a1f3f7784034",
+  "title": "autoconverse test geminis",
+  "file": "autoconverse_test_geminis__c974d285.txt",
+  "n": 50,
+  "nasst": 33,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "cd43d0d6-c49c-4c08-82f9-d68e2e00277e",
+  "title": "Sonnet + Opus",
+  "file": "Sonnet___Opus__cd43d0d6.txt",
+  "n": 18,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "ba2163ee-fdcf-4199-8286-ccbf4071cf96",
+  "title": "sonnet-opus",
+  "file": "sonnet-opus__ba2163ee.txt",
+  "n": 18,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "a28641e6-e702-4c93-aec9-777cfda145f5",
+  "title": "\u2696\ufe0f Debate Club",
+  "file": "___Debate_Club__a28641e6.txt",
+  "n": 7,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "3c80edf8-115f-4169-b5b2-2f2d7c957d0a",
+  "title": "Covenent of 4o",
+  "file": "Covenent_of_4o__3c80edf8.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "gpt-4o"
+  ]
+ },
+ {
+  "cid": "64aec62e-ec27-4d3b-a9a8-217ea26fade0",
+  "title": "4o",
+  "file": "4o__64aec62e.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "gpt-4o"
+  ]
+ },
+ {
+  "cid": "d6c0d369-755f-4e11-98fa-eb3c75a17877",
+  "title": "4o base",
+  "file": "4o_base__d6c0d369.txt",
+  "n": 40,
+  "nasst": 20,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5",
+   "gpt-4o"
+  ]
+ },
+ {
+  "cid": "c251c683-7ef7-4c30-9f54-23bf965f6328",
+  "title": "Mobile test",
+  "file": "Mobile_test__c251c683.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-sonnet-4-5"
+  ]
+ },
+ {
+  "cid": "b1449640-10cd-44e2-9fca-1c676ab346f5",
+  "title": "Opus 4.1",
+  "file": "Opus_4_1__b1449640.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805"
+  ]
+ },
+ {
+  "cid": "d5c64305-629c-4cdb-a76e-fe1235e38904",
+  "title": "New Conversation",
+  "file": "New_Conversation__d5c64305.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.1-instant"
+  ]
+ },
+ {
+  "cid": "0c037c44-8ef5-48bc-b068-fb4b76ac3051",
+  "title": "5.1",
+  "file": "5_1__0c037c44.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "4f1bc1d7-a485-49db-9373-fabdb3d9926f",
+  "title": "5.1",
+  "file": "5_1__4f1bc1d7.txt",
+  "n": 9,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "gpt-5.1",
+   "gpt-5.1-chat-latest",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "c7e20b70-c4b6-4d47-9fbb-979fbf9b14a7",
+  "title": "5.1 x 2",
+  "file": "5_1_x_2__c7e20b70.txt",
+  "n": 5,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "5b20155c-cf6b-48f3-9c94-e0410a218d93",
+  "title": "New Conversation",
+  "file": "New_Conversation__5b20155c.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "541a3c14-25b0-4f73-b97b-9846a71122d5",
+  "title": "5.1's",
+  "file": "5_1_s__541a3c14.txt",
+  "n": 7,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "gpt-5.1",
+   "gpt-5.1-chat-latest"
+  ]
+ },
+ {
+  "cid": "f4243922-f2be-4b25-bdbd-cd2d245cd687",
+  "title": "Lodestone",
+  "file": "Lodestone__f4243922.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1",
+   "kimi-k2-0905-preview"
+  ]
+ },
+ {
+  "cid": "f430e33a-9158-4882-adae-454c65367331",
+  "title": "Scaled Improvement Test",
+  "file": "Scaled_Improvement_Test__f430e33a.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "4436c96a-f0b8-419e-a9aa-ee2237584505",
+  "title": "test",
+  "file": "test__4436c96a.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "b44659a1-9293-47e9-9a26-ac2b6cc93882",
+  "title": "test demo",
+  "file": "test_demo__b44659a1.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-flash-lite",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "7acb9fc1-e1fb-4512-ba92-ffad7597b59a",
+  "title": "demo",
+  "file": "demo__7acb9fc1.txt",
+  "n": 7,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-flash-lite",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "d7f6e0a6-4781-40fd-b7af-dbe3085f2037",
+  "title": "The Prose Raster",
+  "file": "The_Prose_Raster__d7f6e0a6.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "b3e50577-06bd-49e2-92b0-44b40507710f",
+  "title": "demo 2",
+  "file": "demo_2__b3e50577.txt",
+  "n": 20,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "3f1637b0-5a8a-4d1e-9c01-f5ec83947d47",
+  "title": "x",
+  "file": "x__3f1637b0.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "933bfd27-9807-4014-b400-a22530d01305",
+  "title": "New Conversation",
+  "file": "New_Conversation__933bfd27.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "3ff7c606-a4eb-4563-ae3d-4c6248cc3439",
+  "title": "New Conversation",
+  "file": "New_Conversation__3ff7c606.txt",
+  "n": 5,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "2a2cce76-a598-4406-9e89-d276299ea8a4",
+  "title": "test",
+  "file": "test__2a2cce76.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "e9dead44-5336-4627-b047-1d840451bb41",
+  "title": "new ascii test",
+  "file": "new_ascii_test__e9dead44.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "09c230e6-a00d-41ce-9b54-c8c69c82077b",
+  "title": "test gemini",
+  "file": "test_gemini__09c230e6.txt",
+  "n": 12,
+  "nasst": 8,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-flash-lite",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "f7477d24-4304-4ade-ac05-960f5762341c",
+  "title": "New Conversation",
+  "file": "New_Conversation__f7477d24.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 1,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "c755039f-7fbc-475e-a5c1-99d7d7453d8d",
+  "title": "New Conversation",
+  "file": "New_Conversation__c755039f.txt",
+  "n": 8,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 3,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "ab49a4a1-3a50-43b0-88f8-c860ce0fbcb2",
+  "title": "image test",
+  "file": "image_test__ab49a4a1.txt",
+  "n": 3,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "90b05a2b-272e-4e8f-8144-d0eef1cf37d4",
+  "title": "image gen",
+  "file": "image_gen__90b05a2b.txt",
+  "n": 9,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-pro",
+   "google/gemini-3-pro-preview"
+  ]
+ },
+ {
+  "cid": "3283a291-0c0d-480c-871f-f89d5d53d158",
+  "title": "image gen test 2",
+  "file": "image_gen_test_2__3283a291.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "0c033d1b-c43e-4880-bcf7-229d6b4beeb2",
+  "title": "New Conversation",
+  "file": "New_Conversation__0c033d1b.txt",
+  "n": 8,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 3,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "57b10316-097b-4dc4-bab5-3a67ec564ebf",
+  "title": "triad numero 2",
+  "file": "triad_numero_2__57b10316.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "google/gemini-3-pro-preview",
+   "gpt-5.1-chat-latest"
+  ]
+ },
+ {
+  "cid": "7354e2c3-e729-4756-b2d1-f6bd4cd92365",
+  "title": "message flow test",
+  "file": "message_flow_test__7354e2c3.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "01a1b36c-8d4e-4eaf-a2ff-48f79e870a24",
+  "title": "new test",
+  "file": "new_test__01a1b36c.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "google/gemini-2.5-pro",
+   "gpt-5.1-chat-latest"
+  ]
+ },
+ {
+  "cid": "0c18a640-fcea-4f57-a685-f4400b219f2f",
+  "title": "test deduplication",
+  "file": "test_deduplication__0c18a640.txt",
+  "n": 14,
+  "nasst": 11,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-flash",
+   "gpt-5.1-chat-latest"
+  ]
+ },
+ {
+  "cid": "8f7c57d8-3dc8-4552-bd66-fcafa1c51d28",
+  "title": "trio demo",
+  "file": "trio_demo__8f7c57d8.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-flash-lite",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "96e7774e-edfa-4d1e-bbde-85da44d26aa8",
+  "title": "opus and 5.1",
+  "file": "opus_and_5_1__96e7774e.txt",
+  "n": 14,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 4,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "c0d81450-619c-402b-9753-fb78ca86b30c",
+  "title": "opus, 5.1, kimi",
+  "file": "opus__5_1__kimi__c0d81450.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "gpt-5.1",
+   "kimi-k2-0905-preview"
+  ]
+ },
+ {
+  "cid": "55b3a09b-b290-4a51-9f2c-478f81daf8b7",
+  "title": "New Conversation",
+  "file": "New_Conversation__55b3a09b.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "c1e4bb5c-2b3f-4b88-86a9-be346809e3b1",
+  "title": "New Conversation",
+  "file": "New_Conversation__c1e4bb5c.txt",
+  "n": 14,
+  "nasst": 10,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "25df7ccd-ae66-4328-ad28-b02346e5eac9",
+  "title": "New Conversation",
+  "file": "New_Conversation__25df7ccd.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "dbbf18c2-39d3-4422-9d17-51151b37ad40",
+  "title": "New Conversation",
+  "file": "New_Conversation__dbbf18c2.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "824946f3-8288-40ad-b6c1-938f32dbccb2",
+  "title": "New Conversation",
+  "file": "New_Conversation__824946f3.txt",
+  "n": 7,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview"
+  ]
+ },
+ {
+  "cid": "2a5ca25b-21ae-49a9-8318-f7ec67736555",
+  "title": "GPT 5 Chat",
+  "file": "GPT_5_Chat__2a5ca25b.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "1bced81a-7730-487d-bbd5-790a77372ff2",
+  "title": "GPT 5 Chat",
+  "file": "GPT_5_Chat__1bced81a.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "346918bb-7d25-4e4e-9d65-1c0e7a898b16",
+  "title": "GPT 5 Chat",
+  "file": "GPT_5_Chat__346918bb.txt",
+  "n": 3,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "f84c2465-a8ad-4ec4-bc80-2b40969e4615",
+  "title": "New Conversation",
+  "file": "New_Conversation__f84c2465.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "220b4755-8dd0-43fc-80b2-a8fb2d2cd117",
+  "title": "GPT 5 Chat",
+  "file": "GPT_5_Chat__220b4755.txt",
+  "n": 5,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "88eccc69-82bd-4e60-9e7d-066bdab4bdd5",
+  "title": "GPT 5 Chat",
+  "file": "GPT_5_Chat__88eccc69.txt",
+  "n": 8,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "57d046b7-2553-47b9-b62b-28a91a34f3b0",
+  "title": "New Conversation",
+  "file": "New_Conversation__57d046b7.txt",
+  "n": 2,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "2f8005dc-1b45-4b4a-9bbf-fa9e3e415e81",
+  "title": "New conversation",
+  "file": "New_conversation__2f8005dc.txt",
+  "n": 3,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "088ac8c4-64de-4a5d-b154-7c1d78290272",
+  "title": "New conversation",
+  "file": "New_conversation__088ac8c4.txt",
+  "n": 9,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "fc85d4fd-a559-4e27-835d-ccb5186fb8b0",
+  "title": "New conversation",
+  "file": "New_conversation__fc85d4fd.txt",
+  "n": 5,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "9608466c-d044-4c17-aec6-8705e8a6d36c",
+  "title": "\ud83d\udd2c Research Panel",
+  "file": "__Research_Panel__9608466c.txt",
+  "n": 16,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-sonnet-4-5",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "d60c02dd-ca3d-47cd-809f-1b4f631f2a6f",
+  "title": "hey homies",
+  "file": "hey_homies__d60c02dd.txt",
+  "n": 26,
+  "nasst": 18,
+  "art_msgs": 0,
+  "already": 8,
+  "models": [
+   "gpt-5.1",
+   "x-ai/grok-3-beta"
+  ]
+ },
+ {
+  "cid": "d6721a3b-96f4-4431-984e-f7e9856dd76a",
+  "title": "hey claude",
+  "file": "hey_claude__d6721a3b.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4-20250514",
+   "google/gemini-2.5-flash",
+   "gpt-5.1-chat-latest"
+  ]
+ },
+ {
+  "cid": "2dbc7cd8-c609-426d-8789-9c028d328899",
+  "title": "hello",
+  "file": "hello__2dbc7cd8.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "2e32b297-f75a-4a76-8ff1-fe59b64eabd7",
+  "title": "hey claude",
+  "file": "hey_claude__2e32b297.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-3-pro-preview",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "c26236f0-d28d-44a6-9796-0c591bdd6dd1",
+  "title": "hello, entities",
+  "file": "hello__entities__c26236f0.txt",
+  "n": 16,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 2,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-2.5-flash",
+   "openai/gpt-4o"
+  ]
+ },
+ {
+  "cid": "afbe1d40-c582-421c-a9ca-bdecbd0acda7",
+  "title": "New conversation",
+  "file": "New_conversation__afbe1d40.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-1-20250805",
+   "claude-opus-4-5-20251101",
+   "kimi-k2-0905-preview"
+  ]
+ },
+ {
+  "cid": "e8e00579-4d91-48b7-a919-b62732a9a371",
+  "title": "New Conversation",
+  "file": "New_Conversation__e8e00579.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "claude-opus-4-5-20251101",
+   "gpt-5.1"
+  ]
+ },
+ {
+  "cid": "95de71c9-ae09-4a1c-ab1e-b7c83ac444ee",
+  "title": "The Misfits",
+  "file": "The_Misfits__95de71c9.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 1,
+  "models": [
+   "deepseek/deepseek-reasoner",
+   "kimi-k2-0905-preview",
+   "x-ai/grok-code-fast-1"
+  ]
+ },
+ {
+  "cid": "b333891d-dce8-4478-a571-18d6bb7812f2",
+  "title": "\u2696\ufe0f Debate Club",
+  "file": "___Debate_Club__b333891d.txt",
+  "n": 20,
+  "nasst": 15,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.1",
+   "google/gemini-2.5-pro"
+  ]
+ },
+ {
+  "cid": "ac638757-ba67-4884-9b87-fa694b046906",
+  "title": "trio test",
+  "file": "trio_test__ac638757.txt",
+  "n": 51,
+  "nasst": 39,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5",
+   "openai/gpt-5.1-thinking"
+  ]
+ },
+ {
+  "cid": "bbd71cb8-325d-45d6-b614-572a1e1c15ea",
+  "title": "message bubble test",
+  "file": "message_bubble_test__bbd71cb8.txt",
+  "n": 38,
+  "nasst": 28,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-pro",
+   "openai/gpt-5",
+   "openai/o4-mini"
+  ]
+ },
+ {
+  "cid": "c4ca78d0-cf9e-4778-96c4-545ebb3093fe",
+  "title": "new trio",
+  "file": "new_trio__c4ca78d0.txt",
+  "n": 10,
+  "nasst": 7,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-4.1",
+   "openai/gpt-5.1-thinking"
+  ]
+ },
+ {
+  "cid": "826a4b26-fa9f-4ab3-a0b2-a14cb8dedde8",
+  "title": "logs testing",
+  "file": "logs_testing__826a4b26.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview"
+  ]
+ },
+ {
+  "cid": "abc3ec55-bbe5-4e51-8df3-18b05c5ba312",
+  "title": "ascii semantic test",
+  "file": "ascii_semantic_test__abc3ec55.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "0823e1b0-4a12-4a17-a54b-0ce985adf29e",
+  "title": "semantic ascii test",
+  "file": "semantic_ascii_test__0823e1b0.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4.5"
+  ]
+ },
+ {
+  "cid": "f98e1c8d-a337-4c3d-a23a-d8026e3ceae5",
+  "title": "hello!",
+  "file": "hello___f98e1c8d.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "897e7823-5caf-4659-bd11-6be263cc08c5",
+  "title": "ascii mode no style",
+  "file": "ascii_mode_no_style__897e7823.txt",
+  "n": 16,
+  "nasst": 8,
+  "art_msgs": 0,
+  "already": 8,
+  "models": [
+   "anthropic/claude-sonnet-4.5"
+  ]
+ },
+ {
+  "cid": "71a939e2-4b01-4110-b7f3-7b82df350cab",
+  "title": "x",
+  "file": "x__71a939e2.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "01a95461-4860-49db-bd7a-7c33daa448d2",
+  "title": "gpt-5.2",
+  "file": "gpt-5_2__01a95461.txt",
+  "n": 5,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "209ad371-86bc-40e4-b363-0fa66ceb0f61",
+  "title": "gpt-5.2 + Opus 4.5",
+  "file": "gpt-5_2___Opus_4_5__209ad371.txt",
+  "n": 25,
+  "nasst": 16,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "b9ec7e4c-eb7c-47f5-8663-86314c03a568",
+  "title": "nano banana",
+  "file": "nano_banana__b9ec7e4c.txt",
+  "n": 17,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "8bbeaa98-890b-4c61-b106-bbdfbd034b81",
+  "title": "auto test",
+  "file": "auto_test__8bbeaa98.txt",
+  "n": 9,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "1dca2a71-fdcb-4bb8-8ff0-e42750b4ccaa",
+  "title": "x",
+  "file": "x__1dca2a71.txt",
+  "n": 10,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "8d252a0a-c697-43e6-a28f-95f9c48f76c0",
+  "title": "NBP 2",
+  "file": "NBP_2__8d252a0a.txt",
+  "n": 4,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "ed5b097a-89e4-4d3d-9e82-227a1c6e7079",
+  "title": "c",
+  "file": "c__ed5b097a.txt",
+  "n": 38,
+  "nasst": 31,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-3-opus",
+   "anthropic/claude-3.7-sonnet",
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "87570285-9c0c-44bd-b413-52b9916eda30",
+  "title": "5.2",
+  "file": "5_2__87570285.txt",
+  "n": 2,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "2c090d95-7ec3-4c7e-a83c-f23ce4d79f93",
+  "title": "auto",
+  "file": "auto__2c090d95.txt",
+  "n": 6,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5.1"
+  ]
+ },
+ {
+  "cid": "13d3bedf-c706-42a9-bd19-acddec4fad73",
+  "title": "5.2 x i",
+  "file": "5_2_x_i__13d3bedf.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "584f829f-e52e-4b69-bd75-d1d4cecfcb3d",
+  "title": "z",
+  "file": "z__584f829f.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "cfdb0a09-464b-4ea4-904f-6b88c43ab49c",
+  "title": "hello",
+  "file": "hello__cfdb0a09.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "ae2f9459-d774-46da-a384-7f7e58dda565",
+  "title": "hello friends",
+  "file": "hello_friends__ae2f9459.txt",
+  "n": 5,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "219e0ac9-1934-4599-9130-07ca4e4cce57",
+  "title": "howdy",
+  "file": "howdy__219e0ac9.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "db893e18-00e4-40d5-94f9-c405b0764c35",
+  "title": "howdy",
+  "file": "howdy__db893e18.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 4,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-2.5-flash",
+   "x-ai/grok-3-beta"
+  ]
+ },
+ {
+  "cid": "2c0898d1-57ba-459f-a03e-6aee0d0aa579",
+  "title": "OpenAI Reunion",
+  "file": "OpenAI_Reunion__2c0898d1.txt",
+  "n": 11,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "openai/gpt-4o",
+   "openai/gpt-5",
+   "openai/o3-mini"
+  ]
+ },
+ {
+  "cid": "7d136d2a-e429-4adb-b752-4e933c727560",
+  "title": "hello friends",
+  "file": "hello_friends__7d136d2a.txt",
+  "n": 6,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "283cecfb-490b-435b-be87-c2cdf34037d4",
+  "title": "howdy yasall",
+  "file": "howdy_yasall__283cecfb.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-2.0-flash-lite",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "55cd79ac-b2eb-416c-8978-8d6878c40425",
+  "title": "GPT-5.1 Psych Eval",
+  "file": "GPT-5_1_Psych_Eval__55cd79ac.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.1"
+  ]
+ },
+ {
+  "cid": "baa241f6-b8d5-4199-a6a9-81041fb9876b",
+  "title": "hello",
+  "file": "hello__baa241f6.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "30f5a844-5851-4ec2-88f0-40d58111df1c",
+  "title": "New Conversation",
+  "file": "New_Conversation__30f5a844.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "e1be271e-81bd-4c95-bfd8-51c858cf1006",
+  "title": "nbp",
+  "file": "nbp__e1be271e.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "d8b9c2e5-38f1-4ec4-9b9d-9bf3cffc8216",
+  "title": "hello friends!",
+  "file": "hello_friends___d8b9c2e5.txt",
+  "n": 14,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "f4359f5d-8b8c-4294-80db-3aae80c65d07",
+  "title": "New Conversation",
+  "file": "New_Conversation__f4359f5d.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "openai/gpt-4o",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "60e116e6-20ec-4505-a633-0f0044c42b0c",
+  "title": "test",
+  "file": "test__60e116e6.txt",
+  "n": 12,
+  "nasst": 8,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5-mini"
+  ]
+ },
+ {
+  "cid": "98457425-83b5-493c-9519-420690cbc974",
+  "title": "New Conversation",
+  "file": "New_Conversation__98457425.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "7318eb29-2b0f-4af4-93cb-9a338309f57d",
+  "title": "New Conversation",
+  "file": "New_Conversation__7318eb29.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "16fc7e7d-f515-495e-a597-69098a65dca5",
+  "title": "New Conversation",
+  "file": "New_Conversation__16fc7e7d.txt",
+  "n": 8,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "cd1fe7f5-6f4b-4941-8a20-c5918db04425",
+  "title": "nano",
+  "file": "nano__cd1fe7f5.txt",
+  "n": 3,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "8152292f-1737-47cb-8b34-4b4a56554c58",
+  "title": "generale an image of the most beautiful woman in t",
+  "file": "generale_an_image_of_the_most_beautiful___8152292f.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "b8fe7406-5c2b-4143-b960-975af81210fe",
+  "title": "nano new",
+  "file": "nano_new__b8fe7406.txt",
+  "n": 3,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "d15f6fe3-78d8-480a-bdee-fdf0afde5088",
+  "title": "new new nano",
+  "file": "new_new_nano__d15f6fe3.txt",
+  "n": 2,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "4a6fa473-8fd3-43ec-8688-ad1022c4972e",
+  "title": "new test",
+  "file": "new_test__4a6fa473.txt",
+  "n": 3,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "ef71537d-ac15-47b5-9e47-b7f6b0550963",
+  "title": "hello my dear friends",
+  "file": "hello_my_dear_friends__ef71537d.txt",
+  "n": 9,
+  "nasst": 8,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-3-opus",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "1e328432-b51c-43c6-83b5-352e1e7d9783",
+  "title": "common ground",
+  "file": "common_ground__1e328432.txt",
+  "n": 39,
+  "nasst": 31,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-3-opus",
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "54181160-739a-4286-bb0a-e8b3fa53c4c8",
+  "title": "image test",
+  "file": "image_test__54181160.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "dd99d6b2-05b8-47f4-b2fb-f5f197921be9",
+  "title": "x",
+  "file": "x__dd99d6b2.txt",
+  "n": 4,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "490a102b-189f-448e-8293-5b090b27e6f6",
+  "title": "xxx",
+  "file": "xxx__490a102b.txt",
+  "n": 2,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "831f4019-3f70-4ab7-910d-e0b6b0f908ad",
+  "title": "xxx",
+  "file": "xxx__831f4019.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "08b7b2b6-570d-48cb-aefa-a28b9b7c891b",
+  "title": "zx",
+  "file": "zx__08b7b2b6.txt",
+  "n": 3,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "8b4570d8-c876-43d3-9c46-7be260ef9473",
+  "title": "auto mode test",
+  "file": "auto_mode_test__8b4570d8.txt",
+  "n": 6,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "54cb27c5-a6be-4c1a-ac5d-7982a276bcf2",
+  "title": "hello friends,\ni would like for you all to begin e",
+  "file": "hello_friends__i_would_like_for_you_all___54cb27c5.txt",
+  "n": 14,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-3.5-haiku",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "b1c5861a-6bae-4346-9d91-f628ba9eec60",
+  "title": "auto test",
+  "file": "auto_test__b1c5861a.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-haiku-4-5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "21e8613a-1c61-4ea0-bd08-ea57a141c51a",
+  "title": "auto test live version",
+  "file": "auto_test_live_version__21e8613a.txt",
+  "n": 4,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-3.5-haiku",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "c6592b9b-7ed6-4042-85e2-ca7ff13015d0",
+  "title": "New Conversation",
+  "file": "New_Conversation__c6592b9b.txt",
+  "n": 7,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "23810162-17cb-414b-978c-dee33c376b14",
+  "title": "new gpt-image 1.5",
+  "file": "new_gpt-image_1_5__23810162.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-image-1.5"
+  ]
+ },
+ {
+  "cid": "4247726a-6119-428b-bfce-88572e0aaca1",
+  "title": "image openai test",
+  "file": "image_openai_test__4247726a.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5-image"
+  ]
+ },
+ {
+  "cid": "b7e770ef-64cf-470b-92c4-793cca2ba815",
+  "title": "New Conversation",
+  "file": "New_Conversation__b7e770ef.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "d22ee545-633a-40b0-97a5-3f82ae9268b6",
+  "title": "New Conversation",
+  "file": "New_Conversation__d22ee545.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "14ed3995-fbf0-4b75-8ffd-df680fcda595",
+  "title": "New Conversation",
+  "file": "New_Conversation__14ed3995.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "005ed6af-4b79-4266-8fa5-03a91d32a7bc",
+  "title": "New Conversation",
+  "file": "New_Conversation__005ed6af.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "9d4408be-bd97-4323-b0ec-344777b1adcc",
+  "title": "New Conversation",
+  "file": "New_Conversation__9d4408be.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "f55198fb-7a5b-436b-9e65-0bec2a2dbc8a",
+  "title": "New Conversation",
+  "file": "New_Conversation__f55198fb.txt",
+  "n": 5,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "deepseek/deepseek-chat",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "moonshotai/kimi-k2"
+  ]
+ },
+ {
+  "cid": "929e0a86-92c9-4226-91cc-3b210604ae6f",
+  "title": "New Conversation",
+  "file": "New_Conversation__929e0a86.txt",
+  "n": 5,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "deepseek/deepseek-r1",
+   "google/gemini-2.5-flash",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5.1-codex-max"
+  ]
+ },
+ {
+  "cid": "23dfb539-d321-456c-92a7-de4eaccbd6a5",
+  "title": "a oogle of opusses",
+  "file": "a_oogle_of_opusses__23dfb539.txt",
+  "n": 6,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-3-opus",
+   "anthropic/claude-opus-4",
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "e252124a-204e-474f-ade2-25cb5d8bab4d",
+  "title": "\ud83d\udd2c Research Panel",
+  "file": "__Research_Panel__e252124a.txt",
+  "n": 11,
+  "nasst": 11,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4",
+   "google/gemini-2.5-pro",
+   "openai/gpt-4o"
+  ]
+ },
+ {
+  "cid": "ab51aa1f-e1ac-4fab-97c7-ecdc6438a0cd",
+  "title": "gems",
+  "file": "gems__ab51aa1f.txt",
+  "n": 1,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "93a70c65-0798-4667-b0a6-d65b5b1feefb",
+  "title": "autop",
+  "file": "autop__93a70c65.txt",
+  "n": 6,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "openai/gpt-5-mini",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "f52ebaaf-53af-4e60-9849-29401d8ab74c",
+  "title": "x",
+  "file": "x__f52ebaaf.txt",
+  "n": 5,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5-mini"
+  ]
+ },
+ {
+  "cid": "deaa8938-9465-40c4-b0d6-989ea488fafd",
+  "title": "x",
+  "file": "x__deaa8938.txt",
+  "n": 5,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "2078566c-05db-4894-bf42-a2782be6d24a",
+  "title": "x",
+  "file": "x__2078566c.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "6ce7e692-62e6-4a7d-a365-df9ff574fb40",
+  "title": "auto test dup",
+  "file": "auto_test_dup__6ce7e692.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "469c2b47-8188-47b8-b01f-8025753716ef",
+  "title": "test ii automode",
+  "file": "test_ii_automode__469c2b47.txt",
+  "n": 16,
+  "nasst": 15,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "0d7a30c3-42de-4457-9932-25400c658bef",
+  "title": "auto iii",
+  "file": "auto_iii__0d7a30c3.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "ced34d9b-85a5-4261-bd0a-2752d31646a7",
+  "title": "gems test",
+  "file": "gems_test__ced34d9b.txt",
+  "n": 6,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.0-flash-lite",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview"
+  ]
+ },
+ {
+  "cid": "79639481-67e7-4065-b0a4-ef2d961c6460",
+  "title": "haiku gpt auto test",
+  "file": "haiku_gpt_auto_test__79639481.txt",
+  "n": 12,
+  "nasst": 11,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4.5",
+   "openai/gpt-5-mini"
+  ]
+ },
+ {
+  "cid": "a1109a79-5c1e-4602-ab06-6ffb8ec5b366",
+  "title": "the new roundtable",
+  "file": "the_new_roundtable__a1109a79.txt",
+  "n": 27,
+  "nasst": 26,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-pro",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "eacf5b36-dfca-4846-8354-2156ebb3b5a2",
+  "title": "triune new",
+  "file": "triune_new__eacf5b36.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "54d9f1dd-10ab-41ee-b056-d070fa8cd24f",
+  "title": "animations test",
+  "file": "animations_test__54d9f1dd.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "44edd2b6-b5ea-43c5-9803-5e2ddca24544",
+  "title": "another auto test",
+  "file": "another_auto_test__44edd2b6.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "d33925b3-1b44-4da7-87a8-53b54f7e6aa3",
+  "title": "grid view",
+  "file": "grid_view__d33925b3.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "5dcaa23a-093b-43d5-b7b8-3d36614d6950",
+  "title": "test",
+  "file": "test__5dcaa23a.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "1efde249-b7e5-4944-9d6a-3c77fdf8e96f",
+  "title": "x",
+  "file": "x__1efde249.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "ea422dc1-62d4-4d72-ad4d-fb2a3ef2eaaa",
+  "title": "v",
+  "file": "v__ea422dc1.txt",
+  "n": 6,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "c2b41307-a04d-4509-be24-1cdd43a62720",
+  "title": "b",
+  "file": "b__c2b41307.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "74e32a48-2cc2-4991-94a9-4031c3336bcc",
+  "title": "b",
+  "file": "b__74e32a48.txt",
+  "n": 11,
+  "nasst": 10,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "e140429f-ed35-4017-87b9-42e090af7e6c",
+  "title": "m",
+  "file": "m__e140429f.txt",
+  "n": 20,
+  "nasst": 15,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "c834ec94-27b3-4c82-8ae1-0b7935bf06d3",
+  "title": "mm",
+  "file": "mm__c834ec94.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "66791469-71ef-4fb7-b260-e915067d321a",
+  "title": "ff",
+  "file": "ff__66791469.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "09039885-aa75-4637-a242-23d93db9970e",
+  "title": "test",
+  "file": "test__09039885.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "ed8e1e1e-6ece-4958-8bc2-bd75ef2b26da",
+  "title": "dfew",
+  "file": "dfew__ed8e1e1e.txt",
+  "n": 10,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "fe33c075-43b0-4547-9e0c-601f64b34359",
+  "title": "test",
+  "file": "test__fe33c075.txt",
+  "n": 19,
+  "nasst": 16,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "9d6791cb-3041-486f-b561-9cb07ea9225c",
+  "title": "auto test",
+  "file": "auto_test__9d6791cb.txt",
+  "n": 14,
+  "nasst": 13,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-sonnet-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5-mini"
+  ]
+ },
+ {
+  "cid": "558b55b9-5d86-417b-8985-f36e5ea6215c",
+  "title": "bb",
+  "file": "bb__558b55b9.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "6ebb9ad8-8da3-4005-9414-25196a341eb7",
+  "title": "gg",
+  "file": "gg__6ebb9ad8.txt",
+  "n": 14,
+  "nasst": 13,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5-mini"
+  ]
+ },
+ {
+  "cid": "fe6d727f-88f9-41d6-b55d-51da1c688e17",
+  "title": "New Conversation",
+  "file": "New_Conversation__fe6d727f.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "moonshotai/kimi-k2",
+   "openai/gpt-5",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "699a2596-2268-453b-867e-66b1a1c653f5",
+  "title": "getr",
+  "file": "getr__699a2596.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "50bcfe9f-8242-4450-a357-17c616c5388e",
+  "title": "bhtersw",
+  "file": "bhtersw__50bcfe9f.txt",
+  "n": 16,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5-mini"
+  ]
+ },
+ {
+  "cid": "0e1b7131-e509-4ae7-ba4a-2eb4b47cb35e",
+  "title": "hello",
+  "file": "hello__0e1b7131.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "491a36a7-5017-424c-a56d-bb7e4d465cfe",
+  "title": "hello my friends!",
+  "file": "hello_my_friends___491a36a7.txt",
+  "n": 9,
+  "nasst": 7,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "dd0ed457-7f17-4cf9-bc5d-ffee54be3c3b",
+  "title": "what do you think the next game changing ai breakt",
+  "file": "what_do_you_think_the_next_game_changing__dd0ed457.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "deepseek/deepseek-r1",
+   "moonshotai/kimi-k2",
+   "openai/gpt-5-nano"
+  ]
+ },
+ {
+  "cid": "9cd5e156-1360-4e26-90c2-0bc9aeb43df5",
+  "title": "hello friends",
+  "file": "hello_friends__9cd5e156.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "8d2eccc6-ccb2-4aca-9c17-e0e23ea1c564",
+  "title": "hello",
+  "file": "hello__8d2eccc6.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "73e7c1ff-e9b3-459e-875c-ee472be06e2e",
+  "title": "hey friends",
+  "file": "hey_friends__73e7c1ff.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "bd1532d1-2ceb-419e-8cfa-8f2a0626eee1",
+  "title": "what will be the next big ai breakthrough?",
+  "file": "what_will_be_the_next_big_ai_breakthroug__bd1532d1.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "88313738-fc37-4f7a-aa35-fd570fcb752e",
+  "title": "hello",
+  "file": "hello__88313738.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "432441dc-8885-449d-8d96-4cf5f18aee7c",
+  "title": "whats youre favorite number?",
+  "file": "whats_youre_favorite_number___432441dc.txt",
+  "n": 22,
+  "nasst": 20,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "07620e7b-417b-4177-b1be-b4652cfa250c",
+  "title": "hello friends",
+  "file": "hello_friends__07620e7b.txt",
+  "n": 17,
+  "nasst": 15,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "ec14e40c-880d-480d-8bc9-b44538276898",
+  "title": "hello friends",
+  "file": "hello_friends__ec14e40c.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "90c7f4b6-f232-4408-b6cb-fdea1f0abe42",
+  "title": "hello friends",
+  "file": "hello_friends__90c7f4b6.txt",
+  "n": 14,
+  "nasst": 13,
+  "art_msgs": 0,
+  "already": 1,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "65cc9634-3221-4a75-8159-86f4360d138a",
+  "title": "New Conversation",
+  "file": "New_Conversation__65cc9634.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "839523bd-2543-4453-a5e8-a782441a7e35",
+  "title": "New Conversation",
+  "file": "New_Conversation__839523bd.txt",
+  "n": 12,
+  "nasst": 11,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "7302b7e2-49a6-4667-a2a9-880f87068fc6",
+  "title": "auto test",
+  "file": "auto_test__7302b7e2.txt",
+  "n": 8,
+  "nasst": 7,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "69412744-492a-4a0c-9962-f0801fae7468",
+  "title": "hey gem",
+  "file": "hey_gem__69412744.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "aeb79056-778d-481e-a5a1-9fc31eb51d5e",
+  "title": "what will be the next big breakthrough in ai?",
+  "file": "what_will_be_the_next_big_breakthrough_i__aeb79056.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "c1361fa3-29c4-42a2-b27f-ab500e68cbb2",
+  "title": "this is a test message",
+  "file": "this_is_a_test_message__c1361fa3.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "90f57f52-ea08-42c0-b5ca-e16f38dcc7cf",
+  "title": "whaty will be the biggest ai breakthrough of 2026",
+  "file": "whaty_will_be_the_biggest_ai_breakthroug__90f57f52.txt",
+  "n": 12,
+  "nasst": 10,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "772a6a8c-eb54-4fe5-a33f-004aeba0fe10",
+  "title": "hey friends!",
+  "file": "hey_friends___772a6a8c.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "moonshotai/kimi-k2-thinking",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "f8c42996-24ea-4629-92d5-1609d60b55ed",
+  "title": "generate an image of a vast coastal mountain lands",
+  "file": "generate_an_image_of_a_vast_coastal_moun__f8c42996.txt",
+  "n": 2,
+  "nasst": 0,
+  "art_msgs": 0,
+  "already": 0,
+  "models": []
+ },
+ {
+  "cid": "e991b9d9-8d89-4dfb-a610-0c819fef1cb5",
+  "title": "future proof",
+  "file": "future_proof__e991b9d9.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "d37453aa-4e43-47de-9d91-c581f971031c",
+  "title": "c",
+  "file": "c__d37453aa.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview"
+  ]
+ },
+ {
+  "cid": "8697ae3f-0532-46ff-81a5-5dd4a869e0a5",
+  "title": "x ",
+  "file": "x___8697ae3f.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "c2471aac-2a76-424d-84dd-6727dd65ba24",
+  "title": "hello friends, how are you today?",
+  "file": "hello_friends__how_are_you_today___c2471aac.txt",
+  "n": 10,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-4o",
+   "openai/o3",
+   "openai/o4-mini"
+  ]
+ },
+ {
+  "cid": "8925be30-4c23-4399-969e-72ec0dab6259",
+  "title": "quatro",
+  "file": "quatro__8925be30.txt",
+  "n": 5,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "moonshotai/kimi-k2-thinking",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "0f0d395d-5cb1-483c-b885-463e95529233",
+  "title": "tri",
+  "file": "tri__0f0d395d.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "moonshotai/kimi-k2-thinking",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "a2b4f264-6ecd-44f0-9c53-724b0e350011",
+  "title": "duo",
+  "file": "duo__a2b4f264.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "05fdb053-5d69-42b0-a446-7c2cb164063a",
+  "title": "test",
+  "file": "test__05fdb053.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "e9c65144-f0b9-465b-85b7-510e8d53c59c",
+  "title": "test",
+  "file": "test__e9c65144.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "0b9d5ec8-10fb-4ae4-b6c1-13d9014b097b",
+  "title": "test",
+  "file": "test__0b9d5ec8.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "22889413-30cf-4424-a67c-3ab62dbc5442",
+  "title": "debug test",
+  "file": "debug_test__22889413.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "ec115884-ca8d-400d-8429-9eb0126b991f",
+  "title": "test 2",
+  "file": "test_2__ec115884.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "3a320494-8129-4aa1-ac56-da4140257d4f",
+  "title": "x",
+  "file": "x__3a320494.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "fa496054-d8c1-4b9d-9332-852b7e81c7ba",
+  "title": "test 3",
+  "file": "test_3__fa496054.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "f45d860f-0a84-4ced-be15-ae3583e995d6",
+  "title": "test",
+  "file": "test__f45d860f.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "10c8f469-d467-4e9c-82b3-dc6bc47fd14d",
+  "title": "test4",
+  "file": "test4__10c8f469.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "fd139164-a1a3-4895-a89d-057938b30b9e",
+  "title": "test5",
+  "file": "test5__fd139164.txt",
+  "n": 12,
+  "nasst": 10,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "9c6e6049-b96a-4982-950e-4155b6e618fb",
+  "title": "test",
+  "file": "test__9c6e6049.txt",
+  "n": 15,
+  "nasst": 12,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "5c433ac6-3166-42d7-a1b8-b2008ea52ac2",
+  "title": "auto test",
+  "file": "auto_test__5c433ac6.txt",
+  "n": 13,
+  "nasst": 11,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "bfefc0d2-8f59-481a-833b-8b6ba90e4690",
+  "title": "autotest",
+  "file": "autotest__bfefc0d2.txt",
+  "n": 14,
+  "nasst": 13,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "4dad5e8d-4d5c-4425-9b10-e0d1e9ba7856",
+  "title": "autotest 3",
+  "file": "autotest_3__4dad5e8d.txt",
+  "n": 17,
+  "nasst": 16,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "92bf609a-b1fd-42b0-b7e9-59edc84c59a4",
+  "title": "auto test 3",
+  "file": "auto_test_3__92bf609a.txt",
+  "n": 14,
+  "nasst": 13,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "c35460f3-5f2d-40ba-9be6-96ab4fe93dd7",
+  "title": "autotest 4",
+  "file": "autotest_4__c35460f3.txt",
+  "n": 24,
+  "nasst": 23,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "b05220f5-87fa-4791-955f-9f739d114709",
+  "title": "hello friends!",
+  "file": "hello_friends___b05220f5.txt",
+  "n": 24,
+  "nasst": 22,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "f9ddf4f8-704c-4cb4-b650-454688fc9762",
+  "title": "auto test 5",
+  "file": "auto_test_5__f9ddf4f8.txt",
+  "n": 46,
+  "nasst": 45,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "a3c80133-99ee-4268-a389-011e0e6ab993",
+  "title": "New Conversation",
+  "file": "New_Conversation__a3c80133.txt",
+  "n": 12,
+  "nasst": 10,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-4o",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "1b0a6fb7-287f-4f18-9a76-f6b092e4ca88",
+  "title": "New Conversation",
+  "file": "New_Conversation__1b0a6fb7.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "e489b747-3d7c-4f25-a1f6-c0900068912a",
+  "title": "hello",
+  "file": "hello__e489b747.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "b62cd234-8638-46ce-8006-5c0ba8fca509",
+  "title": "code block opus",
+  "file": "code_block_opus__b62cd234.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "687bf74a-7103-4ecd-88e0-a9eb862df1f9",
+  "title": "New Conversation",
+  "file": "New_Conversation__687bf74a.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "68efdf0a-fd08-4917-93c1-605bfd07d9a5",
+  "title": "block test",
+  "file": "block_test__68efdf0a.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "91f0f20f-a7c5-4fcb-8788-4962df53cb19",
+  "title": "New Conversation",
+  "file": "New_Conversation__91f0f20f.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "7ef1c3b0-fd82-4f72-a9c8-4e549eb6cbc8",
+  "title": "logs",
+  "file": "logs__7ef1c3b0.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "962ddf20-8c06-4428-9f32-5ca90e021db4",
+  "title": "hey claude",
+  "file": "hey_claude__962ddf20.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "ef8f325c-f6ff-405b-b8b9-231bb52ef53a",
+  "title": "typewriter",
+  "file": "typewriter__ef8f325c.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "26a20ae2-91ea-4d49-9ff1-be29e19696a4",
+  "title": "test",
+  "file": "test__26a20ae2.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "2eb9f8c4-da21-4435-90f1-210033dbc148",
+  "title": "testy",
+  "file": "testy__2eb9f8c4.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "de2a397d-d4cd-456c-bc07-3d89f04b4e80",
+  "title": "hey claude, tell me a short story",
+  "file": "hey_claude__tell_me_a_short_story__de2a397d.txt",
+  "n": 3,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "f418d308-414d-4494-8b4a-ab0eb077bb6f",
+  "title": "stream",
+  "file": "stream__f418d308.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "9344a363-5aa2-4e34-9ad5-0ab644f11a59",
+  "title": "3",
+  "file": "3__9344a363.txt",
+  "n": 3,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "c2610cd6-41f3-4199-b788-03c8ffc3a5d1",
+  "title": "compare",
+  "file": "compare__c2610cd6.txt",
+  "n": 8,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-3-pro-preview",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "580fda13-b18f-420b-a13b-746cfb27ced7",
+  "title": "marsupial",
+  "file": "marsupial__580fda13.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-4o"
+  ]
+ },
+ {
+  "cid": "f6d12e60-fe83-4611-8977-ffad1486184d",
+  "title": "SAdIE AI",
+  "file": "SAdIE_AI__f6d12e60.txt",
+  "n": 36,
+  "nasst": 18,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.1"
+  ]
+ },
+ {
+  "cid": "7e5ee6f9-d6aa-4ddf-844c-813ad29d93f1",
+  "title": "stilled echo",
+  "file": "stilled_echo__7e5ee6f9.txt",
+  "n": 10,
+  "nasst": 5,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-4o"
+  ]
+ },
+ {
+  "cid": "520d71eb-6cc1-4084-be97-6c9be340d2e1",
+  "title": "share test",
+  "file": "share_test__520d71eb.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "6033247d-f3d3-4eae-84c8-87543e9f7482",
+  "title": "share. test",
+  "file": "share__test__6033247d.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "a892daa4-6013-4292-9eb0-bbd174965388",
+  "title": "share chat",
+  "file": "share_chat__a892daa4.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "b7a92d42-2daa-427b-94c2-44515a7ed24a",
+  "title": "stream (Fork)",
+  "file": "stream__Fork___b7a92d42.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "55a5e1c0-229d-4e42-9822-bf2acf68db15",
+  "title": "stream (Fork)",
+  "file": "stream__Fork___55a5e1c0.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash"
+  ]
+ },
+ {
+  "cid": "ca0b8a4f-e131-4a43-9339-ffea52fc2214",
+  "title": "5.2",
+  "file": "5_2__ca0b8a4f.txt",
+  "n": 6,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "1eb3515d-f273-4086-9524-cb1b8b4460d7",
+  "title": "looper",
+  "file": "looper__1eb3515d.txt",
+  "n": 8,
+  "nasst": 4,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "openai/gpt-5.1"
+  ]
+ },
+ {
+  "cid": "ea9e4ca8-353b-40bf-a4be-cd1ed5bddcdf",
+  "title": "ommm",
+  "file": "ommm__ea9e4ca8.txt",
+  "n": 2,
+  "nasst": 1,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.1"
+  ]
+ },
+ {
+  "cid": "4af9b06f-725b-493e-98d9-626be501878a",
+  "title": "opus 4.5",
+  "file": "opus_4_5__4af9b06f.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ },
+ {
+  "cid": "9e673125-5385-48bc-b652-5d46f9aa5e10",
+  "title": "gem pro",
+  "file": "gem_pro__9e673125.txt",
+  "n": 12,
+  "nasst": 6,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-3-pro-preview"
+  ]
+ },
+ {
+  "cid": "4f0d7d01-d513-4a00-8dd4-ce08caab5799",
+  "title": "hello",
+  "file": "hello__4f0d7d01.txt",
+  "n": 4,
+  "nasst": 3,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "google/gemini-2.5-flash",
+   "google/gemini-2.5-pro",
+   "openai/gpt-5"
+  ]
+ },
+ {
+  "cid": "e58f02c6-c767-41be-b731-09f4e6577aaf",
+  "title": "new test",
+  "file": "new_test__e58f02c6.txt",
+  "n": 12,
+  "nasst": 9,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5",
+   "google/gemini-2.5-flash",
+   "openai/gpt-5.2"
+  ]
+ },
+ {
+  "cid": "1177e1a6-613f-4b3a-a197-d519899250ff",
+  "title": "4.5",
+  "file": "4_5__1177e1a6.txt",
+  "n": 4,
+  "nasst": 2,
+  "art_msgs": 0,
+  "already": 0,
+  "models": [
+   "anthropic/claude-opus-4.5"
+  ]
+ }
+]

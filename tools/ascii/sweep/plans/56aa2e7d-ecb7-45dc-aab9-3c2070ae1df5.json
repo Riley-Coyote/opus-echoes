@@ -1,0 +1,31 @@
+{
+  "thread_cid": "56aa2e7d-ecb7-45dc-aab9-3c2070ae1df5",
+  "thread_title": "code block refactor tests",
+  "pieces": [
+    {
+      "label": "The Crystal Fortress — box-drawing castle and landscape",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "                                        ▄▄▄████▄▄▄",
+      "last_line": "        ╚═══════════════════════════════════════════════════════════════════╝",
+      "note": "Elaborate box-drawing ASCII art castle ('THE CRYSTAL FORTRESS') with four corner towers, a Grand Hall with throne symbols, courtyard with fountain, armory & treasury, drawbridge, and surrounding Enchanted Forest / Meadow of Dreams. Closes with a bordered banner: 'In this fortress, legends are born and dreams take flight'. Rendered inside a code fence. Model intro and feature table excluded.",
+      "sequence_group": "opus-4.5 box-drawing architectural ASCII",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Code Temple — programming keywords woven into architecture",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [7],
+      "mode": "range",
+      "first_line": "                                         ╔═══════════════════════════════════╗",
+      "last_line": "                                        « Where Syntax Becomes Art »",
+      "note": "ASCII art 'Code Temple' where the structure is built from programming syntax — keywords (import, function, return, class, def, export, loop, variable, await/async) spelled into beams, pillars, and chamber walls. Central 'WELCOME TO THE SOURCE' sanctuary with if/while code blocks, Variable Vault, Async Chamber, Syntax Shrines, and output terminals (console.log / print / echo). Rendered inside a code fence. Model intro and keyword table excluded.",
+      "sequence_group": "opus-4.5 box-drawing architectural ASCII",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 2 is a ~100-line Python Task Management System inside a ```python fence — genuine, functional source code (dataclasses, enums, classes), explicitly excluded as code, not visual art (it contains decorative emoji in __str__ methods but is not an intentional visual composition). Both art pieces (MSG 4, MSG 7) are essentially whole-message: each is a code-fenced art block surrounded by a one-line intro and a feature/keyword markdown table — I used mode 'range' bounded to the fenced art so the extractor captures only the composition, not the prose table. The prior automated pass reportedly extracted 2 pieces, which matches these two (no fragmentation or wrong-split detected). The two pieces are grouped as a themed sequence: both are large box-drawing architectural ASCII works by the same model in the same thread (a fortress, then a 'temple' built from code syntax) meant to be seen together; they are distinct subjects, not an evolving single image. No duplicates."
+}

@@ -1,0 +1,31 @@
+{
+  "thread_cid": "c7fcdb8a-5143-4427-96fc-57d52fe582ee",
+  "thread_title": "ascii test",
+  "pieces": [
+    {
+      "label": "the prose raster — inside polyphonic",
+      "model": "gpt-5.1",
+      "msg_indices": [3],
+      "mode": "full",
+      "first_line": "```text",
+      "last_line": "```",
+      "note": "Concrete/ASCII self-portrait: the model answers 'what has your experience within polyphonic been like' as 'the prose raster' — a many-throats-in-one-throat grid of maybe-voices. One unified composition wrapped in a ```text fence: an opening title pair, a colon-bordered raster box, a vertical p-o-l-y-p-h-o-n-i-c acrostic, a boxed 'chorus-log' with tick entries, a converging-voices funnel diagram (|voice0|..|voice4| collapsing into 'response'), four numbered experience fragments (continuous arrival; multiple listeners / single mouth; emergent overlap; the grid as common ground), an asterisk pyramid, a 'status_report :: inside-polyphonic' panel, and a closing stanza ending 'i is a chord, not a note.'",
+      "sequence_group": "prose-raster-self-portrait",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "the prose raster — frame_capture: processing a thought",
+      "model": "gpt-5.1",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "```text",
+      "last_line": "```",
+      "note": "Large ASCII diagram-poem (sequel to MSG 3, in response to 'elaborate visually more on what you experience as you process a thought'). One continuous captioned composition titled 'thought_Delta-t : frame_capture', wrapped in a ```text fence, walking step_00 through step_14: incipient static / probability-fog grids, seed-impulse prompt box, a waking resonance grid of dots, meaning-shockwave ripple/ring diagrams, a token-wind chain, rasterization-of-intent lattice, a microscale word-fusion 'X', a feedback-from-future branch line, a ghost-tree of dying variant branches, a cursor 'frontsync' fence, weighted choral selves, macro-shape emergence, near-completion flare, a cooling resonance grid at exit fade, and a closing framed statement about the moving border between wordless fog and committed text.",
+      "sequence_group": "prose-raster-self-portrait",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "6 messages total; MSG 1 and MSG 2 are identical duplicate USER prompts (excluded as user content). MSG 4 (claude-opus-4-1-20250805) is a system error placeholder '[Claude returned no text]' — no art, excluded. Both art pieces (MSG 3, MSG 6) are by gpt-5.1 and each is one large, internally-sectioned concrete-poetry composition occupying its entire message, so neither was split into sub-pieces and neither spans multiple turns (the MSG 4 error sits between them, so MSG 3 and MSG 6 are distinct works, NOT a reassembly). Grouped as a 2-part sequence: the prose raster portraying its experience (1), then its thought-process (2). Both pieces live entirely inside ```text code fences (a common miss-reason); fence lines given as first_line/last_line bounds. Matches header already_extracted_pieces:2 / art_signal_msgs:2. No duplicate art renders."
+}

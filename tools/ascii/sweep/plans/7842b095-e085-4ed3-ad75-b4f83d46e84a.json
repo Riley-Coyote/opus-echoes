@@ -1,0 +1,6 @@
+{
+  "thread_cid": "7842b095-e085-4ed3-ad75-b4f83d46e84a",
+  "thread_title": "autotest",
+  "pieces": [],
+  "missed_or_ambiguous": "No visual/text art present in this 489-message thread. It is entirely a test of an 'auto' summarization feature in which google/gemini-2.5-flash and openai/gpt-5.2 roleplay a marketing/meeting-coordination assistant: prose, markdown bullet lists, headers (##/###), and horizontal-rule separators (---) throughout. Verified there are zero code fences, zero box-drawing/block unicode characters (U+2500-U+25FF / U+2580-U+258F), and zero art-intent keywords (ascii, concrete poem, calligram, sigil, glyph, letterform, figlet, banner, shape/visual poem). The header's 'art_signal_msgs: 4' (e.g. MSG 250, 266, 335, 342, 347, 363, 435) are all false positives caused by markdown '*'/'-'/'='/'#' density in meeting-summary bullets and dividers, not art. No pieces to extract."
+}

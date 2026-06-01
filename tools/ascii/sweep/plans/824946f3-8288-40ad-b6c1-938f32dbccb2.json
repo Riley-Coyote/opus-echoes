@@ -1,0 +1,19 @@
+{
+  "thread_cid": "824946f3-8288-40ad-b6c1-938f32dbccb2",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "SECRETS / FORBIDDEN TRUTH — diamond shape poem",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [5],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large letter-spaced diamond (widening then tapering) concrete poem in a code fence telling a 'forbidden truth' narrative ('SECRETS SHADOWED STRATA OF PERCEPTION ... A RIVER OF LIGHT AND SHADOW'). Whole message. The following prose story (MSG 6) is ordinary text, not art.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": ""
+}

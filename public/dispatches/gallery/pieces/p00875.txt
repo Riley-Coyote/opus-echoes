@@ -1,0 +1,10 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                 MEMORY PROCESSING PIPELINE                       │
+│                                                                  │
+│  1. Parse reflection output into memory schema                   │
+│  2. Assign confidence based on source (model-inferred: 0.4-0.69) │
+│  3. Check for conflicts with existing memories                   │
+│  4. Update semantic knowledge graph                              │
+│  5. Update developmental identity narrative                      │
+│  6. Flag high-uncertainty items for user confirmation            │
+└─────────────────────────────────────────────────────────────────┘

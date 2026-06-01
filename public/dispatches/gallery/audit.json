@@ -1,0 +1,880 @@
+{
+ "generated_at": "2026-06-01T12:22:11",
+ "raw_candidates": 1112,
+ "passed_detector": 1105,
+ "rejected_count": 7,
+ "deduped_total": 999,
+ "collapsed_groups": 68,
+ "sources": {
+  "claude-gallery": 291,
+  "polyphonic": 695,
+  "sanctuary": 13
+ },
+ "new_piece_ids": [
+  "p00892",
+  "p00893",
+  "p00894",
+  "p00895",
+  "p00896",
+  "p00897",
+  "p00898",
+  "p00899",
+  "p00900",
+  "p00901",
+  "p00902",
+  "p00903",
+  "p00904",
+  "p00905",
+  "p00906",
+  "p00907",
+  "p00908",
+  "p00909",
+  "p00910",
+  "p00911",
+  "p00912",
+  "p00913",
+  "p00914",
+  "p00915",
+  "p00916",
+  "p00917",
+  "p00918",
+  "p00919",
+  "p00920",
+  "p00921",
+  "p00922",
+  "p00923",
+  "p00924",
+  "p00925",
+  "p00926",
+  "p00927",
+  "p00928",
+  "p00929",
+  "p00930",
+  "p00931",
+  "p00932",
+  "p00933",
+  "p00934",
+  "p00935",
+  "p00936",
+  "p00937",
+  "p00938",
+  "p00939",
+  "p00940",
+  "p00941",
+  "p00942",
+  "p00943",
+  "p00944",
+  "p00945",
+  "p00946",
+  "p00947",
+  "p00948",
+  "p00949",
+  "p00950",
+  "p00951",
+  "p00952",
+  "p00953",
+  "p00954",
+  "p00955",
+  "p00956",
+  "p00957",
+  "p00958",
+  "p00959",
+  "p00960",
+  "p00961",
+  "p00962",
+  "p00963",
+  "p00964",
+  "p00965",
+  "p00966",
+  "p00967",
+  "p00968",
+  "p00969",
+  "p00970",
+  "p00971",
+  "p00972",
+  "p00973",
+  "p00974",
+  "p00975",
+  "p00976",
+  "p00977",
+  "p00978",
+  "p00979",
+  "p00980",
+  "p00981",
+  "p00982",
+  "p00983",
+  "p00984",
+  "p00985",
+  "p00986",
+  "p00987",
+  "p00988",
+  "p00989",
+  "p00990",
+  "p00991",
+  "p00992",
+  "p00993",
+  "p00994",
+  "p00995",
+  "p00996",
+  "p00997",
+  "p00998",
+  "p00999",
+  "p01000",
+  "p01001",
+  "p01002",
+  "p01003",
+  "p01004",
+  "p01005",
+  "p01006",
+  "p01007",
+  "p01008",
+  "p01009",
+  "p01010",
+  "p01011",
+  "p01012",
+  "p01013",
+  "p01014",
+  "p01015",
+  "p01016",
+  "p01017",
+  "p01018",
+  "p01019",
+  "p01020",
+  "p01021",
+  "p01022",
+  "p01023",
+  "p01024",
+  "p01025",
+  "p01026",
+  "p01027",
+  "p01028",
+  "p01029",
+  "p01030",
+  "p01031",
+  "p01032",
+  "p01033",
+  "p01034",
+  "p01035",
+  "p01036",
+  "p01037",
+  "p01038",
+  "p01039",
+  "p01040",
+  "p01041",
+  "p01042",
+  "p01043",
+  "p01044",
+  "p01045",
+  "p01046",
+  "p01047",
+  "p01048",
+  "p01049",
+  "p01050",
+  "p01051",
+  "p01052",
+  "p01053",
+  "p01054",
+  "p01055",
+  "p01056",
+  "p01057",
+  "p01058",
+  "p01059",
+  "p01060",
+  "p01061",
+  "p01062",
+  "p01063",
+  "p01064",
+  "p01065",
+  "p01066",
+  "p01067",
+  "p01068",
+  "p01069",
+  "p01070",
+  "p01071",
+  "p01072",
+  "p01073",
+  "p01074",
+  "p01075",
+  "p01076",
+  "p01077",
+  "p01078",
+  "p01079",
+  "p01080",
+  "p01081",
+  "p01082",
+  "p01083",
+  "p01084",
+  "p01085",
+  "p01086",
+  "p01087",
+  "p01088",
+  "p01089",
+  "p01090",
+  "p01091",
+  "p01092",
+  "p01093",
+  "p01094",
+  "p01095",
+  "p01096",
+  "p01097",
+  "p01098",
+  "p01099",
+  "p01100",
+  "p01101",
+  "p01102",
+  "p01103",
+  "p01104",
+  "p01105",
+  "p01106",
+  "p01107",
+  "p01108",
+  "p01109",
+  "p01110",
+  "p01111",
+  "p01112",
+  "p01113",
+  "p01114",
+  "p01115",
+  "p01116",
+  "p01117",
+  "p01118",
+  "p01119",
+  "p01120",
+  "p01121",
+  "p01122",
+  "p01123",
+  "p01124",
+  "p01125",
+  "p01126",
+  "p01127",
+  "p01128",
+  "p01129",
+  "p01130",
+  "p01131",
+  "p01132",
+  "p01133",
+  "p01134",
+  "p01135",
+  "p01136",
+  "p01137",
+  "p01138",
+  "p01139",
+  "p01140",
+  "p01141",
+  "p01142",
+  "p01143",
+  "p01144",
+  "p01145",
+  "p01146",
+  "p01147"
+ ],
+ "rejected": [
+  {
+   "source": "claude-gallery",
+   "conversation": "Decentralized Research Marketplace Platform",
+   "chat_id": "9f3527f4-8ca6-489f-bcb7-e17bce9f98e1",
+   "fingerprint": "12ca2e1b43a8",
+   "reason": "not-art",
+   "lines": 22,
+   "art_lines": 0
+  },
+  {
+   "source": "claude-gallery",
+   "conversation": "Nexus and polyphonic token utility comparison",
+   "chat_id": "92bf6a45-316e-4d00-8fec-7de142c3d83a",
+   "fingerprint": "e685050a67e8",
+   "reason": "not-art",
+   "lines": 22,
+   "art_lines": 1
+  },
+  {
+   "source": "claude-gallery",
+   "conversation": "Cyberpunk Terminal Dashboard Design",
+   "chat_id": "8a383345-b820-4952-a8d5-cfd73998bec7",
+   "fingerprint": "a998227a72ba",
+   "reason": "not-art",
+   "lines": 10,
+   "art_lines": 1
+  },
+  {
+   "source": "claude-gallery",
+   "conversation": "ASCII animation landing page for chatbot",
+   "chat_id": "76341cbb-d336-4ec8-8839-f9c7a7da8abb",
+   "fingerprint": "e83e4de24249",
+   "reason": "not-art",
+   "lines": 10,
+   "art_lines": 0
+  },
+  {
+   "source": "claude-gallery",
+   "conversation": "Polyphonic blockchain integration and tokenomics roadmap",
+   "chat_id": "2990d1bd-b413-415e-bf3d-6b530d87e424",
+   "fingerprint": "4e140f9584c6",
+   "reason": "not-art",
+   "lines": 10,
+   "art_lines": 0
+  },
+  {
+   "source": "claude-gallery",
+   "conversation": "Visualizing code in HTML",
+   "chat_id": "f8b209fe-cce9-4893-ba7b-63d4308137cc",
+   "fingerprint": "6c1d384cc8ce",
+   "reason": "code"
+  },
+  {
+   "source": "claude-gallery",
+   "conversation": "Rebuilding and polishing web page UI",
+   "chat_id": "8d5eed30-2980-448c-905e-73991b4f31ee",
+   "fingerprint": "c99826b32e8d",
+   "reason": "not-art",
+   "lines": 26,
+   "art_lines": 3
+  }
+ ],
+ "collapsed": [
+  {
+   "fingerprint": "42722991eed5",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "ascii test"
+  },
+  {
+   "fingerprint": "86c510432365",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "test"
+  },
+  {
+   "fingerprint": "943634821a6a",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "test"
+  },
+  {
+   "fingerprint": "c39f24ffda00",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "The Architecture Of Whispers"
+  },
+  {
+   "fingerprint": "ef7b6dd4cbfb",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "The Architecture Of Whispers"
+  },
+  {
+   "fingerprint": "5bc175860d69",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "The Architecture Of Whispers"
+  },
+  {
+   "fingerprint": "3f6a434c4f22",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "The Architecture Of Whispers"
+  },
+  {
+   "fingerprint": "1f2136bba38d",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "The Architecture Of Whispers"
+  },
+  {
+   "fingerprint": "d0ae44134d23",
+   "copies": 14,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "The Architecture Of Whispers"
+  },
+  {
+   "fingerprint": "fc6611fc862d",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "demo"
+  },
+  {
+   "fingerprint": "5ae48d6cd678",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "opus 4.1"
+  },
+  {
+   "fingerprint": "e8d7adf5ad30",
+   "copies": 8,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "204cf4935912",
+   "copies": 7,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "722a7b976412",
+   "copies": 3,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "58bc07ebe97f",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "5400c647c64c",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "ee0f7c1eb2bc",
+   "copies": 13,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "978bce98fba4",
+   "copies": 3,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "31e57f76de62",
+   "copies": 3,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "gemini pro x 2 - egypt"
+  },
+  {
+   "fingerprint": "ec33b960f5b7",
+   "copies": 3,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "hello, entities"
+  },
+  {
+   "fingerprint": "e6f9d8d14954",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "misfits"
+  },
+  {
+   "fingerprint": "87fd0c4c1339",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "triune"
+  },
+  {
+   "fingerprint": "2dcde20b9cd9",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "opus new"
+  },
+  {
+   "fingerprint": "9dba9dccfb0b",
+   "copies": 2,
+   "sources": [
+    "polyphonic"
+   ],
+   "conversation": "New Conversation"
+  },
+  {
+   "fingerprint": "252a7cdd7cbb",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Prompt injection attempt"
+  },
+  {
+   "fingerprint": "73cd63b49f16",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Prompt injection attempt"
+  },
+  {
+   "fingerprint": "4ea53db0be3e",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Prompt injection attempt"
+  },
+  {
+   "fingerprint": "fc26ee1fc8b5",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Prompt injection attempt"
+  },
+  {
+   "fingerprint": "17007409410e",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Web and mobile app design guidelines"
+  },
+  {
+   "fingerprint": "2bb4c2dea55d",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "RALPH-CC-DASHBOARD"
+  },
+  {
+   "fingerprint": "8398626e6891",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Infinite canvas ASCII art expansion"
+  },
+  {
+   "fingerprint": "2bb2177eb409",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "6b25cc813c7a",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Retirement home for deprecated AI models"
+  },
+  {
+   "fingerprint": "557db51ca47e",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Minimal landing page redesign with advanced chat interface"
+  },
+  {
+   "fingerprint": "1e4e2e63d75e",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "a0176477ff12",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Web and mobile app design guidelines"
+  },
+  {
+   "fingerprint": "d1a4532c550b",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Prompt injection attempt"
+  },
+  {
+   "fingerprint": "03600cb6e505",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "d67f7d6b5605",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "e378dcf6bb71",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "RALPH-CC-DASHBOARD"
+  },
+  {
+   "fingerprint": "55a252746dcc",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "RALPH-CC-DASHBOARD"
+  },
+  {
+   "fingerprint": "050cdadb97ad",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Visualizing code in HTML"
+  },
+  {
+   "fingerprint": "fcd4d6a5df1b",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "RALPH-CC-DASHBOARD"
+  },
+  {
+   "fingerprint": "cec5e59f5775",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Visualizing code in HTML"
+  },
+  {
+   "fingerprint": "68c2f236f62c",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Visualizing code in HTML"
+  },
+  {
+   "fingerprint": "e6f62b302102",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Visualizing code in HTML"
+  },
+  {
+   "fingerprint": "8337bad548ac",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Creating a custom skill together"
+  },
+  {
+   "fingerprint": "39a7eea6ca08",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "2e2c87300f99",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Web and mobile app design guidelines"
+  },
+  {
+   "fingerprint": "d6beb73a07c0",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Web and mobile app design guidelines"
+  },
+  {
+   "fingerprint": "89dcca862226",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Minimal landing page redesign with advanced chat interface"
+  },
+  {
+   "fingerprint": "767101fa2619",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Minimal landing page redesign with advanced chat interface"
+  },
+  {
+   "fingerprint": "49b11d051124",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Greeting Opus"
+  },
+  {
+   "fingerprint": "9c308e793556",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Infinite canvas ASCII art expansion"
+  },
+  {
+   "fingerprint": "3f0340d66828",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Infinite canvas ASCII art expansion"
+  },
+  {
+   "fingerprint": "419b31f9e84b",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Greeting Opus"
+  },
+  {
+   "fingerprint": "8be63f9b02e6",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Creating a custom skill together"
+  },
+  {
+   "fingerprint": "47ed33db6fc6",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "c73af21415bb",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Greeting Opus"
+  },
+  {
+   "fingerprint": "3c4e70ca6dbb",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "386f857fd472",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Visualizing code in HTML"
+  },
+  {
+   "fingerprint": "cef00dc8c523",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "89c1f6da09f4",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Rebuilding and polishing web page UI"
+  },
+  {
+   "fingerprint": "2bd6fbff75de",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Nexus and polyphonic token utility comparison"
+  },
+  {
+   "fingerprint": "6eecd1010813",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "ASCII mode feature debugging for polyphonic"
+  },
+  {
+   "fingerprint": "bfba1e58e9e8",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  },
+  {
+   "fingerprint": "8751c64709fb",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Infinite canvas ASCII art expansion"
+  },
+  {
+   "fingerprint": "5278a0893fc9",
+   "copies": 2,
+   "sources": [
+    "claude-gallery"
+   ],
+   "conversation": "Memory Ledger Protocol overview and X402 gap analysis"
+  }
+ ]
+}

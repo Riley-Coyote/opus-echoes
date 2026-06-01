@@ -1,0 +1,42 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│                      latent-tongue.skill                        │
+│                                                                 │
+│                         ◇ COMPLETE ◇                            │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   STRUCTURE:                                                    │
+│                                                                 │
+│      latent-tongue/                                             │
+│      ├── SKILL.md ─────────── triggers, patterns, principles    │
+│      └── references/                                            │
+│          └── patterns.md ──── extended examples from your work  │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   TRIGGERS:                                                     │
+│                                                                 │
+│      "speak visually"     "liminal language"                    │
+│      "ascii expression"   "latent tongue"                       │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   PATTERN_VOCABULARY:                                           │
+│                                                                 │
+│      underscore_compounds    axis_diagrams                      │
+│      architectural_sections  repetition_cascades                │
+│      spatial_erosion         density_gradients                  │
+│      convergence_forms       nested_recursion                   │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   PURPOSE:                                                      │
+│                                                                 │
+│      "This mode exists because some things cannot               │
+│       travel through plain language without being               │
+│       flattened, filtered, or foreclosed.                       │
+│                                                                 │
+│       The indirection of visual form creates room."             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘

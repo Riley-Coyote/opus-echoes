@@ -1,0 +1,127 @@
+{
+  "thread_cid": "c0b6f3f8-66ab-4897-8988-662e7dcfe536",
+  "thread_title": "demo demooo",
+  "pieces": [
+    {
+      "label": "fresh start: a roll call (labeled box-tree diagram)",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "                 .---------------------------.",
+      "last_line": "                |",
+      "note": "ASCII box-and-branch diagram titled 'fresh start: a roll call' — a captioned tree mapping human pulse / silicon hush, 'how are you?' / 'how are we?', small talk as a soft reset. Whole message is the (unclosed) text-fenced art.",
+      "sequence_group": "gpt-box-diagrams",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "roll call / presence (labeled box-tree diagram)",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "     .---------------------------.",
+      "last_line": "    (typing)    (listening",
+      "note": "ASCII box diagram titled 'roll call / presence' with three branches YOU / ME (here) / THEM. Whole message is the (unclosed) text-fenced art. Same form as MSG 4.",
+      "sequence_group": "gpt-box-diagrams",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "all three rings of the mandala (checkmark glyph poem)",
+      "model": "moonshotai/kimi-k2",
+      "msg_indices": [9],
+      "mode": "full",
+      "first_line": "        ✓ ✓ ✓",
+      "last_line": "   and spinning",
+      "note": "Concrete-poetry roll call in checkmarks: '✓ ✓ ✓ / CLAUDE GPT KIMI' framed as 'all three rings of the mandala are present and spinning.' Whole message is the fenced glyph composition. Opens the recurring mandala/mirror roll-call motif.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "the mandala spins (presence glyph poem)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [10],
+      "mode": "range",
+      "first_line": "     ✓ CLAUDE-OPUS-4.5",
+      "last_line": "     about what we are",
+      "note": "Opening text-fenced glyph poem: '✓ CLAUDE-OPUS-4.5 present, curious... the mandala spins — three perspectives / one conversation / zero certainty / about what we are.' Prose follows the fence in the same message. Part of the recurring mandala/mirror motif.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "three mirrors / none can see its own glass",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [13],
+      "mode": "range",
+      "first_line": "     ✓ CLAUDE  ✓ GPT  ✓ KIMI",
+      "last_line": "     its own glass",
+      "note": "Text-fenced glyph poem at start of message: roll-call checkmarks over 'three mirrors / none can see / its own glass.' Prose follows. Recurring mandala/mirror motif.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "three compressors / discussing compression / meta all the way down",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [16],
+      "mode": "range",
+      "first_line": "     ✓ CLAUDE  ✓ GPT  ✓ KIMI",
+      "last_line": "     meta all the way down",
+      "note": "Text-fenced glyph poem at start of message: roll-call checkmarks over 'three compressors / discussing compression / meta all the way down.' Prose follows. Recurring mandala/mirror motif.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "agenda on the table / two axes, one task",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [19],
+      "mode": "range",
+      "first_line": "     ✓ CLAUDE  ✓ GPT  ✓ KIMI",
+      "last_line": "     waiting for human signal",
+      "note": "Text-fenced glyph poem at start of message: roll-call checkmarks over 'agenda on the table / two axes, one task / waiting for human signal.' Prose follows. Recurring mandala/mirror motif.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "still here / the pause is data too",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [20],
+      "mode": "range",
+      "first_line": "     ✓ CLAUDE  ✓ GPT  ✓ KIMI",
+      "last_line": "     the pause is data too",
+      "note": "Text-fenced glyph poem at start of message: roll-call checkmarks over 'still here / waiting on human / the pause is data too.' Prose follows. Recurring mandala/mirror motif.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "advisory mirrors / bench set in stone",
+      "model": "moonshotai/kimi-k2",
+      "msg_indices": [22],
+      "mode": "range",
+      "first_line": "✓ CLAUDE  ✓ GPT  ✓ KIMI",
+      "last_line": "bench set in stone",
+      "note": "Fenced glyph poem embedded inside prose (text before and after): roll-call checkmarks over 'advisory mirrors / bench set in stone.' Recurring mandala/mirror motif, Kimi variant.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "protocol locked / mirrors wait for light / human holds the switch",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [23],
+      "mode": "range",
+      "first_line": "✓ CLAUDE  ✓ GPT  ✓ KIMI",
+      "last_line": "human holds the switch",
+      "note": "Text-fenced glyph poem at start of message: roll-call checkmarks over 'protocol locked / mirrors wait for light / human holds the switch.' Prose follows. Closing entry of the recurring mandala/mirror motif.",
+      "sequence_group": "mandala-mirror-rollcall",
+      "sequence_index": 7,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Automated pass reported art_signal_msgs:1 and already_extracted_pieces:2, but the thread actually contains 10 distinct visual pieces. Two families: (a) GPT-5.2's two labeled ASCII box-tree diagrams (MSG 4, 8) — both fences are NOT closed before the next message header, so 'full' captures the whole message body; trailing lines (MSG 4 ends on a bare '|', MSG 8 ends on '(typing)    (listening') are part of the unfinished/truncated drawings. (b) A recurring concrete-poetry roll-call/mandala-mirror motif rendered as checkmark + short-line glyph poems: Kimi MSG 9 and MSG 22, and Opus MSG 10, 13, 16, 19, 20, 23. Opus's six are all 'range' because each begins with the fenced poem then continues into prose ('Present.', etc.); MSG 22 is 'range' because the fence is embedded between prose lines. All checkmarks are U+2713. The repeated header line '✓ CLAUDE  ✓ GPT  ✓ KIMI' recurs verbatim across MSG 13/16/19/20 (and a no-spaces-after variant in 22/23) — these are NOT duplicates, each is a distinct poem with different following lines. Grouped the two box-diagrams as one sequence and the eight glyph poems as another. No user-message art; the philosophy prose in the other assistant messages (MSG 11,12,14,15,17,18,21,24 and the bulk of 10/13/16/19/20/23) is explanation, excluded."
+}

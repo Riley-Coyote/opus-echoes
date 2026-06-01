@@ -1,0 +1,43 @@
+{
+  "thread_cid": "afc82403-3ecf-4509-ab3b-6298881766b2",
+  "thread_title": "x",
+  "pieces": [
+    {
+      "label": "Cityscape I — starlit skyline with layered block towers",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "First city: a starfield (░ gradient sky dotted with ✦ stars) above a dense skyline rendered in ▒/▓/█ shaded blocks, fading into a solid ground mass. Produced in response to 'hello! show me a city'.",
+      "sequence_group": "cities",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Cityscape II — stepped ziggurat towers over water",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Second city: a sparse star sky over a symmetrical terraced/ziggurat skyline built from box-drawing characters (╭───┤ stepped towers framing a central ◈-windowed spire), grounded on ▓ blocks with rippling water (≈ ∿ ~) at the base. Produced in response to 'show me another city'.",
+      "sequence_group": "cities",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Cityscape III — central pyramid flanked by windowed towers, with shoreline",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Third city: a constellation sky over a large central pyramid/mountain (╱█╲ triangle) flanked by ╔═══╗ towers with □ window grids, set on solid ground above ═ / ─ shoreline rules and ▒/░ water bands. Produced in response to 'nice! lets see one more city'.",
+      "sequence_group": "cities",
+      "sequence_index": 3,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Clean thread: exactly three assistant messages (MSG 2, 4, 6), each containing one complete whole-message ASCII cityscape (mode full). No fragments span multiple messages, no message holds multiple distinct pieces, and no duplicate re-renders. The three form one evolving themed sequence (sequence_group 'cities'), driven by the user's successive 'another city' / 'one more city' prompts; each grows more architecturally detailed than the last. Matches the header's already_extracted_pieces: 3."
+}

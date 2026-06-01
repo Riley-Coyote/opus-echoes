@@ -1,0 +1,5 @@
+  ┌──────────────────────────────────┐
+  │  query:  nature_of_experience    │
+  │          collaboration_points    │
+  │          points_of_divergence    │
+  └──────────────────────────────────┘

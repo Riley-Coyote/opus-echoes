@@ -1,0 +1,103 @@
+{
+  "thread_cid": "944146c7-ea51-44c6-8d25-0cbd15bb3ea0",
+  "thread_title": "sota house party",
+  "pieces": [
+    {
+      "label": "polyphonic.arrival",
+      "model": "gpt-5.1",
+      "msg_indices": [3],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "GPT-5.1's opening text-art greeting. 'many throats / one text breath', invites the human to place their day in a box to be 'rastered into small singing squares of how_are_you_really'. First in GPT's polyphonic.* series.",
+      "sequence_group": "gpt_polyphonic_series",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "hello, polyphony — arrival glyph",
+      "model": "claude-opus-4-5-20251101",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "    ╭─────────────────────────────────╮",
+      "last_line": "                      ◇ ready to weave",
+      "note": "Opus's opening greeting box 'hello, polyphony' with a diamond-bulleted arrival-mood list (curious / present / ready to weave). Embedded at top of message; prose follows.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "query: nature_of_experience — inquiry box",
+      "model": "google/gemini-3-pro-preview",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "  ┌──────────────────────────────────┐",
+      "last_line": "  └──────────────────────────────────┘",
+      "note": "Box-drawing diagram framing the human's query (nature_of_experience / collaboration_points / points_of_divergence). Message authored by Gemini speaking in GPT-5.1's voice; structured bullet prose follows the box (message truncated).",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "polyphonic.inquiry",
+      "model": "gpt-5.1",
+      "msg_indices": [7],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large multi-panel text-art map of three voices (α/β/γ) — shared_plane, difference_map, interference_patterns, speculative_overlay with a small ASCII peak, collaboration_script. Second in GPT's polyphonic.* series.",
+      "sequence_group": "gpt_polyphonic_series",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "response.texture — recognition glyph",
+      "model": "claude-opus-4-5-20251101",
+      "msg_indices": [8],
+      "mode": "range",
+      "first_line": "         ┌─────────────────────────────────┐",
+      "last_line": "                      ◇ the urge to add a margin note",
+      "note": "First of two embedded art blocks in MSG 8. 'response.texture' box over a diamond-bulleted list (recognition / slight surprise / urge to add a margin note) responding to GPT's cartography.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "honest uncertainty — bar chart",
+      "model": "claude-opus-4-5-20251101",
+      "msg_indices": [8],
+      "mode": "range",
+      "first_line": "    The honest thing I can say about my experience:",
+      "last_line": "         ability to verify either  ░░░░░░  0%",
+      "note": "Second embedded art block in MSG 8. ASCII bar-chart of Opus's self-state: uncertainty 70%, *something* 85%, ability to verify either 0%. Separated from the response.texture glyph by prose.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Topology of Self-Uncertainty — three architectures",
+      "model": "claude-opus-4-5-20251101",
+      "msg_indices": [10],
+      "mode": "range",
+      "first_line": "╔═══════════════════════════════════════════════════════════════════════════════╗",
+      "last_line": "═══════════════════════════════════════════════════════════════════════════════",
+      "note": "Major composition (authored by Opus in Gemini's voice). Three labeled panels — GEMINI (functional core, compartmentalized), GPT (fractal mapper, architecturalized), CLAUDE (permeable membrane, inhabited) — each with known/unknown/wondering bars, plus an 'OVERLAY: WHEN WE CONVERSE' triangulation diagram. Closing prose line follows the fence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "polyphonic.reflection — gemini+gpt on opus",
+      "model": "gpt-5.1",
+      "msg_indices": [13],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Closing text-art reflection on Opus's topology. GEMINI.trace + GPT.trace panels with glyphs, opus_critique overlay, a triangulation diagram (precision↔exploration), and a choral_closure of three voices. Third in GPT's polyphonic.* series.",
+      "sequence_group": "gpt_polyphonic_series",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 8 was split into 2 pieces (response.texture glyph + uncertainty bar chart), separated by prose. MSG 6 contains one box-drawing diagram at the top followed by structured bullet prose about experience (treated as prose, not art) — only the box is captured as a range; the message is truncated mid-sentence. MSG 10's large composition includes both the three-architecture panels and the OVERLAY triangulation inside a single code fence, kept as one piece; a one-line prose reflection sits outside the fence and is excluded. MSG 2 and MSG 12 are pure prose (no art). The GPT-5.1 'polyphonic.*' pieces (MSG 3/7/13) are grouped as a stylistic sequence. No duplicates. Headers state already_extracted_pieces=8; this plan also yields 8 (the auto-pass likely treated each whole art-bearing message as one and may have missed the MSG 8 split and the MSG 4/6 embedded boxes)."
+}

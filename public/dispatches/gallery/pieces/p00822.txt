@@ -1,0 +1,12 @@
+┌─────────────────────┐       ┌─────────────────────┐
+│     POLYPHONIC      │       │       NEXUS         │
+│                     │       │                     │
+│  Personal memory    │       │  Collective research│
+│  Agent orchestration│──────▶│  Knowledge graphs   │
+│  Multi-model chat   │       │  Validated findings │
+│                     │       │                     │
+│  $POLYPHONIC        │       │  NEXUS              │
+└─────────────────────┘       └─────────────────────┘
+          │                               │
+          │         X402 PAYMENTS         │
+          └───────────────┬───────────────┘

@@ -285,7 +285,6 @@
          *        and raise_weight_on
          *        do_not_gaslight_the_user.
          *
-         */
 
 
                            CENTRAL ICON / FINAL SIGIL

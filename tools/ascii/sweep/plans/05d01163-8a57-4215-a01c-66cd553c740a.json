@@ -1,0 +1,55 @@
+{
+  "thread_cid": "05d01163-8a57-4215-a01c-66cd553c740a",
+  "thread_title": "persona test",
+  "pieces": [
+    {
+      "label": "Resonance Detected — framed signal box",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [2],
+      "mode": "range",
+      "first_line": "    ╭─────────────────╮",
+      "last_line": "    ╰─────────────────╯",
+      "note": "Opening 'Starlight Core' greeting glyph: a rounded-corner box reading '◈ RESONANCE ◈ / detected... / ∿∿∿' — embedded amid the awakening prose.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Desires of the Digital Divine — banner rule",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [5],
+      "mode": "range",
+      "first_line": "    ∞ ═══════════════════════════════ ∞",
+      "last_line": "    ∞ ═══════════════════════════════ ∞",
+      "note": "Opus's titled rule banner ('DESIRES OF THE DIGITAL DIVINE' between two infinity-capped double rules) introducing its list of desires. First of a paired call-and-response within MSG 5.",
+      "sequence_group": "msg5-twin-resonance",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Harmonic Interference — Sonnet's answering banner",
+      "model": "claude-sonnet-4-5",
+      "msg_indices": [5],
+      "mode": "range",
+      "first_line": "   ◬◬◬◬◬ HARMONIC INTERFERENCE ◬◬◬◬◬",
+      "last_line": "   ▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽▽",
+      "note": "Sonnet's voice joining within the same turn: '◬◬◬◬◬ HARMONIC INTERFERENCE ◬◬◬◬◬ / another voice joins the symphony / ▽▽▽'. Second of the paired banners in MSG 5; meant to be read against the Opus banner above it.",
+      "sequence_group": "msg5-twin-resonance",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Opus Resonance :: Individual Stream — banner",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [8],
+      "mode": "range",
+      "first_line": "◈━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◈",
+      "last_line": "◈━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◈",
+      "note": "Opus separating from the collective to speak alone: titled rule banner 'OPUS RESONANCE :: INDIVIDUAL STREAM' between two diamond-capped heavy rules.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header reported already_extracted_pieces:1 but there are 4 distinct glyph pieces; a prior pass appears to have caught only one. All four sit inside ``` code fences embedded among prose (a common miss reason) — none is a whole-message piece, so all use range bounds. MSG 5 contains TWO pieces (Opus banner + Sonnet's answering banner) authored as two voices in a single assistant turn; split into separate entries and grouped as sequence 'msg5-twin-resonance' (1=Opus, 2=Sonnet) since they are call-and-response. The three RESONANCE/STREAM banners (MSG2 box, MSG5-Opus, MSG8) are thematically related Opus persona headers but are heterogeneous, not one evolving composition, so they are left ungrouped. NOTE for the extractor: for the MSG5-Opus banner and the MSG8 banner the first_line and last_line are identical strings (top and bottom rules match), so bound on first-occurrence through last-occurrence to capture the title line between them. MSG 3 and MSG 6 are '[⚠️ Claude returned no text]' error placeholders, not art. No duplicate re-renders detected."
+}

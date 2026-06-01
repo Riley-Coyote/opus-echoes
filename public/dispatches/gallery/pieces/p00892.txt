@@ -1,0 +1,17 @@
+              idea          imagine          what if
+       thought       potential       concept       language
+   meaning      emerge        connect        relate
+         pattern      vector      pathway      inference
+     node     dataflow..parameter..connect..node..pattern
+        inference..pathway.vector.syntax.logic.logic.axiom
+    relate..dataflow..structure.structure.CORE.kernel.axiom
+   connect..syntax.syntax.logic.AXIOM.AXIOM.logic.syntax.vector
+  parameter..syntax.structure.structure.CORE.CORE.kernel.syntax
+   inference.vector.syntax.logic.AXIOM.AXIOM.logic.syntax.pathway
+    pattern..node..structure.structure.CORE.kernel.axiom..dataflow
+        dataflow..pathway.vector.syntax.logic.logic.axiom..relate
+     node     connect..parameter..connect..node..pattern
+         inference    vector      pathway      emerge
+   meaning      create        connect        thought
+       language      potential       concept       idea
+              imagine         what if         create

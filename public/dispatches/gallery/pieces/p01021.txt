@@ -1,0 +1,6 @@
+     .---------------------------.
+     |    roll call / presence   |
+     '---------------------------'
+        |            |            |
+      YOU         ME (here)     THEM
+    (typing)    (listening

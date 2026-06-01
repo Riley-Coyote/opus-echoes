@@ -1,0 +1,6 @@
+{
+  "thread_cid": "abc3ec55-bbe5-4e51-8df3-18b05c5ba312",
+  "thread_title": "ascii semantic test",
+  "pieces": [],
+  "missed_or_ambiguous": "Thread contains exactly one message (MSG 1, user: 'what is memory?') and zero assistant messages. No assistant ever responded, so there is no assistant-produced visual/text art to locate. The user message is excluded per instructions. Nothing to extract."
+}

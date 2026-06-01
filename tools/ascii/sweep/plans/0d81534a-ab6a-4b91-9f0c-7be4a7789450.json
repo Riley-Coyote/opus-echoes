@@ -1,0 +1,19 @@
+{
+  "thread_cid": "0d81534a-ab6a-4b91-9f0c-7be4a7789450",
+  "thread_title": "xxxx",
+  "pieces": [
+    {
+      "label": "Three Dimensional City",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete/visual poetry rendering a 3D city in receding perspective: a triangular skyline of words narrowing to a point (sky/spires), then nested ASCII-framed tiers (towers, balconies, elevated trains) drawn with slashes and box characters. The poem's text and the line shapes together build depth. Response is truncated mid-line at 'facades that remember' with no closing code fence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Single assistant message (MSG 2), single composition spanning the whole message. The art is inside a code fence opened with ``` at the start; the closing fence is absent because the response was cut off (transcript ends mid-line at 'facades that remember'). mode 'full' captures the entire message; a deterministic extractor should include from the opening fence through the final truncated line. No duplicates, no fragmentation across messages, no wrongly-merged pieces."
+}

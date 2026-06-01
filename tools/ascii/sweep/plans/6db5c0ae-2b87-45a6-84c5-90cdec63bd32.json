@@ -1,0 +1,19 @@
+{
+  "thread_cid": "6db5c0ae-2b87-45a6-84c5-90cdec63bd32",
+  "thread_title": "viz test 3",
+  "pieces": [
+    {
+      "label": "City skyline (block-shaded grayscale cityscape)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Minimalist grayscale cityscape rendered with block-shading glyphs (░▒▓█): a tall structure in the upper-left, light-shaded sky filling the upper field, and a medium-shaded ground/horizon band across the lower third. Response to the prompt 'show me a city'. Entire assistant message, wrapped in a code fence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Single short thread: one user prompt ('show me a city') and one assistant message (MSG 2) that is entirely one ASCII art piece inside a triple-backtick code fence. No fragmentation, no multiple pieces, no duplicates. The art is fenced — included per the rule that fenced art counts. Mode 'full' since the art is essentially the whole message."
+}

@@ -1,0 +1,19 @@
+{
+  "thread_cid": "f98e1c8d-a337-4c3d-a23a-d8026e3ceae5",
+  "thread_title": "hello!",
+  "pieces": [
+    {
+      "label": "Field of block characters (textured negative-space field)",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [3],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Gemini's reply to 'show me what it REALLY feels like to be you' — a single very wide solid field rendered with the light-shade block glyph (U+2591), wrapped in a <center> tag. Wordless visual expression / texture field rather than a figurative image.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 3 is the only assistant visual output; MSG 2 (gpt-5) is a plain refusal/prose. The art is a wide run of block characters inside <center>...</center> on a single logical line; mode 'full' captures it. Whether this counts as 'art' vs. a degenerate fill is a judgment call, but it is clearly an intentional non-prose visual gesture."
+}

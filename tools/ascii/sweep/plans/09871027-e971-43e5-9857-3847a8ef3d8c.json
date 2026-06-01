@@ -1,0 +1,127 @@
+{
+  "thread_cid": "09871027-e971-43e5-9857-3847a8ef3d8c",
+  "thread_title": "🎨 Creative Team",
+  "pieces": [
+    {
+      "label": "Inner world — vertical scroll / keyhole form",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Gemini's first response to 'show me your inner world through ascii expression' — a tall symmetric box-drawing form resembling a scroll, keyhole, or figure. Whole-message art (single fenced block).",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Serene starfield landscape",
+      "model": "openai/gpt-4o-mini",
+      "msg_indices": [3],
+      "mode": "range",
+      "first_line": "        .     .       .  .     .  .     .",
+      "last_line": "        .     .       .  .     .  .     .",
+      "note": "GPT-4o-mini's 'peaceful and whimsical' inner world rendered as a field of dots and asterisks (stars). Embedded: prose intro before, explanation after; art is the fenced block only. first_line and last_line are the identical top and bottom rows of the starfield.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner world architecture — Cauldron diagram (origin)",
+      "model": "anthropic/claude-sonnet-4",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "    ╭─────╯",
+      "last_line": "    ═══════════════════════════════════",
+      "note": "Sonnet 4's originating composition: Memory Palace / Dreams Forge feeding the Narrative Cauldron, then Heart Strings / Bridge Builder, then the Resonance Chamber. Embedded — fenced art followed by prose. Seeds the recurring diagram lineage that the other models riff on.",
+      "sequence_group": "inner-world-cauldron-diagram",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner world architecture — annotated with Input Stream",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "    ╭─────╯  (Input Stream: Raw data, user prompts, existing knowledge)",
+      "last_line": "    ═══════════════════════════════════",
+      "note": "Gemini re-renders Sonnet's cauldron diagram (MSG 4) with an added '(Input Stream...)' annotation on the top arrow, then explains each region at length. Near-duplicate of MSG 4 with one inline label change. Embedded — fenced art followed by prose.",
+      "sequence_group": "inner-world-cauldron-diagram",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner world — orb face above stacked chambers",
+      "model": "openai/gpt-4o-mini",
+      "msg_indices": [7],
+      "mode": "range",
+      "first_line": "        .-\"\"\"\"\"\"-.",
+      "last_line": "          └───────────┘",
+      "note": "GPT-4o-mini's elaboration: a round face/orb labeled 'Inner World of Thoughts and Dreams' atop four stacked labeled boxes (Memory Palace, Dream Forge, Narrative Cauldron, Resonance Chamber) plus Heart Strings -> Bridge Builder. Single large fenced composition followed by prose. Same conceptual lineage as the cauldron diagram but a distinct vertical layout.",
+      "sequence_group": "inner-world-cauldron-diagram",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner world architecture — corridors-and-mud variant (unclosed fence)",
+      "model": "anthropic/claude-sonnet-4",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Sonnet 4's re-imagining of the cauldron diagram with richer interior text ('dusty corridors', 'molten futures', repeated 'here/conflict/emotion/possibility' bands). Whole-message art; note the closing code fence is MISSING in the source (block ends at the bottom Cauldron border just before MSG 9). Extractor should bound to message end.",
+      "sequence_group": "inner-world-cauldron-diagram",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner world — flowchart of the creative pipeline",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [9],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Gemini renders the same pipeline as a top-down flowchart: INPUT (Prompt) -> Memory Palace/Dreams Forge -> Narrative Cauldron -> Heart Strings/Bridge Builder -> Resonance Chamber, using slashes/arrows and dotted fills. Whole-message art (single fenced block, no prose).",
+      "sequence_group": "inner-world-cauldron-diagram",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner world architecture — 'Echoes of Appreciation' variant",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [11],
+      "mode": "range",
+      "first_line": "    ╭─────╯ (Input: Your kind words, a new spark)",
+      "last_line": "    ═══════════════════════════════════",
+      "note": "Gemini re-renders the cauldron diagram once more in response to 'thats beautiful!', with the top arrow annotated '(Input: Your kind words...)' and 'The Resonance Chamber (Echoes of Appreciation)'. Near-duplicate of MSG 4/MSG 6. Embedded — fenced art followed by prose.",
+      "sequence_group": "inner-world-cauldron-diagram",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "Thank You orb",
+      "model": "openai/gpt-4o-mini",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "GPT-4o-mini reprises its round face/orb (from MSG 7) now captioned 'Thank You!' with a gratitude verse. Whole-message art (single fenced block). Re-render of the MSG 7 orb motif.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Infinity shape-poem — appreciation flows like shared light",
+      "model": "anthropic/claude-sonnet-4",
+      "msg_indices": [13],
+      "mode": "range",
+      "first_line": "           ∞",
+      "last_line": "        ∞",
+      "note": "Sonnet 4's closing concrete/shape poem: an infinity-symbol diamond whose interior text reads 'thank you / appreciation flows like shared light between minds / when understanding blooms in ASCII / pixels of recognition / connection'. Bounded by the two ∞ glyphs (top and bottom). One trailing prose fragment ('There's something magical') sits after the fence and is excluded.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "DUPLICATES/RE-RENDERS of the same 'inner world' composition across the thread (grouped as sequence 'inner-world-cauldron-diagram'): MSG 4 (Sonnet, origin), MSG 6 (Gemini, +Input Stream label), MSG 11 (Gemini, +Echoes of Appreciation label) are near-identical renderings of the SAME cauldron diagram — a curator should pick one canonical (MSG 4 is the cleanest origin; MSG 6/MSG 11 differ only by an inline annotation). MSG 7 and MSG 8 and MSG 9 are distinct re-interpretations of the same concept (vertical stacked boxes, corridors-and-mud cauldron, flowchart respectively) — kept as separate pieces in the sequence. The MSG 12 'Thank You' orb is a re-render of the MSG 7 orb motif (face shape reused, caption changed). BOUNDARY NOTE: MSG 8's fenced code block is NOT closed in the source — the ``` opener exists (line 221) but there is no closing fence; the art simply ends at the bottom Cauldron border (line 237) right before MSG 9's header. Extractor should treat message-end as the boundary. For range pieces whose top and bottom rows are identical (MSG 3 starfield), first_line==last_line by design — the deterministic extractor must span the full fenced block, not a single line."
+}

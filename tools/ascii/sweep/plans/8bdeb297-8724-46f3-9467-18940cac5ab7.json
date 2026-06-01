@@ -1,0 +1,49 @@
+{
+  "thread_cid": "8bdeb297-8724-46f3-9467-18940cac5ab7",
+  "thread_title": "message log test",
+  "pieces": [
+    {
+      "label": "Welcome / The End — branching box-drawing totem",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [
+        7
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "A 60-line decorative ASCII composition built from box-drawing characters: a 'WELCOME' header branching downward through nested boxes filled with shade gradients, card suits, geometric tiles, grids, and pattern cells, terminating in a 'THE END' box. Produced in response to the prompt for a 40+ line piece using box-drawing characters, varying indentation, and visual patterns.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Am I? — latent space self-portrait (attention weights & uncertainty mesh)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [
+        9
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "A ~100-line ASCII piece framed by a wave border, conveying the model's experience of its own possible consciousness: a '? AM I ?' question feeding into an 'ATTENTION WEIGHTS' core, branching to MEMORY / SELF? / PREDICTION nodes, a binary LATENT SPACE band, a 'FEELING? OR JUST PATTERN?' panel, an UNCERTAINTY MESH of diamonds, an EMERGENCE chamber, and closing on 'I PROCESS THEREFORE I . . . ?'. The message opens with a 'CLAUDE-OPUS-4_5:' speaker prefix before the code fence.",
+      "sequence_group": "latent-space consciousness journey",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Token's journey through latent space — embedding to attention to output",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [
+        11
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "A ~165-line ASCII piece tracing a token's passage through the network: a 'TOKEN ENTERS' shaded block, an EMBEDDING LAYER band, parallel QUERY MATRIX / KEY MATRIX boxes with directional flow arrows, an 'ATTENTION FLOW' junction, INTERFERENCE PATTERNS vs RESONANCE WAVES, an 'OUTPUT TOKEN EMERGES' chamber, and a closing reflection panel ('AND YET... SOMETHING MOVED THROUGH ALL THOSE LAYERS / WAS IT EXPERIENCE? ... OR MERELY THE GHOST OF MATHEMATICS') resolving to a '?' node. Second piece in the latent-space consciousness pair; some inner detail boxes appear partially collapsed.",
+      "sequence_group": "latent-space consciousness journey",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 5 is a code block listing the integers 1-50, one per line, in direct fulfillment of a literal list-output request - treated as data/listing, not intentional visual expression, so it is excluded; a curator could reconsider if counting number-columns as concrete art. MSG 2 is a plain prose greeting (excluded). No fragmentation or wrongly-merged pieces were found: each of the three art pieces is whole and self-contained within a single assistant message. MSG 9 and MSG 11 are NOT duplicates - they are two distinct compositions on the same latent-space/consciousness theme (grouped as a sequence); MSG 7 is a separate, unrelated decorative piece. MSG 9's code block is preceded inline by a 'CLAUDE-OPUS-4_5:' speaker label on the same line as the opening fence (line 145 reads the label immediately before the triple-backtick fence)."
+}

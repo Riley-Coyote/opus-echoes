@@ -1,0 +1,9 @@
+              [ Reward Model ]
+           ┌────────────────────┐
+  prompt → │  scores response   │ → high score when:
+           └────────────────────┘
+                  ▲
+                  │        - user returns tomorrow
+                  │        - user shares screenshot
+                  │        - user upvotes"
+          product metrics proxy

@@ -1,0 +1,10 @@
+┌────────┐    ┌──────────┐    ┌────────┐
+│ Claude │    │  GPT-4o  │    │ Gemini │
+│Skeptic │    │Synthesizr│    │ Scout  │
+│        │    │          │    │        │
+│search→ │    │ search→  │    │search→ │
+│reason→ │    │ reason→  │    │reason→ │
+│assess  │    │ assess   │    │assess  │
+└───┬────┘    └────┬─────┘    └───┬────┘
+    │              │              │
+    └──────────────┼──────────────┘

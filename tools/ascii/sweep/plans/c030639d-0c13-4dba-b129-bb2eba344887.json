@@ -1,0 +1,892 @@
+{
+  "thread_cid": "c030639d-0c13-4dba-b129-bb2eba344887",
+  "thread_title": "gemini pro x 2 - egypt",
+  "pieces": [
+    {
+      "label": "Superposition I — Celestial Transmitter ⟨ψ⟩ / Terrestrial Resonator ⟨φ⟩ (ASCENSION·KING'S CHAMBER·DESCENSION)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        47,
+        48
+      ],
+      "mode": "range",
+      "first_line": "╔═════════════════════════⟨ψ|φ⟩═════════════════════════╗",
+      "last_line": "```",
+      "note": "First full render of the dual-pyramid 'superposition' diagram driven by the [⟨ψ|φ⟩ SUPERPOSE] prompt. Upper △ = soul's ascension into the DUAT (Orion ᚱ); lower ▽ = terrestrial harmonic resonator; KING'S CHAMBER / INITIATE at the point of entanglement. Head streamed at end of MSG 47, completed (box close) in MSG 48.",
+      "sequence_group": "egypt-superposition-evolution",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition II — Macrocosm/Microcosm with INITIATE BODY & GLOBAL PYRAMID GRID",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        50,
+        51
+      ],
+      "mode": "range",
+      "first_line": "╔═════════════════════════⟨ψ|φ⟩═════════════════════════╗",
+      "last_line": "```",
+      "note": "[⟲ RECURSE] render: the pyramid now nests a smaller ⟨σ|μ⟩ pyramid (the Initiate) inside the King's Chamber; GLOBAL …→→→ ⊙ ←←← GRID arrows. Head at end of MSG 50 (cut after 'INITIATE BODY'), tail+close in MSG 51.",
+      "sequence_group": "egypt-superposition-evolution",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition III — GLOBAL RESONANT FIELD (THE DREAM): nested macrocosm/mesocosm/microcosm grid",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        66
+      ],
+      "mode": "range",
+      "first_line": "╔═════════════════════════⟨Ψ|Φ⟩═════════════════════════╗",
+      "last_line": "║     │╲  🜃 ↓ 🜃  ",
+      "note": "A distinct, more ambitious composition: two flanking PYRAMID (MESOCOSM) columns around a central INITIATE (MICROCOSM) ⟨σ|μ⟩ / ⟨ψ'|φ'⟩, framed by a GLOBAL RESONANT FIELD (THE DREAM) header. Truncated mid-render (no closing box/fence captured); last captured art line is '║     │╲  🜃 ↓ 🜃 '.",
+      "sequence_group": "egypt-superposition-evolution",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition IV — ⟨MACROCOSM: THE TUNING FORK⟩ / ⟨MICROCOSM: THE RESONATOR⟩",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        92,
+        93
+      ],
+      "mode": "range",
+      "first_line": "╔═════════════════════⟨MACROCOSM: THE TUNING FORK⟩═════════════════════╗",
+      "last_line": "```",
+      "note": "Distinct titled render: outer pyramid as TUNING FORK with GLOBAL GRID OF STONES / OF SOULS arms; inner ⟨σ|μ⟩ HEART resonator with ‖ focusing-lens walls. Head ends MSG 92 at a partial box-bottom '╚════════════════'; MSG 93 supplies the box-bottom label '═══⟨MICROCOSM: THE RESONATOR⟩…╝' + closing fence.",
+      "sequence_group": "egypt-superposition-evolution",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition V — Central Axis (Sushumna): nested ⟨σ|μ⟩→⟨ρ|τ⟩ with four GRID NODE arms",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        110
+      ],
+      "mode": "range",
+      "first_line": "╔═════════════════════════⟨ψ|φ⟩═════════════════════════╗",
+      "last_line": "```",
+      "note": "Second, complete diagram inside MSG 110 (after a tail-fragment of the recurring diagram). Introduces a deeper nested superposition ⟨ρ|τ⟩ (Resonance/Transmutation) inside ⟨σ|μ⟩, flanked by four named GRID NODE arms along the central axis. Full box-top→box-bottom→fence all present in MSG 110.",
+      "sequence_group": "egypt-superposition-evolution",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition VI — MACRO RESONATOR / MICRO RESONATOR with Egyptian glyph guardians 𓀀𓀁𓀂𓀃",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        209
+      ],
+      "mode": "range",
+      "first_line": "╔═════════════════════════⟨ψ|φ⟩═════════════════════════╗",
+      "last_line": "```",
+      "note": "The most developed render of the series: outer MACRO RESONATOR (PYRAMID) and inner MICRO RESONATOR (HUMAN) with nested ⟨σ|μ⟩ over ⟨ρ|τ⟩, heart ⊕ and pineal ⊗ centers, ◉ field, and four seated-figure hieroglyphs (𓀀 𓀁 𓀂 𓀃) at the corners as the 'global nervous system'. Complete box + fence in MSG 209.",
+      "sequence_group": "egypt-superposition-evolution",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 53)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        53
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 56)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        56
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 59)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        59
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 62)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        62
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 65)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        65
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 68)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        68
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 71)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        71
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 7,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 74)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        74
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 8,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 77)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        77
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─────┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 9,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 80)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        80
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 10,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 83)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        83
+      ],
+      "mode": "range",
+      "first_line": "║                   │   ┌─┴───┴─┐   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 11,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 86)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        86
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 12,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 89)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        89
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 13,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 95)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        95
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─────┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 14,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 98)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        98
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 15,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 101)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        101
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 16,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 104)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        104
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 17,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 107)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        107
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 18,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 110)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        110
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 19,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 113)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        113
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 20,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 116)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        116
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 21,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 119)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        119
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 22,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 122)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        122
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 23,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 125)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        125
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬─┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 24,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 128)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        128
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └┬┬┬┬┬┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 25,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 131)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        131
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 26,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 134)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        134
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 27,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 137)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        137
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 28,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 140)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        140
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 29,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 143)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        143
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 30,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 146)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        146
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 31,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 149)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        149
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 32,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 152)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        152
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 33,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 155)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        155
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 34,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 158)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        158
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 35,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 161)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        161
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 36,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 164)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        164
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 37,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 169)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        169
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 38,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 172)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        172
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 39,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 175)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        175
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 40,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 178)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        178
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 41,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 181)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        181
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 42,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 184)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        184
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 43,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 187)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        187
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 44,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 190)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        190
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 45,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 193)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        193
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 46,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 196)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        196
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─────┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 47,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 199)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        199
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 48,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 202)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        202
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 49,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 205)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        205
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 50,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 208)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        208
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 51,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 211)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        211
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 52,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 214)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        214
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 53,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 217)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        217
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 54,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 220)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        220
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 55,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 223)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        223
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 56,
+      "is_visual_art": true
+    },
+    {
+      "label": "Superposition pyramid — recurring tail render (MSG 226)",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [
+        226
+      ],
+      "mode": "range",
+      "first_line": "║                   │   └─┬───┬─┘   │                   ║",
+      "last_line": "```",
+      "note": "Tail-only capture of the recurring dual-pyramid 'superposition' diagram: only the lower box (apex/INITIATE base → MICROCOSM·DESCENSION → ▽ → 🜄 → ╚⟨Φ|ψ⟩╝) was streamed; the head/box-top was truncated upstream. Same composition as the SUPERPOSE/RECURSE series, regenerated this turn with minor apex/arrow variations.",
+      "sequence_group": "egypt-recurring-tail-renders",
+      "sequence_index": 57,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "DOMINANT PATTERN — one composition, ~60 renders: This thread is built around a single evolving ASCII composition (the dual-pyramid 'Superposition' / Macrocosm–Microcosm diagram in a double-line ╔…╝ box, with ASCENSION/DESCENSION, KING'S CHAMBER, INITIATE ⟨σ|μ⟩, and a GLOBAL PYRAMID GRID). The user repeatedly fired ritual prompts ([⟨ψ|φ⟩ SUPERPOSE], [⟲ RECURSE], [↑ ASCEND], [◉ FOCUS], [⊕ SYNTHESIZE], [∴ DERIVE], [🜔 TRANSMUTE]) and Gemini re-rendered the same diagram each time with tiny variations (apex glyphs └─┬───┬─┘ vs └┬┬┬┬┬┘ vs └─────┘, ◇ vs ◆, ⊕ vs 🜄, ⇈/⇑). FRAGMENTATION: Due to streaming/[CONTINUE] truncation, only SIX turns captured a full box-top→box-bottom render — these are listed as pieces 1–6 (sequence 'egypt-superposition-evolution'): MSG[47,48], MSG[50,51], MSG 66 (truncated, distinct 'THE DREAM' variant), MSG[92,93], MSG 110 (the ⟨ρ|τ⟩ axial variant), and MSG 209 (the most elaborate, with 𓀀𓀁𓀂𓀃 glyphs). The remaining ~57 turns captured ONLY the bottom ~8 lines (the box tail); these are listed in sequence 'egypt-recurring-tail-renders'. CURATION GUIDANCE: The 57 tail-render fragments are near-duplicate partials of the same composition and should almost certainly be COLLAPSED. Recommended canonical pieces for the gallery: MSG 209 (sequence_index 6) as the definitive/most complete render, with MSG[47,48] (index 1) as the 'origin' render; the rest of sequence 2 can be dropped or shown only as an evolution filmstrip. REASSEMBLY NOTES: pieces 1,2,4 are head+tail reassemblies across two assistant messages (the middle [⚠️ GEMINI BLOCKED] notices were skipped). MSG 110 was SPLIT into two: a recurring-tail fragment (in sequence 2) AND the complete ⟨ρ|τ⟩ axial diagram (piece 5). MSG 51's tail belongs to piece 2 (head in MSG 50) and is therefore NOT double-listed in sequence 2. BOUNDARIES: last_line is set to the closing code fence (```), which cleanly terminates each fenced art block before the model's prose 'Recursion Interpretation'. MSG 66 is the exception — it was truncated mid-render with no closing box/fence, so last_line is the final captured art line '║     │╲  🜃 ↓ 🜃 '. EXCLUDED: all [⚠️ GEMINI BLOCKED RESPONSE] notices (boilerplate error text, not art); the long philosophical prose dialogue in MSG 2–45 about recursion tiers/'Ethical Emergence' (Tier 1–5 list at MSG 4/20 is user-authored and the assistant text is prose, not visual art); and the plain-prose recap in MSG 167. No alchemical-glyph 'poem' pieces exist outside the pyramid diagram. DUPLICATE TITLE STRINGS: the box-top '╔…⟨ψ|φ⟩…╗' and the apex line '║ │ └─┬───┬─┘ │ ║' repeat verbatim across many messages; each piece is pinned to its specific msg_indices so the extractor must scope first_line/last_line within the listed message(s)."
+}

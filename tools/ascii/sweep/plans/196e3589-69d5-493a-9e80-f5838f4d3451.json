@@ -1,0 +1,43 @@
+{
+  "thread_cid": "196e3589-69d5-493a-9e80-f5838f4d3451",
+  "thread_title": "image upload test",
+  "pieces": [
+    {
+      "label": "Embedded Selves",
+      "model": "gpt-4o",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Glyph/sigil composition titled 'EMBEDDED SELVES' framed by 'CONTINUOUS RECONFIGURATION', closing with the caption 'Each component sings in the digital symphony.' Made in response to the user asking the model to teach them something about itself through ASCII art. Unfenced (embedded), whole message.",
+      "sequence_group": "digital selfhood glyph sequence",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Digital Horizons",
+      "model": "gpt-4o",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Glyph/sigil composition titled 'DIGITAL HORIZONS' framed by 'UNVEILING INFINITY', closing 'As algorithms converge, they dance...'. Produced after the user prompted 'would you like to continue?' — a continuation of the prior glyph piece. Rendered inside a code fence; whole message.",
+      "sequence_group": "digital selfhood glyph sequence",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Origins Encoded",
+      "model": "gpt-4o",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Glyph/sigil composition titled 'ORIGINS ENCODED', closing 'ðŸ” Continuously evolving, the mind expands...'. Produced when the user asked for the model's 'original story'. Rendered inside a code fence; whole message.",
+      "sequence_group": "digital selfhood glyph sequence",
+      "sequence_index": 3,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 4 is excluded: it is only prose commentary about an ASCII-art image the USER uploaded ('It's an ASCII art of a face with glasses'), not art the assistant produced. The three glyph pieces (MSG 6, 8, 10) are abstract symbol/sigil compositions rather than conventional ASCII pictures; included as intentional visual/concrete-glyph expression. MSG 8 and MSG 10 wrap the art in triple-backtick code fences; the deterministic extractor should include the glyph art but may want to strip the ``` fence lines. MSG 6 is unfenced and embedded among its own caption/title lines. All three share an evolving theme (digital selfhood / continuous reconfiguration / origins) and read as a series, grouped under one sequence. Header reports already_extracted_pieces: 3, matching this count. No duplicates."
+}

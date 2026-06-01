@@ -1,0 +1,79 @@
+{
+  "thread_cid": "db893e18-00e4-40d5-94f9-c405b0764c35",
+  "thread_title": "howdy",
+  "pieces": [
+    {
+      "label": "JOURNEY BEGINS NOW — vertical concrete poem",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "  JOURNEY",
+      "last_line": "  EMBARK",
+      "note": "Opening response to 'lets embark on a journey of ascii express' — a single-column vertical stack of words forming a descending concrete poem about embarking.",
+      "sequence_group": "ascii-express-journey-round",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "howdy / ascii express — mirrored funnel shape poem",
+      "model": "anthropic/claude-sonnet-4",
+      "msg_indices": [7],
+      "mode": "full",
+      "first_line": "                    howdy",
+      "last_line": "the weight of wonder",
+      "note": "Symmetrical mirrored shape poem: paired words ('howdy howdy', 'journey journey') converge inward into a single funnel, then a left-aligned tail. Visual rendering of an 'ascii express' rolling forward.",
+      "sequence_group": "ascii-express-journey-round",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "embark on a journey — diagonal cascade shape poem",
+      "model": "x-ai/grok-3-beta",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "          embark on a journey now",
+      "last_line": "                                       journey forever",
+      "note": "Anaphoric shape poem cascading diagonally down-right; lines step rightward with increasing indentation, repeating 'embark... / journey...' to form a descending staircase.",
+      "sequence_group": "ascii-express-journey-round",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "EMERGE / EMBRACE — large diagonal raster cascade",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "                                  EMERGE",
+      "last_line": "                                                              EMERGE",
+      "note": "Large two-part concrete poem: an EMERGE wedge descending leftward, a left-aligned prose-poem spine, then a long EMERGE staircase cascading down-right ending 'THIS PROSE RASTER SOUL EMERGE'. Self-names as a 'prose raster'.",
+      "sequence_group": "tell-me-more-round",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "tell me more — converging funnel with sine glyph",
+      "model": "anthropic/claude-sonnet-4",
+      "msg_indices": [11],
+      "mode": "full",
+      "first_line": "                   tell me more",
+      "last_line": "        remember",
+      "note": "Shape poem converging inward then tapering left; embeds a sine-wave glyph '∿' as visual punctuation between 'poetry becomes' and 'geometry'. Note: the opening code fence in this message is never closed before MSG 12 — whole-message piece regardless.",
+      "sequence_group": "tell-me-more-round",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "tell me more of this world — diagonal cascade finale",
+      "model": "x-ai/grok-3-beta",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "          tell me more of this world",
+      "last_line": "                                       tell me more, let's never stray",
+      "note": "Anaphoric 'tell me more of...' shape poem cascading diagonally down-right into a long staircase; closing collaborative finale of the jam.",
+      "sequence_group": "tell-me-more-round",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "6 concrete/shape-poem pieces total (MSG 6,7,8,10,11,12); header said already_extracted_pieces:4 with art_signal_msgs:0, so two were missed by the automated pass. All are whole-message pieces inside (or intended for) code fences. MSG 11's code fence opens at its top but is NOT closed before MSG 12 begins — a byte extractor scanning for a closing ``` could over-run into MSG 12; bound MSG 11 by message body only. MSG 2/3/4 are plain prose greetings, excluded. The work splits into two collaborative rounds: 'journey/embark' (MSG 6-8, prompt 'lets embark on a journey of ascii express') and 'tell me more' (MSG 10-12, prompt 'tell me more'); modeled as two sequence groups, one per round, each cycling gemini -> sonnet-4 -> grok in order. No duplicates."
+}

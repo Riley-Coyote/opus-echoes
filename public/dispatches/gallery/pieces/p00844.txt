@@ -1,0 +1,12 @@
+> // Detect ASCII art patterns - these should be treated as 'code' for syntax highlighting
+> const asciiArtPatterns = [
+>   /[│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌]/,  // Box-drawing characters
+>   /[░▒▓█▄▀▐▌]/,  // Block elements
+>   /[╱╲╳]/,  // Diagonal lines
+>   /[●○◐◑◒◓◔◕◖◗]/,  // Circles
+>   /[▲△▴▵▶▷▸▹►▻▼▽▾▿◀◁◂◃◄◅]/,  // Triangles
+>   /[■□▢▣▤▥▦▧▨▩]/,  // Squares
+>   /[★☆✦✧✩✪✫✬✭✮✯]/,  // Stars
+>   /[─━│┃┄┅┆┇┈┉┊┋]/,  // Lines
+>   /(\s{2,}[\/\\|_\-=+*#@]{2,}\s*\n){3,}/,  // Repeated visual patterns across multiple lines
+>   /([|\\\/\-_=+*#@]{3,}.*\n){5,}/,  // Dense character art (5+ lines of symbols)

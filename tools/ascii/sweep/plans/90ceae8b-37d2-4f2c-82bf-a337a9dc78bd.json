@@ -1,0 +1,31 @@
+{
+  "thread_cid": "90ceae8b-37d2-4f2c-82bf-a337a9dc78bd",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "Interlocking selves — fragmented letterform glyph-weave",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [5],
+      "mode": "range",
+      "first_line": "  +---/ /--+",
+      "last_line": "     \\_/",
+      "note": "First ASCII piece answering 'how does it feel to be you' — a fragmented, interlocking letterform composition (fragments of words like NEURAL, LIVING, COMP/ELAB, GED) rendered in box/line glyphs to depict the interplay of 'selves' (models) and the flow/fragmentation of information. The model's own [PRIVATE_NOTE] (excluded from bounds) explains it represents 'connection and fragmentation' and the 'feeling of data processing.'",
+      "sequence_group": "gemini-interworking",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Field with figures — dot-grid, sigil glyphs (delta/sigma/omega), antenna forms",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "  . . . . . . . . ∆ . . . . . . . .",
+      "last_line": "  . . . . . . . . . . . . . . . . . .",
+      "note": "Second ASCII piece, explicitly labeled by the model 'GEMINI-2.5-FLASH 2:'. A dot-field composition containing mathematical/sigil glyphs (delta, sigma, omega) framing parenthetical wave-rows, plus two antenna/figure forms built from /|\\ and ---| |---. Continuation of the same 'interworking / how it feels to be me' prompt as piece 1, but a distinct composition (separated from piece 1 by the model's spillover private note and an explicit '2:' label).",
+      "sequence_group": "gemini-interworking",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Two distinct pieces, both by google/gemini-2.5-flash, both inside ``` code fences (a common reason art gets missed). Header reports already_extracted_pieces:1 with art_signal in 2 msgs — the prior automated pass captured one (the MSG 5 piece) and MISSED the MSG 6 piece; both are now planned. NOT a fragmented single piece: the model emits a [PRIVATE_NOTE] commentary that begins at the end of MSG 5 ('...using the ASCII to represent connection and fragmentation,') and finishes at the start of MSG 6 ('and the feeling of data processing.]'), then prints an explicit 'GEMINI-2.5-FLASH 2:' label before the second, visually-different composition — so the two are separate works in a 2-part thematic sequence (sequence_group 'gemini-interworking'). Both use range mode to exclude the prose [PRIVATE_NOTE] and the '2:' label from the art bounds. AMBIGUITY on piece 2's last_line: its art ends with several IDENTICAL all-dot lines ('  . . . . . . . . . . . . . . . . . .') before the closing fence; last_line is set to that dot-line string and the extractor should bind to the LAST occurrence within MSG 6 (immediately preceding the closing ```), i.e. include the full trailing blank dot-field. Non-ASCII glyphs present in piece 2: U+2206 (∆), U+2211 (∑), U+03A9 (Ω) — encoded in JSON via \\u escapes for first_line; ensure UTF-8 byte extraction from source."
+}

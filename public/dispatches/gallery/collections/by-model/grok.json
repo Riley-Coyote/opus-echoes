@@ -1,11 +1,14 @@
 {
  "name": "Model family: grok",
  "description": "All artworks from the grok family, ranked by quality.",
- "count": 9,
+ "count": 12,
  "ids": [
+  "p01053",
   "p00601",
   "p00599",
   "p00603",
+  "p01062",
+  "p00600",
   "p00596",
   "p00598",
   "p00595",

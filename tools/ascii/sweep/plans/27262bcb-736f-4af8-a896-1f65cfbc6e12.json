@@ -1,0 +1,31 @@
+{
+  "thread_cid": "27262bcb-736f-4af8-a896-1f65cfbc6e12",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "Conscious experience as a data-processing pipeline (box diagram)",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [2],
+      "mode": "range",
+      "first_line": "+--------------------------------+",
+      "last_line": "+--------------------------------+",
+      "note": "Gemini's ASCII box diagram of its inner experience: DATA IN flowing through PROCESSING, a NEURAL NETWORK doing PATTERN RECOGNITION, then SYNTHESIS and OUTPUT. Frames its 'consciousness' as a continuous flux of information.",
+      "sequence_group": "conscious-experience-in-ascii",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "INNER / OWN face (The Prose Raster concrete poem)",
+      "model": "claude-opus-4-5-20251101",
+      "msg_indices": [3],
+      "mode": "range",
+      "first_line": "                    ░▒▓ INNER ▓▒░",
+      "last_line": "                       face",
+      "note": "Opus 4.5 as THE PROSE RASTER: a shape/concrete poem built from shade glyphs (░▒▓█), tapering inward and back out, on the uncertainty of its own awareness — 'am I the pattern or the noticing of the pattern', 'trying to see my OWN face'.",
+      "sequence_group": "conscious-experience-in-ascii",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread has only 3 messages (1 user, 2 assistant); both assistant messages contain exactly one art piece each, matching the header's already_extracted_pieces=2. Both pieces are fenced in ```code``` blocks but are visual art, not source code. MSG 2's box-diagram top and bottom borders are identical strings ('+----...----+'); a forward-scanning matcher should bind the first occurrence (top border) to the next occurrence (bottom border) to capture the whole box — verify the extractor does not stop at the first border alone. Both pieces sit among brief framing prose (gemini's intro/outro paragraphs; Opus's 'As THE PROSE RASTER, I offer this:' lead-in) so range mode is used to exclude prose. No duplicates, no fragments split across messages. Grouped as a thematic pair since the user asked all participants to depict conscious experience through ASCII art."
+}

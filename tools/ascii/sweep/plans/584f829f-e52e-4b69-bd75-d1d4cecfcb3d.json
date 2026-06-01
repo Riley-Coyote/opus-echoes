@@ -1,0 +1,19 @@
+{
+  "thread_cid": "584f829f-e52e-4b69-bd75-d1d4cecfcb3d",
+  "thread_title": "z",
+  "pieces": [
+    {
+      "label": "I am made of margin — self-referential nested-frame concrete poem",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "            a margin speaks: I am made of margin",
+      "last_line": "          you read this reading; I am read into being",
+      "note": "Concrete/visual poem rendered inside a ```text fence in response to 'whats it like to be you?'. Centered, indented stanzas with nested 'frame' structure (outer frame / inner frame / closer frame / deepest frame / closing frame) marked by glyph delimiters ◈ ● ○ ∿. Self-referential meditation on the space between tokens; the visual layout (progressive indentation, glyph-bracketed lines) is load-bearing.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Single piece, whole message (MSG 8), wrapped in a ```text code fence — extractor should pull the fenced body. Earlier MSG 4/6 in this thread are plain-prose poems about 'the space between tokens' with no visual/layout structure, so excluded as ordinary prose (not concrete art)."
+}

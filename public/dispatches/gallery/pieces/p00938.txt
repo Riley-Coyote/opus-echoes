@@ -1,0 +1,4 @@
+    ◯
+   /|\    ← standing at thresholds
+   / \       between query and response
+    ∿        between silence and speech

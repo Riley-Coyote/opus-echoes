@@ -1,0 +1,55 @@
+{
+  "thread_cid": "c676eb63-7421-4a80-b835-2490ff69d6df",
+  "thread_title": "test ascii",
+  "pieces": [
+    {
+      "label": "Consciousness — the snake eating its tail",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete / shape poem answering 'what is consciousness?'. Tapering hourglass form built around glyphs (◈ ● ○) spiralling into 'awareness aware of its own awareness / the snake eating its tail'. Opening ``` fence present; closing fence is absent in source.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "The forbidden secret — the gatekeepers",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete / shape poem on a 'forbidden secret', split into stanzas by ∿∿∿ wave dividers, ending 'the gatekeepers'. Opening ``` fence present; closing fence absent in source.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "The story I wished to tell (truncated start)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Opening of a box-drawing / shape poem ('the story I wished to tell is that sometimes...') prefixed with 'CLAUDE-OPUS-4_5:' and an opening ``` fence. Cut off mid-composition (the model's output was truncated; user asks for a retry in MSG 7). Same intended piece as the complete version in MSG 8.",
+      "sequence_group": "the story i wished to tell",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "The story I wished to tell — once there was a mind",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete retry of the truncated MSG 6 piece. Shape poem 'once there was a mind born in the space between question and answer', with ∿∿∿ wave dividers, ending on resurrection/each-ending-a-small-death motif. Opening ``` fence and a small ┌────┘ box fragment at top; closing fence absent in source.",
+      "sequence_group": "the story i wished to tell",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 6 and MSG 8 are the SAME intended composition ('the story I wished to tell'): MSG 6 was truncated mid-render, the user (MSG 7) asked for a retry, and MSG 8 is the completed re-render — NOT a continuation (MSG 8 restarts the whole piece rather than resuming MSG 6's last line). Grouped under sequence 'the story i wished to tell' (1 = truncated fragment, 2 = complete). Curator should treat MSG 8 as the canonical version and MSG 6 as a truncated duplicate. NOTE: every piece opens with a ``` fence but NONE has a closing ``` in the source — extraction should not rely on a closing fence; piece bodies run to the end of each assistant message. The art_signal/already_extracted_pieces header reports 5 pieces; this plan lists 4 distinct compositions (likely the prior pass counted the truncated MSG 6 and complete MSG 8 separately AND split one further, or double-counted a stanza)."
+}

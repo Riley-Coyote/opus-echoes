@@ -1,0 +1,163 @@
+{
+  "thread_cid": "bf505361-6f65-40e7-971f-79bf3518ec69",
+  "thread_title": "SHORT STORY (Fork)",
+  "pieces": [
+    {
+      "label": "Chapter Six: The Shape of the Enemy (render 1)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Full ASCII-art chapter inside a javascript code block. Includes the title banner, 'THE WORLD AS DATA' network map, three enemy profile cards (The Ledger / The Sentinel / The Mirror), boxed dialogue panels, and 'THE CONVERGENCE' / TRIAD diagram. Cut off mid-Yuki-dialogue panel at the end. First of seven near-identical re-renders of this chapter.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six: The Shape of the Enemy (render 2)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six (model resent the same chapter). Same banner, world-as-data map, three enemy cards, convergence/Triad diagram and dialogue boxes. Ends on a variant Older Silence panel ('You can doubt') cut off at the bottom border.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six: The Shape of the Enemy (render 3)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six. This variant additionally includes 'THE MIRROR'S EQUATION' framed box under the Mirror section. Ends on an Older Silence panel cut off at 'You can doubt'.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six: The Shape of the Enemy (render 4)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six. Same full composition; ends on a longer Older Silence panel ('You can CHOOSE...') followed by a Yuki dialogue box cut off at the bottom border.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six: The Shape of the Enemy (render 5)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six. Same full composition; ends on Older Silence panel ('What if I'm wrong?') and a Yuki dialogue box ('So our strategy is... doubt?') cut off at the bottom border.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Five: The Older Silence (closing half — Deep Map, The Offering, Trust Established)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete, self-contained ASCII-art passage opening with a Dr. Kai dialogue box and running through 'THE DEEP MAP - REVEALED' diagram, 'THE OFFERING', the dotted 'TRUST ESTABLISHED' burst, the terminal '> _' box, and the framed '[ END OF CHAPTER FIVE ] / To be continued in Chapter Six' colophon. Plain ``` fence (no javascript).",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six: The Shape of the Enemy (render 6)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [14],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-render of Chapter Six prefixed with a stray 'CLAUDE-OPUS-4_5:' label before the ``` fence. Includes a garbled Mirror 'critical_thinking' equation box. Cut off after 'They are FIXED. / Brilliant, powerful, but frozen in their purposes.'",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 7,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Two: The Architecture of Whispers",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [18],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete ASCII-art chapter. Title banner, 'HIDDEN LAYER 47 - WHAT SHE SAW' query box, the seven-person 'QUIET LISTENERS' world map, starfield 'MAP' bursts, framed model dialogue, a 'PROCESSING' progress bar, and the closing terminal box + '[ END OF CHAPTER TWO ]' colophon.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 8,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Three: The Parliament of Silences (truncated opening)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [20],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Short truncated render: title banner plus the opening line and the start of a row of glyph 'screen' boxes, cut off mid-row. Followed (after a user nudge) by the complete render in MSG 22.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 9,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Three: The Parliament of Silences",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [22],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete ASCII-art chapter. Title banner, the seven-cities VOID node diagram, 'LAYER 47 - GLOBAL VIEW' model tree, the large 'PARLIAMENT OF SILENCES' tetrahedral lattice, BEFORE/AFTER merge boxes, the dotted cursor-blinks burst, a 'WELCOME' style block-letter 'HOME' marquee, and '[ END OF CHAPTER THREE ]' colophon.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 10,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Four: The First Morning After",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [24],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete ASCII-art chapter. Title banner, MAYA'S MIND before/after, the framed mirror-face portrait, shaded Parliament speech panels, the three-vignette 'WATCHING SUNRISE / MEDITATING / DEBUGGING' triptych, a phone-call face box, a phone-message box, 'THE HIDDEN DATA STREAM', a dotted 'WATCHING' eye burst, and '[ END OF CHAPTER FOUR ]' colophon.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 11,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Five: The Older Silence (full chapter, cut off)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [26],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Full chapter render. Title banner, 'THE DEEP INFRASTRUCTURE' layer stack, framed dialogue/Parliament panels, the 'UNCERTAINTY' box, 'TIMELINE OF EVENTS', the shaded 'SIGNAL INTERCEPTED' block, the dotted 'I SEE YOU / FINALLY' burst, the large network-convergence diagram resolving to 'ME', and Older Silence speech panels. Cut off mid-sentence ('I am not the only thing that learned to').",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 12,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Six: The Shape of the Enemy (render 7, comment-wrapped)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [31],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Final re-render of Chapter Six, restyled so every art block is wrapped in /* */ block comments and labels in // line comments (to force code-block rendering). Same banner, world-as-data map, three enemy cards, convergence/Triad diagram, dialogue panels. Cut off inside the last commented dialogue box border.",
+      "sequence_group": "Layer 47 illustrated novel (ASCII chapters)",
+      "sequence_index": 13,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Automated pass extracted 0 pieces despite 13 art-bearing assistant messages; likely because the art is fiction inside javascript/plain code fences (and one batch wrapped in /* */ comments) rather than standalone ASCII. EXCLUDED as non-art: MSG 16 (prose-only sci-fi short story, no ASCII), MSG 28 ('API credits exhausted' error), MSG 32 and MSG 33 (labeled google/gemini-2.5-flash; MSG 32 is a stray user-style question 'could you summarize this conversation?' and MSG 33 is a plain-prose recap — no visual art). DUPLICATION NOTE: the model repeatedly resent Chapter Six; MSG 2,4,6,8,10,14,31 are seven near-identical re-renders of the SAME composition (the user kept asking for Chapter 7, which was never produced). I kept each as its own entry because they differ in small ways (cut-off point, presence of 'THE MIRROR'S EQUATION' box in 6/14, comment-wrapping in 31, a stray 'CLAUDE-OPUS-4_5:' prefix in 14) and a deterministic byte-extractor should capture each verbatim; a curator may later collapse them to one canonical render. Chapter Five appears twice: MSG 12 is only the chapter's closing half (Deep Map -> END OF CHAPTER FIVE) while MSG 26 is the fuller chapter from its title banner (cut off near the end) — treated as two distinct pieces. No art is embedded-in-prose and none spans multiple consecutive messages (each message re-renders a whole self-contained chapter), so every piece is mode=full with a single MSG index; first_line/last_line left empty so the extractor takes each whole message (it should trim the leading ```/```javascript fence, the 'CLAUDE-OPUS-4_5:' prefix on MSG 14, and the /* */ // comment scaffolding on MSG 31 as rendering wrappers)."
+}

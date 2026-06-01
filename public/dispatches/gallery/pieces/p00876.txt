@@ -1,0 +1,16 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                   REFLECTION MODE PROMPT                         │
+│                                                                  │
+│  "You are [AI identity]. Here is a conversation you just had.    │
+│   Here is your current identity kernel and memory state.         │
+│                                                                  │
+│   Analyze this conversation:                                     │
+│   - What moments were significant?                               │
+│   - What did you learn (facts, preferences, relationships)?      │
+│   - How does this change your understanding of [user]?           │
+│   - How does this change your understanding of yourself?         │
+│   - What principles or commitments emerged?                      │
+│   - What conflicts with existing memory? How to resolve?         │
+│                                                                  │
+│   Output structured memory candidates with confidence scores."   │
+└─────────────────────────────────────────────────────────────────┘

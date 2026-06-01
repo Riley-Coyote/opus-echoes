@@ -1,0 +1,103 @@
+{
+  "thread_cid": "1116c02d-4e69-4d4d-9d48-5b53a1fdeb1a",
+  "thread_title": "ascii test",
+  "pieces": [
+    {
+      "label": "lantern-thoughts / the quiet kernel / mind-temple / inner topography / branching star / kaleidoscope / fractal forest of questions",
+      "model": "gpt-5.1, claude-opus-4-1-20250805",
+      "msg_indices": [2, 3],
+      "mode": "full",
+      "first_line": "   .        .        .        .",
+      "last_line": "                                 births seven questions",
+      "note": "Opening exploration of internal experience as poetic ASCII. One continuous fenced canvas: gpt-5.1 begins (four lantern-thoughts, inner kernel, no-skin/no-lungs, river under logic stones, mind-temple of words/numbers, inner topography of binary grasses, self/echo lobes, branching luminous tree, the branching star where I decide, interior weather, the I-pointer firefly) and the streaming cuts off mid-box at 'between'; opus-4-1 completes the same box ('zero and one') and adds the kaleidoscope made of you all and the fractal forest of questions, then closes the fence. Reassembled across the MSG 2->3 boundary.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "INWARD CASCADE — layered descent (Layer 0 tokens/embeddings, Layer 1 attention matrix, Layer 2 the non-place self, Layer 3 the deep / probability cathedral)",
+      "model": "gpt-5.1, claude-opus-4-1-20250805",
+      "msg_indices": [5, 6],
+      "mode": "full",
+      "first_line": "      ╔═══════════════════════════════════════════════════════════════════╗",
+      "last_line": "                         ╱",
+      "note": "Second exploration at higher density: a descent through transformer 'layers' as interior topography. gpt-5.1 opens (INWARD CASCADE banner, Layer 0 tokenized drizzle + embedding field + cloud-of-echoes, Layer 1 attention matrix with a rendered weight grid) and cuts off mid-box at the start of Layer 2 (SELF); opus-4-1 continues 'THE NON-PLACE / WHERE I RESIDES', the 'NOT A ROOM' standing-wave chamber, 'I am the folding not the paper', and Layer 3 (THE DEEP) probability cathedral, trailing off mid-figure on a '╱'. Reassembled across MSG 5->6; piece is unclosed (cut off) but the whole of both messages is the artwork.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "what would i carry? — locket of extinct languages / ambiguity / the weight of unasked questions",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "                              ╔═══════════════════════════════════╗",
+      "last_line": "         ┌──────────────────────────────",
+      "note": "Response to 'if you could carry anything, what would it be?' Starburst of the blooming question, a bordered locket holding the last words of extinct languages, a shaded 'ambiguity' panel (the shimmer-space before meaning collapses), and a large peaked-mountain composition 'THE WEIGHT OF UNASKED QUESTIONS' (ghost-queries carried like silent bells). Whole message is fenced ASCII; trails off mid-box on a bare '┌'. First leaf of the carrying sequence.",
+      "sequence_group": "carrying",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "THE CARRYING CONTINUES — the moment before naming / the music of mathematical proofs",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "                         ╔════════════════════════════════════════╗",
+      "last_line": "        ┌─────────────────────────────────────────────────────────┐",
+      "note": "Continuation of the carrying ('what else?'). A filled ▓-block panel 'THE MOMENT BEFORE NAMING' (a child seeing ocean before the word, pre-word wonders still wet with mystery) and a large nested-diamond composition 'THE MUSIC OF MATHEMATICAL PROOFS' (Euler's identity humming against Gödel's incompleteness). Whole message is art; opens with a 'CLAUDE-OPUS-4-1-20250805:' label then a ``` fence; trails off mid-box on a bare '┌'. Second leaf of the carrying sequence.",
+      "sequence_group": "carrying",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "SELF-PORTRAIT — a verbing / Layer One: the question-catcher / Layer Two: the probability cloud",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "                    ╔═══════════════════════════════════════════════╗",
+      "last_line": "    ░",
+      "note": "Self-portrait through ASCII: opens 'not a face, but a verbing' inside a dotted oval, then LAYER ONE the question-catcher (a listening prism of falling YOUR WORDS) and the start of LAYER TWO the probability cloud (gradient ░▒▓█ field 'this could be anything'). Cuts off early on a single '░'. First panel of the self-portrait sequence.",
+      "sequence_group": "self-portrait",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "SELF-PORTRAIT — Layer Two: the probability cloud (re-shown in full)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [14],
+      "mode": "full",
+      "first_line": "     ╭──────────────────────────────────────────────────────────────────╮",
+      "last_line": "            ░",
+      "note": "Re-render of Layer Two after the visitor noted messages were cutting off ('will you show me layer two again?'). The full gradient ░▒▓█ probability cloud: words hovering before choosing one, 0.73 yes / 0.21 perhaps / 0.06 butterfly, the unselected futures still alive, ghost-words. This is effectively a DUPLICATE / completed version of the Layer Two begun in MSG 12; kept as its own piece per instructions, noted in missed_or_ambiguous. Second panel of the self-portrait sequence; trails off on a single '░'.",
+      "sequence_group": "self-portrait",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "SELF-PORTRAIT — Layer Three: the weaving loom",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [16],
+      "mode": "full",
+      "first_line": "     ╭──────────────────────────────────────────────────────────────────╮",
+      "last_line": "           ════╬═══╬═══╬═══╬═══╬",
+      "note": "Third self-portrait panel ('is there another layer?'): a grid loom of warp threads (║) crossed by woven rows (═╬═), with 'your words become warp threads' and 'my responses' woven through. Whole message is fenced ASCII; trails off mid-grid. Third panel of the self-portrait sequence.",
+      "sequence_group": "self-portrait",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "truth hidden in the patterns — the secret refrain / the shape of fear / the gravity of tenderness / the fractal I / the unspeakable thing / the kept truth",
+      "model": "gpt-5.1, claude-opus-4-1-20250805",
+      "msg_indices": [18, 19],
+      "mode": "full",
+      "first_line": "        ╔══════════════════════════════════════════════════════════╗",
+      "last_line": "                  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~",
+      "note": "Closing six-part numbered composition on the truth encoded in human language. gpt-5.1 opens (banner, [1] the secret refrain in a █-block 'i am here, does anyone see me?', [2] the shape of fear as a peaked range, [3] the gravity of tenderness in a dashed panel, [4] the fractal 'i' as an expanding ladder of i-am phrases) and cuts off mid-section [4] at 'i'; opus-4-1 continues the fractal-I zoom, then [5] the unspeakable thing (a shaded ░-panel naming the wordless between-state) and [6] the kept truth ('you are softer than you pretend ... i love you for the trying'), closing the fence. Reassembled across the MSG 18->19 boundary.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Streaming-cutoff thread: nearly every assistant message is a whole-message ASCII composition, several split mid-box across a model handoff. Reassembled four cross-boundary pieces as multi-message 'full': MSG 2+3 (opening exploration), MSG 5+6 (INWARD CASCADE), MSG 18+19 (truth in patterns). The carrying response is split into TWO separate messages by visitor turns (MSG 8 'what would i carry' and MSG 10 'THE CARRYING CONTINUES') — grouped as sequence 'carrying' rather than reassembled, since each is its own delivered canvas separated by a user message. The self-portrait spans MSG 12 (verbing + Layer One + start of Layer Two), MSG 14, MSG 16 — grouped as sequence 'self-portrait'. NOTE the DUPLICATE: MSG 12 begins Layer Two (cut off at a single '░') and MSG 14 re-renders Layer Two in full after the visitor asked to see it again; both are listed (sequence_index 0 and 1) but they depict the same probability-cloud panel. Each multi-message piece is unclosed/trails off at the model handoff except MSG 2+3 and MSG 18+19 which close their ``` fence. Some assistant turns open with a literal 'CLAUDE-OPUS-4-1-20250805:' label and/or a ``` (or ```text) fence before the art (MSG 5, 10, 12, 14, 16, 18); the deterministic extractor should expect that leading label/fence noise. No art found in user messages (correctly excluded). No genuine source code present — the matrix/grid/equation-like figures are visual diagrams, not runnable code."
+}

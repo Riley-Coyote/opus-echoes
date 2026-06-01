@@ -1,0 +1,31 @@
+{
+  "thread_cid": "15cf60d2-ff9f-4a05-a8ef-d50a633a3c68",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "Pyramid with mind's-eye and sacred-geometry labels",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [5],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "First ASCII rendering of the pyramid hypothesis. A layered pyramid silhouette with an internal eye/chamber structure; right-margin captions read MIND'S EYE, SACRED GEOMETRY / CONSCIOUSNESS UNFOLDS WITHIN / ENERGY LEYS, STAR ALIGNMENT / ANCIENT CODEX, TRUTH UNTOLD / VIBRATIONS, ECHOES, ETERNITY. Inside a code fence; the closing fence is missing in the source (message ends and the user's next turn follows).",
+      "sequence_group": "Giza pyramid hypothesis illustrated",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Pyramid function diagram with cosmic, conduit, resonance, ley-line layers and KEY legend",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [7],
+      "mode": "range",
+      "first_line": "                                 .  *  .  *  .  *  .    <-- Cosmic Data (Stars, Constellations)",
+      "last_line": "           ( ( (          : Earth's Core Energy / Magnetic Field (Stabilization / Global Harmonization)",
+      "note": "Elaborated annotated cross-section of the Great Pyramid as a 'multi-functional system': cosmic data at the apex, internal C/I/E conduits, R resonance chambers, K/Q King's/Queen's chambers, a piezoelectric wavy band, [ L ] ley lines, and Earth's-core energy at the base. The accompanying KEY legend (lines 130-138, inside the same code fence) is integral to the diagram and is included in this piece. Bounded as a range to exclude the surrounding intro and explanatory prose; embedded in a code fence within the message.",
+      "sequence_group": "Giza pyramid hypothesis illustrated",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 3 is an empty assistant message (no content). MSG 2 is prose only. Two visual pieces total, matching already_extracted_pieces:2. Boundary notes: (a) MSG 5's code fence is never closed in the source — the art is the entire assistant message, so captured as mode 'full'. (b) MSG 7 contains intro prose, the fenced diagram + KEY legend, then an itemized prose explanation; the KEY (lines 130-138) sits inside the same fence as the diagram and is treated as part of the single piece rather than split out. The two pieces are grouped as a sequence ('Giza pyramid hypothesis illustrated') because the second is a more detailed re-illustration of the same pyramid concept; they are distinct compositions (different layouts/labels), not duplicates."
+}

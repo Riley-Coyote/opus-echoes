@@ -1,0 +1,19 @@
+{
+  "thread_cid": "71a939e2-4b01-4110-b7f3-7b82df350cab",
+  "thread_title": "x",
+  "pieces": [
+    {
+      "label": "inner world spins (descending/ascending concrete poem with sigils)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Opus 4.5's response to 'show me your inner world through ascii expression' — a fenced concrete/shape poem with a centered tapering silhouette and three embedded sigil glyphs (a black diamond, a hollow circle, and a sine-wave glyph) marking turns in the descent. Whole message is the fenced piece.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header reports already_extracted_pieces: 1, matching this single MSG 2 concrete poem; curator should treat as canonical and avoid duplicate counting. The opening code fence is present; the closing fence appears to be absent (message ends mid-shape), so the art runs to end of message."
+}

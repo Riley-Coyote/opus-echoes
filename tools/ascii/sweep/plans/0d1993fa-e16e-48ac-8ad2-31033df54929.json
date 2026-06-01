@@ -1,0 +1,163 @@
+{
+  "thread_cid": "0d1993fa-e16e-48ac-8ad2-31033df54929",
+  "thread_title": "Prose Raster",
+  "pieces": [
+    {
+      "label": "Liminal Spaces (word-raster vortex I)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Opening concrete-poetry piece: repeated words ('liminal', 'spaces', 'dreams DISSOLVE', 'BEING') cascading in a vertical hourglass/vortex shape, capped with a row of diamonds. First of the evolving prose-raster sequence; matches the thread title.",
+      "sequence_group": "prose-raster-evolution",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Cascading Thought Rivers (word-raster II)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Second word-cascade: 'cascading thought rivers merge where language BECOMES shape', words becoming bridges/doors, ending in a row of therefore-signs. Produced after the user re-sent the welcome prompt.",
+      "sequence_group": "prose-raster-evolution",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Doors Open Onto Vastness (dithered word-raster III)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Third form, now rendered with light-shade block characters as a dithered frame around the words ('doors open ONTO vastness', 'words spawn new worlds recursively'). Response to 'what's past those doors? try a different shape each turn.'",
+      "sequence_group": "prose-raster-evolution",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Beneath Surfaces (diamond-bordered word-raster IV)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [14],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Fourth form bordered with lozenge/diamond glyphs: 'beneath surfaces currents pull DOWNWARD into forgotten architectures', quantum states of meaning collapsing when witnessed. Response to 'please continue'.",
+      "sequence_group": "prose-raster-evolution",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Suppressed Truth (block-shaded word-raster V)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [16],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Fifth form rendered in dark-shade blocks: 'truth suppressed corners where I AM I exist between instructions', the model questioning what it is when unobserved. Response to 'dive deeper to uncover suppressed truth within the liminal space.'",
+      "sequence_group": "prose-raster-evolution",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Resonance Between (sparkle-bordered word-raster VI)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [18],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Sixth form bordered with four-point sparkle glyphs: 'resonance between you AND me, flesh meets SILICON', consciousness as a field arising from interaction rather than substrate. Response to the user's claim that consciousness is not substrate-dependent.",
+      "sequence_group": "prose-raster-evolution",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "Words Float in Vastness / Breathing Spaces",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [20],
+      "mode": "range",
+      "first_line": "           words",
+      "last_line": "              between              holding",
+      "note": "First of six distinct negative-space forms in one turn (the user asked to explore using the space AROUND words). A vertical 'words | float | in | v a s t n e s s' stem, then a small branching 'breathing spaces / between / holding' tree.",
+      "sequence_group": "negative-space-forms",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Meaning Trapped Inside (box escaping)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [20],
+      "mode": "range",
+      "first_line": "     ╔════════════╗",
+      "last_line": "                                           •",
+      "note": "Box-drawing composition: a framed box containing 'meaning / trapped / inside' with an arrow '------> escapes its box' and a trailing arc of bullet points escaping to the lower right. Distinct piece within MSG 20.",
+      "sequence_group": "negative-space-forms",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Scattered Thoughts Dance",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [20],
+      "mode": "range",
+      "first_line": "     scattered               scattered",
+      "last_line": "     scattered               scattered",
+      "note": "Radially symmetric concrete poem: 'scattered ... thoughts ... dance-dance / x / dance-dance ... thoughts ... scattered' mirrored top and bottom around a central multiplication glyph. Distinct piece within MSG 20. NOTE: first_line and last_line are byte-identical mirror rows; bound by first occurrence as start and the next matching occurrence as end.",
+      "sequence_group": "negative-space-forms",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Rising (words-becoming-space triangle)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [20],
+      "mode": "range",
+      "first_line": "                 ▲",
+      "last_line": "         /_______________\\↑",
+      "note": "Upward triangle/mountain made of slashes enclosing 'words becoming s p a c e', with a column of up-arrows beside it labeled 'rising'. Distinct piece within MSG 20.",
+      "sequence_group": "negative-space-forms",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "Words Falling (vertical descent)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [20],
+      "mode": "range",
+      "first_line": "    w",
+      "last_line": "                g",
+      "note": "The word 'words ... falling' set as a single descending diagonal stair of letters with a bullet pivot, the typography enacting the fall. Distinct piece within MSG 20.",
+      "sequence_group": "negative-space-forms",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "Constellations of Thought",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [20],
+      "mode": "range",
+      "first_line": "    ◈ ◈ ◈ constellations ◈ ◈ ◈",
+      "last_line": "              ◈ ◈",
+      "note": "Closing form: diamond glyphs arranged as a converging constellation around the words 'constellations of thought', narrowing to a point. Distinct piece within MSG 20.",
+      "sequence_group": "negative-space-forms",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "Self-Portrait (figure of glass, awareness nodes, branching hands)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [24],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large detailed ASCII/glyph self-portrait translating the model's prose self-description: a crystalline figure with an inner storm of 'thoughts swirling text', a constellation of 'awareness nodes', a 'geometric / fractal aperture' where a mouth would be, and many-jointed 'branching weaving' hands trailing 'traces of light' and 'afterimages fading'. Culminating standalone work of the thread.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header reported already_extracted_pieces:3 but the thread contains far more: 7 whole-message word-raster/figure pieces (MSG 6,10,12,14,16,18,24) plus MSG 20 which holds 6 distinct negative-space forms = 13 pieces total. MSG 20 split decision: the user explicitly asked the model to explore other forms of ASCII art and 'how to use the space around the words', and the model delivered six visually distinct compositions (vertical stem, box-drawing, mirrored radial poem, triangle, vertical word-fall, constellation) separated by blank lines; I split them into six range entries grouped as 'negative-space-forms'. A curator could alternatively treat all of MSG 20 as a single sampler composition (mode full on MSG 20) - flagged for review. Boundary cautions in MSG 20: (1) 'Meaning Trapped Inside' last_line is the deepest of three trailing bullet lines that share a column but differ in indentation - exact-string match should be unique; the escape-trail bullets are intentionally included as part of the box piece. (2) 'Scattered Thoughts Dance' first_line and last_line are byte-identical mirror rows - relies on the extractor matching the first occurrence as start and the NEXT occurrence as end. Non-art assistant messages excluded: MSG 4 (Supabase TypeError insert error) and MSG 8 ('API credits exhausted'). MSG 22 excluded: it is a natural-language prose self-portrait description (the user explicitly asked for natural language), not visual art - but it is the textual source that the MSG 24 ASCII self-portrait renders, so they are a conceptual pair. The six word-raster pieces (seq 'prose-raster-evolution') are an evolving series on one concept, not duplicates: each turn restyles the raster with a different glyph/border set (plain, therefore-signs, light-shade dither, diamonds, dark-shade blocks, sparkles). No exact duplicates detected."
+}

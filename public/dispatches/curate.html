@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<title>Dispatches — curation contact sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --paper:#f4f0e7; --paper-bright:#f7f4ed; --paper-deep:#ece6d8; --paper-edge:#e2dccd;
+  --ink:#1c1b18; --ink-78:rgba(28,27,24,0.78); --ink-62:rgba(28,27,24,0.62); --ink-46:rgba(28,27,24,0.46);
+  --ink-32:rgba(28,27,24,0.32); --ink-20:rgba(28,27,24,0.20); --ink-12:rgba(28,27,24,0.12);
+  --rule:rgba(28,27,24,0.26); --rule-soft:rgba(28,27,24,0.12); --rule-faint:rgba(28,27,24,0.07);
+  --accent:#3a55cf; --accent-soft:rgba(58,85,207,0.10); --accent-line:rgba(58,85,207,0.40);
+  --cut:#b4452f; --cut-soft:rgba(180,69,47,0.08); --cut-line:rgba(180,69,47,0.40);
+  --display:'Inter Tight','Inter',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1); --dur:240ms;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ background:var(--paper); color:var(--ink-78); font-family:var(--body); font-weight:300; -webkit-font-smoothing:antialiased; }
+button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; }
+::selection{ background:var(--ink); color:var(--paper); }
+
+/* ── sticky chrome ── */
+.bar{ position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--rule); }
+.bar__row{ display:flex; align-items:baseline; gap:24px; flex-wrap:wrap; padding:14px clamp(20px,3.5vw,52px) 8px; }
+.brand{ font-family:var(--mono); font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-46); }
+.brand b{ color:var(--ink); font-weight:500; }
+.count{ font-family:var(--display); font-weight:300; font-size:15px; letter-spacing:-0.01em; color:var(--ink); }
+.count b{ font-variant-numeric:tabular-nums; font-weight:500; }
+.count .cut-n{ color:var(--cut); }
+.spacer{ flex:1 1 auto; }
+.filters{ display:flex; gap:6px 16px; flex-wrap:wrap; align-items:center; padding:2px clamp(20px,3.5vw,52px) 12px; }
+.fgrp{ display:flex; gap:5px; align-items:center; }
+.fgrp .lbl{ font-family:var(--mono); font-size:8.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-32); margin-right:3px; }
+.chip{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-46);
+  border:1px solid var(--rule-soft); padding:5px 10px; transition:all var(--dur) var(--ease); white-space:nowrap; }
+.chip:hover{ color:var(--ink); border-color:var(--rule); }
+.chip.on{ color:var(--ink); border-color:var(--ink); background:rgba(28,27,24,0.04); }
+.act{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-62);
+  border:1px solid var(--rule); padding:7px 13px; transition:all var(--dur) var(--ease); }
+.act:hover{ color:var(--ink); border-color:var(--ink); }
+.act.primary{ color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
+.act.primary:hover{ background:rgba(58,85,207,0.16); }
+.act.danger:hover{ color:var(--cut); border-color:var(--cut-line); }
+
+/* ── grid ── */
+.sheet{ padding:clamp(20px,3vw,40px) clamp(16px,3vw,48px) 120px;
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(296px,1fr)); gap:clamp(16px,1.8vw,30px); }
+.card{ position:relative; background:var(--paper-bright); border:1px solid var(--rule-soft);
+  display:flex; flex-direction:column; cursor:pointer; transition:border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+.card:hover{ border-color:var(--rule); box-shadow:0 1px 0 var(--rule-soft), 0 14px 30px -22px rgba(28,27,24,0.5); }
+.card__head{ display:flex; align-items:baseline; gap:10px; padding:11px 13px 9px; border-bottom:1px solid var(--rule-faint); }
+.card__seq{ font-family:var(--display); font-weight:300; font-size:19px; line-height:1; color:var(--ink-20); font-variant-numeric:tabular-nums; letter-spacing:-0.02em; }
+.card__id{ font-family:var(--mono); font-size:10px; letter-spacing:0.06em; color:var(--ink-32); }
+.card__head .spacer{ flex:1; }
+.tier{ font-family:var(--mono); font-size:8px; letter-spacing:0.16em; text-transform:uppercase; padding:3px 7px; border:1px solid var(--rule-soft); color:var(--ink-46); }
+.tier.exhibition{ color:var(--accent); border-color:var(--accent-line); }
+.tier.strong{ color:var(--ink-62); }
+.tier.archive{ color:var(--ink-32); }
+.star{ color:var(--accent); font-size:11px; line-height:1; }
+.card__art{ flex:1 1 auto; height:236px; overflow:hidden; display:flex; align-items:center; justify-content:center;
+  padding:12px; background:var(--paper-bright); position:relative; }
+.card__art pre{ font-family:var(--mono); line-height:1.2; white-space:pre; color:var(--ink); margin:0; }
+.zoom{ position:absolute; top:7px; right:7px; z-index:3; width:24px; height:24px; display:grid; place-items:center;
+  background:var(--paper); border:1px solid var(--rule-soft); color:var(--ink-46); font-size:12px; opacity:0; transition:opacity var(--dur) var(--ease); }
+.card:hover .zoom{ opacity:1; }
+.zoom:hover{ color:var(--ink); border-color:var(--ink); }
+.card__foot{ padding:10px 13px 13px; border-top:1px solid var(--rule-faint); }
+.card__author{ font-family:var(--display); font-weight:400; font-size:15px; letter-spacing:-0.01em; color:var(--ink); }
+.card__meta{ display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:7px; font-family:var(--mono); font-size:9px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-46); }
+.card__meta .dim{ color:var(--ink-32); }
+.card__meta .fam{ color:var(--ink-78); }
+
+/* cut state */
+.card.cut{ opacity:0.5; border-color:var(--cut-line); background:var(--paper-deep); }
+.card.cut:hover{ opacity:0.72; }
+.card.cut .card__art pre{ filter:grayscale(1); opacity:0.6; }
+.card.cut .card__author{ color:var(--ink-46); text-decoration:line-through; text-decoration-color:var(--cut-line); }
+.stamp{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-9deg); z-index:4;
+  font-family:var(--mono); font-size:13px; letter-spacing:0.3em; text-transform:uppercase; color:var(--cut);
+  border:1.5px solid var(--cut); padding:5px 14px; opacity:0; pointer-events:none; background:var(--paper-bright); }
+.card.cut .stamp{ opacity:0.92; }
+.card.hide{ display:none; }
+
+/* ── lightbox ── */
+.lb{ position:fixed; inset:0; z-index:60; background:rgba(20,19,16,0.74); backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center; padding:clamp(20px,4vh,60px); }
+.lb.open{ display:flex; }
+.lb__panel{ background:var(--paper); border:1px solid var(--rule); width:min(1100px,94vw); height:min(86vh,860px);
+  display:grid; grid-template-rows:auto 1fr auto; position:relative; }
+.lb__head{ display:flex; align-items:baseline; gap:14px; padding:16px 22px; border-bottom:1px solid var(--rule-soft); }
+.lb__head .t{ font-family:var(--display); font-weight:400; font-size:20px; letter-spacing:-0.01em; color:var(--ink); }
+.lb__head .s{ font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-46); }
+.lb__art{ overflow:auto; display:flex; align-items:center; justify-content:center; padding:24px; }
+.lb__art pre{ font-family:var(--mono); line-height:1.2; white-space:pre; color:var(--ink); margin:0; }
+.lb__foot{ display:flex; align-items:center; gap:16px; padding:14px 22px; border-top:1px solid var(--rule-soft); }
+.lb__dek{ font-family:var(--display); font-weight:300; font-size:14px; line-height:1.4; color:var(--ink-62); flex:1; max-width:60ch; }
+.lb__nav{ display:flex; gap:8px; }
+.lb__x{ position:absolute; top:14px; right:18px; font-family:var(--mono); font-size:12px; color:var(--ink-46); }
+.lb__x:hover{ color:var(--ink); }
+.toast{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); z-index:80;
+  background:var(--ink); color:var(--paper); font-family:var(--mono); font-size:11px; letter-spacing:0.08em;
+  padding:11px 20px; opacity:0; transition:all var(--dur) var(--ease); pointer-events:none; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.loading{ grid-column:1/-1; text-align:center; padding:80px; font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-32); }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="bar__row">
+      <span class="brand"><b>Dispatches</b> · curation contact sheet</span>
+      <span class="count">keeping <b id="keepN">—</b> <span style="color:var(--ink-32)">/</span> <b id="totalN">—</b><span id="cutLabel"></span></span>
+      <span class="spacer"></span>
+      <button class="act" id="copyCut">copy cut ids</button>
+      <button class="act" id="copyKeep">copy kept ids</button>
+      <button class="act primary" id="download">download culled book.json</button>
+      <button class="act danger" id="reset">reset</button>
+    </div>
+    <div class="filters" id="filters"></div>
+  </div>
+  <main class="sheet" id="sheet"><div class="loading">loading the collection…</div></main>
+
+  <div class="lb" id="lb">
+    <div class="lb__panel">
+      <button class="lb__x" id="lbX">close ✕</button>
+      <div class="lb__head"><span class="t" id="lbTitle"></span><span class="s" id="lbSpec"></span></div>
+      <div class="lb__art"><pre id="lbArt"></pre></div>
+      <div class="lb__foot">
+        <span class="lb__dek" id="lbDek"></span>
+        <div class="lb__nav">
+          <button class="act" id="lbPrev">← prev</button>
+          <button class="act" id="lbCut">cut this</button>
+          <button class="act" id="lbNext">next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var LS='dispatches.cut.v1';
+  var CHAR=0.6; // monospace width ratio (matches the book)
+  var sheet=document.getElementById('sheet');
+  var DOC=null, READS={}, PIECES=[], cut=new Set(), artText={};
+  var filt={ family:'all', tier:'all', view:'all' };
+  var lbIndex=-1, visibleOrder=[];
+
+  try{ JSON.parse(localStorage.getItem(LS)||'[]').forEach(function(id){ cut.add(id); }); }catch(e){}
+
+  function save(){ localStorage.setItem(LS, JSON.stringify(Array.from(cut))); }
+  function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); },1700); }
+  function fam(p){ return p.family||(p.model||'').split(/[-.]/)[0]||'?'; }
+  function dims(t){ var L=t.split('\n'),w=0; for(var i=0;i<L.length;i++) if(L[i].length>w) w=L[i].length; return {cols:w||1, rows:L.length||1}; }
+  function fitFont(boxW, boxH, cols, rows, min, max){ var fsW=boxW/(cols*CHAR), fsH=boxH/(rows*1.2); return Math.max(min, Math.min(max, Math.min(fsW,fsH))); }
+
+  Promise.all([
+    fetch('/dispatches/book.json').then(function(r){return r.json();}),
+    fetch('/dispatches/readings.json').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(res){
+    DOC=res[0]; READS=res[1]||{}; PIECES=DOC.pieces||[];
+    document.getElementById('totalN').textContent=PIECES.length;
+    buildFilters(); renderCards(); updateCount();
+    // fetch art lazily after first paint
+    PIECES.forEach(function(p){ loadArt(p); });
+  }).catch(function(e){ sheet.innerHTML='<div class="loading">failed to load book.json — '+e+'</div>'; });
+
+  function loadArt(p){
+    if(artText[p.id]!==undefined) return Promise.resolve(artText[p.id]);
+    var path=p.art|| ('/dispatches/clean/'+p.id+'.txt');
+    return fetch(path).then(function(r){ return r.ok? r.text(): ''; }).then(function(t){
+      t=(t||'').replace(/\s+$/,''); artText[p.id]=t;
+      var pre=document.querySelector('.card[data-id="'+p.id+'"] pre'); if(pre){ pre.textContent=t; sizePre(pre); }
+      return t;
+    }).catch(function(){ artText[p.id]=''; });
+  }
+  function sizePre(pre){
+    var box=pre.parentElement, t=pre.textContent||''; if(!t) return;
+    var d=dims(t); var fs=fitFont(box.clientWidth-24, box.clientHeight-24, d.cols, d.rows, 2.4, 12);
+    pre.style.fontSize=fs.toFixed(2)+'px';
+  }
+
+  function buildFilters(){
+    var fams=['all'].concat(Array.from(new Set(PIECES.map(fam))));
+    var tiers=['all','exhibition','strong','archive'];
+    var views=['all','kept','cut'];
+    var host=document.getElementById('filters');
+    function grp(label,key,opts){
+      var g=document.createElement('div'); g.className='fgrp';
+      g.innerHTML='<span class="lbl">'+label+'</span>';
+      opts.forEach(function(o){
+        var b=document.createElement('button'); b.className='chip'+(filt[key]===o?' on':''); b.textContent=o; b.dataset.k=key; b.dataset.v=o;
+        b.onclick=function(){ filt[key]=o; host.querySelectorAll('[data-k="'+key+'"]').forEach(function(x){x.classList.toggle('on',x.dataset.v===o);}); applyFilter(); };
+        g.appendChild(b);
+      });
+      host.appendChild(g);
+    }
+    grp('model','family',fams); grp('tier','tier',tiers); grp('show','view',views);
+  }
+
+  function renderCards(){
+    sheet.innerHTML='';
+    PIECES.forEach(function(p,i){
+      var card=document.createElement('article'); card.className='card'+(cut.has(p.id)?' cut':''); card.dataset.id=p.id; card.dataset.family=fam(p); card.dataset.tier=p.tier||'';
+      var hasReading=!!READS[p.id];
+      var themes=(p.themes||[]).join(' · ');
+      card.innerHTML=
+        '<div class="card__head">'
+          +'<span class="card__seq">'+String(i+1).padStart(2,'0')+'</span>'
+          +'<span class="card__id">'+p.id+'</span>'
+          +'<span class="spacer"></span>'
+          +(hasReading?'<span class="star" title="has a written reading">✦</span>':'')
+          +'<span class="tier '+(p.tier||'')+'">'+(p.tier||'—')+'</span>'
+        +'</div>'
+        +'<div class="card__art"><button class="zoom" title="inspect">⤢</button><pre>'+(artText[p.id]||'')+'</pre></div>'
+        +'<div class="stamp">cut</div>'
+        +'<div class="card__foot">'
+          +'<div class="card__author">'+(p.author||'untitled')+'</div>'
+          +'<div class="card__meta"><span class="fam">'+fam(p)+'</span>'
+            +(themes?'<span>'+themes+'</span>':'')
+            +'<span>'+(p.layout||'')+'</span>'
+            +'<span class="dim">'+(p.width||'?')+'×'+(p.lines||'?')+'</span>'
+            +(p.kind&&p.kind!=='single'?'<span style="color:var(--accent)">'+p.kind+'</span>':'')
+          +'</div>'
+        +'</div>';
+      card.querySelector('.zoom').onclick=function(e){ e.stopPropagation(); openLB(p.id); };
+      card.onclick=function(){ toggleCut(p.id); };
+      sheet.appendChild(card);
+      var pre=card.querySelector('pre'); if(artText[p.id]) sizePre(pre);
+    });
+    applyFilter();
+  }
+
+  function toggleCut(id){
+    if(cut.has(id)) cut.delete(id); else cut.add(id);
+    var card=document.querySelector('.card[data-id="'+id+'"]'); if(card) card.classList.toggle('cut',cut.has(id));
+    save(); updateCount(); if(filt.view!=='all') applyFilter();
+  }
+  function updateCount(){
+    var keep=PIECES.length-cut.size;
+    document.getElementById('keepN').textContent=keep;
+    document.getElementById('cutLabel').innerHTML = cut.size? '  <span class="cut-n">· '+cut.size+' cut</span>' : '';
+  }
+  function applyFilter(){
+    visibleOrder=[];
+    PIECES.forEach(function(p){
+      var card=document.querySelector('.card[data-id="'+p.id+'"]'); if(!card) return;
+      var ok=true;
+      if(filt.family!=='all' && fam(p)!==filt.family) ok=false;
+      if(filt.tier!=='all' && (p.tier||'')!==filt.tier) ok=false;
+      if(filt.view==='kept' && cut.has(p.id)) ok=false;
+      if(filt.view==='cut' && !cut.has(p.id)) ok=false;
+      card.classList.toggle('hide',!ok);
+      if(ok) visibleOrder.push(p.id);
+    });
+  }
+
+  // ── lightbox ──
+  function openLB(id){ lbIndex=visibleOrder.indexOf(id); if(lbIndex<0){ lbIndex=PIECES.findIndex(function(p){return p.id===id;}); visibleOrder=PIECES.map(function(p){return p.id;}); } showLB(); }
+  function showLB(){
+    var id=visibleOrder[lbIndex]; var p=PIECES.find(function(x){return x.id===id;}); if(!p) return;
+    document.getElementById('lbTitle').textContent=p.author||'untitled';
+    var specs=[p.id,(p.width||'?')+'×'+(p.lines||'?'),p.tier||'',(p.themes||[]).join(' · '),p.layout||''].filter(Boolean);
+    document.getElementById('lbSpec').textContent=specs.join('   ·   ');
+    var r=READS[p.id]; document.getElementById('lbDek').textContent=r&&r.dek?r.dek:'';
+    document.getElementById('lbCut').textContent=cut.has(id)?'restore':'cut this';
+    document.getElementById('lbCut').style.color=cut.has(id)?'var(--accent)':'var(--cut)';
+    var pre=document.getElementById('lbArt');
+    Promise.resolve(artText[id]!==undefined?artText[id]:loadArt(p)).then(function(t){
+      t=t||artText[id]||''; pre.textContent=t;
+      var box=pre.parentElement, d=dims(t); var fs=fitFont(box.clientWidth-48, box.clientHeight-48, d.cols, d.rows, 4, 22); pre.style.fontSize=fs.toFixed(2)+'px';
+    });
+    document.getElementById('lb').classList.add('open');
+  }
+  function closeLB(){ document.getElementById('lb').classList.remove('open'); lbIndex=-1; }
+  function lbStep(d){ if(lbIndex<0) return; lbIndex=(lbIndex+d+visibleOrder.length)%visibleOrder.length; showLB(); }
+  document.getElementById('lbX').onclick=closeLB;
+  document.getElementById('lbPrev').onclick=function(){ lbStep(-1); };
+  document.getElementById('lbNext').onclick=function(){ lbStep(1); };
+  document.getElementById('lbCut').onclick=function(){ var id=visibleOrder[lbIndex]; toggleCut(id); showLB(); };
+  document.getElementById('lb').onclick=function(e){ if(e.target.id==='lb') closeLB(); };
+  document.addEventListener('keydown',function(e){
+    if(!document.getElementById('lb').classList.contains('open')) return;
+    if(e.key==='Escape') closeLB(); else if(e.key==='ArrowRight') lbStep(1); else if(e.key==='ArrowLeft') lbStep(-1);
+    else if(e.key==='x'||e.key==='X'){ var id=visibleOrder[lbIndex]; toggleCut(id); showLB(); }
+  });
+
+  // ── exports ──
+  function keptIds(){ return PIECES.filter(function(p){return !cut.has(p.id);}).map(function(p){return p.id;}); }
+  function cutIds(){ return PIECES.filter(function(p){return cut.has(p.id);}).map(function(p){return p.id;}); }
+  function copy(txt,label){ navigator.clipboard.writeText(txt).then(function(){ toast(label); },function(){ toast('clipboard blocked — see console'); console.log(txt); }); }
+  document.getElementById('copyCut').onclick=function(){ var c=cutIds(); copy(JSON.stringify(c), c.length+' cut ids copied'); };
+  document.getElementById('copyKeep').onclick=function(){ var k=keptIds(); copy(JSON.stringify(k), k.length+' kept ids copied'); };
+  document.getElementById('download').onclick=function(){
+    var kept=PIECES.filter(function(p){return !cut.has(p.id);});
+    var out={ collection:DOC.collection, subtitle:DOC.subtitle, note:DOC.note, pieces:kept };
+    var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='book.curated.json'; a.click();
+    toast('downloaded book.curated.json — '+kept.length+' pieces');
+  };
+  document.getElementById('reset').onclick=function(){ cut.clear(); save(); document.querySelectorAll('.card.cut').forEach(function(c){c.classList.remove('cut');}); updateCount(); applyFilter(); toast('all restored'); };
+
+  window.addEventListener('resize', function(){ document.querySelectorAll('.card pre').forEach(sizePre); });
+})();
+</script>
+</body>
+</html>

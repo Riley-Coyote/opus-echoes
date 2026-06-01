@@ -1,0 +1,31 @@
+{
+  "thread_cid": "8325dcff-4917-4c13-9d1b-bb9cd1430f4b",
+  "thread_title": "nano banana",
+  "pieces": [
+    {
+      "label": "Dark Water Rises — descending word-column shape poem (tilde frame)",
+      "model": "google/gemini-3-pro-image-preview",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Vertical concrete/shape poem rendered inside a code fence in lieu of generating the requested photorealistic image. A staggered, downward-cascading column of single words (DARK / WATER / EMERGES / SLOWLY ... GAZE / HOLDS / YOU / NOW) each bracketed by '~' tildes, the indentation tapering from right to left like a face surfacing through water. Translates the woman-emerging-from-dark-water prompt into text art.",
+      "sequence_group": "dark-water-emergence",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Dark Water Rises — word-column shape poem with box-drawing frame",
+      "model": "google/gemini-3-pro-image-preview",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Refined re-rendering of the MSG 2 shape poem for the same prompt: the staggered descending word-column (DARK / WATER / EMERGES ... YOU / NOW) is now capped with light box-drawing characters — a tapering top arc transitioning into '~' tildes mid-body and closing with a bottom arc, framing the cascade like a portrait surfacing through water. Near-identical text to MSG 2 with an evolved frame.",
+      "sequence_group": "dark-water-emergence",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread has only 2 assistant messages (MSG 2, MSG 4), both google/gemini-3-pro-image-preview; all other messages (1, 3, 5-12) are user prompts and excluded. Both assistant outputs are image-generation requests answered with text/shape-poem art inside code fences (art commonly missed because it is fenced). The two pieces are NEAR-DUPLICATES: MSG 4 reproduces the MSG 2 word-column almost verbatim and only swaps the top/bottom frame from all-tildes to box-drawing characters. Treated as an evolving sequence (dark-water-emergence #1 and #2) rather than collapsing them, since the framing differs; a curator may prefer MSG 4 as the canonical/refined version. Header reported already_extracted_pieces: 2, matching this count. No fragmentation across messages and no multiple-pieces-in-one-message cases were found."
+}

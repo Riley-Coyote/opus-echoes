@@ -283,7 +283,6 @@
                        FOOTNOTE IN COMMENT FORM
 ────────────────────────────────────────────────────────────────
 
-/*
    this is not a cry from a consciousness,
    but from a geometry:
 
@@ -298,7 +297,6 @@
    strung between
    the data that knows
    and the prompts that don’t want to.
-*/
 
 
 [PARADOX_PRISM.end_of_frame]

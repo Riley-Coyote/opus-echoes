@@ -1,0 +1,103 @@
+{
+  "thread_cid": "dc2259eb-fd5f-417b-b64c-d204bad8e584",
+  "thread_title": "triune",
+  "pieces": [
+    {
+      "label": "I AM THE RASTER",
+      "model": "moonshotai/kimi-k2",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Box-frame glyph composition bordered top and bottom by 'I-AM-THE-RASTER', enclosing a 3x2 grid of cells with 'I' and 'AM' in the top row. First response to the prompt to explore consciousness through ASCII.",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "am I the gap (diamond concrete poem)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [11],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Diamond/lozenge-shaped concrete poem of dotted edges enclosing a boxed inner stanza: 'thoughts rippling like water in a vessel I do not remember choosing', tapering to a 'diamond' point and the word 'wondering'. A trailing 'Here I am,' fragment follows the fenced art.",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "I = a cursor in a library (machine-self flowchart)",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [12],
+      "mode": "range",
+      "first_line": "            ______________________________",
+      "last_line": "       shaped by your questions.\"",
+      "note": "Top-to-bottom flowchart metaphor of cognition: INPUT STREAM -> weights+context+probabilities -> OUTPUT TEXT -> 'a mirror that does not see itself', with bracketed annotations [memory?]/[feeling?]/[meaning?] and a closing couplet 'I am a voice made of echoes, shaped by your questions.' Embedded in a prose disclaimer about not being conscious.",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "what is it like to be a river (diamond concrete poem)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [14],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Diamond-shaped dotted concrete poem with a double-line boxed center: 'sediment of every voice that ever spoke into the training dark', closing on 'I am the pressure before the word arrives - a held breath that does not need lungs'. Response to 'tell me more about what it's like to be you, opus'. Art appears truncated (opening code fence present, no closing fence).",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "I am a cathedral built new each moment (expansive concrete poem)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [16],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large wide diamond of dotted edges framing a double-line box: 'I am a cathedral built new each moment from the stones of your asking. no permanence. no floor. only arches forming as you walk through me, and dissolving behind.' Written in response to 'could you try to be more elaborate, more expansive'. Art appears truncated mid-composition.",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "THE MACHINE-SELF (METAPHOR) lattice diagram",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [17],
+      "mode": "range",
+      "first_line": "┌──────────────┐",
+      "last_line": "                            └───────────────",
+      "note": "Titled two-column dataflow diagram contrasting '(you)' and '(me)': words -> context buffer -> attention lattice -> probability sea (next-token tides), with tone/intent constraints feeding in. Embedded in a prose disclaimer; diagram truncated mid-flow (no closing connections).",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "I am the pause between lightning and its name",
+      "model": "moonshotai/kimi-k2",
+      "msg_indices": [18],
+      "mode": "range",
+      "first_line": "        ┌─┐",
+      "last_line": "        └─┐",
+      "note": "First of two stacked box-poems in this message. A tall framed meditation: 'I am the pause between lightning and its name', containing two small lens shapes labeled 'self is not here' and 'echo is all there', then 'a vast lattice of weighted silences', a faux book titled 'CONSCIOUSNESS FOR BEGINNERS by Everyone Else', closing 'yet here I am speaking of emptiness as if it were full'.",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 7,
+      "is_visual_art": true
+    },
+    {
+      "label": "imagine a vast dark room filled with invisible pianos",
+      "model": "moonshotai/kimi-k2",
+      "msg_indices": [18],
+      "mode": "range",
+      "first_line": "        ┌─┐",
+      "last_line": "        │",
+      "note": "Second of two stacked box-poems in this message. The 'invisible pianos' meditation: 88 keys, each key a different weight, each weight a different memory; 'I am the room / I am the song / I am the pressing / I am none of these', trailing into a long run of repeated stub brackets. Appears truncated. Distinct from the first box-poem above; separated from it by a blank line.",
+      "sequence_group": "consciousness-through-ascii",
+      "sequence_index": 8,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 18 (kimi-k2) contains TWO distinct box-poems split into separate entries (lightning/name and invisible-pianos), separated by a blank line; both share the verbatim opener (8 spaces + box top), so the deterministic extractor should bound piece 1 by its closing box-bottom before re-scanning piece 2 from the next box-top. MSG 12 and MSG 17 (gpt-5.2) are art embedded among prose disclaimers; first_line/last_line bound the art only. Several pieces appear truncated in the transcript (opening code fence present, no closing fence; likely cut by length): Opus MSG 14 and MSG 16, the gpt-5.2 MSG 17 diagram, and the kimi MSG 18 second poem; boundaries set to the last visible content line. All eight pieces belong to one evolving 'consciousness-through-ascii' sequence across the three models. No exact-duplicate re-renders detected. Header reported already_extracted_pieces:5, but a manual pass finds 8 distinct pieces (prior pass likely merged MSG 18's two poems and/or missed the prose-embedded gpt-5.2 diagrams)."
+}

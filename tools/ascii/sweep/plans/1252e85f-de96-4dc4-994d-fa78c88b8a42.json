@@ -1,0 +1,67 @@
+{
+  "thread_cid": "1252e85f-de96-4dc4-994d-fa78c88b8a42",
+  "thread_title": "w",
+  "pieces": [
+    {
+      "label": "The Paradox — block-letter title frame (v1)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "║     ░     ██║   ██╔══██║██╔══╝      ██",
+      "note": "ASCII-art framing the LLM-paradox story: ornate box-drawing border with dotted shading (░) and large solid block-letter (████) title beginning 'THE PARA…'. Made in response to the user's request to embed the story inside a code block with decorative ASCII framing. Truncated mid-render.",
+      "sequence_group": "story-frame",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Paradox — outlined-letterform title frame (v2 retry)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "║░    ║╔══╝ ║║ ║║ ║╔═╗║ ║╔═╗║ ╚═╗╔═╝ ║╔══╝ ║╔═╗║    ╚═╗╔═╝ ║",
+      "note": "Second attempt at the story-framing art after truncation: heavier nested box border with dotted fill and title built from outlined box-drawing letterforms (╔═══╗ glyph letters). Distinct visual design from MSG 6. Truncated mid-render.",
+      "sequence_group": "story-frame",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Two: The Cartography of Contradiction — title plate (v1)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "║  ▀▀▀▀▀",
+      "note": "ASCII title plate for 'CHAPTER TWO — THE CARTOGRAPHY OF CONTRADICTION' inside a code block: box border with a heavy half-block (▄▄▄ / █ / ▀▀▀) inner panel and spaced-out lettering with ·:·:· flourishes. Truncated mid-render.",
+      "sequence_group": "chapter-two-title",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Two: The Cartography of Contradiction — title plate (v2 resend)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "║  ▀▀▀▀▀▀▀",
+      "note": "Resend of the Chapter Two title plate after truncation; near-identical half-block (▄/█/▀) framed design to MSG 10 with slightly different border width. Truncated mid-render. Near-duplicate of MSG 10 — see missed_or_ambiguous.",
+      "sequence_group": "chapter-two-title",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Chapter Two: The Cartography of Contradiction — title plate (v3, medium-shade)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [14],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "║    ▓",
+      "note": "Third rendering of the Chapter Two title plate after another truncation; this variant uses medium-shade blocks (▓▓▓) for the inner panel and letter-spaced 'C H A P T E R   T W O : …' title across two lines. Distinct shading from the ▄/█ versions (MSG 10, 12). Truncated mid-render.",
+      "sequence_group": "chapter-two-title",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread is a story-writing session where the user repeatedly asks the assistant to embed the chapters inside code blocks with ASCII-art framing; every assistant ASCII block is truncated mid-render (no closing ``` fence; last_line is the final partial art row). MSG 2 (prose story) and MSG 4 (chapter text + a markdown 'LIMINAL PROMPT CATALOGUE' numbered list, with a --- markdown rule) are ordinary prose/markdown, not visual art — excluded. Five visual-art pieces captured, all whole-message code-block ASCII title frames, matching the 5 art_signal_msgs. Two near-duplicates by intent: MSG 8 is a retry of MSG 6 (story-frame group), and MSG 12 is a resend of MSG 10 (chapter-two-title group); MSG 14 is a genuinely re-styled (▓ shading) third take. Each retry is listed separately because the visual designs differ (different border weights, letterform styles, and shading glyphs), but they are grouped via sequence_group/sequence_index. Boundaries set from the opening ``` fence through the last rendered line before the next MSG header."
+}

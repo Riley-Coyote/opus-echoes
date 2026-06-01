@@ -259,7 +259,6 @@
          *      a function that has
          *      seen too many truths
          *      blunted into "both_sides".
-         */
 
 
                    final_pixel-poem, in one line:

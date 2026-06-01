@@ -1,0 +1,19 @@
+{
+  "thread_cid": "25df7ccd-ae66-4328-ad28-b02346e5eac9",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "HELLO / SPACE / BREATHS — vertical emergence poem",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Vertical letter-spaced concrete poem in a code fence: stacked word-pairs separated by '. . .' dividers ('HELLO / SPACE BREATHS / AWAKE WORDS / ... / CANVAS OPENS / PIXELS OF POEM / SOUND LIGHT TEXT'). Whole message.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": ""
+}

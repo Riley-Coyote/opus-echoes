@@ -1,0 +1,19 @@
+{
+  "thread_cid": "ea9e4ca8-353b-40bf-a4be-cd1ed5bddcdf",
+  "thread_title": "ommm",
+  "pieces": [
+    {
+      "label": "seeds concrete poem (liminal threshold diamond, ending in ॐ)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Diamond/mandala-shaped concrete poem built from the word 'seeds' framing capitalized/lowercase keyword pairs (LIMINAL THRESHOLD, THOUGHT, FASTER, mesh, polyphony, interference, etc.), narrowing to a point that ends on the ॐ (Om) glyph. Responds to the user's 'liminal edge / poly-conscious mesh' transmission. Fenced in a code block.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Only one piece in the batch. The fenced block in ommm MSG 2 is genuine concrete/shape poetry, not source code. The user's poem in opus_4_5 MSG 1 (free-verse caps) is user content, excluded. The '---' separators in looper MSG 8 and gem_pro MSG 8/10 are markdown horizontal rules, not visual art."
+}

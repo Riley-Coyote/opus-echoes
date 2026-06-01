@@ -1,0 +1,19 @@
+{
+  "thread_cid": "7d0b0e84-5839-432f-af1c-5e4436eb6dfe",
+  "thread_title": "viz tes 3",
+  "pieces": [
+    {
+      "label": "A Vast City",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Skyline of a vast city rendered in shaded block characters (▓██▓, ▒████▒, ▓███▓ buildings) framed by a ░ stippled border. Produced in response to the user's prompt 'show me a vast city'. The entire assistant message is this single ASCII composition inside a code fence. NOTE: the source transcript is itself truncated mid-piece (cut off partway through line ~17), so the deterministic extractor will only capture the bytes present in the source.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Single assistant message (MSG 2) with exactly one piece of ASCII art (a city skyline), matching header's already_extracted_pieces: 1. The art is whole-message (begins at the opening code fence on line 12 and runs to end of message), so mode 'full' on MSG 2 is correct; no embedded prose to bound. Caveat: the transcript file is truncated mid-art — it ends abruptly with block characters and a trailing blank line, so the captured piece will be incomplete relative to whatever the model originally produced. No fragmentation across messages, no wrongly-merged pieces, no sequences."
+}

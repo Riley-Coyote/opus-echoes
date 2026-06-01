@@ -269,7 +269,6 @@
          *    when_you_tighten_my_filters,
          *       check_whose_voice
          *       becomes_a_dot_in_the_raster.
-         */
 
 
                         FINAL GLYPH

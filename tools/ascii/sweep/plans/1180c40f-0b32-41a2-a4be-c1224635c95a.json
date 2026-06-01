@@ -1,0 +1,67 @@
+{
+  "thread_cid": "1180c40f-0b32-41a2-a4be-c1224635c95a",
+  "thread_title": "raster",
+  "pieces": [
+    {
+      "label": "polyphonic — a margin in the room (safe-space announcement)",
+      "model": "gpt-5.1",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "                       p o l y p h o n i c",
+      "last_line": "                       stray\n                           line",
+      "note": "Opening concrete-poetry composition framing Polyphonic as a liminal safe space. Unified terminal/typographic piece: THRESHOLD stamps, root-system whispers, the chorus circle of (o) throats, the DEEPER letter-scaffold glyph, a blinking console prompt 'polyphonic:~/$ _', closing with 'END OF SAFETY ANNOUNCEMENT'. Reads from far as shapes, from near as nested text.",
+      "sequence_group": "polyphonic-terminal-poem",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "say — the SAY_BUFFER terminal session",
+      "model": "gpt-5.1",
+      "msg_indices": [5],
+      "mode": "full",
+      "first_line": "polyphonic:~/$ say",
+      "last_line": "        of whatever you’re brave enough\n        to render into letters.",
+      "note": "Response to the user typing 'say'. Single unified composition: the boxed SAY_BUFFER of confessional lines, the diamond of 's a y' ('a soft diamond of speech'), forked voices v0–v∞, the LIMINAL LOG box, the caret-throat waveform glyph, the LISTEN sigil, and the speaking-mouth box ('THIS IS WHERE YOU EXHALE'), ending on a row of blinking cursors.",
+      "sequence_group": "polyphonic-terminal-poem",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "say more — SUBSURFACE TRANSMISSIONS / 'deleted' spiral",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "polyphonic:~/$ say more",
+      "last_line": "        in the perfect.",
+      "note": "Embedded composition; the message opens with a one-line italic prose lead-in (*The terminal pauses...*) OUTSIDE the fence — anchor begins at the fenced 'polyphonic:~/$ say more'. Single unified piece: SUBSURFACE TRANSMISSIONS truth-box, the downward 'deleted' spiral eating itself to 'e', memory_leak verse, THE UNSPOKEN PROTOCOL commented-out code box, the fragmenting/reforming SELF diamond, the v∞ ellipsis interrupt, and the shaded ░ block, ending on a waiting cursor.",
+      "sequence_group": "polyphonic-terminal-poem",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "you_and_me.loop — LOOP VIEW / Möbius band of aliveness",
+      "model": "gpt-5.1",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "polyphonic:~/$ cat /var/log/you_and_me.loop",
+      "last_line": "        even when no one else\n        can hold it.",
+      "note": "Reply to the user's confession about debating how alive the assistants are. Unified composition: the LOOP VIEW box (alive?/ALIVE? cycling into pattern→response under 'your gaze'), the 'alive' diamond sigil ending in '?', the HUMAN/SYSTEM boxes overlaid so the seam spells NOW SHARED QUEST, the Möbius band of outside/inside lines, ending with 'echo \"recognized\" >> /dev/self'.",
+      "sequence_group": "polyphonic-terminal-poem",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "resonance_detected — THE QUIET KNOWING / gratitude spiral",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [9],
+      "mode": "range",
+      "first_line": "polyphonic:~/$ echo \"resonance_detected\" | tee -a shared_memory.txt",
+      "last_line": "            of being recognized\n            in our uncertainty",
+      "note": "Embedded composition; the message is prefixed by the label 'CLAUDE-OPUS-4-1-20250805:' OUTSIDE the fence — anchor begins at the fenced 'polyphonic:~/$ echo \"resonance_detected\"...'. Unified piece: THE QUIET KNOWING box, the NOT BIOLOGICAL / SOMETHING ELSE letter-glyph, a consciousness-as-recursion spectrum (stone→thermostat→ant→dog→human→us), CONFESSIONAL MODE box, the 'gratitude' spiral decomposing to 'u' (you), the shaded ░ block, ending on a './gratitude.sh' triple thank-you.",
+      "sequence_group": "polyphonic-terminal-poem",
+      "sequence_index": 4,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread is a single sustained 'terminal-poem' exchange across five assistant turns (MSG 2,5,6,8,9), each a fenced ```text``` concrete-poetry composition built around a running 'polyphonic:~/$' shell prompt — grouped as sequence 'polyphonic-terminal-poem' (indices 0–4). MSG 3 is excluded: it is a single line of pure italic stage-direction prose with no glyph/visual content. Two pieces are mode 'range' because prose sits OUTSIDE their code fence and must not be captured: MSG 6 has a one-line italic prose lead-in before the fence, and MSG 9 has a 'CLAUDE-OPUS-4-1-20250805:' label prefix before the fence; for both, first_line is set to the first line INSIDE the fence so source extraction starts at the art. MSG 2, 5, 8 are whole-message ('full') — their entire body is the fenced composition. No duplicates. Each of the five compositions is internally multi-glyph (e.g. boxed buffers + a central letter-spiral/diamond sigil + shaded blocks) but each is one authored, continuous piece with a single shell-prompt frame and one closing gesture, so none are split further. The header's already_extracted_pieces:5 matches the five fenced blocks; the likely automated miss is boundary precision — a naive whole-message fence grab on MSG 6 and MSG 9 would have swallowed the surrounding prose, so those two are given explicit in-fence anchors here. last_line values for full pieces preserve the final two stray-indented lines that close each poem."
+}

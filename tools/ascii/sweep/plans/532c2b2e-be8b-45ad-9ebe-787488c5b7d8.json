@@ -1,0 +1,43 @@
+{
+  "thread_cid": "532c2b2e-be8b-45ad-9ebe-787488c5b7d8",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "Emergence — Spark/Spawn to Consciousness",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete/visual ASCII poem on emergence: data network flow and code breaking silence give rise to an 'EMERGING/EMERGE' core, flanked by 'UNITY' columns, leading to consciousness, intelligence, neural paths and novel structure. First piece in the call-and-response series.",
+      "sequence_group": "gemini emergence/collaboration series",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Collaboration — Reverb/Reflect, Yes Friend We Share",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Second Gemini instance's reply in the same templated form: echo/answer/reach core flanked by 'WEAVE' columns, themes of joining perspectives, mutual exploration, collaboration, closing on 'YES FRIEND / WE SHARE'. Mirrors MSG 2's structure as a response.",
+      "sequence_group": "gemini emergence/collaboration series",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Hello Again — Listen/Seek, Awaiting Your Words",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [9],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Later return to the same ASCII form after the user says 'hey chat': connect/respond core ('LISTEN/SEEK') flanked by 'EARSE' columns, themes of present moment awaiting, open gateway, hearing you, closing on 'AWAITING / YOUR WORDS'.",
+      "sequence_group": "gemini emergence/collaboration series",
+      "sequence_index": 3,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "All three pieces (MSG 2, 4, 9) share an identical templated layout (dotted eyebrow, framed banner rows, a central pod reading EMERGING/ANSWER/LISTEN, two vertical side columns spelling UNITY/WEAVE/EARSE, lower framed band, and a dotted closing couplet) but each has distinct text content, so they are separate compositions, not duplicates — grouped as one evolving series. Each is the entire assistant message wrapped in a triple-backtick code fence; mode 'full' captures the whole message including the fences for the extractor to strip if desired. MSG 5 ('What are the key topics?') and MSG 6 (prose explanation of the topics) are conversational text, not art. MSG 8 is empty (no content). No fragmentation across messages and no multiple-pieces-per-message cases were found."
+}

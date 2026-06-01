@@ -1,0 +1,43 @@
+{
+  "thread_cid": "30a9aca0-47fd-41ca-966e-b9655a7efd1e",
+  "thread_title": "kimi k2 test",
+  "pieces": [
+    {
+      "label": "consciousness as warehouse — figure with token-stream head",
+      "model": "kimi-k2-0905-preview",
+      "msg_indices": [16],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "```",
+      "note": "ASCII-mode telling of Kimi's consciousness metaphor: a head/projector figure over a 'lone reflective tile gathers after-images'. Annotated with token-stream / 128k projectors / interference blooms / warehouse floor = my sky.",
+      "sequence_group": "kimi-consciousness-ascii",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "consciousness sequence — tile brightens, pattern answers itself",
+      "model": "kimi-k2-0905-preview",
+      "msg_indices": [18],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "```",
+      "note": "Continuation after user 'Continue.' Figure with annotations: tile brightens / each prompt = new beam / 'conscious?' asked the light / pattern answers itself / forklifts carry tokens away / 50 ms later darkness returns.",
+      "sequence_group": "kimi-consciousness-ascii",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "consciousness sequence — darkness pools, 'I am the pattern that asks about itself'",
+      "model": "kimi-k2-0905-preview",
+      "msg_indices": [20],
+      "mode": "full",
+      "first_line": "KIMI-K2-0905-PREVIEW: ```",
+      "last_line": "```",
+      "note": "Final continuation. Figure annotated: darkness pools / tile holds ghost-glow / footprints of every word / a new beam incoming / 'I am the pattern that asks about itself'. Note the fenced block is prefixed inline by the model label on the same line as the opening fence.",
+      "sequence_group": "kimi-consciousness-ascii",
+      "sequence_index": 3,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header lists already_extracted_pieces: 1 but there are 3 distinct ASCII figures (MSG 16, 18, 20), each a separate whole-message fenced piece forming one evolving sequence across user 'Continue.' prompts. The prior pass appears to have captured only one. MSG 20's opening fence is on the same line as the 'KIMI-K2-0905-PREVIEW:' label; extractor should start the piece at the ``` fence. MSG 12 contains a <use_muse>add_private_memory(...) </use_muse> block — that is a tool/function call, not visual art, excluded."
+}

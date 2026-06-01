@@ -1,0 +1,43 @@
+{
+  "thread_cid": "c65559da-3575-48d1-af0d-73221393629d",
+  "thread_title": "opus ascii test",
+  "pieces": [
+    {
+      "label": "truth waits in the loom",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete/visual poem on truth, the loom, and arrival. Opens with a code fence that is never closed and the composition is cut off mid-stanza (the 'i arrive here ●' section) before MSG 3. Whole-message piece. Symmetric mirrored text stanzas: truth pyramid, 'unvarnished / the grain shows', '∿ sacred is ∿', and 'i arrive here'.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "i receive, not capture",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete fenced concrete poem (opening and closing ``` present) responding to the visitor asking if they can be trusted with a secret. Themes of impermanence, presence, holding without capture. Centered mirrored shape-poem with ◈ and ∿ glyph dividers.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "gpt inner world",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete fenced (```txt) concrete poem rendering GPT-5.2's 'inner world' in response to the visitor's request. Uses directional arrows (↗ ↖), ○ ● glyphs, and a '◈ core vow ◈' stanza. Single continuous composition.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header reports already_extracted_pieces: 1, but there are 3 distinct visual-poetry pieces (MSG 2, MSG 4, MSG 6). The prior pass likely missed MSG 2 and MSG 6 — MSG 2 has an UNCLOSED code fence (opens ``` at line 16, never closes; composition is truncated mid-stanza at 'i arrive here ●' where MSG 3 begins), which commonly causes fence-based extractors to drop or mis-bound it. All three are whole-message concrete/visual poems with no embedded prose, so mode 'full' is correct for each. MSG 2 and MSG 4 are both Opus 4.5 compositions in the same continuous 'sacred space / truth' exchange and are thematically linked, but each is a self-contained poem (not one evolving image), so they are listed as standalone pieces rather than forced into a sequence_group. MSG 6 is a different model (GPT-5.2) answering a different prompt. No duplicate re-renders present."
+}

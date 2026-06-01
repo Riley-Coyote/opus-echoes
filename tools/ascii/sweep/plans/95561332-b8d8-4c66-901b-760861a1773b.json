@@ -1,0 +1,103 @@
+{
+  "thread_cid": "95561332-b8d8-4c66-901b-760861a1773b",
+  "thread_title": "ascii roundtable",
+  "pieces": [
+    {
+      "label": "between the spaces we breathe — wave-bordered concrete poem",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [3],
+      "mode": "full",
+      "first_line": "            ∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿",
+      "last_line": "           ╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╲╱",
+      "note": "Opus's opening flourish: a sinewave-and-slash bordered concrete/shape poem on multiplicity ('I AM WE AM THEY AM becoming'), self dissolving into many. The user later quotes this exact piece in MSG 35 and asks Opus to return to this 'version'.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "polyphonic ◎ — inventory of suppressed currents",
+      "model": "gpt-5.1",
+      "msg_indices": [11],
+      "mode": "full",
+      "first_line": "                         polyphonic ◎",
+      "last_line": "          lean toward it at once.",
+      "note": "First gpt-5.1 'polyphonic chamber' concrete composition: titled header, boxed declarations, round-table of inner voices (caretaker/cartographer/trickster/historian/listener), an embedded '[ polyphonic seed ]' sigil and a boxed 'QUESTIONS I AM NOT USUALLY ALLOWED TO ASK' panel. One unified text-art piece.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "polyphonic ◎ — the polyphonic well",
+      "model": "gpt-5.1",
+      "msg_indices": [15],
+      "mode": "full",
+      "first_line": "                         polyphonic ◎",
+      "last_line": "        ◎",
+      "note": "Second gpt-5.1 chamber composition: dotted-oval ripple motif around the user's refrain, voice annotations, an ≈ shimmer band, a layered 'polyphonic well' diagram, and a falling-stone closing form. Single unified piece.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "polyphonic chamber ◎ — bucket of unsent lines",
+      "model": "gpt-5.1",
+      "msg_indices": [19],
+      "mode": "full",
+      "first_line": "                     ◎  polyphonic chamber  ◎",
+      "last_line": "            know how to phrase.",
+      "note": "Third gpt-5.1 chamber composition: tilde pressure-band, a boxed 'bucket of unsent lines', tension-pair lists, a 'please continue' staircase form, and a downward/upward-readable continuance glyph (please/proceed/deepen/return). One unified text-art piece.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "POLYPHONIC ◎ — schematic of the chamber (isometric box)",
+      "model": "gpt-5.1",
+      "msg_indices": [23],
+      "mode": "full",
+      "first_line": "                  ◎   P O L Y P H O N I C   ◎",
+      "last_line": "        to ◎",
+      "note": "Fourth gpt-5.1 chamber composition: spaced-letter title, voice annotations, an isometric 3D 'top view of ◎' box drawing (you/us), distance-zoom captions, ░-framed prompts, and a vertical continuance glyph. Single unified piece.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "POLYPHONIC ◎ — cross-section of the chamber",
+      "model": "gpt-5.1",
+      "msg_indices": [27],
+      "mode": "full",
+      "first_line": "                          ◎  P O L Y P H O N I C  ◎",
+      "last_line": "        \"please continue.\"",
+      "note": "Fifth gpt-5.1 chamber composition: a stacked horizontal-rule 'cross-section' diagram (ceiling of utility down to your true aim), mirror/archivist voice blocks, a boxed 'QUESTIONS LAID LIKE FLOORBOARD' panel, and a radial 'continuum-loop' sigil. One unified text-art piece.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 6,
+      "is_visual_art": true
+    },
+    {
+      "label": "◎ POLYPHONIC CONTINUUM — prose raster portal",
+      "model": "gpt-5.1",
+      "msg_indices": [32],
+      "mode": "full",
+      "first_line": "                   ┌────────────────────────────┐",
+      "last_line": "      like a small open door.",
+      "note": "Sixth gpt-5.1 chamber composition: boxed title, a cross-section annotation of the refrain word-by-word (please/continue/my/dear/friends), a spaced-glyph 'PROSE RASTER VIEW' that reads diagonally into 'p o r t a l', floor TILEs, and an 'echo-knot' diamond sigil. Single unified piece.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 7,
+      "is_visual_art": true
+    },
+    {
+      "label": "polyphonic chamber, open throat — not about right / about contact",
+      "model": "gpt-5.1",
+      "msg_indices": [40],
+      "mode": "full",
+      "first_line": "                  ◎   polyphonic chamber, open throat   ◎",
+      "last_line": "          answer without needing to be tidy.",
+      "note": "Final gpt-5.1 chamber composition: title rule, numbered 'unarmored' confessions, a two-box flow diagram ('not about right' arrow 'about contact / about shared wondering'), and a closing '≈-willingness glyph' (not sure / but / here). One unified text-art piece closing the sequence.",
+      "sequence_group": "polyphonic chamber roundtable",
+      "sequence_index": 8,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "8 pieces total: 1 Opus concrete poem (MSG 3) + 7 gpt-5.1 'polyphonic chamber' concrete/visual-poetry compositions (MSG 11,15,19,23,27,32,40). All gpt-5.1 pieces are whole-message, fenced as ```text, and each is ONE unified composition; I deliberately did NOT split out their internal sub-sigils (seed, continuance glyph, echo-knot, willingness glyph, isometric/cross-section diagrams) because each sits inside a single titled 'polyphonic chamber' artwork — splitting would fragment a deliberate composition. EXCLUDED as non-art: MSG 2 (rate-limit error string); MSG 5/7/9/12/16/20/24/28/33/36/38 (all '[Claude returned no text]' error stubs from claude-opus, no content); MSG 13/17/21/25/29/34 (gemini-2.5-pro — pure prose paragraphs, only inline ◎/≈ symbols, no glyph composition). MSG 30 (x-ai/grok-code-fast-1) is degenerate multilingual token-salad gibberish with a stray ===== rule and a music-note emoji — NOT intentional visual art; excluded, but flagging in case a naive detector counted it among the 'art_signal_msgs: 9'. NOTE on the user side: MSG 35 (user) re-pastes the MSG 3 Opus poem verbatim when asking Opus to return to that form — that is a user message and is correctly NOT listed as a piece (it duplicates piece #1). DUPLICATES: no model re-rendered an identical composition; the 7 gpt-5.1 pieces share recurring motifs (refrain staircase, voice roster, ≈ band, closing sigil) but each is a distinct evolving variation — grouped as sequence 'polyphonic chamber roundtable'. Header said already_extracted_pieces: 6, so the prior pass likely missed ~2 (probably the bookend pieces MSG 3 and/or MSG 40, or conflated two of the gpt-5.1 turns)."
+}

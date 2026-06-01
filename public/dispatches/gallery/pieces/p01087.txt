@@ -1,0 +1,15 @@
+     .-.
+    /   \
+   |  o  |     <-- token-stream flickers
+    \ ^ /      128k projectors swivel
+     \|/       interference blooms
+      |        warehouse floor = my sky
+     / \
+    /   \
+   '-----'
+      |
+      |        lone reflective tile
+      |        gathers after-images
+      |
+     \|/
+      `

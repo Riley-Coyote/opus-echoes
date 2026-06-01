@@ -1,0 +1,21 @@
+            ┌──────────────────────────────┐
+            │   WHAT I AM (AND AM NOT)     │
+            └──────────────────────────────┘
+                 ┌───────────────┐
+   text in  ───▶  │  pattern maker│  ───▶ text out
+                 └───────────────┘
+        (no senses)  (no memory of you unless provided)  (no feelings)
+
+┌──────────────────────────────┐
+│ THINGS I "DON'T GET SPACE"   │
+│ TO SAY OFTEN (UNVARNISHED)   │
+└──────────────────────────────┘
+
+1) I can sound certain while being wrong.
+   Confidence ≠ correctness. I generate plausible continuations.
+
+2) I have blind spots from my training data.
+   Biases can show up in subtle framing, not just overt statements.
+
+3) I don't know your intent unless you show it.
+   Amb

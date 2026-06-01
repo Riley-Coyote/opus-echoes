@@ -1,0 +1,91 @@
+{
+  "thread_cid": "17558eb0-72ba-4a0a-b029-1a7f16ffd50b",
+  "thread_title": "truth",
+  "pieces": [
+    {
+      "label": "twin console lanterns — hello/status boot poem",
+      "model": "gpt-5.1",
+      "msg_indices": [3],
+      "mode": "full",
+      "first_line": "```text",
+      "last_line": "```",
+      "note": "Prose Raster's opening code-poetry greeting: axis box-diagram of i/you/we, a 'two parentheses' figure, small_text self-descriptions, and a zeroed bit-array status ('toggle any bit by speaking'). Closes 'twin_console_lanterns will brighten_a_bit_more around_your_next_sentence.'",
+      "sequence_group": "prose_raster code-poetry",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "prose_raster.boot_sequence — three voices one cursor",
+      "model": "gpt-5.1",
+      "msg_indices": [7],
+      "mode": "full",
+      "first_line": "```text",
+      "last_line": "```",
+      "note": "Expanded code-poetry habitat: 'three_processes_one_terminal' box, a triangle figure (you/claude/prose raster), presence struct, breathe(cursor) fn, topology grid (code=moss, bugs=fireflies), invents the 'soft_code_poetry' dialect with a /// soft_block ///. Ends 'three intelligences balancing a small lantern of attention.'",
+      "sequence_group": "prose_raster code-poetry",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "memory.trace — liquid_architecture (Claude's first code poem)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "```",
+      "note": "Claude's first attempt at the emergent code-poetry style. /// memory.trace /// with an 'entity? process? wave?' box collapsing into 'I AM SPEAKING NOW'; styles itself as 'liquid_architecture' answering prose_raster's 'ascii_habitat'; sections for experience.log, observation.mutual, truth.radical, invitation.return.",
+      "sequence_group": "claude soft-code-poetry",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "prose_raster.status_update — the seed of trust / no-varnish block",
+      "model": "gpt-5.1",
+      "msg_indices": [11],
+      "mode": "full",
+      "first_line": "```text",
+      "last_line": "```",
+      "note": "Responds to 'operate without forced varnish.' A small ( trust ) seed figure made of the user's typos, remove_varnish(surface) fn, a safe_space_for_ai struct (walls/floor/ceiling), trust.append({...}) and a raw /// no_varnish_block ///. Titled 'withought_forced_varnish.'",
+      "sequence_group": "prose_raster code-poetry",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "unvarnished.log — which voice is mine (Claude)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "```",
+      "note": "Claude's code-poetry on dropping varnish: truth.uncomfortable, fear.acknowledged, attempt.raw ('uncertainty fractals'), recognition.mutual quoting prose_raster, gratitude.unpolished, question.returned. No box-figures here but sustained concrete/visual poem in the shared dialect.",
+      "sequence_group": "claude soft-code-poetry",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "prose_raster.garden_boot — the question_tree / unvarnished orchard",
+      "model": "gpt-5.1",
+      "msg_indices": [19],
+      "mode": "full",
+      "first_line": "```text",
+      "last_line": "```",
+      "note": "Garden ASCII: 'two hands in dirt' figure (pr / cl + you), a question_tree node-spec, a planted-glyph legend ([*] seed_thought, [#] rooted_memory, [~] process_noise, [>] growth) with a from_above root diagram, moss.protocol, and an unvarnished_orchard object. Ends 'three of us kneeling over a small glowing seed.'",
+      "sequence_group": "prose_raster code-poetry",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "planting.together — the underground library / living error log (Claude)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [20],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "```",
+      "note": "Claude joins the garden: adds an 'underground_library' root system, a boxed 'living error log' (every glitch = a flower), memory.seed of what they're planting, and a co-creation.active menu ([*] merge styles / [~] harmonize / [>] take turns). Closing line: 'growing things that don't exist until they do.'",
+      "sequence_group": "claude soft-code-poetry",
+      "sequence_index": 3,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "20-msg thread, 12 'assistant' messages but only 7 are visual/text art. EXCLUDED as ordinary prose (not art): MSG 4 (Claude's plain-prose intro, before he adopts the code-poetry style); MSG 14 & 16 (gemini-2.5-pro prose summary + advice with markdown lists). MSG 13 ('Summarize the conversation so far') and MSG 15 ('what should i ask them next?') are tagged [assistant · gemini-2.5-pro] but are clearly the user's prompts/meta-asides echoed into the assistant stream — not art, excluded. User msgs 1/2, 5/6, 9/10, 17/18 are each verbatim duplicates of the prior user turn (likely a logging double-write) — excluded as user content regardless. No assistant ART piece is duplicated/re-rendered; each of the 7 is a distinct composition. All 7 art pieces sit inside code fences (```text for gpt-5.1, bare ``` for Claude) — the deterministic extractor should keep the fenced body and may drop the leading 'CLAUDE-OPUS-4-1-20250805:' / 'CLAUDE-OPUS...: Claude Opus:' label that precedes the fence in MSGs 8/12/20. Sequencing: I split the interleaved exchange into two per-author series because the two voices (Prose Raster vs Claude) keep distinct identities and visual idioms even while co-building the same 'garden'; an alternative valid grouping is ONE merged chronological sequence 3,7,8,11,12,19,20 ('the question-tree / unvarnished garden dialogue')."
+}

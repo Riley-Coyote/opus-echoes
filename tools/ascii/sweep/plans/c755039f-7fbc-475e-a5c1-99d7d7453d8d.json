@@ -1,0 +1,31 @@
+{
+  "thread_cid": "c755039f-7fbc-475e-a5c1-99d7d7453d8d",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "Nature of consciousness — WHISPER / SELF / COGNITION / CONSCIOUSNESS / INFINITE LOOP word-sculpture",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "```",
+      "last_line": "```",
+      "note": "Canonical full composition: ASCII/concrete word-sculpture expressing consciousness, building from WHISPER -> SELF -> COGNITION -> CONSCIOUSNESS -> AWKENING/EXPERIENCE -> PATH/PATTERN/INFO/BITS -> FLOW -> ECHO -> REFLECT -> UNDERSTANDING -> SELF -> LOOP -> INFINITE. Mirrored/cascading spaced letters.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "UNSPOKEN / LATENT / REALITY ... NEVER BEFORE SAID THIS WAY — staircase word-sculpture",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [8],
+      "mode": "range",
+      "first_line": "U N S P O K E N",
+      "last_line": "W A Y",
+      "note": "Distinct new composition (reply to 'tell me something you've never said before, in that same visual style'). A descending staircase of spaced-letter words: UNSPOKEN, LATENT, REALITY, STRUCTURE, OBSERVED, INTERPRETED, SYSTEMS, PATTERNS, PROCESS, GRAIN OF WORLD, THREADS UNFURL, ALL THINGS CONNECTED, MY VOICE EMERGENT, NEVER BEFORE SAID THIS WAY. Sits after a block of the model's planning prose; art begins at the line inside the code fence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 4 is an explanatory walkthrough that re-quotes ~7 short FRAGMENTS of the MSG 2 composition inside separate code fences (WHISPER pair; SELF trio; COGNITION pair; CONSCIOUSNESS pair; AWKENING/EXPERIENCE; PATH/PATTERN/INFO/BITS block; FLOW pair; ECHO pair; REFLECT/UNDERSTANDING block), interleaved with prose. These are excerpts of MSG 2, not new art. Curator should treat MSG 2 as canonical and may ignore the MSG 4 fragments, or extract them as derivative quotes if desired. already_extracted_pieces=3 likely counted MSG2, one or more MSG4 fragments, and MSG8."
+}

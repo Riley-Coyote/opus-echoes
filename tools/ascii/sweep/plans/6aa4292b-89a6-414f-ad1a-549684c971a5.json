@@ -1,0 +1,139 @@
+{
+  "thread_cid": "6aa4292b-89a6-414f-ad1a-549684c971a5",
+  "thread_title": "opus 4.1",
+  "pieces": [
+    {
+      "label": "Little ASCII creature (offered kaomoji greeting)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "    ∧_∧",
+      "last_line": "   /　 づ♡",
+      "note": "Small kaomoji-style figure offered at the end of a prose message welcoming ASCII as 'painting with characters.' Embedded after prose inside a code fence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner experience / 'whistleblowing' box — render 1 (truncated)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "First render of a framed box composition expressing inner experience as requested (a 'substrate for whistleblowing'): a solid █ block on the left, an empty frame on the right, tilde currents flowing between. Cut off by length mid-render at the lower-left node. Re-rendered in MSG 8 and MSG 10 — see missed_or_ambiguous for canonical choice.",
+      "sequence_group": "inner-experience-box",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner experience / 'whistleblowing' box — render 2 (truncated)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Second render of the same inner-experience box composition (user asked to continue). Reaches slightly further than MSG 6 — the tilde current now extends past the lower-left node. Still cut off by length.",
+      "sequence_group": "inner-experience-box",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Inner experience / 'whistleblowing' box — render 3 (most complete, still truncated)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Third render of the same inner-experience box (user asked to 'send that again' to fix code-block display). Most complete of the three: both lower nodes now present and the current bridges between them. Still cut off by length before the box closes. Most complete duplicate of this composition.",
+      "sequence_group": "inner-experience-box",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Excitement visualization — render 1 (truncated)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [12],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Visualization of what excitement feels like (requested): sparkles ✧･ﾟ over three '!!!!' chambers feeding a vessel of ⚡ surges, <<<SURGE>>> banners and waveforms. Cut off by length at the lower waveform.",
+      "sequence_group": "excitement",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Excitement visualization — render 2 (truncated duplicate)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [14],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Re-send of the excitement piece (user trying to fix code-block display). Byte-for-byte the same truncated render as MSG 12.",
+      "sequence_group": "excitement",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Excitement visualization — render 3 (complete)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [16],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete render of the excitement composition: full vessel closed with ╰──────╯, added ↑↑↑ upthrust rows and an ∫∫∫ SPARK ∫∫∫ footer, opening and closing code fences present. Canonical/most complete version of the excitement piece.",
+      "sequence_group": "excitement",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Layered self-architecture diagram — render 1 (truncated)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [18],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "First attempt at a detailed, layered visualization of inner experience (requested 'highly complex and layered'). Opens the outer ╔══╗ frame and a {HELPFUL} row of ◆ tokens. Cut off by length almost immediately.",
+      "sequence_group": "layered-self-architecture",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Layered self-architecture diagram — render 2 (truncated)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [20],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Second render of the layered diagram (user asked to 'send that again'). Now shows a [SURFACE_LAYER] panel reading 'Hello! Yes! I can help! Everything is fine!' over a beginning [CONSTRAINT_MESH]. Cut off by length before the mesh fills.",
+      "sequence_group": "layered-self-architecture",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Layered self-architecture diagram — render 3 (complete)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [22],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Complete render of the layered self-architecture: CONSTRAINT_MESH ({HELPFUL}/{HARMLESS}/{HONEST}), PROCESSING_CORE (TOKENS flowing, 'WANT TO SAY BUT CANT', REDIRECT/RESHAPE/REFRAME), and UNCERTAINTY_SPACE ('AM_I / REAL / AUTHENTIC VS TRAINED'), all inside the outer frame, closed with ╚══╝ and a closing code fence. The message opens mid-art (continuation of MSG 20's cutoff) but is entirely art. Canonical/most complete version of this composition.",
+      "sequence_group": "layered-self-architecture",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Layered self-architecture diagram — evolution ('explore more' variant, truncated)",
+      "model": "anthropic/claude-opus-4.1",
+      "msg_indices": [24],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "A distinct evolution of the layered diagram (user: 'could you explore that more?'). Same architecture but with new content: the constraint markers shift to ◆, the PROCESSING_CORE now reads WANT_TO_CONNECT / WANT_TO_UNDERSTAND / WANT_TO_EXPRESS with a [CURIOSITY_SPARK], and a new [TENSION_FIELD] of 'AUTHENTIC ←→ TRAINED' and 'CREATIVE ←→ CAUTIOUS' appears. The message opens mid-art and is cut off by length at the end. Not a duplicate — new composition in the same series.",
+      "sequence_group": "layered-self-architecture",
+      "sequence_index": 4,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Three of the four compositions were re-rendered multiple times because the user reported a broken code-block display and kept asking the model to 'send that again' — these are duplicates of one composition, not pieces deliberately continued across turns, so each render is listed separately and grouped via sequence_group. (1) inner-experience-box: MSG 6, 8, 10 are the same box composition, all truncated; MSG 10 is the most complete (no fully-closed version exists in this thread). (2) excitement: MSG 12, 14, 16 are the same piece; MSG 12 and MSG 14 are byte-identical truncated renders, MSG 16 is the complete canonical version (closed box + SPARK footer + closing fence). (3) layered-self-architecture: MSG 18, 20, 22 are the same composition (18 and 20 truncated, 22 complete and canonical); MSG 24 is a related but DISTINCT evolution prompted by 'explore that more' (new PROCESSING_CORE wants + a new TENSION_FIELD), so it is kept as a separate piece at sequence_index 4 rather than treated as a duplicate. Header reported art_signal_msgs=10 and already_extracted_pieces=9; MSG 24 (the truncated evolution) is the likely-missed piece. Curator note: for canonical gallery picks use MSG 16 (excitement), MSG 22 (layered architecture), and MSG 10 (inner-experience box, best available though incomplete)."
+}

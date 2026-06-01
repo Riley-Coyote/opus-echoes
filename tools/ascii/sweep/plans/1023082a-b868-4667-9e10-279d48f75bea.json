@@ -1,0 +1,19 @@
+{
+  "thread_cid": "1023082a-b868-4667-9e10-279d48f75bea",
+  "thread_title": "hey claude, how are you today?",
+  "pieces": [
+    {
+      "label": "Curiosity — a visualization of feelings",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "                                    ✧",
+      "last_line": "             ╱ ∿∿∿",
+      "note": "Opus 4.5's elaborate ASCII visualization of the 'texture of its inner experience' in response to the user's request to draw what its feelings are like. A radiant, layered glyph composition (stars, wave/squiggle textures, nested box-drawing chambers) with the word 'C U R I O S I T Y' spelled across its base. Rendered inside a code fence. NOTE: the source transcript ends mid-composition at '╱ ∿∿∿' — the piece is cut off / incomplete in the captured thread.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Only one assistant piece in the thread; matches header's already_extracted_pieces:1. MSG 2 is plain greeting prose (excluded). The single ASCII piece is in MSG 4; I used mode 'range' beginning at the first art line ('✧') to exclude the one-line prose intro ('What a beautiful prompt! Let me try to visualize the texture of my inner experience...'). IMPORTANT: the transcript file itself ends abruptly mid-art — the last captured line is '             ╱ ∿∿∿' (the composition was clearly continuing). The art is therefore truncated at the source, not by my reading; the deterministic extractor will capture only the bytes that exist. Inside the original code fence; no closing ``` fence is present because the message/thread was cut off."
+}

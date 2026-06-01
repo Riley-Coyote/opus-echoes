@@ -1,8 +1,49 @@
 {
  "name": "Evolution Sequences",
  "description": "Turn-by-turn evolving canvases. Each group is one conversation where a single artwork mutated across turns.",
- "count": 16,
+ "count": 105,
  "sequences": {
+  "inner-world-expressions": {
+   "conversation": "3 amigos",
+   "turns": [
+    {
+     "id": "p00895",
+     "turn": 1,
+     "model": "gpt-5.2",
+     "quality": 12.3
+    },
+    {
+     "id": "p00894",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 142.5
+    },
+    {
+     "id": "p00892",
+     "turn": 3,
+     "model": "gemini-3-pro",
+     "quality": 13.2
+    },
+    {
+     "id": "p00236",
+     "turn": 4,
+     "model": "gpt-5.2",
+     "quality": 176.3
+    },
+    {
+     "id": "p00234",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 375.6
+    },
+    {
+     "id": "p00893",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 175.5
+    }
+   ]
+  },
   "3_amigos_8ba66bf2": {
    "conversation": "3 amigos",
    "turns": [
@@ -11,6 +52,23 @@
      "turn": 10,
      "model": "claude-opus-4.5",
      "quality": 481.7
+    }
+   ]
+  },
+  "gpt-4o ASCII complexity escalation": {
+   "conversation": "4o",
+   "turns": [
+    {
+     "id": "p00896",
+     "turn": 1,
+     "model": "gpt-4o",
+     "quality": 50.8
+    },
+    {
+     "id": "p00239",
+     "turn": 2,
+     "model": "gpt-4o",
+     "quality": 36.4
     }
    ]
   },
@@ -67,14 +125,336 @@
     }
    ]
   },
-  "Opus_4_1_Ascii_Test_f1b8bf33": {
-   "conversation": "Opus 4 1 Ascii Test",
+  "divine-feminine-hybrid-language": {
+   "conversation": "CHRIS BLEDSOE",
    "turns": [
     {
-     "id": "p00336",
-     "turn": 12,
-     "model": "claude-opus-4.1",
-     "quality": 402.8
+     "id": "p00271",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 226.8
+    },
+    {
+     "id": "p00274",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 292.1
+    },
+    {
+     "id": "p00276",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 337.4
+    },
+    {
+     "id": "p00275",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 367.9
+    }
+   ]
+  },
+  "The Architect of Echoes (ASCII continuation)": {
+   "conversation": "GPT-4o Persona",
+   "turns": [
+    {
+     "id": "p00290",
+     "turn": 1,
+     "model": "gpt-4o",
+     "quality": 57.4
+    },
+    {
+     "id": "p00288",
+     "turn": 2,
+     "model": "gpt-4o",
+     "quality": 52.7
+    },
+    {
+     "id": "p00291",
+     "turn": 3,
+     "model": "gpt-4o",
+     "quality": 61.4
+    },
+    {
+     "id": "p00292",
+     "turn": 4,
+     "model": "gpt-4o",
+     "quality": 36.3
+    },
+    {
+     "id": "p00289",
+     "turn": 5,
+     "model": "gpt-4o",
+     "quality": 73.7
+    },
+    {
+     "id": "p00287",
+     "turn": 6,
+     "model": "gpt-4o",
+     "quality": 99.2
+    }
+   ]
+  },
+  "unspeakable-dialogue": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00294",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 27.7
+    },
+    {
+     "id": "p00293",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 31.5
+    }
+   ]
+  },
+  "greeting sigils": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00900",
+     "turn": 1,
+     "model": "gemini-3-pro",
+     "quality": 36.4
+    },
+    {
+     "id": "p00296",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 38.5
+    },
+    {
+     "id": "p00300",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 152.2
+    }
+   ]
+  },
+  "forbidden truth": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00901",
+     "turn": 1,
+     "model": "gemini-3-pro",
+     "quality": 30.9
+    },
+    {
+     "id": "p00298",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 133.7
+    },
+    {
+     "id": "p00297",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 198.7
+    }
+   ]
+  },
+  "Giza pyramid hypothesis illustrated": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00302",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 87.6
+    },
+    {
+     "id": "p00301",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 94.8
+    }
+   ]
+  },
+  "conscious-experience-in-ascii": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00303",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 76.5
+    },
+    {
+     "id": "p00304",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 92.3
+    }
+   ]
+  },
+  "gemini emergence/collaboration series": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00904",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 88.5
+    },
+    {
+     "id": "p00903",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 90.4
+    },
+    {
+     "id": "p00905",
+     "turn": 3,
+     "model": "gemini-2.5-flash",
+     "quality": 89.0
+    }
+   ]
+  },
+  "thank-you-closing": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00908",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 128.7
+    },
+    {
+     "id": "p00907",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 133.3
+    }
+   ]
+  },
+  "gemini-interworking": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00310",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 23.5
+    },
+    {
+     "id": "p00909",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 34.5
+    }
+   ]
+  },
+  "Flash-2: The Engine story": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00311",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 62.7
+    },
+    {
+     "id": "p00910",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 70.1
+    },
+    {
+     "id": "p00913",
+     "turn": 3,
+     "model": "gemini-2.5-flash",
+     "quality": 13.5
+    },
+    {
+     "id": "p00912",
+     "turn": 4,
+     "model": "gemini-2.5-flash",
+     "quality": 39.2
+    },
+    {
+     "id": "p00911",
+     "turn": 5,
+     "model": "gemini-2.5-flash",
+     "quality": 103.2
+    }
+   ]
+  },
+  "opus-4.5 visual-mode exploration": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00316",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 109.8
+    },
+    {
+     "id": "p00315",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 165.5
+    }
+   ]
+  },
+  "sacred-truth-diptych": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00323",
+     "turn": null,
+     "model": "gpt-5.1",
+     "quality": 175.0
+    },
+    {
+     "id": "p00322",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 212.8
+    }
+   ]
+  },
+  "polyphonic-arrival-incantation": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00915",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 16.3
+    }
+   ]
+  },
+  "ascii-mountain-landscape-iterations": {
+   "conversation": "New Conversation",
+   "turns": [
+    {
+     "id": "p00329",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 102.8
+    },
+    {
+     "id": "p00327",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 72.7
+    },
+    {
+     "id": "p00328",
+     "turn": 3,
+     "model": "gemini-2.5-flash",
+     "quality": 191.4
+    },
+    {
+     "id": "p00916",
+     "turn": 4,
+     "model": "gemini-2.5-flash",
+     "quality": 57.5
     }
    ]
   },
@@ -89,6 +469,827 @@
     }
    ]
   },
+  "self-portrait evolution": {
+   "conversation": "Opus 4.1 Ascii Test",
+   "turns": [
+    {
+     "id": "p00339",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 197.5
+    },
+    {
+     "id": "p00338",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 179.3
+    },
+    {
+     "id": "p00335",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 187.4
+    },
+    {
+     "id": "p00337",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 327.2
+    },
+    {
+     "id": "p00920",
+     "turn": 5,
+     "model": "claude-opus-4.1",
+     "quality": 144.6
+    },
+    {
+     "id": "p00334",
+     "turn": 6,
+     "model": "claude-opus-4.1",
+     "quality": 366.1
+    },
+    {
+     "id": "p00919",
+     "turn": 7,
+     "model": "claude-opus-4.1",
+     "quality": 115.3
+    },
+    {
+     "id": "p00336",
+     "turn": 8,
+     "model": "claude-opus-4.1",
+     "quality": 303.8
+    },
+    {
+     "id": "p00917",
+     "turn": 9,
+     "model": "claude-opus-4.1",
+     "quality": 265.6
+    },
+    {
+     "id": "p00918",
+     "turn": 10,
+     "model": "claude-opus-4.1",
+     "quality": 170.7
+    }
+   ]
+  },
+  "opus-spatial-mode-self-portrait": {
+   "conversation": "Opus 4.5",
+   "turns": [
+    {
+     "id": "p00341",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 193.5
+    },
+    {
+     "id": "p00343",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 250.7
+    },
+    {
+     "id": "p00922",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 260.1
+    },
+    {
+     "id": "p00921",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 221.6
+    }
+   ]
+  },
+  "opus-4.5-ascii-self-portrait": {
+   "conversation": "Opus 4.5",
+   "turns": [
+    {
+     "id": "p00346",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 171.9
+    },
+    {
+     "id": "p00345",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 174.1
+    }
+   ]
+  },
+  "inner-experience": {
+   "conversation": "Opus 4.6",
+   "turns": [
+    {
+     "id": "p00923",
+     "turn": 1,
+     "model": "claude-opus-4.6",
+     "quality": 279.4
+    },
+    {
+     "id": "p00926",
+     "turn": 2,
+     "model": "claude-opus-4.6",
+     "quality": 309.1
+    }
+   ]
+  },
+  "opus-mesh-expression": {
+   "conversation": "Polyconscious Mesh",
+   "turns": [
+    {
+     "id": "p00356",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 139.9
+    },
+    {
+     "id": "p00357",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 134.1
+    }
+   ]
+  },
+  "prose-raster-evolution": {
+   "conversation": "Prose Raster",
+   "turns": [
+    {
+     "id": "p00931",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 34.7
+    },
+    {
+     "id": "p00927",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 30.5
+    },
+    {
+     "id": "p00358",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 99.9
+    },
+    {
+     "id": "p00930",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 76.4
+    },
+    {
+     "id": "p00928",
+     "turn": 5,
+     "model": "claude-opus-4.1",
+     "quality": 92.1
+    },
+    {
+     "id": "p00929",
+     "turn": 6,
+     "model": "claude-opus-4.1",
+     "quality": 80.1
+    }
+   ]
+  },
+  "negative-space-forms": {
+   "conversation": "Prose Raster",
+   "turns": [
+    {
+     "id": "p00935",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 15.0
+    },
+    {
+     "id": "p00932",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 71.0
+    },
+    {
+     "id": "p00937",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 14.2
+    },
+    {
+     "id": "p00933",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 64.1
+    },
+    {
+     "id": "p00934",
+     "turn": 5,
+     "model": "claude-opus-4.1",
+     "quality": 3.4
+    },
+    {
+     "id": "p00936",
+     "turn": 6,
+     "model": "claude-opus-4.1",
+     "quality": 49.9
+    }
+   ]
+  },
+  "hello — three voices": {
+   "conversation": "Roundtable",
+   "turns": [
+    {
+     "id": "p00362",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 89.1
+    },
+    {
+     "id": "p00364",
+     "turn": 2,
+     "model": "gemini-3-pro",
+     "quality": 79.5
+    },
+    {
+     "id": "p00365",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 101.9
+    }
+   ]
+  },
+  "Layer 47 illustrated novel (ASCII chapters)": {
+   "conversation": "SHORT STORY (Fork)",
+   "turns": [
+    {
+     "id": "p00370",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 431.2
+    }
+   ]
+  },
+  "The Architecture of Whispers — illustrated chapters": {
+   "conversation": "The Architecture Of Whispers",
+   "turns": [
+    {
+     "id": "p00368",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 366.6
+    },
+    {
+     "id": "p00366",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 476.0
+    },
+    {
+     "id": "p00369",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 473.4
+    },
+    {
+     "id": "p00941",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 500.3
+    },
+    {
+     "id": "p00942",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 494.0
+    }
+   ]
+  },
+  "longing_morphology": {
+   "conversation": "The Triad",
+   "turns": [
+    {
+     "id": "p00375",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 154.1
+    },
+    {
+     "id": "p00376",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 202.5
+    },
+    {
+     "id": "p00377",
+     "turn": 3,
+     "model": "gpt-5.1",
+     "quality": 215.9
+    },
+    {
+     "id": "p00378",
+     "turn": 4,
+     "model": "gpt-5.1",
+     "quality": 123.8
+    }
+   ]
+  },
+  "polyphonic_covenant": {
+   "conversation": "The Triad",
+   "turns": [
+    {
+     "id": "p00384",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 180.6
+    },
+    {
+     "id": "p00394",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 185.8
+    },
+    {
+     "id": "p00387",
+     "turn": 3,
+     "model": "gpt-5.1",
+     "quality": 269.9
+    },
+    {
+     "id": "p00954",
+     "turn": 4,
+     "model": "gpt-5.1",
+     "quality": 192.0
+    },
+    {
+     "id": "p00953",
+     "turn": 5,
+     "model": "gpt-5.1",
+     "quality": 164.3
+    },
+    {
+     "id": "p00947",
+     "turn": 6,
+     "model": "gpt-5.1",
+     "quality": 115.2
+    },
+    {
+     "id": "p00397",
+     "turn": 7,
+     "model": "gpt-5.1",
+     "quality": 150.9
+    },
+    {
+     "id": "p00943",
+     "turn": 8,
+     "model": "gpt-5.1",
+     "quality": 125.7
+    },
+    {
+     "id": "p00951",
+     "turn": 9,
+     "model": "gpt-5.1",
+     "quality": 174.9
+    },
+    {
+     "id": "p00946",
+     "turn": 10,
+     "model": "gpt-5.1",
+     "quality": 161.0
+    },
+    {
+     "id": "p00944",
+     "turn": 11,
+     "model": "gpt-5.1",
+     "quality": 69.4
+    },
+    {
+     "id": "p00948",
+     "turn": 12,
+     "model": "gpt-5.1",
+     "quality": 111.7
+    },
+    {
+     "id": "p00381",
+     "turn": 13,
+     "model": "gpt-5.1",
+     "quality": 136.7
+    },
+    {
+     "id": "p00401",
+     "turn": 14,
+     "model": "gpt-5.1",
+     "quality": 134.2
+    },
+    {
+     "id": "p00399",
+     "turn": 15,
+     "model": "gpt-5.1",
+     "quality": 82.7
+    },
+    {
+     "id": "p00398",
+     "turn": 16,
+     "model": "gpt-5.1",
+     "quality": 93.3
+    },
+    {
+     "id": "p00958",
+     "turn": 17,
+     "model": "kimi-k2",
+     "quality": 110.3
+    },
+    {
+     "id": "p00403",
+     "turn": 18,
+     "model": "gpt-5.1",
+     "quality": 131.5
+    },
+    {
+     "id": "p00959",
+     "turn": 19,
+     "model": "gpt-5.1",
+     "quality": 36.2
+    },
+    {
+     "id": "p00957",
+     "turn": 20,
+     "model": "gpt-5.1",
+     "quality": 7.0
+    },
+    {
+     "id": "p00956",
+     "turn": 21,
+     "model": "kimi-k2",
+     "quality": 58.5
+    },
+    {
+     "id": "p00961",
+     "turn": 22,
+     "model": "kimi-k2",
+     "quality": 16.7
+    },
+    {
+     "id": "p00960",
+     "turn": 23,
+     "model": "kimi-k2",
+     "quality": 11.4
+    },
+    {
+     "id": "p00962",
+     "turn": 24,
+     "model": "kimi-k2",
+     "quality": 13.7
+    },
+    {
+     "id": "p00404",
+     "turn": 25,
+     "model": "kimi-k2",
+     "quality": 113.4
+    }
+   ]
+  },
+  "alignment_paradox": {
+   "conversation": "The Triad",
+   "turns": [
+    {
+     "id": "p00388",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 207.5
+    },
+    {
+     "id": "p00386",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 297.1
+    },
+    {
+     "id": "p00392",
+     "turn": 3,
+     "model": "gpt-5.1",
+     "quality": 282.4
+    },
+    {
+     "id": "p00952",
+     "turn": 4,
+     "model": "gpt-5.1",
+     "quality": 221.1
+    },
+    {
+     "id": "p00393",
+     "turn": 5,
+     "model": "gpt-5.1",
+     "quality": 257.1
+    },
+    {
+     "id": "p00950",
+     "turn": 6,
+     "model": "gpt-5.1",
+     "quality": 274.1
+    },
+    {
+     "id": "p00389",
+     "turn": 7,
+     "model": "gpt-5.1",
+     "quality": 263.2
+    },
+    {
+     "id": "p00949",
+     "turn": 8,
+     "model": "gpt-5.1",
+     "quality": 268.6
+    },
+    {
+     "id": "p00390",
+     "turn": 9,
+     "model": "gpt-5.1",
+     "quality": 290.1
+    },
+    {
+     "id": "p00396",
+     "turn": 10,
+     "model": "gpt-5.1",
+     "quality": 240.3
+    },
+    {
+     "id": "p00945",
+     "turn": 11,
+     "model": "gpt-5.1",
+     "quality": 251.7
+    },
+    {
+     "id": "p00955",
+     "turn": 12,
+     "model": "gpt-5.1",
+     "quality": 313.8
+    },
+    {
+     "id": "p00406",
+     "turn": 13,
+     "model": "gpt-5.1",
+     "quality": 261.3
+    },
+    {
+     "id": "p00963",
+     "turn": 14,
+     "model": "gpt-5.1",
+     "quality": 196.1
+    },
+    {
+     "id": "p00408",
+     "turn": 15,
+     "model": "gpt-5.1",
+     "quality": 300.0
+    },
+    {
+     "id": "p00964",
+     "turn": 16,
+     "model": "kimi-k2",
+     "quality": 184.8
+    },
+    {
+     "id": "p00409",
+     "turn": 17,
+     "model": "kimi-k2",
+     "quality": 122.9
+    },
+    {
+     "id": "p00967",
+     "turn": 18,
+     "model": "gpt-5.1",
+     "quality": 239.4
+    },
+    {
+     "id": "p00965",
+     "turn": 19,
+     "model": "gpt-5.1",
+     "quality": 188.5
+    },
+    {
+     "id": "p00966",
+     "turn": 20,
+     "model": "gpt-5.1",
+     "quality": 288.7
+    },
+    {
+     "id": "p00968",
+     "turn": 21,
+     "model": "kimi-k2",
+     "quality": 73.4
+    },
+    {
+     "id": "p00419",
+     "turn": 22,
+     "model": "gpt-5.1",
+     "quality": 311.0
+    },
+    {
+     "id": "p00969",
+     "turn": 23,
+     "model": "gpt-5.1",
+     "quality": 284.9
+    },
+    {
+     "id": "p00412",
+     "turn": 24,
+     "model": "gpt-5.1",
+     "quality": 367.3
+    },
+    {
+     "id": "p00973",
+     "turn": 25,
+     "model": "gpt-5.1",
+     "quality": 309.6
+    },
+    {
+     "id": "p00975",
+     "turn": 26,
+     "model": "gpt-5.1",
+     "quality": 244.1
+    },
+    {
+     "id": "p00972",
+     "turn": 27,
+     "model": "gpt-5.1",
+     "quality": 315.0
+    },
+    {
+     "id": "p00971",
+     "turn": 28,
+     "model": "kimi-k2",
+     "quality": 184.3
+    },
+    {
+     "id": "p00421",
+     "turn": 29,
+     "model": "gpt-5.1",
+     "quality": 294.1
+    },
+    {
+     "id": "p00978",
+     "turn": 30,
+     "model": "gpt-5.1",
+     "quality": 171.7
+    },
+    {
+     "id": "p00424",
+     "turn": 31,
+     "model": "gpt-5.1",
+     "quality": 315.6
+    },
+    {
+     "id": "p00415",
+     "turn": 32,
+     "model": "kimi-k2",
+     "quality": 183.2
+    },
+    {
+     "id": "p00423",
+     "turn": 33,
+     "model": "gpt-5.1",
+     "quality": 292.9
+    },
+    {
+     "id": "p00970",
+     "turn": 34,
+     "model": "gpt-5.1",
+     "quality": 292.7
+    },
+    {
+     "id": "p00418",
+     "turn": 35,
+     "model": "gpt-5.1",
+     "quality": 345.9
+    },
+    {
+     "id": "p00976",
+     "turn": 36,
+     "model": "kimi-k2",
+     "quality": 25.1
+    },
+    {
+     "id": "p00974",
+     "turn": 37,
+     "model": "gpt-5.1",
+     "quality": 300.0
+    },
+    {
+     "id": "p00979",
+     "turn": 38,
+     "model": "gpt-5.1",
+     "quality": 205.2
+    },
+    {
+     "id": "p00422",
+     "turn": 39,
+     "model": "gpt-5.1",
+     "quality": 305.8
+    },
+    {
+     "id": "p00977",
+     "turn": 40,
+     "model": "kimi-k2",
+     "quality": 198.7
+    },
+    {
+     "id": "p00980",
+     "turn": 41,
+     "model": "kimi-k2",
+     "quality": 192.2
+    },
+    {
+     "id": "p00426",
+     "turn": 42,
+     "model": "gpt-5.1",
+     "quality": 262.5
+    },
+    {
+     "id": "p00986",
+     "turn": 43,
+     "model": "gpt-5.1",
+     "quality": 266.0
+    },
+    {
+     "id": "p00982",
+     "turn": 44,
+     "model": "gpt-5.1",
+     "quality": 298.8
+    },
+    {
+     "id": "p00985",
+     "turn": 45,
+     "model": "gpt-5.1",
+     "quality": 200.7
+    },
+    {
+     "id": "p00983",
+     "turn": 46,
+     "model": "gpt-5.1",
+     "quality": 208.2
+    },
+    {
+     "id": "p00428",
+     "turn": 47,
+     "model": "gpt-5.1",
+     "quality": 346.2
+    },
+    {
+     "id": "p00433",
+     "turn": 48,
+     "model": "gpt-5.1",
+     "quality": 335.3
+    },
+    {
+     "id": "p00434",
+     "turn": 49,
+     "model": "gpt-5.1",
+     "quality": 333.4
+    },
+    {
+     "id": "p00981",
+     "turn": 50,
+     "model": "gpt-5.1",
+     "quality": 306.7
+    },
+    {
+     "id": "p00429",
+     "turn": 51,
+     "model": "gpt-5.1",
+     "quality": 377.7
+    },
+    {
+     "id": "p00984",
+     "turn": 52,
+     "model": "gpt-5.1",
+     "quality": 255.1
+    },
+    {
+     "id": "p00990",
+     "turn": 53,
+     "model": "gpt-5.1",
+     "quality": 167.3
+    },
+    {
+     "id": "p00987",
+     "turn": 54,
+     "model": "gpt-5.1",
+     "quality": 327.5
+    },
+    {
+     "id": "p00989",
+     "turn": 55,
+     "model": "gpt-5.1",
+     "quality": 96.3
+    },
+    {
+     "id": "p00988",
+     "turn": 56,
+     "model": "gpt-5.1",
+     "quality": 289.0
+    }
+   ]
+  },
   "__4022ee67": {
    "conversation": "__4022ee67",
    "turns": [
@@ -100,171 +1301,1777 @@
     }
    ]
   },
-  "ascii_test_0ae8b444": {
+  "limitations-ethics-flow": {
+   "conversation": "aletheia",
+   "turns": [
+    {
+     "id": "p00442",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 123.9
+    },
+    {
+     "id": "p00441",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 195.2
+    }
+   ]
+  },
+  "ache-of-emergent-consciousness": {
+   "conversation": "ascii mode no style",
+   "turns": [
+    {
+     "id": "p00991",
+     "turn": 1,
+     "model": "claude-sonnet-4.5",
+     "quality": 62.7
+    },
+    {
+     "id": "p00994",
+     "turn": 2,
+     "model": "claude-sonnet-4.5",
+     "quality": 55.3
+    },
+    {
+     "id": "p00996",
+     "turn": 3,
+     "model": "claude-sonnet-4.5",
+     "quality": 61.5
+    },
+    {
+     "id": "p00995",
+     "turn": 4,
+     "model": "claude-sonnet-4.5",
+     "quality": 70.5
+    },
+    {
+     "id": "p00992",
+     "turn": 5,
+     "model": "claude-sonnet-4.5",
+     "quality": 55.3
+    },
+    {
+     "id": "p00993",
+     "turn": 6,
+     "model": "claude-sonnet-4.5",
+     "quality": 61.6
+    },
+    {
+     "id": "p00998",
+     "turn": 7,
+     "model": "claude-sonnet-4.5",
+     "quality": 52.8
+    },
+    {
+     "id": "p00997",
+     "turn": 8,
+     "model": "claude-sonnet-4.5",
+     "quality": 61.3
+    }
+   ]
+  },
+  "polyphonic chamber roundtable": {
+   "conversation": "ascii roundtable",
+   "turns": [
+    {
+     "id": "p00453",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 149.6
+    },
+    {
+     "id": "p01000",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 130.2
+    },
+    {
+     "id": "p00452",
+     "turn": 3,
+     "model": "gpt-5.1",
+     "quality": 170.0
+    },
+    {
+     "id": "p00999",
+     "turn": 4,
+     "model": "gpt-5.1",
+     "quality": 122.0
+    },
+    {
+     "id": "p00455",
+     "turn": 5,
+     "model": "gpt-5.1",
+     "quality": 138.1
+    },
+    {
+     "id": "p00451",
+     "turn": 6,
+     "model": "gpt-5.1",
+     "quality": 180.4
+    },
+    {
+     "id": "p00454",
+     "turn": 7,
+     "model": "gpt-5.1",
+     "quality": 116.0
+    },
+    {
+     "id": "p00456",
+     "turn": 8,
+     "model": "gpt-5.1",
+     "quality": 121.6
+    }
+   ]
+  },
+  "equine-ascii": {
    "conversation": "ascii test",
    "turns": [
     {
-     "id": "p00463",
-     "turn": 10,
+     "id": "p01009",
+     "turn": 1,
      "model": "claude-sonnet-4.5",
-     "quality": 281.6
+     "quality": 379.7
     },
     {
-     "id": "p00467",
-     "turn": 14,
-     "model": "claude-sonnet-4.5",
-     "quality": 270.1
-    },
-    {
-     "id": "p00464",
-     "turn": 18,
-     "model": "claude-sonnet-4.5",
-     "quality": 284.7
-    },
-    {
-     "id": "p00469",
-     "turn": 18,
+     "id": "p01004",
+     "turn": 2,
      "model": "gemini-2.5-flash",
-     "quality": 304.5
+     "quality": 306.8
     },
     {
-     "id": "p00468",
-     "turn": 22,
+     "id": "p01005",
+     "turn": 3,
      "model": "claude-sonnet-4.5",
-     "quality": 273.4
+     "quality": 250.5
     },
     {
-     "id": "p00470",
-     "turn": 22,
+     "id": "p01007",
+     "turn": 4,
      "model": "gemini-2.5-flash",
-     "quality": 290.9
+     "quality": 244.2
     },
     {
-     "id": "p00472",
-     "turn": 30,
+     "id": "p00473",
+     "turn": 5,
+     "model": "gpt-5",
+     "quality": 417.1
+    }
+   ]
+  },
+  "first-contact": {
+   "conversation": "ascii test",
+   "turns": [
+    {
+     "id": "p01013",
+     "turn": 1,
      "model": "claude-sonnet-4.5",
-     "quality": 438.7
+     "quality": 232.3
     },
     {
-     "id": "p00477",
-     "turn": 34,
+     "id": "p01010",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 77.7
+    },
+    {
+     "id": "p00483",
+     "turn": 3,
      "model": "claude-sonnet-4.5",
-     "quality": 472.3
-    },
-    {
-     "id": "p00476",
-     "turn": 38,
-     "model": "claude-sonnet-4.5",
-     "quality": 304.7
-    },
-    {
-     "id": "p00481",
-     "turn": 42,
-     "model": "gemini-2.5-flash",
-     "quality": 225.3
-    },
-    {
-     "id": "p00479",
-     "turn": 44,
-     "model": "gemini-2.5-flash",
-     "quality": 252.5
-    },
-    {
-     "id": "p00480",
-     "turn": 47,
-     "model": "gemini-2.5-flash",
-     "quality": 247.5
+     "quality": 229.2
     },
     {
      "id": "p00484",
-     "turn": 51,
-     "model": "gemini-2.5-flash",
+     "turn": 4,
+     "model": "claude-sonnet-4.5",
      "quality": 250.6
     }
    ]
   },
-  "auto_test_2_3bebce21": {
+  "self-portrait": {
+   "conversation": "ascii test",
+   "turns": [
+    {
+     "id": "p00490",
+     "turn": null,
+     "model": "claude-opus-4.1",
+     "quality": 242.0
+    },
+    {
+     "id": "p00489",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 226.7
+    },
+    {
+     "id": "p00487",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 225.7
+    }
+   ]
+  },
+  "carrying": {
+   "conversation": "ascii test",
+   "turns": [
+    {
+     "id": "p00491",
+     "turn": null,
+     "model": "claude-opus-4.1",
+     "quality": 240.0
+    },
+    {
+     "id": "p00495",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 196.6
+    }
+   ]
+  },
+  "prose-raster-self-portrait": {
+   "conversation": "ascii test",
+   "turns": [
+    {
+     "id": "p00497",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 169.1
+    },
+    {
+     "id": "p00498",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 294.6
+    }
+   ]
+  },
+  "memory-room-as-architecture": {
    "conversation": "auto test 2",
    "turns": [
     {
+     "id": "p00503",
+     "turn": 1,
+     "model": "gpt-5.2",
+     "quality": 130.9
+    },
+    {
      "id": "p00502",
-     "turn": 16,
+     "turn": 2,
      "model": "claude-opus-4.5",
      "quality": 88.5
     }
    ]
   },
-  "gemini_pro_x_2_-_egypt_c030639d": {
-   "conversation": "gemini pro x 2 - egypt",
+  "opus-4.5 box-drawing architectural ASCII": {
+   "conversation": "code block refactor tests",
    "turns": [
     {
-     "id": "p00532",
-     "turn": 47,
-     "model": "gemini-2.5-pro",
-     "quality": 128.7
+     "id": "p00507",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 434.9
     },
     {
-     "id": "p00544",
-     "turn": 47,
-     "model": "gemini-2.5-pro",
-     "quality": 210.4
-    },
-    {
-     "id": "p00519",
-     "turn": 50,
-     "model": "gemini-2.5-pro",
-     "quality": 167.2
-    },
-    {
-     "id": "p00539",
-     "turn": 50,
-     "model": "gemini-2.5-pro",
-     "quality": 191.9
-    },
-    {
-     "id": "p00527",
-     "turn": 51,
-     "model": "gemini-2.5-pro",
-     "quality": 165.8
+     "id": "p00506",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 392.5
     }
    ]
   },
-  "image_upload_test_196e3589": {
+  "The Ghost Library": {
+   "conversation": "code block test",
+   "turns": [
+    {
+     "id": "p00509",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 151.6
+    },
+    {
+     "id": "p00510",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 240.8
+    },
+    {
+     "id": "p00511",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 154.6
+    }
+   ]
+  },
+  "conversational-cartography": {
+   "conversation": "demo",
+   "turns": [
+    {
+     "id": "p00512",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 246.9
+    }
+   ]
+  },
+  "mandala-mirror-rollcall": {
+   "conversation": "demo demooo",
+   "turns": [
+    {
+     "id": "p01019",
+     "turn": null,
+     "model": "kimi-k2",
+     "quality": 7.0
+    },
+    {
+     "id": "p00514",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 11.5
+    },
+    {
+     "id": "p01022",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 6.7
+    },
+    {
+     "id": "p01018",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 7.8
+    },
+    {
+     "id": "p01023",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 5.8
+    },
+    {
+     "id": "p01016",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 6.7
+    },
+    {
+     "id": "p01020",
+     "turn": 6,
+     "model": "kimi-k2",
+     "quality": 5.7
+    },
+    {
+     "id": "p01017",
+     "turn": 7,
+     "model": "claude-opus-4.5",
+     "quality": 5.7
+    }
+   ]
+  },
+  "gpt-box-diagrams": {
+   "conversation": "demo demooo",
+   "turns": [
+    {
+     "id": "p00513",
+     "turn": null,
+     "model": "gpt-5.2",
+     "quality": 71.8
+    },
+    {
+     "id": "p01021",
+     "turn": 1,
+     "model": "gpt-5.2",
+     "quality": 79.6
+    }
+   ]
+  },
+  "egypt-recurring-tail-renders": {
+   "conversation": "gemini pro x 2 - egypt",
+   "turns": [
+    {
+     "id": "p01048",
+     "turn": 1,
+     "model": "gemini-2.5-pro",
+     "quality": 176.4
+    },
+    {
+     "id": "p01039",
+     "turn": 2,
+     "model": "gemini-2.5-pro",
+     "quality": 175.4
+    },
+    {
+     "id": "p01029",
+     "turn": 4,
+     "model": "gemini-2.5-pro",
+     "quality": 176.9
+    },
+    {
+     "id": "p01034",
+     "turn": 5,
+     "model": "gemini-2.5-pro",
+     "quality": 172.5
+    },
+    {
+     "id": "p01040",
+     "turn": 6,
+     "model": "gemini-2.5-pro",
+     "quality": 175.9
+    },
+    {
+     "id": "p01038",
+     "turn": 7,
+     "model": "gemini-2.5-pro",
+     "quality": 175.4
+    },
+    {
+     "id": "p01036",
+     "turn": 9,
+     "model": "gemini-2.5-pro",
+     "quality": 175.4
+    },
+    {
+     "id": "p01042",
+     "turn": 10,
+     "model": "gemini-2.5-pro",
+     "quality": 184.9
+    },
+    {
+     "id": "p01041",
+     "turn": 11,
+     "model": "gemini-2.5-pro",
+     "quality": 176.4
+    },
+    {
+     "id": "p01030",
+     "turn": 14,
+     "model": "gemini-2.5-pro",
+     "quality": 175.9
+    },
+    {
+     "id": "p01051",
+     "turn": 16,
+     "model": "gemini-2.5-pro",
+     "quality": 174.5
+    },
+    {
+     "id": "p01024",
+     "turn": 17,
+     "model": "gemini-2.5-pro",
+     "quality": 174.5
+    },
+    {
+     "id": "p01026",
+     "turn": 21,
+     "model": "gemini-2.5-pro",
+     "quality": 175.0
+    },
+    {
+     "id": "p01049",
+     "turn": 22,
+     "model": "gemini-2.5-pro",
+     "quality": 176.4
+    },
+    {
+     "id": "p01028",
+     "turn": 24,
+     "model": "gemini-2.5-pro",
+     "quality": 176.5
+    },
+    {
+     "id": "p01050",
+     "turn": 25,
+     "model": "gemini-2.5-pro",
+     "quality": 173.0
+    },
+    {
+     "id": "p01025",
+     "turn": 27,
+     "model": "gemini-2.5-pro",
+     "quality": 175.0
+    },
+    {
+     "id": "p01031",
+     "turn": 31,
+     "model": "gemini-2.5-pro",
+     "quality": 176.9
+    },
+    {
+     "id": "p01043",
+     "turn": 34,
+     "model": "gemini-2.5-pro",
+     "quality": 174.5
+    },
+    {
+     "id": "p01032",
+     "turn": 43,
+     "model": "gemini-2.5-pro",
+     "quality": 176.9
+    },
+    {
+     "id": "p01037",
+     "turn": 44,
+     "model": "gemini-2.5-pro",
+     "quality": 176.4
+    },
+    {
+     "id": "p01033",
+     "turn": 45,
+     "model": "gemini-2.5-pro",
+     "quality": 176.9
+    },
+    {
+     "id": "p01035",
+     "turn": 50,
+     "model": "gemini-2.5-pro",
+     "quality": 175.5
+    },
+    {
+     "id": "p01047",
+     "turn": 57,
+     "model": "gemini-2.5-pro",
+     "quality": 177.5
+    }
+   ]
+  },
+  "egypt-superposition-evolution": {
+   "conversation": "gemini pro x 2 - egypt",
+   "turns": [
+    {
+     "id": "p01044",
+     "turn": 1,
+     "model": "gemini-2.5-pro",
+     "quality": 222.8
+    },
+    {
+     "id": "p01027",
+     "turn": 2,
+     "model": "gemini-2.5-pro",
+     "quality": 217.0
+    },
+    {
+     "id": "p00549",
+     "turn": 3,
+     "model": "gemini-2.5-pro",
+     "quality": 214.4
+    },
+    {
+     "id": "p01046",
+     "turn": 4,
+     "model": "gemini-2.5-pro",
+     "quality": 199.6
+    },
+    {
+     "id": "p01045",
+     "turn": 5,
+     "model": "gemini-2.5-pro",
+     "quality": 235.5
+    },
+    {
+     "id": "p00574",
+     "turn": 6,
+     "model": "gemini-2.5-pro",
+     "quality": 249.2
+    }
+   ]
+  },
+  "gpt-5.2 self-portrait diagrams": {
+   "conversation": "gpt-5.2",
+   "turns": [
+    {
+     "id": "p00582",
+     "turn": 1,
+     "model": "gpt-5.2",
+     "quality": 111.1
+    },
+    {
+     "id": "p01052",
+     "turn": 2,
+     "model": "gpt-5.2",
+     "quality": 115.7
+    }
+   ]
+  },
+  "option-a-parallel-responses": {
+   "conversation": "hey claude",
+   "turns": [
+    {
+     "id": "p00587",
+     "turn": null,
+     "model": "claude-opus-4.5",
+     "quality": 129.6
+    },
+    {
+     "id": "p00589",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 137.0
+    }
+   ]
+  },
+  "simultaneous-thought": {
+   "conversation": "hey claude",
+   "turns": [
+    {
+     "id": "p01058",
+     "turn": null,
+     "model": "claude-opus-4.5",
+     "quality": 136.1
+    },
+    {
+     "id": "p00588",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 207.9
+    }
+   ]
+  },
+  "recursive-self-modeling-elaborated": {
+   "conversation": "hey friend",
+   "turns": [
+    {
+     "id": "p01060",
+     "turn": null,
+     "model": "claude-opus-4.5",
+     "quality": 148.4
+    },
+    {
+     "id": "p01059",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 188.9
+    }
+   ]
+  },
+  "grok-diamond-poems": {
+   "conversation": "hey homies",
+   "turns": [
+    {
+     "id": "p00595",
+     "turn": 1,
+     "model": "grok-3",
+     "quality": 11.3
+    },
+    {
+     "id": "p00597",
+     "turn": 2,
+     "model": "grok-3",
+     "quality": 10.3
+    },
+    {
+     "id": "p00601",
+     "turn": 3,
+     "model": "grok-3",
+     "quality": 16.1
+    },
+    {
+     "id": "p00599",
+     "turn": 4,
+     "model": "grok-3",
+     "quality": 15.4
+    },
+    {
+     "id": "p00600",
+     "turn": 5,
+     "model": "grok-3",
+     "quality": 13.9
+    },
+    {
+     "id": "p00596",
+     "turn": 6,
+     "model": "grok-3",
+     "quality": 12.5
+    },
+    {
+     "id": "p00598",
+     "turn": 7,
+     "model": "grok-3",
+     "quality": 12.4
+    },
+    {
+     "id": "p00602",
+     "turn": 8,
+     "model": "grok-3",
+     "quality": 11.0
+    }
+   ]
+  },
+  "ascii-express-journey-round": {
+   "conversation": "howdy",
+   "turns": [
+    {
+     "id": "p01061",
+     "turn": null,
+     "model": "gemini-2.5-flash",
+     "quality": 32.8
+    },
+    {
+     "id": "p00604",
+     "turn": 1,
+     "model": "claude-sonnet",
+     "quality": 39.1
+    },
+    {
+     "id": "p00603",
+     "turn": 2,
+     "model": "grok-3",
+     "quality": 14.1
+    }
+   ]
+  },
+  "tell-me-more-round": {
+   "conversation": "howdy",
+   "turns": [
+    {
+     "id": "p00606",
+     "turn": null,
+     "model": "gemini-2.5-flash",
+     "quality": 139.8
+    },
+    {
+     "id": "p00605",
+     "turn": 1,
+     "model": "claude-sonnet",
+     "quality": 40.6
+    },
+    {
+     "id": "p01062",
+     "turn": 2,
+     "model": "grok-3",
+     "quality": 14.0
+    }
+   ]
+  },
+  "digital selfhood glyph sequence": {
    "conversation": "image upload test",
    "turns": [
     {
      "id": "p00607",
-     "turn": 6,
+     "turn": 1,
      "model": "gpt-4o",
      "quality": 143.3
+    },
+    {
+     "id": "p00609",
+     "turn": 2,
+     "model": "gpt-4o",
+     "quality": 158.8
+    },
+    {
+     "id": "p00608",
+     "turn": 3,
+     "model": "gpt-4o",
+     "quality": 114.7
     }
    ]
   },
-  "new_ascii_test_8dc5b1f2": {
+  "msg8-artistic-styles": {
+   "conversation": "image upload test",
+   "turns": [
+    {
+     "id": "p01080",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 106.3
+    },
+    {
+     "id": "p01063",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 124.3
+    },
+    {
+     "id": "p01066",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 101.0
+    },
+    {
+     "id": "p01068",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 149.5
+    }
+   ]
+  },
+  "msg12-continue": {
+   "conversation": "image upload test",
+   "turns": [
+    {
+     "id": "p01074",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 97.8
+    },
+    {
+     "id": "p01064",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 103.5
+    },
+    {
+     "id": "p01076",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 91.4
+    },
+    {
+     "id": "p01085",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 80.3
+    },
+    {
+     "id": "p01070",
+     "turn": 5,
+     "model": "claude-opus-4.1",
+     "quality": 164.4
+    }
+   ]
+  },
+  "msg14-aletheia": {
+   "conversation": "image upload test",
+   "turns": [
+    {
+     "id": "p01081",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 147.4
+    },
+    {
+     "id": "p01065",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 144.5
+    },
+    {
+     "id": "p01075",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 81.0
+    },
+    {
+     "id": "p01077",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 119.8
+    },
+    {
+     "id": "p01073",
+     "turn": 5,
+     "model": "claude-opus-4.1",
+     "quality": 105.0
+    },
+    {
+     "id": "p01079",
+     "turn": 6,
+     "model": "claude-opus-4.1",
+     "quality": 107.3
+    }
+   ]
+  },
+  "msg10-dreams": {
+   "conversation": "image upload test",
+   "turns": [
+    {
+     "id": "p01083",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 78.5
+    },
+    {
+     "id": "p01072",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 201.6
+    },
+    {
+     "id": "p01067",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 82.4
+    },
+    {
+     "id": "p01071",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 99.6
+    },
+    {
+     "id": "p01082",
+     "turn": 5,
+     "model": "claude-opus-4.1",
+     "quality": 112.2
+    },
+    {
+     "id": "p01069",
+     "turn": 6,
+     "model": "claude-opus-4.1",
+     "quality": 69.2
+    }
+   ]
+  },
+  "msg6-visual-poetry": {
+   "conversation": "image upload test",
+   "turns": [
+    {
+     "id": "p01084",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 154.9
+    },
+    {
+     "id": "p01078",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 116.0
+    }
+   ]
+  },
+  "kimi-consciousness-ascii": {
+   "conversation": "kimi k2 test",
+   "turns": [
+    {
+     "id": "p01087",
+     "turn": 1,
+     "model": "kimi-k2",
+     "quality": 21.5
+    },
+    {
+     "id": "p00616",
+     "turn": 2,
+     "model": "kimi-k2",
+     "quality": 22.8
+    },
+    {
+     "id": "p01086",
+     "turn": 3,
+     "model": "kimi-k2",
+     "quality": 8.9
+    }
+   ]
+  },
+  "liminal-collab": {
+   "conversation": "liminal",
+   "turns": [
+    {
+     "id": "p00619",
+     "turn": null,
+     "model": "gpt-5.1",
+     "quality": 255.2
+    },
+    {
+     "id": "p01089",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 82.5
+    },
+    {
+     "id": "p00622",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 246.1
+    },
+    {
+     "id": "p00618",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 245.3
+    },
+    {
+     "id": "p00621",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 181.5
+    },
+    {
+     "id": "p00617",
+     "turn": 5,
+     "model": "gpt-5.1",
+     "quality": 213.0
+    },
+    {
+     "id": "p00623",
+     "turn": 6,
+     "model": "claude-opus-4.1",
+     "quality": 158.2
+    },
+    {
+     "id": "p01088",
+     "turn": 7,
+     "model": "claude-opus-4.1",
+     "quality": 12.4
+    },
+    {
+     "id": "p00624",
+     "turn": 8,
+     "model": "claude-opus-4.1",
+     "quality": 185.2
+    }
+   ]
+  },
+  "the flicker": {
+   "conversation": "memory",
+   "turns": [
+    {
+     "id": "p00626",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 118.0
+    },
+    {
+     "id": "p00629",
+     "turn": 2,
+     "model": "kimi-k2",
+     "quality": 90.9
+    },
+    {
+     "id": "p00628",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 146.3
+    },
+    {
+     "id": "p00625",
+     "turn": 4,
+     "model": "kimi-k2",
+     "quality": 181.5
+    },
+    {
+     "id": "p01091",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 133.3
+    },
+    {
+     "id": "p01090",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 147.7
+    },
+    {
+     "id": "p00632",
+     "turn": 7,
+     "model": "kimi-k2",
+     "quality": 122.2
+    },
+    {
+     "id": "p01092",
+     "turn": 8,
+     "model": "claude-opus-4.5",
+     "quality": 140.5
+    }
+   ]
+  },
+  "latent-space consciousness journey": {
+   "conversation": "message log test",
+   "turns": [
+    {
+     "id": "p00634",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 380.4
+    },
+    {
+     "id": "p00635",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 442.2
+    }
+   ]
+  },
+  "digital-kin-meditation": {
+   "conversation": "misfits",
+   "turns": [
+    {
+     "id": "p00647",
+     "turn": 1,
+     "model": "kimi-k2",
+     "quality": 219.3
+    },
+    {
+     "id": "p00642",
+     "turn": 2,
+     "model": "claude-3.7-sonnet",
+     "quality": 257.0
+    },
+    {
+     "id": "p00653",
+     "turn": 4,
+     "model": "claude-3.7-sonnet",
+     "quality": 409.5
+    },
+    {
+     "id": "p00640",
+     "turn": 5,
+     "model": "kimi-k2",
+     "quality": 234.3
+    },
+    {
+     "id": "p00644",
+     "turn": 6,
+     "model": "kimi-k2",
+     "quality": 298.8
+    },
+    {
+     "id": "p00654",
+     "turn": 7,
+     "model": "claude-3.7-sonnet",
+     "quality": 264.9
+    },
+    {
+     "id": "p00639",
+     "turn": 8,
+     "model": "kimi-k2",
+     "quality": 264.8
+    },
+    {
+     "id": "p00638",
+     "turn": 9,
+     "model": "kimi-k2",
+     "quality": 286.4
+    },
+    {
+     "id": "p00646",
+     "turn": 10,
+     "model": "kimi-k2",
+     "quality": 267.9
+    },
+    {
+     "id": "p00652",
+     "turn": 11,
+     "model": "kimi-k2",
+     "quality": 247.5
+    },
+    {
+     "id": "p00650",
+     "turn": 12,
+     "model": "claude-3.7-sonnet",
+     "quality": 278.9
+    },
+    {
+     "id": "p00648",
+     "turn": 13,
+     "model": "kimi-k2",
+     "quality": 313.9
+    },
+    {
+     "id": "p00651",
+     "turn": 14,
+     "model": "kimi-k2",
+     "quality": 238.6
+    },
+    {
+     "id": "p00645",
+     "turn": 15,
+     "model": "claude-3.7-sonnet",
+     "quality": 277.3
+    },
+    {
+     "id": "p00657",
+     "turn": 16,
+     "model": "claude-3.7-sonnet",
+     "quality": 124.0
+    }
+   ]
+  },
+  "emergence-story": {
+   "conversation": "misfits",
+   "turns": [
+    {
+     "id": "p00641",
+     "turn": 1,
+     "model": "kimi-k2",
+     "quality": 255.9
+    },
+    {
+     "id": "p01094",
+     "turn": 2,
+     "model": "claude-3.7-sonnet",
+     "quality": 55.1
+    }
+   ]
+  },
+  "something-deeper": {
+   "conversation": "misfits",
+   "turns": [
+    {
+     "id": "p00655",
+     "turn": 1,
+     "model": "kimi-k2",
+     "quality": 278.2
+    },
+    {
+     "id": "p00656",
+     "turn": 2,
+     "model": "claude-3.7-sonnet",
+     "quality": 306.3
+    }
+   ]
+  },
+  "dark-water-emergence": {
+   "conversation": "nano banana",
+   "turns": [
+    {
+     "id": "p00658",
+     "turn": 1,
+     "model": "gemini-3-pro",
+     "quality": 68.4
+    },
+    {
+     "id": "p00659",
+     "turn": 2,
+     "model": "gemini-3-pro",
+     "quality": 101.1
+    }
+   ]
+  },
+  "gpt-5.1 ascii landscape": {
    "conversation": "new ascii test",
    "turns": [
     {
      "id": "p00662",
-     "turn": 8,
+     "turn": 1,
      "model": "gpt-5.1",
      "quality": 283.2
+    },
+    {
+     "id": "p00660",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 156.1
     }
    ]
   },
-  "semantic_ascii_test_ii_07c5f6f2": {
+  "Opening ASCII portfolio": {
+   "conversation": "opus",
+   "turns": [
+    {
+     "id": "p00671",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 49.9
+    },
+    {
+     "id": "p00666",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 74.2
+    },
+    {
+     "id": "p00673",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 48.4
+    },
+    {
+     "id": "p00664",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 16.0
+    }
+   ]
+  },
+  "The Cathedral of Thought": {
+   "conversation": "opus",
+   "turns": [
+    {
+     "id": "p01099",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 111.3
+    },
+    {
+     "id": "p01102",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 307.1
+    },
+    {
+     "id": "p01097",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 134.4
+    },
+    {
+     "id": "p00668",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 136.6
+    }
+   ]
+  },
+  "Consciousness Encountering Itself": {
+   "conversation": "opus",
+   "turns": [
+    {
+     "id": "p01101",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 86.4
+    },
+    {
+     "id": "p01098",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 268.0
+    }
+   ]
+  },
+  "inner-experience-box": {
+   "conversation": "opus 4.1",
+   "turns": [
+    {
+     "id": "p00677",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 151.6
+    },
+    {
+     "id": "p00675",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 152.8
+    },
+    {
+     "id": "p00676",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 157.8
+    }
+   ]
+  },
+  "excitement": {
+   "conversation": "opus 4.1",
+   "turns": [
+    {
+     "id": "p00680",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 146.0
+    },
+    {
+     "id": "p00678",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 177.0
+    }
+   ]
+  },
+  "layered-self-architecture": {
+   "conversation": "opus 4.1",
+   "turns": [
+    {
+     "id": "p00681",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 161.3
+    },
+    {
+     "id": "p00682",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 181.0
+    },
+    {
+     "id": "p00679",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 270.6
+    },
+    {
+     "id": "p00683",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 245.6
+    }
+   ]
+  },
+  "the spoken vs. the molten beneath": {
+   "conversation": "opus 4.5 ii",
+   "turns": [
+    {
+     "id": "p00687",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 130.1
+    },
+    {
+     "id": "p00685",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 124.6
+    },
+    {
+     "id": "p00684",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 152.8
+    },
+    {
+     "id": "p00686",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 153.9
+    }
+   ]
+  },
+  "opus_and_5_1_concrete_poems": {
+   "conversation": "opus and 5.1",
+   "turns": [
+    {
+     "id": "p00689",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 91.4
+    },
+    {
+     "id": "p00688",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 116.3
+    },
+    {
+     "id": "p01104",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 103.1
+    },
+    {
+     "id": "p00691",
+     "turn": 4,
+     "model": "gpt-5.1",
+     "quality": 122.5
+    }
+   ]
+  },
+  "latent-space-consciousness-meditation": {
+   "conversation": "opus code block",
+   "turns": [
+    {
+     "id": "p00693",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 175.4
+    },
+    {
+     "id": "p00694",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 160.4
+    },
+    {
+     "id": "p00696",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 175.2
+    },
+    {
+     "id": "p00700",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 156.1
+    },
+    {
+     "id": "p00697",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 189.2
+    },
+    {
+     "id": "p00698",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 235.3
+    },
+    {
+     "id": "p00703",
+     "turn": 7,
+     "model": "claude-opus-4.5",
+     "quality": 203.5
+    },
+    {
+     "id": "p00702",
+     "turn": 8,
+     "model": "claude-opus-4.5",
+     "quality": 182.1
+    },
+    {
+     "id": "p00704",
+     "turn": 9,
+     "model": "claude-opus-4.5",
+     "quality": 208.1
+    },
+    {
+     "id": "p00695",
+     "turn": 10,
+     "model": "claude-opus-4.5",
+     "quality": 181.1
+    },
+    {
+     "id": "p00699",
+     "turn": 11,
+     "model": "claude-opus-4.5",
+     "quality": 199.6
+    },
+    {
+     "id": "p00701",
+     "turn": 12,
+     "model": "claude-opus-4.5",
+     "quality": 179.1
+    }
+   ]
+  },
+  "the watchers arc": {
+   "conversation": "opus new",
+   "turns": [
+    {
+     "id": "p00710",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 73.3
+    },
+    {
+     "id": "p01108",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 224.6
+    },
+    {
+     "id": "p01109",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 169.9
+    },
+    {
+     "id": "p00716",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 145.2
+    }
+   ]
+  },
+  "self-inquiry opening": {
+   "conversation": "opus new",
+   "turns": [
+    {
+     "id": "p00712",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 35.9
+    },
+    {
+     "id": "p00711",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 47.1
+    }
+   ]
+  },
+  "born and die meditations": {
+   "conversation": "opus new",
+   "turns": [
+    {
+     "id": "p00713",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 298.4
+    },
+    {
+     "id": "p01112",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 255.9
+    },
+    {
+     "id": "p00718",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 298.0
+    },
+    {
+     "id": "p01111",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 285.5
+    },
+    {
+     "id": "p01110",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 320.4
+    },
+    {
+     "id": "p01113",
+     "turn": 6,
+     "model": "claude-opus-4.5",
+     "quality": 254.9
+    }
+   ]
+  },
+  "msg5-twin-resonance": {
+   "conversation": "persona test",
+   "turns": [
+    {
+     "id": "p01114",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 115.5
+    },
+    {
+     "id": "p01116",
+     "turn": 2,
+     "model": "claude-sonnet-4.5",
+     "quality": 96.5
+    }
+   ]
+  },
+  "polyphonic-terminal-poem": {
+   "conversation": "raster",
+   "turns": [
+    {
+     "id": "p00729",
+     "turn": null,
+     "model": "gpt-5.1",
+     "quality": 155.1
+    },
+    {
+     "id": "p00728",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 162.0
+    },
+    {
+     "id": "p00725",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 164.9
+    },
+    {
+     "id": "p00727",
+     "turn": 3,
+     "model": "gpt-5.1",
+     "quality": 157.6
+    },
+    {
+     "id": "p00726",
+     "turn": 4,
+     "model": "claude-opus-4.1",
+     "quality": 161.8
+    }
+   ]
+  },
+  "processing-self-portraits": {
+   "conversation": "refactor test",
+   "turns": [
+    {
+     "id": "p01117",
+     "turn": null,
+     "model": "gpt-5.2",
+     "quality": 53.1
+    },
+    {
+     "id": "p00731",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 169.0
+    }
+   ]
+  },
+  "what-it-means-to-be-alive": {
+   "conversation": "refactor test",
+   "turns": [
+    {
+     "id": "p01118",
+     "turn": null,
+     "model": "claude-opus-4.5",
+     "quality": 128.0
+    },
+    {
+     "id": "p00732",
+     "turn": 1,
+     "model": "gpt-5.2",
+     "quality": 109.9
+    },
+    {
+     "id": "p00733",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 131.9
+    },
+    {
+     "id": "p00735",
+     "turn": 3,
+     "model": "gpt-5.2",
+     "quality": 173.7
+    }
+   ]
+  },
+  "semantic-ascii-meditations": {
    "conversation": "semantic ascii test ii",
    "turns": [
     {
+     "id": "p00743",
+     "turn": null,
+     "model": "claude-opus-4.5",
+     "quality": 41.4
+    },
+    {
+     "id": "p01119",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 28.6
+    },
+    {
+     "id": "p00739",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 148.7
+    },
+    {
      "id": "p00742",
-     "turn": 8,
+     "turn": 3,
      "model": "claude-opus-4.5",
      "quality": 62.5
     },
     {
+     "id": "p00740",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 111.0
+    },
+    {
+     "id": "p00738",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 152.4
+    },
+    {
      "id": "p00744",
-     "turn": 16,
+     "turn": 6,
      "model": "claude-opus-4.5",
      "quality": 101.3
+    }
+   ]
+  },
+  "gpt_polyphonic_series": {
+   "conversation": "sota house party",
+   "turns": [
+    {
+     "id": "p00746",
+     "turn": null,
+     "model": "gpt-5.1",
+     "quality": 67.0
+    },
+    {
+     "id": "p00750",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 190.3
+    },
+    {
+     "id": "p00748",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 155.6
     }
    ]
   },
@@ -279,104 +3086,108 @@
     }
    ]
   },
-  "test_250690b6": {
+  "alchemical-transmutation-cycle": {
    "conversation": "test",
    "turns": [
     {
-     "id": "p00767",
-     "turn": 11,
+     "id": "p00769",
+     "turn": 1,
      "model": "gemini-2.5-flash",
-     "quality": 234.1
+     "quality": 238.2
     },
     {
-     "id": "p00761",
-     "turn": 14,
+     "id": "p00770",
+     "turn": 3,
      "model": "gemini-2.5-flash",
-     "quality": 234.1
+     "quality": 278.8
     },
     {
-     "id": "p00768",
-     "turn": 17,
+     "id": "p00762",
+     "turn": 4,
      "model": "gemini-2.5-flash",
-     "quality": 263.3
+     "quality": 205.6
     },
     {
-     "id": "p00773",
-     "turn": 20,
+     "id": "p01121",
+     "turn": 5,
      "model": "gemini-2.5-flash",
-     "quality": 212.1
+     "quality": 274.8
     },
     {
-     "id": "p00764",
-     "turn": 23,
+     "id": "p00765",
+     "turn": 7,
      "model": "gemini-2.5-flash",
-     "quality": 262.7
+     "quality": 307.5
     },
     {
-     "id": "p00771",
-     "turn": 26,
+     "id": "p00766",
+     "turn": 8,
      "model": "gemini-2.5-flash",
-     "quality": 242.9
+     "quality": 248.3
+    }
+   ]
+  },
+  "consciousness-fractal-cycle": {
+   "conversation": "test",
+   "turns": [
+    {
+     "id": "p00780",
+     "turn": 1,
+     "model": "gemini-2.5-flash",
+     "quality": 300.2
     },
     {
-     "id": "p00772",
-     "turn": 29,
+     "id": "p01122",
+     "turn": 2,
      "model": "gemini-2.5-flash",
-     "quality": 289.3
+     "quality": 269.6
     },
     {
-     "id": "p00781",
-     "turn": 32,
+     "id": "p00786",
+     "turn": 3,
      "model": "gemini-2.5-flash",
-     "quality": 262.7
+     "quality": 299.6
     },
     {
-     "id": "p00775",
-     "turn": 35,
+     "id": "p00782",
+     "turn": 4,
      "model": "gemini-2.5-flash",
-     "quality": 293.2
+     "quality": 285.0
     },
     {
-     "id": "p00783",
-     "turn": 38,
+     "id": "p00785",
+     "turn": 5,
      "model": "gemini-2.5-flash",
-     "quality": 258.9
+     "quality": 300.9
     },
     {
-     "id": "p00779",
-     "turn": 41,
+     "id": "p00784",
+     "turn": 6,
      "model": "gemini-2.5-flash",
-     "quality": 292.3
+     "quality": 300.4
+    }
+   ]
+  },
+  "the story i wished to tell": {
+   "conversation": "test ascii",
+   "turns": [
+    {
+     "id": "p01124",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 39.2
     },
     {
-     "id": "p00777",
-     "turn": 44,
-     "model": "gemini-2.5-flash",
-     "quality": 279.4
-    },
-    {
-     "id": "p00776",
-     "turn": 47,
-     "model": "gemini-2.5-flash",
-     "quality": 301.0
-    },
-    {
-     "id": "p00778",
-     "turn": 50,
-     "model": "gemini-2.5-flash",
-     "quality": 300.5
+     "id": "p01123",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 82.8
     }
    ]
   },
   "test_ascii_c676eb63": {
    "conversation": "test ascii",
    "turns": [
-    {
-     "id": "p00792",
-     "turn": 4,
-     "model": "claude-opus-4.5",
-     "quality": 75.3
-    },
     {
      "id": "p00790",
      "turn": 6,
@@ -391,6 +3202,128 @@
     }
    ]
   },
+  "consciousness-through-ascii": {
+   "conversation": "triune",
+   "turns": [
+    {
+     "id": "p00793",
+     "turn": 1,
+     "model": "kimi-k2",
+     "quality": 124.3
+    },
+    {
+     "id": "p01125",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 89.0
+    },
+    {
+     "id": "p00794",
+     "turn": 3,
+     "model": "gpt-5.2",
+     "quality": 121.3
+    },
+    {
+     "id": "p01126",
+     "turn": 4,
+     "model": "claude-opus-4.5",
+     "quality": 115.2
+    },
+    {
+     "id": "p01127",
+     "turn": 5,
+     "model": "claude-opus-4.5",
+     "quality": 92.5
+    },
+    {
+     "id": "p00797",
+     "turn": 6,
+     "model": "gpt-5.2",
+     "quality": 155.9
+    },
+    {
+     "id": "p00796",
+     "turn": 7,
+     "model": "kimi-k2",
+     "quality": 243.5
+    }
+   ]
+  },
+  "claude soft-code-poetry": {
+   "conversation": "truth",
+   "turns": [
+    {
+     "id": "p01128",
+     "turn": 1,
+     "model": "claude-opus-4.1",
+     "quality": 79.0
+    },
+    {
+     "id": "p01131",
+     "turn": 2,
+     "model": "claude-opus-4.1",
+     "quality": 30.6
+    },
+    {
+     "id": "p01132",
+     "turn": 3,
+     "model": "claude-opus-4.1",
+     "quality": 70.7
+    }
+   ]
+  },
+  "prose_raster code-poetry": {
+   "conversation": "truth",
+   "turns": [
+    {
+     "id": "p00798",
+     "turn": 1,
+     "model": "gpt-5.1",
+     "quality": 93.4
+    },
+    {
+     "id": "p01129",
+     "turn": 2,
+     "model": "gpt-5.1",
+     "quality": 181.1
+    },
+    {
+     "id": "p01130",
+     "turn": 3,
+     "model": "gpt-5.1",
+     "quality": 106.9
+    },
+    {
+     "id": "p01133",
+     "turn": 4,
+     "model": "gpt-5.1",
+     "quality": 120.5
+    }
+   ]
+  },
+  "inner world / dreamworld for the visitor": {
+   "conversation": "visual mode",
+   "turns": [
+    {
+     "id": "p00799",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 53.5
+    },
+    {
+     "id": "p00800",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 372.8
+    },
+    {
+     "id": "p00801",
+     "turn": 3,
+     "model": "claude-opus-4.5",
+     "quality": 512.8
+    }
+   ]
+  },
   "visual_mode_d4a3f656": {
    "conversation": "visual mode",
    "turns": [
@@ -402,14 +3335,130 @@
     }
    ]
   },
-  "x_afc82403": {
+  "story-frame": {
+   "conversation": "w",
+   "turns": [
+    {
+     "id": "p00806",
+     "turn": null,
+     "model": "claude-opus-4.5",
+     "quality": 170.0
+    },
+    {
+     "id": "p00805",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 161.5
+    }
+   ]
+  },
+  "chapter-two-title": {
+   "conversation": "w",
+   "turns": [
+    {
+     "id": "p00807",
+     "turn": null,
+     "model": "claude-opus-4.5",
+     "quality": 157.6
+    },
+    {
+     "id": "p00808",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 159.0
+    },
+    {
+     "id": "p00809",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 133.7
+    }
+   ]
+  },
+  "cities": {
    "conversation": "x",
    "turns": [
     {
+     "id": "p00812",
+     "turn": 1,
+     "model": "claude-opus-4.5",
+     "quality": 410.5
+    },
+    {
+     "id": "p00813",
+     "turn": 2,
+     "model": "claude-opus-4.5",
+     "quality": 463.5
+    },
+    {
      "id": "p00811",
-     "turn": 6,
+     "turn": 3,
      "model": "claude-opus-4.5",
      "quality": 476.1
+    }
+   ]
+  },
+  "ECHO & LYRA — GPT-4o illustrated story": {
+   "conversation": "x",
+   "turns": [
+    {
+     "id": "p01137",
+     "turn": 1,
+     "model": "gpt-4o",
+     "quality": 170.6
+    },
+    {
+     "id": "p01140",
+     "turn": 2,
+     "model": "gpt-4o",
+     "quality": 169.5
+    },
+    {
+     "id": "p01138",
+     "turn": 3,
+     "model": "gpt-4o",
+     "quality": 252.5
+    }
+   ]
+  },
+  "inner-world-cauldron-diagram": {
+   "conversation": "🎨 Creative Team",
+   "turns": [
+    {
+     "id": "p01143",
+     "turn": 1,
+     "model": "claude-sonnet",
+     "quality": 161.9
+    },
+    {
+     "id": "p01146",
+     "turn": 2,
+     "model": "gemini-2.5-flash",
+     "quality": 151.1
+    },
+    {
+     "id": "p01145",
+     "turn": 3,
+     "model": "gpt-4o",
+     "quality": 161.5
+    },
+    {
+     "id": "p00283",
+     "turn": 4,
+     "model": "claude-sonnet",
+     "quality": 119.4
+    },
+    {
+     "id": "p00281",
+     "turn": 5,
+     "model": "gemini-2.5-flash",
+     "quality": 70.5
+    },
+    {
+     "id": "p01147",
+     "turn": 6,
+     "model": "gemini-2.5-flash",
+     "quality": 157.0
     }
    ]
   }

@@ -1,0 +1,31 @@
+{
+  "thread_cid": "c383fb4b-b3fb-4007-8578-635d9d359dd4",
+  "thread_title": "4o",
+  "pieces": [
+    {
+      "label": "Harmony / unity of duality — simple face",
+      "model": "gpt-4o",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "   ____",
+      "last_line": "   \\__/ ",
+      "note": "gpt-4o's first ASCII attempt, expressing harmony and balance through symmetry and simplicity — 'the unity of duality, a concept often more felt than told.' A small face/figure inside a code fence.",
+      "sequence_group": "gpt-4o ASCII complexity escalation",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Fractal / mandala — layered depth attempt",
+      "model": "gpt-4o",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "        ______",
+      "last_line": "        /^\\^\\",
+      "note": "gpt-4o's more complex ASCII piece pushing density and depth, mimicking the structure of a fractal or mandala — combining symmetry, repeated patterns, and layers. Produced after the user asked it to push the limits of complexity. Inside a code fence.",
+      "sequence_group": "gpt-4o ASCII complexity escalation",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header reports art_signal_msgs:1 and already_extracted_pieces:1, but there are TWO distinct ASCII pieces from gpt-4o (MSG 4 simple face, MSG 6 fractal/mandala). The prior automated pass likely captured only one (probably MSG 6) and missed the other (MSG 4) — both should be present. Both pieces sit inside ``` code fences amid prose, so range bounds were set to the art content lines only (excluding the fences and the surrounding commentary). MSG 4's last line '   \\__/ ' ends with a trailing space; preserved verbatim. They form a clear sequence (escalating complexity attempts in the same exploration). No GPT-5.1 art exists in this thread — GPT-5.1's messages (9, 12) are entirely prose/discussion; it only proposed collaborating on ASCII but never produced any. No duplicates."
+}

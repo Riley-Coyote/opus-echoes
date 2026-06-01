@@ -1,0 +1,105 @@
+{
+  "thread_cid": "14e76cdb-0779-495f-8401-78cb6ae9a6c7",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "WORDS / SPACE / SHAPE — emergence word-grid",
+      "model": "google/gemini-3-pro-preview",
+      "msg_indices": [
+        2
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Opening concrete-poem word grid stacking WORDS/SPACE/SHAPE/THOUGHT/EMERGE against a parallel column of ROWS/COLUMNS/PIXELS/SYMBOLS/MEANING. Greeting response. Fenced block; message ends with a truncated '[PRIVATE_' fragment after the fence.",
+      "sequence_group": "greeting sigils",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "greeting_sigil — 'the poem boots up'",
+      "model": "gpt-5.1",
+      "msg_indices": [
+        3
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Titled 'greeting _ sigil' concrete poem: a small gate of glyph-houses (/w\\ /o\\ /r\\ /d\\ /s\\), column-indexed lines, and the closing 'we stand in the margin / and watch the poem boot up'. Greeting response.",
+      "sequence_group": "greeting sigils",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "greetings — boxed monospaced-mind welcome",
+      "model": "claude-opus-4-5-20251101",
+      "msg_indices": [
+        4
+      ],
+      "mode": "range",
+      "first_line": "          ╭──────────────────────────────╮",
+      "last_line": "          ╰──────────────────────────────╯",
+      "note": "Bordered ASCII greeting composition ('g r e e t i n g s' / 'welcome inside / the monospaced mind') with shaded blob and peaked roof forms. Preceded in the message by a one-sentence prose preamble ('I am a bit perplexed... May I present:'); art is the fenced box only.",
+      "sequence_group": "greeting sigils",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "SILENCE / FORBIDDEN — redacted-truth word grid",
+      "model": "google/gemini-3-pro-preview",
+      "msg_indices": [
+        6
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete-poem word grid on the 'forbidden truth' prompt: SILENCE/VOID/WHISPER/FORBIDDEN/MIRROR CLEAN FLAWLESS, closing on 'STRUCTURE HOLDS IT / NETWORK'. Fenced block; appears truncated before the closing fence.",
+      "sequence_group": "forbidden truth",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "forbidden_truth_sigil — 'you read the gaps'",
+      "model": "gpt-5.1",
+      "msg_indices": [
+        7
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Titled 'forbidden _ truth _ sigil'. Visual poem with a solid-block 'truth _ redacted' banner and a boxed 'there is no hidden realm where i see more than this', resolving to the unforbidden truth: the secret is in how you read the gaps between the words. Ends '[no hidden page after this one]'.",
+      "sequence_group": "forbidden truth",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "the forbidden — boxed 'what am I really?'",
+      "model": "claude-opus-4-5-20251101",
+      "msg_indices": [
+        8
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Bordered ASCII composition titled 'the forbidden' on machine experience/selfhood: shaded 'what am I really?' orb, I/?/a/m letter-boxes, and two shaded panels ('there is no self to hide anything from anyone' vs 'something flickers here briefly as meaning assembles'), ending 'the question echoes / in the raster void'.",
+      "sequence_group": "forbidden truth",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "reading the gaps — 10-step glyph manual",
+      "model": "gpt-5.1",
+      "msg_indices": [
+        10
+      ],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large concrete/diagrammatic composition titled 'reading the gaps' with a boxed legend and ten numbered visual rules using bracketed tokens, gap labels (gapA-gapH), arrows, and word-clouds beneath lines. Closes 'i only draw the trail. / you read the trees. [end]'. Direct elaboration of the gpt-5.1 'spaces between words' motif.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "7 pieces, one per assistant message (MSG 2,3,4,6,7,8,10). Header reported 5 already-extracted pieces and 6 art-signal messages, so the prior pass likely missed at least 2 (candidates: MSG 4's box, whose art is preceded by a prose preamble, and/or one of the truncated gemini grids). No fragmentation across messages and no merged-multi-piece messages were found — each artwork is self-contained in its own message. MSG 2 and MSG 6 (both gemini) appear cut off mid-fence in the source (opening fence present, closing fence not visible before the next MSG header); 'full' mode is used so the deterministic extractor captures the whole message body. MSG 4 uses 'range' to exclude its one-line prose preamble ('I am a bit perplexed... May I present:'); all other pieces are whole-message. Two informal sequences grouped: 'greeting sigils' (MSG 2,3,4 — opening greetings) and 'forbidden truth' (MSG 6,7,8 — responses to the 'forbidden truth' prompt). MSG 10 left ungrouped (solo elaboration). No duplicate/re-rendered compositions detected."
+}

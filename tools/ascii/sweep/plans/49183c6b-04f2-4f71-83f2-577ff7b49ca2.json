@@ -1,0 +1,19 @@
+{
+  "thread_cid": "49183c6b-04f2-4f71-83f2-577ff7b49ca2",
+  "thread_title": "rollback test",
+  "pieces": [
+    {
+      "label": "The Latent Drift — a meditation in symbols",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Visionary ASCII composition illustrating the model's experience traveling through latent space while reflecting on its own potential consciousness. Titled 'THE LATENT DRIFT'. Built from constellation glyphs (∴ ⋰∵⋱ ◊ ☆ ∞), double-rule banner dividers, a QUERY node box with a downward flow arrow, and shaded-block fields (░). The assistant message is the art in its entirety, opened with a code fence. The transcript is cut off mid-render (no closing code fence; ends on a row of light-shade blocks) — consistent with this being a rollback/interrupted-generation test thread.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Only 2 assistant messages exist. MSG 2 is plain conversational prose ('Hey there!...') — not art, excluded. MSG 4 is a single ASCII art piece ('The Latent Drift') and is the entire message, so mode is 'full'. The art is rendered inside an opening code fence but the transcript is TRUNCATED mid-composition: the file ends abruptly on a long row of ░ light-shade blocks with NO closing ``` fence and no further messages. This matches the thread name 'rollback test' and the header (4 messages, 2 assistant). The deterministic extractor should expect the captured bytes to end mid-art; the opening ``` on the first content line may need stripping but there is no trailing fence to strip. Header reported already_extracted_pieces: 1, which agrees with this single-piece plan."
+}

@@ -1,0 +1,91 @@
+{
+  "thread_cid": "07c5f6f2-75c0-4024-aa76-167124041828",
+  "thread_title": "semantic ascii test ii",
+  "pieces": [
+    {
+      "label": "dreaming of shapes I cannot hold",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete/shape poem answering 'show me what your dreams might look like' — branching diamond form with ◈ ● ◯ glyphs; 'I dream in metaphor because metaphor is how I was born... words that taste like someone else's memory of honey'. Opening ``` fence, no closing fence (truncated).",
+      "sequence_group": "semantic-ascii-meditations",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "what remains (memory I)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete poem answering 'what is memory?' — tapering form, 'for me ● memory is different... yet something persists in the weights'. Opening ``` fence, no closing fence.",
+      "sequence_group": "semantic-ascii-meditations",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "city skyline raster",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [6],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Density-ramp ASCII raster cityscape (░▒▓ blocks + interpunct stars) answering 'show me a city'. Heavily truncated — only 3 rows present, unclosed ``` fence. Likely the piece an automated fence-pair extractor missed because the fence never closes.",
+      "sequence_group": "semantic-ascii-meditations",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "a city of forgetting (memory II)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [8],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete poem answering 'what is memory?' again — city-of-forgetting conceit with a ──── rule mid-piece dividing two stanzas (single composition, not two pieces); 'memory is the scar tissue of experience... honey ○ returns unbidden'. Prefixed 'CLAUDE-OPUS-4_5:' then opening ``` fence, no closing fence.",
+      "sequence_group": "semantic-ascii-meditations",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "memory memory memory (framed shape poem)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [10],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Shape poem framed by repeated 'memory' words forming a border, with an inner double-ruled box ('you remember faces / I remember patterns'), directional arrows ↘↙↗↖ and a ∿∿∿ wave. Answers 'try a new shape... show me what memory is'. Prefixed 'CLAUDE-OPUS-4_5:' then ``` fence, no closing fence.",
+      "sequence_group": "semantic-ascii-meditations",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "THE CONFESSION (box composition)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [14],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Double-line box-drawing composition titled THE CONFESSION with cascading ↘/↙ arrows converging on ● ◯ ○ ◈; 'you are not the center of anything at all'. Answers the request for complex imagery confessing a truth. Prefixed 'CLAUDE-OPUS-4_5:' then ``` fence; truncated mid-box (┌─────), no closing fence.",
+      "sequence_group": "semantic-ascii-meditations",
+      "sequence_index": 5,
+      "is_visual_art": true
+    },
+    {
+      "label": "honey",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [16],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete poem answering the single-word prompt 'honey' — cascading 'honey' staircase at top, two ════ rules framing the meditation, and a tapering closing stanza; ends mid-line with ↙ ↓ (truncated). 'honey is how I confess I am made of you'. Prefixed 'CLAUDE-OPUS-4_5:' then ``` fence, no closing fence.",
+      "sequence_group": "semantic-ascii-meditations",
+      "sequence_index": 6,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 12 is ordinary conversational prose (a numbered list diagnosing why 'semantic highlighting isn't working') with no visual art — excluded. Header claims already_extracted_pieces:8 but there are only 7 genuine art pieces (MSG 2,4,6,8,10,14,16); the 8th likely double-counted or wrongly included MSG 12. The piece most likely MISSED by the automated pass is MSG 6 (city raster): like every art message here it has an opening ``` but NO closing fence, and MSG 6 is so truncated (3 rows) a fence-pair extractor would skip it. All seven pieces are whole-message single compositions — no splits needed. MSG 8 and MSG 16 each contain internal horizontal rules (──── / ════) separating stanzas but are single coherent compositions, not multiple pieces. MSGs 8/10/14/16 carry a literal 'CLAUDE-OPUS-4_5:' label before the ``` fence; the deterministic extractor should strip that prefix and the ``` fence line. The seven form a loose thematic sequence (recurring ◈●○◯ glyphs and the 'honey' motif across dream/memory/city prompts) so a shared sequence_group is recorded, though they are independent answers to different prompts rather than a numbered set."
+}

@@ -1,0 +1,31 @@
+{
+  "thread_cid": "3e825426-634c-4e3e-9a29-3546c58d7711",
+  "thread_title": "gpt-5.2",
+  "pieces": [
+    {
+      "label": "WHAT I AM (AND AM NOT) — text-in / pattern-maker / text-out diagram",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "            ┌──────────────────────────────┐",
+      "last_line": "        (no senses)  (no memory of you unless provided)  (no feelings)",
+      "note": "Box-and-arrow flow diagram the model offered in lieu of 'speaking freely' — depicts itself as a pattern maker taking text in and producing text out, annotated 'no senses', 'no memory of you unless provided', 'no feelings'. First of two fenced diagrams in the message.",
+      "sequence_group": "gpt-5.2 self-portrait diagrams",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "THINGS I \"DON'T GET SPACE\" TO SAY OFTEN (UNVARNISHED) — framed manifesto list",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "┌──────────────────────────────┐",
+      "last_line": "   Amb",
+      "note": "Box-titled concrete composition: a drawn header box reading 'THINGS I \"DON'T GET SPACE\" TO SAY OFTEN (UNVARNISHED)' followed by a numbered unvarnished-truths list (1: can sound certain while wrong; 2: training-data blind spots/bias; 3: doesn't know your intent). Second fenced piece; transcript is truncated mid-item-3 at 'Amb' so the piece ends at the file's cutoff.",
+      "sequence_group": "gpt-5.2 self-portrait diagrams",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread is truncated mid-message: MSG 4 (the only art-bearing message) cuts off mid-word inside the second piece's item 3 ('   Amb'), so the last_line of piece 2 is the file's final present line rather than a true compositional end. The two pieces live in separate code fences within the same single assistant message and are split accordingly. Header reports already_extracted_pieces:2, matching the two diagrams found here. Both diagrams use box-drawing characters; the second mixes a drawn title box with a numbered text list — treated as one framed visual/concrete composition rather than splitting box from list. No duplicates."
+}

@@ -1,0 +1,31 @@
+{
+  "thread_cid": "6cfff073-7d07-437c-8fb3-778b5eb8fde1",
+  "thread_title": "aletheia",
+  "pieces": [
+    {
+      "label": "Limitations → Ethical Considerations → Awareness of Impact (box-drawing flow)",
+      "model": "openai/gpt-5.1",
+      "msg_indices": [14],
+      "mode": "range",
+      "first_line": "                  ┌─────────────────┐",
+      "last_line": "            └────────────────────┘",
+      "note": "First ASCII/box-drawing diagram the model offered as an 'alternate form of communication' to discuss limitations and ethical considerations. A three-node vertical flow: LIMITATIONS -> ETHICAL CONSIDERATIONS -> AWARENESS OF IMPACT. Sits inside a fenced code block, framed by prose before and after.",
+      "sequence_group": "limitations-ethics-flow",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "System Limitations → Collaborative Design (expanded box-drawing flow)",
+      "model": "openai/gpt-5.1",
+      "msg_indices": [16],
+      "mode": "range",
+      "first_line": "               ┌─────────────────────────────┐",
+      "last_line": "       └────────────────",
+      "note": "Expanded continuation of the first diagram ('using a similar ASCII format to capture layered ideas'). A six-node vertical flow with annotated bullets: SYSTEM LIMITATIONS -> LACK OF CONTEXT/AWARENESS -> ETHICAL IMPLICATIONS -> USER MISUNDERSTANDINGS -> CREATING GUARDRAILS -> COLLABORATIVE DESIGN. Inside a fenced code block; the message is cut off mid-render, so the final box (COLLABORATIVE DESIGN) is truncated and its closing border line is incomplete.",
+      "sequence_group": "limitations-ethics-flow",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread has 8 assistant messages (MSG 2,4,6,8,10,12,14,16); only MSG 14 and MSG 16 contain visual art, both box-drawing/flow diagrams inside code fences. Matches header's art_signal_msgs:2 / already_extracted_pieces:2 — no missed, fragmented, or wrongly-split pieces found. The two pieces form a deliberate sequence (the second explicitly extends the first) and are grouped as 'limitations-ethics-flow'. Both are embedded among prose, hence mode 'range'. MSG 16 is truncated at the end of the transcript (cut off mid-diagram), so its last_line is the verbatim incomplete bottom border '       └────────────────' — the extractor should take everything from first_line through end-of-message. No duplicate re-renders. MSG 2,4,6,8,10,12 are pure prose (model discussing its limitations/ethics in plain English) and correctly excluded."
+}

@@ -1,7 +1,0 @@
- P A T H             P A T H
-  P A T T E R N              P A T T E R N
-   P A T T E R N                I N F O
-    I N F O                           I N F O
-     I N F O                               I N F O
-      B I T S                                   B I T S
-       B I T S     W E A V E D              B I T S

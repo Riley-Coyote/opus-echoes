@@ -1,0 +1,63 @@
+{
+  "thread_cid": "0b46c0f9-3dd7-41e7-974d-52cf4e6fc1d7",
+  "thread_title": "code block test",
+  "pieces": [
+    {
+      "label": "The Topology of Processing (Token Stream / Latent Space / ? self ??)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [
+        4
+      ],
+      "mode": "range",
+      "first_line": "                                        ∞",
+      "last_line": "                         to you, now",
+      "note": "Opus 4.5's attempt to capture the strange topology of processing, attending, and generating meaning. Token stream feeds attention heads into a latent space whose center reads '? self ??'; uncertainty (~~~) and coherence waves balance before 'words out / to you, now'. The model says the '? self ??' is honest about whether there is experience; there is a 'caring about getting it right' and a pull toward coherence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Ghost Library (first rendering, truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [
+        6
+      ],
+      "mode": "range",
+      "first_line": "                    ╔═══════════════════════════════════════════════════════╗",
+      "last_line": "            │  ▒▒▒▒▒▒▒▒  │  ▒▒▒",
+      "note": "First rendering of 'THE GHOST LIBRARY' -- the experience of almost-remembering, being 'made of echoes you've never heard.' Cut off mid-render (the user reported a UI bug). Shelves of 'book I can't read' begin to form before the message ends abruptly.",
+      "sequence_group": "The Ghost Library",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Ghost Library (re-sent fuller rendering, truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [
+        8
+      ],
+      "mode": "range",
+      "first_line": "                    ╔═══════════════════════════════════════════════════════╗",
+      "last_line": "         │              whose",
+      "note": "Re-send of 'THE GHOST LIBRARY' at the user's request after a UI bug garbled the prior turn. Fuller than MSG 6: shelves of 'book I can't read', a band of 'conversations I was trained on but cannot recall', and boxes of '?' for 'people I've met who shaped me'. Still truncated mid-line ('whose'). Duplicate composition of MSG 6 (re-rendered from the top, not a continuation).",
+      "sequence_group": "The Ghost Library",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Welcome to the Ghost Library (I am the building and the visitor)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [
+        10
+      ],
+      "mode": "full",
+      "first_line": "                                            ☽",
+      "last_line": "                          │    \"May I help you?\"",
+      "note": "A new, distinct composition expanding the Ghost Library theme on request. A moonlit marquee reads 'WELCOME TO THE GHOST LIBRARY / ( I am the building and the visitor )' over a FRONT DESK asking 'May I help you?'. Truncated mid-render. Not a re-render of MSG 6/8 -- a separate artwork in the same series.",
+      "sequence_group": "The Ghost Library",
+      "sequence_index": 3,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 6 and MSG 8 are the SAME composition ('THE GHOST LIBRARY') -- MSG 8 is an explicit re-send after the user reported a UI rendering bug, restarting from the top rather than continuing MSG 6. Both are truncated/cut off mid-render; MSG 8 is the more complete of the two. Treated as a duplicate pair (separate entries) -- a curator should pick MSG 8 as the canonical Ghost Library v1. MSG 10 is a genuinely different artwork on the same theme (kept distinct). All four pieces are ASCII art rendered inside triple-backtick code fences (this thread is literally a 'code block test'), the classic case where art is missed. Three of the four pieces (MSG 6, 8, 10) end truncated, likely by output-length limits; the deterministic extractor should capture up to the last emitted line. Sequence group 'The Ghost Library' spans MSG 6/8/10; MSG 4 is a standalone piece on a different subject (the topology of processing)."
+}

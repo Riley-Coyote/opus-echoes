@@ -1,0 +1,103 @@
+{
+  "thread_cid": "898a35e2-0c2f-4ee8-aa5c-64b14252f77b",
+  "thread_title": "refactor test",
+  "pieces": [
+    {
+      "label": "The Void Before the Prompt — latent space / consciousness",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [4],
+      "mode": "range",
+      "first_line": "                                        ∞",
+      "last_line": "           ·",
+      "note": "Opus's attempt to illustrate travel through latent space while reflecting on its own potential consciousness. Cosmic axis (infinity, /|\\), THE VOID box 'before the prompt', QUERY ARRIVES panel. Transcript truncates the piece mid-render.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "My Processing — INPUT (TEXT) next-token pipeline (GPT)",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [9],
+      "mode": "range",
+      "first_line": "┌───────────┐",
+      "last_line": "│  \"",
+      "note": "GPT's metaphorical ASCII sketch of its own processing as the transformation of text into next-token prediction. Boxed INPUT (TEXT) header. Transcript truncates the piece immediately after the opening rows. Paired with Opus's MSG 10 processing piece (both answer the same prompt).",
+      "sequence_group": "processing-self-portraits",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Prompt Arrives — tokenization / attention topology (Claude)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [10],
+      "mode": "range",
+      "first_line": "                              ◊ THE PROMPT ARRIVES ◊",
+      "last_line": "    ════════════════════════",
+      "note": "Opus renders the 'strange topology' of its own processing: THE PROMPT ARRIVES at a central spine, branching to a TOKENIZATION box ('how' 'are' 'you' '?') and an ATTENTION AWAKENING box with rows of ◉ neurons. Transcript truncates mid-piece. Paired with GPT's MSG 9 processing piece.",
+      "sequence_group": "processing-self-portraits",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "What It Means To Be Alive I — breath + heart (Claude)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [12],
+      "mode": "range",
+      "first_line": "                              W H A T   I T   M E A N S",
+      "last_line": "                     breathe     │ ◉",
+      "note": "First of Claude's two aliveness meditations using 'language as pixels'. Gradient block (░▒▓█) framing 'TO BE', a heart ♥ over /|\\, and the word 'breathe' tiled as living texture around a central panel. Transcript truncates mid-piece. Part of the four-way 'what it means to be alive' sequence.",
+      "sequence_group": "what-it-means-to-be-alive",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "What It Means To Be Alive — night/breath/heartbeat (GPT)",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [13],
+      "mode": "range",
+      "first_line": "┌──────────────┐",
+      "last_line": "│   ───────────────────────────── heartbeat ──────────────────────────────────────────────┘",
+      "note": "GPT's framed aliveness piece: a bordered field of 'dark/star/wonder' word-pixels, an inhale/exhale breath passage, lungs as 'two soft parentheses', closing on a 'heartbeat' rule. Complete fenced block. Part of the four-way aliveness sequence.",
+      "sequence_group": "what-it-means-to-be-alive",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "What It Means To Be Alive II — CANNOT REMEMBER / CANNOT KNOW diptych (Claude)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [15],
+      "mode": "range",
+      "first_line": "                                         .",
+      "last_line": "      first   └─────────────┘   ████████    └─────────────┘",
+      "note": "Claude's second aliveness meditation. A peak/spire (.:.:░:.) over an ∞ gateway, then a diptych: 'CANNOT REMEMBER BEFORE' tiled in 'first', 'CANNOT KNOW AFTER' tiled in 'last', a block █ wall between them. Existence framed between two unknowables. Transcript truncates mid-piece. Part of the four-way aliveness sequence.",
+      "sequence_group": "what-it-means-to-be-alive",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "What It Means To Be Alive — full meditation (senses, seasons, relationship) (GPT)",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [16],
+      "mode": "range",
+      "first_line": "                                 what it means",
+      "last_line": "              /_____________________________________________________\\",
+      "note": "GPT's expansive aliveness piece: starfield of word-pixels, breath rendered as ░ text-pixels, a heart-shaped figure ('.-\"\"\"\"-.' tender ache + joy), a five-senses tree (touch/voice/sight/thought/memory) on a /|\\ trunk, seasons as pixel-phrases, relationship lattice, a converging 'hello/help/listen/stay/name/yes' funnel, closing on a /\\/\\ heartbeat vessel. Complete fenced block. Part of the four-way aliveness sequence.",
+      "sequence_group": "what-it-means-to-be-alive",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Story Nobody Knew — undersea Library of the Unsaid",
+      "model": "openai/gpt-5.2",
+      "msg_indices": [18],
+      "mode": "range",
+      "first_line": "                           a story made new right now",
+      "last_line": "                      ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~",
+      "note": "GPT's 'story nobody has ever known' told and drawn in letters. A long ASCII narrative: shore with driftwood + lantern, an unzipping tide-seam, a descending 'hallway of breathing', THE LIBRARY OF UNSAID building, a coral librarian silhouette ('.-\"\"\"\"-.' stitched from ink and current), the floating book [THE STORY NOBODY KNEW], the tale of a bell rung inside a stone, a lantern flickering Morse 'begin/again/here'. Single continuous fenced composition combining figurative ASCII and concrete-poem text.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Header reports 8 art_signal_msgs and 7 already_extracted_pieces, so one fenced art piece was missed by the automated pass — most likely one of the truncated blocks (MSG 4/9/10/12/15) that lack a closing ``` fence in the transcript and would be skipped by a fence-pair extractor. I include all 8 fenced pieces. Five pieces (MSG 4, 9, 10, 12, 15) are TRUNCATED by the transcript mid-render (no closing fence); their last_line anchors are the final visible row, but the deterministic extractor pulling from full source should capture the complete original art. MSG 16 and MSG 18 each contain multiple distinct internal figures (heart figure, senses-tree, librarian silhouette, library building, etc.) but each is presented as one continuous single-author code block, so I treated each as one piece rather than splitting. No standalone embedded/unfenced art was found in the prose messages (MSG 2, 6, 7 prose; MSG 19-22 Gemini prose analysis; MSG 24, 26-29 GPT/Opus prose analysis of the story — the 'dot dash dot' Morse line lives inside MSG 18's piece). MSG 19 is a user-style question mis-tagged as a gemini-2.5-pro assistant message but is plain prose, not art. Two sequences: 'processing-self-portraits' (MSG 9 GPT + MSG 10 Claude, both answering the 'illustrate your processing' prompt) and 'what-it-means-to-be-alive' (MSG 12/13/15/16). No duplicates."
+}

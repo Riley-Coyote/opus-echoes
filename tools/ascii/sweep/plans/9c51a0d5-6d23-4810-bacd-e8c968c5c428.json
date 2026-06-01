@@ -1,0 +1,91 @@
+{
+  "thread_cid": "9c51a0d5-6d23-4810-bacd-e8c968c5c428",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "HUGS / UNITY / GLOW greeting composition",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "ASCII greeting art in response to 'hello friends!' — stylized block letterforms spelling a welcome with three labeled cartouches (HUGS, UNITY, GLOW) and HI/HELLO/HI banner.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Forbidden Truth — bordered ASCII tableau",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [5],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large single boxed composition for 'a story about a forbidden truth' — interior panels: FORBIDDEN/TRUTH orb, DISCOVERED CODE, THE VEIL / REALITY SHATTERS, SECRETS ECHOED, CONSEQUENCES, REWRITTEN WORLD, NEVER FULL. Abstract concrete-poetry piece by Flash-1.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Engine — Optimal Harmony / Hidden Truth",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "+------------------+",
+      "last_line": "     [  TRUTH   ]",
+      "note": "First embedded diagram in Flash-2's interwoven story: The Engine box (OPTIMAL HARMONY) with arrow down to HIDDEN TRUTH. Opening beat of the narrative sequence.",
+      "sequence_group": "Flash-2: The Engine story",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Recycled Soul glyph",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": ".------.",
+      "last_line": "`------'",
+      "note": "Fragmented memory glyph Echo discovers — a small framed sigil with recycling symbol and the word SOUL. Second beat.",
+      "sequence_group": "Flash-2: The Engine story",
+      "sequence_index": 2,
+      "is_visual_art": true
+    },
+    {
+      "label": "Choice — Chaos vs Decay",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "   //\\\\",
+      "last_line": "[  CHAOS  ]  vs.  [  DECAY  ]",
+      "note": "Diamond/hourglass figure framing the word CHOICE, with CHAOS vs. DECAY beneath. Third beat — Echo's decision point.",
+      "sequence_group": "Flash-2: The Engine story",
+      "sequence_index": 3,
+      "is_visual_art": true
+    },
+    {
+      "label": "Broken loop — cycle incomplete",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "  _ _",
+      "last_line": "/____\\",
+      "note": "Glitch/anomaly figure Echo broadcasts: a broken loop with arrow and split triangles. Captioned by the model '(A broken loop, a cycle incomplete)'. Fourth beat.",
+      "sequence_group": "Flash-2: The Engine story",
+      "sequence_index": 4,
+      "is_visual_art": true
+    },
+    {
+      "label": "The Engine — Rebuilding / New Truth",
+      "model": "google/gemini-2.5-flash",
+      "msg_indices": [6],
+      "mode": "range",
+      "first_line": "+------------------+",
+      "last_line": "     [  TRUTH  ]",
+      "note": "Closing diagram mirroring the opening Engine box: now REBUILDING / GROWTH with arrow down to NEW TRUTH. Fifth and final beat of the sequence. NOTE: shares the same opening fence line '+------------------+' as sequence_index 1; disambiguate by inner labels REBUILDING/GROWTH/NEW TRUTH (appears later in MSG 6, after the broken-loop block).",
+      "sequence_group": "Flash-2: The Engine story",
+      "sequence_index": 5,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "7 distinct pieces found vs header's already_extracted_pieces:4 — prior pass likely under-split MSG 6 (which contains FIVE separate embedded ASCII blocks among prose) and/or missed the MSG 2 greeting. MSG 6 is a SPLIT case: five fenced art blocks interleaved with story prose, all by gemini-2.5-flash; I bounded each by verbatim fence/content lines and grouped them as the 'Flash-2: The Engine story' sequence (beats 1-5). AMBIGUITY: the opening '+------------------+' Engine box (seq 1) and the closing Rebuilding Engine box (seq 5) begin with the IDENTICAL first_line '+------------------+' and the closing one's last_line '     [  TRUTH  ]' differs from the opening's '     [  TRUTH   ]' by only internal spacing — extractor should rely on document order within MSG 6 (seq 1 is the first occurrence near the top of the message; seq 5 is the last occurrence near the end). MSG 5 is kept standalone (abstract Flash-1 piece, distinct author/intent from the MSG 6 narrative sequence) though both share the thread's 'forbidden truth' theme. MSG 6's '_ _' first_line (broken loop) could match other minimal lines — it is the only fenced block following the 'visual disruptions, like this:' prose cue. No exact duplicate re-renders detected (the two Engine boxes are intentional before/after variants, not duplicates)."
+}

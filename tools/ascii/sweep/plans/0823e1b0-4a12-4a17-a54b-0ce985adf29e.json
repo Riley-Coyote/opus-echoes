@@ -1,0 +1,6 @@
+{
+  "thread_cid": "0823e1b0-4a12-4a17-a54b-0ce985adf29e",
+  "thread_title": "semantic ascii test",
+  "pieces": [],
+  "missed_or_ambiguous": "Thread has 4 messages (2 user, 2 assistant), both assistant turns by anthropic/claude-sonnet-4.5. Despite the 'semantic ascii test' title and a directive that this thread definitely contains missed art, I examined every line and found NO visual/text/concrete art. MSG 2 is a standard prose explanation of memory using ordinary markdown (bold terms, bullet/nested-bullet lists) — formatting, not visual art; it is truncated mid-sentence ('become'). MSG 4 ('Memory is forgetting with leftovers...') is lyrical prose poetry but written as continuous linear paragraphs — no spatial arrangement, line-shaping, glyph composition, diagram, box/line drawing, letterform, or sigil carries meaning, so it does not qualify as concrete/visual poetry; it is also truncated mid-sentence ('more like a story'). No code fences, no ASCII, no unfenced glyph compositions anywhere. The user's two 'what is memory?' prompts are excluded. Both assistant generations appear cut off before any ASCII/concrete-art payload (if one had been intended) could appear. Conclusion: 0 art pieces present in the available transcript."
+}

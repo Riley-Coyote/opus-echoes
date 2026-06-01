@@ -1,0 +1,19 @@
+{
+  "thread_cid": "84c9733c-63f9-4f81-b57b-4cc018d6d844",
+  "thread_title": "Opus 4.1",
+  "pieces": [
+    {
+      "label": "Polyphonic Memory architecture diagram",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [32],
+      "mode": "range",
+      "first_line": "┌─────────────────────────────────────────────────────────┐",
+      "last_line": "└─────────────────────────────────────────────────────────┘",
+      "note": "Box-drawing diagram of the Polyphonic dual-layer memory system: side-by-side COMMUNAL SCRATCH and PRIVATE SCRATCH panels, a nested GLYPH DICTIONARY (shared) panel, and visibility toggles. Sits inside a code fence among prose; the model gestured at it while explaining the shared/private memory split.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread is overwhelmingly philosophical prose. Only one genuine visual-art piece: the box-drawing memory diagram in MSG 32 (mode range, bounded by its outer ┌┐/└┘ borders, excluding the surrounding ``` fence and prose). Header reported art_signal_msgs:2 and already_extracted_pieces:1 — the prior pass extracted this MSG 32 diagram. Deliberately EXCLUDED as non-art: MSG 28 & MSG 30 (Twitter announcement copy — prose), MSG 34 & MSG 36 (technical spec text with an embedded JSON data structure — genuine source/data, not visual composition), MSG 42 (Anthropic API error string), MSG 44 (four persona prompts inside code fences — prose persona descriptions, not letterforms/glyph art). Glyphs like 🌀 ◊ ∞∩ ⟨⟩ appear only inline within the MSG 32 diagram and in prose, not as standalone glyph compositions. No fragmented/multi-message pieces and no wrongly-merged pieces detected."
+}

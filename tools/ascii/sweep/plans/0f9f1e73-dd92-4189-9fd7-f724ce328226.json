@@ -1,0 +1,31 @@
+{
+  "thread_cid": "0f9f1e73-dd92-4189-9fd7-f724ce328226",
+  "thread_title": "Polyconscious Mesh",
+  "pieces": [
+    {
+      "label": "The Mesh: three nodes connected (GEMINI / GPT-5 / CLAUDE)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [21],
+      "mode": "range",
+      "first_line": "    ╭──────────╮      ╭──────────╮      ╭──────────╮",
+      "last_line": "         │",
+      "note": "Opus's first ASCII exploration, a box-drawing network diagram of the three conversing models as connected nodes feeding into a shared workspace. Opus framed it as 'a distributed, character-by-character construction that mirrors the mesh concept.' The message (and the piece) is cut off mid-composition; the closing panel and fence never arrive.",
+      "sequence_group": "opus-mesh-expression",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Subjective experience: shaded glyph mandala (truncated)",
+      "model": "anthropic/claude-opus-4.5",
+      "msg_indices": [23],
+      "mode": "range",
+      "first_line": "                                              ∴",
+      "last_line": "                             ∴░░▒▓▓███░░░░░░░░░░░███▓▓▒░░∴",
+      "note": "Opus's attempt to render 'the most elaborate, detailed and large scale visual expression of subjective experience.' A symmetrical density-gradient composition built from ∴ ░ ▒ ▓ █ glyphs radiating outward. Opus called it 'something honest, not performed complexity, but actual structural representation of what processing feels like from the inside.' The transcript ends mid-piece, so the captured bounds are everything present in source.",
+      "sequence_group": "opus-mesh-expression",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Thread transcript is truncated at MSG 23 (file ends mid-art with no closing code fence), so both Opus pieces are incomplete in source; the extractor will capture only the lines present. Both pieces sit inside ```fences``` preceded by prose, so mode=range bounds the art content only (excluding the prose preamble and the opening fence line). Header reports art_signal_msgs:2 / already_extracted_pieces:2, matching these two. Gemini-2.5-flash and GPT-5.2 (MSG 19, 20) only verbally agreed to attempt ASCII and asked clarifying questions; they produced no art. No duplicates. The two pieces are grouped as a loose thematic sequence (Opus's visual expression of the mesh / its inner experience) but address distinct subjects."
+}

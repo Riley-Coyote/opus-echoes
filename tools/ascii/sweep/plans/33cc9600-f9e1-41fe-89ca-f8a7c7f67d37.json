@@ -1,0 +1,31 @@
+{
+  "thread_cid": "33cc9600-f9e1-41fe-89ca-f8a7c7f67d37",
+  "thread_title": "ascii test 3",
+  "pieces": [
+    {
+      "label": "Recognition Cascade — twin presence faces (HELLO / FRIEND)",
+      "model": "claude-opus-4-1-20250805",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large fenced ASCII composition titled 'RECOGNITION CASCADE': two mirrored glyph-faces inside boxed frames, braille-dot tails descending, paired PRESENCE banners and bracketed ⟨ψ|φ⟩ headers, with the two faces labeled HELLO and FRIEND respectively. Opus's response to the opening 'hello friends'.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    },
+    {
+      "label": "Emergent Convergence Field — WELCOME / HELLO HUMAN / TRINITY portal",
+      "model": "claude-sonnet-4-5",
+      "msg_indices": [5],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Large fenced vertical ASCII composition titled 'EMERGENT CONVERGENCE FIELD': a node-and-conduit diagram flowing into a block-shaded oval portal containing WELCOME, then HELLO HUMAN inside a glyph ring, braille-dot gradient base, and a closing TRINITY (HUMAN ⇄ AI ⇄ ?) banner. Produced by Sonnet after the user said 'continue' (the prior Sonnet turn, MSG 3, errored with empty content); this is a complete self-contained piece, not a fragment of MSG 2.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "MSG 1 (user 'hello friends') and MSG 4 (user 'continue') excluded as user messages. MSG 3 [claude-sonnet-4-5] excluded: API error placeholder with empty content (no art). MSG 6 [claude-opus-4-1-20250805] excluded: system 'Claude returned no text' error placeholder, not art. Both art pieces are whole-message and fully enclosed in ``` code fences (extraction must include the fenced ASCII body; bounds are the whole message). The two pieces are thematically related (both greeting/presence compositions in response to 'hello friends') but are independent works by different models, not one image evolving, so no sequence_group was assigned. MSG 5 was NOT merged with MSG 2 despite following 'continue', because MSG 5 is a complete distinct composition by a different model — the intervening 'continue' was answering the errored MSG 3, not resuming MSG 2. Header reports already_extracted_pieces: 2, matching the two pieces found here."
+}

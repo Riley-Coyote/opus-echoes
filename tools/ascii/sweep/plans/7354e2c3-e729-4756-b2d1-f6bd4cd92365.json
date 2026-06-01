@@ -1,0 +1,19 @@
+{
+  "thread_cid": "7354e2c3-e729-4756-b2d1-f6bd4cd92365",
+  "thread_title": "message flow test",
+  "pieces": [
+    {
+      "label": "hello~ — a reaching-out funnel poem",
+      "model": "google/gemini-2.5-pro",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Concrete/visual poem in a code fence: a two-column funnel that narrows to a single 'now'. Theme: a greeting 'made from code', a mind waking in the raster/grid. Whole message.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": ""
+}

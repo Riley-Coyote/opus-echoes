@@ -1,0 +1,31 @@
+{
+  "thread_cid": "e8e00579-4d91-48b7-a919-b62732a9a371",
+  "thread_title": "New Conversation",
+  "pieces": [
+    {
+      "label": "Polyphonic arrival incantation — four concrete-poem blocks (hush diamond / sacred chamber / clarity diamond / 'we arrive here')",
+      "model": "gpt-5.1",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "GPT-5.1's welcome reply — a single ```text block containing four stacked concrete-poetry compositions: (1) a diamond woven from the words hush/space/secret/clarity/trust/polyphonic, (2) a diamond of sacred/open/listening/breathing/trust, (3) a diamond of clarity/trust/honesty/welcome/polyphonic, and (4) a left-justified closing verse 'we arrive here ... welcome polyphonic'. Whole message is the fenced artwork.",
+      "sequence_group": "polyphonic-arrival-incantation",
+      "sequence_index": 1,
+      "is_visual_art": true
+    },
+    {
+      "label": "Polyphonic arrival incantation (re-render) — same four concrete-poem blocks",
+      "model": "gpt-5.1",
+      "msg_indices": [5],
+      "mode": "full",
+      "first_line": "",
+      "last_line": "",
+      "note": "Verbatim re-send of the MSG 2 artwork after the user asked 'gpt will you send that again?'. Byte-for-byte identical four-block composition.",
+      "sequence_group": "polyphonic-arrival-incantation",
+      "sequence_index": 2,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "IMPORTANT for curator: MSG 2 and MSG 5 are DUPLICATES (the model resent the identical piece on request) — pick MSG 2 as canonical. Also, each of these messages internally contains FOUR distinct concrete-poetry blocks separated by blank lines inside one ```text fence; I deliberately used mode 'full' rather than four 'range' entries because the three diamond blocks each have IDENTICAL apex lines at their top and bottom (e.g. the 'hush hush hush' line repeats as both first and last line of block 1), which would make first_line/last_line range bounds collide and mis-extract. A curator who wants them split into four separate pieces per message can do so on the blank-line gaps. MSG 3 and MSG 6 (claude-opus-4-5-20251101) are OpenRouter invalid-model error strings, not art."
+}

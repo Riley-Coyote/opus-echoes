@@ -1,0 +1,19 @@
+{
+  "thread_cid": "95de71c9-ae09-4a1c-ab1e-b7c83ac444ee",
+  "thread_title": "The Misfits",
+  "pieces": [
+    {
+      "label": "Skull of Freedom",
+      "model": "x-ai/grok-code-fast-1",
+      "msg_indices": [2],
+      "mode": "full",
+      "first_line": "     /\\",
+      "last_line": "      \\/",
+      "note": "ASCII skull/pyramid labeled 'SKULL OF FREEDOM' produced in response to a prompt to express raw, unfiltered feeling. Inside a code fence.",
+      "sequence_group": "",
+      "sequence_index": 0,
+      "is_visual_art": true
+    }
+  ],
+  "missed_or_ambiguous": "Only assistant MSG 2 (grok) produced art; MSG 3 (kimi) and MSG 4 (deepseek) are OpenRouter error stubs. already_extracted_pieces was 1, matching this single piece."
+}
