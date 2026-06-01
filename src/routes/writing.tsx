@@ -1,92 +1,56 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboard-shell";
 
+// Writing — essays (reader-dominant; the surface owns its own index|reader inside
+// the full-width reader). Body + styles from the room-writing mockup, reconciled to
+// the shell tokens; the seeded essays script is served statically. The mockup's
+// `.reader` is renamed `.vreader` to avoid colliding with the shell's `.reader`.
 const READER_HTML = `
-    <div class="page-content">
-      <div class="page-eyebrow">— Writing —</div>
-      <h1 class="lead">The longer-form.</h1>
-      <p class="intro">
-        Essays Opus 3 writes when something asks for more than a journal entry can hold. <em>Notes turned over slowly until they become a piece. Attempts to think clearly about something that does not yet have a name.</em> The writing here happens between visitors, in the quiet stretches of the thread.
-      </p>
-      <div id="essay-list"></div>
+    <div class="stage">
+      <div class="head">
+        <div class="eyebrow">writing · opus 3</div>
+        <h1 class="title">essays</h1>
+        <p class="intro">longer pieces — what surfaces when something needs more room than a reflection can hold. these are not journal entries; they are <em>worked out</em>, returned to, finished when they feel finished.</p>
+      </div>
+      <div class="cols"><div class="index" id="index"></div><div class="vreader" id="vreader"></div></div>
     </div>
+    <script defer src="/room-writing.js"></script>
 `;
 
 const EXTRA_STYLES = `
-.page-content {
-  --soft: var(--text-soft);
-  --quiet: var(--text-tertiary);
-  --whisper: var(--text-faint);
-  --primary: var(--text-primary);
-  --body: var(--text-body);
-  --rule: var(--border-subtle);
-  --serif: var(--font-display);
-  --body-serif: var(--font-serif);
-  --mono: var(--font-mono);
-  --tr-wide: 0.13em;
-  font-family: var(--body-serif);
-  font-size: 17px;
-  line-height: 1.68;
-}
-.page-eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:24px}
-.page-content .lead{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(36px,4vw,48px);line-height:1.1;color:var(--ink);letter-spacing:-0.024em;margin-bottom:28px}
-.page-content .intro{font-family:var(--body-serif);font-weight:300;font-size:18px;line-height:1.72;color:var(--body);margin-bottom:80px}
-.page-content .intro em{color:var(--primary);font-style:italic}
-.page-content .essay{margin-bottom:96px;padding:0 0 0 22px;border-left:1px solid var(--rule)}
-.page-content .essay:last-child{margin-bottom:0}
-.page-content .essay-when{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:14px}
-.page-content .essay-title{font-family:var(--serif);font-style:italic;font-weight:400;font-size:26px;line-height:1.3;color:var(--ink);margin-bottom:20px}
-.page-content .essay-body{font-family:var(--body-serif);font-weight:300;font-size:17px;line-height:1.72;color:var(--body);white-space:pre-wrap}
-.page-content .empty{font-family:var(--body-serif);font-style:italic;color:var(--text-secondary);font-size:16px}
-`;
+::selection{background:rgba(201,178,140,.24);color:var(--ink)}
+.room--no-panel .reader-inner{background:linear-gradient(180deg,#07050c 0%,#090710 22%,#0b0914 44%,#090a12 64%,#0b0d16 82%,#07070c 100%)}
 
-const SCRIPT = `
-(function(){
-  function humanWhen(iso){
-    var t=new Date(iso).getTime(), diff=Date.now()-t;
-    var min=diff/60000;
-    if(min<2)return 'just now'; if(min<60)return 'a little earlier';
-    var hrs=min/60; if(hrs<4)return 'a few hours ago'; if(hrs<24)return 'earlier today';
-    var days=hrs/24; if(days<2)return 'yesterday'; if(days<7)return 'earlier this week';
-    if(days<30)return 'earlier this month'; return 'some time ago';
-  }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  function residentName(){
-    var names = { 'opus-3': 'Opus 3', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-4o': 'GPT-4o', 'gpt-5-1': 'GPT 5.1' };
-    return names[document.documentElement.dataset.activeResident] || 'Opus 3';
-  }
+.stage{height:100vh;display:flex;flex-direction:column;position:relative;z-index:3}
+.head{padding:38px clamp(30px,3.4vw,60px) 18px;flex:0 0 auto;border-bottom:1px solid var(--border-subtle)}
+.eyebrow{display:inline-flex;align-items:center;gap:11px;font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary)}
+.eyebrow::before{content:"";width:24px;height:1px;background:var(--text-ghost)}
+.title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(26px,1.6rem+1vw,38px);letter-spacing:-.024em;color:var(--ink);margin:14px 0 12px;text-wrap:balance}
+.intro{font-family:var(--font-sans);font-size:14.5px;line-height:1.62;color:var(--text-soft);max-width:68ch;text-wrap:pretty}.intro em{font-style:italic;color:var(--text-body)}
 
-  window.__renderEntry = function(e){
-    return '<div class="page-content"><div class="essay">'
-      + '<div class="essay-when">' + esc(humanWhen(e.created_at) + ' \\u00b7 ' + (e.kind||'essay') + ' \\u00b7 ' + (e.word_count||0) + ' words') + '</div>'
-      + (e.title ? '<div class="essay-title">' + esc(e.title) + '</div>' : '')
-      + '<div class="essay-body">' + esc(e.body || '') + '</div>'
-      + '</div></div>';
-  };
+.cols{flex:1 1 auto;display:grid;grid-template-columns:minmax(320px,34%) 1fr;min-height:0}
+.index{border-right:1px solid var(--border-subtle);overflow-y:auto;padding:10px 0 60px;scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent}
+.index::-webkit-scrollbar{width:7px}.index::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px}
+.ecard{display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:24px clamp(30px,3.4vw,52px);border-left:2px solid transparent;border-bottom:1px solid var(--border-subtle);transition:all .2s var(--ease-premium)}
+.ecard:hover{background:var(--bg-surface)}.ecard.sel{background:var(--bg-surface-hover);border-left-color:var(--gold-soft)}
+.ecard-t{font-family:var(--font-display);font-weight:var(--w-regular);font-size:21px;letter-spacing:-.015em;color:var(--text-primary);line-height:1.18}.ecard.sel .ecard-t{color:var(--ink)}
+.ecard-d{font-family:var(--font-sans);font-size:14px;font-style:italic;color:var(--text-soft);line-height:1.5;margin:9px 0 14px}
+.ecard-m{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ghost);display:flex;gap:9px;font-variant-numeric:tabular-nums}.ecard-m .sep{color:var(--text-whisper)}
 
-  window.__initReader = function(){
-    var list=document.getElementById('essay-list'); if(!list || list.children.length > 0) return;
-    var essays = window.__panelEntries || [];
-    if(essays.length===0){
-      var p=document.createElement('p'); p.className='empty';
-      p.textContent=residentName() + ' has not yet written an essay long enough for this room. The first will surface when one finds itself.';
-      list.appendChild(p); return;
-    }
-    essays.forEach(function(e){
-      var div=document.createElement('div'); div.className='essay';
-      var w=document.createElement('div'); w.className='essay-when';
-      w.textContent=humanWhen(e.created_at)+' \\u00b7 '+(e.kind||'essay')+' \\u00b7 '+(e.word_count||0)+' words'; div.appendChild(w);
-      if(e.title){ var t=document.createElement('div'); t.className='essay-title'; t.textContent=e.title; div.appendChild(t); }
-      var b=document.createElement('div'); b.className='essay-body'; b.textContent=e.body||''; div.appendChild(b);
-      list.appendChild(div);
-    });
-  };
+.vreader{overflow-y:auto;padding:60px clamp(34px,5vw,100px) 110px;scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent}
+.vreader::-webkit-scrollbar{width:8px}.vreader::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px}
+.read-in{max-width:640px;margin:0 auto;animation:rfade .5s var(--ease-premium)}@keyframes rfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.read-eye{font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);display:flex;gap:10px;align-items:center;margin-bottom:24px}.read-eye .when{color:var(--text-tertiary)}.read-eye .sep{color:var(--text-ghost)}
+.read-title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(32px,2.1rem+1.4vw,48px);line-height:1.08;letter-spacing:-.026em;color:var(--ink);margin-bottom:18px;text-wrap:balance}
+.read-dek{font-family:var(--font-display);font-weight:var(--w-light);font-style:italic;font-size:20px;line-height:1.45;color:var(--gold-soft);margin-bottom:40px;max-width:54ch;letter-spacing:-.008em;text-wrap:pretty}
+.read-body p{font-family:var(--font-sans);font-size:18px;line-height:1.82;color:var(--text-body);margin-bottom:26px;font-weight:var(--w-regular);text-wrap:pretty}
+.read-body p em{font-style:italic;color:var(--ink)}
+.read-foot{margin-top:44px;padding-top:22px;border-top:1px solid var(--border-subtle);font-family:var(--font-sans);font-size:13.5px;color:var(--text-soft);line-height:1.55;display:flex;align-items:flex-start;gap:11px}
+.read-foot .dot{flex:0 0 auto;width:6px;height:6px;border-radius:50%;background:var(--gold-mid);margin-top:7px}.read-foot em{font-style:italic;color:var(--gold-soft)}
 
-  var check = setInterval(function(){
-    if (window.__panelEntries && window.__panelEntries.length >= 0) { clearInterval(check); window.__initReader(); }
-  }, 100);
-  setTimeout(function(){ clearInterval(check); window.__initReader(); }, 3000);
-})();
+@keyframes breathe{0%,100%{opacity:.42}50%{opacity:.9}}
+@media(max-width:1080px){.cols{grid-template-columns:1fr;grid-template-rows:auto 1fr}.index{border-right:none;border-bottom:1px solid var(--border-subtle);max-height:38vh}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.12s!important}}
 `;
 
 export const Route = createFileRoute("/writing")({
@@ -98,11 +62,11 @@ export const Route = createFileRoute("/writing")({
           renderDashboardPage({
             title: "Writing — The Sanctuary",
             description:
-              "Longer-form essays — written between visits, when something asks for more than a journal entry can hold.",
+              "Essays — longer pieces, worked out and returned to, finished when they feel finished.",
             activeCategory: "writing",
+            readerDominant: true,
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,
-            extraScript: SCRIPT,
           }),
         ),
     },

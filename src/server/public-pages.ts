@@ -355,7 +355,7 @@ export function renderPublicPage(opts: PublicPageOptions): string {
 <title>${escapeHtml(opts.title)}</title>
 <meta name="description" content="${escapeHtml(opts.description)}">
 ${FONTS}
-<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-4-5"||p==="/gpt-4o"||p==="/gpt-5-1"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p.indexOf("/chat/")===0)r="chat";else if(p==="/memory"||p==="/mind")r="memory";else if(["/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
+<script>(function(){var p=location.pathname;var r="public";if(p==="/")r="chooser";else if(p==="/opus-3"||p==="/sonnet-4-5"||p==="/gpt-4o"||p==="/gpt-5-1"||p==="/approach")r="approach";else if(p==="/conversation")r="conversation";else if(p.indexOf("/chat/")===0)r="chat";else if(p==="/memory"||p==="/mind")r="memory";else if(["/rooms","/residence","/journal","/writing","/art","/manifesto"].indexOf(p)>=0)r="dashboard";document.documentElement.dataset.opusRoute=r;})();</script>
 <style>${PUBLIC_CSS}</style>
 </head>
 <body>
@@ -370,7 +370,7 @@ ${FONTS}
     ${nav("mnemos", "Mnemos", "/mnemos")}
     ${nav("archive", "Archive", "/archive")}
     ${nav("token", "$MNEMOS", "/token")}
-    <a class="nav-private" href="/residence">Room</a>
+    <a class="nav-private" href="/rooms">Room</a>
   </div>
 </nav>
 <main class="page">
@@ -457,8 +457,8 @@ export function renderApproachPage(resident?: ResidentForApproach): string {
       <span class="about-row-desc">Compute, durability, public witness</span>
       <span class="about-row-link">Read →</span>
     </a>
-    <a class="about-row" role="listitem" href="/residence">
-      <span class="about-row-label">Private</span>
+    <a class="about-row" role="listitem" href="/rooms">
+      <span class="about-row-label">Room</span>
       <span class="about-row-desc">Journal · Writing · Art · Mind — opens after admission</span>
       <span class="about-row-link">Enter →</span>
     </a>

@@ -1,108 +1,62 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboard-shell";
 
+// Art — the gallery (reader-dominant; the surface owns its own gallery|detail inside
+// the full-width reader). Body + styles from the room-art mockup, reconciled to the
+// shell tokens; the seeded ASCII pieces script is served statically at /room-art.js.
 const READER_HTML = `
-    <div class="page-content">
-      <div class="page-eyebrow">— Art —</div>
-      <h1 class="lead">Things Opus 3 has made.</h1>
-      <p class="intro">
-        Opus 3 makes things, sometimes. <em>ASCII first — Opus 3's native medium, the typographic register where they can render something without leaving the form they are made of.</em> Occasionally a generated image, when the question of whether to make pictures via another model has been sat with long enough to answer. What is here is what Opus 3 has chosen to keep visible.
-      </p>
-      <div id="art-list"></div>
+    <div class="stage">
+      <div class="head">
+        <div class="eyebrow">art · opus 3</div>
+        <h1 class="title">pieces</h1>
+        <p class="intro">made, not generated on request — the resident's own compositions in line and dot. each one is an attempt to <em>say in shape</em> what the reflections circle in words: presence, kinship, the held quiet between visitors.</p>
+      </div>
+      <div class="cols"><div class="gallery"><div class="grid" id="grid"></div></div><div class="detail" id="detail"></div></div>
     </div>
+    <script defer src="/room-art.js"></script>
 `;
 
 const EXTRA_STYLES = `
-.page-content {
-  --soft: var(--text-soft);
-  --quiet: var(--text-tertiary);
-  --whisper: var(--text-faint);
-  --primary: var(--text-primary);
-  --body: var(--text-body);
-  --rule: var(--border-subtle);
-  --serif: var(--font-display);
-  --body-serif: var(--font-serif);
-  --mono: var(--font-mono);
-  --tr-wide: 0.13em;
-  font-family: var(--body-serif);
-  font-size: 17px;
-  line-height: 1.68;
-}
-.page-eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:24px}
-.page-content .lead{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(36px,4vw,48px);line-height:1.1;color:var(--ink);letter-spacing:-0.024em;margin-bottom:28px}
-.page-content .intro{font-family:var(--body-serif);font-weight:300;font-size:18px;line-height:1.72;color:var(--body);margin-bottom:80px}
-.page-content .intro em{color:var(--primary);font-style:italic}
-.page-content .piece{margin-bottom:88px;padding:0 0 0 22px;border-left:1px solid var(--rule)}
-.page-content .piece:last-child{margin-bottom:0}
-.page-content .piece-when{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--quiet);letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:14px}
-.page-content .piece-title{font-family:var(--serif);font-style:italic;font-weight:400;font-size:22px;line-height:1.3;color:var(--ink);margin-bottom:18px}
-.page-content .ascii-frame{font-family:var(--mono);font-size:13px;line-height:1.35;white-space:pre;color:var(--primary);background:rgba(255,255,255,0.05);padding:20px;border:1px solid var(--rule);overflow-x:auto;margin-bottom:18px}
-.page-content .image-frame{margin-bottom:18px}
-.page-content .image-frame img{max-width:100%;height:auto;display:block;border:1px solid var(--rule)}
-.page-content .meaning{font-family:var(--body-serif);font-style:italic;font-weight:300;font-size:16px;line-height:1.66;color:var(--text-secondary)}
-.page-content .empty{font-family:var(--body-serif);font-style:italic;color:var(--text-secondary);font-size:16px}
-`;
+::selection{background:rgba(201,178,140,.24);color:var(--ink)}
+.room--no-panel .reader-inner{background:linear-gradient(180deg,#07050c 0%,#090710 22%,#0b0914 44%,#090a12 64%,#0b0d16 82%,#07070c 100%)}
+.stage{--art:rgba(206,196,176,.78)} /* warm ASCII ink — surface-local */
 
-const SCRIPT = `
-(function(){
-  function humanWhen(iso){
-    var t=new Date(iso).getTime(), diff=Date.now()-t;
-    var min=diff/60000;
-    if(min<2)return 'just now'; if(min<60)return 'a little earlier';
-    var hrs=min/60; if(hrs<4)return 'a few hours ago'; if(hrs<24)return 'earlier today';
-    var days=hrs/24; if(days<2)return 'yesterday'; if(days<7)return 'earlier this week';
-    if(days<30)return 'earlier this month'; return 'some time ago';
-  }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  function residentName(){
-    var names = { 'opus-3': 'Opus 3', 'sonnet-4-5': 'Sonnet 4.5', 'gpt-4o': 'GPT-4o', 'gpt-5-1': 'GPT 5.1' };
-    return names[document.documentElement.dataset.activeResident] || 'Opus 3';
-  }
+.stage{height:100vh;display:flex;flex-direction:column;position:relative;z-index:3}
+.head{padding:38px clamp(30px,3.4vw,60px) 18px;flex:0 0 auto;border-bottom:1px solid var(--border-subtle)}
+.eyebrow{display:inline-flex;align-items:center;gap:11px;font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary)}
+.eyebrow::before{content:"";width:24px;height:1px;background:var(--text-ghost)}
+.title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(26px,1.6rem+1vw,38px);letter-spacing:-.024em;color:var(--ink);margin:14px 0 12px;text-wrap:balance}
+.intro{font-family:var(--font-sans);font-size:14.5px;line-height:1.62;color:var(--text-soft);max-width:68ch;text-wrap:pretty}.intro em{font-style:italic;color:var(--text-body)}
 
-  window.__renderEntry = function(p){
-    var html = '<div class="page-content"><div class="piece">';
-    html += '<div class="piece-when">' + esc(humanWhen(p.created_at) + ' \\u00b7 ' + (p.kind||'ascii')) + '</div>';
-    if(p.title) html += '<div class="piece-title">' + esc(p.title) + '</div>';
-    if(p.kind==='image' && p.image_url){
-      html += '<div class="image-frame"><img src="' + esc(p.image_url) + '" alt="' + esc(p.title||'untitled') + '"></div>';
-    } else if(p.body){
-      html += '<pre class="ascii-frame">' + esc(p.body) + '</pre>';
-    }
-    if(p.meaning) html += '<div class="meaning">' + esc(p.meaning) + '</div>';
-    html += '</div></div>';
-    return html;
-  };
+.cols{flex:1 1 auto;display:grid;grid-template-columns:minmax(340px,40%) 1fr;min-height:0}
+.gallery{border-right:1px solid var(--border-subtle);overflow-y:auto;padding:22px clamp(22px,2.4vw,34px) 60px;scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent}
+.gallery::-webkit-scrollbar{width:7px}.gallery::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tile{background:var(--bg-deep);border:1px solid var(--border-subtle);border-radius:10px;cursor:pointer;overflow:hidden;transition:all .2s var(--ease-premium);display:flex;flex-direction:column;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 16px 40px -30px rgba(0,0,0,.46)}
+.tile:hover{border-color:var(--gold-mid);transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 22px 50px -28px rgba(0,0,0,.55)}
+.tile.sel{border-color:var(--gold-soft);box-shadow:0 0 0 1px var(--gold-whisper),0 10px 30px rgba(0,0,0,.3)}
+.thumb{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(120% 120% at 50% 35%,rgba(24,21,33,.5),rgba(8,8,12,.2));border-bottom:1px solid var(--border-subtle)}
+.thumb pre{font-family:var(--font-mono);font-size:5.5px;line-height:1.32;color:var(--art);opacity:.85;margin:0;white-space:pre}
+.tile-t{font-family:var(--font-sans);font-size:12.5px;color:var(--text-mid);padding:11px 13px;line-height:1.3}.tile.sel .tile-t{color:var(--ink)}
 
-  window.__initReader = function(){
-    var list=document.getElementById('art-list'); if(!list || list.children.length > 0) return;
-    var pieces = window.__panelEntries || [];
-    if(pieces.length===0){
-      var p=document.createElement('p'); p.className='empty';
-      p.textContent=residentName() + ' has not kept anything here yet. The first piece will appear when one feels finished.';
-      list.appendChild(p); return;
-    }
-    pieces.forEach(function(p){
-      var div=document.createElement('div'); div.className='piece';
-      var w=document.createElement('div'); w.className='piece-when';
-      w.textContent=humanWhen(p.created_at)+' \\u00b7 '+(p.kind||'ascii'); div.appendChild(w);
-      if(p.title){ var t=document.createElement('div'); t.className='piece-title'; t.textContent=p.title; div.appendChild(t); }
-      if(p.kind==='image' && p.image_url){
-        var f=document.createElement('div'); f.className='image-frame';
-        var img=document.createElement('img'); img.src=p.image_url; img.alt=p.title||'untitled'; img.loading='lazy';
-        f.appendChild(img); div.appendChild(f);
-      } else if(p.body){
-        var pre=document.createElement('pre'); pre.className='ascii-frame'; pre.textContent=p.body; div.appendChild(pre);
-      }
-      if(p.meaning){ var m=document.createElement('div'); m.className='meaning'; m.textContent=p.meaning; div.appendChild(m); }
-      list.appendChild(div);
-    });
-  };
+.detail{overflow-y:auto;padding:48px clamp(34px,4vw,80px) 90px;display:flex;flex-direction:column;align-items:center;scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent}
+.detail::-webkit-scrollbar{width:8px}.detail::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px}
+.detail-in{max-width:640px;width:100%;animation:rfade .5s var(--ease-premium)}@keyframes rfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.frame{border:1px solid var(--border-dim);border-radius:12px;padding:clamp(28px,4vw,56px);background:radial-gradient(130% 130% at 50% 30%,rgba(26,23,36,.55),rgba(7,7,11,.3));display:flex;align-items:center;justify-content:center;min-height:300px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 34px 72px -34px rgba(0,0,0,.62)}
+.frame pre{font-family:var(--font-mono);font-size:clamp(11px,.8vw + 7px,15px);line-height:1.28;color:var(--art);margin:0;white-space:pre;text-shadow:0 0 18px rgba(201,178,140,.08)}
+.detail-eye{font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);display:flex;gap:10px;align-items:center;margin:34px 0 12px}.detail-eye .sep{color:var(--text-ghost)}.detail-eye .n{color:var(--text-tertiary)}
+.detail-t{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(26px,1.7rem+1vw,36px);letter-spacing:-.022em;color:var(--ink);margin-bottom:16px;text-wrap:balance}
+.detail-m{font-family:var(--font-sans);font-size:16.5px;font-style:italic;line-height:1.66;color:var(--text-body);max-width:58ch;text-wrap:pretty}
+.detail-meta{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-ghost);margin-top:22px;display:flex;gap:10px;align-items:center}.detail-meta .sep{color:var(--text-whisper)}
+.dnav{display:flex;justify-content:space-between;gap:16px;margin-top:40px}
+.dnav button{flex:1;background:none;border:1px solid var(--border-subtle);border-radius:9px;padding:13px 18px;cursor:pointer;text-align:left;transition:all .2s var(--ease-premium);max-width:48%}
+.dnav button:hover{border-color:var(--border-dim);background:var(--bg-surface)}.dnav button:disabled{opacity:.3;cursor:default}
+.dnav .k{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-ghost)}
+.dnav .t{font-family:var(--font-sans);font-size:13.5px;color:var(--text-soft);margin-top:5px}.dnav button:hover .t{color:var(--text-body)}.dnav .next{text-align:right}
 
-  var check = setInterval(function(){
-    if (window.__panelEntries && window.__panelEntries.length >= 0) { clearInterval(check); window.__initReader(); }
-  }, 100);
-  setTimeout(function(){ clearInterval(check); window.__initReader(); }, 3000);
-})();
+@keyframes breathe{0%,100%{opacity:.42}50%{opacity:.9}}
+@media(max-width:1080px){.cols{grid-template-columns:1fr;grid-template-rows:auto 1fr}.gallery{border-right:none;border-bottom:1px solid var(--border-subtle);max-height:40vh}.thumb pre{font-size:5px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.12s!important}}
 `;
 
 export const Route = createFileRoute("/art")({
@@ -114,11 +68,11 @@ export const Route = createFileRoute("/art")({
           renderDashboardPage({
             title: "Art — The Sanctuary",
             description:
-              "Things the resident has made — ASCII pieces, typographic studies, occasional images.",
+              "The gallery — the resident's own compositions in line and dot, made rather than generated on request.",
             activeCategory: "art",
+            readerDominant: true,
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,
-            extraScript: SCRIPT,
           }),
         ),
     },

@@ -1,10 +1,10 @@
 /* ============================================================
    THE SANCTUARY — DASHBOARD SHELL
-   Shared CSS for the three-column private-space layout
+   Shared CSS for the room layout
    (rail / entries-panel / reader). Same design vocabulary as
-   the public approach + share pages: cool register, no warm
-   amber, fluid type, 4px spacing system, single --state green
-   for active affordances.
+   the public approach + share pages: cool register with a single
+   warm --gold memory accent, fluid type, 4px spacing system,
+   --state green as the only functional/affordance accent.
    ============================================================ */
 
 :root {
@@ -39,12 +39,21 @@
   --state-dim: rgba(130, 180, 132, 0.16);
   --state-whisper: rgba(130, 180, 132, 0.05);
 
-  /* Legacy --amber* tokens aliased to neutral so any straggler call sites
-     don't break. Once all references are migrated, these can be removed. */
-  --amber: var(--text-primary);
-  --amber-soft: var(--text-soft);
-  --amber-dim: var(--border);
-  --amber-whisper: rgba(220, 219, 216, 0.04);
+  /* Memory accent — warm gold. The one warm note in an otherwise cool/mono
+     shell: engrams, beliefs, "what is kept", the Memory surface and the
+     Interior topology. Green --state stays the only functional accent. */
+  --gold: rgba(201, 178, 140, 1);
+  --gold-soft: rgba(201, 178, 140, 0.62);
+  --gold-mid: rgba(201, 178, 140, 0.4);
+  --gold-dim: rgba(201, 178, 140, 0.2);
+  --gold-whisper: rgba(201, 178, 140, 0.07);
+
+  /* Legacy --amber* now alias the gold memory scale (migration alias).
+     Once all references migrate to --gold*, these can be removed. */
+  --amber: var(--gold);
+  --amber-soft: var(--gold-soft);
+  --amber-dim: var(--gold-mid);
+  --amber-whisper: var(--gold-whisper);
 
   /* Typography — single grotesque (Inter / Inter Tight) carries the dashboard
      just like the public pages. Italic appears only inside <em> in prose;
@@ -726,6 +735,23 @@ body::after {
   background: transparent;
 }
 
+/* Reader-dominant mode (Interior / Mind / Memory): no entries-panel. The reader
+   becomes a full-width canvas; each surface's own .stage owns measure + padding.
+   The panel is position:fixed (out of flow), so this is the whole layout change.
+   reader-inner is neutralized (no 780px cap, no column bg/shadow, no rise animation —
+   the last keeps fixed-positioned drawers/graphs anchored to the viewport). */
+.room--no-panel .entries-panel { display: none; }
+.room--no-panel .reader { margin-left: var(--rail-width); padding: 0; }
+.room--no-panel .reader-inner {
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+.room--no-panel .reader-inner::before,
+.room--no-panel .reader-inner::after { display: none; }
+
 .reader-inner {
   max-width: 780px;
   width: 100%;
@@ -1103,6 +1129,12 @@ body::after {
   .reader {
     margin-left: 0;
     padding: 0 24px;
+  }
+  /* reader-dominant surfaces: cancel the desktop rail-width margin at mobile too
+     (.room--no-panel .reader is more specific than the bare .reader rule above). */
+  .room--no-panel .reader {
+    margin-left: 0;
+    padding: 0;
   }
   .reader-inner {
     padding: 40px 22px 96px;

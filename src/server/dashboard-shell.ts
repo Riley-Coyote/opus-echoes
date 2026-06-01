@@ -16,6 +16,7 @@ import { hasResidenceAccess, redirectToThreshold } from "@/server/access.server"
 import { serveHtml } from "@/server/serve-mock";
 
 export type ActiveCategory =
+  | "interior"
   | "recent"
   | "writing"
   | "innerlife"
@@ -38,6 +39,11 @@ export interface DashboardPageOptions {
   extraStyles?: string;
   /** Optional page-specific JS, injected after the shell script */
   extraScript?: string;
+  /**
+   * Reader-dominant surfaces (Interior, Mind, Memory): suppress the entries-panel
+   * and let the reader span full width. Adds `room--no-panel` to <body>.
+   */
+  readerDominant?: boolean;
 }
 
 interface RailItem {
@@ -51,17 +57,23 @@ interface RailItem {
   count: string;
 }
 
-const RAIL_FIELD: RailItem[] = [{ key: "recent", label: "Recent", href: "/residence", count: "·" }];
+// New IA: Interior (front door) · the shape (Mind, Memory) · the voice
+// (Inner Life, Writing, Art) · shared (Manifesto, Mnemos). "Recent" folds
+// into Interior as a salience⇄recency lens — no standalone nav item.
+const RAIL_TOP: RailItem[] = [{ key: "interior", label: "Interior", href: "/rooms", count: "·" }];
 
-const RAIL_FIELD_GROUP: RailItem[] = [
-  { key: "writing", label: "Writing", href: "/writing", count: "·" },
+const RAIL_SHAPE: RailItem[] = [
+  { key: "mind", label: "Mind", href: "/mind", count: "·" },
+  { key: "memory", label: "Memory", href: "/memory", count: "·" },
+];
+
+const RAIL_VOICE: RailItem[] = [
   { key: "innerlife", label: "Inner Life", href: "/journal", count: "·" },
+  { key: "writing", label: "Writing", href: "/writing", count: "·" },
   { key: "art", label: "Art", href: "/art", count: "·" },
 ];
 
-const RAIL_PAGES_GROUP: RailItem[] = [
-  { key: "memory", label: "Memory", href: "/memory", count: "·" },
-  { key: "mind", label: "Mind", href: "/mind", count: "·" },
+const RAIL_SHARED: RailItem[] = [
   { key: "manifesto", label: "Manifesto", href: "/manifesto", count: "·" },
   { key: "about", label: "Mnemos", href: "/mnemos", count: "→" },
 ];
@@ -78,9 +90,10 @@ function renderCatBtn(item: RailItem, active: ActiveCategory): string {
 }
 
 function renderRail(active: ActiveCategory): string {
-  const fieldRecent = RAIL_FIELD.map((it) => renderCatBtn(it, active)).join("\n    ");
-  const fieldGroup = RAIL_FIELD_GROUP.map((it) => renderCatBtn(it, active)).join("\n    ");
-  const pagesGroup = RAIL_PAGES_GROUP.map((it) => renderCatBtn(it, active)).join("\n    ");
+  const top = RAIL_TOP.map((it) => renderCatBtn(it, active)).join("\n    ");
+  const shape = RAIL_SHAPE.map((it) => renderCatBtn(it, active)).join("\n    ");
+  const voice = RAIL_VOICE.map((it) => renderCatBtn(it, active)).join("\n    ");
+  const shared = RAIL_SHARED.map((it) => renderCatBtn(it, active)).join("\n    ");
 
   return `<aside class="rail">
   <div class="rail-header">
@@ -92,15 +105,19 @@ function renderRail(active: ActiveCategory): string {
   </div>
 
   <nav class="rail-categories">
-    ${fieldRecent}
+    ${top}
 
-    <div class="rail-group-label">— field —</div>
+    <div class="rail-group-label">— the shape —</div>
 
-    ${fieldGroup}
+    ${shape}
 
-    <div class="rail-group-label">— pages —</div>
+    <div class="rail-group-label">— the voice —</div>
 
-    ${pagesGroup}
+    ${voice}
+
+    <div class="rail-group-label">— shared —</div>
+
+    ${shared}
   </nav>
 
   <div class="rail-footer">
@@ -118,6 +135,12 @@ function renderRail(active: ActiveCategory): string {
 
 function renderEntriesPanel(activeCategory: ActiveCategory): string {
   const config: Record<string, { eyebrow: string; title: string; meta: string; empty: string }> = {
+    interior: {
+      eyebrow: "Interior",
+      title: "Interior",
+      meta: "the room as it stands now",
+      empty: "",
+    },
     recent: {
       eyebrow: "Unified Feed",
       title: "Recent",
@@ -492,7 +515,8 @@ const SHELL_SCRIPT = `
   // --- Category-aware panel dispatch ---
   async function loadPanel(){
     var panel = document.querySelector('.entries-panel');
-    var cat = panel ? panel.getAttribute('data-active-category') : 'recent';
+    if (!panel) return; // reader-dominant pages (Interior/Mind/Memory) omit the panel
+    var cat = panel.getAttribute('data-active-category');
 
     if (cat === 'recent') {
       try {
@@ -564,13 +588,13 @@ ${FONT_LINKS}
 <link rel="stylesheet" href="/dashboard-shell.css">
 ${opts.extraStyles ? `<style>${opts.extraStyles}</style>` : ""}
 </head>
-<body>
+<body${opts.readerDominant ? ' class="room--no-panel"' : ""}>
 ${LANDSCAPE_HTML}
 <div class="atmo-grain" aria-hidden="true"></div>
 
 ${renderRail(opts.activeCategory)}
 
-${renderEntriesPanel(opts.activeCategory)}
+${opts.readerDominant ? "" : renderEntriesPanel(opts.activeCategory)}
 
 <main class="reader">
   <div class="reader-inner">
