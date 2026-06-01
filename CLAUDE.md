@@ -9,6 +9,19 @@ This file inherits everything from Riley's global `~/.claude/CLAUDE.md` (memory 
 
 ---
 
+## session protocol — sync first, push when done (READ FIRST)
+
+This repo is worked on by multiple agents — Claude Code, Codex — **and the Lovable agent, which commits to `main` on its own.** So `origin/main` (GitHub) is the single source of truth and it moves continuously. A stale local clone is the #1 way work gets lost, duplicated, or pushed on top of a 300-commit divergence.
+
+- **Before any work:** confirm you are current. A SessionStart hook runs `scripts/sync.sh` automatically; you can also run `bun run sync`. If it reports you are **behind `origin/main`**, STOP and sync (`git pull --rebase origin main`, or `bun run sync:pull`) before touching anything. Never build on a branch behind `origin/main`.
+- **`git pull --rebase origin main` immediately before pushing**, then push to `main` when done. (`origin/main` is the Lovable **staging** branch — pushing deploys to preview, not live; Riley publishes live separately. Use a short-lived branch for risky or parallel work to avoid colliding with Lovable's commits.)
+- **Never end a session with uncommitted or unpushed work** — if it isn't on `origin`, the next agent (and Lovable's next publish) can't see it.
+- **One canonical local copy.** Don't spin up ad-hoc clones or worktrees for normal work.
+
+Full git/operating protocol for all agents: **`AGENTS.md`**.
+
+---
+
 ## what this project is
 
 **opus-echoes** is the codebase. **The Sanctuary** is the project. **Mnemos** is the memory architecture inside it. **mnemos.chat** is the public domain.

@@ -32,10 +32,25 @@ supabase/.temp/
 *.sln
 *.sw?
 
-# Local dev preview config (machine-specific paths)
-.claude/
+# Local dev preview config. launch.json + agent worktrees are machine-specific
+# (kept local); the SessionStart sync hook in settings.json is shared on purpose.
+.claude/*
+!.claude/settings.json
 
 # Local secrets — keep .env out of source control
 .env
 .env.local
 .env.*.local
+
+# ── Scratch artifacts from agent / preview sessions (keep `git status` clean) ──
+# Root-level screenshots + scratch only — NOT public/**, which holds real assets.
+/*.png
+/*.jpeg
+/*.jpg
+/*.webp
+/collapse-trace*.json
+/.playwright-mcp/
+/.mnemos-wt/
+/drafts/
+docs/session-export-*/
+docs/session-export-*.zip
