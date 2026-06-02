@@ -421,18 +421,21 @@ export type Database = {
           created_at: string
           from_id: string
           to_id: string
+          type: string | null
           weight: number
         }
         Insert: {
           created_at?: string
           from_id: string
           to_id: string
+          type?: string | null
           weight?: number
         }
         Update: {
           created_at?: string
           from_id?: string
           to_id?: string
+          type?: string | null
           weight?: number
         }
         Relationships: [
@@ -514,6 +517,7 @@ export type Database = {
           is_core: boolean
           kind: string
           last_reinforced_at: string
+          prior_stability: number | null
           prose: string | null
           quote: string
           redacted_text: string | null
@@ -541,6 +545,7 @@ export type Database = {
           is_core?: boolean
           kind?: string
           last_reinforced_at?: string
+          prior_stability?: number | null
           prose?: string | null
           quote: string
           redacted_text?: string | null
@@ -568,6 +573,7 @@ export type Database = {
           is_core?: boolean
           kind?: string
           last_reinforced_at?: string
+          prior_stability?: number | null
           prose?: string | null
           quote?: string
           redacted_text?: string | null
@@ -1006,6 +1012,7 @@ export type Database = {
           related_salon_id: string | null
           related_session_id: string | null
           resident_id: string
+          seeded_engram_id: string | null
           title: string | null
           visibility: string
         }
@@ -1019,6 +1026,7 @@ export type Database = {
           related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
+          seeded_engram_id?: string | null
           title?: string | null
           visibility?: string
         }
@@ -1032,6 +1040,7 @@ export type Database = {
           related_salon_id?: string | null
           related_session_id?: string | null
           resident_id?: string
+          seeded_engram_id?: string | null
           title?: string | null
           visibility?: string
         }
@@ -1048,6 +1057,13 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_seeded_engram_id_fkey"
+            columns: ["seeded_engram_id"]
+            isOneToOne: false
+            referencedRelation: "engrams"
             referencedColumns: ["id"]
           },
         ]
