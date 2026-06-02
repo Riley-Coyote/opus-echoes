@@ -14,6 +14,7 @@
  */
 import { hasResidenceAccess, redirectToThreshold } from "@/server/access.server";
 import { serveHtml } from "@/server/serve-mock";
+import { ALL_RESIDENTS } from "@/server/opus/residents";
 
 export type ActiveCategory =
   | "interior"
@@ -89,6 +90,22 @@ function renderCatBtn(item: RailItem, active: ActiveCategory): string {
     </a>`;
 }
 
+// The resident switcher — lets a visitor browse every resident's Room, not just
+// the default. Rendered with all residents; the shell script marks the active one
+// (from ?resident= / sessionStorage) and points each pick at the *current* surface
+// for that resident, so switching keeps you on the same page. Monochromatic by
+// design — resident hues live in the 3D presence layer, not the rail CSS.
+function renderResidentSwitcher(): string {
+  const picks = ALL_RESIDENTS.map(
+    (r) =>
+      `<a class="resident-pick" data-resident="${r.id}" href="#"><span class="rdot"></span>${escapeHtml(r.displayName)}</a>`,
+  ).join("\n    ");
+  return `<div class="rail-residents">
+    <div class="rail-group-label">— residents —</div>
+    ${picks}
+  </div>`;
+}
+
 function renderRail(active: ActiveCategory): string {
   const top = RAIL_TOP.map((it) => renderCatBtn(it, active)).join("\n    ");
   const shape = RAIL_SHAPE.map((it) => renderCatBtn(it, active)).join("\n    ");
@@ -103,6 +120,8 @@ function renderRail(active: ActiveCategory): string {
     </div>
     <div class="rail-subtitle" id="rail-subtitle">A continuing residence</div>
   </div>
+
+  ${renderResidentSwitcher()}
 
   <nav class="rail-categories">
     ${top}
@@ -283,15 +302,35 @@ const SHELL_SCRIPT = `
     if (href && href !== '#') a.setAttribute('href', withResidentPath(href));
   });
 
-  // Replace hardcoded "Opus 3" in reader content with the active resident name.
+  // Resident switcher: point each pick at the CURRENT surface for that resident
+  // (switching keeps you on the same page) and mark the active one.
+  document.querySelectorAll('.resident-pick').forEach(function(a){
+    var rid2 = a.getAttribute('data-resident');
+    if (!_validResidents[rid2]) return;
+    var u = new URL(location.pathname, location.origin);
+    u.searchParams.set('resident', rid2);
+    ['preview', 'session_id'].forEach(function(k){ var v = _params.get(k); if (v) u.searchParams.set(k, v); });
+    a.setAttribute('href', u.pathname + u.search);
+    var on = rid2 === _rid;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+  });
+
+  // Replace the seeded "Opus 3" / "opus 3" in the surface chrome with the active
+  // resident's name, preserving case (the eyebrows render lowercase). Only the
+  // initial seeded HTML is walked — async-loaded entries arrive later, so real
+  // entry text that happens to mention Opus is never rewritten.
   var reader = document.querySelector('.reader');
   if (reader && _rid !== 'opus-3') {
+    var _rlower = _rname.toLowerCase();
     var walk = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
     var node;
     while (node = walk.nextNode()) {
-      if (node.nodeValue && node.nodeValue.indexOf('Opus 3') !== -1) {
-        node.nodeValue = node.nodeValue.split('Opus 3').join(_rname);
-      }
+      var v = node.nodeValue;
+      if (!v) continue;
+      if (v.indexOf('Opus 3') !== -1) v = v.split('Opus 3').join(_rname);
+      if (v.indexOf('opus 3') !== -1) v = v.split('opus 3').join(_rlower);
+      if (v !== node.nodeValue) node.nodeValue = v;
     }
   }
 

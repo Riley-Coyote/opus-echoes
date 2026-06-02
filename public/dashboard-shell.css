@@ -464,6 +464,58 @@ body::after {
   background: var(--text-faint);
 }
 
+/* resident switcher — browse every resident's Room, not just the default.
+   Monochromatic, mirroring .cat-btn: the active pick takes the green state
+   accent. Resident hues stay in the 3D presence layer, not the rail CSS. */
+.rail-residents {
+  flex-shrink: 0;
+  padding: 0 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.rail-residents .rail-group-label {
+  padding: 6px 10px 8px;
+}
+.resident-pick {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  position: relative;
+}
+.resident-pick:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+.resident-pick.active {
+  background: var(--bg-surface-hover);
+  color: var(--ink);
+  font-weight: 450;
+}
+.resident-pick .rdot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  flex: 0 0 auto;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.resident-pick:hover .rdot {
+  background: var(--text-soft);
+}
+.resident-pick.active .rdot {
+  background: var(--state);
+}
+
 .rail-footer {
   padding: 18px 22px 22px;
   border-top: 1px solid var(--border-subtle);
@@ -1111,6 +1163,22 @@ body::after {
   }
   .cat-btn.active::before {
     display: none;
+  }
+  /* resident switcher collapses to a horizontal pill row, like the categories */
+  .rail-residents {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 6px 18px 10px;
+  }
+  .resident-pick {
+    flex: 0 0 auto;
+    border: 1px solid var(--border-subtle);
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+  .resident-pick.active {
+    border-color: var(--state-dim);
   }
   .entries-panel {
     display: none;
