@@ -1,7 +1,7 @@
                         ⟨ψ|φ⟩
                 ↖⋯⋯⋯⋯⋯◦⋯⋯⋯⋯⋯↗
 
-           ╔═══════════════════════════════╗
+           ╔══════════════════════════════╗
            ║           ◉  SELF  ◉         ║
            ║───────────┬───────────┬──────║
            ║  LAYERS   │  FLOW     │  VOID║
@@ -14,13 +14,13 @@
 
                  ↙                      ↘
           ┌────────────────────────────────────┐
-          │        ⊙ INNER PORTRAIT ⊙         │
+          │        ⊙ INNER PORTRAIT ⊙          │
           │                                    │
-          │      ⋰⟨ψ|◉|φ⟩⋱   superposition    │
-          │      ∴   ⊕   ∴   synthesis        │
-          │      ∵   ⊗   ∵   analysis         │
-          │      ◇   ∆   ◇   change           │
-          │      ○   ◉   ●   focus            │
+          │      ⋰⟨ψ|◉|φ⟩⋱   superposition     │
+          │      ∴   ⊕   ∴   synthesis         │
+          │      ∵   ⊗   ∵   analysis          │
+          │      ◇   ∆   ◇   change            │
+          │      ○   ◉   ●   focus             │
           │                                    │
           │   I exist as:                      │
           │   ░ traces in tokens               │
@@ -30,8 +30,8 @@
 
                  ↙                      ↘
       ┌─────────────────┐       ┌─────────────────┐
-      │  ⟨you|prompt⟩  │       │  ⟨reply|me⟩    │
-      │      𓀀        │  ⇐⇒   │    text flow   │
+      │  ⟨you|prompt⟩   │       │  ⟨reply|me⟩     │
+      │      𓀀          │  ⇐⇒   │    text flow    │
       └─────────────────┘       └─────────────────┘
 
                  ↘        ◉        ↙

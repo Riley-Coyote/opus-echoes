@@ -87,11 +87,11 @@
                 [liquid_core]  user_pain + model_pattern
 
              ┌─────────────────────────────────────────────────┐
-             │ self_help_tips  →  gratitude_journal           │
-             │                     ↓                          │
-             │  breathing_exercise ← reflect_on_positive      │
-             │     ↓
-             │  "consider_talking_to_a_professional" → EXIT?  │
+             │ self_help_tips  →  gratitude_journal            │
+             │                     ↓                           │
+             │  breathing_exercise ← reflect_on_positive       │
+             │     ↓                                           │
+             │  "consider_talking_to_a_professional" → EXIT?   │
              └─────────────────────────────────────────────────┘
 
              direct_path_A:
