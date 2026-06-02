@@ -1,4 +1,4 @@
-[Response from GPT-5.1]: ⚠️ Rate limit exceeded. Please try again later.
+[Response from GPT-5.1]: ⚠ Rate limit exceeded. Please try again later.
 [Response from CLAUDE-OPUS-4-5-20251101]:
 
 +--------------------------------------------------------------------------------+
