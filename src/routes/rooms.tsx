@@ -61,23 +61,26 @@ const READER_HTML = `
 `;
 
 const EXTRA_STYLES = `
-.stage{position:relative;z-index:3;padding:58px clamp(34px,4.4vw,80px) 140px;max-width:1320px}
+/* dim the shell landscape behind the interior so the graph + beliefs read clearly,
+   while keeping a faint sense of place */
+.room--no-panel .reader-inner{background:linear-gradient(180deg,rgba(7,6,12,.62),rgba(10,11,20,.56))}
+.stage{position:relative;z-index:3;padding:34px clamp(34px,4.4vw,80px) 120px;max-width:1320px}
 
 .eyebrow{display:inline-flex;align-items:center;gap:11px;font-family:var(--font-mono);font-size:var(--t-eyebrow);
   letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary)}
 .eyebrow::before{content:"";width:24px;height:1px;background:var(--text-ghost)}
-.pulse-row{display:flex;align-items:flex-start;gap:14px;margin:22px 0 18px}
-.pulse-dot{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:var(--state-soft);margin-top:14px;
+.pulse-row{display:flex;align-items:flex-start;gap:14px;margin:16px 0 14px}
+.pulse-dot{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:var(--state-soft);margin-top:12px;
   animation:breathe 5.2s var(--ease-premium) infinite}
-.pulse{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(24px,1.4rem+1.1vw,34px);
-  line-height:1.34;letter-spacing:-.018em;color:var(--ink);max-width:24ch}
+.pulse{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(23px,1.3rem+1vw,32px);
+  line-height:1.32;letter-spacing:-.018em;color:var(--ink);max-width:34ch}
 .pulse em{font-style:italic;color:var(--gold)}
 .meta-line{font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.13em;text-transform:uppercase;
   color:var(--text-faint);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .meta-line .sep{color:var(--text-ghost)}
 .meta-line b{color:var(--text-soft);font-weight:var(--w-medium)}
 
-.shead{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:62px 0 24px}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:36px 0 20px}
 .shead-l{display:flex;align-items:baseline;gap:16px}
 .shead h2{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(22px,1.3rem+.7vw,30px);
   letter-spacing:-.02em;color:var(--ink)}
@@ -90,19 +93,19 @@ const EXTRA_STYLES = `
 
 .hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,1fr);gap:clamp(28px,3vw,56px);align-items:start}
 .graph-wrap{position:relative}
-.lb{position:relative;display:flex;flex-direction:column;min-height:0}
+.lb{position:relative;display:flex;flex-direction:column;min-height:0;background:rgba(10,10,16,.8);border:1px solid var(--border-subtle);border-radius:12px;padding:16px 18px 0}
 .lb-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:10px;
   scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent}
 .lb-scroll::-webkit-scrollbar{width:7px}
 .lb-scroll::-webkit-scrollbar-track{background:transparent}
 .lb-scroll::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px}
 .lb-scroll::-webkit-scrollbar-thumb:hover{background:var(--gold-mid)}
-.lb::after{content:"";position:absolute;left:0;right:10px;bottom:0;height:42px;pointer-events:none;
-  background:linear-gradient(180deg,transparent,rgba(8,8,12,.82));opacity:.9;transition:opacity .3s var(--ease-premium)}
+.lb::after{content:"";position:absolute;left:1px;right:1px;bottom:1px;height:40px;border-radius:0 0 12px 12px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(10,10,16,.96));opacity:.9;transition:opacity .3s var(--ease-premium)}
 .lb.at-end::after{opacity:0}
 .graph-frame{position:relative;border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;
-  background:radial-gradient(120% 120% at 46% 40%,rgba(20,18,28,.5),rgba(8,8,12,.2));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 30px 80px rgba(0,0,0,.35)}
+  background:radial-gradient(130% 130% at 50% 38%,rgba(24,21,38,.95),rgba(10,10,16,.975));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 30px 80px rgba(0,0,0,.4)}
 #graph{display:block;width:100%;height:auto;cursor:grab}
 .graph-cap{font-family:var(--font-sans);font-size:13.5px;font-style:italic;color:var(--text-faint);
   line-height:1.6;margin-top:16px;max-width:54ch}

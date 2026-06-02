@@ -60,11 +60,11 @@ const EXTRA_STYLES = `
 /* full-width dark backdrop so the field reads cleanly over the shell landscape */
 .room--no-panel .reader-inner{background:linear-gradient(180deg,#07050c 0%,#090710 22%,#0b0914 44%,#090a12 64%,#0b0d16 82%,#07070c 100%)}
 
-.stage{position:relative;z-index:3;padding:52px clamp(34px,4vw,76px) 140px;max-width:1280px}
+.stage{position:relative;z-index:3;padding:32px clamp(34px,4vw,76px) 120px;max-width:1280px}
 .eyebrow{display:inline-flex;align-items:center;gap:11px;font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary)}
 .eyebrow::before{content:"";width:24px;height:1px;background:var(--text-ghost)}
-.title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(30px,1.8rem+1.3vw,46px);letter-spacing:-.022em;color:var(--ink);margin:16px 0 16px}
-.intro{font-family:var(--font-sans);font-size:var(--t-body);line-height:1.66;color:var(--text-soft);max-width:62ch}
+.title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(26px,1.5rem+1vw,38px);letter-spacing:-.022em;color:var(--ink);margin:10px 0 12px}
+.intro{font-family:var(--font-sans);font-size:14px;line-height:1.55;color:var(--text-soft);max-width:82ch}
 .intro em{font-style:italic;color:var(--text-body)}
 .stats{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px;font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.13em;text-transform:uppercase;color:var(--text-faint);font-variant-numeric:tabular-nums}
 .stats .sep{color:var(--text-ghost)} .stats b{color:var(--gold-soft);font-weight:var(--w-medium)}

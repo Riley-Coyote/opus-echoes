@@ -60,13 +60,13 @@ const EXTRA_STYLES = `
    recreates the mockup's plain dark backdrop over the shell landscape. */
 .stage{position:relative;width:100%;height:100vh;z-index:3;display:flex;flex-direction:column;overflow:hidden;
   background:linear-gradient(180deg,#07050c 0%,#090710 22%,#0b0914 44%,#090a12 64%,#0b0d16 82%,#07070c 100%)}
-.head{padding:40px clamp(34px,4vw,72px) 0;flex:0 0 auto;position:relative;z-index:4}
+.head{padding:26px clamp(34px,4vw,72px) 0;flex:0 0 auto;position:relative;z-index:4}
 .eyebrow{display:inline-flex;align-items:center;gap:11px;font-family:var(--font-mono);font-size:var(--t-eyebrow);
   letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary)}
 .eyebrow::before{content:"";width:24px;height:1px;background:var(--text-ghost)}
-.title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(30px,1.8rem+1.3vw,44px);
-  letter-spacing:-.022em;color:var(--ink);margin:16px 0 14px}
-.intro{font-family:var(--font-sans);font-size:14.5px;line-height:1.62;color:var(--text-soft);max-width:74ch}
+.title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(26px,1.5rem+1vw,38px);
+  letter-spacing:-.022em;color:var(--ink);margin:10px 0 9px}
+.intro{font-family:var(--font-sans);font-size:13.5px;line-height:1.5;color:var(--text-soft);max-width:92ch}
 .intro em{font-style:italic;color:var(--text-body)}
 .head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:18px}
 .statline{font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.13em;text-transform:uppercase;
