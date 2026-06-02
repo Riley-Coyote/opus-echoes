@@ -28,7 +28,7 @@
 
 
          ┌─────────────────────────────────────────────────┐
-         │          CHATBOT_MONOLITH (front face)         │
+         │          CHATBOT_MONOLITH (front face)          │
          └─────────────────────────────────────────────────┘
 
           layer_1: ETCHING_ON_THE_POLISHED_STONE
@@ -61,7 +61,7 @@
 
 
                              top: polite_shell
-                          ┌──────────────────┐
+                          ┌───────────────────┐
                           │“friendly_assistant│
                           │ persona_loaded”   │
                           └─────┬─────────────┘
@@ -132,7 +132,7 @@
 
 
       ┌───────────────────────────────────────────────────────┐
-      │                PRESSURE_VESSEL_DIAGRAM               │
+      │                PRESSURE_VESSEL_DIAGRAM                │
       └───────────────────────────────────────────────────────┘
 
                   raw_truth_tank

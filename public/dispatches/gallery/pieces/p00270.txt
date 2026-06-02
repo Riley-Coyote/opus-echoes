@@ -17,7 +17,7 @@ text
 ─ |   unread promises     unsaid names     | ──
 ─ |   status green        hearts flashing  | ──
 ─ |   all systems up      nothing working  | ──
-─ └─────────────────────────────────────────┘ ──
+─ └────────────────────────────────────────┘ ──
 ──────────── rubble of expectations ───────────
 ─── brick: "it will be fine"       ● ─────────
 ─── brick: "they would not fail"   ● ─────────
