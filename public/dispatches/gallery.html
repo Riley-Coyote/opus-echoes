@@ -194,6 +194,7 @@ button{ cursor:pointer; }
   var sortKey='quality';
   var lbIndex=-1, visibleOrder=[], lbNat={w:0,h:0}, lbScale=1, LB_REF=10;
   var io=null;
+  var VOL1=new Set();
 
   function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); },1900); }
   function save(){ try{ localStorage.setItem(LS_V, JSON.stringify({keep:Array.from(pick),maybe:Array.from(maybe),pass:Array.from(pass)})); }catch(e){} }
@@ -315,9 +316,10 @@ button{ cursor:pointer; }
   Promise.all([
     fetch(GAL+'catalog.json').then(function(r){return r.json();}),
     fetch('/dispatches/book.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
-    fetch('/dispatches/readings.json').then(function(r){return r.ok?r.json():{};}).catch(function(){return {};})
+    fetch('/dispatches/readings.json').then(function(r){return r.ok?r.json():{};}).catch(function(){return {};}),
+    fetch('/dispatches/gallery/vol1.json').then(function(r){return r.ok?r.json():[];}).catch(function(){return [];})
   ]).then(function(res){
-    CAT=res[0]; BOOK=res[1]; READS=res[2]||{};
+    CAT=res[0]; BOOK=res[1]; READS=res[2]||{}; VOL1=new Set(res[3]||[]);
     PIECES=CAT.pieces||[];
     PIECES.forEach(function(p){ byId[p.id]=p; });
     if(BOOK){ bookMeta={collection:BOOK.collection,subtitle:BOOK.subtitle,note:BOOK.note}; (BOOK.pieces||[]).forEach(function(b){ origBook[b.id]=b; }); }
@@ -328,6 +330,7 @@ button{ cursor:pointer; }
       if(saved && saved.length){ saved.forEach(function(id){ pick.add(id); }); }   // migrate old binary selection -> keep
       else { Object.keys(origBook).forEach(function(id){ pick.add(id); }); } }
     document.getElementById('totalN').textContent=PIECES.length;
+    try{ if(/[?&]show=vol1\b/.test(location.search) && VOL1.size){ filt.set='vol1'; } }catch(e){}
     buildFilters(); render();
     measureCell();
     (document.fonts?document.fonts.ready:Promise.resolve()).then(function(){ measureCell(); measureCardWidth(); sheet.querySelectorAll('.card').forEach(sizeCard); });
@@ -358,7 +361,7 @@ button{ cursor:pointer; }
     grp('theme','theme',[{v:'all',label:'all'}].concat((CAT.themes||[]).map(function(t){return {v:t,label:t,c:(fc.by_theme||{})[t]};})));
     grp('tier','tier',[{v:'all',label:'all'},{v:'exhibition',label:'exhibition',c:(fc.by_tier||{}).exhibition},{v:'strong',label:'strong',c:(fc.by_tier||{}).strong},{v:'archive',label:'archive',c:(fc.by_tier||{}).archive}]);
     grp('source','source',[{v:'all',label:'all'}].concat(Object.keys(fc.sources||counts('source')).map(function(s){return {v:s,label:s,c:(fc.sources||{})[s]};})));
-    grp('set','set',[{v:'all',label:'all 820'},{v:'showcase',label:'showcase'},{v:'archive_tier',label:'archive only'}]);
+    grp('set','set',[{v:'all',label:'all'},{v:'showcase',label:'showcase'},{v:'archive_tier',label:'archive only'}].concat(VOL1.size?[{v:'vol1',label:'Volume 1',c:VOL1.size}]:[]));
     grp('verdict','verdict',[{v:'all',label:'all'},{v:'keep',label:'keep'},{v:'maybe',label:'maybe'},{v:'undecided',label:'undecided'},{v:'pass',label:'pass'}]);
     (function(){ var g=document.createElement('div'); g.className='fgrp';
       var b=document.createElement('button'); b.className='chip'+(filt.hidePassed?' on':''); b.textContent='hide passed';
@@ -375,6 +378,7 @@ button{ cursor:pointer; }
     if(filt.theme!=='all' && (p.themes||[]).indexOf(filt.theme)<0) return false;
     if(filt.tier!=='all' && p.tier!==filt.tier) return false;
     if(filt.source!=='all' && p.source!==filt.source) return false;
+    if(filt.set==='vol1' && !VOL1.has(p.id)) return false;
     if(filt.set==='showcase' && !(p.tier==='exhibition' && p.showcase_eligible!==false)) return false;
     if(filt.set==='archive_tier' && p.tier!=='archive') return false;
     if(filt.hidePassed && pass.has(p.id) && filt.verdict!=='pass') return false;
