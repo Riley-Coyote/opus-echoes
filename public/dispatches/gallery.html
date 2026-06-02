@@ -35,6 +35,8 @@ button{ cursor:pointer; }
 .count{ font-family:var(--display); font-weight:300; font-size:14px; letter-spacing:-0.01em; color:var(--ink-62); }
 .count b{ font-variant-numeric:tabular-nums; font-weight:500; color:var(--ink); }
 .count .pick-n{ color:var(--pick); }
+.count .sep{ color:var(--ink-20); margin:0 3px; }
+.count.counts{ color:var(--ink-46); }
 .spacer{ flex:1 1 auto; }
 .search{ font-family:var(--mono); font-size:11px; color:var(--ink); border:1px solid var(--rule); padding:7px 11px; width:min(240px,40vw); }
 .search::placeholder{ color:var(--ink-32); }
@@ -88,12 +90,26 @@ button{ cursor:pointer; }
 .card__meta{ display:flex; flex-wrap:wrap; gap:3px 9px; margin-top:6px; font-family:var(--mono); font-size:9px; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-46); }
 .card__meta .dim{ color:var(--ink-32); }
 .card__meta .src{ color:var(--ink-32); }
-/* picked (in Dispatches) */
-.card.pick{ border-color:var(--pick-line); }
-.card.pick::before{ content:"✓ in dispatches"; position:absolute; top:0; left:0; z-index:4;
-  font-family:var(--mono); font-size:8px; letter-spacing:0.14em; text-transform:uppercase; color:#0b0c0e; background:var(--pick); padding:3px 8px; }
-.card.pick .card__art{ background:var(--pick-soft); }
+/* verdicts: keep (green) · maybe (ink, dashed) · pass (dim) — single-accent preserved */
+.card.keep::before, .card.maybe::before, .card.pass::before{ position:absolute; top:0; left:0; z-index:4;
+  font-family:var(--mono); font-size:8px; letter-spacing:0.14em; text-transform:uppercase; padding:3px 8px; }
+.card.keep{ border-color:var(--pick-line); }
+.card.keep::before{ content:"✓ keep"; color:#0b0c0e; background:var(--pick); }
+.card.keep .card__art{ background:var(--pick-soft); }
+.card.maybe{ border-color:var(--rule); border-style:dashed; }
+.card.maybe::before{ content:"~ maybe"; color:var(--ink); background:var(--paper-edge); }
+.card.pass{ opacity:0.42; }
+.card.pass:hover{ opacity:0.9; }
+.card.pass::before{ content:"✕ pass"; color:var(--ink-46); background:var(--paper-edge); }
 .card.hide{ display:none; }
+/* per-card verdict buttons (appear on hover, top-left) */
+.vset{ position:absolute; top:7px; left:7px; z-index:5; display:flex; gap:3px; opacity:0; transition:opacity var(--dur) var(--ease); }
+.card:hover .vset{ opacity:1; }
+.vset button{ width:22px; height:22px; display:grid; place-items:center; cursor:pointer; padding:0;
+  background:var(--paper); border:1px solid var(--rule-soft); color:var(--ink-46); font-family:var(--mono); font-size:11px; line-height:1; transition:all var(--dur) var(--ease); }
+.vset button:hover{ color:var(--ink); border-color:var(--ink); }
+.vset button.b-keep.on{ color:#0b0c0e; background:var(--pick); border-color:var(--pick); }
+.vset button.b-maybe.on, .vset button.b-pass.on{ color:var(--ink); border-color:var(--ink); background:var(--paper-edge); }
 
 /* ── lightbox ── */
 .lb{ position:fixed; inset:0; z-index:60; background:rgba(20,19,16,0.78); backdrop-filter:blur(3px);
@@ -108,7 +124,8 @@ button{ cursor:pointer; }
 .lb__art pre{ font-family:var(--mono); line-height:1.2; white-space:pre; color:var(--ink); margin:0; display:block; }
 .card__art .wc, .lb__art .wc{ display:inline-block; width:1ch; text-align:center; transform:scale(0.62); transform-origin:center center; }
 .lb__foot{ display:flex; align-items:center; gap:14px; padding:12px 22px; border-top:1px solid var(--rule-soft); flex-wrap:wrap; }
-.lb__dek{ font-family:var(--display); font-weight:300; font-size:14px; line-height:1.45; color:var(--ink-62); flex:1; min-width:200px; max-width:64ch; }
+.lb__dek{ font-family:var(--display); font-weight:300; font-size:14px; line-height:1.45; color:var(--ink-62); flex:1; min-width:120px; max-width:52ch; }
+.lb__status{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-46); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .lb__modes{ display:flex; gap:4px; }
 .lb__nav{ display:flex; gap:8px; align-items:center; }
 .lb__x{ position:absolute; top:13px; right:18px; font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-46); z-index:2; }
@@ -123,11 +140,16 @@ button{ cursor:pointer; }
   <div class="bar">
     <div class="bar__row">
       <span class="brand"><b>Master ASCII Gallery</b> · culling room</span>
-      <span class="count"><b id="shownN">—</b> shown <span style="color:var(--ink-20)">/</span> <b id="totalN">—</b> · <b class="pick-n" id="pickN">0</b> <span class="pick-n">in Dispatches</span></span>
+      <span class="count"><b id="shownN">—</b> shown <span style="color:var(--ink-20)">/</span> <b id="totalN">—</b></span>
+      <span class="count counts"><b class="pick-n" id="keepN">0</b> keep<span class="sep">·</span><b id="maybeN">0</b> maybe<span class="sep">·</span><b id="passN">0</b> pass<span class="sep">·</span><b id="undN">0</b> undecided</span>
       <span class="spacer"></span>
       <input class="search" id="search" placeholder="search title · model · convo · id" />
-      <button class="act" id="copyPick">copy selected ids</button>
-      <button class="act primary" id="exportBook">export Dispatches book.json</button>
+      <button class="act" id="reviewBtn" title="review undecided pieces (R)">review ▸</button>
+      <button class="act" id="copyPick">copy keep ids</button>
+      <button class="act primary" id="exportBook">export book.json</button>
+      <button class="act" id="exportSel" title="save your keep/maybe/pass session to a file">export selection</button>
+      <button class="act" id="importSel" title="restore a saved selection file">import</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" />
     </div>
     <div class="filters" id="filters"></div>
   </div>
@@ -140,6 +162,7 @@ button{ cursor:pointer; }
       <div class="lb__art" id="lbArtBox"><pre id="lbArt"></pre></div>
       <div class="lb__foot">
         <span class="lb__dek" id="lbDek"></span>
+        <span class="lb__status" id="lbStatus"></span>
         <div class="lb__modes">
           <button class="act" data-mode="fit" id="mFit">fit</button>
           <button class="act" data-mode="width" id="mWidth">width</button>
@@ -148,7 +171,9 @@ button{ cursor:pointer; }
         </div>
         <div class="lb__nav">
           <button class="act" id="lbPrev">← prev</button>
-          <button class="act primary" id="lbPick">add to Dispatches</button>
+          <button class="act" id="vKeep" title="keep (K)">✓ keep</button>
+          <button class="act" id="vMaybe" title="maybe (M)">~ maybe</button>
+          <button class="act" id="vPass" title="pass (X)">✕ pass</button>
           <button class="act" id="lbNext">next →</button>
         </div>
       </div>
@@ -158,19 +183,39 @@ button{ cursor:pointer; }
 
 <script>
 (function(){
-  var LS='mnemos.gallery.select.v1';
+  var LS='mnemos.gallery.select.v1', LS_V='mnemos.gallery.verdict.v1';
   var GAL='/dispatches/gallery/';
   var sheet=document.getElementById('sheet');
   var CAT=null, BOOK=null, READS={}, PIECES=[], byId={}, origBook={}, bookMeta={collection:'Dispatches',subtitle:'',note:''};
-  var pick=new Set(), artText={};
-  var filt={ vfam:'all', family:'all', theme:'all', tier:'all', source:'all', set:'all', view:'all', q:'' };
+  var pick=new Set(), maybe=new Set(), pass=new Set(), artText={};   // pick === the Keep set (the only set that exports)
+  var lbDirty=false;
+  var filt={ vfam:'all', family:'all', theme:'all', tier:'all', source:'all', set:'all', verdict:'all', hidePassed:true, q:'' };
   var VFAM=[['framed-terminal','framed'],['structural-diagram','diagram'],['concrete-poetry','poetry'],['dense-shading','shading'],['glyph-mandala','mandala'],['figurative-scene','scene'],['letterform-banner','letterform'],['other','other']];
   var sortKey='quality';
   var lbIndex=-1, visibleOrder=[], lbNat={w:0,h:0}, lbScale=1, LB_REF=10;
   var io=null;
 
   function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); },1900); }
-  function save(){ try{ localStorage.setItem(LS, JSON.stringify(Array.from(pick))); }catch(e){} }
+  function save(){ try{ localStorage.setItem(LS_V, JSON.stringify({keep:Array.from(pick),maybe:Array.from(maybe),pass:Array.from(pass)})); }catch(e){} }
+  function verdictOf(id){ return pick.has(id)?'keep':(maybe.has(id)?'maybe':(pass.has(id)?'pass':'')); }
+  function applyVerdictClass(card,id){ var v=verdictOf(id);
+    card.classList.toggle('keep',v==='keep'); card.classList.toggle('maybe',v==='maybe'); card.classList.toggle('pass',v==='pass');
+    var bs=card.querySelectorAll('.vset button'); for(var i=0;i<bs.length;i++) bs[i].classList.toggle('on', bs[i].dataset.v===v);
+  }
+  function needsRerender(v){
+    if(filt.hidePassed && v==='pass') return true;
+    if(filt.verdict!=='all'){ var shown=(filt.verdict==='undecided')?(v===''):(filt.verdict===v); if(!shown) return true; }
+    return false;
+  }
+  function setVerdict(id,v){
+    if(verdictOf(id)===v) v='';                                  // clicking the current verdict clears it
+    pick.delete(id); maybe.delete(id); pass.delete(id);
+    if(v==='keep') pick.add(id); else if(v==='maybe') maybe.add(id); else if(v==='pass') pass.add(id);
+    save(); updatePickCount();
+    var card=sheet.querySelector('.card[data-id="'+id+'"]'); if(card) applyVerdictClass(card,id);
+    if(document.getElementById('lb').classList.contains('open')){ lbDirty=true; }
+    else if(needsRerender(v)) render();
+  }
   function famColor(f){ return (CAT&&CAT.model_family_colors&&CAT.model_family_colors[f])||'var(--ink-32)'; }
   function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function artURL(p){ return GAL + (p.art_path || ('pieces/'+p.id+'.txt')); }
@@ -277,9 +322,11 @@ button{ cursor:pointer; }
     PIECES.forEach(function(p){ byId[p.id]=p; });
     if(BOOK){ bookMeta={collection:BOOK.collection,subtitle:BOOK.subtitle,note:BOOK.note}; (BOOK.pieces||[]).forEach(function(b){ origBook[b.id]=b; }); }
     // seed selection: saved working set if present, else the current Dispatches book
-    var saved=null; try{ saved=JSON.parse(localStorage.getItem(LS)||'null'); }catch(e){}
-    if(saved && saved.length){ saved.forEach(function(id){ pick.add(id); }); }
-    else { Object.keys(origBook).forEach(function(id){ pick.add(id); }); }
+    var V=null; try{ V=JSON.parse(localStorage.getItem(LS_V)||'null'); }catch(e){}
+    if(V && (V.keep||V.maybe||V.pass)){ (V.keep||[]).forEach(function(id){pick.add(id);}); (V.maybe||[]).forEach(function(id){maybe.add(id);}); (V.pass||[]).forEach(function(id){pass.add(id);}); }
+    else { var saved=null; try{ saved=JSON.parse(localStorage.getItem(LS)||'null'); }catch(e){}
+      if(saved && saved.length){ saved.forEach(function(id){ pick.add(id); }); }   // migrate old binary selection -> keep
+      else { Object.keys(origBook).forEach(function(id){ pick.add(id); }); } }
     document.getElementById('totalN').textContent=PIECES.length;
     buildFilters(); render();
     measureCell();
@@ -312,7 +359,11 @@ button{ cursor:pointer; }
     grp('tier','tier',[{v:'all',label:'all'},{v:'exhibition',label:'exhibition',c:(fc.by_tier||{}).exhibition},{v:'strong',label:'strong',c:(fc.by_tier||{}).strong},{v:'archive',label:'archive',c:(fc.by_tier||{}).archive}]);
     grp('source','source',[{v:'all',label:'all'}].concat(Object.keys(fc.sources||counts('source')).map(function(s){return {v:s,label:s,c:(fc.sources||{})[s]};})));
     grp('set','set',[{v:'all',label:'all 820'},{v:'showcase',label:'showcase'},{v:'archive_tier',label:'archive only'}]);
-    grp('show','view',[{v:'all',label:'all'},{v:'picked',label:'in dispatches'},{v:'unpicked',label:'not yet'}]);
+    grp('verdict','verdict',[{v:'all',label:'all'},{v:'keep',label:'keep'},{v:'maybe',label:'maybe'},{v:'undecided',label:'undecided'},{v:'pass',label:'pass'}]);
+    (function(){ var g=document.createElement('div'); g.className='fgrp';
+      var b=document.createElement('button'); b.className='chip'+(filt.hidePassed?' on':''); b.textContent='hide passed';
+      b.onclick=function(){ filt.hidePassed=!filt.hidePassed; b.classList.toggle('on',filt.hidePassed); render(); };
+      g.appendChild(b); host.appendChild(g); })();
     grp('sort','__sort',[{v:'quality',label:'best'},{v:'size',label:'largest'},{v:'date',label:'newest'},{v:'seq',label:'id'}]);
     // wire sort group (separate key)
     host.querySelectorAll('[data-k="__sort"]').forEach(function(b){ b.classList.toggle('on', b.dataset.v===sortKey); b.onclick=function(){ sortKey=b.dataset.v; host.querySelectorAll('[data-k="__sort"]').forEach(function(x){x.classList.toggle('on',x.dataset.v===sortKey);}); render(); }; });
@@ -326,8 +377,11 @@ button{ cursor:pointer; }
     if(filt.source!=='all' && p.source!==filt.source) return false;
     if(filt.set==='showcase' && !(p.tier==='exhibition' && p.showcase_eligible!==false)) return false;
     if(filt.set==='archive_tier' && p.tier!=='archive') return false;
-    if(filt.view==='picked' && !pick.has(p.id)) return false;
-    if(filt.view==='unpicked' && pick.has(p.id)) return false;
+    if(filt.hidePassed && pass.has(p.id) && filt.verdict!=='pass') return false;
+    if(filt.verdict==='keep' && !pick.has(p.id)) return false;
+    if(filt.verdict==='maybe' && !maybe.has(p.id)) return false;
+    if(filt.verdict==='pass' && !pass.has(p.id)) return false;
+    if(filt.verdict==='undecided' && (pick.has(p.id)||maybe.has(p.id)||pass.has(p.id))) return false;
     if(filt.q){ var q=filt.q.toLowerCase(); var hay=((p.title||'')+' '+(p.model||'')+' '+(p.conversation||'')+' '+p.id+' '+(p.themes||[]).join(' ')).toLowerCase(); if(hay.indexOf(q)<0) return false; }
     return true;
   }
@@ -350,7 +404,7 @@ button{ cursor:pointer; }
     sheet.innerHTML='';
     var frag=document.createDocumentFragment();
     list.forEach(function(p){
-      var card=document.createElement('article'); card.className='card'+(pick.has(p.id)?' pick':''); card.dataset.id=p.id;
+      var card=document.createElement('article'); card.className='card'; card.dataset.id=p.id;
       var themes=(p.themes||[]).slice(0,3).join(' · ');
       card.innerHTML=
         '<div class="card__head">'
@@ -359,7 +413,9 @@ button{ cursor:pointer; }
           +'<span class="spacer"></span>'
           +'<span class="tier '+esc(p.tier||'')+'">'+esc(p.tier||'—')+'</span>'
         +'</div>'
-        +'<div class="card__art"><button class="zoom" title="inspect full size">⤢</button><pre></pre><span class="ph">'+esc(p.width||'?')+'×'+esc(p.lines||'?')+'</span></div>'
+        +'<div class="card__art">'
+          +'<div class="vset"><button class="b-keep" data-v="keep" title="keep">✓</button><button class="b-maybe" data-v="maybe" title="maybe">~</button><button class="b-pass" data-v="pass" title="pass">✕</button></div>'
+          +'<button class="zoom" title="inspect full size">⤢</button><pre></pre><span class="ph">'+esc(p.width||'?')+'×'+esc(p.lines||'?')+'</span></div>'
         +'<div class="card__foot">'
           +'<div class="card__title">'+esc(p.title||prettyModel(p.model,p.model_family))+'</div>'
           +'<div class="card__meta">'
@@ -370,7 +426,9 @@ button{ cursor:pointer; }
           +'</div>'
         +'</div>';
       card.querySelector('.zoom').onclick=function(e){ e.stopPropagation(); openLB(p.id); };
+      card.querySelectorAll('.vset button').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); setVerdict(p.id,b.dataset.v); }; });
       card.onclick=function(){ togglePick(p.id); };
+      applyVerdictClass(card,p.id);
       frag.appendChild(card);
     });
     sheet.appendChild(frag);
@@ -390,17 +448,39 @@ button{ cursor:pointer; }
     fetch(artURL(p)).then(function(r){return r.ok?r.text():'';}).then(function(t){ t=(t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); artText[id]=t; put(t); }).catch(function(){});
   }
 
-  function togglePick(id){
-    if(pick.has(id)) pick.delete(id); else pick.add(id);
-    var card=sheet.querySelector('.card[data-id="'+id+'"]'); if(card) card.classList.toggle('pick',pick.has(id));
-    save(); updatePickCount();
-    if(filt.view!=='all'){ var p=byId[id]; if((filt.view==='picked'&&!pick.has(id))||(filt.view==='unpicked'&&pick.has(id))) render(); }
+  function togglePick(id){ setVerdict(id,'keep'); }
+  function updatePickCount(){
+    document.getElementById('keepN').textContent=pick.size;
+    var m=document.getElementById('maybeN'); if(m) m.textContent=maybe.size;
+    var pa=document.getElementById('passN'); if(pa) pa.textContent=pass.size;
+    var u=document.getElementById('undN'); if(u) u.textContent=Math.max(0, PIECES.length-pick.size-maybe.size-pass.size);
+    if(document.getElementById('lb').classList.contains('open')) updateLBStatus();
   }
-  function updatePickCount(){ document.getElementById('pickN').textContent=pick.size; var lp=document.getElementById('lbPick'); }
 
   // ── lightbox ──
   function openLB(id){ lbIndex=visibleOrder.indexOf(id); if(lbIndex<0){ visibleOrder=[id]; lbIndex=0; } lbScale=1; document.getElementById('lb').classList.add('open'); showLB(); }
-  function closeLB(){ document.getElementById('lb').classList.remove('open'); lbIndex=-1; }
+  function closeLB(){ document.getElementById('lb').classList.remove('open'); lbIndex=-1;
+    if(lbDirty){ lbDirty=false; if(filt.verdict!=='all' || filt.hidePassed) render(); } }
+  function startReview(){
+    if(!visibleOrder.length){ toast('nothing to review in this view'); return; }
+    var i=-1; for(var k=0;k<visibleOrder.length;k++){ var d=visibleOrder[k]; if(!pick.has(d)&&!maybe.has(d)&&!pass.has(d)){ i=k; break; } }
+    openLB(visibleOrder[i>=0?i:0]);
+  }
+  function updateLBStatus(){
+    var id=visibleOrder[lbIndex]; if(id==null) return; var v=verdictOf(id);
+    document.getElementById('vKeep').classList.toggle('primary', v==='keep');
+    document.getElementById('vMaybe').classList.toggle('primary', v==='maybe');
+    document.getElementById('vPass').classList.toggle('primary', v==='pass');
+    var und=Math.max(0, PIECES.length-pick.size-maybe.size-pass.size);
+    var st=document.getElementById('lbStatus');
+    if(st) st.textContent=(lbIndex+1)+' / '+visibleOrder.length+'  ·  keep '+pick.size+'  ·  undecided '+und+'  ·  this: '+(v||'—');
+  }
+  function lbVerdictAdvance(v){
+    var id=visibleOrder[lbIndex]; if(id==null) return; setVerdict(id,v);
+    var n=visibleOrder.length;
+    for(var k=1;k<=n;k++){ var j=(lbIndex+k)%n, d=visibleOrder[j]; if(!pick.has(d)&&!maybe.has(d)&&!pass.has(d)){ lbIndex=j; showLB(); return; } }
+    updateLBStatus();   // nothing undecided left — stay on this piece
+  }
   function lbStep(d){ if(lbIndex<0) return; lbIndex=(lbIndex+d+visibleOrder.length)%visibleOrder.length; showLB(); }
   function relayoutLB(){
     var pre=lbEls().pre; if(!(pre.textContent||'').length) return;
@@ -416,7 +496,7 @@ button{ cursor:pointer; }
     var specs=[prettyModel(p.model,p.model_family),p.id,(p.width||'?')+'×'+(p.lines||'?'),p.tier,p.style,(p.themes||[]).join(' · '),p.source,p.date].filter(Boolean);
     document.getElementById('lbSpec').textContent=specs.join('   ·   ');
     var r=READS[id]; document.getElementById('lbDek').textContent=(r&&r.dek)?r.dek:(p.evolution_group?('evolution sequence · turn '+(p.evolution_turn!=null?p.evolution_turn:'?')):'');
-    var lp=document.getElementById('lbPick'); var on=pick.has(id); lp.textContent=on?'✓ in Dispatches — remove':'add to Dispatches'; lp.classList.toggle('primary',!on);
+    updateLBStatus();
     var pre=document.getElementById('lbArt');
     if(artText[id]!==undefined){ pre.innerHTML=renderArtHTML(artText[id]); relayoutLB(); }
     else { pre.innerHTML=''; fetch(artURL(p)).then(function(x){return x.ok?x.text():'';}).then(function(t){ t=(t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); artText[id]=t; if(visibleOrder[lbIndex]===id){ pre.innerHTML=renderArtHTML(t); relayoutLB(); } }); }
@@ -424,18 +504,27 @@ button{ cursor:pointer; }
   document.getElementById('lbX').onclick=closeLB;
   document.getElementById('lbPrev').onclick=function(){ lbStep(-1); };
   document.getElementById('lbNext').onclick=function(){ lbStep(1); };
-  document.getElementById('lbPick').onclick=function(){ var id=visibleOrder[lbIndex]; togglePick(id); showLB(); };
+  document.getElementById('vKeep').onclick=function(){ lbVerdictAdvance('keep'); };
+  document.getElementById('vMaybe').onclick=function(){ lbVerdictAdvance('maybe'); };
+  document.getElementById('vPass').onclick=function(){ lbVerdictAdvance('pass'); };
+  document.getElementById('reviewBtn').onclick=startReview;
   document.getElementById('mFit').onclick=function(){ if(!lbNat.w) lbMeasure(); lbScale=lbFitScale(); lbApply(); lbSetMode('fit'); lbEls().box.scrollTop=0; };
   document.getElementById('mWidth').onclick=function(){ if(!lbNat.w) lbMeasure(); lbScale=lbWidthScale(); lbApply(); lbSetMode('width'); lbEls().box.scrollTop=0; };
   document.getElementById('zIn').onclick=function(){ if(!lbNat.w) lbMeasure(); lbScale*=1.25; lbApply(); lbSetMode(''); };
   document.getElementById('zOut').onclick=function(){ if(!lbNat.w) lbMeasure(); lbScale/=1.25; lbApply(); lbSetMode(''); };
   document.getElementById('lb').onclick=function(e){ if(e.target.id==='lb') closeLB(); };
   document.addEventListener('keydown',function(e){
-    if(!document.getElementById('lb').classList.contains('open')) return;
+    var open=document.getElementById('lb').classList.contains('open');
+    var typing=/^(input|textarea)$/i.test((e.target&&e.target.tagName)||'');
+    if(!open){ if((e.key==='r'||e.key==='R') && !typing){ e.preventDefault(); startReview(); } return; }
     if(e.key==='Escape') closeLB();
     else if(e.key==='ArrowRight') lbStep(1);
     else if(e.key==='ArrowLeft') lbStep(-1);
-    else if(e.key===' '){ e.preventDefault(); var id=visibleOrder[lbIndex]; togglePick(id); showLB(); }
+    else if(e.key==='k'||e.key==='K'){ e.preventDefault(); lbVerdictAdvance('keep'); }
+    else if(e.key==='m'||e.key==='M'){ e.preventDefault(); lbVerdictAdvance('maybe'); }
+    else if(e.key==='x'||e.key==='X'){ e.preventDefault(); lbVerdictAdvance('pass'); }
+    else if(e.key==='u'||e.key==='U'){ e.preventDefault(); setVerdict(visibleOrder[lbIndex],''); updateLBStatus(); }
+    else if(e.key===' '){ e.preventDefault(); lbVerdictAdvance('keep'); }
     else if(e.key==='+'||e.key==='='){ e.preventDefault(); document.getElementById('zIn').click(); }
     else if(e.key==='-'||e.key==='_'){ e.preventDefault(); document.getElementById('zOut').click(); }
     else if(e.key==='0'){ e.preventDefault(); document.getElementById('mFit').click(); }
@@ -463,6 +552,21 @@ button{ cursor:pointer; }
     var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
     var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='book.json'; a.click();
     toast('exported book.json — '+ids.length+' pieces for Dispatches');
+  };
+  document.getElementById('exportSel').onclick=function(){
+    var out={ keep:Array.from(pick), maybe:Array.from(maybe), pass:Array.from(pass) };
+    var blob=new Blob([JSON.stringify(out,null,1)],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='dispatches-selection.json'; a.click();
+    toast('saved selection — keep '+pick.size+' · maybe '+maybe.size+' · pass '+pass.size);
+  };
+  document.getElementById('importSel').onclick=function(){ document.getElementById('importFile').click(); };
+  document.getElementById('importFile').onchange=function(e){
+    var f=e.target.files&&e.target.files[0]; if(!f) return; var rd=new FileReader();
+    rd.onload=function(){ try{ var v=JSON.parse(rd.result);
+      pick=new Set(v.keep||[]); maybe=new Set(v.maybe||[]); pass=new Set(v.pass||[]);
+      save(); updatePickCount(); render(); toast('imported selection — keep '+pick.size+' · maybe '+maybe.size+' · pass '+pass.size);
+    }catch(err){ toast('import failed — invalid selection file'); } };
+    rd.readAsText(f); e.target.value='';
   };
   document.getElementById('search').addEventListener('input', function(e){ filt.q=e.target.value.trim(); clearTimeout(window._st); window._st=setTimeout(render,160); });
 
