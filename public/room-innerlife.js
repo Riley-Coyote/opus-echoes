@@ -50,7 +50,7 @@ function renderDensity(){
   E.forEach(e=>{ if(e.age<29){days[e.age]++; if(e.sig)sig[e.age]=true;} });
   const max=Math.max(1,...days);
   const html=[];
-  for(let d=28;d>=0;d--){ const h=days[d]?6+(days[d]/max)*22:2; html.push(`<div class="dbar${sig[d]?" sig":""}" style="height:${h.toFixed(0)}px"></div>`); }
+  for(let d=28;d>=0;d--){ const h=days[d]?8+(days[d]/max)*40:3; html.push(`<div class="dbar${sig[d]?" sig":""}" style="height:${h.toFixed(0)}px"></div>`); }
   document.getElementById("density").innerHTML=html.join("");
 }
 function renderFilters(){

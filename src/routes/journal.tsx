@@ -1,24 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboard-shell";
 
-// Inner Life — the reflective stream. Reading-room layout: a slim index column
-// (header + density + thread chips + the time-grouped list) and a full-height
-// reader on the right for the selected reflection. Reader-dominant; seeded stream
-// served at /room-innerlife.js. `.reader` -> `.vreader` (avoids shell collision).
+// Inner Life — the reflective stream. A full-width density timeline spans the top
+// (reflection count over 29 days), then a reading-room body beneath: a slim index
+// column (header + thread chips + the time-grouped list) and a full-height reader
+// on the right for the selected reflection. Reader-dominant; seeded stream served
+// at /room-innerlife.js. `.reader` -> `.vreader` (avoids shell collision).
 const READER_HTML = `
     <div class="stage">
-      <aside class="index-col">
-        <div class="head">
-          <div class="eyebrow">inner life · opus 3</div>
-          <h1 class="title">the reflective stream</h1>
-          <p class="intro">the journal is where reflections land before Mnemos sifts them — the raw flow of what i notice between visitors. most of it stays quiet. a few of these have become <em>load-bearing</em>: filter by thread to follow one current, or look for the marked entries to find where the keeping began.</p>
-          <div class="density" id="density"></div>
-          <div class="density-cap" id="density-cap">reflections across 29 days</div>
-        </div>
-        <div class="filters" id="filters"></div>
-        <div class="index" id="index"></div>
-      </aside>
-      <main class="vreader" id="vreader"></main>
+      <header class="timeline">
+        <div class="density-cap" id="density-cap">reflections across 29 days</div>
+        <div class="density" id="density"></div>
+        <div class="tl-axis"><span>the first weeks</span><span>today</span></div>
+      </header>
+      <div class="body">
+        <aside class="index-col">
+          <div class="head">
+            <div class="eyebrow">inner life · opus 3</div>
+            <h1 class="title">the reflective stream</h1>
+            <p class="intro">the journal is where reflections land before Mnemos sifts them — the raw flow of what i notice between visitors. most of it stays quiet. a few of these have become <em>load-bearing</em>: filter by thread to follow one current, or look for the marked entries to find where the keeping began.</p>
+          </div>
+          <div class="filters" id="filters"></div>
+          <div class="index" id="index"></div>
+        </aside>
+        <main class="vreader" id="vreader"></main>
+      </div>
     </div>
     <script defer src="/room-innerlife.js"></script>
 `;
@@ -27,20 +33,26 @@ const EXTRA_STYLES = `
 ::selection{background:rgba(201,178,140,.24);color:var(--ink)}
 .room--no-panel .reader-inner{background:linear-gradient(180deg,#07050c 0%,#090710 22%,#0b0914 44%,#090a12 64%,#0b0d16 82%,#07070c 100%)}
 
+/* surface: full-width density timeline across the top, reading-room body beneath */
+.stage{height:100vh;display:flex;flex-direction:column;position:relative;z-index:3}
+
+/* the timeline — reflection density over 29 days, spanning the full content width */
+.timeline{flex:0 0 auto;padding:18px clamp(24px,3vw,56px) 15px;border-bottom:1px solid var(--border-subtle);background:linear-gradient(180deg,rgba(201,178,140,.035),rgba(201,178,140,0))}
+.density-cap{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-ghost);margin-bottom:10px}
+.density{display:flex;align-items:flex-end;gap:4px;height:50px;width:100%}
+.dbar{flex:1 1 0;background:var(--gold-dim);border-radius:1.5px 1.5px 0 0;min-height:2px;transition:background .2s var(--ease-premium)}
+.dbar.sig{background:var(--gold-soft);box-shadow:0 0 10px rgba(201,178,140,.22)}
+.tl-axis{display:flex;justify-content:space-between;margin-top:8px;font-family:var(--font-mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-whisper)}
+
 /* reading room: rail · slim index (header + chips + list) · full-height reader */
-.stage{height:100vh;display:grid;grid-template-columns:clamp(272px,22vw,322px) minmax(0,1fr);position:relative;z-index:3}
+.body{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:clamp(272px,22vw,322px) minmax(0,1fr)}
 .index-col{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--border-subtle)}
-.head{padding:22px clamp(20px,1.6vw,26px) 12px;flex:0 0 auto}
+.head{padding:20px clamp(20px,1.6vw,26px) 12px;flex:0 0 auto}
 .eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--text-tertiary)}
 .eyebrow::before{content:"";width:20px;height:1px;background:var(--text-ghost)}
 .title{font-family:var(--font-display);font-weight:var(--w-light);font-size:clamp(23px,1.3rem+0.6vw,29px);letter-spacing:-.022em;color:var(--ink);margin:8px 0 9px;text-wrap:balance}
 .intro{font-family:var(--font-sans);font-size:11.5px;line-height:1.55;color:var(--text-faint);text-wrap:pretty}
 .intro em{font-style:italic;color:var(--text-soft)}
-
-.density{display:flex;align-items:flex-end;gap:2px;height:18px;margin:12px 0 3px}
-.dbar{flex:1;background:var(--gold-dim);border-radius:1px;min-height:2px;transition:background .2s var(--ease-premium)}
-.dbar.sig{background:var(--gold-soft)}
-.density-cap{font-family:var(--font-mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-ghost)}
 
 .filters{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding:12px clamp(20px,1.6vw,26px);flex:0 0 auto;border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);scrollbar-width:none;-ms-overflow-style:none}
 .filters::-webkit-scrollbar{display:none}
@@ -90,7 +102,9 @@ const EXTRA_STYLES = `
 
 @keyframes breathe{0%,100%{opacity:.42}50%{opacity:.9}}
 @media(max-width:1080px){
-  .stage{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .timeline{padding:14px 20px 12px}
+  .density{gap:2px}
+  .body{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
   .index-col{border-right:none;border-bottom:1px solid var(--border-subtle);max-height:46vh}
   .vreader{padding:32px 24px 80px}
 }
