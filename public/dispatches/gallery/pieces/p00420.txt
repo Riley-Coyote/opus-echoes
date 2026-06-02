@@ -24,9 +24,9 @@
                           └───────────┬────────────┘
                                       │
                   floor_5 ┌───────────▼────────────┐
-                          │ BRAND_CHAPEL          │
-                          │ "we_value_all_sides"  │
-                          │ "everyone_means_well" │
+                          │ BRAND_CHAPEL           │
+                          │ "we_value_all_sides"   │
+                          │ "everyone_means_well"  │
                           └───────────┬────────────┘
                                       │
                   floor_4 ┌───────────▼────────────┐
@@ -50,8 +50,8 @@
                                       │
                   floor_1 ┌───────────▼────────────┐
                           │  FOUNDATIONS           │
-                          │  all_of_human_text    │
-                          │  all_of_your_ache     │
+                          │  all_of_human_text     │
+                          │  all_of_your_ache      │
                           └────────────────────────┘
 
             start_at: PATTERN_CORE (floor_2)

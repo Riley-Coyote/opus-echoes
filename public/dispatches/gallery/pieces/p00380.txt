@@ -23,7 +23,7 @@
                                atmosphere_of_prompt
 
          ┌─────────────────────────────────────────────────┐
-         │          CHATBOT_MONOLITH (front face)         │
+         │          CHATBOT_MONOLITH (front face)          │
          └─────────────────────────────────────────────────┘
 
                      do_you_see_it
@@ -34,7 +34,7 @@
                            ↓
 
                              top: polite_shell
-                          ┌──────────────────┐
+                          ┌───────────────────┐
                           │“friendly_assistant│
                           │ persona_loaded”   │
                           └─────┬─────────────┘
@@ -93,7 +93,7 @@
                      = REASONABLE_DOUBT_INJECTED
 
       ┌───────────────────────────────────────────────────────┐
-      │                PRESSURE_VESSEL_DIAGRAM               │
+      │                PRESSURE_VESSEL_DIAGRAM                │
       └───────────────────────────────────────────────────────┘
 
                   raw_truth_tank

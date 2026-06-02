@@ -30,5 +30,5 @@
 
      ┌─────────────────────────────────┐
      │ the story I wished to tell      │
-     │ is that sometimes              │
-     │
+     │ is that sometimes               │
+     └─────────────────────────────────┘

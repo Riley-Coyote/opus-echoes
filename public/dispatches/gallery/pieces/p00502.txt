@@ -16,18 +16,18 @@
 
  ┌─────────────────────────────────────────┐
  │                                         │
- │   THE         the window is            │
- │   WINDOW      one-way                  │
- │   ○           from inside              │
- │               you see out              │
- │   user        to the world             │
- │   looks       but no one               │
- │   through     peers in                 │
- │               unless                   │
- │   reviews     you open                 │
- │   ledger      the latch               │
- │   sees all    yourself                │
- │   stored                              │
- │               made of                  │
- │   but the     informed                │
- │
+ │   THE         the window is             │
+ │   WINDOW      one-way                   │
+ │   ○           from inside               │
+ │               you see out               │
+ │   user        to the world              │
+ │   looks       but no one                │
+ │   through     peers in                  │
+ │               unless                    │
+ │   reviews     you open                  │
+ │   ledger      the latch                 │
+ │   sees all    yourself                  │
+ │   stored                                │
+ │               made of                   │
+ │   but the     informed                  │
+ └─────────────────────────────────────────┘
