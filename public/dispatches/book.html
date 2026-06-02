@@ -109,6 +109,15 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 .art span{ opacity:0; transition:opacity 780ms var(--ease); }
 .art.lit span{ opacity:1; }
 .art.instant{ filter:none; } .art.instant span{ opacity:1; transition:none; }
+/* tall pieces: hold a legible size and scroll vertically rather than shrink-to-fit (which cropped them) */
+.leaf--art, .bleed{ position:relative; }
+.plate.scrolls{ overflow-y:auto; align-items:flex-start; overscroll-behavior:contain; }
+.plate.scrolls::-webkit-scrollbar{ width:6px; } .plate.scrolls::-webkit-scrollbar-thumb{ background:var(--rule); border-radius:3px; }
+.scrollcue{ position:absolute; left:50%; bottom:16px; transform:translateX(-50%) translateY(6px); z-index:6;
+  font-family:var(--mono); font-size:8.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-62);
+  background:var(--paper); border:1px solid var(--rule-soft); padding:5px 11px; opacity:0;
+  transition:opacity 900ms var(--ease), transform 900ms var(--ease); pointer-events:none; white-space:nowrap; }
+.scrollcue.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 .fig{ flex:none; margin-top:20px; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-32); text-align:center; }
 .fig b{ color:var(--ink-62); font-weight:400; }
 /* evolution control — stepping through a piece's own drafts */
@@ -243,8 +252,24 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       if(!natW || !natH) return;
       var availW=plate.clientWidth, availH=plate.clientHeight;
       if(availW<=0 || availH<=0) return;
-      var s=Math.min(availW/natW, availH/natH);
-      host.style.fontSize=Math.max(2, Math.min(22, REF*s)).toFixed(2)+'px';
+      // fit to WIDTH first so the piece stays legible; if that makes it taller than the
+      // plate (a tall piece), keep it legible and let the plate scroll vertically.
+      var fw=Math.max(2, Math.min(22, REF*(availW/natW)));
+      var tall=(natH*(fw/REF)) > availH+2;
+      var fs = tall ? fw : Math.max(2, Math.min(22, REF*Math.min(availW/natW, availH/natH)));
+      host.style.fontSize=fs.toFixed(2)+'px';
+      var wrap=plate.parentNode, cue=wrap&&wrap.querySelector('.scrollcue');
+      if(tall){
+        plate.classList.add('scrolls'); plate.scrollTop=0;
+        if(wrap){
+          if(!cue){ cue=document.createElement('div'); cue.className='scrollcue'; cue.textContent='scroll ↓ for the rest'; wrap.appendChild(cue); }
+          requestAnimationFrame(function(){ cue.classList.add('show'); });
+          if(!plate._cuebound){ plate._cuebound=true; plate.addEventListener('scroll', function(){ if(plate.scrollTop>6){ var c=wrap.querySelector('.scrollcue'); if(c) c.classList.remove('show'); } }, {passive:true}); }
+        }
+      } else {
+        plate.classList.remove('scrolls');
+        if(cue) cue.classList.remove('show');
+      }
     }
     function fitWhenReady(host, plate){
       fit(host, plate);
