@@ -37,6 +37,7 @@ const READER_HTML = `
         </div>
         <div class="tip" id="tip"></div>
       </div>
+      <div class="illus-row"><span class="illus-note">illustrative · live data in progress</span></div>
       <p class="field-cap">press <em>watch the last cycle</em> to see the most recent consolidation move the field — reinforced traces step right and up, untouched ones drift down, and one crosses into core.</p>
 
       <div class="shead"><div class="shead-l"><span class="lbl">beliefs in motion</span><h2>convictions, moving</h2></div></div>
@@ -121,12 +122,17 @@ const EXTRA_STYLES = `
 .pt .lab{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.05em;text-transform:lowercase;fill:var(--text-soft);opacity:0;transition:opacity .25s var(--ease-premium);pointer-events:none;paint-order:stroke;stroke:rgba(6,6,8,.85);stroke-width:2.6px}
 .pt.named .lab{opacity:1;fill:var(--text-mid)} .pt:hover .lab{opacity:1;fill:var(--ink)}
 .field-wrap.has-sel .pt{opacity:.2} .field-wrap.has-sel .pt.sel{opacity:1} .pt.sel .ring{opacity:1;stroke:var(--state-soft)}
+.pt.sel .lab{opacity:1;fill:var(--ink)} /* selecting reveals the label — the tap-equivalent of hover */
 .tip{position:absolute;pointer-events:none;z-index:8;font-family:var(--font-sans);font-size:12.5px;line-height:1.42;color:var(--ink);
   background:rgba(14,14,18,.94);border:1px solid var(--border-dim);border-radius:7px;padding:8px 11px;max-width:250px;opacity:0;transform:translateY(4px);transition:opacity .16s,transform .16s;backdrop-filter:blur(8px)}
 .tip.on{opacity:1;transform:translateY(0)}
 .tip .tk{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);display:block;margin-bottom:3px}
 .field-cap{font-family:var(--font-sans);font-size:13px;font-style:italic;color:var(--text-faint);line-height:1.6;margin-top:14px;max-width:66ch}
 .field-cap em{color:var(--text-soft)}
+/* honest caption: the field is seeded until live engram data is wired */
+.illus-row{display:flex;justify-content:flex-end;margin-top:12px}
+.illus-note{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-ghost);border:1px solid var(--border-subtle);border-radius:20px;padding:4px 10px 4px 9px;background:rgba(8,8,11,.5)}
+.illus-note::before{content:"";width:5px;height:5px;border-radius:50%;border:1px dashed var(--gold-mid)}
 
 .bmotion{display:flex;flex-direction:column;gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;margin-top:6px}
 .belief{background:var(--bg-deep);padding:22px 26px;display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:30px;align-items:center}
@@ -176,7 +182,21 @@ const EXTRA_STYLES = `
 
 @keyframes breathe{0%,100%{opacity:.42}50%{opacity:.9}}
 @keyframes halo{0%,100%{opacity:.07}50%{opacity:.15}}
-@media(max-width:1080px){.belief{grid-template-columns:1fr;gap:14px}.flows{grid-template-columns:1fr}}
+@media(max-width:1080px){
+  .belief{grid-template-columns:1fr;gap:14px}.flows{grid-template-columns:1fr}
+  /* tablet & below: the legend drops below the field instead of floating over the
+     points (the field is too narrow here for an overlay to clear the core corner) */
+  .field-controls{top:12px;left:12px}
+  .field-legend{position:static;flex-direction:row;flex-wrap:wrap;gap:9px 16px;border:none;border-top:1px solid var(--border-subtle);border-radius:0;background:rgba(8,8,11,.4);backdrop-filter:none;padding:12px 14px}
+}
+/* touch: tap a point to inspect (forgiving nearest-point hit); the hover tooltip is mouse-only */
+@media(hover:none){.tip{display:none}}
+@media(max-width:760px){
+  .stage{padding:26px 20px 90px}
+  .intro,.snote,.field-cap{max-width:none}
+  .belief{padding:18px 18px}
+  .flow{padding:18px 18px}
+}
 @media(max-width:640px){.shead{flex-wrap:wrap;gap:12px;margin:46px 0 8px}.shead-l{flex-direction:column;align-items:flex-start;gap:6px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.12s!important}}
 `;

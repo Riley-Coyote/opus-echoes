@@ -46,6 +46,7 @@ const READER_HTML = `
         </div>
 
         <div class="hint">drag to move · scroll to zoom<br>click a node to walk the connections</div>
+        <span class="illus-note">illustrative · live data in progress</span>
         <div class="tip" id="tip"></div>
       </div>
     </div>
@@ -139,6 +140,9 @@ const EXTRA_STYLES = `
   opacity:0;transform:translateY(4px);transition:opacity .16s,transform .16s;backdrop-filter:blur(8px)}
 .tip.on{opacity:1;transform:translateY(0)}
 .tip .tk{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);display:block;margin-bottom:3px}
+/* honest caption: the constellation is seeded until the live topology is wired */
+.illus-note{position:absolute;top:16px;left:18px;z-index:6;display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-ghost);border:1px solid var(--border-subtle);border-radius:20px;padding:4px 10px 4px 9px;background:rgba(8,8,11,.6);backdrop-filter:blur(6px);pointer-events:none}
+.illus-note::before{content:"";width:5px;height:5px;border-radius:50%;border:1px dashed var(--gold-mid)}
 
 .scrim{position:fixed;inset:0;z-index:30;background:rgba(4,5,8,.42);opacity:0;pointer-events:none;transition:opacity .4s var(--ease-premium)}
 .scrim.on{opacity:1;pointer-events:auto}
@@ -171,6 +175,29 @@ const EXTRA_STYLES = `
 
 @keyframes breathe{0%,100%{opacity:.42}50%{opacity:.9}}
 @keyframes halo{0%,100%{opacity:.06}50%{opacity:.14}}
+
+/* touch / small screens: tap a node to walk; pinch to zoom; drag to pan.
+   the hover tooltip is mouse-only, so suppress it where there's no hover. */
+@media(hover:none){.tip{display:none}}
+@media(max-width:760px){
+  .stage{height:auto}
+  .head{padding:18px 20px 0}
+  .title{font-size:clamp(22px,4.5vw,30px);margin:9px 0 8px}
+  .intro{font-size:12.5px;line-height:1.5;max-width:none;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .head-row{margin-top:13px;gap:12px}
+  .canvas{flex:0 0 auto;margin-top:14px;height:70dvh;min-height:460px}
+  .controls{top:12px;right:12px}
+  .legend{left:12px;bottom:14px;padding:10px 13px;gap:7px}
+  .hint{display:none}
+  .drawer{width:100vw}
+  .drawer-in{padding:30px 22px 64px}
+}
+@media(max-width:440px){
+  .head-row{flex-direction:column;align-items:flex-start;gap:10px}
+  .legend{gap:6px;padding:8px 11px}
+  .legend-row{font-size:9px}
+  .jump{font-size:9.5px;padding:4px 10px}
+}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.12s!important}}
 `;

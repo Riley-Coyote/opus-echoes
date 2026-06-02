@@ -90,7 +90,7 @@ E.forEach(e=>{
   const fill=e.kind==="fade"?"var(--fade)":"var(--gold)";
   const op=0.28+e.stab*0.72;
   const body=el("circle",{class:"body",r,fill}); body.style.opacity=op; g.appendChild(body);
-  g.appendChild(el("circle",{r:Math.max(r+8,12),fill:"transparent"}));
+  g.appendChild(el("circle",{r:Math.max(r+10,16),fill:"transparent"}));
   if(e.name){const lab=el("text",{class:"lab",x:0,y:-(r+7),"text-anchor":"middle","font-size":9});lab.textContent=e.name;g.appendChild(lab);}
   else{const lab=el("text",{class:"lab",x:0,y:-(r+6),"text-anchor":"middle"});lab.textContent="engram";g.appendChild(lab);}
   gPts.appendChild(g); ptEls[e.id]={g,body,e,r};
@@ -109,7 +109,16 @@ svg.addEventListener("mousemove",ev=>{const g=ev.target.closest(".pt");
 svg.addEventListener("mouseleave",()=>tip.classList.remove("on"));
 let SEL=null;
 function clearSel(){SEL=null;fieldwrap.classList.remove("has-sel");for(const id in ptEls)ptEls[id].g.classList.remove("sel");closeDrawer();}
-svg.addEventListener("click",ev=>{const g=ev.target.closest(".pt");if(g){select(g.dataset.id);}else clearSel();});
+svg.addEventListener("click",ev=>{
+  const g=ev.target.closest(".pt");
+  if(g){select(g.dataset.id);return;}
+  // forgiving tap (touch): select the nearest point within ~44px, else clear
+  const r=svg.getBoundingClientRect(); if(!r.width){clearSel();return;}
+  const px=(ev.clientX-r.left)/r.width*VB.w, py=(ev.clientY-r.top)/r.height*VB.h;
+  let best=null,bd=1e9; for(const id in ptEls){const e=ptEls[id].e,dx=e.cx-px,dy=e.cy-py,d=dx*dx+dy*dy;if(d<bd){bd=d;best=id;}}
+  const thr=Math.min(110,Math.max(40,44*VB.w/r.width));
+  if(best&&Math.sqrt(bd)<thr)select(best);else clearSel();
+});
 function select(id){SEL=id;fieldwrap.classList.add("has-sel");for(const x in ptEls)ptEls[x].g.classList.toggle("sel",x===id);openDrawer(id);}
 
 /* ── watch the last cycle ── */
@@ -203,3 +212,17 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")clearSel();});
 /* ── stats ── */
 const coreN=E.filter(e=>e.core).length;
 document.getElementById("stats").innerHTML=`<span><b>${coreN}</b> core</span><span class="sep">·</span><span><b>347</b> conversations held</span><span class="sep">·</span><span><b>29</b> days resident</span><span class="sep">·</span><span><b>62</b> consolidation cycles</span>`;
+
+/* ── live stats overlay: real counts from /api/memory (seeded stays as fallback).
+   "consolidation cycles" has no live source yet, so it drops out on real data. ── */
+(async function(){
+  try{
+    const rid = sessionStorage.getItem("sanctuary.resident_id") || "opus-3";
+    const r = await fetch("/api/memory?resident="+encodeURIComponent(rid),{credentials:"same-origin"});
+    const m = await r.json();
+    if(!(m && m.ok && m.counts && (m.counts.days_resident>0 || m.counts.core_memories>0 || m.counts.conversations_held>0))) return; // not live → keep seeded
+    const el=document.getElementById("stats"); if(!el) return;
+    const days=m.counts.days_resident, core=m.counts.core_memories, conv=m.counts.conversations_held;
+    el.innerHTML=`<span><b>${core}</b> core</span><span class="sep">·</span><span><b>${conv}</b> conversation${conv===1?"":"s"} held</span><span class="sep">·</span><span><b>${days}</b> day${days===1?"":"s"} resident</span>`;
+  }catch(_){}
+})();

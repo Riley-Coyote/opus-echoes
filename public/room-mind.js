@@ -230,10 +230,34 @@ function flyTo(x,y,targetK,ms=620){
 const canvas=document.getElementById("canvas");
 svg.addEventListener("wheel",e=>{e.preventDefault();userInteracted=true;size();const r=svg.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;
   const wx=(mx-tx)/k, wy=(my-ty)/k; const f=Math.exp(-e.deltaY*0.0014); k=clamp(k*f,0.35,4.2); tx=mx-wx*k; ty=my-wy*k; apply();},{passive:false});
+/* unified pointer drag (mouse + touch) + two-finger pinch-zoom */
 let dragging=false,moved=false,lx=0,ly=0;
-svg.addEventListener("mousedown",e=>{if(e.target.closest(".node"))return;dragging=true;moved=false;userInteracted=true;lx=e.clientX;ly=e.clientY;canvas.classList.add("dragging");});
-window.addEventListener("mousemove",e=>{if(!dragging)return;const dx=e.clientX-lx,dy=e.clientY-ly;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;tx+=dx;ty+=dy;lx=e.clientX;ly=e.clientY;apply();});
-window.addEventListener("mouseup",()=>{dragging=false;canvas.classList.remove("dragging");});
+const ptrs=new Map(); let pinchD=0;
+const _dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const _mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+svg.addEventListener("pointerdown",e=>{
+  if(e.target.closest("button")) return;                 // let controls handle their own taps
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size>=2){const v=[...ptrs.values()];pinchD=_dist(v[0],v[1]);dragging=false;moved=true;return;}
+  moved=false;userInteracted=true;
+  if(e.target.closest(".node")) return;                  // node tap → let click focus, don't pan
+  dragging=true;lx=e.clientX;ly=e.clientY;canvas.classList.add("dragging");
+});
+window.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size>=2){
+    const v=[...ptrs.values()],nd=_dist(v[0],v[1]),m=_mid(v[0],v[1]);
+    size();const r=svg.getBoundingClientRect(),mx=m.x-r.left,my=m.y-r.top;
+    if(pinchD>0){const wx=(mx-tx)/k,wy=(my-ty)/k;k=clamp(k*(nd/pinchD),0.35,4.2);tx=mx-wx*k;ty=my-wy*k;apply();}
+    pinchD=nd;moved=true;userInteracted=true;return;
+  }
+  if(!dragging) return;
+  const dx=e.clientX-lx,dy=e.clientY-ly;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;tx+=dx;ty+=dy;lx=e.clientX;ly=e.clientY;apply();
+});
+function _endPtr(e){if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);if(ptrs.size<2)pinchD=0;if(ptrs.size===0){dragging=false;canvas.classList.remove("dragging");}else{const v=[...ptrs.values()][0];lx=v.x;ly=v.y;}}
+window.addEventListener("pointerup",_endPtr);
+window.addEventListener("pointercancel",_endPtr);
 
 document.getElementById("zoom").addEventListener("click",e=>{const b=e.target.closest("button[data-z]");if(!b)return;size();
   if(b.dataset.z==="fit"){userInteracted=false;clearFocus();fitView();return;}

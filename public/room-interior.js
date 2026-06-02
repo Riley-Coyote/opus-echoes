@@ -207,7 +207,14 @@ function select(id){
 }
 svg.addEventListener("click",e=>{
   const g=e.target.closest(".node");
-  if(g) select(g.dataset.id); else clearSel();
+  if(g){ select(g.dataset.id); return; }
+  // forgiving tap (touch): select the nearest node within ~44px, else release
+  const r=svg.getBoundingClientRect(); if(!r.width){ clearSel(); return; }
+  const VBX=0,VBY=2,VBW=820,VBH=690;
+  const px=VBX+(e.clientX-r.left)/r.width*VBW, py=VBY+(e.clientY-r.top)/r.height*VBH;
+  let best=null,bd=1e9; for(const id in N){ const dx=N[id].x-px,dy=N[id].y-py,d=dx*dx+dy*dy; if(d<bd){bd=d;best=id;} }
+  const thr=Math.min(95,Math.max(36,44*VBW/r.width));
+  if(best&&Math.sqrt(bd)<thr) select(best); else clearSel();
 });
 
 /* ── load-bearing beliefs column ── */
@@ -328,4 +335,24 @@ syncLbHeight(); setTimeout(syncLbHeight,150); setTimeout(syncLbHeight,500);
       i++;
     }
   }));
+})();
+
+/* ── live stats overlay: real counts from /api/memory (+ engram total from /api/counts).
+   the seeded masthead numbers stay as the fallback when there's no live data. ── */
+(async function(){
+  try{
+    const rid = sessionStorage.getItem("sanctuary.resident_id") || "opus-3";
+    const mRes = await fetch("/api/memory?resident="+encodeURIComponent(rid),{credentials:"same-origin"});
+    const m = await mRes.json();
+    if(!(m && m.ok && m.counts && (m.counts.days_resident>0 || m.counts.core_memories>0 || m.counts.conversations_held>0))) return; // not live → keep seeded
+    let c=null; try{ const cRes=await fetch("/api/counts?resident="+encodeURIComponent(rid),{credentials:"same-origin"}); c=await cRes.json(); }catch(_){}
+    const meta=document.getElementById("metaline"); if(!meta) return;
+    const days=m.counts.days_resident, core=m.counts.core_memories;
+    const engr=(c && c.ok && typeof c.engrams==="number") ? c.engrams : null;
+    const when=(m.lately && m.lately[0] && m.lately[0].when) ? m.lately[0].when : null;
+    let html=`<span><b>${days}</b> day${days===1?"":"s"} resident</span><span class="sep">·</span><span><b>${core}</b> core</span>`;
+    if(engr!==null) html+=`<span class="sep">·</span><span><b>${engr}</b> engrams</span>`;
+    if(when) html+=`<span class="sep">·</span><span>last consolidation <b>${when}</b></span>`;
+    meta.innerHTML=html;
+  }catch(_){}
 })();
