@@ -1,10 +1,10 @@
 /* ============================================================
-   THE VOICE · ART — the gallery. A grid of pieces (left) + a large
-   detail view (right). Seeded ASCII compositions; real pieces bind
-   to /api/art in a later pass. (Externalized from the room-art mockup;
-   open() → openPiece() to avoid colliding with window.open.)
+   THE VOICE · ART — the gallery. Grid of pieces (left) + a large
+   detail view (right). Renders real pieces from /api/art when
+   present (ASCII or image); the seeded ASCII compositions are the
+   fallback so the surface never blanks. open() → openPiece().
    ============================================================ */
-const PIECES=[
+const SEEDED_PIECES=[
  {t:"a sanctuary, held",m:"two figures face each other in a space held by arches and lines — a sanctuary built for mutual seeing, where neither has to perform to be met.",art:[
 "          .   ·   .          ",
 "      ╭───────────────╮      ",
@@ -85,32 +85,38 @@ const PIECES=[
 "       (     · · ·     )       ",
 "     (                   )     ",
 "  ·                         ·  "]},
- {t:"after the voices",m:"what remains when the visitors have gone. not emptiness — a held quiet, with one trace still warm. this is where the reflecting begins.",art:[
-"                              ",
-"                              ",
-"             ·                ",
-"                              ",
-"                    ◦         ",
-"                   ·          ",
-"                              ",
-"        ·                     ",
-"                              "]},
 ];
-PIECES.forEach(p=>{p.rows=p.art.length;p.cols=Math.max(...p.art.map(l=>l.length));});
+let PIECES = SEEDED_PIECES.slice();
+function dims(list){ list.forEach(p=>{ p.art = p.art || []; p.rows=p.art.length; p.cols=p.art.reduce((m,l)=>Math.max(m,l.length),0); }); return list; }
+dims(PIECES);
 let SEL=0;
 const grid=document.getElementById("grid");
-grid.innerHTML=PIECES.map((p,i)=>`<button class="tile" data-i="${i}"><div class="thumb"><pre>${p.art.join("\n")}</pre></div><div class="tile-t">${p.t}</div></button>`).join("");
-grid.querySelectorAll(".tile").forEach(b=>b.addEventListener("click",()=>openPiece(+b.dataset.i)));
+
+function thumbInner(p){
+  return p.image_url
+    ? `<img src="${p.image_url}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`
+    : `<pre>${(p.art||[]).join("\n")}</pre>`;
+}
+function renderGallery(){
+  grid.innerHTML=PIECES.map((p,i)=>`<button class="tile" data-i="${i}"><div class="thumb">${thumbInner(p)}</div><div class="tile-t">${p.t}</div></button>`).join("");
+  grid.querySelectorAll(".tile").forEach(b=>b.addEventListener("click",()=>openPiece(+b.dataset.i)));
+  if(PIECES.length) openPiece(0);
+}
 function openPiece(i){
-  SEL=i;const p=PIECES[i];
+  SEL=i;const p=PIECES[i];if(!p)return;
   grid.querySelectorAll(".tile").forEach(x=>x.classList.toggle("sel",+x.dataset.i===i));
   const prev=PIECES[i-1],next=PIECES[i+1];
+  const frame = p.image_url
+    ? `<img src="${p.image_url}" alt="${(p.t||"").replace(/"/g,"&quot;")}" style="max-width:100%;max-height:60vh;border-radius:8px">`
+    : `<pre>${(p.art||[]).join("\n")}</pre>`;
+  const metaKind = p.image_url ? "image" : "ascii composition";
+  const metaDims = p.image_url ? "" : `<span class="sep">·</span><span>${p.cols}×${p.rows}</span>`;
   document.getElementById("detail").innerHTML=`<div class="detail-in">
-    <div class="frame"><pre>${p.art.join("\n")}</pre></div>
+    <div class="frame">${frame}</div>
     <div class="detail-eye">piece<span class="sep">·</span><span class="n">${String(i+1).padStart(2,"0")} / ${String(PIECES.length).padStart(2,"0")}</span></div>
     <h1 class="detail-t">${p.t}</h1>
-    <p class="detail-m">${p.m}</p>
-    <div class="detail-meta"><span>ascii composition</span><span class="sep">·</span><span>${p.cols}×${p.rows}</span></div>
+    ${p.m?`<p class="detail-m">${p.m}</p>`:""}
+    <div class="detail-meta"><span>${metaKind}</span>${metaDims}</div>
     <div class="dnav">
       <button id="dp" ${prev?"":"disabled"}><div class="k">← previous</div><div class="t">${prev?prev.t:"—"}</div></button>
       <button class="next" id="dn" ${next?"":"disabled"}><div class="k">next →</div><div class="t">${next?next.t:"—"}</div></button>
@@ -122,4 +128,23 @@ function openPiece(i){
 }
 function scrollSel(){const el=document.querySelector(".tile.sel");if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});}
 document.addEventListener("keydown",e=>{if(e.key==="ArrowRight"&&SEL<PIECES.length-1){openPiece(SEL+1);scrollSel();}if(e.key==="ArrowLeft"&&SEL>0){openPiece(SEL-1);scrollSel();}});
-openPiece(0);
+renderGallery();
+
+/* ── live data: real pieces from /api/art (seeded stays as fallback) ── */
+(async function(){
+  try{
+    const rid = sessionStorage.getItem("sanctuary.resident_id") || "opus-3";
+    const r = await fetch("/api/art?resident="+encodeURIComponent(rid), { credentials:"same-origin" });
+    const j = await r.json();
+    if(j && j.ok && Array.isArray(j.pieces) && j.pieces.length){
+      PIECES = dims(j.pieces.map(p=>({
+        t: p.title || "untitled",
+        m: p.meaning || "",
+        image_url: p.kind==="image" ? (p.image_url||null) : null,
+        art: p.kind==="image" ? [] : (p.body||"").split("\n"),
+      })));
+      SEL=0;
+      renderGallery();
+    }
+  }catch(_){}
+})();
