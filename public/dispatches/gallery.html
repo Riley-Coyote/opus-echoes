@@ -106,6 +106,7 @@ button{ cursor:pointer; }
 .lb__head .s{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-46); }
 .lb__art{ overflow:auto; display:flex; align-items:safe center; justify-content:safe center; padding:16px; min-height:0; }
 .lb__art pre{ font-family:var(--mono); line-height:1.2; white-space:pre; color:var(--ink); margin:0; display:block; }
+.card__art .wc, .lb__art .wc{ display:inline-block; width:1ch; text-align:center; transform:scale(0.62); transform-origin:center center; }
 .lb__foot{ display:flex; align-items:center; gap:14px; padding:12px 22px; border-top:1px solid var(--rule-soft); flex-wrap:wrap; }
 .lb__dek{ font-family:var(--display); font-weight:300; font-size:14px; line-height:1.45; color:var(--ink-62); flex:1; min-width:200px; max-width:64ch; }
 .lb__modes{ display:flex; gap:4px; }
@@ -209,6 +210,17 @@ button{ cursor:pointer; }
     m.remove();
   }
   function measureCardWidth(){ var c=sheet.querySelector('.card'); if(c){ var w=c.clientWidth-ART_PAD*2-2; if(w>40) cardInnerW=w; } }
+  // force >1-cell glyphs (alchemical SMP, emoji, CJK/kana) into a 1ch grid cell so the model's intended column alignment holds
+  function renderArtHTML(t){
+    function e(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    var out='';
+    for(const ch of (t||'')){
+      var o=ch.codePointAt(0);
+      if(o>=0x1F000 || (o>=0x2E80 && o<=0xD7A3) || (o>=0xFF00 && o<=0xFFEF)) out+='<span class="wc">'+e(ch)+'</span>';
+      else out+=e(ch);
+    }
+    return out;
+  }
   // per-piece canvas, masonry-packed: fit each piece to the card WIDTH and make the card exactly as tall as it needs (capped).
   // pure analytic (cached width + measured cell) — NO per-card reflow reads, so 820 cards stay smooth. Fills the card, minimal edges, whole piece visible.
   function sizeCard(card){
@@ -345,7 +357,7 @@ button{ cursor:pointer; }
 
   function loadCardArt(card){
     var id=card.dataset.id, p=byId[id], pre=card.querySelector('pre'), ph=card.querySelector('.ph');
-    function put(t){ pre.textContent=t; if(ph) ph.style.display='none'; sizeCard(card); }
+    function put(t){ pre.innerHTML=renderArtHTML(t); if(ph) ph.style.display='none'; sizeCard(card); }
     if(artText[id]!==undefined){ put(artText[id]); return; }
     fetch(artURL(p)).then(function(r){return r.ok?r.text():'';}).then(function(t){ t=(t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); artText[id]=t; put(t); }).catch(function(){});
   }
@@ -378,8 +390,8 @@ button{ cursor:pointer; }
     var r=READS[id]; document.getElementById('lbDek').textContent=(r&&r.dek)?r.dek:(p.evolution_group?('evolution sequence · turn '+(p.evolution_turn!=null?p.evolution_turn:'?')):'');
     var lp=document.getElementById('lbPick'); var on=pick.has(id); lp.textContent=on?'✓ in Dispatches — remove':'add to Dispatches'; lp.classList.toggle('primary',!on);
     var pre=document.getElementById('lbArt');
-    if(artText[id]!==undefined){ pre.textContent=artText[id]; relayoutLB(); }
-    else { pre.textContent=''; fetch(artURL(p)).then(function(x){return x.ok?x.text():'';}).then(function(t){ t=(t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); artText[id]=t; if(visibleOrder[lbIndex]===id){ pre.textContent=t; relayoutLB(); } }); }
+    if(artText[id]!==undefined){ pre.innerHTML=renderArtHTML(artText[id]); relayoutLB(); }
+    else { pre.innerHTML=''; fetch(artURL(p)).then(function(x){return x.ok?x.text():'';}).then(function(t){ t=(t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); artText[id]=t; if(visibleOrder[lbIndex]===id){ pre.innerHTML=renderArtHTML(t); relayoutLB(); } }); }
   }
   document.getElementById('lbX').onclick=closeLB;
   document.getElementById('lbPrev').onclick=function(){ lbStep(-1); };
