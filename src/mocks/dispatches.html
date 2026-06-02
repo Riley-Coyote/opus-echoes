@@ -193,19 +193,39 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       charRatio=(r.getBoundingClientRect().width/(5*20))/100; r.remove();
     })();
 
+    // per-glyph width ratio (cached) — used to clamp any non-1-cell glyph into a single monospace cell
+    var _bwProbe=null,_bwCell=0,BGW={};
+    function glyphRatio(ch){
+      if(ch in BGW) return BGW[ch];
+      if(!_bwProbe){ _bwProbe=document.createElement('span');
+        _bwProbe.style.cssText='position:absolute;visibility:hidden;left:-9999px;white-space:pre;font-family:'+getComputedStyle(document.body).getPropertyValue('--mono')+';font-size:40px;line-height:1';
+        document.body.appendChild(_bwProbe); _bwProbe.textContent='0'; _bwCell=_bwProbe.getBoundingClientRect().width||24; }
+      _bwProbe.textContent=ch; var w=_bwProbe.getBoundingClientRect().width; var r=_bwCell?w/_bwCell:1; BGW[ch]=r; return r;
+    }
+
     function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function fmtDate(d){ if(!d) return ''; var m=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']; var p=String(d).split('-'); if(p.length<3) return String(d); return (p[2].replace(/^0/,''))+' '+m[(+p[1])-1]+' '+p[0]; }
-    function dims(t){ var L=t.split('\n'),w=0; for(var i=0;i<L.length;i++) if(L[i].length>w) w=L[i].length; return {cols:w,rows:L.length}; }
+    function dims(t){ var L=t.split('\n'),w=0; for(var i=0;i<L.length;i++){ var n=Array.from(L[i]).length; if(n>w) w=n; } return {cols:w,rows:L.length}; }
 
     function buildArt(host,text,spread){
       spread=spread||1850;
       var lines=text.split('\n'), maxY=Math.max(1,lines.length-1), frag=document.createDocumentFragment();
       for(var y=0;y<lines.length;y++){
         var line=lines[y], ln=document.createElement('div'); ln.className='ln';
-        var ny=y/maxY, maxX=Math.max(1,line.length-1);
-        if(line.length===0){ var sp=document.createElement('span'); sp.textContent=' '; ln.appendChild(sp); frag.appendChild(ln); continue; }
-        for(var ci=0;ci<line.length;ci++){
-          var s=document.createElement('span'); s.textContent=line[ci];
+        var chars=Array.from(line), ny=y/maxY, maxX=Math.max(1,chars.length-1);
+        if(chars.length===0){ var sp=document.createElement('span'); sp.textContent=' '; ln.appendChild(sp); frag.appendChild(ln); continue; }
+        for(var ci=0;ci<chars.length;ci++){
+          var ch=chars[ci], o=ch.codePointAt(0);
+          if(o<0x20 && o!==9){ continue; }                          // drop stray control chars
+          var s=document.createElement('span'); s.textContent=ch;
+          if(o>0x7e){                                               // clamp any non-ascii glyph to one cell
+            var gr=glyphRatio(ch);
+            if(gr<0.02){ continue; }                                // zero-width modifier: drop (corrupts grid)
+            if(gr<0.97 || gr>1.03){
+              s.style.display='inline-block'; s.style.width='1ch'; s.style.textAlign='center'; s.style.transformOrigin='center center';
+              if(gr>1) s.style.transform='scale('+(0.98/gr).toFixed(3)+')';
+            }
+          }
           var d=Math.round((0.42*ny + 0.12*(ci/maxX) + 0.9*Math.random())*spread);
           s.style.transitionDelay=d+'ms'; ln.appendChild(s);
         }

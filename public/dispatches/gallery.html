@@ -210,14 +210,36 @@ button{ cursor:pointer; }
     m.remove();
   }
   function measureCardWidth(){ var c=sheet.querySelector('.card'); if(c){ var w=c.clientWidth-ART_PAD*2-2; if(w>40) cardInnerW=w; } }
-  // force >1-cell glyphs (alchemical SMP, emoji, CJK/kana) into a 1ch grid cell so the model's intended column alignment holds
+  // force any glyph that is not exactly one monospace cell wide — alchemical SMP, runic, egyptian
+  // hieroglyph, braille, CJK/kana, exotic math symbols, emoji — into a single 1ch cell, scaled to
+  // fit, so the model's intended column grid holds for every script. measured at runtime (cached
+  // per codepoint) rather than by hardcoded ranges, so it self-calibrates to the installed font.
+  // zero-width modifiers (variation selectors, lone combining marks) are dropped — they corrupt the grid.
+  var _gwProbe=null, _gwCell=0, GW={};
+  function glyphRatio(ch){
+    if(ch in GW) return GW[ch];
+    if(!_gwProbe){
+      _gwProbe=document.createElement('span');
+      _gwProbe.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre;font-family:var(--mono);font-size:32px;line-height:1;margin:0;padding:0;';
+      document.body.appendChild(_gwProbe);
+      _gwProbe.textContent='0'; _gwCell=_gwProbe.getBoundingClientRect().width||19.2;
+    }
+    _gwProbe.textContent=ch; var w=_gwProbe.getBoundingClientRect().width;
+    var r=_gwCell ? w/_gwCell : 1; GW[ch]=r; return r;
+  }
   function renderArtHTML(t){
     function e(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     var out='';
     for(const ch of (t||'')){
       var o=ch.codePointAt(0);
-      if(o>=0x1F000 || (o>=0x2E80 && o<=0xD7A3) || (o>=0xFF00 && o<=0xFFEF)) out+='<span class="wc">'+e(ch)+'</span>';
-      else out+=e(ch);
+      if(o===10 || o===9){ out+=ch; continue; }          // newline / tab pass through
+      if(o<0x20){ continue; }                            // other control chars: drop
+      if(o<=0x7e){ out+=e(ch); continue; }               // printable ascii is always one cell
+      var r=glyphRatio(ch);
+      if(r<0.02){ continue; }                            // zero-width modifier: drop (corrupts the grid)
+      if(r>=0.97 && r<=1.03){ out+=e(ch); continue; }    // already one cell — leave it
+      var sc = r>1 ? (0.98/r) : 1;                        // shrink wide glyphs to fit one cell
+      out+='<span class="wc" style="transform:scale('+sc.toFixed(3)+')">'+e(ch)+'</span>';
     }
     return out;
   }
