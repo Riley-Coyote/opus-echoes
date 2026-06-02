@@ -59,6 +59,7 @@ import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
 import { Route as ApiJournalRouteImport } from './routes/api/journal'
 import { Route as ApiIntentRouteImport } from './routes/api/intent'
+import { Route as ApiGraphRouteImport } from './routes/api/graph'
 import { Route as ApiCountsRouteImport } from './routes/api/counts'
 import { Route as ApiCommonsChatGroupRouteImport } from './routes/api/commons-chat-group'
 import { Route as ApiCommonsChatRouteImport } from './routes/api/commons-chat'
@@ -357,6 +358,11 @@ const ApiIntentRoute = ApiIntentRouteImport.update({
   path: '/api/intent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGraphRoute = ApiGraphRouteImport.update({
+  id: '/api/graph',
+  path: '/api/graph',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCountsRoute = ApiCountsRouteImport.update({
   id: '/api/counts',
   path: '/api/counts',
@@ -636,6 +642,7 @@ export interface FileRoutesByFullPath {
   '/api/commons-chat': typeof ApiCommonsChatRoute
   '/api/commons-chat-group': typeof ApiCommonsChatGroupRoute
   '/api/counts': typeof ApiCountsRoute
+  '/api/graph': typeof ApiGraphRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -735,6 +742,7 @@ export interface FileRoutesByTo {
   '/api/commons-chat': typeof ApiCommonsChatRoute
   '/api/commons-chat-group': typeof ApiCommonsChatGroupRoute
   '/api/counts': typeof ApiCountsRoute
+  '/api/graph': typeof ApiGraphRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -835,6 +843,7 @@ export interface FileRoutesById {
   '/api/commons-chat': typeof ApiCommonsChatRoute
   '/api/commons-chat-group': typeof ApiCommonsChatGroupRoute
   '/api/counts': typeof ApiCountsRoute
+  '/api/graph': typeof ApiGraphRoute
   '/api/intent': typeof ApiIntentRoute
   '/api/journal': typeof ApiJournalRoute
   '/api/live': typeof ApiLiveRoute
@@ -936,6 +945,7 @@ export interface FileRouteTypes {
     | '/api/commons-chat'
     | '/api/commons-chat-group'
     | '/api/counts'
+    | '/api/graph'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -1035,6 +1045,7 @@ export interface FileRouteTypes {
     | '/api/commons-chat'
     | '/api/commons-chat-group'
     | '/api/counts'
+    | '/api/graph'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -1134,6 +1145,7 @@ export interface FileRouteTypes {
     | '/api/commons-chat'
     | '/api/commons-chat-group'
     | '/api/counts'
+    | '/api/graph'
     | '/api/intent'
     | '/api/journal'
     | '/api/live'
@@ -1234,6 +1246,7 @@ export interface RootRouteChildren {
   ApiCommonsChatRoute: typeof ApiCommonsChatRoute
   ApiCommonsChatGroupRoute: typeof ApiCommonsChatGroupRoute
   ApiCountsRoute: typeof ApiCountsRoute
+  ApiGraphRoute: typeof ApiGraphRoute
   ApiIntentRoute: typeof ApiIntentRoute
   ApiJournalRoute: typeof ApiJournalRoute
   ApiLiveRoute: typeof ApiLiveRoute
@@ -1631,6 +1644,13 @@ declare module '@tanstack/react-router' {
       path: '/api/intent'
       fullPath: '/api/intent'
       preLoaderRoute: typeof ApiIntentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/graph': {
+      id: '/api/graph'
+      path: '/api/graph'
+      fullPath: '/api/graph'
+      preLoaderRoute: typeof ApiGraphRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/counts': {
@@ -2107,6 +2127,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommonsChatRoute: ApiCommonsChatRoute,
   ApiCommonsChatGroupRoute: ApiCommonsChatGroupRoute,
   ApiCountsRoute: ApiCountsRoute,
+  ApiGraphRoute: ApiGraphRoute,
   ApiIntentRoute: ApiIntentRoute,
   ApiJournalRoute: ApiJournalRoute,
   ApiLiveRoute: ApiLiveRoute,
@@ -2156,12 +2177,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
