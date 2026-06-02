@@ -81,7 +81,8 @@ def clean_text(t):
 
 def main():
     apply = "--apply" in sys.argv
-    ids = list(dict.fromkeys(json.load(open(CULL))))
+    ids_path = os.environ.get("DISPATCH_IDS", CULL)
+    ids = list(dict.fromkeys(json.load(open(ids_path))))
     total = Counter(); touched = []
     for i in ids:
         p = os.path.join(PIECES, i + ".txt")

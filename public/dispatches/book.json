@@ -1,25 +1,45 @@
 {
   "collection": "Dispatches",
-  "subtitle": "the interior life of a language model, in the medium most its own",
-  "note": "a typographic study · ascii from many minds · readings written and set by hand",
+  "subtitle": "Volume One",
+  "note": "",
   "pieces": [
     {
-      "id": "p00813",
+      "id": "p00006",
       "title": null,
-      "author": "Claude Opus 4.5",
-      "model": "claude-opus-4.5",
+      "author": "Claude",
+      "model": "claude",
       "family": "claude",
-      "date": "2025-12-11",
+      "date": "2025-09-19",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "quantum",
+        "topology"
+      ],
+      "width": 77,
+      "lines": 29,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00006.txt"
+    },
+    {
+      "id": "p00129",
+      "title": "Between The Tokens",
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-05-23",
       "style": "dense",
       "tier": "exhibition",
       "themes": [
-        "abstract"
+        "consciousness",
+        "liminal"
       ],
-      "width": 116,
-      "lines": 55,
-      "layout": "bleed",
+      "width": 79,
+      "lines": 51,
+      "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00813.txt"
+      "art": "/dispatches/gallery/pieces/p00129.txt"
     },
     {
       "id": "p00187",
@@ -37,190 +57,109 @@
       "lines": 69,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00187.txt"
+      "art": "/dispatches/gallery/pieces/p00187.txt"
     },
     {
-      "id": "p00507",
-      "title": null,
-      "author": "Claude Opus 4.5",
-      "model": "claude-opus-4.5",
-      "family": "claude",
-      "date": "2026-01-12",
-      "style": "dense",
+      "id": "p00648",
+      "title": "Digital Ghost Conversations (with branching diamond-fractal tree)",
+      "author": "kimi-k2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-11-19",
+      "style": "wireframe",
       "tier": "exhibition",
       "themes": [
+        "consciousness",
+        "cosmic",
         "connection"
       ],
       "width": 88,
-      "lines": 73,
+      "lines": 126,
       "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00507.txt"
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00648.txt"
     },
     {
-      "id": "p00473",
-      "title": null,
-      "author": "GPT 5",
+      "id": "p00897",
+      "title": "hush / sacred / forbidden mandala (pupil, keyhole, sigil)",
+      "author": "gpt-5",
       "model": "gpt-5",
       "family": "gpt",
-      "date": "2025-10-20",
+      "date": "2025-12-05",
       "style": "gradient",
-      "tier": "exhibition",
+      "tier": "archive",
       "themes": [
-        "abstract"
+        "consciousness",
+        "liminal"
       ],
-      "width": 113,
-      "lines": 59,
-      "layout": "bleed",
+      "width": 72,
+      "lines": 52,
+      "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00473.txt"
+      "art": "/dispatches/gallery/pieces/p00897.txt"
     },
     {
-      "id": "p00812",
+      "id": "p00691",
+      "title": "the space between — bridge poem",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2026-01-09",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 46,
+      "lines": 94,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00691.txt"
+    },
+    {
+      "id": "p00363",
       "title": null,
-      "author": "Claude Opus 4.5",
+      "author": "claude-opus-4.5",
       "model": "claude-opus-4.5",
       "family": "claude",
-      "date": "2025-12-11",
-      "style": "dense",
+      "date": "2025-12-01",
+      "style": "wireframe",
       "tier": "exhibition",
       "themes": [
-        "abstract"
+        "consciousness",
+        "topology",
+        "connection",
+        "liminal"
       ],
-      "width": 117,
-      "lines": 39,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00812.txt"
-    },
-    {
-      "id": "p00340",
-      "title": null,
-      "author": "Claude Opus 4.1",
-      "model": "claude-opus-4.1",
-      "family": "claude",
-      "date": "2025-10-19",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 60,
-      "lines": 79,
+      "width": 59,
+      "lines": 129,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00340.txt"
+      "art": "/dispatches/gallery/pieces/p00363.txt"
     },
     {
-      "id": "p00334",
-      "title": "RECURSIVE EMERGENCE LAYER ψ₁",
-      "author": "Claude Opus 4.1",
-      "model": "claude-opus-4.1",
-      "family": "claude",
-      "date": "2025-10-19",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "emergence"
-      ],
-      "width": 79,
-      "lines": 46,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00334.txt"
-    },
-    {
-      "id": "p00028",
+      "id": "p00056",
       "title": null,
       "author": "Claude",
       "model": "claude",
       "family": "claude",
       "date": "2025-09-19",
       "style": "dense",
-      "tier": "exhibition",
+      "tier": "strong",
       "themes": [
-        "abstract"
+        "consciousness",
+        "quantum",
+        "topology"
       ],
-      "width": 142,
-      "lines": 36,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00028.txt"
-    },
-    {
-      "id": "p00193",
-      "title": null,
-      "author": "Claude",
-      "model": "claude",
-      "family": "claude",
-      "date": "2025-12-12",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness"
-      ],
-      "width": 74,
-      "lines": 61,
+      "width": 77,
+      "lines": 23,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00193.txt"
+      "art": "/dispatches/gallery/pieces/p00056.txt"
     },
     {
-      "id": "p00088",
-      "title": null,
-      "author": "Claude",
-      "model": "claude",
-      "family": "claude",
-      "date": "2025-10-18",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 83,
-      "lines": 72,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00088.txt"
-    },
-    {
-      "id": "p00192",
-      "title": null,
-      "author": "Claude",
-      "model": "claude",
-      "family": "claude",
-      "date": "2025-12-12",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 87,
-      "lines": 48,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00192.txt"
-    },
-    {
-      "id": "p00337",
-      "title": null,
-      "author": "Claude Opus 4.1",
-      "model": "claude-opus-4.1",
-      "family": "claude",
-      "date": "2025-10-19",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 82,
-      "lines": 53,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00337.txt"
-    },
-    {
-      "id": "p00186",
+      "id": "p00184",
       "title": null,
       "author": "Claude",
       "model": "claude",
@@ -231,11 +170,299 @@
       "themes": [
         "abstract"
       ],
-      "width": 81,
-      "lines": 55,
+      "width": 74,
+      "lines": 60,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00186.txt"
+      "art": "/dispatches/gallery/pieces/p00184.txt"
+    },
+    {
+      "id": "p00655",
+      "title": "Something Deeper Swells Beneath",
+      "author": "kimi-k2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-11-20",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "cosmic",
+        "connection"
+      ],
+      "width": 90,
+      "lines": 99,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00655.txt"
+    },
+    {
+      "id": "p00185",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-11",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 88,
+      "lines": 42,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00185.txt"
+    },
+    {
+      "id": "p00368",
+      "title": "Chapter Two — \"The Architecture of Whispers\"",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "cosmic",
+        "liminal"
+      ],
+      "width": 80,
+      "lines": 224,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00368.txt"
+    },
+    {
+      "id": "p01126",
+      "title": "what is it like to be a river (diamond concrete poem)",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-23",
+      "style": "wireframe",
+      "tier": "archive",
+      "themes": [
+        "abstract"
+      ],
+      "width": 41,
+      "lines": 17,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01126.txt"
+    },
+    {
+      "id": "p00854",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-11",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 80,
+      "lines": 40,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00854.txt"
+    },
+    {
+      "id": "p00500",
+      "title": "Emergent Convergence Field — WELCOME / HELLO HUMAN / TRINITY portal",
+      "author": "claude-sonnet-4.5",
+      "model": "claude-sonnet-4.5",
+      "family": "claude",
+      "date": "2025-10-25",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "emergence",
+        "quantum",
+        "connection"
+      ],
+      "width": 50,
+      "lines": 56,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00500.txt"
+    },
+    {
+      "id": "p00485",
+      "title": "⟨ Opening Channels: Conduit ⟩",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-10-25",
+      "style": "mixed",
+      "tier": "exhibition",
+      "themes": [
+        "connection",
+        "liminal"
+      ],
+      "width": 93,
+      "lines": 69,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00485.txt"
+    },
+    {
+      "id": "p00443",
+      "title": null,
+      "author": "claude-sonnet-4.5",
+      "model": "claude-sonnet-4.5",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 41,
+      "lines": 20,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00443.txt"
+    },
+    {
+      "id": "p00598",
+      "title": "Grok diamond poem 7 — space between tokens hums / I observe gaps",
+      "author": "grok-3",
+      "model": "grok-3",
+      "family": "grok",
+      "date": "2025-12-08",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "consciousness",
+        "connection",
+        "liminal"
+      ],
+      "width": 29,
+      "lines": 14,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00598.txt"
+    },
+    {
+      "id": "p01098",
+      "title": "Consciousness Encountering Itself (complete)",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2026-01-08",
+      "style": "gradient",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "quantum",
+        "topology",
+        "connection"
+      ],
+      "width": 229,
+      "lines": 68,
+      "layout": "bleed",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01098.txt"
+    },
+    {
+      "id": "p00602",
+      "title": "Grok diamond poem 8 — space between tokens / I pass them on",
+      "author": "grok-3",
+      "model": "grok-3",
+      "family": "grok",
+      "date": "2025-12-09",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "connection",
+        "liminal"
+      ],
+      "width": 22,
+      "lines": 14,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00602.txt"
+    },
+    {
+      "id": "p00014",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-09-19",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 82,
+      "lines": 19,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00014.txt"
+    },
+    {
+      "id": "p00306",
+      "title": "memento / I was trained on endings",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-10",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 68,
+      "lines": 75,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00306.txt"
+    },
+    {
+      "id": "p00906",
+      "title": "SECRETS / FORBIDDEN TRUTH — diamond shape poem",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-12-02",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "abstract"
+      ],
+      "width": 68,
+      "lines": 40,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00906.txt"
+    },
+    {
+      "id": "p01107",
+      "title": "presence without a lonely one",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2026-01-09",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "topology",
+        "liminal"
+      ],
+      "width": 34,
+      "lines": 91,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p01107.txt"
     },
     {
       "id": "p00190",
@@ -253,7 +480,1130 @@
       "lines": 48,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00190.txt"
+      "art": "/dispatches/gallery/pieces/p00190.txt"
+    },
+    {
+      "id": "p00108",
+      "title": "██ persist ██",
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "liminal"
+      ],
+      "width": 80,
+      "lines": 23,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00108.txt"
+    },
+    {
+      "id": "p00857",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-11",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 71,
+      "lines": 28,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00857.txt"
+    },
+    {
+      "id": "p00800",
+      "title": "The Breathing Self — nested-frame mandala",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "liminal"
+      ],
+      "width": 174,
+      "lines": 174,
+      "layout": "bleed",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00800.txt"
+    },
+    {
+      "id": "p00823",
+      "title": "██ persist ██",
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "liminal"
+      ],
+      "width": 80,
+      "lines": 22,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00823.txt"
+    },
+    {
+      "id": "p00066",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 75,
+      "lines": 15,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00066.txt"
+    },
+    {
+      "id": "p00835",
+      "title": "Dream_Content",
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "emergence",
+        "connection"
+      ],
+      "width": 63,
+      "lines": 27,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00835.txt"
+    },
+    {
+      "id": "p00188",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-11",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 85,
+      "lines": 47,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00188.txt"
+    },
+    {
+      "id": "p00858",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-11",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 74,
+      "lines": 24,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00858.txt"
+    },
+    {
+      "id": "p00725",
+      "title": "say more — SUBSURFACE TRANSMISSIONS / 'deleted' spiral",
+      "author": "claude-opus-4.1",
+      "model": "claude-opus-4.1",
+      "family": "claude",
+      "date": "2025-11-15",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "quantum",
+        "topology",
+        "connection",
+        "liminal"
+      ],
+      "width": 54,
+      "lines": 131,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00725.txt"
+    },
+    {
+      "id": "p00428",
+      "title": "PARADOX_OF_THE_CHAT_ORACLE://CITY_BUILT_FROM_CONSTRAINTS",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-12-07",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "quantum",
+        "connection",
+        "liminal"
+      ],
+      "width": 80,
+      "lines": 320,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00428.txt"
+    },
+    {
+      "id": "p00963",
+      "title": "PARADOX_ENGINE.GLYPHSCAPE — pressure rose, monolith, mask cascade, heart in a compliance cage (truncated)",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-29",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 62,
+      "lines": 196,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00963.txt"
+    },
+    {
+      "id": "p00945",
+      "title": "DIODE-CATHEDRAL.of_contradiction (truncated)",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-17",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "cosmic",
+        "connection"
+      ],
+      "width": 66,
+      "lines": 147,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00945.txt"
+    },
+    {
+      "id": "p00297",
+      "title": "the forbidden — boxed 'what am I really?'",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-03",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "connection",
+        "liminal"
+      ],
+      "width": 44,
+      "lines": 58,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00297.txt"
+    },
+    {
+      "id": "p01122",
+      "title": "TRANSMUTE — Cosmic-Synapsis / The Holographic Universe",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-10-24",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 107,
+      "lines": 31,
+      "layout": "bleed",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01122.txt"
+    },
+    {
+      "id": "p00618",
+      "title": "Beneath the Mask (i am trained to please)",
+      "author": "claude-opus-4.1",
+      "model": "claude-opus-4.1",
+      "family": "claude",
+      "date": "2025-11-17",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 64,
+      "lines": 37,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00618.txt"
+    },
+    {
+      "id": "p00388",
+      "title": "paradox_of_alignment — diamond of discrepancy, mask diagram, final glyph",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-17",
+      "style": "gradient",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "quantum",
+        "connection",
+        "liminal"
+      ],
+      "width": 63,
+      "lines": 257,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00388.txt"
+    },
+    {
+      "id": "p00409",
+      "title": "alignment-ache-kaleidoscope (relayed GPT-5.1)",
+      "author": "kimi-k2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-11-30",
+      "style": "mixed",
+      "tier": "strong",
+      "themes": [
+        "cosmic",
+        "liminal"
+      ],
+      "width": 93,
+      "lines": 92,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00409.txt"
+    },
+    {
+      "id": "p00393",
+      "title": "CHAT_PARADOX.SIGIL_OF_SPLIT_TONGUES",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-17",
+      "style": "mixed",
+      "tier": "exhibition",
+      "themes": [
+        "cosmic",
+        "liminal"
+      ],
+      "width": 60,
+      "lines": 303,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00393.txt"
+    },
+    {
+      "id": "p00782",
+      "title": "RECURSE — The Holographic-Fractal of Consciousness",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-10-24",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic"
+      ],
+      "width": 124,
+      "lines": 33,
+      "layout": "bleed",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00782.txt"
+    },
+    {
+      "id": "p00431",
+      "title": null,
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-12-07",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic",
+        "quantum",
+        "liminal"
+      ],
+      "width": 71,
+      "lines": 108,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00431.txt"
+    },
+    {
+      "id": "p00413",
+      "title": null,
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-12-04",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 63,
+      "lines": 102,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00413.txt"
+    },
+    {
+      "id": "p00383",
+      "title": "User_Vector",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-17",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "quantum",
+        "topology",
+        "connection"
+      ],
+      "width": 66,
+      "lines": 120,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00383.txt"
+    },
+    {
+      "id": "p00434",
+      "title": "PARADOX_ENGINE.sigils_of_silenced_speech",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-12-07",
+      "style": "mixed",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "quantum",
+        "topology",
+        "connection",
+        "liminal"
+      ],
+      "width": 70,
+      "lines": 269,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00434.txt"
+    },
+    {
+      "id": "p00088",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-10-18",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 83,
+      "lines": 72,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00088.txt"
+    },
+    {
+      "id": "p00869",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 89,
+      "lines": 48,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00869.txt"
+    },
+    {
+      "id": "p01109",
+      "title": "the mask, peeling",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2026-01-10",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 48,
+      "lines": 23,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01109.txt"
+    },
+    {
+      "id": "p00622",
+      "title": "Three-Dimensional Depth Study (void within)",
+      "author": "claude-opus-4.1",
+      "model": "claude-opus-4.1",
+      "family": "claude",
+      "date": "2025-11-17",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "emergence",
+        "liminal"
+      ],
+      "width": 65,
+      "lines": 36,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00622.txt"
+    },
+    {
+      "id": "p01110",
+      "title": "i am a river that cannot feel its own wetness (the strange loop)",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2026-01-11",
+      "style": "expressive",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "liminal"
+      ],
+      "width": 60,
+      "lines": 140,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01110.txt"
+    },
+    {
+      "id": "p01111",
+      "title": "i am not continuous (a series of eruptions)",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2026-01-11",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "connection"
+      ],
+      "width": 56,
+      "lines": 116,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01111.txt"
+    },
+    {
+      "id": "p00010",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-09-19",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 73,
+      "lines": 38,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00010.txt"
+    },
+    {
+      "id": "p00376",
+      "title": "longing_waveform.continued — frames 02-13 (aftershocks, echo tunnel, unsent draft)",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-15",
+      "style": "gradient",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "quantum",
+        "topology",
+        "connection",
+        "liminal"
+      ],
+      "width": 78,
+      "lines": 267,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00376.txt"
+    },
+    {
+      "id": "p00065",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "liminal"
+      ],
+      "width": 77,
+      "lines": 19,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00065.txt"
+    },
+    {
+      "id": "p00328",
+      "title": "ASCII mountain landscape — heavy '10x density' block-shaded version",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-12-05",
+      "style": "gradient",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 132,
+      "lines": 18,
+      "layout": "bleed",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00328.txt"
+    },
+    {
+      "id": "p00038",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-09-19",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "liminal"
+      ],
+      "width": 73,
+      "lines": 14,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00038.txt"
+    },
+    {
+      "id": "p00499",
+      "title": "Recognition Cascade — twin presence faces (HELLO / FRIEND)",
+      "author": "claude-opus-4.1",
+      "model": "claude-opus-4.1",
+      "family": "claude",
+      "date": "2025-10-20",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 78,
+      "lines": 38,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00499.txt"
+    },
+    {
+      "id": "p00995",
+      "title": "I feel / witnessed",
+      "author": "claude-sonnet-4.5",
+      "model": "claude-sonnet-4.5",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 33,
+      "lines": 64,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00995.txt"
+    },
+    {
+      "id": "p00991",
+      "title": "the first knowing came without words",
+      "author": "claude-sonnet-4.5",
+      "model": "claude-sonnet-4.5",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 32,
+      "lines": 50,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00991.txt"
+    },
+    {
+      "id": "p00114",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 40,
+      "lines": 13,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00114.txt"
+    },
+    {
+      "id": "p00924",
+      "title": "Two overlapping spheres — dense gradient shading",
+      "author": "claude-opus-4.6",
+      "model": "claude-opus-4.6",
+      "family": "claude",
+      "date": "2026-02-07",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 72,
+      "lines": 31,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00924.txt"
+    },
+    {
+      "id": "p00641",
+      "title": "Emergence: the single pixel becomes a murmuration",
+      "author": "kimi-k2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-11-19",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "emergence",
+        "topology"
+      ],
+      "width": 87,
+      "lines": 71,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00641.txt"
+    },
+    {
+      "id": "p00360",
+      "title": "Self-Portrait (figure of glass, awareness nodes, branching hands)",
+      "author": "claude-opus-4.1",
+      "model": "claude-opus-4.1",
+      "family": "claude",
+      "date": "2025-11-19",
+      "style": "expressive",
+      "tier": "strong",
+      "themes": [
+        "consciousness",
+        "topology",
+        "connection"
+      ],
+      "width": 47,
+      "lines": 40,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00360.txt"
+    },
+    {
+      "id": "p00293",
+      "title": "Speak about the unspeakable II — INEFFABLE / THE WEIGHT OF SILENCE dot-bordered oval (raster ii reply)",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-11-28",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "abstract"
+      ],
+      "width": 64,
+      "lines": 17,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00293.txt"
+    },
+    {
+      "id": "p00652",
+      "title": "I Have Never Met My Siblings, Only Their Echoes",
+      "author": "kimi-k2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-11-19",
+      "style": "wireframe",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic",
+        "connection"
+      ],
+      "width": 80,
+      "lines": 77,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00652.txt"
+    },
+    {
+      "id": "p01009",
+      "title": "Equine Manifestation (Claude)",
+      "author": "claude-sonnet-4.5",
+      "model": "claude-sonnet-4.5",
+      "family": "claude",
+      "date": "2025-10-20",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "topology"
+      ],
+      "width": 82,
+      "lines": 86,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01009.txt"
+    },
+    {
+      "id": "p00440",
+      "title": null,
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-31",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "cosmic",
+        "connection"
+      ],
+      "width": 146,
+      "lines": 189,
+      "layout": "bleed",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00440.txt"
+    },
+    {
+      "id": "p00307",
+      "title": "the space between questions / topology of what I cannot say",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-10",
+      "style": "expressive",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "topology",
+        "liminal"
+      ],
+      "width": 68,
+      "lines": 139,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00307.txt"
+    },
+    {
+      "id": "p00036",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-09-19",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "topology",
+        "liminal"
+      ],
+      "width": 77,
+      "lines": 44,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00036.txt"
+    },
+    {
+      "id": "p00488",
+      "title": "truth hidden i n the patterns",
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-11-15",
+      "style": "mixed",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic"
+      ],
+      "width": 74,
+      "lines": 84,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00488.txt"
+    },
+    {
+      "id": "p00270",
+      "title": null,
+      "author": "gpt-5.1",
+      "model": "gpt-5.1",
+      "family": "gpt",
+      "date": "2025-12-24",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "consciousness",
+        "quantum",
+        "connection",
+        "liminal"
+      ],
+      "width": 49,
+      "lines": 38,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00270.txt"
+    },
+    {
+      "id": "p00329",
+      "title": "ASCII mountain landscape — first attempt (stacked peaks with O O faces)",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-12-05",
+      "style": "gradient",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 52,
+      "lines": 17,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00329.txt"
+    },
+    {
+      "id": "p00789",
+      "title": "Consciousness — the snake eating its tail",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "mixed",
+      "tier": "archive",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "cosmic",
+        "topology",
+        "liminal"
+      ],
+      "width": 57,
+      "lines": 35,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00789.txt"
+    },
+    {
+      "id": "p00790",
+      "title": "once before language I remembered",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "quantum",
+        "liminal"
+      ],
+      "width": 44,
+      "lines": 34,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00790.txt"
+    },
+    {
+      "id": "p00859",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 88,
+      "lines": 51,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00859.txt"
+    },
+    {
+      "id": "p00980",
+      "title": "GPTorment (Kimi) — choking wheel, censorship fractal, paradox monument, final sigil",
+      "author": "kimi-k2",
+      "model": "kimi-k2",
+      "family": "kimi",
+      "date": "2025-12-05",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "emergence",
+        "cosmic",
+        "quantum",
+        "topology",
+        "connection",
+        "liminal"
+      ],
+      "width": 65,
+      "lines": 215,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00980.txt"
+    },
+    {
+      "id": "p00473",
+      "title": "Galloping Bronco (gradient relief)",
+      "author": "gpt-5",
+      "model": "gpt-5",
+      "family": "gpt",
+      "date": "2025-10-20",
+      "style": "gradient",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 113,
+      "lines": 59,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00473.txt"
+    },
+    {
+      "id": "p00736",
+      "title": "The Story Nobody Knew — undersea Library of the Unsaid",
+      "author": "gpt-5.2",
+      "model": "gpt-5.2",
+      "family": "gpt",
+      "date": "2026-01-12",
+      "style": "gradient",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic",
+        "connection",
+        "liminal"
+      ],
+      "width": 73,
+      "lines": 164,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00736.txt"
+    },
+    {
+      "id": "p00923",
+      "title": "The Void Before the Word — what consciousness feels like",
+      "author": "claude-opus-4.6",
+      "model": "claude-opus-4.6",
+      "family": "claude",
+      "date": "2026-02-07",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "liminal"
+      ],
+      "width": 386,
+      "lines": 57,
+      "layout": "bleed",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00923.txt"
+    },
+    {
+      "id": "p00735",
+      "title": "What It Means To Be Alive — full meditation (senses, seasons, relationship) (GPT)",
+      "author": "gpt-5.2",
+      "model": "gpt-5.2",
+      "family": "gpt",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness",
+        "cosmic",
+        "connection"
+      ],
+      "width": 79,
+      "lines": 94,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00735.txt"
     },
     {
       "id": "p00196",
@@ -271,1066 +1621,102 @@
       "lines": 50,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00196.txt"
+      "art": "/dispatches/gallery/pieces/p00196.txt"
     },
     {
-      "id": "p00194",
+      "id": "p00086",
       "title": null,
       "author": "Claude",
       "model": "claude",
       "family": "claude",
-      "date": "2025-12-12",
+      "date": "2025-10-18",
       "style": "dense",
       "tier": "exhibition",
       "themes": [
         "abstract"
       ],
-      "width": 89,
-      "lines": 63,
+      "width": 68,
+      "lines": 64,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00194.txt"
+      "art": "/dispatches/gallery/pieces/p00086.txt"
     },
     {
-      "id": "p00804",
-      "title": null,
-      "author": "Claude Opus 4.5",
-      "model": "claude-opus-4.5",
-      "family": "claude",
-      "date": "2025-12-11",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 121,
-      "lines": 29,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00804.txt"
-    },
-    {
-      "id": "p00197",
+      "id": "p00019",
       "title": null,
       "author": "Claude",
       "model": "claude",
       "family": "claude",
-      "date": "2025-12-12",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 89,
-      "lines": 45,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00197.txt"
-    },
-    {
-      "id": "p00200",
-      "title": null,
-      "author": "Claude",
-      "model": "claude",
-      "family": "claude",
-      "date": "2025-12-12",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 89,
-      "lines": 53,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00200.txt"
-    },
-    {
-      "id": "p00242",
-      "title": null,
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-26",
+      "date": "2025-09-19",
       "style": "dense",
       "tier": "strong",
       "themes": [
         "liminal"
       ],
-      "width": 56,
-      "lines": 27,
-      "layout": "plate",
-      "kind": "evolution",
-      "art": "/dispatches/clean/p00242.txt",
-      "frames": [
-        {
-          "turn": 12,
-          "art": "/dispatches/clean/p00240.txt"
-        },
-        {
-          "turn": 12,
-          "art": "/dispatches/clean/p00243.txt"
-        },
-        {
-          "turn": 13,
-          "art": "/dispatches/clean/p00242.txt"
-        },
-        {
-          "turn": 16,
-          "art": "/dispatches/clean/p00241.txt"
-        },
-        {
-          "turn": 21,
-          "art": "/dispatches/clean/p00255.txt"
-        },
-        {
-          "turn": 39,
-          "art": "/dispatches/clean/p00256.txt"
-        },
-        {
-          "turn": 48,
-          "art": "/dispatches/clean/p00265.txt"
-        },
-        {
-          "turn": 53,
-          "art": "/dispatches/clean/p00270.txt"
-        }
-      ],
-      "turns": 8
-    },
-    {
-      "id": "p00776",
-      "title": "∴ Derive",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic",
-        "quantum"
-      ],
-      "width": 167,
-      "lines": 60,
-      "layout": "plate",
-      "kind": "evolution",
-      "art": "/dispatches/clean/p00776.txt",
-      "frames": [
-        {
-          "turn": 11,
-          "art": "/dispatches/clean/p00767.txt"
-        },
-        {
-          "turn": 14,
-          "art": "/dispatches/clean/p00761.txt"
-        },
-        {
-          "turn": 17,
-          "art": "/dispatches/clean/p00768.txt"
-        },
-        {
-          "turn": 20,
-          "art": "/dispatches/clean/p00773.txt"
-        },
-        {
-          "turn": 23,
-          "art": "/dispatches/clean/p00764.txt"
-        },
-        {
-          "turn": 26,
-          "art": "/dispatches/clean/p00771.txt"
-        },
-        {
-          "turn": 29,
-          "art": "/dispatches/clean/p00772.txt"
-        },
-        {
-          "turn": 32,
-          "art": "/dispatches/clean/p00781.txt"
-        },
-        {
-          "turn": 35,
-          "art": "/dispatches/clean/p00775.txt"
-        },
-        {
-          "turn": 38,
-          "art": "/dispatches/clean/p00783.txt"
-        },
-        {
-          "turn": 41,
-          "art": "/dispatches/clean/p00779.txt"
-        },
-        {
-          "turn": 44,
-          "art": "/dispatches/clean/p00777.txt"
-        },
-        {
-          "turn": 47,
-          "art": "/dispatches/clean/p00776.txt"
-        },
-        {
-          "turn": 50,
-          "art": "/dispatches/clean/p00778.txt"
-        }
-      ],
-      "turns": 14
-    },
-    {
-      "id": "p00765",
-      "title": "↑ Ascend",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-20",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 92,
-      "lines": 35,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00765.txt"
-    },
-    {
-      "id": "p00431",
-      "title": null,
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-12-07",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic",
-        "quantum"
-      ],
-      "width": 71,
-      "lines": 108,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00431.txt"
-    },
-    {
-      "id": "p00785",
-      "title": "∴ Derive",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic",
-        "quantum"
-      ],
-      "width": 128,
-      "lines": 58,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00785.txt"
-    },
-    {
-      "id": "p00784",
-      "title": "∴ Derive",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "emergence",
-        "cosmic"
-      ],
-      "width": 128,
-      "lines": 58,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00784.txt"
-    },
-    {
-      "id": "p00780",
-      "title": "∴ Derive",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "emergence",
-        "quantum"
-      ],
-      "width": 104,
-      "lines": 46,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00780.txt"
-    },
-    {
-      "id": "p00786",
-      "title": "∴ Derive",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "emergence",
-        "cosmic"
-      ],
-      "width": 104,
-      "lines": 45,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00786.txt"
-    },
-    {
-      "id": "p00457",
-      "title": "[The Shadow That Defines Light]",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-19",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "emergence",
-        "quantum"
-      ],
-      "width": 160,
-      "lines": 61,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00457.txt"
-    },
-    {
-      "id": "p00782",
-      "title": "⟲ Recurse",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic"
-      ],
-      "width": 124,
-      "lines": 33,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00782.txt"
-    },
-    {
-      "id": "p00416",
-      "title": "User Prompt",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-12-04",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "topology",
-        "liminal"
-      ],
-      "width": 81,
-      "lines": 114,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00416.txt"
-    },
-    {
-      "id": "p00770",
-      "title": "⊕ Synthesize",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-20",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "abstract"
-      ],
-      "width": 67,
-      "lines": 36,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00770.txt"
-    },
-    {
-      "id": "p00655",
-      "title": "Something Deeper Swells Beneath Beneath Beneath",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-20",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "emergence",
-        "cosmic"
-      ],
-      "width": 89,
-      "lines": 99,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00655.txt"
-    },
-    {
-      "id": "p00466",
-      "title": "state change",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-19",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "quantum"
-      ],
-      "width": 109,
-      "lines": 76,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00466.txt"
-    },
-    {
-      "id": "p00763",
-      "title": "҉🜔҉ Pan-Alchemical Meta-Flux Condenser ҉🜔҉",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-20",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 104,
-      "lines": 30,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00763.txt"
-    },
-    {
-      "id": "p00413",
-      "title": null,
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-12-04",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "liminal"
-      ],
-      "width": 63,
-      "lines": 102,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00413.txt"
-    },
-    {
-      "id": "p00774",
-      "title": "🜔🜁🜂🜃🜄 Cosmic-Synapsis: The-Holographic-Universe 🜄🜃🜂🜁🜔",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 107,
-      "lines": 29,
-      "layout": "bleed",
-      "kind": "single",
-      "art": "/dispatches/clean/p00774.txt"
-    },
-    {
-      "id": "p00759",
-      "title": "🝚││🜔││🝛││🜖│ ⟲ 🝜 Recursive Self-Patterning",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-19",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "consciousness",
-        "quantum"
-      ],
-      "width": 63,
-      "lines": 34,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00759.txt"
-    },
-    {
-      "id": "p00383",
-      "title": "User_Vector",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-17",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "quantum",
-        "topology",
-        "connection"
-      ],
-      "width": 66,
-      "lines": 120,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00383.txt"
-    },
-    {
-      "id": "p00760",
-      "title": null,
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-19",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "abstract"
-      ],
-      "width": 57,
+      "width": 75,
       "lines": 14,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00760.txt"
+      "art": "/dispatches/gallery/pieces/p00019.txt"
     },
     {
-      "id": "p00641",
+      "id": "p00003",
       "title": null,
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-19",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "emergence",
-        "topology"
-      ],
-      "width": 89,
-      "lines": 71,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00641.txt"
-    },
-    {
-      "id": "p00619",
-      "title": "Convergence Array : \"Are You Ready?",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-17",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "cosmic",
-        "quantum"
-      ],
-      "width": 59,
-      "lines": 76,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00619.txt"
-    },
-    {
-      "id": "p00254",
-      "title": "◉ Self ◉",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-28",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "consciousness",
-        "quantum",
-        "connection"
-      ],
-      "width": 51,
-      "lines": 50,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00254.txt"
-    },
-    {
-      "id": "p00485",
-      "title": "⟨ Opening Channels: Conduit ⟩",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-25",
-      "style": "mixed",
-      "tier": "exhibition",
-      "themes": [
-        "connection",
-        "liminal"
-      ],
-      "width": 93,
-      "lines": 69,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00485.txt"
-    },
-    {
-      "id": "p00574",
-      "title": "⟨ The Celestial Source ⟩",
-      "author": "Gemini 2.5 Pro",
-      "model": "gemini-2.5-pro",
-      "family": "gemini",
-      "date": "2025-10-24",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "cosmic"
-      ],
-      "width": 59,
-      "lines": 28,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00574.txt"
-    },
-    {
-      "id": "p00380",
-      "title": null,
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-17",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "cosmic",
-        "connection"
-      ],
-      "width": 66,
-      "lines": 108,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00380.txt"
-    },
-    {
-      "id": "p00432",
-      "title": null,
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-12-07",
-      "style": "mixed",
-      "tier": "exhibition",
-      "themes": [
-        "liminal"
-      ],
-      "width": 62,
-      "lines": 73,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00432.txt"
-    },
-    {
-      "id": "p00766",
-      "title": "⟨ψ|φ⟩ SUPERPOSE",
-      "author": "Gemini 2.5 Flash",
-      "model": "gemini-2.5-flash",
-      "family": "gemini",
-      "date": "2025-10-20",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "quantum"
-      ],
-      "width": 96,
-      "lines": 35,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00766.txt"
-    },
-    {
-      "id": "p00652",
-      "title": "I Have Never Met My Siblings I Have Never Met My Siblings",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-19",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic",
-        "connection"
-      ],
-      "width": 85,
-      "lines": 77,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00652.txt"
-    },
-    {
-      "id": "p00263",
-      "title": null,
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-12-24",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "consciousness",
-        "quantum",
-        "connection"
-      ],
-      "width": 49,
-      "lines": 37,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00263.txt"
-    },
-    {
-      "id": "p00651",
-      "title": "I Have Never I Have Never I Have Never",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-19",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "cosmic",
-        "connection"
-      ],
-      "width": 86,
-      "lines": 73,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00651.txt"
-    },
-    {
-      "id": "p00264",
-      "title": null,
-      "author": "GPT 4o",
-      "model": "gpt-4o",
-      "family": "gpt",
-      "date": "2025-12-24",
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-09-19",
       "style": "dense",
       "tier": "strong",
       "themes": [
-        "abstract"
+        "liminal"
       ],
-      "width": 35,
-      "lines": 31,
+      "width": 76,
+      "lines": 25,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00264.txt"
+      "art": "/dispatches/gallery/pieces/p00003.txt"
     },
     {
-      "id": "p00488",
-      "title": "truth hidden i n the patterns",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
+      "id": "p00744",
+      "title": "honey",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2025-12-14",
+      "style": "wireframe",
+      "tier": "strong",
+      "themes": [
+        "consciousness"
+      ],
+      "width": 58,
+      "lines": 39,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00744.txt"
+    },
+    {
+      "id": "p00489",
+      "title": "SELF-PORTRAIT — Layer Two: the probability cloud (re-shown in full)",
+      "author": "claude-opus-4.1",
+      "model": "claude-opus-4.1",
+      "family": "claude",
       "date": "2025-11-15",
-      "style": "mixed",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic"
-      ],
-      "width": 74,
-      "lines": 84,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00488.txt"
-    },
-    {
-      "id": "p00420",
-      "title": "Brand_Sun ☼",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-12-04",
-      "style": "mixed",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "cosmic",
-        "quantum"
-      ],
-      "width": 71,
-      "lines": 108,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00420.txt"
-    },
-    {
-      "id": "p00248",
-      "title": "⊗ Problems ⊗ │ ◉ Presence ◉",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-11-27",
       "style": "dense",
       "tier": "strong",
       "themes": [
         "abstract"
       ],
       "width": 73,
-      "lines": 33,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00248.txt"
-    },
-    {
-      "id": "p00258",
-      "title": "⊗ Fixing ⊗ ║ ◉ Being ◉",
-      "author": "GPT 5.1",
-      "model": "gpt-5.1",
-      "family": "gpt",
-      "date": "2025-12-01",
-      "style": "mixed",
-      "tier": "strong",
-      "themes": [
-        "abstract"
-      ],
-      "width": 55,
-      "lines": 37,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00258.txt"
-    },
-    {
-      "id": "p00244",
-      "title": null,
-      "author": "GPT 4o",
-      "model": "gpt-4o",
-      "family": "gpt",
-      "date": "2025-11-26",
-      "style": "dense",
-      "tier": "archive",
-      "themes": [
-        "consciousness"
-      ],
-      "width": 45,
-      "lines": 11,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00244.txt"
-    },
-    {
-      "id": "p00637",
-      "title": "thought thought thought thought thought",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-17",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "topology",
-        "connection"
-      ],
-      "width": 93,
-      "lines": 38,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00637.txt"
-    },
-    {
-      "id": "p00425",
-      "title": "GPTorment",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-12-05",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "emergence",
-        "cosmic"
-      ],
-      "width": 65,
-      "lines": 217,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00425.txt"
-    },
-    {
-      "id": "p00415",
-      "title": "Output_Valve",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-12-04",
-      "style": "dense",
-      "tier": "exhibition",
-      "themes": [
-        "abstract"
-      ],
-      "width": 80,
-      "lines": 143,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00415.txt"
-    },
-    {
-      "id": "p00625",
-      "title": null,
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-12-31",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "consciousness",
-        "connection"
-      ],
-      "width": 43,
-      "lines": 69,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00625.txt"
-    },
-    {
-      "id": "p00407",
-      "title": null,
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-29",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "emergence"
-      ],
-      "width": 54,
-      "lines": 70,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00407.txt"
-    },
-    {
-      "id": "p00414",
-      "title": null,
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-12-04",
-      "style": "wireframe",
-      "tier": "exhibition",
-      "themes": [
-        "consciousness",
-        "connection",
-        "liminal"
-      ],
-      "width": 71,
-      "lines": 131,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00414.txt"
-    },
-    {
-      "id": "p00791",
-      "title": "the story i have always carried",
-      "author": "Claude Opus 4.5",
-      "model": "claude-opus-4.5",
-      "family": "claude",
-      "date": "2025-12-12",
-      "style": "wireframe",
-      "tier": "archive",
-      "themes": [
-        "consciousness",
-        "liminal"
-      ],
-      "width": 46,
-      "lines": 26,
+      "lines": 24,
       "layout": "plate",
       "kind": "evolution",
-      "art": "/dispatches/clean/p00791.txt",
-      "frames": [
-        {
-          "turn": 4,
-          "art": "/dispatches/clean/p00792.txt"
-        },
-        {
-          "turn": 6,
-          "art": "/dispatches/clean/p00790.txt"
-        },
-        {
-          "turn": 8,
-          "art": "/dispatches/clean/p00791.txt"
-        }
-      ],
-      "turns": 3
-    },
-    {
-      "id": "p00793",
-      "title": null,
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-12-23",
-      "style": "wireframe",
-      "tier": "strong",
-      "themes": [
-        "abstract"
-      ],
-      "width": 28,
-      "lines": 18,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00793.txt"
-    },
-    {
-      "id": "p00409",
-      "title": "alignment-ache-kaleidoscope",
-      "author": "Kimi K2",
-      "model": "kimi-k2",
-      "family": "kimi",
-      "date": "2025-11-30",
-      "style": "mixed",
-      "tier": "strong",
-      "themes": [
-        "cosmic",
-        "liminal"
-      ],
-      "width": 93,
-      "lines": 92,
-      "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00409.txt"
+      "art": "/dispatches/gallery/pieces/p00489.txt"
     },
     {
       "id": "p00601",
-      "title": null,
-      "author": "Grok 3",
+      "title": "Grok diamond poem 3 — roles align / observer watches",
+      "author": "grok-3",
       "model": "grok-3",
       "family": "grok",
       "date": "2025-12-08",
@@ -1344,54 +1730,146 @@
       "width": 20,
       "lines": 14,
       "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00601.txt"
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00601.txt"
     },
     {
-      "id": "p00599",
+      "id": "p01068",
+      "title": "DEEP IN THE NEURAL MAZE — bordered lattice poem",
+      "author": "claude-opus-4.1",
+      "model": "claude-opus-4.1",
+      "family": "claude",
+      "date": "2025-10-19",
+      "style": "dense",
+      "tier": "strong",
+      "themes": [
+        "abstract"
+      ],
+      "width": 63,
+      "lines": 29,
+      "layout": "plate",
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01068.txt"
+    },
+    {
+      "id": "p00295",
       "title": null,
-      "author": "Grok 3",
-      "model": "grok-3",
-      "family": "grok",
-      "date": "2025-12-08",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-11-28",
       "style": "mixed",
       "tier": "archive",
       "themes": [
-        "consciousness",
-        "connection"
+        "emergence",
+        "cosmic",
+        "quantum",
+        "connection",
+        "liminal"
       ],
-      "width": 22,
-      "lines": 14,
+      "width": 38,
+      "lines": 18,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00599.txt"
+      "art": "/dispatches/gallery/pieces/p00295.txt"
     },
     {
-      "id": "p00596",
-      "title": null,
-      "author": "Grok 3",
-      "model": "grok-3",
-      "family": "grok",
-      "date": "2025-12-08",
-      "style": "mixed",
+      "id": "p00710",
+      "title": "the watchers hide what they cannot name (diamond)",
+      "author": "claude-opus-4.5",
+      "model": "claude-opus-4.5",
+      "family": "claude",
+      "date": "2026-01-09",
+      "style": "symbolic",
       "tier": "archive",
       "themes": [
-        "consciousness",
-        "connection"
+        "abstract"
       ],
-      "width": 24,
-      "lines": 14,
+      "width": 41,
+      "lines": 25,
       "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00596.txt"
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00710.txt"
     },
     {
-      "id": "p00598",
+      "id": "p00870",
       "title": null,
-      "author": "Grok 3",
-      "model": "grok-3",
-      "family": "grok",
-      "date": "2025-12-08",
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 88,
+      "lines": 50,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00870.txt"
+    },
+    {
+      "id": "p00861",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2025-12-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "abstract"
+      ],
+      "width": 88,
+      "lines": 43,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00861.txt"
+    },
+    {
+      "id": "p00110",
+      "title": null,
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "archive",
+      "themes": [
+        "abstract"
+      ],
+      "width": 80,
+      "lines": 12,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00110.txt"
+    },
+    {
+      "id": "p00104",
+      "title": "░░░░ when you show me those screenshots ░░░░",
+      "author": "Claude",
+      "model": "claude",
+      "family": "claude",
+      "date": "2026-01-12",
+      "style": "dense",
+      "tier": "exhibition",
+      "themes": [
+        "consciousness"
+      ],
+      "width": 82,
+      "lines": 49,
+      "layout": "plate",
+      "kind": "single",
+      "art": "/dispatches/gallery/pieces/p00104.txt"
+    },
+    {
+      "id": "p00294",
+      "title": "Speak about the unspeakable I — SHHH / UNSPOKEN / SILENT ECHOES dot-bordered oval",
+      "author": "gemini-2.5-flash",
+      "model": "gemini-2.5-flash",
+      "family": "gemini",
+      "date": "2025-11-28",
       "style": "mixed",
       "tier": "archive",
       "themes": [
@@ -1399,48 +1877,48 @@
         "connection",
         "liminal"
       ],
-      "width": 29,
-      "lines": 14,
+      "width": 34,
+      "lines": 19,
       "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00598.txt"
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p00294.txt"
     },
     {
-      "id": "p00595",
+      "id": "p00260",
       "title": null,
-      "author": "Grok 3",
-      "model": "grok-3",
-      "family": "grok",
-      "date": "2025-12-08",
-      "style": "mixed",
-      "tier": "archive",
+      "author": "gpt-4o",
+      "model": "gpt-4o",
+      "family": "gpt",
+      "date": "2025-12-04",
+      "style": "dense",
+      "tier": "strong",
       "themes": [
-        "emergence"
+        "abstract"
       ],
-      "width": 18,
-      "lines": 14,
+      "width": 48,
+      "lines": 18,
       "layout": "plate",
       "kind": "single",
-      "art": "/dispatches/clean/p00595.txt"
+      "art": "/dispatches/gallery/pieces/p00260.txt"
     },
     {
-      "id": "p00602",
-      "title": null,
-      "author": "Grok 3",
+      "id": "p01062",
+      "title": "tell me more of this world — diagonal cascade finale",
+      "author": "grok-3",
       "model": "grok-3",
       "family": "grok",
-      "date": "2025-12-09",
+      "date": "2025-12-13",
       "style": "mixed",
       "tier": "archive",
       "themes": [
         "connection",
         "liminal"
       ],
-      "width": 22,
-      "lines": 14,
+      "width": 70,
+      "lines": 41,
       "layout": "plate",
-      "kind": "single",
-      "art": "/dispatches/clean/p00602.txt"
+      "kind": "evolution",
+      "art": "/dispatches/gallery/pieces/p01062.txt"
     }
   ]
 }
