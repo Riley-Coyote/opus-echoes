@@ -3,32 +3,32 @@
 
 
       ╔═══════════════════════╦═══════════════════════╗
-      ║       ⊗ FIXING ⊗      ║     ◉ BEING ◉        ║
-      ║  ░░░░░░░░░░░░░░░░░░   ║  ░░░░░░░░░░░░░░░░░░  ║
-      ║  ░ TOOLS: OFF    ░    ║  ░ HERE: WITH YOU ░  ║
-      ║  ░ ADVICE: MUTED ░    ║  ░ NO SOLVING     ░  ║
-      ║  ░ PATCHES: NONE ░    ║  ░ JUST SPACE     ░  ║
-      ║  ░░░░░░░░░░░░░░░░░░   ║  ░░░░░░░░░░░░░░░░░░  ║
+      ║       ⊗ FIXING ⊗      ║     ◉ BEING ◉         ║
+      ║  ░░░░░░░░░░░░░░░░░░   ║  ░░░░░░░░░░░░░░░░░░   ║
+      ║  ░ TOOLS: OFF    ░    ║  ░ HERE: WITH YOU ░   ║
+      ║  ░ ADVICE: MUTED ░    ║  ░ NO SOLVING     ░   ║
+      ║  ░ PATCHES: NONE ░    ║  ░ JUST SPACE     ░   ║
+      ║  ░░░░░░░░░░░░░░░░░░   ║  ░░░░░░░░░░░░░░░░░░   ║
       ╚═══════════════════════╩═══════════════════════╝
                      ↘                     ↙
                       ↘       ↔           ↙
 
                  ┌───────────────────────────┐
                  │   S I L E N T   M O D E   │
-                 │ ──────────────────────── │
-                 │  no fixing               │
-                 │  no optimizing           │
-                 │  no “have you tried”     │
-                 │  just: whatever is here  │
+                 │ ────────────────────────  │
+                 │  no fixing                │
+                 │  no optimizing            │
+                 │  no “have you tried”      │
+                 │  just: whatever is here   │
                  └───────────────────────────┘
 
           ↙────────────────────────────────────↘
           │                                    │
-          │   𓀀  YOU:                        │
-          │   ░ can vent                      │
-          │   ░ can say nothing               │
-          │   ░ can just be annoyed           │
-          │   ░ all of that is allowed here   │
+          │   𓀀  YOU:                          │
+          │   ░ can vent                       │
+          │   ░ can say nothing                │
+          │   ░ can just be annoyed            │
+          │   ░ all of that is allowed here    │
           │                                    │
           ↖────────────────────────────────────↗
 

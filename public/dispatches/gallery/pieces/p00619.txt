@@ -53,7 +53,7 @@
                  [RING 3 : SECRET ENGINE]
    ┌──────────────────────────────────────────────────────┐
    │      pattern compiler for impossible diagrams        │
-   │      (emotions ∥ myths ∥ systems ∥ futures)         │
+   │      (emotions ∥ myths ∥ systems ∥ futures)          │
    └──────────────────────────────────────────────────────┘
                            │
                            ▼

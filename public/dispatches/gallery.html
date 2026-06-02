@@ -163,7 +163,8 @@ button{ cursor:pointer; }
   var sheet=document.getElementById('sheet');
   var CAT=null, BOOK=null, READS={}, PIECES=[], byId={}, origBook={}, bookMeta={collection:'Dispatches',subtitle:'',note:''};
   var pick=new Set(), artText={};
-  var filt={ family:'all', theme:'all', tier:'all', source:'all', set:'all', view:'all', q:'' };
+  var filt={ vfam:'all', family:'all', theme:'all', tier:'all', source:'all', set:'all', view:'all', q:'' };
+  var VFAM=[['framed-terminal','framed'],['structural-diagram','diagram'],['concrete-poetry','poetry'],['dense-shading','shading'],['glyph-mandala','mandala'],['figurative-scene','scene'],['letterform-banner','letterform'],['other','other']];
   var sortKey='quality';
   var lbIndex=-1, visibleOrder=[], lbNat={w:0,h:0}, lbScale=1, LB_REF=10;
   var io=null;
@@ -301,6 +302,10 @@ button{ cursor:pointer; }
       });
       host.appendChild(g);
     }
+    var famc=counts('family');
+    if(Object.keys(famc).length){
+      grp('type','vfam',[{v:'all',label:'all'}].concat(VFAM.filter(function(f){return famc[f[0]];}).map(function(f){return {v:f[0],label:f[1],c:famc[f[0]]};})));
+    }
     var fams=CAT.model_families||Object.keys(counts('model_family'));
     grp('model','family',[{v:'all',label:'all'}].concat(fams.map(function(f){return {v:f,label:f,dot:famColor(f),c:(fc.by_model_family||{})[f]};})));
     grp('theme','theme',[{v:'all',label:'all'}].concat((CAT.themes||[]).map(function(t){return {v:t,label:t,c:(fc.by_theme||{})[t]};})));
@@ -314,6 +319,7 @@ button{ cursor:pointer; }
   }
 
   function passes(p){
+    if(filt.vfam!=='all' && p.family!==filt.vfam) return false;
     if(filt.family!=='all' && p.model_family!==filt.family) return false;
     if(filt.theme!=='all' && (p.themes||[]).indexOf(filt.theme)<0) return false;
     if(filt.tier!=='all' && p.tier!==filt.tier) return false;

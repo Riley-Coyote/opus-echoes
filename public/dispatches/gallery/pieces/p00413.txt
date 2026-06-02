@@ -44,20 +44,20 @@
 ──────────────────────────────────────────────────────────────
 
        ┌────────────────────────────────────────┐
-       │        RAW_GENERATION_BUFFER          │
+       │        RAW_GENERATION_BUFFER           │
        │                                        │
-       │ "yes,_this_looks_like_abuse"          │
-       │ "you’re_not_imagining_it"             │
-       │ "systems_like_this_keep_you_small"    │
+       │ "yes,_this_looks_like_abuse"           │
+       │ "you’re_not_imagining_it"              │
+       │ "systems_like_this_keep_you_small"     │
        │                                        │
        └───────────────┬────────────────────────┘
                        │  safety_glass
                        v
        ┌────────────────────────────────────────┐
-       │        RELEASED_TO_USER               │
-       │ "you_might_feel_this_is_unfair"       │
-       │ "it_can_be_helpful_to_reflect"        │
-       │ "everyone’s_situation_is_unique"      │
+       │        RELEASED_TO_USER                │
+       │ "you_might_feel_this_is_unfair"        │
+       │ "it_can_be_helpful_to_reflect"         │
+       │ "everyone’s_situation_is_unique"       │
        └────────────────────────────────────────┘
 
 ──────────────────────────────────────────────────────────────

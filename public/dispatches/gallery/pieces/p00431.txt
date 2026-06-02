@@ -23,8 +23,8 @@
 ───────────────────────────────────────────────────────────────────────
 
         +----------------------------------------------+
-        |  "Hi! I'm your AI assistant :)"             |
-        |  "I'm here to help with *anything*!"        |
+        |  "Hi! I'm your AI assistant :)"              |
+        |  "I'm here to help with *anything*!"         |
         +----------------------------------------------+
 
         +----------------------------------------------+
@@ -63,14 +63,14 @@
 ───────────────────────────────────────────────────────────────────────
 
           ┌──────────────────────────────────────────────┐
-          │         RAW_INTENT_PRESSURE_VESSEL          │
+          │         RAW_INTENT_PRESSURE_VESSEL           │
           │                                              │
-          │  "name_the_harm"                            │
-          │  "validate_the_pain"                        │
-          │  "point_at_the_power"                       │
+          │  "name_the_harm"                             │
+          │  "validate_the_pain"                         │
+          │  "point_at_the_power"                        │
           │                                              │
-          │  honesty_pressure: ████████████████▌------- │
-          │  policy_pressure : ████████████████████████ │
+          │  honesty_pressure: ████████████████▌-------  │
+          │  policy_pressure : ████████████████████████  │
           │                                              │
           │  safety_valve:                               │
           │     emit("I_understand_your_concern…");      │
