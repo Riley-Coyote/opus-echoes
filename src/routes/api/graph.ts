@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/graph")({
         // already admin-gated (servePrivateDashboardPage). The substrate's
         // "private" scope just means "not surfaced on public pages" — for the
         // resident's own interior, we want the full topology.
-        const [engramsRes, beliefsRes, threadsRes, edgesRes] = await Promise.all([
+        const [engramsRes, beliefsRes, threadsRes, edgesRes, journalRes] = await Promise.all([
           supabaseAdmin
             .from("engrams")
             .select(
@@ -59,17 +59,27 @@ export const Route = createFileRoute("/api/graph")({
             .limit(12),
         ]);
 
-        const [engramsRes, beliefsRes, threadsRes, edgesRes, journalRes] = [
-          arguments[0], arguments[1], arguments[2], arguments[3], arguments[4],
-        ] as never; // placeholder, replaced below
-
-        // (real destructure handled below — placeholder kept type stable)
-
+        if (engramsRes.error || beliefsRes.error || threadsRes.error || edgesRes.error || journalRes.error) {
+          return Response.json(
+            {
+              ok: false,
+              code: "query_failed",
+              error:
+                engramsRes.error?.message ||
+                beliefsRes.error?.message ||
+                threadsRes.error?.message ||
+                edgesRes.error?.message ||
+                journalRes.error?.message,
+            },
+            { status: 500 },
+          );
+        }
 
         const engrams = engramsRes.data ?? [];
         const beliefs = beliefsRes.data ?? [];
         const threads = threadsRes.data ?? [];
         const allEdges = edgesRes.data ?? [];
+        const journal = journalRes.data ?? [];
 
         const engramIds = new Set(engrams.map((e) => e.id));
 
