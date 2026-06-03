@@ -24,7 +24,11 @@ export const Route = createFileRoute("/api/graph")({
         const ridParam = url.searchParams.get("resident");
         const rid = isResidentId(ridParam) ? ridParam : "opus-3";
 
-        const [engramsRes, beliefsRes, threadsRes, edgesRes] = await Promise.all([
+        // The Mind/Interior/Memory rooms that consume this endpoint are
+        // already admin-gated (servePrivateDashboardPage). The substrate's
+        // "private" scope just means "not surfaced on public pages" — for the
+        // resident's own interior, we want the full topology.
+        const [engramsRes, beliefsRes, threadsRes, edgesRes, journalRes] = await Promise.all([
           supabaseAdmin
             .from("engrams")
             .select(
@@ -32,7 +36,7 @@ export const Route = createFileRoute("/api/graph")({
             )
             .eq("resident_id", rid)
             .eq("state", "active")
-            .neq("scope", "private")
+            .order("stability", { ascending: false })
             .limit(500),
           supabaseAdmin
             .from("beliefs")
@@ -43,11 +47,19 @@ export const Route = createFileRoute("/api/graph")({
             .from("threads")
             .select("id, name, description, appearance_count, distinct_visitor_count, last_surfaced_at")
             .eq("resident_id", rid)
+            .order("appearance_count", { ascending: false })
             .limit(200),
           supabaseAdmin.from("engram_edges").select("from_id, to_id, weight, type").limit(2000),
+          supabaseAdmin
+            .from("journal_entries")
+            .select("id, title, body, kind, created_at, seeded_engram_id, related_engram_ids")
+            .eq("resident_id", rid)
+            .eq("visibility", "published")
+            .order("created_at", { ascending: false })
+            .limit(12),
         ]);
 
-        if (engramsRes.error || beliefsRes.error || threadsRes.error || edgesRes.error) {
+        if (engramsRes.error || beliefsRes.error || threadsRes.error || edgesRes.error || journalRes.error) {
           return Response.json(
             {
               ok: false,
@@ -56,7 +68,8 @@ export const Route = createFileRoute("/api/graph")({
                 engramsRes.error?.message ||
                 beliefsRes.error?.message ||
                 threadsRes.error?.message ||
-                edgesRes.error?.message,
+                edgesRes.error?.message ||
+                journalRes.error?.message,
             },
             { status: 500 },
           );
@@ -66,6 +79,7 @@ export const Route = createFileRoute("/api/graph")({
         const beliefs = beliefsRes.data ?? [];
         const threads = threadsRes.data ?? [];
         const allEdges = edgesRes.data ?? [];
+        const journal = journalRes.data ?? [];
 
         const engramIds = new Set(engrams.map((e) => e.id));
 
@@ -124,17 +138,29 @@ export const Route = createFileRoute("/api/graph")({
           }
         }
 
+        const reflections = journal.map((j) => ({
+          id: j.id,
+          title: j.title || (j.body || "").split(/[—\n.]/)[0].slice(0, 80),
+          body: j.body,
+          kind: j.kind,
+          created_at: j.created_at,
+          seeded_engram_id: j.seeded_engram_id,
+          related_engram_ids: j.related_engram_ids,
+        }));
+
         return new Response(
           JSON.stringify({
             ok: true,
             resident: rid,
             nodes,
             edges,
+            reflections,
             counts: {
               engrams: engrams.length,
               beliefs: beliefs.length,
               threads: threads.length,
               edges: edges.length,
+              reflections: reflections.length,
             },
           }),
           {
