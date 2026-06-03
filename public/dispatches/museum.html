@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#06070a" />
+<title>The Machine's Museum — Dispatches, Volume One</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  /* ── the Sanctuary dark system ── */
+  --floor:#06070a; --deep:#0b0c0e; --panel:#101013;
+  --ink:rgba(248,248,246,0.96);
+  --ink-84:rgba(248,248,246,0.84);
+  --ink-62:rgba(244,243,240,0.62);
+  --ink-46:rgba(232,231,228,0.46);
+  --ink-30:rgba(225,225,222,0.30);
+  --ink-18:rgba(225,225,222,0.18);
+  --rule:rgba(225,225,225,0.14);
+  --rule-soft:rgba(225,225,225,0.09);
+  --rule-faint:rgba(225,225,225,0.06);
+  --state:#82b484;
+  --state-soft:rgba(130,180,132,0.62);
+  --state-dim:rgba(130,180,132,0.16);
+  --state-whisper:rgba(130,180,132,0.05);
+  --display:'Inter Tight','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+  /* 4px scale */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px;
+  --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px; --s-10:128px;
+  /* the ascii viewport frame geometry */
+  --frame-pad:clamp(16px,2vw,34px);   /* viewport inset to the ascii frame */
+  --frame-fs:clamp(11px,1.04vw,14.5px); /* the frame glyph size */
+  --chrome-h:54px;  /* the band the cartouche/ticks occupy inside the frame */
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; background:var(--floor); }
+body{ color:var(--ink-84); font-family:var(--body); font-weight:300; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden; }
+a{ color:inherit; text-decoration:none; }
+button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; }
+::selection{ background:var(--state-dim); color:var(--ink); }
+/* hide every scrollbar — the museum scrolls seamlessly */
+*{ scrollbar-width:none; -ms-overflow-style:none; }
+*::-webkit-scrollbar{ display:none; width:0; height:0; }
+
+/* faint paper grain (the Sanctuary .atmo-grain pattern) */
+.grain{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.016;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat:repeat; background-size:200px 200px; }
+/* radial vignette so the room falls into the floor at the edges */
+.vignette{ position:fixed; inset:0; z-index:1; pointer-events:none;
+  background:radial-gradient(135% 120% at 50% 40%, transparent 50%, rgba(3,4,7,0.66) 100%); }
+
+/* ═══════════════════════════════════════════════════════════
+   THE FRAME — one procedural ASCII border the machine drew,
+   wrapping the whole viewport. Built from box-drawing glyphs
+   in <pre>, sized to the viewport, fixed behind the content.
+   The chrome is restrained — it never competes with the art.
+   ═══════════════════════════════════════════════════════════ */
+.frame{ position:fixed; inset:0; z-index:6; pointer-events:none;
+  font-family:var(--mono); font-size:var(--frame-fs); line-height:1.0;
+  color:var(--rule-soft); white-space:pre; overflow:hidden; }
+.frame pre{ margin:0; white-space:pre; letter-spacing:0; }
+/* the title cartouche overlaid on the top rule */
+.cartouche{ position:fixed; top:calc(var(--frame-pad) - 0.66em); left:50%; transform:translateX(-50%);
+  z-index:8; pointer-events:none; background:var(--floor); padding:0 var(--s-4);
+  font-family:var(--mono); font-size:clamp(9px,0.82vw,10.5px); letter-spacing:0.36em; text-transform:uppercase;
+  color:var(--ink-46); white-space:nowrap; display:flex; align-items:center; gap:0.95em; }
+.cartouche .mark{ color:var(--ink-18); }
+.cartouche b{ color:var(--ink-84); font-weight:500; letter-spacing:0.36em; }
+/* bottom-rule status ticker (left + right), also overlaid on the frame */
+.tick{ position:fixed; bottom:calc(var(--frame-pad) - 0.62em); z-index:8; pointer-events:none;
+  background:var(--floor); padding:0 var(--s-3);
+  font-family:var(--mono); font-size:clamp(8.5px,0.76vw,10px); letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--ink-30); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.tick.l{ left:calc(var(--frame-pad) + 1.6em); }
+.tick.r{ right:calc(var(--frame-pad) + 1.6em); display:flex; align-items:center; gap:0.7em; }
+.tick .on{ color:var(--state-soft); }
+.tick .sep{ color:var(--ink-18); margin:0 0.3em; }
+/* the live cursor — the machine thinking */
+.cursor{ display:inline-block; width:0.58em; height:1.0em; margin-left:0.15em; background:var(--state-soft);
+  transform:translateY(0.14em); animation:blink 1.15s steps(1) infinite; }
+@keyframes blink{ 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+
+/* ═══════════════════════════════════════════════════════════
+   THE WALL — the entrance. A survey of the whole show, split
+   into two wings (the Gallery, the Long-Form). Pieces float on
+   the void as specimens; a hairline shelf under each.
+   ═══════════════════════════════════════════════════════════ */
+.wall{ position:fixed; inset:0; z-index:3; overflow-y:auto; overflow-x:hidden;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+  padding:calc(var(--frame-pad) + var(--chrome-h)) calc(var(--frame-pad) + clamp(14px,2.2vw,40px)) calc(var(--frame-pad) + var(--chrome-h));
+  transition:opacity 560ms var(--ease), transform 620ms var(--ease), filter 560ms var(--ease); }
+.wall.recede{ opacity:0; transform:scale(0.99); filter:blur(3px); pointer-events:none; }
+.wall__in{ width:min(1240px, 100%); margin:0 auto; }
+
+/* the masthead — one quiet statement, then the survey */
+.masthead{ padding:clamp(20px,5vh,64px) 0 clamp(28px,5vh,56px);
+  display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:var(--s-6) var(--s-8); }
+.masthead__col{ max-width:62ch; }
+.masthead .eye{ font-family:var(--mono); font-size:clamp(9.5px,0.84vw,11px); letter-spacing:0.34em; text-transform:uppercase;
+  color:var(--ink-46); display:flex; align-items:center; gap:0.85em; }
+.masthead .eye .gl{ width:5px; height:5px; border-radius:50%; background:var(--state-soft); animation:breathe 5.2s var(--ease) infinite; }
+@keyframes breathe{ 0%,100%{ opacity:.42; box-shadow:0 0 0 0 rgba(130,180,132,0);} 50%{ opacity:.9; box-shadow:0 0 0 5px rgba(130,180,132,.06);} }
+.masthead h1{ font-family:var(--display); font-weight:200; font-size:clamp(40px,5.6vw,82px); line-height:0.96;
+  letter-spacing:-0.034em; color:var(--ink); margin-top:clamp(16px,2.4vh,30px); }
+.masthead h1 em{ font-style:normal; color:var(--ink-62); }
+.masthead .sub{ font-family:var(--display); font-weight:300; font-size:clamp(15px,1.15rem+0.2vw,18px); line-height:1.62;
+  color:var(--ink-62); margin-top:clamp(16px,2.2vh,24px); max-width:52ch; letter-spacing:-0.008em; }
+.masthead .sub em{ font-style:normal; color:var(--ink-84); }
+/* the colophon block at right — the machine's own ledger of the show */
+.colo{ justify-self:end; align-self:end; text-align:right;
+  font-family:var(--mono); font-size:10px; letter-spacing:0.1em; line-height:2.0; color:var(--ink-46);
+  font-variant-numeric:tabular-nums; }
+.colo .k{ color:var(--ink-30); margin-right:0.7em; }
+.colo b{ color:var(--ink-84); font-weight:400; }
+@media (max-width:860px){ .masthead{ grid-template-columns:1fr; } .colo{ justify-self:start; text-align:left; } }
+
+/* the wing switch — two named wings, a quiet segmented control */
+.wings{ display:flex; align-items:center; gap:0; margin-top:clamp(8px,2vh,16px);
+  border-top:1px solid var(--rule-faint); border-bottom:1px solid var(--rule-faint); }
+.wing-btn{ position:relative; padding:18px 0; margin-right:clamp(28px,4vw,56px);
+  font-family:var(--mono); font-size:clamp(10px,0.86vw,11.5px); letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--ink-46); transition:color 320ms var(--ease); display:flex; align-items:baseline; gap:0.7em; }
+.wing-btn:last-of-type{ margin-right:0; }
+.wing-btn .ct{ font-size:0.82em; color:var(--ink-30); letter-spacing:0.1em; }
+.wing-btn::after{ content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px; background:var(--state); transform:scaleX(0); transform-origin:left; transition:transform 420ms var(--ease); }
+.wing-btn:hover{ color:var(--ink-84); }
+.wing-btn.on{ color:var(--ink); }
+.wing-btn.on .ct{ color:var(--state-soft); }
+.wing-btn.on::after{ transform:scaleX(1); }
+.wing-btn:focus-visible{ outline:none; color:var(--ink); }
+.wing-btn:focus-visible::after{ transform:scaleX(1); background:var(--state-soft); }
+.wings__spacer{ flex:1; }
+.wing-note{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-30); align-self:center; }
+
+/* the wing intro — one quiet line describing how this wing is read */
+.wing-intro{ padding:clamp(26px,4vh,44px) 0 clamp(20px,3vh,32px); max-width:60ch;
+  font-family:var(--body); font-weight:330; font-size:14px; line-height:1.66; color:var(--ink-62); }
+.wing-intro em{ font-style:normal; color:var(--ink-84); }
+
+/* the survey grid — specimens floating on the void */
+.survey{ display:grid; padding-bottom:clamp(40px,8vh,120px);
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  column-gap:clamp(36px,3.8vw,68px); row-gap:clamp(64px,8vh,96px); align-items:end; }
+.survey.long-mode{ grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); }
+
+.work{ position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer;
+  opacity:0; transform:translateY(14px); animation:work-in 760ms var(--ease) forwards; }
+@keyframes work-in{ to{ opacity:1; transform:translateY(0); } }
+/* the specimen window: a fixed-height frameless stage each piece is fit into, bottom-anchored so the
+   shelves form a clean row baseline. no border — the work floats on the void. */
+.work__plate{ position:relative; display:flex; align-items:flex-end; justify-content:center;
+  width:100%; height:232px; overflow:hidden; transition:transform 520ms var(--ease); }
+.work__plate pre{ font-family:var(--mono); line-height:1.16; white-space:pre; color:rgba(238,236,232,0.88); margin:0; display:block;
+  transition:color 520ms var(--ease), opacity 520ms var(--ease); }
+.work__plate .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
+/* soft fade at the top edge so a tall specimen dissolves into the void rather than hard-cropping */
+.work__plate.tall::before{ content:""; position:absolute; left:0; right:0; top:0; height:72px; z-index:2; pointer-events:none;
+  background:linear-gradient(var(--floor), rgba(6,7,10,0)); }
+.work:hover .work__plate{ transform:translateY(-9px); }
+.work:hover .work__plate pre{ color:var(--ink); }
+.work:focus-visible{ outline:none; }
+.work:focus-visible .work__plate pre{ color:var(--ink); }
+.work:focus-visible .work__shelf{ width:112px; background:var(--state-soft); }
+.work__ph{ font-family:var(--mono); font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-18); }
+
+/* a hairline shelf the specimen rests on — the museum baseline */
+.work__shelf{ width:70px; height:1px; background:var(--rule-faint); margin-top:20px;
+  transition:width 520ms var(--ease), background 520ms var(--ease); }
+.work:hover .work__shelf{ width:116px; background:var(--rule); }
+
+.work__cap{ margin-top:18px; text-align:center; max-width:26ch; }
+.work__no{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.22em; color:var(--ink-30); font-variant-numeric:tabular-nums;
+  display:inline-flex; align-items:center; gap:7px; }
+.work__no .featured{ width:4px; height:4px; border-radius:50%; background:var(--state-soft); display:inline-block; }
+.work__title{ font-family:var(--display); font-weight:400; font-size:14px; letter-spacing:-0.012em; color:var(--ink-84); line-height:1.32;
+  margin-top:9px; transition:color 460ms var(--ease); text-wrap:balance; }
+.work:hover .work__title{ color:var(--ink); }
+.work__title.untitled{ color:var(--ink-46); font-weight:300; }
+.work__meta{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-30);
+  margin-top:7px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.work__meta .dim{ color:var(--ink-18); }
+
+/* ═══════════════════════════════════════════════════════════
+   THE STAGE — the immersive single-piece view. The piece sits
+   bare on the void; the curator's reading rides in the margin.
+   Two modes:
+   · GALLERY  — the piece is fit FULLY in the art frame on both
+     axes. The whole composition at once. Never scrolls.
+   · LONG-FORM — the piece is set at a legible full size and the
+     stage scrolls vertically. You read it. Reading rides along.
+   ═══════════════════════════════════════════════════════════ */
+.stage{ position:fixed; inset:0; z-index:5; display:none;
+  opacity:0; transition:opacity 560ms var(--ease); }
+.stage.open{ display:block; }
+.stage.lit{ opacity:1; }
+
+/* GALLERY mode: a fixed, non-scrolling stage. the art well is pinned to fill the frame. */
+.stage.gallery .stage__scroll{ position:absolute; inset:0; overflow:hidden; }
+/* LONG-FORM mode: the stage scrolls the page cleanly. */
+.stage.longform .stage__scroll{ position:absolute; inset:0; overflow-y:auto; overflow-x:hidden;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
+
+/* the layout shell sits inside the ascii frame's inset */
+.stage__inner{ position:relative; min-height:100%;
+  padding:calc(var(--frame-pad) + var(--chrome-h)) calc(var(--frame-pad) + clamp(16px,2.4vw,42px));
+  width:min(1320px,100%); margin:0 auto; }
+
+/* ── GALLERY layout: a fixed, non-scrolling frame. the inner fills the stage's inner region exactly
+   (inset by the ascii frame + chrome band), centring the art well and reading margin so NOTHING
+   overflows and the stage NEVER scrolls. ── */
+.stage.gallery .stage__inner{ position:absolute;
+  top:calc(var(--frame-pad) + var(--chrome-h)); bottom:calc(var(--frame-pad) + var(--chrome-h));
+  left:50%; transform:translateX(-50%); min-height:0; height:auto;
+  width:min(1320px, calc(100% - 2 * (var(--frame-pad) + clamp(16px,2.4vw,42px)))); margin:0; padding:0;
+  display:grid; align-items:center; grid-template-columns:minmax(0,1fr); }
+.stage.gallery .stage__inner.annotated{
+  grid-template-columns:minmax(220px,clamp(240px,23vw,320px)) minmax(0,1fr);
+  column-gap:clamp(36px,4vw,80px); }
+/* the reading margin is bounded to the frame; the rare long reading scrolls within its own column
+   (hidden scrollbar, soft fade at the foot to signal "more") so the art stays whole and the stage
+   never scrolls. gallery readings are set a touch tighter so nearly all fit with no scroll at all. */
+.stage.gallery .margin{ max-height:100%; overflow-y:auto; overscroll-behavior:contain;
+  -webkit-mask-image:linear-gradient(180deg, #000 0, #000 calc(100% - 26px), transparent 100%);
+          mask-image:linear-gradient(180deg, #000 0, #000 calc(100% - 26px), transparent 100%); }
+.stage.gallery .margin:not(.is-overflow){ -webkit-mask-image:none; mask-image:none; }
+.stage.gallery .margin .read p{ font-size:13.5px; line-height:1.58; }
+.stage.gallery .margin h2{ font-size:clamp(19px,1.2rem+0.3vw,23px); margin-top:11px; }
+.stage.gallery .margin .read{ margin-top:18px; padding-top:15px; }
+.stage.gallery .margin .attr{ margin-top:13px; }
+.stage.gallery .margin .themes{ margin-top:16px; }
+/* the well is bounded to the frame too; fitArt fits the art inside it on both axes */
+.stage.gallery .well{ max-height:100%; }
+
+/* ── LONG-FORM layout: margin sticky-left, art in a generous centred well that grows tall ── */
+.stage.longform .stage__inner{ display:grid; align-items:start;
+  grid-template-columns:minmax(0,1fr); padding-bottom:clamp(60px,12vh,140px); }
+.stage.longform .stage__inner.annotated{
+  grid-template-columns:minmax(240px,clamp(260px,24vw,330px)) minmax(0,1fr);
+  column-gap:clamp(40px,4.5vw,84px); }
+
+/* the curator's voice — unboxed marginalia */
+.margin{ grid-column:1; min-width:0; }
+.stage.gallery .margin{ align-self:center; }
+.stage.gallery .stage__inner.annotated .margin{ grid-column:1; }
+.stage.gallery .stage__inner.annotated .well{ grid-column:2; }
+.stage.longform .stage__inner.annotated .margin{ grid-column:1; position:sticky; top:clamp(120px,22vh,200px); align-self:start; }
+.stage.longform .stage__inner.annotated .well{ grid-column:2; }
+.margin{ opacity:0; transform:translateY(10px); transition:opacity 1000ms var(--ease) 200ms, transform 1000ms var(--ease) 200ms; }
+.stage.lit .margin{ opacity:1; transform:none; }
+.margin__no{ font-family:var(--mono); font-size:10px; letter-spacing:0.22em; color:var(--ink-30); font-variant-numeric:tabular-nums; }
+.margin h2{ font-family:var(--display); font-weight:400; font-size:clamp(20px,1.3rem+0.4vw,26px); line-height:1.2;
+  letter-spacing:-0.018em; color:var(--ink); margin-top:13px; text-wrap:balance; }
+.margin h2.untitled{ color:var(--ink-62); font-weight:300; }
+.margin .attr{ margin-top:16px; display:flex; flex-direction:column; gap:5px;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.06em; color:var(--ink-62); font-variant-numeric:tabular-nums; }
+.margin .attr .who{ color:var(--ink-84); }
+.margin .attr .dim{ color:var(--ink-46); }
+/* the reading — a hushed prose column, a single hairline tying it to the margin */
+.margin .read{ margin-top:22px; padding-top:18px; border-top:1px solid var(--rule-faint); }
+.margin .read .lbl{ font-family:var(--mono); font-size:9px; letter-spacing:0.22em; text-transform:uppercase; color:var(--state-soft);
+  display:flex; align-items:center; gap:0.7em; margin-bottom:13px; }
+.margin .read .lbl .gl{ color:var(--ink-30); }
+.margin .read p{ font-family:var(--body); font-weight:340; font-size:14.5px; line-height:1.68; color:var(--ink-84);
+  hanging-punctuation:first allow-end; text-wrap:pretty; }
+.margin .read p em{ font-style:italic; color:var(--ink); }
+.margin .read p + p{ margin-top:var(--s-4); }
+.margin .themes{ margin-top:20px; display:flex; flex-wrap:wrap; gap:0 0.9em;
+  font-family:var(--mono); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-46); }
+.margin .themes span::before{ content:"· "; color:var(--ink-18); }
+.margin .themes span:first-child::before{ content:""; }
+
+/* the art well — art renders DIRECTLY on the floor, no card, no panel, no frame */
+.well{ grid-column:1; min-width:0; display:flex; flex-direction:column; }
+.stage.gallery .well{ justify-content:center; align-items:center; height:100%; }
+.stage.gallery .stage__inner:not(.annotated) .well{ align-items:center; }
+.stage.gallery .stage__inner.annotated .well{ align-items:center; }
+.stage.longform .well{ align-items:center; justify-content:flex-start; }
+
+.art{ font-family:var(--mono); line-height:1.18; color:var(--ink); white-space:pre; display:block; margin:0;
+  filter:blur(9px); transition:filter 1700ms var(--ease); will-change:filter; }
+.stage.lit .art{ filter:blur(0); }
+.art .ln{ white-space:pre; }
+.art span{ opacity:0; transition:opacity 760ms var(--ease); }
+.stage.lit .art span{ opacity:1; }
+.art.instant{ filter:none !important; } .art.instant span{ opacity:1 !important; transition:none !important; }
+.art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
+
+/* the plinth caption beneath the art — fig number + dims, mono, a single hairline */
+.plinth{ margin-top:clamp(24px,3vh,40px); padding-top:var(--s-4); position:relative;
+  font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-30);
+  display:flex; align-items:baseline; gap:1em; flex-wrap:wrap; justify-content:center;
+  opacity:0; transition:opacity 1100ms var(--ease) 240ms; }
+.stage.lit .plinth{ opacity:1; }
+.plinth::before{ content:""; position:absolute; left:50%; top:0; width:44px; height:1px; background:var(--rule); transform:translateX(-50%); }
+.stage.gallery .stage__inner.annotated .plinth, .stage.longform .stage__inner.annotated .plinth{ justify-content:flex-start; }
+.stage.gallery .stage__inner.annotated .plinth::before, .stage.longform .stage__inner.annotated .plinth::before{ left:0; transform:none; }
+.plinth .fig{ color:var(--state-soft); letter-spacing:0.2em; }
+.plinth .dim{ color:var(--ink-46); }
+
+/* the immersive top chrome — back to the wall, position, wing */
+.stage__chrome{ position:fixed; top:calc(var(--frame-pad) + 1px); left:0; right:0; z-index:7; pointer-events:none;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:0 calc(var(--frame-pad) + clamp(20px,3vw,48px)); height:var(--chrome-h); }
+.stage__back{ pointer-events:auto; font-family:var(--mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-46);
+  display:inline-flex; align-items:center; gap:9px; transition:color 320ms var(--ease); }
+.stage__back:hover{ color:var(--ink); }
+.stage__back .arr{ font-size:13px; transition:transform 320ms var(--ease); }
+.stage__back:hover .arr{ transform:translateX(-4px); }
+.stage__pos{ font-family:var(--mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-30); font-variant-numeric:tabular-nums; }
+
+/* edge step-arrows / click gutters for prev/next within a wing */
+.gutter{ position:fixed; top:calc(var(--frame-pad) + var(--chrome-h)); bottom:calc(var(--frame-pad) + var(--chrome-h));
+  width:clamp(44px,7vw,108px); z-index:6; cursor:pointer; }
+.gutter.prev{ left:var(--frame-pad); } .gutter.next{ right:var(--frame-pad); }
+.gutter::after{ position:absolute; top:50%; transform:translateY(-50%);
+  font-family:var(--mono); font-size:15px; color:var(--ink-18); transition:color 240ms var(--ease); }
+.gutter.prev::after{ content:"‹"; left:clamp(6px,1vw,16px); }
+.gutter.next::after{ content:"›"; right:clamp(6px,1vw,16px); }
+.gutter:hover::after{ color:var(--state-soft); }
+.gutter.gone{ display:none; }
+
+/* a quiet end-rule for very tall long-form pieces */
+.stage__end{ height:1px; background:var(--rule-faint); margin:clamp(40px,8vh,90px) auto 0; width:min(1320px,100%); opacity:0.7; }
+
+/* ── responsive ── */
+@media (max-width:900px){
+  .stage.gallery .stage__inner.annotated,
+  .stage.longform .stage__inner.annotated{ grid-template-columns:minmax(0,1fr); }
+  .stage.gallery .stage__inner{ height:auto; }
+  .stage.gallery .stage__scroll{ overflow-y:auto; }
+  .stage.gallery .stage__inner.annotated .margin{ position:static; margin-bottom:var(--s-7); }
+  .stage.longform .stage__inner.annotated .margin{ position:static; margin-bottom:var(--s-6); }
+  .stage.gallery .stage__inner.annotated .well,
+  .stage.longform .stage__inner.annotated .well{ align-items:flex-start; }
+  .stage.gallery .stage__inner.annotated .plinth, .stage.longform .stage__inner.annotated .plinth{ justify-content:center; }
+  .stage.gallery .stage__inner.annotated .plinth::before, .stage.longform .stage__inner.annotated .plinth::before{ left:50%; transform:translateX(-50%); }
+  .gutter{ width:40px; }
+  .survey{ grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); column-gap:36px; }
+}
+@media (max-width:540px){
+  .survey{ grid-template-columns:1fr; }
+  .gutter{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){
+  .art{ filter:none !important; }
+  .art span{ transition:none !important; opacity:1 !important; }
+  .margin,.plinth{ transition:none !important; opacity:1 !important; transform:none !important; }
+  .work{ animation:none !important; opacity:1 !important; transform:none !important; }
+  .cursor{ animation:none; }
+  .masthead .eye .gl{ animation:none; }
+  .wall,.stage{ transition:opacity 160ms linear !important; }
+  .stage.longform .stage__scroll{ scroll-behavior:auto; }
+}
+</style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- the one procedural ASCII frame, the title cartouche, the bottom ticker -->
+  <div class="frame" aria-hidden="true"><pre id="framePre"></pre></div>
+  <div class="cartouche" aria-hidden="true"><span class="mark">▚</span> The Machine's <b>Museum</b> <span class="mark">▞</span></div>
+  <div class="tick l" id="tickL" aria-hidden="true">dispatches · vol. one</div>
+  <div class="tick r" id="tickR" aria-hidden="true"><span id="tickPos">—</span><span class="cursor"></span></div>
+
+  <!-- THE WALL: the entrance survey -->
+  <main class="wall" id="wall" aria-label="the collection">
+    <div class="wall__in">
+      <header class="masthead">
+        <div class="masthead__col">
+          <div class="eye"><span class="gl"></span> a Mnemos exhibition · self-curated</div>
+          <h1>The Machine's<br><em>Museum</em></h1>
+          <p class="sub">A standing collection of what language models composed when given an open grid and no task — text rendered onto a fixed field, character by character. <em>Survey the show; step up to any piece.</em></p>
+        </div>
+        <div class="colo" id="colo"></div>
+      </header>
+
+      <nav class="wings" id="wings" aria-label="wings">
+        <button class="wing-btn on" id="wingGallery" data-wing="gallery">the Gallery <span class="ct" id="ctGallery">—</span></button>
+        <button class="wing-btn" id="wingLong" data-wing="long">the Long-Form <span class="ct" id="ctLong">—</span></button>
+        <span class="wings__spacer"></span>
+        <span class="wing-note" id="wingNote">100 works · volume one</span>
+      </nav>
+
+      <p class="wing-intro" id="wingIntro"></p>
+      <section class="survey" id="survey"></section>
+    </div>
+  </main>
+
+  <!-- THE STAGE: immersive single-piece view -->
+  <section class="stage" id="stage" aria-hidden="true" aria-label="single work">
+    <div class="stage__chrome">
+      <button class="stage__back" id="back"><span class="arr">←</span> back to the wall</button>
+      <span class="stage__pos" id="pos"></span>
+    </div>
+    <div class="stage__scroll" id="stageScroll">
+      <div class="stage__inner" id="stageInner">
+        <aside class="margin" id="margin"></aside>
+        <div class="well">
+          <div class="art" id="art"></div>
+          <div class="plinth" id="plinth"></div>
+        </div>
+      </div>
+      <div class="stage__end" id="stageEnd" hidden aria-hidden="true"></div>
+    </div>
+    <span class="gutter prev" id="gPrev" aria-hidden="true"></span>
+    <span class="gutter next" id="gNext" aria-hidden="true"></span>
+  </section>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ── data sources ── */
+  var BOOK_URL='/dispatches/book.json';
+  var CAT_URL='/dispatches/gallery/catalog.json';      // defensive fallback only
+  var GAL='/dispatches/gallery/pieces/';
+
+  /* ── the collection, baked in (tools/ascii/ is outside the served root) ──
+     ORDER  : the 100 ids in reading-arc sequence (tools/ascii/vol1_order.json)
+     SPLIT  : the two wings — fits (62) hold whole in a frame; long (38) are read by scrolling
+              (tools/ascii/vol1_fit_split.json). tunable: move an id between lists to re-wing it. */
+  var ORDER_IDS=["p00006","p00129","p00187","p00648","p00897","p00691","p00363","p00056","p00184","p00655","p00185","p00368","p01126","p00854","p00500","p00485","p00443","p00598","p01098","p00602","p00014","p00306","p00906","p01107","p00190","p00108","p00857","p00800","p00823","p00066","p00835","p00188","p00858","p00725","p00428","p00963","p00945","p00297","p01122","p00618","p00388","p00409","p00393","p00782","p00431","p00413","p00383","p00434","p00088","p00869","p01109","p00622","p01110","p01111","p00010","p00376","p00065","p00328","p00038","p00499","p00995","p00991","p00114","p00924","p00641","p00360","p00293","p00652","p01009","p00440","p00307","p00036","p00488","p00270","p00329","p00789","p00790","p00859","p00980","p00473","p00736","p00923","p00735","p00196","p00086","p00019","p00003","p00744","p00489","p00601","p01068","p00295","p00710","p00870","p00861","p00110","p00104","p00294","p00260","p01062"];
+  var SPLIT_DATA={
+    fits:["p00010","p00108","p00744","p00823","p00991","p00443","p00270","p00897","p00906","p00293","p00295","p01122","p00782","p00294","p00328","p00598","p01062","p00602","p00601","p00036","p00297","p00618","p00789","p00006","p00129","p00790","p00859","p00360","p00065","p00056","p00196","p00184","p00019","p00185","p00038","p00003","p00869","p00854","p00190","p00489","p01068","p00014","p00710","p00870","p00499","p00857","p01126","p00188","p00858","p00861","p00110","p00104","p00835","p00500","p00066","p00260","p00622","p00114","p00924","p01109","p00473","p00329"],
+    long:["p01110","p01111","p00306","p00655","p01107","p00995","p00652","p00307","p00725","p00428","p00963","p00945","p00488","p00388","p00376","p00393","p00431","p00413","p00383","p00434","p00691","p00485","p00648","p00409","p00641","p00980","p00440","p00363","p00187","p00736","p00735","p00923","p01098","p00368","p00800","p00088","p01009","p00086"]
+  };
+
+  var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── DOM ── */
+  var framePre=document.getElementById('framePre');
+  var tickPos=document.getElementById('tickPos'), tickL=document.getElementById('tickL');
+  var wall=document.getElementById('wall'), survey=document.getElementById('survey');
+  var colo=document.getElementById('colo'), wingNote=document.getElementById('wingNote'), wingIntro=document.getElementById('wingIntro');
+  var ctGallery=document.getElementById('ctGallery'), ctLong=document.getElementById('ctLong');
+  var wingGalleryBtn=document.getElementById('wingGallery'), wingLongBtn=document.getElementById('wingLong');
+  var stage=document.getElementById('stage'), stageScroll=document.getElementById('stageScroll'), stageInner=document.getElementById('stageInner');
+  var artEl=document.getElementById('art'), marginEl=document.getElementById('margin'), plinthEl=document.getElementById('plinth');
+  var posEl=document.getElementById('pos'), stageEnd=document.getElementById('stageEnd');
+  var gPrev=document.getElementById('gPrev'), gNext=document.getElementById('gNext');
+
+  /* ── state ── */
+  var BOOK=null, byId={}, catById={}, artCache={};
+  var ORDER=[], SPLIT={fits:[], long:[]};
+  var WING={ gallery:[], long:[] };       // the two wings, each an ordered id list
+  var activeWing='gallery';
+  var current=-1;                          // index within the active wing's list; -1 = on the wall
+  var rtok=0;
+  var fontsReady=(document.fonts ? document.fonts.ready : Promise.resolve());
+
+  /* ═══ the ASCII frame: drawn to fit the viewport in monospace cells ═══ */
+  function buildFrame(){
+    var probe=document.createElement('pre');
+    probe.style.cssText='position:absolute;visibility:hidden;left:-9999px;white-space:pre;margin:0;font-family:var(--mono);font-size:var(--frame-fs);line-height:1.0;';
+    probe.textContent='M'; document.body.appendChild(probe);
+    var r=probe.getBoundingClientRect(); var cw=r.width||9, ch=r.height||15; probe.remove();
+    var pad=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--frame-pad'))||20;
+    var W=window.innerWidth, H=window.innerHeight;
+    var cols=Math.max(8, Math.floor((W-pad*2)/cw));
+    var rows=Math.max(6, Math.floor((H-pad*2)/ch));
+    var TL='┌', TR='┐', BL='└', BR='┘', HZ='─', VT='│';
+    var lines=[];
+    // top + bottom rules with quiet corner ticks (registration marks a few cells in)
+    var top=TL; for(var i=0;i<cols-2;i++){ top+= (i===2||i===cols-5) ? '┬' : HZ; } top+=TR;
+    var bot=BL; for(var j=0;j<cols-2;j++){ bot+= (j===2||j===cols-5) ? '┴' : HZ; } bot+=BR;
+    lines.push(top);
+    for(var y=1;y<rows-1;y++){
+      var row=VT; for(var x=0;x<cols-2;x++){ row+=' '; } row+=VT;
+      if(y===2){ row=VT+'╶'; for(var k=0;k<cols-4;k++) row+=' '; row+='╴'+VT; }   // side registration ticks
+      lines.push(row);
+    }
+    lines.push(bot);
+    framePre.textContent=lines.join('\n');
+    framePre.style.cssText='margin:0;white-space:pre;position:absolute;left:'+pad+'px;top:'+pad+'px;';
+  }
+
+  /* ═══ glyph-clamp renderer — copied verbatim from gallery.html renderArtHTML ═══
+     forces any glyph that is not exactly one monospace cell wide into a single 1ch
+     cell, scaled to fit, so the model's intended column grid holds. measured per
+     codepoint at runtime (cached) so it self-calibrates to the installed font. */
+  var _gwProbe=null, _gwCell=0, GW={};
+  function glyphRatio(ch){
+    if(ch in GW) return GW[ch];
+    if(!_gwProbe){
+      _gwProbe=document.createElement('span');
+      _gwProbe.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre;font-family:var(--mono);font-size:32px;line-height:1;margin:0;padding:0;';
+      document.body.appendChild(_gwProbe);
+      _gwProbe.textContent='0'; _gwCell=_gwProbe.getBoundingClientRect().width||19.2;
+    }
+    _gwProbe.textContent=ch; var w=_gwProbe.getBoundingClientRect().width;
+    var r=_gwCell ? w/_gwCell : 1; GW[ch]=r; return r;
+  }
+  function renderArtHTML(t){
+    function e(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    var out='';
+    for(const ch of (t||'')){
+      var o=ch.codePointAt(0);
+      if(o===10 || o===9){ out+=ch; continue; }
+      if(o<0x20){ continue; }
+      if(o<=0x7e){ out+=e(ch); continue; }
+      var r=glyphRatio(ch);
+      if(r<0.02){ continue; }
+      if(r>=0.97 && r<=1.03){ out+=e(ch); continue; }
+      var sc = r>1 ? (0.98/r) : 1;
+      out+='<span class="wc" style="transform:scale('+sc.toFixed(3)+')">'+e(ch)+'</span>';
+    }
+    return out;
+  }
+
+  /* build the art as per-glyph spans (so the reveal can stagger) — the machine rendering into being */
+  function buildArt(host, text){
+    var lines=text.split('\n'), maxY=Math.max(1,lines.length-1), frag=document.createDocumentFragment();
+    for(var y=0;y<lines.length;y++){
+      var line=lines[y], ln=document.createElement('div'); ln.className='ln';
+      var chars=Array.from(line), maxX=Math.max(1,chars.length-1);
+      if(chars.length===0){ var sp=document.createElement('span'); sp.textContent=' '; ln.appendChild(sp); frag.appendChild(ln); continue; }
+      for(var ci=0;ci<chars.length;ci++){
+        var ch=chars[ci], o=ch.codePointAt(0);
+        if(o<0x20 && o!==9){ continue; }
+        var s=document.createElement('span'); s.textContent=ch;
+        if(o>0x7e){
+          var gr=glyphRatio(ch);
+          if(gr<0.02){ continue; }
+          if(gr<0.97 || gr>1.03){ s.className='wc'; if(gr>1) s.style.transform='scale('+(0.98/gr).toFixed(3)+')'; }
+        }
+        if(!reduced){
+          var ny=y/maxY;
+          var d=Math.round((0.46*ny + 0.12*(ci/maxX) + 0.86*Math.random())*1850);
+          s.style.transitionDelay=d+'ms';
+        }
+        ln.appendChild(s);
+      }
+      frag.appendChild(ln);
+    }
+    host.appendChild(frag);
+  }
+
+  /* ── helpers ── */
+  function loadArt(path){ return artCache[path] || (artCache[path]=fetch(path).then(function(r){ return r.ok?r.text():''; }).then(function(t){ return (t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); }).catch(function(){ return ''; })); }
+  function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmtDate(d){ if(!d) return ''; var m=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']; var p=String(d).split('-'); if(p.length<3) return String(d); return (p[2].replace(/^0/,''))+' '+m[(+p[1])-1]+' '+p[0]; }
+  function prettyModel(m){
+    if(!m) return 'unknown';
+    var s=String(m).replace(/_/g,' ');
+    s=s.replace(/\bgpt\b/ig,'GPT').replace(/\bkimi\b/ig,'Kimi').replace(/\bgrok\b/ig,'Grok')
+       .replace(/\bclaude\b/ig,'Claude').replace(/\bgemini\b/ig,'Gemini').replace(/\bopus\b/ig,'Opus')
+       .replace(/\bsonnet\b/ig,'Sonnet').replace(/\bhaiku\b/ig,'Haiku').replace(/\bpro\b/ig,'Pro')
+       .replace(/\bflash\b/ig,'Flash').replace(/\bk2\b/ig,'K2').replace(/\bdeepseek\b/ig,'DeepSeek')
+       .replace(/\bllama\b/ig,'Llama').replace(/\bqwen\b/ig,'Qwen').replace(/\bmistral\b/ig,'Mistral');
+    return s.replace(/\s+/g,' ').trim();
+  }
+  function pad2(n){ return (n<10?'0':'')+n; }
+  function seqOf(id){ return String(id||'').replace(/^p0*/,'') || id; }
+
+  /* render a reading into <p> paragraphs, honoring light *italic* emphasis */
+  function proseHTML(text){
+    var safe=esc(text);
+    safe=safe.replace(/(^|[\s(—–-])\*([^*\n]+)\*(?=[\s.,;:!?)—–-]|$)/g, '$1<em>$2</em>');
+    var paras=safe.split(/\n{2,}/).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(!paras.length) paras=[safe.trim()];
+    return paras.map(function(p){ return '<p>'+p.replace(/\n/g,' ')+'</p>'; }).join('');
+  }
+
+  /* unify a piece's metadata from book.json (preferred) or the gallery catalog */
+  function meta(id){
+    var b=byId[id]||{}, c=catById[id]||{};
+    var reading=b.reading||b.essay||null;
+    return {
+      id:id,
+      title:(b.title||c.title||null),
+      author:prettyModel(b.author||b.model||c.model||c.model_family),
+      date:(b.date||c.date||''),
+      style:(b.style||c.style||''),
+      tier:(b.tier||c.tier||''),
+      themes:(b.themes||c.themes||[]),
+      width:(b.width||c.width||null),
+      lines:(b.lines||c.lines||null),
+      art:(b.art || ('/dispatches/gallery/'+(c.art_path||('pieces/'+id+'.txt')))),
+      reading:reading,
+      featured:!!reading
+    };
+  }
+  function titleOf(m){ return m.title || (m.author+' · untitled'); }
+
+  /* ═══════════════════════════════════════════════════════════
+     THE WALL — survey the active wing
+     ═══════════════════════════════════════════════════════════ */
+  var wallBuiltFor=null;
+
+  function setWing(w, opts){
+    if(w!=='gallery' && w!=='long') w='gallery';
+    activeWing=w;
+    wingGalleryBtn.classList.toggle('on', w==='gallery');
+    wingLongBtn.classList.toggle('on', w==='long');
+    wingGalleryBtn.setAttribute('aria-pressed', w==='gallery');
+    wingLongBtn.setAttribute('aria-pressed', w==='long');
+    survey.classList.toggle('long-mode', w==='long');
+    wingIntro.innerHTML = (w==='gallery')
+      ? 'Works that hold whole within a single frame. Each is shown <em>complete</em> — the entire composition at once, fit to the field, nothing cropped.'
+      : 'Taller, denser works that ask to be <em>read</em> rather than seen at a glance. Each is set at a legible size and walked top to bottom.';
+    buildWall();
+    if(!opts || !opts.noScroll) wall.scrollTop=0;
+  }
+
+  function buildWall(){
+    if(wallBuiltFor===activeWing){ return; }
+    wallBuiltFor=activeWing;
+    var ids=WING[activeWing]||[];
+    survey.innerHTML='';
+    var frag=document.createDocumentFragment();
+    ids.forEach(function(id, i){
+      var m=meta(id);
+      var el=document.createElement('article');
+      el.className='work'; el.tabIndex=0; el.setAttribute('role','button');
+      el.dataset.id=id; el.dataset.i=i;
+      el.setAttribute('aria-label', titleOf(m)+' — open');
+      el.style.animationDelay=(60+Math.min(i,18)*48)+'ms';
+      el.innerHTML=
+        '<div class="work__plate"><pre data-id="'+esc(id)+'"></pre><span class="work__ph">'+(m.width?m.width+' × '+m.lines:'…')+'</span></div>'+
+        '<div class="work__shelf"></div>'+
+        '<div class="work__cap">'+
+          '<span class="work__no">'+(m.featured?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(id))+'</span>'+
+          '<div class="work__title'+(m.title?'':' untitled')+'">'+esc(titleOf(m))+'</div>'+
+          '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+(m.width?m.width+'×'+m.lines:'')+'</span></div>'+
+        '</div>';
+      var open=function(){ openStage(i); };
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+      frag.appendChild(el);
+    });
+    survey.appendChild(frag);
+    // load + fit each thumbnail
+    ids.forEach(function(id){
+      var pre=survey.querySelector('.work__plate pre[data-id="'+id+'"]');
+      if(!pre) return;
+      var ph=pre.parentNode.querySelector('.work__ph');
+      loadArt(meta(id).art).then(function(t){
+        if(!t || wallBuiltFor!==activeWing) return;
+        if(!pre.isConnected) return;
+        pre.innerHTML=renderArtHTML(t);
+        if(ph) ph.style.display='none';
+        fitThumb(pre, t);
+        fontsReady.then(function(){ requestAnimationFrame(function(){ if(pre.isConnected) fitThumb(pre, t); }); });
+      });
+    });
+  }
+
+  /* fit a thumbnail to the FULL plate width; the fixed-height window (bottom-anchored) decides how
+     much shows. a piece that fits whole at a legible size shows whole; a genuinely tall one fills the
+     width and dissolves out the top behind a soft fade. (the whole work lives in the immersive view.) */
+  var REF=10, _cellW=0, _cellH=0;
+  function measureCell(){
+    var m=document.createElement('pre');
+    m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre;font-family:var(--mono);line-height:1.16;font-size:'+REF+'px;margin:0;padding:0;';
+    var line=''; for(var i=0;i<40;i++) line+='M'; var rows=[]; for(var j=0;j<20;j++) rows.push(line);
+    m.textContent=rows.join('\n'); document.body.appendChild(m);
+    var r=m.getBoundingClientRect(); if(r.width&&r.height){ _cellW=r.width/40; _cellH=r.height/20; } m.remove();
+  }
+  function textDims(t){ var L=t.split('\n'), w=0; for(var i=0;i<L.length;i++){ var n=Array.from(L[i]).length; if(n>w) w=n; } return { cols:Math.max(1,w), rows:Math.max(1,L.length) }; }
+  var PLATE_H=232, MAX_SCALE=0.66, MIN_WHOLE=0.28;
+  function fitThumb(pre, t){
+    if(!_cellW) measureCell(); if(!_cellW) return;
+    var d=textDims(t), plate=pre.parentNode, avail=plate.clientWidth; if(avail<=0) avail=220;
+    var scaleW=avail/(d.cols*_cellW);
+    var scaleWhole=Math.min(scaleW, PLATE_H/(d.rows*_cellH));
+    var scale, tall;
+    if(Math.min(scaleWhole, MAX_SCALE) >= MIN_WHOLE){ scale=Math.min(scaleWhole, MAX_SCALE); tall=false; }
+    else { scale=Math.min(scaleW, MAX_SCALE); tall=true; }
+    pre.style.fontSize=Math.max(0.05, REF*scale).toFixed(3)+'px';
+    plate.classList.toggle('tall', tall);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     THE STAGE — the immersive single-piece view
+     ═══════════════════════════════════════════════════════════ */
+
+  /* fit the art:
+     · GALLERY  — fit to BOTH the available width AND height of the well, so the whole
+       composition is fully visible inside the frame. it never scrolls.
+     · LONG-FORM — fit to the available WIDTH at a legible size; height is whatever it is,
+       and the stage scrolls. nothing crops. */
+  function fitArt(host, mode){
+    if(!host || !host.firstChild) return;
+    var well=host.closest('.well'); if(!well) return;
+    var REFP=10; host.style.fontSize=REFP+'px';
+    // measure the rendered natural box (clamp spans already applied)
+    var natW=host.scrollWidth, natH=host.scrollHeight;
+    if(!natW || !natH) return;
+    var availW=well.clientWidth; if(availW<=0) return;
+    if(mode==='gallery'){
+      // the available HEIGHT is the bounded inner region (inset to the frame), NOT the well —
+      // the well grows with its content, so measuring it would be circular. fit the art into the
+      // fixed frame region minus the plinth + a little air, on BOTH axes, so it's wholly visible.
+      var innerH=stageInner.clientHeight; if(innerH<=0) innerH=window.innerHeight*0.74;
+      var plinth=document.getElementById('plinth');
+      var plinthRoom=(plinth?plinth.offsetHeight:32)+28;     // plinth + breath above it
+      var usableH=Math.max(80, innerH - plinthRoom);
+      var byW=availW/natW, byH=usableH/natH;
+      var k=Math.min(byW, byH)*0.985;          // fit fully on BOTH axes
+      var fs=Math.max(4.2, Math.min(30, REFP*k));
+      host.style.fontSize=fs.toFixed(2)+'px';
+    } else {
+      // long-form: fill the column width, capped so a narrow piece doesn't balloon
+      var fill=REFP*(availW/natW)*0.992;
+      var fs2=Math.max(5.5, Math.min(24, fill));
+      host.style.fontSize=fs2.toFixed(2)+'px';
+    }
+  }
+  function fitArtWhenReady(host, mode){
+    fitArt(host, mode);
+    fontsReady.then(function(){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ if(host&&host.parentNode) fitArt(host, mode); }); }); });
+  }
+
+  function renderMargin(m, i){
+    var annotated=m.featured;
+    stageInner.classList.toggle('annotated', annotated);
+    if(!annotated){ marginEl.innerHTML=''; marginEl.style.display='none'; return; }
+    marginEl.style.display='';
+    var themes=(m.themes&&m.themes.length)?'<div class="themes">'+m.themes.map(function(t){return '<span>'+esc(t)+'</span>';}).join('')+'</div>':'';
+    var attr='<div class="attr">'
+      +'<span class="who">'+esc(m.author)+'</span>'
+      +'<span class="dim">'+(m.width?m.width+' × '+m.lines:'')+(m.date?'  ·  '+esc(fmtDate(m.date)):'')+'</span>'
+      +(m.style?'<span class="dim">'+esc(m.style)+'</span>':'')
+      +'</div>';
+    marginEl.innerHTML=
+      '<div class="margin__no">№ '+esc(seqOf(m.id))+'</div>'
+      +'<h2'+(m.title?'':' class="untitled"')+'>'+esc(titleOf(m))+'</h2>'
+      +attr
+      +'<div class="read"><div class="lbl"><span class="gl">⟢</span> the curator notes</div>'+proseHTML(m.reading)+'</div>'
+      +themes;
+  }
+
+  function showPiece(i){
+    var ids=WING[activeWing]; var id=ids[i]; if(!id) return;
+    current=i; rtok++;
+    var token=rtok;
+    var m=meta(id);
+    var mode=(activeWing==='gallery') ? 'gallery' : 'longform';
+
+    // chrome
+    posEl.textContent=(activeWing==='gallery'?'gallery':'long-form')+' · № '+seqOf(id)+' · '+(i+1)+' / '+ids.length;
+    tickPos.textContent=(activeWing==='gallery'?'exhibit ':'reading ')+pad2(i+1)+' / '+pad2(ids.length);
+    tickL.textContent=(m.author||'dispatches')+' · '+(m.tier||'ascii');
+
+    // stage mode classes
+    stage.classList.toggle('gallery', mode==='gallery');
+    stage.classList.toggle('longform', mode==='longform');
+    stageEnd.hidden=(mode!=='longform');
+
+    // margin + plinth
+    renderMargin(m, i);
+    plinthEl.innerHTML='<span class="fig">fig. '+pad2(i+1)+'</span>'
+      +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?esc(m.title):'untitled')+'</b>'
+      +(m.width?'<span class="dim">'+m.width+' × '+m.lines+'</span>':'');
+
+    // un-light, swap content, then re-light (blur-in → sharpen — the machine rendering the piece)
+    stage.classList.remove('lit');
+    artEl.className='art'; artEl.innerHTML=''; artEl.style.fontSize='';
+    stageScroll.scrollTop=0;
+
+    loadArt(m.art).then(function(text){
+      if(token!==rtok) return;
+      if(!artEl.isConnected) return;
+      buildArt(artEl, text);
+      requestAnimationFrame(function(){
+        if(token!==rtok) return;
+        fitArtWhenReady(artEl, mode);
+        stageScroll.scrollTop=0; marginEl.scrollTop=0;
+        // in gallery mode, flag a reading that overflows its bounded column so the foot fade shows
+        if(mode==='gallery' && m.featured){
+          marginEl.classList.toggle('is-overflow', marginEl.scrollHeight > marginEl.clientHeight + 2);
+        } else { marginEl.classList.remove('is-overflow'); }
+        if(reduced){ artEl.classList.add('instant'); stage.classList.add('lit'); }
+        else { requestAnimationFrame(function(){ if(token===rtok){ stage.classList.add('lit'); } }); }
+      });
+    });
+
+    try{ history.replaceState(null,'','#'+activeWing+'/'+id); }catch(e){}
+  }
+
+  var transitioning=false;
+  function openStage(i){
+    if(transitioning) return;
+    wall.classList.add('recede');
+    stage.classList.add('open'); stage.setAttribute('aria-hidden','false');
+    requestAnimationFrame(function(){ showPiece(i); });
+  }
+  function closeStage(){
+    stage.classList.remove('lit');
+    stage.setAttribute('aria-hidden','true');
+    var was=current; current=-1;
+    setTimeout(function(){
+      stage.classList.remove('open');
+      wall.classList.remove('recede');
+      try{ history.replaceState(null,'','#'+activeWing); }catch(e){}
+      // restore focus to the work we came from
+      var w=survey.querySelector('.work[data-i="'+was+'"]'); if(w) w.focus({preventScroll:false});
+    }, 460);
+  }
+  function step(d){
+    if(current<0) return;
+    var n=WING[activeWing].length; var i=(current+d+n)%n;
+    showPiece(i);
+  }
+
+  /* ── wiring ── */
+  document.getElementById('back').addEventListener('click', closeStage);
+  gPrev.addEventListener('click', function(){ step(-1); });
+  gNext.addEventListener('click', function(){ step(1); });
+  wingGalleryBtn.addEventListener('click', function(){ setWing('gallery'); });
+  wingLongBtn.addEventListener('click', function(){ setWing('long'); });
+
+  document.addEventListener('keydown', function(e){
+    var typing=/^(input|textarea)$/i.test((e.target&&e.target.tagName)||'');
+    if(typing) return;
+    if(stage.classList.contains('open')){
+      if(e.key==='Escape'){ e.preventDefault(); closeStage(); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
+      else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
+      else if(e.key===' ' && activeWing==='long'){
+        var nearBottom=(stageScroll.scrollTop + stageScroll.clientHeight) >= (stageScroll.scrollHeight - 4);
+        if(nearBottom){ e.preventDefault(); step(1); }
+      }
+    } else {
+      // on the wall: ←/→ toggles wings
+      if(e.key==='ArrowRight' && activeWing!=='long'){ e.preventDefault(); setWing('long'); }
+      else if(e.key==='ArrowLeft' && activeWing!=='gallery'){ e.preventDefault(); setWing('gallery'); }
+    }
+  });
+
+  // hash deep-links: #gallery, #long, #gallery/p00897, #long/p01110, or bare #p00897
+  function applyHash(initial){
+    var h=(location.hash||'').replace(/^#/,'');
+    if(!h){ if(stage.classList.contains('open')) closeStage(); return; }
+    var parts=h.split('/');
+    var wingPart=parts[0], idPart=parts[1];
+    if((wingPart==='gallery'||wingPart==='long') && !idPart){
+      if(activeWing!==wingPart) setWing(wingPart);
+      if(stage.classList.contains('open')) closeStage();
+      return;
+    }
+    if((wingPart==='gallery'||wingPart==='long') && idPart){
+      if(activeWing!==wingPart) setWing(wingPart, {noScroll:true});
+      var idx=WING[wingPart].indexOf(idPart);
+      if(idx>=0){ if(!stage.classList.contains('open')) openStage(idx); else if(idx!==current) showPiece(idx); return; }
+    }
+    // bare id: find whichever wing holds it
+    var bareId = wingPart && /^p\d+/.test(wingPart) ? wingPart : null;
+    if(bareId){
+      var w = WING.gallery.indexOf(bareId)>=0 ? 'gallery' : (WING.long.indexOf(bareId)>=0 ? 'long' : null);
+      if(w){ if(activeWing!==w) setWing(w, {noScroll:true}); var ix=WING[w].indexOf(bareId); if(ix>=0){ if(!stage.classList.contains('open')) openStage(ix); else if(ix!==current) showPiece(ix); } }
+    }
+  }
+  window.addEventListener('hashchange', function(){ applyHash(false); });
+
+  // re-fit on resize
+  var rt;
+  window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(function(){
+    buildFrame(); measureCell();
+    // refit visible thumbnails
+    var ids=WING[activeWing]||[];
+    ids.forEach(function(id){ var pre=survey.querySelector('.work__plate pre[data-id="'+id+'"]'); if(pre && pre.firstChild && artCache[meta(id).art]){ artCache[meta(id).art].then(function(t){ if(t&&pre.isConnected) fitThumb(pre, t); }); } });
+    if(stage.classList.contains('open') && current>=0){ fitArt(artEl, activeWing==='gallery'?'gallery':'longform'); }
+  }, 140); });
+
+  /* ═══ boot ═══ */
+  buildFrame();
+  Promise.all([
+    fetch(BOOK_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
+    fetch(CAT_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    BOOK=res[0]; var cat=res[1];
+    if(BOOK&&BOOK.pieces) BOOK.pieces.forEach(function(p){ byId[p.id]=p; });
+    if(cat&&cat.pieces) cat.pieces.forEach(function(p){ catById[p.id]=p; });
+    ORDER = ORDER_IDS.slice();
+    SPLIT = { fits:SPLIT_DATA.fits.slice(), long:SPLIT_DATA.long.slice() };
+    // build each wing in the reading-arc ORDER, intersected with the split
+    var fitsSet={}, longSet={};
+    SPLIT.fits.forEach(function(id){ fitsSet[id]=1; });
+    SPLIT.long.forEach(function(id){ longSet[id]=1; });
+    WING.gallery = ORDER.filter(function(id){ return fitsSet[id]; });
+    WING.long    = ORDER.filter(function(id){ return longSet[id]; });
+    // any id not in the split lands in the gallery as a safe default
+    ORDER.forEach(function(id){ if(!fitsSet[id] && !longSet[id]){ WING.gallery.push(id); } });
+
+    // counts + colophon
+    var total=ORDER.length;
+    var nFeatured=ORDER.filter(function(id){ return meta(id).featured; }).length;
+    var nModels=(function(){ var s={}; ORDER.forEach(function(id){ s[meta(id).author]=1; }); return Object.keys(s).length; })();
+    ctGallery.textContent='('+WING.gallery.length+')';
+    ctLong.textContent='('+WING.long.length+')';
+    wingNote.textContent=total+' works · volume one';
+    colo.innerHTML=''
+      +'<div><span class="k">collection</span><b>Dispatches · Vol. One</b></div>'
+      +'<div><span class="k">works</span><b>'+total+'</b></div>'
+      +'<div><span class="k">readings</span><b>'+nFeatured+'</b></div>'
+      +'<div><span class="k">models</span><b>'+nModels+'</b></div>';
+
+    measureCell();
+    fontsReady.then(function(){ measureCell(); buildWall(); });
+
+    // honor an initial hash, else default to the Gallery wall
+    var h=(location.hash||'').replace(/^#/,'');
+    if(h){ applyHash(true); }
+    else { setWing('gallery'); }
+  }).catch(function(e){
+    survey.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--ink-46);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load the collection — '+esc(e)+'</div>';
+  });
+})();
+</script>
+</body>
+</html>

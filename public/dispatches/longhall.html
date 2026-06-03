@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#06070a" />
+<title>The Long Hall — Dispatches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  /* the sanctuary palette — dark only */
+  --floor:#06070a; --floor-2:#0b0c0e;
+  --ink:rgba(248,248,246,0.96);
+  --r1:rgba(248,248,246,0.84); --r2:rgba(248,248,246,0.62); --r3:rgba(248,248,246,0.46); --r4:rgba(248,248,246,0.30);
+  --rule:rgba(225,225,225,0.12); --rule-soft:rgba(225,225,225,0.07); --rule-strong:rgba(225,225,225,0.14);
+  --state:#82b484; --state-soft:rgba(130,180,132,0.62); --state-dim:rgba(130,180,132,0.16);
+  --display:'Inter Tight','Inter',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --body:'Inter',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+
+  /* the hall: a wide centered column. art sits on the optical centre; the curator's voice in the left margin.
+     the hall is held narrower than the viewport so the page keeps a generous dark margin on either side. */
+  --hall:min(1200px, 90vw);
+  --margin-w:284px;          /* the marginalia column on wide viewports */
+  --gutter:66px;             /* breath between margin and art */
+  --art-col:740px;           /* the centred band the art is fit into — wide enough to command the floor */
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ background:var(--floor); scrollbar-width:none; -ms-overflow-style:none; }
+html::-webkit-scrollbar{ display:none; }
+body{ background:var(--floor); color:var(--r1); font-family:var(--body); font-weight:300;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  scrollbar-width:none; -ms-overflow-style:none; overflow-x:hidden; }
+body::-webkit-scrollbar{ display:none; }
+::selection{ background:var(--state-dim); color:var(--ink); }
+
+/* a near-black floor that deepens at the very top and bottom — the corridor recedes into dark */
+body::before{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(140% 70% at 50% -8%, rgba(11,12,14,0.9), transparent 60%),
+    linear-gradient(180deg, #07080b 0%, #06070a 14%, #06070a 86%, #050609 100%); }
+/* faintest grain so the void isn't a flat plane */
+body::after{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.018; mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* ── faint fixed chrome — restraint is the whole point ── */
+.progress{ position:fixed; top:0; left:0; height:1px; width:0%; z-index:40;
+  background:linear-gradient(90deg, var(--state-soft), var(--state)); opacity:0.55;
+  transition:width 120ms linear; pointer-events:none; }
+.counter{ position:fixed; z-index:40; bottom:28px; right:28px; font-family:var(--mono);
+  font-size:10.5px; letter-spacing:0.18em; color:var(--r4); font-variant-numeric:tabular-nums;
+  pointer-events:none; user-select:none; transition:color 600ms var(--ease); }
+.counter b{ color:var(--r2); font-weight:400; }
+.counter .of{ color:var(--rule-strong); margin:0 5px; }
+
+/* ── the masthead — one quiet line, then nothing but the walk ── */
+.head{ position:relative; z-index:1; width:var(--hall); margin:0 auto; padding:clamp(72px,11vh,128px) 0 clamp(60px,9vh,104px); }
+.head .ey{ font-family:var(--mono); font-size:11px; letter-spacing:0.32em; text-transform:uppercase; color:var(--r4);
+  display:flex; align-items:center; gap:11px; }
+.head .ey .dot{ width:6px; height:6px; border-radius:50%; background:var(--state); box-shadow:0 0 0 0 rgba(130,180,132,0);
+  animation:breathe 5.2s var(--ease) infinite; }
+.head h1{ font-family:var(--display); font-weight:200; font-size:clamp(40px,6vw,76px); letter-spacing:-0.028em;
+  line-height:0.98; color:var(--ink); margin-top:clamp(20px,3vh,34px); }
+.head .sub{ font-family:var(--body); font-weight:300; font-size:clamp(15px,1.05rem+0.2vw,17px); line-height:1.65;
+  color:var(--r3); margin-top:22px; max-width:54ch; }
+.head .sub em{ font-style:italic; color:var(--r1); }
+@keyframes breathe{ 0%,100%{ opacity:0.42; box-shadow:0 0 0 0 rgba(130,180,132,0); } 50%{ opacity:0.9; box-shadow:0 0 0 5px rgba(130,180,132,0.06); } }
+
+/* ── a station: a screen-height room holding one piece. ink on the void — no card, no border. ──
+   the piece is centred on the open floor; the curator's voice hangs in the left margin and RIDES
+   ALONGSIDE it (sticky) so for a tall piece the spec + reading stay beside whatever you're looking at.
+   3 columns: [margin][centred art][balancing space] — the art sits on the optical centre of the page. */
+.hall{ position:relative; z-index:1; }
+.station{ position:relative; width:var(--hall); margin:0 auto; min-height:100vh;
+  display:grid;
+  grid-template-columns:[edge] var(--margin-w) [art-start] minmax(0, var(--art-col)) [art-end] 1fr [end];
+  column-gap:0; align-items:start; padding:clamp(56px,11vh,120px) 0; }
+/* a station with a reading column gets a touch more breath above/below — these are the dwell points */
+.station.has-read{ padding:clamp(72px,15vh,160px) 0; }
+
+/* the curator's voice — unboxed, in the wide left margin. sticky: it pins a third down the viewport
+   and travels beside the art as a tall station scrolls past, then releases at the station's foot. */
+.aside{ grid-column:edge / art-start; padding-right:var(--gutter);
+  position:sticky; top:clamp(120px, 24vh, 220px); align-self:start; max-width:33ch;
+  opacity:0; transform:translateY(8px);
+  transition:opacity 1100ms var(--ease), transform 1100ms var(--ease); }
+.station.lit .aside{ opacity:1; transform:none; }
+.aside .idx{ font-family:var(--mono); font-size:10px; letter-spacing:0.22em; color:var(--r4); font-variant-numeric:tabular-nums; }
+.aside h2{ font-family:var(--display); font-weight:400; font-size:clamp(18px,1.2rem+0.3vw,22px); line-height:1.22;
+  letter-spacing:-0.018em; color:var(--ink); margin-top:14px; text-wrap:balance; }
+.aside .untitled{ color:var(--r2); font-weight:300; font-style:normal; }
+.aside .spec{ display:flex; flex-direction:column; gap:5px; margin-top:16px;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.06em; color:var(--r3); font-variant-numeric:tabular-nums; }
+.aside .spec .who{ color:var(--r2); letter-spacing:0.04em; }
+.aside .spec .dim{ color:var(--r4); }
+.aside .spec .thm{ color:var(--r4); letter-spacing:0.12em; text-transform:uppercase; font-size:9.5px; }
+/* the reading: a hushed prose column, unboxed, a single hairline tying it to the margin */
+.aside .read{ margin-top:22px; padding-top:18px; border-top:1px solid var(--rule-soft); }
+.aside .read .lbl{ font-family:var(--mono); font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--r4); display:block; margin-bottom:11px; }
+.aside .read p{ font-family:var(--body); font-weight:330; font-size:14px; line-height:1.72; color:var(--r1); letter-spacing:0.002em; }
+.aside .read p em{ font-style:italic; color:var(--ink); }
+
+/* the art well — the centred art column; the piece is fit to this width and left to be as tall as it
+   is. nothing crops, nothing scrolls inside. the art is centred within the column. */
+.well{ grid-column:art-start / art-end; min-width:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-start; }
+.art{ font-family:var(--mono); line-height:1.2; color:var(--ink); white-space:pre; margin:0;
+  filter:blur(9px); transition:filter 1700ms var(--ease); will-change:filter; max-width:100%; }
+.station.lit .art{ filter:blur(0); }
+.art .ln{ white-space:pre; }
+.art span{ opacity:0; transition:opacity 820ms var(--ease); }
+.station.lit .art span{ opacity:1; }
+.art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
+/* the footing under each piece — a hairline of presence, the figure number echoed below the art */
+.foot{ margin-top:clamp(26px,3vh,40px); display:flex; align-items:center; gap:14px;
+  font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--r4);
+  opacity:0; transition:opacity 1100ms var(--ease) 220ms; }
+.station.lit .foot{ opacity:1; }
+.foot .ln-rule{ width:34px; height:1px; background:var(--rule); }
+.foot .fno{ color:var(--state-soft); letter-spacing:0.2em; font-variant-numeric:tabular-nums; }
+
+/* the close of the hall — the corridor ends in the dark it began in */
+.tail{ position:relative; z-index:1; width:var(--hall); margin:0 auto; min-height:64vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding:clamp(64px,12vh,140px) 0 clamp(96px,18vh,200px); gap:20px; }
+.tail .rule{ width:1px; height:clamp(48px,8vh,88px); background:linear-gradient(180deg, var(--rule-strong), transparent); }
+.tail .ln{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.28em; text-transform:uppercase; color:var(--r4); }
+.tail .n{ font-family:var(--display); font-weight:200; font-size:clamp(26px,3.4vw,40px); letter-spacing:-0.02em; color:var(--r2); }
+
+/* ── narrower viewports: the margin lifts above the art (still unboxed). one left-aligned column,
+   marginalia and art sharing the same edge so the station stays composed, not centred-by-default. ── */
+@media (max-width:900px){
+  :root{ --hall:min(680px, calc(100% - 40px)); }
+  .station{ display:block; min-height:auto; padding:clamp(72px,12vh,120px) 0; }
+  .station.has-read{ padding:clamp(72px,14vh,140px) 0; }
+  .aside{ position:static; max-width:58ch; margin-bottom:clamp(28px,5vh,40px); padding-right:0; }
+  .aside .read p{ max-width:56ch; }
+  .well{ align-items:flex-start; }
+  .counter{ bottom:18px; right:18px; }
+}
+@media (max-width:540px){
+  :root{ --hall:min(100% - 32px, 560px); }
+  .head{ padding:64px 0 48px; }
+  .well{ align-items:flex-start; }
+}
+
+/* reduced motion: no blur-resolve, no fades — the hall is simply there */
+@media (prefers-reduced-motion:reduce){
+  .art{ filter:none !important; }
+  .art span{ opacity:1 !important; transition:none !important; }
+  .aside,.foot{ opacity:1 !important; transform:none !important; transition:none !important; }
+  .head .ey .dot{ animation:none !important; }
+  .progress{ transition:none !important; }
+}
+</style>
+</head>
+<body>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <div class="counter" id="counter" aria-hidden="true"><b>—</b><span class="of">/</span><span id="counterTotal">—</span></div>
+
+  <header class="head">
+    <div class="ey"><span class="dot"></span><span>Dispatches</span></div>
+    <h1>The Long Hall</h1>
+    <p class="sub">A corridor of text composed by language models — held on the open dark, one piece at a time. <em>Walk it by scrolling.</em></p>
+  </header>
+
+  <main class="hall" id="hall"><!-- stations mount here --></main>
+
+  <footer class="tail" id="tail" hidden>
+    <div class="rule"></div>
+    <div class="n">the hall ends here</div>
+    <div class="ln">one continuous thread · mnemos beneath it</div>
+  </footer>
+
+<script>
+(function(){
+  "use strict";
+  var GAL='/dispatches/gallery/pieces/';
+  var BOOK_URL='/dispatches/book.json';
+  // the demo set, in the order the hall walks them
+  var ORDER=['p01110','p00306','p00897','p00648','p00440','p00813','p00942','p00088'];
+
+  var hall=document.getElementById('hall');
+  var prog=document.getElementById('progress');
+  var counterN=document.querySelector('#counter b');
+  var counterTotal=document.getElementById('counterTotal');
+  var tail=document.getElementById('tail');
+  var reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // ── glyph clamp (ported from gallery.html renderArtHTML / book.html buildArt) ──
+  // any glyph that is not exactly one monospace cell wide — alchemical SMP, runic, CJK/kana,
+  // exotic math symbols, emoji — is forced into a single 1ch cell, scaled to fit, so the model's
+  // intended column grid holds. measured at runtime (cached per codepoint), so it self-calibrates
+  // to the installed font. zero-width modifiers are dropped — they corrupt the grid.
+  var _probe=null, _cell=0, GW={};
+  function glyphRatio(ch){
+    if(ch in GW) return GW[ch];
+    if(!_probe){
+      _probe=document.createElement('span');
+      _probe.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre;font-family:var(--mono);font-size:40px;line-height:1;margin:0;padding:0;';
+      document.body.appendChild(_probe);
+      _probe.textContent='0'; _cell=_probe.getBoundingClientRect().width||24;
+    }
+    _probe.textContent=ch; var w=_probe.getBoundingClientRect().width;
+    var r=_cell?w/_cell:1; GW[ch]=r; return r;
+  }
+
+  // buildArt — the book reader's reveal: every glyph in its own <span> with a staggered
+  // transition-delay so the piece resolves out of the blur as a slow shimmer (top-left → out),
+  // rather than a flat fade. wide glyphs get the .wc clamp. this is renderArtHTML's grid logic,
+  // expressed as DOM so the per-character reveal is possible.
+  function buildArt(host, text, spread){
+    spread=(spread||1850);
+    var lines=text.split('\n');
+    var maxY=Math.max(1, lines.length-1);
+    var frag=document.createDocumentFragment();
+    for(var y=0;y<lines.length;y++){
+      var line=lines[y];
+      var ln=document.createElement('div'); ln.className='ln';
+      var chars=Array.from(line);
+      var ny=y/maxY, maxX=Math.max(1, chars.length-1);
+      if(chars.length===0){
+        var sp=document.createElement('span'); sp.textContent=' '; ln.appendChild(sp); frag.appendChild(ln); continue;
+      }
+      for(var ci=0;ci<chars.length;ci++){
+        var ch=chars[ci], o=ch.codePointAt(0);
+        if(o<0x20 && o!==9) continue;                       // drop stray control chars (tab passes)
+        var s=document.createElement('span'); s.textContent=ch;
+        if(o>0x7e){                                         // clamp any non-ascii glyph to one cell
+          var gr=glyphRatio(ch);
+          if(gr<0.02) continue;                             // zero-width modifier: drop
+          if(gr<0.97 || gr>1.03){
+            s.className='wc';
+            if(gr>1) s.style.transform='scale('+(0.98/gr).toFixed(3)+')';
+          }
+        }
+        if(!reduced){
+          var d=Math.round((0.42*ny + 0.12*(ci/maxX) + 0.9*Math.random())*spread);
+          s.style.transitionDelay=d+'ms';
+        }
+        ln.appendChild(s);
+      }
+      frag.appendChild(ln);
+    }
+    host.appendChild(frag);
+  }
+
+  // ── sizing: fit each piece to the WIDTH of its art well, capped at a legible max.
+  // height is whatever it is — a tall piece becomes a tall station. NOTHING crops, nothing scrolls inside. ──
+  var REF=10, MIN_FS=4.5, MAX_FS=22;
+  function dims(t){ var L=t.split('\n'), w=0; for(var i=0;i<L.length;i++){ var n=Array.from(L[i]).length; if(n>w) w=n; } return {cols:w, rows:L.length}; }
+  function fit(art, well){
+    if(!art || !well || !art.firstChild) return;
+    art.style.fontSize=REF+'px';
+    var natW=art.scrollWidth;
+    if(!natW) return;
+    var availW=well.clientWidth;
+    if(availW<=0) return;
+    // fit to width so the piece commands the centred column. cap so a tiny piece doesn't become
+    // grotesquely large, and floor so a giant stays present. nothing is cropped — height follows.
+    var fs=REF*(availW/natW);
+    fs=Math.max(MIN_FS, Math.min(MAX_FS, fs));
+    art.style.fontSize=fs.toFixed(2)+'px';
+  }
+
+  // ── prose: turn a reading string into <p> paragraphs, honoring *italic* spans gently ──
+  function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function proseHTML(text){
+    var safe=esc(text);
+    // light emphasis: *word* → <em>word</em>  (the readings occasionally lean on it)
+    safe=safe.replace(/(^|[\s(—–-])\*([^*\n]+)\*(?=[\s.,;:!?)—–-]|$)/g, '$1<em>$2</em>');
+    var paras=safe.split(/\n{2,}/).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(!paras.length) paras=[safe.trim()];
+    return paras.map(function(p){ return '<p>'+p.replace(/\n/g,' ')+'</p>'; }).join('');
+  }
+
+  // model name prettifier (ported, condensed from gallery.html)
+  function prettyModel(m){
+    if(!m) return 'Unknown';
+    var s=String(m).replace(/[_]/g,' ').replace(/-/g,' ');
+    s=s.replace(/\bgpt\b/ig,'GPT').replace(/\bkimi\b/ig,'Kimi').replace(/\bgrok\b/ig,'Grok')
+       .replace(/\bclaude\b/ig,'Claude').replace(/\bgemini\b/ig,'Gemini').replace(/\bopus\b/ig,'Opus')
+       .replace(/\bsonnet\b/ig,'Sonnet').replace(/\bhaiku\b/ig,'Haiku').replace(/\bpro\b/ig,'Pro')
+       .replace(/\bflash\b/ig,'Flash').replace(/\bk2\b/ig,'K2');
+    return s.replace(/\s+/g,' ').trim();
+  }
+  function pad2(n){ return (n<10?'0':'')+n; }
+
+  // ── load metadata, then build the hall ──
+  var META={};
+  fetch(BOOK_URL).then(function(r){ return r.ok?r.json():{pieces:[]}; }).catch(function(){ return {pieces:[]}; })
+  .then(function(book){
+    (book.pieces||[]).forEach(function(p){ META[p.id]=p; });
+    buildHall();
+  });
+
+  var stations=[];     // {el, art, well, id, text, built}
+  var fontsReady=(document.fonts? document.fonts.ready : Promise.resolve());
+
+  function buildHall(){
+    counterTotal.textContent=ORDER.length;
+    var frag=document.createDocumentFragment();
+    ORDER.forEach(function(id, i){
+      var m=META[id]||{};
+      var hasRead=!!(m.reading || m.essay);
+      var readText=m.reading || m.essay || '';
+
+      var st=document.createElement('section');
+      st.className='station'+(hasRead?' has-read':'');
+      st.dataset.id=id; st.dataset.i=i;
+
+      // marginalia
+      var title=m.title;
+      var titleHTML = title ? esc(title) : '<span class="untitled">Untitled</span>';
+      var who=prettyModel(m.model||m.author);
+      var dim=(m.width||'?')+' × '+(m.lines||'?');
+      var themes=(m.themes||[]).join(' · ');
+
+      var asideHTML=''
+        + '<div class="idx">No. '+pad2(i+1)+'</div>'
+        + '<h2>'+titleHTML+'</h2>'
+        + '<div class="spec">'
+          + '<span class="who">'+esc(who)+'</span>'
+          + '<span class="dim">'+esc(dim)+(m.date?'  ·  '+esc(m.date):'')+'</span>'
+          + (themes?'<span class="thm">'+esc(themes)+'</span>':'')
+        + '</div>'
+        + (hasRead ? '<div class="read"><span class="lbl">on this piece</span>'+proseHTML(readText)+'</div>' : '');
+
+      st.innerHTML=''
+        + '<aside class="aside">'+asideHTML+'</aside>'
+        + '<div class="well">'
+          + '<pre class="art" aria-label="ASCII artwork '+esc(title||id)+'"></pre>'
+          + '<div class="foot"><span class="ln-rule"></span><span class="fno">FIG · '+pad2(i+1)+'</span></div>'
+        + '</div>';
+
+      frag.appendChild(st);
+      stations.push({ el:st, art:st.querySelector('.art'), well:st.querySelector('.well'), id:id, text:null, built:false });
+    });
+    hall.appendChild(frag);
+    tail.hidden=false;
+
+    setupObservers();
+    // eagerly fetch the first two so the top of the hall is never empty
+    ensureArt(0); ensureArt(1);
+    bindScroll();
+  }
+
+  var artCache={};
+  function loadArt(id){
+    if(artCache[id]) return artCache[id];
+    artCache[id]=fetch(GAL+id+'.txt').then(function(r){ return r.ok?r.text():''; })
+      .then(function(t){ return (t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); })
+      .catch(function(){ return ''; });
+    return artCache[id];
+  }
+
+  function ensureArt(i){
+    var s=stations[i]; if(!s || s.built) return;
+    s.built=true;
+    loadArt(s.id).then(function(text){
+      s.text=text;
+      buildArt(s.art, text, 1850);
+      // fit now, and again once fonts have settled (monospace metrics shift the natural width)
+      fit(s.art, s.well);
+      fontsReady.then(function(){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ fit(s.art, s.well); refreshScroll(); }); }); });
+    });
+  }
+
+  // ── two observers: one to MOUNT art a little ahead of arrival, one to LIGHT it on arrival ──
+  function setupObservers(){
+    // mount slightly before the station enters, so the blur-resolve begins as it arrives
+    var mountIO=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          var i=+en.target.dataset.i;
+          ensureArt(i); ensureArt(i+1);   // also warm the next one
+          mountIO.unobserve(en.target);
+        }
+      });
+    }, { rootMargin:'600px 0px' });
+
+    // light (resolve) when the station is meaningfully in view
+    var litIO=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          ensureArt(+en.target.dataset.i);
+          // a frame's grace so the spans exist before .lit flips their transition target
+          requestAnimationFrame(function(){ requestAnimationFrame(function(){ en.target.classList.add('lit'); }); });
+          litIO.unobserve(en.target);
+        }
+      });
+    }, { rootMargin:'0px 0px -22% 0px', threshold:0.01 });
+
+    stations.forEach(function(s){ mountIO.observe(s.el); litIO.observe(s.el); });
+  }
+
+  // ── chrome: progress hairline + which piece is centered ──
+  var ticking=false;
+  function onScroll(){
+    if(ticking) return; ticking=true;
+    requestAnimationFrame(function(){
+      var doc=document.documentElement;
+      var scrolled=doc.scrollTop || document.body.scrollTop;
+      var max=(doc.scrollHeight - doc.clientHeight) || 1;
+      prog.style.width=Math.max(0, Math.min(100, (scrolled/max)*100)).toFixed(2)+'%';
+
+      // current piece = whichever station's center is nearest the viewport center
+      var vc=scrolled + doc.clientHeight/2;
+      var best=0, bestD=Infinity;
+      for(var i=0;i<stations.length;i++){
+        var r=stations[i].el.getBoundingClientRect();
+        var c=scrolled + r.top + r.height/2;
+        var d=Math.abs(c-vc);
+        if(d<bestD){ bestD=d; best=i; }
+      }
+      counterN.textContent=pad2(best+1);
+      ticking=false;
+    });
+  }
+  function bindScroll(){ window.addEventListener('scroll', onScroll, {passive:true}); onScroll(); }
+
+  // re-fit everything on resize (width changes the fit; nothing else)
+  var rs;
+  function refreshScroll(){ onScroll(); }
+  window.addEventListener('resize', function(){
+    clearTimeout(rs);
+    rs=setTimeout(function(){
+      stations.forEach(function(s){ if(s.built) fit(s.art, s.well); });
+      onScroll();
+    }, 140);
+  });
+})();
+</script>
+</body>
+</html>

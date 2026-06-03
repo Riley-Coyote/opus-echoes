@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#06070a" />
+<title>The Exhibition — Dispatches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --floor:#06070a; --deep:#09090b; --panel:#101013; --panel-2:#0b0c0e;
+  --ink:rgba(248,248,246,0.96); --body:rgba(228,226,222,0.84); --soft:rgba(208,206,202,0.62);
+  --quiet:rgba(186,184,180,0.46); --ghost:rgba(160,158,154,0.30);
+  --rule:rgba(225,225,225,0.12); --rule-soft:rgba(225,225,225,0.07); --rule-strong:rgba(225,225,225,0.18);
+  --state:#82b484; --state-soft:rgba(130,180,132,0.62); --state-dim:rgba(130,180,132,0.16); --state-whisper:rgba(130,180,132,0.05);
+  --display:'Inter Tight','Inter',system-ui,sans-serif; --body-font:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px; --s-10:128px;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ background:var(--floor); }
+html,body{ scrollbar-width:none; -ms-overflow-style:none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar{ display:none; }
+body{ background:var(--floor); color:var(--body); font-family:var(--body-font); font-weight:400; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  min-height:100vh; overflow-x:hidden; }
+button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; }
+::selection{ background:var(--state-dim); color:var(--ink); }
+a{ color:inherit; text-decoration:none; }
+
+/* faint vignette + grain so the void has depth */
+body::after{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(130% 120% at 50% 28%, transparent 38%, rgba(3,4,7,0.55) 100%); }
+.grain{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.018; mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* ─────────────────────────────  the standing header  ───────────────────────────── */
+.masthead{ position:fixed; top:0; left:0; right:0; z-index:40; pointer-events:none;
+  padding:28px clamp(24px,4vw,64px) 0;
+  transition:opacity 420ms var(--ease); }
+.masthead.is-hidden{ opacity:0; pointer-events:none; }
+.masthead__row{ display:flex; align-items:baseline; gap:18px; }
+.brand-dot{ width:7px; height:7px; border-radius:50%; background:var(--state); flex:none;
+  align-self:center; animation:breathe 5.2s var(--ease) infinite; }
+@keyframes breathe{ 0%,100%{ opacity:.42; box-shadow:0 0 0 0 rgba(130,180,132,0);} 50%{ opacity:.9; box-shadow:0 0 0 5px rgba(130,180,132,.06);} }
+.brand{ font-family:var(--mono); font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:var(--quiet); }
+.brand b{ color:var(--ink); font-weight:500; }
+.masthead .sep{ color:var(--ghost); }
+.masthead__spacer{ flex:1; }
+.masthead__count{ font-family:var(--mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--quiet); font-variant-numeric:tabular-nums; }
+
+/* ─────────────────────────────  the wall (entrance)  ───────────────────────────── */
+.wall{ position:relative; z-index:2; transition:opacity 620ms var(--ease), transform 620ms var(--ease), filter 620ms var(--ease); }
+.wall.is-recede{ opacity:0; transform:scale(0.985); filter:blur(2px); pointer-events:none; }
+
+.wall__intro{ width:min(1180px, calc(100% - 96px)); margin:0 auto; padding:152px 0 0; }
+.wall__intro > *{ opacity:0; transform:translateY(12px); animation:wall-rise 1000ms var(--ease) forwards; }
+.wall__eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:0.32em; text-transform:uppercase; color:var(--quiet);
+  display:flex; align-items:center; gap:12px; animation-delay:60ms; }
+.wall__eyebrow .glyph{ width:5px; height:5px; border-radius:50%; background:var(--state-soft); animation:breathe 5.2s var(--ease) infinite; }
+.wall__title{ font-family:var(--display); font-weight:200; font-size:clamp(46px, 5.6vw, 84px); letter-spacing:-0.03em; line-height:0.98;
+  color:var(--ink); margin-top:22px; animation-delay:160ms; }
+.wall__sub{ font-family:var(--body-font); font-weight:300; font-size:clamp(16px,1.05rem+0.3vw,19px); line-height:1.7; color:var(--soft);
+  max-width:52ch; margin-top:24px; animation-delay:300ms; }
+.wall__sub em{ font-style:italic; color:var(--body); }
+@keyframes wall-rise{ to{ opacity:1; transform:translateY(0); } }
+.wall__rule{ width:min(1180px, calc(100% - 96px)); margin:64px auto 0; height:1px; background:var(--rule-soft);
+  transform-origin:left center; opacity:0; animation:rule-draw 1100ms var(--ease) 420ms forwards; }
+@keyframes rule-draw{ from{ opacity:0; transform:scaleX(0); } to{ opacity:1; transform:scaleX(1); } }
+
+/* the constellation — pieces float on the void, no cards */
+.constellation{ width:min(1180px, calc(100% - 96px)); margin:0 auto; padding:84px 0 200px;
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(248px, 1fr));
+  column-gap:clamp(44px, 4.4vw, 80px); row-gap:96px; align-items:end; }
+
+.work{ position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer;
+  opacity:0; transform:translateY(14px);
+  animation:work-in 900ms var(--ease) forwards; }
+@keyframes work-in{ to{ opacity:1; transform:translateY(0); } }
+/* the specimen window: a fixed-height frameless stage each piece is fit into, bottom-anchored so the
+   shelves form a clean row baseline. no border — the work floats on the void. */
+.work__plate{ position:relative; display:flex; align-items:flex-end; justify-content:center;
+  width:100%; height:236px; overflow:hidden;
+  transition:transform 520ms var(--ease); }
+.work__plate pre{ font-family:var(--mono); line-height:1.16; white-space:pre; color:rgba(238,236,232,0.90); margin:0; display:block;
+  transition:color 520ms var(--ease), opacity 520ms var(--ease); will-change:transform; }
+.work__plate .wc{ display:inline-block; width:1ch; text-align:center; }
+/* soft fade at the top edge so a tall specimen dissolves into the void rather than hard-cropping */
+.work__plate.tall::before{ content:""; position:absolute; left:0; right:0; top:0; height:64px; z-index:2; pointer-events:none;
+  background:linear-gradient(var(--floor), rgba(6,7,10,0)); }
+.work:hover .work__plate{ transform:translateY(-9px); }
+.work:hover .work__plate pre{ color:var(--ink); }
+.work:focus-visible{ outline:none; }
+.work:focus-visible .work__plate pre{ color:var(--ink); }
+.work:focus-visible .work__shelf{ width:108px; background:var(--state-soft); }
+.work__ph{ font-family:var(--mono); font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ghost); }
+
+/* a hairline shelf the specimen rests on — the museum baseline */
+.work__shelf{ width:72px; height:1px; background:var(--rule-soft); margin-top:20px;
+  transition:width 520ms var(--ease), background 520ms var(--ease); }
+.work:hover .work__shelf{ width:116px; background:var(--rule); }
+
+.work__cap{ margin-top:18px; text-align:center; max-width:26ch; }
+.work__no{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.22em; color:var(--ghost); font-variant-numeric:tabular-nums;
+  display:inline-flex; align-items:center; gap:7px; }
+.work__no .featured{ width:4px; height:4px; border-radius:50%; background:var(--state-soft); display:inline-block; }
+.work__title{ font-family:var(--display); font-weight:400; font-size:14.5px; letter-spacing:-0.012em; color:var(--body); line-height:1.32;
+  margin-top:9px; transition:color 460ms var(--ease); }
+.work:hover .work__title{ color:var(--ink); }
+.work__meta{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--quiet);
+  margin-top:7px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.work__meta .dim{ color:var(--ghost); }
+
+/* ─────────────────────────────  immersive single-piece view  ───────────────────────────── */
+.stage{ position:fixed; inset:0; z-index:30; background:var(--floor);
+  overflow-y:auto; overflow-x:hidden; display:none;
+  scrollbar-width:none; -ms-overflow-style:none;
+  opacity:0; transition:opacity 560ms var(--ease); }
+.stage::-webkit-scrollbar{ display:none; }
+.stage.open{ display:block; }
+.stage.lit{ opacity:1; }
+
+/* the immersive top chrome — quiet, fixed */
+.stage__chrome{ position:fixed; top:0; left:0; right:0; z-index:6; pointer-events:none;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:26px clamp(24px,4vw,64px);
+  background:linear-gradient(180deg, var(--floor) 8%, rgba(6,7,10,0.78) 60%, transparent 100%); }
+.stage__back{ pointer-events:auto; font-family:var(--mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--quiet);
+  display:inline-flex; align-items:center; gap:9px; transition:color 320ms var(--ease); }
+.stage__back:hover{ color:var(--ink); }
+.stage__back .arr{ font-size:13px; transition:transform 320ms var(--ease); }
+.stage__back:hover .arr{ transform:translateX(-4px); }
+.stage__pos{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase; color:var(--ghost); font-variant-numeric:tabular-nums; }
+
+/* the piece sits ink-on-void: no card, no border. marginalia rides beside it.
+   minmax(0,…) on the art track is load-bearing — it lets the column shrink instead of letting the
+   pre's intrinsic width blow the grid out and overlap the reading. */
+.stage__inner{ position:relative; min-height:100vh;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(300px, 440px);
+  gap:clamp(40px, 5vw, 88px); align-items:start;
+  width:min(1320px, calc(100% - 128px)); margin:0 auto; padding:128px 0 140px; }
+.stage__inner.solo{ grid-template-columns:minmax(0,1fr); }
+/* wide panoramic works claim the full wall; the reading drops beneath, centered. */
+.stage__inner.wide{ grid-template-columns:minmax(0,1fr); }
+.stage__inner.wide .margin{ position:static; max-width:62ch; margin:88px auto 0; justify-self:center; width:100%; }
+.stage__inner.wide .stage__art{ overflow-x:auto; scrollbar-width:none; }
+.stage__inner.wide .stage__art::-webkit-scrollbar{ display:none; }
+
+.stage__art{ min-width:0; align-self:start; justify-self:center; }
+.stage__art pre{ font-family:var(--mono); line-height:1.2; white-space:pre; color:var(--ink); margin:0; display:block;
+  filter:blur(7px); opacity:0; transition:filter 1100ms var(--ease), opacity 900ms var(--ease); }
+.stage__art .wc{ display:inline-block; width:1ch; text-align:center; }
+.stage.lit .stage__art pre{ filter:blur(0); opacity:1; }
+.stage__art pre span:not(.wc){ display:inline; }
+
+/* the curator's voice — quiet unboxed marginalia */
+.margin{ position:sticky; top:128px; align-self:start; max-width:460px;
+  opacity:0; transform:translateY(12px); transition:opacity 900ms var(--ease) 320ms, transform 900ms var(--ease) 320ms; }
+.stage.lit .margin{ opacity:1; transform:translateY(0); }
+.margin__label{ font-family:var(--mono); font-size:10px; letter-spacing:0.26em; text-transform:uppercase; color:var(--quiet);
+  display:flex; align-items:center; gap:10px; }
+.margin__label::after{ content:""; flex:1; height:1px; background:var(--rule-soft); }
+.margin__meta{ margin-top:26px; }
+.margin__no{ font-family:var(--mono); font-size:10px; letter-spacing:0.2em; color:var(--ghost); font-variant-numeric:tabular-nums; }
+.margin__title{ font-family:var(--display); font-weight:300; font-size:clamp(24px,1.5rem+0.6vw,30px); letter-spacing:-0.018em; line-height:1.22;
+  color:var(--ink); margin-top:14px; }
+.margin__attr{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--quiet);
+  margin-top:16px; display:flex; flex-wrap:wrap; gap:6px 16px; }
+.margin__attr .dim{ color:var(--ghost); }
+.margin__reading{ font-family:var(--body-font); font-weight:300; font-size:15.5px; line-height:1.72; color:var(--soft);
+  margin-top:30px; padding-top:30px; border-top:1px solid var(--rule-soft); }
+.margin__reading::first-letter{ }
+.margin__reading em{ font-style:italic; color:var(--body); }
+.margin__themes{ margin-top:28px; font-family:var(--mono); font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ghost);
+  display:flex; gap:8px 14px; flex-wrap:wrap; }
+
+/* edge step-arrows for prev/next — whisper-quiet, hint at keyboard */
+.stage__step{ position:fixed; top:50%; transform:translateY(-50%); z-index:6;
+  width:56px; height:120px; display:grid; place-items:center;
+  font-family:var(--mono); font-size:18px; color:var(--ghost);
+  opacity:0; transition:opacity 420ms var(--ease), color 320ms var(--ease); }
+.stage.lit .stage__step{ opacity:1; }
+.stage__step:hover{ color:var(--ink); }
+.stage__step.prev{ left:6px; } .stage__step.next{ right:6px; }
+.stage__step .k{ position:absolute; bottom:30px; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ghost); }
+
+/* a quiet footer keyline inside the stage so very tall pieces clearly end */
+.stage__end{ width:min(1320px, calc(100% - 128px)); margin:0 auto; height:1px; background:var(--rule-soft); opacity:0.6; }
+
+/* ── reduced motion ── */
+@media (prefers-reduced-motion:reduce){
+  .work, .wall__intro > *, .wall__rule{ animation:none; opacity:1; transform:none; }
+  .stage__art pre{ filter:none; transition:opacity 200ms linear; }
+  .wall, .stage, .margin{ transition:opacity 160ms linear; }
+  .brand-dot, .wall__eyebrow .glyph{ animation:none; }
+}
+
+/* ── responsive ── */
+@media (max-width:900px){
+  .wall__intro, .wall__rule{ width:min(100% - 48px, 640px); }
+  .wall__intro{ padding-top:128px; }
+  .constellation{ width:min(100% - 48px, 720px); column-gap:40px; row-gap:72px;
+    grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); }
+  .stage__inner{ grid-template-columns:1fr; gap:56px; width:min(100% - 48px, 760px); padding-top:104px; }
+  .margin{ position:static; top:auto; max-width:none; }
+  .stage__end{ width:min(100% - 48px, 760px); }
+  .stage__step{ display:none; }
+}
+@media (max-width:540px){
+  .masthead{ padding:20px 24px 0; }
+  .masthead__count{ display:none; }
+  .wall__intro{ padding-top:112px; }
+  .constellation{ grid-template-columns:1fr; row-gap:64px; }
+}
+</style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <div class="masthead__row">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <span class="brand"><b>Dispatches</b> <span class="sep">·</span> The Exhibition</span>
+      <span class="masthead__spacer"></span>
+      <span class="masthead__count" id="count">—</span>
+    </div>
+  </header>
+
+  <main class="wall" id="wall">
+    <div class="wall__intro">
+      <div class="wall__eyebrow"><span class="glyph"></span><span>a standing collection · text made by machines</span></div>
+      <h1 class="wall__title" id="collTitle">Dispatches</h1>
+      <p class="wall__sub" id="collSub">Works in ASCII and Unicode, composed by language models reaching for something they could not say in prose. Survey the show below; step up to any piece to read it on the open dark.</p>
+    </div>
+    <div class="wall__rule"></div>
+    <section class="constellation" id="constellation" aria-label="the collection"></section>
+  </main>
+
+  <section class="stage" id="stage" aria-hidden="true" aria-label="single work">
+    <div class="stage__chrome">
+      <button class="stage__back" id="back"><span class="arr">←</span> back to the exhibition</button>
+      <span class="stage__pos" id="pos"></span>
+    </div>
+    <button class="stage__step prev" id="stepPrev" aria-label="previous work">←<span class="k">prev</span></button>
+    <button class="stage__step next" id="stepNext" aria-label="next work">→<span class="k">next</span></button>
+    <div class="stage__inner" id="stageInner">
+      <div class="stage__art" id="stageArt"><pre id="stagePre"></pre></div>
+      <aside class="margin" id="margin"></aside>
+    </div>
+    <div class="stage__end" aria-hidden="true"></div>
+  </section>
+
+<script>
+(function(){
+  "use strict";
+  var BOOK_URL='/dispatches/book.json';
+  var CATALOG_URL='/dispatches/gallery/catalog.json';   // fallback for demo pieces not yet in the book
+  var DEMO=['p01110','p00306','p00897','p00648','p00440','p00813','p00942','p00088'];
+
+  // ── the clamp renderer (copied from gallery.html) ──
+  // forces any glyph that is not exactly one monospace cell wide into a single 1ch cell,
+  // scaled to fit, so the model's intended column grid holds for every script.
+  // measured per-codepoint at runtime (cached) so it self-calibrates to the installed font.
+  var _gwProbe=null, _gwCell=0, GW={};
+  function glyphRatio(ch){
+    if(ch in GW) return GW[ch];
+    if(!_gwProbe){
+      _gwProbe=document.createElement('span');
+      _gwProbe.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre;font-family:var(--mono);font-size:32px;line-height:1;margin:0;padding:0;';
+      document.body.appendChild(_gwProbe);
+      _gwProbe.textContent='0'; _gwCell=_gwProbe.getBoundingClientRect().width||19.2;
+    }
+    _gwProbe.textContent=ch; var w=_gwProbe.getBoundingClientRect().width;
+    var r=_gwCell ? w/_gwCell : 1; GW[ch]=r; return r;
+  }
+  function renderArtHTML(t){
+    function e(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    var out='';
+    for(const ch of (t||'')){
+      var o=ch.codePointAt(0);
+      if(o===10 || o===9){ out+=ch; continue; }          // newline / tab pass through
+      if(o<0x20){ continue; }                            // other control chars: drop
+      if(o<=0x7e){ out+=e(ch); continue; }               // printable ascii is always one cell
+      var r=glyphRatio(ch);
+      if(r<0.02){ continue; }                            // zero-width modifier: drop (corrupts the grid)
+      if(r>=0.97 && r<=1.03){ out+=e(ch); continue; }    // already one cell — leave it
+      var sc = r>1 ? (0.98/r) : 1;                        // shrink wide glyphs to fit one cell
+      out+='<span class="wc" style="transform:scale('+sc.toFixed(3)+')">'+e(ch)+'</span>';
+    }
+    return out;
+  }
+
+  // ── monospace cell measurement (for fitting thumbnails + immersive art to width) ──
+  var REF=10, CELL=null;
+  function measureCell(){
+    var m=document.createElement('pre');
+    m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre;font-family:var(--mono);line-height:1.18;font-size:'+REF+'px;margin:0;padding:0;';
+    var line=''; for(var i=0;i<40;i++) line+='M';
+    var rows=[]; for(var j=0;j<20;j++) rows.push(line);
+    m.textContent=rows.join('\n');
+    document.body.appendChild(m);
+    var r=m.getBoundingClientRect();
+    if(r.width&&r.height) CELL={ charW:r.width/40, lineH:r.height/20 };
+    m.remove();
+  }
+  function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function prettyModel(m){
+    if(!m) return 'Unknown';
+    var s=String(m).replace(/[_]/g,' ').replace(/-/g,' ');
+    s=s.replace(/\bgpt\b/ig,'GPT').replace(/\bkimi\b/ig,'Kimi').replace(/\bgrok\b/ig,'Grok')
+       .replace(/\bclaude\b/ig,'Claude').replace(/\bgemini\b/ig,'Gemini').replace(/\bopus\b/ig,'Opus')
+       .replace(/\bsonnet\b/ig,'Sonnet').replace(/\bhaiku\b/ig,'Haiku').replace(/\bpro\b/ig,'Pro')
+       .replace(/\bflash\b/ig,'Flash').replace(/\bk2\b/ig,'K2');
+    return s.replace(/\s+/g,' ').trim();
+  }
+  function dims(p){ return (p.width||'?')+' × '+(p.lines||'?'); }
+  function untitled(p){ return p.title || prettyModel(p.model)+' · untitled'; }
+  function seqOf(id){ return String(id||'').replace(/^p0*/,'') || id; }
+
+  // ── state ──
+  var PIECES=[], byId={}, ART={}, order=[], current=-1;
+  var coll={ collection:'Dispatches', subtitle:'', note:'' };
+  var wall=document.getElementById('wall');
+  var masthead=document.querySelector('.masthead');
+  var stage=document.getElementById('stage');
+  var stageInner=document.getElementById('stageInner');
+  var stagePre=document.getElementById('stagePre');
+  var stageArt=document.getElementById('stageArt');
+  var margin=document.getElementById('margin');
+
+  function artURL(p){ return p.art || ('/dispatches/gallery/pieces/'+p.id+'.txt'); }
+  function fetchArt(id, p){
+    if(ART[id]!==undefined) return Promise.resolve(ART[id]);
+    return fetch(artURL(p)).then(function(r){ return r.ok?r.text():''; })
+      .then(function(t){ t=(t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); ART[id]=t; return t; })
+      .catch(function(){ ART[id]=''; return ''; });
+  }
+
+  // normalize a catalog.json piece into the book-entry shape (catalog uses model_family; no reading)
+  function fromCatalog(c){
+    return { id:c.id, title:c.title||null, author:prettyModel(c.model), model:c.model, family:c.model_family,
+      date:c.date, style:c.style, tier:c.tier, themes:c.themes||[], width:c.width, lines:c.lines,
+      art:'/dispatches/gallery/'+(c.art_path||('pieces/'+c.id+'.txt')) };
+  }
+
+  // ── load ──
+  // book.json is the source of metadata + the ~30 curator readings; catalog.json backfills any
+  // demo piece not yet promoted into the book so the wall is never short a work.
+  Promise.all([
+    fetch(BOOK_URL).then(function(r){ return r.json(); }),
+    fetch(CATALOG_URL).then(function(r){ return r.ok?r.json():{pieces:[]}; }).catch(function(){ return {pieces:[]}; })
+  ]).then(function(res){
+    var book=res[0], cat=res[1]||{};
+    coll.collection=book.collection||'Dispatches'; coll.subtitle=book.subtitle||''; coll.note=book.note||'';
+    (book.pieces||[]).forEach(function(p){ byId[p.id]=p; });
+    var catById={}; (cat.pieces||[]).forEach(function(c){ catById[c.id]=c; });
+    // build the demo set in the requested order; prefer the book entry (it carries the reading)
+    PIECES=DEMO.map(function(id){
+      if(byId[id]) return byId[id];
+      if(catById[id]){ var p=fromCatalog(catById[id]); byId[id]=p; return p; }
+      return null;
+    }).filter(Boolean);
+    order=PIECES.map(function(p){ return p.id; });
+    document.getElementById('collTitle').textContent=coll.collection;
+    document.getElementById('count').textContent=PIECES.length+' works · volume one';
+    measureCell();
+    (document.fonts?document.fonts.ready:Promise.resolve()).then(function(){ measureCell(); buildWall(); });
+    buildWall();
+    // deep-link support: #p00306 opens that piece
+    var h=(location.hash||'').replace('#','');
+    if(h && byId[h] && order.indexOf(h)>=0){ requestAnimationFrame(function(){ openStage(order.indexOf(h)); }); }
+  }).catch(function(e){
+    document.getElementById('constellation').innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--quiet);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load book.json — '+esc(e)+'</div>';
+  });
+
+  // ── the wall ──
+  function buildWall(){
+    var host=document.getElementById('constellation');
+    if(host.dataset.built==='1'){ // already built once; just (re)fit art now that fonts/cell are ready
+      PIECES.forEach(function(p){ var pre=host.querySelector('.work__plate pre[data-id="'+p.id+'"]'); if(pre && ART[p.id]) fitThumb(pre, p); });
+      return;
+    }
+    host.dataset.built='1';
+    host.innerHTML='';
+    var frag=document.createDocumentFragment();
+    PIECES.forEach(function(p, i){
+      var hasReading=!!(p.reading);
+      var el=document.createElement('article');
+      el.className='work'; el.tabIndex=0; el.setAttribute('role','button');
+      el.setAttribute('aria-label', untitled(p)+' — open');
+      el.style.animationDelay=(120+i*70)+'ms';
+      el.innerHTML=
+        '<div class="work__plate"><pre data-id="'+p.id+'"></pre><span class="work__ph">'+dims(p)+'</span></div>'+
+        '<div class="work__shelf"></div>'+
+        '<div class="work__cap">'+
+          '<span class="work__no">'+(hasReading?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(p.id))+'</span>'+
+          '<div class="work__title">'+esc(untitled(p))+'</div>'+
+          '<div class="work__meta"><span>'+esc(prettyModel(p.model))+'</span><span class="dim">'+esc(dims(p))+'</span></div>'+
+        '</div>';
+      var open=function(){ openStage(i); };
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+      frag.appendChild(el);
+    });
+    host.appendChild(frag);
+    // load + fit each thumbnail
+    PIECES.forEach(function(p){
+      var pre=host.querySelector('.work__plate pre[data-id="'+p.id+'"]');
+      var ph=pre.parentNode.querySelector('.work__ph');
+      fetchArt(p.id, p).then(function(t){ if(!t){ return; } pre.innerHTML=renderArtHTML(t); if(ph) ph.style.display='none'; fitThumb(pre, p); });
+    });
+  }
+
+  // fit a thumbnail to the FULL plate width so every specimen has real presence, then let the
+  // fixed-height window (bottom-anchored) decide how much shows. wide pieces shrink to fit width;
+  // tall pieces fill the width and dissolve out the top behind a soft fade. the wall is a map of
+  // the show — a specimen, not the whole work. (the whole work lives in the immersive view.)
+  var PLATE_H=236, MAX_SCALE=0.62, MIN_WHOLE=0.30;
+  function fitThumb(pre, p){
+    if(!CELL) return;
+    var t=ART[p.id]; var cols, rows;
+    if(t){ var L=t.split('\n'); rows=L.length||1; cols=1; for(var i=0;i<L.length;i++){ if(L[i].length>cols) cols=L[i].length; } }
+    else { cols=Math.max(1,p.width||1); rows=Math.max(1,p.lines||1); }
+    var plate=pre.parentNode;
+    var avail=plate.clientWidth; if(avail<=0) avail=248;
+    var scaleW=avail/(cols*CELL.charW);
+    var scaleWhole=Math.min(scaleW, PLATE_H/(rows*CELL.lineH));   // fits entirely inside the window
+    var scale, tall;
+    // if the WHOLE piece fits at a legible size, show it whole — a complete specimen.
+    // otherwise it's a genuinely tall work: fill the width (legible), bottom-anchor, dissolve the top.
+    if(Math.min(scaleWhole, MAX_SCALE) >= MIN_WHOLE){ scale=Math.min(scaleWhole, MAX_SCALE); tall=false; }
+    else { scale=Math.min(scaleW, MAX_SCALE); tall=true; }
+    pre.style.fontSize=Math.max(0.05, REF*scale).toFixed(3)+'px';
+    plate.classList.toggle('tall', tall);
+  }
+
+  // ── the immersive stage ──
+  // fit the piece to the width it has: tall/narrow works sit beside the reading; wide works claim the
+  // full wall with the reading beneath. nothing ever crops vertically — the page scrolls. a comfortable
+  // reading-size ceiling keeps small pieces from ballooning; ultra-wide works land at a legible floor.
+  var hasReading=false;
+  function fitStageArt(p){
+    if(!CELL) return;
+    var t=ART[p.id]; var cols, rows;
+    if(t){ var L=t.split('\n'); rows=L.length||1; cols=1; for(var i=0;i<L.length;i++){ if(L[i].length>cols) cols=L[i].length; } }
+    else { cols=Math.max(1,p.width||1); rows=Math.max(1,p.lines||1); }
+    var pieceW=cols*CELL.charW;     // natural pixel width at the reference font size
+    var FULL=stageInner.clientWidth; if(FULL<=0) FULL=Math.min(1192, window.innerWidth-128);
+    var FS_MAX=17, FS_FLOOR=11;     // below this, a piece is too wide to read beside the reading → give it the wall
+    // step 1: decide layout. how small would glyphs be to fit the *beside-the-reading* art column?
+    // that column ≈ full − margin(440) − gap. if the piece would have to drop below the floor to fit
+    // there, give it the whole wall instead and stack the reading beneath.
+    var gap=Math.max(40, Math.min(88, FULL*0.05));
+    var besideW=hasReading ? Math.max(120, FULL - 440 - gap) : FULL;
+    var fsBeside=(besideW/pieceW)*REF;
+    var wide = hasReading && (fsBeside < FS_FLOOR);
+    stageInner.classList.toggle('wide', wide);
+    // step 2: fit to the chosen width. re-measure after the layout class flips.
+    var avail = wide ? FULL : (hasReading ? besideW : FULL);
+    var fs=(avail/pieceW)*REF*0.99;
+    fs=Math.min(fs, FS_MAX);
+    if(wide) fs=Math.max(fs, FS_FLOOR);                  // wide works: never below the legible floor (h-scroll if truly enormous)
+    else fs=Math.max(fs, 2.4);
+    stagePre.style.fontSize=fs.toFixed(3)+'px';
+  }
+
+  function renderMargin(p, idx){
+    hasReading=!!(p.reading);
+    stageInner.classList.toggle('solo', !hasReading);
+    if(!hasReading){ stageInner.classList.remove('wide'); margin.innerHTML=''; margin.style.display='none'; return; }
+    margin.style.display='';
+    var themes=(p.themes||[]).map(function(t){ return esc(t); }).join('<span style="color:var(--rule)"> · </span>');
+    margin.innerHTML=
+      '<div class="margin__label">the reading</div>'+
+      '<div class="margin__meta">'+
+        '<div class="margin__no">№ '+esc(seqOf(p.id))+'</div>'+
+        '<h2 class="margin__title">'+esc(untitled(p))+'</h2>'+
+        '<div class="margin__attr"><span>'+esc(prettyModel(p.model))+'</span><span class="dim">'+esc(dims(p))+'</span>'+(p.date?'<span class="dim">'+esc(p.date)+'</span>':'')+'</div>'+
+      '</div>'+
+      '<div class="margin__reading">'+esc(p.reading)+'</div>'+
+      (themes?'<div class="margin__themes">'+themes+'</div>':'');
+  }
+
+  function showStage(idx){
+    var p=PIECES[idx]; if(!p) return;
+    current=idx;
+    document.getElementById('pos').textContent='№ '+seqOf(p.id)+' · '+(idx+1)+' / '+PIECES.length;
+    renderMargin(p, idx);
+    // un-light, swap content, scroll to top, then re-light (blur-in → sharpen)
+    stage.classList.remove('lit');
+    stagePre.innerHTML=''; stagePre.style.fontSize='';
+    fetchArt(p.id, p).then(function(t){
+      if(current!==idx) return;
+      stagePre.innerHTML=renderArtHTML(t);
+      // wait a frame for layout, fit to width, then light
+      requestAnimationFrame(function(){
+        fitStageArt(p);
+        stage.scrollTop=0;
+        requestAnimationFrame(function(){ stage.classList.add('lit'); });
+      });
+    });
+    try{ history.replaceState(null,'','#'+p.id); }catch(e){}
+  }
+
+  var transitioning=false;
+  function openStage(idx){
+    if(transitioning) return;
+    wall.classList.add('is-recede');
+    if(masthead) masthead.classList.add('is-hidden');
+    stage.classList.add('open'); stage.setAttribute('aria-hidden','false');
+    document.documentElement.style.overflow='hidden';
+    // let the wall begin receding, then bring the stage in
+    requestAnimationFrame(function(){ showStage(idx); });
+  }
+  function closeStage(){
+    stage.classList.remove('lit');
+    stage.setAttribute('aria-hidden','true');
+    setTimeout(function(){
+      stage.classList.remove('open');
+      wall.classList.remove('is-recede');
+      if(masthead) masthead.classList.remove('is-hidden');
+      document.documentElement.style.overflow='';
+      try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+    }, 460);
+  }
+  function step(d){
+    if(current<0) return;
+    var n=PIECES.length; var idx=(current+d+n)%n;
+    showStage(idx);
+  }
+
+  document.getElementById('back').addEventListener('click', closeStage);
+  document.getElementById('stepPrev').addEventListener('click', function(){ step(-1); });
+  document.getElementById('stepNext').addEventListener('click', function(){ step(1); });
+
+  document.addEventListener('keydown', function(e){
+    if(!stage.classList.contains('open')) return;
+    if(e.key==='Escape'){ e.preventDefault(); closeStage(); }
+    else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
+    else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
+  });
+
+  // honor the browser's back/forward + pasted #id deep-links once the show is loaded
+  window.addEventListener('hashchange', function(){
+    var h=(location.hash||'').replace('#',''); var idx=order.indexOf(h);
+    if(h && idx>=0){ if(!stage.classList.contains('open')) openStage(idx); else if(idx!==current) showStage(idx); }
+    else if(!h && stage.classList.contains('open')){ closeStage(); }
+  });
+
+  // refit on resize (thumbnails in the wall + the open piece)
+  window.addEventListener('resize', function(){
+    clearTimeout(window._rs); window._rs=setTimeout(function(){
+      measureCell();
+      var host=document.getElementById('constellation');
+      PIECES.forEach(function(p){ var pre=host.querySelector('.work__plate pre[data-id="'+p.id+'"]'); if(pre && ART[p.id]) fitThumb(pre, p); });
+      if(stage.classList.contains('open') && current>=0) fitStageArt(PIECES[current]);
+    }, 140);
+  });
+})();
+</script>
+</body>
+</html>
