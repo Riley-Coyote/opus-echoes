@@ -47,8 +47,16 @@ export const Route = createFileRoute("/api/graph")({
             .from("threads")
             .select("id, name, description, appearance_count, distinct_visitor_count, last_surfaced_at")
             .eq("resident_id", rid)
+            .order("appearance_count", { ascending: false })
             .limit(200),
           supabaseAdmin.from("engram_edges").select("from_id, to_id, weight, type").limit(2000),
+          supabaseAdmin
+            .from("journal_entries")
+            .select("id, title, body, kind, created_at, seeded_engram_id, related_engram_ids")
+            .eq("resident_id", rid)
+            .eq("visibility", "published")
+            .order("created_at", { ascending: false })
+            .limit(12),
         ]);
 
         if (engramsRes.error || beliefsRes.error || threadsRes.error || edgesRes.error) {
