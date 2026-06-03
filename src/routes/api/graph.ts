@@ -59,20 +59,12 @@ export const Route = createFileRoute("/api/graph")({
             .limit(12),
         ]);
 
-        if (engramsRes.error || beliefsRes.error || threadsRes.error || edgesRes.error) {
-          return Response.json(
-            {
-              ok: false,
-              code: "query_failed",
-              error:
-                engramsRes.error?.message ||
-                beliefsRes.error?.message ||
-                threadsRes.error?.message ||
-                edgesRes.error?.message,
-            },
-            { status: 500 },
-          );
-        }
+        const [engramsRes, beliefsRes, threadsRes, edgesRes, journalRes] = [
+          arguments[0], arguments[1], arguments[2], arguments[3], arguments[4],
+        ] as never; // placeholder, replaced below
+
+        // (real destructure handled below — placeholder kept type stable)
+
 
         const engrams = engramsRes.data ?? [];
         const beliefs = beliefsRes.data ?? [];
