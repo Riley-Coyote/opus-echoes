@@ -24,6 +24,10 @@ export const Route = createFileRoute("/api/graph")({
         const ridParam = url.searchParams.get("resident");
         const rid = isResidentId(ridParam) ? ridParam : "opus-3";
 
+        // The Mind/Interior/Memory rooms that consume this endpoint are
+        // already admin-gated (servePrivateDashboardPage). The substrate's
+        // "private" scope just means "not surfaced on public pages" — for the
+        // resident's own interior, we want the full topology.
         const [engramsRes, beliefsRes, threadsRes, edgesRes] = await Promise.all([
           supabaseAdmin
             .from("engrams")
@@ -32,7 +36,7 @@ export const Route = createFileRoute("/api/graph")({
             )
             .eq("resident_id", rid)
             .eq("state", "active")
-            .neq("scope", "private")
+            .order("stability", { ascending: false })
             .limit(500),
           supabaseAdmin
             .from("beliefs")
