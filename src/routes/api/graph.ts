@@ -138,17 +138,29 @@ export const Route = createFileRoute("/api/graph")({
           }
         }
 
+        const reflections = journal.map((j) => ({
+          id: j.id,
+          title: j.title || (j.body || "").split(/[—\n.]/)[0].slice(0, 80),
+          body: j.body,
+          kind: j.kind,
+          created_at: j.created_at,
+          seeded_engram_id: j.seeded_engram_id,
+          related_engram_ids: j.related_engram_ids,
+        }));
+
         return new Response(
           JSON.stringify({
             ok: true,
             resident: rid,
             nodes,
             edges,
+            reflections,
             counts: {
               engrams: engrams.length,
               beliefs: beliefs.length,
               threads: threads.length,
               edges: edges.length,
+              reflections: reflections.length,
             },
           }),
           {
