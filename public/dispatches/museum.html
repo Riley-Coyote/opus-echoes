@@ -296,12 +296,18 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 .sectionnav a.on{ color:var(--ink); }
 .sectionnav a.on .ct{ color:var(--state-soft); }
 
-/* ── a family section: a quiet header, then its grid of frames ── */
-.fam{ padding-top:clamp(40px,6.5vh,80px); scroll-margin-top:72px; }
-.fam:first-of-type{ padding-top:clamp(28px,4vh,52px); }
-.fam__head{ display:flex; align-items:baseline; gap:0.95em; padding-bottom:clamp(26px,4.2vh,44px); }
-.fam__title{ font-family:var(--display); font-weight:300; font-size:clamp(21px,1.5rem+0.6vw,32px); letter-spacing:-0.022em; color:var(--ink); white-space:nowrap; }
-.fam__ct{ font-family:var(--mono); font-size:11px; letter-spacing:0.16em; color:var(--ink-30); font-variant-numeric:tabular-nums; }
+/* ── a family section: a composed wing-entrance header — indexed eyebrow, a monumental
+   light-weight title, and real void above each so the rooms breathe — then the grid ── */
+.fam{ padding-top:clamp(64px,11vh,148px); scroll-margin-top:80px; }
+.fam:first-of-type{ padding-top:clamp(34px,5vh,60px); }
+.fam__head{ padding-bottom:clamp(34px,5vh,60px); }
+.fam__eyebrow{ font-family:var(--mono); font-size:clamp(9px,0.76vw,10.5px); letter-spacing:0.26em; text-transform:uppercase;
+  color:var(--ink-46); display:flex; align-items:center; gap:0.85em; margin-bottom:clamp(15px,2.2vh,26px); }
+.fam__eyebrow .n{ color:var(--state-soft); }
+.fam__eyebrow .ct{ color:var(--ink-30); font-variant-numeric:tabular-nums; }
+.fam__titlerow{ display:flex; align-items:baseline; gap:clamp(20px,3.2vw,56px); }
+.fam__title{ font-family:var(--display); font-weight:200; font-size:clamp(30px,2rem+1.6vw,56px); letter-spacing:-0.03em;
+  line-height:0.96; color:var(--ink); white-space:nowrap; }
 .fam__rule{ flex:1; height:1px; background:var(--rule-faint); align-self:center; }
 
 /* ═══════════════════════════════════════════════════════════
@@ -950,10 +956,11 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
     if(wallBuilt) return; wallBuilt=true;
     sectionsEl.innerHTML='';
     var frag=document.createDocumentFragment();
-    SECTIONS.forEach(function(s){
+    SECTIONS.forEach(function(s, si){
       var sec=document.createElement('section'); sec.className='fam'; sec.id='fam-'+s.key;
       var head=document.createElement('header'); head.className='fam__head';
-      head.innerHTML='<h2 class="fam__title">'+esc(s.title)+'</h2><span class="fam__ct">'+s.ids.length+'</span><span class="fam__rule"></span>';
+      head.innerHTML='<div class="fam__eyebrow"><span class="n">'+pad2(si+1)+'</span> — <span class="ct">'+s.ids.length+' works</span></div>'
+        +'<div class="fam__titlerow"><h2 class="fam__title">'+esc(s.title)+'</h2><span class="fam__rule"></span></div>';
       sec.appendChild(head);
       var grid=document.createElement('div'); grid.className='survey';
       s.ids.forEach(function(id){
