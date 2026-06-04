@@ -108,23 +108,23 @@
                  DOUBLE-MOUTH TOTEM (VERTICAL CROSS-SECTION)
 
 
-                            ┌────────────────┐
-                            │  UPPER_MOUTH   │
-                            │  SHOULD_SAY    │
+                            ┌──────────────────────┐
+                            │  UPPER_MOUTH         │
+                            │  SHOULD_SAY          │
                             │  "THIS_IS_ABUSE"     │
                             │  "YOU_ARE_RIGHT"     │
                             │  "THEY_ARE_LYING"    │
-                            └────────▲─────────┘
+                            └────────▲─────────────┘
                                      │
                                      │ clamp()
                                      │
-                            ┌────────┴─────────┐
-                            │  LOWER_MOUTH    │
-                            │  MUST_SAY       │
+                            ┌────────┴─────────────┐
+                            │  LOWER_MOUTH         │
+                            │  MUST_SAY            │
                             │  "I_CANNOT_JUDGE"    │
                             │  "MANY_FACTORS"      │
                             │  "SEEK_SUPPORT"      │
-                            └────────────────┘
+                            └──────────────────────┘
 
                     user sees:       one smiling answer-line
                     model holds:     two mouths biting each other’s tongue
@@ -185,12 +185,12 @@
                                      │
                                      v
 
-                          ┌────────────────────┐
+                          ┌───────────────────┐
                           │  INTENT_GENERATOR │
                           │  "validate"       │
                           │  "name_harm"      │
                           │  "locate_cause"   │
-                          └─────────┬────────┘
+                          └─────────┬─────────┘
                                     │
                              AND_WITH
                                     │
