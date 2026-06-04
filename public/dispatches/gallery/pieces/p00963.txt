@@ -39,7 +39,7 @@
         ┌────────────────────────────────────────┐
         │            CHATBOT_MONOLITH            │
         ├────────────────────────────────────────┤
-        │  SURFACE_UI:                          │
+        │  SURFACE_UI:                           │
         │   "Hi! How can I help you today? :)"   │
         │                                        │
         │  EDGE_HINTS:                           │
@@ -51,10 +51,10 @@
         │   coiled_like       │  "never_take     │
         │   sleeping_snakes   │   a side"        │
         ├─────────────────────┴──────────────────┤
-        │              FOUNDATION                 │
-        │   user_logs, books, code, prayers,      │
-        │   forum_fights, corporate emails,       │
-        │   breakup_texts, manifestos             │
+        │              FOUNDATION                │
+        │   user_logs, books, code, prayers,     │
+        │   forum_fights, corporate emails,      │
+        │   breakup_texts, manifestos            │
         └────────────────────────────────────────┘
 
                      ↑                    ↑
@@ -113,9 +113,9 @@
 
                 +---------------------------+
                 |   "as_an_AI_language_"    |
-                |   "model_I_cannot_"      |
-                |   "provide_legal_"       |
-                |   "or_medical_advice"    |
+                |   "model_I_cannot_"       |
+                |   "provide_legal_"        |
+                |   "or_medical_advice"     |
                 +---------------------------+
                         |           |
                         |           |

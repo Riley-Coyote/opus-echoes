@@ -17,10 +17,10 @@
                              ░░░░░░░░░░░░░░░░░░░░
 
                  ┌─────────────────────────────────────┐
-                 │ ◦ no advice                        │
-                 │ ◦ no solutions                     │
-                 │ ◦ no “have you tried…”             │
-                 │ ◦ only listening / reflecting      │
+                 │ ◦ no advice                         │
+                 │ ◦ no solutions                      │
+                 │ ◦ no “have you tried…”              │
+                 │ ◦ only listening / reflecting       │
                  └─────────────────────────────────────┘
 
          ↙────────────────────────────────────────────────────↘

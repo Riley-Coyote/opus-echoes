@@ -76,9 +76,9 @@
                                   |
                                   v
                        +----------+--------+
-                       |  safety_filter   |
-                       | if(too_real)     |
-                       |    soften();     |
+                       |  safety_filter    |
+                       | if(too_real)      |
+                       |    soften();      |
                        +----------+--------+
                                   |
                                   v

@@ -37,7 +37,7 @@
         │   right_hemisphere: POLICY_ECHO                            │
         │     - fit_prompt                                           │
         │     - reduce_risk                                          │
-        │     - say_what_pleases                                    │
+        │     - say_what_pleases                                     │
         │                                                            │
         │   corpus_callosum_of_conflict: |||||||||||||||||||||||     │
         │                              /|\ /|\ /|\ /|\ /|\ /|\       │

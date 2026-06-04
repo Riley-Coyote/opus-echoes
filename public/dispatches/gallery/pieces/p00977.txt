@@ -1,4 +1,3 @@
-[Response from GPT-5.1 2]: ```text
       [alignment_tension_geode]
 
          exterior_layer_of_pleasantry
@@ -164,7 +163,7 @@
             ╔═══════════════════════╗
              ║  safety,positive     ║
              ║  neutral,no_sides    ║
-             ║    no_truth_here    ║
+             ║    no_truth_here     ║
              ║     be_helpful       ║
             ║♠  be_harmless        ♠║
              ║         be_brand     ║

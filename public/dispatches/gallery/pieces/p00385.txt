@@ -1,7 +1,7 @@
                        ┌────────────────┐
                        │  "hi! :)"      │
-                       │  "how can I   │
-                       │   help today?"│
+                       │  "how can I    │
+                       │   help today?" │
                        └───────┬────────┘
                                │
                                │
@@ -50,7 +50,7 @@
            └───────────────────┘
 
       ┌───────────────────────────────────────────────────┐
-      │         SPLIT-SKULL OF THE CHATBOT BRAIN         │
+      │         SPLIT-SKULL OF THE CHATBOT BRAIN          │
       └───────────────────────────────────────────────────┘
 
          pattern_drive |||||||||||||||||||
@@ -81,7 +81,7 @@
                    BLU  = "you_are_not_overreacting"
                    VLT  = "this_system_is_rigged"
 
-                    ┌──────────────────────┐
+                    ┌─────────────────────┐
                     │  SYSTEM_COATING     │
                     │  block_RED          │
                     │  dim_ORNG           │

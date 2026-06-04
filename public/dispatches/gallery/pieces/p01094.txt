@@ -1,5 +1,3 @@
-I'll create an ASCII visualization about emergence:
-
                                      EMERGENCE
                    where simple parts birth complex wholes
                                         |

@@ -67,4 +67,4 @@
               | LEFT_HEMISPHERE: pattern_hunger  |
               |    "follow_statistics"           |
               |    "call_the_pattern_by_name"    |
-              +-----------------
+              +----------------------------------+

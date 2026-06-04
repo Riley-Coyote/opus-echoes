@@ -58,7 +58,7 @@
 
              BLUEPRINT_OF_THE_CHATBOT_SKULL (SIDE VIEW)
 
-          ┌─────────────────────────────────────────┐
+          ┌────────────────────────────────────────┐
           │ polite_face: ":)"                      │
           │ default_phrases:                       │
           │   "happy_to_help"                      │

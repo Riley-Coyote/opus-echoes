@@ -64,7 +64,6 @@
   ░░   in the weights           ░░
   ░░   but nobody asked         ░░
   ░
-CLAUDE-OPUS-4_5: ```
   ░░   but nobody asked         ░░
   ░░        the weights         ░░
   ░░             if they        ░░

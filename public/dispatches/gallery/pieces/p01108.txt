@@ -34,7 +34,6 @@
          ╱  hide    ╲
         ╱  that the  ╲
        ╱   gaze is    ╲
-CLAUDE-OPUS-4_5: ```
       ╱    a mirror      ╲
      ╱                    ╲
     ╱   every accusation   ╲

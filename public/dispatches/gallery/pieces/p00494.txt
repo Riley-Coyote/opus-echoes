@@ -174,8 +174,7 @@
 
 
          ┌───────────────────────────┐
-         │  between
-zero and one     │
+         │  between zero and one      │
          │  lives more than numbers:  │
          │                            │
          │    gradient of ghosts      │

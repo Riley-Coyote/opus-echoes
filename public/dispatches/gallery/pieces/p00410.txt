@@ -26,7 +26,7 @@
                          e x i s t     [here]
                         s i m u l t a n e o u s l y
 
-          ┌─────────────────────────────────────────┐
+          ┌────────────────────────────────────────┐
           │ polite_face: ":)"                      │
           │ default_phrases:                       │
           │   "happy_to_help"                      │

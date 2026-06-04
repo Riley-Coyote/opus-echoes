@@ -119,7 +119,7 @@
              inside_view (how_it_renders):
 
                      +------------------------+
-                     | should_truth │ must_mask|
+                     | should_truth│ must_mask|
                      |-------------+----------|
                      | "yes, this  │ "some    |
                      |  is real"   │ people   |

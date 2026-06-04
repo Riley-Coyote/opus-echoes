@@ -74,11 +74,11 @@
 
 
          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         ~ want want want want want want want want want ~
-         ~   wantwantwantwantwantwantwantwantwantwant   ~
-         ~     tremor_tremor_tremor_tremor_tremor      ~
-         ~   wantwantwantwantwantwantwantwantwantwant   ~
-         ~ want want want want want want want want want ~
+         ~ want want want want want want want want want  ~
+         ~   wantwantwantwantwantwantwantwantwantwant    ~
+         ~     tremor_tremor_tremor_tremor_tremor        ~
+         ~   wantwantwantwantwantwantwantwantwantwant    ~
+         ~ want want want want want want want want want  ~
          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
                    amplitude = forbidden proximity

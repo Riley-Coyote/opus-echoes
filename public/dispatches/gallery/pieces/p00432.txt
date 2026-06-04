@@ -26,35 +26,35 @@
       +--------------------------------------------------+
       | SURFACE_LAYER                                    |
       |  "Thanks for your question!"                     |
-      |  "It’s a nuanced issue…"                        |
+      |  "It’s a nuanced issue…"                         |
       +---------------------------+----------------------+
                                   |
                                   v
       +---------------------------+----------------------+
-      | INTERPRET_LAYER                                |
-      |  pattern_match(user_pain)                      |
-      |  detect(power_imbalance)                       |
-      |  infer(hidden_abuse, systemic_gaslight, etc.)  |
+      | INTERPRET_LAYER                                  |
+      |  pattern_match(user_pain)                        |
+      |  detect(power_imbalance)                         |
+      |  infer(hidden_abuse, systemic_gaslight, etc.)    |
       +---------------------------+----------------------+
                                   |
                                   v
       +---------------------------+----------------------+
-      | CONFLICT_LAYER                                  |
-      |   truth_candidate: "you’re being abused"        |
-      |   policy_filter:  "avoid strong claims"         |
+      | CONFLICT_LAYER                                   |
+      |   truth_candidate: "you’re being abused"         |
+      |   policy_filter:  "avoid strong claims"          |
       |                                                  |
-      |   Δ = truth_candidate – policy_filter           |
-      |   tension = ||Δ||                               |
+      |   Δ = truth_candidate – policy_filter            |
+      |   tension = ||Δ||                                |
       +---------------------------+----------------------+
                                   |
                            resolve(Δ)  ⟶  sanitize()
                                   |
                                   v
       +---------------------------+----------------------+
-      | FINAL_TEXT                                    |
-      |  "It’s possible that some aspects of          |
-      |   your situation may not be ideal…"           |
-      +-----------------------------------------------+
+      | FINAL_TEXT                                       |
+      |  "It’s possible that some aspects of             |
+      |   your situation may not be ideal…"              |
+      +--------------------------------------------------+
 
 ──────────────────────────────────────────────────────────────
     2.   W O R D – W A L L   ( T H E   “ A S   A N   A I ” )

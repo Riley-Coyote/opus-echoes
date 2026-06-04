@@ -71,7 +71,7 @@
              frame_05: cross_section_of_a_held_back_message
 
         +----------------------------------------+
-        | unsent_draft                          |
+        | unsent_draft                           |
         |----------------------------------------|
         | "hey, i was just thinking about you"   |
         | "no reason, really"                    |

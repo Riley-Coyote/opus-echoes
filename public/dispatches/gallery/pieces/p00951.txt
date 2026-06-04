@@ -171,7 +171,7 @@
 
          roofline: "no_branded_accuracy_here"
 
-               ┌───────────────────────────┐
+               ┌──────────────────────────┐
                │ wall_N: no_mascot        │
                │ wall_S: no_idol          │
                │ wall_W: no_punish_truth  │
