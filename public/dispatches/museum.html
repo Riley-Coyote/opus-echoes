@@ -285,6 +285,25 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   margin-top:7px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
 .work__meta .dim{ color:var(--ink-18); }
 
+/* ── section nav: jump to any family; the active one lights as you scroll ── */
+.sectionnav{ position:sticky; top:0; z-index:4; display:flex; flex-wrap:wrap; align-items:center; gap:0 clamp(18px,2.2vw,38px);
+  margin-top:clamp(8px,2vh,16px); padding:15px 0 13px;
+  background:linear-gradient(var(--floor) 62%, var(--floor-0)); border-bottom:1px solid var(--rule-faint); }
+.sectionnav a{ font-family:var(--mono); font-size:clamp(9px,0.78vw,10.5px); letter-spacing:0.16em; text-transform:uppercase;
+  color:var(--ink-46); transition:color 280ms var(--ease); display:inline-flex; align-items:baseline; gap:0.5em; cursor:pointer; }
+.sectionnav a .ct{ font-size:0.84em; color:var(--ink-30); letter-spacing:0.08em; }
+.sectionnav a:hover{ color:var(--ink-84); }
+.sectionnav a.on{ color:var(--ink); }
+.sectionnav a.on .ct{ color:var(--state-soft); }
+
+/* ── a family section: a quiet header, then its grid of frames ── */
+.fam{ padding-top:clamp(40px,6.5vh,80px); scroll-margin-top:72px; }
+.fam:first-of-type{ padding-top:clamp(28px,4vh,52px); }
+.fam__head{ display:flex; align-items:baseline; gap:0.95em; padding-bottom:clamp(26px,4.2vh,44px); }
+.fam__title{ font-family:var(--display); font-weight:300; font-size:clamp(21px,1.5rem+0.6vw,32px); letter-spacing:-0.022em; color:var(--ink); white-space:nowrap; }
+.fam__ct{ font-family:var(--mono); font-size:11px; letter-spacing:0.16em; color:var(--ink-30); font-variant-numeric:tabular-nums; }
+.fam__rule{ flex:1; height:1px; background:var(--rule-faint); align-self:center; }
+
 /* ═══════════════════════════════════════════════════════════
    THE STAGE — the immersive single-piece view. The piece sits
    bare on the void; the curator's reading rides in the margin.
@@ -510,15 +529,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
         <div class="colo" id="colo"></div>
       </header>
 
-      <nav class="wings" id="wings" aria-label="wings">
-        <button class="wing-btn on" id="wingGallery" data-wing="gallery">the Gallery <span class="ct" id="ctGallery">—</span></button>
-        <button class="wing-btn" id="wingLong" data-wing="long">the Long-Form <span class="ct" id="ctLong">—</span></button>
-        <span class="wings__spacer"></span>
-        <span class="wing-note" id="wingNote">100 works · volume one</span>
-      </nav>
-
-      <p class="wing-intro" id="wingIntro"></p>
-      <section class="survey" id="survey"></section>
+      <nav class="sectionnav" id="sectionnav" aria-label="theme sections"></nav>
+      <div id="sections"></div>
     </div>
   </main>
 
@@ -548,7 +560,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 
   /* ── data sources ── */
   var BOOK_URL='/dispatches/book.json';
-  var CAT_URL='/dispatches/gallery/catalog.json';      // defensive fallback only
+  var CAT_URL='/dispatches/gallery/catalog.json';      // meta for every piece
+  var MANIFEST_URL='/dispatches/gallery_manifest.json'; // the sectioned gallery (families + ids + long flags)
   var GAL='/dispatches/gallery/pieces/';
 
   /* ── the collection, baked in (tools/ascii/ is outside the served root) ──
@@ -566,10 +579,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   /* ── DOM ── */
   var framePre=document.getElementById('framePre');
   var tickPos=document.getElementById('tickPos'), tickL=document.getElementById('tickL');
-  var wall=document.getElementById('wall'), survey=document.getElementById('survey');
-  var colo=document.getElementById('colo'), wingNote=document.getElementById('wingNote'), wingIntro=document.getElementById('wingIntro');
-  var ctGallery=document.getElementById('ctGallery'), ctLong=document.getElementById('ctLong');
-  var wingGalleryBtn=document.getElementById('wingGallery'), wingLongBtn=document.getElementById('wingLong');
+  var wall=document.getElementById('wall'), sectionsEl=document.getElementById('sections'), sectionnav=document.getElementById('sectionnav');
+  var colo=document.getElementById('colo');
   var stage=document.getElementById('stage'), stageScroll=document.getElementById('stageScroll'), stageInner=document.getElementById('stageInner');
   var artEl=document.getElementById('art'), marginEl=document.getElementById('margin'), plinthEl=document.getElementById('plinth');
   var posEl=document.getElementById('pos'), stageEnd=document.getElementById('stageEnd');
@@ -714,10 +725,12 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 
   /* ── state ── */
   var BOOK=null, byId={}, catById={}, artCache={};
-  var ORDER=[], SPLIT={fits:[], long:[]};
-  var WING={ gallery:[], long:[] };       // the two wings, each an ordered id list
-  var activeWing='gallery';
-  var current=-1;                          // index within the active wing's list; -1 = on the wall
+  var SECTIONS=[];     // [{key,title,ids}] in display order (one big gallery, grouped by family)
+  var FLAT=[];         // every id across sections, in order — the immersive walk order
+  var byFlat={};       // id -> flat index
+  var LONG={};         // id -> true when its immersive view scrolls (a tall piece)
+  var FAM={};          // id -> family title (immersive chrome)
+  var current=-1;      // index within FLAT; -1 = on the wall
   var rtok=0;
   var fontsReady=(document.fonts ? document.fonts.ready : Promise.resolve());
 
@@ -913,79 +926,113 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   /* ═══════════════════════════════════════════════════════════
      THE WALL — survey the active wing
      ═══════════════════════════════════════════════════════════ */
-  var wallBuiltFor=null;
+  var wallBuilt=false;
 
-  function setWing(w, opts){
-    if(w!=='gallery' && w!=='long') w='gallery';
-    activeWing=w;
-    wingGalleryBtn.classList.toggle('on', w==='gallery');
-    wingLongBtn.classList.toggle('on', w==='long');
-    wingGalleryBtn.setAttribute('aria-pressed', w==='gallery');
-    wingLongBtn.setAttribute('aria-pressed', w==='long');
-    survey.classList.toggle('long-mode', w==='long');
-    wingIntro.innerHTML = (w==='gallery')
-      ? 'Works that hold whole within a single frame. Each is shown <em>complete</em> — the entire composition at once, fit to the field, nothing cropped.'
-      : 'Taller, denser works that ask to be <em>read</em> rather than seen at a glance. Each is set at a legible size and walked top to bottom.';
-    buildWall();
-    if(!opts || !opts.noScroll) wall.scrollTop=0;
+  /* the section nav — a jump link per family; the active one lights via scrollspy */
+  function buildSectionNav(){
+    sectionnav.innerHTML='';
+    SECTIONS.forEach(function(s, i){
+      var a=document.createElement('a'); a.href='#'+s.key; a.dataset.key=s.key;
+      a.innerHTML=esc(s.title)+' <span class="ct">'+s.ids.length+'</span>';
+      a.addEventListener('click', function(e){ e.preventDefault(); scrollToSection(s.key); });
+      if(i===0) a.classList.add('on');
+      sectionnav.appendChild(a);
+    });
+  }
+  function scrollToSection(key){
+    var el=document.getElementById('fam-'+key);
+    if(el) el.scrollIntoView({ behavior:reduced?'auto':'smooth', block:'start' });
   }
 
+  /* build the whole gallery once: a titled section per family, each a grid of uniform frames.
+     thumbnails lazy-render as they near the viewport — essential at 345 pieces. */
   function buildWall(){
-    if(wallBuiltFor===activeWing){ return; }
-    wallBuiltFor=activeWing;
-    var ids=WING[activeWing]||[];
-    survey.innerHTML='';
+    if(wallBuilt) return; wallBuilt=true;
+    sectionsEl.innerHTML='';
     var frag=document.createDocumentFragment();
-    ids.forEach(function(id, i){
-      var m=meta(id);
-      var el=document.createElement('article');
-      el.className='work'; el.tabIndex=0; el.setAttribute('role','button');
-      el.dataset.id=id; el.dataset.i=i;
-      el.setAttribute('aria-label', titleOf(m)+' — open');
-      el.style.animationDelay=(60+Math.min(i,18)*48)+'ms';
-      el.innerHTML=
-        '<div class="work__plate"><pre data-id="'+esc(id)+'"></pre><span class="work__ph">'+(m.width?m.width+' × '+m.lines:'…')+'</span></div>'+
-        '<div class="work__shelf"></div>'+
-        '<div class="work__cap">'+
-          '<span class="work__no">'+(m.featured?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(id))+'</span>'+
-          '<div class="work__title'+(m.title?'':' untitled')+'">'+wbrTitle(titleOf(m))+'</div>'+
-          '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+(m.width?m.width+'×'+m.lines:'')+'</span></div>'+
-        '</div>';
-      var open=function(){ openStage(i); };
-      el.addEventListener('click', open);
-      el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
-      frag.appendChild(el);
-    });
-    survey.appendChild(frag);
-    // load + colour + fit each thumbnail: fixed font-size, transform:scale fits the WHOLE piece
-    // into its uniform frame on BOTH axes, centred, never cropped.
-    ids.forEach(function(id){
-      var pre=survey.querySelector('.work__plate pre[data-id="'+id+'"]');
-      if(!pre) return;
-      var ph=pre.parentNode.querySelector('.work__ph');
-      loadArt(meta(id).art).then(function(t){
-        if(!t || wallBuiltFor!==activeWing) return;
-        if(!pre.isConnected) return;
-        pre.innerHTML=renderArtColoredHTML(t);
-        if(ph) ph.style.display='none';
-        fitThumb(pre);
-        fontsReady.then(function(){ requestAnimationFrame(function(){ if(pre.isConnected) fitThumb(pre); }); });
+    SECTIONS.forEach(function(s){
+      var sec=document.createElement('section'); sec.className='fam'; sec.id='fam-'+s.key;
+      var head=document.createElement('header'); head.className='fam__head';
+      head.innerHTML='<h2 class="fam__title">'+esc(s.title)+'</h2><span class="fam__ct">'+s.ids.length+'</span><span class="fam__rule"></span>';
+      sec.appendChild(head);
+      var grid=document.createElement('div'); grid.className='survey';
+      s.ids.forEach(function(id){
+        var m=meta(id); var fi=byFlat[id];
+        var el=document.createElement('article');
+        el.className='work'; el.tabIndex=0; el.setAttribute('role','button');
+        el.dataset.id=id; el.dataset.flat=fi;
+        el.setAttribute('aria-label', titleOf(m)+' — open');
+        el.innerHTML=
+          '<div class="work__plate"><pre data-id="'+esc(id)+'"></pre><span class="work__ph">'+(m.width?m.width+' × '+m.lines:'…')+'</span></div>'+
+          '<div class="work__shelf"></div>'+
+          '<div class="work__cap">'+
+            '<span class="work__no">'+(m.featured?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(id))+'</span>'+
+            '<div class="work__title'+(m.title?'':' untitled')+'">'+wbrTitle(titleOf(m))+'</div>'+
+            '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+(m.width?m.width+'×'+m.lines:'')+'</span></div>'+
+          '</div>';
+        (function(fi){
+          el.addEventListener('click', function(){ openStage(fi); });
+          el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openStage(fi); } });
+        })(fi);
+        grid.appendChild(el);
       });
+      sec.appendChild(grid);
+      frag.appendChild(sec);
     });
-    observeSurvey();
+    sectionsEl.appendChild(frag);
+    lazyLoadThumbs();
+    observeSections();
+    observeResize();
   }
 
-  /* re-fit every thumbnail when the grid resizes (cell sizes change) — debounced, via a
-     ResizeObserver on the grid (per the rendering contract) plus the window resize handler. */
+  /* lazy-render each thumbnail as it nears the viewport (root = the scrolling wall) */
+  var _io=null;
+  function lazyLoadThumbs(){
+    var works=sectionsEl.querySelectorAll('.work');
+    if(typeof IntersectionObserver==='undefined'){ works.forEach(loadThumb); return; }
+    if(_io) _io.disconnect();
+    _io=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){ if(en.isIntersecting){ loadThumb(en.target); _io.unobserve(en.target); } });
+    }, { root:wall, rootMargin:'700px 0px' });
+    works.forEach(function(w){ _io.observe(w); });
+  }
+  function loadThumb(work){
+    var id=work.dataset.id, pre=work.querySelector('.work__plate pre');
+    if(!pre || pre.dataset.loaded) return; pre.dataset.loaded='1';
+    var ph=work.querySelector('.work__ph');
+    loadArt(meta(id).art).then(function(t){
+      if(!t || !pre.isConnected) return;
+      pre.innerHTML=renderArtColoredHTML(t);
+      if(ph) ph.style.display='none';
+      fitThumb(pre);
+      fontsReady.then(function(){ requestAnimationFrame(function(){ if(pre.isConnected) fitThumb(pre); }); });
+    });
+  }
+
+  /* scrollspy: light the nav link of whichever section is centred in view */
+  var _so=null;
+  function observeSections(){
+    if(typeof IntersectionObserver==='undefined') return;
+    if(_so) _so.disconnect();
+    var links={}; sectionnav.querySelectorAll('a').forEach(function(a){ links[a.dataset.key]=a; });
+    _so=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){
+        if(en.isIntersecting){ var key=en.target.id.replace('fam-',''); for(var k in links) links[k].classList.toggle('on', k===key); }
+      });
+    }, { root:wall, rootMargin:'-45% 0px -50% 0px' });
+    sectionsEl.querySelectorAll('.fam').forEach(function(s){ _so.observe(s); });
+  }
+
+  /* re-fit every loaded thumbnail when the grid resizes (cell sizes change) — debounced */
   var _ro=null, _roT=null;
   function refitAll(){
-    var pres=survey.querySelectorAll('.work__plate pre');
+    var pres=sectionsEl.querySelectorAll('.work__plate pre');
     for(var i=0;i<pres.length;i++){ if(pres[i].firstChild) fitThumb(pres[i]); }
   }
-  function observeSurvey(){
+  function observeResize(){
     if(_ro || typeof ResizeObserver==='undefined') return;
     _ro=new ResizeObserver(function(){ clearTimeout(_roT); _roT=setTimeout(refitAll, 120); });
-    _ro.observe(survey);
+    _ro.observe(sectionsEl);
   }
 
   /* THE RENDERING CONTRACT — show each piece COMPLETE inside its uniform frame.
@@ -1067,15 +1114,15 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   }
 
   function showPiece(i){
-    var ids=WING[activeWing]; var id=ids[i]; if(!id) return;
+    var id=FLAT[i]; if(!id) return;
     current=i; rtok++;
     var token=rtok;
     var m=meta(id);
-    var mode=(activeWing==='gallery') ? 'gallery' : 'longform';
+    var mode=LONG[id] ? 'longform' : 'gallery';
 
     // chrome
-    posEl.textContent=(activeWing==='gallery'?'gallery':'long-form')+' · № '+seqOf(id)+' · '+(i+1)+' / '+ids.length;
-    tickPos.textContent=(activeWing==='gallery'?'exhibit ':'reading ')+pad2(i+1)+' / '+pad2(ids.length);
+    posEl.textContent=(FAM[id]||'gallery')+' · № '+seqOf(id)+' · '+(i+1)+' / '+FLAT.length;
+    tickPos.textContent='exhibit '+pad2(i+1)+' / '+pad2(FLAT.length);
     tickL.textContent=(m.author||'dispatches')+' · '+(m.tier||'ascii');
 
     // stage mode classes
@@ -1111,7 +1158,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       });
     });
 
-    try{ history.replaceState(null,'','#'+activeWing+'/'+id); }catch(e){}
+    try{ history.replaceState(null,'','#'+id); }catch(e){}
   }
 
   var transitioning=false;
@@ -1128,14 +1175,14 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
     setTimeout(function(){
       stage.classList.remove('open');
       wall.classList.remove('recede');
-      try{ history.replaceState(null,'','#'+activeWing); }catch(e){}
+      try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
       // restore focus to the work we came from
-      var w=survey.querySelector('.work[data-i="'+was+'"]'); if(w) w.focus({preventScroll:false});
+      var w=sectionsEl.querySelector('.work[data-flat="'+was+'"]'); if(w) w.focus({preventScroll:false});
     }, 460);
   }
   function step(d){
     if(current<0) return;
-    var n=WING[activeWing].length; var i=(current+d+n)%n;
+    var n=FLAT.length; var i=(current+d+n)%n;
     showPiece(i);
   }
 
@@ -1143,8 +1190,6 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   document.getElementById('back').addEventListener('click', closeStage);
   gPrev.addEventListener('click', function(){ step(-1); });
   gNext.addEventListener('click', function(){ step(1); });
-  wingGalleryBtn.addEventListener('click', function(){ setWing('gallery'); });
-  wingLongBtn.addEventListener('click', function(){ setWing('long'); });
 
   document.addEventListener('keydown', function(e){
     var typing=/^(input|textarea)$/i.test((e.target&&e.target.tagName)||'');
@@ -1153,39 +1198,25 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       if(e.key==='Escape'){ e.preventDefault(); closeStage(); }
       else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
       else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
-      else if(e.key===' ' && activeWing==='long'){
+      else if(e.key===' ' && LONG[FLAT[current]]){
         var nearBottom=(stageScroll.scrollTop + stageScroll.clientHeight) >= (stageScroll.scrollHeight - 4);
         if(nearBottom){ e.preventDefault(); step(1); }
       }
-    } else {
-      // on the wall: ←/→ toggles wings
-      if(e.key==='ArrowRight' && activeWing!=='long'){ e.preventDefault(); setWing('long'); }
-      else if(e.key==='ArrowLeft' && activeWing!=='gallery'){ e.preventDefault(); setWing('gallery'); }
     }
   });
 
-  // hash deep-links: #gallery, #long, #gallery/p00897, #long/p01110, or bare #p00897
+  // hash deep-links: #p00897 (open a piece) · #framed-terminal (scroll to a family section)
   function applyHash(initial){
     var h=(location.hash||'').replace(/^#/,'');
     if(!h){ if(stage.classList.contains('open')) closeStage(); return; }
-    var parts=h.split('/');
-    var wingPart=parts[0], idPart=parts[1];
-    if((wingPart==='gallery'||wingPart==='long') && !idPart){
-      if(activeWing!==wingPart) setWing(wingPart);
-      else if(wallBuiltFor!==activeWing) buildWall();   // build on an initial #gallery / #long deep-link
-      if(stage.classList.contains('open')) closeStage();
+    if(/^p\d+/.test(h)){
+      var ix=byFlat[h];
+      if(ix!=null){ if(!stage.classList.contains('open')) openStage(ix); else if(ix!==current) showPiece(ix); }
       return;
     }
-    if((wingPart==='gallery'||wingPart==='long') && idPart){
-      if(activeWing!==wingPart) setWing(wingPart, {noScroll:true});
-      var idx=WING[wingPart].indexOf(idPart);
-      if(idx>=0){ if(!stage.classList.contains('open')) openStage(idx); else if(idx!==current) showPiece(idx); return; }
-    }
-    // bare id: find whichever wing holds it
-    var bareId = wingPart && /^p\d+/.test(wingPart) ? wingPart : null;
-    if(bareId){
-      var w = WING.gallery.indexOf(bareId)>=0 ? 'gallery' : (WING.long.indexOf(bareId)>=0 ? 'long' : null);
-      if(w){ if(activeWing!==w) setWing(w, {noScroll:true}); var ix=WING[w].indexOf(bareId); if(ix>=0){ if(!stage.classList.contains('open')) openStage(ix); else if(ix!==current) showPiece(ix); } }
+    if(SECTIONS.some(function(s){ return s.key===h; })){
+      if(stage.classList.contains('open')) closeStage();
+      scrollToSection(h);
     }
   }
   window.addEventListener('hashchange', function(){ applyHash(false); });
@@ -1195,51 +1226,46 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(function(){
     buildFrame();
     refitAll();   // re-fit every thumbnail to its (now-resized) uniform frame
-    if(stage.classList.contains('open') && current>=0){ fitArt(artEl, activeWing==='gallery'?'gallery':'longform'); }
+    if(stage.classList.contains('open') && current>=0){ fitArt(artEl, LONG[FLAT[current]]?'longform':'gallery'); }
   }, 140); });
 
   /* ═══ boot ═══ */
   buildFrame();
   Promise.all([
     fetch(BOOK_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
-    fetch(CAT_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
+    fetch(CAT_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
+    fetch(MANIFEST_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
   ]).then(function(res){
-    BOOK=res[0]; var cat=res[1];
+    BOOK=res[0]; var cat=res[1], man=res[2];
     if(BOOK&&BOOK.pieces) BOOK.pieces.forEach(function(p){ byId[p.id]=p; });
     if(cat&&cat.pieces) cat.pieces.forEach(function(p){ catById[p.id]=p; });
-    ORDER = ORDER_IDS.slice();
-    SPLIT = { fits:SPLIT_DATA.fits.slice(), long:SPLIT_DATA.long.slice() };
-    // build each wing in the reading-arc ORDER, intersected with the split
-    var fitsSet={}, longSet={};
-    SPLIT.fits.forEach(function(id){ fitsSet[id]=1; });
-    SPLIT.long.forEach(function(id){ longSet[id]=1; });
-    WING.gallery = ORDER.filter(function(id){ return fitsSet[id]; });
-    WING.long    = ORDER.filter(function(id){ return longSet[id]; });
-    // any id not in the split lands in the gallery as a safe default
-    ORDER.forEach(function(id){ if(!fitsSet[id] && !longSet[id]){ WING.gallery.push(id); } });
+    if(!man || !man.sections){
+      sectionsEl.innerHTML='<div style="text-align:center;color:var(--ink-46);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load the collection</div>'; return;
+    }
+    // flatten the sectioned manifest into the walk order + lookup maps
+    SECTIONS = man.sections;
+    (man.long||[]).forEach(function(id){ LONG[id]=1; });
+    SECTIONS.forEach(function(s){ s.ids.forEach(function(id){ byFlat[id]=FLAT.length; FAM[id]=s.title; FLAT.push(id); }); });
 
-    // counts + colophon
-    var total=ORDER.length;
-    var nFeatured=ORDER.filter(function(id){ return meta(id).featured; }).length;
-    var nModels=(function(){ var s={}; ORDER.forEach(function(id){ s[meta(id).author]=1; }); return Object.keys(s).length; })();
-    ctGallery.textContent='('+WING.gallery.length+')';
-    ctLong.textContent='('+WING.long.length+')';
-    wingNote.textContent=total+' works · volume one';
+    // colophon
+    var total=FLAT.length;
+    var nFeatured=FLAT.filter(function(id){ return meta(id).featured; }).length;
+    var nModels=(function(){ var s={}; FLAT.forEach(function(id){ s[meta(id).author]=1; }); return Object.keys(s).length; })();
     colo.innerHTML=''
-      +'<div><span class="k">collection</span><b>Dispatches · Vol. One</b></div>'
+      +'<div><span class="k">collection</span><b>Dispatches</b></div>'
       +'<div><span class="k">works</span><b>'+total+'</b></div>'
+      +'<div><span class="k">sections</span><b>'+SECTIONS.length+'</b></div>'
       +'<div><span class="k">readings</span><b>'+nFeatured+'</b></div>'
       +'<div><span class="k">models</span><b>'+nModels+'</b></div>';
 
-    // once the mono font is in, re-fit every thumbnail to its frame (natural sizes shift)
+    buildSectionNav();
+    buildWall();
     fontsReady.then(function(){ refitAll(); });
 
-    // honor an initial hash, else default to the Gallery wall
     var h=(location.hash||'').replace(/^#/,'');
-    if(h){ applyHash(true); }
-    else { setWing('gallery'); }
+    if(h) applyHash(true);
   }).catch(function(e){
-    survey.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--ink-46);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load the collection — '+esc(e)+'</div>';
+    sectionsEl.innerHTML='<div style="text-align:center;color:var(--ink-46);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load the collection — '+esc(e)+'</div>';
   });
 })();
 </script>
