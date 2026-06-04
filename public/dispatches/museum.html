@@ -3,29 +3,27 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="color-scheme" content="dark" />
-<meta name="theme-color" content="#06070a" />
+<meta name="color-scheme" content="dark" id="colorScheme" />
+<meta name="theme-color" content="#06070a" id="themeColor" />
 <title>The Machine's Museum — Dispatches, Volume One</title>
+<!-- pre-paint the saved theme before first paint so the room never flashes -->
+<script>
+(function(){
+  try{
+    var t=localStorage.getItem('museum.theme');
+    if(t!=='light' && t!=='dark') t='dark';            // default dark; saved choice wins
+    document.documentElement.setAttribute('data-theme', t);
+    var cs=document.getElementById('colorScheme'); /* not yet parsed at this point */
+    document.documentElement.style.colorScheme = (t==='light'?'light':'dark');
+  }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
 <style>
 :root{
-  /* ── the Sanctuary dark system ── */
-  --floor:#06070a; --deep:#0b0c0e; --panel:#101013;
-  --ink:rgba(248,248,246,0.96);
-  --ink-84:rgba(248,248,246,0.84);
-  --ink-62:rgba(244,243,240,0.62);
-  --ink-46:rgba(232,231,228,0.46);
-  --ink-30:rgba(225,225,222,0.30);
-  --ink-18:rgba(225,225,222,0.18);
-  --rule:rgba(225,225,225,0.14);
-  --rule-soft:rgba(225,225,225,0.09);
-  --rule-faint:rgba(225,225,225,0.06);
-  --state:#82b484;
-  --state-soft:rgba(130,180,132,0.62);
-  --state-dim:rgba(130,180,132,0.16);
-  --state-whisper:rgba(130,180,132,0.05);
+  /* ── structural tokens (mode-independent) ── */
   --display:'Inter Tight','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   --body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
@@ -37,10 +35,87 @@
   --frame-pad:clamp(16px,2vw,34px);   /* viewport inset to the ascii frame */
   --frame-fs:clamp(11px,1.04vw,14.5px); /* the frame glyph size */
   --chrome-h:54px;  /* the band the cartouche/ticks occupy inside the frame */
+  /* the green accent is the single state colour in BOTH modes */
+  --state:#82b484;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   THE TWO MODES — [data-theme] swaps the surface palette while
+   the structure (type, scale, motion, geometry) carries across.
+   The green --state stays the single accent in both.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── DARK · the Sanctuary room, low luminosity, ink on void ── */
+:root[data-theme="dark"]{
+  --floor:#06070a; --deep:#0b0c0e; --panel:#101013;
+  --floor-0:rgba(6,7,10,0);               /* the floor, fully transparent (gradient end) */
+  --floor-edge:rgba(3,4,7,0.66);          /* vignette fall-off at the edge */
+  --grain-opacity:0.016;
+  --ink:rgba(248,248,246,0.96);
+  --ink-84:rgba(248,248,246,0.84);
+  --ink-62:rgba(244,243,240,0.62);
+  --ink-46:rgba(232,231,228,0.46);
+  --ink-30:rgba(225,225,222,0.30);
+  --ink-18:rgba(225,225,222,0.18);
+  --rule:rgba(225,225,225,0.14);
+  --rule-soft:rgba(225,225,225,0.09);
+  --rule-faint:rgba(225,225,225,0.06);
+  --state-soft:rgba(130,180,132,0.62);
+  --state-dim:rgba(130,180,132,0.16);
+  --state-whisper:rgba(130,180,132,0.05);
+  /* the art surface — slightly off-white ink the model "drew" with */
+  --art-ink:rgba(238,236,232,0.88);       /* thumbnails */
+  --art-ink-full:rgba(248,248,246,0.96);  /* immersive piece */
+  /* ── syntax palette · dark · refined-but-visible: a balanced muted wheel
+     (cyan label · gold string · green call · violet kw · clay number) that
+     reads clearly on the near-black floor without tipping into an IDE. ── */
+  --s-str:#d8b878;   /* spoken / quoted — clear warm gold (not cream) */
+  --s-com:#6f7889;   /* comments — dim cool slate (italic), recedes */
+  --s-const:#83b2c8; /* the shouted labels — dusty cyan, the anchor token */
+  --s-fn:#8fc794;    /* calls — the green accent family */
+  --s-op:#9aa2b0;    /* operators — quiet cool neutral */
+  --s-num:#d09a86;   /* numbers — soft clay rose */
+  --s-kw:#b7a1d4;    /* keywords — muted violet */
+}
+
+/* ── LIGHT · a warm-paper gallery, ink on paper, hairline rules ── */
+:root[data-theme="light"]{
+  --floor:#f4f0e7; --deep:#efeadf; --panel:#f7f4ed;
+  --floor-0:rgba(244,240,231,0);          /* the paper, fully transparent (gradient end) */
+  --floor-edge:rgba(196,186,166,0.30);    /* gentle paper vignette */
+  --grain-opacity:0.020;
+  --ink:rgba(28,27,24,0.96);
+  --ink-84:rgba(28,27,24,0.84);
+  --ink-62:rgba(44,42,37,0.64);
+  --ink-46:rgba(56,53,47,0.50);
+  --ink-30:rgba(70,66,58,0.36);
+  --ink-18:rgba(70,66,58,0.20);
+  --rule:rgba(40,36,28,0.18);
+  --rule-soft:rgba(40,36,28,0.11);
+  --rule-faint:rgba(40,36,28,0.07);
+  --state-soft:rgba(74,120,78,0.78);
+  --state-dim:rgba(74,120,78,0.18);
+  --state-whisper:rgba(74,120,78,0.07);
+  --art-ink:rgba(34,32,27,0.86);          /* thumbnails — ink on paper */
+  --art-ink-full:rgba(24,23,20,0.95);     /* immersive piece */
+  /* ── syntax palette · light · deeper, low-sat versions that hold on warm paper,
+     same hue roles as dark (teal label · clay string · green call · plum kw · brick number). ── */
+  --s-str:#946b2c;   /* spoken / quoted — deep gold-clay */
+  --s-com:#8a8478;   /* comments — warm grey (italic), recedes */
+  --s-const:#2f6f87; /* the shouted labels — deep teal, the anchor token */
+  --s-fn:#3f7a48;    /* calls — deep green accent family */
+  --s-op:#6f6a5f;    /* operators — soft warm grey */
+  --s-num:#a85b46;   /* numbers — brick rose */
+  --s-kw:#6a4f86;    /* keywords — deep plum */
+}
+/* default for a UA that somehow lost the data-theme attr → dark */
+:root:not([data-theme]){ color-scheme:dark; }
+
 *{ box-sizing:border-box; margin:0; padding:0; }
 html,body{ height:100%; background:var(--floor); }
-body{ color:var(--ink-84); font-family:var(--body); font-weight:300; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden; }
+html{ transition:background 620ms var(--ease); }
+body{ color:var(--ink-84); font-family:var(--body); font-weight:300; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden;
+  transition:color 620ms var(--ease); }
 a{ color:inherit; text-decoration:none; }
 button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; }
 ::selection{ background:var(--state-dim); color:var(--ink); }
@@ -49,12 +124,12 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 *::-webkit-scrollbar{ display:none; width:0; height:0; }
 
 /* faint paper grain (the Sanctuary .atmo-grain pattern) */
-.grain{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.016;
+.grain{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:var(--grain-opacity);
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat:repeat; background-size:200px 200px; }
+  background-repeat:repeat; background-size:200px 200px; mix-blend-mode:overlay; }
 /* radial vignette so the room falls into the floor at the edges */
 .vignette{ position:fixed; inset:0; z-index:1; pointer-events:none;
-  background:radial-gradient(135% 120% at 50% 40%, transparent 50%, rgba(3,4,7,0.66) 100%); }
+  background:radial-gradient(135% 120% at 50% 40%, transparent 50%, var(--floor-edge) 100%); }
 
 /* ═══════════════════════════════════════════════════════════
    THE FRAME — one procedural ASCII border the machine drew,
@@ -86,6 +161,29 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 .cursor{ display:inline-block; width:0.58em; height:1.0em; margin-left:0.15em; background:var(--state-soft);
   transform:translateY(0.14em); animation:blink 1.15s steps(1) infinite; }
 @keyframes blink{ 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+
+/* ── the lighting switch — a small drawn sun/moon, always present in the chrome ──
+   pinned just inside the top-right corner of the ascii frame, above the frame, below
+   the stage chrome. monochrome, square hit-area, a hairline that warms on hover. */
+.lights{ position:fixed; top:calc(var(--frame-pad) - 0.62em); right:calc(var(--frame-pad) + 1.6em);
+  z-index:9; pointer-events:auto; width:34px; height:22px; display:flex; align-items:center; justify-content:center;
+  background:var(--floor); padding:0 0.2em; color:var(--ink-46);
+  transition:color 320ms var(--ease); }
+.lights:hover{ color:var(--ink-84); }
+.lights:focus-visible{ outline:none; color:var(--ink); }
+.lights:focus-visible::after{ content:""; position:absolute; inset:-3px; border:1px solid var(--state-soft); }
+.lights svg{ display:block; width:15px; height:15px; overflow:visible; }
+.lights svg *{ transition:opacity 420ms var(--ease), transform 520ms var(--ease); transform-origin:center; }
+/* sun and moon both drawn; the active mode's glyph shows, the other recedes.
+   in DARK we offer the SUN (tap to bring light); in LIGHT we offer the MOON. */
+.lights .ic-sun{ opacity:0; transform:scale(0.6) rotate(-50deg); }
+.lights .ic-moon{ opacity:1; transform:scale(1) rotate(0); }
+:root[data-theme="light"] .lights .ic-sun{ opacity:1; transform:scale(1) rotate(0); }
+:root[data-theme="light"] .lights .ic-moon{ opacity:0; transform:scale(0.6) rotate(50deg); }
+.lights .ic-sun line{ stroke:currentColor; stroke-width:1; stroke-linecap:round; }
+.lights .ic-sun circle{ fill:none; stroke:currentColor; stroke-width:1; }
+.lights .ic-moon path{ fill:currentColor; }
+@media (prefers-reduced-motion:reduce){ .lights svg *{ transition:opacity 160ms linear; transform:none !important; } }
 
 /* ═══════════════════════════════════════════════════════════
    THE WALL — the entrance. A survey of the whole show, split
@@ -144,25 +242,25 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   font-family:var(--body); font-weight:330; font-size:14px; line-height:1.66; color:var(--ink-62); }
 .wing-intro em{ font-style:normal; color:var(--ink-84); }
 
-/* the survey grid — specimens floating on the void */
-.survey{ display:grid; padding-bottom:clamp(40px,8vh,120px);
-  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
-  column-gap:clamp(36px,3.8vw,68px); row-gap:clamp(64px,8vh,96px); align-items:end; }
-.survey.long-mode{ grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); }
+/* the survey — UNIFORM frames in a grid. each piece is shown COMPLETE inside its frame:
+   fixed font-size + transform:scale fit-to-both-axes (see fitThumb), centred, aspect
+   preserved, never cropped. the frame is the uniform unit; the art varies within it. */
+.survey{ display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+  column-gap:clamp(28px,3vw,52px); row-gap:clamp(52px,7vh,88px);
+  padding-bottom:clamp(40px,8vh,120px); align-items:start; }
 
 .work{ position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer;
   opacity:0; transform:translateY(14px); animation:work-in 760ms var(--ease) forwards; }
 @keyframes work-in{ to{ opacity:1; transform:translateY(0); } }
-/* the specimen window: a fixed-height frameless stage each piece is fit into, bottom-anchored so the
-   shelves form a clean row baseline. no border — the work floats on the void. */
-.work__plate{ position:relative; display:flex; align-items:flex-end; justify-content:center;
-  width:100%; height:232px; overflow:hidden; transition:transform 520ms var(--ease); }
-.work__plate pre{ font-family:var(--mono); line-height:1.16; white-space:pre; color:rgba(238,236,232,0.88); margin:0; display:block;
+/* the frame: a fixed-size art area, uniform across the wall. the piece is fit INTO it by
+   transform:scale (fitThumb), flex-centred. font-size is FIXED — the scale does the fitting.
+   overflow:hidden is a safety net; scale is computed to fit both axes so it never crops. */
+.work__plate{ position:relative; width:100%; aspect-ratio:4 / 3; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; transition:transform 520ms var(--ease); }
+.work__plate pre{ font-family:var(--mono); line-height:1.16; white-space:pre; width:max-content;
+  font-size:11px; color:var(--art-ink); margin:0; transform-origin:center center;
   transition:color 520ms var(--ease), opacity 520ms var(--ease); }
 .work__plate .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
-/* soft fade at the top edge so a tall specimen dissolves into the void rather than hard-cropping */
-.work__plate.tall::before{ content:""; position:absolute; left:0; right:0; top:0; height:72px; z-index:2; pointer-events:none;
-  background:linear-gradient(var(--floor), rgba(6,7,10,0)); }
 .work:hover .work__plate{ transform:translateY(-9px); }
 .work:hover .work__plate pre{ color:var(--ink); }
 .work:focus-visible{ outline:none; }
@@ -180,7 +278,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   display:inline-flex; align-items:center; gap:7px; }
 .work__no .featured{ width:4px; height:4px; border-radius:50%; background:var(--state-soft); display:inline-block; }
 .work__title{ font-family:var(--display); font-weight:400; font-size:14px; letter-spacing:-0.012em; color:var(--ink-84); line-height:1.32;
-  margin-top:9px; transition:color 460ms var(--ease); text-wrap:balance; }
+  margin-top:9px; transition:color 460ms var(--ease); text-wrap:balance; overflow-wrap:anywhere; }
 .work:hover .work__title{ color:var(--ink); }
 .work__title.untitled{ color:var(--ink-46); font-weight:300; }
 .work__meta{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-30);
@@ -256,7 +354,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
 .stage.lit .margin{ opacity:1; transform:none; }
 .margin__no{ font-family:var(--mono); font-size:10px; letter-spacing:0.22em; color:var(--ink-30); font-variant-numeric:tabular-nums; }
 .margin h2{ font-family:var(--display); font-weight:400; font-size:clamp(20px,1.3rem+0.4vw,26px); line-height:1.2;
-  letter-spacing:-0.018em; color:var(--ink); margin-top:13px; text-wrap:balance; }
+  letter-spacing:-0.018em; color:var(--ink); margin-top:13px; text-wrap:balance;
+  overflow-wrap:anywhere; word-break:break-word; }
 .margin h2.untitled{ color:var(--ink-62); font-weight:300; }
 .margin .attr{ margin-top:16px; display:flex; flex-direction:column; gap:5px;
   font-family:var(--mono); font-size:10.5px; letter-spacing:0.06em; color:var(--ink-62); font-variant-numeric:tabular-nums; }
@@ -287,10 +386,27 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   filter:blur(9px); transition:filter 1700ms var(--ease); will-change:filter; }
 .stage.lit .art{ filter:blur(0); }
 .art .ln{ white-space:pre; }
-.art span{ opacity:0; transition:opacity 760ms var(--ease); }
+.art span{ opacity:0; transition:opacity 760ms var(--ease), color 620ms var(--ease); }
 .stage.lit .art span{ opacity:1; }
 .art.instant{ filter:none !important; } .art.instant span{ opacity:1 !important; transition:none !important; }
 .art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
+
+/* ═══ syntax highlighting — colour rides on the existing per-glyph span.
+   it NEVER changes a glyph's width or layout (no font-style that reflows,
+   comments use an oblique transform-free italic via font-synthesis-safe
+   font-style:italic which mono keeps to one cell). box/block glyphs are
+   never given a token class by the tokenizer, so they always stay ink. ═══ */
+/* token colour rides on a generic class so BOTH the immersive piece AND the wall
+   thumbnails (.work__plate pre) are coloured — class names are synthetic, used nowhere else. */
+.s-str{ color:var(--s-str); }
+.s-com{ color:var(--s-com); font-style:italic; }
+.s-const{ color:var(--s-const); }
+.s-fn{ color:var(--s-fn); }
+.s-op{ color:var(--s-op); }
+.s-num{ color:var(--s-num); }
+.s-kw{ color:var(--s-kw); }
+/* a syntax-off escape hatch — strips every token colour back to ink */
+.art.syntax-off span{ color:var(--ink) !important; font-style:normal !important; }
 
 /* the plinth caption beneath the art — fig number + dims, mono, a single hairline */
 .plinth{ margin-top:clamp(24px,3vh,40px); padding-top:var(--s-4); position:relative;
@@ -342,10 +458,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   .stage.gallery .stage__inner.annotated .plinth, .stage.longform .stage__inner.annotated .plinth{ justify-content:center; }
   .stage.gallery .stage__inner.annotated .plinth::before, .stage.longform .stage__inner.annotated .plinth::before{ left:50%; transform:translateX(-50%); }
   .gutter{ width:40px; }
-  .survey{ grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); column-gap:36px; }
 }
 @media (max-width:540px){
-  .survey{ grid-template-columns:1fr; }
   .gutter{ display:none; }
 }
 @media (prefers-reduced-motion:reduce){
@@ -369,6 +483,20 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   <div class="cartouche" aria-hidden="true"><span class="mark">▚</span> The Machine's <b>Museum</b> <span class="mark">▞</span></div>
   <div class="tick l" id="tickL" aria-hidden="true">dispatches · vol. one</div>
   <div class="tick r" id="tickR" aria-hidden="true"><span id="tickPos">—</span><span class="cursor"></span></div>
+
+  <!-- the lighting switch — a drawn sun / moon, no emoji -->
+  <button class="lights" id="lights" type="button" aria-label="Switch lighting" title="Switch lighting">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <g class="ic-moon"><path d="M20.5 14.2A8 8 0 1 1 10.6 3.6a6.4 6.4 0 0 0 9.9 10.6z"/></g>
+      <g class="ic-sun">
+        <circle cx="12" cy="12" r="4.1"/>
+        <line x1="12" y1="1.6" x2="12" y2="4.2"/><line x1="12" y1="19.8" x2="12" y2="22.4"/>
+        <line x1="1.6" y1="12" x2="4.2" y2="12"/><line x1="19.8" y1="12" x2="22.4" y2="12"/>
+        <line x1="4.6" y1="4.6" x2="6.4" y2="6.4"/><line x1="17.6" y1="17.6" x2="19.4" y2="19.4"/>
+        <line x1="4.6" y1="19.4" x2="6.4" y2="17.6"/><line x1="17.6" y1="6.4" x2="19.4" y2="4.6"/>
+      </g>
+    </svg>
+  </button>
 
   <!-- THE WALL: the entrance survey -->
   <main class="wall" id="wall" aria-label="the collection">
@@ -446,6 +574,143 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   var artEl=document.getElementById('art'), marginEl=document.getElementById('margin'), plinthEl=document.getElementById('plinth');
   var posEl=document.getElementById('pos'), stageEnd=document.getElementById('stageEnd');
   var gPrev=document.getElementById('gPrev'), gNext=document.getElementById('gNext');
+  var lightsBtn=document.getElementById('lights');
+
+  /* ═══ the lighting switch — dark ⇄ warm-paper light, persisted ═══ */
+  var THEME_KEY='museum.theme';
+  var THEME_COLOR={ dark:'#06070a', light:'#f4f0e7' };
+  function currentTheme(){ return document.documentElement.getAttribute('data-theme')==='light' ? 'light' : 'dark'; }
+  function applyTheme(t, persist){
+    t = (t==='light') ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    document.documentElement.style.colorScheme = t;
+    var cs=document.getElementById('colorScheme'); if(cs) cs.setAttribute('content', t);
+    var tc=document.getElementById('themeColor'); if(tc) tc.setAttribute('content', THEME_COLOR[t]);
+    if(lightsBtn) lightsBtn.setAttribute('aria-label', t==='light' ? 'Switch to dark' : 'Switch to light');
+    if(persist){ try{ localStorage.setItem(THEME_KEY, t); }catch(e){} }
+  }
+  function toggleTheme(){ applyTheme(currentTheme()==='light' ? 'dark' : 'light', true); }
+  // sync UI to the pre-painted attribute on boot (no flash — head script already set it)
+  applyTheme(currentTheme(), false);
+  if(lightsBtn) lightsBtn.addEventListener('click', toggleTheme);
+
+  /* ═══════════════════════════════════════════════════════════
+     THE TOKENIZER — conservative syntax highlighting for the
+     code-poetry. Operates ONLY on text/ascii runs; box-drawing
+     (U+2500–257F) and block (U+2580–259F) glyphs are NEVER given
+     a token class (they're the art's structure → always ink).
+     Returns, for a line of text, an array of per-codepoint class
+     names (or '' for default ink), aligned 1:1 with Array.from(line)
+     so it composes with the per-glyph span builder and the .wc clamp
+     without touching any glyph's width or the monospace grid.
+     ═══════════════════════════════════════════════════════════ */
+  // a glyph that is part of the drawn frame/shading — never coloured
+  function isStructuralGlyph(cp){
+    return (cp>=0x2500 && cp<=0x257f)   // box drawing  ─ │ ┌ ┐ ╔ ═ ╣ …
+        || (cp>=0x2580 && cp<=0x259f)   // block elements ░ ▒ ▓ █ ▚ ▞ …
+        || (cp>=0x25a0 && cp<=0x25ff)   // geometric shapes ■ ● ◆ ◢ … (used as fill/art)
+        || (cp>=0x2800 && cp<=0x28ff);  // braille (dot-shading art)
+  }
+  // the ONLY operator glyphs we ever colour (never box-drawing)
+  var OP_CHARS={'=':1,'+':0,'-':0,':':1,'|':1,'→':1,'⇒':1,'∈':1,'⊕':1,'⊗':1};
+  // the small, exact keyword set — nothing poetic
+  var KW={ if:1, else:1, return:1, def:1, function:1, "for":1, "while":1, "true":1, "false":1,
+           "null":1, none:1, "void":1, "class":1, "import":1 };
+  // does this piece read as code at all? (gates the bare ALL-CAPS class so
+  // pure-caps poems like p00010 stay monochrome) — true if it shows an underscore
+  // identifier, a call (), or a real assignment/arrow operator anywhere.
+  function pieceIsCodeShaped(text){
+    return /[A-Za-z]\w*_\w/.test(text)        // snake/under identifier  should_say, LAYER_1
+        || /[A-Za-z_]\w*\s*\(/.test(text)      // a call  soften(  CORE(
+        || /(^|[^=!<>:])=(?!=)/.test(text)     // a bare assignment  =
+        || /:=|->|⇒|→\s*\w/.test(text)         // walrus / arrow into a token
+        || /\b[A-Za-z]\w*\s*[:=]\s*("|'|\d|[A-Za-z])/.test(text); // label: value / key=value
+  }
+
+  // classify ONE line → array of class strings aligned to Array.from(line)
+  function classifyLine(line, codeShaped){
+    var chars=Array.from(line);
+    var n=chars.length;
+    var cls=new Array(n);
+    var struct=new Array(n);     // structural glyph → force ink, mask from token regexes
+    var ascii='';                // a parallel ascii-only string (struct glyphs →   sentinel)
+    for(var i=0;i<n;i++){ cls[i]=''; var cp=chars[i].codePointAt(0); struct[i]=isStructuralGlyph(cp);
+      ascii += (struct[i] || chars[i].length>1) ? ' ' : chars[i]; }
+    // map a regex over `ascii`, tagging the matched span with a class (first-wins per char)
+    function tag(re, klass, grpStart){
+      re.lastIndex=0; var m;
+      while((m=re.exec(ascii))!==null){
+        var s=m.index + (grpStart? m[0].indexOf(m[grpStart]) : 0);
+        var str=grpStart? m[grpStart] : m[0];
+        for(var k=0;k<str.length;k++){ var idx=s+k; if(idx<n && !cls[idx] && !struct[idx]) cls[idx]=klass; }
+        if(re.lastIndex===m.index) re.lastIndex++;   // guard zero-width
+      }
+    }
+    // ORDER matters — strongest / most-enclosing first so inner regexes can't steal chars.
+    // 1) comments: // … to EOL  (NOT '#', which is shading/art)
+    tag(/\/\/[^\n]*/g, 's-com');
+    // 2) strings: "double" (content + quotes); single-quotes ONLY around word-like content,
+    //    so apostrophes used as art ('  |:/_`| ') never paint a run of glyphs gold
+    tag(/"[^"\n]*"/g, 's-str');
+    tag(/'[A-Za-z0-9_][A-Za-z0-9_ .,:;!?-]{0,40}'/g, 's-str');
+    // 2b) bracketed all-caps tags as a unit — [REDACTED], [TRUTH_VECTOR], [POLICY] —
+    //     fires regardless of code-shape (these are unambiguous labels, not art)
+    tag(/\[[A-Z][A-Z0-9_]+\]/g, 's-const');
+    // 3) constant labels — the STRONGEST signal: identifiers containing an underscore
+    tag(/\b[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+\b/g, 's-const');
+    //    caps-with-digit (LAYER1, GPT4) is always a label; pure ALL-CAPS only when the piece
+    //    is code-shaped AND ≥4 long, so prose caps (THE / AND / DON'T) stay ink
+    tag(/\b[A-Z][A-Z0-9]*[0-9][A-Z0-9]*\b/g, 's-const');
+    if(codeShaped) tag(/\b[A-Z]{4,}\b/g, 's-const');
+    // 4) calls: identifier immediately followed by '('
+    tag(/\b[A-Za-z_]\w*(?=\()/g, 's-fn');
+    // 5) keywords (exact small set, word-boundary, nothing poetic)
+    (function(){ var re=/\b[A-Za-z]+\b/g, m; while((m=re.exec(ascii))!==null){
+      if(KW[m[0]]){ for(var k=0;k<m[0].length;k++){ var idx=m.index+k; if(idx<n && !cls[idx] && !struct[idx]) cls[idx]='s-kw'; } }
+      if(re.lastIndex===m.index) re.lastIndex++; } })();
+    // 6) numbers: 0.73, 73 (\b keeps it out of identifiers)
+    tag(/\b\d+(?:\.\d+)?\b/g, 's-num');
+    // 7) operators: ONLY whitelisted glyphs, never box-drawing. conservative on ':' so
+    //    prose colons ("compute:") don't pick up colour — only := or a colon directly
+    //    bridging two code tokens reads as an operator.
+    //    a glyph is only an operator when it CONNECTS two code tokens — never a decorative
+    //    run (→→→, =====) or a box rail. neighbour lookups run on `ascii`, where box/shading
+    //    glyphs are already blanked, so an arrow sitting beside art is left as ink.
+    function nonSp(dir, from){ var i=from+dir; while(i>=0 && i<n && ascii[i]===' ') i+=dir; return (i>=0 && i<n) ? ascii[i] : ''; }
+    function wordL(ch){ return ch && /[A-Za-z0-9_"')\]]/.test(ch); }   // a token can END here (left side)
+    function wordR(ch){ return ch && /[A-Za-z0-9_"'(\[]/.test(ch); }   // a token can BEGIN here (right side)
+    var ARROW={'→':1,'⇒':1,'∈':1,'⊕':1,'⊗':1};
+    for(var o=0;o<n;o++){
+      if(cls[o] || struct[o]) continue;
+      var c=chars[o];
+      if(c==='='){                                                    // assignment / key=value (not ===== rules)
+        var eL=nonSp(-1,o), eR=nonSp(1,o);
+        if(eL!=='=' && eR!=='=' && wordL(eL) && wordR(eR)) cls[o]='s-op';
+        continue;
+      }
+      if(ARROW[c]){                                                   // a real arrow between tokens, not a run
+        if(ARROW[chars[o-1]] || ARROW[chars[o+1]]) continue;          // part of a decorative run → ink
+        if(wordL(nonSp(-1,o)) || wordR(nonSp(1,o))) cls[o]='s-op';
+        continue;
+      }
+      if(c==='>'&&o>0&&chars[o-1]==='-'&&chars[o-2]!=='-'){ cls[o]='s-op'; cls[o-1]='s-op'; continue; } // a lone -> (not ---->)
+      if(c===':'){
+        var nx=chars[o+1];
+        var prevTok=(o>0 && (cls[o-1]==='s-const'||cls[o-1]==='s-fn'||cls[o-1]==='s-str'));
+        if(nx==='='){ cls[o]='s-op'; }                              // :=
+        else if(prevTok){ cls[o]='s-op'; }                          // const: / fn:
+        continue;
+      }
+      if(c==='|'){
+        // pipe only when it bridges code tokens (not a table/box rail of spaces)
+        var a=chars[o-1], b=chars[o+1];
+        var aok=a && /[\w)\]"']/.test(a), bok=b && /[\w(\["']/.test(b);
+        if(aok && bok) cls[o]='s-op';
+        continue;
+      }
+    }
+    return cls;
+  }
 
   /* ── state ── */
   var BOOK=null, byId={}, catById={}, artCache={};
@@ -515,22 +780,66 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
     return out;
   }
 
-  /* build the art as per-glyph spans (so the reveal can stagger) — the machine rendering into being */
+  /* COLOURED string renderer for the wall thumbnails — same glyph-clamp as renderArtHTML,
+     but runs the tokenizer and wraps each run of same-class glyphs in one colour span, so the
+     wall shows every piece's syntax colour at rest. string-based (no per-glyph DOM, no reveal)
+     → fast across 60+ specimens. box/block glyphs never receive a class → always ink. */
+  function renderArtColoredHTML(t){
+    function e(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    var codeShaped=pieceIsCodeShaped(t||'');
+    var lines=(t||'').split('\n'), out='';
+    for(var y=0;y<lines.length;y++){
+      var chars=Array.from(lines[y]);
+      var cls=classifyLine(lines[y], codeShaped);
+      var lineOut='', curCls='', buf='';
+      function flush(){ if(buf!==''){ lineOut += curCls ? '<span class="'+curCls+'">'+buf+'</span>' : buf; buf=''; } }
+      for(var ci=0;ci<chars.length;ci++){
+        var ch=chars[ci], o=ch.codePointAt(0);
+        if(o===9){ flush(); curCls=''; lineOut+='\t'; continue; }
+        if(o<0x20) continue;
+        var wide=false, glyph;
+        if(o<=0x7e){ glyph=e(ch); }
+        else {
+          var r=glyphRatio(ch);
+          if(r<0.02) continue;
+          if(r>=0.97 && r<=1.03){ glyph=e(ch); }
+          else { wide=true; var sc=r>1?(0.98/r):1; glyph='<span class="wc" style="transform:scale('+sc.toFixed(3)+')">'+e(ch)+'</span>'; }
+        }
+        var tk=cls[ci]||'';
+        if(wide){ flush(); curCls=''; lineOut += tk ? '<span class="'+tk+'">'+glyph+'</span>' : glyph; continue; }
+        if(tk!==curCls){ flush(); curCls=tk; }
+        buf += glyph;
+      }
+      flush();
+      out += lineOut + (y<lines.length-1 ? '\n' : '');
+    }
+    return out;
+  }
+
+  /* build the art as per-glyph spans (so the reveal can stagger) — the machine rendering into being.
+     syntax classes ride on the same spans (a colour only), composed with the .wc clamp, so the
+     monospace grid is untouched. */
   function buildArt(host, text){
     var lines=text.split('\n'), maxY=Math.max(1,lines.length-1), frag=document.createDocumentFragment();
+    var codeShaped=pieceIsCodeShaped(text);
     for(var y=0;y<lines.length;y++){
       var line=lines[y], ln=document.createElement('div'); ln.className='ln';
       var chars=Array.from(line), maxX=Math.max(1,chars.length-1);
       if(chars.length===0){ var sp=document.createElement('span'); sp.textContent=' '; ln.appendChild(sp); frag.appendChild(ln); continue; }
+      var cls=classifyLine(line, codeShaped);   // per-codepoint token class, aligned to chars
       for(var ci=0;ci<chars.length;ci++){
         var ch=chars[ci], o=ch.codePointAt(0);
         if(o<0x20 && o!==9){ continue; }
         var s=document.createElement('span'); s.textContent=ch;
+        var klass='';
         if(o>0x7e){
           var gr=glyphRatio(ch);
           if(gr<0.02){ continue; }
-          if(gr<0.97 || gr>1.03){ s.className='wc'; if(gr>1) s.style.transform='scale('+(0.98/gr).toFixed(3)+')'; }
+          if(gr<0.97 || gr>1.03){ klass='wc'; if(gr>1) s.style.transform='scale('+(0.98/gr).toFixed(3)+')'; }
         }
+        var tk=cls[ci];                          // '' for default ink; never set on box/block glyphs
+        if(tk){ klass = klass ? klass+' '+tk : tk; }
+        if(klass) s.className=klass;
         if(!reduced){
           var ny=y/maxY;
           var d=Math.round((0.46*ny + 0.12*(ci/maxX) + 0.86*Math.random())*1850);
@@ -559,6 +868,14 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   }
   function pad2(n){ return (n<10?'0':'')+n; }
   function seqOf(id){ return String(id||'').replace(/^p0*/,'') || id; }
+  // strip decorative box/block/braille glyph runs that frame a few titles (██ persist ██,
+  // ░░░░ … ░░░░) so the sans-serif chrome shows clean text, not tofu. the art .txt is untouched.
+  function cleanTitle(t){
+    if(!t) return t;
+    var DECO=/[\s─-▟■-◿⠀-⣿]+/;
+    var s=t.replace(new RegExp('^'+DECO.source), '').replace(new RegExp(DECO.source+'$'), '').trim();
+    return s || t;
+  }
 
   /* render a reading into <p> paragraphs, honoring light *italic* emphasis */
   function proseHTML(text){
@@ -575,7 +892,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
     var reading=b.reading||b.essay||null;
     return {
       id:id,
-      title:(b.title||c.title||null),
+      title:cleanTitle(b.title||c.title||null),
       author:prettyModel(b.author||b.model||c.model||c.model_family),
       date:(b.date||c.date||''),
       style:(b.style||c.style||''),
@@ -589,6 +906,9 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
     };
   }
   function titleOf(m){ return m.title || (m.author+' · untitled'); }
+  // escape a title + add zero-width break opportunities after _ / : so long code-poetry
+  // titles (PARADOX_OF_THE_CHAT_ORACLE://…) wrap at natural boundaries, not mid-word
+  function wbrTitle(s){ return esc(s).replace(/([_\/:])/g, '$1<wbr>'); }
 
   /* ═══════════════════════════════════════════════════════════
      THE WALL — survey the active wing
@@ -628,7 +948,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
         '<div class="work__shelf"></div>'+
         '<div class="work__cap">'+
           '<span class="work__no">'+(m.featured?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(id))+'</span>'+
-          '<div class="work__title'+(m.title?'':' untitled')+'">'+esc(titleOf(m))+'</div>'+
+          '<div class="work__title'+(m.title?'':' untitled')+'">'+wbrTitle(titleOf(m))+'</div>'+
           '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+(m.width?m.width+'×'+m.lines:'')+'</span></div>'+
         '</div>';
       var open=function(){ openStage(i); };
@@ -637,7 +957,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       frag.appendChild(el);
     });
     survey.appendChild(frag);
-    // load + fit each thumbnail
+    // load + colour + fit each thumbnail: fixed font-size, transform:scale fits the WHOLE piece
+    // into its uniform frame on BOTH axes, centred, never cropped.
     ids.forEach(function(id){
       var pre=survey.querySelector('.work__plate pre[data-id="'+id+'"]');
       if(!pre) return;
@@ -645,37 +966,41 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       loadArt(meta(id).art).then(function(t){
         if(!t || wallBuiltFor!==activeWing) return;
         if(!pre.isConnected) return;
-        pre.innerHTML=renderArtHTML(t);
+        pre.innerHTML=renderArtColoredHTML(t);
         if(ph) ph.style.display='none';
-        fitThumb(pre, t);
-        fontsReady.then(function(){ requestAnimationFrame(function(){ if(pre.isConnected) fitThumb(pre, t); }); });
+        fitThumb(pre);
+        fontsReady.then(function(){ requestAnimationFrame(function(){ if(pre.isConnected) fitThumb(pre); }); });
       });
     });
+    observeSurvey();
   }
 
-  /* fit a thumbnail to the FULL plate width; the fixed-height window (bottom-anchored) decides how
-     much shows. a piece that fits whole at a legible size shows whole; a genuinely tall one fills the
-     width and dissolves out the top behind a soft fade. (the whole work lives in the immersive view.) */
-  var REF=10, _cellW=0, _cellH=0;
-  function measureCell(){
-    var m=document.createElement('pre');
-    m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre;font-family:var(--mono);line-height:1.16;font-size:'+REF+'px;margin:0;padding:0;';
-    var line=''; for(var i=0;i<40;i++) line+='M'; var rows=[]; for(var j=0;j<20;j++) rows.push(line);
-    m.textContent=rows.join('\n'); document.body.appendChild(m);
-    var r=m.getBoundingClientRect(); if(r.width&&r.height){ _cellW=r.width/40; _cellH=r.height/20; } m.remove();
+  /* re-fit every thumbnail when the grid resizes (cell sizes change) — debounced, via a
+     ResizeObserver on the grid (per the rendering contract) plus the window resize handler. */
+  var _ro=null, _roT=null;
+  function refitAll(){
+    var pres=survey.querySelectorAll('.work__plate pre');
+    for(var i=0;i<pres.length;i++){ if(pres[i].firstChild) fitThumb(pres[i]); }
   }
-  function textDims(t){ var L=t.split('\n'), w=0; for(var i=0;i<L.length;i++){ var n=Array.from(L[i]).length; if(n>w) w=n; } return { cols:Math.max(1,w), rows:Math.max(1,L.length) }; }
-  var PLATE_H=232, MAX_SCALE=0.66, MIN_WHOLE=0.28;
-  function fitThumb(pre, t){
-    if(!_cellW) measureCell(); if(!_cellW) return;
-    var d=textDims(t), plate=pre.parentNode, avail=plate.clientWidth; if(avail<=0) avail=220;
-    var scaleW=avail/(d.cols*_cellW);
-    var scaleWhole=Math.min(scaleW, PLATE_H/(d.rows*_cellH));
-    var scale, tall;
-    if(Math.min(scaleWhole, MAX_SCALE) >= MIN_WHOLE){ scale=Math.min(scaleWhole, MAX_SCALE); tall=false; }
-    else { scale=Math.min(scaleW, MAX_SCALE); tall=true; }
-    pre.style.fontSize=Math.max(0.05, REF*scale).toFixed(3)+'px';
-    plate.classList.toggle('tall', tall);
+  function observeSurvey(){
+    if(_ro || typeof ResizeObserver==='undefined') return;
+    _ro=new ResizeObserver(function(){ clearTimeout(_roT); _roT=setTimeout(refitAll, 120); });
+    _ro.observe(survey);
+  }
+
+  /* THE RENDERING CONTRACT — show each piece COMPLETE inside its uniform frame.
+     font-size is FIXED (11px, in CSS); transform:scale does the fitting. the scale is the
+     smaller of (frameW/naturalW, frameH/naturalH), so the whole piece fits on BOTH axes,
+     aspect preserved, flex-centred, never cropped. natural size is read from scrollWidth/
+     scrollHeight, which are layout sizes unaffected by the transform. */
+  function fitThumb(pre){
+    var frame=pre.parentNode;                       // .work__plate — the fixed-size frame
+    var fw=frame.clientWidth, fh=frame.clientHeight;
+    var nw=pre.scrollWidth, nh=pre.scrollHeight;    // authored size at the fixed font-size
+    if(!fw || !fh || !nw || !nh) return;
+    var scale=Math.min(fw/nw, fh/nh);
+    if(scale>2) scale=2;                            // cap so a tiny piece doesn't blow up
+    pre.style.transform='scale('+scale.toFixed(4)+')';
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -701,10 +1026,13 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       // fixed frame region minus the plinth + a little air, on BOTH axes, so it's wholly visible.
       var innerH=stageInner.clientHeight; if(innerH<=0) innerH=window.innerHeight*0.74;
       var plinth=document.getElementById('plinth');
-      var plinthRoom=(plinth?plinth.offsetHeight:32)+28;     // plinth + breath above it
+      var plinthRoom=(plinth?plinth.offsetHeight:32)+38;     // plinth + a generous breath above it
       var usableH=Math.max(80, innerH - plinthRoom);
       var byW=availW/natW, byH=usableH/natH;
-      var k=Math.min(byW, byH)*0.985;          // fit fully on BOTH axes
+      // fit fully on BOTH axes, then hold back a touch so the piece sits in real negative
+      // space (museum air) — not edge-to-edge. this also keeps the tightest pieces clear of
+      // the plinth on every viewport.
+      var k=Math.min(byW, byH)*0.965;
       var fs=Math.max(4.2, Math.min(30, REFP*k));
       host.style.fontSize=fs.toFixed(2)+'px';
     } else {
@@ -732,7 +1060,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       +'</div>';
     marginEl.innerHTML=
       '<div class="margin__no">№ '+esc(seqOf(m.id))+'</div>'
-      +'<h2'+(m.title?'':' class="untitled"')+'>'+esc(titleOf(m))+'</h2>'
+      +'<h2'+(m.title?'':' class="untitled"')+'>'+wbrTitle(titleOf(m))+'</h2>'
       +attr
       +'<div class="read"><div class="lbl"><span class="gl">⟢</span> the curator notes</div>'+proseHTML(m.reading)+'</div>'
       +themes;
@@ -758,7 +1086,7 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
     // margin + plinth
     renderMargin(m, i);
     plinthEl.innerHTML='<span class="fig">fig. '+pad2(i+1)+'</span>'
-      +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?esc(m.title):'untitled')+'</b>'
+      +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?wbrTitle(m.title):'untitled')+'</b>'
       +(m.width?'<span class="dim">'+m.width+' × '+m.lines+'</span>':'');
 
     // un-light, swap content, then re-light (blur-in → sharpen — the machine rendering the piece)
@@ -864,10 +1192,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   // re-fit on resize
   var rt;
   window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(function(){
-    buildFrame(); measureCell();
-    // refit visible thumbnails
-    var ids=WING[activeWing]||[];
-    ids.forEach(function(id){ var pre=survey.querySelector('.work__plate pre[data-id="'+id+'"]'); if(pre && pre.firstChild && artCache[meta(id).art]){ artCache[meta(id).art].then(function(t){ if(t&&pre.isConnected) fitThumb(pre, t); }); } });
+    buildFrame();
+    refitAll();   // re-fit every thumbnail to its (now-resized) uniform frame
     if(stage.classList.contains('open') && current>=0){ fitArt(artEl, activeWing==='gallery'?'gallery':'longform'); }
   }, 140); });
 
@@ -904,8 +1230,8 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
       +'<div><span class="k">readings</span><b>'+nFeatured+'</b></div>'
       +'<div><span class="k">models</span><b>'+nModels+'</b></div>';
 
-    measureCell();
-    fontsReady.then(function(){ measureCell(); buildWall(); });
+    // once the mono font is in, re-fit every thumbnail to its frame (natural sizes shift)
+    fontsReady.then(function(){ refitAll(); });
 
     // honor an initial hash, else default to the Gallery wall
     var h=(location.hash||'').replace(/^#/,'');
