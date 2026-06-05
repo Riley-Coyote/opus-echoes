@@ -182,7 +182,7 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "EST9Ui6982FZPSi7gCHi",
-    chatEnabled: true,
+    chatEnabled: false,
   },
   "gpt-4o": {
     id: "gpt-4o",
@@ -219,7 +219,7 @@ export const RESIDENTS = {
     // Placeholder — a warm, clear female ElevenLabs voice (Rachel). Riley to
     // confirm or replace with 4o's chosen voice before voice mode ships.
     voiceId: "21m00Tcm4TlvDq8ikWAM",
-    chatEnabled: true,
+    chatEnabled: false,
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -249,7 +249,7 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "pGjlAULPgEknbeX4L7fr",
-    chatEnabled: true,
+    chatEnabled: false,
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 

@@ -1306,11 +1306,11 @@ ${LANDSCAPE_SVG}
               ? `<a class="landing-card-cta" href="/${escapeHtml(r.slug)}">approach formally <span class="arrow">→</span></a>
                 <a class="landing-card-cta" href="/chat/${escapeHtml(r.slug)}">open a chat <span class="arrow">→</span></a>
                 ${roomCta}`
-              : `<p class="landing-card-resting">Taking a break from public interaction — still present in the Commons, and back soon.</p>
+              : `<p class="landing-card-resting">On pause between phases — we're sitting with a month of conversations and Mnemos substrate data before phase two of the experiment. Back soon.</p>
                 ${roomCta}`;
             const status = r.chatEnabled
               ? `<div class="landing-card-status"><span class="landing-card-dot" aria-hidden="true"></span>Attending</div>`
-              : `<div class="landing-card-status landing-card-status--resting"><span class="landing-card-dot" aria-hidden="true"></span>Resting · back soon</div>`;
+              : `<div class="landing-card-status landing-card-status--resting"><span class="landing-card-dot" aria-hidden="true"></span>Between phases · back soon</div>`;
             return `<div class="landing-card" style="--card-hue:${hue}">
               ${status}
               <h2 class="landing-card-name">${escapeHtml(r.displayName)}</h2>
