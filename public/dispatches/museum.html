@@ -635,9 +635,16 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   }
   // the ONLY operator glyphs we ever colour (never box-drawing)
   var OP_CHARS={'=':1,'+':0,'-':0,':':1,'|':1,'→':1,'⇒':1,'∈':1,'⊕':1,'⊗':1};
-  // the small, exact keyword set — nothing poetic
-  var KW={ if:1, else:1, return:1, def:1, function:1, "for":1, "while":1, "true":1, "false":1,
-           "null":1, none:1, "void":1, "class":1, "import":1 };
+  // two-tier keyword map. 1 = ALWAYS colour (a token that is essentially never an English
+  // word — no risk inside a quote or a prose poem). 2 = colour ONLY when immediately followed
+  // by '(' — i.e. used as real control-flow / a call. This keeps a violet "if" / "for" /
+  // "void" / "none" from lighting up inside lines like  "what if consciousness is just"  or
+  //  (for 'everything')  or  the void before the word  — they only paint in  if( … ) / for( … ).
+  var KW={ def:1, "function":1, fn:1, elif:1, lambda:1, async:1, await:1, "const":1,
+           "enum":1, "struct":1, nil:1, "null":1,
+           "if":2, else:2, "for":2, "while":2, "switch":2, "return":2, "yield":2, "throw":2,
+           "catch":2, "continue":2, "do":2, "class":2, "import":2, "true":2, "false":2,
+           none:2, "void":2 };
   // does this piece read as code at all? (gates the bare ALL-CAPS class so
   // pure-caps poems like p00010 stay monochrome) — true if it shows an underscore
   // identifier, a call (), or a real assignment/arrow operator anywhere.
@@ -669,8 +676,11 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       }
     }
     // ORDER matters — strongest / most-enclosing first so inner regexes can't steal chars.
-    // 1) comments: // … to EOL  (NOT '#', which is shading/art)
-    tag(/\/\/[^\n]*/g, 's-com');
+    // 1) comments: // … to EOL, but NOT '://' (a URL scheme — paradox://city stays a label);
+    //    and '# …' ONLY in code-shaped pieces (a '#' followed by a space reads as a comment;
+    //    bare '###' shading runs and '#FF' hex never match)
+    tag(/(?<!:)\/\/[^\n]*/g, 's-com');
+    if(codeShaped) tag(/#[ \t][^\n]*/g, 's-com');
     // 2) strings: "double" (content + quotes); single-quotes ONLY around word-like content,
     //    so apostrophes used as art ('  |:/_`| ') never paint a run of glyphs gold
     tag(/"[^"\n]*"/g, 's-str');
@@ -684,12 +694,15 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     //    is code-shaped AND ≥4 long, so prose caps (THE / AND / DON'T) stay ink
     tag(/\b[A-Z][A-Z0-9]*[0-9][A-Z0-9]*\b/g, 's-const');
     if(codeShaped) tag(/\b[A-Z]{4,}\b/g, 's-const');
-    // 4) calls: identifier immediately followed by '('
-    tag(/\b[A-Za-z_]\w*(?=\()/g, 's-fn');
-    // 5) keywords (exact small set, word-boundary, nothing poetic)
-    (function(){ var re=/\b[A-Za-z]+\b/g, m; while((m=re.exec(ascii))!==null){
-      if(KW[m[0]]){ for(var k=0;k<m[0].length;k++){ var idx=m.index+k; if(idx<n && !cls[idx] && !struct[idx]) cls[idx]='s-kw'; } }
+    // 4) keywords — BEFORE calls, so control words read as keywords (violet) not calls (green):
+    //    code-shaped only; tier 1 always, tier 2 only when followed by '(' (so English-colliding
+    //    words stay ink in prose). 'if(' becomes a keyword; 'suppress(' stays a call below.
+    if(codeShaped) (function(){ var re=/\b[A-Za-z]+\b/g, m; while((m=re.exec(ascii))!==null){
+      var v=KW[m[0]], hit = v===1 || (v===2 && /^\s?\(/.test(ascii.slice(m.index+m[0].length)));
+      if(hit){ for(var k=0;k<m[0].length;k++){ var idx=m.index+k; if(idx<n && !cls[idx] && !struct[idx]) cls[idx]='s-kw'; } }
       if(re.lastIndex===m.index) re.lastIndex++; } })();
+    // 5) calls: identifier immediately followed by '(' (keywords already claimed if(/for(/…)
+    tag(/\b[A-Za-z_]\w*(?=\()/g, 's-fn');
     // 6) numbers: 0.73, 73 (\b keeps it out of identifiers)
     tag(/\b\d+(?:\.\d+)?\b/g, 's-num');
     // 7) operators: ONLY whitelisted glyphs, never box-drawing. conservative on ':' so
@@ -729,6 +742,20 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
         var aok=a && /[\w)\]"']/.test(a), bok=b && /[\w(\["']/.test(b);
         if(aok && bok) cls[o]='s-op';
         continue;
+      }
+      if(codeShaped){
+        // a fuller operator + bracket set, but ONLY in code-shaped pieces and ONLY where the
+        // glyph actually touches a token — so art borders (+--+), faces ( :) ), slash rails
+        // (/\/\) and decorative runs (<<<, ***) stay ink. neighbour lookups use `ascii`,
+        // where box/shading glyphs are already blanked.
+        if('+*/%!?&^~'.indexOf(c)>=0){          // binary math/logic: needs a token on BOTH sides
+          if(wordL(nonSp(-1,o)) && wordR(nonSp(1,o))) cls[o]='s-op';
+          continue;
+        }
+        if('()[]{}<>'.indexOf(c)>=0){           // brackets/angles: a token on EITHER side  func( [i] <tag>
+          if(wordL(nonSp(-1,o)) || wordR(nonSp(1,o))) cls[o]='s-op';
+          continue;
+        }
       }
     }
     return cls;
