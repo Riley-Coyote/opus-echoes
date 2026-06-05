@@ -412,6 +412,37 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 .stage.gallery .stage__inner.annotated .well{ align-items:center; }
 .stage.longform .well{ align-items:center; justify-content:flex-start; }
 
+/* MAGNIFY — at fit the well shows the whole piece (no scroll); zoomed past fit the well
+   itself becomes the scroll/pan viewport, so the curator's margin stays put beside it.
+   `safe` centring prevents the flex top/left-clip when the art is larger than the well. */
+.well{ overflow:hidden; }
+.stage.zoomed .well{ overflow:auto; cursor:grab; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch; justify-content:safe center; align-items:safe center; }
+.stage.zoomed .well.grabbing{ cursor:grabbing; }
+.stage.zoomed .well::-webkit-scrollbar{ width:9px; height:9px; }
+.stage.zoomed .well::-webkit-scrollbar-thumb{ background:var(--ink-18); border-radius:6px; }
+.stage.zoomed .well::-webkit-scrollbar-track{ background:transparent; }
+
+/* the magnify cluster — a hushed control on the void, mirrors the chrome's restraint */
+.zoomctl{ position:absolute; right:clamp(16px,2.4vw,40px); bottom:clamp(16px,2.4vh,34px); z-index:7;
+  display:flex; align-items:center; gap:1px; padding:3px;
+  background:color-mix(in oklab, var(--floor) 70%, transparent);
+  border:1px solid var(--rule-faint); border-radius:11px;
+  -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
+  opacity:0; transform:translateY(7px); transition:opacity 500ms var(--ease), transform 500ms var(--ease); }
+.stage.lit .zoomctl{ opacity:1; transform:none; }
+.zoomctl .zb{ appearance:none; -webkit-appearance:none; background:transparent; border:0; margin:0;
+  color:var(--ink-62); font-family:var(--mono); font-size:14px; line-height:1; cursor:pointer;
+  width:30px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px;
+  transition:background 200ms var(--ease), color 200ms var(--ease); }
+.zoomctl .zb:hover:not(:disabled){ background:color-mix(in oklab, var(--ink) 9%, transparent); color:var(--ink); }
+.zoomctl .zb:active:not(:disabled){ background:color-mix(in oklab, var(--ink) 14%, transparent); }
+.zoomctl .zb:disabled{ opacity:0.3; cursor:default; }
+.zoomctl .zb:focus-visible{ outline:2px solid var(--state); outline-offset:2px; }
+.zoomctl .zpct{ width:auto; min-width:48px; padding:0 9px; font-size:11px; letter-spacing:0.03em;
+  color:var(--ink-84); font-variant-numeric:tabular-nums; }
+.zoomctl .zfit svg{ display:block; }
+
 .art{ font-family:var(--mono); line-height:1.18; color:var(--ink); white-space:pre; display:block; margin:0;
   filter:blur(9px); transition:filter 1700ms var(--ease); will-change:filter; }
 .stage.lit .art{ filter:blur(0); }
@@ -563,6 +594,12 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     </div>
     <span class="gutter prev" id="gPrev" aria-hidden="true"></span>
     <span class="gutter next" id="gNext" aria-hidden="true"></span>
+    <div class="zoomctl" id="zoomCtl" role="group" aria-label="magnify">
+      <button class="zb" id="zOut" type="button" aria-label="zoom out">&#8722;</button>
+      <button class="zb zpct" id="zPct" type="button" aria-label="reset to fit" title="reset to fit (0)">100%</button>
+      <button class="zb" id="zIn" type="button" aria-label="zoom in">+</button>
+      <button class="zb zfit" id="zFit" type="button" aria-label="fit to view" title="fit to view"><svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 6V2.5H6M14 6V2.5h-3.5M2.5 10v3.5H6M14 10v3.5h-3.5"/></svg></button>
+    </div>
   </section>
 
 <script>
@@ -597,6 +634,8 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   var posEl=document.getElementById('pos'), stageEnd=document.getElementById('stageEnd');
   var gPrev=document.getElementById('gPrev'), gNext=document.getElementById('gNext');
   var lightsBtn=document.getElementById('lights');
+  var zoomCtl=document.getElementById('zoomCtl'), zOutBtn=document.getElementById('zOut'),
+      zInBtn=document.getElementById('zIn'), zPctEl=document.getElementById('zPct'), zFitBtn=document.getElementById('zFit');
 
   /* ═══ the lighting switch — dark ⇄ warm-paper light, persisted ═══ */
   var THEME_KEY='museum.theme';
@@ -1105,35 +1144,51 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
        composition is fully visible inside the frame. it never scrolls.
      · LONG-FORM — fit to the available WIDTH at a legible size; height is whatever it is,
        and the stage scrolls. nothing crops. */
+  // ── immersive sizing + magnify ───────────────────────────────────────────
+  // EVERY piece opens fit FULLY in view (both axes) but never larger than CAPFS
+  // (≈ standard reading size). Tall pieces shrink below the cap to fit whole.
+  // Magnify scales UP from there, to MAXFS at most (still < the old fill size);
+  // past the fit size the art overflows and the well scrolls / pans.
+  var REFP=10, CAPFS=14, MAXFS=20;
+  var zoom=1, curFitFs=CAPFS, curDefaultFs=CAPFS;
+
+  function artAvail(){
+    var well=artEl.closest('.well'); if(!well) return null;
+    var availW=well.clientWidth, wellH=well.clientHeight;
+    var plinthH=plinthEl?plinthEl.offsetHeight:0;
+    var usableH=Math.max(90, wellH - plinthH - 14);   // leave the plinth its breath
+    if(availW<=0 || usableH<=0) return null;
+    return { availW:availW, usableH:usableH };
+  }
+
   function fitArt(host, mode){
     if(!host || !host.firstChild) return;
-    var well=host.closest('.well'); if(!well) return;
-    var REFP=10; host.style.fontSize=REFP+'px';
-    // measure the rendered natural box (clamp spans already applied)
+    host.style.fontSize=REFP+'px';                     // measure natural at the reference size
     var natW=host.scrollWidth, natH=host.scrollHeight;
     if(!natW || !natH) return;
-    var availW=well.clientWidth; if(availW<=0) return;
-    if(mode==='gallery'){
-      // the available HEIGHT is the bounded inner region (inset to the frame), NOT the well —
-      // the well grows with its content, so measuring it would be circular. fit the art into the
-      // fixed frame region minus the plinth + a little air, on BOTH axes, so it's wholly visible.
-      var innerH=stageInner.clientHeight; if(innerH<=0) innerH=window.innerHeight*0.74;
-      var plinth=document.getElementById('plinth');
-      var plinthRoom=(plinth?plinth.offsetHeight:32)+38;     // plinth + a generous breath above it
-      var usableH=Math.max(80, innerH - plinthRoom);
-      var byW=availW/natW, byH=usableH/natH;
-      // fit fully on BOTH axes, then hold back a touch so the piece sits in real negative
-      // space (museum air) — not edge-to-edge. this also keeps the tightest pieces clear of
-      // the plinth on every viewport.
-      var k=Math.min(byW, byH)*0.965;
-      var fs=Math.max(4.2, Math.min(30, REFP*k));
-      host.style.fontSize=fs.toFixed(2)+'px';
-    } else {
-      // long-form: fill the column width, capped so a narrow piece doesn't balloon
-      var fill=REFP*(availW/natW)*0.992;
-      var fs2=Math.max(5.5, Math.min(24, fill));
-      host.style.fontSize=fs2.toFixed(2)+'px';
-    }
+    var box=artAvail(); if(!box) return;
+    // fit on BOTH axes, hold back a touch so the piece sits in museum air, not edge-to-edge
+    var k=Math.min(box.availW/natW, box.usableH/natH)*0.965;
+    curFitFs=Math.max(4.4, REFP*k);                    // the whole piece, in view
+    curDefaultFs=Math.min(curFitFs, CAPFS);            // …but never larger than the cap
+    if(curDefaultFs*zoom > MAXFS) zoom=MAXFS/curDefaultFs;   // keep the magnify within ceiling
+    var fs=Math.max(curDefaultFs, Math.min(MAXFS, curDefaultFs*zoom));
+    host.style.fontSize=fs.toFixed(2)+'px';
+    stage.classList.toggle('zoomed', fs > curFitFs + 0.15);  // overflowing the frame → scroll/pan
+    updateZoomUI(fs);
+  }
+
+  function maxZoom(){ return curDefaultFs>0 ? Math.max(1, MAXFS/curDefaultFs) : 1; }
+  function applyZoom(z){ zoom=Math.max(1, Math.min(maxZoom(), z)); fitArt(artEl, 'gallery'); }
+  function zoomBy(f){ applyZoom(zoom*f); }
+  function resetZoom(){ applyZoom(1); var w=artEl.closest('.well'); if(w){ w.scrollTop=0; w.scrollLeft=0; } }
+  function updateZoomUI(fs){
+    if(!zPctEl) return;
+    zPctEl.textContent=Math.round(fs/curDefaultFs*100)+'%';
+    var atMin=zoom<=1.001, atMax=zoom>=maxZoom()-0.001;
+    if(zOutBtn) zOutBtn.disabled=atMin;
+    if(zInBtn) zInBtn.disabled=atMax;
+    if(zFitBtn) zFitBtn.disabled=atMin;
   }
   function fitArtWhenReady(host, mode){
     fitArt(host, mode);
@@ -1164,17 +1219,18 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     current=i; rtok++;
     var token=rtok;
     var m=meta(id);
-    var mode=LONG[id] ? 'longform' : 'gallery';
+    var mode='gallery';   // every piece now opens fit-in-view; magnify replaces long-form scroll
+    zoom=1;               // reset the magnify for each new piece
 
     // chrome
     posEl.textContent=(FAM[id]||'gallery')+' · № '+seqOf(id)+' · '+(i+1)+' / '+CUR.length;
     tickPos.textContent='exhibit '+pad2(i+1)+' / '+pad2(CUR.length);
     tickL.textContent=(m.author||'dispatches')+' · '+(m.tier||'ascii');
 
-    // stage mode classes
-    stage.classList.toggle('gallery', mode==='gallery');
-    stage.classList.toggle('longform', mode==='longform');
-    stageEnd.hidden=(mode!=='longform');
+    // stage mode classes — fit-in-view layout for all; clear any prior magnify
+    stage.classList.add('gallery');
+    stage.classList.remove('longform','zoomed');
+    stageEnd.hidden=true;
 
     // margin + plinth
     renderMargin(m, i);
@@ -1239,16 +1295,50 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   gPrev.addEventListener('click', function(){ step(-1); });
   gNext.addEventListener('click', function(){ step(1); });
 
+  /* ── magnify: buttons, ⌘/pinch-wheel, drag-to-pan ── */
+  if(zOutBtn) zOutBtn.addEventListener('click', function(){ zoomBy(1/1.25); });
+  if(zInBtn)  zInBtn.addEventListener('click', function(){ zoomBy(1.25); });
+  if(zPctEl)  zPctEl.addEventListener('click', resetZoom);
+  if(zFitBtn) zFitBtn.addEventListener('click', resetZoom);
+
+  // ⌘-scroll or trackpad-pinch (which arrives as wheel + ctrlKey) → zoom; plain wheel → native pan
+  stageScroll.addEventListener('wheel', function(e){
+    if(!stage.classList.contains('open')) return;
+    if(e.ctrlKey || e.metaKey){ e.preventDefault(); zoomBy(e.deltaY<0 ? 1.11 : 1/1.11); }
+  }, {passive:false});
+
+  // grab-to-pan inside the well, only when zoomed past fit
+  (function(){
+    var well=null, sx=0, sy=0, sl=0, st=0, moved=false;
+    stageScroll.addEventListener('mousedown', function(e){
+      if(e.button!==0 || !stage.classList.contains('zoomed')) return;
+      var w=e.target.closest && e.target.closest('.well'); if(!w) return;
+      well=w; sx=e.clientX; sy=e.clientY; sl=w.scrollLeft; st=w.scrollTop; moved=false;
+      w.classList.add('grabbing'); e.preventDefault();
+    });
+    window.addEventListener('mousemove', function(e){
+      if(!well) return;
+      well.scrollLeft=sl-(e.clientX-sx); well.scrollTop=st-(e.clientY-sy);
+      if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>3) moved=true;
+    });
+    window.addEventListener('mouseup', function(){ if(well){ well.classList.remove('grabbing'); } well=null; });
+  })();
+
   document.addEventListener('keydown', function(e){
     var typing=/^(input|textarea)$/i.test((e.target&&e.target.tagName)||'');
     if(typing) return;
     if(stage.classList.contains('open')){
-      if(e.key==='Escape'){ e.preventDefault(); closeStage(); }
+      if(e.key==='Escape'){ e.preventDefault(); if(zoom>1.001){ resetZoom(); } else { closeStage(); } }
       else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
       else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
-      else if(e.key===' ' && LONG[CUR[current]]){
-        var nearBottom=(stageScroll.scrollTop + stageScroll.clientHeight) >= (stageScroll.scrollHeight - 4);
-        if(nearBottom){ e.preventDefault(); step(1); }
+      else if(e.key==='+'||e.key==='='){ e.preventDefault(); zoomBy(1.25); }
+      else if(e.key==='-'||e.key==='_'){ e.preventDefault(); zoomBy(1/1.25); }
+      else if(e.key==='0'){ e.preventDefault(); resetZoom(); }
+      else if(e.key===' '){
+        var w=artEl.closest('.well');
+        if(stage.classList.contains('zoomed') && w && (w.scrollTop + w.clientHeight) < (w.scrollHeight - 4)){
+          e.preventDefault(); w.scrollTop += w.clientHeight*0.85;
+        } else { e.preventDefault(); step(1); }
       }
     }
   });
