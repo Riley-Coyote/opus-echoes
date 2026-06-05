@@ -736,12 +736,12 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 
   /* ── state ── */
   var BOOK=null, byId={}, catById={}, artCache={};
-  var SECTIONS=[];     // [{key,title,ids}] in display order (one big gallery, grouped by family)
-  var FLAT=[];         // every id across sections, in order — the immersive walk order
-  var byFlat={};       // id -> flat index
+  var SECTIONS=[];     // [{key,title,ids}] in display order (concrete-poetry first)
+  var byFamily={};     // key -> section
+  var idSection={};    // id -> section key (for deep-links)
   var LONG={};         // id -> true when its immersive view scrolls (a tall piece)
   var FAM={};          // id -> family title (immersive chrome)
-  var current=-1;      // index within FLAT; -1 = on the wall
+  var current=-1;      // index within the active tab's id list (CUR); -1 = on the wall
   var rtok=0;
   var fontsReady=(document.fonts ? document.fonts.ready : Promise.resolve());
 
@@ -937,63 +937,70 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   /* ═══════════════════════════════════════════════════════════
      THE WALL — survey the active wing
      ═══════════════════════════════════════════════════════════ */
-  var wallBuilt=false;
+  var activeKey=null, CUR=[], byCur={};
 
-  /* the section nav — a jump link per family; the active one lights via scrollspy */
+  /* the tab bar — one tab per family; clicking shows ONLY that category */
   function buildSectionNav(){
     sectionnav.innerHTML='';
-    SECTIONS.forEach(function(s, i){
+    SECTIONS.forEach(function(s){
       var a=document.createElement('a'); a.href='#'+s.key; a.dataset.key=s.key;
       a.innerHTML=esc(s.title)+' <span class="ct">'+s.ids.length+'</span>';
-      a.addEventListener('click', function(e){ e.preventDefault(); scrollToSection(s.key); });
-      if(i===0) a.classList.add('on');
+      a.addEventListener('click', function(e){ e.preventDefault(); setSection(s.key, {toNav:true}); });
       sectionnav.appendChild(a);
     });
   }
-  function scrollToSection(key){
-    var el=document.getElementById('fam-'+key);
-    if(el) el.scrollIntoView({ behavior:reduced?'auto':'smooth', block:'start' });
+  function markNav(){
+    var as=sectionnav.querySelectorAll('a');
+    for(var i=0;i<as.length;i++) as[i].classList.toggle('on', as[i].dataset.key===activeKey);
   }
 
-  /* build the whole gallery once: a titled section per family, each a grid of uniform frames.
-     thumbnails lazy-render as they near the viewport — essential at 345 pieces. */
-  function buildWall(){
-    if(wallBuilt) return; wallBuilt=true;
+  /* switch the active tab: show ONLY that family's pieces (rebuild the grid, lazy-loaded) */
+  function setSection(key, opts){
+    opts=opts||{};
+    if(!byFamily[key]) key=SECTIONS[0].key;
+    activeKey=key;
+    var s=byFamily[key];
+    CUR=s.ids.slice(); byCur={}; CUR.forEach(function(id,i){ byCur[id]=i; });
+    markNav();
+    buildSection(s);
+    if(opts.noScroll){ /* keep position — deep-link into a piece */ }
+    else if(opts.toNav){ sectionnav.scrollIntoView({ behavior:'auto', block:'start' }); }  // stay in the gallery on tab switch
+    else { wall.scrollTop=0; }                                                              // initial load shows the masthead
+  }
+
+  /* render the active family: a titled banner + a grid of uniform frames, lazy-loaded */
+  function buildSection(s){
     sectionsEl.innerHTML='';
-    var frag=document.createDocumentFragment();
-    SECTIONS.forEach(function(s, si){
-      var sec=document.createElement('section'); sec.className='fam'; sec.id='fam-'+s.key;
-      var head=document.createElement('header'); head.className='fam__head';
-      head.innerHTML='<div class="fam__eyebrow"><span class="n">'+pad2(si+1)+'</span> — <span class="ct">'+s.ids.length+' works</span></div>'
-        +'<div class="fam__titlerow"><h2 class="fam__title">'+esc(s.title)+'</h2><span class="fam__rule"></span></div>';
-      sec.appendChild(head);
-      var grid=document.createElement('div'); grid.className='survey';
-      s.ids.forEach(function(id){
-        var m=meta(id); var fi=byFlat[id];
-        var el=document.createElement('article');
-        el.className='work'; el.tabIndex=0; el.setAttribute('role','button');
-        el.dataset.id=id; el.dataset.flat=fi;
-        el.setAttribute('aria-label', titleOf(m)+' — open');
-        el.innerHTML=
-          '<div class="work__plate"><pre data-id="'+esc(id)+'"></pre><span class="work__ph">'+(m.width?m.width+' × '+m.lines:'…')+'</span></div>'+
-          '<div class="work__shelf"></div>'+
-          '<div class="work__cap">'+
-            '<span class="work__no">'+(m.featured?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(id))+'</span>'+
-            '<div class="work__title'+(m.title?'':' untitled')+'">'+wbrTitle(titleOf(m))+'</div>'+
-            '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+(m.width?m.width+'×'+m.lines:'')+'</span></div>'+
-          '</div>';
-        (function(fi){
-          el.addEventListener('click', function(){ openStage(fi); });
-          el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openStage(fi); } });
-        })(fi);
-        grid.appendChild(el);
-      });
-      sec.appendChild(grid);
-      frag.appendChild(sec);
+    var sec=document.createElement('section'); sec.className='fam'; sec.id='fam-'+s.key;
+    var si=SECTIONS.indexOf(s);
+    var head=document.createElement('header'); head.className='fam__head';
+    head.innerHTML='<div class="fam__eyebrow"><span class="n">'+pad2(si+1)+'</span> — <span class="ct">'+s.ids.length+' works</span></div>'
+      +'<div class="fam__titlerow"><h2 class="fam__title">'+esc(s.title)+'</h2><span class="fam__rule"></span></div>';
+    sec.appendChild(head);
+    var grid=document.createElement('div'); grid.className='survey';
+    s.ids.forEach(function(id){
+      var m=meta(id); var ci=byCur[id];
+      var el=document.createElement('article');
+      el.className='work'; el.tabIndex=0; el.setAttribute('role','button');
+      el.dataset.id=id; el.dataset.idx=ci;
+      el.setAttribute('aria-label', titleOf(m)+' — open');
+      el.innerHTML=
+        '<div class="work__plate"><pre data-id="'+esc(id)+'"></pre><span class="work__ph">'+(m.width?m.width+' × '+m.lines:'…')+'</span></div>'+
+        '<div class="work__shelf"></div>'+
+        '<div class="work__cap">'+
+          '<span class="work__no">'+(m.featured?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(id))+'</span>'+
+          '<div class="work__title'+(m.title?'':' untitled')+'">'+wbrTitle(titleOf(m))+'</div>'+
+          '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+(m.width?m.width+'×'+m.lines:'')+'</span></div>'+
+        '</div>';
+      (function(ci){
+        el.addEventListener('click', function(){ openStage(ci); });
+        el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openStage(ci); } });
+      })(ci);
+      grid.appendChild(el);
     });
-    sectionsEl.appendChild(frag);
+    sec.appendChild(grid);
+    sectionsEl.appendChild(sec);
     lazyLoadThumbs();
-    observeSections();
     observeResize();
   }
 
@@ -1126,15 +1133,15 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   }
 
   function showPiece(i){
-    var id=FLAT[i]; if(!id) return;
+    var id=CUR[i]; if(!id) return;
     current=i; rtok++;
     var token=rtok;
     var m=meta(id);
     var mode=LONG[id] ? 'longform' : 'gallery';
 
     // chrome
-    posEl.textContent=(FAM[id]||'gallery')+' · № '+seqOf(id)+' · '+(i+1)+' / '+FLAT.length;
-    tickPos.textContent='exhibit '+pad2(i+1)+' / '+pad2(FLAT.length);
+    posEl.textContent=(FAM[id]||'gallery')+' · № '+seqOf(id)+' · '+(i+1)+' / '+CUR.length;
+    tickPos.textContent='exhibit '+pad2(i+1)+' / '+pad2(CUR.length);
     tickL.textContent=(m.author||'dispatches')+' · '+(m.tier||'ascii');
 
     // stage mode classes
@@ -1191,12 +1198,12 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       wall.classList.remove('recede');
       try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
       // restore focus to the work we came from
-      var w=sectionsEl.querySelector('.work[data-flat="'+was+'"]'); if(w) w.focus({preventScroll:false});
+      var w=sectionsEl.querySelector('.work[data-idx="'+was+'"]'); if(w) w.focus({preventScroll:false});
     }, 460);
   }
   function step(d){
     if(current<0) return;
-    var n=FLAT.length; var i=(current+d+n)%n;
+    var n=CUR.length; var i=(current+d+n)%n;
     showPiece(i);
   }
 
@@ -1212,7 +1219,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       if(e.key==='Escape'){ e.preventDefault(); closeStage(); }
       else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
       else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
-      else if(e.key===' ' && LONG[FLAT[current]]){
+      else if(e.key===' ' && LONG[CUR[current]]){
         var nearBottom=(stageScroll.scrollTop + stageScroll.clientHeight) >= (stageScroll.scrollHeight - 4);
         if(nearBottom){ e.preventDefault(); step(1); }
       }
@@ -1224,13 +1231,15 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     var h=(location.hash||'').replace(/^#/,'');
     if(!h){ if(stage.classList.contains('open')) closeStage(); return; }
     if(/^p\d+/.test(h)){
-      var ix=byFlat[h];
+      var key=idSection[h]; if(!key) return;
+      if(activeKey!==key) setSection(key, {noScroll:true});
+      var ix=byCur[h];
       if(ix!=null){ if(!stage.classList.contains('open')) openStage(ix); else if(ix!==current) showPiece(ix); }
       return;
     }
-    if(SECTIONS.some(function(s){ return s.key===h; })){
+    if(byFamily[h]){
       if(stage.classList.contains('open')) closeStage();
-      scrollToSection(h);
+      setSection(h);
     }
   }
   window.addEventListener('hashchange', function(){ applyHash(false); });
@@ -1240,7 +1249,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(function(){
     buildFrame();
     refitAll();   // re-fit every thumbnail to its (now-resized) uniform frame
-    if(stage.classList.contains('open') && current>=0){ fitArt(artEl, LONG[FLAT[current]]?'longform':'gallery'); }
+    if(stage.classList.contains('open') && current>=0){ fitArt(artEl, LONG[CUR[current]]?'longform':'gallery'); }
   }, 140); });
 
   /* ═══ boot ═══ */
@@ -1259,12 +1268,13 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     // flatten the sectioned manifest into the walk order + lookup maps
     SECTIONS = man.sections;
     (man.long||[]).forEach(function(id){ LONG[id]=1; });
-    SECTIONS.forEach(function(s){ s.ids.forEach(function(id){ byFlat[id]=FLAT.length; FAM[id]=s.title; FLAT.push(id); }); });
+    var allIds=[];
+    SECTIONS.forEach(function(s){ byFamily[s.key]=s; s.ids.forEach(function(id){ idSection[id]=s.key; FAM[id]=s.title; allIds.push(id); }); });
 
     // colophon
-    var total=FLAT.length;
-    var nFeatured=FLAT.filter(function(id){ return meta(id).featured; }).length;
-    var nModels=(function(){ var s={}; FLAT.forEach(function(id){ s[meta(id).author]=1; }); return Object.keys(s).length; })();
+    var total=allIds.length;
+    var nFeatured=allIds.filter(function(id){ return meta(id).featured; }).length;
+    var nModels=(function(){ var o={}; allIds.forEach(function(id){ o[meta(id).author]=1; }); return Object.keys(o).length; })();
     colo.innerHTML=''
       +'<div><span class="k">collection</span><b>Dispatches</b></div>'
       +'<div><span class="k">works</span><b>'+total+'</b></div>'
@@ -1273,11 +1283,10 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       +'<div><span class="k">models</span><b>'+nModels+'</b></div>';
 
     buildSectionNav();
-    buildWall();
-    fontsReady.then(function(){ refitAll(); });
-
     var h=(location.hash||'').replace(/^#/,'');
-    if(h) applyHash(true);
+    if(h && (/^p\d+/.test(h) || byFamily[h])) applyHash(true);
+    else setSection(SECTIONS[0].key);   // default tab — concrete-poetry
+    fontsReady.then(function(){ refitAll(); });
   }).catch(function(e){
     sectionsEl.innerHTML='<div style="text-align:center;color:var(--ink-46);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load the collection — '+esc(e)+'</div>';
   });
