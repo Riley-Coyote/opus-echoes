@@ -273,16 +273,16 @@ button{ background:none; border:0; color:inherit; font:inherit; cursor:pointer; 
   transition:width 520ms var(--ease), background 520ms var(--ease); }
 .work:hover .work__shelf{ width:116px; background:var(--rule); }
 
-.work__cap{ margin-top:18px; text-align:center; max-width:26ch; }
-.work__no{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.22em; color:var(--ink-30); font-variant-numeric:tabular-nums;
+.work__cap{ margin-top:clamp(17px,2.1vh,23px); text-align:center; max-width:28ch; }
+.work__no{ font-family:var(--mono); font-size:9px; letter-spacing:0.2em; color:var(--ink-30); font-variant-numeric:tabular-nums;
   display:inline-flex; align-items:center; gap:7px; }
 .work__no .featured{ width:4px; height:4px; border-radius:50%; background:var(--state-soft); display:inline-block; }
-.work__title{ font-family:var(--display); font-weight:400; font-size:14px; letter-spacing:-0.012em; color:var(--ink-84); line-height:1.32;
+.work__title{ font-family:var(--display); font-weight:350; font-size:13.5px; letter-spacing:-0.008em; color:var(--ink-84); line-height:1.36;
   margin-top:9px; transition:color 460ms var(--ease); text-wrap:balance; overflow-wrap:anywhere; }
 .work:hover .work__title{ color:var(--ink); }
 .work__title.untitled{ color:var(--ink-46); font-weight:300; }
-.work__meta{ font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-30);
-  margin-top:7px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.work__meta{ font-family:var(--mono); font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-30);
+  margin-top:8px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
 .work__meta .dim{ color:var(--ink-18); }
 
 /* ── section nav: jump to any family; the active one lights as you scroll ── */
