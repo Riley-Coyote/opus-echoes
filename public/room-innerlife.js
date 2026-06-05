@@ -124,14 +124,23 @@ function openEntry(t){
 }
 function scrollSel(){const el=document.querySelector(".entry.sel");if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});}
 
-function renderAll(){ renderDensity(); renderFilters(); renderIndex(); const f=current()[0]; if(f) openEntry(f.t); }
+function renderEmpty(){
+  const idx=document.getElementById("index");
+  if(idx) idx.innerHTML = `<div class="entry" style="opacity:.55;cursor:default"><div class="entry-t">no reflections yet</div><div class="entry-o">${RESIDENT_LABEL} has not published reflections yet.</div></div>`;
+  const r=document.getElementById("vreader");
+  if(r) r.innerHTML = `<div class="read-in"><div class="read-eye">reflections<span class="sep">·</span>${RESIDENT_LABEL}</div><h1 class="read-title">no reflections yet</h1><div class="read-body"><p>this stream is built from the resident's published reflections between visitors. ${RESIDENT_LABEL} has not produced any yet — when they do, they'll appear here.</p></div></div>`;
+  if(filterRow) filterRow.style.display="none";
+}
+function renderAll(){
+  if(!E.length){ renderEmpty(); return; }
+  renderDensity(); renderFilters(); renderIndex(); const f=current()[0]; if(f) openEntry(f.t);
+}
 renderAll();
 
-/* ── live data: real reflections from /api/journal (seeded stays as fallback) ── */
+/* ── live data: real reflections from /api/journal ── */
 (async function(){
   try{
-    const rid = sessionStorage.getItem("sanctuary.resident_id") || "opus-3";
-    const r = await fetch("/api/journal?resident="+encodeURIComponent(rid), { credentials:"same-origin" });
+    const r = await fetch("/api/journal?resident="+encodeURIComponent(RID), { credentials:"same-origin" });
     const j = await r.json();
     if(j && j.ok && Array.isArray(j.entries) && j.entries.length){
       E = prepE(j.entries.map(e=>{
@@ -139,6 +148,9 @@ renderAll();
         return { t:e.title||"(untitled)", th:null, sig:null, age:daysAgo(e.created_at), b:paras.length?paras:[e.body||""] };
       }));
       LIVE=true; FILTER="all";
+      renderAll();
+    } else if(RID !== "opus-3"){
+      E = [];
       renderAll();
     }
   }catch(_){}
