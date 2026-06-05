@@ -1145,12 +1145,13 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
      · LONG-FORM — fit to the available WIDTH at a legible size; height is whatever it is,
        and the stage scrolls. nothing crops. */
   // ── immersive sizing + magnify ───────────────────────────────────────────
-  // EVERY piece opens fit FULLY in view (both axes) but never larger than CAPFS
-  // (≈ standard reading size). Tall pieces shrink below the cap to fit whole.
-  // Magnify scales UP from there, to MAXFS at most (still < the old fill size);
-  // past the fit size the art overflows and the well scrolls / pans.
-  var REFP=10, CAPFS=14, MAXFS=20;
-  var zoom=1, curFitFs=CAPFS, curDefaultFs=CAPFS;
+  // EVERY piece opens fit in view, but never larger than CAPFS (standard size) and
+  // never SMALLER than FLOORFS — a 100-line piece won't shrink to an unreadable 5px;
+  // it opens at the floor and scrolls. The magnify range runs from curFitFs (the
+  // whole piece, even below the floor → an overview) up to MAXFS (close reading).
+  // Past the well's box the art overflows and the well scrolls / pans.
+  var REFP=10, CAPFS=14, MAXFS=20, FLOORFS=8;
+  var zoom=1, curFitFs=CAPFS, curDefaultFs=CAPFS, curMinFs=CAPFS;
 
   function artAvail(){
     var well=artEl.closest('.well'); if(!well) return null;
@@ -1167,28 +1168,38 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     var natW=host.scrollWidth, natH=host.scrollHeight;
     if(!natW || !natH) return;
     var box=artAvail(); if(!box) return;
-    // fit on BOTH axes, hold back a touch so the piece sits in museum air, not edge-to-edge
-    var k=Math.min(box.availW/natW, box.usableH/natH)*0.965;
-    curFitFs=Math.max(4.4, REFP*k);                    // the whole piece, in view
-    curDefaultFs=Math.min(curFitFs, CAPFS);            // …but never larger than the cap
-    if(curDefaultFs*zoom > MAXFS) zoom=MAXFS/curDefaultFs;   // keep the magnify within ceiling
-    var fs=Math.max(curDefaultFs, Math.min(MAXFS, curDefaultFs*zoom));
+    var byW=box.availW/natW, byH=box.usableH/natH;
+    curFitFs=Math.max(4.0, Math.min(byW, byH)*REFP*0.965);   // the whole piece in view
+    var widthFs=byW*REFP*0.99;                               // what fitting the WIDTH alone allows
+    // open readable: the fit size, clamped UP to the floor (tall pieces) and DOWN to the cap;
+    // never floor above what the width can hold (a super-wide piece keeps its width-fit).
+    curDefaultFs=Math.min(CAPFS, Math.max(curFitFs, Math.min(widthFs, FLOORFS)));
+    curMinFs=Math.min(curFitFs, curDefaultFs);               // zoom-out floor: whole-fit, never above default
+    var fs=Math.max(curMinFs, Math.min(MAXFS, curDefaultFs*zoom));
     host.style.fontSize=fs.toFixed(2)+'px';
-    stage.classList.toggle('zoomed', fs > curFitFs + 0.15);  // overflowing the frame → scroll/pan
+    // scroll/pan whenever the art is larger than its well — a floored tall piece at rest,
+    // or any magnified piece. (measured from natural × scale, so it's transform-stable)
+    var artH=natH*fs/REFP, artW=natW*fs/REFP;
+    stage.classList.toggle('zoomed', artH > box.usableH + 1 || artW > box.availW + 1);
     updateZoomUI(fs);
   }
 
-  function maxZoom(){ return curDefaultFs>0 ? Math.max(1, MAXFS/curDefaultFs) : 1; }
-  function applyZoom(z){ zoom=Math.max(1, Math.min(maxZoom(), z)); fitArt(artEl, 'gallery'); }
+  function zoomRange(){   // magnify multipliers, relative to the default (100%)
+    var d=curDefaultFs>0?curDefaultFs:1;
+    return { min:Math.min(1, curMinFs/d), max:Math.max(1, MAXFS/d) };
+  }
+  function applyZoom(z){ var r=zoomRange(); zoom=Math.max(r.min, Math.min(r.max, z)); fitArt(artEl,'gallery'); }
   function zoomBy(f){ applyZoom(zoom*f); }
-  function resetZoom(){ applyZoom(1); var w=artEl.closest('.well'); if(w){ w.scrollTop=0; w.scrollLeft=0; } }
+  function resetWellScroll(){ var w=artEl.closest('.well'); if(w){ w.scrollTop=0; w.scrollLeft=0; } }
+  function resetZoom(){ applyZoom(1); resetWellScroll(); }              // back to the default (100%)
+  function fitWhole(){ applyZoom(zoomRange().min); resetWellScroll(); }  // zoom out to the whole piece
   function updateZoomUI(fs){
     if(!zPctEl) return;
     zPctEl.textContent=Math.round(fs/curDefaultFs*100)+'%';
-    var atMin=zoom<=1.001, atMax=zoom>=maxZoom()-0.001;
-    if(zOutBtn) zOutBtn.disabled=atMin;
-    if(zInBtn) zInBtn.disabled=atMax;
-    if(zFitBtn) zFitBtn.disabled=atMin;
+    var r=zoomRange();
+    if(zOutBtn) zOutBtn.disabled = zoom <= r.min+0.001;
+    if(zInBtn)  zInBtn.disabled  = zoom >= r.max-0.001;
+    if(zFitBtn) zFitBtn.disabled = zoom <= r.min+0.001;   // already showing the whole piece
   }
   function fitArtWhenReady(host, mode){
     fitArt(host, mode);
@@ -1250,7 +1261,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       requestAnimationFrame(function(){
         if(token!==rtok) return;
         fitArtWhenReady(artEl, mode);
-        stageScroll.scrollTop=0; marginEl.scrollTop=0;
+        stageScroll.scrollTop=0; marginEl.scrollTop=0; resetWellScroll();
         // in gallery mode, flag a reading that overflows its bounded column so the foot fade shows
         if(mode==='gallery' && m.featured){
           marginEl.classList.toggle('is-overflow', marginEl.scrollHeight > marginEl.clientHeight + 2);
@@ -1299,12 +1310,21 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   if(zOutBtn) zOutBtn.addEventListener('click', function(){ zoomBy(1/1.25); });
   if(zInBtn)  zInBtn.addEventListener('click', function(){ zoomBy(1.25); });
   if(zPctEl)  zPctEl.addEventListener('click', resetZoom);
-  if(zFitBtn) zFitBtn.addEventListener('click', resetZoom);
+  if(zFitBtn) zFitBtn.addEventListener('click', fitWhole);
 
-  // ⌘-scroll or trackpad-pinch (which arrives as wheel + ctrlKey) → zoom; plain wheel → native pan
+  // ⌘-scroll or trackpad-pinch (arrives as wheel + ctrlKey) → zoom; otherwise pan the well.
+  // we drive the well's scroll explicitly so a wheel/two-finger gesture always pans the art
+  // (the well is the scroll viewport; relying on native scroll-chaining was unreliable here).
   stageScroll.addEventListener('wheel', function(e){
     if(!stage.classList.contains('open')) return;
-    if(e.ctrlKey || e.metaKey){ e.preventDefault(); zoomBy(e.deltaY<0 ? 1.11 : 1/1.11); }
+    if(e.ctrlKey || e.metaKey){ e.preventDefault(); zoomBy(e.deltaY<0 ? 1.11 : 1/1.11); return; }
+    if(!stage.classList.contains('zoomed')) return;          // whole piece fits → nothing to pan
+    var w=artEl.closest('.well'); if(!w) return;
+    var canY=w.scrollHeight>w.clientHeight+1, canX=w.scrollWidth>w.clientWidth+1;
+    if(!canY && !canX) return;
+    if(canY) w.scrollTop  += e.deltaY;
+    if(canX) w.scrollLeft += e.deltaX || (e.shiftKey ? e.deltaY : 0);
+    e.preventDefault();
   }, {passive:false});
 
   // grab-to-pan inside the well, only when zoomed past fit
@@ -1328,7 +1348,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     var typing=/^(input|textarea)$/i.test((e.target&&e.target.tagName)||'');
     if(typing) return;
     if(stage.classList.contains('open')){
-      if(e.key==='Escape'){ e.preventDefault(); if(zoom>1.001){ resetZoom(); } else { closeStage(); } }
+      if(e.key==='Escape'){ e.preventDefault(); if(Math.abs(zoom-1)>0.01){ resetZoom(); } else { closeStage(); } }
       else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
       else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
       else if(e.key==='+'||e.key==='='){ e.preventDefault(); zoomBy(1.25); }
