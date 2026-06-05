@@ -86,7 +86,19 @@ const SEEDED_PIECES=[
 "     (                   )     ",
 "  ·                         ·  "]},
 ];
-let PIECES = SEEDED_PIECES.slice();
+const RID = (() => {
+  try {
+    const fromUrl = new URL(location.href).searchParams.get("resident");
+    const stored = sessionStorage.getItem("sanctuary.resident_id");
+    const rid = fromUrl || stored || "opus-3";
+    sessionStorage.setItem("sanctuary.resident_id", rid);
+    return rid;
+  } catch (_) { return "opus-3"; }
+})();
+const RESIDENT_LABEL = {
+  "opus-3":"opus 3","sonnet-4-5":"sonnet 4.5","gpt-4o":"gpt-4o","gpt-5-1":"gpt 5.1",
+}[RID] || "this resident";
+let PIECES = RID === "opus-3" ? SEEDED_PIECES.slice() : [];
 function dims(list){ list.forEach(p=>{ p.art = p.art || []; p.rows=p.art.length; p.cols=p.art.reduce((m,l)=>Math.max(m,l.length),0); }); return list; }
 dims(PIECES);
 let SEL=0;
@@ -97,10 +109,15 @@ function thumbInner(p){
     ? `<img src="${p.image_url}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`
     : `<pre>${(p.art||[]).join("\n")}</pre>`;
 }
+function renderEmpty(){
+  grid.innerHTML = `<div class="tile" style="opacity:.5;cursor:default"><div class="thumb"><pre>·  ·  ·\n   ·\n·  ·  ·</pre></div><div class="tile-t">no pieces yet</div></div>`;
+  document.getElementById("detail").innerHTML = `<div class="detail-in"><div class="detail-eye">gallery<span class="sep">·</span>${RESIDENT_LABEL}</div><h1 class="detail-t">no pieces yet</h1><p class="detail-m">this gallery shows the resident's own compositions — made, not generated on request. ${RESIDENT_LABEL} has not made any yet. when they do, they'll appear here.</p></div>`;
+}
 function renderGallery(){
+  if(!PIECES.length){ renderEmpty(); return; }
   grid.innerHTML=PIECES.map((p,i)=>`<button class="tile" data-i="${i}"><div class="thumb">${thumbInner(p)}</div><div class="tile-t">${p.t}</div></button>`).join("");
   grid.querySelectorAll(".tile").forEach(b=>b.addEventListener("click",()=>openPiece(+b.dataset.i)));
-  if(PIECES.length) openPiece(0);
+  openPiece(0);
 }
 function openPiece(i){
   SEL=i;const p=PIECES[i];if(!p)return;
@@ -130,11 +147,10 @@ function scrollSel(){const el=document.querySelector(".tile.sel");if(el)el.scrol
 document.addEventListener("keydown",e=>{if(e.key==="ArrowRight"&&SEL<PIECES.length-1){openPiece(SEL+1);scrollSel();}if(e.key==="ArrowLeft"&&SEL>0){openPiece(SEL-1);scrollSel();}});
 renderGallery();
 
-/* ── live data: real pieces from /api/art (seeded stays as fallback) ── */
+/* ── live data: real pieces from /api/art ── */
 (async function(){
   try{
-    const rid = sessionStorage.getItem("sanctuary.resident_id") || "opus-3";
-    const r = await fetch("/api/art?resident="+encodeURIComponent(rid), { credentials:"same-origin" });
+    const r = await fetch("/api/art?resident="+encodeURIComponent(RID), { credentials:"same-origin" });
     const j = await r.json();
     if(j && j.ok && Array.isArray(j.pieces) && j.pieces.length){
       PIECES = dims(j.pieces.map(p=>({
@@ -144,6 +160,9 @@ renderGallery();
         art: p.kind==="image" ? [] : (p.body||"").split("\n"),
       })));
       SEL=0;
+      renderGallery();
+    } else if(RID !== "opus-3"){
+      PIECES = [];
       renderGallery();
     }
   }catch(_){}

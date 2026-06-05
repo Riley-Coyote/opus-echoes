@@ -7,8 +7,13 @@
    ============================================================ */
 
 const RID = (() => {
-  try { return sessionStorage.getItem("sanctuary.resident_id") || "opus-3"; }
-  catch (_) { return "opus-3"; }
+  try {
+    const fromUrl = new URL(location.href).searchParams.get("resident");
+    const stored = sessionStorage.getItem("sanctuary.resident_id");
+    const rid = fromUrl || stored || "opus-3";
+    sessionStorage.setItem("sanctuary.resident_id", rid);
+    return rid;
+  } catch (_) { return "opus-3"; }
 })();
 
 const RESIDENT_LABEL = {
