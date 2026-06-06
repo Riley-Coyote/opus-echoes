@@ -391,7 +391,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 .stage.gallery .stage__inner.annotated .well{ grid-column:2; }
 .stage.longform .stage__inner.annotated .margin{ grid-column:1; position:sticky; top:clamp(120px,22vh,200px); align-self:start; }
 .stage.longform .stage__inner.annotated .well{ grid-column:2; }
-.margin{ opacity:0; transform:translateY(10px); transition:opacity 1000ms var(--ease) 200ms, transform 1000ms var(--ease) 200ms; }
+.margin{ opacity:0; transform:translateY(8px); transition:opacity 560ms var(--ease) 80ms, transform 560ms var(--ease) 80ms; }
 .stage.lit .margin{ opacity:1; transform:none; }
 .margin__no{ font-family:var(--mono); font-size:10px; letter-spacing:0.22em; color:var(--ink-30); font-variant-numeric:tabular-nums; }
 .margin h2{ font-family:var(--display); font-weight:400; font-size:clamp(20px,1.3rem+0.4vw,26px); line-height:1.2;
@@ -455,12 +455,15 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 .zoomctl .zfit svg{ display:block; }
 
 .art{ font-family:var(--mono); line-height:1.18; color:var(--ink); white-space:pre; display:block; margin:0;
-  filter:blur(9px); transition:filter 1700ms var(--ease); will-change:filter; }
+  filter:blur(9px); transition:filter 720ms var(--ease); will-change:filter; }
 .stage.lit .art{ filter:blur(0); }
 .art .ln{ white-space:pre; }
-.art span{ opacity:0; transition:opacity 760ms var(--ease), color 620ms var(--ease); }
+.art span{ opacity:0; transition:opacity 460ms var(--ease), color 440ms var(--ease); }
 .stage.lit .art span{ opacity:1; }
 .art.instant{ filter:none !important; } .art.instant span{ opacity:1 !important; transition:none !important; }
+/* fast flip: no blur, uniform 190ms fade, no per-glyph stagger — snappy to flick through */
+.art.fast{ filter:none !important; }
+.art.fast span{ transition:opacity 190ms var(--ease), color 190ms var(--ease) !important; transition-delay:0ms !important; }
 .art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
 
 /* ═══ syntax highlighting — colour rides on the existing per-glyph span.
@@ -943,7 +946,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
         if(klass) s.className=klass;
         if(!reduced){
           var ny=y/maxY;
-          var d=Math.round((0.46*ny + 0.12*(ci/maxX) + 0.86*Math.random())*1850);
+          var d=Math.round((0.46*ny + 0.12*(ci/maxX) + 0.86*Math.random())*520);
           s.style.transitionDelay=d+'ms';
         }
         ln.appendChild(s);
@@ -1238,8 +1241,10 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       +themes;
   }
 
-  function showPiece(i){
+  var lastNav=0;
+  function showPiece(i, nav){
     var id=CUR[i]; if(!id) return;
+    nav = nav || 'graceful';
     current=i; rtok++;
     var token=rtok;
     var m=meta(id);
@@ -1262,14 +1267,22 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?wbrTitle(m.title):'untitled')+'</b>'
       +(m.width?'<span class="dim">'+m.width+' × '+m.lines+'</span>':'');
 
-    // un-light, swap content, then re-light (blur-in → sharpen — the machine rendering the piece)
-    stage.classList.remove('lit');
-    artEl.className='art'; artEl.innerHTML=''; artEl.style.fontSize='';
+    // reveal mode — 'graceful' (first open): un-light → blur-in → per-glyph sharpen.
+    // 'fast'/'instant' (flipping): the stage STAYS lit (no whole-stage re-fade) and the old
+    // piece holds until the new is ready, then swaps with a quick uniform fade (or instantly
+    // when flipping rapidly) — so you can flick through full-screen without waiting on an animation.
+    var graceful = (nav==='graceful' && !reduced);
+    var revealCls = reduced ? 'art instant' : (graceful ? 'art' : (nav==='instant' ? 'art instant' : 'art fast'));
+    if(graceful){
+      stage.classList.remove('lit');
+      artEl.className='art'; artEl.innerHTML=''; artEl.style.fontSize='';
+    }
     stageScroll.scrollTop=0;
 
     loadArt(m.art).then(function(text){
       if(token!==rtok) return;
       if(!artEl.isConnected) return;
+      if(!graceful){ artEl.className=revealCls; artEl.innerHTML=''; artEl.style.fontSize=''; }   // swap atomically — no empty flash
       buildArt(artEl, text);
       requestAnimationFrame(function(){
         if(token!==rtok) return;
@@ -1279,12 +1292,20 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
         if(mode==='gallery' && m.featured){
           marginEl.classList.toggle('is-overflow', marginEl.scrollHeight > marginEl.clientHeight + 2);
         } else { marginEl.classList.remove('is-overflow'); }
-        if(reduced){ artEl.classList.add('instant'); stage.classList.add('lit'); }
-        else { requestAnimationFrame(function(){ if(token===rtok){ stage.classList.add('lit'); } }); }
+        if(graceful){ requestAnimationFrame(function(){ if(token===rtok){ stage.classList.add('lit'); } }); }
+        else { stage.classList.add('lit'); }
       });
     });
 
+    preloadNeighbors(i);
     try{ history.replaceState(null,'','#'+id); }catch(e){}
+  }
+  // prefetch the neighbouring pieces' art so flipping never waits on a network fetch
+  function preloadNeighbors(i){
+    var n=CUR.length; if(!n) return;
+    [CUR[(i-1+n)%n], CUR[(i+1)%n]].forEach(function(nid){
+      if(nid){ var nm=meta(nid); if(nm && nm.art) loadArt(nm.art); }
+    });
   }
 
   var transitioning=false;
@@ -1311,7 +1332,10 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   function step(d){
     if(current<0) return;
     var n=CUR.length; var i=(current+d+n)%n;
-    showPiece(i);
+    var now=Date.now();
+    var nav=(now-lastNav < 300) ? 'instant' : 'fast';   // holding ←/→ → instant; a single flip → quick fade
+    lastNav=now;
+    showPiece(i, nav);
   }
 
   /* ── wiring ── */
