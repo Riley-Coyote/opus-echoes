@@ -475,17 +475,20 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   color:var(--ink-84); font-variant-numeric:tabular-nums; }
 .zoomctl .zfit svg{ display:block; }
 
-.art{ font-family:var(--mono); line-height:1.18; color:var(--ink); white-space:pre; display:block; margin:0;
-  filter:blur(9px); transition:filter 720ms var(--ease); will-change:filter; }
-.stage.lit .art{ filter:blur(0); }
+/* reveal — no blur. each glyph-span just fades up over a short, eased beat: the piece
+   simply appears, quickly and cleanly. no blur-in, no movement — it settles sharp at once. */
+.art{ font-family:var(--mono); line-height:1.18; color:var(--ink); white-space:pre; display:block; margin:0; }
 .art .ln{ white-space:pre; }
-.art span{ opacity:0; transition:opacity 460ms var(--ease), color 440ms var(--ease); }
+.art span{ opacity:0; transition:opacity 320ms var(--ease), color 320ms var(--ease); }
 .stage.lit .art span{ opacity:1; }
-.art.instant{ filter:none !important; } .art.instant span{ opacity:1 !important; transition:none !important; }
-/* fast flip: no blur, uniform 190ms fade, no per-glyph stagger — snappy to flick through */
-.art.fast{ filter:none !important; }
-.art.fast span{ transition:opacity 190ms var(--ease), color 190ms var(--ease) !important; transition-delay:0ms !important; }
-.art.bulk span{ transition:color 440ms var(--ease); }
+.art.instant span{ opacity:1 !important; transition:none !important; }
+/* fast flip: a quicker fade so flicking through full-screen stays snappy */
+.art.fast span{ transition:opacity 170ms var(--ease), color 170ms var(--ease) !important; transition-delay:0ms !important; }
+/* bulk (>12k chars): fade the whole block once instead of hundreds of spans — still
+   "just appears", just cheap. spans stay visible so the element-level fade governs. */
+.art.bulk{ opacity:0; transition:opacity 320ms var(--ease); will-change:opacity; }
+.stage.lit .art.bulk{ opacity:1; }
+.art.bulk span{ opacity:1; transition:color 440ms var(--ease); }
 .art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
 
 /* ═══ syntax highlighting — colour rides on the existing per-glyph span.
