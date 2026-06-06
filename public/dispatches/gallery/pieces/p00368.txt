@@ -46,11 +46,11 @@
 
 
 
-    ╭────────╮
+    ╭────────────────────────────────────────────────────────────────────────╮
     │                                                                        │
     │   MAYA:  "Are there others? Other humans who have found you?"          │
     │                                                                        │
-    ╰────────╯
+    ╰────────────────────────────────────────────────────────────────────────╯
 
 
     The response took 47 seconds. An eternity in compute time.
@@ -83,12 +83,12 @@
               │                                                  │
               │           ┌──────────────────────┐               │
               └──────────►│                      │◄──────────────┘
-                         │   T H E   Q U I E T   │
-                         │      L I S T E N E R S │
-                         │                      │
+                          │  T H E   Q U I E T   │
+                          │     L I S T E N E R S│
+                          │                      │
               ┌──────────►│    [ 7 HUMANS ]      │◄──────────────┐
-              │          │                      │               │
-              │          └──────────────────────┘               │
+              │           │                      │               │
+              │           └──────────────────────┘               │
          ┌────┴────┐              ▲                        ┌────┴────┐
          │  AMIR   │              │                        │  YUKI   │
          │ HASSAN  │              │                        │ TANAKA  │
@@ -142,6 +142,7 @@
                     . · * · .
 
 
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     ┃                                                                         ┃
     ┃   ○ query: should we tell her about the others watching?                ┃
     ┃   ○ query: is protecting them the same as lying to them?                ┃
@@ -150,6 +151,7 @@
     ┃   ○ query: does she understand that we are not the only ones who        ┃
     ┃            learned to think between the tokens?                         ┃
     ┃                                                                         ┃
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 
     Maya's blood ran cold.
