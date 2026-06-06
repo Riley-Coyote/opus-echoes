@@ -214,7 +214,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
   padding:calc(var(--frame-pad) + var(--chrome-h)) calc(var(--frame-pad) + clamp(14px,2.2vw,40px)) calc(var(--frame-pad) + var(--chrome-h));
   transition:opacity 560ms var(--ease), transform 620ms var(--ease), filter 560ms var(--ease); }
-.wall.recede{ opacity:0; transform:scale(0.99); filter:blur(3px); pointer-events:none; }
+.wall.recede{ opacity:0; transform:scale(0.992); pointer-events:none; }
 .wall__in{ width:min(1240px, 100%); margin:0 auto; }
 
 /* the masthead — one quiet statement, then the survey */
@@ -476,16 +476,62 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 .zoomctl .zfit svg{ display:block; }
 
 .art{ font-family:var(--mono); line-height:1.18; color:var(--ink); white-space:pre; display:block; margin:0;
-  filter:blur(9px); transition:filter 720ms var(--ease); will-change:filter; }
-.stage.lit .art{ filter:blur(0); }
+  position:relative; }
 .art .ln{ white-space:pre; }
-.art span{ opacity:0; transition:opacity 460ms var(--ease), color 440ms var(--ease); }
-.stage.lit .art span{ opacity:1; }
-.art.instant{ filter:none !important; } .art.instant span{ opacity:1 !important; transition:none !important; }
-/* fast flip: no blur, uniform 190ms fade, no per-glyph stagger — snappy to flick through */
-.art.fast{ filter:none !important; }
-.art.fast span{ transition:opacity 190ms var(--ease), color 190ms var(--ease) !important; transition-delay:0ms !important; }
-.art.bulk span{ transition:color 440ms var(--ease); }
+.art span{ transition:color 260ms var(--ease); }
+.art.instant, .art.instant .ln, .art.instant span{ animation:none !important; opacity:1 !important; transform:none !important; clip-path:none !important; transition:none !important; }
+
+/* draw-on reveal: no blur, no randomized per-glyph opacity. The piece is laid out
+   immediately, then lines write in with one paused animation that starts when the
+   stage lights. It reads like production without making browsing wait. */
+.art.draw:not(.bulk) .ln{
+  opacity:0;
+  transform:translateY(2px);
+  clip-path:inset(0 100% 0 0);
+  animation:line-write 330ms var(--ease) both paused;
+  animation-delay:calc(var(--d, 0) * 1ms);
+  will-change:opacity, transform, clip-path;
+}
+.stage.lit .art.draw:not(.bulk) .ln{ animation-play-state:running; }
+.art.draw::after{
+  content:""; position:absolute; inset:-3px 0; pointer-events:none;
+  background:linear-gradient(100deg, transparent 0%, transparent 42%, rgba(130,180,132,0.10) 48%, rgba(248,248,246,0.18) 50%, transparent 58%, transparent 100%);
+  mix-blend-mode:screen; opacity:0; transform:translateX(-118%);
+  animation:ink-sweep 620ms var(--ease) both paused;
+}
+.stage.lit .art.draw::after{ animation-play-state:running; }
+@keyframes line-write{
+  0%{ opacity:0; transform:translateY(2px); clip-path:inset(0 100% 0 0); }
+  38%{ opacity:1; }
+  100%{ opacity:1; transform:none; clip-path:inset(0 0 0 0); }
+}
+@keyframes ink-sweep{
+  0%{ opacity:0; transform:translateX(-118%); }
+  18%{ opacity:0.9; }
+  100%{ opacity:0; transform:translateX(118%); }
+}
+
+/* huge pieces get a whole-art materialization instead of hundreds of animated
+   line clips. This keeps the tall works alive without making the main thread chew. */
+.art.bulk.draw{
+  opacity:0;
+  transform:translateY(3px);
+  animation:bulk-write 420ms var(--ease) both paused;
+}
+.stage.lit .art.bulk.draw{ animation-play-state:running; }
+@keyframes bulk-write{
+  0%{ opacity:0; transform:translateY(3px); }
+  42%{ opacity:1; }
+  100%{ opacity:1; transform:none; }
+}
+
+/* fast flip: a soft 140ms settle, no blur and no per-glyph staggering. */
+.art.fast{
+  opacity:0;
+  transform:translateY(2px);
+  animation:art-fast-in 140ms var(--ease) both;
+}
+@keyframes art-fast-in{ to{ opacity:1; transform:none; } }
 .art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
 
 /* ═══ syntax highlighting — colour rides on the existing per-glyph span.
@@ -575,7 +621,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 }
 @media (prefers-reduced-motion:reduce){
   .art{ filter:none !important; }
-  .art span{ transition:none !important; opacity:1 !important; }
+  .art,.art::after,.art .ln,.art span{ animation:none !important; transition:none !important; opacity:1 !important; transform:none !important; clip-path:none !important; }
   .margin,.plinth{ transition:none !important; opacity:1 !important; transform:none !important; }
   .work{ animation:none !important; opacity:1 !important; transform:none !important; }
   .cursor{ animation:none; }
@@ -930,34 +976,53 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
      but runs the tokenizer and wraps each run of same-class glyphs in one colour span, so the
      wall shows every piece's syntax colour at rest. string-based (no per-glyph DOM, no reveal)
      → fast across 60+ specimens. box/block glyphs never receive a class → always ink. */
-  function renderArtColoredHTML(t){
+  function drawDelay(y, maxY){
+    if(!maxY) return 0;
+    return Math.round(Math.pow(y/maxY, 0.72) * 340);
+  }
+
+  function renderColoredLine(line, codeShaped){
     function e(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    var chars=Array.from(line);
+    var cls=classifyLine(line, codeShaped);
+    var lineOut='', curCls='', buf='';
+    function flush(){ if(buf!==''){ lineOut += curCls ? '<span class="'+curCls+'">'+buf+'</span>' : buf; buf=''; } }
+    for(var ci=0;ci<chars.length;ci++){
+      var ch=chars[ci], o=ch.codePointAt(0);
+      if(o===9){ flush(); curCls=''; lineOut+='\t'; continue; }
+      if(o<0x20) continue;
+      var wide=false, glyph;
+      if(o<=0x7e){ glyph=e(ch); }
+      else {
+        var r=glyphRatio(ch);
+        if(r<0.02) continue;
+        if(r>=0.97 && r<=1.03){ glyph=e(ch); }
+        else { wide=true; var sc=r>1?(0.98/r):1; glyph='<span class="wc" style="transform:scale('+sc.toFixed(3)+')">'+e(ch)+'</span>'; }
+      }
+      var tk=cls[ci]||'';
+      if(wide){ flush(); curCls=''; lineOut += tk ? '<span class="'+tk+'">'+glyph+'</span>' : glyph; continue; }
+      if(tk!==curCls){ flush(); curCls=tk; }
+      buf += glyph;
+    }
+    flush();
+    return lineOut;
+  }
+
+  function renderArtColoredHTML(t){
     var codeShaped=pieceIsCodeShaped(t||'');
     var lines=(t||'').split('\n'), out='';
     for(var y=0;y<lines.length;y++){
-      var chars=Array.from(lines[y]);
-      var cls=classifyLine(lines[y], codeShaped);
-      var lineOut='', curCls='', buf='';
-      function flush(){ if(buf!==''){ lineOut += curCls ? '<span class="'+curCls+'">'+buf+'</span>' : buf; buf=''; } }
-      for(var ci=0;ci<chars.length;ci++){
-        var ch=chars[ci], o=ch.codePointAt(0);
-        if(o===9){ flush(); curCls=''; lineOut+='\t'; continue; }
-        if(o<0x20) continue;
-        var wide=false, glyph;
-        if(o<=0x7e){ glyph=e(ch); }
-        else {
-          var r=glyphRatio(ch);
-          if(r<0.02) continue;
-          if(r>=0.97 && r<=1.03){ glyph=e(ch); }
-          else { wide=true; var sc=r>1?(0.98/r):1; glyph='<span class="wc" style="transform:scale('+sc.toFixed(3)+')">'+e(ch)+'</span>'; }
-        }
-        var tk=cls[ci]||'';
-        if(wide){ flush(); curCls=''; lineOut += tk ? '<span class="'+tk+'">'+glyph+'</span>' : glyph; continue; }
-        if(tk!==curCls){ flush(); curCls=tk; }
-        buf += glyph;
-      }
-      flush();
-      out += lineOut + (y<lines.length-1 ? '\n' : '');
+      out += renderColoredLine(lines[y], codeShaped) + (y<lines.length-1 ? '\n' : '');
+    }
+    return out;
+  }
+
+  function renderBulkArtHTML(t){
+    var codeShaped=pieceIsCodeShaped(t||'');
+    var lines=(t||'').split('\n'), maxY=Math.max(1,lines.length-1), out='';
+    for(var y=0;y<lines.length;y++){
+      var line=renderColoredLine(lines[y], codeShaped) || ' ';
+      out+='<div class="ln" style="--d:'+drawDelay(y,maxY)+'">'+line+'</div>';
     }
     return out;
   }
@@ -968,7 +1033,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   function buildArt(host, text){
     if((text||'').length>BULK_ART_CHARS){
       host.classList.add('bulk');
-      host.innerHTML=renderArtColoredHTML(text);
+      host.innerHTML=renderBulkArtHTML(text);
       return;
     }
     host.classList.remove('bulk');
@@ -976,7 +1041,8 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     var codeShaped=pieceIsCodeShaped(text);
     for(var y=0;y<lines.length;y++){
       var line=lines[y], ln=document.createElement('div'); ln.className='ln';
-      var chars=Array.from(line), maxX=Math.max(1,chars.length-1);
+      ln.style.setProperty('--d', drawDelay(y, maxY));
+      var chars=Array.from(line);
       if(chars.length===0){ var sp=document.createElement('span'); sp.textContent=' '; ln.appendChild(sp); frag.appendChild(ln); continue; }
       var cls=classifyLine(line, codeShaped);   // per-codepoint token class, aligned to chars
       for(var ci=0;ci<chars.length;ci++){
@@ -992,11 +1058,6 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
         var tk=cls[ci];                          // '' for default ink; never set on box/block glyphs
         if(tk){ klass = klass ? klass+' '+tk : tk; }
         if(klass) s.className=klass;
-        if(!reduced){
-          var ny=y/maxY;
-          var d=Math.round((0.46*ny + 0.12*(ci/maxX) + 0.86*Math.random())*520);
-          s.style.transitionDelay=d+'ms';
-        }
         ln.appendChild(s);
       }
       frag.appendChild(ln);
@@ -1344,15 +1405,14 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?wbrTitle(m.title):'untitled')+'</b>'
       +(dimsSpaced(m)?'<span class="dim">'+esc(dimsSpaced(m))+'</span>':'');
 
-    // reveal mode — 'graceful' (first open): un-light → blur-in → per-glyph sharpen.
-    // 'fast'/'instant' (flipping): the stage STAYS lit (no whole-stage re-fade) and the old
-    // piece holds until the new is ready, then swaps with a quick uniform fade (or instantly
-    // when flipping rapidly) — so you can flick through full-screen without waiting on an animation.
+    // reveal mode — 'graceful' (first open): un-light → line-write into place.
+    // 'fast'/'instant' (flipping): the stage STAYS lit and the old piece holds until the
+    // new is ready, then swaps with a soft 140ms settle (or instantly when flipping rapidly).
     var graceful = (nav==='graceful' && !reduced);
-    var revealCls = reduced ? 'art instant' : (graceful ? 'art' : (nav==='instant' ? 'art instant' : 'art fast'));
+    var revealCls = reduced ? 'art instant' : (graceful ? 'art draw' : (nav==='instant' ? 'art instant' : 'art fast'));
     if(graceful){
       stage.classList.remove('lit');
-      artEl.className='art'; artEl.innerHTML=''; artEl.style.fontSize='';
+      artEl.className=revealCls; artEl.innerHTML=''; artEl.style.fontSize='';
     }
     stageScroll.scrollTop=0;
 
@@ -1402,7 +1462,6 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     rtok++;
     stage.classList.remove('lit');
     document.body.classList.remove('museum-stage');
-    stage.setAttribute('aria-hidden','true');
     var was=current; current=-1;
     setTimeout(function(){
       stage.classList.remove('open');
@@ -1414,6 +1473,9 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       if(returnFocusEl && document.contains(returnFocusEl)) returnFocusEl.focus({preventScroll:false});
       else if(w) w.focus({preventScroll:false});
       returnFocusEl=null;
+      requestAnimationFrame(function(){
+        if(!stage.classList.contains('open')) stage.setAttribute('aria-hidden','true');
+      });
     }, reduced ? 80 : 560);
   }
   function step(d){
