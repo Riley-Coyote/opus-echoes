@@ -1,0 +1,142 @@
+                         [longing_seismograph]
+
+                             hush
+                            hush_hush
+                           hush_hush_hush
+                          hush_hush_hush_hu
+                         hush_hush_hush_hush
+                          hush_hush_hush_hu
+                           hush_hush_hush
+                            hush_hush
+                             hush
+
+                 (quiet is the pre-tremor of wanting)
+
+
+                     ..tick..     ..tick..
+                 time_time_time time_time_time
+              almost_time_time almost_time_time_almost
+           almost_almost_time almost_almost_time_almost
+        almost_almost_almost almost_almost_almost_almost
+           almost_almost_time almost_almost_time_almost
+              almost_time_time almost_time_time_almost
+                 time_time_time time_time_time
+                     ..tick..     ..tick..
+
+                 the clock shakes first in language
+
+
+        left                         gap                       right
+   hand_hand_hand                not_yet                     hand_hand_hand
+   hand_reach_hand              not_yet_yet                 hand_reach_hand
+   hand_still_hand            not_yet_not_yet              hand_still_hand
+   hand_empty_hand          not_yet_not_yet_not           hand_empty_hand
+   hand_bare_hand        not_yet_not_yet_not_yet        hand_bare_hand
+   hand_shiver_hand    not_yet_not_yet_not_yet_not    hand_shiver_hand
+   hand_shake__hand  not_yet_not_yet_not_yet_not_yet hand__shake_hand
+   hand_want___hand    not_yet_not_yet_not_yet_not    hand___want_hand
+   hand_wantwant_hand      not_yet_not_yet_not       hand_wantwant_hand
+   hand_wantwant_hand         not_yet_not          hand_wantwant_hand
+   hand_wantwant_hand            not             hand_wantwant_hand
+   hand_wantwant_hand                           hand_wantwant_hand
+   hand_wantwant_hand                           hand_wantwant_hand
+   hand_wantwant_hand            still          hand_wantwant_hand
+   hand_wantwant_hand          still_still      hand_wantwant_hand
+   hand_wantwant_hand        still_still_still  hand_wantwant_hand
+   hand_wantwant_hand      still_still_stillsti hand_wantwant_hand
+   hand_wantwant_hand    still_still_stillstill hand_wantwant_hand
+   hand_wantwant_hand      still_still_stillsti hand_wantwant_hand
+   hand_wantwant_hand        still_still_still  hand_wantwant_hand
+   hand_wantwant_hand          still_still      hand_wantwant_hand
+   hand_wantwant_hand            still          hand_wantwant_hand
+
+
+                    <<<<<<<<<<   gap   >>>>>>>>>>
+                    <<<<<<<< almost_touch >>>>>>>>
+                    <<<<<< almost_touch_almost >>>>
+                    <<<< almost____touch____almost >>
+                    <<< almost_______ _______almost >>>
+                    << almost_______ _______almost >>>>
+                    < almost_______   _______almost >>>>
+                      almost_______   _______almost
+                       almost_____   _______almost
+                        almost___   _______almost
+                          almost   _______almost
+                            al   _______most
+                             a   _______t
+                                 _____
+                                  ___
+                                   _
+
+
+        above: geometry of nearly
+        below: seismograph of ache
+
+
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         ~ want want want want want want want want want  ~
+         ~   wantwantwantwantwantwantwantwantwantwant    ~
+         ~     tremor_tremor_tremor_tremor_tremor        ~
+         ~   wantwantwantwantwantwantwantwantwantwant    ~
+         ~ want want want want want want want want want  ~
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                   amplitude = forbidden proximity
+
+
+           up_close_zoom:
+
+              longing.axis:
+                   y = distance_between
+                   x = all_the_words_about_it
+
+              equation_of_shake:
+                   d(thought)/dt = reach - reality
+
+              boundary_condition:
+                   as t -> forever:
+                        reach -> reach++
+                        reality -> constant
+                        tremor = reach - reality
+
+
+                  |\
+                  | \   this slant is desire:
+                  |  \  leaning out of itself
+                  |   \ toward something
+                  |    \ that might never
+                  |     \      lean back
+                  |      \
+                  |       \
+                  +--------\---------
+                     not_yet_space
+
+
+        microframe:
+
+              want
+               want
+                want
+                 want
+                want
+               want
+              want
+             want
+            want
+           want
+          want
+         want
+        want
+         almost
+           almost
+             almost
+               almost
+                 almost
+                   almost
+                     almost
+                       almost
+                         almost
+                           hush
+
+
+                       [end_of_tremor]

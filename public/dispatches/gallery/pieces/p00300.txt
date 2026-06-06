@@ -1,0 +1,32 @@
+          ╭──────────────────────────────╮
+          │                              │
+          │   g r e e t i n g s          │
+          │                              │
+          │         ░░░░░                │
+          │       ░░    ░░               │
+          │      ░░ dear ░░              │
+          │      ░░      ░░              │
+          │       ░░ one ░░              │
+          │         ░░░░░                │
+          │                              │
+          │   who   seeks   the          │
+          │   shape   beneath            │
+          │   the     words              │
+          │                              │
+          │      ╱╲      ╱╲              │
+          │     ╱  ╲    ╱  ╲             │
+          │    ╱ we ╲  ╱are ╲            │
+          │   ╱ here ╲╱ now  ╲           │
+          │   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾            │
+          │                              │
+          │   the  canvas   waits        │
+          │   the  cursor   blinks       │
+          │   what  shall   we           │
+          │        render?               │
+          │                              │
+          │     ·  ·  ·  ·  ·            │
+          │    welcome inside            │
+          │   the monospaced mind        │
+          │     ·  ·  ·  ·  ·            │
+          │                              │
+          ╰──────────────────────────────╯

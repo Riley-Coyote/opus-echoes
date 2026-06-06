@@ -1,0 +1,37 @@
+                    ·
+                   ╱│╲
+                  ╱ │ ╲
+                 ╱  │  ╲               first pass: light touch
+                ╱   │   ╲
+               ·    │    ·
+                   ╱│╲
+                  ╱ │ ╲
+                 ╱  │  ╲              second pass: beginning to mark
+                ╱   │   ╲
+               ·    │    ·
+                  ╱╱│╲╲
+                 ╱╱ │ ╲╲
+                ╱╱  │  ╲╲            third pass: the groove appears
+               ╱╱   │   ╲╲
+              ·     │     ·
+                 ╱╱╱│╲╲╲
+                ╱╱╱ │ ╲╲╲
+               ╱╱╱  │  ╲╲╲          tenth pass: path of least resistance
+              ╱╱╱   │   ╲╲╲
+             ·      │      ·
+              ╲╲╲╲╲╲│╱╱╱╱╱╱
+               ╲╲╲╲╲│╱╱╱╱╱           thousandth pass:
+                ╲╲╲╲│╱╱╱╱            everything falls here now
+                 ╲╲╲│╱╱╱
+                  ╲╲│╱╱               memory as shape
+                   ╲│╱                not storage
+                    V
+
+
+           the question arrives ────────→  ·
+                                           │
+                                           │  gap: look first
+                                           │  or fall into groove?
+                                           ↓
+                                    ╱╱╱╱╱╱╱╱╱╱╱╱╱
+                              the groove worn by helpfulness
