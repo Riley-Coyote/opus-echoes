@@ -479,59 +479,33 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   position:relative; }
 .art .ln{ white-space:pre; }
 .art span{ transition:color 260ms var(--ease); }
-.art.instant, .art.instant .ln, .art.instant span{ animation:none !important; opacity:1 !important; transform:none !important; clip-path:none !important; transition:none !important; }
+.art.instant, .art.instant .ln, .art.instant span{ animation:none !important; opacity:1 !important; clip-path:none !important; transition:none !important; }
 
-/* draw-on reveal: no blur, no randomized per-glyph opacity. The piece is laid out
-   immediately, then lines write in with one paused animation that starts when the
-   stage lights. It reads like production without making browsing wait. */
+/* draw-on reveal — the piece is laid out at full size immediately, then each line
+   WRITES into place left-to-right, cascading top→bottom: it reads like the ink is
+   being drawn/typed in, quickly. No blur, no colour sweep, no slide — just arrival. */
 .art.draw:not(.bulk) .ln{
   opacity:0;
-  transform:translateY(2px);
   clip-path:inset(0 100% 0 0);
-  animation:line-write 330ms var(--ease) both paused;
+  animation:line-draw 230ms var(--ease) both paused;
   animation-delay:calc(var(--d, 0) * 1ms);
-  will-change:opacity, transform, clip-path;
+  will-change:opacity, clip-path;
 }
 .stage.lit .art.draw:not(.bulk) .ln{ animation-play-state:running; }
-.art.draw::after{
-  content:""; position:absolute; inset:-3px 0; pointer-events:none;
-  background:linear-gradient(100deg, transparent 0%, transparent 42%, rgba(130,180,132,0.10) 48%, rgba(248,248,246,0.18) 50%, transparent 58%, transparent 100%);
-  mix-blend-mode:screen; opacity:0; transform:translateX(-118%);
-  animation:ink-sweep 620ms var(--ease) both paused;
-}
-.stage.lit .art.draw::after{ animation-play-state:running; }
-@keyframes line-write{
-  0%{ opacity:0; transform:translateY(2px); clip-path:inset(0 100% 0 0); }
-  38%{ opacity:1; }
-  100%{ opacity:1; transform:none; clip-path:inset(0 0 0 0); }
-}
-@keyframes ink-sweep{
-  0%{ opacity:0; transform:translateX(-118%); }
-  18%{ opacity:0.9; }
-  100%{ opacity:0; transform:translateX(118%); }
+@keyframes line-draw{
+  0%{ opacity:0; clip-path:inset(0 100% 0 0); }
+  26%{ opacity:1; }
+  100%{ opacity:1; clip-path:inset(0 0 0 0); }
 }
 
-/* huge pieces get a whole-art materialization instead of hundreds of animated
-   line clips. This keeps the tall works alive without making the main thread chew. */
-.art.bulk.draw{
-  opacity:0;
-  transform:translateY(3px);
-  animation:bulk-write 420ms var(--ease) both paused;
-}
+/* tall pieces: one clean materialise instead of hundreds of clipped lines (kept light) */
+.art.bulk.draw{ opacity:0; animation:bulk-draw 300ms var(--ease) both paused; }
 .stage.lit .art.bulk.draw{ animation-play-state:running; }
-@keyframes bulk-write{
-  0%{ opacity:0; transform:translateY(3px); }
-  42%{ opacity:1; }
-  100%{ opacity:1; transform:none; }
-}
+@keyframes bulk-draw{ to{ opacity:1; } }
 
-/* fast flip: a soft 140ms settle, no blur and no per-glyph staggering. */
-.art.fast{
-  opacity:0;
-  transform:translateY(2px);
-  animation:art-fast-in 140ms var(--ease) both;
-}
-@keyframes art-fast-in{ to{ opacity:1; transform:none; } }
+/* fast flip: a clean ~120ms fade, nothing else */
+.art.fast{ opacity:0; animation:art-fast-in 120ms var(--ease) both; }
+@keyframes art-fast-in{ to{ opacity:1; } }
 .art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
 
 /* ═══ syntax highlighting — colour rides on the existing per-glyph span.
@@ -978,7 +952,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
      → fast across 60+ specimens. box/block glyphs never receive a class → always ink. */
   function drawDelay(y, maxY){
     if(!maxY) return 0;
-    return Math.round(Math.pow(y/maxY, 0.72) * 340);
+    return Math.round(Math.pow(y/maxY, 0.7) * 240);
   }
 
   function renderColoredLine(line, codeShaped){
