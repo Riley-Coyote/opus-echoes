@@ -483,25 +483,26 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 
 /* draw-on reveal — the piece is laid out at full size immediately, then each line
    WRITES into place left-to-right, cascading top→bottom: it reads like the ink is
-   being drawn/typed in, quickly. No blur, no colour sweep, no slide — just arrival. */
+   being drawn/typed in — deliberate, then quick. No blur, no colour sweep, no slide. */
 .art.draw:not(.bulk) .ln{
   opacity:0;
   clip-path:inset(0 100% 0 0);
-  animation:line-draw 230ms var(--ease) both paused;
+  animation:line-draw 280ms var(--ease) both paused;
   animation-delay:calc(var(--d, 0) * 1ms);
   will-change:opacity, clip-path;
 }
 .stage.lit .art.draw:not(.bulk) .ln{ animation-play-state:running; }
 @keyframes line-draw{
   0%{ opacity:0; clip-path:inset(0 100% 0 0); }
-  26%{ opacity:1; }
+  24%{ opacity:1; }
   100%{ opacity:1; clip-path:inset(0 0 0 0); }
 }
 
-/* tall pieces: one clean materialise instead of hundreds of clipped lines (kept light) */
-.art.bulk.draw{ opacity:0; animation:bulk-draw 300ms var(--ease) both paused; }
+/* tall pieces: too many lines to clip individually without jank, so the whole block
+   draws in top→bottom as one cheap reveal — still "printed into place", just cohesive. */
+.art.bulk.draw{ opacity:1; clip-path:inset(0 0 100% 0); animation:bulk-draw 520ms var(--ease) both paused; }
 .stage.lit .art.bulk.draw{ animation-play-state:running; }
-@keyframes bulk-draw{ to{ opacity:1; } }
+@keyframes bulk-draw{ from{ clip-path:inset(0 0 100% 0); } to{ clip-path:inset(0 0 0 0); } }
 
 /* fast flip: a clean ~120ms fade, nothing else */
 .art.fast{ opacity:0; animation:art-fast-in 120ms var(--ease) both; }
@@ -952,7 +953,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
      → fast across 60+ specimens. box/block glyphs never receive a class → always ink. */
   function drawDelay(y, maxY){
     if(!maxY) return 0;
-    return Math.round(Math.pow(y/maxY, 0.7) * 240);
+    return Math.round(Math.pow(y/maxY, 0.7) * 300);
   }
 
   function renderColoredLine(line, codeShaped){
@@ -1379,9 +1380,9 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?wbrTitle(m.title):'untitled')+'</b>'
       +(dimsSpaced(m)?'<span class="dim">'+esc(dimsSpaced(m))+'</span>':'');
 
-    // reveal mode — 'graceful' (first open): un-light → line-write into place.
+    // reveal mode — 'graceful' (first open): un-light → lines draw into place left-to-right.
     // 'fast'/'instant' (flipping): the stage STAYS lit and the old piece holds until the
-    // new is ready, then swaps with a soft 140ms settle (or instantly when flipping rapidly).
+    // new is ready, then swaps with a quick ~120ms fade (or instantly when flipping rapidly).
     var graceful = (nav==='graceful' && !reduced);
     var revealCls = reduced ? 'art instant' : (graceful ? 'art draw' : (nav==='instant' ? 'art instant' : 'art fast'));
     if(graceful){
