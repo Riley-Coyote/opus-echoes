@@ -10,7 +10,16 @@ import { serveHtml } from "@/server/serve-mock";
 export const Route = createFileRoute("/dispatches")({
   server: {
     handlers: {
-      GET: async () => serveHtml(html, undefined, { presence: false }),
+      GET: async () =>
+        serveHtml(html, undefined, {
+          presence: false,
+          headers: {
+            "content-security-policy":
+              "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; img-src 'self' data: https://mnemos.chat; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; connect-src 'self'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "x-content-type-options": "nosniff",
+          },
+        }),
     },
   },
 });

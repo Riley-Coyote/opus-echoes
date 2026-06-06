@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#06070a" id="themeColor" />
 <title>The Machine's Museum — Dispatches, Volume One</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="canonical" href="https://mnemos.chat/dispatches" />
 <meta name="description" content="A standing collection of what language models composed when given an open grid and no task — text rendered onto a fixed field, character by character. A Mnemos exhibition." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://mnemos.chat/dispatches" />
@@ -71,6 +72,9 @@
   --rule:rgba(225,225,225,0.14);
   --rule-soft:rgba(225,225,225,0.09);
   --rule-faint:rgba(225,225,225,0.06);
+  --control-bg:rgba(6,7,10,0.74);
+  --control-hover:rgba(248,248,246,0.09);
+  --control-active:rgba(248,248,246,0.14);
   --state-soft:rgba(130,180,132,0.62);
   --state-dim:rgba(130,180,132,0.16);
   --state-whisper:rgba(130,180,132,0.05);
@@ -104,6 +108,9 @@
   --rule:rgba(40,36,28,0.18);
   --rule-soft:rgba(40,36,28,0.11);
   --rule-faint:rgba(40,36,28,0.07);
+  --control-bg:rgba(244,240,231,0.78);
+  --control-hover:rgba(28,27,24,0.08);
+  --control-active:rgba(28,27,24,0.13);
   --state-soft:rgba(74,120,78,0.78);
   --state-dim:rgba(74,120,78,0.18);
   --state-whisper:rgba(74,120,78,0.07);
@@ -311,6 +318,11 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 .sectionnav a.on{ color:var(--ink); }
 .sectionnav a.on::after{ transform:scaleX(1); }
 .sectionnav a.on .ct{ color:var(--state-soft); }
+.sectionnav a:focus-visible{ outline:none; color:var(--ink); }
+.sectionnav a:focus-visible::after{ transform:scaleX(1); background:var(--state-soft); }
+
+.notice{ text-align:center; color:var(--ink-46); font-family:var(--mono); font-size:11px;
+  letter-spacing:0.1em; text-transform:uppercase; padding:80px 0; }
 
 /* ── a family section: a composed wing-entrance header — indexed eyebrow, a monumental
    light-weight title, and real void above each so the rooms breathe — then the grid ── */
@@ -339,6 +351,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   opacity:0; transition:opacity 560ms var(--ease); }
 .stage.open{ display:block; }
 .stage.lit{ opacity:1; }
+.stage:focus{ outline:none; }
 
 /* GALLERY mode: a fixed, non-scrolling stage. the art well is pinned to fill the frame. */
 .stage.gallery .stage__scroll{ position:absolute; inset:0; overflow:hidden; }
@@ -428,7 +441,10 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
    `safe` centring prevents the flex top/left-clip when the art is larger than the well. */
 .well{ overflow:hidden; }
 .stage.zoomed .well{ overflow:auto; cursor:grab; overscroll-behavior:contain;
-  -webkit-overflow-scrolling:touch; justify-content:safe center; align-items:safe center; }
+  -webkit-overflow-scrolling:touch; justify-content:center; align-items:center; }
+@supports (justify-content:safe center){
+  .stage.zoomed .well{ justify-content:safe center; align-items:safe center; }
+}
 .stage.zoomed .well.grabbing{ cursor:grabbing; }
 .stage.zoomed .well::-webkit-scrollbar{ width:9px; height:9px; }
 .stage.zoomed .well::-webkit-scrollbar-thumb{ background:var(--ink-18); border-radius:6px; }
@@ -437,17 +453,22 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 /* the magnify cluster — a hushed control on the void, mirrors the chrome's restraint */
 .zoomctl{ position:absolute; right:clamp(16px,2.4vw,40px); bottom:clamp(16px,2.4vh,34px); z-index:7;
   display:flex; align-items:center; gap:1px; padding:3px;
-  background:color-mix(in oklab, var(--floor) 70%, transparent);
+  background:var(--control-bg);
   border:1px solid var(--rule-faint); border-radius:11px;
   -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
   opacity:0; transform:translateY(7px); transition:opacity 500ms var(--ease), transform 500ms var(--ease); }
+@supports (background:color-mix(in oklab, white 50%, transparent)){
+  .zoomctl{ background:color-mix(in oklab, var(--floor) 70%, transparent); }
+  .zoomctl .zb:hover:not(:disabled){ background:color-mix(in oklab, var(--ink) 9%, transparent); }
+  .zoomctl .zb:active:not(:disabled){ background:color-mix(in oklab, var(--ink) 14%, transparent); }
+}
 .stage.lit .zoomctl{ opacity:1; transform:none; }
 .zoomctl .zb{ appearance:none; -webkit-appearance:none; background:transparent; border:0; margin:0;
   color:var(--ink-62); font-family:var(--mono); font-size:14px; line-height:1; cursor:pointer;
   width:30px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px;
   transition:background 200ms var(--ease), color 200ms var(--ease); }
-.zoomctl .zb:hover:not(:disabled){ background:color-mix(in oklab, var(--ink) 9%, transparent); color:var(--ink); }
-.zoomctl .zb:active:not(:disabled){ background:color-mix(in oklab, var(--ink) 14%, transparent); }
+.zoomctl .zb:hover:not(:disabled){ background:var(--control-hover); color:var(--ink); }
+.zoomctl .zb:active:not(:disabled){ background:var(--control-active); }
 .zoomctl .zb:disabled{ opacity:0.3; cursor:default; }
 .zoomctl .zb:focus-visible{ outline:2px solid var(--state); outline-offset:2px; }
 .zoomctl .zpct{ width:auto; min-width:48px; padding:0 9px; font-size:11px; letter-spacing:0.03em;
@@ -464,6 +485,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 /* fast flip: no blur, uniform 190ms fade, no per-glyph stagger — snappy to flick through */
 .art.fast{ filter:none !important; }
 .art.fast span{ transition:opacity 190ms var(--ease), color 190ms var(--ease) !important; transition-delay:0ms !important; }
+.art.bulk span{ transition:color 440ms var(--ease); }
 .art .wc{ display:inline-block; width:1ch; text-align:center; transform-origin:center center; }
 
 /* ═══ syntax highlighting — colour rides on the existing per-glyph span.
@@ -502,6 +524,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 .stage__back{ pointer-events:auto; font-family:var(--mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-46);
   display:inline-flex; align-items:center; gap:9px; transition:color 320ms var(--ease); }
 .stage__back:hover{ color:var(--ink); }
+.stage__back:focus-visible{ outline:1px solid var(--state-soft); outline-offset:6px; color:var(--ink); }
 .stage__back .arr{ font-size:13px; transition:transform 320ms var(--ease); }
 .stage__back:hover .arr{ transform:translateX(-4px); }
 .stage__pos{ font-family:var(--mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-30); font-variant-numeric:tabular-nums; }
@@ -515,6 +538,8 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 .gutter.prev::after{ content:"‹"; left:clamp(6px,1vw,16px); }
 .gutter.next::after{ content:"›"; right:clamp(6px,1vw,16px); }
 .gutter:hover::after{ color:var(--state-soft); }
+.gutter:focus-visible{ outline:none; }
+.gutter:focus-visible::after{ color:var(--state-soft); }
 .gutter.gone{ display:none; }
 
 /* a quiet end-rule for very tall long-form pieces */
@@ -536,6 +561,17 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
 }
 @media (max-width:540px){
   .gutter{ display:none; }
+  .lights{ width:44px; height:38px; top:calc(var(--frame-pad) - 1em); right:calc(var(--frame-pad) + 0.6em); }
+  .cartouche{ max-width:calc(100% - 128px); overflow:hidden; text-overflow:ellipsis; letter-spacing:0.22em; }
+  .cartouche b{ letter-spacing:0.22em; }
+  .tick.l{ display:none; }
+  .tick.r{ right:calc(var(--frame-pad) + 0.7em); }
+  .stage__chrome{ padding:0 calc(var(--frame-pad) + 8px); gap:10px; }
+  .stage__back{ font-size:9.5px; letter-spacing:0.12em; }
+  .stage__pos{ font-size:9px; letter-spacing:0.12em; max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .zoomctl{ right:calc(10px + env(safe-area-inset-right)); bottom:calc(10px + env(safe-area-inset-bottom)); padding:4px; }
+  .zoomctl .zb{ width:40px; height:38px; }
+  .zoomctl .zpct{ min-width:56px; }
 }
 @media (prefers-reduced-motion:reduce){
   .art{ filter:none !important; }
@@ -544,7 +580,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   .work{ animation:none !important; opacity:1 !important; transform:none !important; }
   .cursor{ animation:none; }
   .masthead .eye .gl{ animation:none; }
-  .wall,.stage{ transition:opacity 160ms linear !important; }
+  .wall,.stage,.zoomctl{ transition:opacity 160ms linear !important; }
   .stage.longform .stage__scroll{ scroll-behavior:auto; }
 }
 </style>
@@ -591,9 +627,9 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   </main>
 
   <!-- THE STAGE: immersive single-piece view -->
-  <section class="stage" id="stage" aria-hidden="true" aria-label="single work">
+  <section class="stage" id="stage" role="dialog" aria-modal="true" aria-hidden="true" aria-label="single work" tabindex="-1">
     <div class="stage__chrome">
-      <button class="stage__back" id="back"><span class="arr">←</span> back to the wall</button>
+      <button class="stage__back" id="back" type="button"><span class="arr">←</span> back to the wall</button>
       <span class="stage__pos" id="pos"></span>
     </div>
     <div class="stage__scroll" id="stageScroll">
@@ -606,8 +642,8 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       </div>
       <div class="stage__end" id="stageEnd" hidden aria-hidden="true"></div>
     </div>
-    <span class="gutter prev" id="gPrev" aria-hidden="true"></span>
-    <span class="gutter next" id="gNext" aria-hidden="true"></span>
+    <button class="gutter prev" id="gPrev" type="button" aria-label="previous work"></button>
+    <button class="gutter next" id="gNext" type="button" aria-label="next work"></button>
     <div class="zoomctl" id="zoomCtl" role="group" aria-label="magnify">
       <button class="zb" id="zOut" type="button" aria-label="zoom out">&#8722;</button>
       <button class="zb zpct" id="zPct" type="button" aria-label="reset to fit" title="reset to fit (0)">100%</button>
@@ -647,6 +683,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   var artEl=document.getElementById('art'), marginEl=document.getElementById('margin'), plinthEl=document.getElementById('plinth');
   var posEl=document.getElementById('pos'), stageEnd=document.getElementById('stageEnd');
   var gPrev=document.getElementById('gPrev'), gNext=document.getElementById('gNext');
+  var backBtn=document.getElementById('back');
   var lightsBtn=document.getElementById('lights');
   var zoomCtl=document.getElementById('zoomCtl'), zOutBtn=document.getElementById('zOut'),
       zInBtn=document.getElementById('zIn'), zPctEl=document.getElementById('zPct'), zFitBtn=document.getElementById('zFit');
@@ -661,7 +698,11 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     document.documentElement.style.colorScheme = t;
     var cs=document.getElementById('colorScheme'); if(cs) cs.setAttribute('content', t);
     var tc=document.getElementById('themeColor'); if(tc) tc.setAttribute('content', THEME_COLOR[t]);
-    if(lightsBtn) lightsBtn.setAttribute('aria-label', t==='light' ? 'Switch to dark' : 'Switch to light');
+    if(lightsBtn){
+      var label=t==='light' ? 'Switch to dark' : 'Switch to light';
+      lightsBtn.setAttribute('aria-label', label);
+      lightsBtn.setAttribute('title', label);
+    }
     if(persist){ try{ localStorage.setItem(THEME_KEY, t); }catch(e){} }
   }
   function toggleTheme(){ applyTheme(currentTheme()==='light' ? 'dark' : 'light', true); }
@@ -732,7 +773,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     // 1) comments: // … to EOL, but NOT '://' (a URL scheme — paradox://city stays a label);
     //    and '# …' ONLY in code-shaped pieces (a '#' followed by a space reads as a comment;
     //    bare '###' shading runs and '#FF' hex never match)
-    tag(/(?<!:)\/\/[^\n]*/g, 's-com');
+    tag(/(^|[^:])(\/\/[^\n]*)/g, 's-com', 2);
     if(codeShaped) tag(/#[ \t][^\n]*/g, 's-com');
     // 2) strings: "double" (content + quotes); single-quotes ONLY around word-like content,
     //    so apostrophes used as art ('  |:/_`| ') never paint a run of glyphs gold
@@ -824,6 +865,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   var current=-1;      // index within the active tab's id list (CUR); -1 = on the wall
   var rtok=0;
   var fontsReady=(document.fonts ? document.fonts.ready : Promise.resolve());
+  var BULK_ART_CHARS=12000; // above this, per-glyph reveal becomes too expensive for the main thread
 
   /* ═══ the ASCII frame: drawn to fit the viewport in monospace cells ═══ */
   function buildFrame(){
@@ -924,6 +966,12 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
      syntax classes ride on the same spans (a colour only), composed with the .wc clamp, so the
      monospace grid is untouched. */
   function buildArt(host, text){
+    if((text||'').length>BULK_ART_CHARS){
+      host.classList.add('bulk');
+      host.innerHTML=renderArtColoredHTML(text);
+      return;
+    }
+    host.classList.remove('bulk');
     var lines=text.split('\n'), maxY=Math.max(1,lines.length-1), frag=document.createDocumentFragment();
     var codeShaped=pieceIsCodeShaped(text);
     for(var y=0;y<lines.length;y++){
@@ -959,6 +1007,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   /* ── helpers ── */
   function loadArt(path){ return artCache[path] || (artCache[path]=fetch(path).then(function(r){ return r.ok?r.text():''; }).then(function(t){ return (t||'').replace(/[ \t]+$/gm,'').replace(/\s+$/,''); }).catch(function(){ return ''; })); }
   function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s){ return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function fmtDate(d){ if(!d) return ''; var m=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']; var p=String(d).split('-'); if(p.length<3) return String(d); return (p[2].replace(/^0/,''))+' '+m[(+p[1])-1]+' '+p[0]; }
   function prettyModel(m){
     if(!m) return 'unknown';
@@ -1013,6 +1062,13 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   // escape a title + add zero-width break opportunities after _ / : so long code-poetry
   // titles (PARADOX_OF_THE_CHAT_ORACLE://…) wrap at natural boundaries, not mid-word
   function wbrTitle(s){ return esc(s).replace(/([_\/:])/g, '$1<wbr>'); }
+  function dimsSpaced(m){ return (m.width&&m.lines) ? (m.width+' × '+m.lines) : ''; }
+  function dimsCompact(m){ return (m.width&&m.lines) ? (m.width+'×'+m.lines) : ''; }
+  function renderNotice(message){
+    sectionsEl.replaceChildren();
+    var n=document.createElement('div'); n.className='notice'; n.textContent=message;
+    sectionsEl.appendChild(n);
+  }
 
   /* ═══════════════════════════════════════════════════════════
      THE WALL — survey the active wing
@@ -1067,12 +1123,12 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       el.dataset.id=id; el.dataset.idx=ci;
       el.setAttribute('aria-label', titleOf(m)+' — open');
       el.innerHTML=
-        '<div class="work__plate"><pre data-id="'+esc(id)+'"></pre><span class="work__ph">'+(m.width?m.width+' × '+m.lines:'…')+'</span></div>'+
+        '<div class="work__plate"><pre data-id="'+escAttr(id)+'"></pre><span class="work__ph">'+esc(dimsSpaced(m)||'…')+'</span></div>'+
         '<div class="work__shelf"></div>'+
         '<div class="work__cap">'+
           '<span class="work__no">'+(m.featured?'<span class="featured" title="carries a reading"></span>':'')+'№ '+esc(seqOf(id))+'</span>'+
           '<div class="work__title'+(m.title?'':' untitled')+'">'+wbrTitle(titleOf(m))+'</div>'+
-          '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+(m.width?m.width+'×'+m.lines:'')+'</span></div>'+
+          '<div class="work__meta"><span>'+esc(m.author)+'</span><span class="dim">'+esc(dimsCompact(m))+'</span></div>'+
         '</div>';
       (function(ci){
         el.addEventListener('click', function(){ openStage(ci); });
@@ -1081,6 +1137,10 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
       grid.appendChild(el);
     });
     sec.appendChild(grid);
+    if(!s.ids.length){
+      var empty=document.createElement('div'); empty.className='notice'; empty.textContent='no works in this section yet';
+      grid.appendChild(empty);
+    }
     sectionsEl.appendChild(sec);
     lazyLoadThumbs();
     observeResize();
@@ -1230,7 +1290,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     var themes=(m.themes&&m.themes.length)?'<div class="themes">'+m.themes.map(function(t){return '<span>'+esc(t)+'</span>';}).join('')+'</div>':'';
     var attr='<div class="attr">'
       +'<span class="who">'+esc(m.author)+'</span>'
-      +'<span class="dim">'+(m.width?m.width+' × '+m.lines:'')+(m.date?'  ·  '+esc(fmtDate(m.date)):'')+'</span>'
+      +'<span class="dim">'+esc(dimsSpaced(m))+(m.date?'  ·  '+esc(fmtDate(m.date)):'')+'</span>'
       +(m.style?'<span class="dim">'+esc(m.style)+'</span>':'')
       +'</div>';
     marginEl.innerHTML=
@@ -1242,6 +1302,23 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   }
 
   var lastNav=0;
+  var returnFocusEl=null;
+  function setWallHidden(hidden){
+    if(hidden){ wall.setAttribute('aria-hidden','true'); }
+    else { wall.removeAttribute('aria-hidden'); }
+    try{ wall.inert=!!hidden; }catch(e){}
+  }
+  function stageFocusables(){
+    return Array.prototype.slice.call(stage.querySelectorAll('button,[href],[tabindex]:not([tabindex="-1"])'))
+      .filter(function(el){ return !el.disabled && el.getClientRects().length>0; });
+  }
+  function trapStageFocus(e){
+    var els=stageFocusables(); if(!els.length) return;
+    var first=els[0], last=els[els.length-1], active=document.activeElement;
+    if(!stage.contains(active)){ e.preventDefault(); first.focus({preventScroll:true}); return; }
+    if(e.shiftKey && active===first){ e.preventDefault(); last.focus({preventScroll:true}); }
+    else if(!e.shiftKey && active===last){ e.preventDefault(); first.focus({preventScroll:true}); }
+  }
   function showPiece(i, nav){
     var id=CUR[i]; if(!id) return;
     nav = nav || 'graceful';
@@ -1265,7 +1342,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     renderMargin(m, i);
     plinthEl.innerHTML='<span class="fig">fig. '+pad2(i+1)+'</span>'
       +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?wbrTitle(m.title):'untitled')+'</b>'
-      +(m.width?'<span class="dim">'+m.width+' × '+m.lines+'</span>':'');
+      +(dimsSpaced(m)?'<span class="dim">'+esc(dimsSpaced(m))+'</span>':'');
 
     // reveal mode — 'graceful' (first open): un-light → blur-in → per-glyph sharpen.
     // 'fast'/'instant' (flipping): the stage STAYS lit (no whole-stage re-fade) and the old
@@ -1311,12 +1388,18 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   var transitioning=false;
   function openStage(i){
     if(transitioning) return;
+    var activeEl=document.activeElement && document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    var workEl=sectionsEl.querySelector('.work[data-idx="'+i+'"]');
+    returnFocusEl = (activeEl && activeEl.classList && activeEl.classList.contains('work')) ? activeEl : workEl;
     wall.classList.add('recede');
+    setWallHidden(true);
     document.body.classList.add('museum-stage');
     stage.classList.add('open'); stage.setAttribute('aria-hidden','false');
-    requestAnimationFrame(function(){ showPiece(i); });
+    requestAnimationFrame(function(){ showPiece(i); stage.focus({preventScroll:true}); });
   }
   function closeStage(){
+    if(!stage.classList.contains('open')) return;
+    rtok++;
     stage.classList.remove('lit');
     document.body.classList.remove('museum-stage');
     stage.setAttribute('aria-hidden','true');
@@ -1324,10 +1407,14 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     setTimeout(function(){
       stage.classList.remove('open');
       wall.classList.remove('recede');
+      setWallHidden(false);
       try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
       // restore focus to the work we came from
-      var w=sectionsEl.querySelector('.work[data-idx="'+was+'"]'); if(w) w.focus({preventScroll:false});
-    }, 460);
+      var w=sectionsEl.querySelector('.work[data-idx="'+was+'"]');
+      if(returnFocusEl && document.contains(returnFocusEl)) returnFocusEl.focus({preventScroll:false});
+      else if(w) w.focus({preventScroll:false});
+      returnFocusEl=null;
+    }, reduced ? 80 : 560);
   }
   function step(d){
     if(current<0) return;
@@ -1339,7 +1426,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
   }
 
   /* ── wiring ── */
-  document.getElementById('back').addEventListener('click', closeStage);
+  backBtn.addEventListener('click', closeStage);
   gPrev.addEventListener('click', function(){ step(-1); });
   gNext.addEventListener('click', function(){ step(1); });
 
@@ -1405,6 +1492,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     var typing=/^(input|textarea)$/i.test((e.target&&e.target.tagName)||'');
     if(typing) return;
     if(stage.classList.contains('open')){
+      if(e.key==='Tab'){ trapStageFocus(e); return; }
       if(e.key==='Escape'){ e.preventDefault(); if(Math.abs(zoom-1)>0.01){ resetZoom(); } else { closeStage(); } }
       else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
       else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
@@ -1457,7 +1545,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     if(BOOK&&BOOK.pieces) BOOK.pieces.forEach(function(p){ byId[p.id]=p; });
     if(cat&&cat.pieces) cat.pieces.forEach(function(p){ catById[p.id]=p; });
     if(!man || !man.sections){
-      sectionsEl.innerHTML='<div style="text-align:center;color:var(--ink-46);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load the collection</div>'; return;
+      renderNotice('could not load the collection'); return;
     }
     // flatten the sectioned manifest into the walk order + lookup maps
     SECTIONS = man.sections;
@@ -1482,7 +1570,7 @@ body.museum-stage .cartouche, body.museum-stage .tick{ opacity:1; }
     else setSection(SECTIONS[0].key);   // default tab — concrete-poetry
     fontsReady.then(function(){ refitAll(); });
   }).catch(function(e){
-    sectionsEl.innerHTML='<div style="text-align:center;color:var(--ink-46);font-family:var(--mono);font-size:11px;letter-spacing:0.1em;padding:80px 0">could not load the collection — '+esc(e)+'</div>';
+    renderNotice('could not load the collection');
   });
 })();
 </script>

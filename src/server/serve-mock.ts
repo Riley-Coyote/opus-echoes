@@ -67,7 +67,7 @@ function injectPresenceAssets(html: string): string {
 export function serveHtml(
   html: string,
   extraScript?: string,
-  opts?: { status?: number; presence?: boolean },
+  opts?: { status?: number; presence?: boolean; headers?: Record<string, string> },
 ): Response {
   // The resident 3D presence layer is injected by default (every Sanctuary page).
   // Self-contained surfaces (the Observatory, the Research Wing) opt out with
@@ -80,6 +80,7 @@ export function serveHtml(
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
+      ...opts?.headers,
     },
   });
 }
