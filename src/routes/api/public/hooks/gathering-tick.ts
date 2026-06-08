@@ -42,6 +42,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { runSpaceSalon } from "@/server/substrate.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
+import { isAuthorizedCronRequest } from "@/server/cron-auth.server";
 
 const GATHERING_SLUG = "the-gathering";
 // Sized to fit inside pg_cron's HTTP timeout (90s in the migration).
