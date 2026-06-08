@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { idleSweep } from "@/server/substrate.server";
+import { isAuthorizedCronRequest } from "@/server/cron-auth.server";
 
 // Called by pg_cron every few minutes. Closes sessions idle past the
 // SESSION_IDLE_TIMEOUT_MIN window and runs full Mnemos consolidation on each.
