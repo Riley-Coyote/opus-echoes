@@ -19,10 +19,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
-        if (!apikey || !expected || apikey !== expected) {
+        if (!isAuthorizedCronRequest(request)) {
           return new Response("unauthorized", { status: 401 });
         }
         try {
