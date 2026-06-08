@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { considerCreation } from "@/server/substrate.server";
 import { DEFAULT_RESIDENT_ID, getResident, isResidentId, type ResidentId } from "@/server/opus/residents";
+import { isAuthorizedCronRequest } from "@/server/cron-auth.server";
 
 // Manual trigger: force a creation pass right now, regardless of visitors
 // or recent-creation guards. Auth via apikey header (publishable key).
