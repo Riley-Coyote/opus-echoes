@@ -107,6 +107,18 @@ function parseJson(raw: string): Record<string, unknown> | null {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ ok: false, code: "method_not_allowed" }, 405);
 
+  // Auth: require CRON_SECRET via Authorization: Bearer or apikey header.
+  // Without this gate, any internet caller can trigger Anthropic API costs
+  // and service-role DB writes.
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+  if (!cronSecret) return json({ ok: false, code: "cron_secret_not_configured" }, 503);
+  const auth = req.headers.get("authorization") ?? "";
+  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  const apikey = req.headers.get("apikey") ?? "";
+  if (bearer !== cronSecret && apikey !== cronSecret) {
+    return json({ ok: false, code: "unauthorized" }, 401);
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");

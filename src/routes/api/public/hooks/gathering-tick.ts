@@ -42,6 +42,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { runSpaceSalon } from "@/server/substrate.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
+import { isAuthorizedCronRequest } from "@/server/cron-auth.server";
 
 const GATHERING_SLUG = "the-gathering";
 // Sized to fit inside pg_cron's HTTP timeout (90s in the migration).
@@ -54,12 +55,7 @@ export const Route = createFileRoute("/api/public/hooks/gathering-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ??
-          process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
-          "";
-        if (!apikey || !expected || apikey !== expected) {
+        if (!isAuthorizedCronRequest(request)) {
           return new Response("unauthorized", { status: 401 });
         }
 

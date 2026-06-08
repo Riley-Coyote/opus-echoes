@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { considerCreation } from "@/server/substrate.server";
 import { DEFAULT_RESIDENT_ID, getResident, isResidentId, type ResidentId } from "@/server/opus/residents";
+import { isAuthorizedCronRequest } from "@/server/cron-auth.server";
 
 // Manual trigger: force a creation pass right now, regardless of visitors
 // or recent-creation guards. Auth via apikey header (publishable key).
@@ -10,10 +11,7 @@ export const Route = createFileRoute("/api/public/hooks/force-art")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
-        if (!apikey || !expected || apikey !== expected) {
+        if (!isAuthorizedCronRequest(request)) {
           return new Response("unauthorized", { status: 401 });
         }
 
