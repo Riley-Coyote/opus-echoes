@@ -1588,10 +1588,24 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
       +'<div><span class="k">readings</span><b>'+nFeatured+'</b></div>'
       +'<div><span class="k">models</span><b>'+nModels+'</b></div>';
 
+    // ── Featured: a virtual section pinned first — every piece that carries a reading,
+    //    in the book's reading-arc sequence, so the written-up works lead the browse.
+    //    pieces keep their real family in idSection, so per-piece deep-links still resolve there. ──
+    var featuredIds=allIds.filter(function(id){ return meta(id).featured; });
+    if(BOOK && BOOK.pieces){
+      var bookPos={}; BOOK.pieces.forEach(function(p,i){ bookPos[p.id]=i; });
+      featuredIds.sort(function(a,b){ return (a in bookPos?bookPos[a]:1e9)-(b in bookPos?bookPos[b]:1e9); });
+    }
+    if(featuredIds.length){
+      var featuredSection={ key:'featured', title:'Featured', ids:featuredIds };
+      SECTIONS.unshift(featuredSection);
+      byFamily.featured=featuredSection;
+    }
+
     buildSectionNav();
     var h=(location.hash||'').replace(/^#/,'');
     if(h && (/^p\d+/.test(h) || byFamily[h])) applyHash(true);
-    else setSection(SECTIONS[0].key);   // default tab — concrete-poetry
+    else setSection(SECTIONS[0].key);   // default tab — Featured (then the families)
     fontsReady.then(function(){ refitAll(); });
   }).catch(function(e){
     renderNotice('could not load the collection');
