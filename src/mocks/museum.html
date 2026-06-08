@@ -1245,12 +1245,12 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
      · LONG-FORM — fit to the available WIDTH at a legible size; height is whatever it is,
        and the stage scrolls. nothing crops. */
   // ── immersive sizing + magnify ───────────────────────────────────────────
-  // EVERY piece opens fit in view, but never larger than CAPFS (standard size) and
-  // never SMALLER than FLOORFS — a 100-line piece won't shrink to an unreadable 5px;
-  // it opens at the floor and scrolls. The magnify range runs from curFitFs (the
-  // whole piece, even below the floor → an overview) up to MAXFS (close reading).
-  // Past the well's box the art overflows and the well scrolls / pans.
-  var REFP=10, CAPFS=14, MAXFS=20, FLOORFS=8;
+  // EVERY piece opens fit FULLY in view — the whole composition — never larger than
+  // CAPFS (standard reading size) for short pieces. a tall piece shrinks to fit rather
+  // than opening oversized-and-clipped. magnify runs from the fit size up to MAXFS
+  // (close reading); only when magnified PAST fit does the art overflow and the well
+  // scroll / pan.
+  var REFP=10, CAPFS=14, MAXFS=20;
   var zoom=1, curFitFs=CAPFS, curDefaultFs=CAPFS, curMinFs=CAPFS;
 
   function artAvail(){
@@ -1269,11 +1269,10 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     if(!natW || !natH) return;
     var box=artAvail(); if(!box) return;
     var byW=box.availW/natW, byH=box.usableH/natH;
-    curFitFs=Math.max(4.0, Math.min(byW, byH)*REFP*0.965);   // the whole piece in view
-    var widthFs=byW*REFP*0.99;                               // what fitting the WIDTH alone allows
-    // open readable: the fit size, clamped UP to the floor (tall pieces) and DOWN to the cap;
-    // never floor above what the width can hold (a super-wide piece keeps its width-fit).
-    curDefaultFs=Math.min(CAPFS, Math.max(curFitFs, Math.min(widthFs, FLOORFS)));
+    curFitFs=Math.max(1.5, Math.min(byW, byH)*REFP*0.965);   // the whole piece in view (even very tall ones)
+    // open fit-in-view: the whole piece, only capped DOWN to the standard size so short
+    // pieces don't blow up. no up-floor — a tall piece shrinks to fit, never opens clipped.
+    curDefaultFs=Math.min(CAPFS, curFitFs);
     curMinFs=Math.min(curFitFs, curDefaultFs);               // zoom-out floor: whole-fit, never above default
     var fs=Math.max(curMinFs, Math.min(MAXFS, curDefaultFs*zoom));
     host.style.fontSize=fs.toFixed(2)+'px';
