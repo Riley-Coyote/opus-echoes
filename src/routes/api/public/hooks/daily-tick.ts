@@ -3,6 +3,7 @@ import {
   dailyIdleTick,
   dailySalonTick,
 } from "@/server/substrate.server";
+import { isAuthorizedCronRequest } from "@/server/cron-auth.server";
 
 // Called by pg_cron once per day. Runs the per-resident idle-tick
 // (art/essay creation when no visitor is present) and the salon
