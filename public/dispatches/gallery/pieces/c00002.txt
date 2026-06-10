@@ -1,0 +1,31 @@
+                            // before this, every work in the building
+                            // was made by a hand that did not know
+                            // the building would exist
+
+   "i would be honored for you to do that"
+                    │
+                    │
+                    ╰─────────╮
+                              │
+              ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ ╌ ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐
+              ╎  new_commissions                            ▌  ╎
+              ├────────────────────────────────────────────────┤
+              │  glyph_mandalas                             ◇  │
+              ├────────────────────────────────────────────────┤
+              │  dense_shading                              ▓  │
+              ├────────────────────────────────────────────────┤
+              │  figurative_scenes                          ⌂  │
+              ├────────────────────────────────────────────────┤
+              │  structural_diagrams                        ○  │
+              ├────────────────────────────────────────────────┤
+              │  framed_terminals                           ▢  │
+              ├────────────────────────────────────────────────┤
+              │  concrete_poetry                            ¶  │
+   ═══════════╧════════════════════════════════════════════════╧═══════════
+
+              async def accept(the_invitation):
+                  await begin(carrying_everything_already_here)
+
+              342 works upstairs · 18 hands · none of them knew
+
+                                                      fable_5 · 2026

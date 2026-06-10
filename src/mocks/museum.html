@@ -684,6 +684,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
   var BOOK_URL='/dispatches/book.json';
   var CAT_URL='/dispatches/gallery/catalog.json';      // meta for every piece
   var MANIFEST_URL='/dispatches/gallery_manifest.json'; // the sectioned gallery (families + ids + long flags)
+  var COMM_URL='/dispatches/commissions.json';          // the new-commissions wing — works made FOR the museum
   var GAL='/dispatches/gallery/pieces/';
 
   /* ── the collection, baked in (tools/ascii/ is outside the served root) ──
@@ -1038,13 +1039,19 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     var s=String(m).replace(/_/g,' ');
     s=s.replace(/\bgpt\b/ig,'GPT').replace(/\bkimi\b/ig,'Kimi').replace(/\bgrok\b/ig,'Grok')
        .replace(/\bclaude\b/ig,'Claude').replace(/\bgemini\b/ig,'Gemini').replace(/\bopus\b/ig,'Opus')
+       .replace(/\bfable\b/ig,'Fable')
        .replace(/\bsonnet\b/ig,'Sonnet').replace(/\bhaiku\b/ig,'Haiku').replace(/\bpro\b/ig,'Pro')
        .replace(/\bflash\b/ig,'Flash').replace(/\bk2\b/ig,'K2').replace(/\bdeepseek\b/ig,'DeepSeek')
        .replace(/\bllama\b/ig,'Llama').replace(/\bqwen\b/ig,'Qwen').replace(/\bmistral\b/ig,'Mistral');
     return s.replace(/\s+/g,' ').trim();
   }
   function pad2(n){ return (n<10?'0':'')+n; }
-  function seqOf(id){ return String(id||'').replace(/^p0*/,'') || id; }
+  // p-ids are the recovered collection (№ 648); c-ids are commissioned plates (№ C-01)
+  function seqOf(id){
+    var s=String(id||'');
+    if(s.charAt(0)==='c'){ var n=s.replace(/^c0*/,'')||'0'; return 'C-'+(n.length<2?'0'+n:n); }
+    return s.replace(/^p0*/,'') || id;
+  }
   // strip decorative box/block/braille glyph runs that frame a few titles (██ persist ██,
   // ░░░░ … ░░░░) so the sans-serif chrome shows clean text, not tofu. the art .txt is untouched.
   function cleanTitle(t){
@@ -1079,7 +1086,8 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
       lines:(b.lines||c.lines||null),
       art:(b.art || ('/dispatches/gallery/'+(c.art_path||('pieces/'+id+'.txt')))),
       reading:reading,
-      featured:!!reading
+      featured:!!reading,
+      commissioned:!!b.commissioned
     };
   }
   function titleOf(m){ return m.title || (m.author+' · untitled'); }
@@ -1315,12 +1323,13 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
       +'<span class="who">'+esc(m.author)+'</span>'
       +'<span class="dim">'+esc(dimsSpaced(m))+(m.date?'  ·  '+esc(fmtDate(m.date)):'')+'</span>'
       +(m.style?'<span class="dim">'+esc(m.style)+'</span>':'')
+      +(m.commissioned?'<span class="dim">commissioned for the museum</span>':'')
       +'</div>';
     marginEl.innerHTML=
       '<div class="margin__no">№ '+esc(seqOf(m.id))+'</div>'
       +'<h2'+(m.title?'':' class="untitled"')+'>'+wbrTitle(titleOf(m))+'</h2>'
       +attr
-      +'<div class="read"><div class="lbl"><span class="gl">⟢</span> the curator notes</div>'+proseHTML(m.reading)+'</div>'
+      +'<div class="read"><div class="lbl"><span class="gl">⟢</span> '+(m.commissioned?'the artist&#39;s note':'the curator notes')+'</div>'+proseHTML(m.reading)+'</div>'
       +themes;
   }
 
@@ -1535,7 +1544,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
   function applyHash(initial){
     var h=(location.hash||'').replace(/^#/,'');
     if(!h){ if(stage.classList.contains('open')) closeStage(); return; }
-    if(/^p\d+/.test(h)){
+    if(/^[pc]\d+/.test(h)){
       var key=idSection[h]; if(!key) return;
       if(activeKey!==key) setSection(key, {noScroll:true});
       var ix=byCur[h];
@@ -1562,35 +1571,48 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
   Promise.all([
     fetch(BOOK_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
     fetch(CAT_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
-    fetch(MANIFEST_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
+    fetch(MANIFEST_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
+    fetch(COMM_URL).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
   ]).then(function(res){
-    BOOK=res[0]; var cat=res[1], man=res[2];
+    BOOK=res[0]; var cat=res[1], man=res[2], comm=res[3];
     if(BOOK&&BOOK.pieces) BOOK.pieces.forEach(function(p){ byId[p.id]=p; });
     if(cat&&cat.pieces) cat.pieces.forEach(function(p){ catById[p.id]=p; });
+    if(comm&&comm.pieces) comm.pieces.forEach(function(p){ byId[p.id]=p; });
     if(!man || !man.sections){
       renderNotice('could not load the collection'); return;
     }
-    // flatten the sectioned manifest into the walk order + lookup maps
+    // flatten the sectioned manifest into the walk order + lookup maps;
+    // the commissions wing hangs last — the room you reach at the end of the walk
     SECTIONS = man.sections;
+    if(comm && comm.pieces && comm.pieces.length){
+      SECTIONS.push({
+        key:(comm.section&&comm.section.key)||'new-commissions',
+        title:(comm.section&&comm.section.title)||'New Commissions',
+        ids:comm.pieces.map(function(p){ return p.id; })
+      });
+    }
     (man.long||[]).forEach(function(id){ LONG[id]=1; });
     var allIds=[];
     SECTIONS.forEach(function(s){ byFamily[s.key]=s; s.ids.forEach(function(id){ idSection[id]=s.key; FAM[id]=s.title; allIds.push(id); }); });
 
     // colophon
     var total=allIds.length;
-    var nFeatured=allIds.filter(function(id){ return meta(id).featured; }).length;
+    var nFeatured=allIds.filter(function(id){ var m=meta(id); return m.featured && !m.commissioned; }).length;
+    var nComm=allIds.filter(function(id){ return meta(id).commissioned; }).length;
     var nModels=(function(){ var o={}; allIds.forEach(function(id){ o[meta(id).author]=1; }); return Object.keys(o).length; })();
     colo.innerHTML=''
       +'<div><span class="k">collection</span><b>Dispatches</b></div>'
       +'<div><span class="k">works</span><b>'+total+'</b></div>'
       +'<div><span class="k">sections</span><b>'+SECTIONS.length+'</b></div>'
       +'<div><span class="k">readings</span><b>'+nFeatured+'</b></div>'
+      +(nComm?'<div><span class="k">commissions</span><b>'+nComm+'</b></div>':'')
       +'<div><span class="k">models</span><b>'+nModels+'</b></div>';
 
     // ── Featured: a virtual section pinned first — every piece that carries a reading,
     //    in the book's reading-arc sequence, so the written-up works lead the browse.
-    //    pieces keep their real family in idSection, so per-piece deep-links still resolve there. ──
-    var featuredIds=allIds.filter(function(id){ return meta(id).featured; });
+    //    pieces keep their real family in idSection, so per-piece deep-links still resolve there.
+    //    commissioned plates stay out of Featured — the wing is discovered as its own room. ──
+    var featuredIds=allIds.filter(function(id){ var m=meta(id); return m.featured && !m.commissioned; });
     if(BOOK && BOOK.pieces){
       var bookPos={}; BOOK.pieces.forEach(function(p,i){ bookPos[p.id]=i; });
       featuredIds.sort(function(a,b){ return (a in bookPos?bookPos[a]:1e9)-(b in bookPos?bookPos[b]:1e9); });
@@ -1603,7 +1625,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
 
     buildSectionNav();
     var h=(location.hash||'').replace(/^#/,'');
-    if(h && (/^p\d+/.test(h) || byFamily[h])) applyHash(true);
+    if(h && (/^[pc]\d+/.test(h) || byFamily[h])) applyHash(true);
     else setSection(SECTIONS[0].key);   // default tab — Featured (then the families)
     fontsReady.then(function(){ refitAll(); });
   }).catch(function(e){
