@@ -463,19 +463,18 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
 .stage.gallery .stage__inner.annotated .well{ align-items:center; }
 .stage.longform .well{ align-items:center; justify-content:flex-start; }
 
-/* MAGNIFY — at fit the well shows the whole piece (no scroll); zoomed past fit the well
-   itself becomes the scroll/pan viewport, so the curator's margin stays put beside it.
-   vertical start keeps tall works from opening clipped above the scroll origin. */
-.well{ overflow:hidden; }
-.stage.zoomed .well{ overflow:auto; cursor:grab; overscroll-behavior:contain;
-  -webkit-overflow-scrolling:touch; justify-content:flex-start; align-items:center; }
-@supports (justify-content:safe center){
-  .stage.zoomed .well{ justify-content:flex-start; align-items:safe center; }
-}
+/* MAGNIFY — at fit the well shows the whole piece centered; the well is ALWAYS its own
+   scroll viewport so that any piece which doesn't fully fit (rounding, tall compositions,
+   browser zoom shifts) remains reachable — never silently clipped by an overflow:hidden.
+   `safe center` keeps centering only while there's room; once it would overflow, the
+   alignment falls back to start so the top of the piece stays scrollable into view. */
+.well{ overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+  justify-content:safe center; align-items:safe center; }
+.stage.zoomed .well{ cursor:grab; }
+.well::-webkit-scrollbar{ width:9px; height:9px; }
+.well::-webkit-scrollbar-thumb{ background:var(--ink-18); border-radius:6px; }
+.well::-webkit-scrollbar-track{ background:transparent; }
 .stage.zoomed .well.grabbing{ cursor:grabbing; }
-.stage.zoomed .well::-webkit-scrollbar{ width:9px; height:9px; }
-.stage.zoomed .well::-webkit-scrollbar-thumb{ background:var(--ink-18); border-radius:6px; }
-.stage.zoomed .well::-webkit-scrollbar-track{ background:transparent; }
 
 /* the magnify cluster — a hushed control on the void, mirrors the chrome's restraint */
 .zoomctl{ position:absolute; right:clamp(16px,2.4vw,40px); bottom:clamp(16px,2.4vh,34px); z-index:7;
