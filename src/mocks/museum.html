@@ -91,6 +91,9 @@
   --s-op:#9aa2b0;    /* operators — quiet cool neutral */
   --s-num:#d09a86;   /* numbers — soft clay rose */
   --s-kw:#b7a1d4;    /* keywords — muted violet */
+  /* the performance — fresh ink, and the room's veil while a piece is written */
+  --perf-fresh:#ffffff;
+  --veil:rgba(3,4,7,0.32);
 }
 
 /* ── LIGHT · a warm-paper gallery, ink on paper, hairline rules ── */
@@ -125,6 +128,9 @@
   --s-op:#6f6a5f;    /* operators — soft warm grey */
   --s-num:#a85b46;   /* numbers — brick rose */
   --s-kw:#6a4f86;    /* keywords — deep plum */
+  /* the performance — fresh ink on paper, and the paper's veil */
+  --perf-fresh:#000000;
+  --veil:rgba(58,52,40,0.08);
 }
 /* default for a UA that somehow lost the data-theme attr → dark */
 :root:not([data-theme]){ color-scheme:dark; }
@@ -528,6 +534,55 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
 .plinth .fig{ color:var(--state-soft); letter-spacing:0.2em; }
 .plinth .dim{ color:var(--ink-46); }
 
+/* ═══════════════════════════════════════════════════════════
+   THE PERFORMANCE — watch the piece be written. the masthead
+   promises "character by character"; this keeps the promise.
+   a text-node grid is written in front of the visitor at a
+   thought cadence; fresh glyphs cool like drying ink; at the
+   end the syntax colour develops over the finished field.
+   ═══════════════════════════════════════════════════════════ */
+/* the performing grid — spans inside it (wc cells) must not inherit the
+   reveal rules; the grid is always fully visible, the writes ARE the reveal */
+.art.performing{ position:relative; }
+.art.performing span{ opacity:1 !important; transition:none !important; transition-delay:0ms !important; }
+/* the fx layer — cursor + drying-ink trail ride above the grid */
+.perf-fx{ position:absolute; inset:0; pointer-events:none; }
+/* the writing cursor — the ticker's cursor, walking. blinks ONLY while holding */
+.perf-cursor{ position:absolute; left:0; top:0; background:var(--state-soft);
+  box-shadow:0 0 12px var(--state-dim); will-change:transform; }
+.perf-cursor.hold{ animation:blink 1.15s steps(1) infinite; }
+/* a freshly written glyph — bright, floor-backed (masks overwrites), cooling */
+.pg{ position:absolute; left:0; top:0; white-space:pre; background:var(--floor);
+  color:var(--perf-fresh); will-change:color;
+  transition:color 1200ms var(--ease), background-color 620ms var(--ease); }
+/* the room recedes while a piece is being written */
+.stage__veil{ position:absolute; inset:0; pointer-events:none; opacity:0;
+  background:var(--veil); transition:opacity 600ms var(--ease); }
+.stage.performing .stage__veil{ opacity:1; }
+.stage.performing .margin, .stage.performing .zoomctl{ opacity:0.15; pointer-events:none; }
+/* the settle — the performed grid lifts off the developed colour beneath it */
+.perf-ghost{ position:absolute; inset:0; opacity:1; transition:opacity 900ms var(--ease); }
+.perf-ghost.gone{ opacity:0; }
+/* plinth controls — perform / finish, tempo, and the scored mark */
+.plinth__act{ pointer-events:auto; font-family:var(--mono); font-size:10px; letter-spacing:0.14em;
+  text-transform:uppercase; color:var(--ink-62); padding:2px 0; position:relative;
+  transition:color 280ms var(--ease); }
+.plinth__act::after{ content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px;
+  background:var(--state-soft); transform:scaleX(0); transform-origin:left; transition:transform 360ms var(--ease); }
+.plinth__act:hover{ color:var(--ink); }
+.plinth__act:hover::after{ transform:scaleX(1); }
+.plinth__act:focus-visible{ outline:none; color:var(--ink); }
+.plinth__act:focus-visible::after{ transform:scaleX(1); }
+.plinth__scored{ color:var(--ink-30); letter-spacing:0.14em; }
+.plinth .tb{ pointer-events:auto; font-family:var(--mono); font-size:10px; letter-spacing:0.08em;
+  color:var(--ink-30); padding:2px 1px; transition:color 240ms var(--ease); font-variant-numeric:tabular-nums; }
+.plinth .tb:hover{ color:var(--ink-84); }
+.plinth .tb.on{ color:var(--state-soft); }
+.plinth .tb:focus-visible{ outline:1px solid var(--state-soft); outline-offset:3px; }
+@media (max-width:540px){
+  .plinth__act, .plinth .tb{ min-height:38px; display:inline-flex; align-items:center; padding:0 6px; }
+}
+
 /* the immersive top chrome — back to the wall, position, wing */
 .stage__chrome{ position:fixed; top:calc(var(--frame-pad) + 1px); left:0; right:0; z-index:7; pointer-events:none;
   display:flex; align-items:center; justify-content:space-between; gap:16px;
@@ -606,6 +661,11 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
   .masthead .eye .gl{ animation:none; }
   .wall,.stage,.zoomctl{ transition:opacity 160ms linear !important; }
   .stage.longform .stage__scroll{ scroll-behavior:auto; }
+  /* the performance, becalmed — beats of line-fades instead of a walking cursor */
+  .perf-cursor{ display:none !important; }
+  .pg{ transition:none !important; }
+  .art.performing .ln{ transition:opacity 160ms linear; }
+  .stage__veil{ transition:none !important; }
 }
 </style>
 </head>
@@ -652,6 +712,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
 
   <!-- THE STAGE: immersive single-piece view -->
   <section class="stage" id="stage" role="dialog" aria-modal="true" aria-hidden="true" aria-label="single work" tabindex="-1">
+    <div class="stage__veil" aria-hidden="true"></div>
     <div class="stage__chrome">
       <button class="stage__back" id="back" type="button"><span class="arr">←</span> back to the wall</button>
       <span class="stage__pos" id="pos"></span>
@@ -1087,7 +1148,8 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
       art:(b.art || ('/dispatches/gallery/'+(c.art_path||('pieces/'+id+'.txt')))),
       reading:reading,
       featured:!!reading,
-      commissioned:!!b.commissioned
+      commissioned:!!b.commissioned,
+      score:(b.score||c.score||null)
     };
   }
   function titleOf(m){ return m.title || (m.author+' · untitled'); }
@@ -1295,7 +1357,10 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     var d=curDefaultFs>0?curDefaultFs:1;
     return { min:Math.min(1, curMinFs/d), max:Math.max(1, MAXFS/d) };
   }
-  function applyZoom(z){ var r=zoomRange(); zoom=Math.max(r.min, Math.min(r.max, z)); fitArt(artEl,'gallery'); }
+  function applyZoom(z){
+    if(PERF.state==='running'||PERF.state==='settling') return;   // the magnify rests while a piece is written
+    var r=zoomRange(); zoom=Math.max(r.min, Math.min(r.max, z)); fitArt(artEl,'gallery');
+  }
   function zoomBy(f){ applyZoom(zoom*f); }
   function resetWellScroll(){ var w=artEl.closest('.well'); if(w){ w.scrollTop=0; w.scrollLeft=0; } }
   function resetZoom(){ applyZoom(1); resetWellScroll(); }              // back to the default (100%)
@@ -1311,6 +1376,351 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
   function fitArtWhenReady(host, mode){
     fitArt(host, mode);
     fontsReady.then(function(){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ if(host&&host.parentNode) fitArt(host, mode); }); }); });
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     THE PERFORMANCE — the piece, written again in front of you.
+     reading order is testimony for these works (they were emitted
+     autoregressively), so the default score re-enacts composition;
+     a piece may instead declare an authored score of writes —
+     including overwrites and held beats — and the museum performs
+     exactly that. ends, always, on the colour developing.
+     ═══════════════════════════════════════════════════════════ */
+  var PERF={ state:'idle', token:0, raf:0, prev:0, elapsed:0, tempo:1, idx:0, done:0,
+             writes:null, grid:null, text:'', cols:0, rows:0, m:null, mi:0, check:null };
+
+  /* seeded determinism — a piece always performs the same way */
+  function xmur3(str){ var h=1779033703^str.length;
+    for(var i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=(h<<13)|(h>>>19); }
+    return function(){ h=Math.imul(h^(h>>>16),2246822507); h=Math.imul(h^(h>>>13),3266489909); return (h^(h>>>16))>>>0; }; }
+  function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0;
+    var t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+  function fnv1a32(s){ var h=0x811c9dc5;
+    for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h+((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24)))>>>0; }
+    return '0x'+('0000000'+h.toString(16)).slice(-8); }
+
+  var scoreCache={};
+  function loadScore(url){ return scoreCache[url] || (scoreCache[url]=fetch(url)
+    .then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })); }
+
+  /* one line of art → its cells, exactly as buildArt counts them */
+  function cellsOf(line){
+    var out=[];
+    for(const ch of line){
+      var o=ch.codePointAt(0);
+      if(o<0x20) continue;
+      if(o>0x7e && glyphRatio(ch)<0.02) continue;
+      out.push(ch);
+    }
+    return out;
+  }
+  function runSafe(ch){
+    if(ch.length>1) return false;
+    var o=ch.codePointAt(0);
+    if(o<=0x7e) return true;
+    var r=glyphRatio(ch);
+    return r>=0.97 && r<=1.03;
+  }
+
+  /* the default score — reading order at a thought cadence, seeded by id */
+  function synthesizeScore(text, id){
+    var rnd=mulberry32(xmur3(id||'untitled')());
+    var lines=text.split('\n'), writes=[], t=0, prevCh='', prevPunct=false;
+    for(var r=0;r<lines.length;r++){
+      var cells=cellsOf(lines[r]);
+      var pending=120+Math.round(rnd()*100);              // the breath before each line
+      for(var c=0;c<cells.length;c++){
+        var ch=cells[c];
+        if(ch===' '){ pending+=2; prevCh=ch; prevPunct=false; continue; }
+        var d;
+        var cp=ch.codePointAt(0);
+        if(ch===prevCh) d=4;                              // a run — the hand knows where it is going
+        else if(isStructuralGlyph(cp)) d=4;               // fills and frames go quickly
+        else d=14;
+        d=Math.round(d*(0.7+rnd()*0.6));                  // jitter
+        if(prevPunct) d+=90;                              // the pause after a stop
+        if(rnd()<1/180) d+=150+Math.round(rnd()*250);     // a thought stalls
+        t+=pending+d; pending=0;
+        writes.push([r,c,ch,t]);
+        prevCh=ch; prevPunct=('.,;:!?—'.indexOf(ch)>=0);
+      }
+    }
+    if(t>90000){                                          // long works stay under ~90s at 1×
+      var k=90000/t;
+      for(var i2=0;i2<writes.length;i2++) writes[i2][3]=Math.max(1,Math.round(writes[i2][3]*k));
+    }
+    return writes;
+  }
+  /* an authored score's [r,c,ch,dt] deltas → absolute times, parks kept (ch null) */
+  function absolutize(sw){
+    var out=[], t=0;
+    for(var i=0;i<sw.length;i++){ t+=(sw[i][3]||0); out.push([sw[i][0],sw[i][1],sw[i][2],t]); }
+    return out;
+  }
+
+  /* the performing grid — text-node rows; lines holding non-1-cell glyphs are
+     segmented [text run][span.wc][text run] from the FINAL text so the column
+     grid holds while being written. starts blank; the writes are the reveal. */
+  function buildPerfGrid(host, text){
+    var lines=text.split('\n');
+    var cols=0, rows=lines.length, parsed=[];
+    for(var r=0;r<rows;r++){ var cs=cellsOf(lines[r]); parsed.push(cs); if(cs.length>cols) cols=cs.length; }
+    if(PERF.m && PERF.m.scoreCols && PERF.m.scoreCols>cols) cols=PERF.m.scoreCols;
+    var grid={ lines:[], rows:rows, cols:cols };
+    var frag=document.createDocumentFragment();
+    for(var y=0;y<rows;y++){
+      var ln=document.createElement('div'); ln.className='ln';
+      var cs2=parsed[y], allSafe=true;
+      for(var x=0;x<cs2.length;x++){ if(!runSafe(cs2[x])){ allSafe=false; break; } }
+      if(allSafe){
+        var tn=document.createTextNode(new Array(cols+1).join(' '));
+        ln.appendChild(tn);
+        grid.lines.push({ el:ln, simple:true, node:tn });
+      } else {
+        var map=new Array(cols), runStart=0, x2=0;
+        function flushRun(end){ if(end>runStart){ var t2=document.createTextNode(new Array(end-runStart+1).join(' '));
+          ln.appendChild(t2); for(var k=runStart;k<end;k++) map[k]={node:t2,off:k-runStart}; } }
+        for(x2=0;x2<cols;x2++){
+          var ch2=x2<cs2.length?cs2[x2]:' ';
+          if(runSafe(ch2)) continue;
+          flushRun(x2);
+          var sp=document.createElement('span'); sp.className='wc'; sp.textContent=' ';
+          var gr=glyphRatio(ch2); if(gr>1) sp.style.transform='scale('+(0.98/gr).toFixed(3)+')';
+          ln.appendChild(sp); map[x2]={span:sp};
+          runStart=x2+1;
+        }
+        flushRun(cols);
+        grid.lines.push({ el:ln, simple:false, map:map });
+      }
+      frag.appendChild(ln);
+    }
+    host.appendChild(frag);
+    var fx=document.createElement('div'); fx.className='perf-fx';
+    var cur=document.createElement('div'); cur.className='perf-cursor';
+    fx.appendChild(cur); host.appendChild(fx);
+    grid.fx=fx; grid.cursor=cur; grid.pool=[]; grid.poolAt=0;
+    return grid;
+  }
+
+  /* metrics — rect math, robust to fractional font sizes */
+  var perfCellW=8, perfLineH=12;
+  function perfMeasure(){
+    var g=PERF.grid; if(!g||!g.lines.length) return;
+    var r0=g.lines[0].el.getBoundingClientRect();
+    perfCellW=g.cols?r0.width/g.cols:8;
+    perfLineH=(g.lines.length>1)?(g.lines[1].el.getBoundingClientRect().top-r0.top):r0.height;
+    g.cursor.style.width=(perfCellW*0.62)+'px';
+    g.cursor.style.height=(perfLineH*0.82)+'px';
+  }
+  function perfCursorTo(r,c){
+    var g=PERF.grid; if(!g) return;
+    g.cursor.style.transform='translate3d('+(c*perfCellW)+'px,'+(r*perfLineH+perfLineH*0.07)+'px,0)';
+  }
+  function perfFlushTrail(){
+    var g=PERF.grid; if(!g) return;
+    for(var i=0;i<g.pool.length;i++){ g.pool[i].textContent=''; }
+  }
+  function perfRemeasure(){ perfMeasure(); }
+
+  /* one write — commit to the grid in final ink, spawn a cooling trail glyph */
+  function perfWrite(r,c,ch,silent){
+    var g=PERF.grid; if(!g||r>=g.rows) return;
+    var L=g.lines[r];
+    if(L.simple){ if(c<L.node.length) L.node.replaceData(c,1,ch); }
+    else { var cell=L.map[c]; if(!cell) return;
+      if(cell.span){ cell.span.textContent=ch; silent=true; }   // wc cells: commit only
+      else cell.node.replaceData(cell.off,1,ch); }
+    if(silent || reduced) return;
+    var sp;
+    if(g.pool.length<30){ sp=document.createElement('span'); sp.className='pg'; g.pool.push(sp); }
+    else { sp=g.pool[g.poolAt%30]; }
+    g.poolAt++;
+    sp.textContent=ch;
+    sp.style.transform='translate3d('+(c*perfCellW)+'px,'+(r*perfLineH)+'px,0)';
+    sp.style.transition='none'; sp.style.color='var(--perf-fresh)';
+    g.fx.appendChild(sp);                                   // newest always on top
+    void sp.offsetWidth;
+    sp.style.transition=''; sp.style.color='var(--art-ink-full)';
+  }
+
+  function perfProgressText(){
+    return PERF.done+' / '+(PERF.writes?PERF.writes.length:0);
+  }
+  function perfTickProgress(){
+    tickL.textContent='being written · '+perfProgressText()+' · '+PERF.tempo+'×';
+    var p=document.getElementById('perfProg'); if(p) p.textContent=perfProgressText();
+  }
+
+  /* the engine — one rAF walk; tempo scales consumption, so it shifts mid-flight */
+  function perfLoop(ts){
+    if(PERF.state!=='running') return;
+    if(!PERF.prev) PERF.prev=ts;
+    PERF.elapsed+=(ts-PERF.prev)*PERF.tempo; PERF.prev=ts;
+    var w=PERF.writes, n=w.length, applied=0, lastR=-1, lastC=-1, lastPark=false;
+    while(PERF.idx<n && w[PERF.idx][3]<=PERF.elapsed){
+      var e=w[PERF.idx];
+      if(e[2]!==null){ perfWrite(e[0],e[1],e[2], applied>18); lastPark=false; }
+      else lastPark=true;
+      lastR=e[0]; lastC=e[1];
+      PERF.idx++; PERF.done++; applied++;
+    }
+    if(applied) perfTickProgress();
+    if(PERF.idx>=n){ perfSettle(); return; }
+    var nx=w[PERF.idx], wait=nx[3]-PERF.elapsed;
+    if(wait<=280){ perfCursorTo(nx[0],nx[1]); PERF.grid.cursor.classList.remove('hold'); }
+    else {
+      if(lastR>=0) perfCursorTo(lastR, lastPark?lastC:Math.min(PERF.grid.cols-1,lastC+1));
+      PERF.grid.cursor.classList.add('hold');
+    }
+    PERF.raf=requestAnimationFrame(perfLoop);
+  }
+
+  /* plinth during a performance — progress + tempo + finish */
+  function renderPlinthPerforming(){
+    plinthEl.innerHTML='<span class="fig">being written</span>'
+      +'<span class="dim" id="perfProg">'+perfProgressText()+'</span>'
+      +'<span class="dim">·</span>'
+      +[1,2,4].map(function(x){ return '<button class="tb'+(x===PERF.tempo?' on':'')+'" type="button" data-act="tempo" data-x="'+x+'">'+x+'×</button>'; }).join('')
+      +'<span class="dim">·</span>'
+      +'<button class="plinth__act" type="button" data-act="perform">finish</button>';
+  }
+  function perfSetTempo(x){
+    if(PERF.state!=='running') return;
+    PERF.tempo=(x===2||x===4)?x:1;
+    var bs=plinthEl.querySelectorAll('.tb');
+    for(var i=0;i<bs.length;i++) bs[i].classList.toggle('on', +bs[i].dataset.x===PERF.tempo);
+    perfTickProgress();
+  }
+
+  function performStart(){
+    if(PERF.state!=='idle') return;
+    if(current<0 || !stage.classList.contains('open')) return;
+    var i=current, id=CUR[i]; if(!id) return;
+    var m=meta(id);
+    PERF.state='arming';
+    var tk=++rtok; PERF.token=tk;
+    Promise.all([ loadArt(m.art), m.score?loadScore(m.score):Promise.resolve(null) ]).then(function(res){
+      if(rtok!==tk || PERF.state!=='arming'){ if(PERF.token===tk && PERF.state==='arming') PERF.state='idle'; return; }
+      var text=res[0]||'', sc=res[1];
+      if(!text){ PERF.state='idle'; return; }
+      if(sc && !(sc.writes&&sc.writes.length)) sc=null;
+      if(m.score && !sc) try{ console.warn('score unavailable — performing in reading order'); }catch(e){}
+      PERF.m=m; PERF.mi=i; PERF.text=text;
+      PERF.m.scoreCols=sc?sc.cols:0;
+      PERF.writes=sc?absolutize(sc.writes):synthesizeScore(text,id);
+      PERF.check=sc&&sc.check?sc.check:null;
+      PERF.idx=0; PERF.done=0; PERF.elapsed=0; PERF.prev=0; PERF.tempo=1;
+      fitWhole();
+      stage.classList.add('performing');
+      artEl.className='art performing'; artEl.innerHTML=''; artEl.style.fontSize='';
+      PERF.grid=buildPerfGrid(artEl, text);
+      fitArt(artEl,'gallery');
+      renderPlinthPerforming();
+      perfTickProgress();
+      if(reduced){ PERF.state='running'; reducedPerform(); return; }
+      fontsReady.then(function(){ requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        if(rtok!==tk || PERF.state!=='arming') return;
+        fitArt(artEl,'gallery');
+        perfMeasure(); perfCursorTo(0,0);
+        PERF.state='running';
+        PERF.raf=requestAnimationFrame(perfLoop);
+      }); }); });
+    });
+  }
+
+  /* finish — flush every remaining write, then let the colour develop */
+  function performFinish(){
+    if(PERF.state!=='running') return;
+    var w=PERF.writes;
+    for(;PERF.idx<w.length;PERF.idx++){ var e=w[PERF.idx]; if(e[2]!==null) perfWrite(e[0],e[1],e[2],true); PERF.done++; }
+    perfSettle();
+  }
+
+  function perfSettle(){
+    if(PERF.state!=='running') return;
+    PERF.state='settling';
+    cancelAnimationFrame(PERF.raf);
+    var g=PERF.grid, m=PERF.m, mi=PERF.mi, tk=PERF.token;
+    // verify the performed grid equals the hanging still (warn-only)
+    if(PERF.check && PERF.check.algo==='fnv1a32' && g){
+      var got=[]; for(var r=0;r<g.lines.length;r++) got.push(g.lines[r].el.textContent.replace(/[ \t]+$/,''));
+      var hash=fnv1a32(got.join('\n').replace(/\s+$/,''));
+      if(hash!==PERF.check.value) try{ console.warn('performance check mismatch', hash, PERF.check.value); }catch(e){}
+    }
+    g.cursor.style.display='none';
+    var ghost=document.createElement('div'); ghost.className='perf-ghost';
+    while(artEl.firstChild) ghost.appendChild(artEl.firstChild);
+    var fin=document.createElement('div'); fin.innerHTML=renderArtColoredHTML(PERF.text);
+    artEl.appendChild(fin); artEl.appendChild(ghost);
+    artEl.classList.add('bulk');
+    void ghost.offsetWidth;
+    ghost.classList.add('gone');
+    setTimeout(function(){
+      if(PERF.state!=='settling' || PERF.token!==tk) return;
+      if(ghost.parentNode) ghost.parentNode.removeChild(ghost);
+      artEl.classList.remove('performing');
+      stage.classList.remove('performing');
+      renderPlinth(m, mi); renderTick(m, mi);
+      PERF.state='idle'; PERF.grid=null; PERF.writes=null;
+      fitArt(artEl,'gallery');
+    }, 950);
+  }
+
+  /* cancel — teardown only; whoever cancels is about to rebuild the art */
+  function performCancel(){
+    if(PERF.state==='idle') return;
+    cancelAnimationFrame(PERF.raf);
+    artEl.classList.remove('performing','bulk');
+    stage.classList.remove('performing');
+    PERF.state='idle'; PERF.grid=null; PERF.writes=null; PERF.token=-1;
+  }
+
+  /* reduced motion — the piece arrives in beats of line-fades, no cursor */
+  function reducedPerform(){
+    var g=PERF.grid, w=PERF.writes, tk=PERF.token;
+    for(var i=0;i<g.lines.length;i++) g.lines[i].el.style.opacity='0';
+    var beats=[], cut=[];
+    if(PERF.check||PERF.m.score){                 // scored: chunk at long parks (≤12 beats)
+      for(var j=0;j<w.length;j++){ if(w[j][2]===null && (j+1<w.length) && (w[j+1][3]-w[j][3])>=0) cut.push(j); }
+    }
+    if(PERF.m.score){
+      var prev=0, longParks=[];
+      for(var j2=0;j2<w.length;j2++){ if(w[j2][2]===null){ var dt=w[j2][3]-(j2?w[j2-1][3]:0); if(dt>=500) longParks.push(j2); } }
+      while(longParks.length>11) longParks.splice(1,1);
+      var starts=[0].concat(longParks.map(function(x){return x+1;}));
+      for(var b=0;b<starts.length;b++) beats.push([starts[b], b+1<starts.length?starts[b+1]:w.length]);
+    } else {
+      beats.push([0,w.length]);
+    }
+    var bi=0;
+    function playBeat(){
+      if(PERF.state!=='running' || PERF.token!==tk) return;
+      if(bi>=beats.length){ perfSettle(); return; }
+      var be=beats[bi]; bi++;
+      var touched={};
+      for(var k=be[0];k<be[1];k++){ var e=w[k]; if(e[2]!==null){ perfWrite(e[0],e[1],e[2],true); touched[e[0]]=1; } PERF.done++; }
+      if(!PERF.m.score){               // default: rows fade in sequence
+        var rows=g.lines, ri=0;
+        (function fadeRows(){
+          if(PERF.state!=='running' || PERF.token!==tk) return;
+          var stepN=Math.max(1, Math.ceil(rows.length/40));
+          for(var s=0;s<stepN && ri<rows.length;s++,ri++) rows[ri].el.style.opacity='1';
+          if(ri<rows.length){ setTimeout(fadeRows, 45); } else { perfTickProgress(); setTimeout(playBeat, 300); }
+        })();
+        bi=beats.length;               // the single default beat consumed all writes
+        return;
+      }
+      for(var rr in touched) g.lines[+rr].el.style.opacity='1';
+      perfTickProgress();
+      setTimeout(playBeat, 700);
+    }
+    playBeat();
+  }
+
+  function performToggle(){
+    if(PERF.state==='running'){ performFinish(); return; }
+    if(PERF.state==='idle'){ performStart(); return; }
+    /* arming / settling — let it land */
   }
 
   function renderMargin(m, i){
@@ -1351,7 +1761,21 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     if(e.shiftKey && active===first){ e.preventDefault(); last.focus({preventScroll:true}); }
     else if(!e.shiftKey && active===last){ e.preventDefault(); first.focus({preventScroll:true}); }
   }
+  /* the resting chrome — factored so the performance can restore it */
+  function renderTick(m, i){
+    tickPos.textContent='exhibit '+pad2(i+1)+' / '+pad2(CUR.length);
+    tickL.textContent=(m.author||'dispatches')+' · '+(m.tier||'ascii');
+  }
+  function renderPlinth(m, i){
+    plinthEl.innerHTML='<span class="fig">fig. '+pad2(i+1)+'</span>'
+      +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?wbrTitle(m.title):'untitled')+'</b>'
+      +(dimsSpaced(m)?'<span class="dim">'+esc(dimsSpaced(m))+'</span>':'')
+      +'<button class="plinth__act" type="button" data-act="perform" title="watch it written (p)">perform</button>'
+      +(m.score?'<span class="plinth__scored" title="this piece carries its own score">◦ scored</span>':'');
+  }
+
   function showPiece(i, nav){
+    performCancel();
     var id=CUR[i]; if(!id) return;
     nav = nav || 'graceful';
     current=i; rtok++;
@@ -1359,11 +1783,11 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     var m=meta(id);
     var mode='gallery';   // every piece now opens fit-in-view; magnify replaces long-form scroll
     zoom=1;               // reset the magnify for each new piece
+    if(m.score) loadScore(m.score);   // a scored piece performs instantly when asked
 
     // chrome
     posEl.textContent=(FAM[id]||'gallery')+' · № '+seqOf(id)+' · '+(i+1)+' / '+CUR.length;
-    tickPos.textContent='exhibit '+pad2(i+1)+' / '+pad2(CUR.length);
-    tickL.textContent=(m.author||'dispatches')+' · '+(m.tier||'ascii');
+    renderTick(m, i);
 
     // stage mode classes — fit-in-view layout for all; clear any prior magnify
     stage.classList.add('gallery');
@@ -1372,9 +1796,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
 
     // margin + plinth
     renderMargin(m, i);
-    plinthEl.innerHTML='<span class="fig">fig. '+pad2(i+1)+'</span>'
-      +'<b style="color:var(--ink-62);font-weight:400;text-transform:none;letter-spacing:0;font-family:var(--display);font-size:12.5px">'+(m.title?wbrTitle(m.title):'untitled')+'</b>'
-      +(dimsSpaced(m)?'<span class="dim">'+esc(dimsSpaced(m))+'</span>':'');
+    renderPlinth(m, i);
 
     // reveal mode — 'graceful' (first open): un-light → blur-in → per-glyph sharpen.
     // 'fast'/'instant' (flipping): the stage STAYS lit (no whole-stage re-fade) and the old
@@ -1431,6 +1853,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
   }
   function closeStage(){
     if(!stage.classList.contains('open')) return;
+    performCancel();
     rtok++;
     stage.classList.remove('lit');
     document.body.classList.remove('museum-stage');
@@ -1459,6 +1882,13 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
 
   /* ── wiring ── */
   backBtn.addEventListener('click', closeStage);
+  // one delegated listener for the plinth's controls — survives every rebuild
+  plinthEl.addEventListener('click', function(e){
+    var b=e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+    if(!b) return;
+    if(b.dataset.act==='perform') performToggle();
+    else if(b.dataset.act==='tempo') perfSetTempo(+b.dataset.x);
+  });
   gPrev.addEventListener('click', function(){ step(-1); });
   gNext.addEventListener('click', function(){ step(1); });
 
@@ -1525,6 +1955,13 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     if(typing) return;
     if(stage.classList.contains('open')){
       if(e.key==='Tab'){ trapStageFocus(e); return; }
+      if(e.key==='p'||e.key==='P'){ e.preventDefault(); performToggle(); return; }
+      if(PERF.state==='running'){
+        // while a piece is being written: escape finishes; the magnify and space rest
+        if(e.key==='Escape'){ e.preventDefault(); performFinish(); return; }
+        if(e.key==='+'||e.key==='='||e.key==='-'||e.key==='_'||e.key==='0'||e.key===' '){ e.preventDefault(); return; }
+      }
+      if(PERF.state==='settling' && e.key==='Escape'){ e.preventDefault(); return; }   // let the colour land
       if(e.key==='Escape'){ e.preventDefault(); if(Math.abs(zoom-1)>0.01){ resetZoom(); } else { closeStage(); } }
       else if(e.key==='ArrowRight'){ e.preventDefault(); step(1); }
       else if(e.key==='ArrowLeft'){ e.preventDefault(); step(-1); }
@@ -1564,6 +2001,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     buildFrame();
     refitAll();   // re-fit every thumbnail to its (now-resized) uniform frame
     if(stage.classList.contains('open') && current>=0){ fitArt(artEl, LONG[CUR[current]]?'longform':'gallery'); }
+    if(PERF.state==='running'){ perfFlushTrail(); perfRemeasure(); }   // the writing continues at the new size
   }, 140); });
 
   /* ═══ boot ═══ */
