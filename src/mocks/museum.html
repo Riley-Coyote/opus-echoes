@@ -363,6 +363,7 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
 .fam__title{ font-family:var(--display); font-weight:200; font-size:clamp(30px,2rem+1.6vw,56px); letter-spacing:-0.03em;
   line-height:0.96; color:var(--ink); white-space:nowrap; }
 .fam__rule{ flex:1; height:1px; background:var(--rule-faint); align-self:center; }
+.fam__desc{ font-family:var(--body); font-weight:300; font-size:clamp(13px,0.92vw,15.5px); line-height:1.6; color:var(--ink-46); max-width:56ch; margin-top:clamp(10px,0.8vw,14px); letter-spacing:0.01em; }
 
 /* ═══════════════════════════════════════════════════════════
    THE STAGE — the immersive single-piece view. The piece sits
@@ -1219,7 +1220,8 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     var si=SECTIONS.indexOf(s);
     var head=document.createElement('header'); head.className='fam__head';
     head.innerHTML='<div class="fam__eyebrow"><span class="n">'+pad2(si+1)+'</span> — <span class="ct">'+s.ids.length+' works</span></div>'
-      +'<div class="fam__titlerow"><h2 class="fam__title">'+esc(s.title)+'</h2><span class="fam__rule"></span></div>';
+      +'<div class="fam__titlerow"><h2 class="fam__title">'+esc(s.title)+'</h2><span class="fam__rule"></span></div>'
+      +(s.description?'<p class="fam__desc">'+esc(s.description)+'</p>':'');
     sec.appendChild(head);
     var grid=document.createElement('div'); grid.className='survey';
     s.ids.forEach(function(id){
@@ -2037,7 +2039,8 @@ body.museum-stage .tick.r{ right:calc(var(--frame-pad) + clamp(184px,12vw,220px)
     if(comm && comm.pieces && comm.pieces.length){
       SECTIONS.push({
         key:(comm.section&&comm.section.key)||'new-commissions',
-        title:(comm.section&&comm.section.title)||'New Commissions',
+        title:(comm.section&&comm.section.title)||'COMMISSIONS',
+        description: comm.description || '',
         ids:comm.pieces.map(function(p){ return p.id; })
       });
     }
