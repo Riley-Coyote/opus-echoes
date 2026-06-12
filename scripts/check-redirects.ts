@@ -97,7 +97,10 @@ async function checkStub(path: string, marker: string): Promise<CheckResult> {
     path,
     fate: "stub",
     expected: `200 + ${marker}`,
-    got: res.status === 200 ? `200 ${body.includes(marker) ? "+ marker" : "— marker missing"}` : String(res.status),
+    got:
+      res.status === 200
+        ? `200 ${body.includes(marker) ? "+ marker" : "— marker missing"}`
+        : String(res.status),
     pass,
   };
 }
@@ -183,9 +186,7 @@ async function main() {
   console.log("─".repeat(118));
   for (const r of results) {
     const mark = r.pass ? "✓" : "✗";
-    console.log(
-      `${mark} ${pad(r.path, 36)}${pad(r.fate, 12)}${pad(r.expected, 44)}${r.got}`,
-    );
+    console.log(`${mark} ${pad(r.path, 36)}${pad(r.fate, 12)}${pad(r.expected, 44)}${r.got}`);
   }
 
   const failed = results.filter((r) => !r.pass);

@@ -16,9 +16,7 @@ export const Route = createFileRoute("/chat/$resident")({
         if (redirect) return redirect;
         const slug = params.resident;
         if (!isResidentId(slug)) throw notFound();
-        return serveHtml(
-          renderMinimalChatPage(getResident(slug), { showStudio: false }),
-        );
+        return serveHtml(renderMinimalChatPage(getResident(slug), { showStudio: false }));
       },
     },
   },

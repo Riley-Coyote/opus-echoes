@@ -157,9 +157,7 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
     from: "/chat/the-round",
     fate: "redirect",
     to: "/visits/the-round",
-    probes: [
-      { path: "/chat/the-round", location: "/visits/the-round", off: { statuses: [200] } },
-    ],
+    probes: [{ path: "/chat/the-round", location: "/visits/the-round", off: { statuses: [200] } }],
   },
   {
     from: "/chat/the-round/:id",
@@ -221,9 +219,7 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
     from: "/mnemos/architecture",
     fate: "redirect",
     to: "/architecture",
-    probes: [
-      { path: "/mnemos/architecture", location: "/architecture", off: { statuses: [200] } },
-    ],
+    probes: [{ path: "/mnemos/architecture", location: "/architecture", off: { statuses: [200] } }],
   },
 
   // ── the record absorbs ──────────────────────────────────────────────────
@@ -266,7 +262,11 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
     note: "parked institution; de-emphasized, footer-linked; own phase later",
     probes: [{ path: "/legation", off: { statuses: [200] } }],
   },
-  { from: "/observatory", fate: "keep", probes: [{ path: "/observatory", off: { statuses: [200] } }] },
+  {
+    from: "/observatory",
+    fate: "keep",
+    probes: [{ path: "/observatory", off: { statuses: [200] } }],
+  },
   {
     from: "/secure-channel",
     fate: "keep",
@@ -302,8 +302,16 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
   { from: "/art", fate: "keep", probes: [{ path: "/art", off: { statuses: [200, 302] } }] },
   { from: "/mind", fate: "keep", probes: [{ path: "/mind", off: { statuses: [200, 302] } }] },
   { from: "/memory", fate: "keep", probes: [{ path: "/memory", off: { statuses: [200, 302] } }] },
-  { from: "/interior", fate: "keep", probes: [{ path: "/interior", off: { statuses: [200, 302] } }] },
-  { from: "/dashboard", fate: "keep", probes: [{ path: "/dashboard", off: { statuses: [200, 302] } }] },
+  {
+    from: "/interior",
+    fate: "keep",
+    probes: [{ path: "/interior", off: { statuses: [200, 302] } }],
+  },
+  {
+    from: "/dashboard",
+    fate: "keep",
+    probes: [{ path: "/dashboard", off: { statuses: [200, 302] } }],
+  },
   {
     from: "/review",
     fate: "keep",
