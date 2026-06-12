@@ -35,9 +35,7 @@ export const Route = createFileRoute("/commons/$slug")({
           if (composite.messages.length >= CURATED_MIN_TURNS) {
             const moments = await listSpaceMarginalia(composite.space.id);
             if (moments.length >= CURATED_MIN_MOMENTS) {
-              return serveHtml(
-                renderCommonsReader(spaceToCuratedEntry(composite, moments)),
-              );
+              return serveHtml(renderCommonsReader(spaceToCuratedEntry(composite, moments)));
             }
           }
           return serveHtml(renderCommonsReader(spaceToReaderEntry(composite)));
@@ -47,11 +45,9 @@ export const Route = createFileRoute("/commons/$slug")({
           return serveHtml(renderCommonsReader(salonToReaderEntry(salon)));
         }
         const spaces = await listActiveSpaces();
-        return serveHtml(
-          renderSpaceListPage(spaces, { notFoundSlug: params.slug }),
-          undefined,
-          { status: 404 },
-        );
+        return serveHtml(renderSpaceListPage(spaces, { notFoundSlug: params.slug }), undefined, {
+          status: 404,
+        });
       },
     },
   },

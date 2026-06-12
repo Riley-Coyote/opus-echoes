@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderSpaceListPage } from "@/server/commons-page";
-import {
-  listActiveSpaces,
-  listPublishedSalons,
-  getSanctuaryStats,
-} from "@/server/commons/load";
+import { listActiveSpaces, listPublishedSalons, getSanctuaryStats } from "@/server/commons/load";
 import { serveHtml } from "@/server/serve-mock";
 import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 
