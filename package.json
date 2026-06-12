@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "sync": "bash scripts/sync.sh",
-    "sync:pull": "bash scripts/sync.sh pull"
+    "sync:pull": "bash scripts/sync.sh pull",
+    "check:redirects": "bun scripts/check-redirects.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",

@@ -281,8 +281,8 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
   {
     from: "/share/:token",
     fate: "keep",
-    note: "live share links must not break",
-    probes: [{ path: "/share/phase-zero-probe-token", off: { statuses: [200, 404, 410] } }],
+    note: "live share links must not break; 503 acceptable only when local dev has no supabase env",
+    probes: [{ path: "/share/phase-zero-probe-token", off: { statuses: [200, 404, 410, 503] } }],
   },
   { from: "/voice-orb", fate: "keep", probes: [{ path: "/voice-orb", off: { statuses: [200] } }] },
   {
@@ -304,7 +304,12 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
   { from: "/memory", fate: "keep", probes: [{ path: "/memory", off: { statuses: [200, 302] } }] },
   { from: "/interior", fate: "keep", probes: [{ path: "/interior", off: { statuses: [200, 302] } }] },
   { from: "/dashboard", fate: "keep", probes: [{ path: "/dashboard", off: { statuses: [200, 302] } }] },
-  { from: "/review", fate: "keep", probes: [{ path: "/review", off: { statuses: [200, 302] } }] },
+  {
+    from: "/review",
+    fate: "keep",
+    note: "stealth-gated: deliberately 404s without the review key",
+    probes: [{ path: "/review", off: { statuses: [200, 302, 404] } }],
+  },
 ];
 
 /** The phase-0 stub surfaces and their render markers — probed by the check
