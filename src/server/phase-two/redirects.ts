@@ -315,8 +315,17 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
   {
     from: "/review",
     fate: "keep",
-    note: "stealth-gated: deliberately 404s without the review key",
-    probes: [{ path: "/review", off: { statuses: [200, 302, 404] } }],
+    note: "stealth-gated: deliberately 404s without the review key; covers /review/* sub-paths",
+    probes: [
+      { path: "/review", off: { statuses: [200, 302, 404] } },
+      { path: "/review/state", off: { statuses: [200, 302, 404] } },
+    ],
+  },
+  {
+    from: "/research",
+    fate: "keep",
+    note: "the research wing (§4 '/research/*') — static assets under public/research/, served outside the router; keep + reframe in phase 7",
+    probes: [{ path: "/research/research-wing.html", off: { statuses: [200] } }],
   },
 ];
 
@@ -351,8 +360,10 @@ function splitSegments(path: string): string[] {
 
 /** Match a pathname against the table: exact rows win over param rows. */
 export function matchMigration(pathname: string): MigrationMatch | null {
-  const normalized =
-    pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  let normalized = pathname;
+  while (normalized.length > 1 && normalized.endsWith("/")) {
+    normalized = normalized.slice(0, -1);
+  }
 
   for (const row of ROUTE_MIGRATION) {
     if (!row.from.includes(":") && row.from === normalized) return { row, params: {} };
@@ -383,7 +394,11 @@ export function matchMigration(pathname: string): MigrationMatch | null {
 function substituteParams(target: string, params: Record<string, string>): string {
   return target.replace(/:([A-Za-z0-9_]+)/g, (_m, name: string) => {
     const value = params[name];
-    return value !== undefined ? encodeURIComponent(value) : `:${name}`;
+    // Segments come from new URL(...).pathname and are therefore already
+    // percent-encoded exactly as the visitor sent them — echo them raw.
+    // Re-encoding here would double-encode (%2F → %252F) and change what
+    // the destination route decodes.
+    return value !== undefined ? value : `:${name}`;
   });
 }
 
