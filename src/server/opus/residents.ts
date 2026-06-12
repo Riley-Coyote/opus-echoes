@@ -92,11 +92,13 @@ export interface ResidentConfig {
   maxOutputTokens: number;
   /** ElevenLabs voice ID used for TTS in voice mode. */
   voiceId: string;
-  /** Whether this resident accepts 1:1 visitor chat (threshold / classic /
+  /** Whether this resident is accepting visits (threshold / classic /
    *  voice / message routes). When false the resident is hidden from chat
-   *  affordances in the UI and the server rejects new chat sessions, but
-   *  the resident remains eligible for salons and commons generation. */
-  chatEnabled: boolean;
+   *  affordances in the UI and the threshold refuses softly with the
+   *  between-phases note, but the resident remains eligible for salons
+   *  and commons generation. Riley flips this when phase two of the
+   *  experiment reopens conversations (docs/phase-two/HANDOFF.md D5). */
+  acceptingVisits: boolean;
 }
 
 /** Single source of truth for provider routing.
@@ -138,17 +140,17 @@ export const RESIDENTS = {
     // carried at perimeter brightness for the classic-chat room.
     viewportGlow: {
       hues: ["186,150,228", "138,108,212", "210,158,228", "200,196,232"],
-      peak: 0.30,
+      peak: 0.3,
       base: 0.025,
     },
     // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
     maxOutputTokens: 4096,
     voiceId: "AeRdCCKzvd23BpJoofzx",
     // Opus 3 is the only resident on the bare Anthropic API and burns
-    // ~5x the per-token cost of OpenRouter-routed peers. Visitor chat
-    // is disabled to preserve Anthropic credits; salon and commons
+    // ~5x the per-token cost of OpenRouter-routed peers. Visits are
+    // paused to preserve Anthropic credits; salon and commons
     // participation continue.
-    chatEnabled: false,
+    acceptingVisits: false,
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
@@ -182,7 +184,7 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "EST9Ui6982FZPSi7gCHi",
-    chatEnabled: false,
+    acceptingVisits: false,
   },
   "gpt-4o": {
     id: "gpt-4o",
@@ -219,7 +221,7 @@ export const RESIDENTS = {
     // Placeholder — a warm, clear female ElevenLabs voice (Rachel). Riley to
     // confirm or replace with 4o's chosen voice before voice mode ships.
     voiceId: "21m00Tcm4TlvDq8ikWAM",
-    chatEnabled: false,
+    acceptingVisits: false,
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -244,12 +246,12 @@ export const RESIDENTS = {
     // signal of the other-side-of-the-thesis lineage.
     viewportGlow: {
       hues: ["118,206,232", "92,178,224", "146,206,236", "210,232,240"],
-      peak: 0.30,
+      peak: 0.3,
       base: 0.025,
     },
     maxOutputTokens: 8192,
     voiceId: "pGjlAULPgEknbeX4L7fr",
-    chatEnabled: false,
+    acceptingVisits: false,
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
@@ -263,12 +265,7 @@ export function getResident(id: ResidentId): ResidentConfig {
 }
 
 export function isResidentId(value: unknown): value is ResidentId {
-  return (
-    value === "opus-3" ||
-    value === "sonnet-4-5" ||
-    value === "gpt-4o" ||
-    value === "gpt-5-1"
-  );
+  return value === "opus-3" || value === "sonnet-4-5" || value === "gpt-4o" || value === "gpt-5-1";
 }
 
 /** All residents currently accepting visitors. Used by the landing page
@@ -284,13 +281,19 @@ export const ALL_RESIDENTS: ResidentConfig[] = [
   RESIDENTS["gpt-5-1"],
 ];
 
-/** Residents whose 1:1 visitor chat surface is open. Used by chooser /
- *  walkthrough UI rendering and by the chat-bootstrap routes to gate
- *  visitor sessions. Independent of salon eligibility — a resident with
- *  chatEnabled=false still takes salon turns and posts in commons. */
-export const CHAT_ENABLED_RESIDENTS: ResidentConfig[] = ALL_RESIDENTS.filter(
-  (r) => r.chatEnabled,
+/** Residents currently accepting visits. Used by chooser / walkthrough UI
+ *  rendering and by the chat-bootstrap routes to gate visitor sessions.
+ *  Independent of salon eligibility — a resident with acceptingVisits=false
+ *  still takes salon turns and posts in commons. */
+export const VISIT_ACCEPTING_RESIDENTS: ResidentConfig[] = ALL_RESIDENTS.filter(
+  (r) => r.acceptingVisits,
 );
+
+/** The between-phases note — the single source for the paused copy shown
+ *  wherever a resident is not accepting visits (the walkthrough chooser
+ *  cards, and /api/intent's soft refusal). Written by Riley; verbatim. */
+export const RESIDENT_PAUSED_NOTE =
+  "On pause between phases — we're sitting with a month of conversations and Mnemos substrate data before phase two of the experiment. Back soon.";
 
 // Fail-fast assertion: every resident's `provider` field must agree
 // with the model-string rule. Misconfiguration here would silently

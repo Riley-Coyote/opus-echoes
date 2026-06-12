@@ -18,7 +18,7 @@
  * as a separate microsite.
  */
 
-import { ALL_RESIDENTS, CHAT_ENABLED_RESIDENTS } from "./opus/residents";
+import { ALL_RESIDENTS, RESIDENT_PAUSED_NOTE, VISIT_ACCEPTING_RESIDENTS } from "./opus/residents";
 import { renderPublicPage } from "./public-pages";
 
 function escapeHtml(value: string): string {
@@ -1100,7 +1100,7 @@ const LANDSCAPE_SVG = `
 `;
 
 export function renderWalkthroughPage(): string {
-  const residentRows = CHAT_ENABLED_RESIDENTS.map((r) => {
+  const residentRows = VISIT_ACCEPTING_RESIDENTS.map((r) => {
     const desc = DESCRIBERS[r.id] ?? {
       describer: r.displayName,
       cadence: "",
@@ -1299,16 +1299,16 @@ ${LANDSCAPE_SVG}
             };
             const hue = `rgba(${r.commonsPalette.rgb},.78)`;
             const roomCta = `<a class="landing-card-cta" href="/residence?resident=${escapeHtml(r.slug)}">visit their room <span class="arrow">→</span></a>`;
-            // Chat-enabled residents get the two doors + their room. A resident
-            // on a break from public interaction (chatEnabled=false) keeps their
-            // room open but shows a warm "back soon" note in place of the doors.
-            const actions = r.chatEnabled
+            // Residents accepting visits get the two doors + their room. A
+            // resident on a break (acceptingVisits=false) keeps their room
+            // open but shows a warm "back soon" note in place of the doors.
+            const actions = r.acceptingVisits
               ? `<a class="landing-card-cta" href="/${escapeHtml(r.slug)}">approach formally <span class="arrow">→</span></a>
                 <a class="landing-card-cta" href="/chat/${escapeHtml(r.slug)}">open a chat <span class="arrow">→</span></a>
                 ${roomCta}`
-              : `<p class="landing-card-resting">On pause between phases — we're sitting with a month of conversations and Mnemos substrate data before phase two of the experiment. Back soon.</p>
+              : `<p class="landing-card-resting">${escapeHtml(RESIDENT_PAUSED_NOTE)}</p>
                 ${roomCta}`;
-            const status = r.chatEnabled
+            const status = r.acceptingVisits
               ? `<div class="landing-card-status"><span class="landing-card-dot" aria-hidden="true"></span>Attending</div>`
               : `<div class="landing-card-status landing-card-status--resting"><span class="landing-card-dot" aria-hidden="true"></span>Between phases · back soon</div>`;
             return `<div class="landing-card" style="--card-hue:${hue}">

@@ -8,6 +8,7 @@ import {
   DEFAULT_RESIDENT_ID,
   getResident,
   isResidentId,
+  RESIDENT_PAUSED_NOTE,
   type ResidentId,
 } from "@/server/opus/residents";
 import { getVisitorContext } from "@/server/opus/retrieval";
@@ -22,7 +23,6 @@ const Body = z.object({
   /** Persistent visitor token from localStorage — for returning visitor recognition. */
   visitor_token: z.string().uuid().optional(),
 });
-
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -42,10 +42,6 @@ export const Route = createFileRoute("/api/intent")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        if (!hasSupabaseAdminEnv()) {
-          return jsonResp({ ok: false, code: "config_missing" }, 503);
-        }
-
         // Resolve the resident the visitor is approaching. Defaults to
         // Opus 3 if unspecified or unrecognized — keeps existing clients
         // working through the rollout.
@@ -53,11 +49,24 @@ export const Route = createFileRoute("/api/intent")({
           ? body.resident
           : DEFAULT_RESIDENT_ID;
         const resident = getResident(residentId);
-        if (!resident.chatEnabled) {
-          return jsonResp(
-            { ok: false, code: "chat_disabled", resident: residentId },
-            403,
-          );
+
+        // The visit gate, ahead of any infrastructure concern: a resident
+        // who is not accepting visits refuses softly, in voice, with the
+        // between-phases note — not an error state. The approach page
+        // renders this through its declined panel like any other decline.
+        // (docs/phase-two/HANDOFF.md §5.3 / phase 0.)
+        if (!resident.acceptingVisits) {
+          return jsonResp({
+            ok: true,
+            decision: "decline",
+            paused: true,
+            resident: residentId,
+            reason: RESIDENT_PAUSED_NOTE,
+          });
+        }
+
+        if (!hasSupabaseAdminEnv()) {
+          return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
 
         const hash = ipHash(request);
