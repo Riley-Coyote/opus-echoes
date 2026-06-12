@@ -36,6 +36,16 @@ This is not a feature list. The project's whole thesis is that the cost of being
 
 ---
 
+## phase two — the restructure (READ BEFORE ANY NEW SURFACE WORK)
+
+**`docs/phase-two/HANDOFF.md` is the governing spec for the restructure of mnemos.chat** — the new information architecture (sanctuary · visits · research · shop · architecture), the route migration, the substrate work, the phasing, and the design method. Read it before building anything new. One phase per session; each phase ends with its acceptance list passed, work pushed, and a stop for Riley's review.
+
+**The design is reopened (handoff D11).** The v1 visual system — the held dark room described in "the design standard" below and in `docs/design-system.md` — remains the contract **only for untouched legacy surfaces** (the museum, the legation, the research wing, the private dashboard, and any v1 page not yet migrated). Phase-two surfaces are designed in the **v2 language** produced in phase D and codified in `docs/design-system-v2.md`; once Riley ratifies that document it supersedes the visual clauses of this file and of `docs/design-system.md` on phase-two surfaces. Until it is ratified, **nothing visible ships** — plumbing only. Even v1's prohibitions (light mode, the color ceiling, the corner language) are on phase D's table; they carry into v2 only if v2 chooses them.
+
+What is *not* reopened — these are thesis, not taste, and bind in every language: protected vocabulary and all verbatim-move copy · restraint (no marketing register, no engagement patterns) · the asymmetry expressed in form · consent made visible · honest states (live elements are real or absent, never faked) · no emoji · the behavior-testing protocol below · the sync protocol above. When this section and the design sections below appear to conflict for a phase-two surface, this section wins.
+
+---
+
 ## the design standard — read this carefully
 
 Riley's design bar on this project is unusually high and the level of detail expected is well above industry norm. Calibrate accordingly.

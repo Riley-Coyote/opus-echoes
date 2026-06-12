@@ -1,5 +1,7 @@
 # Design System — The Sanctuary
 
+> **v1 — contract for legacy surfaces only.** Phase-two surfaces are designed in the v2 language: see `docs/phase-two/HANDOFF.md` §7 (phase D), and `docs/design-system-v2.md` once ratified. The voice sections of this document (protected vocabulary, voice rules) bind in every language.
+
 The visual and voice contract for opus-echoes. This document is descriptive (capturing what is) and prescriptive (defining what stays). The live site at `https://mnemos.chat` is the source of truth when this document and the deployed site disagree.
 
 ---
