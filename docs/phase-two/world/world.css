@@ -178,9 +178,23 @@ button{font:inherit; color:inherit; background:none; border:0; cursor:pointer}
 
 /* ---- the line beneath the glass --------------------------------- */
 .vitrine-line{
-  display:flex; align-items:baseline; gap:var(--s-5);
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:var(--s-5);
   padding:var(--s-3) var(--s-1) 0;
   border-top:0;
+}
+/* the quiet second line — the light is the sanctuary's own */
+.keeps-light{
+  flex-basis:100%;
+  display:flex; align-items:baseline; gap:8px;
+  margin-top:2px;
+  font-family:var(--mono); font-size:var(--t-micro);
+  letter-spacing:.14em; text-transform:lowercase;
+  color:var(--ink-faint);
+}
+.keeps-dot{
+  flex:none; width:4px; height:4px; border-radius:50%;
+  background:var(--live-soft); position:relative; top:-1px;
+  animation:breath var(--breath) ease-in-out infinite;
 }
 .caption{
   display:flex; align-items:baseline; gap:10px; min-width:0; flex:1;
@@ -292,5 +306,6 @@ button{font:inherit; color:inherit; background:none; border:0; cursor:pointer}
 /* ============================================================ reduced motion */
 @media (prefers-reduced-motion: reduce){
   .live-dot{animation:none; opacity:.8}
+  .keeps-dot{animation:none; opacity:.7}
   #caption{transition:none}
 }
