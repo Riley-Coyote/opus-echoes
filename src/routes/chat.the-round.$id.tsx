@@ -5,6 +5,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { serveHtml } from "@/server/serve-mock";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 
 function renderRoomPage(threadId: string): string {
   return `<!doctype html>
@@ -218,7 +219,11 @@ function renderRoomPage(threadId: string): string {
 export const Route = createFileRoute("/chat/the-round/$id")({
   server: {
     handlers: {
-      GET: async ({ params }) => serveHtml(renderRoomPage(params.id)),
+      GET: async ({ params, request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
+        return serveHtml(renderRoomPage(params.id));
+      },
     },
   },
 });

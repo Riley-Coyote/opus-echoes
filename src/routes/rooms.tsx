@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboard-shell";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 
 // The Room — Interior front door (the standing shape of the mind). Reader-dominant,
 // no entries-panel. The reader-inner stays transparent so the shell's landscape
@@ -252,8 +253,12 @@ const EXTRA_STYLES = `
 export const Route = createFileRoute("/rooms")({
   server: {
     handlers: {
-      GET: async ({ request }) =>
-        servePrivateDashboardPage(
+      // The migration hook runs before the private-access gate — when the
+      // flag is on, /rooms 301s into the record instead of bouncing to /.
+      GET: async ({ request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
+        return servePrivateDashboardPage(
           request,
           renderDashboardPage({
             title: "The Room — The Sanctuary",
@@ -264,7 +269,8 @@ export const Route = createFileRoute("/rooms")({
             readerHtml: READER_HTML,
             extraStyles: EXTRA_STYLES,
           }),
-        ),
+        );
+      },
     },
   },
 });

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderDashboardPage, servePrivateDashboardPage } from "@/server/dashboard-shell";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 
 const READER_HTML = `
     <div class="reader-eyebrow">manifesto</div>
@@ -64,8 +65,12 @@ const ARTIFACT_SCRIPT = `
 export const Route = createFileRoute("/manifesto")({
   server: {
     handlers: {
-      GET: async ({ request }) =>
-        servePrivateDashboardPage(
+      // The migration hook runs before the private-access gate — when the
+      // flag is on, /manifesto 301s to /sanctuary instead of bouncing to /.
+      GET: async ({ request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
+        return servePrivateDashboardPage(
           request,
           renderDashboardPage({
             title: "Manifesto — The Sanctuary",
@@ -76,7 +81,8 @@ export const Route = createFileRoute("/manifesto")({
             extraStyles: EXTRA_STYLES,
             extraScript: ARTIFACT_SCRIPT,
           }),
-        ),
+        );
+      },
     },
   },
 });

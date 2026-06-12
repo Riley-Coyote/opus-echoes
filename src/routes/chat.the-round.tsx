@@ -6,6 +6,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { serveHtml } from "@/server/serve-mock";
 import { ALL_RESIDENTS } from "@/server/opus/residents";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 
 function renderPickerPage(): string {
   const opts = ALL_RESIDENTS.map((r) => {
@@ -101,7 +102,11 @@ function renderPickerPage(): string {
 export const Route = createFileRoute("/chat/the-round")({
   server: {
     handlers: {
-      GET: async () => serveHtml(renderPickerPage()),
+      GET: async ({ request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
+        return serveHtml(renderPickerPage());
+      },
     },
   },
 });
