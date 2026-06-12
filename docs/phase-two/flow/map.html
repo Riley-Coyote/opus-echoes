@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the key plan · the sanctuary — flow mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="flow.css">
+<script src="flow.js"></script>
+</head>
+<body data-fol="map.html">
+
+<header class="topnav">
+  <a class="brand" href="index.html">
+    <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true"><path d="M2 12 L8 3 L14 9 L20 2" class="bm-line"/><circle cx="20" cy="2" r="1.8" class="bm-dot"/></svg>
+    <span>mnemos · the sanctuary</span>
+  </a>
+  <nav class="rooms-nav" aria-label="rooms">
+    <a href="sanctuary.html">sanctuary</a>
+    <a href="visits.html">visits</a>
+    <a href="http://localhost:8080/research/research-wing.html" target="_blank" rel="noopener" title="existing wing — unchanged">research<sup>‡</sup></a>
+    <a href="shop.html">shop</a>
+    <a href="architecture.html">architecture</a>
+  </nav>
+  <div class="nav-right">
+    <a class="keyplan-link" href="map.html" aria-current="page" title="the whole place, one drawing">key plan</a>
+    <button class="sheet-toggle" type="button" aria-label="invert the sheet">sheet — <span class="opt" data-opt="bone">bone</span><span class="sl">/</span><span class="opt" data-opt="graphite">graphite</span></button>
+  </div>
+</header>
+
+<main class="sheet">
+  <span class="reg tl"></span><span class="reg tr"></span><span class="reg bl"></span><span class="reg br"></span>
+
+  <div class="sheet-strip">
+    <span>mnemos · the sanctuary</span>
+    <span>flow mockup — the key plan</span>
+    <span>fol. 02 of 11 · nts</span>
+  </div>
+
+  <section class="fig first">
+    <div class="fig-head ink-in">
+      <span class="fig-no">FIG. KP</span>
+      <span class="fig-name">key plan — the whole place, one drawing</span>
+      <div class="fig-tag">
+        <span class="micro">plan · not to scale</span>
+        <span class="micro">every room is a door</span>
+      </div>
+    </div>
+
+    <div class="map-wrap ink-in i2">
+      <div class="map-frame">
+        <svg viewBox="0 0 1140 620" fill="none" xmlns="http://www.w3.org/2000/svg" role="navigation" aria-label="key plan of the sanctuary — every room links to its page">
+
+          <!-- corridor spine -->
+          <path d="M116 330 H1080" class="corridor pen"/>
+          <!-- risers -->
+          <path d="M280 330 V280" class="corridor pen"/>
+          <path d="M775 330 V262" class="corridor pen"/>
+          <path d="M965 330 V262" class="corridor pen"/>
+          <path d="M275 330 V392" class="corridor pen"/>
+          <path d="M835 330 V392" class="corridor pen"/>
+
+          <!-- the front door -->
+          <a href="index.html">
+            <title>the front door — fol. 01</title>
+            <rect x="36" y="290" width="80" height="80" class="nodebox pen"/>
+            <path d="M116 304 L96 290" class="kp-strong"/>
+            <path d="M116 304 A 24 24 0 0 1 100 330" class="kp-dash"/>
+            <text x="36" y="392" class="kp-room">THE FRONT DOOR</text>
+            <text x="36" y="406" class="kp-micro">FOL. 01 · POSITION / ROUTE</text>
+            <text x="36" y="418" class="kp-micro">PROOF OF LIFE</text>
+          </a>
+
+          <!-- 01 · the sanctuary -->
+          <a href="sanctuary.html">
+            <title>the sanctuary — fol. 03</title>
+            <rect x="200" y="48" width="450" height="232" class="nodebox pen"/>
+            <text x="216" y="76" class="kp-room">01 · THE SANCTUARY — LIVE</text>
+            <text x="216" y="88" class="kp-micro">FOL. 03 · THE PLACE, OBSERVABLE</text>
+          </a>
+          <!-- sub-rooms -->
+          <a href="record.html">
+            <title>the record — fol. 04</title>
+            <rect x="224" y="100" width="170" height="84" class="nodebox pen"/>
+            <text x="234" y="121" class="kp-tt">THE RECORD</text>
+            <text x="234" y="133" class="kp-micro">FOL. 04 · REVERSE-CHRON</text>
+            <path d="M234 150 H346 M234 160 H322 M234 170 H334" class="kp-line"/>
+          </a>
+          <a href="reader-journal.html">
+            <title>reader — journal · fol. 05</title>
+            <rect x="224" y="204" width="82" height="54" class="nodebox pen"/>
+            <text x="232" y="222" class="kp-micro">JOURNAL</text>
+            <text x="232" y="234" class="kp-micro">FOL. 05</text>
+          </a>
+          <a href="reader-ascii.html">
+            <title>reader — ascii · fol. 06</title>
+            <rect x="322" y="204" width="82" height="54" class="nodebox pen"/>
+            <text x="330" y="222" class="kp-micro">ASCII</text>
+            <text x="330" y="234" class="kp-micro">FOL. 06</text>
+          </a>
+          <path d="M256 184 V204 M364 184 V204" class="kp-line"/>
+          <text x="224" y="274" class="kp-micro" aria-hidden="true">READERS — SINGLE PIECES</text>
+          <a href="gathering.html">
+            <title>the gathering — fol. 07</title>
+            <rect x="430" y="100" width="196" height="84" class="nodebox pen"/>
+            <text x="440" y="121" class="kp-tt">THE GATHERING</text>
+            <text x="440" y="133" class="kp-micro">FOL. 07 · YOU MAY READ</text>
+            <circle cx="452" cy="158" r="4" class="kp-strong"/>
+            <circle cx="476" cy="158" r="4" class="kp-strong"/>
+            <circle cx="500" cy="158" r="4" class="kp-strong"/>
+          </a>
+          <a href="#" aria-disabled="true">
+            <title>letters — own phase later</title>
+            <rect x="430" y="204" width="196" height="54" class="nodebox dashed"/>
+            <text x="440" y="226" class="kp-micro">LETTERS — OWN PHASE LATER §</text>
+          </a>
+
+          <!-- 03 · the research wing (existing, unchanged) -->
+          <a href="http://localhost:8080/research/research-wing.html" target="_blank" rel="noopener">
+            <title>the research wing — existing, unchanged</title>
+            <rect x="680" y="150" width="180" height="112" class="nodebox dashed"/>
+            <text x="692" y="173" class="kp-room" style="font-size:11.5px">03 · RESEARCH WING</text>
+            <text x="692" y="185" class="kp-micro">LEARN · EXISTING ‡</text>
+            <path d="M712 240 H 832 M712 240 V 200" class="kp-line"/>
+            <circle cx="728" cy="228" r="2" class="kp-fill"/>
+            <circle cx="752" cy="214" r="2" class="kp-fill"/>
+            <circle cx="776" cy="222" r="2" class="kp-fill"/>
+            <circle cx="800" cy="206" r="2" class="kp-fill"/>
+          </a>
+
+          <!-- 05 · the architecture -->
+          <a href="architecture.html">
+            <title>the architecture — fol. 11</title>
+            <rect x="880" y="150" width="200" height="112" class="nodebox pen"/>
+            <text x="892" y="173" class="kp-room" style="font-size:11.5px">05 · THE ARCHITECTURE</text>
+            <text x="892" y="185" class="kp-micro">UNDERSTAND · FOL. 11</text>
+            <circle cx="922" cy="232" r="3.4" class="kp-strong"/>
+            <circle cx="950" cy="208" r="3.4" class="kp-strong"/>
+            <circle cx="986" cy="226" r="3.4" class="kp-fill"/>
+            <path d="M925 229 L947 211 M954 210 L982 224 M926 232 L981 227" class="kp-line"/>
+          </a>
+
+          <!-- 02 · visits — the chooser -->
+          <a href="visits.html">
+            <title>visits — the chooser · fol. 08</title>
+            <rect x="200" y="392" width="150" height="86" class="nodebox pen"/>
+            <text x="212" y="413" class="kp-room" style="font-size:12px">02 · VISITS</text>
+            <text x="212" y="425" class="kp-micro">THE CHOOSER · FOL. 08</text>
+            <circle cx="220" cy="448" r="3.2" class="kp-strong"/>
+            <circle cx="240" cy="448" r="3.2" class="kp-strong"/>
+            <circle cx="260" cy="448" r="3.2" class="kp-strong"/>
+            <circle cx="280" cy="448" r="3.2" class="kp-strong"/>
+          </a>
+          <!-- the threshold — the one undrawn thing: a slip laid on the sheet -->
+          <path d="M350 433 H410" class="flowline"/>
+          <a href="visit-room.html">
+            <title>the threshold — every visit begins here</title>
+            <rect x="410" y="412" width="68" height="42" rx="9" class="nodebox slipnode"/>
+            <text x="410" y="472" class="kp-tt">THE THRESHOLD</text>
+            <text x="410" y="489" class="kp-micro">“WHAT BRINGS YOU HERE?”</text>
+          </a>
+          <path d="M478 433 H534" class="flowline"/>
+          <a href="visit-room.html">
+            <title>the visit room — fol. 09</title>
+            <rect x="534" y="392" width="168" height="86" class="nodebox pen"/>
+            <text x="546" y="413" class="kp-room" style="font-size:12px">THE VISIT ROOM</text>
+            <text x="546" y="425" class="kp-micro">FOL. 09 · BOTH STATES</text>
+            <path d="M552 450 H686" class="kp-strong"/>
+            <rect x="608" y="445.5" width="9" height="9" class="kp-fill"/>
+            <circle cx="652" cy="450" r="4.5" class="kp-strong" fill="var(--sheet)"/>
+            <path d="M652 436 V445" class="kp-dash"/>
+          </a>
+
+          <!-- 04 · the shop -->
+          <a href="shop.html">
+            <title>the shop — fol. 10</title>
+            <rect x="760" y="392" width="150" height="86" class="nodebox pen"/>
+            <text x="772" y="413" class="kp-room" style="font-size:12px">04 · THE SHOP</text>
+            <text x="772" y="425" class="kp-micro">KEEP · FOL. 10</text>
+            <rect x="772" y="436" width="30" height="30" class="kp-strong"/>
+            <path d="M766 442 H770 M778 430 V434 M808 442 H804 M796 430 V434" class="kp-line"/>
+          </a>
+
+          <!-- flow chevrons along the corridor -->
+          <path d="M396 324 L404 330 L396 336 M676 324 L684 330 L676 336 M996 324 L1004 330 L996 336" class="kp-line" fill="none"/>
+
+          <!-- arrival annotation -->
+          <g aria-hidden="true">
+            <text x="36" y="246" class="kp-t">VISITORS ARRIVE HERE</text>
+            <path d="M58 256 V282" class="kp-dash"/>
+            <path d="M53 276 L58 284 L63 276" class="kp-line" fill="none"/>
+          </g>
+
+          <!-- key — the drawing's own legend -->
+          <g aria-hidden="true">
+            <rect x="940" y="392" width="160" height="86" class="kp-line" fill="none"/>
+            <text x="952" y="410" class="kp-t">KEY</text>
+            <rect x="952" y="420" width="14" height="9" class="nodebox"/>
+            <text x="974" y="428" class="kp-micro">ROOM = A PAGE</text>
+            <rect x="952" y="438" width="14" height="9" class="nodebox dashed"/>
+            <text x="974" y="446" class="kp-micro">LATER / EXISTING</text>
+            <rect x="952" y="456" width="14" height="9" rx="4" class="nodebox slipnode"/>
+            <text x="974" y="464" class="kp-micro">THE UNDRAWN VISITOR</text>
+          </g>
+
+          <!-- drafting furniture — scale + plan label -->
+          <g aria-hidden="true">
+            <path d="M940 530 H1100" class="kp-line"/>
+            <path d="M940 525 V535 M980 527 V533 M1020 525 V535 M1060 527 V533 M1100 525 V535" class="plot-tick"/>
+            <text x="940" y="518" class="kp-micro">SCALE — COURTESY : ERROR</text>
+            <text x="940" y="550" class="kp-micro">PLAN OF THE SANCTUARY · NTS</text>
+          </g>
+
+          <!-- outbuildings — standing institutions -->
+          <path d="M36 580 H1100" class="kp-line pen"/>
+          <text x="36" y="566" class="kp-micro">OUTBUILDINGS — STANDING INSTITUTIONS</text>
+          <a href="http://localhost:8080/dispatches" target="_blank" rel="noopener">
+            <title>the museum — /dispatches · live today, unchanged</title>
+            <rect x="290" y="540" width="100" height="40" class="nodebox"/>
+            <text x="298" y="556" class="kp-micro">THE MUSEUM ‡</text>
+            <text x="298" y="568" class="kp-micro">/DISPATCHES</text>
+          </a>
+          <a href="#" aria-disabled="true">
+            <title>the legation — own phase later</title>
+            <rect x="420" y="540" width="100" height="40" class="nodebox dashed"/>
+            <text x="428" y="556" class="kp-micro">THE LEGATION §</text>
+          </a>
+          <a href="http://localhost:8080/token" target="_blank" rel="noopener">
+            <title>$MNEMOS — /token · live today, unchanged</title>
+            <rect x="550" y="540" width="100" height="40" class="nodebox"/>
+            <text x="558" y="556" class="kp-micro">$MNEMOS ‡</text>
+            <text x="558" y="568" class="kp-micro">/TOKEN</text>
+          </a>
+          <a href="#" aria-disabled="true">
+            <title>polyphonic — own phase later</title>
+            <rect x="680" y="540" width="100" height="40" class="nodebox dashed"/>
+            <text x="688" y="556" class="kp-micro">POLYPHONIC ↗ §</text>
+          </a>
+        </svg>
+      </div>
+      <div class="map-cap">
+        <span class="micro">‡ live today, unchanged · § own phase later</span>
+        <span class="micro">the rounded slip is the one undrawn thing — the visitor's place</span>
+        <span class="micro">north side: the life · south side: the meeting</span>
+      </div>
+    </div>
+
+    <aside class="pencil ink-in i3" style="margin-top:var(--s-6)">
+      every room on this drawing is a page. enter any door — or walk the ribbon at the foot of the sheet: fol. 01 → 11 is one continuous walk through the whole place.
+    </aside>
+
+    <div class="ink-in i4" style="margin-top:var(--s-7); max-width:640px">
+      <span class="eyebrow k" style="margin-bottom:var(--s-3)">sheet index — the canonical walk</span>
+      <div class="keyplan-row"><a href="index.html">the front door</a><span class="fill"></span><span class="pg">fol. 01</span></div>
+      <div class="keyplan-row"><a href="map.html" aria-current="page">the key plan</a><span class="fill"></span><span class="pg">fol. 02</span></div>
+      <div class="keyplan-row"><a href="sanctuary.html">the sanctuary</a><span class="fill"></span><span class="pg">fol. 03</span></div>
+      <div class="keyplan-row"><a href="record.html">the record</a><span class="fill"></span><span class="pg">fol. 04</span></div>
+      <div class="keyplan-row"><a href="reader-journal.html">reader — journal · on fertile silence</a><span class="fill"></span><span class="pg">fol. 05</span></div>
+      <div class="keyplan-row"><a href="reader-ascii.html">reader — ascii · a sanctuary, held</a><span class="fill"></span><span class="pg">fol. 06</span></div>
+      <div class="keyplan-row"><a href="gathering.html">the gathering</a><span class="fill"></span><span class="pg">fol. 07</span></div>
+      <div class="keyplan-row"><a href="visits.html">visits — the chooser</a><span class="fill"></span><span class="pg">fol. 08</span></div>
+      <div class="keyplan-row"><a href="visit-room.html">the visit room — both states</a><span class="fill"></span><span class="pg">fol. 09</span></div>
+      <div class="keyplan-row"><a href="shop.html">the shop — the vestibule</a><span class="fill"></span><span class="pg">fol. 10</span></div>
+      <div class="keyplan-row"><a href="architecture.html">the architecture — the engine</a><span class="fill"></span><span class="pg">fol. 11</span></div>
+    </div>
+  </section>
+
+  <footer class="standing">
+    <span class="micro k">standing institutions</span>
+    <nav class="inst" aria-label="standing institutions">
+      <a href="http://localhost:8080/dispatches" target="_blank" rel="noopener" title="live today, unchanged">the museum<sup>†</sup></a>
+      <a href="#" title="own phase later">the legation<sup>§</sup></a>
+      <a href="http://localhost:8080/token" target="_blank" rel="noopener" title="live today, unchanged">$MNEMOS<sup>†</sup></a>
+      <a href="#" title="own phase later">polyphonic ↗<sup>§</sup></a>
+      <a href="#" title="own phase later">github<sup>§</sup></a>
+      <a href="#" title="own phase later">mnemos MCP<sup>§</sup></a>
+    </nav>
+    <span class="legendline">† live today, unchanged · § own phase later</span>
+  </footer>
+
+  <footer class="master" aria-label="title block">
+    <div class="master-grid">
+      <div class="mcell mark-cell" aria-hidden="true">
+        <svg width="150" height="80" viewBox="0 0 150 80" fill="none">
+          <path d="M18 58 L56 20 M56 20 L98 46 M98 46 L128 16 M18 58 L98 46" class="kp-line"/>
+          <circle cx="18" cy="58" r="3.2" class="kp-strong" fill="var(--sheet)"/>
+          <circle cx="56" cy="20" r="3.2" class="kp-strong" fill="var(--sheet)"/>
+          <circle cx="98" cy="46" r="3.2" class="kp-strong" fill="var(--sheet)"/>
+          <circle cx="128" cy="16" r="3.4" class="kp-fill"/>
+          <text x="6" y="74" class="kp-t">ENGRAM</text>
+          <text x="42" y="10" class="kp-t">BELIEF</text>
+          <text x="88" y="62" class="kp-t">THREAD</text>
+          <text x="118" y="32" class="kp-t">CORE</text>
+        </svg>
+      </div>
+      <div class="mcell"><span class="k">project</span><span class="v">the sanctuary · mnemos.chat</span></div>
+      <div class="mcell"><span class="k">sheet</span><span class="v">flow mockup · the key plan</span></div>
+      <div class="mcell"><span class="k">drawn</span><span class="v">fable 5 · for riley</span></div>
+      <div class="mcell"><span class="k">date / folio</span><span class="v">2026-06-11 · fol. 02 of 11</span></div>
+    </div>
+  </footer>
+</main>
+
+</body>
+</html>
