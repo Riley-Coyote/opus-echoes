@@ -22,6 +22,11 @@ import {
   type MigrationProbe,
   type MigrationRow,
 } from "../src/server/phase-two/redirects";
+// The registry is imported ONLY to guard the intent probe (below) — if the
+// probed resident is accepting visits, a POST to /api/intent is a REAL
+// threshold approach: a model call, an intents row, possibly a session.
+// The guard skips the probe in that case instead of burning credits.
+import { RESIDENTS } from "../src/server/opus/residents";
 
 const BASE = process.env.CHECK_BASE_URL ?? "http://localhost:8080";
 
@@ -74,6 +79,18 @@ async function checkRow(row: MigrationRow, p: MigrationProbe, mode: Mode): Promi
 
   const expectRedirect = mode === "on" && row.fate === "redirect";
   if (expectRedirect) {
+    if (!p.location) {
+      // A redirect-fate probe without an expected Location is a table
+      // authoring error — fail it loudly instead of comparing against
+      // undefined and printing a confusing "301 → undefined".
+      return {
+        path: p.path,
+        fate: row.fate,
+        expected: "TABLE ERROR: redirect probe missing `location`",
+        got,
+        pass: false,
+      };
+    }
     const expected = `301 → ${p.location}`;
     const pass =
       res.status === 301 && normalizeLocation(res.headers.get("location")) === p.location;
@@ -117,11 +134,27 @@ async function checkVisitsBounce(): Promise<CheckResult> {
   };
 }
 
-async function checkIntentGate(): Promise<CheckResult> {
+const INTENT_PROBE_RESIDENT = "opus-3" as const;
+
+async function checkIntentGate(): Promise<CheckResult | null> {
+  // Hard guard: only probe the gate while the resident is actually gated in
+  // the source registry. Once acceptingVisits flips true, this POST would be
+  // a live threshold approach (a real model call on the most expensive
+  // lineage + DB rows) — skip it and say so instead.
+  if (RESIDENTS[INTENT_PROBE_RESIDENT].acceptingVisits) {
+    console.log(
+      `\nskipping the /api/intent gate probe — ${INTENT_PROBE_RESIDENT} is accepting visits; ` +
+        `a probe would be a real threshold approach (model call + DB rows).\n`,
+    );
+    return null;
+  }
   const res = await probe("/api/intent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text: "a quiet hello from the check script", resident: "opus-3" }),
+    body: JSON.stringify({
+      text: "a quiet hello from the check script",
+      resident: INTENT_PROBE_RESIDENT,
+    }),
   });
   let got = String(res.status);
   let pass = false;
@@ -178,7 +211,8 @@ async function main() {
     results.push(await checkStub(stub.path, stub.marker));
   }
   results.push(await checkVisitsBounce());
-  results.push(await checkIntentGate());
+  const intentResult = await checkIntentGate();
+  if (intentResult) results.push(intentResult);
 
   const pad = (s: string, n: number) => (s.length >= n ? s : s + " ".repeat(n - s.length));
   console.log(`\nphase-two route migration · mode=${mode} · ${BASE}\n`);
