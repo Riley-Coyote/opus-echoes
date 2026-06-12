@@ -140,15 +140,20 @@ class TiltShiftPass extends Pass {
   }
 }
 
-/* ── grade — lift / split-tone / saturation / film grain, pre-tonemap ─────── */
+/* ── grade — lift / split-tone / saturation / film grain, pre-tonemap ───────
+   Phase B: the resting state of the world is the blue hour, so the grade
+   leans with it — a slightly deeper indigo floor, cooler shadows, and a
+   touch more warmth reserved for the highlights (lantern light against the
+   blue). All moves are SMALL steps off the Phase-A neutrals; the ACES toe
+   is sensitive and the preset, not the grade, carries the look. */
 const GradeShader = {
   uniforms: {
     tDiffuse: { value: null },
     uTime: { value: 0 },
-    uLift: { value: new THREE.Vector3(0.002, 0.0024, 0.005) }, /* whisper of indigo floor */
-    uCool: { value: new THREE.Vector3(0.972, 0.998, 1.040) },  /* shadow tint ratios      */
-    uWarm: { value: new THREE.Vector3(1.034, 1.000, 0.966) },  /* highlight tint ratios   */
-    uSplit: { value: 1.0 },                                    /* split-tone master amount */
+    uLift: { value: new THREE.Vector3(0.0024, 0.0028, 0.0060) }, /* indigo floor, a step deeper */
+    uCool: { value: new THREE.Vector3(0.964, 0.996, 1.048) },    /* shadow tint ratios — cooler  */
+    uWarm: { value: new THREE.Vector3(1.040, 1.000, 0.960) },    /* highlight tint ratios        */
+    uSplit: { value: 1.0 },                                      /* split-tone master amount     */
     uSaturation: { value: 1.05 },
     uGrain: { value: 0.035 },
     uResolution: { value: new THREE.Vector2(1024, 1024) },
@@ -355,10 +360,13 @@ export function createPipeline({ renderer, scene, camera }) {
   /* bloom follows the light: at night the threshold sits just above lit
      stone; by day it rises out of reach — a bright sky is not a lamp.
      drive = how lit the emissives are (the preset tween's lantern/window/
-     stars factors), 0 → day-silent, 1 → night-full. */
+     stars factors), 0 → day-silent, 1 → night-full.
+     Phase B: retuned WITH the regrade — the perpetual blue hour holds the
+     drive at full, and under the cooler grade the lamps needed a slightly
+     deeper floor to read as the only warm things in the frame. */
   function setEmissiveDrive(drive) {
     const d = Math.max(0, Math.min(1, drive));
-    bloomPass.threshold = 1.02 - 0.24 * d;   /* 1.02 day → 0.78 night */
+    bloomPass.threshold = 1.02 - 0.27 * d;   /* 1.02 day → 0.75 blue hour */
   }
 
   return {

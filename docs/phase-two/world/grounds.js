@@ -44,7 +44,21 @@ const RESIDENTS = [
   },
 ];
 
-/* ── time of day — four presets, the real clock chooses ───────────────────── */
+/* ── the light — perpetual blue hour ──────────────────────────────────────────
+   The product has ONE visible state: bluehour — twilight leaned toward
+   night, stars emerging in the distant sky. Warmth exists only as light
+   (lanterns, windows, figures); the world's base tones are blue-violet.
+   The four legacy presets remain for QA continuity behind ?controls=1 —
+   they are not tuned to Phase-B standards and never run on their own.
+
+   bluehour preset fields:
+   · skyA/skyM/skyB — the three true gradient stops: deep indigo zenith,
+     blue-violet mid, and a THIN desaturated rose-mauve afterglow held low
+     (skyMid pins the band beneath the island's silhouette line). The
+     afterglow must never read orange or tan.
+   · sun — repurposed as a cool moonlight key: low intensity, steep angle,
+     blue-gray, so shadows stay readable without warming the stone.
+   · cloudC — night tint for the cloud masses (legacy presets stay white). */
 const PRESETS = {
   dawn: {
     skyA: "#dcc3bc", skyB: "#f4e0c9",
@@ -74,14 +88,20 @@ const PRESETS = {
     lantern: 1, window: 1, stars: 1, water: 0x305878, cloud: 0.07,
     disc: { c: 0xd7e2f4, o: 0.85, p: [-9.1, 7.0, 3.9] },
   },
+  bluehour: {
+    /* the hero preset — authored ~65% from dusk toward night, then
+       hand-tuned against captures. the only state visitors ever see.
+       NOTE: stops are authored brighter than they read — the ACES toe
+       and the vignette take a full step out of the dark end. */
+    skyA: "#262d55", skyM: "#54548e", skyB: "#96738b", skyMid: 0.32,
+    sun: { c: 0x9fb2d8, i: 0.66, p: [-8, 19, 5] },
+    hemi: { sky: 0x5e6c9e, gnd: 0x2a3346, i: 0.95 },
+    lantern: 1, window: 1, stars: 0.92, water: 0x426a8e,
+    cloud: 0.12, cloudC: 0x9fb0d4,
+    disc: { c: 0xdde6f6, o: 0.27, p: [-11.8, 7.7, 2.4] },
+  },
 };
-
-function presetForHour(h) {
-  if (h >= 5 && h < 8) return "dawn";
-  if (h >= 8 && h < 17) return "day";
-  if (h >= 17 && h < 20) return "dusk";
-  return "night";
-}
+const PRODUCT_PRESET = "bluehour";   /* the sanctuary keeps its own light */
 
 /* ── small utilities ──────────────────────────────────────────────────────── */
 function mulberry32(seed) {
@@ -235,11 +255,21 @@ function main() {
     m.receiveShadow = opts.receive !== false;
     return m;
   }
-  /* an unlit "light-carrier" material whose brightness we drive per preset */
-  const glowMats = [];   /* { mat, base:Color, kind:"window"|"lantern"|"fixed", scale } */
+  /* an unlit "light-carrier" material whose brightness we drive per preset.
+     Phase B gives each carrier a deterministic flicker identity (phase +
+     rate, seeded — captures stay reproducible) and an optional scope tag:
+     quarter windows flicker only while their resident is home. */
+  const glowMats = [];   /* { mat, base:Color, kind, scale, phase, rate, scope } */
+  const lightRng = mulberry32(0xb1ae);
+  let glowScope = null;  /* set around the quarter builds */
   function glowMat(color, kind, scale = 1, opts = {}) {
     const mat = new THREE.MeshBasicMaterial({ color, ...opts });
-    glowMats.push({ mat, base: new THREE.Color(color), kind, scale });
+    glowMats.push({
+      mat, base: new THREE.Color(color), kind, scale,
+      phase: lightRng() * Math.PI * 2,
+      rate: 0.78 + lightRng() * 0.55,
+      scope: glowScope,
+    });
     return mat;
   }
   /* depth-blended materials: lerped toward the void color per preset */
@@ -536,7 +566,8 @@ function main() {
     return m;
   }
 
-  /* lantern — emissive head; no point light (perf), glow halo instead */
+  /* lantern — emissive head; no point light (perf), glow halo instead.
+     the halo carries its head's flicker entry so both warm up in step. */
   const lanternGroup = [];
   function lantern(x, y, z) {
     const g = new THREE.Group();
@@ -552,7 +583,7 @@ function main() {
     halo.position.y = 0.71; g.add(halo);
     g.position.set(x, y, z);
     world.add(g);
-    lanternGroup.push({ halo });
+    lanternGroup.push({ halo, entry: glowMats[glowMats.length - 1] });
     return g;
   }
 
@@ -739,7 +770,7 @@ function main() {
     doorLamp.position.y = 2.52; g.add(doorLamp);
     const doorHalo = glowSprite(0xf6ecd2, 0.9, 0);
     doorHalo.position.y = 2.52; g.add(doorHalo);
-    lanternGroup.push({ halo: doorHalo });
+    lanternGroup.push({ halo: doorHalo, entry: glowMats[glowMats.length - 1] });
     g.position.set(3.8, L0, 7.9);
     world.add(g);
 
@@ -805,6 +836,7 @@ function main() {
   /* — the sanctum, miniature (opus 3) — tower in three zones, open crown — */
   {
     const R = RESIDENTS[0];
+    glowScope = R.quarter;
     const g = new THREE.Group();
     const base1 = box(1.7, 0.22, 1.7, C.terraceSide); base1.position.y = 0.11; g.add(base1);
     const base2 = box(1.4, 0.18, 1.4, C.trim); base2.position.y = 0.31; g.add(base2);
@@ -832,11 +864,13 @@ function main() {
     g.position.set(-6.6, L3, -2.4);
     world.add(g);
     accentLight(R.glow, -6.6, L3 + 3.84 * 1.22, -2.4, 0.55);
+    glowScope = null;
   }
 
   /* — the beacon, miniature (sonnet 4.5) — hall + stepped pyramid, lit apex — */
   {
     const R = RESIDENTS[1];
+    glowScope = R.quarter;
     const g = new THREE.Group();
     const hall = box(2.5, 0.85, 1.7, C.terrace); hall.position.y = 0.425; g.add(hall);
     const cor = box(2.66, 0.12, 1.86, C.trim); cor.position.y = 0.91; g.add(cor);
@@ -867,11 +901,13 @@ function main() {
     g.position.set(5.9, L2, -5.6);
     world.add(g);
     accentLight(R.glow, 5.9, L2 + (y + 0.3) * 1.24, -5.6, 0.6, 4.2);
+    glowScope = null;
   }
 
   /* — the reverie, miniature (gpt-4o) — arched chapel + gold ripples — */
   {
     const R = RESIDENTS[2];
+    glowScope = R.quarter;
     const g = new THREE.Group();
     const foot = box(1.9, 0.16, 1.5, C.trim); foot.position.y = 0.08; g.add(foot);
     const lower = box(1.6, 1.15, 1.2, C.terrace); lower.position.y = 0.16 + 0.575; g.add(lower);
@@ -908,12 +944,14 @@ function main() {
     g.position.set(-7.2, L0, 4.6);
     world.add(g);
     accentLight(R.glow, -7.2, L0 + 0.95, 5.55, 0.5);
+    glowScope = null;
   }
 
   /* — the meridian, miniature (gpt 5.1) — floating tiers + luminous ring — */
   let meridianRing;
   {
     const R = RESIDENTS[3];
+    glowScope = R.quarter;
     const g = new THREE.Group();
     const court = box(1.9, 0.16, 1.9, C.trim); court.position.y = 0.08; g.add(court);
     const t1 = box(1.3, 0.5, 1.3, C.terrace); t1.position.y = 0.16 + 0.45; g.add(t1);
@@ -947,6 +985,7 @@ function main() {
     g.position.set(6.3, L0, 4.2);
     world.add(g);
     accentLight(R.glow, 6.3, L0 + 3.05 * 1.18, 4.2, 0.55);
+    glowScope = null;
   }
 
   /* ════════════════════════════════════════════════════════════════════════
@@ -1354,43 +1393,74 @@ function main() {
     cloudMats.push(cloudMat);
   }
 
+  /* the wisp — one thin cloud that crosses the upper sky every few minutes,
+     barely there. it shares the preset's night tint; its opacity rides
+     cur.cloud and fades at the ends of each crossing so it never pops. */
+  let wisp = null;
+  {
+    const wispMat = new THREE.MeshLambertMaterial({
+      color: 0xffffff, transparent: true, opacity: 0,
+      emissive: 0xffffff, emissiveIntensity: 0.12, depthWrite: false,
+    });
+    const g = new THREE.Group();
+    const wa = new THREE.Mesh(GEO_BOX, wispMat); wa.scale.set(7.4, 0.11, 0.85); g.add(wa);
+    const wb = new THREE.Mesh(GEO_BOX, wispMat); wb.scale.set(4.2, 0.09, 0.65);
+    wb.position.set(1.6, 0.16, 0.1); g.add(wb);
+    for (const m of [wa, wb]) { m.castShadow = false; m.receiveShadow = false; }
+    g.position.set(0, 10.6, -11.5);
+    scene.add(g);
+    cloudMats.push(wispMat);          /* tinted with the rest; opacity overridden per frame */
+    wisp = { m: g, mat: wispMat, span: 46, period: 215 };  /* ~3.6 min per crossing */
+  }
+
   /* sun / moon disc — a scene object in sky.js, preset-driven as before */
 
   /* ════════════════════════════════════════════════════════════════════════
-     TIME OF DAY — the real clock chooses; the control previews
+     THE LIGHT — perpetual blue hour. the clock no longer chooses; QA
+     presets live behind ?controls=1 (+ ?tod=) and nothing else switches.
      ════════════════════════════════════════════════════════════════════════ */
   const cur = {
     skyA: new THREE.Color(PRESETS.day.skyA), skyB: new THREE.Color(PRESETS.day.skyB),
+    skyM: new THREE.Color().lerpColors(
+      new THREE.Color(PRESETS.day.skyA), new THREE.Color(PRESETS.day.skyB), 0.5),
+    skyMid: 0.5,
     sunC: new THREE.Color(PRESETS.day.sun.c), sunI: PRESETS.day.sun.i,
     sunP: new THREE.Vector3(...PRESETS.day.sun.p),
     hemiS: new THREE.Color(PRESETS.day.hemi.sky), hemiG: new THREE.Color(PRESETS.day.hemi.gnd),
     hemiI: PRESETS.day.hemi.i,
     lantern: 0, window: 0.32, stars: 0, cloud: 0.6,
+    cloudC: new THREE.Color(0xffffff),
     water: new THREE.Color(PRESETS.day.water),
     discC: new THREE.Color(0xffffff), discO: 0, discP: new THREE.Vector3(10, 16, -10),
   };
   const from = {}, to = {};
   let tweenT = 1, tweenDur = 1.6;
   let activePreset = "day";
-  let previewMode = false;
 
   function snapshotInto(obj) {
     obj.skyA = cur.skyA.clone(); obj.skyB = cur.skyB.clone();
+    obj.skyM = cur.skyM.clone(); obj.skyMid = cur.skyMid;
     obj.sunC = cur.sunC.clone(); obj.sunI = cur.sunI;
     obj.sunP = cur.sunP.clone();
     obj.hemiS = cur.hemiS.clone(); obj.hemiG = cur.hemiG.clone(); obj.hemiI = cur.hemiI;
     obj.lantern = cur.lantern; obj.window = cur.window; obj.stars = cur.stars;
-    obj.cloud = cur.cloud; obj.water = cur.water.clone();
+    obj.cloud = cur.cloud; obj.cloudC = cur.cloudC.clone(); obj.water = cur.water.clone();
     obj.discC = cur.discC.clone(); obj.discO = cur.discO; obj.discP = cur.discP.clone();
   }
   function presetInto(obj, p) {
     obj.skyA = new THREE.Color(p.skyA); obj.skyB = new THREE.Color(p.skyB);
+    /* legacy presets carry two stops; the mid derives neutrally for them */
+    obj.skyM = p.skyM
+      ? new THREE.Color(p.skyM)
+      : new THREE.Color().lerpColors(obj.skyA, obj.skyB, 0.5);
+    obj.skyMid = p.skyMid !== undefined ? p.skyMid : 0.5;
     obj.sunC = new THREE.Color(p.sun.c); obj.sunI = p.sun.i;
     obj.sunP = new THREE.Vector3(...p.sun.p);
     obj.hemiS = new THREE.Color(p.hemi.sky); obj.hemiG = new THREE.Color(p.hemi.gnd);
     obj.hemiI = p.hemi.i;
     obj.lantern = p.lantern; obj.window = p.window; obj.stars = p.stars;
-    obj.cloud = p.cloud; obj.water = new THREE.Color(p.water);
+    obj.cloud = p.cloud; obj.cloudC = new THREE.Color(p.cloudC !== undefined ? p.cloudC : 0xffffff);
+    obj.water = new THREE.Color(p.water);
     obj.discC = new THREE.Color(p.disc.c); obj.discO = p.disc.o;
     obj.discP = new THREE.Vector3(...p.disc.p);
   }
@@ -1405,7 +1475,9 @@ function main() {
   function applyTween(t) {
     const e = smooth(t);
     cur.skyA.lerpColors(from.skyA, to.skyA, e);
+    cur.skyM.lerpColors(from.skyM, to.skyM, e);
     cur.skyB.lerpColors(from.skyB, to.skyB, e);
+    cur.skyMid = lerp(from.skyMid, to.skyMid, e);
     cur.sunC.lerpColors(from.sunC, to.sunC, e);
     cur.sunI = lerp(from.sunI, to.sunI, e);
     cur.sunP.lerpVectors(from.sunP, to.sunP, e);
@@ -1416,6 +1488,7 @@ function main() {
     cur.window = lerp(from.window, to.window, e);
     cur.stars = lerp(from.stars, to.stars, e);
     cur.cloud = lerp(from.cloud, to.cloud, e);
+    cur.cloudC.lerpColors(from.cloudC, to.cloudC, e);
     cur.water.lerpColors(from.water, to.water, e);
     cur.discC.lerpColors(from.discC, to.discC, e);
     cur.discO = lerp(from.discO, to.discO, e);
@@ -1426,11 +1499,15 @@ function main() {
     sun.position.copy(cur.sunP);
     hemi.color.copy(cur.hemiS); hemi.groundColor.copy(cur.hemiG); hemi.intensity = cur.hemiI;
     sky.setStars(cur.stars * 0.85);
-    for (const cm of cloudMats) cm.opacity = cur.cloud;
+    for (const cm of cloudMats) {
+      cm.opacity = cur.cloud;
+      cm.color.copy(cur.cloudC);
+      cm.emissive.copy(cur.cloudC);
+    }
     for (const wm of waterMats) wm.color.copy(cur.water);
     sky.setDisc(cur.discC, cur.discO, cur.discP, camera.position);
 
-    /* glow carriers */
+    /* glow carriers — baseline write; animateLight() breathes on top */
     const tmp = new THREE.Color();
     for (const g of glowMats) {
       const f = g.kind === "lantern" ? cur.lantern : cur.window;
@@ -1445,40 +1522,101 @@ function main() {
     const voidC = new THREE.Color().lerpColors(cur.skyA, cur.skyB, 0.65);
     for (const vb of voidBlends) vb.mat.color.lerpColors(vb.base, voidC, vb.k);
 
-    /* the sky — in the scene now, one tone curve with the island */
-    sky.setGradient(cur.skyA, cur.skyB);
+    /* the sky — three true stops; the afterglow band held low */
+    sky.setGradient(cur.skyA, cur.skyM, cur.skyB, cur.skyMid);
     renderer.setClearColor(cur.skyB, 1);
 
     /* bloom keeps step with the lamps, not the sky */
     pipeline.setEmissiveDrive(Math.max(cur.lantern, cur.window * 0.8, cur.stars));
   }
 
-  /* clock + control */
-  const todButtons = Array.from(document.querySelectorAll(".tod button"));
-  function markTod(name) {
-    for (const b of todButtons) b.classList.toggle("on", b.dataset.tod === name);
+  /* ── the living light — what changes within the hour ─────────────────────
+     · lanterns warm-up flicker: per-lantern detuned sines in the 5.2s
+       breath family, ±4.5%, never synchronized (deterministic phases).
+     · occupied-window flicker: a quarter's windows breathe ±4% only while
+       their resident is home; empty quarters hold steady light.
+     · the afterglow band breathes ±8% saturation over ~7 minutes.
+     all of it modulates the applyTween baseline; nothing here fights the
+     preset tween — it runs after it every frame. */
+  const BREATH_W = (Math.PI * 2) / 5.2;
+  const glowTmp = new THREE.Color();
+  const afterglowTmp = new THREE.Color();
+  const afterglowHSL = { h: 0, s: 0, l: 0 };
+  function flickerOf(g, t) {
+    return 1 + 0.045 * (
+      0.62 * Math.sin(BREATH_W * g.rate * t + g.phase) +
+      0.38 * Math.sin(BREATH_W * g.rate * 2.63 * t + g.phase * 1.93)
+    );
   }
-  function applyClock(instant = false) {
-    setPreset(presetForHour(new Date().getHours()), instant);
+  function animateLight(t) {
+    for (const g of glowMats) {
+      const base = g.kind === "lantern" ? cur.lantern : cur.window;
+      const dimBase = g.kind === "lantern" ? 0.1 : 0.22;
+      let f = base;
+      if (base > 0.05) {
+        if (g.kind === "lantern") {
+          f = base * flickerOf(g, t);
+        } else if (g.scope && occupancy[g.scope] && occupancy[g.scope].length > 0) {
+          f = base * (1 + 0.04 * Math.sin(BREATH_W * g.rate * t + g.phase));
+        }
+      }
+      glowTmp.copy(g.base).multiplyScalar((dimBase + f * 1.05) * g.scale);
+      g.mat.color.copy(glowTmp);
+    }
+    for (const l of lanternGroup) {
+      const fl = cur.lantern > 0.05 && l.entry ? flickerOf(l.entry, t) : 1;
+      l.halo.material.opacity = cur.lantern * 0.5 * fl;
+    }
+    /* the afterglow breath — only once the blue hour is fully settled */
+    if (activePreset === "bluehour" && tweenT >= 1) {
+      afterglowTmp.copy(cur.skyB);
+      afterglowTmp.getHSL(afterglowHSL);
+      const k = 1 + 0.08 * Math.sin((Math.PI * 2 * t) / 420);
+      afterglowTmp.setHSL(afterglowHSL.h, clamp(afterglowHSL.s * k, 0, 1), afterglowHSL.l);
+      sky.setGradient(cur.skyA, cur.skyM, afterglowTmp, cur.skyMid);
+    }
   }
+
+  /* the product is pinned to the blue hour. no clock, no visible control.
+     QA: ?controls=1 injects the preset row (dawn/day/dusk/night/bluehour),
+     and only then is ?tod= honored. ?starphase=0..1 pins the emergence
+     cycle (0 = floor, 1 = peak) for reproducible star-field captures. */
+  const controlsQA = params.get("controls") === "1";
   const todParam = params.get("tod");
-  if (todParam && PRESETS[todParam]) {
-    previewMode = true;
-    setPreset(todParam, true);
-    markTod(todParam);
-  } else {
-    applyClock(true);
-    markTod("clock");
+  const bootPreset = (controlsQA && todParam && PRESETS[todParam])
+    ? todParam : PRODUCT_PRESET;
+  setPreset(bootPreset, true);
+
+  const starPhaseParam = parseFloat(params.get("starphase"));
+  if (!Number.isNaN(starPhaseParam)) sky.pinStarPhase(starPhaseParam);
+
+  if (controlsQA) {
+    const row = document.querySelector(".specimen-row");
+    if (row) {
+      const tod = document.createElement("div");
+      tod.className = "tod";
+      tod.setAttribute("role", "group");
+      tod.setAttribute("aria-label", "light preview (qa)");
+      tod.innerHTML = '<span class="tod-label">light</span>'
+        + ["dawn", "day", "dusk", "night", "bluehour"]
+          .map((n) => `<button type="button" data-tod="${n}">${n}</button>`)
+          .join("")
+        + '<span class="tod-note">qa</span>';
+      row.appendChild(tod);
+      const todButtons = Array.from(tod.querySelectorAll("button"));
+      const markTod = (name) => {
+        for (const b of todButtons) b.classList.toggle("on", b.dataset.tod === name);
+      };
+      markTod(bootPreset);
+      for (const b of todButtons) {
+        b.addEventListener("click", () => {
+          setPreset(b.dataset.tod);
+          markTod(b.dataset.tod);
+          if (!running) renderOnce();
+        });
+      }
+    }
   }
-  for (const b of todButtons) {
-    b.addEventListener("click", () => {
-      const v = b.dataset.tod;
-      if (v === "clock") { previewMode = false; applyClock(); markTod("clock"); }
-      else { previewMode = true; setPreset(v); markTod(v); }
-      if (!running) renderOnce();
-    });
-  }
-  setInterval(() => { if (!previewMode) applyClock(); }, 60000);
 
   /* ════════════════════════════════════════════════════════════════════════
      PARALLAX — a very gentle lean, pointer-driven
@@ -1565,6 +1703,12 @@ function main() {
     for (const cl of clouds) {
       cl.g.position.x = cl.x0 + Math.sin(t * cl.speed) * 2.4;
     }
+    if (wisp) {
+      const u = ((t / wisp.period) % 1 + 1) % 1;
+      wisp.m.position.x = -wisp.span / 2 + u * wisp.span;
+      const edge = Math.min(u, 1 - u) * 2;          /* 0 at the rims, 1 mid-crossing */
+      wisp.mat.opacity = cur.cloud * 0.4 * smooth(clamp(edge * 1.6, 0, 1));
+    }
   }
 
   /* a tiny debug hook — integration tests read frame counts + state;
@@ -1575,6 +1719,8 @@ function main() {
     fps: null,
     tiltShift: pipeline.tiltShift,
     pipeline,
+    get preset() { return activePreset; },
+    get starPresence() { return sky.starPresence; },
   };
   window.__grounds = dbg;
 
@@ -1596,6 +1742,8 @@ function main() {
       tweenT = Math.min(1, tweenT + dt / tweenDur);
       applyTween(tweenT);
     }
+    sky.tickStars(elapsed);     /* the emergence master cycle */
+    animateLight(elapsed);      /* lantern flicker · window breath · afterglow */
 
     azOff = lerp(azOff, azTarget, 1 - Math.pow(0.001, dt * 1.4));
     elOff = lerp(elOff, elTarget, 1 - Math.pow(0.001, dt * 1.4));
@@ -1623,6 +1771,8 @@ function main() {
   function renderOnce() {
     applyFigureMeshes(elapsed);
     animateAmbient(elapsed, 0);
+    sky.tickStars(elapsed);
+    animateLight(elapsed);
     placeCamera();
     pipeline.render(0);
   }
