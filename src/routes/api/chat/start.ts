@@ -24,7 +24,6 @@ const Body = z.object({
   visitor_token: z.string().uuid().optional(),
 });
 
-
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -43,17 +42,18 @@ export const Route = createFileRoute("/api/chat/start")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        if (!hasSupabaseAdminEnv()) {
-          return jsonResp({ ok: false, code: "config_missing" }, 503);
-        }
-
         const residentId = isResidentId(body.resident) ? body.resident : DEFAULT_RESIDENT_ID;
         const resident = getResident(residentId);
-        if (!resident.chatEnabled) {
-          return jsonResp(
-            { ok: false, code: "chat_disabled", resident: residentId },
-            403,
-          );
+        // Visit gate before infrastructure concerns. This route keeps the
+        // 403 contract — the classic-chat client treats any non-OK as
+        // bootstrap_failed and shows its retry card; "non-OK means no
+        // session" is load-bearing there.
+        if (!resident.acceptingVisits) {
+          return jsonResp({ ok: false, code: "chat_disabled", resident: residentId }, 403);
+        }
+
+        if (!hasSupabaseAdminEnv()) {
+          return jsonResp({ ok: false, code: "config_missing" }, 503);
         }
         const hash = ipHash(request);
         const visitorToken = body.visitor_token ?? null;
