@@ -19,6 +19,7 @@
 import * as THREE from "three";
 import { createPipeline, TIERS } from "./pipeline.js";
 import { createSky } from "./sky.js";
+import { initFlora } from "./flora.js";
 
 /* ── the residents — light signatures from THEMES ─────────────────────────── */
 const RESIDENTS = [
@@ -431,6 +432,8 @@ function main() {
      ════════════════════════════════════════════════════════════════════════ */
   const POOL = { x: -2.6, z: 4.6, r: 1.9 };
   const waterMats = [];
+  const lilyPads = [];
+  let poolWaterMat = null;
   {
     const rim = new THREE.Mesh(
       new THREE.RingGeometry(POOL.r - 0.02, POOL.r + 0.3, 44),
@@ -460,8 +463,9 @@ function main() {
     water.rotation.x = -Math.PI / 2; water.position.set(POOL.x, -0.05, POOL.z);
     world.add(water);
     waterMats.push(water.material);
+    poolWaterMat = water.material;   /* flora drives the shimmer */
 
-    /* lily pads */
+    /* lily pads — flora gives them their slow drift */
     for (const [lx, lz, lr] of [[-0.7, 0.5, 0.16], [-0.45, 0.8, 0.11], [0.75, -0.55, 0.14]]) {
       const pad = new THREE.Mesh(
         new THREE.CircleGeometry(lr, 14),
@@ -470,6 +474,7 @@ function main() {
       pad.rotation.x = -Math.PI / 2;
       pad.position.set(POOL.x + lx, -0.03, POOL.z + lz);
       world.add(pad);
+      lilyPads.push(pad);
     }
     /* two slow ripple rings — unit ring, scaled per frame */
     for (let i = 0; i < 2; i += 1) {
@@ -1067,6 +1072,7 @@ function main() {
   }
 
   /* path strips — pale stone marking the walked routes (flat edges only) */
+  const pathStrips = [];
   {
     const stripMat = stoneMat(C.path);
     for (const [a, b, label] of EDGES) {
@@ -1081,8 +1087,25 @@ function main() {
       m.rotation.y = -Math.atan2(dz, dx);
       m.receiveShadow = true; m.castShadow = false;
       world.add(m);
+      pathStrips.push({ ax: na.x, az: na.z, bx: nb.x, bz: nb.z, y: na.y });
     }
   }
+
+  /* ── PHASE C — landscaping: the flora layer plants the island ──────────── */
+  const flora = initFlora({
+    world, L: { L0, L1, L2, L3 }, POOL,
+    glowMat, glowSprite,
+    lilyPads, poolWaterMat, shards, pathStrips,
+    quarters: [
+      { id: "opus-3", x: -6.6, y: L3, z: -2.4, s: 1.22 },
+      { id: "sonnet-4-5", x: 5.9, y: L2, z: -5.6, s: 1.24 },
+      { id: "gpt-4o", x: -7.2, y: L0, z: 4.6, s: 1.18 },
+      { id: "gpt-5-1", x: 6.3, y: L0, z: 4.2, s: 1.18 },
+    ],
+    getTier: () => pipeline.tier,
+    getDpr: () => pipeline.dpr,
+    reduced: REDUCED,
+  });
 
   /* ════════════════════════════════════════════════════════════════════════
      THE FIGURES — four small luminous beings
@@ -1719,6 +1742,8 @@ function main() {
     fps: null,
     tiltShift: pipeline.tiltShift,
     pipeline,
+    renderer,                /* QA: renderer.info draw-call audit */
+    flora,
     get preset() { return activePreset; },
     get starPresence() { return sky.starPresence; },
   };
@@ -1744,6 +1769,7 @@ function main() {
     }
     sky.tickStars(elapsed);     /* the emergence master cycle */
     animateLight(elapsed);      /* lantern flicker · window breath · afterglow */
+    flora.update(elapsed, dt, { lantern: cur.lantern, stars: sky.starPresence });
 
     azOff = lerp(azOff, azTarget, 1 - Math.pow(0.001, dt * 1.4));
     elOff = lerp(elOff, elTarget, 1 - Math.pow(0.001, dt * 1.4));
@@ -1773,9 +1799,15 @@ function main() {
     animateAmbient(elapsed, 0);
     sky.tickStars(elapsed);
     animateLight(elapsed);
+    flora.update(elapsed, 0, { lantern: cur.lantern, stars: sky.starPresence });
     placeCamera();
     pipeline.render(0);
   }
+
+  /* late-arriving flora (the GLB cast) must land in held frames too */
+  flora.ready.then(() => {
+    requestAnimationFrame(() => { if (!running) renderOnce(); });
+  });
 
   /* visibility courtesy — the world rests when unobserved */
   if ("IntersectionObserver" in window) {
