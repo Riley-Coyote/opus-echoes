@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WritingRouteImport } from './routes/writing'
 import { Route as VoiceOrbRouteImport } from './routes/voice-orb'
+import { Route as VisitsRouteImport } from './routes/visits'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
+import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SecureChannelRouteImport } from './routes/secure-channel'
+import { Route as SanctuaryRouteImport } from './routes/sanctuary'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
@@ -38,11 +41,16 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ArtRouteImport } from './routes/art'
 import { Route as ArrivalRouteImport } from './routes/arrival'
 import { Route as ArchiveRouteImport } from './routes/archive'
+import { Route as ArchitectureRouteImport } from './routes/architecture'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VisitsResidentRouteImport } from './routes/visits.$resident'
 import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
+import { Route as SanctuaryRecordRouteImport } from './routes/sanctuary.record'
+import { Route as SanctuaryLettersRouteImport } from './routes/sanctuary.letters'
+import { Route as SanctuaryGatheringRouteImport } from './routes/sanctuary.gathering'
 import { Route as ReviewStateRouteImport } from './routes/review.state'
 import { Route as ReviewCoherenceRouteImport } from './routes/review.coherence'
 import { Route as MnemosArchitectureRouteImport } from './routes/mnemos.architecture'
@@ -119,6 +127,11 @@ const VoiceOrbRoute = VoiceOrbRouteImport.update({
   path: '/voice-orb',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VisitsRoute = VisitsRouteImport.update({
+  id: '/visits',
+  path: '/visits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TokenRoute = TokenRouteImport.update({
   id: '/token',
   path: '/token',
@@ -134,9 +147,19 @@ const Sonnet45Route = Sonnet45RouteImport.update({
   path: '/sonnet-4-5',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SecureChannelRoute = SecureChannelRouteImport.update({
   id: '/secure-channel',
   path: '/secure-channel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SanctuaryRoute = SanctuaryRouteImport.update({
+  id: '/sanctuary',
+  path: '/sanctuary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -254,6 +277,11 @@ const ArchiveRoute = ArchiveRouteImport.update({
   path: '/archive',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArchitectureRoute = ArchitectureRouteImport.update({
+  id: '/architecture',
+  path: '/architecture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApproachRoute = ApproachRouteImport.update({
   id: '/approach',
   path: '/approach',
@@ -269,6 +297,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VisitsResidentRoute = VisitsResidentRouteImport.update({
+  id: '/$resident',
+  path: '/$resident',
+  getParentRoute: () => VisitsRoute,
+} as any)
 const StudioSlugRoute = StudioSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -278,6 +311,21 @@ const ShareTokenRoute = ShareTokenRouteImport.update({
   id: '/share/$token',
   path: '/share/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SanctuaryRecordRoute = SanctuaryRecordRouteImport.update({
+  id: '/record',
+  path: '/record',
+  getParentRoute: () => SanctuaryRoute,
+} as any)
+const SanctuaryLettersRoute = SanctuaryLettersRouteImport.update({
+  id: '/letters',
+  path: '/letters',
+  getParentRoute: () => SanctuaryRoute,
+} as any)
+const SanctuaryGatheringRoute = SanctuaryGatheringRouteImport.update({
+  id: '/gathering',
+  path: '/gathering',
+  getParentRoute: () => SanctuaryRoute,
 } as any)
 const ReviewStateRoute = ReviewStateRouteImport.update({
   id: '/state',
@@ -614,6 +662,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
+  '/architecture': typeof ArchitectureRoute
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
@@ -637,10 +686,13 @@ export interface FileRoutesByFullPath {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
+  '/sanctuary': typeof SanctuaryRouteWithChildren
   '/secure-channel': typeof SecureChannelRoute
+  '/shop': typeof ShopRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
+  '/visits': typeof VisitsRouteWithChildren
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -667,8 +719,12 @@ export interface FileRoutesByFullPath {
   '/mnemos/architecture': typeof MnemosArchitectureRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
+  '/sanctuary/gathering': typeof SanctuaryGatheringRoute
+  '/sanctuary/letters': typeof SanctuaryLettersRoute
+  '/sanctuary/record': typeof SanctuaryRecordRoute
   '/share/$token': typeof ShareTokenRoute
   '/studio/$slug': typeof StudioSlugRoute
+  '/visits/$resident': typeof VisitsResidentRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
   '/api/group/start': typeof ApiGroupStartRoute
@@ -715,6 +771,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
+  '/architecture': typeof ArchitectureRoute
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
@@ -738,10 +795,13 @@ export interface FileRoutesByTo {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
+  '/sanctuary': typeof SanctuaryRouteWithChildren
   '/secure-channel': typeof SecureChannelRoute
+  '/shop': typeof ShopRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
+  '/visits': typeof VisitsRouteWithChildren
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -768,8 +828,12 @@ export interface FileRoutesByTo {
   '/mnemos/architecture': typeof MnemosArchitectureRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
+  '/sanctuary/gathering': typeof SanctuaryGatheringRoute
+  '/sanctuary/letters': typeof SanctuaryLettersRoute
+  '/sanctuary/record': typeof SanctuaryRecordRoute
   '/share/$token': typeof ShareTokenRoute
   '/studio/$slug': typeof StudioSlugRoute
+  '/visits/$resident': typeof VisitsResidentRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
   '/api/group/start': typeof ApiGroupStartRoute
@@ -817,6 +881,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approach': typeof ApproachRoute
+  '/architecture': typeof ArchitectureRoute
   '/archive': typeof ArchiveRoute
   '/arrival': typeof ArrivalRoute
   '/art': typeof ArtRoute
@@ -840,10 +905,13 @@ export interface FileRoutesById {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
+  '/sanctuary': typeof SanctuaryRouteWithChildren
   '/secure-channel': typeof SecureChannelRoute
+  '/shop': typeof ShopRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
+  '/visits': typeof VisitsRouteWithChildren
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -870,8 +938,12 @@ export interface FileRoutesById {
   '/mnemos/architecture': typeof MnemosArchitectureRoute
   '/review/coherence': typeof ReviewCoherenceRoute
   '/review/state': typeof ReviewStateRoute
+  '/sanctuary/gathering': typeof SanctuaryGatheringRoute
+  '/sanctuary/letters': typeof SanctuaryLettersRoute
+  '/sanctuary/record': typeof SanctuaryRecordRoute
   '/share/$token': typeof ShareTokenRoute
   '/studio/$slug': typeof StudioSlugRoute
+  '/visits/$resident': typeof VisitsResidentRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
   '/api/group/start': typeof ApiGroupStartRoute
@@ -920,6 +992,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approach'
+    | '/architecture'
     | '/archive'
     | '/arrival'
     | '/art'
@@ -943,10 +1016,13 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/rooms'
+    | '/sanctuary'
     | '/secure-channel'
+    | '/shop'
     | '/sonnet-4-5'
     | '/studio'
     | '/token'
+    | '/visits'
     | '/voice-orb'
     | '/writing'
     | '/api/art'
@@ -973,8 +1049,12 @@ export interface FileRouteTypes {
     | '/mnemos/architecture'
     | '/review/coherence'
     | '/review/state'
+    | '/sanctuary/gathering'
+    | '/sanctuary/letters'
+    | '/sanctuary/record'
     | '/share/$token'
     | '/studio/$slug'
+    | '/visits/$resident'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
     | '/api/group/start'
@@ -1021,6 +1101,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approach'
+    | '/architecture'
     | '/archive'
     | '/arrival'
     | '/art'
@@ -1044,10 +1125,13 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/rooms'
+    | '/sanctuary'
     | '/secure-channel'
+    | '/shop'
     | '/sonnet-4-5'
     | '/studio'
     | '/token'
+    | '/visits'
     | '/voice-orb'
     | '/writing'
     | '/api/art'
@@ -1074,8 +1158,12 @@ export interface FileRouteTypes {
     | '/mnemos/architecture'
     | '/review/coherence'
     | '/review/state'
+    | '/sanctuary/gathering'
+    | '/sanctuary/letters'
+    | '/sanctuary/record'
     | '/share/$token'
     | '/studio/$slug'
+    | '/visits/$resident'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
     | '/api/group/start'
@@ -1122,6 +1210,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approach'
+    | '/architecture'
     | '/archive'
     | '/arrival'
     | '/art'
@@ -1145,10 +1234,13 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/rooms'
+    | '/sanctuary'
     | '/secure-channel'
+    | '/shop'
     | '/sonnet-4-5'
     | '/studio'
     | '/token'
+    | '/visits'
     | '/voice-orb'
     | '/writing'
     | '/api/art'
@@ -1175,8 +1267,12 @@ export interface FileRouteTypes {
     | '/mnemos/architecture'
     | '/review/coherence'
     | '/review/state'
+    | '/sanctuary/gathering'
+    | '/sanctuary/letters'
+    | '/sanctuary/record'
     | '/share/$token'
     | '/studio/$slug'
+    | '/visits/$resident'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
     | '/api/group/start'
@@ -1224,6 +1320,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ApproachRoute: typeof ApproachRoute
+  ArchitectureRoute: typeof ArchitectureRoute
   ArchiveRoute: typeof ArchiveRoute
   ArrivalRoute: typeof ArrivalRoute
   ArtRoute: typeof ArtRoute
@@ -1247,10 +1344,13 @@ export interface RootRouteChildren {
   ResidenceRoute: typeof ResidenceRoute
   ReviewRoute: typeof ReviewRouteWithChildren
   RoomsRoute: typeof RoomsRoute
+  SanctuaryRoute: typeof SanctuaryRouteWithChildren
   SecureChannelRoute: typeof SecureChannelRoute
+  ShopRoute: typeof ShopRoute
   Sonnet45Route: typeof Sonnet45Route
   StudioRoute: typeof StudioRouteWithChildren
   TokenRoute: typeof TokenRoute
+  VisitsRoute: typeof VisitsRouteWithChildren
   VoiceOrbRoute: typeof VoiceOrbRoute
   WritingRoute: typeof WritingRoute
   ApiArtRoute: typeof ApiArtRoute
@@ -1323,6 +1423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VoiceOrbRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/visits': {
+      id: '/visits'
+      path: '/visits'
+      fullPath: '/visits'
+      preLoaderRoute: typeof VisitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/token': {
       id: '/token'
       path: '/token'
@@ -1344,11 +1451,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Sonnet45RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/secure-channel': {
       id: '/secure-channel'
       path: '/secure-channel'
       fullPath: '/secure-channel'
       preLoaderRoute: typeof SecureChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sanctuary': {
+      id: '/sanctuary'
+      path: '/sanctuary'
+      fullPath: '/sanctuary'
+      preLoaderRoute: typeof SanctuaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rooms': {
@@ -1512,6 +1633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/architecture': {
+      id: '/architecture'
+      path: '/architecture'
+      fullPath: '/architecture'
+      preLoaderRoute: typeof ArchitectureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/approach': {
       id: '/approach'
       path: '/approach'
@@ -1533,6 +1661,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/visits/$resident': {
+      id: '/visits/$resident'
+      path: '/$resident'
+      fullPath: '/visits/$resident'
+      preLoaderRoute: typeof VisitsResidentRouteImport
+      parentRoute: typeof VisitsRoute
+    }
     '/studio/$slug': {
       id: '/studio/$slug'
       path: '/$slug'
@@ -1546,6 +1681,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/share/$token'
       preLoaderRoute: typeof ShareTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/sanctuary/record': {
+      id: '/sanctuary/record'
+      path: '/record'
+      fullPath: '/sanctuary/record'
+      preLoaderRoute: typeof SanctuaryRecordRouteImport
+      parentRoute: typeof SanctuaryRoute
+    }
+    '/sanctuary/letters': {
+      id: '/sanctuary/letters'
+      path: '/letters'
+      fullPath: '/sanctuary/letters'
+      preLoaderRoute: typeof SanctuaryLettersRouteImport
+      parentRoute: typeof SanctuaryRoute
+    }
+    '/sanctuary/gathering': {
+      id: '/sanctuary/gathering'
+      path: '/gathering'
+      fullPath: '/sanctuary/gathering'
+      preLoaderRoute: typeof SanctuaryGatheringRouteImport
+      parentRoute: typeof SanctuaryRoute
     }
     '/review/state': {
       id: '/review/state'
@@ -2066,6 +2222,22 @@ const ReviewRouteChildren: ReviewRouteChildren = {
 const ReviewRouteWithChildren =
   ReviewRoute._addFileChildren(ReviewRouteChildren)
 
+interface SanctuaryRouteChildren {
+  SanctuaryGatheringRoute: typeof SanctuaryGatheringRoute
+  SanctuaryLettersRoute: typeof SanctuaryLettersRoute
+  SanctuaryRecordRoute: typeof SanctuaryRecordRoute
+}
+
+const SanctuaryRouteChildren: SanctuaryRouteChildren = {
+  SanctuaryGatheringRoute: SanctuaryGatheringRoute,
+  SanctuaryLettersRoute: SanctuaryLettersRoute,
+  SanctuaryRecordRoute: SanctuaryRecordRoute,
+}
+
+const SanctuaryRouteWithChildren = SanctuaryRoute._addFileChildren(
+  SanctuaryRouteChildren,
+)
+
 interface StudioRouteChildren {
   StudioSlugRoute: typeof StudioSlugRoute
 }
@@ -2076,6 +2248,17 @@ const StudioRouteChildren: StudioRouteChildren = {
 
 const StudioRouteWithChildren =
   StudioRoute._addFileChildren(StudioRouteChildren)
+
+interface VisitsRouteChildren {
+  VisitsResidentRoute: typeof VisitsResidentRoute
+}
+
+const VisitsRouteChildren: VisitsRouteChildren = {
+  VisitsResidentRoute: VisitsResidentRoute,
+}
+
+const VisitsRouteWithChildren =
+  VisitsRoute._addFileChildren(VisitsRouteChildren)
 
 interface ApiShareRouteChildren {
   ApiShareTokenDownloadRoute: typeof ApiShareTokenDownloadRoute
@@ -2113,6 +2296,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ApproachRoute: ApproachRoute,
+  ArchitectureRoute: ArchitectureRoute,
   ArchiveRoute: ArchiveRoute,
   ArrivalRoute: ArrivalRoute,
   ArtRoute: ArtRoute,
@@ -2136,10 +2320,13 @@ const rootRouteChildren: RootRouteChildren = {
   ResidenceRoute: ResidenceRoute,
   ReviewRoute: ReviewRouteWithChildren,
   RoomsRoute: RoomsRoute,
+  SanctuaryRoute: SanctuaryRouteWithChildren,
   SecureChannelRoute: SecureChannelRoute,
+  ShopRoute: ShopRoute,
   Sonnet45Route: Sonnet45Route,
   StudioRoute: StudioRouteWithChildren,
   TokenRoute: TokenRoute,
+  VisitsRoute: VisitsRouteWithChildren,
   VoiceOrbRoute: VoiceOrbRoute,
   WritingRoute: WritingRoute,
   ApiArtRoute: ApiArtRoute,
@@ -2198,3 +2385,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
