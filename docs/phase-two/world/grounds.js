@@ -17,6 +17,8 @@
    ============================================================================ */
 
 import * as THREE from "three";
+import { createPipeline, TIERS } from "./pipeline.js";
+import { createSky } from "./sky.js";
 
 /* ── the residents — light signatures from THEMES ─────────────────────────── */
 const RESIDENTS = [
@@ -123,9 +125,10 @@ if (!webglOk()) {
 function main() {
   /* ── renderer / scene / camera ────────────────────────────────────────── */
   const renderer = new THREE.WebGLRenderer({
-    canvas, alpha: true, antialias: true, powerPreference: "high-performance",
+    canvas, alpha: false, antialias: true, powerPreference: "high-performance",
   });
-  renderer.setClearColor(0x000000, 0);
+  /* the sky is in the scene now; the clear color follows the horizon tween */
+  renderer.setClearColor(0x06070a, 1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.12;
@@ -155,8 +158,8 @@ function main() {
   function resize() {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(w, h, false);
+    pipeline.setSize(w, h);   /* renderer + composer + per-pass targets, dpr per tier */
+    sky.setStarScale(pipeline.usesComposer ? pipeline.dpr : 1);
     const aspect = w / h;
     /* fit: generous breath on wide, fit-by-width on narrow */
     const fitW = aspect < 1.25 ? 13.5 : 12.9;
@@ -165,6 +168,37 @@ function main() {
     camera.left = -halfW; camera.right = halfW;
     camera.top = halfH; camera.bottom = -halfH;
     camera.updateProjectionMatrix();
+  }
+
+  /* ── pipeline + sky — tiers resolved before anything renders ─────────── */
+  const tierParam = params.get("tier");
+  const forcedTier = TIERS.includes(tierParam) ? tierParam : null;
+  const bootStatic = REDUCED || window.innerWidth < 768;
+  const pipeline = createPipeline({ renderer, scene, camera });
+  const sky = createSky({ scene });
+  pipeline.applyTier(forcedTier || (bootStatic ? "static" : "high"));
+
+  /* fps probe — first ~90 frames after a short warm-up; one-way downgrade */
+  let probe = (forcedTier || bootStatic) ? null : { warm: 20, frames: 0, t0: 0 };
+  function probeTick() {
+    if (!probe) return;
+    if (probe.warm > 0) {
+      probe.warm -= 1;
+      if (probe.warm === 0) probe.t0 = performance.now();
+      return;
+    }
+    probe.frames += 1;
+    if (probe.frames >= 70) {
+      const fps = probe.frames / ((performance.now() - probe.t0) / 1000);
+      probe = null;
+      dbg.fps = Math.round(fps * 10) / 10;
+      const next = fps >= 45 ? "high" : fps >= 26 ? "mid" : "low";
+      if (next !== pipeline.tier) {
+        pipeline.applyTier(next);
+        resize();             /* re-derive dpr + buffer sizes for the tier */
+      }
+      dbg.tier = pipeline.tier;
+    }
   }
 
   /* ── lights ───────────────────────────────────────────────────────────── */
@@ -1292,31 +1326,9 @@ function main() {
   }
 
   /* ════════════════════════════════════════════════════════════════════════
-     STARS — only the night knows them
+     STARS — only the night knows them. they live in sky.js now: in-scene
+     Points, additive and size-attenuated, bright enough for the bloom.
      ════════════════════════════════════════════════════════════════════════ */
-  let starsMat, starsBuilt = false;
-  starsMat = new THREE.PointsMaterial({
-    color: 0xe8eefb, size: 2.4, sizeAttenuation: false,
-    transparent: true, opacity: 0, depthWrite: false,
-  });
-  function buildStars() {
-    /* sprinkle the upper band of the actual frame, pushed deep behind */
-    if (starsBuilt) return;
-    starsBuilt = true;
-    camera.updateMatrixWorld(true);
-    const pts = [];
-    const srng = mulberry32(977);
-    const v = new THREE.Vector3();
-    for (let i = 0; i < 90; i += 1) {
-      const nx = -0.96 + srng() * 1.92;
-      const ny = 0.30 + srng() * 0.66;
-      v.set(nx, ny, 0.94).unproject(camera);
-      pts.push(v.x, v.y, v.z);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-    scene.add(new THREE.Points(geo, starsMat));
-  }
 
   /* clouds — two quiet puffs far behind the island */
   const clouds = [];
@@ -1342,22 +1354,11 @@ function main() {
     cloudMats.push(cloudMat);
   }
 
-  /* sun / moon disc */
-  let discMesh, discMat, discHalo;
-  {
-    discMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff, transparent: true, opacity: 0, depthWrite: false,
-    });
-    discMesh = new THREE.Mesh(new THREE.CircleGeometry(0.85, 28), discMat);
-    scene.add(discMesh);
-    discHalo = glowSprite(0xffffff, 3.6, 0);
-    scene.add(discHalo);
-  }
+  /* sun / moon disc — a scene object in sky.js, preset-driven as before */
 
   /* ════════════════════════════════════════════════════════════════════════
      TIME OF DAY — the real clock chooses; the control previews
      ════════════════════════════════════════════════════════════════════════ */
-  const skyAEl = document.documentElement;
   const cur = {
     skyA: new THREE.Color(PRESETS.day.skyA), skyB: new THREE.Color(PRESETS.day.skyB),
     sunC: new THREE.Color(PRESETS.day.sun.c), sunI: PRESETS.day.sun.i,
@@ -1424,14 +1425,10 @@ function main() {
     sun.color.copy(cur.sunC); sun.intensity = cur.sunI;
     sun.position.copy(cur.sunP);
     hemi.color.copy(cur.hemiS); hemi.groundColor.copy(cur.hemiG); hemi.intensity = cur.hemiI;
-    starsMat.opacity = cur.stars * 0.85;
+    sky.setStars(cur.stars * 0.85);
     for (const cm of cloudMats) cm.opacity = cur.cloud;
     for (const wm of waterMats) wm.color.copy(cur.water);
-    discMat.color.copy(cur.discC); discMat.opacity = cur.discO;
-    discMesh.position.copy(cur.discP); discMesh.lookAt(camera.position);
-    discHalo.material.color.copy(cur.discC);
-    discHalo.material.opacity = cur.discO * 0.5;
-    discHalo.position.copy(cur.discP);
+    sky.setDisc(cur.discC, cur.discO, cur.discP, camera.position);
 
     /* glow carriers */
     const tmp = new THREE.Color();
@@ -1448,10 +1445,12 @@ function main() {
     const voidC = new THREE.Color().lerpColors(cur.skyA, cur.skyB, 0.65);
     for (const vb of voidBlends) vb.mat.color.lerpColors(vb.base, voidC, vb.k);
 
-    /* the sheet's sky */
-    const a = "#" + cur.skyA.getHexString(), b = "#" + cur.skyB.getHexString();
-    skyAEl.style.setProperty("--skyA", a);
-    skyAEl.style.setProperty("--skyB", b);
+    /* the sky — in the scene now, one tone curve with the island */
+    sky.setGradient(cur.skyA, cur.skyB);
+    renderer.setClearColor(cur.skyB, 1);
+
+    /* bloom keeps step with the lamps, not the sky */
+    pipeline.setEmissiveDrive(Math.max(cur.lantern, cur.window * 0.8, cur.stars));
   }
 
   /* clock + control */
@@ -1568,8 +1567,15 @@ function main() {
     }
   }
 
-  /* a tiny debug hook — integration tests read frame counts + state */
-  const dbg = { frames: 0 };
+  /* a tiny debug hook — integration tests read frame counts + state;
+     QA reads the tier and steers the tilt-shift band from here */
+  const dbg = {
+    frames: 0,
+    tier: pipeline.tier,
+    fps: null,
+    tiltShift: pipeline.tiltShift,
+    pipeline,
+  };
   window.__grounds = dbg;
 
   let captionTimer = 0;
@@ -1595,7 +1601,8 @@ function main() {
     elOff = lerp(elOff, elTarget, 1 - Math.pow(0.001, dt * 1.4));
     placeCamera();
 
-    renderer.render(scene, camera);
+    pipeline.render(dt);
+    probeTick();
 
     if (settleFrames > 0) {
       settleFrames -= 1;
@@ -1617,14 +1624,14 @@ function main() {
     applyFigureMeshes(elapsed);
     animateAmbient(elapsed, 0);
     placeCamera();
-    renderer.render(scene, camera);
+    pipeline.render(0);
   }
 
   /* visibility courtesy — the world rests when unobserved */
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver((entries) => {
       visible = entries[0].isIntersecting;
-      if (!REDUCED && !isNarrow()) {
+      if (!REDUCED && !isNarrow() && pipeline.tier !== "static") {
         if (visible && !running) start();
         if (!visible && running) stop();
       }
@@ -1635,7 +1642,7 @@ function main() {
   /* ── boot sequence ────────────────────────────────────────────────────── */
   resize();
   placeCamera();
-  buildStars();
+  sky.buildStars(camera);
   applyTween(1);
   stage.classList.add("alive");
   updateCaption(true);
@@ -1644,8 +1651,13 @@ function main() {
     renderOnce();
     /* a second frame lets shadows settle on some drivers */
     requestAnimationFrame(renderOnce);
-  } else if (isNarrow()) {
+    /* and a third once the SMAA lookup textures have decoded, so the held
+       frame keeps its edges (composer path only; harmless on direct) */
+    setTimeout(renderOnce, 320);
+  } else if (isNarrow() || pipeline.tier === "static") {
     start(4);   /* settle, then hold the frame — the perf budget under 768px */
+    /* re-hold once SMAA textures have decoded — keeps the edges crisp */
+    setTimeout(() => { if (!running) renderOnce(); }, 420);
   } else {
     start();
   }
@@ -1654,9 +1666,14 @@ function main() {
   window.addEventListener("resize", () => {
     clearTimeout(resizeT);
     resizeT = setTimeout(() => {
+      /* leaving the narrow static path re-enters the live tiers */
+      if (!forcedTier && !REDUCED && !isNarrow() && pipeline.tier === "static") {
+        pipeline.applyTier("high");
+        dbg.tier = pipeline.tier;
+      }
       resize();
       if (!running) renderOnce();
-      if (!REDUCED && !isNarrow() && visible && !running) start();
+      if (!REDUCED && !isNarrow() && visible && !running && pipeline.tier !== "static") start();
       if (!REDUCED && isNarrow() && running) { stop(); renderOnce(); }
     }, 120);
   });
