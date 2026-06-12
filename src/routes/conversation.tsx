@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import html from "@/mocks/conversation.html?raw";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 import { serveHtml } from "@/server/serve-mock";
 
 function extractHeadAssets(documentHtml: string): string {
@@ -1107,6 +1108,8 @@ export const Route = createFileRoute("/conversation")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
         const url = new URL(request.url);
         if (url.searchParams.get("partial") === "1") return serveConversationPartial();
         return serveHtml(html, CONVERSATION_SCRIPT);

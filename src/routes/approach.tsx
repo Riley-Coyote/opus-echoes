@@ -1,11 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderApproachPage } from "@/server/public-pages";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 import { serveHtml } from "@/server/serve-mock";
 
 export const Route = createFileRoute("/approach")({
   server: {
     handlers: {
-      GET: async () => serveHtml(renderApproachPage()),
+      GET: async ({ request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
+        return serveHtml(renderApproachPage());
+      },
     },
   },
 });

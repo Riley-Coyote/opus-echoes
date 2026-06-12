@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import html from "@/mocks/mnemos-home.html?raw";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 import { serveHtml } from "@/server/serve-mock";
 
 // The Mnemos landing + surface hub: rolling-memory hero → bento of the six
@@ -9,7 +10,11 @@ import { serveHtml } from "@/server/serve-mock";
 export const Route = createFileRoute("/mnemos")({
   server: {
     handlers: {
-      GET: async () => serveHtml(html, undefined, { presence: false }),
+      GET: async ({ request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
+        return serveHtml(html, undefined, { presence: false });
+      },
     },
   },
 });

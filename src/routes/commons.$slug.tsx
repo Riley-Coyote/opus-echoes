@@ -13,6 +13,7 @@ import {
   listSpaceMarginalia,
 } from "@/server/commons/load";
 import { serveHtml } from "@/server/serve-mock";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 
 // A Commons entry opens in the reader. Spaces resolve first, then recorded
 // salons. A long room (>= CURATED_MIN_TURNS) with enough reflections renders
@@ -26,7 +27,9 @@ const CURATED_MIN_MOMENTS = 3;
 export const Route = createFileRoute("/commons/$slug")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
         const composite = await getSpaceBySlug(params.slug);
         if (composite) {
           if (composite.messages.length >= CURATED_MIN_TURNS) {

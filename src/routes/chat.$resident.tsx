@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { renderMinimalChatPage } from "@/server/minimal-chat-page";
 import { serveHtml } from "@/server/serve-mock";
 import { getResident, isResidentId } from "@/server/opus/residents";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 
 // Classic chat — the minimal surface. Same residents, same Mnemos
 // topology, lower ceremony. Path-segment validated against the
@@ -10,7 +11,9 @@ import { getResident, isResidentId } from "@/server/opus/residents";
 export const Route = createFileRoute("/chat/$resident")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
         const slug = params.resident;
         if (!isResidentId(slug)) throw notFound();
         return serveHtml(

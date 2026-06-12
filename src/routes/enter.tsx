@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderWalkthroughPage } from "@/server/walkthrough-page";
+import { legacyRedirectResponse } from "@/server/phase-two/redirects";
 import { serveHtml } from "@/server/serve-mock";
 
 // The Sanctuary entry — the 5-beat walkthrough into the residents. The Mnemos
@@ -8,7 +9,11 @@ import { serveHtml } from "@/server/serve-mock";
 export const Route = createFileRoute("/enter")({
   server: {
     handlers: {
-      GET: async () => serveHtml(renderWalkthroughPage()),
+      GET: async ({ request }) => {
+        const redirect = legacyRedirectResponse(request);
+        if (redirect) return redirect;
+        return serveHtml(renderWalkthroughPage());
+      },
     },
   },
 });
