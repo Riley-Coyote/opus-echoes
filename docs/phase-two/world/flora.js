@@ -1026,7 +1026,9 @@ export function initFlora(ctx) {
     for (const fn of updaters) fn(t, dt || 0, drive);
   }
 
-  const api = { update, ready, wind: floraWind, dbg };
+  /* lawns + the rejection test are shared with Phase D (particles.js) so the
+     fireflies sample the SAME ground truth the grass did */
+  const api = { update, ready, wind: floraWind, dbg, lawns: LAWNS, clearOf };
   window.__flora = api;
   return api;
 }
