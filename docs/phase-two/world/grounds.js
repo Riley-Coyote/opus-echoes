@@ -160,16 +160,8 @@ function main() {
 
   const scene = new THREE.Scene();
 
-  /* ── depth-graded atmospheric fog ──────────────────────────────────────────
-     aerial perspective: near elements crisp, distant edges and the floating
-     roots hazing into the sky. FogExp2 keyed to the blue-hour mid-sky so the
-     island reads as suspended in real air. Density is gentle — the diorama is
-     ~26 units deep along the iso axis; the goal is to dissolve the void roots
-     and the far rim, NOT to veil the architecture or wash the bloom.
-     The in-scene sky / stars / moon opt OUT of fog (set in sky.js) so the
-     backdrop and the moon — which the god rays read — stay clean and bright.
-     The color is re-keyed to cur.skyM each tween in applyTween(). */
-  scene.fog = new THREE.FogExp2(0x54548e, 0.0118);
+  /* no scene fog — the depth haze washed the environment; removed per direction.
+     (the fog-color lerp later in applyTween is guarded by `if (scene.fog)`.) */
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -120, 220);
   const AZ = Math.PI / 4;                  /* monument-valley fixed angle */
@@ -982,6 +974,7 @@ function main() {
     const orb = glowOrbSmall(R.glow, 0.085); orb.position.y = 3.84; g.add(orb);
     g.scale.setScalar(1.22);
     g.position.set(-4.4, L2, -4.4);
+    g.name = "sanctumTower";
     world.add(g);
     accentLight(R.glow, -4.4, L2 + 3.84 * 1.22, -4.4, 0.55);
     glowScope = null;
@@ -1892,6 +1885,36 @@ function main() {
     fx: fx.dbg,              /* Phase D — active systems + point counts */
     get preset() { return activePreset; },
     get starPresence() { return sky.starPresence; },
+    scene, world,
+    /* placement verification — raycast straight down from each base corner of
+       a named object; a corner is "supported" only if solid terrain sits at
+       (not far below) the object's base. Defeats iso-projection ambiguity. */
+    support(name, inset = 0.08) {
+      const o = scene.getObjectByName(name);
+      if (!o) return { error: "not found: " + name };
+      o.updateWorldMatrix(true, true);
+      const b = new THREE.Box3().setFromObject(o);
+      const y0 = b.min.y;
+      const isOwn = (obj) => { let p = obj; while (p) { if (p === o) return true; p = p.parent; } return false; };
+      const rc = new THREE.Raycaster();
+      const down = new THREE.Vector3(0, -1, 0);
+      const corners = [
+        ["-x-z", b.min.x + inset, b.min.z + inset], ["+x-z", b.max.x - inset, b.min.z + inset],
+        ["-x+z", b.min.x + inset, b.max.z - inset], ["+x+z", b.max.x - inset, b.max.z - inset],
+      ];
+      const out = corners.map(([tag, x, z]) => {
+        rc.set(new THREE.Vector3(x, y0 + 12, z), down); rc.far = 80;
+        const hit = rc.intersectObject(world, true).filter(h => !isOwn(h.object) && h.point.y <= y0 + 0.15)[0];
+        const surfaceY = hit ? +hit.point.y.toFixed(2) : null;
+        const gap = surfaceY === null ? null : +(y0 - surfaceY).toFixed(2);
+        return { corner: tag, surfaceY, gapBelowBase: gap, supported: surfaceY !== null && gap < 0.3 };
+      });
+      return {
+        base: { x: [+b.min.x.toFixed(2), +b.max.x.toFixed(2)], y: +y0.toFixed(2), z: [+b.min.z.toFixed(2), +b.max.z.toFixed(2)] },
+        corners: out,
+        seated: out.every(c => c.supported),
+      };
+    },
   };
   window.__grounds = dbg;
 
