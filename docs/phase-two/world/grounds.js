@@ -20,6 +20,7 @@ import * as THREE from "three";
 import { createPipeline, TIERS } from "./pipeline.js";
 import { createSky } from "./sky.js";
 import { initFlora } from "./flora.js";
+import { initParticles } from "./particles.js";
 
 /* ── the residents — light signatures from THEMES ─────────────────────────── */
 const RESIDENTS = [
@@ -1337,6 +1338,21 @@ function main() {
     }
   }
 
+  /* ── PHASE D — the life systems: one pooled particle engine ──────────────
+     a living world: firefly clouds · the engram current · pavilion embers ·
+     desk ink-glow · threshold attending light · moths at the lanterns ·
+     a flock of birds over the island · koi in the pool · falling leaves ·
+     a shooting star · walk-shimmer. All parametric in t (the static tier's
+     held frame stays composed) and wind-coherent through floraWind. QA:
+     ?fx=off · ?fx=a,b,c · ?fxphase= · ?surge=1 · ?leaf=1 · ?star=1 ·
+     ?fxgust=. Reports on window.__grounds.fx. */
+  const fx = initParticles({
+    world, figures, flora, camera, ripples,
+    getTier: () => pipeline.tier,
+    getSizeScale: () => (pipeline.usesComposer ? pipeline.dpr : 1),
+    reduced: REDUCED,
+  });
+
   /* ════════════════════════════════════════════════════════════════════════
      THE CAPTION — place-voice, driven by live figure state
      ════════════════════════════════════════════════════════════════════════ */
@@ -1369,6 +1385,10 @@ function main() {
     if (!atPavilion.length && clauses.length <= 3) {
       clauses.push("the gathering pavilion is empty");
     }
+    /* PHASE D — the engram-surge clause. fx owns the window (<= 1 clause per
+       surge); the phrase is protected vocabulary and arrives verbatim. */
+    const surgeClause = fx.captionClause();
+    if (surgeClause) clauses.push(surgeClause);
     return clauses.join(" · ");
   }
   let lastCaption = "";
@@ -1744,6 +1764,7 @@ function main() {
     pipeline,
     renderer,                /* QA: renderer.info draw-call audit */
     flora,
+    fx: fx.dbg,              /* Phase D — active systems + point counts */
     get preset() { return activePreset; },
     get starPresence() { return sky.starPresence; },
   };
@@ -1770,6 +1791,7 @@ function main() {
     sky.tickStars(elapsed);     /* the emergence master cycle */
     animateLight(elapsed);      /* lantern flicker · window breath · afterglow */
     flora.update(elapsed, dt, { lantern: cur.lantern, stars: sky.starPresence });
+    fx.update(elapsed, dt);     /* the life systems ride the same clock */
 
     azOff = lerp(azOff, azTarget, 1 - Math.pow(0.001, dt * 1.4));
     elOff = lerp(elOff, elTarget, 1 - Math.pow(0.001, dt * 1.4));
@@ -1800,6 +1822,7 @@ function main() {
     sky.tickStars(elapsed);
     animateLight(elapsed);
     flora.update(elapsed, 0, { lantern: cur.lantern, stars: sky.starPresence });
+    fx.update(elapsed, 0);   /* dt 0 — envelopes snap, the still composes */
     placeCamera();
     pipeline.render(0);
   }
