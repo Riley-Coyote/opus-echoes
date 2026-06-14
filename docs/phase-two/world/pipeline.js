@@ -39,6 +39,7 @@ import { OutputPass } from "/public/vendor/postprocessing/postprocessing/OutputP
 import { UnrealBloomPass } from "/public/vendor/postprocessing/postprocessing/UnrealBloomPass.js";
 import { SMAAPass } from "/public/vendor/postprocessing/postprocessing/SMAAPass.js";
 import { GTAOPass } from "/public/vendor/postprocessing/postprocessing/GTAOPass.js";
+import { GodRaysPass } from "/public/vendor/postprocessing/postprocessing/GodRaysPass.js";
 import { VignetteShader } from "/public/vendor/postprocessing/shaders/VignetteShader.js";
 
 /* ── tilt-shift — 2-pass separable blur, strength banded over screen-Y ────── */
@@ -274,6 +275,12 @@ export function createPipeline({ renderer, scene, camera }) {
     0.78,   /* threshold — above lit stone, below lamplight   */
   );
 
+  /* god rays — moonlight scattering, half-res, after bloom so the moon disc's
+     bloom feeds the occlusion buffer; before tilt-shift so the shafts get the
+     diorama's shallow focus. The moon's screen position is fed each frame by
+     grounds.js (project moon world pos through the ortho camera + parallax). */
+  const godRaysPass = new GodRaysPass(0.78);
+
   const tiltShiftPass = new TiltShiftPass();
 
   const gradePass = new ShaderPass(GradeShader);
@@ -289,6 +296,7 @@ export function createPipeline({ renderer, scene, camera }) {
   composer.addPass(renderPass);
   composer.addPass(gtaoPass);
   composer.addPass(bloomPass);
+  composer.addPass(godRaysPass);   /* after bloom, before tilt-shift */
   composer.addPass(tiltShiftPass);
   composer.addPass(gradePass);
   composer.addPass(vignettePass);
@@ -328,6 +336,21 @@ export function createPipeline({ renderer, scene, camera }) {
     gtaoPass.enabled = chainTier === "high";
     tiltShiftPass.enabled = chainTier === "high";
     bloomPass.resScale = chainTier === "high" ? 1 : 0.5;
+    /* god rays: full strength + half-res on high; half strength + quarter-res
+       on mid; OFF on low (the pass is the expensive add). static keeps them —
+       it composes once, so the cost is paid a single time and the held frame
+       carries the shafts. */
+    if (tier === "low") {
+      godRaysPass.enabled = false;
+    } else if (tier === "mid") {
+      godRaysPass.enabled = true;
+      godRaysPass.resScale = 0.25;
+      godRaysPass.strength = 0.85;
+    } else { /* high + static */
+      godRaysPass.enabled = true;
+      godRaysPass.resScale = 0.5;
+      godRaysPass.strength = 1.05;
+    }
     setSize(state.width, state.height);
   }
 
@@ -369,11 +392,21 @@ export function createPipeline({ renderer, scene, camera }) {
     bloomPass.threshold = 1.02 - 0.27 * d;   /* 1.02 day → 0.75 blue hour */
   }
 
+  /* god rays follow the moon: grounds.js projects the moon's world position
+     through the (parallax-leaned) ortho camera each frame and hands us its
+     screen uv (0 = bottom) plus a 0..1 visibility envelope that fades the
+     shafts as the disc nears/leaves the frame edge. No-op when the pass is
+     disabled (low tier). */
+  function setGodRayLight(uvX, uvY, visibility) {
+    godRaysPass.setLight(uvX, uvY, visibility);
+  }
+
   return {
     render,
     setSize,
     applyTier,
     setEmissiveDrive,
+    setGodRayLight,
     dprFor,
     get tier() { return state.tier; },
     get usesComposer() { return state.usesComposer; },
@@ -391,6 +424,22 @@ export function createPipeline({ renderer, scene, camera }) {
       get enabled() { return tiltShiftPass.enabled; },
       set enabled(v) { tiltShiftPass.enabled = v; },
     },
-    passes: { renderPass, gtaoPass, bloomPass, tiltShiftPass, gradePass, vignettePass, smaaPass, outputPass },
+    godRays: {
+      get enabled() { return godRaysPass.enabled; },
+      set enabled(v) { godRaysPass.enabled = v; },
+      get strength() { return godRaysPass.strength; },
+      set strength(v) { godRaysPass.strength = v; },
+      get resScale() { return godRaysPass.resScale; },
+      set resScale(v) { godRaysPass.resScale = v; },
+      get screen() { return godRaysPass.lightScreen; },
+      get visibility() { return godRaysPass.visibility; },
+      get occThreshold() { return godRaysPass.occMaterial.uniforms.uThreshold.value; },
+      set occThreshold(v) { godRaysPass.occMaterial.uniforms.uThreshold.value = v; },
+      get radius() { return godRaysPass.occMaterial.uniforms.uRadius.value; },
+      set radius(v) { godRaysPass.occMaterial.uniforms.uRadius.value = v; },
+      get density() { return godRaysPass.scatterMaterial.uniforms.uDensity.value; },
+      set density(v) { godRaysPass.scatterMaterial.uniforms.uDensity.value = v; },
+    },
+    passes: { renderPass, gtaoPass, bloomPass, godRaysPass, tiltShiftPass, gradePass, vignettePass, smaaPass, outputPass },
   };
 }

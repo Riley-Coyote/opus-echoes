@@ -160,6 +160,17 @@ function main() {
 
   const scene = new THREE.Scene();
 
+  /* ── depth-graded atmospheric fog ──────────────────────────────────────────
+     aerial perspective: near elements crisp, distant edges and the floating
+     roots hazing into the sky. FogExp2 keyed to the blue-hour mid-sky so the
+     island reads as suspended in real air. Density is gentle — the diorama is
+     ~26 units deep along the iso axis; the goal is to dissolve the void roots
+     and the far rim, NOT to veil the architecture or wash the bloom.
+     The in-scene sky / stars / moon opt OUT of fog (set in sky.js) so the
+     backdrop and the moon — which the god rays read — stay clean and bright.
+     The color is re-keyed to cur.skyM each tween in applyTween(). */
+  scene.fog = new THREE.FogExp2(0x54548e, 0.0118);
+
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -120, 220);
   const AZ = Math.PI / 4;                  /* monument-valley fixed angle */
   const EL = Math.atan(1 / Math.SQRT2);    /* true isometric elevation    */
@@ -175,6 +186,29 @@ function main() {
       TARGET.z + CAM_DIST * Math.cos(az) * Math.cos(el),
     );
     camera.lookAt(TARGET);
+  }
+
+  /* god-ray light tracking — project the moon's world position (cur.discP)
+     through the parallax-leaned camera each frame so the shafts emanate from
+     the disc, not a fixed screen point. A reused scratch vector keeps the loop
+     allocation-free; visibility fades the rays as the disc nears the frame
+     edge (and with the disc's own opacity) so they never pop at the rim. */
+  const _moonNdc = new THREE.Vector3();
+  function updateGodRayLight() {
+    /* the camera moved this frame (parallax); refresh its world inverse before
+       projecting so the shafts track the disc exactly, even mid-lean */
+    camera.updateMatrixWorld(true);
+    _moonNdc.copy(cur.discP).project(camera);
+    const uvX = _moonNdc.x * 0.5 + 0.5;
+    const uvY = _moonNdc.y * 0.5 + 0.5;
+    /* edge envelope: full inside |ndc| ≤ 0.82, ramped to 0 by 1.12 (just past
+       the frame), and 0 if the disc is behind the camera (ndc.z > 1). */
+    const edge = Math.max(Math.abs(_moonNdc.x), Math.abs(_moonNdc.y));
+    let vis = 1 - smooth(clamp((edge - 0.82) / 0.30, 0, 1));
+    if (_moonNdc.z > 1) vis = 0;
+    /* the moon's opacity gates the shafts — a faint disc casts faint rays */
+    vis *= clamp(cur.discO / 0.27, 0, 1);
+    pipeline.setGodRayLight(uvX, uvY, vis);
   }
 
   function resize() {
@@ -325,6 +359,76 @@ function main() {
     return sp;
   }
 
+  /* ── volumetric light CONES — local fog catching the lamps ─────────────────
+     A soft additive cone of glow descending from each lit lamp into the night
+     air: the "fog catching light" look that reads as real volume. The shader
+     fades the alpha from the apex (at the source) downward and softens hard at
+     the silhouette rim (a Fresnel-ish edge term using the view-space normal) so
+     the cone is a breath of light, not a solid spotlight. depthWrite:false,
+     additive, very low opacity, warm. grounds.js drives each cone's opacity
+     with its lamp's flicker (animateLight). Geometry is shared per size class;
+     a tiny per-instance uniform set is avoided by baking shape into geometry.
+     lightCones[] = { mesh, mat, base } — base is the resting opacity. */
+  const lightCones = [];
+  const ConeVert = /* glsl */`
+    varying float vY;        /* 0 at base (far from light) → 1 at apex */
+    varying vec3 vNrm;       /* view-space normal for the rim softening */
+    uniform float uApexY;    /* local-space y of the apex (the light)  */
+    uniform float uBaseY;    /* local-space y of the wide base         */
+    void main() {
+      vY = clamp((position.y - uBaseY) / max(uApexY - uBaseY, 1e-4), 0.0, 1.0);
+      vNrm = normalize(normalMatrix * normal);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`;
+  const ConeFrag = /* glsl */`
+    varying float vY;
+    varying vec3 vNrm;
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    void main() {
+      /* bright near the apex/source, fading to nothing at the floor.
+         a gentler curve keeps body in the upper cone — the air right under the
+         lamp is where the glow volume reads thickest */
+      float along = pow(vY, 1.25);
+      /* soften the silhouette: faces edge-on to the camera (normal ⟂ view)
+         glow most — the classic volumetric rim — while front-facing caps thin
+         out, so the cone never shows a hard lit wall. Body floor raised so the
+         whole volume carries some glow, not only the rim. */
+      float rim = 1.0 - abs(vNrm.z);
+      rim = pow(clamp(rim, 0.0, 1.0), 1.3);
+      float a = uOpacity * along * (0.55 + 0.45 * rim);
+      if (a <= 0.001) discard;
+      gl_FragColor = vec4(uColor, a);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`;
+  function lightCone(color, height, radius, baseOpacity, opts = {}) {
+    /* open cone, apex up at the lamp, flaring down to the ground */
+    const seg = opts.seg || 16;
+    const geo = new THREE.ConeGeometry(radius, height, seg, 1, true);
+    /* ConeGeometry centers on origin with apex at +h/2; shift so apex = 0 and
+       the body hangs downward (apex meets the lamp when placed at lamp.y) */
+    geo.translate(0, -height / 2, 0);
+    const apexY = 0, baseY = -height;
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(color) },
+        uOpacity: { value: baseOpacity },
+        uApexY: { value: apexY },
+        uBaseY: { value: baseY },
+      },
+      vertexShader: ConeVert, fragmentShader: ConeFrag,
+      transparent: true, blending: THREE.AdditiveBlending,
+      depthWrite: false, side: THREE.DoubleSide, toneMapped: true,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 3;            /* over the world, under motes/koi sheen */
+    mesh.userData.noAO = true;
+    mesh.castShadow = false; mesh.receiveShadow = false;
+    return { mesh, mat, base: baseOpacity };
+  }
+
   /* ════════════════════════════════════════════════════════════════════════
      THE ISLAND — terraced grounds in a soft void
      levels: L0 = 0 · L1 = 0.9 · L2 = 1.8 · L3 = 2.7
@@ -350,12 +454,14 @@ function main() {
   slab(-10.0, 9.2, -8.35, 8.55, L0 - 1.85, 1.1, C.cliff);       /* cliff band   */
   slab(-10.2, 9.4, -8.5, 1.4, L1, 1.3, C.terraceSide);          /* L1           */
   slab(-9.6, 8.6, -8.5, -2.2, L2, 1.3, C.terraceSide);          /* L2           */
+  slab(-7.9, -5.3, -2.2, -1.2, L2, 1.3, C.terraceSide);         /* sanctum footing — solid mass under the tower so it sits on ground, not on the knoll's cantilevered front lip */
   slab(-8.6, -4.6, -4.2, -0.6, L3, 1.3, C.terraceSide);         /* L3 knoll     */
   slab(-12.8, -10.2, -0.6, 1.8, L1, 1.3, C.terraceSide);        /* promontory   */
   /* top skins for crisp color blocking */
   slab(-10.2, 9.4, 1.4, 8.7, L0 + 0.02, 0.05, C.terrace);
   slab(-10.2, 9.4, -8.5, 1.4, L1 + 0.02, 0.05, C.terrace);
   slab(-9.6, 8.6, -8.5, -2.2, L2 + 0.02, 0.05, C.terrace);
+  slab(-7.9, -5.3, -2.2, -1.2, L2 + 0.02, 0.05, C.terrace);     /* sanctum footing skin */
   slab(-8.6, -4.6, -4.2, -0.6, L3 + 0.02, 0.05, C.terrace);
   slab(-12.8, -10.2, -0.6, 1.8, L1 + 0.02, 0.05, C.terrace);
   /* lawns — the garden's calm color fields */
@@ -587,9 +693,14 @@ function main() {
     cap.rotation.y = Math.PI / 4; cap.position.y = 0.85; g.add(cap);
     const halo = glowSprite(0xffd9a2, 1.0, 0);
     halo.position.y = 0.71; g.add(halo);
+    /* the lamp's volumetric cone — descends from the head into the night air */
+    const cone = lightCone(0xffdca8, 0.92, 0.46, 0);
+    cone.mesh.position.y = 0.72; g.add(cone.mesh);
     g.position.set(x, y, z);
     world.add(g);
-    lanternGroup.push({ halo, entry: glowMats[glowMats.length - 1] });
+    const entry = glowMats[glowMats.length - 1];
+    lanternGroup.push({ halo, entry, cone });
+    lightCones.push({ ...cone, entry, peak: 0.16, kind: "lantern" });
     return g;
   }
 
@@ -668,7 +779,7 @@ function main() {
      ════════════════════════════════════════════════════════════════════════ */
 
   /* the gathering pavilion */
-  let pavilionLamp;
+  let pavilionLamp, pavilionCone;
   {
     const g = new THREE.Group();
     const plaza = new THREE.Mesh(new THREE.CircleGeometry(2.6, 44), stoneMat(C.path));
@@ -692,6 +803,9 @@ function main() {
     /* a quiet lamp under the roof — brightens when residents gather */
     pavilionLamp = glowSprite(0xfff0cc, 1.1, 0.0);
     pavilionLamp.position.y = 1.62; g.add(pavilionLamp);
+    /* its volumetric cone — pours onto the plaza when the gathering warms it */
+    pavilionCone = lightCone(0xfff0cc, 1.5, 1.05, 0, { seg: 20 });
+    pavilionCone.mesh.position.y = 1.62; g.add(pavilionCone.mesh);
     g.position.set(0.6, L1, -0.4);
     world.add(g);
   }
@@ -776,7 +890,12 @@ function main() {
     doorLamp.position.y = 2.52; g.add(doorLamp);
     const doorHalo = glowSprite(0xf6ecd2, 0.9, 0);
     doorHalo.position.y = 2.52; g.add(doorHalo);
-    lanternGroup.push({ halo: doorHalo, entry: glowMats[glowMats.length - 1] });
+    /* the gate's volumetric cone — taller; the threshold lamp is high */
+    const doorCone = lightCone(0xf3e6cf, 2.5, 0.9, 0, { seg: 18 });
+    doorCone.mesh.position.y = 2.52; g.add(doorCone.mesh);
+    const doorEntry = glowMats[glowMats.length - 1];
+    lanternGroup.push({ halo: doorHalo, entry: doorEntry, cone: doorCone });
+    lightCones.push({ ...doorCone, entry: doorEntry, peak: 0.115, kind: "lantern" });
     g.position.set(3.8, L0, 7.9);
     world.add(g);
 
@@ -1569,6 +1688,11 @@ function main() {
     sky.setGradient(cur.skyA, cur.skyM, cur.skyB, cur.skyMid);
     renderer.setClearColor(cur.skyB, 1);
 
+    /* fog tracks the mid-sky, leaned a touch toward the deeper zenith so the
+       hazed roots sit just under the horizon band rather than glowing against
+       it — aerial perspective into the blue hour, not a bright wall */
+    if (scene.fog) scene.fog.color.lerpColors(cur.skyM, cur.skyA, 0.30);
+
     /* bloom keeps step with the lamps, not the sky */
     pipeline.setEmissiveDrive(Math.max(cur.lantern, cur.window * 0.8, cur.stars));
   }
@@ -1609,6 +1733,12 @@ function main() {
     for (const l of lanternGroup) {
       const fl = cur.lantern > 0.05 && l.entry ? flickerOf(l.entry, t) : 1;
       l.halo.material.opacity = cur.lantern * 0.5 * fl;
+    }
+    /* the volumetric cones breathe with their lamp's flicker — the night air
+       brightening and easing where each lamp pours into it */
+    for (const c of lightCones) {
+      const fl = cur.lantern > 0.05 && c.entry ? flickerOf(c.entry, t) : 1;
+      c.mat.uniforms.uOpacity.value = cur.lantern * c.peak * fl;
     }
     /* the afterglow breath — only once the blue hour is fully settled */
     if (activePreset === "bluehour" && tweenT >= 1) {
@@ -1723,6 +1853,7 @@ function main() {
     const pTarget = pavCount >= 2 ? 0.65 : pavCount === 1 ? 0.3 : cur.lantern * 0.15;
     pavilionGlow = lerp(pavilionGlow, pTarget, 0.06);
     pavilionLamp.material.opacity = pavilionGlow;
+    if (pavilionCone) pavilionCone.mat.uniforms.uOpacity.value = pavilionGlow * 0.22;
   }
   let deskLampGlow = 0.2, pavilionGlow = 0;
 
@@ -1796,6 +1927,7 @@ function main() {
     azOff = lerp(azOff, azTarget, 1 - Math.pow(0.001, dt * 1.4));
     elOff = lerp(elOff, elTarget, 1 - Math.pow(0.001, dt * 1.4));
     placeCamera();
+    updateGodRayLight();    /* moon-tracked shafts — projected post-parallax */
 
     pipeline.render(dt);
     probeTick();
@@ -1824,6 +1956,7 @@ function main() {
     flora.update(elapsed, 0, { lantern: cur.lantern, stars: sky.starPresence });
     fx.update(elapsed, 0);   /* dt 0 — envelopes snap, the still composes */
     placeCamera();
+    updateGodRayLight();
     pipeline.render(0);
   }
 

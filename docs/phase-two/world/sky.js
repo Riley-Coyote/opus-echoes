@@ -75,6 +75,7 @@ export function createSky({ scene }) {
     depthWrite: false,
     depthTest: false,
     toneMapped: true,
+    fog: false,            /* the backdrop is the fog's destination, never fogged */
   });
   const skyMesh = new THREE.Mesh(skyGeo, skyMat);
   skyMesh.frustumCulled = false;
@@ -155,6 +156,7 @@ export function createSky({ scene }) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     toneMapped: true,
+    fog: false,            /* additive stars must not darken toward the fog colour */
   });
 
   let starsBuilt = false;
@@ -239,8 +241,11 @@ export function createSky({ scene }) {
   }
 
   /* ── the disc — sun / moon ─────────────────────────────────────────────── */
+  /* fog:false on the disc + halo: the scene's FogExp2 must not dim the moon —
+     it sits deep in the frame and the grounds' god-ray pass reads its bloom as
+     the scatter source, so it has to stay clean and bright. */
   const discMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff, transparent: true, opacity: 0, depthWrite: false,
+    color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, fog: false,
   });
   const discMesh = new THREE.Mesh(new THREE.CircleGeometry(0.85, 28), discMat);
   scene.add(discMesh);
@@ -253,7 +258,7 @@ export function createSky({ scene }) {
       [1, "rgba(255,255,255,0)"],
     ]),
     color: 0xffffff, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false,
+    blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
   });
   const discHalo = new THREE.Sprite(haloMat);
   discHalo.scale.setScalar(3.6);
