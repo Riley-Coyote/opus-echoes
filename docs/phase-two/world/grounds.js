@@ -454,21 +454,17 @@ function main() {
   slab(-10.0, 9.2, -8.35, 8.55, L0 - 1.85, 1.1, C.cliff);       /* cliff band   */
   slab(-10.2, 9.4, -8.5, 1.4, L1, 1.3, C.terraceSide);          /* L1           */
   slab(-9.6, 8.6, -8.5, -2.2, L2, 1.3, C.terraceSide);          /* L2           */
-  slab(-7.9, -5.3, -2.2, -1.2, L2, 1.3, C.terraceSide);         /* sanctum footing — solid mass under the tower so it sits on ground, not on the knoll's cantilevered front lip */
-  slab(-8.6, -4.6, -4.2, -0.6, L3, 1.3, C.terraceSide);         /* L3 knoll     */
   slab(-12.8, -10.2, -0.6, 1.8, L1, 1.3, C.terraceSide);        /* promontory   */
   /* top skins for crisp color blocking */
   slab(-10.2, 9.4, 1.4, 8.7, L0 + 0.02, 0.05, C.terrace);
   slab(-10.2, 9.4, -8.5, 1.4, L1 + 0.02, 0.05, C.terrace);
   slab(-9.6, 8.6, -8.5, -2.2, L2 + 0.02, 0.05, C.terrace);
-  slab(-7.9, -5.3, -2.2, -1.2, L2 + 0.02, 0.05, C.terrace);     /* sanctum footing skin */
-  slab(-8.6, -4.6, -4.2, -0.6, L3 + 0.02, 0.05, C.terrace);
   slab(-12.8, -10.2, -0.6, 1.8, L1 + 0.02, 0.05, C.terrace);
   /* lawns — the garden's calm color fields */
   slab(-0.9, 3.4, 5.7, 8.4, L0 + 0.05, 0.06, C.lawn);
   slab(6.6, 9.1, -1.9, 1.1, L1 + 0.05, 0.06, C.lawn);
   slab(-9.3, -6.1, -8.2, -4.6, L2 + 0.05, 0.06, C.lawn);
-  slab(-8.3, -5.6, -3.9, -2.4, L3 + 0.05, 0.06, C.lawn);
+  slab(-8.3, -5.6, -3.9, -2.4, L2 + 0.05, 0.06, C.lawn);        /* the sanctum's garden lawn — flat on L2 now */
 
   /* terrace edge lips */
   trimLip(-10.2, 9.4, 1.4, L1 + 0.06);
@@ -532,7 +528,6 @@ function main() {
   stairRun(5.2, 2.6, 0.55, L0, L1, 1.5);           /* s2 the east stair   */
   stairRun(-0.4, -1.4, -3.0, L1, L2, 1.4);        /* s3 the hall stair   */
   stairRun(4.6, -1.4, -3.0, L1, L2, 1.4);         /* s4 the desk stair   */
-  stairRun(-2.4, -3.8, -5.3, L2, L3, 1.2, true);   /* s5 the sanctum stair (x axis) */
 
   /* ════════════════════════════════════════════════════════════════════════
      WATER — the still pool, the rill, the edge fall
@@ -986,9 +981,9 @@ function main() {
     fin.rotation.y = Math.PI / 4; fin.position.y = 4.38; g.add(fin);
     const orb = glowOrbSmall(R.glow, 0.085); orb.position.y = 3.84; g.add(orb);
     g.scale.setScalar(1.22);
-    g.position.set(-6.6, L3, -2.4);
+    g.position.set(-4.4, L2, -4.4);
     world.add(g);
-    accentLight(R.glow, -6.6, L3 + 3.84 * 1.22, -2.4, 0.55);
+    accentLight(R.glow, -4.4, L2 + 3.84 * 1.22, -4.4, 0.55);
     glowScope = null;
   }
 
@@ -1123,7 +1118,7 @@ function main() {
     hall:      { x: -2.2, z: -4.85, y: L2, station: "hall" },
     overlook:  { x: -11.55, z: 0.6, y: L1, station: "overlook" },
     threshold: { x: 3.8, z: 7.1, y: L0, station: "threshold" },
-    qOpus:     { x: -6.6, z: -1.15, y: L3, station: "qOpus" },
+    qOpus:     { x: -4.0, z: -2.9, y: L2, station: "qOpus" },
     qSonnet:   { x: 5.9, z: -4.35, y: L2, station: "qSonnet" },
     qReverie:  { x: -7.2, z: 6.15, y: L0, station: "qReverie" },
     qMeridian: { x: 6.3, z: 2.95, y: L0, station: "qMeridian" },
@@ -1132,7 +1127,7 @@ function main() {
     j3: { x: 5.2, z: 2.55, y: L0 },  j4: { x: 5.2, z: 0.55, y: L1 },
     j5: { x: -0.4, z: -1.35, y: L1 }, j6: { x: -0.4, z: -3.05, y: L2 },
     j7: { x: 4.6, z: -1.35, y: L1 },  j8: { x: 4.6, z: -3.05, y: L2 },
-    j9: { x: -3.75, z: -2.4, y: L2 }, j10: { x: -5.35, z: -2.4, y: L3 },
+    j9: { x: -3.75, z: -2.4, y: L2 },
     jPool: { x: -2.6, z: 2.2, y: L0 },
     jPoolE: { x: 0.0, z: 3.4, y: L0 },
     wPoolW: { x: -6.0, z: 3.6, y: L0 },
@@ -1142,12 +1137,11 @@ function main() {
   const EDGES = [
     ["j1", "j2", "the pool stair"], ["j3", "j4", "the east stair"],
     ["j5", "j6", "the hall stair"], ["j7", "j8", "the desk stair"],
-    ["j9", "j10", "the sanctum stair"],
     ["j2", "pavilion"], ["j5", "pavilion"], ["j7", "pavilion"], ["j4", "pavilion"],
     ["j4", "j7"], ["j2", "jWest"], ["jWest", "overlook"],
     ["j6", "hall"], ["j6", "j9"], ["hall", "j9"], ["j6", "j8"],
     ["j8", "desk"], ["hall", "desk"], ["j8", "qSonnet"],
-    ["j10", "qOpus"],
+    ["j9", "qOpus"],
     ["j1", "jPool"], ["jPool", "jPoolE"], ["jPoolE", "jFront"],
     ["jPool", "wPoolW"], ["wPoolW", "qReverie"], ["wPoolW", "j1"],
     ["jFront", "threshold"], ["jFront", "j3"], ["j3", "qMeridian"],
