@@ -973,10 +973,10 @@ function main() {
     fin.rotation.y = Math.PI / 4; fin.position.y = 4.38; g.add(fin);
     const orb = glowOrbSmall(R.glow, 0.085); orb.position.y = 3.84; g.add(orb);
     g.scale.setScalar(1.22);
-    g.position.set(-4.4, L2, -4.4);
+    g.position.set(-7.2, L2, -3.5);
     g.name = "sanctumTower";
     world.add(g);
-    accentLight(R.glow, -4.4, L2 + 3.84 * 1.22, -4.4, 0.55);
+    accentLight(R.glow, -7.2, L2 + 3.84 * 1.22, -3.5, 0.55);
     glowScope = null;
   }
 
@@ -1111,7 +1111,7 @@ function main() {
     hall:      { x: -2.2, z: -4.85, y: L2, station: "hall" },
     overlook:  { x: -11.55, z: 0.6, y: L1, station: "overlook" },
     threshold: { x: 3.8, z: 7.1, y: L0, station: "threshold" },
-    qOpus:     { x: -4.0, z: -2.9, y: L2, station: "qOpus" },
+    qOpus:     { x: -7.2, z: -2.3, y: L2, station: "qOpus" },
     qSonnet:   { x: 5.9, z: -4.35, y: L2, station: "qSonnet" },
     qReverie:  { x: -7.2, z: 6.15, y: L0, station: "qReverie" },
     qMeridian: { x: 6.3, z: 2.95, y: L0, station: "qMeridian" },
