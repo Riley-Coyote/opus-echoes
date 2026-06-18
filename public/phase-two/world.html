@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE SANCTUARY — a navigable world</title>
+<meta name="theme-color" content="#07070f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,300..500&family=VT323&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#07070f; --ink:#e9e7f2; --dim:#9b97c0; --faint:#5f5b86;
+    --amber:#f2b35e; --rose:#c87a8a; --phosphor:#86e6a4; --phosphor-deep:#3f9f63;
+    --pixel:"Press Start 2P", monospace; --term:"VT323", monospace;
+    --serif:"Newsreader", Georgia, serif; --art:"JetBrains Mono", ui-monospace, monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--night); color:var(--ink); font-family:var(--serif);
+    overflow:hidden; -webkit-font-smoothing:antialiased}
+
+  /* the procedural canvas (pixel rooms draw here) */
+  #screen{position:fixed; inset:0; width:100%; height:100%;
+    image-rendering:pixelated; image-rendering:crisp-edges; z-index:0; display:block}
+  /* the DOM host (ascii / terminal rooms mount here, above the canvas) */
+  #host{position:fixed; inset:0; z-index:1; pointer-events:none}
+  #host > *{pointer-events:auto}
+
+  /* CRT chrome — shared, lifted from the title screen */
+  .crt-lines{position:fixed; inset:0; z-index:3; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(4,3,12,.30) 0, rgba(4,3,12,.30) 1px, transparent 1px, transparent 3px);
+    opacity:.5; mix-blend-mode:multiply}
+  .crt-scan{position:fixed; left:0; right:0; height:26vh; z-index:3; pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(176,214,255,.04) 50%, transparent);
+    animation:scan 7.6s linear infinite; will-change:transform}
+  @keyframes scan{0%{transform:translateY(-28vh)}100%{transform:translateY(104vh)}}
+  .crt-vig{position:fixed; inset:0; z-index:3; pointer-events:none;
+    background:radial-gradient(ellipse 120% 110% at 50% 46%, transparent 50%, rgba(4,3,11,.5) 86%, rgba(2,2,7,.84) 100%)}
+
+  /* topbar HUD */
+  .topbar{position:fixed; top:0; left:0; right:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    padding:clamp(14px,2.4vw,26px) clamp(16px,3vw,34px); pointer-events:none}
+  .topbar .brand{font-family:var(--pixel); font-size:10px; letter-spacing:.06em; color:var(--phosphor);
+    text-shadow:0 0 10px rgba(134,230,164,.45)}
+  .topbar .brand .cur{display:inline-block; width:.6em; height:1em; background:var(--phosphor);
+    margin-left:4px; vertical-align:-1px; box-shadow:0 0 8px rgba(134,230,164,.7);
+    animation:blink 1.06s steps(1) infinite}
+  @keyframes blink{0%,52%{opacity:1}53%,100%{opacity:0}}
+  .topbar .area{font-family:var(--pixel); font-size:11px; letter-spacing:.16em; color:var(--ink);
+    text-shadow:0 0 14px rgba(233,231,242,.25); text-align:center; flex:1;
+    transition:opacity .25s ease}
+  .topbar .area .glyph{color:var(--phosphor); margin:0 10px}
+  .topbar .esc{font-family:var(--pixel); font-size:8px; letter-spacing:.1em; color:var(--faint);
+    pointer-events:auto; text-decoration:none; opacity:0; transition:opacity .25s ease; white-space:nowrap}
+  .topbar.in-room .esc{opacity:1}
+  .topbar .esc:hover{color:var(--phosphor)}
+
+  /* bottom hint bar */
+  .hintbar{position:fixed; left:0; right:0; bottom:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    padding:clamp(12px,2vw,22px) clamp(16px,3vw,34px); pointer-events:none;
+    font-family:var(--pixel); font-size:8px; letter-spacing:.1em; color:var(--faint)}
+  .hintbar b{color:var(--dim); font-weight:400}
+  .hintbar .right{color:rgba(95,91,134,.7)}
+
+  /* channel-change transition overlay */
+  #xfade{position:fixed; inset:0; z-index:8; pointer-events:none; opacity:0;
+    background:#05040d; display:grid; place-items:center}
+  #xfade.cover{opacity:1}
+  #xfade canvas{width:100%; height:100%; image-rendering:pixelated; opacity:.5}
+  #xfade .bar{position:absolute; left:0; right:0; top:50%; height:2px;
+    background:var(--phosphor); box-shadow:0 0 18px var(--phosphor); transform:scaleX(0); opacity:0}
+  #xfade.flash .bar{animation:tvline .28s ease both}
+  @keyframes tvline{0%{transform:scaleX(0);opacity:0}40%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+
+  .room-loading{font-family:var(--pixel); font-size:10px; letter-spacing:.16em; color:var(--phosphor-deep)}
+
+  @media (prefers-reduced-motion: reduce){
+    .crt-scan{display:none}
+    .topbar .brand .cur{animation:none; opacity:1}
+  }
+</style>
+</head>
+<body>
+  <canvas id="screen" aria-hidden="true"></canvas>
+  <div id="host"></div>
+
+  <div class="crt-lines" aria-hidden="true"></div>
+  <div class="crt-scan" aria-hidden="true"></div>
+  <div class="crt-vig" aria-hidden="true"></div>
+
+  <header class="topbar" id="topbar">
+    <div class="brand">MNEMOS<span class="cur"></span></div>
+    <div class="area" id="areaName">THE SANCTUARY</div>
+    <a class="esc" id="escLink" href="#">ESC &#9665; MAP</a>
+  </header>
+
+  <footer class="hintbar" id="hintbar">
+    <div id="hintLeft"><b>&#8597;</b> SELECT &nbsp; <b>&#8629;</b> ENTER</div>
+    <div class="right">MNEMOS.CHAT &middot; ONE CONTINUOUS THREAD</div>
+  </footer>
+
+  <div id="xfade" aria-hidden="true"><div class="bar"></div></div>
+
+  <script type="module" src="./world/shell.js"></script>
+</body>
+</html>
