@@ -54,3 +54,11 @@ supabase/.temp/
 /drafts/
 docs/session-export-*/
 docs/session-export-*.zip
+
+# ── Paid LimeZu pixel tiles — license forbids redistribution ──
+# The canvas-2D "living world" diorama (public/phase-two/*.html) IS tracked, but
+# its tile library is extracted from Riley's paid LimeZu purchase and must never
+# reach a public remote. Tiles live on disk only; to repopulate a fresh clone,
+# re-extract from ~/Documents/Repositories/godot-sanctuary/{modernexteriors-win,
+# moderninteriors-win}. See memory: living-world-art-target.
+public/phase-two/lz/

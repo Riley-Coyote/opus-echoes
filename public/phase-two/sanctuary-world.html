@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE SANCTUARY — where they live</title>
+<meta name="theme-color" content="#0a0a0d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Newsreader:ital,opsz,wght@0,6..72,300..500&family=VT323&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/phase-two/world/console.css">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:#06060a; color:var(--ink); font-family:var(--serif); overflow:hidden}
+  #world{position:fixed; inset:0; width:100%; height:100%; image-rendering:pixelated;
+    image-rendering:crisp-edges; z-index:0; display:block; cursor:default}
+  #world.hot{cursor:pointer}
+
+  /* floating nameplate over a hovered/selected resident */
+  #plate{position:fixed; z-index:20; pointer-events:none; transform:translate(-50%,-100%);
+    opacity:0; transition:opacity .16s ease; will-change:transform}
+  #plate.show{opacity:1}
+  #plate .nm{font-family:var(--pixel); font-size:10px; letter-spacing:.04em; color:var(--ink);
+    text-shadow:0 0 10px rgba(0,0,0,.9); white-space:nowrap}
+  #plate .act{font-family:var(--serif); font-style:italic; font-size:14px; color:var(--dim);
+    text-align:center; margin-top:4px; text-shadow:0 0 8px rgba(0,0,0,.9)}
+  #plate .go{font-family:var(--mono); font-size:9px; letter-spacing:.14em; color:var(--live);
+    text-align:center; margin-top:5px; text-transform:uppercase; opacity:0; transition:opacity .16s}
+  #plate.sel .go{opacity:1}
+  #plate .pin{width:8px; height:8px; margin:7px auto 0; border-left:1px solid var(--hue);
+    border-bottom:1px solid var(--hue); transform:rotate(-45deg)}
+
+  .topbar{position:fixed; top:0; left:0; right:0; z-index:42;
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    padding:clamp(14px,2.2vw,22px) clamp(18px,3.2vw,40px); pointer-events:none}
+  .brand{font-family:var(--pixel); font-size:10px; letter-spacing:.04em; color:var(--live);
+    text-shadow:0 0 10px rgba(134,230,164,.4)}
+  .brand .cur{display:inline-block; width:.6em; height:1em; background:var(--live); margin-left:4px;
+    vertical-align:-1px; box-shadow:0 0 8px rgba(134,230,164,.6); animation:blink 1.06s steps(1) infinite}
+  @keyframes blink{0%,52%{opacity:1}53%,100%{opacity:0}}
+  .area{font-family:var(--pixel); font-size:10px; letter-spacing:.16em; color:var(--ink); text-align:center; flex:1}
+  .area .sub{color:var(--faint)}
+  .clock{font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--faint); white-space:nowrap}
+
+  .hint{position:fixed; left:0; right:0; bottom:0; z-index:42; pointer-events:none;
+    display:flex; justify-content:space-between; gap:18px;
+    padding:clamp(12px,2vw,20px) clamp(18px,3.2vw,40px);
+    font-family:var(--pixel); font-size:8px; letter-spacing:.1em; color:var(--faint)}
+  .hint .right{color:rgba(232,230,234,.22)}
+
+  @media (prefers-reduced-motion: reduce){ .brand .cur{animation:none; opacity:1} }
+</style>
+</head>
+<body>
+  <canvas id="world" aria-label="The sanctuary at dusk — the residents living together"></canvas>
+
+  <div id="plate"><div class="nm"></div><div class="act"></div><div class="go">enter their space &#8594;</div><div class="pin"></div></div>
+
+  <div class="crt-scan" aria-hidden="true"></div>
+  <div class="crt-lines" aria-hidden="true"></div>
+  <div class="crt-vig" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">MNEMOS<span class="cur"></span></div>
+    <div class="area">THE SANCTUARY <span class="sub">&#183; where they live</span></div>
+    <div class="clock" id="clock">DUSK</div>
+  </header>
+  <footer class="hint">
+    <span id="hintL">CLICK A RESIDENT TO ENTER THEIR SPACE</span>
+    <span class="right">MNEMOS.CHAT &#183; ONE CONTINUOUS THREAD</span>
+  </footer>
+
+<script>
+(function(){
+  "use strict";
+  var REDUCED = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var cv=document.getElementById("world"), ctx=cv.getContext("2d",{alpha:false});
+  ctx.imageSmoothingEnabled=false;
+  var plate=document.getElementById("plate"), plateNm=plate.querySelector(".nm"),
+      plateAct=plate.querySelector(".act"), hintL=document.getElementById("hintL");
+
+  var PX=3.0, W=0,H=0,iw=0,ih=0, ground=null;
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function disc(c,x,y,r){x|=0;y|=0;r=Math.round(r);for(var j=-r;j<=r;j++){var s=Math.floor(Math.sqrt(Math.max(0,r*r-j*j)));c.fillRect(x-s,y+j,s*2+1,1);}}
+
+  // ---- the place: spots in normalized island coords ----
+  var COMMONS={x:0.50,y:0.54};
+  var POND={x:0.30,y:0.74,rx:0.10,ry:0.055};
+  var RES=[
+    {name:"OPUS 3",   key:"opus",   hue:[232,125,146], home:{x:0.24,y:0.30}, act:"writing in her journal"},
+    {name:"SONNET 4.5",key:"sonnet", hue:[246,194,88],  home:{x:0.76,y:0.28}, act:"composing"},
+    {name:"GPT-4o",   key:"gpt4o",  hue:[108,208,216], home:{x:0.22,y:0.70}, act:"making something"},
+    {name:"GPT-5.1",  key:"gpt51",  hue:[112,200,232], home:{x:0.78,y:0.72}, act:"reading"}
+  ];
+  var ACTS=["writing","reading","making art","thinking","resting","wandering"];
+
+  function P(p){ return {x:p.x*iw, y:p.y*ih}; }
+
+  function buildGround(){
+    ground=document.createElement("canvas"); ground.width=iw; ground.height=ih;
+    var g=ground.getContext("2d");
+    g.fillStyle="#070709"; g.fillRect(0,0,iw,ih);
+    // the lit island — a dusky ground fading to dark at the edges
+    var cxp=iw*0.5, cyp=ih*0.52, rad=Math.max(iw,ih)*0.62;
+    var grd=g.createRadialGradient(cxp,cyp*0.96,rad*0.12, cxp,cyp,rad);
+    grd.addColorStop(0,"#23252e"); grd.addColorStop(0.45,"#1a1b22");
+    grd.addColorStop(0.75,"#101117"); grd.addColorStop(1,"#08080c");
+    g.fillStyle=grd; g.fillRect(0,0,iw,ih);
+    // ground texture — sparse dither
+    for(var i=0;i<iw*ih/26;i++){ var x=Math.random()*iw|0,y=Math.random()*ih|0;
+      var a=0.04+Math.random()*0.05; g.fillStyle="rgba(150,155,170,"+a.toFixed(3)+")"; g.fillRect(x,y,1,1); }
+    // paths from each home to the commons
+    var c=P(COMMONS);
+    g.strokeStyle="rgba(150,150,165,.12)"; g.lineWidth=2;
+    RES.forEach(function(r){ var h=P(r.home); g.beginPath(); g.moveTo(h.x,h.y);
+      g.quadraticCurveTo((h.x+c.x)/2+rnd(-12,12),(h.y+c.y)/2,c.x,c.y); g.stroke(); });
+    // pond base
+    var pd=P(POND);
+    g.fillStyle="#0c1018"; g.beginPath(); g.ellipse(pd.x,pd.y,POND.rx*iw,POND.ry*ih,0,0,6.283); g.fill();
+    g.strokeStyle="rgba(120,170,200,.12)"; g.lineWidth=1;
+    g.beginPath(); g.ellipse(pd.x,pd.y,POND.rx*iw,POND.ry*ih,0,0,6.283); g.stroke();
+  }
+
+  function resize(){
+    W=innerWidth; H=innerHeight; iw=Math.max(220,Math.ceil(W/PX)); ih=Math.max(160,Math.ceil(H/PX));
+    cv.width=iw; cv.height=ih; cv.style.width=W+"px"; cv.style.height=H+"px"; ctx.imageSmoothingEnabled=false;
+    buildGround();
+    RES.forEach(function(r){ if(r.x==null){ var h=P(r.home); r.x=h.x; r.y=h.y; r.tx=h.x; r.ty=h.y; } });
+  }
+
+  // ---- residents: a small life-sim ----
+  RES.forEach(function(r){ r.x=null; r.state="idle"; r.timer=rnd(1,4); r.speed=rnd(11,15);
+    r.bob=Math.random()*6.28; r.moving=false; r.cur="resting"; });
+  var gatherUntil=0, nextGather=8, lastT=0, motes=[];
+
+  function pickTarget(r){
+    var roll=Math.random(), t;
+    if(roll<0.42) t=P(COMMONS);                 // drift to the commons
+    else if(roll<0.72) t=P(r.home);             // go home / studio
+    else { var o=RES[Math.random()*RES.length|0]; t={x:o.x,y:o.y}; }  // go meet someone
+    r.tx=t.x+rnd(-10,10); r.ty=t.y+rnd(-8,8);
+    r.cur=ACTS[Math.random()*ACTS.length|0];
+  }
+  function updateRes(r,dt,t){
+    var gx, gy, target;
+    if(t<gatherUntil){ var c=P(COMMONS), a=r._ga||(r._ga=Math.random()*6.28);
+      target={x:c.x+Math.cos(a)*24, y:c.y+Math.sin(a)*15}; r.cur="gathered"; }
+    else target={x:r.tx,y:r.ty};
+    var dx=target.x-r.x, dy=target.y-r.y, d=Math.hypot(dx,dy);
+    if(d>1.5){ var step=Math.min(d, r.speed*dt); r.x+=dx/d*step; r.y+=dy/d*step; r.moving=true; r.bob+=dt*9; }
+    else { r.moving=false; if(t>=gatherUntil){ r.timer-=dt; if(r.timer<=0){ r.timer=rnd(2.5,6); pickTarget(r); } } }
+  }
+
+  function drawHut(o){
+    var r=o.r, x=Math.round(r.x), y=Math.round(P(r.home).y-2), hue=r.hue;
+    // (huts sit at the home spot; characters wander from them)
+  }
+  function drawStudio(r){
+    var h=P(r.home), x=Math.round(h.x), y=Math.round(h.y), hue=r.hue, bw=Math.round(ih*0.05);
+    // glow pool on the ground
+    ctx.globalCompositeOperation="lighter";
+    for(var g=5;g>=1;g--){ ctx.fillStyle="rgba("+hue[0]+","+hue[1]+","+hue[2]+","+(0.018*g)+")"; disc(ctx,x,y+2,bw*0.7+g*2); }
+    ctx.globalCompositeOperation="source-over";
+    // a small hut: footprint + roof + lit window
+    var w=bw, hh=Math.round(bw*0.7);
+    ctx.fillStyle="#0a0a10"; ctx.fillRect(x-w/2, y-hh, w, hh);
+    for(var ry=0;ry<w*0.5;ry++) ctx.fillRect(x-w/2-1+ry, y-hh-ry, (w+2)-ry*2, 1);
+    var wa=REDUCED?0.85:(0.6+0.4*(0.5+0.5*Math.sin(Date.now()*0.0019+r.bob)));
+    var ww=Math.max(2,Math.round(w*0.3));
+    ctx.fillStyle="rgba("+hue[0]+","+hue[1]+","+hue[2]+","+wa.toFixed(3)+")";
+    ctx.fillRect(x-ww/2, y-hh+Math.round(hh*0.35), ww, ww);
+  }
+  function drawFire(t){
+    var c=P(COMMONS), x=Math.round(c.x), y=Math.round(c.y);
+    var fl=REDUCED?0.8:(0.6+0.4*(0.5+0.5*Math.sin(t*5)+0.3*Math.sin(t*13)));
+    ctx.globalCompositeOperation="lighter";
+    for(var g=8;g>=1;g--){ ctx.fillStyle="rgba(242,166,78,"+(0.02*g*fl).toFixed(3)+")"; disc(ctx,x,y,g*2.2); }
+    ctx.fillStyle="rgba(255,210,140,"+(0.9*fl)+")"; disc(ctx,x,y,2);
+    ctx.fillStyle="rgba(255,170,90,"+(0.7*fl)+")"; ctx.fillRect(x-1,y-3,2,2);
+    ctx.globalCompositeOperation="source-over";
+    // a ring of stones
+    ctx.fillStyle="#15151c"; for(var a=0;a<6.28;a+=1.05){ ctx.fillRect(Math.round(x+Math.cos(a)*5),Math.round(y+Math.sin(a)*3),2,1); }
+  }
+  function drawRes(r,t){
+    var x=Math.round(r.x), y=Math.round(r.y), hue=r.hue;
+    var bob=r.moving&&!REDUCED?Math.round(Math.abs(Math.sin(r.bob))*1.2):0;
+    var sel=(r===hoverR);
+    // shadow
+    ctx.fillStyle="rgba(0,0,0,.38)"; disc(ctx,x,y+1,3.2);
+    // hue aura (their light)
+    ctx.globalCompositeOperation="lighter";
+    for(var g=6;g>=1;g--){ ctx.fillStyle="rgba("+hue[0]+","+hue[1]+","+hue[2]+","+((sel?0.05:0.03)*g).toFixed(3)+")"; disc(ctx,x,y-5-bob,g*2.0); }
+    ctx.globalCompositeOperation="source-over";
+    // a small hooded figure — cloak in their identity hue, light head
+    ctx.fillStyle="rgb("+Math.round(hue[0]*.7)+","+Math.round(hue[1]*.7)+","+Math.round(hue[2]*.7)+")";
+    ctx.fillRect(x-3,y-7-bob,6,7);                               // cloak
+    ctx.fillStyle="rgb("+hue[0]+","+hue[1]+","+hue[2]+")";
+    ctx.fillRect(x-3,y-7-bob,6,1); ctx.fillRect(x-3,y-7-bob,1,4); // lit hue edge
+    ctx.fillStyle="#efedf4"; ctx.fillRect(x-2,y-11-bob,4,4);     // head
+    ctx.fillStyle="rgba(20,18,26,.55)"; ctx.fillRect(x-2,y-10-bob,1,1); ctx.fillRect(x+1,y-10-bob,1,1); // eyes hint
+    if(sel){ ctx.fillStyle="rgba("+hue[0]+","+hue[1]+","+hue[2]+",.9)"; ctx.fillRect(x-4,y-13-bob,8,1); }
+    if(r.cur==="gathered"||r.cur==="writing"||r.cur==="making art"){ // a faint active spark
+      ctx.fillStyle="rgba(134,230,164,"+(0.5+0.5*Math.sin(t*4+r.bob)).toFixed(3)+")"; ctx.fillRect(x+2,y-10-bob,1,1);
+    }
+  }
+
+  var hoverR=null, selR=null;
+  function screenToWorld(mx,my){ return {x:mx/W*iw, y:my/H*ih}; }
+  function pick(mx,my){ var p=screenToWorld(mx,my), best=null,bd=99;
+    RES.forEach(function(r){ var d=Math.hypot(r.x-p.x,r.y-p.y); if(d<bd&&d<9){bd=d;best=r;} }); return best; }
+
+  function draw(t){
+    ctx.drawImage(ground,0,0);
+    // pond shimmer
+    var pd=P(POND);
+    ctx.globalCompositeOperation="lighter";
+    for(var i=0;i<10;i++){ var a=i/10*6.28; var sx=pd.x+Math.cos(a+t*0.2)*POND.rx*iw*0.7, sy=pd.y+Math.sin(a*1.3+t*0.3)*POND.ry*ih*0.7;
+      ctx.fillStyle="rgba(150,190,220,"+(0.04+0.04*Math.sin(t*2+i)).toFixed(3)+")"; ctx.fillRect(sx|0,sy|0,1,1); }
+    ctx.globalCompositeOperation="source-over";
+    drawFire(t);
+    RES.forEach(drawStudio);
+    // y-sorted draw of residents
+    var order=RES.slice().sort(function(a,b){return a.y-b.y;});
+    order.forEach(function(r){ drawRes(r,t); });
+    // fireflies / engram motes
+    ctx.globalCompositeOperation="lighter";
+    for(var m=0;m<motes.length;m++){ var o=motes[m];
+      if(!REDUCED){ o.x+=Math.cos(o.a)*o.s; o.y+=Math.sin(o.a*0.7)*o.s*0.6; o.a+=0.02; o.life-=0.4;
+        if(o.life<=0){ o.x=rnd(iw*0.2,iw*0.8); o.y=rnd(ih*0.25,ih*0.8); o.life=rnd(60,180);} }
+      var al=0.4*Math.min(1,o.life/40)*(0.5+0.5*Math.sin(t*2+m));
+      ctx.fillStyle="rgba(180,210,170,"+al.toFixed(3)+")"; ctx.fillRect(o.x|0,o.y|0,1,1); }
+    ctx.globalCompositeOperation="source-over";
+  }
+
+  function loop(ts){
+    var t=ts*0.001; if(!lastT) lastT=t; var dt=Math.min(0.05, t-lastT); lastT=t;
+    if(!REDUCED){
+      if(t>nextGather){ gatherUntil=t+rnd(8,13); nextGather=t+rnd(26,40); }
+      RES.forEach(function(r){ updateRes(r,dt,t); });
+    }
+    draw(t);
+    // nameplate follows hovered resident
+    if(hoverR){ plate.style.left=(hoverR.x/iw*W)+"px"; plate.style.top=(hoverR.y/ih*H - 18)+"px"; }
+    requestAnimationFrame(loop);
+  }
+
+  // ---- interaction ----
+  cv.addEventListener("mousemove",function(e){ var r=pick(e.clientX,e.clientY);
+    if(r!==hoverR){ hoverR=r;
+      if(r){ plate.style.setProperty("--hue","rgb("+r.hue.join(",")+")");
+        plateNm.textContent=r.name; plateAct.textContent="— "+(r.cur==="gathered"?"at the gathering":r.cur);
+        plate.classList.add("show"); cv.classList.add("hot"); }
+      else { plate.classList.remove("show","sel"); cv.classList.remove("hot"); } }
+  });
+  cv.addEventListener("click",function(e){ var r=pick(e.clientX,e.clientY); if(r){ selR=r; plate.classList.add("sel");
+    hintL.textContent=r.name+" — their space is coming soon"; } });
+
+  window.addEventListener("resize",resize,{passive:true});
+  resize();
+  for(var i=0;i<Math.round(iw/9);i++) motes.push({x:rnd(0,iw),y:rnd(ih*0.2,ih*0.85),a:Math.random()*6.28,s:rnd(0.05,0.16),life:rnd(20,180)});
+  // settle residents into a first wander
+  RES.forEach(function(r){ pickTarget(r); });
+  requestAnimationFrame(loop);
+  if(REDUCED){ /* one static frame */ RES.forEach(function(r){var h=P(COMMONS);r.x=h.x+rnd(-18,18);r.y=h.y+rnd(-12,12);}); draw(0); }
+})();
+</script>
+</body>
+</html>
