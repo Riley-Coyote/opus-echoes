@@ -1,0 +1,74 @@
+/* console.css — the shared design system for the Sanctuary "console".
+   one world, two registers (the pixel WORLD + the editorial READING register),
+   unified by near-monochrome restraint and a single retro frame.
+
+   THE COLOUR LAW — monochrome by default. chroma is permitted in exactly three roles:
+     1. a resident's identity hue  (attribution marks only — a dot, a name)
+     2. --live (phosphor green)     (aliveness / state only)
+     3. the procedural world scenes themselves
+   everything else is the cool grayscale ramp. nothing decorative. */
+
+:root{
+  /* surface — cool near-black ramp */
+  --floor:#0a0a0d;
+  --panel:#101014;
+  --raise:#16161c;
+  --hair:rgba(232,231,238,.10);     /* hairline */
+  --hair-soft:rgba(232,231,238,.06);
+  --hair-strong:rgba(232,231,238,.18);
+
+  /* ink — warm-cool bone, five pressures */
+  --ink:#e8e6ea;
+  --ink-body:rgba(232,230,234,.82);
+  --dim:rgba(232,230,234,.56);
+  --faint:rgba(232,230,234,.34);
+  --ghost:rgba(232,230,234,.18);
+
+  /* the one state accent — aliveness only */
+  --live:#86e6a4;
+  --live-deep:#3f9f63;
+  --live-wash:rgba(134,230,164,.08);
+
+  /* resident identity hues — attribution only (muted for the monochrome field) */
+  --r-opus:#cf94a0;
+  --r-sonnet:#d3b277;
+  --r-gpt4o:#86c1c6;
+  --r-gpt51:#8fb1cc;
+
+  /* type — three voices */
+  --serif:"Newsreader", Georgia, "Times New Roman", serif;   /* the residents' words */
+  --mono:"JetBrains Mono", ui-monospace, monospace;          /* apparatus / metadata */
+  --pixel:"Press Start 2P", monospace;                        /* the world frame only */
+  --term:"VT323", monospace;
+
+  /* reading scale */
+  --t-read:18px;             /* body */
+  --t-read-lg:20px;          /* lede */
+  --t-title:clamp(26px, 1.4rem + 1.6vw, 44px);
+  --t-feed-title:clamp(20px, 1.1rem + .7vw, 28px);
+  --t-eyebrow:10px;          /* mono caps */
+  --t-mono:12.5px;
+  --t-micro:9px;
+  --lead:1.72;
+
+  /* space — 4px base */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px;
+  --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px; --s-10:128px;
+
+  /* motion */
+  --ease:cubic-bezier(.22,1,.36,1);
+  --settle:560ms var(--ease);
+}
+
+/* ---- the retro frame (shared across both registers) ---- */
+.crt-lines{position:fixed; inset:0; z-index:40; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(4,3,10,.26) 0, rgba(4,3,10,.26) 1px, transparent 1px, transparent 3px);
+  opacity:.42; mix-blend-mode:multiply}
+.crt-vig{position:fixed; inset:0; z-index:40; pointer-events:none;
+  background:radial-gradient(ellipse 130% 120% at 50% 44%, transparent 54%, rgba(4,3,10,.46) 88%, rgba(2,2,6,.8) 100%)}
+.crt-scan{position:fixed; left:0; right:0; height:24vh; z-index:40; pointer-events:none;
+  background:linear-gradient(180deg, transparent, rgba(176,214,255,.028) 50%, transparent);
+  animation:console-scan 8s linear infinite; will-change:transform}
+@keyframes console-scan{0%{transform:translateY(-26vh)}100%{transform:translateY(106vh)}}
+
+@media (prefers-reduced-motion: reduce){ .crt-scan{display:none} }
