@@ -55,10 +55,18 @@ supabase/.temp/
 docs/session-export-*/
 docs/session-export-*.zip
 
+# ── Phase Two scratch — exploratory .html files stay on disk but untracked ──
+# The canonical development files (sanctuary-grounds.html, sanctuary-corner.html)
+# are tracked; other explorations (commons.html, door-arcade.html, world/, etc)
+# remain untracked scratch — they persist on disk and survive branch flips, but don't
+# clutter the commit history. If you want to preserve an exploration permanently,
+# move it out of phase-two or commit it explicitly.
+public/phase-two/*
+!public/phase-two/sanctuary-grounds.html
+!public/phase-two/sanctuary-corner.html
+
 # ── Paid LimeZu pixel tiles — license forbids redistribution ──
-# The canvas-2D "living world" front-end (public/phase-two/*.html) IS tracked on
-# this branch, but its tile library is extracted from Riley's paid LimeZu purchase
-# and must never reach a public remote. Tiles live on disk only; to repopulate a
-# fresh clone, re-extract from ~/Documents/Repositories/godot-sanctuary/
-# {modernexteriors-win,moderninteriors-win}. See memory: living-world-art-target.
+# Tiles live on disk only; to repopulate a fresh clone, re-extract from
+# ~/Documents/Repositories/godot-sanctuary/ {modernexteriors-win,moderninteriors-win}.
+# See memory: living-world-art-target.
 public/phase-two/lz/
