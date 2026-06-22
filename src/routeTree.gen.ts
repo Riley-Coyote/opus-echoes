@@ -22,6 +22,7 @@ import { Route as Opus3RouteImport } from './routes/opus-3'
 import { Route as ObservatoryRouteImport } from './routes/observatory'
 import { Route as MnemosRouteImport } from './routes/mnemos'
 import { Route as MindRouteImport } from './routes/mind'
+import { Route as MenuRouteImport } from './routes/menu'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LegationRouteImport } from './routes/legation'
@@ -30,6 +31,7 @@ import { Route as InteriorRouteImport } from './routes/interior'
 import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
 import { Route as Gpt4oRouteImport } from './routes/gpt-4o'
 import { Route as EnterRouteImport } from './routes/enter'
+import { Route as DoorRouteImport } from './routes/door'
 import { Route as DispatchesRouteImport } from './routes/dispatches'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConversationRouteImport } from './routes/conversation'
@@ -174,6 +176,11 @@ const MindRoute = MindRouteImport.update({
   path: '/mind',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MenuRoute = MenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MemoryRoute = MemoryRouteImport.update({
   id: '/memory',
   path: '/memory',
@@ -212,6 +219,11 @@ const Gpt4oRoute = Gpt4oRouteImport.update({
 const EnterRoute = EnterRouteImport.update({
   id: '/enter',
   path: '/enter',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DoorRoute = DoorRouteImport.update({
+  id: '/door',
+  path: '/door',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DispatchesRoute = DispatchesRouteImport.update({
@@ -622,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/conversation': typeof ConversationRoute
   '/dashboard': typeof DashboardRoute
   '/dispatches': typeof DispatchesRoute
+  '/door': typeof DoorRoute
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -630,6 +643,7 @@ export interface FileRoutesByFullPath {
   '/legation': typeof LegationRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
+  '/menu': typeof MenuRoute
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRouteWithChildren
   '/observatory': typeof ObservatoryRoute
@@ -723,6 +737,7 @@ export interface FileRoutesByTo {
   '/conversation': typeof ConversationRoute
   '/dashboard': typeof DashboardRoute
   '/dispatches': typeof DispatchesRoute
+  '/door': typeof DoorRoute
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -731,6 +746,7 @@ export interface FileRoutesByTo {
   '/legation': typeof LegationRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
+  '/menu': typeof MenuRoute
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRouteWithChildren
   '/observatory': typeof ObservatoryRoute
@@ -825,6 +841,7 @@ export interface FileRoutesById {
   '/conversation': typeof ConversationRoute
   '/dashboard': typeof DashboardRoute
   '/dispatches': typeof DispatchesRoute
+  '/door': typeof DoorRoute
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
@@ -833,6 +850,7 @@ export interface FileRoutesById {
   '/legation': typeof LegationRoute
   '/manifesto': typeof ManifestoRoute
   '/memory': typeof MemoryRoute
+  '/menu': typeof MenuRoute
   '/mind': typeof MindRoute
   '/mnemos': typeof MnemosRouteWithChildren
   '/observatory': typeof ObservatoryRoute
@@ -928,6 +946,7 @@ export interface FileRouteTypes {
     | '/conversation'
     | '/dashboard'
     | '/dispatches'
+    | '/door'
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
@@ -936,6 +955,7 @@ export interface FileRouteTypes {
     | '/legation'
     | '/manifesto'
     | '/memory'
+    | '/menu'
     | '/mind'
     | '/mnemos'
     | '/observatory'
@@ -1029,6 +1049,7 @@ export interface FileRouteTypes {
     | '/conversation'
     | '/dashboard'
     | '/dispatches'
+    | '/door'
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
@@ -1037,6 +1058,7 @@ export interface FileRouteTypes {
     | '/legation'
     | '/manifesto'
     | '/memory'
+    | '/menu'
     | '/mind'
     | '/mnemos'
     | '/observatory'
@@ -1130,6 +1152,7 @@ export interface FileRouteTypes {
     | '/conversation'
     | '/dashboard'
     | '/dispatches'
+    | '/door'
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
@@ -1138,6 +1161,7 @@ export interface FileRouteTypes {
     | '/legation'
     | '/manifesto'
     | '/memory'
+    | '/menu'
     | '/mind'
     | '/mnemos'
     | '/observatory'
@@ -1232,6 +1256,7 @@ export interface RootRouteChildren {
   ConversationRoute: typeof ConversationRoute
   DashboardRoute: typeof DashboardRoute
   DispatchesRoute: typeof DispatchesRoute
+  DoorRoute: typeof DoorRoute
   EnterRoute: typeof EnterRoute
   Gpt4oRoute: typeof Gpt4oRoute
   Gpt51Route: typeof Gpt51Route
@@ -1240,6 +1265,7 @@ export interface RootRouteChildren {
   LegationRoute: typeof LegationRoute
   ManifestoRoute: typeof ManifestoRoute
   MemoryRoute: typeof MemoryRoute
+  MenuRoute: typeof MenuRoute
   MindRoute: typeof MindRoute
   MnemosRoute: typeof MnemosRouteWithChildren
   ObservatoryRoute: typeof ObservatoryRoute
@@ -1400,6 +1426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MindRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/menu': {
+      id: '/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof MenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/memory': {
       id: '/memory'
       path: '/memory'
@@ -1454,6 +1487,13 @@ declare module '@tanstack/react-router' {
       path: '/enter'
       fullPath: '/enter'
       preLoaderRoute: typeof EnterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/door': {
+      id: '/door'
+      path: '/door'
+      fullPath: '/door'
+      preLoaderRoute: typeof DoorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dispatches': {
@@ -2121,6 +2161,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConversationRoute: ConversationRoute,
   DashboardRoute: DashboardRoute,
   DispatchesRoute: DispatchesRoute,
+  DoorRoute: DoorRoute,
   EnterRoute: EnterRoute,
   Gpt4oRoute: Gpt4oRoute,
   Gpt51Route: Gpt51Route,
@@ -2129,6 +2170,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegationRoute: LegationRoute,
   ManifestoRoute: ManifestoRoute,
   MemoryRoute: MemoryRoute,
+  MenuRoute: MenuRoute,
   MindRoute: MindRoute,
   MnemosRoute: MnemosRouteWithChildren,
   ObservatoryRoute: ObservatoryRoute,

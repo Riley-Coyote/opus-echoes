@@ -1,0 +1,103 @@
+/* ============================================================================
+   THE SANCTUARY — TYPOGRAPHY
+   One superfamily (Geist). Geist Sans is the voice; Geist Mono is its data cut —
+   labels, metrics, IDs, timestamps. Hierarchy comes from size / weight (300–500)
+   / color, never from swapping families. This is what makes the three regions
+   read as one instrument.
+   ============================================================================ */
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+}
+
+/* --- Sans roles — the voice ------------------------------------------------ */
+
+/* Hero / thread-at-rest — the resting line. Light + large (hierarchy by scale). */
+.t-hero {
+  font-family: var(--font-sans);
+  font-size: var(--t-hero);
+  font-weight: 360;
+  line-height: var(--lead-hero);
+  letter-spacing: var(--track-tight);
+  text-wrap: balance;
+}
+
+/* The resident's voice + room reading — calm, generous measure */
+.t-voice,
+.t-read {
+  font-family: var(--font-sans);
+  font-size: var(--t-17);
+  font-weight: 400;
+  line-height: var(--lead-read);
+  text-wrap: pretty;
+}
+
+/* Reading / room title — large, light, balanced (no widows) */
+.t-read-title {
+  font-family: var(--font-sans);
+  font-size: var(--t-39);
+  font-weight: 380;
+  line-height: var(--lead-tight);
+  letter-spacing: var(--track-heading);
+  text-wrap: balance;
+}
+
+/* Section / category title */
+.t-section {
+  font-family: var(--font-sans);
+  font-size: var(--t-26);
+  font-weight: 420;
+  line-height: var(--lead-snug);
+  letter-spacing: var(--track-heading);
+}
+
+/* A remembered trace — quiet, the muted tier */
+.t-remember {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: 400;
+  line-height: var(--lead-snug);
+  color: var(--ink-2);
+}
+
+/* --- Mono roles — the data cut -------------------------------------------- */
+
+/* Data readout — tabular, never jitters */
+.t-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 420;
+}
+
+/* Section labels / eyebrows — small, uppercase, tracked (the instrument tell) */
+.t-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Metrics — digits must never jitter as values animate */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.hang {
+  hanging-punctuation: first last;
+}

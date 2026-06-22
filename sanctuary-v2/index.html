@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-view="chat" data-interior="open">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#070707" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#e7e2d6" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>mnemos · the sanctuary</title>
+    <script>
+      // Set the theme before first paint so the room never flashes the wrong value.
+      (function () {
+        try {
+          var t = localStorage.getItem("sanctuary-theme");
+          document.documentElement.dataset.theme = t === "light" ? "light" : "dark";
+        } catch (e) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
+    <style>
+      /* Paint the ground before any JS or font loads — no flash, either theme. */
+      html { background: #070707; }
+      html[data-theme="light"] { background: #e7e2d6; }
+      html, body, #root { height: 100%; margin: 0; }
+      body { font-family: "Newsreader", Georgia, "Times New Roman", serif; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

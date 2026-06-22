@@ -1,0 +1,62 @@
+/* a transparent overlay — no panel, no fill, no label. a precise weighted
+   network that reads as a real activation-cascade readout, not decoration. */
+.overlay {
+  position: absolute;
+  left: clamp(16px, 2.4vw, 52px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(220px, 22vw, 340px);
+  height: min(48vh, 420px);
+  z-index: var(--z-base);
+  pointer-events: none;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* hairline edges — opacity set inline from weight×relation_weight, lit by the engine */
+.edge {
+  stroke: rgb(var(--mark-rgb));
+  stroke-width: 1;
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+}
+
+.base {
+  /* static dim node; fill set inline (size = stability, alpha = accessibility) */
+}
+.ring {
+  fill: none;
+  stroke: rgba(var(--mark-rgb), 0.22);
+  stroke-width: 1;
+}
+.core {
+  /* the bright pinprick when a node activates; opacity/scale/fill engine-driven */
+  transform-box: fill-box;
+  transform-origin: center;
+  shape-rendering: geometricPrecision;
+}
+.signal {
+  /* a traveling activation spark; position/opacity/fill engine-driven, parked at 0 */
+  fill: rgb(var(--mark-rgb));
+  shape-rendering: geometricPrecision;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core,
+  .signal {
+    opacity: 0 !important;
+  }
+}
+
+/* the constellation needs room — tuck it away when the room gets narrow */
+@media (max-width: 1200px) {
+  .overlay {
+    display: none;
+  }
+}

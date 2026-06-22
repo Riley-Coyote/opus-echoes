@@ -1,0 +1,177 @@
+/* the interior — a flush panel in the same plane as the rail and the thread.
+   One surface, one hairline divider, no floating card, no shadow. It collapses
+   as a real column (handled by the canvas); here it is simply the right region
+   of the instrument. */
+.drawer {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-5) var(--s-5) var(--s-3);
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s-6);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-mono-wide);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+/* the one iris label — the interior is the present, lit */
+.live {
+  color: var(--iris);
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-card);
+  color: var(--ink-50);
+  transition: background var(--dur-fast) var(--ease-calm), color var(--dur-fast) var(--ease-calm);
+  cursor: pointer;
+}
+.close:hover {
+  background: var(--line-warm);
+  color: var(--ink-70);
+}
+.close:active {
+  transform: scale(0.94);
+  background: var(--line-firm);
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-5);
+  padding: var(--s-6) 0 var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+}
+.count {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.countN {
+  font-family: var(--font-mono);
+  font-size: var(--t-30);
+  line-height: 1;
+  letter-spacing: var(--track-tight);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-100);
+  display: block;
+  margin-bottom: var(--s-2);
+}
+.countL {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--track-mono-wide);
+  color: var(--ink-50);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.section {
+  padding: var(--s-6) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.section:last-child {
+  border-bottom: none;
+}
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-mono-wide);
+  text-transform: uppercase;
+  color: var(--ink-35);
+  margin-bottom: var(--s-4);
+  font-weight: 500;
+}
+.mods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.mod {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.modLabel {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.04em;
+  color: var(--ink-50);
+  width: 80px;
+  flex: 0 0 auto;
+  font-weight: 500;
+}
+.modBar {
+  position: relative;
+  flex: 1 1 auto;
+  height: 1px;
+  border-radius: 1px;
+  background: var(--line-soft);
+  overflow: hidden;
+  transition: height 200ms var(--ease-out-expo);
+}
+.modFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  background: rgba(var(--mark-rgb), 0.62);
+  border-radius: 1px;
+  transition: width var(--dur-drift) var(--ease-in-out-sine);
+}
+.modVal {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-50);
+  min-width: 26px;
+  text-align: right;
+}
+/* temperature is derived, not a modulator — set apart by a hairline + caption */
+.temp {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--line-soft);
+}
+.tempCaption {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.02em;
+  color: var(--ink-35);
+  margin-left: auto;
+}
+
+.recentWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--s-6);
+}
+

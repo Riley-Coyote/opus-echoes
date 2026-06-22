@@ -1,0 +1,67 @@
+.hud {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-rail);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 1.6vw, 26px);
+  width: max-content;
+  max-width: 94vw;
+  padding: 14px 18px 16px;
+  pointer-events: none;
+  /* a whisper of legibility against scrolling text, no hard panel */
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+  mask-image: linear-gradient(180deg, #000 70%, transparent);
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-mono); /* the instrument-caps character */
+  color: var(--ink-50);
+}
+
+.ring {
+  display: block;
+  flex: 0 0 auto;
+}
+.ringBg {
+  fill: none;
+  stroke: var(--line-firm);
+  stroke-width: 1.5;
+}
+.ringArc {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--dur-drift) var(--ease-in-out-sine),
+    stroke var(--dur-drift) var(--ease-in-out-sine);
+}
+/* the value anchors — a tier brighter/larger than its label (set by magnitude) */
+.val {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.01em;
+  color: var(--ink-70);
+}
+
+/* on narrow screens, trim to the essentials so it stays one clean line */
+@media (max-width: 720px) {
+  .hud {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .label {
+    display: none;
+  }
+}

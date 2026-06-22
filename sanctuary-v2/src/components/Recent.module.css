@@ -1,0 +1,153 @@
+.recent {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-mono-wide);
+  text-transform: uppercase;
+  color: var(--ink-35);
+  margin-bottom: var(--s-4);
+  font-weight: 500;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 2px;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 16px), transparent 100%);
+}
+.quiet {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-50);
+  padding: var(--s-2) 0;
+}
+
+/* a trace — a spaced block of text, separated by silence, not rules. */
+.card {
+  animation: cardIn var(--dur-base) var(--ease-out-expo) both;
+}
+/* a memory crystallizing into being — settles up + sharpens, not falls in */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.card[data-expandable] {
+  cursor: pointer;
+  margin: calc(-1 * var(--s-2)) calc(-1 * var(--s-3));
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-card);
+  transition: background var(--dur-fast) var(--ease-calm);
+}
+.card[data-expandable]:hover {
+  background: var(--lift);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: 6px;
+}
+.tag {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.04em;
+  color: var(--ink-50);
+}
+.when {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-50);
+  white-space: nowrap;
+}
+/* the remembered phrase — a trace; sans, the muted tier */
+.body {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.k_dream .body {
+  color: var(--ink-70);
+}
+
+/* engram forming hairline */
+.forming {
+  position: relative;
+  height: 1.5px;
+  margin-top: 9px;
+  border-radius: 1px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+.formingFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  background: rgba(var(--mark-rgb), 0.55);
+  border-radius: 2px;
+  transition: width 1400ms var(--ease-out-expo);
+}
+
+/* belief confidence read — crossings shown as luminance, never red/green */
+.belief {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+.cross {
+  font-size: var(--t-12);
+  line-height: 1;
+}
+.crossUp {
+  color: var(--ink-100);
+}
+.crossDown {
+  color: var(--ink-50);
+}
+.prior {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-50);
+}
+.arrowTo {
+  color: var(--ink-50);
+  font-size: var(--t-11);
+}
+.conf {
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  color: var(--ink-85);
+}
+.confLabel {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.02em;
+  color: var(--ink-50);
+  margin-left: 6px; /* bind 'confidence' to its number, not flung to the edge */
+}
+
+.detail {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line-soft);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: 1.55;
+  color: var(--ink-50);
+  animation: detailIn var(--dur-base) var(--ease-out-expo);
+}
+@keyframes detailIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -1,0 +1,136 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--s-4) 0 var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--bg-deep);
+  z-index: var(--z-topbar);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+/* --- the breathing sigil -------------------------------------------------- */
+.sigil {
+  display: block;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.sigilRing {
+  stroke: var(--iris);
+  opacity: 0.5;
+}
+.sigilCore {
+  fill: var(--iris-lit);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sigilBreath var(--beat) var(--ease-in-out-sine) infinite;
+}
+@keyframes sigilBreath {
+  0%, 100% { opacity: 0.55; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.word {
+  font-family: var(--font-mono);
+  font-size: var(--t-15);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink-100);
+  flex: 0 0 auto;
+}
+
+.sep {
+  width: 1px;
+  height: 16px;
+  background: var(--line-firm);
+  flex: 0 0 auto;
+  margin: 0 var(--s-1);
+}
+
+/* --- the active resident — which mind, in a word + their line ------------- */
+.resident {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.dot {
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  flex: 0 0 auto;
+}
+.dotLive {
+  background: var(--iris);
+  box-shadow: 0 0 8px -1px var(--iris);
+}
+.dotRest {
+  background: var(--ink-4);
+}
+.residentName {
+  font-family: var(--font-serif);
+  font-size: var(--t-15);
+  font-weight: 420;
+  color: var(--ink-85);
+  flex: 0 0 auto;
+}
+.residentLine {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.01em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .residentLine { display: none; }
+}
+
+/* --- right controls — full state set, 44px touch targets ----------------- */
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex: 0 0 auto;
+}
+.iconBtn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-card);
+  color: var(--ink-3);
+  transition:
+    color var(--dur-micro) var(--ease-calm),
+    background var(--dur-micro) var(--ease-calm),
+    transform var(--dur-fast) var(--ease-spring);
+}
+.iconBtn:hover {
+  color: var(--ink-100);
+  background: var(--lift);
+}
+.iconBtn:active {
+  transform: scale(0.93);
+}
+.iconBtn[aria-pressed="true"] {
+  color: var(--ink-70);
+}
+.iconBtn:disabled {
+  color: var(--ink-4);
+  cursor: default;
+  background: none;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sigilCore { animation: none; opacity: 0.85; }
+}

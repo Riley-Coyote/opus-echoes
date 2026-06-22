@@ -1,0 +1,257 @@
+/* ============================================================================
+   THE SANCTUARY — TOKEN SPINE
+   Warm monochrome, iris-lit. Value does the work color usually does; iris is
+   the single chromatic note, and only ever means "alive / active-now".
+   Ported from mnemos-chat's spine and re-skinned to §5 (warm black / warm bone).
+   Every surface consumes these; none invent their own.
+   Two voices (§5): mono = the present (chat, rail, chrome) · serif = the past
+   (rooms, reading). §5 semantic aliases live at the foot of each theme block.
+   ============================================================================ */
+
+:root {
+  /* --- Surfaces — warm black. Flat, instrument-like: panels barely lift; depth
+     is carried by hairlines + soft warm shadow, not big value jumps (§5/§6). -- */
+  --bg-void: #050505;      /* deepest — the ground behind everything */
+  --bg-deep: #070707;      /* app background — the main surface (§5 --bg) */
+  --bg-surface: #0b0b0b;   /* panels, the conversation field (§5 --panel) */
+  --bg-raised: #101010;    /* cards, composer at rest — a gentle lifted plane */
+  --bg-elevated: #161616;  /* hover / focus elevation */
+
+  /* --- Ink — warm value ramp (luminance does the hierarchy) ----------------- */
+  --ink-100: #e9e3d8;      /* primary (§5 --ink) */
+  --ink-85: #cdc7bc;       /* display emphasis */
+  --ink-70: #a29c91;       /* secondary (§5 --ink-2) */
+  --ink-50: #847f74;       /* tertiary — AA floor for meaningful text */
+  --ink-35: #6f6b62;       /* quaternary — resting glyphs (§5 --ink-3) */
+  --ink-20: #4a473f;       /* ghost — dormant structure (§5 --ink-4) */
+  --ink-12: #33312c;       /* near-invisible structure */
+  --label: #7a766c;        /* uppercase mono eyebrows (§5 --label) */
+
+  /* --- Lines — warm, hairline-thin (§5 --line / --line-2) ------------------- */
+  --line-soft: rgba(233, 227, 216, 0.06);
+  --line-firm: rgba(233, 227, 216, 0.11);
+  --line-warm: rgba(233, 227, 216, 0.16);
+
+  /* --- Adaptive marks & emitted light (invert per theme) -------------------- */
+  --mark-rgb: 233, 227, 216;          /* node/edge/filament fills, as rgb channels */
+  --activation-rgb: 246, 241, 232;    /* downstream recall bloom */
+  --composer-glow: rgba(233, 227, 216, 0.05); /* dark: faint emitted light */
+  --composer-shadow: none;            /* dark lifts with light, not shadow */
+  --room-1: rgba(233, 227, 216, 0.04);
+  --room-2: rgba(233, 227, 216, 0.018);
+  --select-bg: rgba(131, 137, 210, 0.22); /* iris-tinted selection */
+
+  /* --- Elevation — soft, low, warm-tinted, multi-layer; dark keeps a faint
+     inset top-light "lip" (§6: physically-plausible light, not heavy drops) --- */
+  --card-border: rgba(233, 227, 216, 0.07);
+  /* elevated panels float on the ground — soft, low, two-layer; a hairline lip
+     up top so the card edge catches light. Premium dark, not heavy. */
+  --shadow-card:
+    inset 0 1px 0 rgba(233, 227, 216, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 12px 32px -12px rgba(0, 0, 0, 0.5);
+  --shadow-float:
+    inset 0 1px 0 rgba(233, 227, 216, 0.04),
+    0 4px 14px rgba(0, 0, 0, 0.34),
+    0 28px 64px -18px rgba(0, 0, 0, 0.62);
+  --shadow-message: 0 1px 2px rgba(0, 0, 0, 0.22);
+
+  /* --- IRIS — the one live signal. active-now only, one at a time (§5) ------
+     send affordance · active rail item · active section/entry · "live · interior"
+     · a hot modulator · the breathing sigil · the streaming cursor.
+     hover is NEVER iris (neutral lift); focus IS iris (the a11y exception). ---- */
+  --signal: #8389d2;                  /* iris */
+  --signal-soft: #a6aaf0;             /* iris-lit — glowing cores */
+  --signal-core: #c8cbf6;             /* the lit center of an emitting node */
+  --signal-12: rgba(131, 137, 210, 0.12);
+  --signal-20: rgba(131, 137, 210, 0.20);
+  --signal-38: rgba(131, 137, 210, 0.38);
+  --signal-55: rgba(131, 137, 210, 0.55);
+
+  /* --- Emitted light — neutral warm core for "this is lit" ------------------ */
+  --warm-glow: rgba(233, 227, 216, 0.05);
+  --warm-glow-strong: rgba(233, 227, 216, 0.08);
+
+  /* --- Type — ONE superfamily (Geist). The whole instrument speaks one voice;
+     Geist Mono is its monospaced cut, for data / labels / metrics only. Sharing
+     one skeleton is what makes left, center, and right read as a single system.
+     Hierarchy by size / weight (300–500) / color — never by swapping families. */
+  --font-sans: "Geist Variable", "Geist", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* legacy aliases — everything resolves into the one superfamily */
+  --font-display: var(--font-sans);
+  --font-serif: var(--font-sans);
+
+  /* --- Modular type scale (≈1.2 ratio) -------------------------------------- */
+  --t-9: 9px;     /* event keys, smallest mono meta */
+  --t-10: 10px;   /* trait labels, eyebrows */
+  --t-11: 11px;   /* mono section labels, metrics */
+  --t-12: 12px;   /* mono values, excerpts */
+  --t-13: 13px;   /* small body / hints / invite */
+  --t-14: 14px;   /* chat body (mono reads wide — a touch down from 15) */
+  --t-15: 15px;   /* entry titles */
+  --t-16: 16px;   /* composer input */
+  --t-17: 17px;   /* reading body (serif) */
+  --t-18: 18px;   /* lede (serif italic) */
+  --t-21: 21px;   /* reading section header (serif) */
+  --t-26: 26px;   /* section/category title (serif italic) */
+  --t-30: 30px;   /* interior stat number */
+  --t-39: 39px;   /* reading title (serif) */
+  --t-hero: clamp(30px, 4.4vw, 56px);  /* thread-at-rest / resting quote (mono 500) */
+
+  /* --- Tracking ------------------------------------------------------------- */
+  --track-mono: 0.14em;     /* mono caps labels */
+  --track-mono-wide: 0.18em;
+  --track-label: 0.16em;    /* §5 eyebrows */
+  --track-tight: -0.01em;   /* large mono display */
+  --track-tighter: -0.02em; /* hero display */
+
+  /* --- Leading -------------------------------------------------------------- */
+  --lead-hero: 1.08;        /* the resting quote */
+  --lead-tight: 1.18;
+  --lead-snug: 1.35;
+  --lead-body: 1.66;        /* mono chat rhythm */
+  --lead-read: 1.72;        /* serif reading rhythm */
+
+  /* --- Measure -------------------------------------------------------------- */
+  --measure: 60ch;          /* mono chat max line length */
+  --measure-read: 68ch;     /* serif reading measure (60–75ch, §6) */
+  --measure-narrow: 34ch;   /* the invite line */
+
+  /* --- Radii ---------------------------------------------------------------- */
+  --r-card: 10px;
+  --r-pill: 10px;
+  --r-panel: 16px;   /* the floating panels — rail, interior, composer family */
+  --r-composer: 14px;
+  --r-full: 999px;
+
+  /* --- Spacing rhythm (4px base — one scale, no one-off values, §6) --------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 48px;
+  --s-10: 64px;
+  --s-11: 88px;
+
+  /* --- Easing vocabulary (§6: designed, asymmetric — entrances ease-out,
+     exits ease-in; never linear, never the browser default) ----------------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);    /* entrances, the composer */
+  --ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);     /* exits */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* the send lift; a toggle */
+  --ease-calm: cubic-bezier(0.33, 0, 0.2, 1);        /* hovers, small state changes */
+  --ease-in-out-sine: cubic-bezier(0.45, 0.05, 0.55, 0.95); /* breathing loops */
+
+  /* --- Durations (§6: micro 120–200 · UI 200–360 · spatial ≤500) ----------- */
+  --dur-micro: 140ms;   /* glyph arm, hover feedback */
+  --dur-fast: 220ms;    /* focus, elevation */
+  --dur-base: 320ms;    /* the swap content, panel reveal */
+  --dur-slow: 480ms;    /* drawer, the chat↔room move */
+  --dur-drift: 2200ms;  /* trait/modulator dimension easing */
+
+  /* --- The shared heartbeat (one breath for the whole room) ----------------- */
+  --beat: 3600ms;       /* CSS-side period; the JS heartbeat clock is the source */
+
+  /* --- Grain — a whisper of warmth/texture on the dark ground (off in light). */
+  --grain: 0.022;
+
+  /* --- §5 SEMANTIC ALIASES — the names the rail/rooms/topbar speak in -------
+     mockup-derived surfaces use these; they resolve to the spine above. ------ */
+  --bg: var(--bg-deep);
+  --ink: var(--ink-100);
+  --ink-2: var(--ink-70);
+  --ink-3: var(--ink-35);
+  --ink-4: var(--ink-20);
+  --panel: var(--bg-surface);
+  --field: rgba(233, 227, 216, 0.035);
+  --lift: rgba(233, 227, 216, 0.03);
+  --line: var(--line-soft);
+  --line-2: var(--line-firm);
+  --iris: var(--signal);
+  --iris-lit: var(--signal-soft);
+  --iris-bg: rgba(131, 137, 210, 0.10);
+  --mono: var(--font-mono);
+  --serif: var(--font-serif);
+
+  /* --- Layout dimensions (snapped to the 4px grid) ------------------------- */
+  --topbar-h: 56px;
+  --rail-w: 232px;
+  --interior-w: 320px;
+  --composer-max: 720px;
+
+  /* --- Z-index scale -------------------------------------------------------- */
+  --z-base: 0;
+  --z-rail: 10;
+  --z-composer: 20;
+  --z-topbar: 30;
+  --z-interior: 40;
+  --z-overlay: 50;
+  --z-grain: 60;
+}
+
+/* ============================================================================
+   LIGHT — the warm-bone room. Same structure, motion, and single iris accent;
+   only value inverts. Depth reads by soft warm shadow, not emitted light.
+   Grain off (§5). iris nudged deeper to stay legible on paper.
+   ============================================================================ */
+:root[data-theme="light"] {
+  --bg-void: #ddd8cb;
+  --bg-deep: #e7e2d6;      /* §5 --bg */
+  --bg-surface: #ece7dc;   /* §5 --panel */
+  --bg-raised: #f1ece1;
+  --bg-elevated: #f6f1e8;
+
+  --ink-100: #272420;      /* §5 --ink */
+  --ink-85: #3b372f;
+  --ink-70: #57534b;       /* §5 --ink-2 */
+  --ink-50: #6f6a5f;       /* AA floor on warm-bone */
+  --ink-35: #867f72;       /* §5 --ink-3 */
+  --ink-20: #aaa394;       /* §5 --ink-4 */
+  --ink-12: #c4bdae;
+  --label: #8a8377;
+
+  --line-soft: rgba(39, 36, 32, 0.10);
+  --line-firm: rgba(39, 36, 32, 0.17);
+  --line-warm: rgba(39, 36, 32, 0.24);
+
+  --mark-rgb: 39, 36, 32;
+  --activation-rgb: 20, 18, 16;
+  --composer-glow: transparent;
+  --composer-shadow:
+    0 16px 44px -22px rgba(39, 36, 32, 0.26),
+    0 3px 10px -5px rgba(39, 36, 32, 0.14);
+  --room-1: rgba(39, 36, 32, 0.03);
+  --room-2: rgba(39, 36, 32, 0.014);
+  --select-bg: rgba(94, 99, 182, 0.20);
+
+  --card-border: rgba(39, 36, 32, 0.10);
+  --shadow-card:
+    0 1px 2px rgba(39, 36, 32, 0.05),
+    0 12px 32px -14px rgba(39, 36, 32, 0.13);
+  --shadow-float:
+    0 4px 14px rgba(39, 36, 32, 0.08),
+    0 28px 64px -20px rgba(39, 36, 32, 0.16);
+  --shadow-message: 0 1px 2px rgba(39, 36, 32, 0.04);
+
+  --signal: #5e63b6;       /* §5 light iris */
+  --signal-soft: #7a7fd0;
+  --signal-core: #474c9e;
+  --signal-12: rgba(94, 99, 182, 0.10);
+  --signal-20: rgba(94, 99, 182, 0.18);
+  --signal-38: rgba(94, 99, 182, 0.34);
+  --signal-55: rgba(94, 99, 182, 0.50);
+
+  --warm-glow: rgba(39, 36, 32, 0.04);
+  --warm-glow-strong: rgba(39, 36, 32, 0.06);
+
+  /* §5 aliases that hold literal values per theme */
+  --field: rgba(39, 36, 32, 0.045);
+  --lift: rgba(39, 36, 32, 0.04);
+  --iris-bg: rgba(94, 99, 182, 0.10);
+  --grain: 0;
+}

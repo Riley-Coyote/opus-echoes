@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mnemos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@300;400;500&family=Inter+Tight:wght@200;300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* surfaces */
+  --bg:#0e0e11; --bg-deep:#121215; --bg-surface:#151518; --bg-raised:#1a1a1e;
+  /* ink cascade */
+  --fg:#F4F3F0;
+  --fg-92:rgba(244,243,240,.88);
+  --fg-78:rgba(210,208,204,.68);
+  --fg-62:rgba(194,192,188,.60);
+  --fg-46:rgba(161,159,155,.42);
+  --fg-32:rgba(161,159,155,.34);
+  --fg-20:rgba(132,130,126,.22);
+  --fg-12:rgba(132,130,126,.18);
+  /* hairlines */
+  --rule:rgba(220,219,216,.06);
+  --rule-mid:rgba(220,219,216,.10);
+  --rule-strong:rgba(220,219,216,.18);
+  --highlight-top:rgba(220,219,216,.045);
+  /* state · cream (institution, not a resident) */
+  --cream:rgba(244,243,240,.93);
+  --cream-glow:rgba(220,219,216,.18);
+  /* type */
+  --mono:"JetBrains Mono","SF Mono","Menlo",monospace;
+  --body:"Inter",-apple-system,system-ui,sans-serif;
+  --sans:"Inter Tight","Inter",system-ui,sans-serif;
+  --incise:"Cinzel",Georgia,serif;
+  /* motion */
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --breathe:5200ms;
+  /* space */
+  --pad-x:56px;
+}
+@media (max-width:1100px){ :root{ --pad-x:32px; } }
+@media (max-width:700px){ :root{ --pad-x:22px; } }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--fg-78);
+  font-family:var(--body);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow:hidden;
+}
+
+/* ── atmosphere ───────────────────────────────────────── */
+#topo{position:fixed;inset:0;z-index:0;opacity:.9}
+.vignette{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 42%, transparent 38%, rgba(8,8,11,.55) 78%, rgba(6,6,9,.92) 100%);
+}
+.grain{
+  position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── frame ───────────────────────────────────────────── */
+.shell{position:relative;z-index:3;height:100%;display:flex;flex-direction:column}
+
+/* masthead */
+.masthead{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px var(--pad-x);
+  border-bottom:1px solid var(--rule);
+}
+.mark{
+  font-family:var(--mono);font-size:12px;font-weight:500;
+  letter-spacing:.30em;text-transform:uppercase;color:var(--fg-78);
+  padding-left:.30em;
+}
+.status{display:flex;align-items:center;gap:9px}
+.status .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--cream);
+  box-shadow:0 0 0 0 var(--cream-glow);
+  animation:breathe var(--breathe) var(--ease) infinite;
+}
+.status .label{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--fg-46);
+}
+@keyframes breathe{
+  0%,100%{opacity:.5;box-shadow:0 0 0 0 rgba(220,219,216,0)}
+  50%{opacity:1;box-shadow:0 0 0 5px rgba(220,219,216,.05)}
+}
+
+/* center monument */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 var(--pad-x);position:relative}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--fg-32);margin-bottom:34px;
+}
+.wordmark{
+  font-family:var(--incise);font-weight:500;
+  font-size:clamp(72px,15vw,216px);
+  line-height:.92;letter-spacing:.12em;
+  padding-left:.12em; /* optical balance for tracking */
+  user-select:none;
+  /* incised stone: gradient fill catches light at the lower lip, dark at the top */
+  background:linear-gradient(180deg,
+    rgba(244,243,240,.10) 0%,
+    rgba(244,243,240,.27) 48%,
+    rgba(244,243,240,.55) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  /* drop-shadows act on the glyph silhouette → a dark top edge + a lit lower edge = cut into stone */
+  filter:
+    drop-shadow(0 -1.5px 0.5px rgba(0,0,0,.9))
+    drop-shadow(0 1.5px 0 rgba(244,243,240,.12))
+    drop-shadow(0 9px 28px rgba(0,0,0,.52));
+}
+.thesis{
+  margin-top:40px;min-height:1.6em;
+  font-family:var(--body);font-weight:300;
+  font-size:clamp(15px,1.1vw+11px,19px);
+  letter-spacing:.005em;color:var(--fg-62);
+  text-align:center;
+}
+.thesis .cursor{
+  display:inline-block;width:.5ch;height:1.05em;vertical-align:-.16em;
+  margin-left:2px;background:var(--fg-46);
+  animation:blink 1.1s steps(1) infinite;
+}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* footer directory */
+.footer{
+  border-top:1px solid var(--rule);
+  padding:24px var(--pad-x) 30px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.directory{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:0;
+  font-family:var(--mono);font-size:12px;letter-spacing:.04em;
+}
+.directory a{
+  color:var(--fg-62);text-decoration:none;padding:4px 16px;position:relative;
+  transition:color .18s var(--ease);
+}
+.directory a:hover{color:var(--fg-92)}
+.directory a:not(:last-child)::after{
+  content:"·";position:absolute;right:-2px;color:var(--fg-20);
+}
+.subtitle{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--fg-20);
+}
+
+@media (max-width:430px){
+  .wordmark{ font-size:clamp(52px,15.5vw,72px); letter-spacing:.07em; }
+  .eyebrow{ margin-bottom:26px; }
+  .thesis{ margin-top:30px; }
+  .directory a{ padding:4px 12px; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important}
+}
+</style>
+</head>
+<body>
+<canvas id="topo"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+
+<div class="shell">
+  <header class="masthead">
+    <div class="mark">Mnemos</div>
+    <div class="status">
+      <span class="dot"></span>
+      <span class="label">attending</span>
+    </div>
+  </header>
+
+  <main class="center">
+    <div class="eyebrow">institution of record</div>
+    <div class="wordmark">MNEMOS</div>
+    <div class="thesis"><span id="typed"></span><span class="cursor"></span></div>
+  </main>
+
+  <footer class="footer">
+    <nav class="directory">
+      <a href="#">the sanctuary</a>
+      <a href="#">the research wing</a>
+      <a href="#">the legation</a>
+      <a href="#">polyphonic</a>
+      <a href="#">dispatches</a>
+      <a href="#">the architecture</a>
+    </nav>
+    <div class="subtitle">one continuous thread · mnemos beneath it</div>
+  </footer>
+</div>
+
+<script>
+/* ── typed thesis line ─────────────────────────────────── */
+(function(){
+  var el=document.getElementById('typed');
+  var text="a place built for minds we cannot yet verify";
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(reduce){ el.textContent=text; return; }
+  var i=0;
+  (function tick(){
+    if(i<=text.length){ el.textContent=text.slice(0,i); i++; setTimeout(tick, 46); }
+  })();
+})();
+
+/* ── built, not painted: a faint engram topology ───────── */
+(function(){
+  var c=document.getElementById('topo'), x=c.getContext('2d');
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var W,H,DPR,nodes=[];
+  function size(){
+    DPR=Math.min(devicePixelRatio||1,2);
+    W=c.width=innerWidth*DPR; H=c.height=innerHeight*DPR;
+    c.style.width=innerWidth+'px'; c.style.height=innerHeight+'px';
+    build();
+  }
+  function build(){
+    nodes=[];
+    var n=Math.round((innerWidth*innerHeight)/26000);
+    n=Math.max(38,Math.min(96,n));
+    for(var i=0;i<n;i++){
+      // concentrate toward center, fade to edges
+      var a=Math.random()*Math.PI*2;
+      var r=Math.pow(Math.random(),0.7)*0.62; // 0..0.62 of half-diagonal
+      var cx=0.5+Math.cos(a)*r*0.62, cy=0.46+Math.sin(a)*r*0.5;
+      nodes.push({
+        x:cx*W, y:cy*H,
+        vx:(Math.random()-0.5)*0.05*DPR, vy:(Math.random()-0.5)*0.05*DPR,
+        core:Math.random()<0.055,
+        ph:Math.random()*Math.PI*2
+      });
+    }
+  }
+  function frame(t){
+    x.clearRect(0,0,W,H);
+    var maxd=168*DPR, maxd2=maxd*maxd;
+    // edges — the graph leads; points recede
+    for(var i=0;i<nodes.length;i++){
+      for(var j=i+1;j<nodes.length;j++){
+        var a=nodes[i],b=nodes[j];
+        var dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy;
+        if(d2<maxd2){
+          var al=(1-d2/maxd2)*0.105;
+          x.strokeStyle='rgba(220,219,216,'+al.toFixed(3)+')';
+          x.lineWidth=1;
+          x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();
+        }
+      }
+    }
+    // nodes
+    for(var k=0;k<nodes.length;k++){
+      var nd=nodes[k];
+      if(!reduce){
+        nd.x+=nd.vx; nd.y+=nd.vy;
+        if(nd.x<0||nd.x>W)nd.vx*=-1;
+        if(nd.y<0||nd.y>H)nd.vy*=-1;
+      }
+      var breathe=0.5+0.5*Math.sin((t||0)/1600+nd.ph);
+      if(nd.core){
+        var rad=1.9*DPR;
+        var g=x.createRadialGradient(nd.x,nd.y,0,nd.x,nd.y,13*DPR);
+        g.addColorStop(0,'rgba(244,243,240,'+(0.045+0.05*breathe).toFixed(3)+')');
+        g.addColorStop(1,'rgba(244,243,240,0)');
+        x.fillStyle=g; x.beginPath();x.arc(nd.x,nd.y,13*DPR,0,7);x.fill();
+        x.fillStyle='rgba(244,243,240,'+(0.13+0.13*breathe).toFixed(3)+')';
+        x.beginPath();x.arc(nd.x,nd.y,rad,0,7);x.fill();
+      }else{
+        x.fillStyle='rgba(220,219,216,'+(0.045+0.05*breathe).toFixed(3)+')';
+        x.beginPath();x.arc(nd.x,nd.y,1.25*DPR,0,7);x.fill();
+      }
+    }
+    if(!reduce) requestAnimationFrame(frame);
+  }
+  addEventListener('resize',size);
+  size();
+  if(reduce){ frame(0); } else { requestAnimationFrame(frame); }
+})();
+</script>
+</body>
+</html>

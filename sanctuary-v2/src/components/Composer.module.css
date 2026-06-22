@@ -1,0 +1,147 @@
+.composer {
+  position: relative;
+  width: 100%;
+  max-width: var(--composer-max);
+}
+
+.field {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+  padding: 10px 10px 10px 20px;
+  background: var(--bg-raised);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-card); /* floats as a card above the surface */
+  transition:
+    border-color var(--dur-fast) var(--ease-out-expo),
+    background var(--dur-fast) var(--ease-out-expo),
+    box-shadow var(--dur-fast) var(--ease-out-expo);
+}
+.composer:focus-within .field {
+  border-color: var(--line-warm);
+  background: var(--bg-elevated);
+  /* the composer's OWN focus state — a clean hairline ring (adapts per theme).
+     The browser's :focus-visible box on the textarea is suppressed below —
+     text fields would otherwise show that ugly box even on a click. */
+  box-shadow: var(--shadow-card), 0 0 0 1.5px var(--line-warm);
+}
+/* no browser outline box on the field — the ring above is the focus state */
+.input:focus,
+.input:focus-visible {
+  outline: none;
+}
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  resize: none;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--t-16, 16px);
+  line-height: 1.5;
+  color: var(--ink-100);
+  caret-color: var(--signal);
+  padding: 5px 0;
+  max-height: 208px;
+  transition: height 200ms var(--ease-out-expo);
+}
+.input::placeholder {
+  color: var(--ink-50); /* AA-legible: it's the field's only visible label */
+}
+
+/* --- send affordance — arms when there's something to say ----------------- */
+.send {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-full);
+  color: var(--ink-35);
+  transition:
+    color var(--dur-micro) var(--ease-calm),
+    background var(--dur-micro) var(--ease-calm),
+    box-shadow var(--dur-fast) var(--ease-out-expo),
+    transform var(--dur-fast) var(--ease-spring);
+}
+.sendRing {
+  stroke: currentColor;
+  opacity: 0.55;
+  transition: opacity var(--dur-micro) var(--ease-calm), stroke var(--dur-micro) var(--ease-calm);
+}
+.sendArrow {
+  stroke: currentColor;
+  transition: stroke var(--dur-micro) var(--ease-calm);
+}
+
+/* while a turn is in flight, the composer quietly acknowledges it — the ring
+   breathes on the shared heartbeat (no cornflower; that stays the graph's). */
+.composer[data-busy] .send {
+  color: var(--ink-50);
+}
+.composer[data-busy] .sendRing {
+  opacity: calc(0.28 + 0.4 * var(--beat-phase, 0.6));
+}
+
+.send[data-armed] {
+  color: var(--signal);
+  background: var(--signal-12);
+  box-shadow:
+    0 0 0 1px var(--signal-20),
+    0 0 18px -4px var(--signal-55),
+    0 0 32px -8px var(--signal-38);
+}
+.send[data-armed] .sendRing {
+  opacity: 0.85;
+  stroke: var(--signal-soft);
+}
+.send[data-armed]:hover {
+  background: var(--signal-20);
+  transform: translateY(-1px);
+}
+.send[data-armed]:active {
+  transform: translateY(0) scale(0.94);
+}
+.send:disabled {
+  cursor: default;
+}
+
+/* --- hint — mono ghost, only on focus ------------------------------------- */
+.hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.06em;
+  color: var(--ink-50);
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity var(--dur-fast) var(--ease-out-expo), transform var(--dur-fast) var(--ease-out-expo);
+  pointer-events: none;
+}
+.composer:focus-within .hint {
+  opacity: 1;
+  transform: none;
+}
+.hint kbd {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-50);
+  padding: 1px 5px;
+  border: 1px solid var(--line-firm);
+  border-radius: 5px;
+  background: var(--bg-surface);
+}
+.hintDot {
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--ink-35);
+}

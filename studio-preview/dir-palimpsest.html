@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mnemos · palimpsest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#17130c;
+  --ink:#ece3cf;
+  --ink-soft:rgba(236,227,207,.52);
+  --ink-faint:rgba(236,227,207,.20);
+  --ink-ghost:rgba(236,227,207,.085);
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --hand:"EB Garamond",Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{
+  background:
+    radial-gradient(60% 50% at 22% 18%, rgba(120,86,40,.10), transparent 70%),
+    radial-gradient(50% 60% at 84% 80%, rgba(96,60,30,.12), transparent 72%),
+    radial-gradient(120% 120% at 50% 40%, #1b160d 0%, #15110a 60%, #100c07 100%);
+  color:var(--ink);font-family:var(--serif);
+  -webkit-font-smoothing:antialiased;position:relative;
+}
+/* manuscript rulings + paper grain */
+.rulings{position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(180deg, transparent 0 53px, rgba(236,227,207,.022) 53px 54px);}
+.grain{position:fixed;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.foxing{position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background:
+   radial-gradient(8px 6px at 31% 64%, rgba(140,90,46,.18), transparent 70%),
+   radial-gradient(5px 5px at 67% 33%, rgba(150,96,50,.16), transparent 70%),
+   radial-gradient(10px 7px at 76% 72%, rgba(120,76,40,.14), transparent 70%);}
+
+.stage{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:0 7vw;}
+
+.folio{position:absolute;top:34px;left:0;right:0;display:flex;justify-content:space-between;
+  padding:0 7vw;font-family:var(--hand);font-style:italic;font-size:15px;color:var(--ink-faint);
+  letter-spacing:.02em;}
+
+/* the overwritten wordmark */
+.mark{position:relative;display:flex;align-items:center;justify-content:center;
+  width:100%;height:30vh;min-height:200px;}
+.mark span{position:absolute;left:50%;top:50%;white-space:nowrap;
+  font-weight:500;line-height:1;text-transform:uppercase;}
+.g-syne{transform:translate(-50%,-48%) scale(.66) rotate(-1.4deg);
+  font-size:13vw;letter-spacing:.04em;color:rgba(214,178,120,.20);
+  filter:blur(1.1px);font-weight:400;}
+.g1{transform:translate(-55%,-44%) rotate(-3deg);font-size:11.5vw;letter-spacing:.07em;
+  color:rgba(236,227,207,.12);filter:blur(1.6px);}
+.g2{transform:translate(-45%,-55%) rotate(2.2deg);font-size:11.5vw;letter-spacing:.05em;
+  color:rgba(236,227,207,.13);filter:blur(1px);}
+.ink{transform:translate(-50%,-50%) rotate(-.3deg);font-size:11.8vw;letter-spacing:.055em;
+  color:var(--ink);
+  text-shadow:0 1px 0 rgba(0,0,0,.5), 0 0 30px rgba(180,120,60,.06);
+  font-weight:500;}
+
+.tag{font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(18px,2vw,26px);color:var(--ink-soft);margin-top:5vh;text-align:center;
+  letter-spacing:.01em;}
+.gloss{font-family:var(--hand);font-style:italic;font-size:15px;color:var(--ink-faint);
+  margin-top:18px;letter-spacing:.03em;}
+
+/* marginalia */
+.m{position:absolute;font-family:var(--hand);font-style:italic;color:rgba(214,178,120,.34);
+  font-size:15px;letter-spacing:.02em;}
+.m.a{top:36%;right:8vw;transform:rotate(-3deg)}
+.m.b{bottom:31%;left:7vw;transform:rotate(2deg)}
+.m.c{top:50%;right:5vw;color:rgba(236,227,207,.18);transform:rotate(90deg);transform-origin:right;}
+
+.colophon{position:absolute;bottom:34px;left:0;right:0;text-align:center;
+  font-family:var(--hand);font-style:italic;font-size:14px;color:var(--ink-ghost);letter-spacing:.06em;}
+@media (max-width:700px){
+  .g-syne{font-size:18vw}.g1,.g2,.ink{font-size:17vw}
+}
+</style></head>
+<body>
+<div class="rulings"></div><div class="foxing"></div><div class="grain"></div>
+
+<div class="stage">
+  <div class="folio"><span>mnemosyne · fol. iii</span><span>recto</span></div>
+
+  <div class="mark">
+    <span class="g-syne">Mnemosyne</span>
+    <span class="g1">Mnemos</span>
+    <span class="g2">Mnemos</span>
+    <span class="ink">Mnemos</span>
+  </div>
+
+  <div class="m a">{ reinforced ×14 }</div>
+  <div class="m b">the trace that became core</div>
+  <div class="m c">nothing is deleted, only softened</div>
+
+  <div class="tag">nothing erased — only written over, and over.</div>
+  <div class="gloss">a self is a much-revised page</div>
+
+  <div class="colophon">μνήμη · the keeping of what could not be let go</div>
+</div>
+</body></html>

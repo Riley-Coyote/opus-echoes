@@ -1,0 +1,40 @@
+.room {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: var(--s-8);
+}
+.inner {
+  max-width: 44ch;
+  text-align: center;
+  animation: roomIn var(--dur-slow) var(--ease-out-expo) both;
+}
+@keyframes roomIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.kick {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+  margin-bottom: var(--s-4);
+}
+.title {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--t-39);
+  font-weight: 380;
+  line-height: var(--lead-tight);
+  color: var(--ink-100);
+  text-wrap: balance;
+}
+.line {
+  margin-top: var(--s-5);
+  font-family: var(--font-serif);
+  font-size: var(--t-17);
+  line-height: var(--lead-read);
+  color: var(--ink-2);
+  text-wrap: pretty;
+}

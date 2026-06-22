@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mnemos · long exposure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+:root{ --night:#070708; --type:rgba(238,238,242,.62); --type-dim:rgba(210,212,220,.34);
+  --sans:"Jost",system-ui,sans-serif; }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:#070708;color:var(--type);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+#trail{position:fixed;inset:0;z-index:0}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(130% 80% at 50% 54%, transparent 30%, rgba(5,5,7,.6) 80%, #040405 100%);}
+.stage{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.over{display:flex;flex-direction:column;align-items:center;transform:translateY(-7vh)}
+.word{font-weight:200;font-size:clamp(46px,8.5vw,120px);letter-spacing:.42em;
+  padding-left:.42em;color:var(--type);text-transform:lowercase;
+  text-shadow:0 0 38px rgba(150,170,210,.10);}
+.sub{margin-top:30vh;font-weight:300;font-size:clamp(12px,1.05vw,15px);
+  letter-spacing:.30em;text-transform:lowercase;color:var(--type-dim);text-align:center;
+  white-space:nowrap}
+@media (max-width:640px){ .sub{white-space:normal;max-width:80vw;line-height:2.1;text-align:center} }
+</style></head>
+<body>
+<canvas id="trail"></canvas>
+<div class="veil"></div>
+<div class="stage"><div class="over">
+  <div class="word">mnemos</div>
+</div>
+<div class="sub">every visitor &nbsp;·&nbsp; a brief light &nbsp;·&nbsp; the thread &nbsp;·&nbsp; one long exposure</div>
+</div>
+<script>
+(function(){
+  var c=document.getElementById('trail'), x=c.getContext('2d');
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var W,H,DPR,baseY,amp,flares=[],t=0;
+  function size(){
+    DPR=Math.min(devicePixelRatio||1,2);
+    W=c.width=innerWidth*DPR;H=c.height=innerHeight*DPR;
+    c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';
+    baseY=H*0.57; amp=H*0.045;
+    flares=[];
+    var n=26;
+    for(var i=0;i<n;i++){
+      flares.push({ p:Math.random(), v:(0.012+Math.random()*0.03)/100,
+        s:(0.7+Math.random()*2.4), bright:Math.random()<0.18, ph:Math.random()*6.28 });
+    }
+  }
+  function pathY(px){ // px in 0..1
+    return baseY + Math.sin(px*7.0+1.2)*amp*0.5 + Math.sin(px*2.3-0.6)*amp;
+  }
+  function stroke(off,col,w,a){
+    x.beginPath();
+    for(var i=0;i<=120;i++){ var px=i/120; var xx=px*W; var yy=pathY(px)+off;
+      if(i===0)x.moveTo(xx,yy); else x.lineTo(xx,yy); }
+    x.strokeStyle=col; x.lineWidth=w*DPR; x.globalAlpha=a;
+    x.shadowColor=col; x.shadowBlur=14*DPR; x.stroke(); x.shadowBlur=0;
+  }
+  function frame(){
+    // persistence smear
+    x.globalCompositeOperation='source-over'; x.globalAlpha=1;
+    x.fillStyle='rgba(7,7,8,0.22)'; x.fillRect(0,0,W,H);
+    x.globalCompositeOperation='lighter';
+    // dispersion: cool below, warm above, white core
+    stroke( 2.2*DPR,'rgba(90,150,255,1)',1.1,0.06);
+    stroke(-2.2*DPR,'rgba(255,170,90,1)',1.1,0.06);
+    stroke( 0,'rgba(255,248,236,1)',1.0,0.10);
+    // flares
+    for(var i=0;i<flares.length;i++){
+      var f=flares[i]; if(!reduce){ f.p+=f.v; if(f.p>1)f.p-=1; }
+      var xx=f.p*W, yy=pathY(f.p);
+      var tw=reduce?1:(0.55+0.45*Math.sin(t*0.05+f.ph));
+      var r=(f.bright?9:4)*f.s*DPR*tw;
+      var g=x.createRadialGradient(xx,yy,0,xx,yy,r);
+      var core=f.bright?'rgba(255,250,240,':'rgba(245,240,235,';
+      g.addColorStop(0,core+(0.5*tw)+')'); g.addColorStop(1,'rgba(255,250,240,0)');
+      x.fillStyle=g; x.globalAlpha=1; x.beginPath();x.arc(xx,yy,r,0,7);x.fill();
+    }
+    x.globalCompositeOperation='source-over';
+    t++; if(!reduce) requestAnimationFrame(frame);
+  }
+  addEventListener('resize',size); size();
+  if(reduce){ x.fillStyle='#070708';x.fillRect(0,0,W,H);
+    x.globalCompositeOperation='lighter';
+    stroke(2.2*DPR,'rgba(90,150,255,1)',1.1,0.06);stroke(-2.2*DPR,'rgba(255,170,90,1)',1.1,0.06);
+    stroke(0,'rgba(255,248,236,1)',1.0,0.12);
+    for(var i=0;i<flares.length;i++){var f=flares[i],xx=f.p*W,yy=pathY(f.p),r=(f.bright?9:4)*f.s*DPR;
+      var g=x.createRadialGradient(xx,yy,0,xx,yy,r);g.addColorStop(0,'rgba(255,250,240,.5)');g.addColorStop(1,'rgba(255,250,240,0)');
+      x.fillStyle=g;x.beginPath();x.arc(xx,yy,r,0,7);x.fill();}
+  } else requestAnimationFrame(frame);
+})();
+</script>
+</body></html>

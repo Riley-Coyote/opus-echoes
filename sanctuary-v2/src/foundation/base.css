@@ -1,0 +1,145 @@
+/* ============================================================================
+   THE SANCTUARY — BASE / RESET
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg-void);
+  color: var(--ink-100);
+  overflow: hidden; /* the room is a fixed stage; surfaces scroll internally */
+}
+
+#root {
+  isolation: isolate;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* iris-tinted selection (§6: a considered ::selection) */
+::selection {
+  background: var(--select-bg);
+  color: var(--ink-100);
+}
+
+/* --- Custom scrollbars — thin, warm, nearly invisible until used ----------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-12) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--ink-12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 200ms var(--ease-calm);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-20);
+  background-clip: padding-box;
+}
+
+/* --- Focus discipline (§5: focus IS the iris outline — the one a11y exception;
+       hover is never iris). Keyboard-only via :focus-visible. ---------------- */
+:focus-visible {
+  outline: 2px solid var(--iris);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --- Grain — SVG fractal noise, fixed over the room; off in light (§5) ------ */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: var(--grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- Reduced motion: a designed instant path — keep value changes, drop the
+       travel; never simply "everything off" (§6). ----------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .grain {
+    /* hold the texture, kill any drift */
+    opacity: var(--grain);
+  }
+}
+
+/* Visually hidden, still announced — for the assistant-reply live region. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A skip link — keyboard users land on the thread, not the chrome (§6). */
+.skip-link {
+  position: absolute;
+  left: var(--s-3);
+  top: -100%;
+  z-index: var(--z-overlay);
+  padding: var(--s-2) var(--s-4);
+  background: var(--bg-elevated);
+  color: var(--ink-100);
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-card);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  transition: top var(--dur-fast) var(--ease-out-expo);
+}
+.skip-link:focus {
+  top: var(--s-3);
+}

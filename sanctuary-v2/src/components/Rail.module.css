@@ -1,0 +1,185 @@
+.rail {
+  flex: 0 0 var(--rail-w);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-card);
+  padding: var(--s-5) var(--s-3) var(--s-3);
+  overflow-y: auto;
+  z-index: var(--z-rail);
+}
+
+.head {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+  padding: 0 var(--s-3) var(--s-5);
+}
+
+.residents {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+/* --- resident — the top level: a mind, in its name + line ----------------- */
+.resident {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-radius: var(--r-card);
+  border-left: 2px solid transparent;
+  transition:
+    background var(--dur-fast) var(--ease-calm),
+    border-color var(--dur-fast) var(--ease-calm);
+}
+.resident:hover {
+  background: var(--lift); /* neutral lift — never iris */
+}
+.resident[data-active] {
+  background: var(--iris-bg);
+  border-left-color: var(--iris);
+}
+
+.rTop {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-full);
+  flex: 0 0 auto;
+}
+.dotLive {
+  background: var(--iris);
+  box-shadow: 0 0 7px -1px var(--iris);
+}
+.dotRest {
+  background: var(--ink-4);
+}
+.rName {
+  font-family: var(--font-serif);
+  font-size: var(--t-15);
+  font-weight: 440;
+  color: var(--ink-70);
+  transition: color var(--dur-fast) var(--ease-calm);
+}
+.resident:hover .rName,
+.resident[data-active] .rName {
+  color: var(--ink-100);
+}
+.rLine {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--ink-3);
+  padding-left: calc(5px + var(--s-2));
+}
+.rStatus {
+  font-family: var(--font-mono);
+  font-size: var(--t-9);
+  letter-spacing: 0.04em;
+  color: var(--ink-4);
+  padding-left: calc(5px + var(--s-2));
+  margin-top: 1px;
+}
+
+/* --- sections — nested under the active resident -------------------------- */
+.sections {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  margin: var(--s-2) 0 var(--s-3);
+  padding-left: var(--s-4);
+  animation: sectionsIn var(--dur-base) var(--ease-out-expo) both;
+}
+@keyframes sectionsIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.section {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 38px;
+  text-align: left;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-card);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  letter-spacing: 0.01em;
+  color: var(--ink-3);
+  transition:
+    color var(--dur-fast) var(--ease-calm),
+    background var(--dur-fast) var(--ease-calm);
+}
+.section:hover {
+  color: var(--ink-85);
+  background: var(--lift);
+}
+.section[data-active] {
+  color: var(--ink-100);
+  background: var(--iris-bg);
+}
+/* a small leading tick — lights iris on the active section */
+.tick {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--ink-4);
+  flex: 0 0 auto;
+  transition: background var(--dur-fast) var(--ease-calm);
+}
+.section:hover .tick {
+  background: var(--ink-3);
+}
+.section[data-active] .tick {
+  background: var(--iris);
+  box-shadow: 0 0 6px -1px var(--iris);
+}
+
+/* --- foot — settings ------------------------------------------------------ */
+.foot {
+  margin-top: auto;
+  padding-top: var(--s-4);
+}
+.settings {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-card);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  transition:
+    color var(--dur-fast) var(--ease-calm),
+    background var(--dur-fast) var(--ease-calm);
+}
+.settings:hover {
+  color: var(--ink-85);
+  background: var(--lift);
+}
+
+@media (max-width: 920px) {
+  /* the rail becomes a drawer in Stage 3 — hidden for now so the chat is primary */
+  .rail { display: none; }
+}

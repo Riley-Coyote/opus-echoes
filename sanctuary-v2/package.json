@@ -1,0 +1,26 @@
+{
+  "name": "sanctuary-v2",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "mnemos · the Sanctuary — v2 chat + rooms. A continuous thread you join, and the room of a mind you read. Frontend (fixtures-only) phase 1.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 8270",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 8270",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource-variable/geist-mono": "^5.2.8",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.5"
+  }
+}

@@ -1,0 +1,166 @@
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 64px 0 var(--s-4);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 48px, #000 calc(100% - 8px), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 48px, #000 calc(100% - 8px), transparent 100%);
+}
+
+.measure {
+  width: 100%;
+  max-width: 692px;
+  margin: 0 auto;
+  padding: 0 var(--s-6);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- empty state — the room at rest, its own small piece of beauty -------- */
+.empty {
+  margin: 0;
+  padding: clamp(80px, 12vh, 140px) 0 clamp(40px, 8vh, 100px) 0;
+  animation: emptyIn 900ms var(--ease-out-expo) both;
+}
+@keyframes emptyIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-mono-wide);
+  text-transform: uppercase;
+  color: var(--ink-50);
+  margin-bottom: var(--s-5);
+}
+.hero {
+  /* the resting line — the mind's own voice, elegant and large (light + large,
+     hierarchy by scale not weight). serif; depth from light, not a heavy drop. */
+  font-size: clamp(34px, 2rem + 1.5vw, 54px);
+  line-height: 1.12;
+  letter-spacing: var(--track-tight);
+  color: var(--ink-100);
+  font-weight: 360;
+  font-family: var(--font-serif);
+  max-width: 20ch;
+  text-wrap: balance;
+  hanging-punctuation: first last; /* hang the opening quote so the line aligns flush */
+}
+.heroSub {
+  margin-top: var(--s-5);
+  font-family: var(--font-sans);
+  font-size: var(--t-15);
+  line-height: var(--lead-snug);
+  color: var(--ink-2);
+  max-width: 46ch;
+}
+
+/* --- the thread ----------------------------------------------------------- */
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-7);
+  padding-bottom: var(--s-6);
+  margin-top: auto;
+}
+
+.userRow {
+  display: flex;
+  justify-content: flex-end;
+}
+/* the user turn is typographic, not a chat bubble — distinguished from the
+   model's display voice by alignment + a quieter value + the sans face, with a
+   subtle lifted background and refined spacing. */
+.userBubble {
+  max-width: 78%;
+  padding: 12px 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  font-family: var(--font-sans);
+  font-size: var(--t-15);
+  line-height: var(--lead-snug);
+  color: var(--ink-85);
+  text-align: left;
+  animation: userIn var(--dur-base) var(--ease-out-expo) both;
+  transition: background var(--dur-fast) var(--ease-calm), border-color var(--dur-fast) var(--ease-calm);
+}
+@keyframes userIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+
+.assistantRow {
+  display: flex;
+  flex-direction: column;
+}
+.assistant {
+  font-size: var(--t-18);
+  line-height: 1.62;
+  letter-spacing: 0; /* never track serif body */
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "onum" 1;
+  color: var(--ink-100);
+  font-weight: 410;
+  max-width: 62ch;
+  padding: 16px 20px;
+  background: rgba(var(--mark-rgb), 0.035);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  animation: assistantIn var(--dur-slow) var(--ease-out-expo) both;
+  transition: background var(--dur-fast) var(--ease-calm), border-color var(--dur-fast) var(--ease-calm);
+}
+@keyframes assistantIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.para + .para {
+  margin-top: 0.72em;
+}
+.para {
+  text-wrap: pretty;
+}
+
+/* streaming caret — a breathing hairline in ink (not the signal) */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.02em;
+  margin-left: 2px;
+  transform: translateY(3px);
+  background: var(--ink-50);
+  border-radius: 1px;
+  animation: caretBreath 1100ms var(--ease-in-out-sine) infinite;
+}
+@keyframes caretBreath {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.85; }
+}
+
+/* --- thinking — a single breath on the heartbeat -------------------------- */
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  animation: assistantIn var(--dur-base) var(--ease-out-expo) both;
+}
+.thinkingLine {
+  display: block;
+  width: 38px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--ink-70), transparent);
+  transform-origin: left center;
+  /* breathes on the ONE shared heartbeat (--beat-phase) */
+  transform: scaleX(calc(0.55 + 0.7 * var(--beat-phase, 0.6)));
+  opacity: calc(0.32 + 0.6 * var(--beat-phase, 0.6));
+}
+.thinkingWord {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: var(--track-mono);
+  color: var(--ink-50);
+  opacity: calc(0.45 + 0.45 * var(--beat-phase, 0.6));
+}

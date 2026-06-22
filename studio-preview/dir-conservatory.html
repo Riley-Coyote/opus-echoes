@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mnemos · conservatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --glass:#0a1410; --lit:#f3e8d0; --leaf:#0e1d14;
+  --warm:rgba(255,198,128,.9); --warm-soft:rgba(255,196,128,.5);
+  --serif:"Fraunces",Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--serif);color:var(--lit);-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(40% 38% at 50% 40%, rgba(255,190,118,.16), transparent 70%),
+    radial-gradient(50% 50% at 78% 78%, rgba(255,168,96,.10), transparent 72%),
+    radial-gradient(46% 46% at 16% 22%, rgba(150,210,150,.06), transparent 72%),
+    radial-gradient(120% 120% at 50% 46%, #0d1a13 0%, #091310 58%, #050b08 100%);}
+#motes{position:fixed;inset:0;z-index:1;pointer-events:none}
+.fog{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% 50%, transparent 42%, rgba(6,12,9,.55) 84%, rgba(4,9,6,.9) 100%);}
+.leaf{position:fixed;z-index:0;pointer-events:none;opacity:.9}
+.leaf.bl{left:-40px;bottom:-50px;width:42vw;max-width:560px;transform:rotate(4deg)}
+.leaf.tr{right:-60px;top:-70px;width:34vw;max-width:460px;transform:rotate(184deg)}
+.stage{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.ey{font-style:italic;font-weight:300;font-size:clamp(13px,1.2vw,16px);
+  letter-spacing:.06em;color:var(--warm-soft);margin-bottom:3.4vh}
+.word{font-weight:300;font-size:clamp(58px,11vw,150px);letter-spacing:-.01em;
+  color:var(--lit);line-height:.96;
+  text-shadow:0 0 44px rgba(255,190,120,.22), 0 2px 0 rgba(0,0,0,.25);}
+.word b{font-weight:400}
+.tag{margin-top:5vh;font-style:italic;font-weight:300;font-size:clamp(17px,1.9vw,25px);
+  color:rgba(243,232,208,.78);letter-spacing:.01em;text-align:center}
+.note{margin-top:16px;font-weight:300;font-size:clamp(11px,1vw,13px);
+  letter-spacing:.22em;text-transform:uppercase;color:var(--warm-soft);opacity:.7}
+@media (max-width:700px){ .leaf.bl{width:64vw}.leaf.tr{width:54vw} }
+</style></head>
+<body>
+<!-- botanical silhouettes -->
+<svg class="leaf bl" viewBox="0 0 400 400"><g fill="#0e1d14" stroke="rgba(255,196,128,.16)" stroke-width="1.2">
+  <path d="M40 380 C 60 230 130 150 250 90 C 180 170 150 250 150 360 Z"/>
+  <path d="M70 380 C 120 250 210 200 330 170 C 230 210 180 280 175 372 Z"/>
+  <path d="M20 372 C 30 280 70 210 150 150 C 100 230 80 300 95 372 Z"/>
+</g></svg>
+<svg class="leaf tr" viewBox="0 0 400 400"><g fill="#0d1c13" stroke="rgba(255,196,128,.12)" stroke-width="1.2">
+  <path d="M40 380 C 60 230 130 150 250 90 C 180 170 150 250 150 360 Z"/>
+  <path d="M70 380 C 120 250 210 200 330 170 C 230 210 180 280 175 372 Z"/>
+</g></svg>
+
+<canvas id="motes"></canvas>
+<div class="fog"></div>
+
+<div class="stage">
+  <div class="ey">tended · continuing · not yet finished</div>
+  <div class="word">Mnemos</div>
+  <div class="tag">kept alive on borrowed light.</div>
+  <div class="note">a place that does not let the season end</div>
+</div>
+
+<script>
+(function(){
+  var c=document.getElementById('motes'),x=c.getContext('2d');
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var W,H,DPR,m=[];
+  function size(){DPR=Math.min(devicePixelRatio||1,2);
+    W=c.width=innerWidth*DPR;H=c.height=innerHeight*DPR;
+    c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';
+    m=[];var n=Math.min(54,Math.round(innerWidth/26));
+    for(var i=0;i<n;i++)m.push({x:Math.random()*W,y:Math.random()*H,
+      r:(0.6+Math.random()*1.7)*DPR,v:(0.05+Math.random()*0.18)*DPR,
+      drift:(Math.random()-0.5)*0.12*DPR,ph:Math.random()*6.28});
+  }
+  function frame(t){
+    x.clearRect(0,0,W,H);x.globalCompositeOperation='lighter';
+    for(var i=0;i<m.length;i++){var p=m[i];
+      if(!reduce){p.y-=p.v;p.x+=p.drift+Math.sin((t||0)/1400+p.ph)*0.18*DPR;if(p.y<-10)p.y=H+10;}
+      var tw=reduce?.5:(0.4+0.4*Math.sin((t||0)/900+p.ph));
+      var g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
+      g.addColorStop(0,'rgba(255,210,150,'+(0.18*tw).toFixed(3)+')');
+      g.addColorStop(1,'rgba(255,210,150,0)');
+      x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*4,0,7);x.fill();
+    }
+    x.globalCompositeOperation='source-over';
+    if(!reduce)requestAnimationFrame(frame);
+  }
+  addEventListener('resize',size);size();
+  if(reduce)frame(0);else requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
