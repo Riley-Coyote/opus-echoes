@@ -1,7 +1,7 @@
 import { TopBar } from "./TopBar";
 import { Rail } from "./Rail";
 import { ChatCanvas } from "./ChatCanvas";
-import { Room } from "./Room";
+import { Notebook } from "./Notebook";
 import { useView } from "../state/ViewProvider";
 import { useMnemos } from "../state/MnemosProvider";
 import styles from "./Shell.module.css";
@@ -20,7 +20,7 @@ export function Shell() {
       <div className={styles.body}>
         <Rail />
         <main className={styles.stage} id="stage">
-          {view === "chat" ? <ChatCanvas /> : <Room />}
+          {view === "chat" ? <ChatCanvas /> : <Notebook />}
         </main>
       </div>
     </div>

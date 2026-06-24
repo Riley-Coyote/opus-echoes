@@ -1,5 +1,6 @@
 .rail {
   flex: 0 0 var(--rail-w);
+  min-width: 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -9,18 +10,49 @@
   border-radius: var(--r-panel);
   box-shadow: var(--shadow-card);
   padding: var(--s-5) var(--s-3) var(--s-3);
-  overflow-y: auto;
+  overflow: hidden auto;
   z-index: var(--z-rail);
+  transition:
+    flex-basis var(--dur-base) var(--ease-out-expo),
+    padding var(--dur-base) var(--ease-out-expo),
+    opacity var(--dur-base) var(--ease-out-expo),
+    border-color var(--dur-base) var(--ease-out-expo);
+}
+/* collapsed — the rail folds to nothing (gutter and all) so the stage reclaims */
+.rail[data-open="false"] {
+  flex-basis: 0;
+  padding-left: 0;
+  padding-right: 0;
+  opacity: 0;
+  pointer-events: none;
+  border-color: transparent;
 }
 
 .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
   font-family: var(--font-mono);
   font-size: var(--t-10);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--label);
-  padding: 0 var(--s-3) var(--s-5);
+  padding: 0 var(--s-2) var(--s-5) var(--s-3);
+  white-space: nowrap;
 }
+.collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-card);
+  color: var(--ink-3);
+  flex: 0 0 auto;
+  transition: color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.collapse:hover { color: var(--ink-85); background: var(--lift); }
 
 .residents {
   list-style: none;
@@ -91,11 +123,11 @@
 }
 .rStatus {
   font-family: var(--font-mono);
-  font-size: var(--t-9);
+  font-size: var(--t-10);
   letter-spacing: 0.04em;
-  color: var(--ink-4);
+  color: var(--ink-50);
   padding-left: calc(5px + var(--s-2));
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 /* --- sections — nested under the active resident -------------------------- */

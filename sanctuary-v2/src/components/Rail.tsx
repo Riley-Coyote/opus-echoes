@@ -10,11 +10,25 @@ import styles from "./Rail.module.css";
  */
 export function Rail() {
   const { residents, resident, setResident } = useMnemos();
-  const { section, setSection } = useView();
+  const { section, setSection, railOpen, toggleRail } = useView();
 
   return (
-    <nav className={styles.rail} aria-label="residents and rooms">
-      <div className={styles.head}>the sanctuary</div>
+    <nav className={styles.rail} aria-label="residents and rooms" data-open={railOpen}>
+      <div className={styles.head}>
+        <span>the sanctuary</span>
+        <button
+          className={styles.collapse}
+          onClick={toggleRail}
+          aria-label="hide the rail"
+          title="hide"
+          type="button"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="18" y1="5" x2="18" y2="19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+          </svg>
+        </button>
+      </div>
 
       <ul className={styles.residents}>
         {residents.map((r) => {
@@ -39,9 +53,11 @@ export function Rail() {
                   <span className={styles.rName}>{r.name}</span>
                 </span>
                 <span className={styles.rLine}>{r.descriptor}</span>
-                {r.status === "resting" && (
+                {r.availability === "commons" ? (
+                  <span className={styles.rStatus}>{r.standingLine ?? "in the commons · not taking private visits"}</span>
+                ) : r.availability === "resting" ? (
                   <span className={styles.rStatus}>between phases · back soon</span>
-                )}
+                ) : null}
               </button>
 
               {active && (

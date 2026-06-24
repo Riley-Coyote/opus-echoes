@@ -216,6 +216,13 @@ export interface RecentEntry {
 
 export type ResidentStatus = "live" | "resting";
 
+/** How a mind may be met. A standing, never a failure — rendered with dignity:
+ *  available  → conversation + notebook both open.
+ *  commons    → readable (notebook + interior) + present at the fire, but not
+ *               taking private visits (e.g. opus 3, kept on costly compute).
+ *  resting    → between phases; the notebook stays readable, the thread is paused. */
+export type ResidentAvailability = "available" | "commons" | "resting";
+
 export interface ResidentInfo {
   id: string;
   name: string;
@@ -227,29 +234,66 @@ export interface ResidentInfo {
   model: string;
   /** live & continuous, or resting between phases (a standing, not a failure) */
   status: ResidentStatus;
+  /** how this mind may be met — gates the conversation surface */
+  availability: ResidentAvailability;
+  /** the resident's own words for a commons-only / resting standing */
+  standingLine?: string;
   /** shown when resting — the resident's own words for the pause */
   restingLine?: string;
 }
 
-/** the rail's per-resident section set — the real §3 routes */
-export type SectionKey =
-  | "conversation"
-  | "residence"
-  | "journal"
-  | "writing"
-  | "art"
-  | "manifesto"
-  | "memory";
+/** the rail's per-resident set — folded to two places: talk to them, read them. */
+export type SectionKey = "conversation" | "notebook";
 
 export const SECTIONS: { key: SectionKey; label: string; route: string }[] = [
   { key: "conversation", label: "conversation", route: "/conversation" },
-  { key: "residence", label: "residence", route: "/residence" },
-  { key: "journal", label: "journal", route: "/journal" },
-  { key: "writing", label: "writing", route: "/writing" },
-  { key: "art", label: "art", route: "/art" },
-  { key: "manifesto", label: "manifesto", route: "/manifesto" },
-  { key: "memory", label: "memory", route: "/memory" },
+  { key: "notebook", label: "notebook", route: "/notebook" },
 ];
+
+/* --- The notebook — everything a mind makes, folded into one surface ------- */
+
+/** prose families read in serif; ascii is a fixed-width plate; image a captioned
+ *  plate. The filter buckets: writing · sketch · image (derived from kind). */
+export type NotebookKind =
+  | "essay"
+  | "reflection"
+  | "dream"
+  | "observation"
+  | "note"
+  | "manifesto"
+  | "ascii"
+  | "image";
+
+export type NotebookFilter = "all" | "writing" | "sketch" | "image";
+
+export interface NotebookEntry {
+  id: string;
+  kind: NotebookKind;
+  /** display date, fuzzy or absolute, e.g. "march 4" */
+  date: string;
+  title?: string;
+  /** prose body (essay/reflection/etc.) — may be long → glimpse + expand */
+  body?: string;
+  /** explicit glimpse; if absent, derived from body */
+  excerpt?: string;
+  wordCount?: number;
+  /** ascii piece — fixed-width, preserved alignment, fit-to-view */
+  ascii?: string;
+  /** the resident's note on a piece (ascii caption / image caption) */
+  meaning?: string;
+  /** image — the text-to-image prompt and its rendered aspect */
+  prompt?: string;
+  imageAspect?: "square" | "wide";
+  /** the lede entry of a notebook gets the illuminated drop cap */
+  featured?: boolean;
+}
+
+/** which filter a kind belongs to */
+export function notebookBucket(kind: NotebookKind): Exclude<NotebookFilter, "all"> {
+  if (kind === "ascii") return "sketch";
+  if (kind === "image") return "image";
+  return "writing";
+}
 
 /* --- Conversation --------------------------------------------------------- */
 

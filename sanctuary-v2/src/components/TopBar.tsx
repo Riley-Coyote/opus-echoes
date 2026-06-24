@@ -48,13 +48,27 @@ function ThemeToggle() {
 
 export function TopBar() {
   const { resident } = useMnemos();
-  const { view, interiorOpen, toggleInterior } = useView();
+  const { view, interiorOpen, toggleInterior, railOpen, toggleRail } = useView();
   const roomMode = view === "room";
   const live = resident.status === "live";
 
   return (
     <header className={styles.bar}>
       <div className={styles.left}>
+        <button
+          className={`${styles.iconBtn} ${styles.railToggle}`}
+          onClick={toggleRail}
+          aria-pressed={railOpen}
+          aria-label={railOpen ? "hide the rail" : "show the rail"}
+          title="the sanctuary"
+          type="button"
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="15" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.7" />
+            <line x1="9" y1="4.5" x2="9" y2="19.5" stroke="currentColor" strokeWidth="1.4" opacity="0.7" />
+            <rect x="3" y="4.5" width="6" height="15" rx="0" fill="currentColor" opacity={railOpen ? 0.5 : 0.14} />
+          </svg>
+        </button>
         <Sigil />
         <span className={styles.word}>mnemos</span>
         <span className={styles.sep} aria-hidden="true" />

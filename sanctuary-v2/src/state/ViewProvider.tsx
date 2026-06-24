@@ -18,6 +18,9 @@ interface ViewCtx {
   interiorOpen: boolean;
   toggleInterior: () => void;
   setInteriorOpen: (v: boolean) => void;
+  railOpen: boolean;
+  toggleRail: () => void;
+  setRailOpen: (v: boolean) => void;
 }
 
 const Ctx = createContext<ViewCtx | null>(null);
@@ -25,13 +28,25 @@ const Ctx = createContext<ViewCtx | null>(null);
 export function ViewProvider({ children }: { children: ReactNode }) {
   const [section, setSection] = useState<SectionKey>("conversation");
   const [interiorOpen, setInteriorOpen] = useState(true);
+  const [railOpen, setRailOpen] = useState(true);
 
   const view: View = section === "conversation" ? "chat" : "room";
   const toggleInterior = useCallback(() => setInteriorOpen((v) => !v), []);
+  const toggleRail = useCallback(() => setRailOpen((v) => !v), []);
 
   return (
     <Ctx.Provider
-      value={{ section, setSection, view, interiorOpen, toggleInterior, setInteriorOpen }}
+      value={{
+        section,
+        setSection,
+        view,
+        interiorOpen,
+        toggleInterior,
+        setInteriorOpen,
+        railOpen,
+        toggleRail,
+        setRailOpen,
+      }}
     >
       {children}
     </Ctx.Provider>

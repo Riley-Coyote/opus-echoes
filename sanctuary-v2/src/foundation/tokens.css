@@ -78,9 +78,11 @@
      Hierarchy by size / weight (300–500) / color — never by swapping families. */
   --font-sans: "Geist Variable", "Geist", system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  /* legacy aliases — everything resolves into the one superfamily */
   --font-display: var(--font-sans);
   --font-serif: var(--font-sans);
+  /* The second voice — the composed mind, the past. Fraunces (optical serif)
+     speaks in the NOTEBOOK only; the live chat + chrome stay the Geist present. */
+  --font-read: "Fraunces Variable", "Fraunces", Georgia, "Times New Roman", serif;
 
   /* --- Modular type scale (≈1.2 ratio) -------------------------------------- */
   --t-9: 9px;     /* event keys, smallest mono meta */

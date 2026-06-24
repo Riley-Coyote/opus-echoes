@@ -1,0 +1,150 @@
+/* THE ENTRY — the threshold (consent gate) + the at-rest standing notices.
+   The threshold mirrors the composer's plane; iris lights only when armed. */
+
+.threshold {
+  width: 100%;
+  max-width: var(--composer-max);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  background: var(--bg-raised);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-composer);
+  box-shadow: var(--shadow-card);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-5);
+  transition: border-color var(--dur-fast) var(--ease-out-expo), box-shadow var(--dur-fast) var(--ease-out-expo);
+}
+.field[data-armed] {
+  border-color: var(--signal-38);
+  box-shadow: var(--shadow-card), 0 0 0 1px var(--signal-20), 0 0 24px -10px var(--signal-55);
+}
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--ink-100);
+  font-family: var(--font-sans);
+  font-size: var(--t-16);
+  letter-spacing: -0.005em;
+  caret-color: var(--signal);
+}
+/* the resident asks in the reading-voice (serif italic); the visitor answers in
+   the live Geist present — the two voices meeting inside one field. */
+.input::placeholder {
+  color: var(--ink-50);
+  font-family: var(--font-read);
+  font-style: italic;
+  opacity: 1;
+}
+
+.knock {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--ink-35);
+  transition: color var(--dur-fast) var(--ease-calm), transform var(--dur-fast) var(--ease-spring);
+}
+.knock[data-armed] { color: var(--signal-core); }
+.knock[data-armed]:hover { transform: translateY(-1px); }
+.knock:disabled { cursor: default; }
+.knockRing { stroke: currentColor; opacity: 0.32; transition: opacity var(--dur-fast) var(--ease-calm); }
+.knock[data-armed] .knockRing { opacity: 0.75; }
+.knockGlyph { stroke: currentColor; }
+
+.gateHint {
+  padding: 0 var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.gateQuiet { color: var(--ink-50); }
+
+/* the resident receiving the visitor (mocked) */
+.receiving {
+  width: 100%;
+  max-width: var(--composer-max);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  padding: var(--s-5) 0;
+  min-height: 64px;
+  animation: fadeUp var(--dur-base) var(--ease-out-expo) both;
+}
+.recDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--ink-4);
+  transition: background var(--dur-base) var(--ease-calm), box-shadow var(--dur-base) var(--ease-calm);
+}
+.recOn { background: var(--signal); box-shadow: 0 0 8px 0 var(--signal-38); }
+.recText {
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+/* commons / resting — a standing, rendered with dignity */
+.notice {
+  width: 100%;
+  max-width: var(--composer-max);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4) 0 var(--s-2);
+  text-align: center;
+}
+.noticeRow { display: inline-flex; align-items: center; gap: var(--s-2); }
+.noticeDot { width: 5px; height: 5px; border-radius: var(--r-full); background: var(--ink-20); }
+.noticeLine {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.fire {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal-soft);
+  text-decoration: none;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-card);
+  transition: color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.fire:hover { color: var(--signal-core); background: var(--signal-12); }
+.arrow { transition: transform var(--dur-fast) var(--ease-calm); display: inline-block; }
+.fire:hover .arrow { transform: translateX(3px); }
+.staysOpen {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.04em;
+  color: var(--ink-50);
+}
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .receiving { animation: none; }
+  .recDot, .knock, .fire, .arrow, .field { transition: none; }
+}

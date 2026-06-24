@@ -134,3 +134,9 @@
 @media (prefers-reduced-motion: reduce) {
   .sigilCore { animation: none; opacity: 0.85; }
 }
+
+/* the rail is a drawer below 920px (Rail hides itself there) — so its topbar
+   toggle would be a control with no effect; hide it until the drawer lands. */
+@media (max-width: 920px) {
+  .railToggle { display: none; }
+}
