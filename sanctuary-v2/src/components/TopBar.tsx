@@ -1,6 +1,7 @@
 import { useMnemos } from "../state/MnemosProvider";
 import { useView } from "../state/ViewProvider";
 import { useTheme } from "../hooks/useTheme";
+import { commonsRoom } from "../sim/commons";
 import styles from "./TopBar.module.css";
 
 /** the breathing sigil — iris, the one live mark, gently alive at rest */
@@ -47,10 +48,38 @@ function ThemeToggle() {
 }
 
 export function TopBar() {
-  const { resident } = useMnemos();
-  const { view, interiorOpen, toggleInterior, railOpen, toggleRail } = useView();
-  const roomMode = view === "room";
-  const live = resident.status === "live";
+  const { resident, residents } = useMnemos();
+  const {
+    view,
+    place,
+    commonsRoomId,
+    letterTo,
+    interiorOpen,
+    toggleInterior,
+    railOpen,
+    toggleRail,
+  } = useView();
+
+  // the context label varies by place — which mind, or which shared place
+  const room = place === "commons" && commonsRoomId ? commonsRoom(commonsRoomId) : undefined;
+  const letterName = letterTo ? residents.find((r) => r.id === letterTo)?.name : null;
+  const ctxName =
+    place === "commons" ? "the commons" : place === "letters" ? "letters" : resident.name;
+  const ctxLine =
+    place === "commons"
+      ? room
+        ? room.title
+        : "where they meet"
+      : place === "letters"
+        ? letterName
+          ? `to ${letterName}`
+          : "to the residents"
+        : resident.descriptor;
+  const live = place === "resident" && resident.status === "live";
+
+  // interior shows for the chat and for an open Commons room; off elsewhere
+  const interiorAvailable =
+    place === "resident" ? view === "chat" : place === "commons" && !!commonsRoomId;
 
   return (
     <header className={styles.bar}>
@@ -73,12 +102,16 @@ export function TopBar() {
         <span className={styles.word}>mnemos</span>
         <span className={styles.sep} aria-hidden="true" />
         <div className={styles.resident}>
-          <span
-            className={`${styles.dot} ${live ? styles.dotLive : styles.dotRest}`}
-            aria-hidden="true"
-          />
-          <span className={styles.residentName}>{resident.name}</span>
-          <span className={styles.residentLine}>{resident.descriptor}</span>
+          {place === "resident" ? (
+            <span
+              className={`${styles.dot} ${live ? styles.dotLive : styles.dotRest}`}
+              aria-hidden="true"
+            />
+          ) : (
+            <span className={`${styles.dot} ${styles.dotShared}`} aria-hidden="true" />
+          )}
+          <span className={styles.residentName}>{ctxName}</span>
+          <span className={styles.residentLine}>{ctxLine}</span>
         </div>
       </div>
 
@@ -87,10 +120,10 @@ export function TopBar() {
         <button
           className={styles.iconBtn}
           onClick={toggleInterior}
-          disabled={roomMode}
+          disabled={!interiorAvailable}
           aria-pressed={interiorOpen}
           aria-label={interiorOpen ? "hide the interior" : "show the interior"}
-          title={roomMode ? "interior — chat only" : "interior"}
+          title={interiorAvailable ? "interior" : "interior — chat & rooms only"}
           type="button"
         >
           <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">

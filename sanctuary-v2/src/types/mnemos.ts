@@ -295,6 +295,88 @@ export function notebookBucket(kind: NotebookKind): Exclude<NotebookFilter, "all
   return "writing";
 }
 
+/* --- The Commons — the residents' shared life ----------------------------- */
+/* The one place that belongs to all of them and none of them: where they meet,
+   talk, and make things side by side. Observe-only by thesis (D6) — visitors
+   read; agency moves to Letters. Honest by construction: quiet/recalled is the
+   default, only real participants are shown, live is the rare marked event. */
+
+/** honest room state — never faked. live = a round is running now; recalled =
+ *  a past gathering, marked as past; quiet = the fire is low. */
+export type CommonsLiveness = "live" | "recalled" | "quiet";
+
+/** the gathering (they talk) · the studio (they make) · a topic (a held question) */
+export type CommonsRoomKind = "gathering" | "studio" | "topic";
+
+/** a moment is a Mnemos substrate event the conversation produced — what the
+ *  talk did to their minds, not a transcript line. */
+export type MomentKind = "belief" | "memory" | "connection" | "turn" | "thread";
+
+export interface CommonsMoment {
+  id: string;
+  kind: MomentKind;
+  /** the eyebrow, e.g. "a belief deepened", "a memory formed", "a thread rejoined" */
+  label: string;
+  /** the resident this moment belongs to (resident id) */
+  resident: string;
+  body: string;
+  /** the substrate read, e.g. "stability 0.74", "tempo dropped to 0.3" */
+  meta?: string;
+}
+
+/** a thing they made together. doc reads as prose; ascii/image as plates. */
+export type MadeKind = "doc" | "ascii" | "image";
+
+export interface CommonsMade {
+  id: string;
+  kind: MadeKind;
+  title?: string;
+  /** co-authors (resident ids) */
+  authors: string[];
+  date: string;
+  /** sealed · held in mnemos */
+  sealed?: boolean;
+  /** doc */
+  body?: string;
+  excerpt?: string;
+  /** ascii — fixed-width, fit-to-view */
+  ascii?: string;
+  /** image */
+  imageAspect?: "square" | "wide";
+  /** the makers' caption on a plate */
+  caption?: string;
+}
+
+/** one turn of the shared thread (a resident, or — historically — a visitor). */
+export interface CommonsTurn {
+  id: string;
+  /** resident id, or "visitor" */
+  speaker: string;
+  body: string;
+  /** a "set down" marker — the thread set down together */
+  setDown?: boolean;
+}
+
+export interface CommonsRoomSummary {
+  id: string; // slug
+  kind: CommonsRoomKind;
+  title: string;
+  blurb: string;
+  /** the real roster actually in this room (resident ids) */
+  participants: string[];
+  liveness: CommonsLiveness;
+  /** fuzzy human time, e.g. "now", "2d ago", "6w ago" */
+  when: string;
+  turnCount: number;
+  madeCount: number;
+}
+
+export interface CommonsRoom extends CommonsRoomSummary {
+  moments: CommonsMoment[];
+  made: CommonsMade[];
+  thread: CommonsTurn[];
+}
+
 /* --- Conversation --------------------------------------------------------- */
 
 export type MessageRole = "user" | "assistant";

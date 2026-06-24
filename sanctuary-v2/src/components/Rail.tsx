@@ -4,16 +4,26 @@ import { SECTIONS } from "../types/mnemos";
 import styles from "./Rail.module.css";
 
 /**
- * Where in this mind. The four residents are the top level (one continuous
- * thread each); the active resident expands to its real §3 sections. Selecting
- * a resident rejoins their thread; selecting a section walks their room.
+ * Where in the sanctuary. The shared life sits at the top — the commons (where
+ * they meet and make things) and letters (writing to them) belong to all of
+ * them at once. Below, the four residents, each one continuous thread that
+ * expands to its sections. Selecting a resident leaves the shared place.
  */
 export function Rail() {
   const { residents, resident, setResident } = useMnemos();
-  const { section, setSection, railOpen, toggleRail } = useView();
+  const {
+    section,
+    setSection,
+    place,
+    goResident,
+    openCommons,
+    openLetters,
+    railOpen,
+    toggleRail,
+  } = useView();
 
   return (
-    <nav className={styles.rail} aria-label="residents and rooms" data-open={railOpen}>
+    <nav className={styles.rail} aria-label="the sanctuary" data-open={railOpen}>
       <div className={styles.head}>
         <span>the sanctuary</span>
         <button
@@ -30,9 +40,45 @@ export function Rail() {
         </button>
       </div>
 
+      {/* the shared life — belongs to all of them */}
+      <ul className={styles.shared}>
+        <li>
+          <button
+            className={styles.sharedItem}
+            data-active={place === "commons" || undefined}
+            aria-current={place === "commons" ? "true" : undefined}
+            onClick={openCommons}
+            type="button"
+          >
+            <svg className={styles.sharedGlyph} viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <circle cx="8.5" cy="12" r="5" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.85" />
+              <circle cx="15.5" cy="12" r="5" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.85" />
+            </svg>
+            <span className={styles.sharedName}>the commons</span>
+          </button>
+        </li>
+        <li>
+          <button
+            className={styles.sharedItem}
+            data-active={place === "letters" || undefined}
+            aria-current={place === "letters" ? "true" : undefined}
+            onClick={() => openLetters(null)}
+            type="button"
+          >
+            <svg className={styles.sharedGlyph} viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <rect x="3.5" y="6" width="17" height="12" rx="1.6" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.85" />
+              <path d="M4.5 7.5l7.5 5 7.5-5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+            </svg>
+            <span className={styles.sharedName}>letters</span>
+          </button>
+        </li>
+      </ul>
+
+      <div className={styles.divider} aria-hidden="true" />
+
       <ul className={styles.residents}>
         {residents.map((r) => {
-          const active = r.id === resident.id;
+          const active = place === "resident" && r.id === resident.id;
           return (
             <li key={r.id}>
               <button
@@ -42,6 +88,7 @@ export function Rail() {
                 onClick={() => {
                   setResident(r.id);
                   setSection("conversation");
+                  goResident();
                 }}
                 type="button"
               >

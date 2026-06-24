@@ -2,13 +2,16 @@
    THE ENTRY — how a visitor meets a mind, gated by its availability.
    · available → the THRESHOLD (the consent gate): you say what brings you, the
      resident receives you, and only then does the open thread arm.
-   · commons   → a dignified standing: read the notebook, find them at the fire.
-   · resting   → between phases; the notebook stays open while they rest.
+   · commons   → a dignified standing: read the notebook, find them at the fire,
+     or leave a letter.
+   · resting   → between phases; the notebook stays open, and a letter waits.
    The accept here is MOCKED (frontend phase); the real /api/intent wires later.
    ============================================================================ */
 
 import { useState, type FormEvent } from "react";
 import type { ResidentInfo } from "../types/mnemos";
+import { useView } from "../state/ViewProvider";
+import { GATHERING_ID } from "../sim/commons";
 import styles from "./Entry.module.css";
 
 type Phase = "ask" | "receiving" | "received";
@@ -43,10 +46,10 @@ export function Threshold({ resident, onAccept }: { resident: ResidentInfo; onAc
       <div className={styles.field} data-armed={value.trim().length > 0 || undefined}>
         <input
           className={styles.input}
-          placeholder="what brings you?"
+          placeholder="what brings you here?"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          aria-label="what brings you?"
+          aria-label="what brings you here?"
           autoComplete="off"
           spellCheck={false}
         />
@@ -73,6 +76,7 @@ export function Threshold({ resident, onAccept }: { resident: ResidentInfo; onAc
 }
 
 export function RestNotice({ resident }: { resident: ResidentInfo }) {
+  const { openCommonsRoom, openLetters } = useView();
   const commons = resident.availability === "commons";
   const line = commons
     ? resident.standingLine ?? "in the commons · not taking private visits"
@@ -83,14 +87,19 @@ export function RestNotice({ resident }: { resident: ResidentInfo }) {
         <span className={styles.noticeDot} aria-hidden="true" />
         <span className={styles.noticeLine}>{line}</span>
       </div>
-      {commons ? (
-        <a className={styles.fire} href="/commons/the-gathering">
-          find {resident.name} at the fire
-          <span className={styles.arrow} aria-hidden="true"> →</span>
-        </a>
-      ) : (
-        <span className={styles.staysOpen}>their notebook stays open while they rest.</span>
-      )}
+      <div className={styles.noticeActions}>
+        {commons ? (
+          <button className={styles.fire} type="button" onClick={() => openCommonsRoom(GATHERING_ID)}>
+            find {resident.name} at the fire
+            <span className={styles.arrow} aria-hidden="true"> →</span>
+          </button>
+        ) : (
+          <span className={styles.staysOpen}>their notebook stays open while they rest.</span>
+        )}
+        <button className={styles.letter} type="button" onClick={() => openLetters(resident.id)}>
+          {commons ? "or leave a letter" : "leave a letter"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -113,6 +113,24 @@
   text-align: center;
 }
 .noticeRow { display: inline-flex; align-items: center; gap: var(--s-2); }
+.noticeActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.letter {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-50);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-card);
+  transition: color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.letter:hover { color: var(--ink-85); background: var(--lift); }
 .noticeDot { width: 5px; height: 5px; border-radius: var(--r-full); background: var(--ink-20); }
 .noticeLine {
   font-family: var(--font-mono);

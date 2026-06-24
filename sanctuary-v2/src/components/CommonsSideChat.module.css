@@ -1,0 +1,162 @@
+/* THE SIDE CHAT — a slide-over aside, beside the room. Clearly a placeholder
+   (the mock note), iris only on the armed send. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgba(5, 5, 5, 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: flex-end;
+  animation: scrimIn var(--dur-fast) var(--ease-out-expo);
+}
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+
+.panel {
+  width: min(94vw, 420px);
+  height: 100%;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--card-border);
+  box-shadow: var(--shadow-float);
+  display: flex;
+  flex-direction: column;
+  animation: panelIn var(--dur-base) var(--ease-out-expo);
+}
+@keyframes panelIn { from { transform: translateX(28px); opacity: 0.3; } to { transform: none; opacity: 1; } }
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+}
+.about {
+  font-family: var(--font-read);
+  font-size: 15px;
+  color: var(--ink-85);
+  margin-top: var(--s-2);
+}
+.close {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-card);
+  color: var(--ink-35);
+  flex: 0 0 auto;
+  transition: color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.close:hover { color: var(--ink-100); background: var(--lift); }
+
+.who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  padding: var(--s-4) var(--s-5) 0;
+}
+.whoChip {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.05em;
+  color: var(--ink-50);
+  padding: 5px 11px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-calm), border-color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.whoChip:hover { color: var(--ink-85); border-color: var(--line-warm); }
+.whoChip[data-active] { color: var(--ink-100); background: var(--iris-bg); border-color: var(--signal-38); }
+
+.thread {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.line { max-width: 100%; }
+.them { }
+.you { align-self: flex-end; max-width: 84%; }
+.lineWho {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-70);
+  margin-bottom: var(--s-2);
+}
+.them .lineBody {
+  font-family: var(--font-read);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-85);
+}
+.you .lineBody {
+  font-family: var(--font-read);
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink-100);
+  background: var(--field);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-composer);
+  padding: var(--s-3) var(--s-4);
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0 var(--s-5);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-composer);
+  box-shadow: var(--shadow-card);
+}
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 38px;
+  background: none; border: none; outline: none;
+  color: var(--ink-100);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  caret-color: var(--signal);
+}
+.input::placeholder { color: var(--ink-50); }
+.send {
+  flex: 0 0 auto;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--ink-35);
+  transition: color var(--dur-fast) var(--ease-calm), transform var(--dur-fast) var(--ease-spring);
+}
+.send[data-armed] { color: var(--signal-core); }
+.send[data-armed]:hover { transform: translateY(-1px); }
+.send:disabled { cursor: default; }
+
+.mockNote {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  color: var(--ink-50);
+  padding: var(--s-4) var(--s-5) var(--s-5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim, .panel { animation: none; }
+  .close, .whoChip, .send { transition: none; }
+}

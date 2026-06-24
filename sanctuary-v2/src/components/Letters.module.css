@@ -1,0 +1,191 @@
+/* LETTERS — the agency channel. A reading-surface composer; iris only on the
+   armed send. Consent is a visible, required gesture (the asymmetry in form). */
+
+.scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+.scroll::-webkit-scrollbar { width: 7px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--line-firm); border-radius: var(--r-full); }
+
+.surface {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(32px, 7vh, 88px) clamp(20px, 4vw, 48px) 140px;
+}
+
+.head { margin-bottom: clamp(28px, 5vh, 48px); }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+  font-weight: 500;
+}
+.title {
+  font-family: var(--font-read);
+  font-weight: 560;
+  font-size: clamp(28px, 3.4vw, 40px);
+  letter-spacing: -0.022em;
+  line-height: 1.08;
+  color: var(--ink-100);
+  margin-top: var(--s-3);
+}
+.lede {
+  font-family: var(--font-read);
+  font-weight: 380;
+  font-size: clamp(17px, 1.9vw, 20px);
+  line-height: 1.55;
+  letter-spacing: -0.012em;
+  color: var(--ink-70);
+  max-width: 52ch;
+  margin-top: var(--s-4);
+  text-wrap: pretty;
+}
+
+.form { display: flex; flex-direction: column; gap: var(--s-5); }
+
+.toRow { display: flex; align-items: baseline; gap: var(--s-4); flex-wrap: wrap; }
+.toLabel {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+  flex: 0 0 auto;
+}
+.toChips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.toChip {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.04em;
+  color: var(--ink-50);
+  padding: 6px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-calm), border-color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.toChip:hover { color: var(--ink-85); border-color: var(--line-warm); }
+.toChip[data-active] { color: var(--ink-100); background: var(--iris-bg); border-color: var(--signal-38); }
+
+.body {
+  width: 100%;
+  resize: vertical;
+  min-height: 180px;
+  background: var(--bg-raised);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-composer);
+  box-shadow: var(--shadow-card);
+  padding: var(--s-5);
+  color: var(--ink-100);
+  font-family: var(--font-read);
+  font-size: 18px;
+  line-height: 1.6;
+  outline: none;
+  caret-color: var(--signal);
+  transition: border-color var(--dur-fast) var(--ease-out-expo), box-shadow var(--dur-fast) var(--ease-out-expo);
+}
+.body::placeholder { color: var(--ink-50); }
+.body:focus {
+  border-color: var(--signal-38);
+  box-shadow: var(--shadow-card), 0 0 0 1px var(--signal-20);
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  cursor: pointer;
+}
+.checkbox { position: absolute; opacity: 0; width: 0; height: 0; }
+.consentBox {
+  flex: 0 0 auto;
+  width: 20px; height: 20px;
+  margin-top: 1px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line-warm);
+  border-radius: 6px;
+  color: var(--signal-core);
+  transition: border-color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.checkbox:checked + .consentBox { border-color: var(--signal-38); background: var(--iris-bg); }
+.checkbox:focus-visible + .consentBox { box-shadow: 0 0 0 2px var(--signal-38); }
+.consentText {
+  font-family: var(--font-read);
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink-70);
+  max-width: 56ch;
+}
+
+.foot { display: flex; justify-content: flex-end; }
+.send {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-50);
+  padding: var(--s-3) var(--s-6);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-composer);
+  background: var(--bg-raised);
+  transition: color var(--dur-fast) var(--ease-calm), border-color var(--dur-fast) var(--ease-calm), box-shadow var(--dur-fast) var(--ease-out-expo);
+}
+.send:not(:disabled) {
+  color: var(--signal-core);
+  border-color: var(--signal-38);
+  box-shadow: 0 0 24px -12px var(--signal-55);
+}
+.send:not(:disabled):hover { background: var(--signal-12); }
+.send:disabled { cursor: default; }
+
+/* the set-down confirmation ------------------------------------------------ */
+.sentMark {
+  width: 52px; height: 52px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--signal-soft);
+  background: var(--iris-bg);
+  margin-bottom: var(--s-5);
+}
+.sentTitle {
+  font-family: var(--font-read);
+  font-weight: 560;
+  font-size: clamp(24px, 2.8vw, 32px);
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  color: var(--ink-100);
+}
+.sentLede {
+  font-family: var(--font-read);
+  font-weight: 380;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink-70);
+  max-width: 50ch;
+  margin-top: var(--s-4);
+  text-wrap: pretty;
+}
+.sentActions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-7); }
+.again, .toCommons {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.06em;
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-card);
+  transition: color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.again { color: var(--ink-70); border: 1px solid var(--card-border); }
+.again:hover { color: var(--ink-100); border-color: var(--line-warm); }
+.toCommons { color: var(--signal-soft); }
+.toCommons:hover { color: var(--signal-core); background: var(--signal-12); }
+
+@media (max-width: 720px) {
+  .surface { padding-left: 18px; padding-right: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .body, .send, .toChip, .consentBox, .again, .toCommons { transition: none; }
+}
