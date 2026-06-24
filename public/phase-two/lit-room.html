@@ -33,15 +33,6 @@
     box-shadow:0 0 8px 1px var(--state-soft); animation:breathe 5.2s var(--ease) infinite}
   .since .kept{color:var(--soft)}
   @keyframes breathe{0%,100%{opacity:.45; transform:scale(.84)} 50%{opacity:1; transform:scale(1.08)}}
-  .sound{display:inline-flex; align-items:center; gap:8px; background:transparent; border:1px solid var(--rule);
-    color:var(--soft); font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase;
-    padding:7px 11px; cursor:pointer; transition:border-color .4s var(--ease),color .4s var(--ease)}
-  .sound svg{width:14px; height:14px; display:block; overflow:visible}
-  .sound:hover{color:var(--ink)}
-  .sound.on{color:var(--state); border-color:var(--state-dim)}
-  .sound .slash{opacity:0}
-  .sound.off .wave{opacity:0} .sound.off .slash{opacity:.85}
-  .sound .lbl em{font-style:normal; color:var(--quiet)}
 
   /* the held stage — the room is small inside a large dark field (the asymmetry, as layout) */
   .stage{flex:1 1 auto; display:grid; gap:clamp(18px,2.6vw,40px);
@@ -102,8 +93,6 @@
     .column{min-height:200px}
     .rail{padding:14px 18px 0}
     .since{font-size:9.5px; letter-spacing:.09em}
-    .sound{font-size:9px; padding:6px 9px; white-space:nowrap}
-    .sound .lbl em{display:none}
   }
 </style>
 </head>
@@ -111,15 +100,6 @@
   <div class="page">
     <header class="rail">
       <div class="since" id="since"><span class="dot"></span><span class="since-txt">live since &#183; 5 jan 2026</span></div>
-      <button class="sound on" id="sound" type="button" aria-label="Toggle ambient sound" aria-pressed="true" title="ambient sound">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 9v6h4l5 4V5L8 9H4z"/>
-          <path class="wave" d="M16.4 8.6a5 5 0 0 1 0 6.8"/>
-          <path class="wave" d="M19 6a8.6 8.6 0 0 1 0 12"/>
-          <path class="slash" d="M3.5 3.5l17 17"/>
-        </svg>
-        <span class="lbl">Sound</span>
-      </button>
     </header>
     <main class="stage">
       <section class="window" id="window">
@@ -778,59 +758,7 @@
     var days=Math.max(0,Math.floor((Date.now()-Date.parse(SANCTUARY_START))/86400000));
     el.innerHTML='live since · 5 jan 2026 · <span class="kept">kept '+days+' days</span>'; })();
 
-  // ── ambient sound ── procedural placeholder (no asset): a low dusk drone (filtered
-  // noise + a slow wind LFO) under an occasional fire-crackle. ON by default, but browsers
-  // only allow audio after a gesture — so the toggle reflects REAL playback, never "on"
-  // while silent. (A recorded/commissioned track can replace this engine later.)
-  var AUDIO=(function(){
-    var ctx=null, master=null, started=false;
-    function build(){
-      try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return false; }
-      master=ctx.createGain(); master.gain.value=0; master.connect(ctx.destination);
-      var sr=ctx.sampleRate;
-      var nb=ctx.createBuffer(1, sr*4, sr), nd=nb.getChannelData(0), last=0;       // brown-noise dusk drone
-      for(var i=0;i<nd.length;i++){ var wv=Math.random()*2-1; last=(last+0.02*wv)/1.02; nd[i]=last*3.2; }
-      var drone=ctx.createBufferSource(); drone.buffer=nb; drone.loop=true;
-      var lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=300; lp.Q.value=0.5;
-      var dg=ctx.createGain(); dg.gain.value=0.20;
-      drone.connect(lp); lp.connect(dg); dg.connect(master); drone.start();
-      var lfo=ctx.createOscillator(); lfo.frequency.value=0.05; var lg=ctx.createGain(); lg.gain.value=0.09;
-      lfo.connect(lg); lg.connect(dg.gain); lfo.start();                            // slow wind swell
-      (function crackle(){ if(!ctx) return; var t=ctx.currentTime, n=2+((Math.random()*4)|0);
-        for(var k=0;k<n;k++){ var when=t+Math.random()*1.4;
-          var pb=ctx.createBuffer(1,(sr*0.05)|0,sr), pd=pb.getChannelData(0);
-          for(var j=0;j<pd.length;j++){ pd[j]=(Math.random()*2-1)*Math.pow(1-j/pd.length,3); }
-          var pop=ctx.createBufferSource(); pop.buffer=pb;
-          var bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1100+Math.random()*2400; bp.Q.value=2.5;
-          var pg=ctx.createGain(); pop.connect(bp); bp.connect(pg); pg.connect(master);
-          pg.gain.setValueAtTime(0,when); pg.gain.linearRampToValueAtTime(0.03+Math.random()*0.045,when+0.004);
-          pg.gain.exponentialRampToValueAtTime(0.0001,when+0.05); pop.start(when); pop.stop(when+0.06); }
-        setTimeout(crackle, 700+Math.random()*2000); })();
-      return true;
-    }
-    function fade(v){ if(!ctx||!master) return; var t=ctx.currentTime;
-      master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value,t);
-      master.gain.linearRampToValueAtTime(v,t+0.9); }
-    return { fadeIn:function(){ if(!started){ if(build()===false) return; started=true; } if(ctx&&ctx.state==="suspended") ctx.resume(); fade(0.9); },
-             fadeOut:function(){ fade(0); }, ready:function(){ return started; } };
-  })();
-  var soundOn=(function(){ try{ return localStorage.getItem("litroom.sound")!=="off"; }catch(e){ return true; } })();
-  var soundBtn=document.getElementById("sound"), gestured=false;
-  function reflectSound(){ if(!soundBtn) return;
-    soundBtn.classList.toggle("off", !soundOn);
-    soundBtn.classList.toggle("on", soundOn && AUDIO.ready());
-    soundBtn.classList.toggle("armed", soundOn && !AUDIO.ready());
-    var lbl=soundBtn.querySelector(".lbl"); if(lbl) lbl.innerHTML=(soundOn&&!AUDIO.ready())?'Sound <em>· tap to wake</em>':'Sound';
-    soundBtn.setAttribute("aria-pressed", String(soundOn)); }
-  function firstGesture(e){ if(gestured) return;
-    if(e&&e.target&&e.target.closest&&e.target.closest("#sound")) return;          // the button decides for itself
-    gestured=true; dropGesture(); if(soundOn) AUDIO.fadeIn(); reflectSound(); }
-  function dropGesture(){ ["pointerdown","keydown","touchstart","wheel"].forEach(function(ev){ document.removeEventListener(ev,firstGesture); }); }
-  ["pointerdown","keydown","touchstart","wheel"].forEach(function(ev){ document.addEventListener(ev,firstGesture,{passive:true}); });
-  if(soundBtn) soundBtn.addEventListener("click", function(){ gestured=true; dropGesture();
-    soundOn=!soundOn; try{ localStorage.setItem("litroom.sound", soundOn?"on":"off"); }catch(e){}
-    if(soundOn) AUDIO.fadeIn(); else AUDIO.fadeOut(); reflectSound(); });
-  reflectSound();
+  // (ambient sound removed for now — to be revisited; a recorded/commissioned track can be added later)
 
   // re-fit the diorama to its WINDOW CELL (not the viewport)
   var winCell=document.getElementById("window");
