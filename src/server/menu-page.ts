@@ -205,7 +205,7 @@ body{ background:var(--bg); color:var(--ink); font-family:var(--mono);
   var flashText = flash.querySelector('.ft');
   var cv = document.querySelector('.mosaic');
   var ctx = cv.getContext('2d');
-  var active = 0, locked = false;
+  var active = 0, locked = false, revealed = false;
   var W=0,H=0,dpr=1,cell=34,cols=0,rows=0,order=[];
 
   /* ---- roving-tabindex keyboard + hover navigation ---- */
@@ -260,6 +260,7 @@ body{ background:var(--bg); color:var(--ink); font-family:var(--mono);
     var total = order.length, i = 0, N = Math.ceil(total/30);
     if (dir==='in') fillAll();
     function frame(){
+      if (dir==='in' && revealed) return;        /* superseded by the wall-clock fallback */
       var end = Math.min(i+N, total);
       for (; i<end; i++) block(order[i], dir==='out');
       if (i < total) requestAnimationFrame(frame);
@@ -288,15 +289,19 @@ body{ background:var(--bg); color:var(--ink); font-family:var(--mono);
   /* ---- boot ---- */
   window.addEventListener('resize', size);
   size();
+  function revealDone(){
+    if (revealed) return;
+    revealed = true;
+    clearAll();
+    menu.classList.add('ready'); brand.classList.add('ready');
+  }
   if (!reduce){
     fillAll();                                  /* cover before first paint */
-    requestAnimationFrame(function(){
-      animate('in', function(){
-        menu.classList.add('ready'); brand.classList.add('ready');
-      });
-    });
+    requestAnimationFrame(function(){ if (!revealed) animate('in', revealDone); });
+    /* robustness: never stay black if rAF is throttled (e.g. a backgrounded tab) */
+    setTimeout(revealDone, 1500);
   } else {
-    menu.classList.add('ready'); brand.classList.add('ready');
+    revealDone();
   }
   setActive(0, false);
 })();
