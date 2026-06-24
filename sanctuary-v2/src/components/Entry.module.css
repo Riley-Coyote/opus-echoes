@@ -38,12 +38,11 @@
   letter-spacing: -0.005em;
   caret-color: var(--signal);
 }
-/* the resident asks in the reading-voice (serif italic); the visitor answers in
-   the live Geist present — the two voices meeting inside one field. */
+/* the threshold's question reads quiet; once the visitor types, their words
+   take the field in full ink. the difference is the copy and the armed glow,
+   not a second typeface — one voice, the same as the room. */
 .input::placeholder {
   color: var(--ink-50);
-  font-family: var(--font-read);
-  font-style: italic;
   opacity: 1;
 }
 

@@ -80,9 +80,11 @@
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-display: var(--font-sans);
   --font-serif: var(--font-sans);
-  /* The second voice — the composed mind, the past. Fraunces (optical serif)
-     speaks in the NOTEBOOK only; the live chat + chrome stay the Geist present. */
-  --font-read: "Fraunces Variable", "Fraunces", Georgia, "Times New Roman", serif;
+  /* The notebook reads in the same Geist superfamily as everything else — the
+     "composed mind" is carried by size, measure, leading, and warm ink, not by
+     a foreign typeface. (Kept as its own token so the reading surface can be
+     retuned in one place.) */
+  --font-read: var(--font-sans);
 
   /* --- Modular type scale (≈1.2 ratio) -------------------------------------- */
   --t-9: 9px;     /* event keys, smallest mono meta */
