@@ -44,13 +44,13 @@
   .sound .lbl em{font-style:normal; color:var(--quiet)}
 
   /* the held stage — the room is small inside a large dark field (the asymmetry, as layout) */
-  .stage{flex:1 1 auto; display:grid; gap:clamp(16px,2.4vw,34px);
-    grid-template-columns:minmax(0,1.66fr) minmax(300px,1fr); align-items:stretch;
-    padding:clamp(14px,2.2vh,28px) clamp(18px,4vw,54px); max-width:1500px; width:100%; margin:0 auto; min-height:0}
+  .stage{flex:1 1 auto; display:grid; gap:clamp(18px,2.6vw,40px);
+    grid-template-columns:minmax(0,1.85fr) minmax(290px,1fr); align-items:center; align-content:center;
+    padding:clamp(14px,2.2vh,28px) clamp(18px,4vw,56px); max-width:1640px; width:100%; margin:0 auto; min-height:0}
   @media(min-height:740px){ .stage{max-height:80vh} }
 
   /* the window — a held room seen through cold glass */
-  .window{position:relative; min-height:0; background:#03030a; overflow:hidden;
+  .window{position:relative; aspect-ratio:16/10; background:#03030a; overflow:hidden;
     border:1px solid rgba(255,255,255,.07);
     box-shadow:0 46px 100px -34px rgba(0,0,0,.86),
       0 0 140px -26px rgba(250,176,116,.13),          /* the lit room leaks warmth into the dark */
@@ -98,7 +98,7 @@
   /* mobile — stacked; the window stays the hero (flex-column avoids the aspect-ratio/stretch overflow) */
   @media(max-width:920px){
     .stage{display:flex; flex-direction:column; max-height:none; gap:18px; padding-bottom:26px}
-    .window{height:clamp(260px,52vh,480px)}
+    .oh{display:none}            /* the short mobile window shows the clean living world; the conversation lives in the column (Phase 2) */
     .column{min-height:200px}
     .rail{padding:14px 18px 0}
     .since{font-size:9.5px; letter-spacing:.09em}
@@ -640,7 +640,7 @@
     W=Math.max(1,Math.round(r.width)); H=Math.max(1,Math.round(r.height));
     view.width=Math.round(W*dpr); view.height=Math.round(H*dpr);   // crisp on retina; draw in CSS px
     vx.setTransform(dpr,0,0,dpr,0,0);
-    baseScale=Math.max(W/SW, H/SH)*1.0;                            // fill the narrower window without over-zoom
+    baseScale=Math.min(W/SW, H/SH);                                // FIT the whole world (no cropping; any dark letterbox blends into the frame)
   }
   function s2v(x,y){ return [ox+x*scale, oy+y*scale]; }
   function pool(wx,wy,radius,c,a,coreR,fl){
@@ -661,10 +661,8 @@
   function draw(t){
     var tt=REDUCED?6:t*0.001;
     updateFigures(); fireStep();
-    var breath=1+0.016*Math.sin(tt*0.05); scale=baseScale*breath;
-    var cx=SW/2 + (REDUCED?0:Math.sin(tt*0.03)*SW*0.010 + Math.sin(tt*0.011)*SW*0.007);
-    var cy=SH/2 + (REDUCED?0:Math.cos(tt*0.024)*SH*0.009);
-    ox=W/2-cx*scale; oy=H/2-cy*scale;
+    scale=baseScale;                                  // a window doesn't zoom or drift — the frame is dead-still; the life is the fire, embers, lights, residents
+    ox=W/2-(SW/2)*scale; oy=H/2-(SH/2)*scale;
 
     vx.clearRect(0,0,W,H); vx.fillStyle="#04040a"; vx.fillRect(0,0,W,H);
     vx.imageSmoothingEnabled=true;
