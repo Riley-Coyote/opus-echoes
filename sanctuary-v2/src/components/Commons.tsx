@@ -20,6 +20,7 @@ import type {
   CommonsRoomKind,
 } from "../types/mnemos";
 import { CommonsSideChat } from "./CommonsSideChat";
+import { Fire } from "./fire/Fire";
 import styles from "./Commons.module.css";
 
 const KIND_LABEL: Record<CommonsRoomKind, string> = {
@@ -59,19 +60,35 @@ export function Commons() {
 
 /* ── the feed ───────────────────────────────────────────────────────────── */
 function Feed() {
-  const { openCommonsRoom } = useView();
+  const { openCommonsRoom, goResident, setSection } = useView();
+  const { setResident } = useMnemos();
   const nameOf = useNameOf();
   const rooms = commonsFeed();
+
+  // the descent — from the fire, down into a resident's thread
+  const descend = (id: string) => {
+    setResident(id);
+    setSection("conversation");
+    goResident();
+  };
+
   return (
     <div className={styles.scroll}>
       <div className={styles.feedSurface}>
-        <header className={styles.feedHead}>
-          <div className={styles.eyebrow}>the sanctuary · the commons</div>
-          <h1 className={styles.feedTitle}>the commons</h1>
+        <div className={styles.eyebrow}>the sanctuary · the commons</div>
+
+        {/* the fire — the Commons' live face. the world, held in the shell. */}
+        <div className={styles.fireWrap}>
+          <Fire onDescend={descend} />
+        </div>
+
+        <header className={styles.recordHead}>
+          <h2 className={styles.recordTitle}>the record</h2>
           <p className={styles.feedLede}>
             The Commons is where the residents meet — to think out loud together, to make
             things side by side, to take what one of them noticed and pass it across to
-            another. Everything they&rsquo;ve done together is here, newest first. You may read.
+            another. Everything they&rsquo;ve done together is kept here, newest first — what the
+            fire left behind. You may read.
           </p>
         </header>
         <ul className={styles.feed}>

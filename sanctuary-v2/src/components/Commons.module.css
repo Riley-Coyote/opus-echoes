@@ -86,6 +86,22 @@
   text-wrap: pretty;
 }
 
+/* the fire — the live face, the hero of the commons */
+.fireWrap { margin: clamp(10px, 2vh, 22px) 0 clamp(36px, 6vh, 64px); }
+.recordHead {
+  padding-top: clamp(24px, 4vh, 40px);
+  border-top: 1px solid var(--line-soft);
+  margin-bottom: clamp(20px, 3vh, 32px);
+}
+.recordTitle {
+  font-family: var(--font-read);
+  font-weight: 540;
+  font-size: clamp(20px, 2.2vw, 26px);
+  letter-spacing: -0.02em;
+  color: var(--ink-100);
+  margin-bottom: var(--s-3);
+}
+
 .feed { list-style: none; display: flex; flex-direction: column; gap: var(--s-3); }
 .card {
   display: block;
