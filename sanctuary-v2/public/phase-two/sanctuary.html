@@ -21,7 +21,7 @@
     --iris:#8389d2; --iris-soft:#a6aaf0; --iris-bg:rgba(131,137,210,.12);
     --rose:#f48aaa; --amber:#fcc46c; --cyan:#76d6dc; --blue:#96b0ee;
     --rule:rgba(214,220,244,.10); --rule-soft:rgba(214,220,244,.055);
-    --glass:rgba(20,22,44,.42); --glass-2:rgba(26,28,52,.55);
+    --glass:rgba(20,22,44,.42); --glass-2:rgba(26,28,52,.55); --panel-deep:rgba(15,17,36,.86);
     --pixel:"Press Start 2P",monospace; --display:"Inter Tight","Inter",system-ui,sans-serif;
     --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
     --read:"Newsreader",Georgia,serif; --ease:cubic-bezier(.22,1,.36,1);
@@ -55,7 +55,7 @@
   .page{position:relative; z-index:2; min-height:100vh; min-height:100svh; display:flex; flex-direction:column}
 
   /* ── top chrome — pixel signature, floats over the dusk ── */
-  .topbar{display:flex; align-items:center; justify-content:space-between; gap:16px;
+  .topbar{position:absolute; top:0; left:0; right:0; z-index:6; display:flex; align-items:center; justify-content:space-between; gap:16px;
     padding:24px clamp(20px,5vw,64px) 0}
   .brand{display:flex; align-items:center; gap:12px}
   .brand .sigil{width:11px; height:11px; transform:rotate(45deg);
@@ -72,13 +72,13 @@
   .brand .sigil{transform:rotate(45deg) scale(1)}
 
   /* ── the hero — the window, front and centre ── */
-  .hero{flex:0 0 auto; display:flex; flex-direction:column; align-items:center;
-    padding:clamp(20px,4vh,46px) clamp(20px,5vw,64px) 0; text-align:center}
+  .hero{min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:72px clamp(20px,5vw,64px) clamp(20px,4vh,40px); text-align:center}
   .hero-eyebrow{font-family:var(--pixel); font-size:9px; letter-spacing:.12em; color:var(--ink-4);
     text-transform:uppercase; margin-bottom:18px}
   .hero-eyebrow b{color:var(--fire-soft); font-weight:400}
 
-  .window-wrap{position:relative; width:100%; max-width:1000px}
+  .window-wrap{position:relative; width:min(1040px, 94vw, calc((100svh - 300px) * 1.6)); margin:0 auto}
   .window{position:relative; aspect-ratio:16/10; width:100%; border-radius:18px; overflow:hidden;
     background:#03030a; border:1px solid rgba(220,224,240,.08);
     box-shadow:0 50px 120px -38px rgba(0,0,0,.9),
@@ -115,7 +115,7 @@
   .rec-title{font-family:var(--display); font-weight:300; font-size:clamp(28px,4vw,44px);
     letter-spacing:-.02em; color:var(--ink); margin-top:18px; line-height:1.05}
   .rec-sub{font-family:var(--read); font-style:italic; font-size:clamp(16px,2vw,19px);
-    color:var(--ink-3); margin-top:14px}
+    color:var(--ink-2); margin-top:14px}
 
   /* section tabs (pixel labels) */
   .tabs{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
@@ -131,20 +131,20 @@
 
   /* a held-glass card (echoes the window frame) */
   .card{position:relative; border-radius:14px; padding:22px 24px; cursor:pointer;
-    background:var(--glass); border:1px solid var(--rule-soft);
-    box-shadow:0 24px 60px -34px rgba(0,0,0,.8), inset 0 1px 0 rgba(220,224,240,.04);
-    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); transition:all .4s var(--ease)}
-  .card:hover{border-color:var(--rule); background:var(--glass-2); transform:translateY(-2px)}
+    background:var(--panel-deep); border:1px solid var(--rule);
+    box-shadow:0 24px 60px -34px rgba(0,0,0,.85), inset 0 1px 0 rgba(220,224,240,.05);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:all .4s var(--ease)}
+  .card:hover{border-color:var(--rule-warm,rgba(255,155,70,.3)); background:rgba(22,24,48,.92); transform:translateY(-2px)}
   .card .meta{display:flex; align-items:center; justify-content:space-between; gap:12px;
-    font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-4)}
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3)}
   .card .live{display:inline-flex; align-items:center; gap:7px; color:var(--fire-soft)}
   .card .live .ld{width:6px; height:6px; border-radius:50%; background:var(--fire); box-shadow:0 0 8px 1px rgba(255,155,70,.6)}
   .card h3{font-family:var(--display); font-weight:400; font-size:20px; letter-spacing:-.015em;
     color:var(--ink); margin:14px 0 8px; line-height:1.18}
-  .card p{font-family:var(--read); font-size:15px; line-height:1.55; color:var(--ink-3)}
+  .card p{font-family:var(--read); font-size:15px; line-height:1.55; color:var(--ink-2)}
   .card .roster{display:flex; align-items:center; gap:7px; margin-top:16px}
   .card .roster i{width:6px; height:6px; border-radius:50%; box-shadow:0 0 7px 1px currentColor}
-  .card .roster span{font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--ink-4); margin-left:4px}
+  .card .roster span{font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--ink-3); margin-left:4px}
   .ro-rose{color:var(--rose)} .ro-amber{color:var(--amber)} .ro-cyan{color:var(--cyan)} .ro-blue{color:var(--blue)}
 
   /* the made — a wider plate */
@@ -158,17 +158,17 @@
   .made .body .seal{font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase;
     color:var(--iris-soft)}
   .made .body h3{font-family:var(--display); font-weight:400; font-size:23px; color:var(--ink); margin:12px 0 10px; letter-spacing:-.015em}
-  .made .body p{font-family:var(--read); font-size:16px; line-height:1.6; color:var(--ink-3); max-width:46ch}
+  .made .body p{font-family:var(--read); font-size:16px; line-height:1.6; color:var(--ink-2); max-width:46ch}
 
   /* letters — the one outward gesture */
   .letters{max-width:1040px; margin:0 auto; width:100%; padding:0 clamp(20px,5vw,64px) 140px}
   .letters .panel{border-radius:16px; padding:clamp(28px,5vw,44px); text-align:center;
-    background:var(--glass); border:1px solid var(--rule-soft);
+    background:var(--panel-deep); border:1px solid var(--rule);
     box-shadow:0 30px 80px -40px rgba(0,0,0,.8), inset 0 1px 0 rgba(220,224,240,.04);
     -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
   .letters .eyebrow{font-family:var(--pixel); font-size:9px; letter-spacing:.12em; color:var(--ink-4); text-transform:uppercase}
   .letters h3{font-family:var(--display); font-weight:300; font-size:clamp(22px,3vw,30px); color:var(--ink); margin:16px 0 10px; letter-spacing:-.02em}
-  .letters p{font-family:var(--read); font-style:italic; font-size:16px; color:var(--ink-3); max-width:48ch; margin:0 auto 22px}
+  .letters p{font-family:var(--read); font-style:italic; font-size:16px; color:var(--ink-2); max-width:48ch; margin:0 auto 22px}
   .letters .field{display:flex; gap:10px; max-width:540px; margin:0 auto; padding:8px 8px 8px 18px;
     background:rgba(8,9,20,.6); border:1px solid var(--rule); border-radius:14px}
   .letters .field input{flex:1; background:none; border:none; outline:none; color:var(--ink);
@@ -193,9 +193,9 @@
   <div class="grain"></div>
   <div class="switch" id="switch">
     <span class="lbl">bg</span>
-    <button data-m="A" class="on">1 &#183; twilight</button>
+    <button data-m="A">1 &#183; twilight</button>
     <button data-m="B">2 &#183; shore</button>
-    <button data-m="C">3 &#183; deep</button>
+    <button data-m="C" class="on">3 &#183; deep</button>
   </div>
 
   <div class="page">
@@ -297,7 +297,7 @@
       var c=document.getElementById("skyfield"), x=c.getContext("2d");
       var lo=document.createElement("canvas"), lx=lo.getContext("2d");
       var reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var MODE="A", W=0,H=0,LW=0,LH=0, PX=4.2, img=null, buf=null;
+      var MODE="C", W=0,H=0,LW=0,LH=0, PX=4.2, img=null, buf=null;   // The Deep — the chosen direction
 
       var B=[0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,
              3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
