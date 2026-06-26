@@ -36,7 +36,7 @@
 
   /* the dusk field — fixed behind everything (the "same night") */
   .sky{position:fixed; inset:0; z-index:0; pointer-events:none; background:#06060f}
-  #skyfield{position:fixed; inset:0; z-index:0; pointer-events:none;
+  #skyfield{position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;
     image-rendering:pixelated; image-rendering:crisp-edges}
   /* dev switcher — compare the three background directions */
   .switch{position:fixed; left:clamp(18px,5vw,40px); bottom:18px; z-index:50; display:flex; align-items:center; gap:6px;
@@ -154,6 +154,12 @@
     box-shadow:0 18px 44px -26px rgba(0,0,0,.8)}
   .made .plate::after{content:""; position:absolute; inset:0;
     background:radial-gradient(90% 70% at 30% 20%, rgba(131,137,210,.22), transparent 60%)}
+  /* faint document lines — reads as a sealed manuscript, not an empty plate */
+  .made .plate::before{content:""; position:absolute; left:16px; right:16px; top:22px; bottom:34px;
+    background:
+      linear-gradient(180deg, rgba(233,227,216,.26) 0 3px, transparent 3px) 0 0/100% 16px,
+      repeating-linear-gradient(180deg, rgba(220,224,240,.13) 0 2px, transparent 2px 12px) 0 18px/100% 100%;
+    background-repeat:no-repeat, no-repeat}
   .made .body{flex:1 1 280px; min-width:240px}
   .made .body .seal{font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase;
     color:var(--iris-soft)}
@@ -191,12 +197,8 @@
   <canvas id="skyfield"></canvas>
   <div class="vignette"></div>
   <div class="grain"></div>
-  <div class="switch" id="switch">
-    <span class="lbl">bg</span>
-    <button data-m="A">1 &#183; twilight</button>
-    <button data-m="B">2 &#183; shore</button>
-    <button data-m="C" class="on">3 &#183; deep</button>
-  </div>
+  <!-- dev: press 1 / 2 / 3 to compare twilight · shore · deep -->
+
 
   <div class="page">
     <header class="topbar">
@@ -312,8 +314,10 @@
         if(i>=pal.length-1){ i=pal.length-2; fr=1; } return (fr>bay(px,py))?pal[i+1]:pal[i]; }
 
       var stars=[], embers=[];
-      function seed(){ stars=[]; var n=Math.round(LW*LH/52);
-        for(var i=0;i<n;i++) stars.push({x:(Math.random()*LW)|0,y:(Math.random()*LH*0.72)|0,b:0.35+Math.random()*0.65,tw:0.4+Math.random()*1.8,ph:Math.random()*6.28});
+      function seed(){ stars=[]; var n=Math.round(LW*LH/44);
+        // stars fill the whole field (the night extends below the fold) — except modes A/B
+        // skip them below their bright horizon at render time.
+        for(var i=0;i<n;i++) stars.push({x:(Math.random()*LW)|0,y:(Math.random()*LH)|0,b:0.32+Math.random()*0.68,tw:0.4+Math.random()*1.8,ph:Math.random()*6.28});
         embers=[]; for(var e=0;e<72;e++) embers.push({x:Math.random()*LW,y:Math.random()*LH,s:0.04+Math.random()*0.12,ph:Math.random()*6.28}); }
 
       function fit(){ W=innerWidth; H=innerHeight; var DPR=Math.min(2,devicePixelRatio||1);
@@ -324,6 +328,7 @@
       function add(p,r,g,b2){ buf[p]=Math.min(255,buf[p]+r); buf[p+1]=Math.min(255,buf[p+1]+g); buf[p+2]=Math.min(255,buf[p+2]+b2); }
 
       function render(t){ var tt=reduced?6:t*0.001;
+        if(innerWidth!==W || innerHeight!==H) fit();   // keep the field locked to the viewport (catches late/missed resizes)
         var horizon = MODE==="B" ? Math.round(LH*0.60) : LH;
         for(var ly=0; ly<LH; ly++){
           if(MODE==="B" && ly>=horizon){
@@ -339,8 +344,11 @@
           for(var sxp=0; sxp<LW; sxp++){ var cc=band(pal,rt,sxp,ly), q=(ly*LW+sxp)*4; buf[q]=cc[0]; buf[q+1]=cc[1]; buf[q+2]=cc[2]; buf[q+3]=255; }
         }
         if(MODE==="C"){ var gy0=Math.round(LH*0.82);
-          for(var gy=gy0; gy<LH; gy++){ var ga=(gy-gy0)/(LH-gy0);
-            for(var gx=0; gx<LW; gx++){ var gg=ga*0.95*(0.7+0.3*Math.sin(gx*0.04+tt*0.4));
+          // the ember-floor belongs to the hero (the window's warmth on the ground) —
+          // fade it out as you descend so it doesn't follow you down into the record.
+          var efade=Math.max(0, 1-(window.scrollY||0)/(H*0.85));
+          if(efade>0.01) for(var gy=gy0; gy<LH; gy++){ var ga=(gy-gy0)/(LH-gy0);
+            for(var gx=0; gx<LW; gx++){ var gg=efade*ga*0.95*(0.7+0.3*Math.sin(gx*0.04+tt*0.4));
               if(gg>bay(gx,gy)) add((gy*LW+gx)*4, 96*gg, 46*gg, 18*gg); } } }
         if(MODE==="A"){ aurora(reduced?0:tt, LH*0.30, [120,210,180], 0.55); aurora(reduced?0:tt*0.8+2, LH*0.43, [150,140,222], 0.42); }
         if(MODE!=="C") moon(LW*0.15, MODE==="B"?horizon*0.34:LH*0.20);   // upper-left, clear of the centred window
