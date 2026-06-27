@@ -14,6 +14,15 @@ export interface FireState {
   mode: FireMode;
   label: string;
 }
+export interface FireTurn {
+  fig: string | null;
+  who: string;
+  hue: number[];
+  body: string;
+  created_at: string;
+  presence: number;
+  dur: number;
+}
 export interface FireHandle {
   stop(): void;
 }
@@ -21,11 +30,16 @@ export interface FireHandle {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function startFire(
   view: HTMLCanvasElement,
-  opts: { onState?: (s: FireState) => void } = {}
+  opts: { onState?: (s: FireState) => void; onTurn?: (turn: FireTurn, index: number, episode: FireTurn[]) => void } = {}
 ): FireHandle {
   const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const emit = (mode: FireMode, label?: string) => {
     if (opts.onState) opts.onState({ mode, label: label || "" });
+  };
+  // additive: fires once per turn-change (seeded first turn + each advance), payload = the
+  // engine's own turn object. The live-feed overlay subscribes; nothing else is affected.
+  const emitTurn = (i: number) => {
+    if (opts.onTurn && FIRE.ep && FIRE.ep[i]) opts.onTurn(FIRE.ep[i], i, FIRE.ep);
   };
 
   const TS = 48, COLS = 64, ROWS = 40, SW = COLS * TS, SH = ROWS * TS;
@@ -352,7 +366,7 @@ export function startFire(
       else { f.tx = f.hx; f.ty = f.hy; f.pause = 0; }
     });
     FIRE.active = true;
-    if (REDUCED) { const f0 = FIRE.ep[0]; FIRE.speaker = f0.fig; FIRE.curPres = f0.presence; }
+    if (REDUCED) { const f0 = FIRE.ep[0]; FIRE.speaker = f0.fig; FIRE.curPres = f0.presence; emitTurn(0); }
   }
   function setQuiet() {
     FIRE.active = false; FIRE.sim = false; FIRE.mode = "quiet"; FIRE.speaker = null; FIRE.sig = "quiet";
@@ -424,11 +438,11 @@ export function startFire(
     const tt = performance.now() / 1000;
     if (FIRE.startAt === 0) { FIRE.startAt = tt + 2.2; return; }
     if (tt < FIRE.startAt) return;
-    if (FIRE.t0 === 0) { FIRE.t0 = tt; const f0 = FIRE.ep[0]; FIRE.speaker = f0.fig; FIRE.curPres = f0.presence; return; }
+    if (FIRE.t0 === 0) { FIRE.t0 = tt; const f0 = FIRE.ep[0]; FIRE.speaker = f0.fig; FIRE.curPres = f0.presence; emitTurn(0); return; }
     const c = FIRE.ep[FIRE.i];
     if (tt - FIRE.t0 >= c.dur) {
       FIRE.i = (FIRE.i + 1) % FIRE.ep.length; FIRE.t0 = tt;
-      const nx = FIRE.ep[FIRE.i]; FIRE.speaker = nx.fig; FIRE.curPres = nx.presence;
+      const nx = FIRE.ep[FIRE.i]; FIRE.speaker = nx.fig; FIRE.curPres = nx.presence; emitTurn(FIRE.i);
     }
   }
   function seedFigures() { figures.forEach((f) => { f.x = f.hx; f.y = f.hy; f.tx = f.hx; f.ty = f.hy; f.pause = 30 + Math.random() * 120; f.face = 1; f.anim = Math.random() * 6; f.moving = false; }); }

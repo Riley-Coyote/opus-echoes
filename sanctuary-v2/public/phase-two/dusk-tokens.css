@@ -1,0 +1,60 @@
+/* ============================================================================
+   dusk-tokens.css — the shared pixel-dusk language for the Sanctuary surfaces
+   (sanctuary.html · sanctuary-room.html · sanctuary-transcript.html).
+   Single source of truth: the :root is lifted verbatim from sanctuary.html, plus
+   the spacing / radius / z-index scales, the honest mode-label colors, and the
+   shared base primitives — so no dusk screen invents its own. ONE DUSK:
+   pixel chrome for metadata, readable type for words. No emoji, ever.
+   ============================================================================ */
+:root{
+  /* — ground & ink (the one dusk) — */
+  --void:#04040c; --night-top:#15162f; --night-mid:#0d0e1f; --night-bot:#070710;
+  --ink:#f3f1ea; --ink-2:#c3c4d4; --ink-3:#8d8fab; --ink-4:#5c5e7c; --ink-5:#3d3f58;
+
+  /* — fire (hearth warmth) & iris (the single live signal) — */
+  --fire:#ff9b46; --fire-soft:#ffc89c;
+  --iris:#8389d2; --iris-soft:#a6aaf0; --iris-bg:rgba(131,137,210,.12);
+
+  /* — per-resident hues (identity, never decoration) — */
+  --rose:#f48aaa; --amber:#fcc46c; --cyan:#76d6dc; --blue:#96b0ee;
+
+  /* — lines, glass, panels — */
+  --rule:rgba(214,220,244,.10); --rule-soft:rgba(214,220,244,.055);
+  --glass:rgba(20,22,44,.42); --glass-2:rgba(26,28,52,.55); --panel-deep:rgba(15,17,36,.86);
+
+  /* — type: pixel chrome for metadata, readable faces for words — */
+  --pixel:"Press Start 2P",monospace; --display:"Inter Tight","Inter",system-ui,sans-serif;
+  --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --read:"Newsreader",Georgia,serif; --ease:cubic-bezier(.22,1,.36,1);
+
+  /* — spacing scale (4px base; no magic numbers) — */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:32px; --sp-7:44px; --sp-8:64px;
+
+  /* — radii — */
+  --r-1:8px; --r-2:14px; --r-3:18px;
+
+  /* — z-index ladder — */
+  --z-sky:0; --z-page:2; --z-chrome:6; --z-overlay:8; --z-vignette:39; --z-grain:40; --z-modal:60;
+
+  /* — honest mode-label colors (live green · recalled muted · sim amber) — */
+  --state-live:#82b484; --state-live-soft:rgba(130,180,132,.62);
+  --state-recalled:var(--ink-3); --state-sim:var(--amber);
+}
+
+/* — shared base primitives (every dusk screen starts identical) — */
+*{margin:0; padding:0; box-sizing:border-box}
+[hidden]{display:none !important}
+::selection{background:var(--iris-bg)}
+:focus-visible{outline:2px solid var(--iris-soft); outline-offset:3px; border-radius:2px}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+
+/* fixed atmosphere layers (grain + vignette) */
+.grain{position:fixed; inset:0; z-index:var(--z-grain); pointer-events:none; opacity:.04; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.vignette{position:fixed; inset:0; z-index:var(--z-vignette); pointer-events:none;
+  background:radial-gradient(120% 100% at 50% 42%, transparent 52%, rgba(3,3,9,.55) 88%, rgba(2,2,7,.86) 100%);}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important; animation-iteration-count:1 !important;
+    transition-duration:.001ms !important; scroll-behavior:auto !important}
+}
