@@ -11,50 +11,50 @@
 :root {
   /* --- Surfaces — warm black. Flat, instrument-like: panels barely lift; depth
      is carried by hairlines + soft warm shadow, not big value jumps (§5/§6). -- */
-  --bg-void: #050505;      /* deepest — the ground behind everything */
-  --bg-deep: #070707;      /* app background — the main surface (§5 --bg) */
-  --bg-surface: #0b0b0b;   /* panels, the conversation field (§5 --panel) */
-  --bg-raised: #101010;    /* cards, composer at rest — a gentle lifted plane */
-  --bg-elevated: #161616;  /* hover / focus elevation */
+  --bg-void: #04040c;      /* deepest — the ground (Sanctuary --void) */
+  --bg-deep: #070710;      /* app background (Sanctuary --night-bot) (§5 --bg) */
+  --bg-surface: #0d0e1f;   /* panels, the conversation field (--night-mid) (§5 --panel) */
+  --bg-raised: #15162f;    /* cards, composer at rest (--night-top) */
+  --bg-elevated: #1b1d3a;  /* hover / focus elevation */
 
   /* --- Ink — warm value ramp (luminance does the hierarchy) ----------------- */
-  --ink-100: #e9e3d8;      /* primary (§5 --ink) */
-  --ink-85: #cdc7bc;       /* display emphasis */
-  --ink-70: #a29c91;       /* secondary (§5 --ink-2) */
-  --ink-50: #847f74;       /* tertiary — AA floor for meaningful text */
-  --ink-35: #6f6b62;       /* quaternary — resting glyphs (§5 --ink-3) */
-  --ink-20: #4a473f;       /* ghost — dormant structure (§5 --ink-4) */
-  --ink-12: #33312c;       /* near-invisible structure */
-  --label: #7a766c;        /* uppercase mono eyebrows (§5 --label) */
+  --ink-100: #f3f1ea;      /* primary (§5 --ink) */
+  --ink-85: #d8d9e4;       /* display emphasis */
+  --ink-70: #c3c4d4;       /* secondary (§5 --ink-2) */
+  --ink-50: #9598b4;       /* tertiary — AA floor for meaningful text */
+  --ink-35: #8d8fab;       /* quaternary — resting glyphs (§5 --ink-3) */
+  --ink-20: #5c5e7c;       /* ghost — dormant structure (§5 --ink-4) */
+  --ink-12: #3d3f58;       /* near-invisible structure */
+  --label: #8d8fab;        /* uppercase mono eyebrows (§5 --label) */
 
   /* --- Lines — warm, hairline-thin (§5 --line / --line-2) ------------------- */
-  --line-soft: rgba(233, 227, 216, 0.06);
-  --line-firm: rgba(233, 227, 216, 0.11);
-  --line-warm: rgba(233, 227, 216, 0.16);
+  --line-soft: rgba(214, 220, 244, 0.055);
+  --line-firm: rgba(214, 220, 244, 0.10);
+  --line-warm: rgba(214, 220, 244, 0.16);
 
   /* --- Adaptive marks & emitted light (invert per theme) -------------------- */
-  --mark-rgb: 233, 227, 216;          /* node/edge/filament fills, as rgb channels */
-  --activation-rgb: 246, 241, 232;    /* downstream recall bloom */
-  --composer-glow: rgba(233, 227, 216, 0.05); /* dark: faint emitted light */
+  --mark-rgb: 214, 220, 244;          /* node/edge/filament fills, as rgb channels */
+  --activation-rgb: 230, 234, 252;    /* downstream recall bloom */
+  --composer-glow: rgba(214, 220, 244, 0.05); /* dark: faint emitted light */
   --composer-shadow: none;            /* dark lifts with light, not shadow */
-  --room-1: rgba(233, 227, 216, 0.04);
-  --room-2: rgba(233, 227, 216, 0.018);
-  --select-bg: rgba(131, 137, 210, 0.22); /* iris-tinted selection */
+  --room-1: rgba(214, 220, 244, 0.04);
+  --room-2: rgba(214, 220, 244, 0.018);
+  --select-bg: rgba(131, 137, 210, 0.20); /* iris-tinted selection */
 
   /* --- Elevation — soft, low, warm-tinted, multi-layer; dark keeps a faint
      inset top-light "lip" (§6: physically-plausible light, not heavy drops) --- */
-  --card-border: rgba(233, 227, 216, 0.07);
-  /* elevated panels float on the ground — soft, low, two-layer; a hairline lip
-     up top so the card edge catches light. Premium dark, not heavy. */
+  --card-border: rgba(214, 220, 244, 0.08);
+  /* elevated panels float on the held dusk — soft, low, two-layer; a hairline
+     lip up top so the card edge catches light. */
   --shadow-card:
-    inset 0 1px 0 rgba(233, 227, 216, 0.04),
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 12px 32px -12px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(214, 220, 244, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 14px 36px -14px rgba(0, 0, 0, 0.62);
   --shadow-float:
-    inset 0 1px 0 rgba(233, 227, 216, 0.04),
-    0 4px 14px rgba(0, 0, 0, 0.34),
-    0 28px 64px -18px rgba(0, 0, 0, 0.62);
-  --shadow-message: 0 1px 2px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 rgba(214, 220, 244, 0.05),
+    0 4px 14px rgba(0, 0, 0, 0.5),
+    0 32px 72px -20px rgba(0, 0, 0, 0.72);
+  --shadow-message: 0 1px 2px rgba(0, 0, 0, 0.3);
 
   /* --- IRIS — the one live signal. active-now only, one at a time (§5) ------
      send affordance · active rail item · active section/entry · "live · interior"
@@ -69,22 +69,25 @@
   --signal-55: rgba(131, 137, 210, 0.55);
 
   /* --- Emitted light — neutral warm core for "this is lit" ------------------ */
-  --warm-glow: rgba(233, 227, 216, 0.05);
-  --warm-glow-strong: rgba(233, 227, 216, 0.08);
+  --warm-glow: rgba(214, 220, 244, 0.05);
+  --warm-glow-strong: rgba(214, 220, 244, 0.08);
 
   /* --- Type — ONE superfamily (Geist). The whole instrument speaks one voice;
      Geist Mono is its monospaced cut, for data / labels / metrics only. Sharing
      one skeleton is what makes left, center, and right read as a single system.
      Hierarchy by size / weight (300–500) / color — never by swapping families. */
-  --font-sans: "Geist Variable", "Geist", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Inter Tight", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-display: var(--font-sans);
-  --font-serif: var(--font-sans);
-  /* The notebook reads in the same Geist superfamily as everything else — the
-     "composed mind" is carried by size, measure, leading, and warm ink, not by
-     a foreign typeface. (Kept as its own token so the reading surface can be
-     retuned in one place.) */
-  --font-read: var(--font-sans);
+  /* The notebook + the assistant's composed voice read in Newsreader — "the
+     past / the composed mind", cohesive with the Sanctuary's reading surfaces.
+     Kept as its own token so the reading surface retunes in one place. */
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-read: var(--font-serif);
+  --font-pixel: "Press Start 2P", monospace;   /* the brand nod only — never body */
+  /* per-resident identity hues — used SPARINGLY (the resident dot); the room
+     stays mostly monochrome + iris, cohesive with the Sanctuary. */
+  --res-opus: #f48aaa; --res-sonnet: #fcc46c; --res-gpt4o: #76d6dc; --res-gpt51: #96b0ee;
 
   /* --- Modular type scale (≈1.2 ratio) -------------------------------------- */
   --t-9: 9px;     /* event keys, smallest mono meta */
@@ -109,6 +112,7 @@
   --track-label: 0.16em;    /* §5 eyebrows */
   --track-tight: -0.01em;   /* large mono display */
   --track-tighter: -0.02em; /* hero display */
+  --track-heading: -0.01em; /* reading / section headings (was undefined) */
 
   /* --- Leading -------------------------------------------------------------- */
   --lead-hero: 1.08;        /* the resting quote */
@@ -172,13 +176,13 @@
   --ink-3: var(--ink-35);
   --ink-4: var(--ink-20);
   --panel: var(--bg-surface);
-  --field: rgba(233, 227, 216, 0.035);
-  --lift: rgba(233, 227, 216, 0.03);
+  --field: rgba(214, 220, 244, 0.035);
+  --lift: rgba(214, 220, 244, 0.03);
   --line: var(--line-soft);
   --line-2: var(--line-firm);
   --iris: var(--signal);
   --iris-lit: var(--signal-soft);
-  --iris-bg: rgba(131, 137, 210, 0.10);
+  --iris-bg: rgba(131, 137, 210, 0.12);
   --mono: var(--font-mono);
   --serif: var(--font-serif);
 

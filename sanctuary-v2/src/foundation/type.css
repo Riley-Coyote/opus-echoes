@@ -37,7 +37,7 @@ body {
 /* The resident's voice + room reading — calm, generous measure */
 .t-voice,
 .t-read {
-  font-family: var(--font-sans);
+  font-family: var(--font-read);
   font-size: var(--t-17);
   font-weight: 400;
   line-height: var(--lead-read);
