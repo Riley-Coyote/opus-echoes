@@ -5,10 +5,14 @@
 .drawer {
   width: 100%;
   height: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--card-border);
+  /* glass — a frosted veil floating on the fire-world (shared recipe, matches
+     the rail exactly so left + right read as one instrument) */
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
   border-radius: var(--r-panel);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--glass-shadow);
   overflow: hidden;
 }
 
@@ -167,11 +171,77 @@
   margin-left: auto;
 }
 
-.recentWrap {
+/* ── NOW — the live margin. presence + what is forming this exchange. grows to
+   fill the panel; the feed inside scrolls only if it overflows. ───────────── */
+.now {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding-top: var(--s-6);
+  padding-top: var(--s-5);
+}
+.presence {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.06em;
+  flex: 0 0 auto;
+}
+/* the one live signal — iris, soft at rest (attending), lit + breathing when active */
+.presenceDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--iris);
+  opacity: 0.5;
+  flex: 0 0 auto;
+  transition: opacity var(--dur-base) var(--ease-calm);
+}
+.presence[data-active] .presenceDot {
+  opacity: 1;
+  box-shadow: 0 0 8px 0 var(--iris);
+  animation: presenceBreath 2.6s var(--ease-in-out-sine) infinite;
+}
+@keyframes presenceBreath {
+  0%, 100% { opacity: 0.5; transform: scale(0.82); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+.presenceWord {
+  color: var(--ink-70);
+  transition: color var(--dur-base) var(--ease-calm);
+}
+.presence[data-active] .presenceWord {
+  color: var(--ink-85);
+}
+.forming {
+  color: var(--ink-35);
+  font-size: var(--t-10);
+  letter-spacing: 0.04em;
+}
+
+/* ── SETTLED — the standing state; only moves at consolidation. anchored foot. ── */
+.settled {
+  flex: 0 0 auto;
+  margin-top: var(--s-4);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--line-soft);
+}
+.settledLabel {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-mono-wide);
+  text-transform: uppercase;
+  color: var(--ink-35);
+  font-weight: 500;
+}
+.consolidation {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: 1.5;
+  color: var(--ink-50);
+  margin-top: var(--s-3);
 }
 

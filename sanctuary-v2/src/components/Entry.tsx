@@ -76,7 +76,7 @@ export function Threshold({ resident, onAccept }: { resident: ResidentInfo; onAc
 }
 
 export function RestNotice({ resident }: { resident: ResidentInfo }) {
-  const { openCommonsRoom, openLetters } = useView();
+  const { openRoom, openLetters } = useView();
   const commons = resident.availability === "commons";
   const line = commons
     ? resident.standingLine ?? "in the commons · not taking private visits"
@@ -89,7 +89,7 @@ export function RestNotice({ resident }: { resident: ResidentInfo }) {
       </div>
       <div className={styles.noticeActions}>
         {commons ? (
-          <button className={styles.fire} type="button" onClick={() => openCommonsRoom(GATHERING_ID)}>
+          <button className={styles.fire} type="button" onClick={() => openRoom(GATHERING_ID)}>
             find {resident.name} at the fire
             <span className={styles.arrow} aria-hidden="true"> →</span>
           </button>

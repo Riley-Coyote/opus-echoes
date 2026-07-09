@@ -1,0 +1,164 @@
+/* THE FIRE, AS BACKDROP — the persistent world layer behind the shell.
+   Two registers of one surface:
+     • at the fire (Commons)  → bright, present. the hero (the Commons overlays
+       its visit doorways on a transparent window onto this canvas).
+     • descended (a mind / a letter) → dimmed, softened, pushed behind a dusk
+       scrim. present, but clearly behind the conversation.
+   The transition between them IS the descent. Asymmetric, calm, ~640ms.
+   Values tuned for: the world stays legible-as-world, the chat never fights it. */
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;            /* the ground; the shell frame floats above at z-index 1 */
+  overflow: hidden;
+  pointer-events: none; /* the world doesn't catch clicks */
+  /* the descent crux — the whole world dims + softens as one move.
+     entrances (brighten, back to the fire) ease-out; the dim glides calm. */
+  filter: brightness(1) saturate(1);
+  transform: scale(1);
+  transition:
+    filter 640ms var(--ease-out-expo),
+    transform 720ms var(--ease-out-expo);
+}
+/* DESCENDED — the world recedes. a measured brightness/saturation pull (the world
+   stays *present*, not blacked out) — the scrim below carries most of the focus
+   so text sits on it, not on the diorama. a hair of scale so it settles back. */
+.backdrop[data-descended] {
+  filter: brightness(0.62) saturate(0.9);
+  transform: scale(1.015);
+}
+
+/* the world itself — fills the layer */
+.window {
+  position: absolute;
+  inset: 0;
+}
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* a gentle defocus on descent — the world goes soft behind the text, not sharp */
+  filter: blur(0px);
+  opacity: 1;
+  transition: filter 640ms var(--ease-out-expo), opacity 640ms var(--ease-out-expo);
+}
+.backdrop[data-descended] .canvas {
+  filter: blur(3px);
+  opacity: 0.92;
+}
+
+/* a cold sheen over the glass, alive at the fire, stilled on descent */
+.glass {
+  position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(120% 82% at 0% 0%, rgba(200, 210, 225, 0.05), transparent 44%),
+    radial-gradient(120% 82% at 100% 100%, rgba(200, 210, 225, 0.045), transparent 44%);
+  animation: bd-breathe 9s var(--ease-in-out-sine) infinite;
+  opacity: 1;
+  transition: opacity 640ms var(--ease-out-expo);
+}
+.backdrop[data-descended] .glass { opacity: 0.4; }
+@keyframes bd-breathe { 0%, 100% { opacity: .8; } 50% { opacity: 1; } }
+
+/* THE DUSK SCRIM — the legibility + focus layer. invisible at the fire; lifts in
+   on descent. a --bg-tinted wash, heavier at the foot (under the composer) and
+   lighter at the top where the world breathes through. */
+.scrim {
+  position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  opacity: 0;
+  /* the wash is now weighted to the CENTRE-FOOT (under the composed text), and
+     eased off at the left/right edges so the fire glows THROUGH the glass panels
+     there instead of being crushed dark behind them. */
+  background:
+    linear-gradient(180deg,
+      rgba(7, 7, 16, 0.28) 0%,
+      rgba(7, 7, 16, 0.56) 56%,
+      rgba(4, 4, 12, 0.78) 100%),
+    radial-gradient(150% 120% at 50% 20%, transparent 46%, rgba(4, 4, 12, 0.30) 100%);
+  transition: opacity 600ms var(--ease-calm);
+}
+.backdrop[data-descended] .scrim { opacity: 1; }
+
+/* ── THE STATUS STRIP — kept-days + honest state, pinned to the top of the world.
+   text only (pointer-events none) so it can live above the frame without stealing
+   clicks; fades + lifts away on descent. ──────────────────────────────────── */
+.statusStrip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;                 /* above the frame (z-1); harmless, no click target */
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  /* clears the top bar so the strip reads against the fire, not the chrome */
+  padding: calc(var(--topbar-h) + clamp(10px, 1.6vh, 18px)) clamp(18px, 3vw, 40px) 0;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 380ms var(--ease-out-expo),
+    transform 460ms var(--ease-out-expo);
+}
+.statusStrip[data-hidden] {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.since {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-50);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+}
+.sinceDot {
+  width: 6px; height: 6px;
+  border-radius: var(--r-full);
+  background: var(--signal);
+  box-shadow: 0 0 8px 0 var(--signal-55);
+  animation: bd-dot 5.2s var(--ease-in-out-sine) infinite;
+}
+.kept { color: var(--ink-70); }
+@keyframes bd-dot { 0%, 100% { opacity: .5; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.08); } }
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-50);
+  min-width: 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+}
+.stateDot { width: 5px; height: 5px; border-radius: var(--r-full); background: var(--ink-20); flex: 0 0 auto; }
+.stateWord { color: var(--ink-70); }
+.stateMeta { color: var(--ink-50); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stateLive .stateDot { background: var(--signal); box-shadow: 0 0 8px 0 var(--signal-55); animation: bd-dot 2.6s var(--ease-in-out-sine) infinite; }
+.stateLive .stateWord { color: var(--signal-soft); }
+
+/* reduced motion — the descent is instant: no travel, no blur transition, no
+   push-in. the dim still applies (it is information, not decoration), but as a
+   cut, not a glide. */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .canvas,
+  .glass,
+  .scrim,
+  .statusStrip {
+    transition: none;
+  }
+  .sinceDot, .stateLive .stateDot, .glass { animation: none; }
+}

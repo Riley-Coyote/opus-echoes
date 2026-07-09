@@ -29,7 +29,6 @@ import { WEATHER_DEFAULT } from "../types/mnemos";
 import { adapter, railNodeIds } from "../adapter/mnemosAdapter";
 import { layoutGraph, type LaidOutNode } from "../sim/forceLayout";
 import { applyEvent, relaxToward, computeModulators } from "../sim/weatherModel";
-import { classifyCrossing } from "../sim/cognitiveStream";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 
 type Phase = "idle" | "thinking" | "streaming";
@@ -144,48 +143,11 @@ export function MnemosProvider({ children }: { children: ReactNode }) {
     const subEdges = g.edges.filter((e) => ids.has(e.from_id) && ids.has(e.to_id));
     setLayout(layoutGraph(present, subEdges, id));
 
-    // seed the margin so it feels inhabited from first load
-    const seed: RecentEntry[] = [];
-    if (m.beliefs[0]) {
-      const b = m.beliefs[0];
-      // honest: only call it a crossing if it actually crossed a tier (same
-      // rule the live stream uses). otherwise it's just a settled belief.
-      const crossing =
-        b.prior_confidence !== undefined
-          ? classifyCrossing(b.prior_confidence, b.confidence)
-          : null;
-      seed.push({
-        id: `seed-b-${id}`,
-        kind: "belief",
-        tag: crossing ? `belief · ${crossing}` : "belief",
-        text: b.text,
-        when: "earlier today",
-        confidence: b.confidence,
-        prior_confidence: b.prior_confidence,
-        crossing: crossing ?? undefined,
-      });
-    }
-    if (m.threads[0]) {
-      seed.push({
-        id: `seed-t-${id}`,
-        kind: "resonance",
-        tag: "resonance",
-        text: `echoes “${m.threads[0].name}”`,
-        when: "earlier this week",
-        detail: `surfaced ${m.threads[0].appearance_count} times across conversations`,
-      });
-    }
-    if (d[0]) {
-      seed.push({
-        id: `seed-d-${id}`,
-        kind: "dream",
-        tag: "while you were away",
-        text: firstSentence(d[0]),
-        when: "earlier today",
-        detail: d[0],
-      });
-    }
-    setRecent(seed);
+    // the live margin ("forming now") starts EMPTY — honest: nothing has surfaced
+    // from this exchange yet. per-turn surfaces + ambient events fill it as you talk.
+    // the settled state (counts, modulators, last consolidation) is read from
+    // memory/dreams by the interior's SETTLED zone, not seeded here.
+    setRecent([]);
   }, []);
 
   useEffect(() => {
@@ -379,8 +341,4 @@ function sameEdge(a: GraphEdge, b: GraphEdge) {
     (a.from_id === b.from_id && a.to_id === b.to_id) ||
     (a.from_id === b.to_id && a.to_id === b.from_id)
   );
-}
-function firstSentence(s: string): string {
-  const m = s.match(/^[^.!?]*[.!?]/);
-  return (m ? m[0] : s).trim();
 }

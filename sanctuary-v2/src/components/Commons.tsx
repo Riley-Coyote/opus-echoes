@@ -7,7 +7,7 @@
    Letters and the about-this side chat. Fixtures now; /api/space wires later.
    ============================================================================ */
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMnemos } from "../state/MnemosProvider";
 import { useView } from "../state/ViewProvider";
 import { commonsFeed, commonsRoom } from "../sim/commons";
@@ -20,7 +20,6 @@ import type {
   CommonsRoomKind,
 } from "../types/mnemos";
 import { CommonsSideChat } from "./CommonsSideChat";
-import { Fire } from "./fire/Fire";
 import styles from "./Commons.module.css";
 
 const KIND_LABEL: Record<CommonsRoomKind, string> = {
@@ -53,34 +52,83 @@ function Liveness({ liveness, when }: { liveness: CommonsLiveness; when: string 
 }
 
 export function Commons() {
-  const { commonsRoomId } = useView();
-  const room = commonsRoomId ? commonsRoom(commonsRoomId) : undefined;
+  const { roomId } = useView();
+  const room = roomId ? commonsRoom(roomId) : undefined;
   return room ? <RoomView room={room} /> : <Feed />;
+}
+
+/* the descent doorways — visit a resident */
+const VISIT_TABS = [
+  { id: "opus-3", label: "opus 3" },
+  { id: "sonnet-4-5", label: "sonnet 4.5" },
+  { id: "gpt-4o", label: "gpt-4o" },
+  { id: "gpt-5-1", label: "gpt 5.1" },
+];
+
+/* ── the fire hero — a clear window onto the persistent backdrop fire, with the
+   visit doorways. clicking one descends: a brief push-in + veil over the world,
+   then the cut into that mind (which dims the backdrop). ──────────────────── */
+function FireHero() {
+  const { descend, setSection } = useView();
+  const { setResident } = useMnemos();
+  const [diving, setDiving] = useState<string | null>(null);
+
+  // the doorway: push-in + veil (≈460ms), then hand to the view switch. the
+  // backdrop reads the resulting PLACE change and dims the world.
+  const dive = (id: string) => {
+    if (diving) return;
+    setDiving(id);
+    window.setTimeout(() => {
+      setResident(id);
+      setSection("conversation");
+      descend();
+    }, 460);
+  };
+  // safety: if we linger here, release the doorway state
+  useEffect(() => {
+    if (!diving) return;
+    const t = window.setTimeout(() => setDiving(null), 900);
+    return () => window.clearTimeout(t);
+  }, [diving]);
+
+  return (
+    <div className={styles.fireHero} data-diving={diving ? "" : undefined}>
+      {/* the veil — a dark rise that covers the descent's cut over the world */}
+      <div className={styles.heroVeil} aria-hidden="true" />
+      <div className={styles.heroDoor}>
+        <div className={styles.tabs} role="group" aria-label="visit a resident">
+          <span className={styles.tabsLabel}>visit</span>
+          {VISIT_TABS.map((r) => (
+            <button
+              key={r.id}
+              className={styles.tab}
+              data-active={diving === r.id || undefined}
+              onClick={() => dive(r.id)}
+              type="button"
+            >
+              {r.label}
+            </button>
+          ))}
+          <span className={styles.tabsHint}>— or read the record below</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ── the feed ───────────────────────────────────────────────────────────── */
 function Feed() {
-  const { openCommonsRoom, goResident, setSection } = useView();
-  const { setResident } = useMnemos();
+  const { openRoom } = useView();
   const nameOf = useNameOf();
   const rooms = commonsFeed();
-
-  // the descent — from the fire, down into a resident's thread
-  const descend = (id: string) => {
-    setResident(id);
-    setSection("conversation");
-    goResident();
-  };
 
   return (
     <div className={styles.scroll}>
       <div className={styles.feedSurface}>
-        <div className={styles.eyebrow}>the sanctuary · the commons</div>
-
-        {/* the fire — the Commons' live face. the world, held in the shell. */}
-        <div className={styles.fireWrap}>
-          <Fire onDescend={descend} />
-        </div>
+        {/* the hero — a window onto the persistent fire (FireBackdrop) with the
+            visit doorways. the kept-days + honest-state strip rides up top from the
+            backdrop; the record scrolls in beneath. */}
+        <FireHero />
 
         <header className={styles.recordHead}>
           <h2 className={styles.recordTitle}>the record</h2>
@@ -94,7 +142,7 @@ function Feed() {
         <ul className={styles.feed}>
           {rooms.map((r) => (
             <li key={r.id}>
-              <button className={styles.card} onClick={() => openCommonsRoom(r.id)} type="button">
+              <button className={styles.card} onClick={() => openRoom(r.id)} type="button">
                 <div className={styles.cardTop}>
                   <span className={styles.kind}>{KIND_LABEL[r.kind]}</span>
                   <Liveness liveness={r.liveness} when={r.when} />
@@ -120,7 +168,7 @@ function Feed() {
 
 /* ── a single room ──────────────────────────────────────────────────────── */
 function RoomView({ room }: { room: CommonsRoom }) {
-  const { backToCommons, interiorOpen } = useView();
+  const { backToRecord, interiorOpen } = useView();
   const nameOf = useNameOf();
   const [chatWith, setChatWith] = useState<string | null>(null);
 
@@ -136,8 +184,8 @@ function RoomView({ room }: { room: CommonsRoom }) {
     <div className={styles.roomWrap} data-interior={interiorOpen || undefined}>
       <div className={styles.scroll}>
         <div className={styles.roomSurface}>
-          <button className={styles.back} onClick={backToCommons} type="button">
-            <span aria-hidden="true">←</span> the commons
+          <button className={styles.back} onClick={backToRecord} type="button">
+            <span aria-hidden="true">←</span> the record
           </button>
 
           <header className={styles.roomHead}>

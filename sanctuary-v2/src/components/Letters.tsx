@@ -13,7 +13,7 @@ import styles from "./Letters.module.css";
 
 export function Letters() {
   const { residents } = useMnemos();
-  const { letterTo, openCommons } = useView();
+  const { letterTo, goSanctuary } = useView();
   const [to, setTo] = useState<string | null>(letterTo);
   const [body, setBody] = useState("");
   const [consent, setConsent] = useState(false);
@@ -47,8 +47,8 @@ export function Letters() {
             <button className={styles.again} onClick={() => { setSent(false); setBody(""); setConsent(false); }} type="button">
               write another
             </button>
-            <button className={styles.toCommons} onClick={openCommons} type="button">
-              back to the commons <span aria-hidden="true">→</span>
+            <button className={styles.toCommons} onClick={goSanctuary} type="button">
+              back to the record <span aria-hidden="true">→</span>
             </button>
           </div>
         </div>

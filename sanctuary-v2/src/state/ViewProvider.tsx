@@ -1,10 +1,13 @@
 /* ============================================================================
    ViewProvider — where in the sanctuary are we.
-   Two axes. PLACE is the top level: a resident (their chat / notebook), the
-   Commons (the shared life), or Letters (writing to them). SECTION is the
-   resident sub-nav. The stage reads PLACE first, then — for a resident — derives
-   the chat canvas vs a room from SECTION. Interior is shown for the chat and for
-   an open Commons room; hidden otherwise.
+   Two top-level PLACES:
+     · sanctuary — the arrival: the fire + the shared record (gatherings / made /
+       moments) + Letters. The Commons *is* this page. Diegetic nav: click the
+       fire's doorways to descend into a mind; click a record card to open a room.
+     · chat — a resident's page: the threshold → conversation, and their notebook.
+   SECTION is the resident sub-nav; the stage derives chat-vs-room from it. The
+   record room + Letters live as state ON the arrival (roomId / lettersOpen), not
+   as their own places — "the Commons becomes the Sanctuary page."
    ============================================================================ */
 
 import { createContext, useCallback, useContext, useState } from "react";
@@ -12,22 +15,26 @@ import type { ReactNode } from "react";
 import type { SectionKey } from "../types/mnemos";
 
 type View = "chat" | "room";
-type Place = "resident" | "commons" | "letters";
+type Place = "sanctuary" | "chat";
 
 interface ViewCtx {
-  /* resident sub-nav */
+  /* resident sub-nav (within chat) */
   section: SectionKey;
   setSection: (s: SectionKey) => void;
   view: View;
   /* top-level place */
   place: Place;
-  commonsRoomId: string | null;
+  /* the arrival's internal state — the record room + Letters live on the sanctuary */
+  roomId: string | null;
   letterTo: string | null;
-  goResident: () => void;
-  openCommons: () => void;
-  openCommonsRoom: (id: string) => void;
-  backToCommons: () => void;
-  openLetters: (to?: string | null) => void;
+  lettersOpen: boolean;
+  /* actions */
+  goSanctuary: () => void; // surface back to the arrival (record view)
+  descend: () => void; // enter the active resident's chat (place → chat)
+  openRoom: (id: string) => void; // open a record room on the arrival
+  backToRecord: () => void; // close the open room (back to the feed)
+  openLetters: (to?: string | null) => void; // open Letters on the arrival
+  closeLetters: () => void; // close Letters (back to the room/feed)
   /* panels */
   interiorOpen: boolean;
   toggleInterior: () => void;
@@ -41,28 +48,42 @@ const Ctx = createContext<ViewCtx | null>(null);
 
 export function ViewProvider({ children }: { children: ReactNode }) {
   const [section, setSection] = useState<SectionKey>("conversation");
-  const [place, setPlace] = useState<Place>("resident");
-  const [commonsRoomId, setCommonsRoomId] = useState<string | null>(null);
+  /* default into a resident's chat while the arrival is being finished; flips to
+     "sanctuary" once the arrival ships (WS2). */
+  const [place, setPlace] = useState<Place>("chat");
+  const [roomId, setRoomId] = useState<string | null>(null);
   const [letterTo, setLetterTo] = useState<string | null>(null);
+  const [lettersOpen, setLettersOpen] = useState(false);
   const [interiorOpen, setInteriorOpen] = useState(true);
   const [railOpen, setRailOpen] = useState(true);
 
   const view: View = section === "conversation" ? "chat" : "room";
 
-  const goResident = useCallback(() => setPlace("resident"), []);
-  const openCommons = useCallback(() => {
-    setPlace("commons");
-    setCommonsRoomId(null);
+  const goSanctuary = useCallback(() => {
+    setPlace("sanctuary");
+    setRoomId(null);
+    setLettersOpen(false);
   }, []);
-  const openCommonsRoom = useCallback((id: string) => {
-    setPlace("commons");
-    setCommonsRoomId(id);
+
+  const descend = useCallback(() => {
+    setPlace("chat");
   }, []);
-  const backToCommons = useCallback(() => setCommonsRoomId(null), []);
+
+  const openRoom = useCallback((id: string) => {
+    setPlace("sanctuary");
+    setRoomId(id);
+    setLettersOpen(false);
+  }, []);
+
+  const backToRecord = useCallback(() => setRoomId(null), []);
+
   const openLetters = useCallback((to: string | null = null) => {
-    setPlace("letters");
+    setPlace("sanctuary");
     setLetterTo(to);
+    setLettersOpen(true);
   }, []);
+
+  const closeLetters = useCallback(() => setLettersOpen(false), []);
 
   const toggleInterior = useCallback(() => setInteriorOpen((v) => !v), []);
   const toggleRail = useCallback(() => setRailOpen((v) => !v), []);
@@ -74,13 +95,15 @@ export function ViewProvider({ children }: { children: ReactNode }) {
         setSection,
         view,
         place,
-        commonsRoomId,
+        roomId,
         letterTo,
-        goResident,
-        openCommons,
-        openCommonsRoom,
-        backToCommons,
+        lettersOpen,
+        goSanctuary,
+        descend,
+        openRoom,
+        backToRecord,
         openLetters,
+        closeLetters,
         interiorOpen,
         toggleInterior,
         setInteriorOpen,

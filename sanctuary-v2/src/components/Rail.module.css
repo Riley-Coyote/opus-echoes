@@ -5,10 +5,13 @@
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--card-border);
+  /* glass — a frosted veil floating on the fire-world (shared recipe) */
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
   border-radius: var(--r-panel);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--glass-shadow);
   padding: var(--s-5) var(--s-3) var(--s-3);
   overflow: hidden auto;
   z-index: var(--z-rail);

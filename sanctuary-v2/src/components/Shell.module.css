@@ -2,11 +2,30 @@
   position: relative;
   height: 100vh;
   height: 100dvh;
-  display: grid;
-  grid-template-rows: var(--topbar-h) 1fr;
-  background: var(--bg-void); /* the ground the panels float on */
+  background: var(--bg-void); /* seen only at the very edges; the fire fills it */
   color: var(--ink-100);
   overflow: hidden;
+}
+
+/* the arrival (Sanctuary) floats above the persistent fire backdrop (z-index 0),
+   the bright hero. the Commons record scrolls internally. */
+.arrival {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* the frame floats above the persistent fire backdrop (z-index 0). it carries the
+   grid — top bar + body — and is transparent so the world shows through its
+   gutters and (in the Commons) behind the routed content. */
+.frame {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-rows: var(--topbar-h) 1fr;
 }
 
 /* the content region — a gutter of ground around the floating panels */

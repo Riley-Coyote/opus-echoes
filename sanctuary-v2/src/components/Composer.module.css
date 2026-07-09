@@ -11,7 +11,11 @@
   align-items: flex-end;
   gap: var(--s-3);
   padding: 10px 10px 10px 20px;
-  background: var(--bg-raised);
+  /* neutral glass — the same cool frost as the chrome, a touch more opaque for
+     input grounding. no indigo fill. */
+  background: var(--composer-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--card-border);
   border-radius: var(--r-panel);
   box-shadow: var(--shadow-card); /* floats as a card above the surface */
@@ -22,7 +26,7 @@
 }
 .composer:focus-within .field {
   border-color: var(--line-warm);
-  background: var(--bg-elevated);
+  background: var(--composer-fill-focus);
   /* the composer's OWN focus state — a clean hairline ring (adapts per theme).
      The browser's :focus-visible box on the textarea is suppressed below —
      text fields would otherwise show that ugly box even on a click. */
@@ -44,7 +48,7 @@
   font-size: var(--t-16, 16px);
   line-height: 1.5;
   color: var(--ink-100);
-  caret-color: var(--signal);
+  caret-color: var(--ink-70);
   padding: 5px 0;
   max-height: 208px;
   transition: height 200ms var(--ease-out-expo);
@@ -87,20 +91,20 @@
   opacity: calc(0.28 + 0.4 * var(--beat-phase, 0.6));
 }
 
+/* armed reads "ready" by BRIGHTENING, not by turning violet — luminance, not hue */
 .send[data-armed] {
-  color: var(--signal);
-  background: var(--signal-12);
+  color: var(--ink-100);
+  background: var(--warm-glow-strong);
   box-shadow:
-    0 0 0 1px var(--signal-20),
-    0 0 18px -4px var(--signal-55),
-    0 0 32px -8px var(--signal-38);
+    0 0 0 1px var(--line-warm),
+    0 0 16px -6px rgba(214, 220, 244, 0.26);
 }
 .send[data-armed] .sendRing {
-  opacity: 0.85;
-  stroke: var(--signal-soft);
+  opacity: 0.9;
+  stroke: currentColor;
 }
 .send[data-armed]:hover {
-  background: var(--signal-20);
+  background: rgba(214, 220, 244, 0.12);
   transform: translateY(-1px);
 }
 .send[data-armed]:active {

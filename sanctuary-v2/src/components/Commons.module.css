@@ -60,9 +60,11 @@
 
 /* ── the feed ─────────────────────────────────────────────────────────────── */
 .feedSurface {
+  position: relative;
   max-width: 58rem;
   margin: 0 auto;
-  padding: clamp(32px, 6vh, 72px) clamp(20px, 4vw, 48px) 140px;
+  /* no top padding — the fire hero owns the top; the record begins below it */
+  padding: 0 clamp(20px, 4vw, 48px) 140px;
 }
 .feedHead { margin-bottom: clamp(32px, 5vh, 56px); }
 .feedTitle {
@@ -86,13 +88,113 @@
   text-wrap: pretty;
 }
 
-/* the fire — the live face, the hero of the commons */
-.fireWrap { margin: clamp(10px, 2vh, 22px) 0 clamp(36px, 6vh, 64px); }
+/* the fire is the persistent backdrop (FireBackdrop); the hero is a transparent
+   window onto it that holds the focal area open and carries the visit doorways at
+   its foot. the record scrolls in beneath. */
+.fireHero {
+  position: relative;
+  height: clamp(236px, 40vh, 380px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* the doorway band — the visit tabs, at the foot of the hero window */
+.heroDoor {
+  position: relative;
+  z-index: 1;
+  padding-bottom: clamp(14px, 2.4vh, 24px);
+}
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+.tabsLabel {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+  margin-right: var(--s-1);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+}
+.tab {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.04em;
+  color: var(--ink-85);
+  padding: 7px 13px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-pill);
+  background: rgba(7, 7, 16, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 14px -6px rgba(0, 0, 0, 0.7);
+  transition:
+    color var(--dur-fast) var(--ease-calm),
+    border-color var(--dur-fast) var(--ease-calm),
+    background var(--dur-fast) var(--ease-calm);
+}
+.tab:hover { color: var(--ink-100); border-color: var(--signal-38); background: rgba(131, 137, 210, 0.18); }
+.tab[data-active] { color: var(--signal-core); border-color: var(--signal-38); background: rgba(131, 137, 210, 0.22); }
+.tabsHint {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.04em;
+  color: var(--ink-50);
+  margin-left: auto;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+}
+
+/* the veil — a dark rise that covers the descent's cut over the living world.
+   only during the transient `diving`; the backdrop dims once the view switches. */
+.heroVeil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(120% 130% at 50% 64%, transparent 24%, rgba(3, 3, 8, 0.96) 78%);
+  opacity: 0;
+  transition: opacity 460ms var(--ease-out-expo);
+}
+.fireHero[data-diving] .heroVeil { opacity: 1; }
+
+@media (max-width: 720px) {
+  .tabsHint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heroVeil { transition: none; opacity: 0 !important; }
+}
+
+/* the record proper — head + feed — rises onto solid ground beneath the fire
+   hero, so the world is the top hero and the reading content never fights it.
+   the backing starts where the hero ends and runs to the foot; a short top
+   gradient softens the seam from fire into ground. */
+.feedSurface::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: clamp(236px, 40vh, 380px);
+  bottom: 0;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 7, 16, 0) 0%, var(--bg-deep) clamp(64px, 10vh, 120px)),
+    var(--bg-deep);
+  pointer-events: none;
+}
 .recordHead {
+  position: relative;
+  z-index: 1;
   padding-top: clamp(24px, 4vh, 40px);
-  border-top: 1px solid var(--line-soft);
   margin-bottom: clamp(20px, 3vh, 32px);
 }
+/* the lede + cards sit on the record's solid ground */
+.feed,
+.feedLede,
+.recordTitle { position: relative; z-index: 1; }
 .recordTitle {
   font-family: var(--font-read);
   font-weight: 540;
@@ -172,7 +274,9 @@
 .card:hover .cardArrow { color: var(--signal-soft); transform: translateX(3px); }
 
 /* ── a room ───────────────────────────────────────────────────────────────── */
-.roomWrap { display: flex; height: 100%; min-height: 0; }
+/* a room is a reading surface — you've drilled past the hero into the record, so
+   it rests on solid ground (the living fire stays behind, ambient at the edges). */
+.roomWrap { display: flex; height: 100%; min-height: 0; background: var(--bg-deep); border-radius: var(--r-panel); }
 .roomWrap .scroll { flex: 1 1 auto; min-width: 0; }
 
 .roomSurface {

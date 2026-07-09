@@ -3,8 +3,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--s-4) 0 var(--s-5);
-  border-bottom: 1px solid var(--line-soft);
-  background: var(--bg-deep);
+  /* glass — the same frosted veil as the rail + interior, so the header reads as
+     one instrument with them; the world's dusk shows through the top edge */
+  border-bottom: 1px solid var(--glass-edge);
+  background: var(--glass-fill-bar);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 14px 34px -26px rgba(0, 0, 0, 0.85);
   z-index: var(--z-topbar);
 }
 

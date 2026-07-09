@@ -15,8 +15,9 @@ export function Rail() {
     section,
     setSection,
     place,
-    goResident,
-    openCommons,
+    lettersOpen,
+    descend,
+    goSanctuary,
     openLetters,
     railOpen,
     toggleRail,
@@ -45,9 +46,9 @@ export function Rail() {
         <li>
           <button
             className={styles.sharedItem}
-            data-active={place === "commons" || undefined}
-            aria-current={place === "commons" ? "true" : undefined}
-            onClick={openCommons}
+            data-active={(place === "sanctuary" && !lettersOpen) || undefined}
+            aria-current={place === "sanctuary" && !lettersOpen ? "true" : undefined}
+            onClick={goSanctuary}
             type="button"
           >
             <svg className={styles.sharedGlyph} viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -60,8 +61,8 @@ export function Rail() {
         <li>
           <button
             className={styles.sharedItem}
-            data-active={place === "letters" || undefined}
-            aria-current={place === "letters" ? "true" : undefined}
+            data-active={(place === "sanctuary" && lettersOpen) || undefined}
+            aria-current={place === "sanctuary" && lettersOpen ? "true" : undefined}
             onClick={() => openLetters(null)}
             type="button"
           >
@@ -78,7 +79,7 @@ export function Rail() {
 
       <ul className={styles.residents}>
         {residents.map((r) => {
-          const active = place === "resident" && r.id === resident.id;
+          const active = place === "chat" && r.id === resident.id;
           return (
             <li key={r.id}>
               <button
@@ -88,7 +89,7 @@ export function Rail() {
                 onClick={() => {
                   setResident(r.id);
                   setSection("conversation");
-                  goResident();
+                  descend();
                 }}
                 type="button"
               >

@@ -72,6 +72,26 @@
   --warm-glow: rgba(214, 220, 244, 0.05);
   --warm-glow-strong: rgba(214, 220, 244, 0.08);
 
+  /* --- GLASS — the chrome (header · rail · interior) as frosted veils held
+     over the fire-world. Cool-neutral near-black so there is no indigo/violet
+     cast and no warmth of its own; the world's glow transmits THROUGH the fill,
+     and the blur keeps text legible over whatever moves behind. ONE recipe for
+     all three panels so they read as a single instrument floating on the dusk. */
+  --glass-fill: rgba(10, 12, 16, 0.46);        /* the floating cards (rail, interior) */
+  --glass-fill-bar: rgba(10, 12, 16, 0.40);    /* the header — a touch more world through */
+  --glass-blur: blur(28px) saturate(135%);     /* the frost; saturate lets the fire read warm */
+  --glass-edge: rgba(216, 222, 246, 0.11);     /* cool-white hairline */
+  --glass-lip: rgba(216, 222, 246, 0.06);      /* the lit top edge (inset) */
+  --glass-shadow:
+    inset 0 1px 0 var(--glass-lip),
+    0 18px 48px -20px rgba(0, 0, 0, 0.7);
+
+  /* --- COMPOSER — the visitor's field. Same cool-neutral glass family as the
+     chrome, a touch more opaque so typed ink stays crisp and the field reads as
+     grounded (an input, not a veil). No indigo, no accent — monochrome. ------ */
+  --composer-fill: rgba(12, 14, 18, 0.62);
+  --composer-fill-focus: rgba(16, 18, 24, 0.72);
+
   /* --- Type — ONE superfamily (Geist). The whole instrument speaks one voice;
      Geist Mono is its monospaced cut, for data / labels / metrics only. Sharing
      one skeleton is what makes left, center, and right read as a single system.
@@ -188,8 +208,9 @@
 
   /* --- Layout dimensions (snapped to the 4px grid) ------------------------- */
   --topbar-h: 56px;
-  --rail-w: 232px;
-  --interior-w: 320px;
+  --panel-w: 320px;              /* rail + interior share ONE width — symmetric chrome */
+  --rail-w: var(--panel-w);
+  --interior-w: var(--panel-w);
   --composer-max: 720px;
 
   /* --- Z-index scale -------------------------------------------------------- */
@@ -203,63 +224,10 @@
 }
 
 /* ============================================================================
-   LIGHT — the warm-bone room. Same structure, motion, and single iris accent;
-   only value inverts. Depth reads by soft warm shadow, not emitted light.
-   Grain off (§5). iris nudged deeper to stay legible on paper.
+   LIGHT — RETIRED. The Sanctuary is one fixed night world; a warm-bone "paper"
+   chrome inverted over a dark diorama never cohered (it read as cream slabs
+   pasted on the night). There is one mode now. The old [data-theme="light"]
+   block, the header toggle, and the index.html restore path were removed
+   together — see TopBar.tsx and index.html. Restore from git if a paper mode
+   is ever wanted on a light-world surface.
    ============================================================================ */
-:root[data-theme="light"] {
-  --bg-void: #ddd8cb;
-  --bg-deep: #e7e2d6;      /* §5 --bg */
-  --bg-surface: #ece7dc;   /* §5 --panel */
-  --bg-raised: #f1ece1;
-  --bg-elevated: #f6f1e8;
-
-  --ink-100: #272420;      /* §5 --ink */
-  --ink-85: #3b372f;
-  --ink-70: #57534b;       /* §5 --ink-2 */
-  --ink-50: #6f6a5f;       /* AA floor on warm-bone */
-  --ink-35: #867f72;       /* §5 --ink-3 */
-  --ink-20: #aaa394;       /* §5 --ink-4 */
-  --ink-12: #c4bdae;
-  --label: #8a8377;
-
-  --line-soft: rgba(39, 36, 32, 0.10);
-  --line-firm: rgba(39, 36, 32, 0.17);
-  --line-warm: rgba(39, 36, 32, 0.24);
-
-  --mark-rgb: 39, 36, 32;
-  --activation-rgb: 20, 18, 16;
-  --composer-glow: transparent;
-  --composer-shadow:
-    0 16px 44px -22px rgba(39, 36, 32, 0.26),
-    0 3px 10px -5px rgba(39, 36, 32, 0.14);
-  --room-1: rgba(39, 36, 32, 0.03);
-  --room-2: rgba(39, 36, 32, 0.014);
-  --select-bg: rgba(94, 99, 182, 0.20);
-
-  --card-border: rgba(39, 36, 32, 0.10);
-  --shadow-card:
-    0 1px 2px rgba(39, 36, 32, 0.05),
-    0 12px 32px -14px rgba(39, 36, 32, 0.13);
-  --shadow-float:
-    0 4px 14px rgba(39, 36, 32, 0.08),
-    0 28px 64px -20px rgba(39, 36, 32, 0.16);
-  --shadow-message: 0 1px 2px rgba(39, 36, 32, 0.04);
-
-  --signal: #5e63b6;       /* §5 light iris */
-  --signal-soft: #7a7fd0;
-  --signal-core: #474c9e;
-  --signal-12: rgba(94, 99, 182, 0.10);
-  --signal-20: rgba(94, 99, 182, 0.18);
-  --signal-38: rgba(94, 99, 182, 0.34);
-  --signal-55: rgba(94, 99, 182, 0.50);
-
-  --warm-glow: rgba(39, 36, 32, 0.04);
-  --warm-glow-strong: rgba(39, 36, 32, 0.06);
-
-  /* §5 aliases that hold literal values per theme */
-  --field: rgba(39, 36, 32, 0.045);
-  --lift: rgba(39, 36, 32, 0.04);
-  --iris-bg: rgba(94, 99, 182, 0.10);
-  --grain: 0;
-}

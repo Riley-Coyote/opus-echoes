@@ -6,10 +6,9 @@ export function Recent() {
   const { recent } = useMnemos();
   return (
     <div className={styles.recent}>
-      <div className={styles.label}>recent</div>
       <div className={styles.list}>
         {recent.length === 0 ? (
-          <div className={styles.quiet}>nothing has settled yet</div>
+          <div className={styles.quiet}>the substrate listens · nothing has surfaced yet</div>
         ) : (
           recent.map((entry) => <RecentCard key={entry.id} entry={entry} />)
         )}
