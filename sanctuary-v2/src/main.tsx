@@ -1,13 +1,9 @@
 import { createRoot } from "react-dom/client";
 
-// Self-hosted fonts — bundled, no network FOUT. One superfamily, one system:
-// Geist (sans) is the voice; Geist Mono is its monospaced cut for data, labels,
-// and metrics. Sharing one skeleton is what makes the instrument read unified.
-import "@fontsource-variable/geist";
-import "@fontsource-variable/geist-mono";
-// One superfamily. Geist is the voice; Geist Mono is its monospaced cut for data,
-// labels, and metrics. The notebook reads in the same Geist — the reading feel
-// comes from size, measure, and breath, not from a second typeface.
+// The typefaces load in index.html — Inter Tight (display) · Inter (body) ·
+// JetBrains Mono (data / labels / metrics) · Newsreader (the notebook's reading
+// voice) · Press Start 2P (chrome only). Hierarchy comes from size, weight, and
+// breath, not from swapping families.
 
 import "./foundation/tokens.css";
 import "./foundation/type.css";

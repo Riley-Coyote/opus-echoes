@@ -6,6 +6,16 @@
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
+  /* a dusk scrim so the letter reads over the bright arrival fire — the world
+     glows faintly through the top, deepening under the writing surface. */
+  background: linear-gradient(
+    180deg,
+    rgba(6, 7, 10, 0.4) 0%,
+    rgba(6, 7, 10, 0.86) 24%,
+    rgba(6, 7, 10, 0.93) 100%
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 .scroll::-webkit-scrollbar { width: 7px; }
 .scroll::-webkit-scrollbar-thumb { background: var(--line-firm); border-radius: var(--r-full); }
