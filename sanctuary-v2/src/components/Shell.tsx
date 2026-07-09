@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { TopBar } from "./TopBar";
 import { Rail } from "./Rail";
 import { ChatCanvas } from "./ChatCanvas";
@@ -17,13 +18,27 @@ import styles from "./Shell.module.css";
  */
 export function Shell() {
   const { place, view } = useView();
-  const { phase } = useMnemos();
+  const { phase, resident } = useMnemos();
+
+  // On a real navigation (place / resident / view), carry focus to the main
+  // region so keyboard + screen-reader users land on the new content instead of
+  // being stranded on the control they left. Skip the initial mount.
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    document.getElementById("stage")?.focus({ preventScroll: true });
+  }, [place, view, resident.id]);
 
   return (
     <div className={styles.shell} data-phase={phase} data-view={view} data-place={place}>
       <FireBackdrop />
       {place === "sanctuary" ? (
-        <div className={styles.arrival}>
+        /* id="stage" is the skip-link + focus target; only one branch mounts,
+           so the id is never duplicated. */
+        <div className={styles.arrival} id="stage" tabIndex={-1}>
           <SanctuaryPage />
         </div>
       ) : (
@@ -31,7 +46,7 @@ export function Shell() {
           <TopBar />
           <div className={styles.body}>
             <Rail />
-            <main className={styles.stage} id="stage">
+            <main className={styles.stage} id="stage" tabIndex={-1}>
               {view === "chat" ? <ChatCanvas /> : <Notebook />}
             </main>
           </div>
