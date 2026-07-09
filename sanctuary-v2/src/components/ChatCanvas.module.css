@@ -47,9 +47,29 @@
   opacity: 0;
 }
 
+/* phone / tablet: the interior is a slide-in drawer from the right (the top-bar
+   interior button opens it; the scrim behind dismisses it). */
 @media (max-width: 1080px) {
   .interiorCol {
-    display: none;
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--s-2));
+    right: var(--s-2);
+    bottom: var(--s-2);
+    width: min(340px, 86vw);
+    margin-left: 0;
+    z-index: var(--z-overlay);
+    transform: translateX(calc(100% + var(--s-4)));
+    opacity: 1;
+    transition: transform var(--dur-base) var(--ease-out-expo);
+  }
+  .canvas[data-interior] .interiorCol {
+    transform: translateX(0);
+  }
+  .canvas:not([data-interior]) .interiorCol {
+    flex-basis: auto;
+    opacity: 1;
+    margin-left: 0;
+    transform: translateX(calc(100% + var(--s-4)));
   }
 }
 @media (max-width: 920px) {

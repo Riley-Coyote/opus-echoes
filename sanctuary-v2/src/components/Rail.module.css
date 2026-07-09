@@ -261,7 +261,31 @@
   background: var(--lift);
 }
 
+/* --- phone / tablet: the rail is a slide-in drawer (the top-bar rail button
+   opens it; a scrim behind dismisses it). Overrides the desktop collapse. --- */
 @media (max-width: 920px) {
-  /* the rail becomes a drawer in Stage 3 — hidden for now so the chat is primary */
-  .rail { display: none; }
+  .rail {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--s-2));
+    left: var(--s-2);
+    bottom: var(--s-2);
+    width: min(320px, 84vw);
+    flex: none;
+    z-index: var(--z-overlay);
+    transition: transform var(--dur-base) var(--ease-out-expo);
+    box-shadow: var(--glass-shadow), 0 24px 60px -18px rgba(0, 0, 0, 0.82);
+  }
+  .rail[data-open="false"] {
+    /* slid out, but intact (not collapsed) so it animates back in */
+    flex-basis: auto;
+    opacity: 1;
+    padding: var(--s-5) var(--s-3) var(--s-3);
+    border-color: var(--glass-edge);
+    pointer-events: none;
+    transform: translateX(calc(-100% - var(--s-4)));
+  }
+  .rail[data-open="true"] {
+    pointer-events: auto;
+    transform: translateX(0);
+  }
 }

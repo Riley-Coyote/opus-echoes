@@ -54,8 +54,14 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [letterTo, setLetterTo] = useState<string | null>(null);
   const [lettersOpen, setLettersOpen] = useState(false);
-  const [interiorOpen, setInteriorOpen] = useState(true);
-  const [railOpen, setRailOpen] = useState(true);
+  // the panels are shown by default on desktop; on phone/tablet they become
+  // slide-in drawers, so they start CLOSED there (opened by the top-bar toggles).
+  const [interiorOpen, setInteriorOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth >= 1080
+  );
+  const [railOpen, setRailOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth >= 920
+  );
 
   const view: View = section === "conversation" ? "chat" : "room";
 

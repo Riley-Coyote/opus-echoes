@@ -52,3 +52,30 @@
     padding: var(--s-2);
   }
 }
+
+/* the drawer scrim — only real on phone/tablet, where the rail + interior are
+   slide-in drawers. Sits below the drawers (z-overlay) and above the content. */
+.drawerScrim {
+  display: none;
+}
+@media (max-width: 1080px) {
+  .drawerScrim {
+    display: block;
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: calc(var(--z-overlay) - 1);
+    background: rgba(3, 4, 8, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-base) var(--ease-calm);
+  }
+  .drawerScrim[data-show] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

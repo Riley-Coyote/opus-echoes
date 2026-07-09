@@ -56,12 +56,10 @@
 }
 
 /* on narrow screens, trim to the essentials so it stays one clean line */
-@media (max-width: 720px) {
+@media (max-width: 768px) {
+  /* the ambient weather strip clips at phone/tablet widths, and the modulators
+     already live (labelled) in the interior drawer — so hide it here. */
   .hud {
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .label {
     display: none;
   }
 }
