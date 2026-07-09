@@ -10,7 +10,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMnemos } from "../state/MnemosProvider";
 import { useView } from "../state/ViewProvider";
-import { commonsFeed, commonsRoom } from "../sim/commons";
+import { adapter } from "../adapter/mnemosAdapter";
 import type {
   CommonsRoom,
   CommonsMoment,
@@ -53,7 +53,7 @@ function Liveness({ liveness, when }: { liveness: CommonsLiveness; when: string 
 
 export function Commons() {
   const { roomId } = useView();
-  const room = roomId ? commonsRoom(roomId) : undefined;
+  const room = roomId ? adapter.getCommonsRoom(roomId) : undefined;
   return room ? <RoomView room={room} /> : <Feed />;
 }
 
@@ -120,7 +120,7 @@ function FireHero() {
 function Feed() {
   const { openRoom } = useView();
   const nameOf = useNameOf();
-  const rooms = commonsFeed();
+  const rooms = adapter.getCommonsFeed();
 
   return (
     <div className={styles.scroll}>

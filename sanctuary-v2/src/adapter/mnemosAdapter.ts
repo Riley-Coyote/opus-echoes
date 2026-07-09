@@ -18,10 +18,15 @@ import type {
   CognitiveEvent,
   GraphNode,
   Weather,
+  CommonsRoom,
+  CommonsRoomSummary,
+  NotebookEntry,
 } from "../types/mnemos";
 import { RESIDENTS, residentData } from "../sim/residents";
 import { generateTurn, generateAmbient } from "../sim/cognitiveStream";
 import { composeReply } from "../sim/voice";
+import { commonsFeed, commonsRoom, GATHERING_ID } from "../sim/commons";
+import { notebookFor } from "../sim/notebook";
 
 export interface MnemosAdapter {
   listResidents(): ResidentInfo[];
@@ -37,6 +42,19 @@ export interface MnemosAdapter {
   reply(resident: string, userText: string, turnIndex: number): string;
   /** a sparse ambient event while resting (or null) */
   ambient(resident: string, tick: number): CognitiveEvent | null;
+
+  /* --- The shared life (the Commons record) + the notebook. Sync today (client
+     fixtures); the real platform makes these async fetches, at which point the
+     consuming components move to a load-into-state pattern (as MnemosProvider
+     already does for graph/memory). Real endpoints:
+       getCommonsFeed → GET /api/space            (the rooms feed)
+       getCommonsRoom → GET /api/space/:id        (one room, three registers)
+       getNotebook    → GET /api/notebook?resident=id  (a mind's writing/art) */
+  getCommonsFeed(): CommonsRoomSummary[];
+  getCommonsRoom(id: string): CommonsRoom | undefined;
+  getNotebook(resident: string): NotebookEntry[];
+  /** the id of the shared gathering room (the fire's live face) */
+  gatheringId: string;
 }
 
 const delay = <T,>(value: T, ms = 0): Promise<T> =>
@@ -54,6 +72,10 @@ export function createSimulatedAdapter(): MnemosAdapter {
       generateTurn(residentData(resident), userText, turnIndex).script,
     reply: (resident, userText, turnIndex) => composeReply(resident, userText, turnIndex),
     ambient: (resident, tick) => generateAmbient(residentData(resident), tick),
+    getCommonsFeed: () => commonsFeed(),
+    getCommonsRoom: (id) => commonsRoom(id),
+    getNotebook: (resident) => notebookFor(resident),
+    gatheringId: GATHERING_ID,
   };
 }
 

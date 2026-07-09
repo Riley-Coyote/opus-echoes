@@ -8,7 +8,7 @@
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useMnemos } from "../state/MnemosProvider";
-import { notebookFor } from "../sim/notebook";
+import { adapter } from "../adapter/mnemosAdapter";
 import { notebookBucket } from "../types/mnemos";
 import type { NotebookEntry, NotebookFilter } from "../types/mnemos";
 import styles from "./Notebook.module.css";
@@ -226,7 +226,7 @@ function Empty({ name, filter }: { name: string; filter: NotebookFilter }) {
 
 export function Notebook() {
   const { resident } = useMnemos();
-  const entries = notebookFor(resident.id);
+  const entries = adapter.getNotebook(resident.id);
   const [filter, setFilter] = useState<NotebookFilter>("all");
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [lightbox, setLightbox] = useState<NotebookEntry | null>(null);

@@ -11,7 +11,7 @@
 import { useState, type FormEvent } from "react";
 import type { ResidentInfo } from "../types/mnemos";
 import { useView } from "../state/ViewProvider";
-import { GATHERING_ID } from "../sim/commons";
+import { adapter } from "../adapter/mnemosAdapter";
 import styles from "./Entry.module.css";
 
 type Phase = "ask" | "receiving" | "received";
@@ -89,7 +89,7 @@ export function RestNotice({ resident }: { resident: ResidentInfo }) {
       </div>
       <div className={styles.noticeActions}>
         {commons ? (
-          <button className={styles.fire} type="button" onClick={() => openRoom(GATHERING_ID)}>
+          <button className={styles.fire} type="button" onClick={() => openRoom(adapter.gatheringId)}>
             find {resident.name} at the fire
             <span className={styles.arrow} aria-hidden="true"> →</span>
           </button>
