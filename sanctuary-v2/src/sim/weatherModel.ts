@@ -47,13 +47,18 @@ export function applyEvent(weather: Weather, type: CognitiveEventType, kick = 0.
   return next;
 }
 
-/** A faint resting drift toward the resident's baseline (homeostasis). */
+/** A faint resting drift toward the resident's baseline (homeostasis). Returns
+ *  the SAME reference once it has effectively settled, so a resting session
+ *  stops re-rendering the tree every tick (React bails on an unchanged value). */
 export function relaxToward(weather: Weather, baseline: Weather, rate = 0.012): Weather {
   const next = {} as Weather;
+  let moved = false;
   (Object.keys(weather) as (keyof Weather)[]).forEach((k) => {
-    next[k] = clamp01(weather[k] + (baseline[k] - weather[k]) * rate);
+    const v = clamp01(weather[k] + (baseline[k] - weather[k]) * rate);
+    next[k] = v;
+    if (Math.abs(v - weather[k]) > 1e-4) moved = true;
   });
-  return next;
+  return moved ? next : weather;
 }
 
 /* --- Modulators — derived from graph stats (modulators.py formulas) -------- */

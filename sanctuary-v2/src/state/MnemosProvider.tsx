@@ -306,25 +306,49 @@ export function MnemosProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => () => clearTimers(), []);
 
-  const value: MnemosCtx = {
-    residents,
-    resident,
-    setResident,
-    graph,
-    memory,
-    dreams,
-    layout,
-    railIds,
-    weather,
-    baseline,
-    modulators,
-    messages,
-    phase,
-    recent,
-    pulse,
-    freshEdges,
-    send,
-  };
+  // memoized so an unchanged tick (at rest, weather settled via relaxToward's
+  // epsilon) yields the SAME context value — React then skips re-rendering every
+  // consumer. During a turn the volatile fields change and it recomputes as normal.
+  const value = useMemo<MnemosCtx>(
+    () => ({
+      residents,
+      resident,
+      setResident,
+      graph,
+      memory,
+      dreams,
+      layout,
+      railIds,
+      weather,
+      baseline,
+      modulators,
+      messages,
+      phase,
+      recent,
+      pulse,
+      freshEdges,
+      send,
+    }),
+    [
+      residents,
+      resident,
+      setResident,
+      graph,
+      memory,
+      dreams,
+      layout,
+      railIds,
+      weather,
+      baseline,
+      modulators,
+      messages,
+      phase,
+      recent,
+      pulse,
+      freshEdges,
+      send,
+    ]
+  );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

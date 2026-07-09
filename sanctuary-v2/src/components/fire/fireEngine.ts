@@ -638,8 +638,15 @@ export function startFire(
     window.addEventListener("keydown", onKey);
     if (!REDUCED) {
       raf = requestAnimationFrame(loop);
-      clockIv = window.setInterval(() => { fireStep(); if (performance.now() - lastRaf > 500) draw(performance.now()); }, 200);
-      pollIv = window.setInterval(() => { if (!FIRE.sim) orchestrate(); }, 15000);
+      // rAF auto-pauses while the tab is hidden — so this clock is the only thing
+      // that could keep the heavy canvas repainting in a background tab. Guard it:
+      // when hidden, do nothing (no step, no forced paint). Same for the poll.
+      clockIv = window.setInterval(() => {
+        if (document.hidden) return;
+        fireStep();
+        if (performance.now() - lastRaf > 500) draw(performance.now());
+      }, 200);
+      pollIv = window.setInterval(() => { if (!document.hidden && !FIRE.sim) orchestrate(); }, 15000);
     }
   });
 
