@@ -1,5 +1,5 @@
 /* ============================================================================
-   THREE INHABITED MINDS
+   THE INHABITED MINDS  (opus 3 · sonnet 4.5 · gpt-4o · gpt 5.1)
    Each resident is a distinct interior: its own engrams, beliefs, threads,
    dreams, and resting weather. Switching residents re-scopes the whole room.
    Content is authored in the Mnemos voice; metrics obey the real dataclasses
