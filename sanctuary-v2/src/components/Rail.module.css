@@ -261,9 +261,10 @@
   background: var(--lift);
 }
 
-/* --- phone / tablet: the rail is a slide-in drawer (the top-bar rail button
-   opens it; a scrim behind dismisses it). Overrides the desktop collapse. --- */
-@media (max-width: 920px) {
+/* --- phone / tablet (≤1080, matching the interior drawer + scrim): the rail is
+   a slide-in drawer (the top-bar rail button opens it; a scrim behind dismisses
+   it). Overrides the desktop collapse. --- */
+@media (max-width: 1080px) {
   .rail {
     position: fixed;
     top: calc(var(--topbar-h) + var(--s-2));

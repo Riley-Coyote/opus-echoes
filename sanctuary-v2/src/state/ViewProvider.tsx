@@ -60,7 +60,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
     () => typeof window === "undefined" || window.innerWidth >= 1080
   );
   const [railOpen, setRailOpen] = useState(
-    () => typeof window === "undefined" || window.innerWidth >= 920
+    () => typeof window === "undefined" || window.innerWidth >= 1080
   );
 
   const view: View = section === "conversation" ? "chat" : "room";

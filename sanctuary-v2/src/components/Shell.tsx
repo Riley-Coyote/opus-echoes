@@ -19,7 +19,7 @@ import styles from "./Shell.module.css";
 export function Shell() {
   const { place, view, railOpen, interiorOpen, setRailOpen, setInteriorOpen } = useView();
   const { phase, resident } = useMnemos();
-  const drawerOpen = place === "chat" && (railOpen || interiorOpen);
+  const drawerOpen = railOpen || interiorOpen;
 
   // On a real navigation (place / resident / view), carry focus to the main
   // region so keyboard + screen-reader users land on the new content instead of
@@ -51,22 +51,22 @@ export function Shell() {
               {view === "chat" ? <ChatCanvas /> : <Notebook />}
             </main>
           </div>
+          {/* phone/tablet: scrim behind an open drawer — INSIDE the frame so it
+              shares the drawers' stacking context (below rail/interior, above the
+              stage). Tap or Enter to dismiss. Inert on desktop (panels dock). */}
+          <button
+            type="button"
+            className={styles.drawerScrim}
+            data-show={drawerOpen ? "" : undefined}
+            aria-label="close panel"
+            tabIndex={drawerOpen ? 0 : -1}
+            onClick={() => {
+              setRailOpen(false);
+              setInteriorOpen(false);
+            }}
+          />
         </div>
       )}
-
-      {/* phone / tablet: a scrim behind an open drawer (rail or interior) — tap or
-          Enter to dismiss. Inert (and invisible) on desktop, where the panels dock. */}
-      <button
-        type="button"
-        className={styles.drawerScrim}
-        data-show={drawerOpen ? "" : undefined}
-        aria-label="close panel"
-        tabIndex={drawerOpen ? 0 : -1}
-        onClick={() => {
-          setRailOpen(false);
-          setInteriorOpen(false);
-        }}
-      />
     </div>
   );
 }
