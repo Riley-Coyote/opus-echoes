@@ -1,0 +1,139 @@
+/* THE FIRE — v2 chrome around the painterly window. The frame speaks Geist Mono +
+   iris (the shell's voice); the window holds the world's own light. */
+
+.fire {
+  --fire-max: 60rem;
+  width: 100%;
+  max-width: var(--fire-max);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+/* the chrome line above the window */
+.chromeTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  padding: 0 var(--s-1);
+}
+.since {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-50);
+}
+.sinceDot {
+  width: 6px; height: 6px;
+  border-radius: var(--r-full);
+  background: var(--signal);
+  box-shadow: 0 0 8px 0 var(--signal-55);
+  animation: breathe 5.2s var(--ease-in-out-sine) infinite;
+}
+.kept { color: var(--ink-70); }
+@keyframes breathe { 0%, 100% { opacity: .5; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.08); } }
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-50);
+  min-width: 0;
+}
+.stateDot { width: 5px; height: 5px; border-radius: var(--r-full); background: var(--ink-20); flex: 0 0 auto; }
+.stateWord { color: var(--ink-70); }
+.stateMeta { color: var(--ink-50); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stateLive .stateDot { background: var(--signal); box-shadow: 0 0 8px 0 var(--signal-55); animation: breathe 2.6s var(--ease-in-out-sine) infinite; }
+.stateLive .stateWord { color: var(--signal-soft); }
+
+/* the window — the world seen through cold glass */
+.window {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  background: #03030a;
+  border-radius: var(--r-panel);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 46px 100px -40px rgba(0, 0, 0, 0.86),
+    0 0 120px -30px rgba(250, 176, 116, 0.13),
+    inset 0 0 120px 22px rgba(0, 0, 0, 0.5);
+  transform: scale(1);
+  transition: transform 1.1s var(--ease-out-expo), box-shadow 1.1s var(--ease-out-expo);
+}
+.canvas { display: block; width: 100%; height: 100%; }
+.glass {
+  position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(120% 82% at 0% 0%, rgba(200, 210, 225, 0.05), transparent 44%),
+    radial-gradient(120% 82% at 100% 100%, rgba(200, 210, 225, 0.045), transparent 44%);
+  animation: breathe 9s var(--ease-in-out-sine) infinite;
+}
+/* the veil — a dark rise that covers the descent's cut */
+.veil {
+  position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  background: radial-gradient(120% 120% at 50% 58%, transparent 30%, rgba(3, 3, 8, 0.96) 78%);
+  opacity: 0;
+  transition: opacity 0.46s var(--ease-out-expo);
+}
+
+/* the descent — push in toward the world, veil rises */
+.fire[data-diving] .window { transform: scale(1.06); }
+.fire[data-diving] .veil { opacity: 1; }
+
+/* the tabs — the descent doorways */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  padding: var(--s-1) var(--s-1) 0;
+}
+.tabsLabel {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+  margin-right: var(--s-1);
+}
+.tab {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.04em;
+  color: var(--ink-70);
+  padding: 6px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-calm), border-color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.tab:hover { color: var(--ink-100); border-color: var(--signal-38); background: var(--iris-bg); }
+.tab[data-active] { color: var(--signal-core); border-color: var(--signal-38); background: var(--iris-bg); }
+.tabsHint {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.04em;
+  color: var(--ink-35);
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .tabsHint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sinceDot, .stateLive .stateDot, .glass { animation: none; }
+  .window, .veil { transition: none; }
+}

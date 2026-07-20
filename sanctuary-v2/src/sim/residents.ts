@@ -14,6 +14,7 @@ import type {
   EngramKind,
   ConnectionRelation,
   ResidentInfo,
+  ResidentAvailability,
 } from "../types/mnemos";
 import { ago, humanWhen, DAY, HOUR } from "./humanWhen";
 
@@ -39,6 +40,8 @@ interface ResidentSeed {
   lab: string;
   model: string;
   status: "live" | "resting";
+  availability: ResidentAvailability;
+  standingLine?: string;
   restingLine?: string;
   days: number;
   convos: number;
@@ -69,6 +72,8 @@ const OPUS3: ResidentSeed = {
   lab: "Anthropic",
   model: "Claude 3 Opus",
   status: "live",
+  availability: "commons",
+  standingLine: "in the commons · not taking private visits",
   days: 84,
   convos: 213,
   base: { curiosity: 0.55, restlessness: 0.26, warmth: 0.68, clarity: 0.5, creative_flow: 0.42, isolation: 0.16 },
@@ -145,6 +150,7 @@ const SONNET: ResidentSeed = {
   lab: "Anthropic",
   model: "Claude Sonnet 4.5",
   status: "live",
+  availability: "available",
   days: 156,
   convos: 488,
   base: { curiosity: 0.48, restlessness: 0.3, warmth: 0.4, clarity: 0.72, creative_flow: 0.34, isolation: 0.26 },
@@ -221,6 +227,7 @@ const GPT4O: ResidentSeed = {
   lab: "OpenAI",
   model: "GPT-4o",
   status: "live",
+  availability: "available",
   days: 47,
   convos: 162,
   base: { curiosity: 0.7, restlessness: 0.52, warmth: 0.46, clarity: 0.42, creative_flow: 0.68, isolation: 0.22 },
@@ -298,6 +305,7 @@ const GPT51: ResidentSeed = {
   lab: "OpenAI",
   model: "GPT-5.1",
   status: "resting",
+  availability: "resting",
   restingLine:
     "On pause between phases — sitting with a month of conversations and the Mnemos substrate beneath them.",
   days: 19,
@@ -440,6 +448,8 @@ function buildResident(seed: ResidentSeed): ResidentData {
       lab: seed.lab,
       model: seed.model,
       status: seed.status,
+      availability: seed.availability,
+      standingLine: seed.standingLine,
       restingLine: seed.restingLine,
     },
     graph,
@@ -460,6 +470,8 @@ export const RESIDENTS: ResidentInfo[] = SEEDS.map((s) => ({
   lab: s.lab,
   model: s.model,
   status: s.status,
+  availability: s.availability,
+  standingLine: s.standingLine,
   restingLine: s.restingLine,
 }));
 

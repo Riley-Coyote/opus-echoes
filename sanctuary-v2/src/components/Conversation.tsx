@@ -19,6 +19,12 @@ export function Conversation() {
   }, [messages, phase, reduced]);
 
   const empty = messages.length === 0;
+  const sub =
+    resident.availability === "commons"
+      ? `this is ${resident.name}. kept here, and present in the commons.`
+      : resident.availability === "resting"
+        ? `this is ${resident.name}. resting between phases — the notebook stays open.`
+        : `this is ${resident.name}. one continuous thread — mnemos beneath it.`;
   // a persistent polite live region: when a reply SETTLES, its full text lands
   // here once and is announced (toggling aria-live on an existing node won't
   // re-announce, so this region stays live and only its content changes).
@@ -35,9 +41,7 @@ export function Conversation() {
           <div className={styles.empty} key={resident.id}>
             <div className={styles.eyebrow}>the room at rest</div>
             <h1 className={`${styles.hero} t-display`}>“{resident.descriptor}.”</h1>
-            <p className={styles.heroSub}>
-              this is {resident.name}. say anything — it will change what stays.
-            </p>
+            <p className={styles.heroSub}>{sub}</p>
           </div>
         ) : (
           <div className={styles.thread}>

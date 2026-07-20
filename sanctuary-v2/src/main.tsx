@@ -5,6 +5,9 @@ import { createRoot } from "react-dom/client";
 // and metrics. Sharing one skeleton is what makes the instrument read unified.
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
+// One superfamily. Geist is the voice; Geist Mono is its monospaced cut for data,
+// labels, and metrics. The notebook reads in the same Geist — the reading feel
+// comes from size, measure, and breath, not from a second typeface.
 
 import "./foundation/tokens.css";
 import "./foundation/type.css";
