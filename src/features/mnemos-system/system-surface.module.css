@@ -1,0 +1,44 @@
+.surface {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #06070a;
+}
+
+.frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface[data-ready] .frame {
+  opacity: 1;
+}
+
+.loading {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(220, 219, 216, 0.42);
+  font:
+    10px/1.4 "JetBrains Mono",
+    "SFMono-Regular",
+    Menlo,
+    monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.surface[data-ready] .loading {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame {
+    transition: none;
+  }
+}

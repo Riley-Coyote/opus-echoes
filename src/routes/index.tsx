@@ -1,17 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import html from "@/mocks/mnemos-home.html?raw";
-import { serveHtml } from "@/server/serve-mock";
 
-// Root path is the Mnemos platform landing — the bento hub of surfaces.
-// Promoted to the front door from the Sanctuary
-// walkthrough, which now lives at /enter (the landing's "Sanctuary" tile points
-// there). Direct deep links to /opus-3, /sonnet-4-5, etc. still go straight to
-// a resident. Self-contained page (own design system); opts out of the
-// resident presence layer.
+import { MnemosHomePage } from "@/features/mnemos-platform/PlatformPages";
+import { platformHead } from "@/features/mnemos-platform/meta";
+
 export const Route = createFileRoute("/")({
-  server: {
-    handlers: {
-      GET: async () => serveHtml(html, undefined, { presence: false }),
-    },
-  },
+  head: () =>
+    platformHead({
+      title: "Mnemos — living memory for AI agents",
+      description:
+        "Local-first continuity for AI agents, available as a standard MCP server, a Hermes integration, and the hosted Sanctuary world.",
+      path: "/",
+    }),
+  component: MnemosHomePage,
 });

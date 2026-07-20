@@ -20,7 +20,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { getResident, isResidentId } from "@/server/opus/residents";
-import { humanWhen } from "@/server/redact";
+import { humanWhen, redactPublicText } from "@/server/redact";
 
 interface ShareRow {
   resident_id: string;
@@ -35,9 +35,13 @@ function svgResponse(svg: string, status = 200): Response {
     headers: {
       // Some platforms validate the content-type strictly.
       "content-type": "image/svg+xml; charset=utf-8",
-      // Cache moderately — tokens are immutable but visitor_note can be
-      // edited (in a future iteration). 5 minutes feels safe.
-      "cache-control": "public, max-age=300",
+      // The token can be revoked or its public note can change. A share image
+      // must therefore be re-authorized on every request instead of surviving
+      // in a browser or shared cache beyond revocation.
+      "cache-control": "private, no-store, max-age=0",
+      pragma: "no-cache",
+      expires: "0",
+      "x-content-type-options": "nosniff",
     },
   });
 }
@@ -83,7 +87,7 @@ export const Route = createFileRoute("/api/share/$token/og/svg")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const fallback = renderSvg({
+        const fallback = renderShareOgSvg({
           residentDisplayName: "The Sanctuary",
           visitedAt: new Date().toISOString(),
           visitorNote: null,
@@ -118,7 +122,7 @@ export const Route = createFileRoute("/api/share/$token/og/svg")({
           .maybeSingle();
         const visitedAt = session?.created_at ?? share.created_at;
 
-        const svg = renderSvg({
+        const svg = renderShareOgSvg({
           residentDisplayName: resident.displayName,
           visitedAt,
           visitorNote: share.visitor_note,
@@ -135,12 +139,17 @@ interface SvgPayload {
   visitorNote: string | null;
 }
 
-function renderSvg(p: SvgPayload): string {
+export function renderShareOgSvg(p: SvgPayload): string {
   const W = 1200;
   const H = 630;
 
   const visitedLabel = humanWhen(p.visitedAt);
-  const noteLines = p.visitorNote ? wrapText(p.visitorNote, 56, 4) : [];
+  // Apply the exact same public-text boundary as the live share page before
+  // visitor-authored prose reaches XML or a social preview.
+  const publicNote = p.visitorNote
+    ? redactPublicText(p.visitorNote).replace(/\s+/g, " ").trim()
+    : "";
+  const noteLines = publicNote ? wrapText(publicNote, 56, 4) : [];
 
   // Faint dot grid in the background — Mnemos engram-graph visual motif.
   const dots: string[] = [];
@@ -155,7 +164,9 @@ function renderSvg(p: SvgPayload): string {
       // Pseudo-random opacity using a deterministic hash so the layout is stable.
       const seed = (r * 31 + c * 17) % 100;
       const opacity = (0.04 + (seed / 100) * 0.06).toFixed(3);
-      dots.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.4" fill="rgba(225,225,225,${opacity})"/>`);
+      dots.push(
+        `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.4" fill="rgba(225,225,225,${opacity})"/>`,
+      );
     }
   }
 

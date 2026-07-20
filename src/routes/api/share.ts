@@ -3,8 +3,8 @@
  *
  * POST /api/share
  *   Body: { session_id, visitor_note? }
- *   Auth: session_id UUID is a 128-bit random bearer token — knowing
- *         it proves the visitor was present.
+ *   Auth: legacy sessions use the session UUID bearer. Runtime sessions also
+ *         require their canonical x-mnemos-visitor-id bearer.
  *   Effect: creates a row in visitor_shares with a generated token.
  *           If a non-revoked share already exists for this session,
  *           returns the existing one (idempotent).
@@ -12,7 +12,8 @@
  *
  * POST /api/share?action=revoke
  *   Body: { token }
- *   Auth: share token is a random secret — knowing it proves ownership.
+ *   Auth: share token is a random secret. Runtime-session shares also require
+ *         their canonical x-mnemos-visitor-id bearer.
  *   Effect: sets revoked_at on the share. Public reads start failing
  *           immediately (RLS filters out revoked).
  *   Returns: { ok: true }
@@ -27,6 +28,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
 import { generateShareToken } from "@/server/redact";
+import { isStoredRuntimeVisitorAuthorized } from "@/server/runtime/visitor-auth.server";
 
 const CreateBody = z.object({
   session_id: z.string().uuid(),
@@ -56,9 +58,8 @@ export const Route = createFileRoute("/api/share")({
         const hash = ipHash(request);
 
         // -------- revoke branch --------
-        // Auth: the share token itself is a random secret known only to the
-        // creator. Knowing it is proof of ownership. IP hash check removed
-        // because the daily-rotating salt caused revoke to fail after midnight.
+        // The share token remains the first bearer. Runtime-session shares add
+        // the same stable visitor bearer used to create and hydrate the visit.
         if (action === "revoke") {
           let body: z.infer<typeof RevokeBody>;
           try {
@@ -68,11 +69,19 @@ export const Route = createFileRoute("/api/share")({
           }
           const { data: share } = await supabaseAdmin
             .from("visitor_shares")
-            .select("id, revoked_at")
+            .select("id, session_id, revoked_at")
             .eq("token", body.token)
             .maybeSingle();
           if (!share) {
             return jsonResp({ ok: false, code: "share_not_found" }, 404);
+          }
+          try {
+            if (!(await isStoredRuntimeVisitorAuthorized(request, share.session_id))) {
+              return jsonResp({ ok: false, code: "visitor_access_denied" }, 403);
+            }
+          } catch (error) {
+            console.error("[share] runtime visitor authorization failed", error);
+            return jsonResp({ ok: false, code: "authorization_unavailable" }, 500);
           }
           if (share.revoked_at) {
             return jsonResp({ ok: true, already_revoked: true });
@@ -92,10 +101,8 @@ export const Route = createFileRoute("/api/share")({
           return jsonResp({ ok: false, code: "bad_request" }, 400);
         }
 
-        // Session UUID is a 128-bit random bearer token — knowing it IS
-        // proof the visitor was present. IP hash verification removed:
-        // daily-rotating salt + Cloudflare header inconsistency caused
-        // legitimate share requests to fail with "not_owned".
+        // The UUID remains the first bearer. Runtime sessions add the stable
+        // visitor id below rather than reviving fragile IP-hash ownership.
         const { data: session } = await supabaseAdmin
           .from("sessions")
           .select("id, resident_id")
@@ -103,6 +110,14 @@ export const Route = createFileRoute("/api/share")({
           .maybeSingle();
         if (!session) {
           return jsonResp({ ok: false, code: "session_not_found" }, 404);
+        }
+        try {
+          if (!(await isStoredRuntimeVisitorAuthorized(request, session.id))) {
+            return jsonResp({ ok: false, code: "visitor_access_denied" }, 403);
+          }
+        } catch (error) {
+          console.error("[share] runtime visitor authorization failed", error);
+          return jsonResp({ ok: false, code: "authorization_unavailable" }, 500);
         }
 
         // If an active share already exists for this session, return it

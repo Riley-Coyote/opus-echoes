@@ -8,6 +8,9 @@
  *      so the file looks right opened in any browser without internet.
  *   2. A `<meta name="generator">` tag is injected near the top of <head>
  *      so the file's provenance is discoverable from "View Source".
+ *   3. Public image artifacts are inlined when they fit the bounded export
+ *      budget. SVG/ASCII artifacts and visit-safe cognition receipts already
+ *      arrive inline through the same projection used by the live share.
  *
  * The CSS is already inlined by `renderSharePage()` (`<style>${SHARE_CSS}</style>`),
  * so no additional inlining is needed here.
@@ -19,24 +22,10 @@
  * and HEAD (some hosts pre-flight downloads to read content-length / type).
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
-import { getResident, isResidentId } from "@/server/opus/residents";
-import { renderSharePage, type ShareTurn } from "@/server/share-pages";
-
-interface ShareRow {
-  id: string;
-  token: string;
-  session_id: string;
-  resident_id: string;
-  visitor_note: string | null;
-  created_at: string;
-}
-
-interface SessionRow {
-  id: string;
-  created_at: string;
-}
+import { loadPublicShare, type PublicSharePayload } from "@/server/public-share.server";
+import { attachmentBytesMatchMediaType } from "@/server/runtime/attachment-policy";
+import { renderSharePage, type ShareArtifact } from "@/server/share-pages";
 
 const NOT_FOUND_BODY = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>Share Not Found</title></head>
@@ -82,6 +71,126 @@ function safeFilenameToken(token: string): string {
   return token.replace(/[^A-Za-z0-9_-]/g, "");
 }
 
+const OFFLINE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
+const MAX_OFFLINE_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_OFFLINE_IMAGE_TOTAL_BYTES = 16 * 1024 * 1024;
+
+function isPublicArtUrl(value: string): boolean {
+  const configuredUrl = process.env.SUPABASE_URL;
+  if (!configuredUrl) return false;
+  try {
+    const candidate = new URL(value);
+    const configured = new URL(configuredUrl);
+    return (
+      candidate.origin === configured.origin &&
+      candidate.pathname.startsWith("/storage/v1/object/public/art/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  // 24 KiB is divisible by three, so independently encoded chunks concatenate
+  // without introducing padding in the middle of the data URL.
+  const chunkSize = 24 * 1024;
+  let encoded = "";
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length));
+    let binary = "";
+    for (const byte of chunk) binary += String.fromCharCode(byte);
+    encoded += btoa(binary);
+  }
+  return encoded;
+}
+
+async function readResponseBytesWithLimit(
+  response: Response,
+  maxBytes: number,
+): Promise<Uint8Array | null> {
+  if (!response.body) return new Uint8Array();
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel("offline artifact size limit exceeded").catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
+async function inlineImageArtifact(
+  artifact: ShareArtifact,
+  remainingBytes: number,
+): Promise<{ artifact: ShareArtifact; bytesUsed: number }> {
+  if (artifact.kind !== "image" || !artifact.url || !isPublicArtUrl(artifact.url)) {
+    return { artifact, bytesUsed: 0 };
+  }
+
+  try {
+    const response = await fetch(artifact.url, { redirect: "error" });
+    if (!response.ok) return { artifact, bytesUsed: 0 };
+
+    const mediaType = (response.headers.get("content-type") ?? "")
+      .split(";", 1)[0]
+      .trim()
+      .toLowerCase();
+    if (!OFFLINE_IMAGE_TYPES.has(mediaType)) return { artifact, bytesUsed: 0 };
+
+    const declaredSize = Number(response.headers.get("content-length") ?? "0");
+    const byteLimit = Math.min(MAX_OFFLINE_IMAGE_BYTES, remainingBytes);
+    if (declaredSize > byteLimit) return { artifact, bytesUsed: 0 };
+
+    const bytes = await readResponseBytesWithLimit(response, byteLimit);
+    if (!bytes || !attachmentBytesMatchMediaType(mediaType, bytes)) {
+      return { artifact, bytesUsed: 0 };
+    }
+
+    return {
+      artifact: {
+        ...artifact,
+        url: `data:${mediaType};base64,${bytesToBase64(bytes)}`,
+      },
+      bytesUsed: bytes.byteLength,
+    };
+  } catch {
+    // Preserve the already-public URL if the storage object cannot be inlined.
+    // The rest of the offline export remains complete and readable.
+    return { artifact, bytesUsed: 0 };
+  }
+}
+
+async function makeSharePayloadOffline(payload: PublicSharePayload): Promise<PublicSharePayload> {
+  let remainingBytes = MAX_OFFLINE_IMAGE_TOTAL_BYTES;
+  const turns = [];
+
+  for (const turn of payload.turns) {
+    const artifacts: ShareArtifact[] = [];
+    for (const artifact of turn.artifacts ?? []) {
+      const inlined = await inlineImageArtifact(artifact, remainingBytes);
+      remainingBytes -= inlined.bytesUsed;
+      artifacts.push(inlined.artifact);
+    }
+    turns.push({ ...turn, artifacts });
+  }
+
+  return { ...payload, turns };
+}
+
 async function buildDownloadResponse(
   request: Request,
   token: string,
@@ -91,72 +200,30 @@ async function buildDownloadResponse(
     return notFoundResponse(method);
   }
 
-  // Token validation — same shape as share.$token.og.svg.ts. Reject empty,
-  // surrounding whitespace, or out-of-range lengths.
-  if (!token || token.length < 4 || token.length > 64 || token !== token.trim()) {
-    return notFoundResponse(method);
-  }
-
-  const { data: share } = (await supabaseAdmin
-    .from("visitor_shares")
-    .select("id, token, session_id, resident_id, visitor_note, created_at")
-    .eq("token", token)
-    .is("revoked_at", null)
-    .maybeSingle()) as { data: ShareRow | null };
-
-  if (!share || !isResidentId(share.resident_id)) {
-    return notFoundResponse(method);
-  }
-
-  const resident = getResident(share.resident_id);
-
-  const { data: session } = (await supabaseAdmin
-    .from("sessions")
-    .select("id, created_at")
-    .eq("id", share.session_id)
-    .maybeSingle()) as { data: SessionRow | null };
-
-  const { data: turnsData } = await supabaseAdmin
-    .from("turns")
-    .select("role, body, kind, created_at")
-    .eq("session_id", share.session_id)
-    .in("role", ["visitor", "resident"])
-    .order("created_at", { ascending: true });
-
-  const turns: ShareTurn[] = (turnsData ?? []).map((t) => ({
-    role: t.role as "visitor" | "resident",
-    body: t.body ?? "",
-    kind: t.kind ?? "message",
-    created_at: t.created_at,
-  }));
+  const share = await loadPublicShare(token);
+  if (!share) return notFoundResponse(method);
 
   const url = new URL(request.url);
   const origin = `${url.protocol}//${url.host}`;
 
-  const liveHtml = renderSharePage({
-    token: share.token,
-    residentDisplayName: resident.displayName,
-    residentSlug: resident.slug,
-    visitedAt: session?.created_at ?? share.created_at,
-    visitorNote: share.visitor_note,
-    turns,
-    origin,
-  });
+  const offlinePayload = await makeSharePayloadOffline(share.payload);
+  const liveHtml = renderSharePage({ ...offlinePayload, origin });
 
   // Two transforms: drop the external font link, mark the file's origin.
   const offlineHtml = addGeneratorMeta(stripGoogleFontsLinks(liveHtml));
 
-  const filename = `sanctuary-conversation-${safeFilenameToken(share.token)}.html`;
+  const filename = `sanctuary-conversation-${safeFilenameToken(share.payload.token)}.html`;
 
   return new Response(method === "HEAD" ? null : offlineHtml, {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
       "content-disposition": `attachment; filename="${filename}"`,
-      // Private — this is per-token user content. Cache briefly so a
-      // double-click on a slow connection doesn't re-fetch the world,
-      // but never let a shared cache pin it.
-      "cache-control": "private, max-age=300",
+      // The token can be revoked at any time. Do not let a browser, CDN, or
+      // intermediary retain an accessible copy after that boundary changes.
+      "cache-control": "private, no-store, max-age=0",
+      pragma: "no-cache",
+      expires: "0",
     },
   });
 }

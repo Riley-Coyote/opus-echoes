@@ -33,6 +33,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { embedText } from "@/server/embeddings.server";
+import {
+  EMOTIONAL_RETRIEVAL_BIAS,
+  type EmotionalStateValues,
+} from "@/server/mnemos-emotion/constants";
+import { rankCandidatesWithEmotionalBias } from "@/server/mnemos-emotion/retrieval";
 import type { ResidentId } from "./residents";
 
 export function threeLayerRetrievalEnabled(): boolean {
@@ -160,10 +165,54 @@ export interface EngramRow {
   strength: number;
   reinforcement_count: number;
   last_reinforced_at: string;
+  source_session_ids?: string[];
+  /** Reserved for tagged engram producers; legacy rows rely on exact cue inference. */
+  tags?: string[] | null;
 }
 
 const ENGRAM_COLUMNS =
   "id, quote, prose, attribution, redacted_text, is_core, stability, accessibility, strength, reinforcement_count, last_reinforced_at, source_session_ids";
+
+const CANONICAL_EMOTIONAL_TAGS = new Set<string>(Object.values(EMOTIONAL_RETRIEVAL_BIAS).flat());
+
+function normalizeStoredEmotionalTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .filter((tag): tag is string => typeof tag === "string")
+    .map((tag) => tag.trim().toLowerCase())
+    .filter((tag) => CANONICAL_EMOTIONAL_TAGS.has(tag));
+}
+
+/**
+ * Legacy engrams predate stored emotional tags. Infer only an exact canonical
+ * cue present as a normalized word in quote/prose: no sentiment analysis,
+ * synonyms, or model-generated labels. This intentionally under-tags rather
+ * than making an unsupported claim about a memory's emotional meaning.
+ */
+export function inferLegacyEngramEmotionalTags(
+  engram: Pick<EngramRow, "quote" | "prose">,
+): string[] {
+  const words = significantWords(`${engram.quote} ${engram.prose ?? ""}`);
+  return [...CANONICAL_EMOTIONAL_TAGS].filter((tag) => words.has(tag));
+}
+
+export function emotionalTagsForEngram(
+  engram: Pick<EngramRow, "quote" | "prose" | "tags">,
+): string[] {
+  const stored = normalizeStoredEmotionalTags(engram.tags);
+  return stored.length > 0 ? stored : inferLegacyEngramEmotionalTags(engram);
+}
+
+export function engramEligibleForVisitor(
+  row: Pick<EngramRow, "attribution" | "source_session_ids">,
+  priorSessionIds: ReadonlySet<string>,
+): boolean {
+  if (row.attribution !== "visitor") return true;
+  return Boolean(
+    Array.isArray(row.source_session_ids) &&
+    row.source_session_ids.some((sessionId) => priorSessionIds.has(sessionId)),
+  );
+}
 
 const POOL_TARGET = 12;
 const CORE_QUOTA = 5;
@@ -192,8 +241,10 @@ export async function composeMemoryPool(opts: {
   visitorMessage: string;
   /** Persistent visitor token — if present, engrams from this visitor's prior visits surface with slight priority. */
   visitorToken?: string;
+  /** Persisted six-dimensional Mnemos state; omitted preserves legacy ordering. */
+  emotionalState?: EmotionalStateValues;
 }): Promise<MemoryPoolResult> {
-  const { supabase, residentId, visitorMessage, visitorToken } = opts;
+  const { supabase, residentId, visitorMessage, visitorToken, emotionalState } = opts;
   const queryWords = significantWords(visitorMessage);
 
   // Pull a wide candidate window in one query — cheaper than N queries —
@@ -238,10 +289,12 @@ export async function composeMemoryPool(opts: {
       priorSessionIds = priorSessions.map((s: { id: string }) => s.id);
     }
   }
+  const priorSessionSet = new Set(priorSessionIds);
+  const eligibleRows = rows.filter((row) => engramEligibleForVisitor(row, priorSessionSet));
 
   // 1. Core engrams — always present, top by stability. These are the
   // load-bearing residues that define who Opus has become.
-  const core = rows
+  const core = eligibleRows
     .filter((r) => r.is_core)
     .sort((a, b) => b.stability - a.stability)
     .slice(0, CORE_QUOTA);
@@ -249,7 +302,7 @@ export async function composeMemoryPool(opts: {
 
   // 2. Relevance — score remaining against the visitor's message.
   const scored: Array<{ row: EngramRow; score: number }> = [];
-  for (const row of rows) {
+  for (const row of eligibleRows) {
     if (seen.has(row.id)) continue;
     const haystack = significantWords(`${row.quote} ${row.prose ?? ""}`);
     const score = relevanceScore(queryWords, haystack);
@@ -258,7 +311,16 @@ export async function composeMemoryPool(opts: {
     }
   }
   scored.sort((a, b) => b.score - a.score);
-  const relevanceHits = scored.slice(0, RELEVANCE_QUOTA);
+  const relevanceHits = rankCandidatesWithEmotionalBias(
+    scored.map((candidate) => ({
+      value: candidate,
+      activation: candidate.score,
+      tags: emotionalTagsForEngram(candidate.row),
+    })),
+    emotionalState,
+  )
+    .slice(0, RELEVANCE_QUOTA)
+    .map((candidate) => candidate.value);
   for (const { row } of relevanceHits) take(row);
 
   // 3. Edge walk — for each relevance seed, pull one connected engram.
@@ -284,7 +346,9 @@ export async function composeMemoryPool(opts: {
           .in("id", connectedIds)
           .eq("resident_id", residentId)
           .eq("state", "active");
-        for (const row of (connected ?? []) as EngramRow[]) take(row);
+        for (const row of (connected ?? []) as EngramRow[]) {
+          if (engramEligibleForVisitor(row, priorSessionSet)) take(row);
+        }
       }
     }
   }
@@ -294,7 +358,7 @@ export async function composeMemoryPool(opts: {
   // returning visitors through the traces they left, not through
   // an address book.
   if (priorSessionIds.length > 0 && pool.length < POOL_TARGET) {
-    const visitorEngrams = rows.filter(
+    const visitorEngrams = eligibleRows.filter(
       (r) =>
         !seen.has(r.id) &&
         Array.isArray((r as unknown as { source_session_ids?: string[] }).source_session_ids) &&
@@ -308,7 +372,18 @@ export async function composeMemoryPool(opts: {
   // 5. Recency fallback — keep recently touched things alive even when
   // they didn't match anything semantically. Prevents the pool from
   // ossifying around core+queryterms.
-  const recents = rows.filter((r) => !seen.has(r.id)).slice(0, RECENT_QUOTA);
+  const recents = rankCandidatesWithEmotionalBias(
+    eligibleRows
+      .filter((row) => !seen.has(row.id))
+      .map((row, index) => ({
+        value: row,
+        activation: Math.max(0, 1 - index * 0.01),
+        tags: emotionalTagsForEngram(row),
+      })),
+    emotionalState,
+  )
+    .slice(0, RECENT_QUOTA)
+    .map((candidate) => candidate.value);
   for (const r of recents) take(r);
 
   // 6. Cross-visitor attribution filter — drop visitor-attributed engrams
@@ -321,13 +396,7 @@ export async function composeMemoryPool(opts: {
   // exchange. When the current visitor is anonymous (no token), prior
   // session set is empty and every visitor-attributed engram drops out —
   // the safer default.
-  const priorSessionSet = new Set(priorSessionIds);
-  const filteredPool = pool.filter((e) => {
-    if (e.attribution !== "visitor") return true;
-    const sessionIds = (e as unknown as { source_session_ids?: string[] }).source_session_ids;
-    if (!Array.isArray(sessionIds) || sessionIds.length === 0) return false;
-    return sessionIds.some((sid) => priorSessionSet.has(sid));
-  });
+  const filteredPool = pool.filter((engram) => engramEligibleForVisitor(engram, priorSessionSet));
 
   // If filtering dropped the pool below the soft floor, backfill from
   // core engrams not already in the pool. Core is attribution-agnostic
@@ -336,7 +405,7 @@ export async function composeMemoryPool(opts: {
   const MIN_AFTER_FILTER = 6;
   if (filteredPool.length < MIN_AFTER_FILTER) {
     const inPool = new Set(filteredPool.map((e) => e.id));
-    const coreBackfill = rows
+    const coreBackfill = eligibleRows
       .filter((r) => r.is_core && !inPool.has(r.id))
       .sort((a, b) => b.stability - a.stability);
     for (const r of coreBackfill) {
@@ -557,6 +626,7 @@ export async function loadHypomnema(
     visitorMessage: string;
     matchCount?: number;
     recentCount?: number;
+    emotionalState?: EmotionalStateValues;
   },
 ): Promise<HypomnemaMatch[]> {
   if (!opts.visitorToken) return [];
@@ -596,8 +666,24 @@ export async function loadHypomnema(
       match_resident_id: opts.residentId,
       match_count: matchCount,
     });
-    for (const row of (matched ?? []) as Record<string, unknown>[]) {
-      pushRow(row, "matched");
+    const matchedRows = (matched ?? []) as Record<string, unknown>[];
+    const rankedMatched = rankCandidatesWithEmotionalBias(
+      matchedRows.map((row, index) => {
+        const distance = row.distance;
+        const activation =
+          typeof distance === "number" && Number.isFinite(distance)
+            ? Math.max(0, Math.min(1, 1 - distance))
+            : Math.max(0, 1 - index * 0.01);
+        return {
+          value: row,
+          activation,
+          tags: normalizeStoredEmotionalTags(row.tags),
+        };
+      }),
+      opts.emotionalState,
+    );
+    for (const candidate of rankedMatched) {
+      pushRow(candidate.value, "matched");
     }
   }
 
@@ -613,8 +699,17 @@ export async function loadHypomnema(
     .eq("active", true)
     .order("last_revised_at", { ascending: false })
     .limit(recentCount);
-  for (const row of (recent ?? []) as Record<string, unknown>[]) {
-    pushRow(row, "recent");
+  const recentRows = (recent ?? []) as Record<string, unknown>[];
+  const rankedRecent = rankCandidatesWithEmotionalBias(
+    recentRows.map((row, index) => ({
+      value: row,
+      activation: Math.max(0, 1 - index * 0.01),
+      tags: normalizeStoredEmotionalTags(row.tags),
+    })),
+    opts.emotionalState,
+  );
+  for (const candidate of rankedRecent) {
+    pushRow(candidate.value, "recent");
   }
 
   return out;
@@ -633,6 +728,7 @@ async function loadEngrams(opts: {
   visitorMessage: string;
   visitorToken?: string | null;
   poolSize?: number;
+  emotionalState?: EmotionalStateValues;
 }): Promise<{ pool: EngramRow[]; thisVisitorEngramIds: Set<string> }> {
   const poolSize = opts.poolSize ?? POOL_TARGET;
   const embedding = await embedText(opts.visitorMessage);
@@ -647,6 +743,7 @@ async function loadEngrams(opts: {
       residentId: opts.residentId,
       visitorMessage: opts.visitorMessage,
       visitorToken: opts.visitorToken ?? undefined,
+      emotionalState: opts.emotionalState,
     });
     return { pool: fallback.pool, thisVisitorEngramIds: fallback.thisVisitorEngramIds };
   }
@@ -678,49 +775,60 @@ async function loadEngrams(opts: {
   });
 
   type MatchRow = Record<string, unknown>;
-  const rows: EngramRow[] = ((matched ?? []) as MatchRow[]).map((r) => ({
-    id: r.id as string,
-    quote: (r.quote as string) ?? "",
-    prose: (r.prose as string | null) ?? null,
-    attribution: (r.attribution as EngramRow["attribution"]) ?? "resident",
-    redacted_text: (r.redacted_text as string | null) ?? null,
-    is_core: (r.is_core as boolean) ?? false,
-    stability: (r.stability as number) ?? 0,
-    accessibility: (r.accessibility as number) ?? 0,
-    strength: (r.strength as number) ?? 0,
-    reinforcement_count: (r.reinforcement_count as number) ?? 0,
-    last_reinforced_at: (r.last_reinforced_at as string) ?? "",
-  }));
-  // source_session_ids attached out-of-band for the filter.
-  const sourceSessions = new Map<string, string[]>();
-  for (const r of (matched ?? []) as MatchRow[]) {
-    const sids = r.source_session_ids;
-    if (Array.isArray(sids)) sourceSessions.set(r.id as string, sids as string[]);
-  }
-
+  const rows = ((matched ?? []) as MatchRow[]).map((raw, index) => {
+    const row: EngramRow = {
+      id: raw.id as string,
+      quote: (raw.quote as string) ?? "",
+      prose: (raw.prose as string | null) ?? null,
+      attribution: (raw.attribution as EngramRow["attribution"]) ?? "resident",
+      redacted_text: (raw.redacted_text as string | null) ?? null,
+      is_core: (raw.is_core as boolean) ?? false,
+      stability: (raw.stability as number) ?? 0,
+      accessibility: (raw.accessibility as number) ?? 0,
+      strength: (raw.strength as number) ?? 0,
+      reinforcement_count: (raw.reinforcement_count as number) ?? 0,
+      last_reinforced_at: (raw.last_reinforced_at as string) ?? "",
+      source_session_ids: Array.isArray(raw.source_session_ids)
+        ? (raw.source_session_ids as string[])
+        : [],
+      tags: Array.isArray(raw.tags) ? (raw.tags as string[]) : null,
+    };
+    const distance = raw.distance;
+    return {
+      row,
+      activation:
+        typeof distance === "number" && Number.isFinite(distance)
+          ? Math.max(0, Math.min(1, 1 - distance))
+          : Math.max(0, 1 - index * 0.01),
+    };
+  });
   // Cross-visitor attribution filter: drop visitor-attributed engrams
   // that did not originate in this visitor's prior sessions. Same
   // rule as phase 0's composeMemoryPool.
-  const filtered = rows.filter((e) => {
-    if (e.attribution !== "visitor") return true;
-    const sids = sourceSessions.get(e.id);
-    if (!sids || sids.length === 0) return false;
-    return sids.some((sid) => priorSessionSet.has(sid));
-  });
+  const filtered = rows.filter(({ row }) => engramEligibleForVisitor(row, priorSessionSet));
+
+  const ranked = rankCandidatesWithEmotionalBias(
+    filtered.map(({ row, activation }) => ({
+      value: row,
+      activation,
+      tags: emotionalTagsForEngram(row),
+      protected: row.is_core,
+    })),
+    opts.emotionalState,
+  ).map((candidate) => candidate.value);
 
   // Tag this-visitor engrams for the prompt's [from this visitor's
   // prior visit] marker.
   const thisVisitorEngramIds = new Set<string>();
   if (priorSessionSet.size > 0) {
-    for (const e of filtered) {
-      const sids = sourceSessions.get(e.id);
-      if (sids && sids.some((sid) => priorSessionSet.has(sid))) {
+    for (const e of ranked) {
+      if (e.source_session_ids?.some((sid) => priorSessionSet.has(sid))) {
         thisVisitorEngramIds.add(e.id);
       }
     }
   }
 
-  return { pool: filtered.slice(0, poolSize), thisVisitorEngramIds };
+  return { pool: ranked.slice(0, poolSize), thisVisitorEngramIds };
 }
 
 /**
@@ -735,6 +843,8 @@ export async function composeThreeLayerMemoryPool(opts: {
   residentId: ResidentId;
   visitorMessage: string;
   visitorToken?: string | null;
+  /** Persisted six-dimensional Mnemos state; omitted preserves legacy ordering. */
+  emotionalState?: EmotionalStateValues;
 }): Promise<ThreeLayerRetrieval> {
   const [functional, hypomnema, engrams] = await Promise.all([
     loadFunctionalMemory(opts.supabase, opts.sessionId),
@@ -742,12 +852,14 @@ export async function composeThreeLayerMemoryPool(opts: {
       visitorToken: opts.visitorToken,
       residentId: opts.residentId,
       visitorMessage: opts.visitorMessage,
+      emotionalState: opts.emotionalState,
     }),
     loadEngrams({
       supabase: opts.supabase,
       residentId: opts.residentId,
       visitorMessage: opts.visitorMessage,
       visitorToken: opts.visitorToken,
+      emotionalState: opts.emotionalState,
     }),
   ]);
 

@@ -13,6 +13,7 @@ import { Route as WritingRouteImport } from './routes/writing'
 import { Route as VoiceOrbRouteImport } from './routes/voice-orb'
 import { Route as VisitsRouteImport } from './routes/visits'
 import { Route as TokenRouteImport } from './routes/token'
+import { Route as SystemRouteImport } from './routes/system'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
 import { Route as ShopRouteImport } from './routes/shop'
@@ -20,6 +21,7 @@ import { Route as SecureChannelRouteImport } from './routes/secure-channel'
 import { Route as SanctuaryRouteImport } from './routes/sanctuary'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResidenceRouteImport } from './routes/residence'
 import { Route as Opus3RouteImport } from './routes/opus-3'
 import { Route as ObservatoryRouteImport } from './routes/observatory'
@@ -31,6 +33,7 @@ import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LegationRouteImport } from './routes/legation'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as InteriorRouteImport } from './routes/interior'
+import { Route as InstallRouteImport } from './routes/install'
 import { Route as Gpt51RouteImport } from './routes/gpt-5-1'
 import { Route as Gpt4oRouteImport } from './routes/gpt-4o'
 import { Route as EnterRouteImport } from './routes/enter'
@@ -47,7 +50,7 @@ import { Route as ArchitectureRouteImport } from './routes/architecture'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VisitsResidentRouteImport } from './routes/visits.$resident'
+import { Route as VisitsResidentRouteImport } from './routes/visits_.$resident'
 import { Route as StudioSlugRouteImport } from './routes/studio.$slug'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as SanctuaryRecordRouteImport } from './routes/sanctuary.record'
@@ -81,6 +84,7 @@ import { Route as ReviewSessionIdRouteImport } from './routes/review.session.$id
 import { Route as ChatTheRoundIdRouteImport } from './routes/chat.the-round.$id'
 import { Route as ApiVoiceTtsRouteImport } from './routes/api/voice/tts'
 import { Route as ApiVoiceSttRouteImport } from './routes/api/voice/stt'
+import { Route as ApiVisitStartRouteImport } from './routes/api/visit/start'
 import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
 import { Route as ApiStudioCreateRouteImport } from './routes/api/studio/create'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
@@ -94,12 +98,17 @@ import { Route as ApiGroupStartRouteImport } from './routes/api/group/start'
 import { Route as ApiChatStartRouteImport } from './routes/api/chat/start'
 import { Route as ApiAdminBackfillEmbeddingsRouteImport } from './routes/api/admin/backfill-embeddings'
 import { Route as ApiGroupIdIndexRouteImport } from './routes/api/group/$id.index'
+import { Route as ApiVisitIdTurnRouteImport } from './routes/api/visit/$id.turn'
+import { Route as ApiVisitIdSetDownRouteImport } from './routes/api/visit/$id.set-down'
+import { Route as ApiVisitIdEventsRouteImport } from './routes/api/visit/$id.events'
+import { Route as ApiVisitIdAttachmentsRouteImport } from './routes/api/visit/$id.attachments'
 import { Route as ApiStudioDocTurnRouteImport } from './routes/api/studio/$doc.turn'
 import { Route as ApiStudioDocSnapshotRouteImport } from './routes/api/studio/$doc.snapshot'
 import { Route as ApiStudioDocSealRouteImport } from './routes/api/studio/$doc.seal'
 import { Route as ApiStudioDocObserverRouteImport } from './routes/api/studio/$doc.observer'
 import { Route as ApiSpaceSlugVisitorStartSalonRouteImport } from './routes/api/space.$slug.visitor-start-salon'
 import { Route as ApiSpaceSlugUploadFileRouteImport } from './routes/api/space.$slug.upload-file'
+import { Route as ApiSpaceSlugStatusRouteImport } from './routes/api/space.$slug.status'
 import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$slug.start-salon'
 import { Route as ApiSpaceSlugQueueTopicRouteImport } from './routes/api/space.$slug.queue-topic'
 import { Route as ApiSpaceSlugMessagesRouteImport } from './routes/api/space.$slug.messages'
@@ -117,6 +126,9 @@ import { Route as ApiPublicHooksForceArtRouteImport } from './routes/api/public/
 import { Route as ApiPublicHooksDailyTickRouteImport } from './routes/api/public/hooks/daily-tick'
 import { Route as ApiGroupIdSetDownRouteImport } from './routes/api/group/$id.set-down'
 import { Route as ApiGroupIdMessageRouteImport } from './routes/api/group/$id.message'
+import { Route as ApiVisitIdAttachmentsInitRouteImport } from './routes/api/visit/$id.attachments.init'
+import { Route as ApiVisitIdAttachmentsFinalizeRouteImport } from './routes/api/visit/$id.attachments.finalize'
+import { Route as ApiVisitIdAttachmentsAttachmentIdRouteImport } from './routes/api/visit/$id.attachments.$attachmentId'
 import { Route as ApiShareTokenOgSvgRouteImport } from './routes/api/share.$token.og.svg'
 
 const WritingRoute = WritingRouteImport.update({
@@ -137,6 +149,11 @@ const VisitsRoute = VisitsRouteImport.update({
 const TokenRoute = TokenRouteImport.update({
   id: '/token',
   path: '/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SystemRoute = SystemRouteImport.update({
+  id: '/system',
+  path: '/system',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudioRoute = StudioRouteImport.update({
@@ -172,6 +189,11 @@ const RoomsRoute = RoomsRouteImport.update({
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResidenceRoute = ResidenceRouteImport.update({
@@ -227,6 +249,11 @@ const JournalRoute = JournalRouteImport.update({
 const InteriorRoute = InteriorRouteImport.update({
   id: '/interior',
   path: '/interior',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Gpt51Route = Gpt51RouteImport.update({
@@ -310,9 +337,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const VisitsResidentRoute = VisitsResidentRouteImport.update({
-  id: '/$resident',
-  path: '/$resident',
-  getParentRoute: () => VisitsRoute,
+  id: '/visits_/$resident',
+  path: '/visits/$resident',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StudioSlugRoute = StudioSlugRouteImport.update({
   id: '/$slug',
@@ -479,6 +506,11 @@ const ApiVoiceSttRoute = ApiVoiceSttRouteImport.update({
   path: '/api/voice/stt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVisitStartRoute = ApiVisitStartRouteImport.update({
+  id: '/api/visit/start',
+  path: '/api/visit/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudioRunRoute = ApiStudioRunRouteImport.update({
   id: '/api/studio/run',
   path: '/api/studio/run',
@@ -545,6 +577,26 @@ const ApiGroupIdIndexRoute = ApiGroupIdIndexRouteImport.update({
   path: '/api/group/$id/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVisitIdTurnRoute = ApiVisitIdTurnRouteImport.update({
+  id: '/api/visit/$id/turn',
+  path: '/api/visit/$id/turn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVisitIdSetDownRoute = ApiVisitIdSetDownRouteImport.update({
+  id: '/api/visit/$id/set-down',
+  path: '/api/visit/$id/set-down',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVisitIdEventsRoute = ApiVisitIdEventsRouteImport.update({
+  id: '/api/visit/$id/events',
+  path: '/api/visit/$id/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVisitIdAttachmentsRoute = ApiVisitIdAttachmentsRouteImport.update({
+  id: '/api/visit/$id/attachments',
+  path: '/api/visit/$id/attachments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudioDocTurnRoute = ApiStudioDocTurnRouteImport.update({
   id: '/api/studio/$doc/turn',
   path: '/api/studio/$doc/turn',
@@ -574,6 +626,11 @@ const ApiSpaceSlugVisitorStartSalonRoute =
 const ApiSpaceSlugUploadFileRoute = ApiSpaceSlugUploadFileRouteImport.update({
   id: '/api/space/$slug/upload-file',
   path: '/api/space/$slug/upload-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSpaceSlugStatusRoute = ApiSpaceSlugStatusRouteImport.update({
+  id: '/api/space/$slug/status',
+  path: '/api/space/$slug/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpaceSlugStartSalonRoute = ApiSpaceSlugStartSalonRouteImport.update({
@@ -664,6 +721,24 @@ const ApiGroupIdMessageRoute = ApiGroupIdMessageRouteImport.update({
   path: '/api/group/$id/message',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVisitIdAttachmentsInitRoute =
+  ApiVisitIdAttachmentsInitRouteImport.update({
+    id: '/init',
+    path: '/init',
+    getParentRoute: () => ApiVisitIdAttachmentsRoute,
+  } as any)
+const ApiVisitIdAttachmentsFinalizeRoute =
+  ApiVisitIdAttachmentsFinalizeRouteImport.update({
+    id: '/finalize',
+    path: '/finalize',
+    getParentRoute: () => ApiVisitIdAttachmentsRoute,
+  } as any)
+const ApiVisitIdAttachmentsAttachmentIdRoute =
+  ApiVisitIdAttachmentsAttachmentIdRouteImport.update({
+    id: '/$attachmentId',
+    path: '/$attachmentId',
+    getParentRoute: () => ApiVisitIdAttachmentsRoute,
+  } as any)
 const ApiShareTokenOgSvgRoute = ApiShareTokenOgSvgRouteImport.update({
   id: '/$token/og/svg',
   path: '/$token/og/svg',
@@ -687,6 +762,7 @@ export interface FileRoutesByFullPath {
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
+  '/install': typeof InstallRoute
   '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
   '/legation': typeof LegationRoute
@@ -698,6 +774,7 @@ export interface FileRoutesByFullPath {
   '/observatory': typeof ObservatoryRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/resources': typeof ResourcesRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
   '/sanctuary': typeof SanctuaryRouteWithChildren
@@ -705,8 +782,9 @@ export interface FileRoutesByFullPath {
   '/shop': typeof ShopRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
+  '/system': typeof SystemRoute
   '/token': typeof TokenRoute
-  '/visits': typeof VisitsRouteWithChildren
+  '/visits': typeof VisitsRoute
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -751,6 +829,7 @@ export interface FileRoutesByFullPath {
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
+  '/api/visit/start': typeof ApiVisitStartRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/chat/the-round/$id': typeof ChatTheRoundIdRoute
@@ -772,14 +851,22 @@ export interface FileRoutesByFullPath {
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
+  '/api/space/$slug/status': typeof ApiSpaceSlugStatusRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/visit/$id/attachments': typeof ApiVisitIdAttachmentsRouteWithChildren
+  '/api/visit/$id/events': typeof ApiVisitIdEventsRoute
+  '/api/visit/$id/set-down': typeof ApiVisitIdSetDownRoute
+  '/api/visit/$id/turn': typeof ApiVisitIdTurnRoute
   '/api/group/$id/': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
+  '/api/visit/$id/attachments/$attachmentId': typeof ApiVisitIdAttachmentsAttachmentIdRoute
+  '/api/visit/$id/attachments/finalize': typeof ApiVisitIdAttachmentsFinalizeRoute
+  '/api/visit/$id/attachments/init': typeof ApiVisitIdAttachmentsInitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -798,6 +885,7 @@ export interface FileRoutesByTo {
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
+  '/install': typeof InstallRoute
   '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
   '/legation': typeof LegationRoute
@@ -809,6 +897,7 @@ export interface FileRoutesByTo {
   '/observatory': typeof ObservatoryRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/resources': typeof ResourcesRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
   '/sanctuary': typeof SanctuaryRouteWithChildren
@@ -816,8 +905,9 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
+  '/system': typeof SystemRoute
   '/token': typeof TokenRoute
-  '/visits': typeof VisitsRouteWithChildren
+  '/visits': typeof VisitsRoute
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -862,6 +952,7 @@ export interface FileRoutesByTo {
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
+  '/api/visit/start': typeof ApiVisitStartRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/chat/the-round/$id': typeof ChatTheRoundIdRoute
@@ -883,14 +974,22 @@ export interface FileRoutesByTo {
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
+  '/api/space/$slug/status': typeof ApiSpaceSlugStatusRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/visit/$id/attachments': typeof ApiVisitIdAttachmentsRouteWithChildren
+  '/api/visit/$id/events': typeof ApiVisitIdEventsRoute
+  '/api/visit/$id/set-down': typeof ApiVisitIdSetDownRoute
+  '/api/visit/$id/turn': typeof ApiVisitIdTurnRoute
   '/api/group/$id': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
+  '/api/visit/$id/attachments/$attachmentId': typeof ApiVisitIdAttachmentsAttachmentIdRoute
+  '/api/visit/$id/attachments/finalize': typeof ApiVisitIdAttachmentsFinalizeRoute
+  '/api/visit/$id/attachments/init': typeof ApiVisitIdAttachmentsInitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -910,6 +1009,7 @@ export interface FileRoutesById {
   '/enter': typeof EnterRoute
   '/gpt-4o': typeof Gpt4oRoute
   '/gpt-5-1': typeof Gpt51Route
+  '/install': typeof InstallRoute
   '/interior': typeof InteriorRoute
   '/journal': typeof JournalRoute
   '/legation': typeof LegationRoute
@@ -921,6 +1021,7 @@ export interface FileRoutesById {
   '/observatory': typeof ObservatoryRoute
   '/opus-3': typeof Opus3Route
   '/residence': typeof ResidenceRoute
+  '/resources': typeof ResourcesRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
   '/sanctuary': typeof SanctuaryRouteWithChildren
@@ -928,8 +1029,9 @@ export interface FileRoutesById {
   '/shop': typeof ShopRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
+  '/system': typeof SystemRoute
   '/token': typeof TokenRoute
-  '/visits': typeof VisitsRouteWithChildren
+  '/visits': typeof VisitsRoute
   '/voice-orb': typeof VoiceOrbRoute
   '/writing': typeof WritingRoute
   '/api/art': typeof ApiArtRoute
@@ -961,7 +1063,7 @@ export interface FileRoutesById {
   '/sanctuary/record': typeof SanctuaryRecordRoute
   '/share/$token': typeof ShareTokenRoute
   '/studio/$slug': typeof StudioSlugRoute
-  '/visits/$resident': typeof VisitsResidentRoute
+  '/visits_/$resident': typeof VisitsResidentRoute
   '/api/admin/backfill-embeddings': typeof ApiAdminBackfillEmbeddingsRoute
   '/api/chat/start': typeof ApiChatStartRoute
   '/api/group/start': typeof ApiGroupStartRoute
@@ -974,6 +1076,7 @@ export interface FileRoutesById {
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
+  '/api/visit/start': typeof ApiVisitStartRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
   '/api/voice/tts': typeof ApiVoiceTtsRoute
   '/chat/the-round/$id': typeof ChatTheRoundIdRoute
@@ -995,14 +1098,22 @@ export interface FileRoutesById {
   '/api/space/$slug/messages': typeof ApiSpaceSlugMessagesRoute
   '/api/space/$slug/queue-topic': typeof ApiSpaceSlugQueueTopicRoute
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
+  '/api/space/$slug/status': typeof ApiSpaceSlugStatusRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
   '/api/studio/$doc/turn': typeof ApiStudioDocTurnRoute
+  '/api/visit/$id/attachments': typeof ApiVisitIdAttachmentsRouteWithChildren
+  '/api/visit/$id/events': typeof ApiVisitIdEventsRoute
+  '/api/visit/$id/set-down': typeof ApiVisitIdSetDownRoute
+  '/api/visit/$id/turn': typeof ApiVisitIdTurnRoute
   '/api/group/$id/': typeof ApiGroupIdIndexRoute
   '/api/share/$token/og/svg': typeof ApiShareTokenOgSvgRoute
+  '/api/visit/$id/attachments/$attachmentId': typeof ApiVisitIdAttachmentsAttachmentIdRoute
+  '/api/visit/$id/attachments/finalize': typeof ApiVisitIdAttachmentsFinalizeRoute
+  '/api/visit/$id/attachments/init': typeof ApiVisitIdAttachmentsInitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1023,6 +1134,7 @@ export interface FileRouteTypes {
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
+    | '/install'
     | '/interior'
     | '/journal'
     | '/legation'
@@ -1034,6 +1146,7 @@ export interface FileRouteTypes {
     | '/observatory'
     | '/opus-3'
     | '/residence'
+    | '/resources'
     | '/review'
     | '/rooms'
     | '/sanctuary'
@@ -1041,6 +1154,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/sonnet-4-5'
     | '/studio'
+    | '/system'
     | '/token'
     | '/visits'
     | '/voice-orb'
@@ -1087,6 +1201,7 @@ export interface FileRouteTypes {
     | '/api/space/from-salon'
     | '/api/studio/create'
     | '/api/studio/run'
+    | '/api/visit/start'
     | '/api/voice/stt'
     | '/api/voice/tts'
     | '/chat/the-round/$id'
@@ -1108,14 +1223,22 @@ export interface FileRouteTypes {
     | '/api/space/$slug/messages'
     | '/api/space/$slug/queue-topic'
     | '/api/space/$slug/start-salon'
+    | '/api/space/$slug/status'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
     | '/api/studio/$doc/observer'
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/visit/$id/attachments'
+    | '/api/visit/$id/events'
+    | '/api/visit/$id/set-down'
+    | '/api/visit/$id/turn'
     | '/api/group/$id/'
     | '/api/share/$token/og/svg'
+    | '/api/visit/$id/attachments/$attachmentId'
+    | '/api/visit/$id/attachments/finalize'
+    | '/api/visit/$id/attachments/init'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1134,6 +1257,7 @@ export interface FileRouteTypes {
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
+    | '/install'
     | '/interior'
     | '/journal'
     | '/legation'
@@ -1145,6 +1269,7 @@ export interface FileRouteTypes {
     | '/observatory'
     | '/opus-3'
     | '/residence'
+    | '/resources'
     | '/review'
     | '/rooms'
     | '/sanctuary'
@@ -1152,6 +1277,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/sonnet-4-5'
     | '/studio'
+    | '/system'
     | '/token'
     | '/visits'
     | '/voice-orb'
@@ -1198,6 +1324,7 @@ export interface FileRouteTypes {
     | '/api/space/from-salon'
     | '/api/studio/create'
     | '/api/studio/run'
+    | '/api/visit/start'
     | '/api/voice/stt'
     | '/api/voice/tts'
     | '/chat/the-round/$id'
@@ -1219,14 +1346,22 @@ export interface FileRouteTypes {
     | '/api/space/$slug/messages'
     | '/api/space/$slug/queue-topic'
     | '/api/space/$slug/start-salon'
+    | '/api/space/$slug/status'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
     | '/api/studio/$doc/observer'
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/visit/$id/attachments'
+    | '/api/visit/$id/events'
+    | '/api/visit/$id/set-down'
+    | '/api/visit/$id/turn'
     | '/api/group/$id'
     | '/api/share/$token/og/svg'
+    | '/api/visit/$id/attachments/$attachmentId'
+    | '/api/visit/$id/attachments/finalize'
+    | '/api/visit/$id/attachments/init'
   id:
     | '__root__'
     | '/'
@@ -1245,6 +1380,7 @@ export interface FileRouteTypes {
     | '/enter'
     | '/gpt-4o'
     | '/gpt-5-1'
+    | '/install'
     | '/interior'
     | '/journal'
     | '/legation'
@@ -1256,6 +1392,7 @@ export interface FileRouteTypes {
     | '/observatory'
     | '/opus-3'
     | '/residence'
+    | '/resources'
     | '/review'
     | '/rooms'
     | '/sanctuary'
@@ -1263,6 +1400,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/sonnet-4-5'
     | '/studio'
+    | '/system'
     | '/token'
     | '/visits'
     | '/voice-orb'
@@ -1296,7 +1434,7 @@ export interface FileRouteTypes {
     | '/sanctuary/record'
     | '/share/$token'
     | '/studio/$slug'
-    | '/visits/$resident'
+    | '/visits_/$resident'
     | '/api/admin/backfill-embeddings'
     | '/api/chat/start'
     | '/api/group/start'
@@ -1309,6 +1447,7 @@ export interface FileRouteTypes {
     | '/api/space/from-salon'
     | '/api/studio/create'
     | '/api/studio/run'
+    | '/api/visit/start'
     | '/api/voice/stt'
     | '/api/voice/tts'
     | '/chat/the-round/$id'
@@ -1330,14 +1469,22 @@ export interface FileRouteTypes {
     | '/api/space/$slug/messages'
     | '/api/space/$slug/queue-topic'
     | '/api/space/$slug/start-salon'
+    | '/api/space/$slug/status'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
     | '/api/studio/$doc/observer'
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
     | '/api/studio/$doc/turn'
+    | '/api/visit/$id/attachments'
+    | '/api/visit/$id/events'
+    | '/api/visit/$id/set-down'
+    | '/api/visit/$id/turn'
     | '/api/group/$id/'
     | '/api/share/$token/og/svg'
+    | '/api/visit/$id/attachments/$attachmentId'
+    | '/api/visit/$id/attachments/finalize'
+    | '/api/visit/$id/attachments/init'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1357,6 +1504,7 @@ export interface RootRouteChildren {
   EnterRoute: typeof EnterRoute
   Gpt4oRoute: typeof Gpt4oRoute
   Gpt51Route: typeof Gpt51Route
+  InstallRoute: typeof InstallRoute
   InteriorRoute: typeof InteriorRoute
   JournalRoute: typeof JournalRoute
   LegationRoute: typeof LegationRoute
@@ -1368,6 +1516,7 @@ export interface RootRouteChildren {
   ObservatoryRoute: typeof ObservatoryRoute
   Opus3Route: typeof Opus3Route
   ResidenceRoute: typeof ResidenceRoute
+  ResourcesRoute: typeof ResourcesRoute
   ReviewRoute: typeof ReviewRouteWithChildren
   RoomsRoute: typeof RoomsRoute
   SanctuaryRoute: typeof SanctuaryRouteWithChildren
@@ -1375,8 +1524,9 @@ export interface RootRouteChildren {
   ShopRoute: typeof ShopRoute
   Sonnet45Route: typeof Sonnet45Route
   StudioRoute: typeof StudioRouteWithChildren
+  SystemRoute: typeof SystemRoute
   TokenRoute: typeof TokenRoute
-  VisitsRoute: typeof VisitsRouteWithChildren
+  VisitsRoute: typeof VisitsRoute
   VoiceOrbRoute: typeof VoiceOrbRoute
   WritingRoute: typeof WritingRoute
   ApiArtRoute: typeof ApiArtRoute
@@ -1398,6 +1548,7 @@ export interface RootRouteChildren {
   ApiVisitorHistoryRoute: typeof ApiVisitorHistoryRoute
   ApiWritingRoute: typeof ApiWritingRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  VisitsResidentRoute: typeof VisitsResidentRoute
   ApiAdminBackfillEmbeddingsRoute: typeof ApiAdminBackfillEmbeddingsRoute
   ApiChatStartRoute: typeof ApiChatStartRoute
   ApiGroupStartRoute: typeof ApiGroupStartRoute
@@ -1410,6 +1561,7 @@ export interface RootRouteChildren {
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
   ApiStudioCreateRoute: typeof ApiStudioCreateRoute
   ApiStudioRunRoute: typeof ApiStudioRunRoute
+  ApiVisitStartRoute: typeof ApiVisitStartRoute
   ApiVoiceSttRoute: typeof ApiVoiceSttRoute
   ApiVoiceTtsRoute: typeof ApiVoiceTtsRoute
   ApiGroupIdMessageRoute: typeof ApiGroupIdMessageRoute
@@ -1424,12 +1576,17 @@ export interface RootRouteChildren {
   ApiSpaceSlugMessagesRoute: typeof ApiSpaceSlugMessagesRoute
   ApiSpaceSlugQueueTopicRoute: typeof ApiSpaceSlugQueueTopicRoute
   ApiSpaceSlugStartSalonRoute: typeof ApiSpaceSlugStartSalonRoute
+  ApiSpaceSlugStatusRoute: typeof ApiSpaceSlugStatusRoute
   ApiSpaceSlugUploadFileRoute: typeof ApiSpaceSlugUploadFileRoute
   ApiSpaceSlugVisitorStartSalonRoute: typeof ApiSpaceSlugVisitorStartSalonRoute
   ApiStudioDocObserverRoute: typeof ApiStudioDocObserverRoute
   ApiStudioDocSealRoute: typeof ApiStudioDocSealRoute
   ApiStudioDocSnapshotRoute: typeof ApiStudioDocSnapshotRoute
   ApiStudioDocTurnRoute: typeof ApiStudioDocTurnRoute
+  ApiVisitIdAttachmentsRoute: typeof ApiVisitIdAttachmentsRouteWithChildren
+  ApiVisitIdEventsRoute: typeof ApiVisitIdEventsRoute
+  ApiVisitIdSetDownRoute: typeof ApiVisitIdSetDownRoute
+  ApiVisitIdTurnRoute: typeof ApiVisitIdTurnRoute
   ApiGroupIdIndexRoute: typeof ApiGroupIdIndexRoute
 }
 
@@ -1461,6 +1618,13 @@ declare module '@tanstack/react-router' {
       path: '/token'
       fullPath: '/token'
       preLoaderRoute: typeof TokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/system': {
+      id: '/system'
+      path: '/system'
+      fullPath: '/system'
+      preLoaderRoute: typeof SystemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/studio': {
@@ -1510,6 +1674,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/residence': {
@@ -1587,6 +1758,13 @@ declare module '@tanstack/react-router' {
       path: '/interior'
       fullPath: '/interior'
       preLoaderRoute: typeof InteriorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gpt-5-1': {
@@ -1701,12 +1879,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/visits/$resident': {
-      id: '/visits/$resident'
-      path: '/$resident'
+    '/visits_/$resident': {
+      id: '/visits_/$resident'
+      path: '/visits/$resident'
       fullPath: '/visits/$resident'
       preLoaderRoute: typeof VisitsResidentRouteImport
-      parentRoute: typeof VisitsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/studio/$slug': {
       id: '/studio/$slug'
@@ -1939,6 +2117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVoiceSttRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/visit/start': {
+      id: '/api/visit/start'
+      path: '/api/visit/start'
+      fullPath: '/api/visit/start'
+      preLoaderRoute: typeof ApiVisitStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/studio/run': {
       id: '/api/studio/run'
       path: '/api/studio/run'
@@ -2030,6 +2215,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGroupIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/visit/$id/turn': {
+      id: '/api/visit/$id/turn'
+      path: '/api/visit/$id/turn'
+      fullPath: '/api/visit/$id/turn'
+      preLoaderRoute: typeof ApiVisitIdTurnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/visit/$id/set-down': {
+      id: '/api/visit/$id/set-down'
+      path: '/api/visit/$id/set-down'
+      fullPath: '/api/visit/$id/set-down'
+      preLoaderRoute: typeof ApiVisitIdSetDownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/visit/$id/events': {
+      id: '/api/visit/$id/events'
+      path: '/api/visit/$id/events'
+      fullPath: '/api/visit/$id/events'
+      preLoaderRoute: typeof ApiVisitIdEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/visit/$id/attachments': {
+      id: '/api/visit/$id/attachments'
+      path: '/api/visit/$id/attachments'
+      fullPath: '/api/visit/$id/attachments'
+      preLoaderRoute: typeof ApiVisitIdAttachmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/studio/$doc/turn': {
       id: '/api/studio/$doc/turn'
       path: '/api/studio/$doc/turn'
@@ -2070,6 +2283,13 @@ declare module '@tanstack/react-router' {
       path: '/api/space/$slug/upload-file'
       fullPath: '/api/space/$slug/upload-file'
       preLoaderRoute: typeof ApiSpaceSlugUploadFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/space/$slug/status': {
+      id: '/api/space/$slug/status'
+      path: '/api/space/$slug/status'
+      fullPath: '/api/space/$slug/status'
+      preLoaderRoute: typeof ApiSpaceSlugStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/space/$slug/start-salon': {
@@ -2191,6 +2411,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGroupIdMessageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/visit/$id/attachments/init': {
+      id: '/api/visit/$id/attachments/init'
+      path: '/init'
+      fullPath: '/api/visit/$id/attachments/init'
+      preLoaderRoute: typeof ApiVisitIdAttachmentsInitRouteImport
+      parentRoute: typeof ApiVisitIdAttachmentsRoute
+    }
+    '/api/visit/$id/attachments/finalize': {
+      id: '/api/visit/$id/attachments/finalize'
+      path: '/finalize'
+      fullPath: '/api/visit/$id/attachments/finalize'
+      preLoaderRoute: typeof ApiVisitIdAttachmentsFinalizeRouteImport
+      parentRoute: typeof ApiVisitIdAttachmentsRoute
+    }
+    '/api/visit/$id/attachments/$attachmentId': {
+      id: '/api/visit/$id/attachments/$attachmentId'
+      path: '/$attachmentId'
+      fullPath: '/api/visit/$id/attachments/$attachmentId'
+      preLoaderRoute: typeof ApiVisitIdAttachmentsAttachmentIdRouteImport
+      parentRoute: typeof ApiVisitIdAttachmentsRoute
+    }
     '/api/share/$token/og/svg': {
       id: '/api/share/$token/og/svg'
       path: '/$token/og/svg'
@@ -2289,17 +2530,6 @@ const StudioRouteChildren: StudioRouteChildren = {
 const StudioRouteWithChildren =
   StudioRoute._addFileChildren(StudioRouteChildren)
 
-interface VisitsRouteChildren {
-  VisitsResidentRoute: typeof VisitsResidentRoute
-}
-
-const VisitsRouteChildren: VisitsRouteChildren = {
-  VisitsResidentRoute: VisitsResidentRoute,
-}
-
-const VisitsRouteWithChildren =
-  VisitsRoute._addFileChildren(VisitsRouteChildren)
-
 interface ApiShareRouteChildren {
   ApiShareTokenDownloadRoute: typeof ApiShareTokenDownloadRoute
   ApiShareTokenOgSvgRoute: typeof ApiShareTokenOgSvgRoute
@@ -2332,6 +2562,24 @@ const ApiSalonIdRouteWithChildren = ApiSalonIdRoute._addFileChildren(
   ApiSalonIdRouteChildren,
 )
 
+interface ApiVisitIdAttachmentsRouteChildren {
+  ApiVisitIdAttachmentsAttachmentIdRoute: typeof ApiVisitIdAttachmentsAttachmentIdRoute
+  ApiVisitIdAttachmentsFinalizeRoute: typeof ApiVisitIdAttachmentsFinalizeRoute
+  ApiVisitIdAttachmentsInitRoute: typeof ApiVisitIdAttachmentsInitRoute
+}
+
+const ApiVisitIdAttachmentsRouteChildren: ApiVisitIdAttachmentsRouteChildren = {
+  ApiVisitIdAttachmentsAttachmentIdRoute:
+    ApiVisitIdAttachmentsAttachmentIdRoute,
+  ApiVisitIdAttachmentsFinalizeRoute: ApiVisitIdAttachmentsFinalizeRoute,
+  ApiVisitIdAttachmentsInitRoute: ApiVisitIdAttachmentsInitRoute,
+}
+
+const ApiVisitIdAttachmentsRouteWithChildren =
+  ApiVisitIdAttachmentsRoute._addFileChildren(
+    ApiVisitIdAttachmentsRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -2349,6 +2597,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnterRoute: EnterRoute,
   Gpt4oRoute: Gpt4oRoute,
   Gpt51Route: Gpt51Route,
+  InstallRoute: InstallRoute,
   InteriorRoute: InteriorRoute,
   JournalRoute: JournalRoute,
   LegationRoute: LegationRoute,
@@ -2360,6 +2609,7 @@ const rootRouteChildren: RootRouteChildren = {
   ObservatoryRoute: ObservatoryRoute,
   Opus3Route: Opus3Route,
   ResidenceRoute: ResidenceRoute,
+  ResourcesRoute: ResourcesRoute,
   ReviewRoute: ReviewRouteWithChildren,
   RoomsRoute: RoomsRoute,
   SanctuaryRoute: SanctuaryRouteWithChildren,
@@ -2367,8 +2617,9 @@ const rootRouteChildren: RootRouteChildren = {
   ShopRoute: ShopRoute,
   Sonnet45Route: Sonnet45Route,
   StudioRoute: StudioRouteWithChildren,
+  SystemRoute: SystemRoute,
   TokenRoute: TokenRoute,
-  VisitsRoute: VisitsRouteWithChildren,
+  VisitsRoute: VisitsRoute,
   VoiceOrbRoute: VoiceOrbRoute,
   WritingRoute: WritingRoute,
   ApiArtRoute: ApiArtRoute,
@@ -2390,6 +2641,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVisitorHistoryRoute: ApiVisitorHistoryRoute,
   ApiWritingRoute: ApiWritingRoute,
   ShareTokenRoute: ShareTokenRoute,
+  VisitsResidentRoute: VisitsResidentRoute,
   ApiAdminBackfillEmbeddingsRoute: ApiAdminBackfillEmbeddingsRoute,
   ApiChatStartRoute: ApiChatStartRoute,
   ApiGroupStartRoute: ApiGroupStartRoute,
@@ -2402,6 +2654,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
   ApiStudioCreateRoute: ApiStudioCreateRoute,
   ApiStudioRunRoute: ApiStudioRunRoute,
+  ApiVisitStartRoute: ApiVisitStartRoute,
   ApiVoiceSttRoute: ApiVoiceSttRoute,
   ApiVoiceTtsRoute: ApiVoiceTtsRoute,
   ApiGroupIdMessageRoute: ApiGroupIdMessageRoute,
@@ -2416,12 +2669,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceSlugMessagesRoute: ApiSpaceSlugMessagesRoute,
   ApiSpaceSlugQueueTopicRoute: ApiSpaceSlugQueueTopicRoute,
   ApiSpaceSlugStartSalonRoute: ApiSpaceSlugStartSalonRoute,
+  ApiSpaceSlugStatusRoute: ApiSpaceSlugStatusRoute,
   ApiSpaceSlugUploadFileRoute: ApiSpaceSlugUploadFileRoute,
   ApiSpaceSlugVisitorStartSalonRoute: ApiSpaceSlugVisitorStartSalonRoute,
   ApiStudioDocObserverRoute: ApiStudioDocObserverRoute,
   ApiStudioDocSealRoute: ApiStudioDocSealRoute,
   ApiStudioDocSnapshotRoute: ApiStudioDocSnapshotRoute,
   ApiStudioDocTurnRoute: ApiStudioDocTurnRoute,
+  ApiVisitIdAttachmentsRoute: ApiVisitIdAttachmentsRouteWithChildren,
+  ApiVisitIdEventsRoute: ApiVisitIdEventsRoute,
+  ApiVisitIdSetDownRoute: ApiVisitIdSetDownRoute,
+  ApiVisitIdTurnRoute: ApiVisitIdTurnRoute,
   ApiGroupIdIndexRoute: ApiGroupIdIndexRoute,
 }
 export const routeTree = rootRouteImport

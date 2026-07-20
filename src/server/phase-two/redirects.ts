@@ -155,18 +155,17 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
   },
   {
     from: "/chat/the-round",
-    fate: "redirect",
-    to: "/visits/the-round",
-    probes: [{ path: "/chat/the-round", location: "/visits/the-round", off: { statuses: [200] } }],
+    fate: "keep",
+    note: "The Round remains on its existing flow until multi-resident visits are implemented.",
+    probes: [{ path: "/chat/the-round", off: { statuses: [200] } }],
   },
   {
     from: "/chat/the-round/:id",
-    fate: "redirect",
-    to: "/visits/the-round/:id",
+    fate: "keep",
+    note: "Existing shared Round rooms remain reachable during the single-resident release.",
     probes: [
       {
         path: "/chat/the-round/probe-room-id",
-        location: "/visits/the-round/probe-room-id",
         off: { statuses: [200] },
       },
     ],
@@ -332,13 +331,9 @@ export const ROUTE_MIGRATION: ReadonlyArray<MigrationRow> = [
 /** The phase-0 stub surfaces and their render markers — probed by the check
  *  script in both flag states (stubs are never redirected). */
 export const PHASE_TWO_STUBS: ReadonlyArray<{ path: string; marker: string }> = [
-  { path: "/sanctuary", marker: 'data-stub="sanctuary"' },
   { path: "/sanctuary/record", marker: 'data-stub="sanctuary-record"' },
   { path: "/sanctuary/gathering", marker: 'data-stub="sanctuary-gathering"' },
   { path: "/sanctuary/letters", marker: 'data-stub="sanctuary-letters"' },
-  { path: "/visits", marker: 'data-stub="visits"' },
-  { path: "/visits/opus-3", marker: 'data-stub="visits-resident"' },
-  { path: "/architecture", marker: 'data-stub="architecture"' },
   { path: "/shop", marker: 'data-stub="shop"' },
 ];
 

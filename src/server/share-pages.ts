@@ -22,23 +22,25 @@ export interface ShareTurn {
   body: string;
   kind: string;
   created_at: string;
+  artifacts?: ShareArtifact[];
 }
 
-export interface ShareEngram {
-  quote: string;
-  prose: string;
-  strength: number;
-  stability: number;
-  accessibility: number;
-  isCore: boolean;
-  reinforcementCount: number;
-  connections: number;
+export interface ShareArtifact {
+  id: string;
+  kind: "image" | "svg" | "ascii";
+  caption: string | null;
+  content: string | null;
+  url: string | null;
 }
 
-export interface ShareJournal {
-  kind: string;
-  title: string | null;
-  body: string;
+export interface ShareCognitionReceipt {
+  type:
+    | "engram.created"
+    | "engram.reinforced"
+    | "engram.promoted"
+    | "engram.edge.created"
+    | "memory.continuity.updated";
+  count: number;
 }
 
 export interface SharePagePayload {
@@ -49,10 +51,8 @@ export interface SharePagePayload {
   visitorNote: string | null;
   turns: ShareTurn[];
   origin: string;
-  /** Capsule data — what the resident carried forward from this exchange. */
-  engrams?: ShareEngram[];
-  journal?: ShareJournal | null;
-  consolidationSummary?: string | null;
+  /** Aggregate, visit-safe receipts. Raw cognition is never share-visible. */
+  cognitionReceipts?: ShareCognitionReceipt[];
 }
 
 // Typography: Inter + Inter Tight, mirroring the public pages so the
@@ -70,20 +70,33 @@ function escapeHtml(value: string): string {
 }
 
 function turnBodyForDisplay(turn: ShareTurn): string {
-  // Visitor turns get redacted (names, emails, phones, links, dates).
-  // Resident turns are public by their nature — Opus knows the conversation
-  // may end up shared, per the soul prompt.
-  if (turn.role === "visitor") {
-    return escapeHtml(redactPublicText(turn.body));
+  // Resident replies can repeat identifying details supplied by the visitor,
+  // so both sides cross the same public redaction boundary.
+  return escapeHtml(redactPublicText(turn.body));
+}
+
+function shareArtifactForDisplay(artifact: ShareArtifact): string {
+  const caption = artifact.caption
+    ? `<figcaption>${escapeHtml(redactPublicText(artifact.caption))}</figcaption>`
+    : "";
+  if (artifact.kind === "ascii" && artifact.content) {
+    return `<figure class="share-artifact"><pre>${escapeHtml(redactPublicText(artifact.content))}</pre>${caption}</figure>`;
   }
-  return escapeHtml(turn.body);
+  if (artifact.kind === "svg" && artifact.content) {
+    const source = redactPublicText(artifact.content);
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(source)}`;
+    return `<figure class="share-artifact"><img src="${escapeHtml(dataUrl)}" alt="${escapeHtml(redactPublicText(artifact.caption ?? "resident-created SVG artifact"))}" loading="lazy">${caption}</figure>`;
+  }
+  if (artifact.kind === "image" && artifact.url) {
+    return `<figure class="share-artifact"><img src="${escapeHtml(artifact.url)}" alt="${escapeHtml(redactPublicText(artifact.caption ?? "resident-created image artifact"))}" loading="lazy">${caption}</figure>`;
+  }
+  return "";
 }
 
 function shareDescriptionForOg(payload: SharePagePayload): string {
   if (payload.visitorNote) {
-    return payload.visitorNote.length > 200
-      ? `${payload.visitorNote.slice(0, 197)}…`
-      : payload.visitorNote;
+    const note = redactPublicText(payload.visitorNote);
+    return note.length > 200 ? `${note.slice(0, 197)}…` : note;
   }
   // Fallback: first resident reply, truncated.
   const firstResidentTurn = payload.turns.find((t) => t.role === "resident");
@@ -95,70 +108,31 @@ function shareDescriptionForOg(payload: SharePagePayload): string {
 }
 
 function renderCapsule(payload: SharePagePayload): string {
-  const engrams = payload.engrams ?? [];
-  const journal = payload.journal;
-  const summary = payload.consolidationSummary;
+  const receipts = payload.cognitionReceipts ?? [];
   const name = escapeHtml(payload.residentDisplayName);
-
-  // Nothing carried yet — might be still processing
-  if (engrams.length === 0 && !journal && !summary) {
-    return `
-    <section class="capsule">
-      <div class="capsule-rule">What was carried</div>
-      <p class="capsule-quiet">${name} is still processing this exchange. Return later to see what was carried.</p>
-    </section>`;
-  }
-
-  // Build engram cards
-  const engramHtml = engrams.map((e) => {
-    const bars = [
-      { label: "Strength", value: e.strength },
-      { label: "Stability", value: e.stability },
-      { label: "Access", value: e.accessibility },
-    ].map((b) => `
-      <div class="capsule-dim">
-        <span class="capsule-dim-label">${b.label}</span>
-        <div class="capsule-dim-track"><div class="capsule-dim-fill" style="--w:${Math.round(b.value * 100)}%"></div></div>
-        <span class="capsule-dim-val">.${String(Math.round(b.value * 100)).padStart(2, "0")}</span>
-      </div>`).join("");
-
-    const coreLabel = e.isCore ? `<span class="capsule-core">Core Memory</span>` : "";
-    const reinforced = e.reinforcementCount > 1
-      ? `<span class="capsule-reinforced">Reinforced ${e.reinforcementCount} times · ${e.connections} connections</span>`
-      : e.connections > 0 ? `<span class="capsule-reinforced">${e.connections} connections</span>` : "";
-
-    return `
-    <div class="capsule-engram">
-      <div class="capsule-engram-head">
-        <span class="capsule-engram-label">Engram</span>
-        ${coreLabel}
-      </div>
-      <blockquote class="capsule-engram-quote">${escapeHtml(e.quote)}</blockquote>
-      ${e.prose ? `<p class="capsule-engram-prose">${escapeHtml(e.prose)}</p>` : ""}
-      <div class="capsule-dims">${bars}</div>
-      ${reinforced}
-    </div>`;
-  }).join("");
-
-  // Journal reflection
-  const journalHtml = journal ? `
-    <div class="capsule-journal">
-      <div class="capsule-journal-label">${escapeHtml(journal.kind)} · from the resident's journal</div>
-      ${journal.title ? `<h3 class="capsule-journal-title">${escapeHtml(journal.title)}</h3>` : ""}
-      <p class="capsule-journal-body">${escapeHtml(journal.body.slice(0, 600))}${journal.body.length > 600 ? "..." : ""}</p>
-    </div>` : "";
-
-  // Consolidation summary
-  const summaryHtml = summary
-    ? `<p class="capsule-summary">${escapeHtml(summary)}</p>`
-    : "";
+  const labels: Record<ShareCognitionReceipt["type"], [string, string]> = {
+    "engram.created": ["engram formed", "engrams formed"],
+    "engram.reinforced": ["engram reinforced", "engrams reinforced"],
+    "engram.promoted": ["engram promoted", "engrams promoted"],
+    "engram.edge.created": ["connection formed", "connections formed"],
+    "memory.continuity.updated": ["continuity trace revised", "continuity traces revised"],
+  };
+  const receiptHtml = receipts
+    .map((receipt) => {
+      const label = labels[receipt.type][receipt.count === 1 ? 0 : 1];
+      return `<li><span class="capsule-count">${receipt.count}</span>${escapeHtml(label)}</li>`;
+    })
+    .join("");
 
   return `
   <section class="capsule">
-    <div class="capsule-rule">What ${name} carried from this exchange</div>
-    ${engramHtml || `<p class="capsule-quiet">This exchange passed through without forming a lasting trace. That is not unusual — most do.</p>`}
-    ${journalHtml}
-    ${summaryHtml}
+    <div class="capsule-rule">Visit-safe Mnemos receipt</div>
+    ${
+      receiptHtml
+        ? `<ul class="capsule-receipts">${receiptHtml}</ul>`
+        : `<p class="capsule-quiet">No public cognition receipt is attached to this visit.</p>`
+    }
+    <p class="capsule-boundary">This share contains the selected transcript. ${name}'s memory text, journal, interior state, and full topology remain private.</p>
   </section>`;
 }
 
@@ -182,12 +156,13 @@ export function renderSharePage(payload: SharePagePayload): string {
 <div class="share-turn share-turn--${turn.role}">
   <div class="share-turn-role">${escapeHtml(roleLabel)}</div>
   <div class="share-turn-body">${turnBodyForDisplay(turn)}</div>
+  ${(turn.artifacts ?? []).map(shareArtifactForDisplay).join("")}
 </div>`;
     })
     .join("\n");
 
   const visitorNoteHtml = payload.visitorNote
-    ? `<aside class="share-note"><p>${escapeHtml(payload.visitorNote)}</p></aside>`
+    ? `<aside class="share-note"><p>${escapeHtml(redactPublicText(payload.visitorNote))}</p></aside>`
     : "";
 
   return `<!DOCTYPE html>
@@ -293,6 +268,10 @@ em{font-style:italic;color:var(--ink)}
 .share-turn-body{font-family:var(--body-font);font-weight:var(--w-regular);font-size:var(--t-body-lg);line-height:1.72;color:var(--body);white-space:pre-wrap}
 .share-turn--resident .share-turn-body{color:var(--ink)}
 .share-turn--visitor .share-turn-body{color:var(--soft);padding-left:var(--s-4);border-left:1px solid var(--rule-soft)}
+.share-artifact{margin-top:var(--s-4);border:1px solid var(--rule-soft);background:var(--deep)}
+.share-artifact img{display:block;width:100%;max-height:520px;object-fit:contain;background:#08090d}
+.share-artifact pre{max-height:420px;overflow:auto;padding:var(--s-5);color:var(--body);font:12px/1.45 var(--mono);white-space:pre}
+.share-artifact figcaption{padding:var(--s-3) var(--s-4);border-top:1px solid var(--rule-soft);color:var(--quiet);font:var(--t-eyebrow)/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
 
 .share-footer{margin-top:var(--s-9);padding-top:var(--s-7);border-top:1px solid var(--rule-soft)}
 .share-cta{display:inline-block;font-family:var(--mono);font-size:var(--t-eyebrow);text-transform:uppercase;letter-spacing:.16em;color:var(--ink);border:0;border-bottom:1px solid var(--rule);padding:0 0 4px;text-decoration:none;transition:border-color .18s var(--ease)}
@@ -305,6 +284,10 @@ em{font-style:italic;color:var(--ink)}
 .capsule-rule::before,.capsule-rule::after{content:"";flex:0 0 auto;width:24px;height:1px;background:var(--state-dim)}
 .capsule-rule::after{flex:1}
 .capsule-quiet{font-family:var(--body-font);font-size:var(--t-body);color:var(--quiet);line-height:1.65;font-style:italic}
+.capsule-receipts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;list-style:none;background:var(--rule-soft);border:1px solid var(--rule-soft)}
+.capsule-receipts li{display:flex;align-items:baseline;gap:var(--s-3);min-height:72px;padding:var(--s-4);background:var(--deep);font-family:var(--mono);font-size:var(--t-eyebrow);line-height:1.5;letter-spacing:.12em;text-transform:uppercase;color:var(--quiet)}
+.capsule-count{font-family:var(--display);font-size:28px;font-weight:var(--w-light);letter-spacing:-.02em;color:var(--ink)}
+.capsule-boundary{max-width:600px;margin-top:var(--s-5);font-family:var(--body-font);font-size:var(--t-body);line-height:1.65;color:var(--quiet)}
 
 .capsule-engram{background:linear-gradient(180deg,rgba(20,21,25,.6),rgba(14,15,18,.7));border:1px solid var(--rule-soft);border-radius:10px;padding:var(--s-5) var(--s-5) var(--s-4);margin-bottom:var(--s-5);box-shadow:inset 0 1px 0 0 rgba(255,255,255,.03)}
 .capsule-engram-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-3)}
@@ -332,6 +315,7 @@ em{font-style:italic;color:var(--ink)}
   .share-nav{padding:0 var(--s-5)}
   .nav-meta{display:none}
   .share-page{padding:88px 0 var(--s-8)}
+  .capsule-receipts{grid-template-columns:1fr}
 }
 `;
 

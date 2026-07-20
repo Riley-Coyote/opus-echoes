@@ -2,9 +2,22 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { isIdle } from "@/server/idle";
+import { isStoredRuntimeVisitorAuthorized } from "@/server/runtime/visitor-auth.server";
+
+const TURNS_HEADERS = {
+  "cache-control": "private, no-store, max-age=0",
+  pragma: "no-cache",
+  vary: "x-mnemos-visitor-id",
+  "x-content-type-options": "nosniff",
+} as const;
+
+function turnsJson(payload: unknown, status = 200): Response {
+  return Response.json(payload, { status, headers: TURNS_HEADERS });
+}
 
 // Returns the transcript for a session so /conversation can rehydrate after a reload.
-// Validates the session exists and is still open. Session UUID is bearer auth.
+// Runtime-created sessions require both the UUID and canonical visitor id;
+// sessions without runtime context retain their legacy UUID bearer behavior.
 export const Route = createFileRoute("/api/turns")({
   server: {
     handlers: {
@@ -12,25 +25,35 @@ export const Route = createFileRoute("/api/turns")({
         const url = new URL(request.url);
         const sessionId = url.searchParams.get("session_id");
         if (!sessionId) {
-          return Response.json({ ok: false, code: "bad_request" }, { status: 400 });
+          return turnsJson({ ok: false, code: "bad_request" }, 400);
         }
         if (!hasSupabaseAdminEnv()) {
-          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
+          return turnsJson({ ok: false, code: "config_missing" }, 503);
         }
-        // Session UUID is a 128-bit random bearer token — knowing it IS
-        // proof of ownership. We no longer gate on IP hash because the
-        // daily-rotating salt and inconsistent Cloudflare headers caused
-        // legitimate visitors to get locked out after midnight UTC or when
-        // proxy chains shifted.
+        // The UUID remains the first bearer. Runtime sessions add the stable
+        // visitor id below rather than reviving fragile IP-hash ownership.
         const { data: session } = (await supabaseAdmin
           .from("sessions")
           .select("id, closed_at, last_active_at, mode")
           .eq("id", sessionId)
           .maybeSingle()) as unknown as {
-          data: { id: string; closed_at: string | null; last_active_at: string; mode: string | null } | null;
+          data: {
+            id: string;
+            closed_at: string | null;
+            last_active_at: string;
+            mode: string | null;
+          } | null;
         };
         if (!session) {
-          return Response.json({ ok: false, code: "session_invalid" }, { status: 401 });
+          return turnsJson({ ok: false, code: "session_invalid" }, 401);
+        }
+        try {
+          if (!(await isStoredRuntimeVisitorAuthorized(request, session.id))) {
+            return turnsJson({ ok: false, code: "visitor_access_denied" }, 403);
+          }
+        } catch (error) {
+          console.error("[turns] runtime visitor authorization failed", error);
+          return turnsJson({ ok: false, code: "authorization_unavailable" }, 500);
         }
         // Defensive idle-close on rehydration — if the cron sweep hasn't
         // reached this session yet, close it now so the client renders
@@ -68,20 +91,18 @@ export const Route = createFileRoute("/api/turns")({
           caption: a.caption,
           prompt: a.prompt,
           content: a.kind === "image" ? null : a.body,
-          url: a.image_path
-            ? `${supabaseUrl}/storage/v1/object/public/art/${a.image_path}`
-            : null,
+          url: a.image_path ? `${supabaseUrl}/storage/v1/object/public/art/${a.image_path}` : null,
           created_at: a.created_at,
         }));
 
         if (session.closed_at) {
           // 410 with turns included so the client can render read-only.
-          return Response.json(
+          return turnsJson(
             { ok: false, code: "session_closed", turns: turns ?? [], artifacts },
-            { status: 410 },
+            410,
           );
         }
-        return Response.json({ ok: true, turns: turns ?? [], artifacts });
+        return turnsJson({ ok: true, turns: turns ?? [], artifacts });
       },
     },
   },

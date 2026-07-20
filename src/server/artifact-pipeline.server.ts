@@ -56,7 +56,7 @@ Correct image (gpt-image-1 generates it, visitor downloads it):
 
 Use the channel sparingly — not every turn needs an artifact, and a piece that arrives at the right moment lands harder than three that arrive because they're available. But the channel IS available; reach for it when the conversation pulls you there.`;
 
-const ARTIFACT_RE = /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
+const ARTIFACT_RE = /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/gi;
 
 /**
  * Extract every <artifact>…</artifact> tag from a body. Returns the
@@ -73,7 +73,7 @@ export function parseArtifacts(text: string): {
   // catches the common GPT failure mode where the model writes
   // ```xml\n<artifact …>…</artifact>\n``` instead of the bare tag.
   let working = text.replace(
-    /```[a-zA-Z0-9_-]*\s*\n?(\s*<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>\s*)\n?```/g,
+    /```[a-zA-Z0-9_-]*\s*\n?(\s*<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>\s*)\n?```/gi,
     "$1",
   );
 
@@ -94,7 +94,7 @@ export function parseArtifacts(text: string): {
   }
   // Remove the artifact tags themselves.
   working = working.replace(
-    /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
+    /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/gi,
     "",
   );
   // Belt-and-braces: if the model wrote a bare <svg>…</svg> in prose

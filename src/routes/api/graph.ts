@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { hasAdminAccess } from "@/server/access.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { isResidentId } from "@/server/opus/residents";
+
+const GRAPH_RESPONSE_HEADERS = {
+  "cache-control": "private, no-store, max-age=0",
+  pragma: "no-cache",
+  "x-content-type-options": "nosniff",
+} as const;
+
+function graphJson(payload: unknown, status = 200): Response {
+  return Response.json(payload, { status, headers: GRAPH_RESPONSE_HEADERS });
+}
 
 /**
  * GET /api/graph?resident=<id>
@@ -16,18 +27,22 @@ export const Route = createFileRoute("/api/graph")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        // hasAdminAccess also permits credential-free local development when
+        // ADMIN_TOKEN is unset; production remains token/cookie gated.
+        if (!hasAdminAccess(request)) {
+          return graphJson({ ok: false, code: "admin_required" }, 401);
+        }
         if (!hasSupabaseAdminEnv()) {
-          return Response.json({ ok: false, code: "no_admin_env", nodes: [], edges: [] }, { status: 503 });
+          return graphJson({ ok: false, code: "no_admin_env", nodes: [], edges: [] }, 503);
         }
 
         const url = new URL(request.url);
         const ridParam = url.searchParams.get("resident");
         const rid = isResidentId(ridParam) ? ridParam : "opus-3";
 
-        // The Mind/Interior/Memory rooms that consume this endpoint are
-        // already admin-gated (servePrivateDashboardPage). The substrate's
-        // "private" scope just means "not surfaced on public pages" — for the
-        // resident's own interior, we want the full topology.
+        // This endpoint exposes full topology, including private substrate
+        // rows, so its own access gate is authoritative regardless of which
+        // page initiated the request.
         const [engramsRes, beliefsRes, threadsRes, edgesRes, journalRes] = await Promise.all([
           supabaseAdmin
             .from("engrams")
@@ -45,7 +60,9 @@ export const Route = createFileRoute("/api/graph")({
             .limit(200),
           supabaseAdmin
             .from("threads")
-            .select("id, name, description, appearance_count, distinct_visitor_count, last_surfaced_at")
+            .select(
+              "id, name, description, appearance_count, distinct_visitor_count, last_surfaced_at",
+            )
             .eq("resident_id", rid)
             .order("appearance_count", { ascending: false })
             .limit(200),
@@ -59,8 +76,14 @@ export const Route = createFileRoute("/api/graph")({
             .limit(12),
         ]);
 
-        if (engramsRes.error || beliefsRes.error || threadsRes.error || edgesRes.error || journalRes.error) {
-          return Response.json(
+        if (
+          engramsRes.error ||
+          beliefsRes.error ||
+          threadsRes.error ||
+          edgesRes.error ||
+          journalRes.error
+        ) {
+          return graphJson(
             {
               ok: false,
               code: "query_failed",
@@ -71,7 +94,7 @@ export const Route = createFileRoute("/api/graph")({
                 edgesRes.error?.message ||
                 journalRes.error?.message,
             },
-            { status: 500 },
+            500,
           );
         }
 
@@ -133,7 +156,12 @@ export const Route = createFileRoute("/api/graph")({
         for (const b of beliefs) {
           for (const eid of b.cited_engram_ids || []) {
             if (engramIds.has(eid)) {
-              edges.push({ from: b.id, to: eid, weight: b.confidence ?? 0.5, type: "supported_by" });
+              edges.push({
+                from: b.id,
+                to: eid,
+                weight: b.confidence ?? 0.5,
+                type: "supported_by",
+              });
             }
           }
         }
@@ -148,28 +176,20 @@ export const Route = createFileRoute("/api/graph")({
           related_engram_ids: j.related_engram_ids,
         }));
 
-        return new Response(
-          JSON.stringify({
-            ok: true,
-            resident: rid,
-            nodes,
-            edges,
-            reflections,
-            counts: {
-              engrams: engrams.length,
-              beliefs: beliefs.length,
-              threads: threads.length,
-              edges: edges.length,
-              reflections: reflections.length,
-            },
-          }),
-          {
-            headers: {
-              "content-type": "application/json",
-              "cache-control": "public, max-age=30, stale-while-revalidate=60",
-            },
+        return graphJson({
+          ok: true,
+          resident: rid,
+          nodes,
+          edges,
+          reflections,
+          counts: {
+            engrams: engrams.length,
+            beliefs: beliefs.length,
+            threads: threads.length,
+            edges: edges.length,
+            reflections: reflections.length,
           },
-        );
+        });
       },
     },
   },

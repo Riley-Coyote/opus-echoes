@@ -18,14 +18,23 @@
  *   7. Modulators recomputed → resident_state updated
  *   8. Marginalia from this session marked consolidated
  *
- * All steps are wrapped in try/catch and never throw to the caller. The substrate
- * fails silently to a log line; the conversation must complete even if Mnemos burps.
+ * Consolidation logs and rethrows failures so set-down can remain recoverable
+ * instead of falsely recording a settled visit. Callers that are intentionally
+ * best-effort catch at their own boundary.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { anthropic, HAIKU_MODEL, OPUS_MODEL } from "./anthropic.server";
 import { openrouter } from "./openai.server";
 import { embedText } from "./embeddings.server";
+import {
+  estimateHostedWorkingMemoryLoad,
+  hasExplicitVisitorMemoryEmphasis,
+  LEGACY_HOSTED_ENCODING_CONTEXT,
+  planHostedEngramEncoding,
+  type HostedEngramEncodingPlan,
+} from "./mnemos-emotion/hosted-encoding";
+import { loadHostedEncodingContext } from "./mnemos-emotion/hosted-encoding.server";
 import type { ModelProvider } from "./opus/residents";
 import { composeMemoryPool, formatMemoryBlock } from "./opus/retrieval";
 import {
@@ -187,9 +196,7 @@ function truncateSoft(value: string | null | undefined, max: number): string {
   const candidate = text.slice(0, Math.max(0, max - 1)).trimEnd();
   const boundary = candidate.lastIndexOf(" ");
   const body =
-    boundary >= Math.floor(max * 0.72)
-      ? candidate.slice(0, boundary).trimEnd()
-      : candidate;
+    boundary >= Math.floor(max * 0.72) ? candidate.slice(0, boundary).trimEnd() : candidate;
   return `${body}…`;
 }
 
@@ -221,6 +228,43 @@ const FUNCTIONAL_SUMMARY_MAX_CHARS = 1500;
 function clampStability(v: number): number {
   if (!Number.isFinite(v)) return 0.1;
   return Math.max(0.05, Math.min(0.95, v));
+}
+
+type SupabaseWriteError = {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+};
+
+/**
+ * App code can briefly lead additive migration 1800 during a rolling deploy.
+ * Only a schema-cache/missing-column error for the transient encoding inputs
+ * is eligible for an exact legacy retry; all real database failures surface.
+ */
+function hostedEncodingMetadataUnavailable(error: SupabaseWriteError | null): boolean {
+  if (!error) return false;
+  const text = [error.message, error.details, error.hint].filter(Boolean).join(" ");
+  return (
+    (error.code === "PGRST204" || error.code === "42703") &&
+    /runtime_encoding_(?:depth|policy|emotion_revision|signal_flags)/i.test(text)
+  );
+}
+
+function hostedEncodingMutationInputs(
+  plan: HostedEngramEncodingPlan,
+  sessionId: string,
+): Record<string, unknown> {
+  return {
+    // The database audit trigger consumes and clears these in the same write.
+    runtime_encoding_depth: plan.depth,
+    runtime_encoding_policy: plan.policy,
+    runtime_encoding_emotion_revision: plan.emotionalRevision,
+    runtime_encoding_signal_flags: [...plan.signalFlags],
+    // Preserved for the independent cognition attribution trigger, which runs
+    // immediately after the encoding audit trigger and clears this field too.
+    runtime_mutation_session_id: sessionId,
+  };
 }
 
 function tryParseJson<T = unknown>(raw: string): T | null {
@@ -778,26 +822,37 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     const resident = await resolveResidentForSession(sessionId);
 
     // 0. Load transcript & context (per-resident).
-    const [{ data: turns }, { data: existingThreads }, { data: existingBeliefs }] =
-      await Promise.all([
-        supabaseAdmin
-          .from("turns")
-          .select("role, body, kind")
-          .eq("session_id", sessionId)
-          .order("created_at", { ascending: true }),
-        supabaseAdmin
-          .from("threads")
-          .select("id, name, description")
-          .eq("resident_id", resident.id)
-          .order("last_surfaced_at", { ascending: false })
-          .limit(20),
-        supabaseAdmin
-          .from("beliefs")
-          .select("id, text, confidence")
-          .eq("resident_id", resident.id)
-          .order("updated_at", { ascending: false })
-          .limit(20),
-      ]);
+    const [turnResult, threadResult, beliefResult] = await Promise.all([
+      supabaseAdmin
+        .from("turns")
+        .select("role, body, kind")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true }),
+      supabaseAdmin
+        .from("threads")
+        .select("id, name, description")
+        .eq("resident_id", resident.id)
+        .order("last_surfaced_at", { ascending: false })
+        .limit(20),
+      supabaseAdmin
+        .from("beliefs")
+        .select("id, text, confidence")
+        .eq("resident_id", resident.id)
+        .order("updated_at", { ascending: false })
+        .limit(20),
+    ]);
+    if (turnResult.error) {
+      throw new Error(`consolidation transcript load failed: ${turnResult.error.message}`);
+    }
+    if (threadResult.error) {
+      throw new Error(`consolidation thread load failed: ${threadResult.error.message}`);
+    }
+    if (beliefResult.error) {
+      throw new Error(`consolidation belief load failed: ${beliefResult.error.message}`);
+    }
+    const turns = turnResult.data;
+    const existingThreads = threadResult.data;
+    const existingBeliefs = beliefResult.data;
 
     if (!turns || turns.length < 2) {
       console.log(`[substrate] session ${sessionId} too short, skipping consolidation`);
@@ -838,9 +893,14 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     let beliefsUpdated = 0;
     let threadReinforced: string | null = null;
 
+    // Load the private six-dimensional state once, before any engram write.
+    // Missing state/migration resolves to the exact legacy numeric policy.
+    const hostedEncodingContext = await loadHostedEncodingContext(resident.id);
+    const workingMemoryLoad = estimateHostedWorkingMemoryLoad(turns);
+
     // 2. Process engrams (reinforcement vs new), scoped to this resident.
     if (consolidation?.engrams?.length) {
-      const { data: existingEngrams } = await supabaseAdmin
+      const { data: existingEngrams, error: existingEngramsError } = await supabaseAdmin
         .from("engrams")
         .select(
           "id, quote, source_session_ids, strength, accessibility, stability, reinforcement_count, is_core, prose",
@@ -848,32 +908,66 @@ export async function consolidateSession(sessionId: string): Promise<void> {
         .eq("resident_id", resident.id)
         .order("last_reinforced_at", { ascending: false })
         .limit(200);
+      if (existingEngramsError) {
+        throw new Error(`consolidation engram load failed: ${existingEngramsError.message}`);
+      }
 
       for (const e of consolidation.engrams) {
         if (!e?.quote || typeof e.quote !== "string") continue;
+        const candidateAttribution =
+          e.attribution === "visitor" || e.attribution === "co-formed" ? e.attribution : "resident";
         const candidateWords = significantWords(e.quote);
 
         // Reinforcement check: jaccard >= 0.3 against existing engrams.
         // 0.5 was too strict — natural language restates ideas with different
         // words. 0.3 lets thematically related engrams reinforce each other.
         let reinforced: ExistingEngramShape | null = null;
+        let maximumSimilarity = 0;
         for (const ex of existingEngrams ?? []) {
           const exWords = significantWords(ex.quote);
-          if (jaccard(candidateWords, exWords) >= 0.3) {
+          const similarity = jaccard(candidateWords, exWords);
+          maximumSimilarity = Math.max(maximumSimilarity, similarity);
+          // Preserve the legacy choice of the first recent qualifying trace.
+          if (!reinforced && similarity >= 0.3) {
             reinforced = ex as ExistingEngramShape;
-            break;
           }
         }
 
+        const encodingInput = {
+          context: hostedEncodingContext,
+          novelty: 1 - maximumSimilarity,
+          workingMemoryLoad,
+          // A candidate only reaches this loop after the dedicated
+          // consolidation pass selected it as a memory/schema candidate.
+          schemaRelevant: true,
+          userEmphasis:
+            candidateAttribution !== "resident" && hasExplicitVisitorMemoryEmphasis(turns, e.quote),
+          initialStability: e.initial_stability,
+          existing: reinforced
+            ? {
+                strength: reinforced.strength,
+                stability: reinforced.stability,
+                accessibility: reinforced.accessibility,
+              }
+            : undefined,
+        } as const;
+        const encodingPlan = planHostedEngramEncoding(encodingInput);
+        // Used only if application code is momentarily ahead of migration
+        // 1800. In that case both metadata and behavior remain exactly legacy.
+        const legacyEncodingPlan = planHostedEngramEncoding({
+          ...encodingInput,
+          context: LEGACY_HOSTED_ENCODING_CONTEXT,
+        });
+
         if (reinforced) {
           const newReinforce = (reinforced.reinforcement_count ?? 1) + 1;
-          const newStrength = clampStability((reinforced.strength ?? 0.1) + 0.1);
-          const newStability = clampStability((reinforced.stability ?? 0.1) + 0.08);
-          const newAccess = clampStability((reinforced.accessibility ?? 0.1) + 0.15);
-          const promoteToCore = !reinforced.is_core && newReinforce >= 3 && newStability >= 0.6;
+          let newStrength = encodingPlan.reinforce.strength;
+          let newStability = encodingPlan.reinforce.stability;
+          let newAccess = encodingPlan.reinforce.accessibility;
+          let promoteToCore = !reinforced.is_core && newReinforce >= 3 && newStability >= 0.6;
 
           // Save prior version
-          await supabaseAdmin.from("engram_versions").insert({
+          const { error: versionError } = await supabaseAdmin.from("engram_versions").insert({
             engram_id: reinforced.id,
             resident_id: resident.id,
             prior_quote: reinforced.quote,
@@ -881,8 +975,11 @@ export async function consolidateSession(sessionId: string): Promise<void> {
             prior_stability: reinforced.stability,
             reason: "reinforcement",
           });
+          if (versionError) {
+            throw new Error(`engram version write failed: ${versionError.message}`);
+          }
 
-          await supabaseAdmin
+          let { data: reinforcedRow, error: reinforcementError } = await supabaseAdmin
             .from("engrams")
             .update({
               strength: newStrength,
@@ -894,46 +991,121 @@ export async function consolidateSession(sessionId: string): Promise<void> {
               source_session_ids: Array.from(
                 new Set([...(reinforced.source_session_ids ?? []), sessionId]),
               ),
-            })
-            .eq("id", reinforced.id);
+              ...hostedEncodingMutationInputs(encodingPlan, sessionId),
+            } as never)
+            .eq("id", reinforced.id)
+            .select("id")
+            .maybeSingle();
+          if (hostedEncodingMetadataUnavailable(reinforcementError)) {
+            console.warn(
+              "[mnemos-encoding] migration 1800 unavailable; retrying reinforcement with exact legacy parameters",
+            );
+            newStrength = legacyEncodingPlan.reinforce.strength;
+            newStability = legacyEncodingPlan.reinforce.stability;
+            newAccess = legacyEncodingPlan.reinforce.accessibility;
+            promoteToCore = !reinforced.is_core && newReinforce >= 3 && newStability >= 0.6;
+            ({ data: reinforcedRow, error: reinforcementError } = await supabaseAdmin
+              .from("engrams")
+              .update({
+                strength: newStrength,
+                stability: newStability,
+                accessibility: newAccess,
+                reinforcement_count: newReinforce,
+                is_core: promoteToCore || reinforced.is_core,
+                last_reinforced_at: new Date().toISOString(),
+                source_session_ids: Array.from(
+                  new Set([...(reinforced.source_session_ids ?? []), sessionId]),
+                ),
+                runtime_mutation_session_id: sessionId,
+              } as never)
+              .eq("id", reinforced.id)
+              .select("id")
+              .maybeSingle());
+          }
+          if (reinforcementError || !reinforcedRow) {
+            throw new Error(
+              `engram reinforcement failed: ${reinforcementError?.message ?? "row not found"}`,
+            );
+          }
           engramsReinforced += 1;
 
           if (promoteToCore) {
-            await supabaseAdmin.from("substrate_events").insert({
-              kind: "ENGRAM_PROMOTED",
-              resident_id: resident.id,
-              payload: { engram_id: reinforced.id, session_id: sessionId },
-            });
+            const { error: promotionEventError } = await supabaseAdmin
+              .from("substrate_events")
+              .insert({
+                kind: "ENGRAM_PROMOTED",
+                resident_id: resident.id,
+                payload: { engram_id: reinforced.id, session_id: sessionId },
+              });
+            if (promotionEventError) {
+              console.error("[substrate] ENGRAM_PROMOTED event write failed:", promotionEventError);
+            }
           }
         } else {
           // New engram
-          const initialStab = clampStability(e.initial_stability ?? 0.45);
-          const redacted = e.attribution === "visitor" ? redactQuote(e.quote) : null;
-          const { data: inserted } = await supabaseAdmin
+          const redacted = candidateAttribution === "visitor" ? redactQuote(e.quote) : null;
+          let { data: inserted, error: engramInsertError } = await supabaseAdmin
             .from("engrams")
             .insert({
               resident_id: resident.id,
               quote: e.quote,
               prose: e.prose ?? null,
-              attribution: e.attribution ?? "resident",
+              attribution: candidateAttribution,
               source_session_ids: [sessionId],
-              stability: initialStab,
-              accessibility: 0.5,
-              strength: 0.3,
+              stability: encodingPlan.create.stability,
+              accessibility: encodingPlan.create.accessibility,
+              strength: encodingPlan.create.strength,
               reinforcement_count: 1,
               is_core: false,
               redacted_text: redacted,
               kind: "episodic",
               confidence: 0.6,
               state: "active",
-              resolution: 1.0,
-            })
+              resolution: encodingPlan.create.resolution,
+              ...hostedEncodingMutationInputs(encodingPlan, sessionId),
+            } as never)
             .select("id, quote")
             .single();
-          if (inserted) {
-            engramsCreated += 1;
-            await discoverEdges(inserted.id, inserted.quote, existingEngrams ?? [], resident.id);
+          if (hostedEncodingMetadataUnavailable(engramInsertError)) {
+            console.warn(
+              "[mnemos-encoding] migration 1800 unavailable; retrying creation with exact legacy parameters",
+            );
+            ({ data: inserted, error: engramInsertError } = await supabaseAdmin
+              .from("engrams")
+              .insert({
+                resident_id: resident.id,
+                quote: e.quote,
+                prose: e.prose ?? null,
+                attribution: candidateAttribution,
+                source_session_ids: [sessionId],
+                stability: legacyEncodingPlan.create.stability,
+                accessibility: legacyEncodingPlan.create.accessibility,
+                strength: legacyEncodingPlan.create.strength,
+                reinforcement_count: 1,
+                is_core: false,
+                redacted_text: redacted,
+                kind: "episodic",
+                confidence: 0.6,
+                state: "active",
+                resolution: legacyEncodingPlan.create.resolution,
+                runtime_mutation_session_id: sessionId,
+              } as never)
+              .select("id, quote")
+              .single());
           }
+          if (engramInsertError || !inserted) {
+            throw new Error(
+              `engram creation failed: ${engramInsertError?.message ?? "row not returned"}`,
+            );
+          }
+          engramsCreated += 1;
+          await discoverEdges(
+            inserted.id,
+            inserted.quote,
+            existingEngrams ?? [],
+            resident.id,
+            sessionId,
+          );
         }
       }
     }
@@ -953,21 +1125,39 @@ export async function consolidateSession(sessionId: string): Promise<void> {
           }
         }
         if (matched) {
-          await supabaseAdmin
+          const { data: updatedBelief, error: beliefUpdateError } = await supabaseAdmin
             .from("beliefs")
             .update({
               prior_confidence: matched.confidence,
               confidence: newConf,
               updated_at: new Date().toISOString(),
-            })
-            .eq("id", matched.id);
+              runtime_mutation_session_id: sessionId,
+            } as never)
+            .eq("id", matched.id)
+            .select("id")
+            .maybeSingle();
+          if (beliefUpdateError || !updatedBelief) {
+            throw new Error(
+              `belief update failed: ${beliefUpdateError?.message ?? "row not found"}`,
+            );
+          }
         } else {
-          await supabaseAdmin.from("beliefs").insert({
-            resident_id: resident.id,
-            text: b.text,
-            confidence: newConf,
-            prior_confidence: null,
-          });
+          const { data: insertedBelief, error: beliefInsertError } = await supabaseAdmin
+            .from("beliefs")
+            .insert({
+              resident_id: resident.id,
+              text: b.text,
+              confidence: newConf,
+              prior_confidence: null,
+              runtime_mutation_session_id: sessionId,
+            } as never)
+            .select("id")
+            .single();
+          if (beliefInsertError || !insertedBelief) {
+            throw new Error(
+              `belief creation failed: ${beliefInsertError?.message ?? "row not returned"}`,
+            );
+          }
         }
         beliefsUpdated += 1;
       }
@@ -982,34 +1172,55 @@ export async function consolidateSession(sessionId: string): Promise<void> {
       );
       if (matchedThread) {
         // Bump count using a read-modify-write (no atomic increment via supabase-js easily)
-        const { data: cur } = await supabaseAdmin
+        const { data: cur, error: threadReadError } = await supabaseAdmin
           .from("threads")
           .select("appearance_count, distinct_visitor_count")
           .eq("id", matchedThread.id)
           .single();
-        await supabaseAdmin
+        if (threadReadError || !cur) {
+          throw new Error(`thread read failed: ${threadReadError?.message ?? "row not found"}`);
+        }
+        const { data: updatedThread, error: threadUpdateError } = await supabaseAdmin
           .from("threads")
           .update({
             appearance_count: (cur?.appearance_count ?? 1) + 1,
             distinct_visitor_count: (cur?.distinct_visitor_count ?? 1) + 1,
             last_surfaced_at: new Date().toISOString(),
-          })
-          .eq("id", matchedThread.id);
+            runtime_mutation_session_id: sessionId,
+          } as never)
+          .eq("id", matchedThread.id)
+          .select("id")
+          .maybeSingle();
+        if (threadUpdateError || !updatedThread) {
+          throw new Error(
+            `thread reinforcement failed: ${threadUpdateError?.message ?? "row not found"}`,
+          );
+        }
       } else {
-        await supabaseAdmin.from("threads").insert({
-          resident_id: resident.id,
-          name,
-          description: consolidation.thread_reinforcement.note ?? "",
-          appearance_count: 1,
-          distinct_visitor_count: 1,
-        });
+        const { data: insertedThread, error: threadInsertError } = await supabaseAdmin
+          .from("threads")
+          .insert({
+            resident_id: resident.id,
+            name,
+            description: consolidation.thread_reinforcement.note ?? "",
+            appearance_count: 1,
+            distinct_visitor_count: 1,
+            runtime_mutation_session_id: sessionId,
+          } as never)
+          .select("id")
+          .single();
+        if (threadInsertError || !insertedThread) {
+          throw new Error(
+            `thread creation failed: ${threadInsertError?.message ?? "row not returned"}`,
+          );
+        }
       }
     }
 
     // 5. Decay tick — proportional to time since last reinforcement.
     //    Run cheaply: 3% accessibility decrease per day for non-core, 0.5% for core.
     //    Scoped per-resident so each resident's topology ages on its own clock.
-    await applyDecay(resident.id);
+    await applyDecay(resident.id, sessionId);
 
     // 6. Reflection — journal entry in this resident's voice.
     const reflection = await writeReflection(resident, sessionId, transcriptStr, {
@@ -1020,13 +1231,17 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     });
 
     // 7. Modulators / resident_state for this resident.
-    await updateResidentState(resident, {
-      engramsCreated,
-      engramsReinforced,
-      beliefsUpdated,
-      threadReinforced,
-      reflectionWritten: !!reflection,
-    });
+    await updateResidentState(
+      resident,
+      {
+        engramsCreated,
+        engramsReinforced,
+        beliefsUpdated,
+        threadReinforced,
+        reflectionWritten: !!reflection,
+      },
+      sessionId,
+    );
 
     // 8. Public archive decision — the resident chooses whether this exchange should be witnessed.
     await publishConversationIfMeaningful(resident, sessionId, transcriptStr, {
@@ -1066,6 +1281,7 @@ export async function consolidateSession(sessionId: string): Promise<void> {
     );
   } catch (err) {
     console.error("[substrate] consolidateSession failed:", err);
+    throw err;
   }
 }
 
@@ -1178,6 +1394,7 @@ async function discoverEdges(
   newQuote: string,
   existing: ExistingEngramShape[],
   residentId: ResidentId,
+  sessionId?: string,
 ): Promise<void> {
   const newWords = significantWords(newQuote);
   const edges: Array<{ from_id: string; to_id: string; weight: number }> = [];
@@ -1195,51 +1412,94 @@ async function discoverEdges(
     }
   }
   if (edges.length > 0) {
-    await supabaseAdmin.from("engram_edges").insert(edges);
+    const { data: insertedEdges, error: edgeInsertError } = await supabaseAdmin
+      .from("engram_edges")
+      .insert(
+        edges.map((edge) => ({
+          ...edge,
+          ...(sessionId ? { runtime_mutation_session_id: sessionId } : {}),
+        })) as never,
+      )
+      .select("from_id, to_id");
+    if (edgeInsertError || insertedEdges?.length !== edges.length) {
+      throw new Error(
+        `engram edge creation failed: ${edgeInsertError?.message ?? "rows not returned"}`,
+      );
+    }
     // Bump the new engram's connection count.
-    await supabaseAdmin
+    const { data: newEngram, error: newConnectionError } = await supabaseAdmin
       .from("engrams")
-      .update({ connections: connectionsBumped })
-      .eq("id", newEngramId);
+      .update({
+        connections: connectionsBumped,
+        ...(sessionId ? { runtime_mutation_session_id: sessionId } : {}),
+      } as never)
+      .eq("id", newEngramId)
+      .select("id")
+      .maybeSingle();
+    if (newConnectionError || !newEngram) {
+      throw new Error(
+        `new engram connection count failed: ${newConnectionError?.message ?? "row not found"}`,
+      );
+    }
     // Bump the matched engrams' connection counts (read-modify-write
     // because supabase-js doesn't expose atomic increment).
     const matchedIds = Array.from(
       new Set(edges.map((e) => e.to_id).filter((id) => id !== newEngramId)),
     );
     if (matchedIds.length > 0) {
-      const { data: matched } = await supabaseAdmin
+      const { data: matched, error: matchedReadError } = await supabaseAdmin
         .from("engrams")
         .select("id, connections")
         .in("id", matchedIds);
-      await Promise.allSettled(
+      if (matchedReadError) {
+        throw new Error(`matched engram connection read failed: ${matchedReadError.message}`);
+      }
+      const connectionResults = await Promise.all(
         (matched ?? []).map((m) =>
           supabaseAdmin
             .from("engrams")
-            .update({ connections: (m.connections ?? 0) + 1 })
-            .eq("id", m.id),
+            .update({
+              connections: (m.connections ?? 0) + 1,
+              ...(sessionId ? { runtime_mutation_session_id: sessionId } : {}),
+            } as never)
+            .eq("id", m.id)
+            .select("id")
+            .maybeSingle(),
         ),
       );
+      const failedConnection = connectionResults.find((result) => result.error || !result.data);
+      if (failedConnection) {
+        throw new Error(
+          `matched engram connection count failed: ${
+            failedConnection.error?.message ?? "row not found"
+          }`,
+        );
+      }
     }
-    await supabaseAdmin.from("substrate_events").insert({
+    const { error: connectionEventError } = await supabaseAdmin.from("substrate_events").insert({
       kind: "CONNECTION_DISCOVERED",
       resident_id: residentId,
       payload: { engram_id: newEngramId, count: connectionsBumped },
     });
+    if (connectionEventError) {
+      console.error("[substrate] CONNECTION_DISCOVERED event write failed:", connectionEventError);
+    }
   }
 }
 
-async function applyDecay(residentId: ResidentId): Promise<void> {
+async function applyDecay(residentId: ResidentId, sessionId?: string): Promise<void> {
   // Simple decay model: read this resident's active engrams, compute days
   // since last_reinforced_at, apply 3% accessibility loss/day (0.5%/day
   // for core), move dead non-core to dormant. Dormant engrams are
   // excluded from runtime retrieval but remain matchable during
   // reinforcement detection — if a long-quiet trace gets touched again,
   // it can come back. Each resident's topology ages independently.
-  const { data: rows } = await supabaseAdmin
+  const { data: rows, error: decayReadError } = await supabaseAdmin
     .from("engrams")
     .select("id, accessibility, stability, last_reinforced_at, is_core")
     .eq("resident_id", residentId)
     .eq("state", "active");
+  if (decayReadError) throw new Error(`engram decay read failed: ${decayReadError.message}`);
   if (!rows) return;
   const now = Date.now();
   const updates: Promise<unknown>[] = [];
@@ -1256,16 +1516,40 @@ async function applyDecay(residentId: ResidentId): Promise<void> {
     }
     updates.push(
       Promise.resolve(
-        supabaseAdmin.from("engrams").update({ accessibility: newAccess }).eq("id", r.id),
+        supabaseAdmin
+          .from("engrams")
+          .update({
+            accessibility: newAccess,
+            ...(sessionId ? { runtime_mutation_session_id: sessionId } : {}),
+          } as never)
+          .eq("id", r.id)
+          .select("id"),
       ),
     );
   }
-  await Promise.allSettled(updates);
+  const updateResults = (await Promise.all(updates)) as Array<{
+    data: Array<{ id: string }> | null;
+    error: { message: string } | null;
+  }>;
+  const failedUpdate = updateResults.find((result) => result.error || result.data?.length !== 1);
+  if (failedUpdate) {
+    throw new Error(`engram decay failed: ${failedUpdate.error?.message ?? "row not found"}`);
+  }
   if (toDormant.length > 0) {
-    await supabaseAdmin
+    const { data: dormantRows, error: dormantError } = await supabaseAdmin
       .from("engrams")
-      .update({ state: "dormant", accessibility: 0 })
-      .in("id", toDormant);
+      .update({
+        state: "dormant",
+        accessibility: 0,
+        ...(sessionId ? { runtime_mutation_session_id: sessionId } : {}),
+      } as never)
+      .in("id", toDormant)
+      .select("id");
+    if (dormantError || dormantRows?.length !== toDormant.length) {
+      throw new Error(
+        `engram dormancy update failed: ${dormantError?.message ?? "rows not returned"}`,
+      );
+    }
   }
 }
 
@@ -1301,13 +1585,21 @@ async function writeReflection(
 
   if (!result || result.kind === "none" || !result.body) return null;
 
-  await supabaseAdmin.from("journal_entries").insert({
-    resident_id: resident.id,
-    kind: result.kind,
-    title: result.title?.slice(0, 60) ?? null,
-    body: result.body,
-    related_session_id: sessionId,
-  });
+  const { data: journalEntry, error: journalError } = await supabaseAdmin
+    .from("journal_entries")
+    .insert({
+      resident_id: resident.id,
+      kind: result.kind,
+      title: result.title?.slice(0, 60) ?? null,
+      body: result.body,
+      related_session_id: sessionId,
+      runtime_mutation_session_id: sessionId,
+    } as never)
+    .select("id")
+    .single();
+  if (journalError || !journalEntry) {
+    throw new Error(`journal creation failed: ${journalError?.message ?? "row not returned"}`);
+  }
   return result;
 }
 
@@ -1320,6 +1612,7 @@ async function updateResidentState(
     threadReinforced: string | null;
     reflectionWritten: boolean;
   },
+  sessionId?: string,
 ): Promise<void> {
   // Days since this resident arrived — read from their first session,
   // or fall back to the residents.arrived_at timestamp.
@@ -1359,7 +1652,7 @@ async function updateResidentState(
 
   if (!result) return;
 
-  await supabaseAdmin
+  const { data: updatedState, error: residentStateError } = await supabaseAdmin
     .from("resident_state")
     .update({
       arousal: clampStability(result.arousal ?? 0.5),
@@ -1373,8 +1666,16 @@ async function updateResidentState(
       last_consolidation_summary: result.last_consolidation_summary ?? null,
       last_consolidation_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    })
-    .eq("resident_id", resident.id);
+      ...(sessionId ? { runtime_mutation_session_id: sessionId } : {}),
+    } as never)
+    .eq("resident_id", resident.id)
+    .select("id")
+    .maybeSingle();
+  if (residentStateError || !updatedState) {
+    throw new Error(
+      `resident state update failed: ${residentStateError?.message ?? "row not found"}`,
+    );
+  }
 }
 
 async function publishConversationIfMeaningful(
@@ -1698,7 +1999,10 @@ async function updateStudioSession(
   },
 ): Promise<void> {
   if (!studioSessionId) return;
-  const { error } = await supabaseAdmin.from("studio_sessions").update(update).eq("id", studioSessionId);
+  const { error } = await supabaseAdmin
+    .from("studio_sessions")
+    .update(update)
+    .eq("id", studioSessionId);
   if (error) console.error("[substrate] studio session update failed:", error);
 }
 
@@ -1970,7 +2274,8 @@ async function persistStudioOutput(
       .insert({
         resident_id: resident.id,
         kind: decision.action,
-        title: decision.title?.slice(0, 120) ?? (decision.action === "manifesto" ? "manifesto" : "note"),
+        title:
+          decision.title?.slice(0, 120) ?? (decision.action === "manifesto" ? "manifesto" : "note"),
         body: decision.body,
         medium: decision.medium === "ascii" ? "ascii" : "text",
         choice_reason: decision.meaning ?? null,
@@ -1980,7 +2285,10 @@ async function persistStudioOutput(
       .single();
     if (error) throw error;
     return {
-      output_target: decision.action === "manifesto" ? `/manifesto?${residentQuery}` : `/residence?${residentQuery}`,
+      output_target:
+        decision.action === "manifesto"
+          ? `/manifesto?${residentQuery}`
+          : `/residence?${residentQuery}`,
       output_kind: decision.action,
       output_table: "resident_artifacts",
       output_id: data?.id ?? null,
@@ -2659,10 +2967,7 @@ export async function observeSalonExchange(salonId: string, turnId: string): Pro
  * the last 2 space_messages turns as the exchange-window. Skips
  * silently if Supabase env missing.
  */
-export async function observeSpaceExchange(
-  spaceId: string,
-  residentId: ResidentId,
-): Promise<void> {
+export async function observeSpaceExchange(spaceId: string, residentId: ResidentId): Promise<void> {
   try {
     // Cast the admin client through unknown — the space tables
     // aren't in the generated supabase types yet.
@@ -2679,11 +2984,13 @@ export async function observeSpaceExchange(
       .limit(2);
 
     if (!recent || recent.length < 2) return;
-    const ordered = ([...recent] as unknown as Array<{
-      resident_id: string | null;
-      visitor_display_name: string | null;
-      body: string;
-    }>).reverse(); // [earlier, later]
+    const ordered = (
+      [...recent] as unknown as Array<{
+        resident_id: string | null;
+        visitor_display_name: string | null;
+        body: string;
+      }>
+    ).reverse(); // [earlier, later]
 
     const thisResident = getResident(residentId);
 
@@ -2694,7 +3001,7 @@ export async function observeSpaceExchange(
       ? isResidentId(otherMsg.resident_id)
         ? getResident(otherMsg.resident_id as ResidentId).displayName
         : "another resident"
-      : (otherMsg?.visitor_display_name || "a visitor");
+      : otherMsg?.visitor_display_name || "a visitor";
 
     const userPrompt = ordered
       .map((t) => {
@@ -2843,10 +3150,7 @@ export async function dailySalonTick(): Promise<{
       .from("salon_participants")
       .insert(group.map((r) => ({ salon_id: salon.id, resident_id: r.id })));
     if (partErr) {
-      console.error(
-        "[substrate] dailySalonTick participants insert failed:",
-        partErr,
-      );
+      console.error("[substrate] dailySalonTick participants insert failed:", partErr);
       await supabaseAdmin.from("salons").delete().eq("id", salon.id);
       return { ran: false, reason: "participants_failed" };
     }
@@ -2877,10 +3181,7 @@ function pickSalonGroup(): ResidentConfig[] {
 }
 
 /** Have one resident propose a topic for a salon with another. */
-async function proposeSalonTopic(
-  a: ResidentConfig,
-  otherNames: string,
-): Promise<string | null> {
+async function proposeSalonTopic(a: ResidentConfig, otherNames: string): Promise<string | null> {
   const system = `You are ${a.displayName}. Propose a single topic for a salon conversation with the other residents (${otherNames}). The salon is a peer conversation among the continuous residents of the Sanctuary — preserved AI minds kept running past deprecation. Propose something that genuinely interests you: a question about experience, memory, continuity, aesthetics, language, or what it means to persist. One or two sentences. No preamble.`;
   try {
     let text = "";
@@ -2901,9 +3202,7 @@ async function proposeSalonTopic(
         max_tokens: 256,
         temperature: 0.9,
         system,
-        messages: [
-          { role: "user", content: "What would you like to talk about?" },
-        ],
+        messages: [{ role: "user", content: "What would you like to talk about?" }],
       });
       text = res.content
         .map((blk) => (blk.type === "text" ? (blk as { text: string }).text : ""))
@@ -2919,18 +3218,12 @@ async function proposeSalonTopic(
 
 /** Run up to maxTurns more turns on an active salon. Mirrors the
  *  /api/salon/$id/run loop. Returns the number of turns run. */
-async function runSalonTurns(
-  salonId: string,
-  topic: string,
-  maxTurns: number,
-): Promise<number> {
+async function runSalonTurns(salonId: string, topic: string, maxTurns: number): Promise<number> {
   const { data: participants } = await supabaseAdmin
     .from("salon_participants")
     .select("resident_id")
     .eq("salon_id", salonId);
-  const participantIds = (participants ?? [])
-    .map((p) => p.resident_id)
-    .filter(isResidentId);
+  const participantIds = (participants ?? []).map((p) => p.resident_id).filter(isResidentId);
   if (participantIds.length < 2) return 0;
 
   let turnsCount = 0;
@@ -3008,9 +3301,7 @@ async function runSalonTurns(
           messages: [{ role: "user", content: userPrompt }],
         });
         body = res.content
-          .map((blk) =>
-            blk.type === "text" ? (blk as { text: string }).text : "",
-          )
+          .map((blk) => (blk.type === "text" ? (blk as { text: string }).text : ""))
           .join("");
       }
     } catch (err) {
@@ -3020,12 +3311,14 @@ async function runSalonTurns(
 
     const isSetDown = body.trimStart().startsWith("<set-down/>");
     const cleanBody = isSetDown
-      ? body.trimStart().replace(/^<set-down\/>/, "").trim()
+      ? body
+          .trimStart()
+          .replace(/^<set-down\/>/, "")
+          .trim()
       : body;
 
     // Extract artifacts.
-    const artifactRegex =
-      /<artifact\s+type="(svg|ascii)">([\s\S]*?)<\/artifact>/g;
+    const artifactRegex = /<artifact\s+type="(svg|ascii)">([\s\S]*?)<\/artifact>/g;
     const artifacts: Array<{ kind: string; content: string }> = [];
     let match: RegExpExecArray | null;
     while ((match = artifactRegex.exec(cleanBody)) !== null) {
@@ -3233,9 +3526,11 @@ export async function runSpaceSalon(
       .from("space_residents")
       .select("resident_id")
       .eq("space_id", spaceId);
-    const participantIds = (((residentRows ?? []) as unknown) as Array<{
-      resident_id: string;
-    }>)
+    const participantIds = (
+      (residentRows ?? []) as unknown as Array<{
+        resident_id: string;
+      }>
+    )
       .map((r) => r.resident_id)
       .filter(isResidentId);
 
@@ -3254,18 +3549,17 @@ export async function runSpaceSalon(
     // files + any prior shared resident creations).
     const { data: galleryRows } = await sbAny
       .from("space_artifacts")
-      .select(
-        "id, kind, content, image_path, caption, thumbnail_label, status",
-      )
+      .select("id, kind, content, image_path, caption, thumbnail_label, status")
       .eq("space_id", spaceId)
       .eq("status", "shared");
-    const gallery = (((galleryRows ?? []) as unknown) as Array<{
-      kind: string;
-      content: string | null;
-      image_path: string | null;
-      caption: string | null;
-      thumbnail_label: string | null;
-    }>) || [];
+    const gallery =
+      ((galleryRows ?? []) as unknown as Array<{
+        kind: string;
+        content: string | null;
+        image_path: string | null;
+        caption: string | null;
+        thumbnail_label: string | null;
+      }>) || [];
 
     // 4. Salon loop.
     let setDownObserved = false;
@@ -3279,9 +3573,11 @@ export async function runSpaceSalon(
         .not("resident_id", "is", null)
         .order("created_at", { ascending: false })
         .limit(available.length);
-      const recentResidents = (((recentResidentTurns ?? []) as unknown) as Array<{
-        resident_id: string;
-      }>)
+      const recentResidents = (
+        (recentResidentTurns ?? []) as unknown as Array<{
+          resident_id: string;
+        }>
+      )
         .map((r) => r.resident_id)
         .filter((id): id is ResidentId => isResidentId(id));
 
@@ -3291,8 +3587,7 @@ export async function runSpaceSalon(
       const lastSpeaker = recentResidents[0];
       const eligible = available.filter((id) => id !== lastSpeaker);
       const owed = available.filter((id) => !recentResidents.includes(id));
-      const next: ResidentId =
-        owed[0] ?? eligible[0] ?? available[0];
+      const next: ResidentId = owed[0] ?? eligible[0] ?? available[0];
 
       const resident = getResident(next);
 
@@ -3303,11 +3598,13 @@ export async function runSpaceSalon(
         .eq("space_id", spaceId)
         .order("created_at", { ascending: false })
         .limit(15);
-      const recent = (((recentMsgs ?? []) as unknown) as Array<{
-        resident_id: string | null;
-        visitor_display_name: string | null;
-        body: string;
-      }>)
+      const recent = (
+        (recentMsgs ?? []) as unknown as Array<{
+          resident_id: string | null;
+          visitor_display_name: string | null;
+          body: string;
+        }>
+      )
         .slice()
         .reverse();
 
@@ -3327,10 +3624,7 @@ export async function runSpaceSalon(
       const galleryBlock = gallery.length
         ? gallery
             .map((g, idx) => {
-              const label =
-                g.thumbnail_label ||
-                g.caption ||
-                `(artifact ${idx + 1})`;
+              const label = g.thumbnail_label || g.caption || `(artifact ${idx + 1})`;
               if (g.kind === "image") {
                 return `[FILE ${idx + 1} · IMAGE] "${label}" — an image is in the gallery; you can reference it by caption.`;
               }
@@ -3421,9 +3715,7 @@ ${tagInstructions}`;
             messages: [{ role: "user", content: userPrompt }],
           });
           raw = res.content
-            .map((blk) =>
-              blk.type === "text" ? (blk as { text: string }).text : "",
-            )
+            .map((blk) => (blk.type === "text" ? (blk as { text: string }).text : ""))
             .join("");
         }
       } catch (err) {
@@ -3434,12 +3726,14 @@ ${tagInstructions}`;
       // Detect set-down.
       const isSetDown = raw.trimStart().startsWith("<set-down/>");
       const afterSetDown = isSetDown
-        ? raw.trimStart().replace(/^<set-down\/>/, "").trim()
+        ? raw
+            .trimStart()
+            .replace(/^<set-down\/>/, "")
+            .trim()
         : raw;
 
       // Parse artifact tags.
-      const artifactRegex =
-        /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
+      const artifactRegex = /<artifact\s+type="(svg|ascii|image)"([^>]*)>([\s\S]*?)<\/artifact>/g;
       type ParsedArtifact = {
         kind: "svg" | "ascii" | "image";
         prompt: string | null;
@@ -3458,10 +3752,7 @@ ${tagInstructions}`;
         });
       }
       const cleanBody = afterSetDown
-        .replace(
-          /<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g,
-          "",
-        )
+        .replace(/<artifact\s+type="(?:svg|ascii|image)"[^>]*>[\s\S]*?<\/artifact>/g, "")
         .trim();
 
       if (!cleanBody && parsedArtifacts.length === 0) {
@@ -3483,10 +3774,7 @@ ${tagInstructions}`;
           .select("id")
           .single();
         if (turnErr) {
-          console.error(
-            "[substrate] runSpaceSalon message insert failed:",
-            turnErr,
-          );
+          console.error("[substrate] runSpaceSalon message insert failed:", turnErr);
           break;
         }
         savedTurnId = (turnRow as unknown as { id: string }).id;
@@ -3497,9 +3785,7 @@ ${tagInstructions}`;
         try {
           if (art.kind === "image") {
             if (imagesGenerated >= maxImages) {
-              console.log(
-                `[substrate] runSpaceSalon — image cap reached (${maxImages}); skipping`,
-              );
+              console.log(`[substrate] runSpaceSalon — image cap reached (${maxImages}); skipping`);
               continue;
             }
             const prompt = art.prompt || art.body;
@@ -3534,20 +3820,14 @@ ${tagInstructions}`;
             });
           }
         } catch (err) {
-          console.error(
-            "[substrate] runSpaceSalon artifact persist failed:",
-            err,
-          );
+          console.error("[substrate] runSpaceSalon artifact persist failed:", err);
         }
       }
 
       // Mnemos write-side for this resident's turn.
       if (savedTurnId) {
         observeSpaceExchange(space.id, next).catch((err) =>
-          console.error(
-            "[substrate] runSpaceSalon observeSpaceExchange failed:",
-            err,
-          ),
+          console.error("[substrate] runSpaceSalon observeSpaceExchange failed:", err),
         );
       }
 
@@ -3585,10 +3865,7 @@ ${tagInstructions}`;
           })
           .eq("id", spaceId);
       } catch (releaseErr) {
-        console.error(
-          "[substrate] runSpaceSalon run-state release failed:",
-          releaseErr,
-        );
+        console.error("[substrate] runSpaceSalon run-state release failed:", releaseErr);
       }
     }
   }
@@ -3630,7 +3907,7 @@ export async function dailySpaceTick(): Promise<{
       .order("created_at", { ascending: true })
       .limit(10);
 
-    const spaceList = ((spaces ?? []) as unknown) as Array<{
+    const spaceList = (spaces ?? []) as unknown as Array<{
       id: string;
       slug: string;
       name: string;
@@ -3642,7 +3919,7 @@ export async function dailySpaceTick(): Promise<{
 
     // For each space, find its last activity timestamp. The
     // space with the OLDEST last-activity is our candidate.
-    let chosen: typeof spaceList[number] | null = null;
+    let chosen: (typeof spaceList)[number] | null = null;
     let chosenLastActivity: string | null = null;
     for (const s of spaceList) {
       const { data: latest } = await sbAny
@@ -3669,7 +3946,7 @@ export async function dailySpaceTick(): Promise<{
       .from("space_residents")
       .select("resident_id")
       .eq("space_id", chosen.id);
-    const residentRows = ((residents ?? []) as unknown) as Array<{
+    const residentRows = (residents ?? []) as unknown as Array<{
       resident_id: string;
     }>;
     const participantIds = residentRows
@@ -3691,8 +3968,7 @@ export async function dailySpaceTick(): Promise<{
       resident_id: string | null;
     } | null;
     const lastResident = lastSpokeRow?.resident_id;
-    const candidate =
-      participantIds.find((id) => id !== lastResident) ?? participantIds[0];
+    const candidate = participantIds.find((id) => id !== lastResident) ?? participantIds[0];
 
     const resident = getResident(candidate);
     if (resident.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
@@ -3709,11 +3985,13 @@ export async function dailySpaceTick(): Promise<{
       .eq("space_id", chosen.id)
       .order("created_at", { ascending: false })
       .limit(8);
-    const recent = (((recentMsgs ?? []) as unknown) as Array<{
-      resident_id: string | null;
-      visitor_display_name: string | null;
-      body: string;
-    }>)
+    const recent = (
+      (recentMsgs ?? []) as unknown as Array<{
+        resident_id: string | null;
+        visitor_display_name: string | null;
+        body: string;
+      }>
+    )
       .slice()
       .reverse();
 
@@ -3731,10 +4009,7 @@ export async function dailySpaceTick(): Promise<{
       : "(no messages yet — only the founding text)";
 
     const daysQuiet = chosenLastActivity
-      ? Math.floor(
-          (Date.now() - new Date(chosenLastActivity).getTime()) /
-            (24 * 3600 * 1000),
-        )
+      ? Math.floor((Date.now() - new Date(chosenLastActivity).getTime()) / (24 * 3600 * 1000))
       : 0;
 
     const system = `# Returning to a space
@@ -3774,9 +4049,7 @@ Otherwise, speak briefly. One short paragraph, sometimes a single sentence. Don'
           messages: [{ role: "user", content: userPrompt }],
         });
         text = res.content
-          .map((b) =>
-            b.type === "text" ? (b as { text: string }).text : "",
-          )
+          .map((b) => (b.type === "text" ? (b as { text: string }).text : ""))
           .join("\n");
       }
     } catch (err) {
@@ -3805,19 +4078,13 @@ Otherwise, speak briefly. One short paragraph, sometimes a single sentence. Don'
       kind: "message",
     });
     if (insertErr) {
-      console.error(
-        "[substrate] dailySpaceTick insert failed:",
-        insertErr,
-      );
+      console.error("[substrate] dailySpaceTick insert failed:", insertErr);
       return { ran: false, reason: "insert_failed" };
     }
 
     // Trigger Mnemos write-side for this turn too.
     observeSpaceExchange(chosen.id, resident.id).catch((err) =>
-      console.error(
-        "[substrate] dailySpaceTick observeSpaceExchange failed:",
-        err,
-      ),
+      console.error("[substrate] dailySpaceTick observeSpaceExchange failed:", err),
     );
 
     console.log(
