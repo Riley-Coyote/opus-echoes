@@ -187,7 +187,16 @@ body.machine-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 .glyph{width:12px;height:12px;background:var(--soft);clip-path:polygon(0 0,33% 0,33% 33%,66% 33%,66% 0,100% 0,100% 66%,66% 66%,66% 100%,33% 100%,33% 66%,0 66%)}
 .mark b{font-family:var(--pix);font-size:11px;letter-spacing:.14em;font-weight:400;color:var(--ink)}
 .mark .sep{color:var(--ghost)} .mark .rm{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--quiet);text-transform:uppercase}
-.hud-top .r{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--quiet)}
+.hud-top .r{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--quiet);white-space:nowrap}
+/* the roster rides directly under the wordmark row — top-anchored, because at
+   375px the canvas is only ~147px tall and anything bottom-anchored lands on
+   the figures' heads. Hidden until the live layer ships. */
+.hud-head{display:flex;flex-direction:column}
+.hud-roster{display:flex;flex-wrap:wrap;gap:0 18px;padding:0 26px 8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em}
+.hud-roster[hidden]{display:none}
+.hud-roster .rs{display:inline-flex;align-items:baseline;gap:6px}
+.hud-roster .nm{color:var(--soft);text-transform:lowercase}
+.hud-roster .st{color:var(--ghost);text-transform:lowercase}
 .hud-bot{display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 24px;gap:20px}
 .hud-bot h1{margin:0;font-family:var(--display);font-weight:200;font-size:clamp(38px,5.4vw,62px);line-height:.95;letter-spacing:-.028em;text-shadow:0 3px 26px rgba(0,0,0,.65)}
 .hud-bot p{margin:14px 0 0;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--soft);max-width:48ch;text-shadow:0 1px 10px rgba(0,0,0,.6)}
@@ -310,9 +319,12 @@ body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   <div id="npcClick" title="click a resident to open their machine"></div>
   <div id="boot">opening the house…</div>
   <div class="hud">
-    <div class="hud-top">
-      <div class="mark"><span class="glyph"></span><b>MNEMOS</b><span class="sep">·</span><span class="rm">THE SANCTUARY</span></div>
-      <div class="r">PERPETUAL DUSK</div>
+    <div class="hud-head">
+      <div class="hud-top">
+        <div class="mark"><span class="glyph"></span><b>MNEMOS</b><span class="sep">·</span><span class="rm">THE SANCTUARY</span></div>
+        <div class="r" id="duskClock" data-min="1111">PERPETUAL DUSK</div>
+      </div>
+      <div class="hud-roster" id="roster" hidden></div>
     </div>
     <div class="hud-bot">
       <div>
@@ -381,12 +393,74 @@ const FRAME_W=1530, CAM_X=90, ROOM_H=600, MINBAND=300, CONDENSE=360;
 const stage=document.getElementById('stage'), spacer=document.getElementById('spacer'), cv=document.getElementById('stageCanvas'), sill=document.getElementById('sill');
 let engine=null, hoverNpc=null, machineOpen=false;
 
+/* ── the rule ────────────────────────────────────────────────────────────────
+   Nothing that reaches the screen as a resident's voice is invented. Feed lines
+   are matched against a whitelist of archived text (SPOKEN, below) and dropped
+   on a miss — a whitelist, not a blacklist, so the engine's own strings (system
+   lines, the cat, weather) can never render even if new ones are added upstream.
+
+   mutters is DELETED rather than emptied: the engine filters on n.def.mutters
+   being truthy, and an empty array is truthy in JS — it would pass the filter
+   and hand undefined to speak(), which reads text.length. */
+const SPOKEN=new Map();   /* 'NAME|text' -> provenance. populated once the corpus lands. */
+const feedSeen=[];
+
+/* the engine's roster words describe a live model; these describe a drawn
+   figure. attending/resting/reflecting/withdrawn are protected and mean
+   something else entirely — see CLAUDE.md. */
+const STATE_LABEL={ walking:'walking', sitting:'seated', talking:'in an exchange',
+  idle:'standing', 'with you':'standing', visiting:'standing' };
+
+const clockEl=document.getElementById('duskClock'), rosterEl=document.getElementById('roster');
+let clockNow='', restartAt=0, restarts=0, lastMin=null;
+function renderClock(){
+  if(!clockNow) return;
+  const fresh=restartAt&&performance.now()-restartAt<8000;
+  const next='PERPETUAL DUSK · '+clockNow+(fresh?' · RESTARTED':'');
+  if(clockEl.textContent!==next) clockEl.textContent=next;
+}
+function onClock(s){
+  const p=s.split(':'), mins=(+p[0])*60+(+p[1]);
+  /* detect the loop by the clock going backwards, not by matching the engine's
+     own restart string — decoupled from engine internals */
+  if(lastMin!=null&&mins<lastMin){ restarts++; restartAt=performance.now(); clockEl.dataset.restarts=String(restarts); }
+  lastMin=mins; clockNow=s; clockEl.dataset.min=String(mins); renderClock();
+}
+setInterval(renderClock,1000);
+
+function onRoster(list){
+  for(const r of list){
+    let el=rosterEl.querySelector('[data-cid="'+r.id+'"]');
+    if(!el){
+      el=document.createElement('span'); el.className='rs'; el.dataset.cid=r.id;
+      const nm=document.createElement('span'); nm.className='nm';
+      const st=document.createElement('span'); st.className='st';
+      el.append(nm,st); rosterEl.appendChild(el);
+    }
+    const dbid=CAST_TO_DB[r.id];
+    if(dbid) el.dataset.rid=dbid; else el.removeAttribute('data-rid');
+    const label=STATE_LABEL[r.state]||'standing';
+    el.dataset.state=label;
+    el.querySelector('.nm').textContent=(dbid?(D.residents.find(x=>x.id===dbid)||{}).display_name||r.name:r.name).toLowerCase();
+    el.querySelector('.st').textContent=label;
+  }
+}
+
+function onFeed(entry){
+  feedSeen.push(entry);
+  if(entry.kind!=='line') return;                       /* system lines never render */
+  const hit=SPOKEN.get(entry.who+'|'+entry.text);
+  if(!hit) return;                                      /* not from the archive — drop it */
+  /* the visible strip lands in the next phase */
+}
+
 try{
   engine=create({
     mount:stage, palette:PALETTE, rooms:{ sanctuary: makeSanctuary({ note(){}, openDesk:(id)=>{ const d=CAST_TO_DB[id]; if(d) openMachine(d); } }) }, start:'sanctuary',
     width:FRAME_W, height:ROOM_H, walkBand:[352,402], wallBase:300,
-    cast: CAST.map((c,i)=>({ ...c, room:'sanctuary', x: 160 + i*150 })),
-    scripts:SCRIPTS, groupScripts:GROUP_SCRIPTS, ambient:AMBIENT, cat:CAT,
+    cast: CAST.map((c,i)=>{ const { mutters, ...rest }=c; return { ...rest, room:'sanctuary', x: 160 + i*150 }; }),
+    scripts:SCRIPTS, groupScripts:GROUP_SCRIPTS, ambient:[], cat:CAT,
+    onClock, onRoster, onFeed,
     bubbles:false, sound:false, storageKey:'mnemos:sanctuary:v2',
   });
   engine.drawAvatar=()=>{}; engine.drawPrompt=()=>{}; engine.interact=()=>{};
@@ -394,7 +468,11 @@ try{
   if(engine.clearKeys) engine.clearKeys();
   Object.defineProperty(engine,'camX',{ get:()=>CAM_X, set:()=>{}, configurable:true });
   document.getElementById('boot').style.display='none';
-}catch(err){ document.getElementById('boot').textContent='the room could not be opened: '+err.message; console.error(err); }
+  document.documentElement.dataset.world='ready';
+}catch(err){ document.getElementById('boot').textContent='the room could not be opened: '+err.message;
+  document.documentElement.dataset.world='failed'; console.error(err); }
+
+window.__world={ engine, spoken:SPOKEN, feed:feedSeen, exchanges:[] };
 
 /* hover nameplate over a resident in the world */
 const worldLayer=document.getElementById('worldLayer');
