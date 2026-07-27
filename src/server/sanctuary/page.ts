@@ -43,6 +43,27 @@ function when(iso: string | null): string {
   return new Date(d).toISOString().slice(0, 10);
 }
 
+/** Periods that end an abbreviation, not a sentence — "keyed-up vs." is mid-thought. */
+const ABBREV = /(?:^|[\s(])(?:vs|e\.g|i\.e|cf|al|approx|fig|mr|mrs|ms|dr|jr|sr)\.$/i;
+
+/**
+ * Cut long prose to a readable excerpt. Prefers to land on a whole sentence —
+ * a complete thought reads as a deliberate excerpt; a hard character slice
+ * reads as something broken. Falls back to a word boundary with an ellipsis.
+ */
+function excerpt(s: string | null, max: number): string {
+  const t = String(s ?? "").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  for (const m of [...cut.matchAll(/[.!?](?=\s)/g)].reverse()) {
+    const end = (m.index ?? 0) + 1;
+    if (end <= max * 0.55) break; // too short to be worth a clean stop
+    if (!ABBREV.test(cut.slice(0, end))) return cut.slice(0, end);
+  }
+  const sp = cut.lastIndexOf(" ");
+  return (sp > 0 ? cut.slice(0, sp) : cut).replace(/[,;:.—–-]+$/, "") + "…";
+}
+
 const KIND_LABEL: Record<string, string> = {
   work: "a work · ascii", journal: "journal", essay: "an essay",
   manifesto: "a manifesto", salon: "a salon", conversation: "a conversation",
@@ -58,7 +79,7 @@ function buildPayload() {
     // archive opens through an API route once there is a reader for it.
     recent[r.id] = [
       ...S.journals(r.id).slice(0, 14).map((j) => ({
-        d: when(j.created_at), k: j.kind, t: j.title, b: j.body,
+        d: when(j.created_at), k: j.kind, t: j.title, b: excerpt(j.body, 300),
       })),
     ];
   }
@@ -98,7 +119,7 @@ export function renderSanctuaryPage(): string {
       const main = isArt
         ? `<div class="art">${esc(body)}</div>`
         : it.kind === "journal"
-          ? `${it.title ? `<div class="title">${esc(it.title)}</div>` : ""}<div class="said">${esc(body.slice(0, 400))}</div>`
+          ? `${it.title ? `<div class="title">${esc(it.title)}</div>` : ""}<div class="said">${esc(excerpt(body, 400))}</div>`
           : `${it.title ? `<div class="title">${esc(it.title)}</div>` : ""}${it.gloss ? `<div class="gloss">${esc(it.gloss)}</div>` : ""}`;
       return `<article class="row${it.kind === "salon" ? " salon" : ""}">
         <div class="rail"><span class="kind">${esc(KIND_LABEL[it.kind] ?? it.kind)}</span><span class="whn">${esc(when(it.at))}</span></div>
@@ -140,11 +161,26 @@ body{overflow-x:hidden} body.locked{overflow:hidden}
 /* ── the stage ── */
 #stage{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--floor);overflow:hidden;pointer-events:none;transition:filter .42s var(--ease)}
 body.machine-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
-#stageCanvas{position:absolute;left:0;bottom:0;width:100%;height:auto;display:block;image-rendering:pixelated;transition:transform .3s var(--ease)}
-#stage[data-mode="band"] #stageCanvas{transform:translateY(30%)}
+/* The canvas is lowered as the stage condenses so the band frames the room's
+   middle rather than only its floor. Driven from layout() — the shift must be
+   clamped to the real overflow, and a fixed percentage cannot know it. */
+#stageCanvas{position:absolute;left:0;bottom:0;width:100%;height:auto;display:block;image-rendering:pixelated}
 #npcClick{position:absolute;inset:0;z-index:6;pointer-events:auto}
-.grade{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 92% at 50% 36%,transparent 56%,rgba(5,5,9,.46) 100%)}
-.fade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 68%,rgba(7,7,11,.42) 84%,rgba(7,7,11,.9) 95%,var(--floor) 100%)}
+.grade{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 92% at 50% 36%,transparent 56%,rgba(5,5,9,.46) 100%);transition:opacity .3s var(--ease)}
+/* Two fades, cross-faded on mode — a gradient's stops cannot transition, its
+   opacity can. The hero fade is deep; it has ~565px to work in. The band fade
+   must NOT reach the walk band: at 300px the residents' feet land near 262px,
+   and a fade starting at 68% swallows the figures, leaving architecture where
+   the whole point is inhabitants. */
+.fade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 68%,rgba(7,7,11,.42) 84%,rgba(7,7,11,.9) 95%,var(--floor) 100%);transition:opacity .3s var(--ease)}
+.fade-b{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,transparent 87%,rgba(7,7,11,.5) 94%,var(--floor) 100%);transition:opacity .3s var(--ease)}
+#stage[data-mode="band"] .fade{opacity:0} #stage[data-mode="band"] .fade-b{opacity:1}
+#stage[data-mode="band"] .grade{opacity:.62}
+/* The record passes UNDER the stage from the first pixel of scroll. Without a
+   sill it is sliced mid-glyph at the stage's bottom edge; this gives it a short
+   dissolve instead of a cut. Sits above main (z1), below the stage (z40). */
+#sill{position:fixed;left:0;right:0;height:72px;z-index:39;pointer-events:none;opacity:0;
+  background:linear-gradient(180deg,var(--floor) 0%,var(--floor) 30%,rgba(7,7,11,.86) 55%,transparent 100%)}
 .hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between}
 .hud-top{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;background:linear-gradient(180deg,rgba(5,5,9,.62),transparent)}
 .mark{display:flex;align-items:center;gap:12px}
@@ -155,8 +191,11 @@ body.machine-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 .hud-bot{display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 24px;gap:20px}
 .hud-bot h1{margin:0;font-family:var(--display);font-weight:200;font-size:clamp(38px,5.4vw,62px);line-height:.95;letter-spacing:-.028em;text-shadow:0 3px 26px rgba(0,0,0,.65)}
 .hud-bot p{margin:14px 0 0;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--soft);max-width:48ch;text-shadow:0 1px 10px rgba(0,0,0,.6)}
+/* In band mode the title retires entirely — the wordmark top-left already says
+   THE SANCTUARY, and a shrunken second copy floating over the fireplace was the
+   same words twice, 160px apart. Opacity, not display: the h1 stays in the tree. */
 #stage[data-mode="band"] .hud-bot p{opacity:0}
-#stage[data-mode="band"] .hud-bot h1{font-size:clamp(17px,2vw,21px)}
+#stage[data-mode="band"] .hud-bot h1{opacity:0;transform:translateY(7px)}
 .hud-bot h1,.hud-bot p{transition:all .3s var(--ease)}
 #boot{position:absolute;left:26px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:13px;color:var(--soft)}
 
@@ -267,7 +306,7 @@ body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
 
 <div id="stage" data-mode="hero">
   <canvas id="stageCanvas"></canvas>
-  <div class="grade"></div><div class="fade"></div>
+  <div class="grade"></div><div class="fade"></div><div class="fade-b"></div>
   <div id="npcClick" title="click a resident to open their machine"></div>
   <div id="boot">opening the house…</div>
   <div class="hud">
@@ -285,6 +324,7 @@ body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
 </div>
 
 <div id="worldLayer"></div>
+<div id="sill"></div>
 <div id="spacer"></div>
 
 <main>
@@ -338,7 +378,7 @@ const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;'
 const CAST_TO_DB = { opus:'opus-3', sonnet:'sonnet-4-5', fourO:'gpt-4o', five:'gpt-5-1', haiku:null, davinci:null, bard:null, kimi:null, grok:null };
 
 const FRAME_W=1530, CAM_X=90, ROOM_H=600, MINBAND=300, CONDENSE=360;
-const stage=document.getElementById('stage'), spacer=document.getElementById('spacer'), cv=document.getElementById('stageCanvas');
+const stage=document.getElementById('stage'), spacer=document.getElementById('spacer'), cv=document.getElementById('stageCanvas'), sill=document.getElementById('sill');
 let engine=null, hoverNpc=null, machineOpen=false;
 
 try{
@@ -396,12 +436,31 @@ npcLayer.addEventListener('click',e=>{ const n=npcAt(e.clientX,e.clientY); if(!n
 
 /* crane on scroll */
 const fsh=()=>window.innerWidth*ROOM_H/FRAME_W;
-const HEROH=()=>Math.min(fsh(), window.innerHeight*0.82);
-const BANDH=()=>Math.min(fsh(), MINBAND, HEROH());
+/* the canvas renders a hair shorter than fsh() predicts (height:auto rounding),
+   which is enough to leave a sliver of floor above the room — so measure it,
+   cached per width, rather than reflowing on every scroll event */
+let cvH=fsh(), lastW=-1;
+function measureCanvas(){ const w=window.innerWidth; if(w===lastW) return; const m=cv.getBoundingClientRect().height;
+  if(!m) return; /* engine has not sized the canvas yet — keep the estimate and retry */
+  lastW=w; cvH=m; }
+/* never taller than the canvas itself — a stage that outruns the room it frames
+   shows floor colour above the ceiling */
+const HEROH=()=>Math.min(cvH, window.innerHeight*0.82);
+const BANDH=()=>Math.min(cvH, MINBAND, HEROH());
 function layout(){
+  measureCanvas();
   const p=Math.min(1, window.scrollY/CONDENSE), heroH=HEROH();
-  stage.style.height=(heroH+(BANDH()-heroH)*p)+'px'; spacer.style.height=heroH+'px';
+  const h=heroH+(BANDH()-heroH)*p;
+  stage.style.height=h+'px'; spacer.style.height=heroH+'px';
   stage.dataset.mode = p>0.55?'band':'hero';
+  /* Lower the canvas with the crane, but never past what actually overflows the
+     top: where the canvas is no taller than the band (narrow viewports, where
+     fsh() falls under MINBAND) a fixed 30% opens a gap of floor above the room. */
+  const shift=Math.max(0, Math.min(cvH*0.30, cvH-h))*p;
+  cv.style.transform = shift>0.5 ? 'translateY('+shift+'px)' : 'none';
+  /* the record is under the stage from the first pixel of scroll, so the sill
+     rides the stage's bottom edge and fades in well before band mode */
+  sill.style.top=h+'px'; sill.style.opacity=String(Math.min(1, window.scrollY/140));
 }
 addEventListener('scroll',layout,{passive:true}); addEventListener('resize',layout); layout();
 
@@ -457,7 +516,7 @@ function renderPane(r){
   } else if(curTab==='journal'){
     inner=(D.recent[r.id]||[]).map(e=>
       '<div class="ent"><span class="d">'+esc(e.d)+'</span><span class="t">'+
-      (e.t?'<b>'+esc(e.t)+'</b><i>'+esc((e.b||'').slice(0,300))+'</i>':esc((e.b||'').slice(0,300)))+
+      (e.t?'<b>'+esc(e.t)+'</b><i>'+esc(e.b||'')+'</i>':esc(e.b||''))+
       '</span><span class="k">'+esc(e.k)+'</span></div>').join('')
       + '<div class="m-empty" style="font-size:15px">showing the last '+(D.recent[r.id]||[]).length+' of '+n+'.<span>the full archive opens when the reader is wired</span></div>';
   } else if(curTab==='art'){
