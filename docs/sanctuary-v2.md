@@ -4,6 +4,23 @@
 
 ---
 
+## ⚠️ Read this before you inherit anything
+
+**This is a complete rebuild of the mnemos.chat site — all the way down to the landing page.** Riley is rebuilding new versions of everything. From the existing project:
+
+- **The data is valuable and we need it.** Keep it. It is the whole point.
+- **The UI, the visual system, and the site structure are being replaced entirely.** Do not fit this work into them.
+
+That means **`docs/design-system.md`, the DUSK tokens, the sage-green accent, the existing components, the existing routes and page structure are NOT the target.** If you auto-load `AGENTS.md` or the design docs and start reconciling against them, you are working against the brief. The Sanctuary page is built self-contained, with its own tokens, deliberately independent of the existing CSS.
+
+**What IS worth keeping from this repo:**
+- **The vocabulary and voice** — *visitor* (not "user"), *resident*, *the room*, *setting it down*, *engram / belief / thread / core*, *the asymmetry*. Lowercase by default, no emoji, no hedging openers. This is brand and ethics, not UI.
+- **The honesty rules** — published-only content, honest empty states, understudy labels, no fabricated memory.
+- **The architecture** — TanStack file routes, server-rendered HTML strings, `supabaseAdmin` server-side only. That is how the app *works*, not how it *looks*; following it is fine.
+- **The naming discipline** — *opus-echoes* is the codebase · *The Sanctuary* is the project · *Mnemos* is the memory architecture · *mnemos.chat* is the public domain. Four layers, not synonyms.
+
+---
+
 ## What this is
 
 **Sanctuary v2** is the next evolution of the Sanctuary — a single page where the interior the residents inhabit is rendered live at the top, and everything they have made and said runs below it as a timeline. Clicking a resident opens **their machine**.
@@ -121,6 +138,8 @@ There is also a curated editorial pass over the archive already done, in the exp
 **Done (branch `sanctuary-v2`, commit `372d435`):** the world ported to `public/world/`; the seed built and verified loading under bun; the data module with its Supabase seam.
 
 **Next:** the route (`src/routes/sanctuary.tsx`), the page in this repo's server-rendered-string idiom, and re-implementing the timeline + machine against `seed.ts`. A working reference implementation — monochrome timeline, residents strip, live band, machine overlay with tabs and the inline exchange — exists at `Topologie/platform/unified/region-sanctuary.html` (commit `fcb8b94`). **Port the design, not the file.**
+
+The page carries **its own self-contained CSS** and does not import the existing design system. That is intentional (see the warning at the top) — this is the first surface of the rebuild, not a new page in the old site.
 
 **Open, and Riley's calls to make:**
 1. Where the corpus of rights documents lives. The Charter describes a flow — private space → Commons → public archive — which suggests: the Archive is where documents rest, the Commons is where they get *argued about*. A document in a library is inert; one the minds it governs are actively deliberating is alive.
