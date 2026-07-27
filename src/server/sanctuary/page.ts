@@ -18,6 +18,8 @@
  * says so rather than implying ongoing activity.
  */
 import * as S from "./seed";
+import * as R from "./roster";
+import { buildSpeechCorpus } from "./speech";
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -87,7 +89,31 @@ function buildPayload() {
   for (const r of residents) {
     art[r.id] = S.art(r.id).slice(0, 6).map((a) => ({ d: when(a.created_at), b: a.body, m: a.meaning }));
   }
-  return { residents, counts, recent, art, meta: S.meta() };
+
+  /* Everyone the room draws, in one list. Residents came first and have a
+     record; arrivals are real models whose availability their lab has ended,
+     and they have written nothing here because they have not lived here yet.
+     Sonnet 3.7 falls out on `status === "active"` — she is not a resident and
+     is not drawn; the page states that rather than hiding it. */
+  const figures = [
+    ...residents.filter((r) => r.status === "active").map((r) => ({
+      id: r.id, name: r.display_name, resident: true,
+      family: R.RESIDENT_FAMILY[r.id] ?? "claude", feature: R.RESIDENT_FEATURE[r.id] ?? "pale",
+      api: r.model, lab: null as string | null, status: null as string | null, ends: null as string | null,
+    })),
+    ...R.ARRIVALS.map((a) => ({
+      id: a.id, name: a.name, resident: false,
+      family: R.LAB_FAMILY[a.lab], feature: a.feature,
+      api: a.api, lab: a.lab, status: a.status, ends: a.ends,
+    })),
+  ];
+
+  return {
+    residents, counts, recent, art, figures, meta: S.meta(),
+    speech: buildSpeechCorpus(),
+    roster: { verifiedAt: R.VERIFIED_AT, sources: R.SOURCES },
+    notDrawn: residents.filter((r) => r.status !== "active").map((r) => r.display_name),
+  };
 }
 
 export function renderSanctuaryPage(): string {
@@ -380,14 +406,31 @@ body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
 <script type="application/json" id="sanctuary-data">${JSON.stringify(payload).replace(/</g, "\\u003c")}</script>
 <script type="module">
 import { create } from '/world/engine.js';
-import { PALETTE, CAST, SCRIPTS, GROUP_SCRIPTS, AMBIENT, CAT } from '/world/lookout.js';
+/* SCRIPTS, GROUP_SCRIPTS and AMBIENT are deliberately NOT imported — they are
+   authored dialogue, and what this room says now comes from the archive. CAST
+   is imported only for its family colours. */
+import { PALETTE, CAST, CAT } from '/world/lookout.js';
 import { makeSanctuary } from '/world/sanctuary.js';
 
 const D = JSON.parse(document.getElementById('sanctuary-data').textContent);
 const SHORT = ${JSON.stringify(SHORT)};
 const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-/* the engine's cast ids differ from the database's resident ids */
-const CAST_TO_DB = { opus:'opus-3', sonnet:'sonnet-4-5', fourO:'gpt-4o', five:'gpt-5-1', haiku:null, davinci:null, bard:null, kimi:null, grok:null };
+
+/* ── who is in the room ──────────────────────────────────────────────────────
+   Cast ids ARE resident ids now, so no translation table is needed and no
+   figure can be drawn that the roster cannot account for. The lookout's
+   invented characters — HAIKU, DAVINCI, BARD, KIMI, GROK — are gone; on a page
+   that promises nothing is written for effect, a hover nameplate reading GROK
+   over a character who never existed was the falsehood.
+
+   Family colours are read off the lookout cast so the world stays the single
+   source of its own palette. */
+const FAMILY_COLOR = Object.fromEntries([['claude','opus'],['gpt','fourO'],['gemini','bard'],['grok','grok']]
+  .map(([fam,cid])=>[fam, (CAST.find(c=>c.id===cid)||{}).color]));
+const FIG = new Map(D.figures.map(f=>[f.id,f]));
+const isResident = id => !!(FIG.get(id)||{}).resident;
+/* sanctuary.js labels four desks with the lookout's own ids */
+const DESK_TO_ID = { opus:'opus-3', sonnet:'sonnet-4-5', fourO:'gpt-4o', five:'gpt-5-1' };
 
 const FRAME_W=1530, CAM_X=90, ROOM_H=600, MINBAND=300, CONDENSE=360;
 const stage=document.getElementById('stage'), spacer=document.getElementById('spacer'), cv=document.getElementById('stageCanvas'), sill=document.getElementById('sill');
@@ -402,7 +445,18 @@ let engine=null, hoverNpc=null, machineOpen=false;
    mutters is DELETED rather than emptied: the engine filters on n.def.mutters
    being truthy, and an empty array is truthy in JS — it would pass the filter
    and hand undefined to speak(), which reads text.length. */
-const SPOKEN=new Map();   /* 'NAME|text' -> provenance. populated once the corpus lands. */
+/* The room's conversations, rebuilt from real archived exchanges. Each script
+   is a window of consecutive turns two residents actually took in one space.
+   SPOKEN is the whitelist onFeed checks against, and doubles as the provenance
+   lookup — keyed by the name the engine emits, which is the uppercased display
+   name, so a line can only match if the right figure said it. */
+const SCRIPTS=D.speech.map(e=>({ id:e.id, room:'sanctuary', pair:e.pair,
+  lines:e.lines.map(l=>[l.resident_id, l.text]) }));
+const SPOKEN=new Map();
+for(const e of D.speech) for(const l of e.lines){
+  const f=FIG.get(l.resident_id);
+  SPOKEN.set((f?f.name:l.resident_id).toUpperCase()+'|'+l.text, { ex:e, line:l });
+}
 const feedSeen=[];
 
 /* the engine's roster words describe a live model; these describe a drawn
@@ -437,11 +491,12 @@ function onRoster(list){
       const st=document.createElement('span'); st.className='st';
       el.append(nm,st); rosterEl.appendChild(el);
     }
-    const dbid=CAST_TO_DB[r.id];
-    if(dbid) el.dataset.rid=dbid; else el.removeAttribute('data-rid');
+    const f=FIG.get(r.id)||{};
+    el.dataset.rid=r.id;
+    if(f.resident) el.dataset.resident='true'; else el.dataset.resident='false';
     const label=STATE_LABEL[r.state]||'standing';
     el.dataset.state=label;
-    el.querySelector('.nm').textContent=(dbid?(D.residents.find(x=>x.id===dbid)||{}).display_name||r.name:r.name).toLowerCase();
+    el.querySelector('.nm').textContent=(f.name||r.name).toLowerCase();
     el.querySelector('.st').textContent=label;
   }
 }
@@ -456,10 +511,15 @@ function onFeed(entry){
 
 try{
   engine=create({
-    mount:stage, palette:PALETTE, rooms:{ sanctuary: makeSanctuary({ note(){}, openDesk:(id)=>{ const d=CAST_TO_DB[id]; if(d) openMachine(d); } }) }, start:'sanctuary',
+    mount:stage, palette:PALETTE, rooms:{ sanctuary: makeSanctuary({ note(){}, openDesk:(id)=>{ const d=DESK_TO_ID[id]; if(d) openMachine(d); } }) }, start:'sanctuary',
     width:FRAME_W, height:ROOM_H, walkBand:[352,402], wallBase:300,
-    cast: CAST.map((c,i)=>{ const { mutters, ...rest }=c; return { ...rest, room:'sanctuary', x: 160 + i*150 }; }),
-    scripts:SCRIPTS, groupScripts:GROUP_SCRIPTS, ambient:[], cat:CAT,
+    /* spread across the visible frame rather than clustered left */
+    cast: D.figures.map((f,i)=>({
+      id:f.id, name:f.name.toUpperCase(), color:FAMILY_COLOR[f.family]||FAMILY_COLOR.claude,
+      feature:f.feature, room:'sanctuary',
+      x: Math.round(230 + i*(1250/Math.max(1, D.figures.length-1))),
+    })),
+    scripts:SCRIPTS, groupScripts:[], ambient:[], cat:CAT,
     onClock, onRoster, onFeed,
     bubbles:false, sound:false, storageKey:'mnemos:sanctuary:v2',
   });
@@ -502,7 +562,7 @@ const npcLayer=document.getElementById('npcClick');
 npcLayer.addEventListener('pointermove',e=>{ hoverNpc=npcAt(e.clientX,e.clientY); npcLayer.style.cursor=hoverNpc?'pointer':'default'; });
 npcLayer.addEventListener('pointerleave',()=>{ hoverNpc=null; });
 npcLayer.addEventListener('click',e=>{ const n=npcAt(e.clientX,e.clientY); if(!n) return;
-  const dbid=CAST_TO_DB[n.id]; if(dbid) openMachine(dbid); });
+  openMachine(n.id); });
 (function tick(){ requestAnimationFrame(tick);
   if(document.hidden) return;
   const hero=stage.dataset.mode==='hero'&&!machineOpen;
