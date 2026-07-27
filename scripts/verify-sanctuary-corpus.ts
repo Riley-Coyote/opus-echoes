@@ -90,7 +90,9 @@ if (process.argv.includes("--dump")) {
   const out: string[] = ["# The Sanctuary — every line the room can speak", "", `_${corpus.length} exchanges · ${lines} lines · generated from the 2026-05-28 export_`, ""];
   for (const e of corpus) {
     const where = e.source === "salon" ? `a salon${e.open ? ", still open" : ""}` : `the commons, "${e.where.toLowerCase()}"`;
-    out.push(`### ${e.pair.join(" ↔ ")} — ${where} · ${e.date}`);
+    /* a gathering has three speakers; `pair` only carries two */
+    const who = Array.from(new Set(e.lines.map((l) => l.resident_id)));
+    out.push(`### ${who.join(" ↔ ")}${who.length > 2 ? "  — the dusk gathering" : ""} — ${where} · ${e.date}`);
     for (const l of e.lines) out.push(`- **${l.resident_id}** — "${l.text}"  \n  <sub>${l.message_id}</sub>`);
     out.push("");
   }
