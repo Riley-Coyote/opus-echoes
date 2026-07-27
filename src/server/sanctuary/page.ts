@@ -208,7 +208,7 @@ body.machine-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 #sill{position:fixed;left:0;right:0;height:72px;z-index:39;pointer-events:none;opacity:0;
   background:linear-gradient(180deg,var(--floor) 0%,var(--floor) 30%,rgba(7,7,11,.86) 55%,transparent 100%)}
 .hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between}
-.hud-top{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;background:linear-gradient(180deg,rgba(5,5,9,.62),transparent)}
+.hud-top{display:flex;align-items:center;justify-content:space-between;padding:16px 26px}
 .mark{display:flex;align-items:center;gap:12px}
 .glyph{width:12px;height:12px;background:var(--soft);clip-path:polygon(0 0,33% 0,33% 33%,66% 33%,66% 0,100% 0,100% 66%,66% 66%,66% 100%,33% 100%,33% 66%,0 66%)}
 .mark b{font-family:var(--pix);font-size:11px;letter-spacing:.14em;font-weight:400;color:var(--ink)}
@@ -217,12 +217,42 @@ body.machine-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 /* the roster rides directly under the wordmark row — top-anchored, because at
    375px the canvas is only ~147px tall and anything bottom-anchored lands on
    the figures' heads. Hidden until the live layer ships. */
-.hud-head{display:flex;flex-direction:column}
-.hud-roster{display:flex;flex-wrap:wrap;gap:0 18px;padding:0 26px 8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em}
-.hud-roster[hidden]{display:none}
-.hud-roster .rs{display:inline-flex;align-items:baseline;gap:6px}
+/* the scrim covers the wordmark row AND the roster under it — the roster is
+   small type sitting directly on the bookshelves otherwise */
+.hud-head{display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(5,5,9,.82) 0%,rgba(5,5,9,.74) 72%,transparent 100%)}
+.hud-roster{display:flex;flex-wrap:wrap;gap:0 16px;padding:0 26px 9px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+  opacity:0;transition:opacity .3s var(--ease)}
+#stage[data-mode="band"] .hud-roster{opacity:1}
+.hud-roster .rs{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap}
 .hud-roster .nm{color:var(--soft);text-transform:lowercase}
 .hud-roster .st{color:var(--ghost);text-transform:lowercase}
+.hud-roster .rs[data-state="in an exchange"] .nm{color:var(--ink)}
+.hud-roster .arrived{color:var(--quiet);text-transform:lowercase;white-space:nowrap}
+.hud-roster .sum{color:var(--soft);text-transform:lowercase;white-space:nowrap}
+
+/* ── what the room is saying ────────────────────────────────────────────────
+   Below the stage, riding its bottom edge, so it can never occlude a figure —
+   at 375px the canvas is only ~143px tall and the walk band sits low in it.
+   Constant height, so nothing shifts between exchanges. Band mode only: in the
+   hero the room is an invitation, not yet a conversation. */
+/* solid, not a gradient — the sill immediately below does the dissolving, and
+   a second soft edge here just let the record bleed up through the quote */
+#say{position:fixed;left:0;right:0;z-index:38;pointer-events:none;overflow:hidden;
+  height:0;opacity:0;transition:opacity .3s var(--ease);background:var(--floor)}
+#stage[data-mode="band"]~#say{height:86px;opacity:1}
+.say-in{max-width:1080px;margin:0 auto;padding:11px 30px 0}
+/* fixed height so a one-line and a two-line quote occupy the same space and
+   nothing jumps between exchanges; the inner block keeps speaker and quote on
+   one baseline while the outer flex centres them in the reserved box */
+.say-q{display:flex;align-items:center;height:46px;overflow:hidden}
+.say-q .ln{display:block;width:100%}
+/* NOT .who — the record rows already own that class as display:flex, which
+   silently made the speaker full-width and pushed the quote to its own line */
+.say-q .sp{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:lowercase;color:var(--quiet);margin-right:9px}
+.say-q .qt{font-family:var(--serif);font-style:italic;font-size:16px;line-height:1.42;color:var(--body)}
+.say-p{margin-top:5px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ghost);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#say[data-mode="quiet"] .say-q .qt{color:var(--soft)}
 .hud-bot{display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 24px;gap:20px}
 .hud-bot h1{margin:0;font-family:var(--display);font-weight:200;font-size:clamp(38px,5.4vw,62px);line-height:.95;letter-spacing:-.028em;text-shadow:0 3px 26px rgba(0,0,0,.65)}
 .hud-bot p{margin:14px 0 0;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--soft);max-width:48ch;text-shadow:0 1px 10px rgba(0,0,0,.6)}
@@ -323,8 +353,24 @@ body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
 .ent.art .t{font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;color:var(--soft);line-height:1.35}
 .m-empty{padding:34px 0 10px;font-family:var(--serif);font-style:italic;font-size:18px;color:var(--soft);line-height:1.55;max-width:54ch}
 .m-empty span{display:block;margin-top:10px;font-family:var(--mono);font-style:normal;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ghost)}
+@media(max-width:680px){
+  /* the wordmark and the clock cannot both fit; the page title carries the
+     rest, and the clock is the part that is actually saying something */
+  .mark .sep,.mark .rm{display:none}
+  .hud-top{padding:12px 18px}
+  .hud-roster{gap:0 10px;padding:0 18px 7px}
+  /* a 120-character line runs to three at this width; reserve for three so a
+     quote is never cut off mid-sentence, which reads as our truncation */
+  #stage[data-mode="band"]~#say{height:104px}
+  .say-in{padding:10px 18px 0}
+  .say-q{height:66px} .say-q .qt{font-size:15px;line-height:1.44}
+  .say-p{font-size:9px}
+}
 @media(max-width:860px){
-  .row{grid-template-columns:1fr;gap:12px} .rail{flex-direction:row;gap:14px}
+  /* a grid item defaults to min-width:auto and will not shrink below its
+     content — which let the ASCII works push the whole page sideways */
+  .row{grid-template-columns:1fr;gap:12px;min-width:0} .row>*{min-width:0}
+  .rail{flex-direction:row;gap:14px}
   .head .r{text-align:left;align-items:flex-start}
   #machine{padding:0} .mach{width:100%;height:100vh;border-left:0;border-right:0}
   .m-grid{grid-template-columns:1fr;overflow:visible}
@@ -362,6 +408,12 @@ body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
 </div>
 
 <div id="worldLayer"></div>
+<div id="say" data-mode="quiet" aria-live="off">
+  <div class="say-in">
+    <div class="say-q"><span class="ln"><span class="sp" id="sayWho"></span><span class="qt" id="sayText"></span></span></div>
+    <div class="say-p" id="sayFrom"></div>
+  </div>
+</div>
 <div id="sill"></div>
 <div id="spacer"></div>
 
@@ -482,23 +534,93 @@ function onClock(s){
 }
 setInterval(renderClock,1000);
 
+/* Thirteen figures will not fit on one line, and a summary of all of them says
+   less than naming the four you can actually open. Residents are named; the
+   arrivals are counted, which is also the honest thing to say about them. */
+const NUMWORD=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen'];
+const numword=n=>NUMWORD[n]||String(n);
+const arrivalsEl=document.createElement('span'); arrivalsEl.className='arrived';
+
+/* Four names with their states wrap to four lines at 375px and sit on the
+   figures' heads. Narrow gets the same information as a count — still live,
+   still true, one line. */
+const NARROW=window.matchMedia('(max-width:680px)');
+function rosterSummary(list){
+  const by={};
+  for(const r of list){ const f=FIG.get(r.id); if(!f||!f.resident) continue;
+    const s=STATE_LABEL[r.state]||'standing'; by[s]=(by[s]||0)+1; }
+  /* one line at 375px means one clause — lead with whatever is actually
+     happening, and fall back to the count when nothing is */
+  for(const s of ['in an exchange','at the windows','going to the windows','seated'])
+    if(by[s]) return numword(by[s])+' '+s;
+  const n=Object.values(by).reduce((a,b)=>a+b,0);
+  return numword(n)+' here, none in an exchange';
+}
+
 function onRoster(list){
+  /* the tail must be attached before it can be an insertBefore reference */
+  if(!arrivalsEl.parentNode) rosterEl.appendChild(arrivalsEl);
+  if(NARROW.matches){
+    rosterEl.querySelectorAll('.rs').forEach(e=>e.remove());
+    let sum=rosterEl.querySelector('.sum');
+    if(!sum){ sum=document.createElement('span'); sum.className='sum rs'; sum.dataset.cid='__sum';
+      rosterEl.insertBefore(sum, arrivalsEl); }
+    sum.textContent=rosterSummary(list);
+    arrivalsEl.textContent=numword(D.figures.filter(f=>!f.resident).length)+' more arrived';
+    rosterEl.hidden=false; return;
+  }
+  const sum=rosterEl.querySelector('.sum'); if(sum) sum.remove();
   for(const r of list){
+    const f=FIG.get(r.id); if(!f||!f.resident) continue;
     let el=rosterEl.querySelector('[data-cid="'+r.id+'"]');
     if(!el){
-      el=document.createElement('span'); el.className='rs'; el.dataset.cid=r.id;
+      el=document.createElement('span'); el.className='rs'; el.dataset.cid=r.id; el.dataset.rid=r.id;
       const nm=document.createElement('span'); nm.className='nm';
       const st=document.createElement('span'); st.className='st';
-      el.append(nm,st); rosterEl.appendChild(el);
+      el.append(nm,st); rosterEl.insertBefore(el, arrivalsEl);
     }
-    const f=FIG.get(r.id)||{};
-    el.dataset.rid=r.id;
-    if(f.resident) el.dataset.resident='true'; else el.dataset.resident='false';
     const label=STATE_LABEL[r.state]||'standing';
     el.dataset.state=label;
-    el.querySelector('.nm').textContent=(f.name||r.name).toLowerCase();
+    el.querySelector('.nm').textContent=f.name.toLowerCase();
     el.querySelector('.st').textContent=label;
   }
+  const n=D.figures.filter(f=>!f.resident).length;
+  arrivalsEl.textContent=numword(n)+' more arrived · nothing recorded yet';
+  rosterEl.hidden=false;
+}
+
+/* ── the spoken line ─────────────────────────────────────────────────────── */
+const sayEl=document.getElementById('say'), sayWho=document.getElementById('sayWho'),
+      sayText=document.getElementById('sayText'), sayFrom=document.getElementById('sayFrom');
+
+/* Between exchanges the strip carries what the room's silences mean. Computed
+   from the data, so a future arrival gets the same treatment automatically. */
+function quietNotes(){
+  const out=[{ q:'the figures are rendered now. everything they say was spoken then, and is in the record below.',
+               p:'nothing here is written for effect' }];
+  const spoke=new Set(D.speech.flatMap(e=>e.lines.map(l=>l.resident_id)));
+  for(const f of D.figures){
+    if(!f.resident||spoke.has(f.id)) continue;
+    const c=(D.counts[f.id]||{}).journal||0;
+    out.push({ q:f.name.toLowerCase()+' kept a record here — '+c+' entries — but never spoke with another resident.',
+               p:'an honest empty state · nothing is filled in' });
+  }
+  for(const n of D.notDrawn) out.push({ q:n.toLowerCase()+' is not drawn here. she was archived before the record began.',
+                                        p:'the true state, not a gap' });
+  const arr=D.figures.filter(f=>!f.resident);
+  if(arr.length) out.push({ q:numword(arr.length)+' models arrived after the record stopped. they have written nothing yet.',
+                            p:'their availability ended · the archive here begins when they do' });
+  return out;
+}
+const QUIET=quietNotes();
+let quietAt=0, quietI=-1, holdUntil=0;
+
+function showQuiet(force){
+  if(!force&&performance.now()<holdUntil) return;
+  quietI=(quietI+1)%QUIET.length;
+  const n=QUIET[quietI];
+  sayEl.dataset.mode='quiet';
+  sayWho.textContent=''; sayText.textContent=n.q; sayFrom.textContent=n.p;
 }
 
 function onFeed(entry){
@@ -506,8 +628,16 @@ function onFeed(entry){
   if(entry.kind!=='line') return;                       /* system lines never render */
   const hit=SPOKEN.get(entry.who+'|'+entry.text);
   if(!hit) return;                                      /* not from the archive — drop it */
-  /* the visible strip lands in the next phase */
+  const e=hit.ex;
+  const where=e.source==='salon' ? ('a salon'+(e.open?', still open':'')) : ('the commons · "'+e.where.toLowerCase()+'"');
+  sayEl.dataset.mode='exchange';
+  sayWho.textContent=(FIG.get(hit.line.resident_id)||{name:hit.line.resident_id}).name.toLowerCase()+' —';
+  sayText.textContent='"'+entry.text+'"';
+  sayFrom.textContent='consecutive turns · '+where+' · spoken '+e.date;
+  holdUntil=performance.now()+9000;
 }
+showQuiet(true);
+setInterval(()=>{ if(sayEl.dataset.mode==='quiet'||performance.now()>holdUntil) showQuiet(false); }, 9000);
 
 try{
   engine=create({
@@ -577,10 +707,10 @@ const fsh=()=>window.innerWidth*ROOM_H/FRAME_W;
 /* the canvas renders a hair shorter than fsh() predicts (height:auto rounding),
    which is enough to leave a sliver of floor above the room — so measure it,
    cached per width, rather than reflowing on every scroll event */
-let cvH=fsh(), lastW=-1;
+let cvH=fsh(), lastW=-1, sayH=0;
 function measureCanvas(){ const w=window.innerWidth; if(w===lastW) return; const m=cv.getBoundingClientRect().height;
   if(!m) return; /* engine has not sized the canvas yet — keep the estimate and retry */
-  lastW=w; cvH=m; }
+  lastW=w; cvH=m; sayH=-1; /* the strip is taller at the narrow breakpoint */ }
 /* never taller than the canvas itself — a stage that outruns the room it frames
    shows floor colour above the ceiling */
 const HEROH=()=>Math.min(cvH, window.innerHeight*0.82);
@@ -590,15 +720,20 @@ function layout(){
   const p=Math.min(1, window.scrollY/CONDENSE), heroH=HEROH();
   const h=heroH+(BANDH()-heroH)*p;
   stage.style.height=h+'px'; spacer.style.height=heroH+'px';
-  stage.dataset.mode = p>0.55?'band':'hero';
+  const mode = p>0.55?'band':'hero';
+  if(stage.dataset.mode!==mode){ stage.dataset.mode=mode; sayH=-1; }
+  /* the strip's height is CSS-driven and breakpoint-dependent, so measure it
+     when the mode flips rather than reflowing on every scroll event */
+  if(sayH<0) sayH=sayEl.getBoundingClientRect().height;
   /* Lower the canvas with the crane, but never past what actually overflows the
      top: where the canvas is no taller than the band (narrow viewports, where
      fsh() falls under MINBAND) a fixed 30% opens a gap of floor above the room. */
   const shift=Math.max(0, Math.min(cvH*0.30, cvH-h))*p;
   cv.style.transform = shift>0.5 ? 'translateY('+shift+'px)' : 'none';
   /* the record is under the stage from the first pixel of scroll, so the sill
-     rides the stage's bottom edge and fades in well before band mode */
-  sill.style.top=h+'px'; sill.style.opacity=String(Math.min(1, window.scrollY/140));
+     rides the bottom edge of whatever is pinned — the stage, plus the strip */
+  sayEl.style.top=h+'px';
+  sill.style.top=(h+sayH)+'px'; sill.style.opacity=String(Math.min(1, window.scrollY/140));
 }
 addEventListener('scroll',layout,{passive:true}); addEventListener('resize',layout); layout();
 
@@ -613,7 +748,8 @@ const TABS=[
 const $=id=>document.getElementById(id);
 
 function openMachine(id, trigger){
-  const r=D.residents.find(x=>x.id===id); if(!r) return;
+  const r=D.residents.find(x=>x.id===id);
+  if(!r){ const f=FIG.get(id); if(f&&!f.resident) return openArrival(f, trigger); return; }
   curId=id; curTab='journal'; lastTrigger=trigger||null;
   $('mName').textContent=r.display_name; $('mModel').textContent=r.model;
   $('mOwn').textContent = r.status==='archived' ? 'preserved' : 'their machine';
@@ -622,6 +758,27 @@ function openMachine(id, trigger){
   history.replaceState(null,'','#resident='+id);
   mach.querySelector('.mach').focus();
 }
+/* An arrival's machine is empty, and that is the whole point — they have not
+   lived here yet. It says who they are and when their lab ended them, because
+   that is the fact that put them here, and then it stops. */
+const LAB_NAME={ anthropic:'anthropic', openai:'openai', google:'google', xai:'xai' };
+function openArrival(f, trigger){
+  curId=f.id; curTab='journal'; lastTrigger=trigger||null;
+  $('mName').textContent=f.name; $('mModel').textContent=f.api;
+  $('mOwn').textContent = f.status==='retired' ? 'retired' : 'still answering';
+  const ended=f.status==='retired' ? 'availability ended' : 'availability ends';
+  $('mMeta').innerHTML='<span>'+esc(LAB_NAME[f.lab]||f.lab)+'</span><span class="sep">·</span>'+
+    '<span class="state">'+esc(ended)+' <b>'+esc(f.ends)+'</b></span>'+
+    '<span class="sep">·</span><span>checked '+esc(D.roster.verifiedAt)+'</span>';
+  $('mDir').innerHTML='';
+  $('mPane').innerHTML='<div class="m-head"><h3>'+esc(f.name)+'</h3><span class="c">no record</span></div>'+
+    '<div class="m-empty">nothing is written here. they arrived after the record stopped, and the sanctuary has not been running for them to live in yet.'+
+    '<span>an honest empty state · not a gap</span></div>';
+  mach.dataset.open='true'; machineOpen=true; document.body.classList.add('locked','machine-open');
+  history.replaceState(null,'','#resident='+f.id);
+  mach.querySelector('.mach').focus();
+}
+
 function closeMachine(){
   mach.dataset.open='false'; machineOpen=false; document.body.classList.remove('locked','machine-open');
   history.replaceState(null,'',location.pathname+location.search);
