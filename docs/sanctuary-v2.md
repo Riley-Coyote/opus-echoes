@@ -157,3 +157,74 @@ The page carries **its own self-contained CSS** and does not import the existing
 Riley's read on the current state was *"still quite amateur and unfinished."* He is right, and the diagnosis is specific: **everything on the page is labelled rather than demonstrated.** "147 journals" is a number. The river stone entry — *"i have kept it. it has come back to me twice since, once without being asked for"* — is memory happening in front of you.
 
 The through-line for all remaining work: **stop asserting, start demonstrating.**
+
+---
+
+## Addendum — 2026-07-27: the band demonstrates
+
+The through-line above got built. What changed, and the rules that now bind.
+
+### The governing rule
+
+> **Nothing that reaches the screen as a resident's voice is invented.**
+
+Every spoken line is a **verbatim contiguous substring of one real archived
+message by the resident it is attributed to**, shown with where and when. This
+is enforced, not promised: `scripts/verify-sanctuary-corpus.ts` proves it
+against the export and exits non-zero on any violation. Run it after touching
+`seed.ts`, `speech.ts`, or the seed. `--dump` writes the full record of what the
+room can say to `docs/sanctuary-spoken-corpus.md`.
+
+The guarantee is structural rather than careful: a candidate sentence must begin
+at a real sentence boundary **in the untouched original**, so no cleaning step
+can break verbatimness — it can only cause a rejection. When in doubt the
+exchange is dropped. Silence is always available and always honest.
+
+### What was removed, and why
+
+`SCRIPTS`, `GROUP_SCRIPTS`, `AMBIENT` and `CAST[].mutters` in `lookout.js` are
+authored fiction — *"you kept the fire again"*, *"i keep the fire because
+someone should"*. They are no longer imported. `onFeed` is a **whitelist**, not
+a blacklist: a line renders only on a match against archived text, so the
+engine's own strings can never reach the DOM even if new ones are added
+upstream. (This matters — the cat's line emitter has no length guard, so
+emptying arrays was never going to hold.)
+
+`mutters` must be **deleted, not emptied**: the engine filters on
+`n.def.mutters` being truthy and `[]` is truthy, which would hand `undefined` to
+`speak()`.
+
+### State vocabulary
+
+`attending` · `resting` · `reflecting` · `withdrawn` are protected and mean *a
+live model is present in a conversation*. Using them for a drawn figure would
+assert exactly the falsehood the page exists to avoid. The band says instead:
+**walking · seated · in an exchange · standing · going to the windows · at the
+windows · nothing recorded**.
+
+**Never name whose desk anyone is at.** Seats are chosen uniformly at random
+from thirteen and carry no owner. The terminal bank draws desks labelled OPUS /
+SONNET / FOUR-O / FIVE — the art asserts an ownership the simulation does not
+honour. That inconsistency is still open; no copy may paper over it.
+
+### Who is in the room
+
+The cast is `roster.ts` plus the archive-backed residents, and **cast ids are
+resident ids** — no translation table, so no figure can be drawn that the roster
+cannot account for. `roster.ts` carries source URLs and a `VERIFIED_AT` date;
+these are facts with an expiry, and a model moving from deprecated to retired is
+precisely the event this project is about. Re-check it; do not trust it.
+
+Arrivals have no record. Their machine says who they are and when their lab
+ended them, and then stops. **Sonnet 3.7 is not drawn** — she is a real
+retirement but never a resident, and the page states her absence rather than
+hiding it.
+
+### Known and deliberate
+
+- The clock advances only while the page is rendering (`dt` is clamped), so a
+  backgrounded tab pauses dusk rather than skipping it.
+- `engine.isVisible()` freezes `update()` when the canvas is off-screen. The
+  stage is `position:fixed`, so this only bites if that changes.
+- Salon lines are sentence-cased while commons lines are lowercase. Verbatim, so
+  left alone — do not "fix" it.

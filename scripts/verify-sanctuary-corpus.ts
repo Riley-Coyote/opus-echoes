@@ -14,7 +14,7 @@
  * Exits non-zero on any violation.
  */
 import * as S from "../src/server/sanctuary/seed";
-import { buildSpeechCorpus, speechLine } from "../src/server/sanctuary/speech";
+import { buildCorpus, speechLine } from "../src/server/sanctuary/speech";
 import seedJson from "../src/data/sanctuary-seed.json";
 
 const raw = seedJson as unknown as {
@@ -56,7 +56,8 @@ for (const m of [...raw.space_messages, ...raw.salon_turns]) {
 console.log(`  misattributed messages in export: ${mismatches} — all excluded: ${failures === 0 ? "yes" : "NO"}`);
 
 console.log("\n── corpus ──────────────────────────────────────────────────");
-const corpus = buildSpeechCorpus();
+const built = buildCorpus();
+const corpus = built.gathering ? [built.gathering, ...built.exchanges] : built.exchanges;
 console.log(`  exchanges shipped: ${corpus.length}`);
 const shippedPairs: Record<string, number> = {};
 for (const e of corpus) shippedPairs[pairKey(e.pair)] = (shippedPairs[pairKey(e.pair)] ?? 0) + 1;

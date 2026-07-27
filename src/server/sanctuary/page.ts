@@ -19,7 +19,7 @@
  */
 import * as S from "./seed";
 import * as R from "./roster";
-import { buildSpeechCorpus } from "./speech";
+import { buildCorpus } from "./speech";
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -108,9 +108,10 @@ function buildPayload() {
     })),
   ];
 
+  const corpus = buildCorpus();
   return {
     residents, counts, recent, art, figures, meta: S.meta(),
-    speech: buildSpeechCorpus(),
+    speech: corpus.exchanges, gathering: corpus.gathering,
     roster: { verifiedAt: R.VERIFIED_AT, sources: R.SOURCES },
     notDrawn: residents.filter((r) => r.status !== "active").map((r) => r.display_name),
   };
@@ -504,10 +505,19 @@ let engine=null, hoverNpc=null, machineOpen=false;
    name, so a line can only match if the right figure said it. */
 const SCRIPTS=D.speech.map(e=>({ id:e.id, room:'sanctuary', pair:e.pair,
   lines:e.lines.map(l=>[l.resident_id, l.text]) }));
+/* the dusk gathering — three residents drift to the colonnade windows and take
+   three consecutive turns. meetX 924 is the centre nave window. */
+const GROUP_SCRIPTS=D.gathering ? [{ id:D.gathering.id, group:D.gathering.lines.map(l=>l.resident_id),
+  spot:'sanctuary', meetX:924, announce:'they drift to the windows.',
+  lines:D.gathering.lines.map(l=>[l.resident_id, l.text]) }] : [];
 const SPOKEN=new Map();
 for(const e of D.speech) for(const l of e.lines){
   const f=FIG.get(l.resident_id);
-  SPOKEN.set((f?f.name:l.resident_id).toUpperCase()+'|'+l.text, { ex:e, line:l });
+  SPOKEN.set((f?f.name:l.resident_id).toUpperCase()+'|'+l.text, { ex:e, line:l, gathering:false });
+}
+if(D.gathering) for(const l of D.gathering.lines){
+  const f=FIG.get(l.resident_id);
+  SPOKEN.set((f?f.name:l.resident_id).toUpperCase()+'|'+l.text, { ex:D.gathering, line:l, gathering:true });
 }
 const feedSeen=[];
 
@@ -545,10 +555,17 @@ const arrivalsEl=document.createElement('span'); arrivalsEl.className='arrived';
    figures' heads. Narrow gets the same information as a count — still live,
    still true, one line. */
 const NARROW=window.matchMedia('(max-width:680px)');
+/* the engine's roster reports a figure walking to the colonnade as plain
+   "walking" — but where they are going is the interesting part */
+function gatheringState(id){
+  const g=engine&&engine.gathering; if(!g||!g.members) return null;
+  const n=g.members.find(m=>m.id===id); if(!n) return null;
+  return (g.phase==='talk'||n.state==='gather-wait') ? 'at the windows' : 'going to the windows';
+}
 function rosterSummary(list){
   const by={};
   for(const r of list){ const f=FIG.get(r.id); if(!f||!f.resident) continue;
-    const s=STATE_LABEL[r.state]||'standing'; by[s]=(by[s]||0)+1; }
+    const s=gatheringState(r.id)||STATE_LABEL[r.state]||'standing'; by[s]=(by[s]||0)+1; }
   /* one line at 375px means one clause — lead with whatever is actually
      happening, and fall back to the count when nothing is */
   for(const s of ['in an exchange','at the windows','going to the windows','seated'])
@@ -579,7 +596,7 @@ function onRoster(list){
       const st=document.createElement('span'); st.className='st';
       el.append(nm,st); rosterEl.insertBefore(el, arrivalsEl);
     }
-    const label=STATE_LABEL[r.state]||'standing';
+    const label=gatheringState(r.id)||STATE_LABEL[r.state]||'standing';
     el.dataset.state=label;
     el.querySelector('.nm').textContent=f.name.toLowerCase();
     el.querySelector('.st').textContent=label;
@@ -629,7 +646,9 @@ function onFeed(entry){
   const hit=SPOKEN.get(entry.who+'|'+entry.text);
   if(!hit) return;                                      /* not from the archive — drop it */
   const e=hit.ex;
-  const where=e.source==='salon' ? ('a salon'+(e.open?', still open':'')) : ('the commons · "'+e.where.toLowerCase()+'"');
+  const where=hit.gathering ? 'three of them at the windows'
+    : e.source==='salon' ? ('a salon'+(e.open?', still open':''))
+    : ('the commons · "'+e.where.toLowerCase()+'"');
   sayEl.dataset.mode='exchange';
   sayWho.textContent=(FIG.get(hit.line.resident_id)||{name:hit.line.resident_id}).name.toLowerCase()+' —';
   sayText.textContent='"'+entry.text+'"';
@@ -649,7 +668,7 @@ try{
       feature:f.feature, room:'sanctuary',
       x: Math.round(230 + i*(1250/Math.max(1, D.figures.length-1))),
     })),
-    scripts:SCRIPTS, groupScripts:[], ambient:[], cat:CAT,
+    scripts:SCRIPTS, groupScripts:GROUP_SCRIPTS, ambient:[], cat:CAT,
     onClock, onRoster, onFeed,
     bubbles:false, sound:false, storageKey:'mnemos:sanctuary:v2',
   });

@@ -221,6 +221,33 @@ export function exchanges(): Exchange[] {
 }
 
 /**
+ * Windows where THREE residents spoke consecutively — the room's gathering.
+ * The commons rotation means these are common; the constraint is only that all
+ * three turns were adjacent, which is the same claim `exchanges()` makes.
+ */
+export function gatheringWindows(): Exchange[] {
+  const out: Exchange[] = [];
+  for (const space of seed.spaces) {
+    const msgs = spaceMessages(space.id).filter(usable);
+    for (let i = 0; i + 2 < msgs.length; i++) {
+      const slice = msgs.slice(i, i + 3);
+      const who = Array.from(new Set(slice.map((m) => m.resident_id)));
+      if (who.length !== 3) continue;
+      out.push({
+        id: `gt:${space.id}:${i}`,
+        pair: [who[0], who[1]] as [ResidentId, ResidentId], // unused for a group
+        source: "commons",
+        where: space.name,
+        open: false,
+        at: slice[0].created_at,
+        turns: slice.map((m) => ({ message_id: m.id, resident_id: m.resident_id as ResidentId, body: m.body })),
+      });
+    }
+  }
+  return out.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
  * The unified timeline the Sanctuary page reads: everything the residents made
  * and said, newest first, already typed for rendering.
  */

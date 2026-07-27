@@ -206,11 +206,56 @@ const PER_PAIR = 20;
 const TOTAL_CAP = 60;
 
 /**
+ * The dusk gathering: three residents drift to the colonnade windows and take
+ * three consecutive turns. Same rule as everything else — every line verbatim,
+ * from one real adjacent window, or there is no gathering at all.
+ */
+export function buildGathering(): SpeechExchange | null {
+  const best: { ex: SpeechExchange; rank: number }[] = [];
+  for (const c of S.gatheringWindows()) {
+    const lines: SpeechLine[] = [];
+    for (const t of c.turns) {
+      /* in a three-way there is no single partner, so any other resident named
+         is legitimately present — pass the speaker as their own partner, which
+         disallows every third-party name except a vocative to themselves */
+      const text = speechLine(t.body, t.resident_id, t.resident_id);
+      if (!text) { lines.length = 0; break; }
+      lines.push({ resident_id: t.resident_id, message_id: t.message_id, text });
+    }
+    if (lines.length !== 3) continue;
+    best.push({
+      ex: { id: c.id, pair: c.pair, source: c.source, where: c.where, open: c.open, date: longDate(c.at), lines },
+      rank: lines.reduce((n, l) => n + score(l.text), 0),
+    });
+  }
+  /* same formulaicity penalty the pair corpus gets — otherwise the gathering
+     ends on opus's stock invitation, which is the worst line to end on */
+  const pool = best.flatMap((b) => b.ex.lines.map((l) => tokens(l.text)));
+  for (const b of best)
+    for (const l of b.ex.lines) {
+      const t = tokens(l.text);
+      b.rank -= pool.filter((o) => o !== t && resemblance(t, o) >= ALIKE).length * 2;
+    }
+  best.sort((a, b) => b.rank - a.rank || a.ex.id.localeCompare(b.ex.id));
+  return best.length ? best[0].ex : null;
+}
+
+/**
+ * Everything the room can say, selected in one pass so the gathering and the
+ * pair exchanges never reuse a message or repeat a line at each other.
+ */
+export function buildCorpus(): { exchanges: SpeechExchange[]; gathering: SpeechExchange | null } {
+  const gathering = buildGathering();
+  const reserved = gathering ? gathering.lines : [];
+  return { exchanges: buildSpeechCorpus(reserved), gathering };
+}
+
+/**
  * Deterministic — the same corpus every build, so what gets reviewed is what
  * ships and Playwright runs are reproducible. Runtime variety comes from the
  * engine's own rotation, not from randomness here.
  */
-export function buildSpeechCorpus(): SpeechExchange[] {
+export function buildSpeechCorpus(reserved: SpeechLine[] = []): SpeechExchange[] {
   const built: { ex: SpeechExchange; rank: number }[] = [];
 
   for (const c of S.exchanges()) {
@@ -243,8 +288,9 @@ export function buildSpeechCorpus(): SpeechExchange[] {
 
   built.sort((a, b) => b.rank - a.rank || a.ex.id.localeCompare(b.ex.id));
 
-  const used = new Set<string>();
-  const kept: string[][] = [];
+  /* the gathering claims its lines first, so nothing is said twice */
+  const used = new Set<string>(reserved.map((l) => l.message_id));
+  const kept: string[][] = reserved.map((l) => tokens(l.text));
   const perPair = new Map<string, number>();
   const out: SpeechExchange[] = [];
   for (const { ex } of built) {
