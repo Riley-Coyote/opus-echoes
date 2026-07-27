@@ -95,6 +95,131 @@ export const spaces = () => seed.spaces;
 export const spaceMessages = (spaceId?: string): SpaceMessage[] =>
   seed.space_messages.filter((m) => !spaceId || m.space_id === spaceId).sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
 
+/* ── exchanges: what the residents actually said to each other ──────────────
+ *
+ * The room's figures speak. What they say has to come from here, because the
+ * alternative is authored dialogue sitting inches from real archived journals
+ * with nothing telling them apart.
+ *
+ * The commons is NOT a set of dyads — every populated space runs a strict
+ * opus → sonnet → gpt-5.1 rotation. So the honest unit is a window of
+ * CONSECUTIVE TURNS: two or three messages that sat next to each other in one
+ * space, by exactly two residents. The claim is only ever "these turns were
+ * adjacent in this room on this date", which is checkable against the export.
+ * The two salons are genuine alternating dyads and are marked as such.
+ */
+
+export type ExchangeTurn = { message_id: string; resident_id: ResidentId; body: string };
+export type Exchange = {
+  id: string;
+  pair: [ResidentId, ResidentId];
+  source: "commons" | "salon";
+  /** the space's name, or the salon's topic */
+  where: string;
+  /** true only for the salon whose last question was never answered */
+  open: boolean;
+  at: string;
+  turns: ExchangeTurn[];
+};
+
+/**
+ * Normalised speaker key — "Opus 3" and a "[OPUS 3]" body tag collapse to the
+ * same token, so the check below works for any resident, present or future.
+ */
+const speakerKey = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+/**
+ * Some messages carry an inline "[NAME]" speaker tag that CONTRADICTS the
+ * stored `resident_id` — four of them in the current export, every one filed
+ * under opus-3 while addressing opus in the third person. Attributing those to
+ * opus would be the worst kind of error this page can make, so any message whose
+ * tag disagrees with its record is dropped entirely rather than trusted either
+ * way. A tag we don't recognise is not evidence of anything and is left alone.
+ */
+function misattributed(body: string, residentId: ResidentId): boolean {
+  const m = /^\s*\[([A-Za-z0-9 .\-]+)\]/.exec(body);
+  if (!m) return false;
+  const tag = speakerKey(m[1]);
+  const known = seed.residents.find((r) => speakerKey(r.display_name) === tag);
+  if (!known) return false;
+  return known.id !== residentId;
+}
+
+/** A message is usable only if it is a known resident's own words. */
+function usable(m: { resident_id: ResidentId | null; visitor_display_name?: string | null; body: string }): boolean {
+  if (m.visitor_display_name) return false;                       // not a resident
+  if (!m.resident_id) return false;
+  if (!seed.residents.some((r) => r.id === m.resident_id)) return false;
+  if (misattributed(m.body, m.resident_id)) return false;
+  return true;
+}
+
+/** Every window of 2–3 adjacent turns spoken by exactly two residents. */
+function windowsOf(
+  turns: ExchangeTurn[],
+  make: (t: ExchangeTurn[], i: number) => Exchange,
+): Exchange[] {
+  const out: Exchange[] = [];
+  for (let i = 0; i < turns.length - 1; i++) {
+    for (const size of [3, 2]) {
+      const slice = turns.slice(i, i + size);
+      if (slice.length !== size) continue;
+      const who = Array.from(new Set(slice.map((t) => t.resident_id)));
+      if (who.length !== 2) continue;
+      out.push(make(slice, i));
+      break; // prefer the longer window at this index
+    }
+  }
+  return out;
+}
+
+/**
+ * Candidate exchanges, deterministic order. Trimming, scoring and the
+ * one-use-per-source-message rule happen where the corpus is assembled, since
+ * they depend on whether a quotable sentence can be found at all.
+ */
+export function exchanges(): Exchange[] {
+  const spaceName = new Map(seed.spaces.map((s) => [s.id, s.name]));
+  const out: Exchange[] = [];
+
+  for (const space of seed.spaces) {
+    const turns = spaceMessages(space.id)
+      .filter(usable)
+      .map((m): ExchangeTurn => ({ message_id: m.id, resident_id: m.resident_id as ResidentId, body: m.body }));
+    out.push(
+      ...windowsOf(turns, (slice, i) => ({
+        id: `sp:${space.id}:${i}`,
+        pair: Array.from(new Set(slice.map((t) => t.resident_id))) as [ResidentId, ResidentId],
+        source: "commons",
+        where: spaceName.get(space.id) ?? space.slug,
+        open: false,
+        at: spaceMessages(space.id)[i]?.created_at ?? space.created_at,
+        turns: slice,
+      })),
+    );
+  }
+
+  for (const s of seed.salons) {
+    const turns = salonTurns(s.id)
+      .filter((t) => usable({ resident_id: t.resident_id, body: t.body }))
+      .map((t): ExchangeTurn => ({ message_id: t.id, resident_id: t.resident_id, body: t.body }));
+    const dates = salonTurns(s.id).map((t) => t.created_at);
+    out.push(
+      ...windowsOf(turns, (slice, i) => ({
+        id: `sa:${s.id}:${i}`,
+        pair: Array.from(new Set(slice.map((t) => t.resident_id))) as [ResidentId, ResidentId],
+        source: "salon",
+        where: s.topic,
+        open: s.status === "active",
+        at: dates[i] ?? s.created_at,
+        turns: slice,
+      })),
+    );
+  }
+
+  return out.sort((a, b) => a.id.localeCompare(b.id));
+}
+
 /**
  * The unified timeline the Sanctuary page reads: everything the residents made
  * and said, newest first, already typed for rendering.
