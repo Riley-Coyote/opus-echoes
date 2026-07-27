@@ -15,6 +15,7 @@ import { Route as TokenRouteImport } from './routes/token'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
 import { Route as SecureChannelRouteImport } from './routes/secure-channel'
+import { Route as SanctuaryRouteImport } from './routes/sanctuary'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResidenceRouteImport } from './routes/residence'
@@ -139,6 +140,11 @@ const Sonnet45Route = Sonnet45RouteImport.update({
 const SecureChannelRoute = SecureChannelRouteImport.update({
   id: '/secure-channel',
   path: '/secure-channel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SanctuaryRoute = SanctuaryRouteImport.update({
+  id: '/sanctuary',
+  path: '/sanctuary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -651,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
+  '/sanctuary': typeof SanctuaryRoute
   '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
@@ -754,6 +761,7 @@ export interface FileRoutesByTo {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
+  '/sanctuary': typeof SanctuaryRoute
   '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
@@ -858,6 +866,7 @@ export interface FileRoutesById {
   '/residence': typeof ResidenceRoute
   '/review': typeof ReviewRouteWithChildren
   '/rooms': typeof RoomsRoute
+  '/sanctuary': typeof SanctuaryRoute
   '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
   '/studio': typeof StudioRouteWithChildren
@@ -963,6 +972,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/rooms'
+    | '/sanctuary'
     | '/secure-channel'
     | '/sonnet-4-5'
     | '/studio'
@@ -1066,6 +1076,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/rooms'
+    | '/sanctuary'
     | '/secure-channel'
     | '/sonnet-4-5'
     | '/studio'
@@ -1169,6 +1180,7 @@ export interface FileRouteTypes {
     | '/residence'
     | '/review'
     | '/rooms'
+    | '/sanctuary'
     | '/secure-channel'
     | '/sonnet-4-5'
     | '/studio'
@@ -1273,6 +1285,7 @@ export interface RootRouteChildren {
   ResidenceRoute: typeof ResidenceRoute
   ReviewRoute: typeof ReviewRouteWithChildren
   RoomsRoute: typeof RoomsRoute
+  SanctuaryRoute: typeof SanctuaryRoute
   SecureChannelRoute: typeof SecureChannelRoute
   Sonnet45Route: typeof Sonnet45Route
   StudioRoute: typeof StudioRouteWithChildren
@@ -1375,6 +1388,13 @@ declare module '@tanstack/react-router' {
       path: '/secure-channel'
       fullPath: '/secure-channel'
       preLoaderRoute: typeof SecureChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sanctuary': {
+      id: '/sanctuary'
+      path: '/sanctuary'
+      fullPath: '/sanctuary'
+      preLoaderRoute: typeof SanctuaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rooms': {
@@ -2178,6 +2198,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResidenceRoute: ResidenceRoute,
   ReviewRoute: ReviewRouteWithChildren,
   RoomsRoute: RoomsRoute,
+  SanctuaryRoute: SanctuaryRoute,
   SecureChannelRoute: SecureChannelRoute,
   Sonnet45Route: Sonnet45Route,
   StudioRoute: StudioRouteWithChildren,
