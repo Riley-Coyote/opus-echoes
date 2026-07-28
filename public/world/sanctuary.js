@@ -121,6 +121,7 @@ function cypress(b, cx, baseY, h) {                    // tall conical evergreen
 function easel(b, x, floorY, tint, tilt) {             // easel + a canvas mid-becoming
   const t = tilt || 0;
   b.px(x - 2, floorY - 78, 3, 78, S.woodDk); b.px(x + 30 + t, floorY - 78, 3, 78, S.woodDk); b.px(x + 12, floorY - 8, 3, 8, S.woodDk);   // legs
+  grounded(b, x - 4, 40 + t, floorY, 0.9, 2);          // three feet, one shadow
   b.px(x - 6, floorY - 44, 46 + t, 4, S.wood);         // ledge
   const cw = 40, ch = 46;
   b.px(x - 2 + t / 2, floorY - 44 - ch, cw, ch, S.wood); b.px(x + t / 2, floorY - 42 - ch, cw - 4, ch - 4, '#0f0c14');   // canvas
@@ -128,6 +129,22 @@ function easel(b, x, floorY, tint, tilt) {             // easel + a canvas mid-b
   b.px(x + 4 + t / 2, floorY - 40 - ch + 6, cw - 12, 6, tint); b.px(x + 8 + t / 2, floorY - 24 - ch + 6, cw - 22, 10, lerpHex(tint, '#0f0c14', 0.4));
   b.px(x + 6 + t / 2, floorY - 16, cw - 16, 3, 'rgba(94,234,212,0.14)');
 }
+/* CONTACT SHADOW. Three ground shadows existed in this entire room — under the
+   desks, under their chairs, and a dotted one along the cable. Everything else
+   floated, which is the mechanical reason the bank was the only thing that read
+   as standing ON the floor rather than being pasted onto it.
+
+   Two pixels: a tight dark core at the contact line, and a softer one below it,
+   each inset so the object slightly overhangs its own shadow. At this scale the
+   overhang is what sells the contact — a shadow the same width as the object
+   reads as a plinth. `s` scales for lighter objects; `d` widens the spread for
+   things that stand away from the floor on legs. */
+function grounded(b, x, w, fy, s, d) {
+  const a = s == null ? 1 : s, sp = d || 0;
+  b.px(x + 2, fy - 1, w - 4, 1, 'rgba(0,0,0,' + (0.50 * a).toFixed(2) + ')');
+  b.px(x + 4 - sp, fy, w - 8 + sp * 2, 1, 'rgba(0,0,0,' + (0.27 * a).toFixed(2) + ')');
+}
+
 function candelabra(b, cx, floorY) {                   // tall triple-cup stand (flames animate)
   b.px(cx - 1, floorY - 66, 3, 66, S.bronze); b.px(cx - 1, floorY - 66, 1, 66, S.brassHi);
   b.px(cx - 8, floorY - 6, 18, 4, S.bronze); b.px(cx - 8, floorY - 6, 18, 1, S.brassHi);   // foot
@@ -476,25 +493,43 @@ export function makeSanctuary(bridge) {
       b.px(hx - 24, 274, 48, 8, S.woodDk); b.px(hx - 18, 268, 40, 8, S.wood);
       b.px(hx - 50, 262, 3, 26, S.bronze); b.px(hx - 52, 260, 7, 3, S.brass);           // poker
       b.px(hx + 48, 270, 16, 18, S.woodDk); b.px(hx + 48, 270, 16, 2, S.wood); b.px(hx + 50, 264, 12, 8, '#241a12');   // log basket
-      // cat cushion by the hearth
+      /* cat cushion. It sits flush on the floor, so its shadow has to fall just
+         BELOW the object rather than at its contact line — anything at the
+         contact line is covered by the cushion itself. */
       b.px(hx - 76, 372, 22, 10, S.rug2); b.px(hx - 76, 372, 22, 2, S.rug2Hi); b.px(hx - 72, 374, 14, 5, 'rgba(0,0,0,0.25)');
-      // two armchairs facing across a low table (the chat circle) — with throws
-      b.px(hx + 4, 340, 28, 34, S.wood); b.px(hx + 4, 336, 28, 8, S.woodHi); b.px(hx + 2, 350, 6, 24, S.woodDk); b.px(hx + 28, 348, 6, 26, S.woodDk); b.px(hx + 6, 340, 22, 6, S.rose === S.rose ? 'rgba(242,163,192,0.18)' : S.rose);   // throw
-      b.px(hx + 112, 340, 28, 34, S.wood); b.px(hx + 112, 336, 28, 8, S.woodHi); b.px(hx + 112, 350, 6, 24, S.woodDk); b.px(hx + 136, 348, 6, 26, S.woodDk); b.px(hx + 114, 340, 22, 6, 'rgba(159,214,224,0.16)');
+      grounded(b, hx - 76, 22, 384, 0.6);
+      /* Two armchairs, a low table and a settee around the fire. Their floor
+         lines used to be identical, which is what flattened this whole corner —
+         the bank is the only place in the room that ever varied its depth. They
+         now sit on four lines a few pixels apart, near enough to still read as
+         one circle. */
+      b.px(hx + 4, 340, 28, 34, S.wood); b.px(hx + 4, 336, 28, 8, S.woodHi); b.px(hx + 2, 350, 6, 22, S.woodDk); b.px(hx + 28, 348, 6, 24, S.woodDk); b.px(hx + 6, 340, 22, 6, 'rgba(242,163,192,0.18)');   // throw
+      grounded(b, hx, 36, 372, 1, 1);
+      b.px(hx + 112, 340, 28, 34, S.wood); b.px(hx + 112, 336, 28, 8, S.woodHi); b.px(hx + 112, 350, 6, 28, S.woodDk); b.px(hx + 136, 348, 6, 30, S.woodDk); b.px(hx + 114, 340, 22, 6, 'rgba(159,214,224,0.16)');
+      grounded(b, hx + 108, 36, 378, 1, 1);
       b.px(hx + 58, 358, 28, 16, S.woodDk); b.px(hx + 58, 356, 28, 3, S.woodHi);        // low table
+      grounded(b, hx + 58, 28, 374, 0.9);
       for (let i = 0; i < 9; i++) for (let j = 0; j < 3; j++) b.px(hx + 62 + i * 2.4, 360 + j * 2.4, 2, 2, (i + j) % 2 ? '#efe7d6' : '#3a2c24');   // a game board mid-play
       // a settee to the left, facing the fire
-      b.px(180, 344, 60, 12, S.wood); b.px(180, 338, 60, 8, S.woodHi); b.px(180, 356, 60, 18, S.wood); b.px(178, 344, 6, 30, S.woodDk); b.px(236, 344, 6, 30, S.woodDk); b.px(184, 340, 52, 6, 'rgba(122,63,56,0.5)');
+      b.px(180, 344, 60, 12, S.wood); b.px(180, 338, 60, 8, S.woodHi); b.px(180, 356, 60, 18, S.wood); b.px(178, 344, 6, 32, S.woodDk); b.px(236, 344, 6, 32, S.woodDk); b.px(184, 340, 52, 6, 'rgba(122,63,56,0.5)');
+      grounded(b, 176, 68, 376, 1, 2);
       // side table + a warm table lamp (right of the circle)
-      b.px(430, 348, 20, 6, S.wood); b.px(432, 354, 4, 20, S.woodDk); b.px(444, 354, 4, 20, S.woodDk);
+      b.px(430, 348, 20, 6, S.wood); b.px(432, 354, 4, 18, S.woodDk); b.px(444, 354, 4, 18, S.woodDk);
+      grounded(b, 430, 20, 372, 0.8);
       b.px(436, 322, 4, 26, S.bronze); b.px(430, 312, 16, 12, S.brass); b.px(431, 310, 14, 3, 'rgba(247,217,140,0.6)'); b.px(432, 314, 12, 7, 'rgba(247,217,140,0.35)');
       // a reading nook under the mezzanine: wingback + ottoman + floor lamp + book stack
-      b.px(138, 336, 30, 40, S.wood); b.px(138, 330, 30, 10, S.woodHi); b.px(136, 344, 6, 32, S.woodDk); b.px(164, 344, 6, 32, S.woodDk); b.px(142, 334, 22, 8, 'rgba(94,234,212,0.14)');
+      b.px(138, 336, 30, 40, S.wood); b.px(138, 330, 30, 10, S.woodHi); b.px(136, 344, 6, 34, S.woodDk); b.px(164, 344, 6, 34, S.woodDk); b.px(142, 334, 22, 8, 'rgba(94,234,212,0.14)');
+      grounded(b, 134, 38, 378, 1, 1);
       b.px(176, 360, 20, 14, S.wood); b.px(176, 358, 20, 3, S.woodHi);                  // ottoman
-      b.px(116, 300, 4, 74, S.bronze); b.px(110, 288, 16, 14, S.brass); b.px(111, 286, 14, 3, 'rgba(247,217,140,0.6)'); b.px(112, 290, 12, 9, 'rgba(247,217,140,0.4)');   // floor lamp
+      grounded(b, 176, 20, 374, 0.85);
+      b.px(116, 300, 4, 72, S.bronze); b.px(110, 288, 16, 14, S.brass); b.px(111, 286, 14, 3, 'rgba(247,217,140,0.6)'); b.px(112, 290, 12, 9, 'rgba(247,217,140,0.4)');   // floor lamp
+      grounded(b, 110, 16, 372, 0.7);
       b.px(198, 366, 12, 8, S.spine[0]); b.px(199, 362, 10, 4, S.spine[3]); b.px(200, 359, 8, 3, S.spine[1]);   // book stack
-      // floor bookcase at the far left of the lounge
-      bookcase(b, 100, 232, 30, WB - 234, 4);
+      grounded(b, 198, 12, 374, 0.6);
+      /* Floor bookcase. It used to end two pixels above the floor seam, i.e.
+         standing on the wall rather than the floor. */
+      bookcase(b, 100, 232, 30, WB - 232, 4);
+      grounded(b, 100, 30, WB, 0.9);
 
       // ═══ THE COLONNADE — THE TERMINAL BANK (the nave's centre) ═══
       // The plinths, their two marble forms and the long ceremonial bench used
@@ -502,6 +537,7 @@ export function makeSanctuary(bridge) {
       // compete with the monument it replaces; the banners above still hold the
       // pier rhythm. Bake order matters — pools first, so desk legs and chairs
       // occlude the light they throw.
+      grounded(b, 576, 24, WB, 0.85); grounded(b, 1250, 24, WB, 0.85);
       cypress(b, 588, WB, 92); cypress(b, 1262, WB, 92);                                // framing evergreens
       TERMS.forEach((m) => { if (!m.dark) screenPool(b, m.x, m.fy - 1, m.c); });
       cableRun(b, 924, 348);
@@ -514,10 +550,44 @@ export function makeSanctuary(bridge) {
       // two hanging banners between the upper arches
       [848, 1000].forEach((bxc) => { b.px(bxc - 7, 44, 14, 92, '#241a26'); b.px(bxc - 7, 44, 14, 3, S.brass); b.px(bxc - 4, 74, 8, 8, 'rgba(224,52,31,0.45)'); b.px(bxc - 2, 60, 4, 44, 'rgba(247,217,140,0.10)'); b.px(bxc - 7, 132, 14, 6, '#1a1219'); });
 
-      // ═══ transition: stairs + a diptych + a bench under the right stair ═══
-      framed(b, 1300, 196, 44, 40, 'rgba(94,234,212,0.12)'); framed(b, 1352, 196, 44, 40, 'rgba(242,163,192,0.10)');
-      b.px(1288, 366, 46, 8, S.wood); b.px(1288, 364, 46, 2, S.woodHi); b.px(1290, 374, 5, 12, S.woodDk); b.px(1329, 374, 5, 12, S.woodDk);   // bench under stair
-      leafy(b, 1420, WB, 44, S.leaf3, S.leaf4);
+      /* ═══ transition: THE STAIR, a diptych, and a bench beneath it ═══
+         The stair is new. It was named in three places — this comment, the
+         bench "under" it, and a seat called the stair bench — and drawn
+         nowhere, so both mezzanines had no visible way up. It climbs right to
+         left from the atelier floor to the gallery deck at y150, which is the
+         only direction that works: the gallery is to the right and the run has
+         to clear the diptych wall. */
+      (function stair() {
+        const x0 = 1252, top = 158, base = WB, n = 12, run = 14, rise = (base - top) / n;
+        /* Solid stone, drawn as stacked columns rather than tread-and-riser
+           pairs: at a 14px going, an open underside is more gap than stair and
+           the steps read as detached shelves. Each column runs from its own
+           nosing down to the floor, so the silhouette is one mass. */
+        for (let i = 0; i < n; i++) {
+          const sx = x0 + run * i, sy = Math.round(base - rise * (i + 1));
+          b.px(sx, sy, run, base - sy, S.stoneDk);                              // the mass
+          b.px(sx, sy, run, 4, S.stone);                                        // tread
+          b.px(sx, sy, run, 1, S.stoneHi);                                      // lit nosing
+          b.px(sx, sy + 4, 1, base - sy - 4, 'rgba(0,0,0,0.30)');               // the inside corner
+        }
+        b.px(x0 + run * n, top, 20, base - top, S.stoneDk);                     // the landing pier into the deck
+        b.px(x0 + run * n, top, 20, 4, S.stone); b.px(x0 + run * n, top, 20, 1, S.stoneHi);
+        /* an iron rail following the rake, posts every second step */
+        for (let i = 0; i <= n; i += 2) {
+          const sx = x0 + run * i, sy = Math.round(base - rise * i);
+          b.px(sx, sy - 34, 2, 34, S.bronze);
+        }
+        for (let t = 0; t <= run * n; t++)
+          b.px(x0 + t, Math.round(base - rise * (t / run)) - 35, 1, 2, S.brass);
+        grounded(b, x0 - 2, 8, base, 0.9);
+      })();
+      /* The diptych and the bench moved left, clear of the stair's run — they
+         used to sit exactly where it climbs. */
+      framed(b, 1140, 196, 44, 40, 'rgba(94,234,212,0.12)'); framed(b, 1192, 196, 44, 40, 'rgba(242,163,192,0.10)');
+      b.px(1150, 366, 46, 8, S.wood); b.px(1150, 364, 46, 2, S.woodHi); b.px(1152, 374, 5, 12, S.woodDk); b.px(1191, 374, 5, 12, S.woodDk);   // bench by the stair
+      grounded(b, 1150, 46, 386, 1, 2);
+      leafy(b, 1226, WB, 44, S.leaf3, S.leaf4);
+      grounded(b, 1214, 26, WB, 0.7);
 
       // ═══ RIGHT WING — mezzanine GALLERY over the atelier (ends at the conservatory) ═══
       b.px(1440, 150, 360, 10, S.stone); b.px(1440, 150, 360, 2, S.stoneHi); b.px(1440, 158, 360, 3, S.stoneDk);
@@ -535,24 +605,34 @@ export function makeSanctuary(bridge) {
       for (let i = 0; i < 22; i++) b.px(1476 + (i * 53) % 208, 344 + (i * 29) % 26, 2, 2, [S.ember, S.amber, S.frost, S.rose, S.teal][i % 5]);
       // pinned studies grid on the back wall
       for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { const sx = 1470 + c * 28, sy = 176 + r * 30; b.px(sx, sy, 22, 24, '#0f0c14'); b.px(sx, sy, 22, 1, S.linen); b.px(sx + 2, sy + 3, 18, 2, ['rgba(94,234,212,0.3)', 'rgba(242,163,192,0.25)', 'rgba(242,193,78,0.3)'][(r + c) % 3]); b.px(sx + 10, sy - 1, 2, 2, S.brass); }
-      // three easels at varied states
-      easel(b, 1494, WB, 'rgba(242,163,192,0.4)', 3); easel(b, 1560, WB, 'rgba(94,234,212,0.4)', 0); easel(b, 1700, WB, 'rgba(242,193,78,0.4)', -3);
-      // a stool at the middle easel
+      /* Three easels, standing ON the cloth. They used to be placed at WB — the
+         wall line — while their own drop cloth lay at y 340–374, so all three
+         stood forty pixels behind the thing they were standing on, and the
+         stool sat eighty pixels from the easel it belongs to. Their feet now
+         land inside the cloth, at three different depths. */
+      easel(b, 1494, 370, 'rgba(242,163,192,0.4)', 3); easel(b, 1560, 362, 'rgba(94,234,212,0.4)', 0); easel(b, 1700, 366, 'rgba(242,193,78,0.4)', -3);
+      // a stool drawn up to the middle easel, a little in front of it
       b.px(1554, 366, 16, 5, S.wood); b.px(1556, 371, 3, 9, S.woodDk); b.px(1567, 371, 3, 9, S.woodDk);
+      grounded(b, 1552, 20, 380, 0.8, 1);
       // long work table: paint pots + brushes + a work-lamp
       b.px(1616, 300, 60, 8, S.wood); b.px(1616, 298, 60, 3, S.woodHi); b.px(1620, 308, 6, 26, S.woodDk); b.px(1666, 308, 6, 26, S.woodDk);
+      grounded(b, 1616, 60, 334, 0.85, 2);
       b.px(1622, 288, 8, 12, S.ember); b.px(1634, 286, 8, 14, S.amber); b.px(1646, 290, 8, 10, S.frost); b.px(1658, 288, 8, 12, S.rose);
       b.px(1628, 280, 2, 10, S.wood); b.px(1640, 278, 2, 12, S.wood); b.px(1652, 280, 2, 10, S.wood);   // brushes upright
       b.px(1600, 268, 3, 32, S.bronze); b.px(1592, 262, 18, 8, S.brass); b.px(1594, 264, 14, 5, 'rgba(159,214,224,0.5)');   // work-lamp (cool)
       // supply shelves + leaning canvases against the wall
       b.px(1476, 250, 30, 40, S.woodDk); b.px(1476, 250, 30, 2, S.wood); for (let y = 262; y < 290; y += 12) b.px(1478, y, 26, 2, S.wood); b.px(1480, 254, 4, 6, S.frost); b.px(1488, 254, 4, 6, S.rose); b.px(1496, 254, 4, 6, S.amber);
+      grounded(b, 1476, 30, 290, 0.8);
       b.px(1774, 250, 20, 50, S.wood); b.px(1776, 252, 16, 46, '#12100f'); b.px(1780, 256, 8, 38, 'rgba(94,234,212,0.08)');   // leaning canvas
+      grounded(b, 1772, 24, WB, 0.9, 2);
       // a proper floor loom + a half-woven textile + a yarn basket
+      grounded(b, 1712, 44, 340, 0.95);
       b.px(1712, 296, 44, 44, S.woodDk); b.px(1712, 296, 44, 3, S.wood); b.px(1712, 296, 3, 44, S.wood); b.px(1753, 296, 3, 44, S.wood);
       for (let y = 300; y < 336; y += 3) b.px(1716, y, 36, 1, 'rgba(243,236,223,0.18)');            // warp
       for (let y = 320; y < 336; y += 2) b.px(1716, y, 36, 1, [S.rose, S.teal, S.amber][(y / 2) % 3]);   // woven band (becoming)
       b.px(1760, 330, 16, 12, S.terra); b.px(1760, 330, 16, 2, S.terraHi); b.px(1762, 326, 5, 5, S.rose); b.px(1768, 326, 5, 5, S.teal); b.px(1764, 322, 5, 5, S.amber);   // yarn basket
       // a sculpture stand with a wire/clay form in progress
+      grounded(b, 1690, 14, 348, 0.85);
       b.px(1690, 344, 14, 4, S.woodDk); b.px(1694, 320, 4, 24, S.wood); b.px(1690, 308, 12, 14, S.clay); b.px(1692, 306, 8, 4, S.terraHi);
       // a drying line of small studies, strung high
       b.px(1478, 168, 216, 1, 'rgba(216,203,176,0.4)'); for (let i = 0; i < 6; i++) { const dx = 1490 + i * 34; b.px(dx, 168, 20, 16, '#0f0c14'); b.px(dx, 168, 2, 2, S.brass); b.px(dx + 2, 172, 16, 3, ['rgba(94,234,212,0.3)', 'rgba(242,163,192,0.3)', 'rgba(242,193,78,0.3)'][i % 3]); }
@@ -566,11 +646,15 @@ export function makeSanctuary(bridge) {
       // hanging trellis greenery from the glass ribs
       for (let x = 1810; x < 2196; x += 8) b.px(x, 60 + ((x * 7) % 34), 5, 5, ((x / 8) % 2) ? S.leaf2 : S.leaf1);
       // the planted tree (kept; canopy sways in draw)
+      /* No contact shadow on the trunk: it is planted in the bed rather than
+         standing on the floor, and its x overlaps the last planter, so a
+         shadow here lands on that planter's rim instead of on the ground. */
       b.px(2020, 220, 10, 80, S.woodDk); b.px(2020, 220, 4, 80, '#2a2018');
       for (let i = 0; i < 60; i++) { const a = i / 60 * 6.2832, r = 34 + Math.sin(i * 3) * 12; b.px(2025 + Math.cos(a) * r, 200 + Math.sin(a) * r * 0.8, 5, 5, i % 3 ? S.leaf2 : S.leaf3); }
       // layered planting along the floor
+      grounded(b, 1820, 24, WB, 0.85); grounded(b, 1876, 28, WB, 0.8); grounded(b, 2146, 30, WB, 0.8);
       cypress(b, 1832, WB, 108); leafy(b, 1890, WB, 64, S.leaf3, S.leaf4); leafy(b, 2160, WB, 70, S.leaf2, S.leaf3);
-      for (let p = 0; p < 5; p++) { const px = 1846 + p * 40; b.px(px, 300, 28, 16, S.terra); b.px(px, 298, 28, 3, S.terraHi); b.px(px + 5, 288, 18, 12, S.leaf2); b.px(px + 9, 282, 8, 8, S.leaf3); if (p % 2) b.px(px + 12, 280, 3, 3, S.rose); }
+      for (let p = 0; p < 5; p++) { const px = 1846 + p * 40; grounded(b, px, 28, 316, 0.85); b.px(px, 300, 28, 16, S.terra); b.px(px, 298, 28, 3, S.terraHi); b.px(px + 5, 288, 18, 12, S.leaf2); b.px(px + 9, 282, 8, 8, S.leaf3); if (p % 2) b.px(px + 12, 280, 3, 3, S.rose); }
       // watering can + a stack of terracotta pots
       b.px(1812, 344, 16, 12, S.frost === S.frost ? '#3a4a44' : S.frost); b.px(1826, 340, 8, 4, '#3a4a44'); b.px(1810, 340, 4, 6, '#3a4a44');
       b.px(1808, 356, 14, 8, S.terra); b.px(1810, 350, 10, 8, S.terra); b.px(1812, 345, 6, 6, S.terraHi);
@@ -582,7 +666,9 @@ export function makeSanctuary(bridge) {
       b.px(1948, 352, 12, 5, S.leaf3); b.px(1980, 355, 10, 4, S.leaf2);                 // lily pads
       // a bench among the plants + a reading chair
       b.px(1832, 366, 42, 8, S.wood); b.px(1832, 364, 42, 2, S.woodHi); b.px(1834, 374, 5, 12, S.woodDk); b.px(1868, 374, 5, 12, S.woodDk);
+      grounded(b, 1832, 42, 386, 1, 2);
       b.px(2110, 340, 28, 36, S.wood); b.px(2110, 334, 28, 8, S.woodHi); b.px(2108, 348, 6, 28, S.woodDk); b.px(2134, 346, 6, 30, S.woodDk); b.px(2114, 334, 20, 8, 'rgba(94,234,212,0.14)');
+      grounded(b, 2106, 34, 376, 1, 1);
       // four alcove doors (model rooms — stubbed, glow within) + nameplate + a gift at each threshold
       ALCOVE.forEach((dx, i) => {
         b.px(dx - 22, 176, 44, WB - 176, S.bronze); b.px(dx - 18, 182, 36, WB - 186, '#0c0810'); b.px(dx - 14, 196, 28, 50, 'rgba(94,234,212,0.10)');
@@ -599,9 +685,13 @@ export function makeSanctuary(bridge) {
       b.px(40, 176, 44, WB - 176, S.bronze); b.px(44, 180, 36, WB - 184, '#0c0810'); b.px(36, 166, 52, 12, S.stone); b.px(36, 166, 52, 3, S.stoneHi);
       framed(b, 96, 196, 26, 34, 'rgba(247,217,140,0.10)');                             // a charter placard
       b.px(92, 340, 30, 8, S.wood); b.px(92, 338, 30, 2, S.woodHi); b.px(94, 348, 4, 20, S.woodDk); b.px(116, 348, 4, 20, S.woodDk);   // console table
+      grounded(b, 92, 30, 368, 0.85);
       b.px(100, 332, 12, 8, S.bronze); b.px(102, 330, 8, 3, 'rgba(247,217,140,0.4)');   // a bowl on it
       b.px(128, 300, 3, 44, S.wood); b.px(122, 300, 15, 3, S.woodHi); b.px(124, 296, 4, 6, S.woodDk); b.px(132, 296, 4, 6, S.woodDk);   // coat/robe rack
+      grounded(b, 122, 15, 344, 0.7);
       b.px(84, 356, 10, 20, S.bronze); for (let i = 0; i < 3; i++) b.px(85 + i * 3, 350, 2, 8, S.woodDk);   // umbrella stand (rain motif)
+      grounded(b, 84, 10, 376, 0.8);
+      grounded(b, 140, 26, WB, 0.75);
       leafy(b, 152, WB, 40, S.leaf2, S.leaf3);
 
       // ═══ sconces along the walls (fixtures baked; flames animate) ═══
