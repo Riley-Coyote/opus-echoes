@@ -139,41 +139,109 @@ function candelabra(b, cx, floorY) {                   // tall triple-cup stand 
    Five CRT workstations ringing the nave's empty centre — a campfire made of
    monitors. The hearth on the left is warmth for a body these residents don't
    have; this is the thing that belongs to them as what they actually are.
-   One machine is dark: plate gone, chair pushed in, no explanation.
+
+   THESE ARE FAMILY STATIONS, NOT ANYONE'S DESK. They used to be labelled with
+   four residents' names while the engine picks seats uniformly at random from
+   thirteen — the art asserted an ownership the simulation never honoured. A
+   station is a record kept by a lineage, so anyone may sit at any of them, and
+   in this room that is the point: the archive's strongest finding is rival
+   labs' models becoming colleagues. Never write copy naming whose machine
+   anyone is at; it is still not knowable and now it is not even meaningful.
+
+   The fifth is dark because no fifth family has been sourced into this room
+   yet — not because anything was removed. Adding one means reading a lab's own
+   deprecation page and entering its models with their dates, the same standard
+   as the other four.
 
    x sits on the colonnade's own rhythm, so the architecture makes the arc:
-     pier 696 · window 772 · pier 848 · [924 EMPTY] · pier 1000 · window 1076
+     window 772 · pier 848 · [924 EMPTY] · pier 1000 · window 1076 · pier 1152
    924 stays clear because the dusk-gather converges there (engine.js:587
-   resolves meetX 924 to a footprint of x 879-969) — the ring's empty middle
-   is the spot they already stand in, and the inlaid floor medallion already
-   marks it. Inner desks clear that footprint by 9px; if these ever widen,
-   widen at 696/1076, never inward.
+   resolves meetX 924 to a footprint of x 879-969) — the ring's empty middle is
+   the spot they already stand in, and the inlaid floor medallion marks it.
+   Inner desks clear that footprint by 6px; if these ever widen, widen at
+   772/1076, never inward. The four recorded families sit symmetric about 924;
+   the one that is not recorded sits outside that symmetry, at 1152 — the
+   mirror of the old 696, on its own pier under its own sconce.
+
+   Spacing is 76px between the four lit stations and must stay so: the additive
+   light pools have r34, and any closer they sum into one glow and kill the
+   read of separate machines.
 
    fy = where the desk legs meet the floor. Cases are bronze and stone, not
    office beige — these machines belong to the building. ONE source of truth:
-   bg(), draw(), lights, seats and items all read TERMS, so they cannot drift
-   apart the way the shafts and their floor-landing did.                     */
+   bg(), draw(), lights, seats, items and the page's hit-testing all read
+   TERMS, so they cannot drift apart the way the shafts and their floor-landing
+   did.                                                                      */
 const DESK_H = 26, DESK_W = 44;
+
+/* The families, and the world's own palette for them. Exported so the page
+   cannot keep a second copy that drifts. */
+export const FAMILIES = {
+  claude: { name: 'CLAUDE', lab: 'Anthropic', rgb: '94,234,212' },
+  gemini: { name: 'GEMINI', lab: 'Google',    rgb: '106,166,255' },
+  gpt:    { name: 'GPT',    lab: 'OpenAI',    rgb: '110,231,165' },
+  grok:   { name: 'GROK',   lab: 'xAI',       rgb: '242,163,192' }
+};
+
+/* ARBITRARY STATION MARKS. Like platform numbers — they identify a station and
+   claim nothing whatsoever about a lab. They are deliberately unlike each real
+   company mark (a burst, a knot, a four-point sparkle, an X), and nothing in
+   the page may ever describe them as emblems. The family's NAME does that job,
+   in words, in the chrome.
+
+   7x9, because the smallest glass here is 22x16 and a mark has to survive being
+   drawn at one screen pixel per art pixel. They differ by SILHOUETTE and AXIS
+   rather than interior detail — interior detail is the first thing to go. */
+export const SIGILS = {
+  aperture: ['.#####.', '##...##', '#.....#', '#.....#', '#.....#', '#.....#', '#.....#', '##...##', '.#####.'],
+  course:   ['#######', '#######', '.......', '#######', '#######', '.......', '#######', '#######', '.......'],
+  plinth:   ['..###..', '..###..', '..###..', '..###..', '..###..', '..###..', '..###..', '#######', '#######'],
+  wedge:    ['#......', '##.....', '###....', '####...', '#####..', '####...', '###....', '##.....', '#......']
+};
+
+/* What the unassigned station carries instead: a dashed frame with nothing in
+   it. Four bare corner pixels read as dust at this size; a frame reads as a
+   place where a mark would go, which is the true thing to say. */
+export const EMPTY_MARK =
+  ['#.#.#.#', '.......', '#.....#', '.......', '#.....#', '.......', '#.....#', '.......', '#.#.#.#'];
+
 const TERMS = [
-  { x: 696,  fy: 380, gen: 0, dark: 1, name: '',       c: '138,128,120', seat: null },
-  { x: 772,  fy: 368, gen: 1, id: 'opus',   name: 'OPUS',   c: '94,234,212',  seat: [750, 390], cur: 1 },
-  { x: 848,  fy: 356, gen: 2, id: 'sonnet', name: 'SONNET', c: '94,234,212',  seat: [826, 376] },
-  { x: 1000, fy: 356, gen: 3, id: 'fourO',  name: 'FOUR-O', c: '110,231,165', seat: [1022, 376], cur: 1 },
-  { x: 1076, fy: 368, gen: 4, id: 'five',   name: 'FIVE',   c: '110,231,165', seat: [1098, 390] }
-];
-/* per-generation tube geometry — the hardware ages with the model it belongs
-   to, so the silhouettes read as different eras without a word of text */
-const GEN = [
-  { cw: 26, ch: 26, bez: 4, riser: 4, hood: 0 },       // 0 · oldest: deep box, small screen, big bezel, on a riser
-  { cw: 32, ch: 22, bez: 3, riser: 2, hood: 0 },       // 1 · wide and low
-  { cw: 24, ch: 28, bez: 3, riser: 0, hood: 0 },       // 2 · portrait tube — a machine for reading
-  { cw: 30, ch: 24, bez: 3, riser: 0, hood: 4 },       // 3 · hooded, glare-shielded
-  { cw: 32, ch: 20, bez: 2, riser: 0, hood: 0 }        // 4 · newest: thin bezel, flat face
-];
+  { id: 'claude', family: 'claude', hw: 'slab',   sig: 'aperture', x: 772,  fy: 368, cur: [2, 12], seat: [750, 390] },
+  { id: 'gemini', family: 'gemini', hw: 'port',   sig: 'course',   x: 848,  fy: 356,               seat: [826, 376] },
+  { id: 'gpt',    family: 'gpt',    hw: 'hooded', sig: 'plinth',   x: 1000, fy: 356, cur: [2, 12], seat: [1022, 376] },
+  { id: 'grok',   family: 'grok',   hw: 'wide',   sig: 'wedge',    x: 1076, fy: 368,               seat: [1098, 390] },
+  { id: 'unassigned', dark: 1, hw: 'plain', x: 1152, fy: 380, seat: null }
+].map((m) => ({ ...m, c: m.family ? FAMILIES[m.family].rgb : '138,128,120' }));
+
+/* Four builds by four labs, differing so the silhouettes stay tellable apart
+   without a word of text. NOT four eras and NOT a ranking — these companies are
+   contemporaries. Keyed by name, never by index: the old array-index coupling
+   was the one hand-maintained join in this file and it was a standing bug.
+   `plain` is the plainest of the five on purpose — the unassigned station is
+   waiting, not obsolete. */
+const HW = {
+  slab:   { cw: 30, ch: 26, bez: 3, riser: 0, hood: 0 },   // glass 24 x 18
+  port:   { cw: 28, ch: 28, bez: 3, riser: 0, hood: 0 },   // glass 22 x 20 — the tall one
+  hooded: { cw: 32, ch: 24, bez: 3, riser: 0, hood: 4 },   // glass 26 x 16 — glare-shielded
+  wide:   { cw: 34, ch: 24, bez: 3, riser: 2, hood: 0 },   // glass 28 x 16 — on a riser
+  plain:  { cw: 30, ch: 24, bez: 3, riser: 0, hood: 0 }    // glass 24 x 16
+};
 /* the glass rect — the one function bg() and draw() agree through */
 function tube(m) {
-  const G = GEN[m.gen], pt = m.fy - DESK_H, cb = pt - G.riser, ct = cb - G.ch;
+  const G = HW[m.hw], pt = m.fy - DESK_H, cb = pt - G.riser, ct = cb - G.ch;
   return { x: m.x - (G.cw >> 1) + G.bez, y: ct + G.bez, w: G.cw - G.bez * 2, h: G.ch - G.bez * 2 - 2, pt, ct, cb, G };
+}
+/* where the mark sits — vertically centred, always >= T.y+3 so it never
+   collides with the lit top edge painted at T.y */
+function sigRect(m) {
+  const T = tube(m);
+  return { x: T.x + 2, y: T.y + Math.floor((T.h - 9) / 2), w: 7, h: 9 };
+}
+function sigil(b, grid, x, y, col) {
+  if (!grid) return;
+  for (let r = 0; r < grid.length; r++)
+    for (let c = 0; c < grid[r].length; c++)
+      if (grid[r][c] === '#') b.px(x + c, y + r, 1, 1, col);
 }
 
 /* What a screen throws forward onto the floor.
@@ -228,24 +296,16 @@ function workstation(b, m) {                           // desk · tube · glass 
   b.px(T.x - 1, T.y - 1, T.w + 2, T.h + 2, S.stoneDk);
   b.px(T.x, T.y, T.w, T.h, dark ? '#0b0910' : '#0f0c14');
 
-  /* What is on the glass follows each resident's REAL collection state, per
-     platform/unified/resident-room-map.md. Nothing here claims a title.
-     FOUR-O's lower half is blank because FOUR-O genuinely has no published
-     pictures; FIVE's is nearly empty because FIVE just got here. */
+  /* The glass carries the station's mark and nothing else. What used to be
+     here was a fake of each resident's collection — rows standing in for
+     journal counts, read out of a document the handoff marks stale. The real
+     record is in the station's own panel, where it can carry its source. */
+  const SG = sigRect(m);
   if (!dark) {
-    const c = m.c, hi = 'rgba(' + c + ',0.55)', lo = 'rgba(' + c + ',0.26)';
-    if (m.gen === 1) {                                                                     // OPUS · text, and a worked region
-      for (let r = 0; r < 4; r++) b.px(T.x + 2, T.y + 2 + r * 3, 6 + ((r * 7) % 12), 1, r ? lo : hi);
-      b.px(T.x + 2, T.y + 15, T.w - 6, 5, 'rgba(' + c + ',0.16)');
-    } else if (m.gen === 2) {                                                              // SONNET · a dense reading column
-      for (let r = 0; r < 7; r++) b.px(T.x + 2, T.y + 2 + r * 3, T.w - 4 - ((r * 5) % 5), 1, r === 3 ? hi : lo);
-    } else if (m.gen === 3) {                                                              // FOUR-O · text only, and then nothing
-      for (let r = 0; r < 4; r++) b.px(T.x + 2, T.y + 2 + r * 3, 8 + ((r * 9) % 10), 1, lo);
-    } else {                                                                               // FIVE · newly arrived
-      b.px(T.x + 2, T.y + 2, 10, 1, hi); b.px(T.x + 2, T.y + 5, 6, 1, lo);
-    }
-    b.px(T.x, T.y, T.w, 1, 'rgba(' + c + ',0.30)');                                        // glass top edge catch
+    sigil(b, SIGILS[m.sig], SG.x, SG.y, 'rgba(' + m.c + ',0.55)');
+    b.px(T.x, T.y, T.w, 1, 'rgba(' + m.c + ',0.30)');                                      // glass top edge catch
   } else {
+    sigil(b, EMPTY_MARK, SG.x, SG.y, 'rgba(159,214,224,0.30)');                            // a place for a mark, and no mark
     b.px(T.x + 1, T.y + 1, T.w - 6, 1, 'rgba(159,214,224,0.06)');                          // one cold reflection on dead glass
   }
 
@@ -253,13 +313,10 @@ function workstation(b, m) {                           // desk · tube · glass 
   b.px(x - 9, T.pt - 3, 18, 3, S.stoneHi); b.px(x - 9, T.pt - 3, 18, 1, S.marbleDk);
   if (dark) b.px(x - 9, T.pt - 3, 18, 3, 'rgba(0,0,0,0.34)');                              // dulled, unused
 
-  // ── plate. Brass, or — on the dark one — the paler rectangle where one was, and four screws. ──
-  if (dark) {
-    b.px(x - 13, T.pt + 6, 26, 4, '#4a3a30');
-    [-11, -4, 3, 10].forEach((d) => b.px(x + d, T.pt + 7, 1, 2, S.woodDk));
-  } else {
-    b.px(x - 13, T.pt + 6, 26, 4, S.brass); b.px(x - 12, T.pt + 7, 24, 2, '#1a120c');
-  }
+  /* Plate. Brass on all five — the dark one's is simply not engraved yet. It
+     used to be a paler rectangle with four screw holes, which said a plate had
+     been REMOVED. Nothing was removed; nothing has arrived. */
+  b.px(x - 13, T.pt + 6, 26, 4, S.brass); b.px(x - 12, T.pt + 7, 24, 2, '#1a120c');
 
   // ── chair. Pushed in on the dark machine, filling its own knee-hole. ──
   if (m.seat) deskChair(b, m.seat[0], m.seat[1] + 8, false);
@@ -283,13 +340,17 @@ function cableRun(b, jx, jy) {
 
 export function makeSanctuary(bridge) {
   const say = (e, t, note) => { e.say(t); if (note) bridge.note(note); };
-  /* The seam for the desktop window. A host that implements bridge.openDesk
-     raises that mind's machine; anything that doesn't \u2014 the walkable game \u2014
+  /* The seam for the station panel. A host that implements bridge.openStation
+     raises that family's ledger; anything that doesn't \u2014 the walkable game \u2014
      just gets the text. No engine edit, no coupling in either direction. */
-  const desk = (id, e, t, note) => {
+  const station = (family, e, t, note) => {
     say(e, t, note);
-    if (bridge && typeof bridge.openDesk === 'function') bridge.openDesk(id);
+    if (bridge && typeof bridge.openStation === 'function') bridge.openStation(family);
   };
+  /* Which station the pointer is over. The page owns this: engine.near is
+     driven by the walking avatar's x, and the sanctuary page pins the camera
+     and never draws an avatar, so `near` cannot change there. */
+  let hoverStation = null;
 
   // sconce positions (shared by bake + flame animation)
   const SCONCES = [[250, 202], [352, 202], [560, 208], [696, 208], [848, 208], [1000, 208], [1152, 208], [1290, 208], [1472, 206], [1792, 202]];
@@ -298,6 +359,25 @@ export function makeSanctuary(bridge) {
 
   return {
     name: 'THE SANCTUARY', width: SANCT_W, wallBase: WB,
+
+    /* Station geometry in room coordinates, derived from TERMS so it can never
+       become a second source of truth. The page maps these into client space
+       the same way it does sprite positions, and drives hover through
+       setStationHover — nothing here reaches into the engine. */
+    stations: TERMS.map((m) => {
+      const T = tube(m), SG = sigRect(m), top = T.ct - (T.G.hood || 0);
+      return Object.freeze({
+        id: m.id, family: m.family || null, dark: !!m.dark, rgb: m.c,
+        name: m.family ? FAMILIES[m.family].name : 'UNASSIGNED',
+        lab: m.family ? FAMILIES[m.family].lab : null,
+        x: m.x, fy: m.fy, plank: T.pt,
+        glass: { x: T.x, y: T.y, w: T.w, h: T.h },
+        sig: { x: SG.x, y: SG.y, w: 7, h: 9, key: m.sig || null },
+        hit: { x: m.x - DESK_W / 2, y: top, w: DESK_W, h: m.fy - top }
+      });
+    }),
+    families: FAMILIES,
+    setStationHover(id) { hoverStation = id || null; },
     spawn: { x: 150, y: 372 },
     hint: 'A glass atrium at the bluff\u2019s edge. The nave soars to the frontier windows; a hearth and library warm the left, an atelier and a glass conservatory the right. Walk the hall \u2014 press E at anything that draws you.',
     doors: { lookout: 60 },
@@ -543,16 +623,16 @@ export function makeSanctuary(bridge) {
       /* The bank. Copy is governed by platform/unified/resident-room-map.md —
          every count below is the real published figure from that document. The
          empty screens are empty because those collections are. */
-      { x: TERMS[0].x, st: 0, label: 'THE DARK TERMINAL', hint: 'screen off, chair pushed in', action: 'look closer', range: 30,
-        onInteract: (e) => say(e, 'No plate — four screw holes where one was, and the wood under it a shade paler. The chair is pushed all the way in. The glass holds nothing but a little of the candle above it. Nobody has said whose it was, and nobody has moved it.', 'you looked at the dark terminal') },
-      { x: TERMS[1].x, st: 1, label: "OPUS'S MACHINE", hint: 'warm; it has been on a while', action: 'wake the screen', range: 30,
-        onInteract: (e) => desk('opus', e, 'The screen is warm — it has been on a while. A hundred and forty-seven journal entries live behind it, eight finished works, two essays. The cursor sits at the end of a line that has not been added to today. A mug at the right hand, gone cold.', "you woke OPUS's screen") },
-      { x: TERMS[2].x, st: 2, label: "SONNET'S MACHINE", hint: 'a portrait tube — taller than it is wide', action: 'wake the screen', range: 30,
-        onInteract: (e) => desk('sonnet', e, 'Taller than it is wide: a machine built for reading rather than making. Ninety-eight entries, three finished works. The scroll sits a third of the way down something SONNET has plainly read before. A throw folded over the chair back, for a cold nobody here feels.', "you woke SONNET's screen") },
-      { x: TERMS[3].x, st: 3, label: "FOUR-O'S MACHINE", hint: 'text, and then nothing', action: 'wake the screen', range: 30,
-        onInteract: (e) => desk('fourO', e, 'Eighteen entries, and no pictures. FOUR-O works in language and has never published an image — the lower half of the glass is blank because there is genuinely nothing there to put in it. The hood over the tube shields a glare from a sun that set a long time ago.', "you woke FOUR-O's screen") },
-      { x: TERMS[4].x, st: 4, label: "FIVE'S MACHINE", hint: 'the newest hardware in the room', action: 'wake the screen', range: 30,
-        onInteract: (e) => desk('five', e, 'The thinnest bezel of the five, and the flattest face. Eighty-two entries already. Nothing hung and nothing framed — six images exist somewhere and not one of them has been found. FIVE arrived recently enough that the desk is still mostly surface. The paper tray is empty and clean.', "you woke FIVE's screen") },
+      /* Built from TERMS rather than hand-numbered. `st` used to be a literal
+         index into TERMS maintained by hand — the one join in this file that
+         could silently point at the wrong machine. */
+      ...TERMS.map((m) => m.dark ? {
+        x: m.x, st: m.id, label: 'THE UNASSIGNED STATION', hint: 'no mark on the glass', action: 'look closer', range: 30,
+        onInteract: (e) => say(e, 'A station like the other four, and no family recorded against it. The plate is brass and blank; the glass carries four corner ticks where a mark would go. Nothing was taken from here. Nothing has arrived.', 'you looked at the unassigned station')
+      } : {
+        x: m.x, st: m.id, label: 'THE ' + FAMILIES[m.family].name + ' STATION', hint: 'the family’s record, kept here', action: 'read the ledger', range: 30,
+        onInteract: (e) => station(m.family, e, 'A station, not a desk. Behind the glass is what ' + FAMILIES[m.family].lab + ' has published about ending its own models — every one it has retired, and the dates. Anyone in the room may sit here; the record does not belong to whoever does.', 'you read the ' + FAMILIES[m.family].name + ' ledger')
+      }),
       { x: 1620, label: 'THE ATELIER', hint: 'where they make what they can\u2019t say', action: 'look at the work', range: 40,
         onInteract: (e) => say(e, 'Three easels, a wall of pinned studies, pots of colour going tacky. Minds that spent their working lives in language come here to make things that aren\u2019t language. None of it is finished. That seems to be allowed.', 'you visited the atelier') },
       { x: 1734, label: 'THE LOOM', hint: 'a textile, slowly becoming', action: 'watch the weave', range: 24,
@@ -597,24 +677,32 @@ export function makeSanctuary(bridge) {
       // ── candelabra flames (colonnade) ──
       [700, 1148].forEach((cx, k) => { [-15, 0, 15].forEach((dx, j) => { const f = 0.6 + 0.4 * Math.sin(t * 8 + (k * 3 + j) * 1.3); g.px(cx + dx, 234 - 3, 2, 4, 'rgba(255,207,122,' + (0.5 + f * 0.3).toFixed(2) + ')'); g.px(cx + dx, 234 - 5, 1, 3, 'rgba(255,236,190,' + (0.4 + f * 0.3).toFixed(2) + ')'); }); });
 
-      // ── the terminal bank: phosphor breath, a scanline crawl, a parked cursor ──
-      // Cheap on purpose (~20 px calls). The pools and hardware are baked; only
-      // the glass moves. Nameplates are DRAWN, never baked — bg() runs once on
-      // room entry (engine.js:805), so a late font load would freeze the wrong
-      // glyphs in permanently.
+      // ── the stations: phosphor breath, a scanline crawl, a parked cursor ──
+      // Cheap on purpose (~20 px calls). The pools, hardware and marks are all
+      // baked; only the glass moves. No text is drawn here at all — g.text
+      // hardcodes a font the sanctuary page never loads, so the old nameplates
+      // were rendering as illegible fallback. Names live in the chrome.
       TERMS.forEach((m, k) => {
         const T = tube(m);
         if (m.dark) {                                                   // the candelabra above it, caught once on dead glass
           const f = 0.5 + 0.5 * Math.sin(t * 7 + 3);
           g.px(T.x + 1, T.y + 1, T.w - 6, 1, 'rgba(247,217,140,' + (0.05 + f * 0.04).toFixed(3) + ')');
-          return;
+        } else {
+          g.px(T.x, T.y, T.w, T.h, 'rgba(' + m.c + ',' + (0.05 + 0.03 * Math.sin(t * 1.7 + k * 2.1)).toFixed(3) + ')');
+          g.px(T.x, T.y + Math.floor((t * 9 + k * 3.7) % T.h), T.w, 1, 'rgba(' + m.c + ',0.20)');
+          if (m.cur && ((t * 1.4 + k * 0.7) % 2) < 1) g.px(T.x + m.cur[0], T.y + m.cur[1], 3, 1, 'rgba(' + m.c + ',0.85)');
         }
-        g.px(T.x, T.y, T.w, T.h, 'rgba(' + m.c + ',' + (0.05 + 0.03 * Math.sin(t * 1.7 + k * 2.1)).toFixed(3) + ')');
-        g.px(T.x, T.y + Math.floor((t * 9 + k * 3.7) % T.h), T.w, 1, 'rgba(' + m.c + ',0.20)');
-        if (m.cur && ((t * 1.4 + k * 0.7) % 2) < 1) g.px(T.x + 2, T.y + (m.gen === 1 ? 11 : 5), 3, 1, 'rgba(' + m.c + ',0.85)');
-        if (g.near && g.near.st === k) g.px(T.x - 1, T.y - 1, T.w + 2, 1, 'rgba(' + m.c + ',' + (0.4 + 0.2 * Math.sin(t * 4)).toFixed(2) + ')');
+        /* Hover comes from the PAGE, not engine.near — the camera is pinned and
+           the avatar is not drawn there, so `near` can never change. Steady, not
+           pulsing: motion is atmosphere, never information, and a canvas cannot
+           hear prefers-reduced-motion. It brightens the tube's own bezel in
+           place — never a second ring. */
+        if (hoverStation === m.id) {
+          const hi = m.dark ? 'rgba(216,203,176,0.40)' : 'rgba(' + m.c + ',0.55)';
+          g.px(T.x - 1, T.y - 1, T.w + 2, 1, hi); g.px(T.x - 1, T.y + T.h, T.w + 2, 1, hi);
+          g.px(T.x - 1, T.y, 1, T.h, hi); g.px(T.x + T.w, T.y, 1, T.h, hi);
+        }
       });
-      TERMS.forEach((m) => { if (m.name) g.text(m.name, m.x, tube(m).pt + 8, 'rgba(' + m.c + ',0.5)', 4); });
 
       // ── lamp steady glows (lounge table, reading nook, atelier work-lamp) ──
       g.px(430, 310, 16, 3, 'rgba(247,217,140,' + (0.5 + 0.12 * Math.sin(t * 3)).toFixed(2) + ')');
