@@ -108,7 +108,12 @@ console.log("\n── the sun's arc ──────────────�
 /* The rake only means anything while the sun is actually casting. Below that
    the disc is under the ridge, rayA is nought, and the arc swings back round
    to the east in the dark where nobody can see it. */
-const LIT = 0.025;
+/* Low on purpose. The shafts are *meant* to nearly die at noon — that is the
+   hour's whole idea, the nave giving up and the conservatory taking the load —
+   so a threshold set above noon's alpha would split the sweep in two and
+   report zero direction changes for the healthiest possible reason. It only
+   has to sit above night, where the sun casts nothing at all. */
+const LIT = 0.015;
 let flips = 0, flipAt = -1, prev: number | null = null, minAbs = Infinity, minAbsAt = -1;
 for (let m = 0; m < 1440; m += 1) {
   const e = envAt(m);
@@ -185,16 +190,28 @@ const onGlass = (x: number, y: number, r: number) => {
   const arch = world.archTopAt(SKY_X0 + x * SKY_W);
   return !!arch && y - r >= arch.top && y - r < RIDGE;
 };
-let bright = 0, visible = 0;
-for (let m = 0; m < 1440; m++) {
-  const e = envAt(m);
-  if (e.sunA <= 0.5) continue;
-  bright++;
-  if (onGlass(e.sunX, e.sunY, e.sunR)) visible++;
+for (const [what, aKey, xKey, yKey, rKey, floor] of [
+  ["sun", "sunA", "sunX", "sunY", "sunR", 0.45],
+  ["moon", "moonA", "moonX", "moonY", "moonR", 0.45],
+] as [string, string, string, string, string, number][]) {
+  let bright = 0, visible = 0;
+  for (let m = 0; m < 1440; m++) {
+    const e = envAt(m) as any;
+    if (e[aKey] <= 0.5) continue;
+    bright++;
+    if (onGlass(e[xKey], e[yKey], e[rKey])) visible++;
+  }
+  const share = visible / Math.max(1, bright);
+  if (share < floor) fail(`the ${what} is on glass for only ${(share * 100).toFixed(0)}% of the hours it is bright — the colonnade is eating it`);
+  else ok(`the ${what} is on glass for ${(share * 100).toFixed(0)}% of the hours it is bright`);
 }
-const share = visible / Math.max(1, bright);
-if (share < 0.45) fail(`the sun is on glass for only ${(share * 100).toFixed(0)}% of the hours it is bright — the colonnade is eating the day`);
-else ok(`the sun is on glass for ${(share * 100).toFixed(0)}% of the hours it is bright`);
+/* 01:00 is what a visitor at 01:00 sees; the keyframe at midnight is not */
+for (const m of [30, 60, 120, 180]) {
+  const e = envAt(m);
+  if (e.moonA > 0.5 && !onGlass(e.moonX, e.moonY, e.moonR))
+    fail(`at ${hhmm(m)} the moon is a${e.moonA.toFixed(2)} and behind the arch — a bright object nobody can see`);
+}
+ok("the moon is on glass through the small hours, not just at the keyframe");
 for (const [label, m] of [["dawn", 360], ["noon", 720], ["sunset", 1125]] as [string, number][]) {
   const e = envAt(m);
   if (!onGlass(e.sunX, e.sunY, e.sunR)) fail(`there is no sun visible at ${label} — the one hour that is about the sun`);
@@ -215,6 +232,33 @@ const src = readFileSync("public/world/sanctuary.js", "utf8");
 if (/CANDEL[\s\S]{0,200}\benv\b/.test(src) || /a:\s*0\.13\s*\*\s*/.test(src))
   fail("the candelabra alpha is being scaled by the hour");
 ok("the candelabra, the lamps and the terminals carry no env term");
+
+/* the claim, checked against the running light pass rather than the source */
+const room = world.makeSanctuary({ note() {}, openStation() {} });
+const sky = new Set(world.SKY_LIGHTS);
+const interior = room.lights.filter((L: any) => !sky.has(L));
+const termX = new Set(room.stations.filter((s: any) => !s.dark).map((s: any) => s.x));
+const terms = interior.filter((L: any) => termX.has(L.x) && L.r === 34);
+if (terms.length !== 4) fail(`found ${terms.length} terminal lights, not 4`);
+const shot = (m: number) => { world.tickEnv(envAt(m)); return interior.map((L: any) => `${L.x}/${L.y}/${L.r}/${L.c}/${L.a.toFixed(6)}`); };
+const HOURS = [0, 360, 720, 1080];
+const base = shot(HOURS[0]);
+for (const m of HOURS.slice(1)) {
+  const now = shot(m);
+  now.forEach((v: string, i: number) => {
+    if (v === base[i]) return;
+    if (interior[i] === world.SKY_LIGHTS[0]) return;
+    if (interior[i].x === 300 && interior[i].y === 250) return;      // the hearth, the one exception
+    fail(`interior light ${i} at x${interior[i].x} changed between 00:00 and ${hhmm(m)}: ${base[i]} \u2192 ${v}`);
+  });
+}
+ok(`all ${interior.length - 1} non-hearth interior sources are byte-identical at 00:00 / 06:00 / 12:00 / 18:00`);
+for (const m of [0, 360, 720, 1080, 1125, 1290]) {
+  world.tickEnv(envAt(m));
+  for (const L of terms) if (L.a !== 0.12 || L.r !== 34)
+    fail(`a terminal is a${L.a} r${L.r} at ${hhmm(m)} — the machines are always on, at exactly a0.12 r34`);
+}
+ok("the four terminals hold a0.12 r34 at every hour checked \u2014 a screen does not know what time it is");
 /* the one exception, stated as a range so it cannot quietly widen */
 let hMin = Infinity, hMax = -Infinity, hMinAt = 0, hMaxAt = 0;
 for (let m = 0; m < 1440; m += 1) {
@@ -226,6 +270,36 @@ if (hMin < 0.68 || hMin > 0.74) fail(`the hearth's floor is ${hMin.toFixed(3)}, 
 if (hMax < 1.12 || hMax > 1.18) fail(`the hearth's ceiling is ${hMax.toFixed(3)}, not the authored 1.15`);
 if (hMinAt < 600 || hMinAt > 840) fail(`the hearth is lowest at ${hhmm(hMinAt)}, which is not the middle of the day`);
 ok(`the hearth alone moves: ${hMin.toFixed(2)} at ${hhmm(hMinAt)} \u2192 ${hMax.toFixed(2)} at ${hhmm(hMaxAt)}`);
+
+/* ──────────────────────────── the rays ──────────────────────────── */
+console.log("\n── the shafts land on people ────────────────────────────────");
+/* drawRays composites after the sprite pass and had never executed in the life
+   of this codebase, because no room had ever set `rays`. If this ever goes
+   empty in daylight it is back to being dead code and nothing will say so. */
+if (/ctx\.rect\(0, 0, SANCT_W, 420\)[\s\S]{0,400}moveTo\(sx \+ sway, 150\)/.test(src))
+  fail("the old pre-sprite shaft block is still in draw() — those rays fall behind everyone");
+ok("the pre-sprite shaft block is gone from draw()");
+let dry = 0;
+for (let m = 0; m < 1440; m += 10) {
+  const e = envAt(m);
+  world.tickEnv(e);
+  const rays = room.rays;
+  if (e.rayA > 0.02 && !rays.some((r: any) => Math.abs(r.dx - e.rayDX) < 1e-6))
+    fail(`at ${hhmm(m)} the sun is casting at a${e.rayA.toFixed(3)} but no shaft carries its rake`);
+  if (!rays.length) dry++;
+  for (const r of rays) {
+    if (!Number.isFinite(r.dx) || !Number.isFinite(r.a) || r.w <= 0 || r.len <= 0) fail(`a malformed ray at ${hhmm(m)}`);
+    if (!/^\d+,\d+,\d+$/.test(r.c)) fail(`a ray at ${hhmm(m)} carries colour "${r.c}", which drawRays will emit as rgba(undefined)`);
+  }
+}
+if (dry > 24) fail(`the room has no shafts at all for ${dry * 10} minutes of the day`);
+ok(`shafts present for ${(100 - (dry * 1000) / 1440).toFixed(0)}% of the day, each carrying the hour's rake and colour`);
+world.tickEnv(envAt(360));
+const dawnRays = room.rays.filter((r: any) => r.x < 900);
+const lands = dawnRays.map((r: any) => Math.round(r.x + r.dx));
+if (!lands.some((v: number) => v >= 880 && v <= 968))
+  fail(`no dawn shaft lands on the medallion (880-968); they land at ${lands.join(", ")}`);
+ok(`the dawn shafts from the left window land at floor x ${lands.join(", ")} — on the medallion`);
 
 /* ─────────────────────── predicted luminance ─────────────────────── */
 console.log("\n── predicted luminance (a proxy — pixels are the real check) ─");

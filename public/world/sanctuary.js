@@ -128,7 +128,7 @@ export const PHASES = [
   { min: 200, name: 'night',
     sky: ['#04050b', '#05070f', '#070915', '#080c1b', '#0a0f22', '#0c1229', '#0e1530', '#111937', '#151d3d'],
     sunA: 0, sunX: 0.05, sunY: 232, sunR: 11, sunC: '#c04a34',
-    moonA: 0.78, moonX: 0.86, moonY: 116, moonR: 9,
+    moonA: 0.78, moonX: 0.56, moonY: 118, moonR: 9,
     starA: 0.95, ridgeC: '#0b0d18', ridge2C: '#070911', lakeC: '#2c3a58', lakeA: 0.55,
     lightC: '#8fa8d8', rayA: 0.000, rayDX: 130, rayW: 16,
     spillR: 46, spillA: 0.050, ambA: 0.005, consA: 0.030,
@@ -143,7 +143,7 @@ export const PHASES = [
   { min: 280, name: 'first light',
     sky: ['#060811', '#080c1a', '#0c1226', '#111a33', '#182342', '#212a4d', '#2d3054', '#3a3757', '#493d58'],
     sunA: 0, sunX: 0.07, sunY: 214, sunR: 11, sunC: '#d4603a',
-    moonA: 0.42, moonX: 0.90, moonY: 132, moonR: 9,
+    moonA: 0.42, moonX: 0.84, moonY: 130, moonR: 9,
     starA: 0.55, ridgeC: '#141527', ridge2C: '#0d0e1d', lakeC: '#3c4463', lakeA: 0.44,
     lightC: '#7d90c0', rayA: 0.008, rayDX: 132, rayW: 13,
     spillR: 58, spillA: 0.070, ambA: 0.008, consA: 0.036,
@@ -173,7 +173,7 @@ export const PHASES = [
      powerful rake. This is the hour the baked floor reflections under the
      windows were drawn for and have never once been justified by. */
   { min: 420, name: 'daybreak',
-    sky: ['#183566', '#204077', '#2b4c85', '#38578f', '#476295', '#586c98', '#6c7697', '#828093', '#9a8a8d'],
+    sky: ['#1f4a90', '#2a579d', '#3763a8', '#456eb0', '#5579b6', '#6883b9', '#7f8db8', '#9796b4', '#af9fae'],
     sunA: 0.98, sunX: 0.17, sunY: 136, sunR: 10, sunC: '#ffd08a',
     moonA: 0, moonX: 0.98, moonY: 176, moonR: 9,
     starA: 0, ridgeC: '#3a4260', ridge2C: '#2a3050', lakeC: '#93a3ae', lakeA: 0.24,
@@ -187,10 +187,10 @@ export const PHASES = [
      Work light. The shafts walk off the ring and onto the desks. What morning
      loses is intimacy, and the fire — nobody looks at a fire at nine. */
   { min: 540, name: 'morning',
-    sky: ['#1f4d8c', '#2a5896', '#35639f', '#416ea6', '#4e79ac', '#5d84b0', '#6e8eb3', '#8098b4', '#93a1b4'],
+    sky: ['#2a63ac', '#3670b6', '#437cbe', '#5288c5', '#6293cb', '#749ecf', '#88a8d2', '#9db2d4', '#b2bcd4'],
     sunA: 1.00, sunX: 0.24, sunY: 124, sunR: 10, sunC: '#ffe4ad',
     moonA: 0, moonX: 0.10, moonY: 196, moonR: 9,
-    starA: 0, ridgeC: '#465274', ridge2C: '#333e60', lakeC: '#9fb0bc', lakeA: 0.20,
+    starA: 0, ridgeC: '#5d6f97', ridge2C: '#485a83', lakeC: '#b5c3cf', lakeA: 0.20,
     lightC: '#ffeec8', rayA: 0.068, rayDX: 54, rayW: 18,
     spillR: 108, spillA: 0.175, ambA: 0.062, consA: 0.126,
     gradeC: '#2e4a72', gradeA: 0.090, gradeAmp: 0.005,
@@ -204,12 +204,12 @@ export const PHASES = [
      Noon loses all its drama; the answer is to send the camera where the
      light went. */
   { min: 720, name: 'noon',
-    sky: ['#245aa0', '#3066a9', '#3c72b1', '#497db8', '#5787bd', '#6691c1', '#779ac3', '#89a3c4', '#9cabc3'],
-    sunA: 1.00, sunX: 0.50, sunY: 104, sunR: 9, sunC: '#fff3d0',
+    sky: ['#2f6ebe', '#3d7ac6', '#4b86cd', '#5a92d3', '#6b9dd8', '#7ea8dc', '#93b3de', '#a9bde0', '#c0c7de'],
+    sunA: 1.00, sunX: 0.50, sunY: 104, sunR: 11, sunC: '#fffbe6',
     moonA: 0, moonX: 0.24, moonY: 210, moonR: 9,
-    starA: 0, ridgeC: '#4d5a80', ridge2C: '#39466c', lakeC: '#a9bac6', lakeA: 0.18,
-    lightC: '#fff6dc', rayA: 0.030, rayDX: 0, rayW: 24,
-    spillR: 78, spillA: 0.120, ambA: 0.140, consA: 0.185,
+    starA: 0, ridgeC: '#6d7fa4', ridge2C: '#53668f', lakeC: '#c2ced6', lakeA: 0.18,
+    lightC: '#fff6dc', rayA: 0.022, rayDX: 0, rayW: 20,
+    spillR: 86, spillA: 0.155, ambA: 0.140, consA: 0.185,
     gradeC: '#3a5580', gradeA: 0.100, gradeAmp: 0.004,
     vig: 0.70, hazeA: 0.028, hazeC: '#6b7a9a', moteM: 1.00, hearthM: 0.70, roofA: 0.104,
     camBias: 1990 },
@@ -220,10 +220,10 @@ export const PHASES = [
      drying line, the loom, the pots of colour going tacky. Haze rises and
      warms. */
   { min: 870, name: 'afternoon',
-    sky: ['#22528f', '#2d5c97', '#3a669d', '#4970a1', '#5a79a3', '#6d82a3', '#818ba0', '#96939c', '#ab9c96'],
+    sky: ['#2c66b0', '#3872b8', '#457dbe', '#5588c3', '#6692c6', '#799bc7', '#8ea3c6', '#a8aabf', '#c0b2b0'],
     sunA: 1.00, sunX: 0.76, sunY: 122, sunR: 10, sunC: '#ffe6b0',
     moonA: 0, moonX: 0.40, moonY: 214, moonR: 9,
-    starA: 0, ridgeC: '#4a5473', ridge2C: '#373f5e', lakeC: '#b4a89a', lakeA: 0.22,
+    starA: 0, ridgeC: '#647093', ridge2C: '#4d5878', lakeC: '#c6b8a6', lakeA: 0.22,
     lightC: '#ffe6b8', rayA: 0.052, rayDX: -38, rayW: 19,
     spillR: 102, spillA: 0.170, ambA: 0.064, consA: 0.106,
     gradeC: '#34406a', gradeA: 0.080, gradeAmp: 0.008,
@@ -234,7 +234,7 @@ export const PHASES = [
      The turn. Everything the sunset does, an hour early and eighty per cent
      as saturated — which is what makes the sunset land when it arrives. */
   { min: 1050, name: 'golden hour',
-    sky: ['#153a75', '#22417c', '#37447e', '#514679', '#6f486e', '#8d4d60', '#a85a4f', '#c27043', '#d78d3d'],
+    sky: ['#1c4a92', '#2c5296', '#455391', '#635185', '#874e74', '#a85463', '#c26451', '#d67c43', '#e89a3c'],
     sunA: 1.00, sunX: 0.83, sunY: 142, sunR: 12, sunC: '#ffb257',
     moonA: 0, moonX: 0.06, moonY: 208, moonR: 9,
     starA: 0.04, ridgeC: '#3a3050', ridge2C: '#282041', lakeC: '#b4634e', lakeA: 0.40,
@@ -272,7 +272,7 @@ export const PHASES = [
   { min: 1160, name: 'dusk',
     sky: ['#070513', '#0d071e', '#140b29', '#1d0e31', '#2a1235', '#3b1837', '#4f2135', '#642c31', '#7a392c'],
     sunA: 0.30, sunX: 0.93, sunY: 198, sunR: 12, sunC: '#c04a34',
-    moonA: 0.22, moonX: 0.16, moonY: 130, moonR: 9,
+    moonA: 0.22, moonX: 0.17, moonY: 134, moonR: 9,
     starA: 0.62, ridgeC: '#1d1530', ridge2C: '#140e26', lakeC: '#6a3346', lakeA: 0.56,
     lightC: '#c9743f', rayA: 0.016, rayDX: -86, rayW: 12,
     spillR: 84, spillA: 0.130, ambA: 0.014, consA: 0.038,
@@ -287,7 +287,7 @@ export const PHASES = [
   { min: 1290, name: 'night',
     sky: ['#04050c', '#060810', '#080a17', '#090d1d', '#0b1024', '#0d132b', '#0f1632', '#121a39', '#161e3f'],
     sunA: 0, sunX: 0.99, sunY: 240, sunR: 11, sunC: '#8a3626',
-    moonA: 0.70, moonX: 0.43, moonY: 122, moonR: 9,
+    moonA: 0.70, moonX: 0.44, moonY: 120, moonR: 9,
     starA: 0.92, ridgeC: '#0c0e1a', ridge2C: '#080a13', lakeC: '#303e5c', lakeA: 0.56,
     lightC: '#8fa8d8', rayA: 0.000, rayDX: -120, rayW: 16,
     spillR: 48, spillA: 0.052, ambA: 0.005, consA: 0.032,
@@ -326,6 +326,87 @@ export function envAt(min) {
    a frame never builds it twice. envAt itself stays pure. */
 let _envM = null, _env = envAt(18 * 60 + 45);
 export function envFor(m) { if (m !== _envM) { _envM = m; _env = envAt(m); } return _env; }
+
+const trip = (t) => t[0] + ',' + t[1] + ',' + t[2];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE LIGHTS, IN TWO GROUPS
+
+   Only the sky group is ever mutated. The candelabra, the lamps, the atelier
+   work-light and the four terminals are constant in absolute terms at every
+   hour of the cycle — what changes is their prominence, because the grade and
+   the sky move around them. The hearth is the single exception and it is an
+   exception about the room, not about the sun: somebody tends a fire, so it
+   rises from 0.70 of itself at noon to 1.15 at night.
+
+   The four terminals hold at exactly a0.12 r34 through the whole day, and the
+   verifier asserts it byte-for-byte at four hours. A screen does not know what
+   time it is. These machines are always on, and that is the plainest way the
+   room has of saying so.
+
+   These are declared as named objects rather than array entries because the
+   light pass has to find them again to mutate them, and every join in this
+   file that was ever made by index has eventually pointed at the wrong thing.
+   ══════════════════════════════════════════════════════════════════════════ */
+const SPILLS = WIN_CX.map((cx) => ({ x: cx, y: 250, r: 70, c: '242,173,95', a: 0.12 }));
+/* bounced daylight filling a stone hall. Absent at night, which is why the
+   night reads as five pools in the dark rather than a dim room. */
+const AMB = { x: 924, y: 292, r: 620, c: '255,246,220', a: 0.03 };
+/* the conservatory's glass roof. It takes the load at noon, when the nave
+   shafts have gone vertical and nearly died — and it is off frame at HOME,
+   which is exactly why noon is the hour the camera goes to the far end. */
+const CONS = { x: 1990, y: 250, r: 420, c: '255,246,220', a: 0.05 };
+const CMOON = { x: 1968, y: 190, r: 88, c: '159,214,224', a: 0.06 };
+const HEARTH = { x: 300, y: 250, r: 74, c: '224,102,46', a: 0.30, flicker: 1 };
+const COOL = [159, 214, 224];
+
+let _rays = [];
+
+/* the four the hour is allowed to touch — exported so the verifier can tell
+   the two groups apart without matching on coordinates */
+export const SKY_LIGHTS = [...SPILLS, AMB, CONS, CMOON];
+
+/** the sky group answers the hour; the rays are rebuilt from it */
+export function tickEnv(e) {
+  const warm = trip(e.lightC);
+  /* THE POOLS WALK WITH THE SUN. These sat at y250 — mid-wall — which is why
+     at r130 they only grazed the walk band at y377 and the "sunset paints the
+     figures orange" effect was being carried almost entirely by the ambient.
+     Light through a raked window pools on the FLOOR, displaced the way the
+     shaft is displaced, so the pool follows the rake across the day: it starts
+     right of each window at dawn, sits under it at noon, and has walked left
+     by sunset. Which also delivers morning's whole idea for free — the light
+     comes off the ring and onto the desks. */
+  for (let i = 0; i < SPILLS.length; i++) {
+    const L = SPILLS[i];
+    L.x = Math.round(WIN_CX[i] + e.rayDX * 0.62);
+    L.y = 294;
+    L.r = Math.round(e.spillR); L.a = e.spillA; L.c = warm;
+  }
+  AMB.a = e.ambA; AMB.c = warm;
+  CONS.a = e.consA; CONS.c = warm;
+  CMOON.a = 0.018 + 0.055 * e.moonA;
+  HEARTH.a = 0.30 * e.hearthM;
+
+  /* THE SHAFTS. These used to be painted inside draw(), before the sprite
+     pass, so they fell BEHIND everyone in the room — a god ray that lands on
+     nobody. room.rays composites after the sprites (engine.js:776), and
+     drawRays had never once executed because no room had ever set it. Highest
+     value per line in the whole pass: the light now lands on people.
+
+     Two per window rather than three: at dawn the rake reaches dx+112 and
+     three shafts thirty pixels apart simply overlap into a smear. */
+  _rays.length = 0;
+  if (e.rayA > 0.004) {
+    for (const cx of WIN_CX) for (const off of [-24, 24])
+      _rays.push({ x: cx + off, y: 152, w: e.rayW, dx: e.rayDX, len: 148, a: e.rayA, c: warm });
+  }
+  if (e.roofA > 0.004) {
+    const rc = trip(mix3(e.lightC, COOL, 0.72));
+    for (let i = 0; i < 3; i++)
+      _rays.push({ x: 1886 + i * 58, y: 152, w: 16, dx: e.rayDX * 0.35, len: 148, a: e.roofA, c: rc });
+  }
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    THE VISTA, LIVE
@@ -371,12 +452,20 @@ export function archTopAt(skyX) {
   return null;
 }
 
-/* a disc, rasterised rather than stroked: ctx.arc antialiases, and a soft edge
-   on a nearest-neighbour-upscaled canvas reads as a smear, not as a sun */
+/* A disc, rasterised rather than stroked: ctx.arc antialiases, and a soft edge
+   on a nearest-neighbour-upscaled canvas reads as a smear, not as a sun.
+ *
+ * The radius is inflated by a third of a pixel before the row width is taken.
+ * Without it the polar rows floor to zero — sqrt(r²-r²) — so a nine-pixel moon
+ * went from a one-pixel tick straight to a nine-pixel row and came out square
+ * down one side, with single-pixel spurs at the four poles. It read as a
+ * rendering fault rather than as the moon. */
 function pxDisc(ctx, cx, cy, r, col, a) {
   ctx.fillStyle = rgba(col, a);
+  const rr = (r + 0.35) * (r + 0.35);
   for (let dy = -r; dy <= r; dy++) {
-    const w = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
+    const w = Math.round(Math.sqrt(Math.max(0, rr - dy * dy)));
+    if (w <= 0) continue;
     ctx.fillRect(Math.round(cx - w), Math.round(cy + dy), w * 2 + 1, 1);
   }
 }
@@ -401,6 +490,25 @@ function skyWindow(g, cx, e, t) {
   for (let i = 0; i < 9; i++) grad.addColorStop(i / 8, css(e.sky[i]));
   ctx.fillStyle = grad; ctx.fillRect(x0, sTop, W, sBot - sTop);
 
+  /* THE NEAR VALLEY — everything below the waterline, which used to be
+     nothing at all. The ramp stops at 214 and the aperture runs to 300, so for
+     as long as this was baked, the bottom two thirds of every window was the
+     void colour. At dusk the valley's own lights papered over it and it read
+     as a bluff in shadow. At noon it read as a hole cut in the wall.
+
+     It is land: the shore at the top, falling away into the near bluff, which
+     is in the building's own shadow at every hour. So it takes the hour's
+     lake colour and recedes to near-black, and three strata keep it from
+     being a bare gradient. */
+  const nearTop = mix3(e.lakeC, e.ridge2C, 0.55), nearBot = mix3(e.ridge2C, [4, 3, 8], 0.72);
+  const gnd = ctx.createLinearGradient(0, sBot - 2, 0, yBase);
+  gnd.addColorStop(0, css(nearTop)); gnd.addColorStop(1, css(nearBot));
+  ctx.fillStyle = gnd; ctx.fillRect(x0, sBot - 2, W, yBase - sBot + 2);
+  for (let i = 0; i < 3; i++) {
+    const sy = sBot + 12 + i * 22, f = 0.30 + i * 0.22;
+    g.px(x0, sy + Math.sin((x0 + i * 40) * 0.03) * 3, W, 8 - i * 2, css(mix3(nearTop, nearBot, f)));
+  }
+
   // stars, culled entirely when the sky has none
   if (e.starA > 0.02) {
     for (let i = 0; i < 34; i++) {
@@ -418,9 +526,11 @@ function skyWindow(g, cx, e, t) {
   if (e.moonA > 0.02) {
     const mx = SKY_X0 + e.moonX * SKY_W;
     if (mx > x0 - 24 && mx < x1 + 24) {
-      halo(ctx, mx, e.moonY, e.moonR * 5.5, [214, 226, 246], e.moonA * 0.16);
+      halo(ctx, mx, e.moonY, e.moonR * 7, [206, 220, 246], e.moonA * 0.20);
+      halo(ctx, mx, e.moonY, e.moonR * 2.6, [214, 226, 246], e.moonA * 0.26);
       pxDisc(ctx, mx, e.moonY, e.moonR, [223, 230, 242], e.moonA);
-      pxDisc(ctx, mx - e.moonR * 0.42, e.moonY - e.moonR * 0.3, e.moonR * 0.28, [196, 206, 226], e.moonA * 0.7);
+      pxDisc(ctx, mx - Math.round(e.moonR * 0.4), e.moonY - Math.round(e.moonR * 0.3), 2, [196, 206, 226], e.moonA * 0.55);
+      pxDisc(ctx, mx + Math.round(e.moonR * 0.3), e.moonY + Math.round(e.moonR * 0.34), 1, [196, 206, 226], e.moonA * 0.45);
     }
   }
   if (e.sunA > 0.02) {
@@ -1114,10 +1224,19 @@ export function makeSanctuary(bridge) {
     },
 
     lights: [
-      { x: 300, y: 250, r: 74, c: '224,102,46', a: 0.30, flicker: 1 },              // hearth
+      /* ── the sky group: these four answer the hour, and only these ── */
+      ...SPILLS,     // the three window pools. They composite after the sprite
+                     // pass, so at sunset, at r130/a0.26, every figure standing
+                     // in the nave is washed orange by the window nearest them.
+                     // That is the most valuable consequence in the model and it
+                     // cost one number.
+      AMB,           // bounced daylight in a stone hall
+      CONS,          // the conservatory's glass roof
+      CMOON,         // moonlight through the same roof
+      /* ── the interior group: constant in absolute terms, all day ── */
+      HEARTH,                                                                       // the one exception, and it is about the room
       { x: 436, y: 322, r: 40, c: '247,217,140', a: 0.16, flicker: 2 },             // lounge table lamp
       { x: 118, y: 296, r: 40, c: '247,217,140', a: 0.14, flicker: 2 },             // reading-nook floor lamp
-      ...WIN_CX.map((cx) => ({ x: cx, y: 250, r: 70, c: '242,173,95', a: 0.12 })),  // window spill
       { x: CANDEL[0], y: 246, r: 34, c: '247,217,140', a: 0.13, flicker: 1 },       // candelabra L
       { x: CANDEL[1], y: 246, r: 34, c: '247,217,140', a: 0.13, flicker: 1 },       // candelabra R
       /* the bank. Lights composite AFTER the sprite pass (engine.js:822), so
@@ -1129,9 +1248,12 @@ export function makeSanctuary(bridge) {
          candelabra's 0.13 so the fireplace remains the star. */
       ...TERMS.filter((m) => !m.dark).map((m) => ({ x: m.x, y: m.fy - 18, r: 34, c: m.c, a: 0.12, flicker: 1 })),
       { x: 1600, y: 270, r: 46, c: '159,214,224', a: 0.12 },                        // atelier work-lamp (cool)
-      { x: 1968, y: 190, r: 88, c: '159,214,224', a: 0.06 },                        // conservatory glass-roof moon spill
       { x: 2020, y: 240, r: 44, c: '94,234,212', a: 0.05 }                          // conservatory warmth
     ],
+
+    /* Read by the engine's post-sprite ray pass. It had never executed in the
+       life of this codebase, because no room had ever set `rays`. */
+    get rays() { return _rays; },
 
     items: [
       { x: 60, kind: 'door', to: 'lookout', label: '\u2190 THE GROUNDS', spawn: { x: 150, y: 372 }, autoDoor: false, range: 30 },
@@ -1192,6 +1314,7 @@ export function makeSanctuary(bridge) {
          engine's scene pass, so grade(), the light pass and the ray pass all
          read the env this line cached. */
       const e = envFor(g.clockMin);
+      tickEnv(e);
 
       // ── the frontier, live: three views onto one sky ──
       WIN_CX.forEach((cx) => skyWindow(g, cx, e, t));
@@ -1201,12 +1324,11 @@ export function makeSanctuary(bridge) {
       g.text('THE ATELIER', 1620, 44, 'rgba(205,216,234,0.5)', 5);
       g.text('THE CONSERVATORY', 2000, 44, 'rgba(94,234,212,0.5)', 5);
 
-      // ── god-ray shafts from the five windows ──
-      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, SANCT_W, 420); ctx.clip();
-      WIN_CX.forEach((cx, k) => { for (let i = 0; i < 3; i++) { const sx = cx - 30 + i * 30, sway = Math.sin(t * 0.5 + k + i) * 6, a = 0.04 + 0.025 * Math.sin(t * 0.9 + k + i); ctx.fillStyle = 'rgba(255,214,150,' + a.toFixed(3) + ')'; ctx.beginPath(); ctx.moveTo(sx + sway, 150); ctx.lineTo(sx + 14 + sway, 150); ctx.lineTo(sx - 40 + sway, 300); ctx.lineTo(sx - 70 + sway, 300); ctx.closePath(); ctx.fill(); } });
-      // cool shafts through the conservatory glass roof
-      for (let i = 0; i < 3; i++) { const sx = 1880 + i * 60, sway = Math.sin(t * 0.4 + i) * 7, a = 0.03 + 0.02 * Math.sin(t * 0.7 + i); ctx.fillStyle = 'rgba(159,214,224,' + a.toFixed(3) + ')'; ctx.beginPath(); ctx.moveTo(sx + sway, 150); ctx.lineTo(sx + 16 + sway, 150); ctx.lineTo(sx - 30 + sway, 300); ctx.lineTo(sx - 58 + sway, 300); ctx.closePath(); ctx.fill(); }
-      ctx.restore();
+      /* The god-ray shafts used to be painted here — before the sprite pass,
+         which put every one of them BEHIND the people standing in the room.
+         They live in room.rays now, drawn after the sprites, so the light
+         falls on the residents rather than around them. Their rake, width,
+         colour and alpha all come from the hour. */
 
       // ── hearth fire flicker + pool ──
       const fl = 0.6 + 0.4 * Math.sin(t * 9) + 0.2 * Math.sin(t * 21);
@@ -1254,10 +1376,11 @@ export function makeSanctuary(bridge) {
       g.px(111, 286, 14, 3, 'rgba(247,217,140,' + (0.5 + 0.12 * Math.sin(t * 2.6 + 1)).toFixed(2) + ')');
       g.px(1594, 264, 14, 3, 'rgba(159,214,224,' + (0.42 + 0.1 * Math.sin(t * 3.3)).toFixed(2) + ')');
 
-      // ── dust motes in the nave light ──
-      for (let i = 0; i < 30; i++) { const bx = 580 + ((i * 151) % 700), by = 150 + ((t * 6 + i * 13) % 150); const mx = bx + Math.sin(t * 0.4 + i) * 8, a = 0.1 + 0.4 * (0.5 + 0.5 * Math.sin(t * 1.1 + i)); g.px(mx, by, 1, 1, 'rgba(255,230,180,' + a.toFixed(2) + ')'); }
+      // ── dust motes in the nave light — lit by whatever is coming in ──
+      const moteC = trip(mix3(e.lightC, [255, 240, 210], 0.45));
+      for (let i = 0; i < 30; i++) { const bx = 580 + ((i * 151) % 700), by = 150 + ((t * 6 + i * 13) % 150); const mx = bx + Math.sin(t * 0.4 + i) * 8, a = (0.1 + 0.4 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))) * e.moteM; g.px(mx, by, 1, 1, 'rgba(' + moteC + ',' + a.toFixed(3) + ')'); }
       // dust in the atelier cool light
-      for (let i = 0; i < 10; i++) { const mx = 1560 + ((i * 47) % 120) + Math.sin(t * 0.5 + i) * 6, my = 200 + ((t * 5 + i * 17) % 120); g.px(mx, my, 1, 1, 'rgba(205,216,234,' + (0.1 + 0.3 * (0.5 + 0.5 * Math.sin(t + i))).toFixed(2) + ')'); }
+      for (let i = 0; i < 10; i++) { const mx = 1560 + ((i * 47) % 120) + Math.sin(t * 0.5 + i) * 6, my = 200 + ((t * 5 + i * 17) % 120); g.px(mx, my, 1, 1, 'rgba(205,216,234,' + ((0.1 + 0.3 * (0.5 + 0.5 * Math.sin(t + i))) * e.moteM).toFixed(3) + ')'); }
 
       // ── conservatory: canopy sway, string-light twinkle, basin shimmer ──
       for (let i = 0; i < 30; i++) { const a = i / 30 * 6.2832, r = 34 + Math.sin(i * 3) * 12; const lx = 2025 + Math.cos(a) * r, ly = 200 + Math.sin(a) * r * 0.8 + Math.sin(t * 0.7 + i) * 1.4; g.px(lx, ly, 4, 4, i % 3 ? 'rgba(43,66,32,0.9)' : 'rgba(58,90,44,0.9)'); }
@@ -1275,8 +1398,20 @@ export function makeSanctuary(bridge) {
       // ── hanging vines by the entry + conservatory (soft foreground framing, up high) ──
       for (let f = 0; f < 6; f++) { const vx = 46 + f * 4, sway = Math.sin(t * 0.7 + f) * 2; for (let s = 0; s < 10; s++) g.px(vx + sway * (s / 10), 26 + s * 5, 2, 3, s < 3 ? 'rgba(58,90,44,0.8)' : (s < 7 ? 'rgba(43,66,32,0.85)' : 'rgba(27,42,18,0.85)')); }
 
+      /* ── the basin throws the roof back onto the alcove doors ──
+         A shallow pool under a glass roof does this, and the four doors are
+         the only flat vertical surface in the room facing it. They stay
+         de-claimed: this is weather on a wall, not an affordance. */
+      const cau = e.consA * 1.5 + e.moonA * 0.045;
+      if (cau > 0.012) {
+        for (let i = 0; i < 14; i++) {
+          const ax = 1866 + i * 18, ph = 0.5 + 0.5 * Math.sin(t * 1.3 + i * 0.9);
+          g.px(ax, 208 + Math.sin(t * 0.9 + i * 1.7) * 9, 10, 1, rgba(mix3(e.lightC, COOL, 0.6), cau * (0.3 + ph * 0.7)));
+        }
+      }
+
       // ── atmosphere: haze band ──
-      g.px(0, WB - 26, SANCT_W, 26, 'rgba(60,40,60,0.05)');
+      g.px(0, WB - 26, SANCT_W, 26, rgba(e.hazeC, e.hazeA));
     },
 
     /* THE GRADE. One full-canvas fill, and the engine paints it between the
