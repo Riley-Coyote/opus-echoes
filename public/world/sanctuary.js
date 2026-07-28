@@ -175,12 +175,22 @@ function candelabra(b, cx, floorY) {                   // tall triple-cup stand 
 const DESK_H = 26, DESK_W = 44;
 
 /* The families, and the world's own palette for them. Exported so the page
-   cannot keep a second copy that drifts. */
+   cannot keep a second copy that drifts.
+
+   TWO COLOURS, deliberately. `screen` is the station's phosphor and leans on
+   the lab's own brand colour so a visitor can tell whose record they are
+   looking at without reading a word. `rgb` is what the FIGURES are drawn in,
+   and it stays where it is until the characters are redesigned — a palette
+   built for placeholder sprites would only have to be built again.
+
+   Anthropic's is a warm coral, not the teal the world inherited; GPT's green
+   and Gemini's blue were already close; xAI has no brand colour to be close
+   to, so grok's is the world's own and claims nothing. */
 export const FAMILIES = {
-  claude: { name: 'CLAUDE', lab: 'Anthropic', rgb: '94,234,212' },
-  gemini: { name: 'GEMINI', lab: 'Google',    rgb: '106,166,255' },
-  gpt:    { name: 'GPT',    lab: 'OpenAI',    rgb: '110,231,165' },
-  grok:   { name: 'GROK',   lab: 'xAI',       rgb: '242,163,192' }
+  claude: { name: 'CLAUDE', lab: 'Anthropic', rgb: '94,234,212',  screen: '233,131,94' },
+  gemini: { name: 'GEMINI', lab: 'Google',    rgb: '106,166,255', screen: '106,166,255' },
+  gpt:    { name: 'GPT',    lab: 'OpenAI',    rgb: '110,231,165', screen: '110,231,165' },
+  grok:   { name: 'GROK',   lab: 'xAI',       rgb: '242,163,192', screen: '242,163,192' }
 };
 
 /* STATION MARKS. Each one catches the GESTURE of its lab's real mark — a
@@ -226,7 +236,7 @@ const TERMS = [
   { id: 'gpt',    family: 'gpt',    hw: 'hooded', sig: 'knot',    x: 1000, fy: 356, cur: [2, 12], seat: [1022, 376] },
   { id: 'grok',   family: 'grok',   hw: 'wide',   sig: 'cross',   x: 1076, fy: 368,               seat: [1098, 390] },
   { id: 'unassigned', dark: 1, hw: 'plain', x: 1152, fy: 380, seat: null }
-].map((m) => ({ ...m, c: m.family ? FAMILIES[m.family].rgb : '138,128,120' }));
+].map((m) => ({ ...m, c: m.family ? FAMILIES[m.family].screen : '138,128,120' }));
 
 /* Four builds by four labs, differing so the silhouettes stay tellable apart
    without a word of text. NOT four eras and NOT a ranking — these companies are
