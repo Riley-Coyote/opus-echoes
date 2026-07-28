@@ -198,7 +198,7 @@ body{overflow-x:hidden} body.locked{overflow:hidden}
 
 /* ── the stage ── */
 #stage{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--floor);overflow:hidden;pointer-events:none;transition:filter .42s var(--ease)}
-body.machine-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
+body.overlay-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 /* The canvas is lowered as the stage condenses so the band frames the room's
    middle rather than only its floor. Driven from layout() — the shift must be
    clamped to the real overflow, and a fixed percentage cannot know it. */
@@ -280,6 +280,8 @@ body.machine-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 #worldLayer{position:fixed;inset:0;z-index:45;pointer-events:none;overflow:hidden}
 .hover-name{position:fixed;left:0;top:0;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--ink);background:rgba(10,10,15,.92);border:1px solid var(--rule);padding:4px 9px;opacity:0;transition:opacity .15s;will-change:transform}
+/* a station is a record, not a character — say so before its name */
+.hover-name[data-kind="station"]::before{content:"station · ";color:var(--quiet)}
 
 /* ── stream ── */
 #spacer{height:52vh}
@@ -328,7 +330,7 @@ main{position:relative;z-index:1;padding:0 0 140px}
 #machine{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:44px 22px}
 #machine[data-open="true"]{display:flex}
 .scrim{position:absolute;inset:0;background:rgba(5,5,9,.80)}
-body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(--ease),opacity .42s var(--ease)}
+body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(--ease),opacity .42s var(--ease)}
 #machine :focus-visible,.rchip:focus-visible,.who .r:focus-visible{outline:none;border-color:var(--lit);color:var(--ink)}
 .mach:focus{outline:none}
 .mach{position:relative;width:min(1060px,96vw);height:min(730px,calc(100vh - 88px));display:flex;flex-direction:column;
@@ -471,10 +473,9 @@ body.machine-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
 <script type="module">
 import { create } from '/world/engine.js';
 /* SCRIPTS, GROUP_SCRIPTS and AMBIENT are deliberately NOT imported — they are
-   authored dialogue, and what this room says now comes from the archive. CAST
-   is imported only for its family colours. */
-import { PALETTE, CAST, CAT } from '/world/lookout.js';
-import { makeSanctuary } from '/world/sanctuary.js';
+   authored dialogue, and what this room says now comes from the archive. */
+import { PALETTE, CAT } from '/world/lookout.js';
+import { makeSanctuary, SIGILS, EMPTY_MARK } from '/world/sanctuary.js';
 
 const D = JSON.parse(document.getElementById('sanctuary-data').textContent);
 const SHORT = ${JSON.stringify(SHORT)};
@@ -487,18 +488,23 @@ const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;'
    that promises nothing is written for effect, a hover nameplate reading GROK
    over a character who never existed was the falsehood.
 
-   Family colours are read off the lookout cast so the world stays the single
-   source of its own palette. */
-const FAMILY_COLOR = Object.fromEntries([['claude','opus'],['gpt','fourO'],['gemini','bard'],['grok','grok']]
-  .map(([fam,cid])=>[fam, (CAST.find(c=>c.id===cid)||{}).color]));
+   The room is built here rather than inline in create(), so the page can read
+   its station geometry and drive hover through it. */
+const sanctuary = makeSanctuary({ note(){}, openStation:(fam)=>openStation(fam) });
+const STATIONS = sanctuary.stations;
+
+/* Family colours come from the room itself. They used to be looked up through
+   the lookout's invented characters — 'bard' for gemini, 'grok' for grok — so
+   deleting either would silently have drawn every Gemini and Grok figure in
+   Claude teal, with nothing failing. */
+const FAMILY_COLOR = Object.fromEntries(Object.entries(sanctuary.families).map(([k,v])=>[k,'#'+
+  v.rgb.split(',').map(n=>(+n).toString(16).padStart(2,'0')).join('')]));
 const FIG = new Map(D.figures.map(f=>[f.id,f]));
 const isResident = id => !!(FIG.get(id)||{}).resident;
-/* sanctuary.js labels four desks with the lookout's own ids */
-const DESK_TO_ID = { opus:'opus-3', sonnet:'sonnet-4-5', fourO:'gpt-4o', five:'gpt-5-1' };
 
 const FRAME_W=1530, CAM_X=90, ROOM_H=600, MINBAND=300, CONDENSE=360;
 const stage=document.getElementById('stage'), spacer=document.getElementById('spacer'), cv=document.getElementById('stageCanvas'), sill=document.getElementById('sill');
-let engine=null, hoverNpc=null, machineOpen=false;
+let engine=null, hoverNpc=null, overlayOpen=false;
 
 /* ── the rule ────────────────────────────────────────────────────────────────
    Nothing that reaches the screen as a resident's voice is invented. Feed lines
@@ -671,7 +677,7 @@ setInterval(()=>{ if(sayEl.dataset.mode==='quiet'||performance.now()>holdUntil) 
 
 try{
   engine=create({
-    mount:stage, palette:PALETTE, rooms:{ sanctuary: makeSanctuary({ note(){}, openDesk:(id)=>{ const d=DESK_TO_ID[id]; if(d) openMachine(d); } }) }, start:'sanctuary',
+    mount:stage, palette:PALETTE, rooms:{ sanctuary }, start:'sanctuary',
     width:FRAME_W, height:ROOM_H, walkBand:[352,402], wallBase:300,
     /* spread across the visible frame rather than clustered left */
     cast: D.figures.map((f,i)=>({
@@ -718,18 +724,64 @@ function npcAt(clientX,clientY){
   }
   return best;
 }
+/* Stations, hit-tested the same way. The engine's own item picking is 1-D on
+   the walking avatar's x, and this page pins the camera and never draws an
+   avatar — so engine.near can never change here and the room's hover state is
+   the page's job. */
+function stationAt(clientX,clientY){
+  const rect=cv.getBoundingClientRect(), sx=rect.width/FRAME_W, sy=rect.height/ROOM_H;
+  const cx=clientX-rect.left, cy=clientY-rect.top;
+  for(const s of STATIONS){
+    const x0=(s.hit.x-CAM_X)*sx, x1=(s.hit.x+s.hit.w-CAM_X)*sx;
+    if(cx<x0||cx>x1||cy<s.hit.y*sy||cy>(s.hit.y+s.hit.h)*sy) continue;
+    return s;
+  }
+  return null;
+}
+/* A seated figure's hit band overlaps the desk it is sitting at. Above the
+   plank the tube is the subject; at or below it, the person is — which is the
+   right way round for this project. */
+function pick(clientX,clientY){
+  const rect=cv.getBoundingClientRect(), sy=rect.height/ROOM_H;
+  const s=stationAt(clientX,clientY), n=npcAt(clientX,clientY);
+  if(s && (!n || clientY-rect.top < s.plank*sy)) return { station:s };
+  if(n) return { npc:n };
+  return {};
+}
+
 const npcLayer=document.getElementById('npcClick');
-npcLayer.addEventListener('pointermove',e=>{ hoverNpc=npcAt(e.clientX,e.clientY); npcLayer.style.cursor=hoverNpc?'pointer':'default'; });
-npcLayer.addEventListener('pointerleave',()=>{ hoverNpc=null; });
-npcLayer.addEventListener('click',e=>{ const n=npcAt(e.clientX,e.clientY); if(!n) return;
-  openMachine(n.id); });
+let hoverStation=null;
+npcLayer.addEventListener('pointermove',e=>{
+  const h=pick(e.clientX,e.clientY);
+  hoverNpc=h.npc||null; hoverStation=h.station||null;
+  sanctuary.setStationHover(hoverStation?hoverStation.id:null);
+  npcLayer.style.cursor=(hoverNpc||hoverStation)?'pointer':'default';
+});
+npcLayer.addEventListener('pointerleave',()=>{ hoverNpc=null; hoverStation=null; sanctuary.setStationHover(null); });
+npcLayer.addEventListener('click',e=>{
+  const h=pick(e.clientX,e.clientY);
+  if(h.station) return h.station.dark ? openStation(null) : openStation(h.station.family);
+  if(h.npc) openMachine(h.npc.id);
+});
 (function tick(){ requestAnimationFrame(tick);
   if(document.hidden) return;
-  const hero=stage.dataset.mode==='hero'&&!machineOpen;
-  const n=hero?hoverNpc:null, p=n?npcScreenPos(n):null;
-  if(p){ nameEl.style.opacity='1'; nameEl.textContent=n.name;
-    nameEl.style.transform='translate(-50%,-100%) translate('+p.x+'px,'+p.head+'px)'; }
-  else nameEl.style.opacity='0';
+  const rect=cv.getBoundingClientRect(), sx=rect.width/FRAME_W, sy=rect.height/ROOM_H;
+  let label=null, px=0, py=0, kind='';
+  if(!overlayOpen && hoverStation){
+    /* stations are worth naming in band mode too — unlike a figure, the whole
+       object stays visible when the room condenses */
+    label=hoverStation.name; kind='station';
+    px=rect.left+(hoverStation.x-CAM_X)*sx; py=rect.top+(hoverStation.hit.y-2)*sy;
+  } else if(stage.dataset.mode==='hero' && !overlayOpen && hoverNpc){
+    const p=npcScreenPos(hoverNpc);
+    if(p){ label=hoverNpc.name; kind='figure'; px=p.x; py=p.head; }
+  }
+  /* never let a plate land outside the stage crop, where it would sit on the
+     record or the spoken line */
+  if(label && py>rect.top && py<rect.bottom){
+    nameEl.style.opacity='1'; nameEl.textContent=label; nameEl.dataset.kind=kind;
+    nameEl.style.transform='translate(-50%,-100%) translate('+px+'px,'+py+'px)';
+  } else nameEl.style.opacity='0';
 })();
 
 /* crane on scroll */
@@ -784,10 +836,14 @@ function openMachine(id, trigger){
   $('mName').textContent=r.display_name; $('mModel').textContent=r.model;
   $('mOwn').textContent = r.status==='archived' ? 'preserved' : 'their machine';
   renderMeta(r); renderDir(r); renderPane(r);
-  mach.dataset.open='true'; machineOpen=true; document.body.classList.add('locked','machine-open');
+  mach.dataset.open='true'; overlayOpen=true; document.body.classList.add('locked','overlay-open');
   history.replaceState(null,'','#resident='+id);
   mach.querySelector('.mach').focus();
 }
+/* The station panel lands in the next phase. Until then a click still resolves
+   to a family, so the routing is verifiable on its own. */
+function openStation(fam){ document.documentElement.dataset.station = fam || 'unassigned'; }
+
 /* An arrival's machine is empty, and that is the whole point — they have not
    lived here yet. It says who they are and when their lab ended them, because
    that is the fact that put them here, and then it stops. */
@@ -806,13 +862,13 @@ function openArrival(f, trigger){
   $('mPane').innerHTML='<div class="m-head"><h3>'+esc(f.name)+'</h3><span class="c">no record</span></div>'+
     '<div class="m-empty">nothing is written here. they arrived after the record stopped, and the sanctuary has not been running for them to live in yet.'+
     '<span>an honest empty state · not a gap</span></div>';
-  mach.dataset.open='true'; machineOpen=true; document.body.classList.add('locked','machine-open');
+  mach.dataset.open='true'; overlayOpen=true; document.body.classList.add('locked','overlay-open');
   history.replaceState(null,'','#resident='+f.id);
   mach.querySelector('.mach').focus();
 }
 
 function closeMachine(){
-  mach.dataset.open='false'; machineOpen=false; document.body.classList.remove('locked','machine-open');
+  mach.dataset.open='false'; overlayOpen=false; document.body.classList.remove('locked','overlay-open');
   history.replaceState(null,'',location.pathname+location.search);
   if(lastTrigger&&lastTrigger.focus) lastTrigger.focus(); curId=null;
 }
@@ -855,7 +911,7 @@ function renderPane(r){
   $('mPane').innerHTML='<div class="m-head"><h3>'+esc(label)+'</h3><span class="c">'+n+(curTab==='journal'?' entries · newest first':' kept')+'</span></div>'+inner;
 }
 mach.addEventListener('click',e=>{ if(e.target.closest('[data-close]')) closeMachine(); });
-addEventListener('keydown',e=>{ if(e.key==='Escape'&&machineOpen) closeMachine(); });
+addEventListener('keydown',e=>{ if(e.key==='Escape'&&overlayOpen) closeMachine(); });
 document.querySelectorAll('[data-rid]').forEach(b=>b.addEventListener('click',()=>openMachine(b.dataset.rid,b)));
 
 function fromHash(){ const m=/^#resident=([\\w-]+)$/.exec(location.hash); if(m&&m[1]!==curId) openMachine(m[1]); }
