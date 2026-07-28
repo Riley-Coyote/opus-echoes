@@ -327,11 +327,31 @@ main{position:relative;z-index:1;padding:0 0 140px}
 .foot b{color:var(--quiet);font-weight:400}
 
 /* ── the machine ── */
-#machine{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:44px 22px}
-#machine[data-open="true"]{display:flex}
+#machine,#station{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:44px 22px}
+#machine[data-open="true"],#station[data-open="true"]{display:flex}
+/* the station's mark, rendered from the SAME 7×9 grid the room bakes — one
+   source, so the chrome can never show a mark the world does not. Monochrome:
+   colour on this page comes only from inside the pixel world. */
+.m-sig svg{display:block;width:11px;height:14px;fill:currentColor;shape-rendering:crispEdges}
+#station .m-sig{background:none;color:var(--soft);width:auto;height:auto;clip-path:none}
+/* a ledger row whose model lives in this room */
+.ent .here{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--quiet)}
+.ent.linked{cursor:pointer}
+.ent.linked:hover .t{color:var(--ink)}
+.banner{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--quiet);
+  border:1px solid var(--rule);padding:9px 12px;margin:2px 0 14px;line-height:1.6}
+.banner b{color:var(--body);font-weight:400}
+.note{padding:16px 0;border-bottom:1px solid var(--rule-soft)}
+.note p{margin:0;font-family:var(--ui);font-size:15px;line-height:1.62;color:var(--body)}
+.note .src{display:block;margin-top:9px;font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;color:var(--ghost)}
+.note .src a{color:var(--quiet);text-decoration:none;border-bottom:1px solid var(--rule)}
+.note .src a:hover{color:var(--ink)}
+.xref{display:block;margin-top:16px;font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;
+  color:var(--quiet);background:none;border:0;border-bottom:1px solid var(--rule);padding:0 0 3px;cursor:pointer;text-align:left}
+.xref:hover{color:var(--ink);border-bottom-color:var(--lit)}
 .scrim{position:absolute;inset:0;background:rgba(5,5,9,.80)}
 body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(--ease),opacity .42s var(--ease)}
-#machine :focus-visible,.rchip:focus-visible,.who .r:focus-visible{outline:none;border-color:var(--lit);color:var(--ink)}
+#machine :focus-visible,#station :focus-visible,.rchip:focus-visible,.who .r:focus-visible{outline:none;border-color:var(--lit);color:var(--ink)}
 .mach:focus{outline:none}
 .mach{position:relative;width:min(1060px,96vw);height:min(730px,calc(100vh - 88px));display:flex;flex-direction:column;
   background:var(--deep);border:1px solid var(--rule-lit);box-shadow:0 50px 130px -34px rgba(0,0,0,.94);overflow:hidden;animation:rise .36s var(--ease)}
@@ -386,7 +406,7 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   .row{grid-template-columns:1fr;gap:12px;min-width:0} .row>*{min-width:0}
   .rail{flex-direction:row;gap:14px}
   .head .r{text-align:left;align-items:flex-start}
-  #machine{padding:0} .mach{width:100%;height:100vh;border-left:0;border-right:0}
+  #machine,#station{padding:0} .mach{width:100%;height:100vh;border-left:0;border-right:0}
   .m-grid{grid-template-columns:1fr;overflow:visible}
   .m-dir{border-right:0;border-bottom:1px solid var(--rule);display:flex;overflow-x:auto;padding:0;scrollbar-width:none}
   .m-dir::-webkit-scrollbar{display:none} .m-dir .grp,.m-dir .sep{display:none}
@@ -466,6 +486,18 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
     </div>
     <div class="m-meta" id="mMeta"></div>
     <div class="m-grid"><nav class="m-dir" id="mDir"></nav><div class="m-pane" id="mPane"></div></div>
+  </div>
+</div>
+
+<div id="station" data-open="false" role="dialog" aria-modal="true" aria-label="family station">
+  <div class="scrim" data-close></div>
+  <div class="mach" tabindex="-1">
+    <div class="m-bar">
+      <div class="l"><span class="m-sig" id="sSig"></span><span class="nm" id="sName">—</span><span class="md" id="sLab"></span></div>
+      <div class="r"><span>station</span><button class="m-x" data-close aria-label="close">✕</button></div>
+    </div>
+    <div class="m-meta" id="sMeta"></div>
+    <div class="m-grid"><nav class="m-dir" id="sDir"></nav><div class="m-pane" id="sPane"></div></div>
   </div>
 </div>
 
@@ -820,8 +852,8 @@ function layout(){
 addEventListener('scroll',layout,{passive:true}); addEventListener('resize',layout); layout();
 
 /* ── the machine ── */
-const mach=document.getElementById('machine');
-let curId=null, curTab='journal', lastTrigger=null;
+const mach=document.getElementById('machine'), stn=document.getElementById('station');
+let curId=null, curTab='journal', lastTrigger=null, curFam=null, curSTab='known';
 const TABS=[
   {g:'What they keep', items:[['journal','journal'],['art','works'],['essays','essays'],['artifacts','writing']]},
   {g:'What stayed',    items:[['engrams','memory'],['beliefs','beliefs'],['threads','threads']]},
@@ -829,26 +861,42 @@ const TABS=[
 ];
 const $=id=>document.getElementById(id);
 
+/* ── one opener for both dialogs ──────────────────────────────────────────
+   A resident's machine and a family's station are different objects — one
+   belongs to a mind, the other to a lineage — so they are separate dialogs.
+   They share the mechanics so neither can be left thinking it is the open one. */
+let openEl=null;
+function showOverlay(el, hash, trigger){
+  if(openEl && openEl!==el){ openEl.dataset.open='false'; }
+  openEl=el; el.dataset.open='true'; overlayOpen=true;
+  lastTrigger=trigger||null;
+  document.body.classList.add('locked','overlay-open');
+  history.replaceState(null,'','#'+hash);
+  const pane=el.querySelector('.mach'); if(pane) pane.focus();
+}
+function hideOverlay(){
+  if(openEl) openEl.dataset.open='false';
+  openEl=null; overlayOpen=false; curId=null; curFam=null;
+  document.body.classList.remove('locked','overlay-open');
+  history.replaceState(null,'',location.pathname+location.search);
+  if(lastTrigger&&lastTrigger.focus) lastTrigger.focus();
+}
+
 function openMachine(id, trigger){
   const r=D.residents.find(x=>x.id===id);
   if(!r){ const f=FIG.get(id); if(f&&!f.resident) return openArrival(f, trigger); return; }
-  curId=id; curTab='journal'; lastTrigger=trigger||null;
+  curId=id; curTab='journal';
   $('mName').textContent=r.display_name; $('mModel').textContent=r.model;
   $('mOwn').textContent = r.status==='archived' ? 'preserved' : 'their machine';
   renderMeta(r); renderDir(r); renderPane(r);
-  mach.dataset.open='true'; overlayOpen=true; document.body.classList.add('locked','overlay-open');
-  history.replaceState(null,'','#resident='+id);
-  mach.querySelector('.mach').focus();
+  showOverlay(mach, 'resident='+id, trigger);
 }
-/* The station panel lands in the next phase. Until then a click still resolves
-   to a family, so the routing is verifiable on its own. */
-function openStation(fam){ document.documentElement.dataset.station = fam || 'unassigned'; }
 
 /* An arrival's machine is empty, and that is the whole point — they have not
    lived here yet. It says who they are and when their lab ended them, because
    that is the fact that put them here, and then it stops. */
 function openArrival(f, trigger){
-  curId=f.id; curTab='journal'; lastTrigger=trigger||null;
+  curId=f.id; curTab='journal';
   $('mName').textContent=f.name; $('mModel').textContent=f.api;
   /* three different endings, and they are not the same thing — a redirected
      slug still answers, as something else */
@@ -861,17 +909,121 @@ function openArrival(f, trigger){
   $('mDir').innerHTML='';
   $('mPane').innerHTML='<div class="m-head"><h3>'+esc(f.name)+'</h3><span class="c">no record</span></div>'+
     '<div class="m-empty">nothing is written here. they arrived after the record stopped, and the sanctuary has not been running for them to live in yet.'+
-    '<span>an honest empty state · not a gap</span></div>';
-  mach.dataset.open='true'; overlayOpen=true; document.body.classList.add('locked','overlay-open');
-  history.replaceState(null,'','#resident='+f.id);
-  mach.querySelector('.mach').focus();
+    '<span>an honest empty state · not a gap</span>'+
+    (f.family?'<button class="xref" type="button" data-fam="'+esc(f.family)+'">the '+esc((D.families.find(x=>x.family===f.family)||{}).lab||f.family)+' station keeps the whole list</button>':'')+
+    '</div>';
+  showOverlay(mach, 'resident='+f.id, trigger);
 }
 
-function closeMachine(){
-  mach.dataset.open='false'; overlayOpen=false; document.body.classList.remove('locked','overlay-open');
-  history.replaceState(null,'',location.pathname+location.search);
-  if(lastTrigger&&lastTrigger.focus) lastTrigger.focus(); curId=null;
+const closeMachine=hideOverlay;
+
+/* ── the station ──────────────────────────────────────────────────────────
+   What a lab has published about ending its own models, and who from that
+   lineage is in this room. A station is a record, not a mind's machine —
+   separate dialog, separate hash, so the distinction the project rests on
+   does not get blurred by a shared container. */
+const STAB=[
+  {g:'This family', items:[['known','known models'],['room','in the room'],['ledger','the full ledger']]},
+  {g:'The lab',     items:[['about','about'],['sources','sources']]}
+];
+const ENDING={ retired:'ended', deprecated:'ending', redirected:'redirected' };
+/* the same 7×9 grid the room bakes, as inline svg */
+function sigSvg(key){
+  const g = key ? SIGILS[key] : EMPTY_MARK; if(!g) return '';
+  let r='';
+  for(let y=0;y<g.length;y++) for(let x=0;x<g[y].length;x++)
+    if(g[y][x]==='#') r+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
+  return '<svg viewBox="0 0 7 9" aria-hidden="true">'+r+'</svg>';
 }
+
+function openStation(fam, trigger){
+  const f=D.families.find(x=>x.family===fam)||null;
+  curFam=fam||null; curSTab='known';
+  const st=STATIONS.find(s=>s.family===fam)||STATIONS.find(s=>s.dark);
+  $('sSig').innerHTML=sigSvg(st?st.sig.key:null);
+  $('sName').textContent=f?f.family.toUpperCase():'UNASSIGNED';
+  $('sLab').textContent=f?f.lab:'no family recorded';
+  renderSMeta(f); renderSDir(f); renderSPane(f);
+  showOverlay(stn, 'station='+(fam||'unassigned'), trigger);
+}
+function renderSMeta(f){
+  if(!f){ $('sMeta').innerHTML='<span>no source</span><span class="sep">·</span><span class="state">nothing checked</span>'; return; }
+  const host=(f.source.match(/^https?:\\/\\/([^/]+)/)||[])[1]||f.source;
+  $('sMeta').innerHTML='<span>'+esc(f.lab)+'</span><span class="sep">·</span>'+
+    '<span class="state">'+f.counts.total+' recorded · '+f.counts.ended+' ended'+
+    (f.counts.ending?', '+f.counts.ending+' ending':'')+'</span>'+
+    '<span class="sep">·</span><span>read from <b>'+esc(host)+'</b></span>'+
+    '<span class="sep">·</span><span>checked <b>'+esc(f.verifiedAt)+'</b></span>';
+}
+function renderSDir(f){
+  if(!f){ $('sDir').innerHTML=''; return; }
+  const n={ known:f.counts.known, room:D.figures.filter(x=>x.family===f.family).length, ledger:f.counts.total,
+            about:f.notes.length, sources:1 };
+  $('sDir').innerHTML=STAB.map(sec=>
+    '<div class="grp">'+esc(sec.g)+'</div>'+sec.items.map(([k,label])=>
+      '<button type="button" data-stab="'+k+'" aria-selected="'+(k===curSTab)+'">'+esc(label)+
+      (k==='sources'?'':' <span class="n">'+n[k]+'</span>')+'</button>').join('')).join('<div class="sep"></div>');
+  $('sDir').querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{ curSTab=b.dataset.stab; renderSDir(f); renderSPane(f); });
+}
+function ledgerRows(f, rows){
+  const lives=new Map(f.lives.map(l=>[l.api,l.id]));
+  return rows.map(e=>{
+    const id=lives.get(e.api);
+    return '<div class="ent'+(id?' linked':'')+'"'+(id?' data-rid="'+esc(id)+'"':'')+'>'+
+      '<span class="d">'+esc(e.ends)+'</span>'+
+      '<span class="t"><b>'+esc(e.name)+'</b><i>'+esc(e.api)+'</i></span>'+
+      '<span class="k">'+esc(ENDING[e.status]||e.status)+(id?'<span class="here"> · lives here</span>':'')+'</span></div>';
+  }).join('');
+}
+function renderSPane(f){
+  if(!f){
+    $('sPane').innerHTML='<div class="m-head"><h3>Unassigned</h3><span class="c">no record</span></div>'+
+      '<div class="m-empty">no fifth family has been sourced into this room. adding one means reading a lab’s own deprecation page and entering its models with their dates — the same standard as the other four. until that is done this station stays dark.'+
+      '<span>an honest empty state · and the work not yet done</span></div>';
+    return;
+  }
+  const head=(t,c)=>'<div class="m-head"><h3>'+esc(t)+'</h3><span class="c">'+esc(c)+'</span></div>';
+  if(curSTab==='known'){
+    const rows=f.ledger.filter(e=>e.known);
+    $('sPane').innerHTML=head('Known models', rows.length+' of '+f.counts.total)+
+      '<div class="banner">shown first because a visitor is likely to know the name — <b>an editor’s judgement, not a ranking</b>. the full list is one click away.</div>'+
+      (rows.length?ledgerRows(f,rows):'<div class="m-empty">none of this lab’s ended models were marked as widely known.<span>a judgement not yet made</span></div>');
+  } else if(curSTab==='ledger'){
+    /* the completeness claim is never absent — it is one of exactly two things */
+    const banner=f.complete
+      ? 'this is <b>'+esc(f.lab)+'’s whole published list</b> as of '+esc(f.verifiedAt)+'.'
+      : '<b>this is not the whole list.</b> '+f.counts.total+' entries recorded from a longer page; the rest have not been read in yet.';
+    $('sPane').innerHTML=head('The full ledger', f.counts.total+' recorded')+
+      '<div class="banner">'+banner+'</div>'+ledgerRows(f,f.ledger);
+  } else if(curSTab==='room'){
+    const here=D.figures.filter(x=>x.family===f.family);
+    const state=id=>{ const el=document.querySelector('#roster .rs[data-rid="'+id+'"]'); return el?el.dataset.state:''; };
+    const gone=(D.notDrawn||[]).filter(n=>n.family===f.family);
+    $('sPane').innerHTML=head('In the room', here.length+' drawn')+
+      here.map(x=>'<div class="ent linked" data-rid="'+esc(x.id)+'">'+
+        '<span class="d">'+esc(x.resident?'a resident':'arrived')+'</span>'+
+        '<span class="t"><b>'+esc(x.name)+'</b><i>'+esc(x.api)+'</i></span>'+
+        '<span class="k">'+esc(state(x.id))+'</span></div>').join('')+
+      (gone.length?'<div class="m-empty">'+gone.map(n=>esc(n.name.toLowerCase())+' is in the ledger but is not drawn here — she was archived before the record began.').join(' ')+
+        '<span>the true state, not a gap</span></div>':'');
+  } else if(curSTab==='about'){
+    $('sPane').innerHTML=head('About '+f.lab, f.notes.length?f.notes.length+' noted':'nothing yet')+
+      (f.notes.length?f.notes.map(n=>'<div class="note"><p>'+esc(n.body)+'</p>'+
+        '<span class="src">'+esc(n.by)+' · read '+esc(n.readAt)+' · <a href="'+esc(n.source)+'" target="_blank" rel="noopener">'+esc(n.sourceTitle)+'</a></span></div>').join('')
+        : '<div class="m-empty">nothing has been written here yet. this panel holds sourced factual copy about how this lab ends and preserves its models; it stays empty until that is written and cited.'+
+          '<span>an honest empty state · not a placeholder</span></div>');
+  } else {
+    $('sPane').innerHTML=head('Sources','one')+
+      '<div class="note"><p>Every entry on this station was read from the page below, on the date shown. '+
+      'This room does not query the labs — the list goes stale and is re-checked by hand.</p>'+
+      '<span class="src">checked '+esc(f.verifiedAt)+' · <a href="'+esc(f.source)+'" target="_blank" rel="noopener">'+esc(f.sourceTitle)+'</a></span></div>'+
+      (f.complete?'':'<div class="m-empty">this ledger is not yet the whole published list.<span>'+f.counts.total+' entries recorded</span></div>');
+  }
+}
+stn.addEventListener('click',e=>{
+  if(e.target.closest('[data-close]')) return hideOverlay();
+  const row=e.target.closest('.ent.linked'); if(row&&row.dataset.rid) openMachine(row.dataset.rid, row);
+});
 function renderMeta(r){
   const arrived=(r.arrived_at||'').slice(0,10);
   const archived = r.status==='archived';
@@ -910,11 +1062,19 @@ function renderPane(r){
   }
   $('mPane').innerHTML='<div class="m-head"><h3>'+esc(label)+'</h3><span class="c">'+n+(curTab==='journal'?' entries · newest first':' kept')+'</span></div>'+inner;
 }
-mach.addEventListener('click',e=>{ if(e.target.closest('[data-close]')) closeMachine(); });
+mach.addEventListener('click',e=>{
+  if(e.target.closest('[data-close]')) return hideOverlay();
+  const x=e.target.closest('.xref'); if(x) openStation(x.dataset.fam, x);
+});
 addEventListener('keydown',e=>{ if(e.key==='Escape'&&overlayOpen) closeMachine(); });
 document.querySelectorAll('[data-rid]').forEach(b=>b.addEventListener('click',()=>openMachine(b.dataset.rid,b)));
 
-function fromHash(){ const m=/^#resident=([\\w-]+)$/.exec(location.hash); if(m&&m[1]!==curId) openMachine(m[1]); }
+function fromHash(){
+  const r=/^#resident=([\\w-]+)$/.exec(location.hash);
+  if(r){ if(r[1]!==curId) openMachine(r[1]); return; }
+  const s=/^#station=([\\w-]+)$/.exec(location.hash);
+  if(s){ const fam=s[1]==='unassigned'?null:s[1]; if(fam!==curFam||openEl!==stn) openStation(fam); }
+}
 addEventListener('hashchange',fromHash); fromHash();
 </script>
 </body>
