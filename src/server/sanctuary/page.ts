@@ -305,8 +305,8 @@ main{position:relative;z-index:1;padding:0 0 140px}
 .rchip[data-archived="true"] .sg{background:var(--ghost)} .rchip[data-archived="true"] .nm{color:var(--quiet)}
 
 .stations{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--rule-soft)}
-.stations .rchip .sg{clip-path:none;background:none;color:var(--soft);width:9px;height:11px;display:block}
-.stations .rchip .sg svg{display:block;width:9px;height:11px;fill:currentColor;shape-rendering:crispEdges}
+.stations .rchip .sg{clip-path:none;background:none;color:var(--soft);width:11px;height:11px;display:block}
+.stations .rchip .sg svg{display:block;width:11px;height:11px;fill:currentColor;shape-rendering:crispEdges}
 .stations .rchip:hover .sg{color:var(--ink);background:none}
 .stations .rchip[data-dark="true"] .sg{color:var(--ghost)}
 .stations .rchip[data-dark="true"] .nm{color:var(--quiet)}
@@ -339,7 +339,7 @@ main{position:relative;z-index:1;padding:0 0 140px}
 /* the station's mark, rendered from the SAME 7×9 grid the room bakes — one
    source, so the chrome can never show a mark the world does not. Monochrome:
    colour on this page comes only from inside the pixel world. */
-.m-sig svg{display:block;width:11px;height:14px;fill:currentColor;shape-rendering:crispEdges}
+.m-sig svg{display:block;width:13px;height:13px;fill:currentColor;shape-rendering:crispEdges}
 #station .m-sig{background:none;color:var(--soft);width:auto;height:auto;clip-path:none}
 /* a ledger row whose model lives in this room */
 .ent .here{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--quiet)}
@@ -949,7 +949,7 @@ function sigSvg(key){
   let r='';
   for(let y=0;y<g.length;y++) for(let x=0;x<g[y].length;x++)
     if(g[y][x]==='#') r+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
-  return '<svg viewBox="0 0 7 9" aria-hidden="true">'+r+'</svg>';
+  return '<svg viewBox="0 0 9 9" aria-hidden="true">'+r+'</svg>';
 }
 
 function openStation(fam, trigger){

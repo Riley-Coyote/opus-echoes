@@ -68,12 +68,12 @@ console.log("\n── marks ─────────────────�
 const grids = new Map<string, string>();
 const allMarks: Record<string, string[]> = { ...(world.SIGILS as Record<string, string[]>), empty: world.EMPTY_MARK };
 for (const [key, rows] of Object.entries(allMarks)) {
-  if (rows.length !== 9 || rows.some((r) => r.length !== 7)) fail(`mark ${key} is not 7×9`);
+  if (rows.length !== 9 || rows.some((r) => r.length !== 9)) fail(`mark ${key} is not 9×9`);
   const flat = rows.join("");
   if (grids.has(flat)) fail(`mark ${key} is identical to ${grids.get(flat)} — they must be tellable apart`);
   grids.set(flat, key);
 }
-ok(`${grids.size} distinct 7×9 marks, including the empty frame`);
+ok(`${grids.size} distinct 9×9 marks, including the empty frame`);
 const marked = stations.filter((s) => s.sig.key);
 if (marked.length !== stations.length - 1) fail(`expected exactly one unmarked station, found ${stations.length - marked.length}`);
 for (const s of marked) if (!world.SIGILS[s.sig.key]) fail(`${s.id} cites mark "${s.sig.key}", which does not exist`);

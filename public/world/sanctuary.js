@@ -183,33 +183,48 @@ export const FAMILIES = {
   grok:   { name: 'GROK',   lab: 'xAI',       rgb: '242,163,192' }
 };
 
-/* ARBITRARY STATION MARKS. Like platform numbers — they identify a station and
-   claim nothing whatsoever about a lab. They are deliberately unlike each real
-   company mark (a burst, a knot, a four-point sparkle, an X), and nothing in
-   the page may ever describe them as emblems. The family's NAME does that job,
-   in words, in the chrome.
+/* STATION MARKS. Each one catches the GESTURE of its lab's real mark — a
+   radiating burst, a closed knot, a four-point sparkle, a crossing — because a
+   station you cannot identify at a glance is a station with a legend, and a
+   legend is a failure. At nine pixels nothing is reproduced; only the gesture
+   survives, which is the honest amount to borrow.
 
-   7x9, because the smallest glass here is 22x16 and a mark has to survive being
-   drawn at one screen pixel per art pixel. They differ by SILHOUETTE and AXIS
-   rather than interior detail — interior detail is the first thing to go. */
+   They are still not emblems and the page still may not call them one. The
+   family's NAME does that job, in words, in the chrome.
+
+   9x9, square, because every one of these gestures is radial. The smallest
+   glass is 22x16, so a 9x9 mark centres with three clear pixels above it —
+   which keeps it off the lit top edge painted at T.y. They differ by
+   SILHOUETTE first: open/radiating, closed/enclosed, solid/pointed, crossing.
+   Interior detail is the first thing to vanish at this size, so none of them
+   carry any. */
 export const SIGILS = {
-  aperture: ['.#####.', '##...##', '#.....#', '#.....#', '#.....#', '#.....#', '#.....#', '##...##', '.#####.'],
-  course:   ['#######', '#######', '.......', '#######', '#######', '.......', '#######', '#######', '.......'],
-  plinth:   ['..###..', '..###..', '..###..', '..###..', '..###..', '..###..', '..###..', '#######', '#######'],
-  wedge:    ['#......', '##.....', '###....', '####...', '#####..', '####...', '###....', '##.....', '#......']
+  /* radiating strokes around an open centre — six arms, no crossing */
+  burst:   ['....#....', '#...#...#', '.#..#..#.', '..#.#.#..', '...###...',
+            '..#.#.#..', '.#..#..#.', '#...#...#', '....#....'],
+  /* a closed ring with flat top and bottom and cut shoulders */
+  knot:    ['...###...', '..#...#..', '.#.....#.', '#.......#', '#.......#',
+            '#.......#', '.#.....#.', '..#...#..', '...###...'],
+  /* four points with pinched sides — the only solid mark */
+  sparkle: ['....#....', '....#....', '...###...', '..#####..', '##.###.##',
+            '..#####..', '...###...', '....#....', '....#....'],
+  /* two thick bars crossing — no vertical, which is what separates it from the burst */
+  cross:   ['##.....##', '.##...##.', '..##.##..', '...###...', '....#....',
+            '...###...', '..##.##..', '.##...##.', '##.....##']
 };
 
 /* What the unassigned station carries instead: a dashed frame with nothing in
-   it. Four bare corner pixels read as dust at this size; a frame reads as a
-   place where a mark would go, which is the true thing to say. */
+   it. Bare corner pixels read as dust at this size; a frame reads as a place
+   where a mark would go, which is the true thing to say. */
 export const EMPTY_MARK =
-  ['#.#.#.#', '.......', '#.....#', '.......', '#.....#', '.......', '#.....#', '.......', '#.#.#.#'];
+  ['#.#.#.#.#', '.........', '#.......#', '.........', '#.......#',
+   '.........', '#.......#', '.........', '#.#.#.#.#'];
 
 const TERMS = [
-  { id: 'claude', family: 'claude', hw: 'slab',   sig: 'aperture', x: 772,  fy: 368, cur: [2, 12], seat: [750, 390] },
-  { id: 'gemini', family: 'gemini', hw: 'port',   sig: 'course',   x: 848,  fy: 356,               seat: [826, 376] },
-  { id: 'gpt',    family: 'gpt',    hw: 'hooded', sig: 'plinth',   x: 1000, fy: 356, cur: [2, 12], seat: [1022, 376] },
-  { id: 'grok',   family: 'grok',   hw: 'wide',   sig: 'wedge',    x: 1076, fy: 368,               seat: [1098, 390] },
+  { id: 'claude', family: 'claude', hw: 'slab',   sig: 'burst',   x: 772,  fy: 368, cur: [2, 12], seat: [750, 390] },
+  { id: 'gemini', family: 'gemini', hw: 'port',   sig: 'sparkle', x: 848,  fy: 356,               seat: [826, 376] },
+  { id: 'gpt',    family: 'gpt',    hw: 'hooded', sig: 'knot',    x: 1000, fy: 356, cur: [2, 12], seat: [1022, 376] },
+  { id: 'grok',   family: 'grok',   hw: 'wide',   sig: 'cross',   x: 1076, fy: 368,               seat: [1098, 390] },
   { id: 'unassigned', dark: 1, hw: 'plain', x: 1152, fy: 380, seat: null }
 ].map((m) => ({ ...m, c: m.family ? FAMILIES[m.family].rgb : '138,128,120' }));
 
@@ -235,7 +250,7 @@ function tube(m) {
    collides with the lit top edge painted at T.y */
 function sigRect(m) {
   const T = tube(m);
-  return { x: T.x + 2, y: T.y + Math.floor((T.h - 9) / 2), w: 7, h: 9 };
+  return { x: T.x + 2, y: T.y + Math.floor((T.h - 9) / 2), w: 9, h: 9 };
 }
 function sigil(b, grid, x, y, col) {
   if (!grid) return;
