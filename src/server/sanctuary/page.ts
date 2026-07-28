@@ -396,6 +396,7 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   /* the wordmark and the clock cannot both fit; the page title carries the
      rest, and the clock is the part that is actually saying something */
   .mark .sep,.mark .rm{display:none}
+  .ck-lede{display:none}
   .hud-top{padding:12px 18px}
   .hud-roster{gap:0 10px;padding:0 18px 7px}
   /* a 120-character line runs to three at this width; reserve for three so a
@@ -436,7 +437,7 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
     <div class="hud-head">
       <div class="hud-top">
         <div class="mark"><span class="glyph"></span><b>MNEMOS</b><span class="sep">·</span><span class="rm">THE SANCTUARY</span></div>
-        <div class="r" id="duskClock" data-min="0" data-day="1">THE ROOM’S OWN DAY</div>
+        <div class="r" id="duskClock" data-min="0" data-day="1"><span class="ck-lede">THE ROOM’S OWN DAY</span></div>
       </div>
       <div class="hud-roster" id="roster" hidden></div>
     </div>
@@ -605,8 +606,14 @@ let clockNow='', lastMin=null, day=1;
 function renderClock(){
   if(!clockNow) return;
   const ph=(sanctuary.env&&sanctuary.env.name)||'';
-  const next='THE ROOM’S OWN DAY · '+clockNow+(ph?' · '+ph.toUpperCase():'')+(day>1?' · DAY '+day:'');
-  if(clockEl.textContent!==next) clockEl.textContent=next;
+  /* The lede is the first thing to go at narrow. Adding the phase name in
+     phase 9 pushed this line straight through the wordmark at 375 — and a
+     clock that overlaps the logo is worse than a clock that does not
+     introduce itself. The hour and the phase are the information; "THE
+     ROOM'S OWN DAY" is the sentence around them. CSS drops it, not JS, so
+     there is no width branch to keep in sync. */
+  const next='<span class="ck-lede">THE ROOM’S OWN DAY · </span>'+clockNow+(ph?' · '+ph.toUpperCase():'')+(day>1?' · DAY '+day:'');
+  if(clockEl.innerHTML!==next) clockEl.innerHTML=next;
   /* The fixed dark overlays were tuned against a room that was always dusk.
      At noon the canvas brightens underneath them and the band's bottom fade
      stops reading as a fade and starts reading as a hard bar across a lit
