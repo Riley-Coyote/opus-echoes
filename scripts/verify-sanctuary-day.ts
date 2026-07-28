@@ -136,6 +136,79 @@ for (let m = 0; m < 1440; m += 5) {
 }
 ok("the sun and the moon are never both high at once");
 
+/* ── the colonnade ──
+   The three windows are three views onto one sky, so a disc placed between two
+   apertures is behind a pier and simply does not exist that hour. Crossing the
+   stonework mid-morning is the effect; parking a keyframe's disc inside a pier
+   is the bug, and it is invisible from the table. */
+const { SKY_X0, SKY_W, WIN, WIN_CX } = world;
+const bands = WIN_CX.map((cx: number) => [
+  (cx - WIN.w / 2 + 8 - SKY_X0) / SKY_W,
+  (cx + WIN.w / 2 - 8 - SKY_X0) / SKY_W,
+]);
+const seen = (f: number) => bands.some(([a, b]: number[]) => f >= a && f <= b);
+for (const p of PHASES) {
+  if (p.sunA > 0.25 && !seen(p.sunX))
+    fail(`${p.name} @${hhmm(p.min)} puts the sun at x${(SKY_X0 + p.sunX * SKY_W).toFixed(0)} — behind a pier, at a0.${String(p.sunA).slice(2)}`);
+  if (p.moonA > 0.25 && !seen(p.moonX))
+    fail(`${p.name} @${hhmm(p.min)} puts the moon at x${(SKY_X0 + p.moonX * SKY_W).toFixed(0)} — behind a pier, at a0.${String(p.moonA).slice(2)}`);
+}
+ok("every visible disc is authored inside an aperture, not inside the stonework");
+
+/* ── and inside the GLASS, which is a different question ──
+   The arch is a quadratic peaking at y=91 and falling to y=150 at the jambs,
+   so "inside a window" horizontally says nothing about whether the disc is
+   actually on glass. A sun authored at y62 is clipped away entirely and the
+   table looks perfectly reasonable. */
+const RIDGE = 176;
+for (const p of PHASES) {
+  for (const [what, a, x, y, r] of [
+    ["sun", p.sunA, p.sunX, p.sunY, p.sunR],
+    ["moon", p.moonA, p.moonX, p.moonY, p.moonR],
+  ] as [string, number, number, number, number][]) {
+    if (a <= 0.25) continue;
+    const arch = world.archTopAt(SKY_X0 + x * SKY_W);
+    if (!arch) continue;                                   // already reported above
+    if (y - r < arch.top)
+      fail(`${p.name} @${hhmm(p.min)}: the ${what} at y${y} r${r} reaches above the arch (top y${arch.top.toFixed(0)} at that x) — clipped`);
+    if (a > 0.5 && y - r > RIDGE)
+      fail(`${p.name} @${hhmm(p.min)}: the ${what} at y${y} is entirely behind the ridge at a${a} — bright and invisible`);
+  }
+}
+ok("every visible disc sits on glass, below its arch and clear of the ridge");
+
+/* The keyframes are twelve instants of a continuous journey, so checking them
+   proves nothing about the other 1428 minutes. Sweep the whole day and count
+   how much of it actually has a sun in it — and insist the three hours the
+   design is *about* are among them. */
+const onGlass = (x: number, y: number, r: number) => {
+  const arch = world.archTopAt(SKY_X0 + x * SKY_W);
+  return !!arch && y - r >= arch.top && y - r < RIDGE;
+};
+let bright = 0, visible = 0;
+for (let m = 0; m < 1440; m++) {
+  const e = envAt(m);
+  if (e.sunA <= 0.5) continue;
+  bright++;
+  if (onGlass(e.sunX, e.sunY, e.sunR)) visible++;
+}
+const share = visible / Math.max(1, bright);
+if (share < 0.45) fail(`the sun is on glass for only ${(share * 100).toFixed(0)}% of the hours it is bright — the colonnade is eating the day`);
+else ok(`the sun is on glass for ${(share * 100).toFixed(0)}% of the hours it is bright`);
+for (const [label, m] of [["dawn", 360], ["noon", 720], ["sunset", 1125]] as [string, number][]) {
+  const e = envAt(m);
+  if (!onGlass(e.sunX, e.sunY, e.sunR)) fail(`there is no sun visible at ${label} — the one hour that is about the sun`);
+}
+ok("dawn, noon and sunset each have a sun you can see");
+/* and it must cross, or the colonnade is doing nothing */
+let crossings = 0;
+for (let m = 1; m < 1440; m++) {
+  const a = envAt(m - 1), b = envAt(m);
+  if (a.sunA > 0.5 && b.sunA > 0.5 && seen(a.sunX) !== seen(b.sunX)) crossings++;
+}
+if (crossings < 2) fail(`the sun passes behind the stonework ${crossings} time(s) — the colonnade never reads`);
+else ok(`the sun crosses behind the piers ${crossings} times between rising and setting`);
+
 /* ─────────────────── interior sources ignore the sun ─────────────────── */
 console.log("\n── the interior does not follow the sun ─────────────────────");
 const src = readFileSync("public/world/sanctuary.js", "utf8");

@@ -45,7 +45,7 @@ function lerpHex(a, c, f) {
 function bloom(b, cx, cy, r, rgb, peak) {              // baked radial glow (cheap painter's version)
   for (let i = r; i > 0; i -= 2) { const a = (peak * (1 - i / r) * (1 - i / r)).toFixed(3); b.px(cx - i, cy - i, i * 2, i * 2, 'rgba(' + rgb + ',' + a + ')'); }
 }
-const WIN_CX = [772, 924, 1076];                       // three nave windows (was five; keeps 924 centre so colonnade furniture stays aligned)
+export const WIN_CX = [772, 924, 1076];                       // three nave windows (was five; keeps 924 centre so colonnade furniture stays aligned)
 
 /* ══════════════════════════════════════════════════════════════════════════
    THE DAY
@@ -110,7 +110,7 @@ export const PHASES = [
   { min: 0, name: 'night',
     sky: ['#04050b', '#05070f', '#070915', '#080c1b', '#0a0f22', '#0c1229', '#0e1530', '#111937', '#151d3d'],
     sunA: 0, sunX: 0.04, sunY: 236, sunR: 11, sunC: '#c04a34',
-    moonA: 0.85, moonX: 0.62, moonY: 76, moonR: 9,
+    moonA: 0.85, moonX: 0.50, moonY: 104, moonR: 9,
     starA: 0.95, ridgeC: '#0b0d18', ridge2C: '#070911', lakeC: '#2c3a58', lakeA: 0.55,
     lightC: '#8fa8d8', rayA: 0.000, rayDX: 130, rayW: 16,
     spillR: 46, spillA: 0.050, ambA: 0.005, consA: 0.030,
@@ -160,7 +160,7 @@ export const PHASES = [
   { min: 360, name: 'dawn',
     sky: ['#0d1330', '#171f47', '#252659', '#382e63', '#4f3763', '#6b425e', '#8a5057', '#a9634c', '#c67d47'],
     sunA: 0.90, sunX: 0.10, sunY: 168, sunR: 11, sunC: '#ffb56a',
-    moonA: 0.14, moonX: 0.95, moonY: 154, moonR: 9,
+    moonA: 0.14, moonX: 0.93, moonY: 154, moonR: 9,
     starA: 0.12, ridgeC: '#241f3c', ridge2C: '#191634', lakeC: '#c98049', lakeA: 0.32,
     lightC: '#ffc98a', rayA: 0.055, rayDX: 112, rayW: 13,
     spillR: 96, spillA: 0.150, ambA: 0.016, consA: 0.052,
@@ -188,7 +188,7 @@ export const PHASES = [
      loses is intimacy, and the fire — nobody looks at a fire at nine. */
   { min: 540, name: 'morning',
     sky: ['#1f4d8c', '#2a5896', '#35639f', '#416ea6', '#4e79ac', '#5d84b0', '#6e8eb3', '#8098b4', '#93a1b4'],
-    sunA: 1.00, sunX: 0.29, sunY: 100, sunR: 10, sunC: '#ffe4ad',
+    sunA: 1.00, sunX: 0.24, sunY: 124, sunR: 10, sunC: '#ffe4ad',
     moonA: 0, moonX: 0.10, moonY: 196, moonR: 9,
     starA: 0, ridgeC: '#465274', ridge2C: '#333e60', lakeC: '#9fb0bc', lakeA: 0.20,
     lightC: '#ffeec8', rayA: 0.068, rayDX: 54, rayW: 18,
@@ -205,7 +205,7 @@ export const PHASES = [
      light went. */
   { min: 720, name: 'noon',
     sky: ['#245aa0', '#3066a9', '#3c72b1', '#497db8', '#5787bd', '#6691c1', '#779ac3', '#89a3c4', '#9cabc3'],
-    sunA: 1.00, sunX: 0.50, sunY: 62, sunR: 9, sunC: '#fff3d0',
+    sunA: 1.00, sunX: 0.50, sunY: 104, sunR: 9, sunC: '#fff3d0',
     moonA: 0, moonX: 0.24, moonY: 210, moonR: 9,
     starA: 0, ridgeC: '#4d5a80', ridge2C: '#39466c', lakeC: '#a9bac6', lakeA: 0.18,
     lightC: '#fff6dc', rayA: 0.030, rayDX: 0, rayW: 24,
@@ -221,7 +221,7 @@ export const PHASES = [
      warms. */
   { min: 870, name: 'afternoon',
     sky: ['#22528f', '#2d5c97', '#3a669d', '#4970a1', '#5a79a3', '#6d82a3', '#818ba0', '#96939c', '#ab9c96'],
-    sunA: 1.00, sunX: 0.69, sunY: 92, sunR: 10, sunC: '#ffe6b0',
+    sunA: 1.00, sunX: 0.76, sunY: 122, sunR: 10, sunC: '#ffe6b0',
     moonA: 0, moonX: 0.40, moonY: 214, moonR: 9,
     starA: 0, ridgeC: '#4a5473', ridge2C: '#373f5e', lakeC: '#b4a89a', lakeA: 0.22,
     lightC: '#ffe6b8', rayA: 0.052, rayDX: -38, rayW: 19,
@@ -235,7 +235,7 @@ export const PHASES = [
      as saturated — which is what makes the sunset land when it arrives. */
   { min: 1050, name: 'golden hour',
     sky: ['#153a75', '#22417c', '#37447e', '#514679', '#6f486e', '#8d4d60', '#a85a4f', '#c27043', '#d78d3d'],
-    sunA: 1.00, sunX: 0.81, sunY: 140, sunR: 12, sunC: '#ffb257',
+    sunA: 1.00, sunX: 0.83, sunY: 142, sunR: 12, sunC: '#ffb257',
     moonA: 0, moonX: 0.06, moonY: 208, moonR: 9,
     starA: 0.04, ridgeC: '#3a3050', ridge2C: '#282041', lakeC: '#b4634e', lakeA: 0.40,
     lightC: '#ffc270', rayA: 0.070, rayDX: -54, rayW: 15,
@@ -271,8 +271,8 @@ export const PHASES = [
      already coded. */
   { min: 1160, name: 'dusk',
     sky: ['#070513', '#0d071e', '#140b29', '#1d0e31', '#2a1235', '#3b1837', '#4f2135', '#642c31', '#7a392c'],
-    sunA: 0.30, sunX: 0.95, sunY: 198, sunR: 12, sunC: '#c04a34',
-    moonA: 0.22, moonX: 0.16, moonY: 118, moonR: 9,
+    sunA: 0.30, sunX: 0.93, sunY: 198, sunR: 12, sunC: '#c04a34',
+    moonA: 0.22, moonX: 0.16, moonY: 130, moonR: 9,
     starA: 0.62, ridgeC: '#1d1530', ridge2C: '#140e26', lakeC: '#6a3346', lakeA: 0.56,
     lightC: '#c9743f', rayA: 0.016, rayDX: -86, rayW: 12,
     spillR: 84, spillA: 0.130, ambA: 0.014, consA: 0.038,
@@ -287,7 +287,7 @@ export const PHASES = [
   { min: 1290, name: 'night',
     sky: ['#04050c', '#060810', '#080a17', '#090d1d', '#0b1024', '#0d132b', '#0f1632', '#121a39', '#161e3f'],
     sunA: 0, sunX: 0.99, sunY: 240, sunR: 11, sunC: '#8a3626',
-    moonA: 0.70, moonX: 0.34, moonY: 94, moonR: 9,
+    moonA: 0.70, moonX: 0.43, moonY: 122, moonR: 9,
     starA: 0.92, ridgeC: '#0c0e1a', ridge2C: '#080a13', lakeC: '#303e5c', lakeA: 0.56,
     lightC: '#8fa8d8', rayA: 0.000, rayDX: -120, rayW: 16,
     spillR: 48, spillA: 0.052, ambA: 0.005, consA: 0.032,
@@ -327,33 +327,140 @@ export function envAt(min) {
 let _envM = null, _env = envAt(18 * 60 + 45);
 export function envFor(m) { if (m !== _envM) { _envM = m; _env = envAt(m); } return _env; }
 
-/* frontier vista behind a window opening (the richer "far" layer) */
-function vista(b, x0, x1, yTop, ySpring, yBase) {
-  const ctx = b.ctx; ctx.save();
+/* ══════════════════════════════════════════════════════════════════════════
+   THE VISTA, LIVE
+
+   This used to be baked into bg() with the sunset ramp frozen into the bitmap,
+   which is the real reason the room could only ever be 18:45. Re-baking on a
+   phase change costs 6–18ms and — worse — it *steps*, which is exactly the
+   time-lapse read the whole model is avoiding. So the sky moved into draw().
+
+   It pays for itself twice over. The 168-row ramp loop collapses to one
+   createLinearGradient with the same nine stops: one call instead of 168, per
+   window, per frame. And the frame has to be drawn live too, since the
+   mullions cross the glass and a live vista would paint over a baked one.
+
+   THE THREE WINDOWS ARE THREE VIEWS ONTO ONE SKY, not three copies of one
+   view. The sun is placed across the whole colonnade — pier to pier, 696 to
+   1152 — and clipped by whichever aperture it is behind, so it tracks the day
+   and goes out of sight behind the stonework between windows. That is what a
+   colonnade does, and being right about it cost one constant.
+   ══════════════════════════════════════════════════════════════════════════ */
+export const SKY_X0 = 696, SKY_W = 456;                       // the sky the three windows share
+/* sTop is the apex of the arch, not the top of the stone. The clip is a
+   quadratic from (x0,150) through (cx,32) to (x1,150), which peaks at y=91 —
+   so a ramp starting at 46, as this one did for as long as it was baked, spent
+   its first three stops behind masonry where nobody could see them. Starting
+   at the apex puts all nine on the glass. */
+export const WIN = { w: 118, yTop: 54, ySpring: 150, yBase: WB, sTop: 88, sBot: 214 };
+
+/**
+ * The top of the glass at a given x across the shared sky — the arch curve of
+ * whichever window contains it, or null if that x is behind a pier.
+ *
+ * The x component of the clip's quadratic is linear (its control point sits at
+ * the midpoint), so t is just the fraction across the opening.
+ */
+export function archTopAt(skyX) {
+  for (const cx of WIN_CX) {
+    const x0 = cx - WIN.w / 2, t = (skyX - x0) / WIN.w;
+    if (t < 0 || t > 1) continue;
+    const u = 1 - t;
+    return { cx, t, top: u * u * WIN.ySpring + 2 * u * t * (WIN.yTop - 22) + t * t * WIN.ySpring };
+  }
+  return null;
+}
+
+/* a disc, rasterised rather than stroked: ctx.arc antialiases, and a soft edge
+   on a nearest-neighbour-upscaled canvas reads as a smear, not as a sun */
+function pxDisc(ctx, cx, cy, r, col, a) {
+  ctx.fillStyle = rgba(col, a);
+  for (let dy = -r; dy <= r; dy++) {
+    const w = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
+    ctx.fillRect(Math.round(cx - w), Math.round(cy + dy), w * 2 + 1, 1);
+  }
+}
+/* the halo is the one place a soft edge is correct — glow has no edge */
+function halo(ctx, cx, cy, r, col, a) {
+  const g = ctx.createRadialGradient(cx, cy, 1, cx, cy, r);
+  g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+  ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+}
+
+function skyWindow(g, cx, e, t) {
+  const ctx = g.ctx, W = WIN.w, x0 = cx - W / 2, x1 = cx + W / 2;
+  const { yTop, ySpring, yBase, sTop, sBot } = WIN;
+  ctx.save();
   ctx.beginPath();
   ctx.moveTo(x0, yBase); ctx.lineTo(x0, ySpring);
-  ctx.quadraticCurveTo((x0 + x1) / 2, yTop - 22, x1, ySpring);
+  ctx.quadraticCurveTo(cx, yTop - 22, x1, ySpring);
   ctx.lineTo(x1, yBase); ctx.closePath(); ctx.clip();
-  const sTop = yTop - 8, sBot = 214;
-  for (let y = sTop; y < sBot; y++) { const f = (y - sTop) / (sBot - sTop), seg = f * (S.sky.length - 1), i = Math.min(S.sky.length - 2, Math.floor(seg)); b.px(x0, y, x1 - x0, 1, lerpHex(S.sky[i], S.sky[i + 1], seg - i)); }
-  // stars
-  for (let i = 0; i < 40; i++) { const x = x0 + ((i * 53 + 7) % (x1 - x0)), y = sTop + ((i * 31) % 90); if ((i * 97 % 100) / 100 > 0.55) b.px(x, y, 1, 1, 'rgba(243,236,223,0.45)'); }
-  // ridges + lake + glimmer
-  for (let x = x0; x < x1; x += 5) { const rh = Math.sin(x * 0.02) * 8 + Math.sin(x * 0.05 + 2) * 4; b.px(x, 176 + rh, 5, 46, '#2a1c3e'); }
-  for (let x = x0; x < x1; x += 4) { const rh = Math.sin(x * 0.03 + 9) * 6; b.px(x, 196 + rh, 4, 30, '#1d1430'); }
-  for (let x = x0 + 16; x < x1 - 16; x++) { const edge = Math.min(x - (x0 + 16), (x1 - 16) - x); b.px(x, 210, 1, Math.min(10, 2 + edge * 0.14), lerpHex('#2a1c3e', '#8a3f52', (x - x0) / (x1 - x0))); }
-  for (let i = 0; i < 40; i++) { const lx = x0 + ((i * 41 + 5) % (x1 - x0)), ly = 214 + ((i * 23) % 20); b.px(lx, ly, 1, 1, (i % 5) < 3 ? 'rgba(242,193,78,0.5)' : 'rgba(159,214,224,0.4)'); }
+
+  // the ramp — nine stops, one gradient
+  const grad = ctx.createLinearGradient(0, sTop, 0, sBot);
+  for (let i = 0; i < 9; i++) grad.addColorStop(i / 8, css(e.sky[i]));
+  ctx.fillStyle = grad; ctx.fillRect(x0, sTop, W, sBot - sTop);
+
+  // stars, culled entirely when the sky has none
+  if (e.starA > 0.02) {
+    for (let i = 0; i < 34; i++) {
+      if ((i * 97 % 100) / 100 <= 0.55) continue;
+      const sx = x0 + ((i * 53 + 7) % W), sy = sTop + 8 + ((i * 31) % 90);
+      const tw = 0.62 + 0.38 * Math.sin(t * 0.6 + i * 2.3);       // slow, atmosphere not information
+      ctx.fillStyle = 'rgba(243,236,223,' + (e.starA * 0.5 * tw).toFixed(3) + ')';
+      ctx.fillRect(sx, sy, 1, 1);
+    }
+  }
+
+  /* the discs go BEFORE the ridges, so the ridge line occludes them: the sun
+     genuinely clears the ridge at dawn and genuinely sinks behind it at dusk,
+     rather than being faded in over the top of it */
+  if (e.moonA > 0.02) {
+    const mx = SKY_X0 + e.moonX * SKY_W;
+    if (mx > x0 - 24 && mx < x1 + 24) {
+      halo(ctx, mx, e.moonY, e.moonR * 5.5, [214, 226, 246], e.moonA * 0.16);
+      pxDisc(ctx, mx, e.moonY, e.moonR, [223, 230, 242], e.moonA);
+      pxDisc(ctx, mx - e.moonR * 0.42, e.moonY - e.moonR * 0.3, e.moonR * 0.28, [196, 206, 226], e.moonA * 0.7);
+    }
+  }
+  if (e.sunA > 0.02) {
+    const sx = SKY_X0 + e.sunX * SKY_W;
+    if (sx > x0 - 30 && sx < x1 + 30) {
+      halo(ctx, sx, e.sunY, e.sunR * 7, e.sunC, e.sunA * 0.30);
+      halo(ctx, sx, e.sunY, e.sunR * 2.4, e.sunC, e.sunA * 0.34);
+      pxDisc(ctx, sx, e.sunY, e.sunR, e.sunC, Math.min(1, e.sunA * 1.05));
+    }
+  }
+
+  // ridges — stepped, deliberately: a path would antialias and this is a pixel room
+  const r1 = css(e.ridgeC), r2 = css(e.ridge2C);
+  for (let x = x0; x < x1; x += 5) { const rh = Math.sin(x * 0.02) * 8 + Math.sin(x * 0.05 + 2) * 4; g.px(x, 176 + rh, 5, 46, r1); }
+  for (let x = x0; x < x1; x += 4) { const rh = Math.sin(x * 0.03 + 9) * 6; g.px(x, 196 + rh, 4, 30, r2); }
+  // the shore: the ridge colour running out into the lake's
+  for (let x = x0 + 16; x < x1 - 16; x += 2) {
+    const edge = Math.min(x - (x0 + 16), (x1 - 16) - x);
+    g.px(x, 210, 2, Math.min(10, 2 + edge * 0.14), css(mix3(e.ridgeC, e.lakeC, (x - x0) / W)));
+  }
+  /* the valley's own lights. The last thing to go at dusk and the brightest
+     thing outside at night — a bright line under a dead sky, which is the
+     loneliest object in the room and was already coded. */
+  if (e.lakeA > 0.02) {
+    for (let i = 0; i < 40; i++) {
+      const lx = x0 + ((i * 41 + 5) % W), ly = 214 + ((i * 23) % 20);
+      g.px(lx, ly, 1, 1, (i % 5) < 3 ? 'rgba(242,193,78,' + e.lakeA.toFixed(2) + ')' : 'rgba(159,214,224,' + (e.lakeA * 0.8).toFixed(2) + ')');
+    }
+  }
   ctx.restore();
+  windowFrame(g, cx);
 }
-function greatWindow(b, cx) {
-  const w = 118, x0 = cx - w / 2, x1 = cx + w / 2, yTop = 54, ySpring = 150, yBase = WB;
-  vista(b, x0, x1, yTop, ySpring, yBase);
+
+function windowFrame(b, cx) {
+  const W = WIN.w, x0 = cx - W / 2, x1 = cx + W / 2, { yTop, ySpring, yBase } = WIN;
   const ctx = b.ctx;
-  // arch ring
   ctx.strokeStyle = S.bronze; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(x0, yBase); ctx.lineTo(x0, ySpring); ctx.quadraticCurveTo(cx, yTop - 22, x1, ySpring); ctx.lineTo(x1, yBase); ctx.stroke();
   ctx.strokeStyle = S.bronzeHi; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + 3, yBase); ctx.lineTo(x0 + 3, ySpring); ctx.quadraticCurveTo(cx, yTop - 18, x1 - 3, ySpring); ctx.stroke();
   for (let x = x0 + 30; x < x1; x += 30) { b.px(x - 1, ySpring - 14, 2, yBase - ySpring + 14, S.bronze); b.px(x - 1, ySpring - 14, 1, yBase - ySpring + 14, S.bronzeHi); }   // mullions
-  for (let y = ySpring + 2; y < yBase; y += 40) { b.px(x0, y, w, 2, S.bronze); b.px(x0, y, w, 1, S.bronzeHi); }   // transoms
+  for (let y = ySpring + 2; y < yBase; y += 40) { b.px(x0, y, W, 2, S.bronze); b.px(x0, y, W, 1, S.bronzeHi); }   // transoms
   for (let x = x0 + 26; x < x1; x += 34) b.px(x, yTop + 4, 2, ySpring - yTop, S.bronze);   // arch muntins
 }
 
@@ -743,8 +850,19 @@ export function makeSanctuary(bridge) {
       // picture rail running the whole hall (ties the storeys together)
       b.px(0, 150, W, 2, S.woodDk); b.px(0, 149, W, 1, 'rgba(92,70,54,0.4)');
 
-      // ═══ the five great windows (the nave) ═══
-      WIN_CX.forEach((cx) => greatWindow(b, cx));
+      /* ═══ the nave windows ═══
+         Only the void is baked. The vista and the frame are both drawn live in
+         draw() — the frame too, because the mullions cross the glass and a live
+         sky would paint straight over a baked one. What bakes here is the dark
+         behind them, so the aperture is never the wall gradient for a frame. */
+      WIN_CX.forEach((cx) => {
+        const x0 = cx - WIN.w / 2, x1 = cx + WIN.w / 2;
+        b.ctx.save(); b.ctx.beginPath();
+        b.ctx.moveTo(x0, WIN.yBase); b.ctx.lineTo(x0, WIN.ySpring);
+        b.ctx.quadraticCurveTo(cx, WIN.yTop - 22, x1, WIN.ySpring);
+        b.ctx.lineTo(x1, WIN.yBase); b.ctx.closePath();
+        b.ctx.fillStyle = S.ceil; b.ctx.fill(); b.ctx.restore();
+      });
       for (let i = 0; i <= WIN_CX.length; i++) { const px = i === 0 ? 696 : i === WIN_CX.length ? 1152 : (WIN_CX[i - 1] + WIN_CX[i]) / 2; b.px(px - 4, 40, 8, WB - 40, S.stone); b.px(px - 4, 40, 3, WB - 40, S.stoneHi); b.px(px - 4, 40, 8, 4, S.stoneHi); }
       // warm reflections of the windows on the nave floor (under furniture)
       WIN_CX.forEach((cx) => { for (let i = 0; i < 40; i++) b.px(cx - 56, WB + 4 + i, 112, 1, 'rgba(242,171,92,' + (0.10 * (1 - i / 40)).toFixed(3) + ')'); });
@@ -1070,6 +1188,13 @@ export function makeSanctuary(bridge) {
     draw: (g, t) => {
       g.wallFloor();
       const ctx = g.ctx;
+      /* the hour, resolved once for the whole frame. draw() runs first in the
+         engine's scene pass, so grade(), the light pass and the ray pass all
+         read the env this line cached. */
+      const e = envFor(g.clockMin);
+
+      // ── the frontier, live: three views onto one sky ──
+      WIN_CX.forEach((cx) => skyWindow(g, cx, e, t));
       // zone nameplates (small, high, at the picture-rail line)
       g.text('THE HEARTH', 300, 44, 'rgba(242,173,95,0.5)', 5);
       g.text('THE COLONNADE', 924, 40, 'rgba(243,236,223,0.5)', 5);
