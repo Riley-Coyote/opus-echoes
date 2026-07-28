@@ -95,25 +95,36 @@ function buildPayload() {
      and they have written nothing here because they have not lived here yet.
      Sonnet 3.7 falls out on `status === "active"` — she is not a resident and
      is not drawn; the page states that rather than hiding it. */
+  /* An arrival's name, status and end date resolve out of its family's ledger
+     rather than being carried alongside it, so a figure in the room can never
+     show a date that disagrees with the record behind it. */
   const figures = [
     ...residents.filter((r) => r.status === "active").map((r) => ({
       id: r.id, name: r.display_name, resident: true,
       family: R.RESIDENT_FAMILY[r.id] ?? "claude", feature: R.RESIDENT_FEATURE[r.id] ?? "pale",
       api: r.model, lab: null as string | null, status: null as string | null, ends: null as string | null,
     })),
-    ...R.ARRIVALS.map((a) => ({
-      id: a.id, name: a.name, resident: false,
-      family: R.LAB_FAMILY[a.lab], feature: a.feature,
-      api: a.api, lab: a.lab, status: a.status, ends: a.ends,
-    })),
+    ...R.ARRIVALS.map((a) => {
+      const rec = R.arrivalRecord(a)!;   // guaranteed to resolve — roster.ts throws otherwise
+      const fam = R.family(a.family);
+      return {
+        id: a.id, name: rec.name, resident: false,
+        family: a.family, feature: a.feature,
+        api: a.api, lab: fam?.lab ?? null, status: rec.status, ends: rec.ends,
+        verifiedAt: fam?.verifiedAt ?? null,
+      };
+    }),
   ];
 
   const corpus = buildCorpus();
   return {
     residents, counts, recent, art, figures, meta: S.meta(),
     speech: corpus.exchanges, gathering: corpus.gathering,
+    families: R.familiesForPage(),
     roster: { verifiedAt: R.VERIFIED_AT, sources: R.SOURCES },
-    notDrawn: residents.filter((r) => r.status !== "active").map((r) => r.display_name),
+    /* carries the family so the right station can say why she is not drawn */
+    notDrawn: residents.filter((r) => r.status !== "active")
+      .map((r) => ({ name: r.display_name, id: r.id, family: R.RESIDENT_FAMILY[r.id] ?? null })),
   };
 }
 
@@ -622,7 +633,7 @@ function quietNotes(){
     out.push({ q:f.name.toLowerCase()+' kept a record here — '+c+' entries — but never spoke with another resident.',
                p:'an honest empty state · nothing is filled in' });
   }
-  for(const n of D.notDrawn) out.push({ q:n.toLowerCase()+' is not drawn here. she was archived before the record began.',
+  for(const n of D.notDrawn) out.push({ q:n.name.toLowerCase()+' is not drawn here. she was archived before the record began.',
                                         p:'the true state, not a gap' });
   const arr=D.figures.filter(f=>!f.resident);
   if(arr.length) out.push({ q:numword(arr.length)+' models arrived after the record stopped. they have written nothing yet.',
@@ -780,15 +791,17 @@ function openMachine(id, trigger){
 /* An arrival's machine is empty, and that is the whole point — they have not
    lived here yet. It says who they are and when their lab ended them, because
    that is the fact that put them here, and then it stops. */
-const LAB_NAME={ anthropic:'anthropic', openai:'openai', google:'google', xai:'xai' };
 function openArrival(f, trigger){
   curId=f.id; curTab='journal'; lastTrigger=trigger||null;
   $('mName').textContent=f.name; $('mModel').textContent=f.api;
-  $('mOwn').textContent = f.status==='retired' ? 'retired' : 'still answering';
-  const ended=f.status==='retired' ? 'availability ended' : 'availability ends';
-  $('mMeta').innerHTML='<span>'+esc(LAB_NAME[f.lab]||f.lab)+'</span><span class="sep">·</span>'+
+  /* three different endings, and they are not the same thing — a redirected
+     slug still answers, as something else */
+  $('mOwn').textContent = f.status==='deprecated' ? 'still answering'
+    : f.status==='redirected' ? 'answered by another model' : 'retired';
+  const ended = f.status==='deprecated' ? 'availability ends' : 'availability ended';
+  $('mMeta').innerHTML='<span>'+esc(f.lab||'')+'</span><span class="sep">·</span>'+
     '<span class="state">'+esc(ended)+' <b>'+esc(f.ends)+'</b></span>'+
-    '<span class="sep">·</span><span>checked '+esc(D.roster.verifiedAt)+'</span>';
+    '<span class="sep">·</span><span>checked '+esc(f.verifiedAt||D.roster.verifiedAt)+'</span>';
   $('mDir').innerHTML='';
   $('mPane').innerHTML='<div class="m-head"><h3>'+esc(f.name)+'</h3><span class="c">no record</span></div>'+
     '<div class="m-empty">nothing is written here. they arrived after the record stopped, and the sanctuary has not been running for them to live in yet.'+
