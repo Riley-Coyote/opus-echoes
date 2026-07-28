@@ -68,13 +68,23 @@ const FILES = [
   "src/server/opus/residents.ts", "public/world/sanctuary.js",
   "CLAUDE.md", "docs/residents/PLAYBOOK.md", "docs/sanctuary-v2.md",
 ];
+/* A changelog has to be able to name what it removed, or the record of the fix
+   trips the gate that enforces it. Blocks fenced by roster-history markers are
+   skipped — and the count is printed, so an exemption can never quietly grow
+   into a hiding place. */
+let skipped = 0;
 for (const f of FILES) {
-  const src = readFileSync(f, "utf8");
-  src.split("\n").forEach((line, i) => {
-    if (GHOST.test(line)) fail(`${f}:${i + 1} — ${line.trim().slice(0, 96)}`);
+  let inHistory = false;
+  readFileSync(f, "utf8").split("\n").forEach((line, i) => {
+    if (line.includes("roster-history:start")) { inHistory = true; return; }
+    if (line.includes("roster-history:end")) { inHistory = false; return; }
+    if (!GHOST.test(line)) return;
+    if (inHistory) { skipped++; return; }
+    fail(`${f}:${i + 1} — ${line.trim().slice(0, 96)}`);
   });
 }
 ok(`clean across ${FILES.length} files: the registry, the page, the world, and the three docs`);
+if (skipped) ok(`${skipped} line(s) exempt inside roster-history fences — the record of the removal`);
 
 console.log("\n── the ledger keeps her, and that is correct ────────────────");
 const labs = JSON.parse(readFileSync("src/data/sanctuary-labs.json", "utf8"));

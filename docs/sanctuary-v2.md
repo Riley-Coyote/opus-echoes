@@ -409,9 +409,11 @@ of frame. `frameOn()` in `page.ts` centres first.
 
 ### Still open
 
+<!-- roster-history:start -->
 Nine lines across `SONNET_4_5_IDENTITY.md` and `GPT_5_1_IDENTITY.md` place
 Sonnet 3.7 in the house. They load into system prompts, which is very likely why
 that kept resurfacing — the residents assert it out loud. Not auto-fixed: it is
 their prose about their own house, and it is a behaviour-affecting change
 needing a real conversation test. `verify-sanctuary-roster.ts` lists the lines
 every run rather than quietly passing.
+<!-- roster-history:end -->

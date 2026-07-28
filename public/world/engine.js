@@ -850,8 +850,21 @@ export class Sanctuary {
       let a = L.a;
       if (L.flicker === 1) a *= 0.85 + 0.15 * Math.sin(t * 6.3 + L.x);
       else if (L.flicker === 2) a *= 0.72 + 0.2 * Math.sin(t * 2.2 + L.x * 0.1) + 0.08 * Math.sin(t * 9.1);
+      /* A two-stop radial gradient falls off LINEARLY, which means the alpha
+         is still dropping at a constant rate when it hits zero at r. The eye
+         reads that discontinuity as an edge — Mach banding — so a light stops
+         being a glow and becomes a disc with a rim, and three overlapping ones
+         become one distinct oval lying on the floor.
+
+         Four stops approximating (1-t)^2 instead: same peak, but the curve
+         arrives at zero with zero slope, so there is no boundary to see. It
+         also carries about a third less total light for the same alpha, which
+         is most of why the room got quieter along with the shapes. */
       const g = ctx.createRadialGradient(L.x, L.y, 2, L.x, L.y, L.r);
       g.addColorStop(0, 'rgba(' + L.c + ',' + a.toFixed(3) + ')');
+      g.addColorStop(0.25, 'rgba(' + L.c + ',' + (a * 0.5625).toFixed(3) + ')');
+      g.addColorStop(0.55, 'rgba(' + L.c + ',' + (a * 0.2025).toFixed(3) + ')');
+      g.addColorStop(0.8, 'rgba(' + L.c + ',' + (a * 0.04).toFixed(3) + ')');
       g.addColorStop(1, 'rgba(' + L.c + ',0)');
       ctx.fillStyle = g; ctx.fillRect(L.x - L.r, L.y - L.r, L.r * 2, L.r * 2);
     }
