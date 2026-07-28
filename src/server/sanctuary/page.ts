@@ -304,6 +304,13 @@ main{position:relative;z-index:1;padding:0 0 140px}
 .rchip:hover .nm{color:var(--ink)} .rchip:hover .sg{background:var(--ink)}
 .rchip[data-archived="true"] .sg{background:var(--ghost)} .rchip[data-archived="true"] .nm{color:var(--quiet)}
 
+.stations{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--rule-soft)}
+.stations .rchip .sg{clip-path:none;background:none;color:var(--soft);width:9px;height:11px;display:block}
+.stations .rchip .sg svg{display:block;width:9px;height:11px;fill:currentColor;shape-rendering:crispEdges}
+.stations .rchip:hover .sg{color:var(--ink);background:none}
+.stations .rchip[data-dark="true"] .sg{color:var(--ghost)}
+.stations .rchip[data-dark="true"] .nm{color:var(--quiet)}
+
 .lastday{display:flex;align-items:baseline;gap:15px;padding:17px 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
 .lastday .tag{font-family:var(--pix);font-size:8.5px;letter-spacing:.14em;color:var(--soft);white-space:nowrap}
 .lastday .b{font-family:var(--ui);font-size:14px;color:var(--soft);line-height:1.6;flex:1;min-width:240px}
@@ -413,6 +420,9 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   .m-dir button{border-left:0;border-bottom:2px solid transparent;white-space:nowrap;padding:13px 15px;width:auto;min-height:44px}
   .m-dir button[aria-selected="true"]{border-left-color:transparent;border-bottom-color:var(--lit)}
   .m-pane{padding:20px} .ent{grid-template-columns:1fr;gap:6px} .ent .k{display:none}
+  /* on a ledger the right column is ended/ending, which is the whole point —
+     it may be dropped from a journal's kind label, never from this */
+  #station .ent .k{display:block;color:var(--quiet)}
   .m-x{min-width:44px;min-height:44px} .rchip{min-height:44px}
 }
 </style>
@@ -465,6 +475,12 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
     </header>
 
     <div class="residents">${strip}</div>
+
+    <!-- Real buttons, because a station's canvas hit box is 10x13 CSS pixels at
+         375px — unusable by touch, unreachable by keyboard, invisible to a
+         screen reader. Pointing at the room is the enhancement, not the way in.
+         Rendered by the module so the marks come from the world's own grids. -->
+    <div class="stations" id="stations" aria-label="model family stations"></div>
 
     <div class="lastday">
       <span class="tag">THE LAST DAY</span>
@@ -1020,6 +1036,27 @@ function renderSPane(f){
       (f.complete?'':'<div class="m-empty">this ledger is not yet the whole published list.<span>'+f.counts.total+' entries recorded</span></div>');
   }
 }
+/* the strip — every station reachable without a pointer */
+(function stationStrip(){
+  const host=document.getElementById('stations'); if(!host) return;
+  host.innerHTML=STATIONS.map(s=>{
+    const f=s.family?D.families.find(x=>x.family===s.family):null;
+    const state=f ? (f.counts.ending?f.counts.ending+' ending':f.counts.total+' recorded') : 'no family recorded';
+    return '<button class="rchip" type="button" data-station="'+esc(s.id)+'" data-dark="'+(!!s.dark)+'">'+
+      '<span class="sg">'+sigSvg(s.sig.key)+'</span>'+
+      '<span class="nm">'+esc(s.name.toLowerCase())+'</span>'+
+      '<span class="st">'+esc(state)+'</span></button>';
+  }).join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('[data-station]'); if(!b) return;
+    const s=STATIONS.find(x=>x.id===b.dataset.station);
+    openStation(s&&s.family?s.family:null, b);
+  });
+  /* pointing at the room highlights its chip, and the reverse */
+  host.addEventListener('pointerover',e=>{ const b=e.target.closest('[data-station]'); sanctuary.setStationHover(b?b.dataset.station:null); });
+  host.addEventListener('pointerleave',()=>sanctuary.setStationHover(null));
+})();
+
 stn.addEventListener('click',e=>{
   if(e.target.closest('[data-close]')) return hideOverlay();
   const row=e.target.closest('.ent.linked'); if(row&&row.dataset.rid) openMachine(row.dataset.rid, row);
