@@ -161,7 +161,9 @@ export const ARRIVALS: Arrival[] = [
   { id: "gpt-4-5", family: "gpt", api: "gpt-4.5-preview", feature: "halo" },
   { id: "gpt-4-turbo", family: "gpt", api: "gpt-4-turbo-2024-04-09", feature: "pencil" },
   { id: "o3", family: "gpt", api: "o3-2025-04-16", feature: "pale" },
-  { id: "gemini-1-5-pro", family: "gemini", api: "gemini-1.5-pro-002", feature: "pencil" },
+  /* was Gemini 1.5 Pro, which came from a search summary rather than Google's
+     own page — and is not on it. Corrected to a model the page actually lists. */
+  { id: "gemini-2-0-flash", family: "gemini", api: "gemini-2.0-flash", feature: "pencil" },
   { id: "grok-3", family: "grok", api: "grok-3", feature: "hood" },
 ];
 

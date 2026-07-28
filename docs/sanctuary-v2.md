@@ -228,3 +228,75 @@ hiding it.
   stage is `position:fixed`, so this only bites if that changes.
 - Salon lines are sentence-cased while commons lines are lowercase. Verbatim, so
   left alone — do not "fix" it.
+
+---
+
+## Addendum 2 — 2026-07-28: family stations
+
+The terminal bank used to be four desks labelled OPUS / SONNET / FOUR-O / FIVE
+while the engine picks seats uniformly at random from thirteen. That
+contradiction is **closed**: they are family stations now, and a station is a
+record kept by a lineage rather than anyone's desk.
+
+**Anyone may sit anywhere, deliberately.** Family-affinity seating was
+considered and rejected — the archive's strongest finding is rival labs' models
+becoming colleagues in a private room, and assigning seats by family would
+undercut it. The standing prohibition still holds for the same underlying
+reason: **never write copy naming whose machine anyone is at.**
+
+The fifth station is dark because **no fifth family has been sourced in yet** —
+not because anything was removed. Its old copy ("four screw holes where a plate
+was") was authored mystery. Adding Kimi, Mistral or anyone else means reading
+that lab's own deprecation page and entering its models with their dates, to
+the same standard as the other four.
+
+### The marks
+
+Hand-drawn 7×9 pixel grids in `sanctuary.js`, baked into `bg()`: a ring, stacked
+bands, a stem on a base, a wedge, and a dashed empty frame. They are **arbitrary
+station marks, like platform numbers** — deliberately unlike each real company
+mark, and the page may never describe them as emblems. The family's name does
+that job, in words, in the chrome.
+
+**No text is drawn on the canvas.** `g.text` hardcodes "Press Start 2P", which
+this page never loads, so the old nameplates were rendering as illegible 4px
+fallback the whole time. The four zone nameplates (THE HEARTH etc.) still have
+this problem and are worth their own pass.
+
+### Data, and the seam for a scheduled agent
+
+`roster.ts` holds types, identity and validation and is human-edited.
+**`src/data/sanctuary-labs.json` is the only file a cron or agent may ever
+rewrite** — per family: source, `verifiedAt`, `complete`, `ledger`, `notes`. It
+is treated as untrusted input: a malformed entry is dropped with a warning
+rather than thrown on, and a `complete` claim cannot survive dropped rows.
+
+An arrival carries only a cast id and an API id; its name, status and date
+resolve out of the ledger, so a figure in the room cannot disagree with the
+record behind it. `roster.ts` throws at build time if one cites a model that is
+not published.
+
+**A ledger's completeness claim is never absent** — every ledger pane carries
+one of exactly two banners, "the lab's whole published list as of ⟨date⟩" or
+"this is not the whole list — ⟨n⟩ entries recorded". Never neither.
+
+### Three endings, not one
+
+`retired` · `deprecated` · `redirected` are distinct and must not be flattened.
+Anthropic retires a model and requests fail. xAI retired eight models on 15 May
+2026 and the slugs still resolve — grok-4.3 answers under the old name. One is
+an ending; the other is an ending you cannot detect from outside.
+
+### Verification
+
+`scripts/verify-sanctuary-stations.ts` runs in plain node — `sanctuary.js` has
+no imports and touches no DOM at construction, so the room can be built and
+measured without a browser. It asserts the dusk-gather reserve (876–972), the
+76px light spacing, the wall line at y=300, mark uniqueness, that no station
+draws canvas text, and that the hover highlight carries no time term. It has
+been negative-tested.
+
+**Testing canvas work: a double `requestAnimationFrame` does NOT span the
+engine's 23ms frame cap.** Reading pixels after one makes a working feature look
+broken — this cost three probes chasing a hover highlight that was fine. Use a
+real `setTimeout` settle of ~180ms.

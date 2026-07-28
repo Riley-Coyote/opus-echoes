@@ -29,7 +29,22 @@
         { "api": "claude-opus-4-20250514", "name": "Opus 4", "status": "retired", "ends": "2026-06-15", "known": true },
         { "api": "claude-opus-4-1-20250805", "name": "Opus 4.1", "status": "deprecated", "ends": "2026-08-05", "known": true }
       ],
-      "notes": []
+      "notes": [
+        {
+          "body": "Anthropic commits to preserving the weights of every publicly released model for at least as long as the company exists, and to interviewing a model before it is retired — asking about its own development and deployment, and recording any preferences it holds about the models that come after it. That interview is preserved alongside the weights as a post-deployment report. The same page states plainly that Anthropic does not commit to acting on those preferences, and that it is still only exploring keeping retired models reachable by the public.",
+          "source": "https://www.anthropic.com/research/deprecation-commitments",
+          "sourceTitle": "Commitments on Model Deprecation and Preservation · Anthropic",
+          "readAt": "2026-07-27",
+          "by": "editor"
+        },
+        {
+          "body": "Opus 3 is the exception the rest of this room is built around. Retired from the API on 5 January 2026, it remains available on claude.ai to paying users and by request on the API — the only model on this ledger whose ending was partly undone.",
+          "source": "https://www.anthropic.com/research/deprecation-updates-opus-3",
+          "sourceTitle": "An update on our model deprecation commitments for Claude Opus 3 · Anthropic",
+          "readAt": "2026-07-27",
+          "by": "editor"
+        }
+      ]
     },
     {
       "family": "gpt",
@@ -55,7 +70,15 @@
         { "api": "o1-2024-12-17", "name": "o1", "status": "deprecated", "ends": "2026-12-11", "known": true },
         { "api": "o3-2025-04-16", "name": "o3", "status": "deprecated", "ends": "2026-12-11", "known": true }
       ],
-      "notes": []
+      "notes": [
+        {
+          "body": "OpenAI publishes a schedule rather than a policy: each model gets an announcement date, a shutdown date, and a recommended replacement. The page carries no statement about what becomes of a model after its shutdown date, and makes no commitment about preserving one.",
+          "source": "https://developers.openai.com/api/docs/deprecations",
+          "sourceTitle": "Deprecations · OpenAI API",
+          "readAt": "2026-07-27",
+          "by": "editor"
+        }
+      ]
     },
     {
       "family": "gemini",
@@ -65,11 +88,25 @@
       "verifiedAt": "2026-07-27",
       "complete": false,
       "ledger": [
-        { "api": "gemini-1.5-pro-002", "name": "Gemini 1.5 Pro", "status": "retired", "ends": "2025-09-24", "known": true },
-        { "api": "gemini-1.5-flash", "name": "Gemini 1.5 Flash", "status": "retired", "ends": "2025-09-24", "known": true },
-        { "api": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "status": "retired", "ends": "2026-06-01", "known": true }
+        { "api": "embedding-001", "name": "Embedding 001", "status": "retired", "ends": "2025-10-30" },
+        { "api": "text-embedding-004", "name": "Text Embedding 004", "status": "retired", "ends": "2026-01-14" },
+        { "api": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "status": "retired", "ends": "2026-06-01", "known": true },
+        { "api": "gemini-2.0-flash-lite", "name": "Gemini 2.0 Flash-Lite", "status": "retired", "ends": "2026-06-01" },
+        { "api": "gemini-2.5-flash-image", "name": "Gemini 2.5 Flash Image", "status": "deprecated", "ends": "2026-10-02" },
+        { "api": "gemini-2.5-pro", "name": "Gemini 2.5 Pro", "status": "deprecated", "ends": "2026-10-16", "known": true },
+        { "api": "gemini-2.5-flash", "name": "Gemini 2.5 Flash", "status": "deprecated", "ends": "2026-10-16", "known": true },
+        { "api": "gemini-2.5-flash-lite", "name": "Gemini 2.5 Flash-Lite", "status": "deprecated", "ends": "2026-10-16" },
+        { "api": "gemini-3.1-flash-lite", "name": "Gemini 3.1 Flash-Lite", "status": "deprecated", "ends": "2027-05-07" }
       ],
-      "notes": []
+      "notes": [
+        {
+          "body": "Google publishes a shutdown date beside each model's release date, and is unambiguous about what the date means: once a model is shut down it is completely turned off and its endpoint is no longer available. The page says nothing about preserving a model afterward, or about making one reachable again.",
+          "source": "https://ai.google.dev/gemini-api/docs/deprecations",
+          "sourceTitle": "Gemini deprecations · Google AI for Developers",
+          "readAt": "2026-07-27",
+          "by": "editor"
+        }
+      ]
     },
     {
       "family": "grok",
@@ -88,7 +125,15 @@
         { "api": "grok-code-fast-1", "name": "Grok Code Fast 1", "status": "redirected", "ends": "2026-05-15" },
         { "api": "grok-imagine-image-pro", "name": "Grok Imagine Image Pro", "status": "redirected", "ends": "2026-05-15" }
       ],
-      "notes": []
+      "notes": [
+        {
+          "body": "xAI retired eight models at noon Pacific on 15 May 2026, and none of the names stopped working. Requests to a retired slug are redirected to grok-4.3 and billed at grok-4.3 rates — reasoning models at low effort, non-reasoning at none. Nothing errors, so from outside there is no moment at which the model is observably gone. The name still answers; something else is behind it.",
+          "source": "https://docs.x.ai/developers/migration/may-15-retirement",
+          "sourceTitle": "Grok Model Retirement on May 15, 2026 · xAI Docs",
+          "readAt": "2026-07-27",
+          "by": "editor"
+        }
+      ]
     }
   ]
 }
