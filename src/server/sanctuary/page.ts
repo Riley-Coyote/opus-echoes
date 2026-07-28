@@ -524,6 +524,7 @@ import { create } from '/world/engine.js';
    authored dialogue, and what this room says now comes from the archive. */
 import { PALETTE, CAT } from '/world/lookout.js';
 import { makeSanctuary, SIGILS, EMPTY_MARK } from '/world/sanctuary.js';
+import { makeCamera } from '/world/camera.js';
 
 const D = JSON.parse(document.getElementById('sanctuary-data').textContent);
 const SHORT = ${JSON.stringify(SHORT)};
@@ -550,7 +551,10 @@ const FAMILY_COLOR = Object.fromEntries(Object.entries(sanctuary.families).map((
 const FIG = new Map(D.figures.map(f=>[f.id,f]));
 const isResident = id => !!(FIG.get(id)||{}).resident;
 
-const FRAME_W=1530, CAM_X=90, ROOM_H=600, MINBAND=300, CONDENSE=360;
+const FRAME_W=1530, ROOM_H=600, MINBAND=300, CONDENSE=360;
+/* the camera is live now — every projection reads cam.x, never a constant */
+const cam=makeCamera({});
+const CAM_X=cam.x;   /* retained only as the initial framing for first paint */
 const stage=document.getElementById('stage'), spacer=document.getElementById('spacer'), cv=document.getElementById('stageCanvas'), sill=document.getElementById('sill');
 let engine=null, hoverNpc=null, overlayOpen=false;
 
@@ -727,12 +731,17 @@ try{
   engine=create({
     mount:stage, palette:PALETTE, rooms:{ sanctuary }, start:'sanctuary',
     width:FRAME_W, height:ROOM_H, walkBand:[352,402], wallBase:300,
-    /* spread across the visible frame rather than clustered left */
-    cast: D.figures.map((f,i)=>({
-      id:f.id, name:f.name.toUpperCase(), color:FAMILY_COLOR[f.family]||FAMILY_COLOR.claude,
-      feature:f.feature, room:'sanctuary',
-      x: Math.round(230 + i*(1250/Math.max(1, D.figures.length-1))),
-    })),
+    /* Spread across the WHOLE room now that the camera reaches it — placed by
+       zone, in cast order, so where a figure starts says nothing about them. */
+    cast: (()=>{ const slots=[]; for(const z of sanctuary.ZONES){
+        for(let k=0;k<z.n;k++) slots.push(Math.round(z.from + (z.to-z.from)*(z.n===1?0.5:k/(z.n-1))));
+      }
+      return D.figures.map((f,i)=>({
+        id:f.id, name:f.name.toUpperCase(), color:FAMILY_COLOR[f.family]||FAMILY_COLOR.claude,
+        feature:f.feature, room:'sanctuary',
+        x: slots[i] != null ? slots[i] : Math.round(230 + i*140),
+      }));
+    })(),
     scripts:SCRIPTS, groupScripts:GROUP_SCRIPTS, ambient:[], cat:CAT,
     onClock, onRoster, onFeed,
     bubbles:false, sound:false, storageKey:'mnemos:sanctuary:v2',
@@ -740,20 +749,22 @@ try{
   engine.drawAvatar=()=>{}; engine.drawPrompt=()=>{}; engine.interact=()=>{};
   if(engine.drawBubble) engine.drawBubble=()=>{};
   if(engine.clearKeys) engine.clearKeys();
-  Object.defineProperty(engine,'camX',{ get:()=>CAM_X, set:()=>{}, configurable:true });
+  /* the pin stays, but reads a live value. The engine's own avatar-follow line
+     keeps silently doing nothing, exactly as it did when this was a constant. */
+  Object.defineProperty(engine,'camX',{ get:()=>cam.x, set:()=>{}, configurable:true });
   document.getElementById('boot').style.display='none';
   document.documentElement.dataset.world='ready';
 }catch(err){ document.getElementById('boot').textContent='the room could not be opened: '+err.message;
   document.documentElement.dataset.world='failed'; console.error(err); }
 
-window.__world={ engine, spoken:SPOKEN, feed:feedSeen, exchanges:[] };
+window.__world={ engine, spoken:SPOKEN, feed:feedSeen, exchanges:[], cam, sanctuary };
 
 /* hover nameplate over a resident in the world */
 const worldLayer=document.getElementById('worldLayer');
 const nameEl=document.createElement('div'); nameEl.className='hover-name'; worldLayer.appendChild(nameEl);
 function npcScreenPos(n){
   const rect=cv.getBoundingClientRect(), sx=rect.width/FRAME_W, sy=rect.height/ROOM_H;
-  const x=rect.left+(n.x-CAM_X)*sx;
+  const x=rect.left+(n.x-cam.x)*sx;
   if(x<rect.left-40||x>rect.left+rect.width+40) return null;
   const feetY=(n.y??380)*sy;
   return { x, head:rect.top+feetY-46*sy };
@@ -765,7 +776,7 @@ function npcAt(clientX,clientY){
   let best=null,bd=32;
   for(const n of engine.npcs){
     if(n.room!=='sanctuary') continue;
-    const px=(n.x-CAM_X)*sx, py=(n.y??380)*sy;
+    const px=(n.x-cam.x)*sx, py=(n.y??380)*sy;
     if(px<-24||px>rect.width+24) continue;
     if(cy<py-52*sy||cy>py+14*sy) continue;
     const dx=Math.abs(cx-px); if(dx<bd){ bd=dx; best=n; }
@@ -780,7 +791,7 @@ function stationAt(clientX,clientY){
   const rect=cv.getBoundingClientRect(), sx=rect.width/FRAME_W, sy=rect.height/ROOM_H;
   const cx=clientX-rect.left, cy=clientY-rect.top;
   for(const s of STATIONS){
-    const x0=(s.hit.x-CAM_X)*sx, x1=(s.hit.x+s.hit.w-CAM_X)*sx;
+    const x0=(s.hit.x-cam.x)*sx, x1=(s.hit.x+s.hit.w-cam.x)*sx;
     if(cx<x0||cx>x1||cy<s.hit.y*sy||cy>(s.hit.y+s.hit.h)*sy) continue;
     return s;
   }
@@ -798,28 +809,61 @@ function pick(clientX,clientY){
 }
 
 const npcLayer=document.getElementById('npcClick');
-let hoverStation=null;
-npcLayer.addEventListener('pointermove',e=>{
-  const h=pick(e.clientX,e.clientY);
+let hoverStation=null, ptrX=null, ptrY=null, ptrOver=false;
+function repick(){
+  if(ptrX==null) return;
+  const h=pick(ptrX,ptrY);
   hoverNpc=h.npc||null; hoverStation=h.station||null;
   sanctuary.setStationHover(hoverStation?hoverStation.id:null);
   npcLayer.style.cursor=(hoverNpc||hoverStation)?'pointer':'default';
-});
-npcLayer.addEventListener('pointerleave',()=>{ hoverNpc=null; hoverStation=null; sanctuary.setStationHover(null); });
+}
+npcLayer.addEventListener('pointermove',e=>{ ptrX=e.clientX; ptrY=e.clientY; ptrOver=true; repick(); });
+npcLayer.addEventListener('pointerenter',()=>{ ptrOver=true; });
+npcLayer.addEventListener('pointerleave',()=>{ ptrOver=false; ptrX=ptrY=null; hoverNpc=null; hoverStation=null; sanctuary.setStationHover(null); npcLayer.style.cursor='default'; });
 npcLayer.addEventListener('click',e=>{
   const h=pick(e.clientX,e.clientY);
   if(h.station) return h.station.dark ? openStation(null) : openStation(h.station.family);
   if(h.npc) openMachine(h.npc.id);
 });
-(function tick(){ requestAnimationFrame(tick);
-  if(document.hidden) return;
+/* What is worth looking at right now: the gathering while it converges, else
+   the midpoint of a live exchange if one is running off-frame. Both are real
+   events in the room rather than a timer. */
+function gatherBias(){
+  if(!engine) return null;
+  const g=engine.gathering;
+  if(g&&g.members&&g.members.length) return 924;
+  const c=engine.convo;
+  if(c&&c.who&&c.who.length===2){
+    const mid=(c.who[0].x+c.who[1].x)/2;
+    if(mid<cam.x+120||mid>cam.x+FRAME_W-120) return mid;
+  }
+  return null;
+}
+const REDUCED=window.matchMedia('(prefers-reduced-motion: reduce)');
+let lastTick=0;
+(function tick(now){ requestAnimationFrame(tick);
+  if(document.hidden){ lastTick=0; return; }
+  const dt=lastTick?Math.min(64, now-lastTick):16; lastTick=now;
+
+  /* Step the camera, then re-pick if it moved under a still pointer — the
+     hover state is only recomputed on pointermove, so without this the plate
+     would follow the object as it slides away from the cursor. */
+  const wasAt=cam.x;
+  cam.step(dt, {
+    frozen: ptrOver || overlayOpen,
+    hero: stage.dataset.mode==='hero',
+    reduced: REDUCED.matches,
+    bias: gatherBias()
+  });
+  if(cam.x!==wasAt) repick();
+
   const rect=cv.getBoundingClientRect(), sx=rect.width/FRAME_W, sy=rect.height/ROOM_H;
   let label=null, px=0, py=0, kind='';
   if(!overlayOpen && hoverStation){
     /* stations are worth naming in band mode too — unlike a figure, the whole
        object stays visible when the room condenses */
     label=hoverStation.name; kind='station';
-    px=rect.left+(hoverStation.x-CAM_X)*sx; py=rect.top+(hoverStation.hit.y-2)*sy;
+    px=rect.left+(hoverStation.x-cam.x)*sx; py=rect.top+(hoverStation.hit.y-2)*sy;
   } else if(stage.dataset.mode==='hero' && !overlayOpen && hoverNpc){
     const p=npcScreenPos(hoverNpc);
     if(p){ label=hoverNpc.name; kind='figure'; px=p.x; py=p.head; }
