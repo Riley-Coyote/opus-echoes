@@ -146,7 +146,7 @@ export class Sanctuary {
       visitor: now + rnd(120000, 200000), gather: now + rnd(90000, 150000),
       cat: now + 30000, catLine: now + rnd(70000, 140000), chime: 0, roster: now + 400, save: now + 5000
     };
-    this.clockMin = 18 * 60 + 31; this._clockShown = -1;
+    this.clockMin = opts.clockMin != null ? opts.clockMin : 18 * 60 + 31; this._clockShown = -1; this.day = 1;
 
     /* doors graph for pathfinding */
     this.graph = {};
@@ -207,6 +207,8 @@ export class Sanctuary {
       wallFloor: () => s.blitBg(),
       spotlight: (cx, on) => { if (on) s.spotlight(cx, true); },
       get near() { return s.near; },
+      /* a room needs the hour to light itself */
+      get clockMin() { return s.clockMin; },
       avatar: s.av
     };
   }
@@ -343,12 +345,17 @@ export class Sanctuary {
   }
   sysLine(text) { this.emit({ kind: 'sys', who: null, color: null, room: null, text, convoId: null }); }
 
-  /* ---------- clock: perpetual dusk ---------- */
+  /* ---------- clock: a whole day ----------
+     This used to run 18:31 → 19:14 and snap back, and nothing read it. It is a
+     full 24 hours now, wrapping at midnight and counting days, so the light
+     has something to follow. Rate comes from opts.msPerSimMin — 2000 gives a
+     day in 48 real minutes, which is slow enough that the sun is never
+     watchable and fast enough that a short visit still crosses a phase. */
   tickClock(dt) {
-    this.clockMin += dt / 30000;
-    if (this.clockMin >= 19 * 60 + 14) { this.clockMin = 18 * 60 + 31; this.sysLine('dusk restarts, as scheduled'); }
+    this.clockMin += dt / (this.o.msPerSimMin || 30000);
+    if (this.clockMin >= 1440) { this.clockMin -= 1440; this.day = (this.day || 1) + 1; }
     const shown = Math.floor(this.clockMin);
-    if (shown !== this._clockShown) { this._clockShown = shown; this.cb.clock(this.clockStr()); }
+    if (shown !== this._clockShown) { this._clockShown = shown; this.cb.clock(this.clockStr(), this.day || 1); }
   }
 
   /* ---------- npc movement primitives ---------- */
@@ -751,6 +758,19 @@ export class Sanctuary {
     ents.sort((p, q) => p.y - q.y);
     for (const e of ents) { if (e.player) this.drawAvatar(t); else if (e.cat) this.drawCat(t); else this.drawNpc(e.npc, t); }
 
+    /* TIME GRADE — and it belongs exactly here, between the sprites and the
+       additive lights. It darkens the baked room AND the residents, and then
+       the lights punch back through it. A figure away from a source becomes a
+       silhouette; a figure at a terminal is lit by its own screen. Put it after
+       the lights instead and it dims them, which is what the old "dusk breath"
+       did for as long as it existed. */
+    const gr = this.room().grade && this.room().grade(this.clockMin, t);
+    if (gr) {
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+
     /* additive light pass */
     this.drawLights(t);
     this.drawRays(t);
@@ -764,8 +784,10 @@ export class Sanctuary {
     /* screen-space: rain, vignette, dusk breath, transition */
     if (this.weather.raining && this.room().rainable) this.drawRain(ctx, t);
     this.drawVignette(ctx);
-    const br = 0.045 + 0.03 * Math.sin(t * 0.08);
-    ctx.fillStyle = 'rgba(26,14,44,' + br.toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
+    /* The "dusk breath" that used to live here is gone. It was a grade already
+       — a one-phase one, painted after the lights so it dimmed them. Its job
+       moved into room.grade() above, where the lights punch through it, and
+       its 78-second breathing is carried there as an amplitude term. */
     if (this.trans) this.drawTransition(ctx, now);
   }
 
@@ -812,7 +834,11 @@ export class Sanctuary {
     if (this.bgRoom !== this.roomId || !this._bg) this.buildBg();
     const ctx = this.ctx, cam = this.camX;
     if (this._layers) for (const L of this._layers) ctx.drawImage(L.cv, Math.round(cam * (1 - L.speed)), 0);
-    ctx.drawImage(this._bg, 0, 0);
+    /* Only the slice the camera can see. This used to composite the whole
+       backdrop every frame regardless of camX — 2240x600 for a 1530 window,
+       i.e. a third of the frame's largest single operation spent off-screen. */
+    const sw = Math.min(this._bg.width, this.o.width), sx0 = Math.max(0, Math.min(this._bg.width - sw, Math.round(cam)));
+    ctx.drawImage(this._bg, sx0, 0, sw, this._bg.height, sx0, 0, sw, this._bg.height);
   }
 
   /* ---------- lighting ---------- */
@@ -837,8 +863,9 @@ export class Sanctuary {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     for (const R of rays) {
       const a = R.a * (0.8 + 0.2 * Math.sin(t * 0.5 + R.x));
+      const c = R.c || '242,220,176';   /* a ray carries its own colour, so the hour can set it */
       const g = ctx.createLinearGradient(R.x, R.y, R.x + R.dx, R.y + R.len);
-      g.addColorStop(0, 'rgba(242,220,176,' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(242,220,176,0)');
+      g.addColorStop(0, 'rgba(' + c + ',' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + c + ',0)');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(R.x - R.w / 2, R.y); ctx.lineTo(R.x + R.w / 2, R.y);
@@ -849,7 +876,7 @@ export class Sanctuary {
         const f = ((t * (0.05 + i * 0.013) + i * 0.37) % 1);
         const mx = R.x + R.dx * f + Math.sin(t * 0.9 + i * 4) * (3 + f * 6);
         const my = R.y + R.len * f;
-        ctx.fillStyle = 'rgba(242,220,176,' + (0.25 * (1 - f) * (0.5 + 0.5 * Math.sin(t * 1.4 + i))).toFixed(3) + ')';
+        ctx.fillStyle = 'rgba(' + c + ',' + (0.25 * (1 - f) * (0.5 + 0.5 * Math.sin(t * 1.4 + i))).toFixed(3) + ')';
         ctx.fillRect(mx, my, 1, 1);
       }
     }

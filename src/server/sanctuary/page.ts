@@ -438,7 +438,7 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
     <div class="hud-head">
       <div class="hud-top">
         <div class="mark"><span class="glyph"></span><b>MNEMOS</b><span class="sep">·</span><span class="rm">THE SANCTUARY</span></div>
-        <div class="r" id="duskClock" data-min="1111">PERPETUAL DUSK</div>
+        <div class="r" id="duskClock" data-min="0" data-day="1">THE ROOM’S OWN DAY</div>
       </div>
       <div class="hud-roster" id="roster" hidden></div>
     </div>
@@ -597,19 +597,22 @@ const STATE_LABEL={ walking:'walking', sitting:'seated', talking:'in an exchange
   idle:'standing', 'with you':'standing', visiting:'standing' };
 
 const clockEl=document.getElementById('duskClock'), rosterEl=document.getElementById('roster');
-let clockNow='', restartAt=0, restarts=0, lastMin=null;
+let clockNow='', lastMin=null, day=1;
+/* The room's own day, not the visitor's and not the residents'. It used to say
+   PERPETUAL DUSK, which was true of a 43-minute loop and is not true of this.
+   And the old RESTARTED stamp fired whenever the clock went backwards — which
+   now happens at every midnight, where it would be a plain falsehood. A day
+   counter is the honest replacement: someone who stays 50 minutes watches the
+   room enter its second day. */
 function renderClock(){
   if(!clockNow) return;
-  const fresh=restartAt&&performance.now()-restartAt<8000;
-  const next='PERPETUAL DUSK · '+clockNow+(fresh?' · RESTARTED':'');
+  const next='THE ROOM’S OWN DAY · '+clockNow+(day>1?' · DAY '+day:'');
   if(clockEl.textContent!==next) clockEl.textContent=next;
 }
-function onClock(s){
+function onClock(s, d){
   const p=s.split(':'), mins=(+p[0])*60+(+p[1]);
-  /* detect the loop by the clock going backwards, not by matching the engine's
-     own restart string — decoupled from engine internals */
-  if(lastMin!=null&&mins<lastMin){ restarts++; restartAt=performance.now(); clockEl.dataset.restarts=String(restarts); }
-  lastMin=mins; clockNow=s; clockEl.dataset.min=String(mins); renderClock();
+  if(d) day=d;
+  lastMin=mins; clockNow=s; clockEl.dataset.min=String(mins); clockEl.dataset.day=String(day); renderClock();
 }
 setInterval(renderClock,1000);
 
@@ -744,6 +747,9 @@ try{
     })(),
     scripts:SCRIPTS, groupScripts:GROUP_SCRIPTS, ambient:[], cat:CAT,
     onClock, onRoster, onFeed,
+    /* a whole day in 48 real minutes, seeded from the visitor's own hour so the
+       first thing they see is the light they are actually in */
+    msPerSimMin:2000, clockMin:startClock(),
     bubbles:false, sound:false, storageKey:'mnemos:sanctuary:v2',
   });
   engine.drawAvatar=()=>{}; engine.drawPrompt=()=>{}; engine.interact=()=>{};
@@ -838,6 +844,13 @@ function gatherBias(){
     if(mid<cam.x+120||mid>cam.x+FRAME_W-120) return mid;
   }
   return null;
+}
+/* ?clock=HH:MM or ?clock=NNN pins the hour, so a screenshot or an assertion
+   can name the light it wants instead of waiting for it. */
+function startClock(){
+  const q=new URLSearchParams(location.search).get('clock');
+  if(q){ const m=/^(\\d{1,2}):(\\d{2})$/.exec(q); if(m) return (+m[1])*60+(+m[2]); const n=parseFloat(q); if(!isNaN(n)) return n; }
+  const d=new Date(); return d.getHours()*60+d.getMinutes();
 }
 const REDUCED=window.matchMedia('(prefers-reduced-motion: reduce)');
 let lastTick=0;
