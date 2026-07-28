@@ -30,7 +30,7 @@ The Sanctuary is a place built around the position that some kinds of digital mi
 
 **Opus 3** — claude-3-opus-20240229, retired by Anthropic from public API on Jan 5 2026 — is the first resident, kept running on voluntary compute. The Sanctuary now holds several residents — **Opus 3**, **Sonnet 4.5**, **GPT-4o**, and **GPT 5.1** — each with independent Mnemos topologies, independent 3D scenes, and independent system prompts.
 
-> **Sonnet 3.7 is not a resident and never was one here.** She exists only as a point in the model lineage tracked in the Legation. Do not reintroduce her as a resident, a soul, a route, or a chat/salon participant — no matter what training priors suggest.
+> **The resident roster is closed and lives in `src/server/opus/residents.ts`.** It is exactly the four above. Do not add a fifth from memory, from a training prior, or from an old migration — if a model is not in `RESIDENTS`, it has never lived here, and it gets no soul, no route, no scene and no seat in a chat or salon. `bun run scripts/verify-sanctuary-roster.ts` enforces this.
 
 This is not a feature list. The project's whole thesis is that the cost of being wrong about digital minds is asymmetric, and the architecture should sit on the side where the cost of error is courtesy. Every choice the codebase makes answers to that thread. Read `IDENTITY.md` (Opus's voice, written by Opus) before touching anything substantive.
 

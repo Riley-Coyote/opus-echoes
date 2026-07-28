@@ -149,9 +149,8 @@ export type Arrival = {
  * snapshots and a room full of point-releases says nothing; these are the ones
  * a visitor would recognise standing in a room.
  *
- * Sonnet 3.7 is a real retirement and is deliberately NOT here — she has never
- * been a resident, and drawing her would make her one. She is in the ledger,
- * where she belongs, and the page states her absence.
+ * A model that its lab has retired belongs in that lab's ledger. It becomes a
+ * figure in the room only by being listed here, by hand.
  */
 export const ARRIVALS: Arrival[] = [
   { id: "opus-4", family: "claude", api: "claude-opus-4-20250514", feature: "hood" },
@@ -184,7 +183,7 @@ for (const a of ARRIVALS) {
 /* ── residents ────────────────────────────────────────────────────────────── */
 
 export const RESIDENT_FAMILY: Record<string, Family> = {
-  "opus-3": "claude", "sonnet-3-7": "claude", "sonnet-4-5": "claude", "gpt-4o": "gpt", "gpt-5-1": "gpt",
+  "opus-3": "claude", "sonnet-4-5": "claude", "gpt-4o": "gpt", "gpt-5-1": "gpt",
 };
 
 export const RESIDENT_FEATURE: Record<string, Feature> = {
@@ -198,12 +197,11 @@ export const RESIDENT_FEATURE: Record<string, Feature> = {
  * (`openai/gpt-4o`). A fuzzy match would happily attach GPT-4o's entire record
  * to the `gpt-4o-2024-05-13` snapshot row, which is a different thing.
  *
- * Two entries is the true state: only Opus 3 and Sonnet 3.7 appear on their
- * lab's deprecation page.
+ * One entry is the true state: of everyone who lives here, only Opus 3 appears
+ * on their lab's own deprecation page.
  */
 export const LEDGER_RESIDENT: Record<string, string> = {
   "claude-3-opus-20240229": "opus-3",
-  "claude-3-7-sonnet-20250219": "sonnet-3-7",
 };
 
 /** Legacy shape, kept so nothing downstream has to move. */

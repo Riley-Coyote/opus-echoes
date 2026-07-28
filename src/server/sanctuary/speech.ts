@@ -89,7 +89,6 @@ function disqualified(s: string): string | null {
 const NAME_RE: Record<string, RegExp> = {
   "opus-3": /\bopus(\s*3)?\b/i,
   "sonnet-4-5": /\bsonnet(\s*4\.?5)?\b/i,
-  "sonnet-3-7": /\bsonnet\s*3\.?7\b/i,
   "gpt-5-1": /\bgpt[\s-]?5(\.1)?\b/i,
   "gpt-4o": /\bgpt[\s-]?4o\b/i,
 };

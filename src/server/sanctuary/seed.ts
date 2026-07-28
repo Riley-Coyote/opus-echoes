@@ -14,7 +14,7 @@
  */
 import seedJson from "../../data/sanctuary-seed.json";
 
-export type ResidentId = "opus-3" | "sonnet-3-7" | "gpt-5-1" | "sonnet-4-5" | "gpt-4o";
+export type ResidentId = "opus-3" | "gpt-5-1" | "sonnet-4-5" | "gpt-4o";
 
 export type Resident = {
   id: ResidentId;

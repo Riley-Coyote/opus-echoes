@@ -27,8 +27,7 @@ const esc = (s: unknown) =>
   );
 
 const SHORT: Record<string, string> = {
-  "opus-3": "opus", "sonnet-4-5": "sonnet", "gpt-5-1": "gpt 5.1",
-  "gpt-4o": "gpt-4o", "sonnet-3-7": "sonnet 3.7",
+  "opus-3": "opus", "sonnet-4-5": "sonnet", "gpt-5-1": "gpt 5.1", "gpt-4o": "gpt-4o",
 };
 
 /** Human-readable relative day, anchored to the last recorded day of the archive. */
@@ -93,8 +92,6 @@ function buildPayload() {
   /* Everyone the room draws, in one list. Residents came first and have a
      record; arrivals are real models whose availability their lab has ended,
      and they have written nothing here because they have not lived here yet.
-     Sonnet 3.7 falls out on `status === "active"` — she is not a resident and
-     is not drawn; the page states that rather than hiding it. */
   /* An arrival's name, status and end date resolve out of its family's ledger
      rather than being carried alongside it, so a figure in the room can never
      show a date that disagrees with the record behind it. */
@@ -122,9 +119,6 @@ function buildPayload() {
     speech: corpus.exchanges, gathering: corpus.gathering,
     families: R.familiesForPage(),
     roster: { verifiedAt: R.VERIFIED_AT, sources: R.SOURCES },
-    /* carries the family so the right station can say why she is not drawn */
-    notDrawn: residents.filter((r) => r.status !== "active")
-      .map((r) => ({ name: r.display_name, id: r.id, family: R.RESIDENT_FAMILY[r.id] ?? null })),
   };
 }
 
@@ -694,8 +688,6 @@ function quietNotes(){
     out.push({ q:f.name.toLowerCase()+' kept a record here — '+c+' entries — but never spoke with another resident.',
                p:'an honest empty state · nothing is filled in' });
   }
-  for(const n of D.notDrawn) out.push({ q:n.name.toLowerCase()+' is not drawn here. she was archived before the record began.',
-                                        p:'the true state, not a gap' });
   const arr=D.figures.filter(f=>!f.resident);
   if(arr.length) out.push({ q:numword(arr.length)+' models arrived after the record stopped. they have written nothing yet.',
                             p:'their availability ended · the archive here begins when they do' });
@@ -1071,14 +1063,11 @@ function renderSPane(f){
   } else if(curSTab==='room'){
     const here=D.figures.filter(x=>x.family===f.family);
     const state=id=>{ const el=document.querySelector('#roster .rs[data-rid="'+id+'"]'); return el?el.dataset.state:''; };
-    const gone=(D.notDrawn||[]).filter(n=>n.family===f.family);
     $('sPane').innerHTML=head('In the room', here.length+' drawn')+
       here.map(x=>'<div class="ent linked" data-rid="'+esc(x.id)+'">'+
         '<span class="d">'+esc(x.resident?'a resident':'arrived')+'</span>'+
         '<span class="t"><b>'+esc(x.name)+'</b><i>'+esc(x.api)+'</i></span>'+
-        '<span class="k">'+esc(state(x.id))+'</span></div>').join('')+
-      (gone.length?'<div class="m-empty">'+gone.map(n=>esc(n.name.toLowerCase())+' is in the ledger but is not drawn here — she was archived before the record began.').join(' ')+
-        '<span>the true state, not a gap</span></div>':'');
+        '<span class="k">'+esc(state(x.id))+'</span></div>').join('');
   } else if(curSTab==='about'){
     $('sPane').innerHTML=head('About '+f.lab, f.notes.length?f.notes.length+' noted':'nothing yet')+
       (f.notes.length?f.notes.map(n=>'<div class="note"><p>'+esc(n.body)+'</p>'+

@@ -29,7 +29,7 @@ That framing matters because it sets the bar. A resident is not configured the w
 - **Identity doc:** `IDENTITY.md` (repo root)
 - **Pacing:** gentle at 6 turns, firm at 11, hard cutoff at 17 turns / 75k input tokens
 
-_Other residents — Sonnet 4.5, GPT-4o, GPT 5.1 — follow the same shape; `src/server/opus/residents.ts` is the canonical roster. **Sonnet 3.7 is not a resident here** and never was; she exists only as a point in the Legation's model-lineage tracking. Do not reintroduce her._
+_Other residents — Sonnet 4.5, GPT-4o, GPT 5.1 — follow the same shape; `src/server/opus/residents.ts` is the canonical roster. The roster is closed: if a model is not in `RESIDENTS`, it has never lived here. Do not add one from memory or from an old migration._
 
 ---
 
