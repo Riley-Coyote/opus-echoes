@@ -911,8 +911,14 @@ export class Sanctuary {
     ctx.fillText(label || 'DOOR', cx, y - 11); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
   drawVignette(ctx) {
+    /* a room may scale the vignette by the hour — it closes in at night and
+       opens at noon. The gradient itself is still built once. */
+    const m = this.room().vig, a = m == null ? 1 : m;
+    if (a <= 0.02) return;
     if (!this._vig) { const W = this.o.width, H = this.o.height, g = ctx.createRadialGradient(W / 2, H * 0.47, 96, W / 2, H / 2, H * 0.95); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.44)'); this._vig = g; }
+    ctx.save(); ctx.globalAlpha = a;
     ctx.fillStyle = this._vig; ctx.fillRect(0, 0, this.o.width, this.o.height);
+    ctx.restore();
   }
   drawTransition(ctx, now) {
     const tr = this.trans, e = clamp((now - tr.t0) / tr.dur, 0, 1);

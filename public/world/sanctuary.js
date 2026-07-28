@@ -47,6 +47,286 @@ function bloom(b, cx, cy, r, rgb, peak) {              // baked radial glow (che
 }
 const WIN_CX = [772, 924, 1076];                       // three nave windows (was five; keeps 924 centre so colonnade furniture stays aligned)
 
+/* ══════════════════════════════════════════════════════════════════════════
+   THE DAY
+
+   The room used to run 18:31 → 19:14 on a loop, and not one light, sky or
+   shadow read the clock. It now runs a full 24 hours at 48 real minutes a
+   cycle, seeded from the visitor's local hour: the light you arrive in is the
+   light you are actually in, and then it moves.
+
+   Eleven keyframes, seven named phases. Dawn takes three of them because the
+   break is a moment and not a plateau; noon takes one because it is.
+
+   Three rules the table encodes, and the verifier enforces:
+
+     THE ANCHOR IS 18:45. The day must still contain today's room — the same
+     nine sky stops, the same grade rgb(26,14,44) at a0.045/amp0.030, the same
+     shaft raking left at dx-62. Every other hour was built outward from it.
+
+     INTERIOR SOURCES DO NOT FOLLOW THE SUN. Nothing here touches the
+     candelabra, the lamps or the four terminals. Only their prominence
+     changes, because the grade and the sky move around them. A screen does
+     not know what time it is, and the terminals holding at exactly a0.12/r34
+     through every hour of the cycle is the clearest statement available that
+     these machines are always on. One exception: the hearth runs 0.70 at noon
+     to 1.15 at night, because someone tends a fire, and that is a fact about
+     the room rather than about the sun.
+
+     THE SUN SETS TO THE RIGHT. Today's shaft rakes left (dx negative), so the
+     sun is off frame-right in the evening and rises off frame-left. rayDX
+     runs positive at dawn, through zero at solar noon, negative into the
+     evening; the moon runs the other way. Stated once here so nothing
+     downstream has to guess.
+
+   Two moments fall out of the existing geometry and are protected:
+   the first shaft of the day clears the ridge at an extreme rake and lands at
+   floor x≈882 — the inlaid medallion, the one part of the floor nobody
+   furnished; and the last thing to go at dusk is the lake glimmer, a bright
+   line under a dead sky.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const rgbOf = (h) => { const v = parseInt(h.slice(1), 16); return [v >> 16, (v >> 8) & 255, v & 255]; };
+const mix3 = (a, c, f) => [Math.round(a[0] + (c[0] - a[0]) * f), Math.round(a[1] + (c[1] - a[1]) * f), Math.round(a[2] + (c[2] - a[2]) * f)];
+export const css = (t) => 'rgb(' + t[0] + ',' + t[1] + ',' + t[2] + ')';
+export const rgba = (t, a) => 'rgba(' + t[0] + ',' + t[1] + ',' + t[2] + ',' + (+a).toFixed(3) + ')';
+/* keyframe fields. Colours are authored as hex and carried as [r,g,b] so no
+   frame ever parses a string. */
+const PH_NUM = ['sunA', 'sunX', 'sunY', 'sunR', 'moonA', 'moonX', 'moonY', 'moonR', 'starA', 'lakeA',
+  'rayA', 'rayDX', 'rayW', 'spillR', 'spillA', 'ambA', 'consA',
+  'gradeA', 'gradeAmp', 'vig', 'hazeA', 'moteM', 'hearthM', 'roofA', 'camBias'];
+const PH_COL = ['sunC', 'ridgeC', 'ridge2C', 'lakeC', 'lightC', 'gradeC', 'hazeC'];
+/* the sun glides; the light settles. Position interpolates linearly so the
+   discs never stall at a keyframe, everything else eases so each named phase
+   reads as a state the room arrives at rather than passes through. */
+const PH_LINEAR = new Set(['sunX', 'sunY', 'moonX', 'moonY', 'rayDX', 'camBias']);
+
+export const PHASES = [
+  /* ── 00:00 NIGHT ─────────────────────────────────────────────────────────
+     The building is the only lit thing in the world: five pools in a dark
+     hall. What it loses is the content — the vista, the atelier's colour, the
+     conservatory greens all go, and the valley's own lights become the
+     brightest thing outside. The camera prefers the hearth. */
+  { min: 0, name: 'night',
+    sky: ['#04050b', '#05070f', '#070915', '#080c1b', '#0a0f22', '#0c1229', '#0e1530', '#111937', '#151d3d'],
+    sunA: 0, sunX: 0.04, sunY: 236, sunR: 11, sunC: '#c04a34',
+    moonA: 0.85, moonX: 0.62, moonY: 76, moonR: 9,
+    starA: 0.95, ridgeC: '#0b0d18', ridge2C: '#070911', lakeC: '#2c3a58', lakeA: 0.55,
+    lightC: '#8fa8d8', rayA: 0.000, rayDX: 130, rayW: 16,
+    spillR: 46, spillA: 0.050, ambA: 0.005, consA: 0.030,
+    gradeC: '#05080f', gradeA: 0.370, gradeAmp: 0.012,
+    vig: 1.14, hazeA: 0.030, hazeC: '#1a2038', moteM: 0.35, hearthM: 1.15, roofA: 0.020,
+    camBias: 300 },
+
+  /* ── 03:20 STILL NIGHT ───────────────────────────────────────────────────
+     A hold, and the table needs it. Without a keyframe here the room begins
+     climbing toward dawn the instant midnight passes, and 02:00 comes out
+     forty per cent of the way to first light — which is not what two in the
+     morning is. Nothing changes across this segment except the moon, which
+     has crossed and is going down on the right. Night is long. That is most
+     of what night is. */
+  { min: 200, name: 'night',
+    sky: ['#04050b', '#05070f', '#070915', '#080c1b', '#0a0f22', '#0c1229', '#0e1530', '#111937', '#151d3d'],
+    sunA: 0, sunX: 0.05, sunY: 232, sunR: 11, sunC: '#c04a34',
+    moonA: 0.78, moonX: 0.86, moonY: 116, moonR: 9,
+    starA: 0.95, ridgeC: '#0b0d18', ridge2C: '#070911', lakeC: '#2c3a58', lakeA: 0.55,
+    lightC: '#8fa8d8', rayA: 0.000, rayDX: 130, rayW: 16,
+    spillR: 46, spillA: 0.050, ambA: 0.005, consA: 0.030,
+    gradeC: '#05080f', gradeA: 0.370, gradeAmp: 0.012,
+    vig: 1.14, hazeA: 0.030, hazeC: '#1a2038', moteM: 0.35, hearthM: 1.15, roofA: 0.020,
+    camBias: 300 },
+
+  /* ── 04:40 FIRST LIGHT ───────────────────────────────────────────────────
+     The sky changes before the room does. Nothing indoors has moved: the
+     hearth is at its ebb and the phosphor is exactly as bright as it was at
+     midnight. Only the three apertures know. */
+  { min: 280, name: 'first light',
+    sky: ['#060811', '#080c1a', '#0c1226', '#111a33', '#182342', '#212a4d', '#2d3054', '#3a3757', '#493d58'],
+    sunA: 0, sunX: 0.07, sunY: 214, sunR: 11, sunC: '#d4603a',
+    moonA: 0.42, moonX: 0.90, moonY: 132, moonR: 9,
+    starA: 0.55, ridgeC: '#141527', ridge2C: '#0d0e1d', lakeC: '#3c4463', lakeA: 0.44,
+    lightC: '#7d90c0', rayA: 0.008, rayDX: 132, rayW: 13,
+    spillR: 58, spillA: 0.070, ambA: 0.008, consA: 0.036,
+    gradeC: '#0a0e1c', gradeA: 0.290, gradeAmp: 0.014,
+    vig: 1.08, hazeA: 0.040, hazeC: '#242a44', moteM: 0.45, hearthM: 1.05, roofA: 0.024,
+    camBias: 90 },
+
+  /* ── 06:00 DAWN ──────────────────────────────────────────────────────────
+     The break. The disc clears the ridge at sky-left and the three arches
+     become the brightest objects on screen — pure silhouette, everything
+     around them still cold. The first shaft enters window 772 at dx+112 and
+     lands at floor x≈884: the inlaid medallion, the one place nobody put
+     furniture. Nobody planned that. It was in the geometry the whole time. */
+  { min: 360, name: 'dawn',
+    sky: ['#0d1330', '#171f47', '#252659', '#382e63', '#4f3763', '#6b425e', '#8a5057', '#a9634c', '#c67d47'],
+    sunA: 0.90, sunX: 0.10, sunY: 168, sunR: 11, sunC: '#ffb56a',
+    moonA: 0.14, moonX: 0.95, moonY: 154, moonR: 9,
+    starA: 0.12, ridgeC: '#241f3c', ridge2C: '#191634', lakeC: '#c98049', lakeA: 0.32,
+    lightC: '#ffc98a', rayA: 0.055, rayDX: 112, rayW: 13,
+    spillR: 96, spillA: 0.150, ambA: 0.016, consA: 0.052,
+    gradeC: '#1a1030', gradeA: 0.140, gradeAmp: 0.010,
+    vig: 0.92, hazeA: 0.060, hazeC: '#4a3450', moteM: 0.60, hearthM: 0.86, roofA: 0.030,
+    camBias: 90 },
+
+  /* ── 07:00 DAYBREAK ──────────────────────────────────────────────────────
+     Blue arriving, warmth retreating to a low band, the shafts at their most
+     powerful rake. This is the hour the baked floor reflections under the
+     windows were drawn for and have never once been justified by. */
+  { min: 420, name: 'daybreak',
+    sky: ['#183566', '#204077', '#2b4c85', '#38578f', '#476295', '#586c98', '#6c7697', '#828093', '#9a8a8d'],
+    sunA: 0.98, sunX: 0.17, sunY: 136, sunR: 10, sunC: '#ffd08a',
+    moonA: 0, moonX: 0.98, moonY: 176, moonR: 9,
+    starA: 0, ridgeC: '#3a4260', ridge2C: '#2a3050', lakeC: '#93a3ae', lakeA: 0.24,
+    lightC: '#ffe0ab', rayA: 0.078, rayDX: 88, rayW: 15,
+    spillR: 118, spillA: 0.200, ambA: 0.040, consA: 0.090,
+    gradeC: '#20304c', gradeA: 0.070, gradeAmp: 0.007,
+    vig: 0.84, hazeA: 0.050, hazeC: '#54607e', moteM: 0.85, hearthM: 0.78, roofA: 0.052,
+    camBias: 90 },
+
+  /* ── 09:00 MORNING ───────────────────────────────────────────────────────
+     Work light. The shafts walk off the ring and onto the desks. What morning
+     loses is intimacy, and the fire — nobody looks at a fire at nine. */
+  { min: 540, name: 'morning',
+    sky: ['#1f4d8c', '#2a5896', '#35639f', '#416ea6', '#4e79ac', '#5d84b0', '#6e8eb3', '#8098b4', '#93a1b4'],
+    sunA: 1.00, sunX: 0.29, sunY: 100, sunR: 10, sunC: '#ffe4ad',
+    moonA: 0, moonX: 0.10, moonY: 196, moonR: 9,
+    starA: 0, ridgeC: '#465274', ridge2C: '#333e60', lakeC: '#9fb0bc', lakeA: 0.20,
+    lightC: '#ffeec8', rayA: 0.068, rayDX: 54, rayW: 18,
+    spillR: 108, spillA: 0.175, ambA: 0.062, consA: 0.126,
+    gradeC: '#2e4a72', gradeA: 0.090, gradeAmp: 0.005,
+    vig: 0.76, hazeA: 0.038, hazeC: '#5c6b8a', moteM: 1.00, hearthM: 0.72, roofA: 0.078,
+    camBias: 924 },
+
+  /* ── 12:00 NOON ──────────────────────────────────────────────────────────
+     The glass roof, not the windows. The nave shafts go nearly vertical and
+     nearly die, and the conservatory takes the whole load — which is the one
+     hour of the day the far end of the hall is the best place to be looking.
+     Noon loses all its drama; the answer is to send the camera where the
+     light went. */
+  { min: 720, name: 'noon',
+    sky: ['#245aa0', '#3066a9', '#3c72b1', '#497db8', '#5787bd', '#6691c1', '#779ac3', '#89a3c4', '#9cabc3'],
+    sunA: 1.00, sunX: 0.50, sunY: 62, sunR: 9, sunC: '#fff3d0',
+    moonA: 0, moonX: 0.24, moonY: 210, moonR: 9,
+    starA: 0, ridgeC: '#4d5a80', ridge2C: '#39466c', lakeC: '#a9bac6', lakeA: 0.18,
+    lightC: '#fff6dc', rayA: 0.030, rayDX: 0, rayW: 24,
+    spillR: 78, spillA: 0.120, ambA: 0.140, consA: 0.185,
+    gradeC: '#3a5580', gradeA: 0.100, gradeAmp: 0.004,
+    vig: 0.70, hazeA: 0.028, hazeC: '#6b7a9a', moteM: 1.00, hearthM: 0.70, roofA: 0.104,
+    camBias: 1990 },
+
+  /* ── 14:30 AFTERNOON ─────────────────────────────────────────────────────
+     The long light returns from the other side and a bounce off the gallery
+     underside rakes the studio. This is the atelier's hour — the studies, the
+     drying line, the loom, the pots of colour going tacky. Haze rises and
+     warms. */
+  { min: 870, name: 'afternoon',
+    sky: ['#22528f', '#2d5c97', '#3a669d', '#4970a1', '#5a79a3', '#6d82a3', '#818ba0', '#96939c', '#ab9c96'],
+    sunA: 1.00, sunX: 0.69, sunY: 92, sunR: 10, sunC: '#ffe6b0',
+    moonA: 0, moonX: 0.40, moonY: 214, moonR: 9,
+    starA: 0, ridgeC: '#4a5473', ridge2C: '#373f5e', lakeC: '#b4a89a', lakeA: 0.22,
+    lightC: '#ffe6b8', rayA: 0.052, rayDX: -38, rayW: 19,
+    spillR: 102, spillA: 0.170, ambA: 0.064, consA: 0.106,
+    gradeC: '#34406a', gradeA: 0.080, gradeAmp: 0.008,
+    vig: 0.78, hazeA: 0.052, hazeC: '#6e6180', moteM: 0.95, hearthM: 0.80, roofA: 0.066,
+    camBias: 1620 },
+
+  /* ── 17:30 GOLDEN HOUR ───────────────────────────────────────────────────
+     The turn. Everything the sunset does, an hour early and eighty per cent
+     as saturated — which is what makes the sunset land when it arrives. */
+  { min: 1050, name: 'golden hour',
+    sky: ['#153a75', '#22417c', '#37447e', '#514679', '#6f486e', '#8d4d60', '#a85a4f', '#c27043', '#d78d3d'],
+    sunA: 1.00, sunX: 0.81, sunY: 140, sunR: 12, sunC: '#ffb257',
+    moonA: 0, moonX: 0.06, moonY: 208, moonR: 9,
+    starA: 0.04, ridgeC: '#3a3050', ridge2C: '#282041', lakeC: '#b4634e', lakeA: 0.40,
+    lightC: '#ffc270', rayA: 0.070, rayDX: -54, rayW: 15,
+    spillR: 122, spillA: 0.235, ambA: 0.044, consA: 0.070,
+    gradeC: '#241a3a', gradeA: 0.045, gradeAmp: 0.012,
+    vig: 0.88, hazeA: 0.055, hazeC: '#6a4258', moteM: 0.95, hearthM: 0.88, roofA: 0.044,
+    camBias: 924 },
+
+  /* ── 18:45 SUNSET — THE ANCHOR ───────────────────────────────────────────
+     The ten minutes the room was built for, extended, and the subject is
+     people. The sky is today's nine stops untouched; the grade is today's
+     deleted dusk breath, moved to where the lights punch back through it. The
+     one thing that changes is that the window spills grow to r130/a0.26 —
+     they composite after the sprite pass, so at this hour every figure
+     standing in the nave is washed orange by the window they're near. That is
+     the single most valuable consequence in this whole model and it costs one
+     number. */
+  { min: 1125, name: 'sunset',
+    sky: ['#0b0819', '#160b28', '#241238', '#3a1642', '#5c1f49', '#822f49', '#ab4f43', '#d17a45', '#f2ad5f'],
+    sunA: 0.95, sunX: 0.88, sunY: 172, sunR: 13, sunC: '#f2703a',
+    moonA: 0, moonX: 0.04, moonY: 192, moonR: 9,
+    starA: 0.45, ridgeC: '#2a1c3e', ridge2C: '#1d1430', lakeC: '#8a3f52', lakeA: 0.50,
+    lightC: '#f2ad5f', rayA: 0.040, rayDX: -62, rayW: 14,
+    spillR: 130, spillA: 0.260, ambA: 0.030, consA: 0.050,
+    gradeC: '#1a0e2c', gradeA: 0.045, gradeAmp: 0.030,
+    vig: 1.00, hazeA: 0.050, hazeC: '#3c283c', moteM: 0.90, hearthM: 0.95, roofA: 0.032,
+    camBias: 924 },
+
+  /* ── 19:20 DUSK ──────────────────────────────────────────────────────────
+     Nothing indoors turns on. The outdoors turns off. The valley goes one
+     detail at a time and the last thing left is the lake glimmer — a bright
+     line under a dead sky, which is the loneliest object in the room and was
+     already coded. */
+  { min: 1160, name: 'dusk',
+    sky: ['#070513', '#0d071e', '#140b29', '#1d0e31', '#2a1235', '#3b1837', '#4f2135', '#642c31', '#7a392c'],
+    sunA: 0.30, sunX: 0.95, sunY: 198, sunR: 12, sunC: '#c04a34',
+    moonA: 0.22, moonX: 0.16, moonY: 118, moonR: 9,
+    starA: 0.62, ridgeC: '#1d1530', ridge2C: '#140e26', lakeC: '#6a3346', lakeA: 0.56,
+    lightC: '#c9743f', rayA: 0.016, rayDX: -86, rayW: 12,
+    spillR: 84, spillA: 0.130, ambA: 0.014, consA: 0.038,
+    gradeC: '#120c26', gradeA: 0.145, gradeAmp: 0.020,
+    vig: 1.06, hazeA: 0.044, hazeC: '#2c1e38', moteM: 0.70, hearthM: 1.05, roofA: 0.024,
+    camBias: 300 },
+
+  /* ── 21:30 NIGHT FALLS ───────────────────────────────────────────────────
+     Wraps to 00:00. The moon has come up on the left and is still climbing;
+     the sun's rake crosses back through zero somewhere in here, in the dark,
+     where rayA is nought and nobody can see it happen. */
+  { min: 1290, name: 'night',
+    sky: ['#04050c', '#060810', '#080a17', '#090d1d', '#0b1024', '#0d132b', '#0f1632', '#121a39', '#161e3f'],
+    sunA: 0, sunX: 0.99, sunY: 240, sunR: 11, sunC: '#8a3626',
+    moonA: 0.70, moonX: 0.34, moonY: 94, moonR: 9,
+    starA: 0.92, ridgeC: '#0c0e1a', ridge2C: '#080a13', lakeC: '#303e5c', lakeA: 0.56,
+    lightC: '#8fa8d8', rayA: 0.000, rayDX: -120, rayW: 16,
+    spillR: 48, spillA: 0.052, ambA: 0.005, consA: 0.032,
+    gradeC: '#05080f', gradeA: 0.365, gradeAmp: 0.012,
+    vig: 1.13, hazeA: 0.032, hazeC: '#1c2238', moteM: 0.38, hearthM: 1.13, roofA: 0.020,
+    camBias: 300 }
+];
+
+/* precompute the colour triples once — envAt() must never parse a hex */
+for (const P of PHASES) {
+  P._sky = P.sky.map(rgbOf);
+  for (const k of PH_COL) P['_' + k] = rgbOf(P[k]);
+}
+
+/**
+ * The environment at a given minute of the room's own day. Pure, DOM-free and
+ * total: defined for every real number, wrapping cleanly through midnight, so
+ * it can be swept in node and asserted.
+ */
+export function envAt(min) {
+  const m = ((min % 1440) + 1440) % 1440;
+  let i = 0;
+  for (let k = 0; k < PHASES.length; k++) if (PHASES[k].min <= m) i = k;
+  const A = PHASES[i], B = PHASES[(i + 1) % PHASES.length];
+  const span = ((((B.min - A.min) % 1440) + 1440) % 1440) || 1440;
+  const f = Math.min(1, Math.max(0, ((((m - A.min) % 1440) + 1440) % 1440) / span));
+  const e = { min: m, f, from: A.name, to: B.name, name: f < 0.5 ? A.name : B.name };
+  const s = f * f * (3 - 2 * f);
+  for (const k of PH_NUM) { const g = PH_LINEAR.has(k) ? f : s; e[k] = A[k] + (B[k] - A[k]) * g; }
+  for (const k of PH_COL) e[k] = mix3(A['_' + k], B['_' + k], s);
+  e.sky = A._sky.map((c, j) => mix3(c, B._sky[j], s));
+  return e;
+}
+
+/* One env per distinct minute, shared by draw(), grade() and the light pass so
+   a frame never builds it twice. envAt itself stays pure. */
+let _envM = null, _env = envAt(18 * 60 + 45);
+export function envFor(m) { if (m !== _envM) { _envM = m; _env = envAt(m); } return _env; }
+
 /* frontier vista behind a window opening (the richer "far" layer) */
 function vista(b, x0, x1, yTop, ySpring, yBase) {
   const ctx = b.ctx; ctx.save();
@@ -872,6 +1152,29 @@ export function makeSanctuary(bridge) {
 
       // ── atmosphere: haze band ──
       g.px(0, WB - 26, SANCT_W, 26, 'rgba(60,40,60,0.05)');
-    }
+    },
+
+    /* THE GRADE. One full-canvas fill, and the engine paints it between the
+       sprite pass and the additive lights (engine.js:767) — which is the whole
+       point of it. It darkens the baked room AND the residents standing in it,
+       and then every light in the room punches back through. A figure away
+       from a source becomes a silhouette; a figure at a terminal is lit by
+       their own screen.
+
+       This replaces the old "dusk breath", which was already a grade — a
+       one-phase one, painted after the lights, where it dimmed them instead of
+       being punched through by them. Its 78-second breathing survives as the
+       amplitude term, so the anchor hour still breathes exactly as it did. */
+    grade: (m, t) => {
+      const e = envFor(m);
+      const a = e.gradeA + e.gradeAmp * Math.sin(t * 0.0805);   // 2π/78s
+      return a < 0.004 ? null : rgba(e.gradeC, a);
+    },
+
+    /* the engine's vignette, scaled by the hour: it closes in at night and
+       opens at noon. Read after grade() in the same frame, so the cached env
+       is always the one this frame was drawn with. */
+    get vig() { return _env.vig; },
+    get env() { return _env; }
   };
 }
