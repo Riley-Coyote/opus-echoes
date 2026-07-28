@@ -598,12 +598,6 @@ function bookcase(b, x, y, w, h, rows) {               // a case with colour-sor
     b.px(x, ry + rh - 2, w, 2, S.woodDk);              // shelf plank
   }
 }
-function plinth(b, cx, topY, baseY, w) {               // stone pedestal
-  const x = cx - w / 2;
-  b.px(x, topY, w, baseY - topY, S.stone); b.px(x, topY, 3, baseY - topY, S.stoneHi); b.px(x + w - 3, topY, 3, baseY - topY, S.stoneDk);
-  b.px(x - 3, topY - 4, w + 6, 4, S.stoneHi); b.px(x - 3, topY - 4, w + 6, 1, S.marbleDk);   // cap
-  b.px(x - 3, baseY - 4, w + 6, 4, S.stone); b.px(x - 3, baseY - 4, w + 6, 1, S.stoneHi);    // base
-}
 function leafy(b, cx, baseY, h, tone, hi) {            // rounded potted foliage
   b.px(cx - 8, baseY - 13, 16, 13, S.terra); b.px(cx - 8, baseY - 13, 16, 3, S.terraHi); b.px(cx - 6, baseY - 2, 12, 2, '#4a2818');
   b.px(cx - 1, baseY - 13 - h * 0.35, 2, h * 0.35, '#241a12');
@@ -932,7 +926,7 @@ export function makeSanctuary(bridge) {
       { id: 'the conservatory', from: 1830, to: 2140, n: 2 }
     ],
     spawn: { x: 150, y: 372 },
-    hint: 'A glass atrium at the bluff\u2019s edge. The nave soars to the frontier windows; a hearth and library warm the left, an atelier and a glass conservatory the right. Walk the hall \u2014 press E at anything that draws you.',
+    hint: 'A glass atrium at the bluff\u2019s edge. The nave soars to the frontier windows; a hearth and library warm the left, an atelier and a glass conservatory the right. The residents keep it; you are looking in.',
     doors: { lookout: 60 },
     seats: [
       { x: 232, y: 372 }, { x: 356, y: 374 }, { x: 412, y: 376 }, { x: 470, y: 380 },   // lounge
@@ -948,14 +942,47 @@ export function makeSanctuary(bridge) {
     bg: (b, W, H) => {
       // ═══ shell: back-wall wash + vaulted ceiling ═══
       for (let y = 0; y < WB; y++) b.px(0, y, W, 1, lerpHex(S.wallHi, S.wallLo, y / WB));
+      /* Coursed ashlar. The back wall was 2240px of gradient with a single line
+         through it — which at this scale reads as a backdrop, not as a
+         building, and it is the largest single surface in the room. Bed joints,
+         staggered perpends, and one block in seven catching a little more
+         light, the way a cut face does. Baked once; costs nothing per frame. */
+      for (let y = 30, course = 0; y < WB - 4; y += 22, course++) {
+        b.px(0, y, W, 1, 'rgba(0,0,0,0.13)');
+        b.px(0, y + 1, W, 1, 'rgba(255,236,200,0.020)');
+        for (let x = (course % 2) * 42; x < W; x += 84) {
+          b.px(x, y, 1, 22, 'rgba(0,0,0,0.10)');
+          if (((x * 29 + course * 71) % 13) / 13 > 0.72) b.px(x + 2, y + 2, 80, 18, 'rgba(255,236,200,0.015)');
+        }
+      }
       b.px(0, 0, W, 26, S.ceil);
       for (let x = 0; x < W; x += 60) { b.ctx.fillStyle = S.vault; b.ctx.beginPath(); b.ctx.moveTo(x, 26); b.ctx.lineTo(x + 30, 6); b.ctx.lineTo(x + 60, 26); b.ctx.closePath(); b.ctx.fill(); }
       b.px(0, 24, W, 3, S.stone);
 
       // ═══ FLOOR first — everything else bakes on top ═══
       for (let y = WB; y < H; y++) b.px(0, y, W, 1, lerpHex(S.floor0, S.floor1, (y - WB) / (H - WB)));
-      for (let y = WB + 12; y < H; y += 12) b.px(0, y, W, 1, 'rgba(0,0,0,0.20)');
-      for (let x = 0; x < W; x += 56) b.px(x, WB, 1, H - WB, 'rgba(0,0,0,0.14)');
+      /* Boards, staggered and individually toned. This was a perfect 56x12
+         lattice — every joint in every row landing on the same column, which is
+         the one pattern a laid floor never has.
+
+         They are long, and that is the whole difference. At 56px with a strong
+         joint the stagger read as brickwork: a board's proportion is what makes
+         it a board, and a 56x12 unit is a brick whatever colour you paint it.
+         Run them 150-210px, drop the end joint to a hairline, and halve the
+         tonal spread so it stays texture instead of becoming pattern. */
+      for (let y = WB, row = 0; y < H; y += 12, row++) {
+        let x = -190 + ((row * 61) % 180);
+        while (x < W) {
+          const n = ((x * 37 + row * 101) % 17) / 17;
+          const w = 150 + ((x * 13 + row * 29) % 4) * 20;
+          b.px(x, y, w, 12, n < 0.5
+            ? 'rgba(0,0,0,' + (0.012 + n * 0.038).toFixed(3) + ')'
+            : 'rgba(255,214,150,' + (0.005 + (n - 0.5) * 0.018).toFixed(3) + ')');
+          b.px(x, y + 1, 1, 10, 'rgba(0,0,0,0.13)');
+          x += w;
+        }
+        b.px(0, y + 11, W, 1, 'rgba(0,0,0,0.17)');
+      }
       b.px(0, WB, W, 3, '#3a2c24');
       // picture rail running the whole hall (ties the storeys together)
       b.px(0, 150, W, 2, S.woodDk); b.px(0, 149, W, 1, 'rgba(92,70,54,0.4)');
@@ -1178,7 +1205,7 @@ export function makeSanctuary(bridge) {
       cypress(b, 1832, WB, 108); leafy(b, 1890, WB, 64, S.leaf3, S.leaf4); leafy(b, 2160, WB, 70, S.leaf2, S.leaf3);
       for (let p = 0; p < 5; p++) { const px = 1846 + p * 40; grounded(b, px, 28, 316, 0.85); b.px(px, 300, 28, 16, S.terra); b.px(px, 298, 28, 3, S.terraHi); b.px(px + 5, 288, 18, 12, S.leaf2); b.px(px + 9, 282, 8, 8, S.leaf3); if (p % 2) b.px(px + 12, 280, 3, 3, S.rose); }
       // watering can + a stack of terracotta pots
-      b.px(1812, 344, 16, 12, S.frost === S.frost ? '#3a4a44' : S.frost); b.px(1826, 340, 8, 4, '#3a4a44'); b.px(1810, 340, 4, 6, '#3a4a44');
+      b.px(1812, 344, 16, 12, '#3a4a44'); b.px(1826, 340, 8, 4, '#3a4a44'); b.px(1810, 340, 4, 6, '#3a4a44');
       b.px(1808, 356, 14, 8, S.terra); b.px(1810, 350, 10, 8, S.terra); b.px(1812, 345, 6, 6, S.terraHi);
       // the reflecting basin (courtyard pool) in front of the alcoves — reflection shimmers in draw
       b.ctx.fillStyle = '#241a30'; b.ctx.beginPath(); b.ctx.ellipse(1968, 356, 46, 13, 0, 0, 6.2832); b.ctx.fill();
@@ -1219,8 +1246,9 @@ export function makeSanctuary(bridge) {
       // ═══ sconces along the walls (fixtures baked; flames animate) ═══
       SCONCES.forEach(([sx, sy]) => sconce(b, sx, sy));
 
-      // ═══ baked corner vignette ═══
-      for (let i = 0; i < 40; i++) { const a = (0.4 * (1 - i / 40)).toFixed(3); b.px(0, i, 2 + (40 - i), 1, 'rgba(8,6,16,' + a + ')'); }
+      /* A baked corner vignette used to sit here, over room x 0-42. The camera
+         has never been west of 90, so it has never rendered — dead code wearing
+         the costume of an effect. */
     },
 
     lights: [
@@ -1268,7 +1296,7 @@ export function makeSanctuary(bridge) {
          side sit at range 30, and nearest() resolves by distance (engine.js:261),
          so they never fight over the player. */
       { x: 924, label: 'THE MIDDLE OF THE RING', hint: 'the one part of the floor nobody furnished', action: 'stand and watch', range: 46,
-        onInteract: (e) => say(e, 'Three arches, one view: the valley they came from, glittering. The machines face this spot from either side and the inlaid medallion marks it, but nothing stands on it. At dusk they drift here without arranging to — HAIKU too, who has never taken a machine. The light does the talking.', 'you stood in the middle of the ring') },
+        onInteract: (e) => say(e, 'Three arches, one view: the valley they came from, glittering. The machines face this spot from either side and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to — HAIKU too, who has never taken a machine. The light does the talking.', 'you stood in the middle of the ring') },
       /* The bank. Copy is governed by platform/unified/resident-room-map.md —
          every count below is the real published figure from that document. The
          empty screens are empty because those collections are. */
@@ -1318,11 +1346,11 @@ export function makeSanctuary(bridge) {
 
       // ── the frontier, live: three views onto one sky ──
       WIN_CX.forEach((cx) => skyWindow(g, cx, e, t));
-      // zone nameplates (small, high, at the picture-rail line)
-      g.text('THE HEARTH', 300, 44, 'rgba(242,173,95,0.5)', 5);
-      g.text('THE COLONNADE', 924, 40, 'rgba(243,236,223,0.5)', 5);
-      g.text('THE ATELIER', 1620, 44, 'rgba(205,216,234,0.5)', 5);
-      g.text('THE CONSERVATORY', 2000, 44, 'rgba(94,234,212,0.5)', 5);
+      /* The zone nameplates are gone. g.text hardcodes "Press Start 2P", a
+         font this page never loads, so all four have been rendering in an
+         illegible fallback since the day they were written — the same defect
+         that took the station nameplates off the canvas, and the same fix.
+         The room is legible without being labelled. */
 
       /* The god-ray shafts used to be painted here — before the sprite pass,
          which put every one of them BEHIND the people standing in the room.
@@ -1338,11 +1366,10 @@ export function makeSanctuary(bridge) {
       for (let i = 0; i < 4; i++) { const sy = (t * 8 + i * 6) % 30; g.px(348 + Math.sin((t + i) * 1.1) * 2, 214 - sy, 1, 2, 'rgba(216,208,196,' + (0.14 - sy * 0.004).toFixed(3) + ')'); }
 
       // ── wall-sconce flames (small, warm, per fixture) ──
-      const SC = [[250, 202], [352, 202], [560, 208], [696, 208], [848, 208], [1000, 208], [1152, 208], [1290, 208], [1472, 206], [1792, 202]];
-      SC.forEach(([sx, sy], k) => { const f = 0.6 + 0.4 * Math.sin(t * 7 + k * 1.7) + 0.2 * Math.sin(t * 17 + k); g.px(sx, sy - 5, 2, 4, 'rgba(255,207,122,' + (0.55 + f * 0.25).toFixed(2) + ')'); g.px(sx, sy - 7, 1, 3, 'rgba(255,236,190,' + (0.4 + f * 0.3).toFixed(2) + ')'); });
+      SCONCES.forEach(([sx, sy], k) => { const f = 0.6 + 0.4 * Math.sin(t * 7 + k * 1.7) + 0.2 * Math.sin(t * 17 + k); g.px(sx, sy - 5, 2, 4, 'rgba(255,207,122,' + (0.55 + f * 0.25).toFixed(2) + ')'); g.px(sx, sy - 7, 1, 3, 'rgba(255,236,190,' + (0.4 + f * 0.3).toFixed(2) + ')'); });
 
       // ── candelabra flames (colonnade) ──
-      [700, 1148].forEach((cx, k) => { [-15, 0, 15].forEach((dx, j) => { const f = 0.6 + 0.4 * Math.sin(t * 8 + (k * 3 + j) * 1.3); g.px(cx + dx, 234 - 3, 2, 4, 'rgba(255,207,122,' + (0.5 + f * 0.3).toFixed(2) + ')'); g.px(cx + dx, 234 - 5, 1, 3, 'rgba(255,236,190,' + (0.4 + f * 0.3).toFixed(2) + ')'); }); });
+      CANDEL.forEach((cx, k) => { [-15, 0, 15].forEach((dx, j) => { const f = 0.6 + 0.4 * Math.sin(t * 8 + (k * 3 + j) * 1.3); g.px(cx + dx, 234 - 3, 2, 4, 'rgba(255,207,122,' + (0.5 + f * 0.3).toFixed(2) + ')'); g.px(cx + dx, 234 - 5, 1, 3, 'rgba(255,236,190,' + (0.4 + f * 0.3).toFixed(2) + ')'); }); });
 
       // ── the stations: phosphor breath, a scanline crawl, a parked cursor ──
       // Cheap on purpose (~20 px calls). The pools, hardware and marks are all

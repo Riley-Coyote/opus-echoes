@@ -198,6 +198,10 @@ body.overlay-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
    clamped to the real overflow, and a fixed percentage cannot know it. */
 #stageCanvas{position:absolute;left:0;bottom:0;width:100%;height:auto;display:block;image-rendering:pixelated}
 #npcClick{position:absolute;inset:0;z-index:6;pointer-events:auto}
+/* --lit runs 0 at night to 1 at noon, set from the room's own ambient, so the
+   chrome's dark overlays ease off as the room brightens. Neutral dark only —
+   no colour from the world reaches the chrome. */
+:root{--lit:0}
 .grade{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 92% at 50% 36%,transparent 56%,rgba(5,5,9,.46) 100%);transition:opacity .3s var(--ease)}
 /* Two fades, cross-faded on mode — a gradient's stops cannot transition, its
    opacity can. The hero fade is deep; it has ~565px to work in. The band fade
@@ -206,8 +210,8 @@ body.overlay-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
    the whole point is inhabitants. */
 .fade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 68%,rgba(7,7,11,.42) 84%,rgba(7,7,11,.9) 95%,var(--floor) 100%);transition:opacity .3s var(--ease)}
 .fade-b{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,transparent 87%,rgba(7,7,11,.5) 94%,var(--floor) 100%);transition:opacity .3s var(--ease)}
-#stage[data-mode="band"] .fade{opacity:0} #stage[data-mode="band"] .fade-b{opacity:1}
-#stage[data-mode="band"] .grade{opacity:.62}
+#stage[data-mode="band"] .fade{opacity:0} #stage[data-mode="band"] .fade-b{opacity:calc(1 - var(--lit) * .42)}
+#stage[data-mode="band"] .grade{opacity:calc(.62 - var(--lit) * .26)}
 /* The record passes UNDER the stage from the first pixel of scroll. Without a
    sill it is sliced mid-glyph at the stage's bottom edge; this gives it a short
    dissolve instead of a cut. Sits above main (z1), below the stage (z40). */
@@ -600,8 +604,21 @@ let clockNow='', lastMin=null, day=1;
    room enter its second day. */
 function renderClock(){
   if(!clockNow) return;
-  const next='THE ROOM’S OWN DAY · '+clockNow+(day>1?' · DAY '+day:'');
+  const ph=(sanctuary.env&&sanctuary.env.name)||'';
+  const next='THE ROOM’S OWN DAY · '+clockNow+(ph?' · '+ph.toUpperCase():'')+(day>1?' · DAY '+day:'');
   if(clockEl.textContent!==next) clockEl.textContent=next;
+  /* The fixed dark overlays were tuned against a room that was always dusk.
+     At noon the canvas brightens underneath them and the band's bottom fade
+     stops reading as a fade and starts reading as a hard bar across a lit
+     scene. They are neutral dark, so scaling them by the hour puts no colour
+     into the chrome — it just lets them follow the room they sit on. */
+  const lit=sanctuary.env?Math.max(0,Math.min(1,(sanctuary.env.ambA-0.005)/0.135)):0;
+  const q=String(Math.round(lit*100));
+  if(document.documentElement.dataset.lit!==q){
+    document.documentElement.dataset.lit=q;
+    document.documentElement.dataset.phase=ph.replace(/ /g,'-');
+    document.documentElement.style.setProperty('--lit',lit.toFixed(3));
+  }
 }
 function onClock(s, d){
   const p=s.split(':'), mins=(+p[0])*60+(+p[1]);
@@ -826,16 +843,33 @@ npcLayer.addEventListener('click',e=>{
 /* What is worth looking at right now: the gathering while it converges, else
    the midpoint of a live exchange if one is running off-frame. Both are real
    events in the room rather than a timer. */
+/* A bias is a place in the ROOM; a dwell is a camera position. camera.js's
+   choose() compares the two directly, so handing it a room x sent it to
+   whichever dwell had the nearest *number* — which is not the dwell that frames
+   the thing. The gathering at room 924 was resolving to the far dwell at 710,
+   the one position that pushes it to the edge of frame, when it belongs at
+   HOME where the whole composition was tuned for it. Centre it first. */
+const frameOn=(roomX)=>Math.max(0,Math.min(sanctuary.width-FRAME_W, roomX-FRAME_W/2));
 function gatherBias(){
   if(!engine) return null;
   const g=engine.gathering;
-  if(g&&g.members&&g.members.length) return 924;
+  if(g&&g.members&&g.members.length) return frameOn(924);
   const c=engine.convo;
   if(c&&c.who&&c.who.length===2){
     const mid=(c.who[0].x+c.who[1].x)/2;
-    if(mid<cam.x+120||mid>cam.x+FRAME_W-120) return mid;
+    if(mid<cam.x+120||mid>cam.x+FRAME_W-120) return frameOn(mid);
   }
-  return null;
+  /* THE CAMERA GOES WHERE THE LIGHT IS. With nothing happening, the hour
+     decides: the conservatory at noon, when the nave shafts have gone vertical
+     and nearly died and the glass roof is carrying the room; the hearth at
+     night, when the fire is the brightest thing in the building. This is the
+     answer to noon's one real problem — it is the phase with the least drama
+     at HOME, and the drama is at the far end of the hall.
+
+     A hint, not a command: choose() snaps it to the nearest dwell, and it is
+     read only after a full hold expires, so the camera still rests nine tenths
+     of the time and still stops dead when someone is looking. */
+  return sanctuary.env?sanctuary.env.camBias:null;
 }
 /* ?clock=HH:MM or ?clock=NNN pins the hour, so a screenshot or an assertion
    can name the light it wants instead of waiting for it. */

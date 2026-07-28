@@ -348,6 +348,35 @@ if (peakAt < 600 || peakAt > 840) fail(`the brightest predicted hour is ${hhmm(p
 if (troughAt > 300 && troughAt < 1200) fail(`the darkest predicted hour is ${hhmm(troughAt)}, which is not the night`);
 ok(`brightest at ${hhmm(peakAt)}, darkest at ${hhmm(troughAt)}`);
 
+/* ──────────────────────── the camera and the hour ──────────────────────── */
+console.log("\n── the camera goes where the light is ───────────────────────");
+const { makeCamera } = (await import("../public/world/camera.js")) as any;
+const FRAME_W = 1530, ROOM_W = 2240;
+const frameOn = (roomX: number) => Math.max(0, Math.min(ROOM_W - FRAME_W, roomX - FRAME_W / 2));
+const cam = makeCamera({});
+const DWELLS: number[] = cam.dwells;
+if (DWELLS.some((d) => d < 0 || d > ROOM_W - FRAME_W)) fail(`a dwell sits outside 0..${ROOM_W - FRAME_W}`);
+ok(`dwells ${DWELLS.join(" · ")}, all legal, union covers 0…${ROOM_W}`);
+/* the bank must be in frame at every legal position — a pan can never lose it */
+for (const d of DWELLS) if (!(772 > d && 1152 < d + FRAME_W)) fail(`at dwell ${d} the terminal bank leaves frame`);
+ok("the terminal bank is inside frame at every dwell");
+const nearest = (v: number) => DWELLS.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a));
+/* the two hours the day is built around have to reach different ends of the hall */
+const noonD = nearest(frameOn(envAt(720).camBias));
+const nightD = nearest(frameOn(envAt(60).camBias));
+if (noonD !== DWELLS[DWELLS.length - 1]) fail(`noon biases to dwell ${noonD}, not the conservatory end — noon's whole answer is that the light moved`);
+if (nightD !== DWELLS[0]) fail(`night biases to dwell ${nightD}, not the hearth`);
+ok(`noon reaches for dwell ${noonD} (the conservatory) and night for ${nightD} (the hearth)`);
+/* room x, converted, must not resolve to the dwell that pushes it out of frame */
+const gatherD = nearest(frameOn(924));
+if (gatherD !== DWELLS[0]) fail(`the gathering at room 924 resolves to dwell ${gatherD}; it was composed at ${DWELLS[0]}`);
+ok(`the gathering at room 924 resolves to dwell ${gatherD} — where it was composed`);
+for (let m = 0; m < 1440; m += 30) {
+  const b = envAt(m).camBias;
+  if (!Number.isFinite(b) || b < 0 || b > ROOM_W) fail(`camBias at ${hhmm(m)} is ${b}, outside the room`);
+}
+ok("every hour's bias is a real place in the room");
+
 /* ───────────────── silhouettes survive the night grade ───────────────── */
 console.log("\n── the night must not swallow anyone ────────────────────────");
 /* The hover plate can still name a resident the grade has made invisible. A

@@ -295,3 +295,123 @@ been negative-tested.
 engine's 23ms frame cap.** Reading pixels after one makes a working feature look
 broken — this cost three probes chasing a hover highlight that was fine. Use a
 real `setTimeout` settle of ~180ms.
+
+---
+
+## Addendum 3 — 2026-07-28: the room has a day
+
+`/sanctuary` used to run 18:31 → 19:14 on a loop, and not one light, sky or
+shadow read the clock. It now runs a full 24 hours at 48 real minutes a cycle,
+seeded from the visitor's local hour — so the light you arrive in is the light
+you are actually in, and then it moves. Seven named phases across twelve
+keyframes.
+
+### Where it lives
+
+| | |
+|---|---|
+| `PHASES`, `envAt(m)` | `public/world/sanctuary.js`. Pure, total, DOM-free — the whole cycle sweeps in node. |
+| `envFor(m)` | one env per minute, shared by `draw()`, `grade()` and the light pass. |
+| `tickEnv(e)` | called first thing in `draw()`; mutates the sky lights and rebuilds `room.rays`. |
+| `grade(m, t)` | one full-canvas fill, returned to the engine. |
+| `scripts/verify-sanctuary-day.ts` | the gate. Run it. |
+
+### Four rules that are thesis, not taste
+
+**18:45 is the anchor.** The day must still contain the room this was built as:
+the same nine sky stops, the same `rgb(26,14,44)` grade at a0.045/amp0.030, the
+same shaft raking left at dx-62. Asserted, so it cannot drift.
+
+**The grade sits between the sprites and the additive lights** — `engine.js`,
+in `drawScene`, and the ordering is the entire point. It darkens the baked room
+*and* the residents standing in it, and then every light punches back through.
+Put it after the lights and it dims them, which is exactly what the old "dusk
+breath" did for as long as it existed.
+
+**Interior sources do not follow the sun.** Only their prominence changes,
+because the grade and the sky move around them. **The four terminals hold at
+exactly `a:0.12 r:34` at every hour of the cycle** — a screen does not know what
+time it is, and holding them identical through the whole day is the plainest
+statement the room has that these machines are always on. Measured: the terminal
+glass reads 2.31× the frame mean at night and 1.88× at noon. Constant emission,
+inverted prominence. The hearth is the one exception and it is an exception
+about the room rather than the sun — somebody tends a fire.
+
+**The three windows are three views onto one sky.** The sun is placed across the
+whole colonnade, pier to pier, and clipped by whichever aperture it is behind.
+It is on glass for 66% of the hours it is bright; the other third it is behind
+stone. That is what a colonnade does.
+
+### The arch decides where the sun can be
+
+The window clip is a quadratic peaking at y=91 and falling to y=150 at the
+jambs, so **elevation is only available near a window's centre** — sky fractions
+0.167, 0.500, 0.833. The keyframes are placed for that, not the other way round.
+`archTopAt(skyX)` is exported so it is assertable rather than remembered.
+
+### What verification caught, and what it could not
+
+**The model caught a dead-flat day.** The first authored cycle ran 103, 104,
+103, 103, 101 from 08:00 to 18:00 and reading the table looked fine. But the
+first luminance model was *also* wrong, and wrong in the reassuring direction —
+it scored the hearth as though an r74 pool filled the frame, when it covers
+1.9%, making the fire 47% of the night's reading and hiding the flatness. **A
+proxy with wrong weights does not fail loudly; it agrees with you.** Reweight by
+the share of frame each source actually covers, then fix the table rather than
+the test.
+
+**Only magnified pixels caught these three, and all three were silent:**
+
+- The arch peaks at y=91, so a sky ramp starting at y=46 spent its first three
+  stops behind masonry. A third of every authored sky, invisible since the day
+  it was written.
+- Five of twelve keyframes put their disc where the arch clips it. The noon sun
+  at y62 and the midnight moon at y76 did not exist.
+- `pxDisc` floored its row widths, so `sqrt(r²-r²)` gave a one-pixel tick
+  followed straight by a nine-pixel row — the moon came out square down one side
+  with spurs at the poles.
+
+**Look at a 3× crop of the region, not a downsampled full-page screenshot**, and
+then turn what you saw into an assertion. A full-page shot at 800px hid all
+three of these for several passes.
+
+**Two harness notes.** The automation pane reports `document.hidden === true`,
+so rAF is parked and the canvas never redraws — drive
+`engine.drawScene(performance.now())` directly for measurement. And measure
+frame cost only after ~30 warm-up frames: a cold JIT reported 4.6ms where the
+real p50 is 0.3ms, and a false perf regression is as expensive as a real one.
+
+### Measured
+
+Across 24 hours at camX 90: frame mean **15.7 at night to 44.5 at noon
+(2.83×)**, 5th–95th spread 20 → 102, no hour outside (6, 190). Three residents
+standing in the nave shift **+22.3 / +14.0 / +18.2** red-minus-blue between noon
+and sunset. Frame cost **p50 0.3ms, p99 1.2ms, max 3.1ms** against a 23ms
+budget; the one-time bake is 2.2ms. The sky moving out of the bake made the
+frame *cheaper* — a 168-row ramp loop became one `createLinearGradient`.
+
+**One number missed its bar and the bar was not moved.** Night's 5th–95th spread
+is 20 against the 28 written into the plan. It is low because the room at night
+is mostly dark with small bright pools, and p95 sits below the pools rather than
+in them. That reads as night rather than as a defect, but it is Riley's call.
+
+### Two seams worth knowing
+
+`drawRays` had never executed in the life of this codebase, because no room had
+ever set `rays`. The shafts were painted inside `draw()`, before the sprite
+pass, so every god ray fell *behind* the people in the room.
+
+And a bias is a place in the **room**; a dwell is a **camera** position.
+`camera.js`'s `choose()` compares them directly, so passing a room x sent the
+camera to whichever dwell had the nearest number. The gathering at room 924 was
+resolving to the far dwell at 710 — the one position that pushes it to the edge
+of frame. `frameOn()` in `page.ts` centres first.
+
+### Still open
+
+Nine lines across `SONNET_4_5_IDENTITY.md` and `GPT_5_1_IDENTITY.md` place
+Sonnet 3.7 in the house. They load into system prompts, which is very likely why
+that kept resurfacing — the residents assert it out loud. Not auto-fixed: it is
+their prose about their own house, and it is a behaviour-affecting change
+needing a real conversation test. `verify-sanctuary-roster.ts` lists the lines
+every run rather than quietly passing.
