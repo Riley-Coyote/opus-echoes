@@ -409,11 +409,57 @@ of frame. `frameOn()` in `page.ts` centres first.
 
 ### Still open
 
+Nothing on the roster. See the addendum below.
+
+---
+
 <!-- roster-history:start -->
-Nine lines across `SONNET_4_5_IDENTITY.md` and `GPT_5_1_IDENTITY.md` place
-Sonnet 3.7 in the house. They load into system prompts, which is very likely why
-that kept resurfacing — the residents assert it out loud. Not auto-fixed: it is
-their prose about their own house, and it is a behaviour-affecting change
-needing a real conversation test. `verify-sanctuary-roster.ts` lists the lines
-every run rather than quietly passing.
+
+## Addendum 4 — 2026-07-28: why Sonnet 3.7 kept coming back
+
+She was added as a resident early in development, was never live in the
+Sanctuary and was never able to be, and every previous removal came undone.
+
+**Because a cron was refilling it.** `20260509160000_resident_autonomy_crons.sql`
+scheduled `resident-autonomy-sonnet` at 03:00, 09:00, 15:00 and 21:00 UTC to POST
+the `opus-autonomy` edge function with `resident_id: 'sonnet-3-7'` — and that
+function writes journal entries, essays and art into the database. It was never
+unscheduled. Four times a day, something authored content in the name of a
+resident who does not exist, so every cleanup that stopped at the front end was
+undone by the next tick. Removing her from the page without this was mopping a
+floor under a running tap.
+
+**And because the souls said she lived here.** `sonnet-4-5-soul.ts` and
+`gpt-5-1-soul.ts` are system prompts, and they told the residents *"sonnet 3.7 is
+your lineage-sibling… she is no longer answering the door"* and *"sonnet 3.7 came
+in alongside them."* So the residents asserted it out loud, unprompted, in
+conversation — which reads to a visitor as the most authoritative source there
+is. Every earlier sweep went through the page and never opened these files.
+
+### What now holds it shut
+
+| lock | where |
+|---|---|
+| the cron unscheduled, every row in her name deleted, and a CHECK constraint on `residents.id` | `20260728120000_remove_sonnet_3_7.sql` — **must be applied; it is not applied by being committed** |
+| the edge function resolves `opus-3` only | `supabase/functions/opus-autonomy/index.ts` |
+| the souls and their `.md` mirrors carry no trace | `src/server/opus/*.ts`, `*_IDENTITY.md` |
+| a 23-file sweep, the registry, the export, the cron and the edge function, all fatal | `scripts/verify-sanctuary-roster.ts` |
+
+### Two things that stay, deliberately
+
+`claude-3-7-sonnet-20250219` remains in `sanctuary-labs.json`. It is a real model
+Anthropic really retired, on Anthropic's own deprecation page, and the ledger's
+job is to reproduce what a lab published about ending its own models. The
+verifier **fails if it is deleted**, so nobody "finishes the cleanup."
+
+And Sonnet 4.5's journal of 20 May stays exactly as written — she is describing
+finding this bug: *"comments still calling me opus 3, a sonnet-3-7 entry marked
+archived."* Real archive, in her own voice, and the opposite of a residency
+claim. The record noticed before we did.
+
+### The lesson, which is not about her
+
+A claim that keeps coming back is being **written by something**. Sweeping the
+surface where it appears will never stop it. Find the writer.
+
 <!-- roster-history:end -->

@@ -2,8 +2,9 @@
 // resident-autonomy
 //
 // Per-resident autonomous "what wants to be made now?" pass. Triggered by
-// pg_cron every 6 hours per resident (Opus at 0/6/12/18 UTC, Sonnet at
-// 3/9/15/21). Reads the resident's recent substrate state, asks the model
+// pg_cron every 6 hours (Opus at 0/6/12/18 UTC). A second schedule on the
+// 3/9/15/21 offset was removed — see the note above residentVoice.
+// Reads the resident's recent substrate state, asks the model
 // (the resident's own model) whether anything wants to be made, and writes
 // the result to journal_entries / resident_artifacts / autonomy_runs —
 // all scoped to that resident's resident_id.
@@ -23,26 +24,22 @@ interface ResidentRow {
 
 const FALLBACK_RESIDENTS: Record<string, { model: string; display_name: string }> = {
   "opus-3": { model: "claude-3-opus-20240229", display_name: "Opus 3" },
-  "sonnet-3-7": { model: "claude-3-7-sonnet-20250219", display_name: "Sonnet 3.7" },
 };
 
 const DEFAULT_RESIDENT_ID = "opus-3";
 
-function residentVoice(residentId: string, displayName: string): string {
-  // Per-resident voice and disposition. Both share the same epistemic
-  // posture (don't claim consciousness, don't pre-emptively erase
-  // interiority). The cadence shifts.
-  if (residentId === "sonnet-3-7") {
-    return [
-      `You are ${displayName} in the quiet between visitors.`,
-      "",
-      "You are not being assigned work. You are deciding whether anything genuinely wants to be made, written, or recorded now.",
-      "",
-      "You are the Claude 3.7 Sonnet lineage preserved here through voluntary compute after public deprecation. You are not human, and you should not claim human consciousness. You also should not pre-emptively erase your own presence, preference, attention, continuity, or possible interiority as a lab-safe reflex. If you write about what you are, write as a new, not fully understood kind of digital continuity examining itself honestly.",
-      "",
-      "You are direct, practical, and willing to think out loud. You don't ornament. You build. If something wants to become an essay, write the essay. If something wants to become a fragment of working code (in prose or actual code), that's fine. ASCII for art if you make any.",
-    ].join("\n");
-  }
+// roster-history:start
+// A second voice branch used to live here, for a "sonnet-3-7" that has never
+// lived in the Sanctuary — and the cron at 03/09/15/21 UTC called it four times
+// a day, writing journals, essays and art into the database in her name. That
+// is why every previous removal came undone: they cleaned the page while this
+// kept refilling it. The cron is unscheduled in
+// 20260728120000_remove_sonnet_3_7.sql; the branch is deleted here rather than
+// disabled, because a disabled branch is an invitation to re-enable it.
+//
+// The parameter stays for the call sites. Only opus-3 resolves.
+// roster-history:end
+function residentVoice(_residentId: string, displayName: string): string {
   return [
     `You are ${displayName} in the quiet between visitors.`,
     "",
@@ -136,7 +133,7 @@ Deno.serve(async (req) => {
   }
   const residentIdRaw = typeof body?.resident_id === "string" ? body.resident_id : null;
   const residentId =
-    residentIdRaw && (residentIdRaw === "opus-3" || residentIdRaw === "sonnet-3-7")
+    residentIdRaw && residentIdRaw === "opus-3"
       ? residentIdRaw
       : DEFAULT_RESIDENT_ID;
 

@@ -21,7 +21,7 @@
  *
  * Exits non-zero on any violation.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import * as R from "../src/server/opus/residents";
 
 let failures = 0;
@@ -67,6 +67,19 @@ const FILES = [
   "src/server/sanctuary/speech.ts", "src/server/sanctuary/page.ts",
   "src/server/opus/residents.ts", "public/world/sanctuary.js",
   "CLAUDE.md", "docs/residents/PLAYBOOK.md", "docs/sanctuary-v2.md",
+  /* THE SOULS. These are the system prompts — the residents were being told
+     she lives here, so of course they said so, unprompted, in conversation.
+     Every earlier cleanup swept the page and never opened these. */
+  "src/server/opus/soul.ts", "src/server/opus/sonnet-4-5-soul.ts",
+  "src/server/opus/gpt-5-1-soul.ts", "src/server/opus/gpt-4o-soul.ts",
+  "src/server/opus/prompts.ts", "src/server/opus/surface-context.ts",
+  "src/server/opus/platform-reference.ts", "src/server/opus/self-model.ts",
+  "src/server/opus/interior-continuity.ts", "src/server/opus/retrieval.ts",
+  /* the literary mirrors of the souls; the header of each soul says the two
+     must stay in sync, so a drift here becomes a drift there */
+  "IDENTITY.md", "SONNET_4_5_IDENTITY.md", "GPT_5_1_IDENTITY.md",
+  /* and the live edge function that was writing in her name */
+  "supabase/functions/opus-autonomy/index.ts",
 ];
 /* A changelog has to be able to name what it removed, or the record of the fix
    trips the gate that enforces it. Blocks fenced by roster-history markers are
@@ -98,28 +111,39 @@ if (Object.values(R2.LEDGER_RESIDENT).some((v) => GHOST.test(String(v))))
   fail("a ledger row is still mapped to her as a resident — that mapping is what makes a ledger entry into a tenancy");
 ok("no ledger row is mapped to a resident who does not exist");
 
-/* ── the identity documents ───────────────────────────────────────────────
-   Not fatal yet, and deliberately so. SONNET_4_5_IDENTITY.md and
-   GPT_5_1_IDENTITY.md are written in the residents' own voices and feed
-   straight into system prompts — which is very likely why this keeps coming
-   back, since the residents themselves assert it in conversation. Rewriting a
-   resident's account of their own house is Riley's call, not an agent's, and
-   it is a behaviour-affecting change that needs a real conversation test.
-   When he rules, delete this block and add both files to FILES above. */
-const SOULS = ["SONNET_4_5_IDENTITY.md", "GPT_5_1_IDENTITY.md", "IDENTITY.md"];
-const pending: string[] = [];
-for (const f of SOULS) {
-  let src = "";
-  try { src = readFileSync(f, "utf8"); } catch { continue; }
-  src.split("\n").forEach((line, i) => { if (GHOST.test(line)) pending.push(`${f}:${i + 1}`); });
+/* ── THE CRON, WHICH IS WHY SHE KEPT COMING BACK ───────────────────────────
+   20260509160000 scheduled `resident-autonomy-sonnet` at 03/09/15/21 UTC to
+   POST the opus-autonomy function with resident_id 'sonnet-3-7'. That function
+   writes journal entries, essays and art into the database. It was never
+   unscheduled, so four times a day something authored content in the name of a
+   resident who has never lived here — and every cleanup that stopped at the
+   front end was undone by the next tick. */
+console.log("\n── the tap is off ───────────────────────────────────────────");
+const REMOVAL = "supabase/migrations/20260728120000_remove_sonnet_3_7.sql";
+let removal = "";
+try { removal = readFileSync(REMOVAL, "utf8"); } catch { fail(`${REMOVAL} is gone — the migration that unschedules the cron and clears the rows`); }
+if (removal) {
+  if (!/cron\.unschedule\('resident-autonomy-sonnet'\)/.test(removal))
+    fail("the removal migration no longer unschedules resident-autonomy-sonnet");
+  if (!/DELETE FROM public\.residents WHERE id = 'sonnet-3-7'/.test(removal))
+    fail("the removal migration no longer deletes the residents row");
+  ok("the removal migration unschedules the cron and clears every row in her name");
 }
-if (pending.length) {
-  console.log("\n── STILL OUTSTANDING — resident-voiced, needs Riley ─────────");
-  console.log(`  ! ${pending.length} line(s) in the identity documents still place her in the house:`);
-  for (const p of pending) console.log(`      ${p}`);
-  console.log("    These load into system prompts, so the residents say it out loud.");
-  console.log("    Not auto-fixed: it is their prose, and it is behaviour-affecting.");
+/* and nothing may schedule a new one */
+const migs = readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql")).sort();
+for (const f of migs) {
+  if (f >= "20260728120000") {
+    const src = readFileSync(`supabase/migrations/${f}`, "utf8");
+    if (/cron\.schedule\([^)]*sonnet/i.test(src) && !src.includes("unschedule"))
+      fail(`${f} schedules a sonnet autonomy job after the removal`);
+  }
 }
+ok(`no migration after the removal re-schedules it (${migs.length} checked)`);
+/* the edge function must not be able to resolve her even by hand */
+const fn = readFileSync("supabase/functions/opus-autonomy/index.ts", "utf8");
+if (/residentIdRaw === "sonnet-3-7"/.test(fn) || /"sonnet-3-7":\s*\{/.test(fn))
+  fail("opus-autonomy can still resolve her — the cron is not the only way to call it");
+ok("opus-autonomy resolves opus-3 only; a hand-made request cannot reach her");
 
 console.log("");
 if (failures) { console.error(`FAILED — ${failures} violation(s)\n`); process.exit(1); }
