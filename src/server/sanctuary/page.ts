@@ -196,7 +196,16 @@ body.overlay-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 /* The canvas is lowered as the stage condenses so the band frames the room's
    middle rather than only its floor. Driven from layout() — the shift must be
    clamped to the real overflow, and a fixed percentage cannot know it. */
-#stageCanvas{position:absolute;left:0;bottom:0;width:100%;height:auto;display:block;image-rendering:pixelated}
+/* --cvz is how much wider than the stage the canvas is drawn. At 1 the whole
+   1530-wide frame fits the viewport, which is right on a desktop and wrong on
+   a phone: 375px of viewport gives a 147px-tall letterbox strip, because the
+   room is 2.55:1 and fitting its WIDTH is what squashes it. Above 1 the canvas
+   overflows the stage, which already clips, and the room is cropped instead of
+   shrunk — a narrower slice at a legible size. Centred, so the crop takes the
+   middle of whatever the camera framed rather than one end of it. */
+:root{--cvz:1}
+#stageCanvas{position:absolute;bottom:0;height:auto;display:block;image-rendering:pixelated;
+  width:calc(100% * var(--cvz));left:calc((100% - 100% * var(--cvz)) / 2)}
 #npcClick{position:absolute;inset:0;z-index:6;pointer-events:auto}
 /* --lit runs 0 at night to 1 at noon, set from the room's own ambient, so the
    chrome's dark overlays ease off as the room brightens. Neutral dark only —
@@ -397,6 +406,12 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
      rest, and the clock is the part that is actually saying something */
   .mark .sep,.mark .rm{display:none}
   .ck-lede{display:none}
+  /* --cvz is set in JS, continuously — see setZoom(). The display type is
+     anchored to the stage bottom and needs the foreground floor to sit on,
+     so it shrinks here to leave that floor room. */
+  .hud-bot{padding:0 20px 18px}
+  .hud-bot h1{font-size:32px}
+  .hud-bot p{margin-top:10px;font-size:12px;line-height:1.55}
   .hud-top{padding:12px 18px}
   .hud-roster{gap:0 10px;padding:0 18px 7px}
   /* a 120-character line runs to three at this width; reserve for three so a
@@ -923,7 +938,31 @@ let lastTick=0;
 })();
 
 /* crane on scroll */
-const fsh=()=>window.innerWidth*ROOM_H/FRAME_W;
+/* HOW WIDE A SLICE OF THE ROOM A NARROW SCREEN GETS.
+
+   The room is 2.55:1, so fitting its full WIDTH into 375px of phone gives a
+   147px letterbox — the aspect is what squashes it, not the resolution. Below
+   a certain width the canvas is drawn wider than the stage instead, and the
+   stage (which already clips) crops it: a narrower slice of room at a height
+   you can actually read.
+
+   Continuous rather than a breakpoint. A fixed value under a media query
+   jumped the hero from 267px to 693px across a single pixel of resize at 681.
+   Solving for a target height instead makes the zoom taper to exactly 1 at
+   the width where the room is naturally tall enough, and there is no step.
+
+   384 is where the display type clears the walk band: the title and intro sit
+   on the foreground floor below the residents, and at anything shorter they
+   climb onto them. Capped at 2.9 so a very narrow screen crops to a slice
+   rather than to a keyhole. */
+const HERO_TARGET_H=384, MAX_ZOOM=2.9;
+function setZoom(){
+  const natural=window.innerWidth*ROOM_H/FRAME_W;
+  const z=Math.max(1, Math.min(MAX_ZOOM, HERO_TARGET_H/natural));
+  document.documentElement.style.setProperty('--cvz', z.toFixed(3));
+  return z;
+}
+const fsh=()=>window.innerWidth*setZoom()*ROOM_H/FRAME_W;
 /* the canvas renders a hair shorter than fsh() predicts (height:auto rounding),
    which is enough to leave a sliver of floor above the room — so measure it,
    cached per width, rather than reflowing on every scroll event */
@@ -931,11 +970,16 @@ let cvH=fsh(), lastW=-1, sayH=0;
 function measureCanvas(){ const w=window.innerWidth; if(w===lastW) return; const m=cv.getBoundingClientRect().height;
   if(!m) return; /* engine has not sized the canvas yet — keep the estimate and retry */
   lastW=w; cvH=m; sayH=-1; /* the strip is taller at the narrow breakpoint */ }
+/* The band is a strip you read past, not a second screen. 300 of a 565px
+   desktop canvas is ~53%; the same fraction of the cropped mobile canvas is
+   ~150, and a fixed 300 there would pin a third of the phone. */
+const BAND_CAP=()=>window.innerWidth<=680?150:MINBAND;
 /* never taller than the canvas itself — a stage that outruns the room it frames
    shows floor colour above the ceiling */
 const HEROH=()=>Math.min(cvH, window.innerHeight*0.82);
-const BANDH=()=>Math.min(cvH, MINBAND, HEROH());
+const BANDH=()=>Math.min(cvH, BAND_CAP(), HEROH());
 function layout(){
+  setZoom();
   measureCanvas();
   const p=Math.min(1, window.scrollY/CONDENSE), heroH=HEROH();
   const h=heroH+(BANDH()-heroH)*p;
