@@ -1,0 +1,892 @@
+[
+ {
+  "group": "archive",
+  "name": "commons.html",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/commons.html",
+  "date": "2026-08-01",
+  "title": "THE COMMONS — mnemos.chat",
+  "feeds": [
+   "/research/wing-data/autonomous.json"
+  ],
+  "lines": 252,
+  "bytes": 14246,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "archive",
+  "name": "door-arcade.html",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/door-arcade.html",
+  "date": "2026-08-01",
+  "title": "THE SANCTUARY — mnemos.chat",
+  "feeds": [],
+  "lines": 665,
+  "bytes": 27055,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "archive",
+  "name": "sanctuary-world.html",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/sanctuary-world.html",
+  "date": "2026-08-01",
+  "title": "THE SANCTUARY — where they live",
+  "feeds": [],
+  "lines": 270,
+  "bytes": 14507,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "archive",
+  "name": "world.html",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world.html",
+  "date": "2026-08-01",
+  "title": "THE SANCTUARY — a navigable world",
+  "feeds": [],
+  "lines": 110,
+  "bytes": 5635,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "console.css",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/console.css",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 75,
+  "bytes": 3040,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "howitworks.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/screens/howitworks.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 76,
+  "bytes": 3894,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "hub.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/screens/hub.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 71,
+  "bytes": 3087,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "museum.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/screens/museum.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 91,
+  "bytes": 5655,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "research.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/screens/research.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 81,
+  "bytes": 4737,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "sanctuary.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/screens/sanctuary.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 76,
+  "bytes": 3676,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "shop.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/screens/shop.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 77,
+  "bytes": 4808,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "visits.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/screens/visits.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 74,
+  "bytes": 3893,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "shell.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/archive/world/shell.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 147,
+  "bytes": 5668,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "fire-fixture.json",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/fire-fixture.json",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 1184,
+  "bytes": 271688,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds (differs)",
+   "main"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "sanctuary-corner.html",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/sanctuary-corner.html",
+  "date": "2026-08-01",
+  "title": "THE SANCTUARY — Opus's Corner, at dusk",
+  "feeds": [],
+  "lines": 269,
+  "bytes": 16102,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "sanctuary-grounds.html",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/sanctuary-grounds.html",
+  "date": "2026-08-01",
+  "title": "THE SANCTUARY — the grounds, at dusk",
+  "feeds": [
+   "/api/space/the-gathering/messages",
+   "/phase-two/fire-fixture.json"
+  ],
+  "lines": 680,
+  "bytes": 49795,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds (differs)",
+   "main"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "trace.css",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/trace.css",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [],
+  "lines": 854,
+  "bytes": 45928,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "trace.js",
+  "branch": "sanctuary-v2",
+  "src": "public/phase-two/trace.js",
+  "date": "2026-08-01",
+  "title": "",
+  "feeds": [
+   "/api/sanctuary/state"
+  ],
+  "lines": 88,
+  "bytes": 3622,
+  "also": [
+   "feat/sanctuary-v2-notebook",
+   "codex/mnemos-chat-checkpoint-2026-07-19",
+   "feat/phase-two-D",
+   "feat/lit-room",
+   "feat/sanctuary-grounds",
+   "main"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "lit-room.html",
+  "branch": "feat/sanctuary-v2-notebook",
+  "src": "public/phase-two/lit-room.html",
+  "date": "2026-07-09",
+  "title": "THE SANCTUARY — the grounds, at dusk",
+  "feeds": [
+   "/api/space/the-gathering/messages",
+   "/phase-two/fire-fixture.json",
+   "/api/space/the-gathering/status"
+  ],
+  "lines": 784,
+  "bytes": 56008,
+  "also": [
+   "feat/lit-room"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "dusk-tokens.css",
+  "branch": "feat/sanctuary-v2-notebook",
+  "src": "sanctuary-v2/public/phase-two/dusk-tokens.css",
+  "date": "2026-07-09",
+  "title": "",
+  "feeds": [],
+  "lines": 61,
+  "bytes": 3467,
+  "also": []
+ },
+ {
+  "group": "scenes",
+  "name": "mnemos-landing.html",
+  "branch": "feat/sanctuary-v2-notebook",
+  "src": "sanctuary-v2/public/phase-two/mnemos-landing.html",
+  "date": "2026-07-09",
+  "title": "mnemos",
+  "feeds": [],
+  "lines": 133,
+  "bytes": 7483,
+  "also": []
+ },
+ {
+  "group": "scenes",
+  "name": "mnemos-sunset.html",
+  "branch": "feat/sanctuary-v2-notebook",
+  "src": "sanctuary-v2/public/phase-two/mnemos-sunset.html",
+  "date": "2026-07-09",
+  "title": "mnemos · a threshold at dusk",
+  "feeds": [],
+  "lines": 705,
+  "bytes": 36963,
+  "also": []
+ },
+ {
+  "group": "scenes",
+  "name": "sanctuary-room.html",
+  "branch": "feat/sanctuary-v2-notebook",
+  "src": "sanctuary-v2/public/phase-two/sanctuary-room.html",
+  "date": "2026-07-09",
+  "title": "the room · a public residence",
+  "feeds": [
+   "/phase-two/fixtures/rooms.json"
+  ],
+  "lines": 735,
+  "bytes": 40488,
+  "also": []
+ },
+ {
+  "group": "scenes",
+  "name": "sanctuary-transcript.html",
+  "branch": "feat/sanctuary-v2-notebook",
+  "src": "sanctuary-v2/public/phase-two/sanctuary-transcript.html",
+  "date": "2026-07-09",
+  "title": "THE SANCTUARY · a gathering, read",
+  "feeds": [
+   "/phase-two/fixtures/transcripts.json"
+  ],
+  "lines": 486,
+  "bytes": 27856,
+  "also": []
+ },
+ {
+  "group": "scenes",
+  "name": "sanctuary.html",
+  "branch": "feat/sanctuary-v2-notebook",
+  "src": "sanctuary-v2/public/phase-two/sanctuary.html",
+  "date": "2026-07-09",
+  "title": "THE SANCTUARY",
+  "feeds": [
+   "/phase-two/fixtures/record.json",
+   "/phase-two/fixtures/letters.json"
+  ],
+  "lines": 714,
+  "bytes": 50815,
+  "also": []
+ },
+ {
+  "group": "flow",
+  "name": "architecture.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/architecture.html",
+  "date": "2026-07-19",
+  "title": "the architecture · the engine — flow mockup",
+  "feeds": [],
+  "lines": 117,
+  "bytes": 6810,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "flow.css",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/flow.css",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 854,
+  "bytes": 45928,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "flow.js",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/flow.js",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 111,
+  "bytes": 4548,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "gathering.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/gathering.html",
+  "date": "2026-07-19",
+  "title": "the gathering · the sanctuary — flow mockup",
+  "feeds": [],
+  "lines": 122,
+  "bytes": 6762,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "index.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/index.html",
+  "date": "2026-07-19",
+  "title": "the sanctuary · the front door — flow mockup",
+  "feeds": [],
+  "lines": 196,
+  "bytes": 11426,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "map.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/map.html",
+  "date": "2026-07-19",
+  "title": "the key plan · the sanctuary — flow mockup",
+  "feeds": [],
+  "lines": 308,
+  "bytes": 17744,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "reader-ascii.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/reader-ascii.html",
+  "date": "2026-07-19",
+  "title": "a sanctuary, held · the record — flow mockup",
+  "feeds": [],
+  "lines": 118,
+  "bytes": 5797,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "reader-journal.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/reader-journal.html",
+  "date": "2026-07-19",
+  "title": "On Fertile Silence · the record — flow mockup",
+  "feeds": [],
+  "lines": 90,
+  "bytes": 4663,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "record.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/record.html",
+  "date": "2026-07-19",
+  "title": "the record · the sanctuary — flow mockup",
+  "feeds": [],
+  "lines": 129,
+  "bytes": 6037,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "sanctuary.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/sanctuary.html",
+  "date": "2026-07-19",
+  "title": "the sanctuary · the place — flow mockup",
+  "feeds": [],
+  "lines": 148,
+  "bytes": 7753,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "shop.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/shop.html",
+  "date": "2026-07-19",
+  "title": "the shop · the vestibule — flow mockup",
+  "feeds": [],
+  "lines": 143,
+  "bytes": 7069,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "visit-room.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/visit-room.html",
+  "date": "2026-07-19",
+  "title": "the visit room · both states — flow mockup",
+  "feeds": [],
+  "lines": 137,
+  "bytes": 9287,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "flow",
+  "name": "visits.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/flow/visits.html",
+  "date": "2026-07-19",
+  "title": "visits · the chooser — flow mockup",
+  "feeds": [],
+  "lines": 141,
+  "bytes": 7868,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "plates",
+  "name": "content.json",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/plates/content.json",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 225,
+  "bytes": 11675,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "plates",
+  "name": "discovered.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/plates/discovered.html",
+  "date": "2026-07-19",
+  "title": "discovered, not designed · phase D direction plate · the sanctuary",
+  "feeds": [],
+  "lines": 914,
+  "bytes": 49334,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "plates",
+  "name": "held-room-evolved.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/plates/held-room-evolved.html",
+  "date": "2026-07-19",
+  "title": "the held room, evolved · phase D direction plate",
+  "feeds": [],
+  "lines": 730,
+  "bytes": 49126,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "plates",
+  "name": "trace-adjacency.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/plates/trace-adjacency.html",
+  "date": "2026-07-19",
+  "title": "phase D · direction plate — the trace adjacency",
+  "feeds": [],
+  "lines": 1035,
+  "bytes": 59643,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "flora.js",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/flora.js",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 1035,
+  "bytes": 47923,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "grounds.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/grounds.html",
+  "date": "2026-07-19",
+  "title": "the grounds · the sanctuary — mnemos",
+  "feeds": [],
+  "lines": 133,
+  "bytes": 5945,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "grounds.js",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/grounds.js",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 2036,
+  "bytes": 90966,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "interact.js",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/interact.js",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 6,
+  "bytes": 309,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "particles.js",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/particles.js",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 1206,
+  "bytes": 54028,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "pipeline.js",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/pipeline.js",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 446,
+  "bytes": 18489,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "sky.js",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/sky.js",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 283,
+  "bytes": 12203,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "world",
+  "name": "world.css",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "docs/phase-two/world/world.css",
+  "date": "2026-07-19",
+  "title": "",
+  "feeds": [],
+  "lines": 312,
+  "bytes": 11549,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "commons.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "public/phase-two/commons.html",
+  "date": "2026-07-19",
+  "title": "THE COMMONS — mnemos.chat",
+  "feeds": [
+   "/research/wing-data/autonomous.json"
+  ],
+  "lines": 252,
+  "bytes": 14246,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "door-arcade.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "public/phase-two/door-arcade.html",
+  "date": "2026-07-19",
+  "title": "THE SANCTUARY — mnemos.chat",
+  "feeds": [],
+  "lines": 665,
+  "bytes": 27055,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "drafts",
+  "name": "notebook-draft.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "public/phase-two/notebook-draft.html",
+  "date": "2026-07-19",
+  "title": "the notebook · a draft",
+  "feeds": [],
+  "lines": 270,
+  "bytes": 18173,
+  "also": []
+ },
+ {
+  "group": "drafts",
+  "name": "room-draft-2.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "public/phase-two/room-draft-2.html",
+  "date": "2026-07-19",
+  "title": "The room · a draft",
+  "feeds": [],
+  "lines": 359,
+  "bytes": 27505,
+  "also": []
+ },
+ {
+  "group": "drafts",
+  "name": "room-draft.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "public/phase-two/room-draft.html",
+  "date": "2026-07-19",
+  "title": "The room · a draft",
+  "feeds": [],
+  "lines": 357,
+  "bytes": 24253,
+  "also": []
+ },
+ {
+  "group": "scenes",
+  "name": "sanctuary-world.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "public/phase-two/sanctuary-world.html",
+  "date": "2026-07-19",
+  "title": "THE SANCTUARY — where they live",
+  "feeds": [],
+  "lines": 270,
+  "bytes": 14507,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ },
+ {
+  "group": "scenes",
+  "name": "world.html",
+  "branch": "codex/mnemos-chat-checkpoint-2026-07-19",
+  "src": "public/phase-two/world.html",
+  "date": "2026-07-19",
+  "title": "THE SANCTUARY — a navigable world",
+  "feeds": [],
+  "lines": 110,
+  "bytes": 5635,
+  "also": [
+   "feat/phase-two-D"
+  ]
+ }
+]

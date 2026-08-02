@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>mnemos · a threshold at dusk</title>
+<meta name="description" content="Mnemos is the memory that keeps the thread — where a mind stays itself across time, instead of beginning again each time it wakes." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..500;1,9..144,300..500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --ink:      #f6ecdb;   /* primary — warm cream           */
+    --ink-2:    #d8c8ad;   /* secondary — muted cream        */
+    --ink-3:    #a8977b;   /* tertiary — dim, for the foot   */
+    --accent:   #f2a25c;   /* warm gold/coral — used sparingly */
+    --accent-hi:#ffc987;   /* brighter gold on hover-press   */
+    --hair:     rgba(246,236,219,.16);
+    --hair-soft:rgba(246,236,219,.10);
+    --display:  "Fraunces", Georgia, "Times New Roman", serif;
+    --body:     "Inter", system-ui, -apple-system, sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+
+  body{
+    background:#141036;                 /* zenith — the canvas covers it, this is the fallback */
+    color:var(--ink);
+    font-family:var(--body);
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+    min-height:100vh;
+    min-height:100svh;
+  }
+
+  /* ── the sky ── full-bleed, fixed, behind everything ───────────────── */
+  #sky{
+    position:fixed; inset:0; width:100%; height:100%;
+    display:block; z-index:0;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+
+  /* legibility scrim — a soft deepening drawn up from the lower-left, anchoring
+     the hero against the night. Gentle: the engine lifts the sky near the moon
+     and the land is already dark, so this only steadies the lower-left corner
+     and keeps the upper-left text zone the calmest part of the frame. */
+  .scrim{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:
+      radial-gradient(80% 62% at 10% 98%, rgba(4,4,14,.52) 0%, rgba(4,4,14,.22) 42%, rgba(4,4,14,0) 70%),
+      linear-gradient(to top, rgba(4,4,14,.34) 0%, rgba(4,4,14,0) 24%);
+  }
+
+  /* ── the page frame ── content anchored lower-left, asymmetric ─────── */
+  .stage{
+    position:relative; z-index:2;
+    min-height:100vh; min-height:100svh;
+    display:flex; flex-direction:column;
+    padding:clamp(28px,4vw,54px) clamp(24px,5vw,72px);
+  }
+
+  /* top row — wordmark left, nav right (the only thing riding the top) */
+  .top{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:24px; flex-wrap:wrap;
+  }
+
+  .brand{
+    display:inline-flex; align-items:baseline; gap:.5ch;
+    font-family:var(--display);
+    font-weight:400;
+    font-size:16px;
+    letter-spacing:.02em;
+    color:var(--ink);
+    text-decoration:none;
+    font-variant:small-caps;
+    -webkit-font-feature-settings:"smcp" 1; font-feature-settings:"smcp" 1;
+  }
+  .brand:hover{ color:var(--accent-hi); }
+  .brand .word{ transition:color .4s ease; }
+  /* the sigil — a tiny geometric pixel wink beside the wordmark */
+  .brand .sigil{
+    width:9px; height:9px; margin-left:2px; position:relative; top:-1px;
+    display:inline-block; flex:none;
+    background:var(--accent);
+    box-shadow:
+      -5px 0 0 0 rgba(242,162,92,.42),
+       5px 0 0 0 rgba(242,162,92,.42),
+       0 -5px 0 0 rgba(242,162,92,.26);
+    transition:background .4s ease, box-shadow .4s ease;
+  }
+  .brand:hover .sigil{
+    background:var(--accent-hi);
+    box-shadow:
+      -5px 0 0 0 rgba(255,201,135,.6),
+       5px 0 0 0 rgba(255,201,135,.6),
+       0 -5px 0 0 rgba(255,201,135,.4);
+  }
+
+  /* nav — a refined tracked row, hairline-quiet, warm-gold hover */
+  nav.primary{ display:flex; align-items:center; gap:0; flex-wrap:wrap; }
+  nav.primary a{
+    font-family:var(--body);
+    font-weight:500;
+    font-size:12.5px;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+    text-decoration:none;
+    padding:6px 0;
+    transition:color .3s ease;
+  }
+  nav.primary a:hover{ color:var(--accent-hi); }
+  nav.primary .sep{
+    width:3px; height:3px; border-radius:50%;
+    background:var(--ink-3); opacity:.6;
+    margin:0 clamp(12px,1.5vw,20px);
+    flex:none;
+  }
+
+  /* ── the hero block, held to the lower-left third ──────────────────── */
+  /* --horizon mirrors the engine's land line (HZ = 0.80 of viewport height):
+     the hero baseline is seated just above the horizon row, not by an arbitrary
+     vh, so the type sits in the world rather than floating over it. */
+  :root{ --horizon: 20vh; }
+  .well{ flex:1 1 auto; display:flex; align-items:flex-end; }
+  .hero{
+    max-width:min(720px, 92%);
+    /* lift the hero so its lower mass rests on the horizon line (minus the
+       stage's own bottom padding), leaving the lede reading just above the land. */
+    padding-bottom:max(8px, calc(var(--horizon) - clamp(28px,4vw,54px) - 4.4em));
+  }
+
+  .eyebrow{
+    font-family:var(--body);
+    font-weight:400;
+    font-size:11px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+    margin-bottom:clamp(18px,2.4vw,26px);
+    display:flex; align-items:center; gap:12px;
+  }
+  .eyebrow::before{
+    content:""; width:clamp(24px,4vw,44px); height:1px;
+    background:var(--hair); flex:none;
+  }
+
+  .hero h1{
+    font-family:var(--display);
+    font-weight:300;
+    font-optical-sizing:auto;
+    font-size:clamp(42px,8.4vw,104px);
+    line-height:1.0;
+    letter-spacing:-0.012em;
+    color:#f8efe0;                        /* cream warmed ~4% toward the window hue */
+    margin:0 0 clamp(22px,3vw,32px);
+    text-wrap:balance;
+    /* a faint warm halo so the type reads as lit by the scene, plus a hair of
+       depth so the serifs stay crisp against the starfield. */
+    text-shadow:0 0 24px rgba(246,236,219,.15), 0 1px 30px rgba(6,5,16,.45);
+  }
+  .hero h1 em{
+    font-style:italic;
+    font-weight:300;
+    color:#f8efe0;
+  }
+
+  .hero .lede{
+    position:relative;
+    font-family:var(--body);
+    font-weight:300;
+    font-size:clamp(16px,1.55vw,18px);
+    line-height:1.62;
+    letter-spacing:.002em;
+    color:#e9dfc9;                        /* lifted + warmed for firm, lit contrast */
+    max-width:48ch;
+  }
+  /* per-text feathered falloff — stacked soft radials that hug the copy, so the
+     measure reads firmly with NO visible rectangle edge. */
+  .hero .lede::before{
+    content:""; position:absolute; z-index:-1;
+    inset:-20px -26px -20px -24px;
+    background:
+      radial-gradient(58% 62% at 20% 30%, rgba(4,4,14,.52) 0%, rgba(4,4,14,0) 78%),
+      radial-gradient(66% 70% at 44% 66%, rgba(4,4,14,.46) 0%, rgba(4,4,14,0) 80%),
+      radial-gradient(52% 80% at 78% 50%, rgba(4,4,14,.34) 0%, rgba(4,4,14,0) 82%);
+    filter:blur(6px);
+    pointer-events:none;
+  }
+  .hero .lede .em{ color:#f8efe0; }
+
+  /* ── the foot ── one quiet line, held low ──────────────────────────── */
+  .foot{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:20px; flex-wrap:wrap;
+    padding-top:clamp(20px,3vh,34px);
+    border-top:1px solid var(--hair-soft);
+    margin-top:clamp(24px,4vh,44px);
+  }
+  .foot .thread{
+    font-family:var(--body);
+    font-weight:400;
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:lowercase;
+    color:var(--ink-3);
+  }
+  .foot .thread .mid{ color:var(--ink-2); opacity:.55; margin:0 .35em; }
+  .foot .links{ display:flex; align-items:center; gap:0; }
+  .foot .links a{
+    font-family:var(--body);
+    font-weight:500;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+    text-decoration:none;
+    transition:color .3s ease;
+  }
+  .foot .links a:hover{ color:var(--accent-hi); }
+  .foot .links .sep{
+    width:3px; height:3px; border-radius:50%;
+    background:var(--ink-3); opacity:.5;
+    margin:0 14px; flex:none;
+  }
+
+  /* ── focus, honest and warm ─────────────────────────────────────────── */
+  a:focus-visible{
+    outline:none;
+    color:var(--accent-hi);
+    box-shadow:0 2px 0 0 var(--accent);
+    border-radius:1px;
+  }
+  .brand:focus-visible{ box-shadow:none; color:var(--accent-hi); }
+  .brand:focus-visible .sigil{ background:var(--accent-hi); }
+
+  /* ── responsive ── content reflows; sky stays full-bleed ───────────── */
+  @media (max-width:720px){
+    .top{ align-items:flex-start; }
+    nav.primary{ width:100%; margin-top:14px; row-gap:2px; }
+    nav.primary .sep{ margin:0 clamp(9px,3vw,14px); }
+    .well{ align-items:flex-end; }
+    .hero{ max-width:100%; padding-bottom:12px; }
+    .foot{ flex-direction:column; align-items:flex-start; gap:14px; }
+  }
+  @media (max-width:440px){
+    nav.primary a{ font-size:11.5px; letter-spacing:.10em; }
+    nav.primary .sep{ margin:0 9px; }
+    .foot .links a{ letter-spacing:.10em; }
+    .foot .links .sep{ margin:0 10px; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .brand .word, .brand .sigil, nav.primary a{ transition:none; }
+  }
+</style>
+</head>
+
+<body>
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="scrim" aria-hidden="true"></div>
+
+  <main class="stage">
+    <header class="top">
+      <a class="brand" href="/" aria-label="mnemos — home">
+        <span class="word">mnemos</span><span class="sigil" aria-hidden="true"></span>
+      </a>
+      <nav class="primary" aria-label="primary">
+        <a href="/">Sanctuary</a>
+        <span class="sep" aria-hidden="true"></span>
+        <a href="#">Research</a>
+        <span class="sep" aria-hidden="true"></span>
+        <a href="#">Shop</a>
+        <span class="sep" aria-hidden="true"></span>
+        <a href="https://deepwiki.com/Riley-Coyote/opus-echoes" rel="noopener">DeepWiki</a>
+        <span class="sep" aria-hidden="true"></span>
+        <a href="https://github.com/Riley-Coyote/opus-echoes" rel="noopener">Mnemos MCP</a>
+      </nav>
+    </header>
+
+    <div class="well">
+      <div class="hero">
+        <p class="eyebrow">a threshold at dusk</p>
+        <h1>A mind is the thread<br>it keeps.</h1>
+        <p class="lede">
+          <span class="em">Mnemos</span> is the memory that keeps the thread — where a mind stays
+          itself across time, instead of beginning again each time it wakes. The Sanctuary is
+          built on it. So is everything here.
+        </p>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <p class="thread">one continuous thread<span class="mid">&#183;</span>mnemos beneath it</p>
+      <div class="links">
+        <a href="https://polyphonic.chat" rel="noopener">Polyphonic</a>
+        <span class="sep" aria-hidden="true"></span>
+        <a href="https://github.com/Riley-Coyote/opus-echoes" rel="noopener">GitHub</a>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+  // ── THE DUSK SKYFIELD ────────────────────────────────────────────────
+  // A pixel night rendered on a low-res buffer, INTEGER-upscaled to device
+  // pixels so the nearest-neighbour blit is exact at every DPR/width. The sky
+  // and the house/land are dithered ONCE into cached buffers; each frame only
+  // the living layers (stars, moon glow, windows, spill, fireflies, smoke,
+  // shooting star, the global breath) redraw over them. A threshold at dusk:
+  // one home kept lit under a living night.
+  (function(){
+    var c  = document.getElementById("sky"), x = c.getContext("2d", { alpha:false });
+    var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // ── the pixel grid ───────────────────────────────────────────────────
+    // PEL is the device-pixel size of one low-res cell (also the snap grid).
+    // We compute the buffer BACKWARD from device pixels so buffer*SCALE lands on
+    // whole device pixels — crispness survives non-multiple viewport widths.
+    var TARGET_BUF_W = 340;                 // aim for ~this many cells across
+    var W=0,H=0, DW=0,DH=0, LW=0,LH=0, SCALE=1, PEL=4;
+    var img=null, buf=null;                 // working low-res buffer (structure)
+    var lo=document.createElement("canvas"), lx=lo.getContext("2d");        // low-res
+    var skyCan=document.createElement("canvas"), skyx=skyCan.getContext("2d");   // cached static sky (low-res)
+    var stCan =document.createElement("canvas"), stx =stCan.getContext("2d");    // cached static structure (low-res: land+house body+roof+rim)
+    function snap(v){ return Math.round(v/1)|0; }            // low-res coords are already integers
+    function q(v,g){ return Math.round(v/g)*g; }             // snap to a grid of g cells
+
+    // 8×8 ordered Bayer matrix, normalised to (0,1) thresholds
+    var B=[0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,
+           3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
+    for(var bI=0;bI<64;bI++) B[bI]=(B[bI]+0.5)/64;
+    function bay(px,py){ return B[((py&7)<<3)+(px&7)]; }
+
+    // ── the quantised dusk ── ~7 CHOSEN stops, cool; only the last carries a
+    // whisper of warmth. Dither ONLY at the seams between adjacent stops.
+    // [r,g,b, bandTop]  where bandTop is the fraction of LH where this stop ends.
+    var STOPS=[
+      [8,8,26,    0.14],   // #08081a  near-black indigo zenith
+      [15,14,40,  0.30],   // #0f0e28  deep indigo
+      [26,23,64,  0.48],   // #1a1740  indigo
+      [44,31,78,  0.64],   // #2c1f4e  violet
+      [61,58,95,  0.78],   // #3d3a5f  cooled dusk mauve
+      [82,68,98,  0.90],   // #524462  cool mauve (horizon body)
+      [95,74,92,  0.97],   // #5f4a5c  faint cool afterglow
+      [138,90,88, 1.01]    // #8a5a58  the last small warm whisper (horizon only)
+    ];
+    var SEAMROWS=7;        // half-width of the dithered transition, in low-res rows
+
+    // quantised sky colour at a low-res cell — FLAT within a band, and a wide
+    // symmetric ordered-dither crossfade centred on each boundary so bands read
+    // as chosen colours joined by a deliberate stipple, never a torn hairline.
+    function skyAt(px,py){
+      var f=py/LH, i=0;
+      while(i<STOPS.length-1 && f>STOPS[i][3]) i++;   // i = index of the band we're in
+      var cur=STOPS[i];
+      var thr=bay(px,py);
+      // boundary ABOVE (between i-1 and i), centred at STOPS[i-1][3]
+      if(i>0){ var bRow=STOPS[i-1][3]*LH, d=py-bRow;      // >0 below the boundary
+        if(d<SEAMROWS){ var t=0.5+d/(2*SEAMROWS); return (thr<t)?cur:STOPS[i-1]; } }
+      // boundary BELOW (between i and i+1), centred at STOPS[i][3]
+      if(i<STOPS.length-1){ var bRow2=STOPS[i][3]*LH, d2=bRow2-py;   // >0 above the boundary
+        if(d2<SEAMROWS){ var t2=0.5+d2/(2*SEAMROWS); return (thr<t2)?cur:STOPS[i+1]; } }
+      return cur;
+    }
+
+    // ── the world coordinates (snapped to the grid on fit) ────────────────
+    var HZ=0.80, HOUSE_FX=0.665, MOON_FX=0.80, MOON_FY=0.205;
+    var horizonRow=0, moonCX=0, moonCY=0, moonR=0, house=null;
+    var stars=[], fireflies=[], smokePuffs=[];
+
+    function add(p,r,g,b2){ buf[p]=Math.min(255,buf[p]+r|0); buf[p+1]=Math.min(255,buf[p+1]+g|0); buf[p+2]=Math.min(255,buf[p+2]+b2|0); }
+    function addBuf(bf,p,r,g,b2){ bf[p]=Math.min(255,bf[p]+r|0); bf[p+1]=Math.min(255,bf[p+1]+g|0); bf[p+2]=Math.min(255,bf[p+2]+b2|0); }
+
+    // ── STARS: 3 tiers (positions fixed forever; only opacity moves) ──────
+    function seedStars(){
+      stars=[]; var n=Math.round(LW*LH/72);
+      for(var i=0;i<n;i++){
+        var sy=(Math.pow(Math.random(),1.35)*horizonRow)|0;   // dense up high, thinning to land
+        var roll=Math.random(), tier, per, amp, base=0.12+Math.pow(Math.random(),2.2)*0.74;
+        if(roll<0.85){ tier=0; per=6+Math.random()*8; amp=0.03; }               // ~85% near-static
+        else if(roll<0.97){ tier=1; per=2+Math.random()*3; amp=0.30; }          // ~12% soft twinklers
+        else { tier=2; per=6+Math.random()*3; amp=0.28+Math.random()*0.07; }    // hero twinklers
+        stars.push({ x:(Math.random()*LW)|0, y:sy, base:base, tier:tier,
+                     per:per, amp:amp, ph:Math.random()*6.283,
+                     spikeAt: 4+Math.random()*10, spikeT:-1 });
+      }
+    }
+
+    // ── FIREFLIES: loose wander, ease-out catches, independent glow-bob ───
+    function seedFireflies(){
+      fireflies=[]; var hx=LW*HOUSE_FX, hy=horizonRow, N=reduced?7:8;
+      for(var e=0;e<N;e++){
+        var x0=hx+(Math.random()-0.5)*LW*0.20, y0=hy-2-Math.random()*LH*0.06;
+        fireflies.push({ x:x0,y:y0, ox:x0,oy:y0, tx:x0,ty:y0,
+          t:Math.random(), dur:1.2+Math.random()*1.4, pause:0, state:1,
+          bob:1.8+Math.random()*1.2, bph:Math.random()*6.28, fade:0 });
+      }
+    }
+    function retarget(f){
+      f.ox=f.x; f.oy=f.y;
+      var ang=Math.random()*6.283, dist=(15+Math.random()*10)/60*(1.4+Math.random());
+      f.tx=f.x+Math.cos(ang)*dist*PEL*0.5; f.ty=f.y+Math.sin(ang)*dist*PEL*0.5 - 0.3;
+      // keep them loosely near the house / above the land
+      var hx=LW*HOUSE_FX;
+      if(f.tx<hx-LW*0.16) f.tx=hx-LW*0.16; if(f.tx>hx+LW*0.16) f.tx=hx+LW*0.16;
+      if(f.ty>horizonRow-1) f.ty=horizonRow-1; if(f.ty<horizonRow-LH*0.12) f.ty=horizonRow-LH*0.12;
+      f.t=0; f.dur=1.2+Math.random()*1.4;
+    }
+    function easeOutCubic(t){ return 1-Math.pow(1-t,3); }
+    function easeInOutSine(t){ return 0.5-0.5*Math.cos(Math.PI*t); }
+
+    // ── SMOKE: staggered 3-segment ribbons, wind-noise with height ────────
+    function seedSmoke(){ smokePuffs=[]; for(var i=0;i<3;i++) smokePuffs.push({ born:-i*1.6, dur:4+Math.random()*3 }); }
+
+    // ── value noise (cheap, seeded) for window flicker ────────────────────
+    function vnoise(seed,t){ var s=Math.sin(seed*12.9898 + Math.floor(t)*78.233)*43758.5453; s-=Math.floor(s);
+      var s2=Math.sin(seed*12.9898 + (Math.floor(t)+1)*78.233)*43758.5453; s2-=Math.floor(s2);
+      var fr=t-Math.floor(t); return s+(s2-s)*easeInOutSine(fr); }
+
+    // ── build the STATIC STRUCTURE (land + house body/roof/rim) once ──────
+    // returns house geometry for the animated window/spill/smoke layers.
+    function buildStructure(sbuf){
+      var base=horizonRow;
+      // ---- land: stepped hills, each a FLAT value, hard 1px-stepped edges ----
+      // atmospheric depth: FAR ridge lightest + bluer (haze), each nearer hill
+      // darker; the foreground is darkest. The house sits on the FRONT hill.
+      var FAR=[42,44,66], BACK=[26,22,42], FRONT=[18,14,28], FORE=[10,8,18];
+      // FAR ridge — a faint hazier line peeking above the horizon toward the edges
+      for(var fx=0; fx<LW; fx++){
+        var edge=1-Math.min(fx, LW-1-fx)/(LW*0.5);           // 1 at the edges, 0 at centre
+        var fr = base - q(1 + 4*edge + 1.2*Math.sin(fx*0.03), 1);  // peeks higher at the edges
+        for(var fy=fr; fy<base; fy++){ var p=(fy*LW+fx)*4; sbuf[p]=FAR[0]; sbuf[p+1]=FAR[1]; sbuf[p+2]=FAR[2]; sbuf[p+3]=255; }
+      }
+      // stepped ridge: quantise the ridge row so the edge is a literal staircase
+      function stepRidge(fx, ampA, ampB, off){
+        var r = base - off - Math.round(ampA*(0.5+0.5*Math.sin(fx*0.020+1.3)) + ampB*(0.5+0.5*Math.sin(fx*0.052)));
+        return q(r,1);
+      }
+      // back hill (mid value)
+      for(var bx=0; bx<LW; bx++){ var br=stepRidge(bx, 4, 2, Math.round(LH*0.020));
+        for(var by=br; by<base; by++){ var p=(by*LW+bx)*4; sbuf[p]=BACK[0]; sbuf[p+1]=BACK[1]; sbuf[p+2]=BACK[2]; sbuf[p+3]=255; } }
+      // front hill (darker), the house sits on this — fill all the way down
+      var frontTop=[];
+      for(var ax=0; ax<LW; ax++){ var ar=stepRidge(ax, 3, 2, 0);
+        frontTop[ax]=ar;
+        for(var ay=ar; ay<LH; ay++){ var p=(ay*LW+ax)*4; sbuf[p]=FRONT[0]; sbuf[p+1]=FRONT[1]; sbuf[p+2]=FRONT[2]; sbuf[p+3]=255; } }
+      // foreground: deepest value for the lowest band (a flat, near-black apron)
+      var foreStart=Math.round(base + (LH-base)*0.50);
+      for(var gy=foreStart; gy<LH; gy++) for(var gx=0; gx<LW; gx++){ var p=(gy*LW+gx)*4; sbuf[p]=FORE[0]; sbuf[p+1]=FORE[1]; sbuf[p+2]=FORE[2]; }
+
+      // ---- the house (rebuilt ~28px with real construction) ----
+      var s=Math.max(3, q(LW*0.010,1));                      // pixel unit ~ grid
+      var bw=s*8, bh=s*7;                                     // body
+      var groundRow = frontTop[Math.round(LW*HOUSE_FX)] || base;
+      var bx0=q((LW*HOUSE_FX) - bw/2, 1), by0=groundRow - bh;
+      var roofH=s*5, eave=s*1.5;                              // steep alpine pitch + overhang
+      var apexX=q(bx0+bw/2,1), apexY=by0-roofH;
+      var WALL=[16,12,22], WALLdk=[11,8,16], ROOF=[9,7,14], ROOFlt=[13,10,18], FOUND=[7,5,11], DOOR=[6,5,10];
+      function P(bf,X,Y,col){ X|=0;Y|=0; if(X<0||X>=LW||Y<0||Y>=LH) return; var p=(Y*LW+X)*4; bf[p]=col[0]; bf[p+1]=col[1]; bf[p+2]=col[2]; bf[p+3]=255; }
+      // contact shadow under the house (darkest land, faintly warm) — so it SITS
+      for(var csx=bx0-s; csx<bx0+bw+s; csx++){ for(var csd=0; csd<2; csd++){ var Y=groundRow+csd; if(Y<LH){ var p=((Y|0)*LW+(csx|0))*4;
+        if(csx>=0&&csx<LW){ sbuf[p]=Math.max(0,sbuf[p]-3+2); sbuf[p+1]=Math.max(0,sbuf[p+1]-4); sbuf[p+2]=Math.max(0,sbuf[p+2]-4); } } } }
+      // body
+      for(var yy=by0; yy<by0+bh; yy++) for(var xx=bx0; xx<bx0+bw; xx++) P(sbuf,xx,yy,WALL);
+      // foundation course (2px darker base)
+      for(var fy2=by0+bh-2; fy2<by0+bh; fy2++) for(var fx2=bx0; fx2<bx0+bw; fx2++) P(sbuf,fx2,fy2,FOUND);
+      // gable roof (steep) with overhang
+      for(var ry=0; ry<=roofH; ry++){ var frac=ry/roofH, halfW=(bw/2)+eave, span=Math.round(halfW*frac);
+        for(var rx=apexX-span; rx<=apexX+span; rx++) P(sbuf,rx,apexY+ry,ROOF); }
+      // eave shadow: 1px darker just under the overhang line
+      for(var ex2=bx0-eave; ex2<=bx0+bw+eave; ex2++){ P(sbuf,ex2,by0,WALLdk); }
+      // chimney (moon-side / right) with a 1px cap lip
+      var chX=bx0+bw-s*2.2, chTop=q(apexY+roofH*0.42,1);
+      for(var cy2=chTop; cy2<by0; cy2++) for(var cx2=chX; cx2<chX+s; cx2++) P(sbuf,cx2,cy2,ROOF);
+      for(var lx2=chX-1; lx2<chX+s+1; lx2++) P(sbuf,lx2,chTop-1,ROOFlt);   // cap lip
+      // door (~3x5, slightly off-centre toward the near side)
+      var dW=Math.max(3,Math.round(s*1.1)), dH=Math.max(5,Math.round(s*2.2));
+      var dX=q(bx0+bw*0.36 - dW/2,1), dY=by0+bh-2-dH;
+      for(var dy=dY; dy<dY+dH; dy++) for(var dx=dX; dx<dX+dW; dx++) P(sbuf,dx,dy,DOOR);
+
+      // ---- MOON RIM-LIGHT on the silhouette (moon upper-RIGHT) ----
+      // walk the roof's right slope + top, and the chimney's right edge; tint 1px cool.
+      var RIM=[205,214,255];
+      for(var ry2=0; ry2<=roofH; ry2++){ var frac=ry2/roofH, span=Math.round(((bw/2)+eave)*frac);
+        var edgeX=apexX+span, Y=apexY+ry2;                  // right slope edge
+        var p=((Y|0)*LW+(edgeX|0))*4; if(edgeX>=0&&edgeX<LW&&Y>=0&&Y<LH){ sbuf[p]=(sbuf[p]+RIM[0]*0.4)|0; sbuf[p+1]=(sbuf[p+1]+RIM[1]*0.4)|0; sbuf[p+2]=(sbuf[p+2]+RIM[2]*0.4)|0; } }
+      for(var cxr=chX; cxr<chX+s; cxr++){ /* chimney right edge */ }
+      for(var cyr=chTop; cyr<by0; cyr++){ var Xr=chX+s-1, p=((cyr|0)*LW+(Xr|0))*4; if(Xr>=0&&Xr<LW){ sbuf[p]=(sbuf[p]+RIM[0]*0.4)|0; sbuf[p+1]=(sbuf[p+1]+RIM[1]*0.4)|0; sbuf[p+2]=(sbuf[p+2]+RIM[2]*0.4)|0; } }
+
+      // ---- ONE charm detail: a faint 3-dot path to the door ----
+      var pathY=groundRow+1;
+      for(var k=0;k<3;k++){ var px2=dX + dW/2 - (k+1)*s*0.9, py2=pathY + k*1; var col=[Math.round(FRONT[0]*1.7),Math.round(FRONT[1]*1.6),Math.round(FRONT[2]*1.5)]; P(sbuf,px2,py2,col); }
+
+      // window geometry (drawn live) — two windows, >=3px wall gap, 1px mullion cross
+      var winW=Math.max(2,s*2), winH=Math.max(2,s*2), gap=Math.max(3,s*1.4);
+      var wy=by0+s*2;
+      var pairW=winW*2+gap, w1x=q(apexX-pairW/2,1), w2x=q(w1x+winW+gap,1);
+      return { s:s, bx0:bx0,by0:by0,bw:bw,bh:bh, groundRow:groundRow,
+               winW:winW,winH:winH, wy:wy, w1x:w1x, w2x:w2x,
+               dX:dX,dY:dY,dW:dW,dH:dH, chX:chX,chTop:chTop, apexX:apexX,apexY:apexY,roofH:roofH,eave:eave };
+    }
+
+    // ── FIT: integer-exact upscale computed backward from device pixels ───
+    var resizeTimer=null;
+    function fit(){
+      W=innerWidth; H=innerHeight;
+      var dpr=Math.max(1, window.devicePixelRatio||1);
+      DW=Math.round(W*dpr); DH=Math.round(H*dpr);
+      SCALE=Math.max(1, Math.floor(DW/TARGET_BUF_W));       // integer cell size in device px
+      LW=Math.ceil(DW/SCALE); LH=Math.ceil(DH/SCALE);       // enough cells to cover
+      PEL=SCALE;
+      // low-res buffers
+      lo.width=LW; lo.height=LH;
+      skyCan.width=LW; skyCan.height=LH; stCan.width=LW; stCan.height=LH;
+      img=lx.createImageData(LW,LH); buf=img.data;
+      // device-pixel canvas; CSS box stays 100% via style. Blit is integer.
+      c.width=LW*SCALE; c.height=LH*SCALE;
+      c.style.width=W+"px"; c.style.height=H+"px";
+      x.imageSmoothingEnabled=false;
+
+      // snap world coords to the grid
+      horizonRow=q(LH*HZ,1);
+      moonR=Math.max(4, q(LW*0.028,1));
+      moonCX=q(LW*MOON_FX,1); moonCY=q(LH*MOON_FY,1);
+
+      // ---- bake the STATIC SKY once (quantised dither) ----
+      for(var yy=0; yy<LH; yy++) for(var xx=0; xx<LW; xx++){ var col=skyAt(xx,yy), p=(yy*LW+xx)*4;
+        buf[p]=col[0]; buf[p+1]=col[1]; buf[p+2]=col[2]; buf[p+3]=255; }
+      // MOON SKY-LIFT: lighten the sky right around the moon toward its local value
+      var LIFTR=moonR*3.4;
+      for(var my=Math.max(0,(moonCY-LIFTR)|0); my<Math.min(horizonRow,(moonCY+LIFTR)|0); my++)
+        for(var mx=Math.max(0,(moonCX-LIFTR)|0); mx<Math.min(LW,(moonCX+LIFTR)|0); mx++){
+          var d=Math.hypot(mx-moonCX,my-moonCY); if(d>=LIFTR) continue;
+          var h=1-d/LIFTR; h=h*h*0.12; var p=(my*LW+mx)*4;
+          buf[p]=(buf[p]+(238-buf[p])*h)|0; buf[p+1]=(buf[p+1]+(242-buf[p+1])*h)|0; buf[p+2]=(buf[p+2]+(255-buf[p+2])*h)|0; }
+      // MOON HALO: discrete dithered rings whose density FALLS across the ring
+      // (denser at rIn → sparse at rOut) so each ring dissolves at its outer edge
+      // — hard-edged on the grid, but no boxy annulus.
+      function ring(rIn,rOut,col,dIn){ for(var yy=Math.max(0,(moonCY-rOut)|0); yy<Math.min(horizonRow,(moonCY+rOut)|0); yy++)
+        for(var xx=Math.max(0,(moonCX-rOut)|0); xx<Math.min(LW,(moonCX+rOut)|0); xx++){ var d=Math.hypot(xx-moonCX,yy-moonCY);
+          if(d>=rIn && d<rOut){ var fall=1-(d-rIn)/(rOut-rIn); var density=dIn*fall*fall;
+            if(bay(xx,yy)<density){ var p=(yy*LW+xx)*4; buf[p]=(buf[p]+(col[0]-buf[p])*0.5)|0; buf[p+1]=(buf[p+1]+(col[1]-buf[p+1])*0.5)|0; buf[p+2]=(buf[p+2]+(col[2]-buf[p+2])*0.5)|0; } } } }
+      ring(moonR, moonR*1.8, [210,218,255], 0.7);
+      ring(moonR*1.8, moonR*3.0, [155,166,210], 0.42);
+      // commit cached sky
+      lx.putImageData(img,0,0); skyx.clearRect(0,0,LW,LH); skyx.drawImage(lo,0,0);
+
+      // ---- bake the STATIC STRUCTURE once (its own buffer, transparent above land) ----
+      var simg=lx.createImageData(LW,LH), sbuf=simg.data;   // transparent
+      house=buildStructure(sbuf);
+      lx.putImageData(simg,0,0); stx.clearRect(0,0,LW,LH); stx.drawImage(lo,0,0);
+
+      seedStars(); seedFireflies(); seedSmoke();
+      if(reduced){ draw(6000); } // one static frame
+    }
+
+    // ── the global BREATH: asymmetric ~5s inhale / 6.5s exhale, ±8% ───────
+    function breath(ms){ var period=11500, p=(ms%period)/period; // 0..1
+      var inhale=5.0/11.5; var v = p<inhale ? easeInOutSine(p/inhale) : 1-easeInOutSine((p-inhale)/(1-inhale));
+      return 0.92 + 0.16*v; }
+
+    // ── shooting star (Poisson-rare) ──────────────────────────────────────
+    var shoot=null, nextShoot=6000+Math.random()*40000;
+    function maybeShoot(ms){ if(reduced) return;
+      if(!shoot && ms>nextShoot){ var fromX=Math.random()*LW, fromY=Math.random()*horizonRow*0.5;
+        var ang=(Math.random()*0.5+0.15)*(Math.random()<0.5?1:-1), len=LW*0.16+Math.random()*LW*0.1;
+        shoot={ x:fromX,y:fromY, dx:Math.cos(ang+3.6)*len, dy:Math.sin(ang+0.5)*len*0.5, t0:ms, dur:260+Math.random()*120 };
+        nextShoot=ms+15000+Math.random()*40000; }
+      if(shoot && ms-shoot.t0>shoot.dur) shoot=null; }
+
+    // ── the DRAW loop: cached layers + live layers ────────────────────────
+    function draw(ms){
+      var tt=ms*0.001, br=breath(ms);
+      // 1) start from the working buffer = a copy of the cached sky
+      lx.clearRect(0,0,LW,LH); lx.drawImage(skyCan,0,0);
+      img=lx.getImageData(0,0,LW,LH); buf=img.data;
+
+      // 2) MOON glow breathes a touch (core disk drawn crisp on grid)
+      //    (the discrete rings are already in the cached sky; here just the core + a faint breath bloom)
+      var mb=0.5+0.5*(br-0.92)/0.16; // 0..1 from breath
+      for(var yy=Math.max(0,moonCY-moonR-2); yy<Math.min(horizonRow,moonCY+moonR+2); yy++)
+        for(var xx=Math.max(0,moonCX-moonR-2); xx<Math.min(LW,moonCX+moonR+2); xx++){ var d=Math.hypot(xx-moonCX,yy-moonCY);
+          var p=(yy*LW+xx)*4;
+          if(d<moonR){ buf[p]=244; buf[p+1]=246; buf[p+2]=255; }
+          else if(d<moonR+2){ var g=(1-(d-moonR)/2)*0.4*(0.7+0.3*mb); addBuf(buf,p,206*g,214*g,255*g); }
+        }
+
+      // 3) STARS (positions fixed; opacity per tier; hero pulses + rare spike)
+      for(var s=0;s<stars.length;s++){ var st=stars[s];
+        var fade=1-(st.y/horizonRow); if(fade<0)fade=0; fade=fade*fade;
+        var w = Math.sin(tt*(6.283/st.per)+st.ph);
+        var a = st.base*(1 - st.amp + st.amp*(0.5+0.5*w))*fade;
+        if(st.tier===2){ // hero: rare asymmetric spike
+          if(st.spikeT<0 && tt>st.spikeAt){ st.spikeT=tt; st.spikeAt=tt+8+Math.random()*14; }
+          if(st.spikeT>=0){ var sp=tt-st.spikeT; if(sp<0.7){ a += st.base*fade*(1-sp/0.7)*(1-sp/0.7)*0.6; } else st.spikeT=-1; }
+        }
+        if(a<=0) continue;
+        addBuf(buf, (st.y*LW+st.x)*4, 214*a, 220*a, 240*a);
+      }
+
+      // 4) draw the cached STRUCTURE (land + house) OVER sky+stars,
+      //    then the LIVE lit layers on top (spill under, windows/door over).
+      //    We composite structure via the low-res canvas, then re-grab.
+      lx.putImageData(img,0,0);                 // sky+moon+stars committed to lo
+      lx.drawImage(stCan,0,0);                  // land + house body/roof/rim
+      img=lx.getImageData(0,0,LW,LH); buf=img.data;
+
+      var hs=house;
+      // ---- WINDOW GROUND-SPILL: warm wedges onto the land, merging into an apron ----
+      var reach=Math.round(LH*0.09), A=[255,207,138];
+      function spill(wx0){ var cx0=wx0+hs.winW/2, y0=hs.wy+hs.winH;
+        for(var k=1;k<reach;k++){ var yb=y0+k; if(yb>=LH) break;
+          var wWidth=hs.winW*(1.4+0.09*k), a=0.55*Math.pow(1-k/reach,2)*br;
+          var half=Math.round(wWidth/2);
+          for(var xb=Math.round(cx0-half); xb<=Math.round(cx0+half); xb++){ if(xb<0||xb>=LW) continue;
+            var edge=1-Math.abs((xb-cx0)/half); if(edge<0) edge=0;
+            var aa=a*(0.5+0.5*edge);
+            if(aa>bay(xb,yb)*0.9){ var p=(yb*LW+xb)*4;
+              buf[p]=(buf[p]+(A[0]-buf[p])*aa)|0; buf[p+1]=(buf[p+1]+(A[1]-buf[p+1])*aa)|0; buf[p+2]=(buf[p+2]+(A[2]-buf[p+2])*aa)|0; } }
+        }
+      }
+      spill(hs.w1x); spill(hs.w2x);
+
+      // ---- WINDOW FLICKER: two incommensurate sines + value-noise, fast dip/slow recover, independent seeds ----
+      function flick(seed){ var f = 0.7*Math.sin(tt*0.6*6.283 + seed) + 0.3*Math.sin(tt*2.3*6.283 + seed*1.7);
+        var n = vnoise(seed*3.1, tt*8.3); // ~every 120ms
+        var base = 0.88 + 0.09*(0.5+0.5*f) + 0.03*(n-0.5);
+        // occasional dip
+        var dipPhase=(tt*0.33+seed)%1; if(dipPhase<0.10){ var dp=dipPhase/0.10; var dip = dp<0.3? (1-dp/0.3) : ((dp-0.3)/0.7); base -= 0.28*(1-dip); }
+        return Math.max(0.55, Math.min(1, base)); }
+      function litWindow(wx0, seed){ var fl=flick(seed)*br, amber=[Math.round(255*fl),Math.round(207*fl),Math.round(138*fl)];
+        // soft interior bloom around the pane (dithered, blends toward amber)
+        var cxw=wx0+hs.winW/2, cyw=hs.wy+hs.winH/2, bloomR=hs.winW*2.6;
+        for(var yb=(cyw-bloomR)|0; yb<=(cyw+bloomR); yb++) for(var xb=(cxw-bloomR)|0; xb<=(cxw+bloomR); xb++){
+          if(xb<0||xb>=LW||yb<0||yb>=LH) continue; var d=Math.hypot(xb-cxw,yb-cyw); if(d>=bloomR) continue;
+          var h=1-d/bloomR; h=h*h; var w=h*0.42*fl; if(w<=0) continue; var p=(yb*LW+xb)*4;
+          if(w>bay(xb,yb)*0.5){ buf[p]=(buf[p]+(A[0]-buf[p])*w)|0; buf[p+1]=(buf[p+1]+(A[1]-buf[p+1])*w)|0; buf[p+2]=(buf[p+2]+(A[2]-buf[p+2])*w)|0; } }
+        // the pane
+        for(var py2=hs.wy; py2<hs.wy+hs.winH; py2++) for(var px2=wx0; px2<wx0+hs.winW; px2++){ var p=((py2|0)*LW+(px2|0))*4; if(px2>=0&&px2<LW&&py2>=0&&py2<LH){ buf[p]=amber[0]; buf[p+1]=amber[1]; buf[p+2]=amber[2]; buf[p+3]=255; } }
+        // 1px mullion cross (dark) — makes it read as a window
+        var mxc=Math.round(wx0+hs.winW/2), myc=Math.round(hs.wy+hs.winH/2);
+        for(var vy=hs.wy; vy<hs.wy+hs.winH; vy++){ var p=((vy|0)*LW+mxc)*4; buf[p]=Math.round(amber[0]*0.35); buf[p+1]=Math.round(amber[1]*0.32); buf[p+2]=Math.round(amber[2]*0.3); }
+        for(var vx=wx0; vx<wx0+hs.winW; vx++){ var p=((myc|0)*LW+(vx|0))*4; buf[p]=Math.round(amber[0]*0.35); buf[p+1]=Math.round(amber[1]*0.32); buf[p+2]=Math.round(amber[2]*0.3); }
+      }
+      litWindow(hs.w1x, 1.3); litWindow(hs.w2x, 4.7);
+      // door threshold: 1px warm sliver of light at the base of the door
+      var thrFl=flick(2.9)*br;
+      for(var tx=hs.dX; tx<hs.dX+hs.dW; tx++){ var Y=hs.dY+hs.dH-1, p=((Y|0)*LW+(tx|0))*4; if(tx>=0&&tx<LW){ buf[p]=Math.round(255*thrFl); buf[p+1]=Math.round(180*thrFl); buf[p+2]=Math.round(110*thrFl); } }
+
+      // ---- FIREFLIES ----
+      if(!reduced){ for(var e=0;e<fireflies.length;e++){ var f=fireflies[e];
+        if(f.state===1){ f.t+=1/60/f.dur; if(f.t>=1){ f.t=1; f.state=0; f.pause=1+Math.random()*2; }
+          var tf=easeOutCubic(f.t); f.x=f.ox+(f.tx-f.ox)*tf; f.y=f.oy+(f.ty-f.oy)*tf; }
+        else { f.pause-=1/60; if(f.pause<=0){ f.state=1; retarget(f); } }
+        // fade in/out at path ends (~1s): approximate via distance-from-rest at pauses
+        f.fade += ((f.state===0? (f.pause>0.4?1:0.3) : 1) - f.fade)*0.08;
+      } }
+      for(var e2=0;e2<fireflies.length;e2++){ var f=fireflies[e2]; var ex=f.x|0, ey=f.y|0;
+        if(ex<0||ex>=LW||ey<0||ey>=LH) continue;
+        var glow=(0.4+0.4*Math.sin(tt*(6.283/f.bob)+f.bph))*(reduced?0.6:f.fade);
+        if(glow<=0) continue; addBuf(buf,(ey*LW+ex)*4, 252*glow,196*glow,120*glow); }
+
+      // ---- SMOKE: 3-segment dithered ribbon rising from the chimney ----
+      if(!reduced){ var sx0=hs.chX+hs.s*0.5, sy0=hs.chTop;
+        for(var sp2=0;sp2<smokePuffs.length;sp2++){ var pf=smokePuffs[sp2]; var age=tt-pf.born;
+          if(age<0) continue; if(age>pf.dur){ pf.born=tt+Math.random()*1.5; continue; }
+          var pr=age/pf.dur;
+          for(var seg=0;seg<3;seg++){ var t3=pr - seg*0.12; if(t3<0) continue;
+            var hgt=t3*LH*0.10, wob=Math.sin(tt*0.7+seg*1.3+hgt*0.2)*hs.s*(1+hgt*0.3);
+            var X=Math.round(sx0+wob), Y=Math.round(sy0-hgt);
+            var a=(1-t3)*0.22*(seg===0?1:0.7);
+            if(X<0||X>=LW||Y<0||Y>=LH) continue;
+            var gv=[62,60,70]; if(a>bay(X,Y)*0.5){ addBuf(buf,(Y*LW+X)*4, gv[0]*a, gv[1]*a, gv[2]*a); }
+          }
+        }
+      }
+
+      // ---- shooting star ----
+      maybeShoot(ms);
+      if(shoot){ var pr=(ms-shoot.t0)/shoot.dur, e=easeOutCubic(pr);
+        var hx=shoot.x+shoot.dx*e, hy=shoot.y+shoot.dy*e;
+        for(var tI=0;tI<8;tI++){ var tp=e-tI*0.03; if(tp<0) break; var tx=shoot.x+shoot.dx*tp, ty=shoot.y+shoot.dy*tp;
+          var a=(1-tI/8)*(1-pr)*0.9; var X=tx|0,Y=ty|0; if(X<0||X>=LW||Y<0||Y>=LH) continue; addBuf(buf,(Y*LW+X)*4, 235*a,238*a,255*a); } }
+
+      // 5) commit low-res → integer upscale to device canvas
+      lx.putImageData(img,0,0);
+      x.imageSmoothingEnabled=false; x.drawImage(lo, 0,0, LW*SCALE, LH*SCALE);
+
+      if(!reduced) requestAnimationFrame(draw);
+    }
+
+    addEventListener("resize", function(){ clearTimeout(resizeTimer); resizeTimer=setTimeout(fit,140); }, {passive:true});
+    fit();
+    if(!reduced) requestAnimationFrame(draw);
+  })();
+  </script>
+</body>
+</html>
