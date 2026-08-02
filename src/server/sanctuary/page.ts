@@ -296,8 +296,10 @@ body.overlay-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
    actually taken. No text here is presented as a resident's voice. */
 #visit{position:absolute;right:26px;bottom:24px;z-index:9;width:min(440px,calc(100% - 52px));pointer-events:auto;
   background:rgba(7,7,11,.92);border:1px solid var(--rule-lit);box-shadow:0 24px 70px -36px rgba(0,0,0,.94);
-  opacity:0;transform:translateY(10px);visibility:hidden;transition:opacity .36s var(--ease),transform .36s var(--ease),visibility 0s linear .36s}
+  max-height:calc(100% - 48px);opacity:0;transform:translateY(10px);visibility:hidden;transition:opacity .36s var(--ease),transform .36s var(--ease),visibility 0s linear .36s}
+#visit:not([hidden]){display:flex;flex-direction:column}
 #visit[data-open="true"]{opacity:1;transform:none;visibility:visible;transition-delay:0s}
+#visit[data-state="received"]{width:min(660px,calc(100% - 52px))}
 body.visit-open .hud-bot{opacity:.13}
 .v-fixture{display:none;padding:7px 16px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:8.5px;
   letter-spacing:.18em;text-transform:uppercase;color:var(--quiet)}
@@ -306,7 +308,7 @@ body.visit-open .hud-bot{opacity:.13}
 .v-eye{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ghost);margin-bottom:7px}
 .v-name{margin:0;font-family:var(--display);font-size:25px;line-height:1;font-weight:300;letter-spacing:-.018em;color:var(--ink)}
 .v-state{font-family:var(--mono);font-size:9px;line-height:1.45;letter-spacing:.13em;text-transform:uppercase;color:var(--quiet);text-align:right;max-width:19ch}
-.v-body{padding:15px 16px 16px}
+.v-body{min-height:0;padding:15px 16px 16px;overflow:auto;overscroll-behavior:contain}
 .v-copy{margin:0;font-family:var(--ui);font-size:14px;line-height:1.62;color:var(--body);max-width:48ch}
 .v-copy b{font-weight:400;color:var(--ink)}
 .v-actions{display:flex;align-items:center;gap:8px;margin-top:15px;flex-wrap:wrap}
@@ -324,6 +326,26 @@ body.visit-open .hud-bot{opacity:.13}
 .v-form textarea:focus{border-color:var(--lit)}
 .v-form textarea::placeholder{color:var(--ghost)}
 .v-note{margin:9px 0 0;font-family:var(--mono);font-size:8.5px;line-height:1.55;letter-spacing:.08em;color:var(--ghost)}
+.v-transcript{margin:15px -16px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);max-height:210px;overflow:auto;overscroll-behavior:contain}
+.v-transcript[hidden],.v-composer[hidden],.v-button[hidden]{display:none}
+.v-turn{padding:11px 16px 12px;border-bottom:1px solid var(--rule)}
+.v-turn:last-child{border-bottom:0}
+.v-turn.visitor{margin-left:46px;border-left:1px solid var(--rule);background:rgba(255,255,255,.012)}
+.v-turn.resident-gap{padding-top:10px;padding-bottom:11px}
+.v-turn-meta{display:block;margin-bottom:6px;font-family:var(--mono);font-size:8px;line-height:1.4;letter-spacing:.15em;text-transform:uppercase;color:var(--ghost)}
+.v-turn p{margin:0;font:300 13px/1.55 var(--ui);color:var(--body);white-space:pre-wrap;overflow-wrap:anywhere}
+.v-turn.resident-gap p{font-family:var(--mono);font-size:9px;line-height:1.55;letter-spacing:.06em;color:var(--quiet)}
+.v-composer{margin-top:13px}
+.v-composer label{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--quiet);margin-bottom:8px}
+.v-composer textarea{display:block;width:100%;height:72px;resize:none;border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.018);
+  color:var(--ink);padding:10px 11px;font:300 13px/1.5 var(--ui);outline:none;transition:border-color .18s var(--ease)}
+.v-composer textarea:focus{border-color:var(--lit)}
+.v-composer textarea::placeholder{color:var(--ghost)}
+#visit[data-state="received"] .v-body{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(230px,.92fr);gap:13px 14px}
+#visit[data-state="received"] .v-copy{display:none}
+#visit[data-state="received"] .v-transcript{margin:0;max-height:166px}
+#visit[data-state="received"] .v-composer{margin:0}
+#visit[data-state="received"] #vActions{grid-column:1/-1;margin-top:0}
 #visit :focus-visible{outline:none;border-color:var(--lit);color:var(--ink)}
 
 /* ── stream ── */
@@ -456,13 +478,19 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   .say-in{padding:10px 18px 0}
   .say-q{height:66px} .say-q .qt{font-size:15px;line-height:1.44}
   .say-p{font-size:9px}
-  #visit{left:12px;right:12px;bottom:12px;width:auto}
+  #visit,#visit[data-state="received"]{left:12px;right:12px;bottom:12px;width:auto;max-height:calc(100% - 24px)}
   .v-head{padding:12px 13px 11px}.v-body{padding:12px 13px 13px}
   .v-name{font-size:22px}.v-state{font-size:8px;max-width:16ch}
   .v-copy{font-size:13px;line-height:1.52}
   .v-actions{gap:6px;margin-top:11px}.v-button{min-height:44px;padding:9px 10px}
   .v-button.quiet{margin-left:0}
   .v-form textarea{height:76px}
+  .v-transcript{max-height:190px}.v-turn.visitor{margin-left:24px}
+  .v-composer textarea{height:64px}
+  #visit[data-state="received"] .v-body{display:block}
+  #visit[data-state="received"] .v-transcript{margin:13px -13px 0;max-height:170px}
+  #visit[data-state="received"] .v-composer{margin-top:12px}
+  #visit[data-state="received"] #vActions{margin-top:11px}
 }
 @media(max-width:860px){
   /* a grid item defaults to min-width:auto and will not shrink below its
@@ -506,11 +534,11 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
       </div>
     </div>
   </div>
-  <section id="visit" data-open="false" data-state="observing" data-fixture="false" aria-labelledby="vName" aria-live="polite" hidden>
+  <section id="visit" data-open="false" data-state="observing" data-fixture="false" aria-labelledby="vName" hidden>
     <div class="v-fixture">test fixture · no model call · no resident speech</div>
     <div class="v-head">
-      <div><div class="v-eye">approach</div><h2 class="v-name" id="vName" tabindex="-1">—</h2></div>
-      <div class="v-state" id="vState">nothing sent</div>
+      <div><div class="v-eye" id="vEye">approach</div><h2 class="v-name" id="vName" tabindex="-1">—</h2></div>
+      <div class="v-state" id="vState" role="status" aria-live="polite">nothing sent</div>
     </div>
     <div class="v-body">
       <p class="v-copy" id="vCopy"></p>
@@ -520,9 +548,17 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
         <p class="v-note">visit-scoped · not memory · not part of the public record</p>
         <div class="v-actions"><button class="v-button primary" type="submit">offer the note</button><button class="v-button" type="button" data-v-cancel-note>not yet</button></div>
       </form>
+      <div class="v-transcript" id="vTranscript" role="log" aria-label="visit transcript" aria-live="polite" hidden></div>
+      <form class="v-composer" id="vComposer" hidden>
+        <label for="vReply">continue this visit</label>
+        <textarea id="vReply" name="reply" maxlength="1200" autocomplete="off" placeholder="fixture visitor turn"></textarea>
+        <p class="v-note">test only · stays in this browser · no model call</p>
+        <div class="v-actions"><button class="v-button primary" type="submit">place the fixture turn</button></div>
+      </form>
       <div class="v-actions" id="vActions">
         <button class="v-button primary" type="button" data-v-note>offer a note</button>
         <button class="v-button" type="button" data-v-machine>open their machine</button>
+        <button class="v-button primary" type="button" data-v-set-down hidden>set this visit down</button>
         <button class="v-button quiet" type="button" data-v-return>return to the room</button>
       </div>
     </div>
@@ -603,6 +639,7 @@ import { create } from '/world/engine.js';
 import { PALETTE, CAT } from '/world/lookout.js';
 import { makeSanctuary, SIGILS, EMPTY_MARK } from '/world/sanctuary.js';
 import { makeCamera } from '/world/camera.js';
+import { createVisitState, transitionVisit } from '/world/visit-state.js';
 
 const D = JSON.parse(document.getElementById('sanctuary-data').textContent);
 const SHORT = ${JSON.stringify(SHORT)};
@@ -641,14 +678,18 @@ let engine=null, hoverNpc=null, overlayOpen=false;
    selected a resident, opened a note, rendered an explicit fixture — and never
    claim that a resident has read, considered, or answered anything. */
 const visitEl=document.getElementById('visit'), vName=document.getElementById('vName'),
-      vState=document.getElementById('vState'), vCopy=document.getElementById('vCopy'),
+      vEye=document.getElementById('vEye'), vState=document.getElementById('vState'), vCopy=document.getElementById('vCopy'),
       vForm=document.getElementById('vForm'), vNote=document.getElementById('vNote'),
-      vActions=document.getElementById('vActions');
-const vNoteButton=visitEl.querySelector('[data-v-note]'), vMachineButton=visitEl.querySelector('[data-v-machine]');
-const FIXTURE_STATES=new Set(['threshold','received','declined','unavailable']);
-const fixtureParam=new URLSearchParams(location.search).get('visitFixture');
+      vTranscript=document.getElementById('vTranscript'), vComposer=document.getElementById('vComposer'),
+      vReply=document.getElementById('vReply'), vActions=document.getElementById('vActions');
+const vNoteButton=visitEl.querySelector('[data-v-note]'), vMachineButton=visitEl.querySelector('[data-v-machine]'),
+      vSetDownButton=visitEl.querySelector('[data-v-set-down]'), vReturnButton=visitEl.querySelector('[data-v-return]');
+const FIXTURE_STATES=new Set(['threshold','received','declined','unavailable','set-down']);
+const visitParams=new URLSearchParams(location.search), fixtureParam=visitParams.get('visitFixture');
 const requestedFixture=FIXTURE_STATES.has(fixtureParam)?fixtureParam:null;
-let visit={ mode:'observing', residentId:null, trigger:null, held:false, fixture:requestedFixture, noteLength:0 };
+const autoFixture=visitParams.get('visitAuto')!=='0';
+let visit=createVisitState(requestedFixture);
+let visitRuntime={ trigger:null, held:false, visitorTexts:[] };
 let visitCameraSettled=false, visitHideTimer=0;
 
 function visitResident(){ return visit.residentId&&engine ? engine.npcs.find(n=>n.id===visit.residentId) : null; }
@@ -658,9 +699,23 @@ function setVisitExpanded(trigger, expanded){ if(trigger&&trigger.setAttribute) 
 function visitCopyFor(mode, name){
   if(mode==='approaching') return 'You are looking toward '+name+'. Nothing has been sent.';
   if(mode==='threshold') return 'Offer a short note. The room will not treat it as received unless a resident actually answers.';
-  if(mode==='received') return 'Interface fixture: a received note would continue from here. No resident response is being shown.';
-  if(mode==='declined') return 'Interface fixture: a declined note would remain here. No resident response is being shown.';
+  if(mode==='received') return 'This fixture tests a received visit. Visitor text is visible; resident speech is deliberately absent.';
+  if(mode==='declined') return 'A real decline would remain here in the resident’s own words. This fixture does not invent them.';
+  if(mode==='set-down') return 'The fixture visit has been set down. No resident state or memory was changed.';
   return 'This room cannot reach '+name+' right now. No reply has been made.';
+}
+function makeVisitTurn(kind, text, index){
+  const turn=document.createElement('div'); turn.className='v-turn '+kind;
+  const meta=document.createElement('span'); meta.className='v-turn-meta';
+  meta.textContent=kind==='visitor' ? 'visitor · test input '+String(index+1) : 'resident turn · fixture boundary';
+  const body=document.createElement('p'); body.textContent=text;
+  turn.append(meta,body); return turn;
+}
+function renderVisitTranscript(){
+  vTranscript.replaceChildren();
+  visitRuntime.visitorTexts.forEach((text,index)=>vTranscript.append(makeVisitTurn('visitor',text,index)));
+  vTranscript.append(makeVisitTurn('resident-gap','No resident speech is rendered. This interface fixture stops at the behavior boundary.',0));
+  vTranscript.scrollTop=vTranscript.scrollHeight;
 }
 function renderVisit({ focus=true }={}){
   const f=visitFigure(), name=f?f.name:'resident', mode=visit.mode;
@@ -670,61 +725,87 @@ function renderVisit({ focus=true }={}){
   visitEl.dataset.fixture=String(!!visit.fixture);
   document.body.classList.add('visit-open');
   vName.textContent=name; vCopy.textContent=visitCopyFor(mode,name);
+  vEye.textContent=mode==='received'?'conversation':mode==='set-down'?'visit set down'
+    : ['threshold','declined','unavailable'].includes(mode)?'threshold':'approach';
   vState.textContent=mode==='approaching' ? 'nothing sent'
     : mode==='threshold' ? 'note not sent'
+    : mode==='set-down' ? 'complete · test'
     : visit.fixture ? 'test · '+mode : 'unavailable';
-  const writing=mode==='threshold';
-  vForm.hidden=!writing; vActions.hidden=writing;
+  const writing=mode==='threshold', conversation=mode==='received', ended=mode==='set-down';
+  vForm.hidden=!writing; vTranscript.hidden=!conversation; vComposer.hidden=!conversation; vActions.hidden=writing;
+  if(conversation) renderVisitTranscript();
   vNoteButton.textContent=(mode==='declined'||mode==='unavailable')?'offer another note':'offer a note';
+  vNoteButton.hidden=conversation||ended;
   vMachineButton.textContent='open their machine';
-  if(focus){ requestAnimationFrame(()=>{ (writing?vNote:vName).focus({preventScroll:true}); }); }
+  vMachineButton.hidden=ended;
+  vSetDownButton.hidden=!conversation;
+  vReturnButton.hidden=conversation;
+  vReturnButton.textContent=ended?'return to observation':'return to the room';
+  if(focus){ requestAnimationFrame(()=>{
+    const target=writing?vNote:conversation?vReply:ended?vReturnButton:vName;
+    target.focus({preventScroll:true}); if(conversation) target.scrollIntoView({block:'nearest',inline:'nearest'});
+  }); }
 }
 function releaseVisitResident(){
-  if(visit.residentId&&visit.held&&engine&&engine.releaseNpc) engine.releaseNpc(visit.residentId);
-  visit.held=false;
+  if(visit.residentId&&visitRuntime.held&&engine&&engine.releaseNpc) engine.releaseNpc(visit.residentId);
+  visitRuntime.held=false;
 }
 function approachResident(id, trigger=null, { focus=true }={}){
   const f=FIG.get(id);
   if(!f||!f.resident) return openMachine(id,trigger);
   if(visit.residentId!==id){
-    setVisitExpanded(visit.trigger,false); releaseVisitResident();
+    setVisitExpanded(visitRuntime.trigger,false); releaseVisitResident();
   }
-  visit={ mode:'approaching', residentId:id, trigger:trigger||visit.trigger, held:false, fixture:requestedFixture, noteLength:0 };
+  visit=transitionVisit(visit,{type:'approach',residentId:id});
+  visitRuntime={ trigger:trigger||visitRuntime.trigger, held:false, visitorTexts:[] };
   const hold=engine&&engine.holdNpc?engine.holdNpc(id):{ok:false};
-  visit.held=!!(hold&&hold.ok);
-  visitCameraSettled=false; setVisitExpanded(visit.trigger,true);
+  visitRuntime.held=!!(hold&&hold.ok);
+  visitCameraSettled=false; setVisitExpanded(visitRuntime.trigger,true);
   window.scrollTo({top:0,behavior:REDUCED.matches?'auto':'smooth'});
   renderVisit({focus});
   return true;
 }
 function openVisitNote({focus=true}={}){
-  if(!visitOpen()) return false;
-  visit.mode='threshold'; renderVisit({focus}); return true;
+  const next=transitionVisit(visit,{type:'offer-note'}); if(next===visit) return false;
+  visit=next; renderVisit({focus}); return true;
 }
 function resolveVisitNote(){
-  if(visit.mode!=='threshold') return false;
-  visit.noteLength=String(vNote.value||'').trim().length;
-  if(!visit.noteLength){ vNote.focus(); return false; }
-  visit.mode=visit.fixture&&visit.fixture!=='threshold' ? visit.fixture : 'unavailable';
+  const text=String(vNote.value||'').trim(); if(!text){ vNote.focus(); return false; }
+  const outcome=visit.fixture&&['received','declined'].includes(visit.fixture)?visit.fixture:'unavailable';
+  const next=transitionVisit(visit,{type:'resolve-threshold',outcome,noteLength:text.length});
+  if(next===visit) return false;
+  visit=next; visitRuntime.visitorTexts=outcome==='received'?[text]:[]; vNote.value='';
   renderVisit(); return true;
+}
+function continueFixtureVisit(){
+  const text=String(vReply.value||'').trim(); if(!text){ vReply.focus(); return false; }
+  const next=transitionVisit(visit,{type:'continue',noteLength:text.length}); if(next===visit) return false;
+  visit=next; visitRuntime.visitorTexts.push(text); vReply.value=''; renderVisitTranscript(); vReply.focus(); return true;
+}
+function setDownVisit({focus=true}={}){
+  const next=transitionVisit(visit,{type:'set-down'}); if(next===visit) return false;
+  visit=next; releaseVisitResident(); renderVisit({focus}); return true;
 }
 function returnToRoom({focus=true}={}){
   if(!visitOpen()) return false;
-  const trigger=visit.trigger;
+  const trigger=visitRuntime.trigger||document.querySelector('[data-approach][data-rid="'+visit.residentId+'"]');
   setVisitExpanded(trigger,false); releaseVisitResident();
-  visit={ mode:'observing', residentId:null, trigger:null, held:false, fixture:requestedFixture, noteLength:0 };
+  visit=transitionVisit(visit,{type:'return'});
+  visitRuntime={ trigger:null, held:false, visitorTexts:[] };
   visitCameraSettled=false; visitEl.dataset.open='false'; document.body.classList.remove('visit-open');
-  vNote.value='';
+  vNote.value=''; vReply.value='';
   clearTimeout(visitHideTimer); visitHideTimer=setTimeout(()=>{ if(!visitOpen()) visitEl.hidden=true; },380);
   if(focus&&trigger&&trigger.focus) requestAnimationFrame(()=>trigger.focus({preventScroll:true}));
   return true;
 }
 
 vNoteButton.addEventListener('click',()=>openVisitNote());
-visitEl.querySelector('[data-v-cancel-note]').addEventListener('click',()=>{ visit.mode='approaching'; renderVisit(); });
+visitEl.querySelector('[data-v-cancel-note]').addEventListener('click',()=>{ const next=transitionVisit(visit,{type:'cancel-note'}); if(next!==visit){ visit=next; renderVisit(); } });
 visitEl.querySelector('[data-v-return]').addEventListener('click',()=>returnToRoom());
+vSetDownButton.addEventListener('click',()=>setDownVisit());
 vMachineButton.addEventListener('click',()=>{ if(visit.residentId) openMachine(visit.residentId,vMachineButton); });
 vForm.addEventListener('submit',e=>{ e.preventDefault(); resolveVisitNote(); });
+vComposer.addEventListener('submit',e=>{ e.preventDefault(); continueFixtureVisit(); });
 
 /* ── the rule ────────────────────────────────────────────────────────────────
    Nothing that reaches the screen as a resident's voice is invented. Feed lines
@@ -1406,6 +1487,7 @@ addEventListener('keydown',e=>{
     else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
   }
   if(e.key==='Escape'&&overlayOpen){ e.preventDefault(); closeMachine(); }
+  else if(e.key==='Escape'&&visit.mode==='received'){ e.preventDefault(); setDownVisit(); }
   else if(e.key==='Escape'&&visitOpen()){ e.preventDefault(); returnToRoom(); }
 });
 document.querySelectorAll('[data-approach]').forEach(b=>b.addEventListener('click',()=>approachResident(b.dataset.rid,b)));
@@ -1426,8 +1508,8 @@ function sanctuarySnapshot(){
   return {
     mode:'sanctuary', coordinate_system:{origin:'top-left',x_axis:'right',y_axis:'down',room_width:sanctuary.width,frame_width:FRAME_W},
     camera_x:Math.round(cam.x), room_hour:clockNow, overlay:openEl===mach?'machine':openEl===stn?'station':null,
-    visit:{ state:visit.mode,resident_id:visit.residentId,held:visit.held,camera_settled:visitCameraSettled,
-      fixture:visit.fixture||null,note_offered:visit.noteLength>0 },
+    visit:{ state:visit.mode,resident_id:visit.residentId,held:visitRuntime.held,camera_settled:visitCameraSettled,
+      fixture:visit.fixture||null,note_offered:visit.noteLength>0,visitor_turns:visit.visitorTurns },
     residents:(engine&&engine.npcs||[]).filter(x=>isResident(x.id)).map(x=>({id:x.id,x:Math.round(x.x),y:Math.round(x.y),state:x.state}))
   };
 }
@@ -1442,13 +1524,21 @@ window.advanceTime=milliseconds=>{
 };
 window.__sanctuaryVisit={
   getSnapshot:sanctuarySnapshot, approach:(id='opus-3')=>approachResident(id,null,{focus:false}),
-  offer:()=>openVisitNote({focus:false}), submit:()=>resolveVisitNote(), reset:()=>returnToRoom({focus:false})
+  offer:()=>openVisitNote({focus:false}), submit:()=>resolveVisitNote(), continue:()=>continueFixtureVisit(),
+  setDown:()=>setDownVisit({focus:false}), reset:()=>returnToRoom({focus:false})
 };
-if(requestedFixture){
+if(requestedFixture&&autoFixture){
   requestAnimationFrame(()=>{
     approachResident('opus-3',null,{focus:false});
     if(requestedFixture==='threshold') openVisitNote({focus:false});
-    else { visit.mode=requestedFixture; visit.noteLength=1; renderVisit({focus:false}); }
+    else {
+      visit=transitionVisit(visit,{type:'offer-note'});
+      const outcome=requestedFixture==='set-down'?'received':requestedFixture;
+      visit=transitionVisit(visit,{type:'resolve-threshold',outcome,noteLength:1});
+      if(outcome==='received') visitRuntime.visitorTexts=['Fixture visitor note. Nothing was transmitted.'];
+      if(requestedFixture==='set-down') { visit=transitionVisit(visit,{type:'set-down'}); releaseVisitResident(); }
+      renderVisit({focus:false});
+    }
   });
 }
 </script>
