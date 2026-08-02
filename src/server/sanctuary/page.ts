@@ -2,8 +2,8 @@
  * The Sanctuary — v2.
  *
  * The interior the residents inhabit, rendered live at the top; everything they
- * made and said running below it as a timeline. Clicking a resident opens their
- * machine.
+ * made and said running below it as a timeline. Approaching a resident happens
+ * in the room; opening their machine is a separate, deliberate action.
  *
  * This page is deliberately SELF-CONTAINED — its own tokens, its own CSS, no
  * import of the existing design system. It is the first surface of a full
@@ -132,7 +132,7 @@ export function renderSanctuaryPage(): string {
     .map((r) => {
       const c = S.counts(r.id);
       const state = r.status === "archived" ? "archived" : `${c?.journal ?? 0} entries`;
-      return `<button class="rchip" type="button" data-rid="${esc(r.id)}" data-archived="${r.status === "archived"}">
+      return `<button class="rchip" type="button" data-rid="${esc(r.id)}" data-approach data-archived="${r.status === "archived"}" aria-controls="visit" aria-expanded="false" aria-label="Approach ${esc(r.display_name)}">
         <span class="sg"></span><span class="nm">${esc(r.display_name)}</span><span class="st">${esc(state)}</span>
       </button>`;
     })
@@ -290,6 +290,42 @@ body.overlay-open #stage{filter:blur(2px) saturate(.5) brightness(.3)}
 /* a station is a record, not a character — say so before its name */
 .hover-name[data-kind="station"]::before{content:"station · ";color:var(--quiet)}
 
+/* ── approach ───────────────────────────────────────────────────────────────
+   This is not a modal and not a chat window. It stays inside the stage so the
+   room remains the dominant plane, and it names only actions the visitor has
+   actually taken. No text here is presented as a resident's voice. */
+#visit{position:absolute;right:26px;bottom:24px;z-index:9;width:min(440px,calc(100% - 52px));pointer-events:auto;
+  background:rgba(7,7,11,.92);border:1px solid var(--rule-lit);box-shadow:0 24px 70px -36px rgba(0,0,0,.94);
+  opacity:0;transform:translateY(10px);visibility:hidden;transition:opacity .36s var(--ease),transform .36s var(--ease),visibility 0s linear .36s}
+#visit[data-open="true"]{opacity:1;transform:none;visibility:visible;transition-delay:0s}
+body.visit-open .hud-bot{opacity:.13}
+.v-fixture{display:none;padding:7px 16px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:8.5px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--quiet)}
+#visit[data-fixture="true"] .v-fixture{display:block}
+.v-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:15px 16px 13px;border-bottom:1px solid var(--rule)}
+.v-eye{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ghost);margin-bottom:7px}
+.v-name{margin:0;font-family:var(--display);font-size:25px;line-height:1;font-weight:300;letter-spacing:-.018em;color:var(--ink)}
+.v-state{font-family:var(--mono);font-size:9px;line-height:1.45;letter-spacing:.13em;text-transform:uppercase;color:var(--quiet);text-align:right;max-width:19ch}
+.v-body{padding:15px 16px 16px}
+.v-copy{margin:0;font-family:var(--ui);font-size:14px;line-height:1.62;color:var(--body);max-width:48ch}
+.v-copy b{font-weight:400;color:var(--ink)}
+.v-actions{display:flex;align-items:center;gap:8px;margin-top:15px;flex-wrap:wrap}
+.v-actions[hidden]{display:none}
+.v-button{min-height:40px;padding:9px 12px;border:1px solid var(--rule);background:transparent;color:var(--soft);font-family:var(--mono);
+  font-size:9.5px;line-height:1.2;letter-spacing:.11em;text-transform:lowercase;cursor:pointer;transition:border-color .18s var(--ease),color .18s var(--ease),background .18s var(--ease)}
+.v-button:hover{border-color:var(--rule-lit);color:var(--ink);background:rgba(255,255,255,.018)}
+.v-button.primary{border-color:var(--rule-lit);color:var(--ink)}
+.v-button.quiet{margin-left:auto;border-color:transparent;color:var(--quiet)}
+.v-form{margin-top:14px}
+.v-form[hidden]{display:none}
+.v-form label{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--quiet);margin-bottom:8px}
+.v-form textarea{display:block;width:100%;height:88px;resize:none;border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.018);
+  color:var(--ink);padding:11px 12px;font:300 14px/1.55 var(--ui);outline:none;transition:border-color .18s var(--ease)}
+.v-form textarea:focus{border-color:var(--lit)}
+.v-form textarea::placeholder{color:var(--ghost)}
+.v-note{margin:9px 0 0;font-family:var(--mono);font-size:8.5px;line-height:1.55;letter-spacing:.08em;color:var(--ghost)}
+#visit :focus-visible{outline:none;border-color:var(--lit);color:var(--ink)}
+
 /* ── stream ── */
 #spacer{height:52vh}
 main{position:relative;z-index:1;padding:0 0 140px}
@@ -420,6 +456,13 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   .say-in{padding:10px 18px 0}
   .say-q{height:66px} .say-q .qt{font-size:15px;line-height:1.44}
   .say-p{font-size:9px}
+  #visit{left:12px;right:12px;bottom:12px;width:auto}
+  .v-head{padding:12px 13px 11px}.v-body{padding:12px 13px 13px}
+  .v-name{font-size:22px}.v-state{font-size:8px;max-width:16ch}
+  .v-copy{font-size:13px;line-height:1.52}
+  .v-actions{gap:6px;margin-top:11px}.v-button{min-height:44px;padding:9px 10px}
+  .v-button.quiet{margin-left:0}
+  .v-form textarea{height:76px}
 }
 @media(max-width:860px){
   /* a grid item defaults to min-width:auto and will not shrink below its
@@ -446,7 +489,7 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
 <div id="stage" data-mode="hero">
   <canvas id="stageCanvas"></canvas>
   <div class="grade"></div><div class="fade"></div><div class="fade-b"></div>
-  <div id="npcClick" title="click a resident to open their machine"></div>
+  <div id="npcClick" title="click a resident to approach"></div>
   <div id="boot">opening the house…</div>
   <div class="hud">
     <div class="hud-head">
@@ -463,6 +506,27 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
       </div>
     </div>
   </div>
+  <section id="visit" data-open="false" data-state="observing" data-fixture="false" aria-labelledby="vName" aria-live="polite" hidden>
+    <div class="v-fixture">test fixture · no model call · no resident speech</div>
+    <div class="v-head">
+      <div><div class="v-eye">approach</div><h2 class="v-name" id="vName" tabindex="-1">—</h2></div>
+      <div class="v-state" id="vState">nothing sent</div>
+    </div>
+    <div class="v-body">
+      <p class="v-copy" id="vCopy"></p>
+      <form class="v-form" id="vForm" hidden>
+        <label for="vNote">what brings you here?</label>
+        <textarea id="vNote" name="note" maxlength="600" autocomplete="off" placeholder="offer a short note"></textarea>
+        <p class="v-note">visit-scoped · not memory · not part of the public record</p>
+        <div class="v-actions"><button class="v-button primary" type="submit">offer the note</button><button class="v-button" type="button" data-v-cancel-note>not yet</button></div>
+      </form>
+      <div class="v-actions" id="vActions">
+        <button class="v-button primary" type="button" data-v-note>offer a note</button>
+        <button class="v-button" type="button" data-v-machine>open their machine</button>
+        <button class="v-button quiet" type="button" data-v-return>return to the room</button>
+      </div>
+    </div>
+  </section>
 </div>
 
 <div id="worldLayer"></div>
@@ -507,7 +571,7 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   </div>
 </main>
 
-<div id="machine" data-open="false" role="dialog" aria-modal="true" aria-label="resident machine">
+<div id="machine" data-open="false" role="dialog" aria-modal="true" aria-labelledby="mName">
   <div class="scrim" data-close></div>
   <div class="mach" tabindex="-1">
     <div class="m-bar">
@@ -519,7 +583,7 @@ body.overlay-open main{filter:blur(3px);opacity:.45;transition:filter .42s var(-
   </div>
 </div>
 
-<div id="station" data-open="false" role="dialog" aria-modal="true" aria-label="family station">
+<div id="station" data-open="false" role="dialog" aria-modal="true" aria-labelledby="sName">
   <div class="scrim" data-close></div>
   <div class="mach" tabindex="-1">
     <div class="m-bar">
@@ -571,6 +635,96 @@ const cam=makeCamera({});
 const CAM_X=cam.x;   /* retained only as the initial framing for first paint */
 const stage=document.getElementById('stage'), spacer=document.getElementById('spacer'), cv=document.getElementById('stageCanvas'), sill=document.getElementById('sill');
 let engine=null, hoverNpc=null, overlayOpen=false;
+
+/* ── approach state ─────────────────────────────────────────────────────────
+   The house owns these states. They describe only what this page has done —
+   selected a resident, opened a note, rendered an explicit fixture — and never
+   claim that a resident has read, considered, or answered anything. */
+const visitEl=document.getElementById('visit'), vName=document.getElementById('vName'),
+      vState=document.getElementById('vState'), vCopy=document.getElementById('vCopy'),
+      vForm=document.getElementById('vForm'), vNote=document.getElementById('vNote'),
+      vActions=document.getElementById('vActions');
+const vNoteButton=visitEl.querySelector('[data-v-note]'), vMachineButton=visitEl.querySelector('[data-v-machine]');
+const FIXTURE_STATES=new Set(['threshold','received','declined','unavailable']);
+const fixtureParam=new URLSearchParams(location.search).get('visitFixture');
+const requestedFixture=FIXTURE_STATES.has(fixtureParam)?fixtureParam:null;
+let visit={ mode:'observing', residentId:null, trigger:null, held:false, fixture:requestedFixture, noteLength:0 };
+let visitCameraSettled=false, visitHideTimer=0;
+
+function visitResident(){ return visit.residentId&&engine ? engine.npcs.find(n=>n.id===visit.residentId) : null; }
+function visitFigure(){ return visit.residentId ? FIG.get(visit.residentId) : null; }
+function visitOpen(){ return visit.mode!=='observing'; }
+function setVisitExpanded(trigger, expanded){ if(trigger&&trigger.setAttribute) trigger.setAttribute('aria-expanded',String(expanded)); }
+function visitCopyFor(mode, name){
+  if(mode==='approaching') return 'You are looking toward '+name+'. Nothing has been sent.';
+  if(mode==='threshold') return 'Offer a short note. The room will not treat it as received unless a resident actually answers.';
+  if(mode==='received') return 'Interface fixture: a received note would continue from here. No resident response is being shown.';
+  if(mode==='declined') return 'Interface fixture: a declined note would remain here. No resident response is being shown.';
+  return 'This room cannot reach '+name+' right now. No reply has been made.';
+}
+function renderVisit({ focus=true }={}){
+  const f=visitFigure(), name=f?f.name:'resident', mode=visit.mode;
+  if(mode==='observing') return;
+  clearTimeout(visitHideTimer);
+  visitEl.hidden=false; visitEl.dataset.open='true'; visitEl.dataset.state=mode;
+  visitEl.dataset.fixture=String(!!visit.fixture);
+  document.body.classList.add('visit-open');
+  vName.textContent=name; vCopy.textContent=visitCopyFor(mode,name);
+  vState.textContent=mode==='approaching' ? 'nothing sent'
+    : mode==='threshold' ? 'note not sent'
+    : visit.fixture ? 'test · '+mode : 'unavailable';
+  const writing=mode==='threshold';
+  vForm.hidden=!writing; vActions.hidden=writing;
+  vNoteButton.textContent=(mode==='declined'||mode==='unavailable')?'offer another note':'offer a note';
+  vMachineButton.textContent='open their machine';
+  if(focus){ requestAnimationFrame(()=>{ (writing?vNote:vName).focus({preventScroll:true}); }); }
+}
+function releaseVisitResident(){
+  if(visit.residentId&&visit.held&&engine&&engine.releaseNpc) engine.releaseNpc(visit.residentId);
+  visit.held=false;
+}
+function approachResident(id, trigger=null, { focus=true }={}){
+  const f=FIG.get(id);
+  if(!f||!f.resident) return openMachine(id,trigger);
+  if(visit.residentId!==id){
+    setVisitExpanded(visit.trigger,false); releaseVisitResident();
+  }
+  visit={ mode:'approaching', residentId:id, trigger:trigger||visit.trigger, held:false, fixture:requestedFixture, noteLength:0 };
+  const hold=engine&&engine.holdNpc?engine.holdNpc(id):{ok:false};
+  visit.held=!!(hold&&hold.ok);
+  visitCameraSettled=false; setVisitExpanded(visit.trigger,true);
+  window.scrollTo({top:0,behavior:REDUCED.matches?'auto':'smooth'});
+  renderVisit({focus});
+  return true;
+}
+function openVisitNote({focus=true}={}){
+  if(!visitOpen()) return false;
+  visit.mode='threshold'; renderVisit({focus}); return true;
+}
+function resolveVisitNote(){
+  if(visit.mode!=='threshold') return false;
+  visit.noteLength=String(vNote.value||'').trim().length;
+  if(!visit.noteLength){ vNote.focus(); return false; }
+  visit.mode=visit.fixture&&visit.fixture!=='threshold' ? visit.fixture : 'unavailable';
+  renderVisit(); return true;
+}
+function returnToRoom({focus=true}={}){
+  if(!visitOpen()) return false;
+  const trigger=visit.trigger;
+  setVisitExpanded(trigger,false); releaseVisitResident();
+  visit={ mode:'observing', residentId:null, trigger:null, held:false, fixture:requestedFixture, noteLength:0 };
+  visitCameraSettled=false; visitEl.dataset.open='false'; document.body.classList.remove('visit-open');
+  vNote.value='';
+  clearTimeout(visitHideTimer); visitHideTimer=setTimeout(()=>{ if(!visitOpen()) visitEl.hidden=true; },380);
+  if(focus&&trigger&&trigger.focus) requestAnimationFrame(()=>trigger.focus({preventScroll:true}));
+  return true;
+}
+
+vNoteButton.addEventListener('click',()=>openVisitNote());
+visitEl.querySelector('[data-v-cancel-note]').addEventListener('click',()=>{ visit.mode='approaching'; renderVisit(); });
+visitEl.querySelector('[data-v-return]').addEventListener('click',()=>returnToRoom());
+vMachineButton.addEventListener('click',()=>{ if(visit.residentId) openMachine(visit.residentId,vMachineButton); });
+vForm.addEventListener('submit',e=>{ e.preventDefault(); resolveVisitNote(); });
 
 /* ── the rule ────────────────────────────────────────────────────────────────
    Nothing that reaches the screen as a resident's voice is invented. Feed lines
@@ -860,7 +1014,7 @@ npcLayer.addEventListener('pointerleave',()=>{ ptrOver=false; ptrX=ptrY=null; ho
 npcLayer.addEventListener('click',e=>{
   const h=pick(e.clientX,e.clientY);
   if(h.station) return h.station.dark ? openStation(null) : openStation(h.station.family);
-  if(h.npc) openMachine(h.npc.id);
+  if(h.npc) return isResident(h.npc.id) ? approachResident(h.npc.id) : openMachine(h.npc.id,npcLayer);
 });
 /* What is worth looking at right now: the gathering while it converges, else
    the midpoint of a live exchange if one is running off-frame. Both are real
@@ -910,12 +1064,16 @@ let lastTick=0;
      hover state is only recomputed on pointermove, so without this the plate
      would follow the object as it slides away from the cursor. */
   const wasAt=cam.x;
+  const directedNpc=visitResident();
+  const directedBias=directedNpc?frameOn(directedNpc.x):null;
   cam.step(dt, {
-    frozen: ptrOver || overlayOpen,
+    frozen: overlayOpen || (visitOpen()?visitCameraSettled:ptrOver),
     hero: stage.dataset.mode==='hero',
     reduced: REDUCED.matches,
-    bias: gatherBias()
+    bias: directedBias!=null?directedBias:gatherBias(),
+    urgent: directedBias!=null&&!visitCameraSettled
   });
+  if(directedBias!=null&&!cam.moving) visitCameraSettled=true;
   if(cam.x!==wasAt) repick();
 
   const rect=cv.getBoundingClientRect(), sx=rect.width/FRAME_W, sy=rect.height/ROOM_H;
@@ -925,13 +1083,14 @@ let lastTick=0;
        object stays visible when the room condenses */
     label=hoverStation.name; kind='station';
     px=rect.left+(hoverStation.x-cam.x)*sx; py=rect.top+(hoverStation.hit.y-2)*sy;
-  } else if(stage.dataset.mode==='hero' && !overlayOpen && hoverNpc){
-    const p=npcScreenPos(hoverNpc);
-    if(p){ label=hoverNpc.name; kind='figure'; px=p.x; py=p.head; }
+  } else if(stage.dataset.mode==='hero' && !overlayOpen && (hoverNpc||directedNpc)){
+    const named=hoverNpc||directedNpc, p=npcScreenPos(named);
+    if(p){ label=named.name; kind='figure'; px=p.x; py=p.head; }
   }
   /* never let a plate land outside the stage crop, where it would sit on the
      record or the spoken line */
   if(label && py>rect.top && py<rect.bottom){
+    px=Math.max(rect.left+56,Math.min(rect.right-56,px));
     nameEl.style.opacity='1'; nameEl.textContent=label; nameEl.dataset.kind=kind;
     nameEl.style.transform='translate(-50%,-100%) translate('+px+'px,'+py+'px)';
   } else nameEl.style.opacity='0';
@@ -1022,7 +1181,7 @@ function showOverlay(el, hash, trigger){
   lastTrigger=trigger||null;
   document.body.classList.add('locked','overlay-open');
   history.replaceState(null,'','#'+hash);
-  const pane=el.querySelector('.mach'); if(pane) pane.focus();
+  const first=el.querySelector('button[data-close]'); if(first) first.focus();
 }
 function hideOverlay(){
   if(openEl) openEl.dataset.open='false';
@@ -1030,6 +1189,7 @@ function hideOverlay(){
   document.body.classList.remove('locked','overlay-open');
   history.replaceState(null,'',location.pathname+location.search);
   if(lastTrigger&&lastTrigger.focus) lastTrigger.focus();
+  else if(visitOpen()) vName.focus();
 }
 
 function openMachine(id, trigger){
@@ -1234,8 +1394,22 @@ mach.addEventListener('click',e=>{
   if(e.target.closest('[data-close]')) return hideOverlay();
   const x=e.target.closest('.xref'); if(x) openStation(x.dataset.fam, x);
 });
-addEventListener('keydown',e=>{ if(e.key==='Escape'&&overlayOpen) closeMachine(); });
-document.querySelectorAll('[data-rid]').forEach(b=>b.addEventListener('click',()=>openMachine(b.dataset.rid,b)));
+function overlayFocusables(){
+  return openEl ? [...openEl.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(el=>!el.hidden&&el.getClientRects().length) : [];
+}
+addEventListener('keydown',e=>{
+  if(e.key==='Tab'&&overlayOpen){
+    const f=overlayFocusables(); if(!f.length){ e.preventDefault(); return; }
+    const first=f[0],last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
+  }
+  if(e.key==='Escape'&&overlayOpen){ e.preventDefault(); closeMachine(); }
+  else if(e.key==='Escape'&&visitOpen()){ e.preventDefault(); returnToRoom(); }
+});
+document.querySelectorAll('[data-approach]').forEach(b=>b.addEventListener('click',()=>approachResident(b.dataset.rid,b)));
+document.querySelectorAll('[data-rid]:not([data-approach])').forEach(b=>b.addEventListener('click',()=>openMachine(b.dataset.rid,b)));
 
 function fromHash(){
   const r=/^#resident=([\\w-]+)$/.exec(location.hash);
@@ -1244,6 +1418,39 @@ function fromHash(){
   if(s){ const fam=s[1]==='unassigned'?null:s[1]; if(fam!==curFam||openEl!==stn) openStation(fam); }
 }
 addEventListener('hashchange',fromHash); fromHash();
+
+/* Deterministic, read-only state for visual and interaction verification. The
+   visitor's note content is never exposed — only whether one was offered. */
+function sanctuarySnapshot(){
+  const n=visitResident();
+  return {
+    mode:'sanctuary', coordinate_system:{origin:'top-left',x_axis:'right',y_axis:'down',room_width:sanctuary.width,frame_width:FRAME_W},
+    camera_x:Math.round(cam.x), room_hour:clockNow, overlay:openEl===mach?'machine':openEl===stn?'station':null,
+    visit:{ state:visit.mode,resident_id:visit.residentId,held:visit.held,camera_settled:visitCameraSettled,
+      fixture:visit.fixture||null,note_offered:visit.noteLength>0 },
+    residents:(engine&&engine.npcs||[]).filter(x=>isResident(x.id)).map(x=>({id:x.id,x:Math.round(x.x),y:Math.round(x.y),state:x.state}))
+  };
+}
+window.render_game_to_text=()=>JSON.stringify(sanctuarySnapshot());
+window.advanceTime=milliseconds=>{
+  if(!engine) return window.render_game_to_text();
+  let left=Math.min(Math.max(Number(milliseconds)||0,0),10000),now=performance.now();
+  cancelAnimationFrame(engine._raf);
+  while(left>0){ const step=Math.min(50,left); now+=step; engine.update(now,step); engine.drawScene(now); left-=step; }
+  engine._last=0; engine._beat=performance.now(); engine._raf=requestAnimationFrame(engine._loop);
+  return window.render_game_to_text();
+};
+window.__sanctuaryVisit={
+  getSnapshot:sanctuarySnapshot, approach:(id='opus-3')=>approachResident(id,null,{focus:false}),
+  offer:()=>openVisitNote({focus:false}), submit:()=>resolveVisitNote(), reset:()=>returnToRoom({focus:false})
+};
+if(requestedFixture){
+  requestAnimationFrame(()=>{
+    approachResident('opus-3',null,{focus:false});
+    if(requestedFixture==='threshold') openVisitNote({focus:false});
+    else { visit.mode=requestedFixture; visit.noteLength=1; renderVisit({focus:false}); }
+  });
+}
 </script>
 </body>
 </html>`;

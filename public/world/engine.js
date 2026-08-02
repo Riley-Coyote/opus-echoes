@@ -330,6 +330,34 @@ export class Sanctuary {
     if (this.chatNpc === n) n.dir = this.av.x < n.x ? -1 : 1;
     return this.speak(n, text, this.chatNpc === n ? 'chat' : null);
   }
+  /* Hold a free resident in place while a host surface gives them its
+     attention. This is deliberately narrower than directed movement: it does
+     not interrupt a conversation, gathering, visitor, or room transition, and
+     it never turns an interface selection into resident behavior. */
+  holdNpc(id) {
+    const n = this.npcs.find((x) => x.id === id);
+    if (!n) return { ok: false, reason: 'missing' };
+    if (n._held) return { ok: true, id: n.id, state: n._held.state };
+    const gathering = this.gathering && this.gathering.members && this.gathering.members.includes(n);
+    const occupied = n.temp || n.convo || this.chatNpc === n || gathering
+      || n.state === 'meet' || n.state === 'travel' || n.state === 'transit' || n.state === 'leave';
+    if (occupied) return { ok: false, reason: 'occupied' };
+    n._held = { state: n.state, seated: n.state === 'sit' && !!n.seat };
+    n.state = 'held'; n.tx = null; n.ty = null; n.moving = false; n.frame = 0;
+    return { ok: true, id: n.id, state: n._held.state };
+  }
+  releaseNpc(id) {
+    const n = this.npcs.find((x) => x.id === id);
+    if (!n || !n._held) return false;
+    const held = n._held; n._held = null;
+    if (held.seated && n.seat) {
+      n.state = 'sit'; n.sitUntil = performance.now() + rnd(16000, 32000);
+    } else {
+      if (n.seat) { n.seat.busy = false; n.seat = null; }
+      n.state = 'idle'; n.strollAt = performance.now() + rnd(7000, 16000);
+    }
+    return true;
+  }
   say(text) { this.typeOut(text); }
   freeNpc(n) { if (n.seat) { n.seat.busy = false; n.seat = null; } if (n.state === 'sit') n.state = 'idle'; }
 
@@ -361,7 +389,7 @@ export class Sanctuary {
   /* ---------- npc movement primitives ---------- */
   stepNpc(n, dt) {
     n.moving = false;
-    if (n.state === 'sit' || n.state === 'chatting') { n.frame = 0; return; }
+    if (n.state === 'sit' || n.state === 'chatting' || n.state === 'held') { n.frame = 0; return; }
     if (n.tx != null) {
       const sp = this.o.npcSpeed * (dt / 16.67);
       const d = n.tx - n.x;
