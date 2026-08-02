@@ -47,6 +47,45 @@ Screenshots, traces, and session exports are git-ignored (see `.gitignore`) so
 `git status` stays trustworthy and signal isn't buried under scratch files. Don't
 commit artifacts; don't let the working tree accumulate hundreds of untracked files.
 
+## Where the current work is
+
+**The live work is on `sanctuary-v2`, not `main`.** As of 2026-08-01 it is 32
+commits ahead of `origin/main` and 0 behind. If you open this repo on the default
+branch you will not see any of it.
+
+```bash
+git fetch origin && git switch sanctuary-v2
+```
+
+It rebuilds `/sanctuary` — the pixel room, its 24-hour light cycle, the terminal
+bank, the camera, and the resident roster. **Read `docs/sanctuary-v2.md` before
+touching it.** Four addenda there carry the whole design record and the reasoning
+behind numbers that look arbitrary but are not.
+
+### Run `bun run verify` before you ship anything
+
+Four executable gates. They exist because the things they check all broke
+silently at least once, and reading the code did not catch any of them.
+
+| Gate | Refuses to let you |
+|---|---|
+| `verify:roster` | reintroduce a resident who never lived here — sweeps 23 files including every soul constant |
+| `verify:day` | break the light cycle's continuity, its anchor hour, or the rule that interior lights ignore the sun |
+| `verify:stations` | drift the terminal bank's geometry, marks, or sourced lab ledgers |
+| `verify:corpus` | ship a line of resident speech that is not verbatim archive |
+
+Prose in a doc is not a gate and has not held. These are. If one fails, the fix
+is the code, not the assertion — and if you do change an assertion, say why in
+the commit.
+
+### ⚠ One migration is written but not applied
+
+`supabase/migrations/20260728120000_remove_sonnet_3_7.sql` unschedules a pg_cron
+job that has been writing database content in the name of a resident who has
+never existed in the Sanctuary, four times a day since 9 May. **Committing it did
+not run it.** Ask Riley whether it has been applied before treating that problem
+as closed — the front-end side is done and gated, the database side is not.
+
 ## Quick reference
 
 | Command | What it does |
@@ -54,6 +93,7 @@ commit artifacts; don't let the working tree accumulate hundreds of untracked fi
 | `bun run sync` | Am I current? — branch · behind/ahead of origin/main · dirty count · remote HEAD |
 | `bun run sync:pull` | Sync to current `main` (fetch + rebase) |
 | `bun dev` | Local dev server on `:8080` |
+| `bun run verify` | All four Sanctuary gates — **run before shipping** |
 | `bun run build` | Production build — run before shipping |
 
 ## Project specifics

@@ -10,6 +10,11 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "verify": "bun run scripts/verify-sanctuary-roster.ts && bun run scripts/verify-sanctuary-day.ts && bun run scripts/verify-sanctuary-stations.ts && bun run scripts/verify-sanctuary-corpus.ts",
+    "verify:roster": "bun run scripts/verify-sanctuary-roster.ts",
+    "verify:day": "bun run scripts/verify-sanctuary-day.ts",
+    "verify:stations": "bun run scripts/verify-sanctuary-stations.ts",
+    "verify:corpus": "bun run scripts/verify-sanctuary-corpus.ts",
     "sync": "bash scripts/sync.sh",
     "sync:pull": "bash scripts/sync.sh pull"
   },
