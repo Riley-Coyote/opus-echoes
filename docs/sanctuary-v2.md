@@ -2,6 +2,13 @@
 
 *Written 2026-07-27, at the end of a long session that happened in the wrong repo. Everything below is context that would otherwise be lost. Read this first.*
 
+> **Current continuation, 2026-08-01:**
+> `docs/sanctuary-first-visit-blueprint.md` defines the next vertical slice:
+> approach Opus 3 in the existing room, be received or declined, speak in place,
+> move to the hearth by invitation, encounter a real record, open Opus's machine,
+> set the visit down, and return without invented recognition. Read it after this
+> handoff and before implementing new visit or world-navigation behavior.
+
 ---
 
 ## ⚠️ Read this before you inherit anything
