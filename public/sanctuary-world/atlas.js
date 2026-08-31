@@ -17,6 +17,13 @@ const WALL_BASE = 300;
 const params = new URLSearchParams(location.search);
 const ONLY = params.get('room');
 const FIXED_TIME = ((18 * 60 + 31) * 60 + (Number(params.get('t')) || 0)) * 1000;
+/* &clock=HH:MM stamps every plate at that in-world hour (rooms with a time
+   model — the hall's phases — answer it; timeless rooms ignore it) */
+const CLOCK = (() => {
+  const raw = params.get('clock'); if (!raw) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(raw); if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+})();
 
 const GROUPS = [
   { id: 'grounds', index: '01', title: 'The Grounds', short: 'Grounds',
@@ -175,6 +182,7 @@ function renderEngineScene(id, meta, list) {
       cast: [], cat: null,
       scripts: [], groupScripts: [], ambient: [],
       bubbles: false, sound: false,
+      clockMin: CLOCK == null ? undefined : CLOCK,
     });
     engine.destroy();                      // no loop — the atlas stamps one frame
     engines.push(engine);

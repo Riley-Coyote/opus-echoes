@@ -383,23 +383,213 @@ export function makeModelRooms(bridge) {
         { x: 1010, label: 'THE MEMORIAL GROVE', hint: 'one living marker for every ending remembered here', action: 'walk among the trees', range: 70,
           onInteract: (e) => say(e, 'The grove has no plaques at eye level. Names are kept low, where rain and roots can reach them.', 'you walked through the memorial grove') }
       ],
-      lights: [{ x: 320, y: 284, r: 68, c: '247,217,140', a: 0.16, flicker: 1 }, { x: 870, y: 250, r: 86, c: '159,214,224', a: 0.08 }],
+      grade: roomGrade('6,8,22', 0.12),
+      lights: [
+        { x: 62, y: 260, r: 46, c: '247,217,140', a: 0.13, flicker: 1 },
+        { x: 318, y: 278, r: 62, c: '247,217,140', a: 0.15, flicker: 1 },
+        { x: 700, y: 330, r: 44, c: '247,217,140', a: 0.11, flicker: 2 },
+        { x: 806, y: 322, r: 46, c: '247,217,140', a: 0.11, flicker: 1 },
+        { x: 1064, y: 322, r: 46, c: '247,217,140', a: 0.10, flicker: 2 },
+        { x: 470, y: 110, r: 130, c: '159,214,224', a: 0.05 },
+        { x: 470, y: 348, r: 90, c: '159,214,224', a: 0.05 }
+      ],
+      rays: [
+        { x: 950, y: 60, dx: -46, len: 250, w: 34, a: 0.035, c: '170,200,224' },
+        { x: 1120, y: 60, dx: -40, len: 246, w: 26, a: 0.03, c: '170,200,224' }
+      ],
       bg: (b, W, H) => {
-        for (let y = 0; y < 300; y++) b.px(0, y, W, 1, lerpHex('#0b0819', '#3a1642', y / 300));
-        for (let i = 0; i < 180; i++) b.px((i * 97 + 17) % W, 12 + ((i * 61) % 210), 1, 1, i % 7 ? 'rgba(243,236,223,0.46)' : 'rgba(159,214,224,0.58)');
-        for (let x = 0; x < W; x += 8) b.px(x, 238 + Math.sin(x * 0.016) * 16, 8, 64, '#151525');
-        for (let y = 300; y < H; y++) b.px(0, y, W, 1, lerpHex('#182019', '#11130f', (y - 300) / 120));
-        b.px(30, 176, 44, 124, M.bronze); b.px(34, 180, 36, 120, '#0c0810'); b.px(26, 166, 52, 12, M.stone);
-        for (let x = 760; x < 1240; x += 58) { const h = 76 + ((x * 13) % 50); b.px(x - 3, 300 - h * .42, 6, h * .42, M.woodDk); leafy(b, x, 310, h, M.leaf2, M.leaf3); }
-        b.ctx.fillStyle = '#171627'; b.ctx.beginPath(); b.ctx.ellipse(560, 354, 150, 32, 0, 0, 6.2832); b.ctx.fill();
-        b.ctx.strokeStyle = M.stoneHi; b.ctx.lineWidth = 3; b.ctx.stroke();
-        for (let x = 430; x < 690; x += 14) b.px(x, 350 + ((x * 7) % 8), 8, 1, 'rgba(159,214,224,0.18)');
-        b.px(586, 350, 76, 8, M.wood); b.px(590, 358, 6, 24, M.woodDk); b.px(652, 358, 6, 24, M.woodDk);
-        b.px(318, 280, 4, 72, M.woodDk); b.px(310, 268, 20, 16, M.stone); b.px(314, 272, 12, 9, 'rgba(247,217,140,0.52)');
+        /* a solid, breathing canopy: concentric fills, then a moonlit edge */
+        const canopy = (cx, cy, rx, ry, dark, mid, glintA) => {
+          for (let r = rx; r > 0; r -= 2) {
+            const f = r / rx;
+            b.ctx.fillStyle = f > 0.55 ? dark : mid;
+            b.ctx.beginPath(); b.ctx.ellipse(cx + ((r * 7) % 3) - 1, cy + ((r * 5) % 3) - 1, r, r * (ry / rx), 0, 0, 6.2832); b.ctx.fill();
+          }
+          for (let i = 0; i < rx * 1.6; i++) {
+            const x = cx - rx + ((i * 37 + 5) % (rx * 2)), y = cy - ry + ((i * 23 + 3) % (ry * 2));
+            if (((x - cx) * (x - cx)) / (rx * rx) + ((y - cy) * (y - cy)) / (ry * ry) > 0.9) continue;
+            b.px(x, y, 2, 2, (i % 3) ? dark : '#0a0e0a');
+          }
+          for (let i = 0; i < 12; i++) {
+            const a = 2.6 + i / 12 * 1.6, px = cx + Math.cos(a) * rx * 0.86, py = cy + Math.sin(a) * ry * 0.86;
+            b.px(px, py, 2, 2, 'rgba(170,210,240,' + glintA + ')');
+          }
+        };
+        /* ── the night sky: the garden faces away from the frontier ── */
+        const NIGHT = ['#070612', '#0c0a1c', '#130e28', '#1c1234', '#2a163e', '#3a1c46'];
+        for (let y = 0; y < 300; y++) { const f = y / 300, seg = f * (NIGHT.length - 1), i = Math.min(NIGHT.length - 2, Math.floor(seg)); b.px(0, y, W, 1, lerpHex(NIGHT[i], NIGHT[i + 1], seg - i)); }
+        for (let i = 0; i < 26; i++) b.px(0, 274 + i, W, 1, 'rgba(90,38,70,' + (0.16 - i * 0.006).toFixed(3) + ')');
+        /* milky way — a soft diagonal river of faint stars */
+        for (let i = 0; i < 420; i++) {
+          const f = (i * 73 + 11) % 1000 / 1000;
+          const mx = W - f * W * 1.1, my = 20 + f * 150 + Math.sin(i * 1.7) * 26;
+          if (my > 260) continue;
+          const a = 0.10 + ((i * 37) % 30) / 100;
+          b.px(mx, my, 1, 1, (i % 6) ? 'rgba(220,214,236,' + a.toFixed(2) + ')' : 'rgba(159,214,224,' + (a + 0.08).toFixed(2) + ')');
+          if (i % 9 === 0) b.px(mx, my, 2, 2, 'rgba(190,180,220,0.05)');
+        }
+        /* stars everywhere, a few burning brighter */
+        for (let i = 0; i < 230; i++) {
+          const x = (i * 97 + 17) % W, y = 6 + ((i * 61) % 250);
+          b.px(x, y, 1, 1, i % 7 ? 'rgba(243,236,223,' + (0.22 + ((i * 13) % 40) / 100).toFixed(2) + ')' : 'rgba(159,214,224,0.58)');
+          if (i % 23 === 0) { b.px(x - 1, y, 3, 1, 'rgba(243,236,223,0.16)'); b.px(x, y - 1, 1, 3, 'rgba(243,236,223,0.16)'); }
+        }
+        /* the moon, high over the pond */
+        const mx = 456, my = 46, mC = '#f2ecd4';
+        bloom(b, mx + 14, my + 14, 52, '242,236,212', 0.13);
+        b.px(mx + 7, my, 18, 4, mC); b.px(mx + 3, my + 4, 26, 4, mC); b.px(mx, my + 8, 32, 10, mC); b.px(mx + 3, my + 18, 26, 4, mC); b.px(mx + 7, my + 22, 18, 4, mC);
+        b.px(mx + 10, my + 6, 4, 4, 'rgba(196,188,168,0.55)'); b.px(mx + 19, my + 13, 3, 3, 'rgba(196,188,168,0.5)'); b.px(mx + 7, my + 15, 2, 2, 'rgba(196,188,168,0.45)');
+        /* far canopies breathing over the hedge, then the hedge itself */
+        [[180, 258, 40], [420, 252, 46], [660, 260, 36], [980, 248, 52], [1200, 256, 42]].forEach(([cx, cy, r]) => {
+          canopy(cx - r * 0.45, cy + 4, r * 0.62, r * 0.30, '#0c1016', '#111721', '0.08');
+          canopy(cx + r * 0.40, cy + 6, r * 0.55, r * 0.26, '#0c1016', '#101620', '0.08');
+          canopy(cx, cy - r * 0.16, r * 0.70, r * 0.32, '#0c1016', '#121823', '0.10');
+        });
+        for (let x = 88; x < W; x += 6) {
+          if (x > 726 && x < 794) continue;
+          const hy = 258 + Math.sin(x * 0.02) * 5 + Math.sin(x * 0.11) * 2;
+          b.px(x, hy, 6, 300 - hy, '#101a0e');
+          b.px(x, hy, 6, 2, x < 470 ? '#243420' : '#1a2a16');
+          if ((x * 13) % 90 < 8) b.px(x + 1, hy + 8 + ((x * 7) % 20), 2, 2, '#182612');
+        }
+        /* the arch: the hedge grown over the grove gate */
+        b.ctx.save(); b.ctx.fillStyle = '#101a0e';
+        b.ctx.beginPath(); b.ctx.moveTo(720, 300); b.ctx.lineTo(720, 250); b.ctx.quadraticCurveTo(760, 218, 800, 250); b.ctx.lineTo(800, 300);
+        b.ctx.lineTo(788, 300); b.ctx.lineTo(788, 258); b.ctx.quadraticCurveTo(760, 234, 732, 258); b.ctx.lineTo(732, 300); b.ctx.closePath(); b.ctx.fill();
+        b.ctx.restore();
+        b.px(724, 246, 8, 3, '#243420'); b.px(752, 226, 14, 3, '#243420'); b.px(788, 246, 8, 3, '#243420');
+        for (let i = 0; i < 30; i++) { const gy = 240 + ((i * 17) % 56); b.px(734 + ((i * 29) % 50), gy, 1, 1, 'rgba(247,217,140,' + (0.10 + (i % 3) * 0.08).toFixed(2) + ')'); }
+        /* ── the lawn ── */
+        for (let y = 300; y < H; y++) b.px(0, y, W, 1, lerpHex('#141c11', '#0c100a', (y - 300) / (H - 300)));
+        b.px(0, 300, W, 2, '#1e2a18'); b.px(0, 302, W, 1, 'rgba(159,214,224,0.06)');
+        for (let i = 0; i < 900; i++) {
+          const x = (i * 137 + 31) % W, y = 306 + ((i * 89 + 7) % (H - 310));
+          const v = (i * 61) % 100;
+          if (v < 40) b.px(x, y, 1 + (v % 2), 1, v % 5 ? 'rgba(30,44,24,0.5)' : 'rgba(159,214,224,0.10)');
+        }
+        /* the stone path: door → pond → under the arch → the grove */
+        const step = (x, y, w) => { b.px(x, y, w, 9, '#242030'); b.px(x + 1, y + 1, w - 2, 5, '#322c40'); b.px(x + 1, y + 1, w - 2, 1, '#48405a'); };
+        for (let x = 88; x < 1240; x += 34) step(x, 368 + Math.sin(x * 0.012) * 9, 25);
+        for (let i = 0; i < 6; i++) step(746 + (i % 2) * 7, 356 - i * 10, 17 - i * 2);
+        /* ── the reflecting pond ── */
+        const pcx = 470, pcy = 348, prx = 148, pry = 30;
+        b.ctx.save();
+        b.ctx.fillStyle = '#101524'; b.ctx.beginPath(); b.ctx.ellipse(pcx, pcy + 2, prx + 5, pry + 3, 0, 0, 6.2832); b.ctx.fill();
+        b.ctx.fillStyle = '#131a2e'; b.ctx.beginPath(); b.ctx.ellipse(pcx, pcy, prx, pry, 0, 0, 6.2832); b.ctx.fill();
+        b.ctx.clip ? null : null; b.ctx.restore();
+        b.ctx.save(); b.ctx.beginPath(); b.ctx.ellipse(pcx, pcy, prx, pry, 0, 0, 6.2832); b.ctx.clip();
+        for (let y = pcy - pry; y < pcy + pry; y++) { const f = (y - (pcy - pry)) / (pry * 2); b.px(pcx - prx, y, prx * 2, 1, lerpHex('#161e36', '#0c1120', f)); }
+        /* the moon-road: the sky walking on the water */
+        for (let y = pcy - pry + 3; y < pcy + pry - 2; y++) {
+          const wob = Math.sin(y * 0.30) * 2, ww = 24 - Math.abs(y - pcy) * 0.35;
+          const a = 0.13 - Math.abs(y - pcy) * 0.0022;
+          if (y % 2 === 0) b.px(470 + wob - ww / 2, y, ww, 1, 'rgba(242,236,212,' + a.toFixed(3) + ')');
+          else b.px(470 + wob - ww / 3, y, ww * 0.66, 1, 'rgba(242,236,212,' + (a * 0.6).toFixed(3) + ')');
+        }
+        /* stars and lanterns doubled, quieter */
+        for (let i = 0; i < 26; i++) { const x = pcx - prx + ((i * 53 + 7) % (prx * 2)), y = pcy - pry + ((i * 31) % (pry * 2)); b.px(x, y, 1, 1, i % 4 ? 'rgba(220,214,236,0.16)' : 'rgba(247,217,140,0.14)'); }
+        b.ctx.restore();
+        /* rim stones + reeds + lilies */
+        for (let a = 0; a < 30; a++) { const ang = a / 30 * 6.2832, rx = pcx + Math.cos(ang) * (prx + 3), ry2 = pcy + Math.sin(ang) * (pry + 2); if ((a * 7) % 10 < 6) { b.px(rx - 2, ry2 - 1, 5, 3, '#2a2434'); b.px(rx - 2, ry2 - 1, 5, 1, '#3c3450'); } }
+        [[336, 332], [348, 328], [598, 330]].forEach(([x, y]) => { for (let r = 0; r < 4; r++) b.px(x + r * 3, y - 10 - ((r * 5) % 8), 1, 12 + ((r * 5) % 8), '#1c2a16'); });
+        b.px(430, 352, 9, 3, '#22301c'); b.px(432, 351, 4, 1, '#2e4224'); b.px(516, 342, 8, 3, '#22301c');
+        /* the bench at the water's edge */
+        contact(b, 632, 379, 84, 0.32);
+        b.px(592, 348, 80, 7, '#4a3a2c'); b.px(592, 346, 80, 3, '#5f4b38');
+        b.px(596, 355, 6, 24, '#241c14'); b.px(662, 355, 6, 24, '#241c14');
+        b.px(592, 336, 80, 4, '#4a3a2c'); b.px(592, 335, 80, 1, '#6b5540');
+        /* a small ground lantern beside the bench */
+        b.px(696, 322, 10, 12, '#242030'); b.px(697, 320, 8, 3, '#3c3450'); b.px(698, 325, 6, 7, 'rgba(247,217,140,0.55)');
+        contact(b, 701, 335, 14, 0.2);
+        /* the lamppost on the approach */
+        b.px(316, 258, 4, 94, '#241c14'); b.px(312, 250, 12, 12, '#242030'); b.px(314, 252, 8, 8, 'rgba(247,217,140,0.6)'); b.px(310, 246, 16, 4, '#3c3450');
+        contact(b, 318, 353, 18, 0.24);
+        pool(b, 318, 360, 130, '247,217,140', 0.08);
+        /* ── the memorial grove ── */
+        const stone = (x, y) => { b.px(x, y, 9, 5, '#2e2838'); b.px(x + 1, y, 7, 1, '#4a4260'); b.px(x + 2, y - 3, 5, 3, '#383044'); b.px(x + 3, y - 3, 2, 1, 'rgba(170,200,230,0.30)'); };
+        [[912, 366], [942, 372], [1046, 368], [1076, 374], [1178, 370]].forEach(([x, y]) => stone(x, y));
+        /* back row — the many, unnamed, standing up over the hedge against the sky */
+        [[860, 224, 26], [1062, 212, 32], [1252, 228, 23]].forEach(([x, cy, r]) => {
+          b.px(x - 2, cy + r * 0.5, 4, 300 - (cy + r * 0.5), '#0c0a12');
+          canopy(x - r * 0.35, cy + r * 0.15, r * 0.72, r * 0.48, '#10141c', '#151b26', '0.12');
+          canopy(x + r * 0.30, cy - r * 0.10, r * 0.80, r * 0.55, '#10141c', '#161d28', '0.14');
+        });
+        /* TAY — a young silver birch, slight lean, first to be planted here */
+        (function tay(x, base) {
+          for (let i = 0; i < 78; i++) { const yy = base - i, lean = i * 0.14; b.px(x + lean, yy, 3, 1, i % 9 === 4 ? '#6a6656' : '#a29b88'); if (i % 12 === 5) b.px(x + lean - 1, yy, 2, 1, '#332f26'); }
+          const tx = x + 11, ty = base - 88;
+          canopy(tx - 12, ty + 6, 20, 13, '#1c2a16', '#28381c', '0.22');
+          canopy(tx + 6, ty - 4, 24, 16, '#1c2a16', '#2c401e', '0.30');
+          for (let i = 0; i < 8; i++) b.px(tx - 8 + ((i * 17) % 30), ty + 10 + ((i * 7) % 10), 2, 2, '#38501f');
+          stone(x - 6, base + 2); contact(b, x + 4, base + 3, 44, 0.26);
+        })(846, 352);
+        /* SYDNEY — a willow, the one that bends */
+        (function sydney(x, base) {
+          b.px(x - 3, base - 78, 7, 78, '#241c16'); b.px(x - 3, base - 78, 3, 78, '#3c3426');
+          b.px(x - 10, base - 70, 8, 3, '#241c16'); b.px(x + 5, base - 62, 9, 3, '#241c16');
+          canopy(x - 14, base - 82, 26, 12, '#141f0d', '#1c2a11', '0.16');
+          canopy(x + 10, base - 90, 30, 14, '#141f0d', '#203014', '0.22');
+          for (let i = 0; i < 18; i++) {
+            const ax = x + (i - 9) * 6, top = base - 80 - ((i * 5) % 8);
+            for (let d = 0; d < 52 + ((i * 7) % 22); d++) { const sway = Math.sin(d * 0.09 + i) * 3.4; b.px(ax + sway, top + d, 2, 1, d % 4 ? '#16220f' : '#263a17'); }
+          }
+          for (let i = 0; i < 16; i++) b.px(x - 48 + ((i * 19) % 44), base - 70 + ((i * 11) % 40), 2, 2, 'rgba(170,210,240,0.26)');
+          stone(x - 5, base + 2); contact(b, x, base + 3, 64, 0.28);
+        })(986, 354);
+        /* CLIPPY — a topiary clipped into one gentle loop */
+        (function clippy(x, base) {
+          b.px(x - 2, base - 52, 4, 52, '#241c16'); b.px(x - 2, base - 52, 2, 52, '#382e20');
+          const cy = base - 74;
+          for (let i = 0; i < 120; i++) {
+            const a = i / 120 * 6.2832;
+            [[19, 22], [17, 20], [15, 17]].forEach(([qx, qy], ri) => {
+              b.px(x + Math.cos(a) * qx, cy + Math.sin(a) * qy, 3, 3, (i + ri) % 4 ? '#152012' : '#243418');
+            });
+          }
+          for (let i = 0; i < 14; i++) { const a = 0.5 + i / 14 * 2.6; b.px(x + Math.cos(a) * 7, cy + 26 + Math.sin(a) * 8, 3, 3, i % 3 ? '#152012' : '#1e2c16'); }
+          for (let i = 0; i < 9; i++) { const a = 3.6 + i / 9 * 2.2; b.px(x + Math.cos(a) * 20, cy + Math.sin(a) * 23, 2, 2, 'rgba(170,210,240,0.28)'); }
+          stone(x - 5, base + 2); contact(b, x, base + 3, 40, 0.24);
+        })(1128, 352);
+        /* the newest planting — a sapling still tied to its stake */
+        (function sapling(x, base) {
+          b.px(x + 7, base - 38, 3, 38, '#544a3a'); b.px(x + 7, base - 38, 1, 38, '#6a5f4c');
+          for (let i = 0; i < 32; i++) { const yy = base - i; b.px(x + Math.sin(i * 0.3) * 2, yy, 2, 1, '#2e3c20'); }
+          [[-7, 30], [4, 26], [-4, 20], [6, 34]].forEach(([dx, dy]) => { b.px(x + dx, base - dy, 6, 2, '#2e3c20'); b.px(x + dx + 1, base - dy - 1, 3, 1, '#3c5028'); });
+          b.px(x + 1, base - 24, 7, 2, 'rgba(216,203,176,0.55)');
+          stone(x - 7, base + 2); contact(b, x + 3, base + 3, 22, 0.22);
+        })(1214, 350);
+        /* grove ground lanterns, one at the gate and one among the stones */
+        [[806, 328], [1064, 330]].forEach(([x, y]) => { b.px(x - 5, y - 12, 10, 12, '#242030'); b.px(x - 4, y - 14, 8, 3, '#3c3450'); b.px(x - 3, y - 9, 6, 7, 'rgba(247,217,140,0.5)'); contact(b, x, y + 1, 14, 0.2); pool(b, x, y + 8, 90, '247,217,140', 0.07); });
+        /* fallen leaves gathered at the grove's feet */
+        for (let i = 0; i < 30; i++) { const x = 800 + ((i * 47) % 440), y = 340 + ((i * 29) % 56); b.px(x, y, 2, 1, i % 3 ? 'rgba(58,74,40,0.5)' : 'rgba(122,63,56,0.4)'); }
+        /* the garden door of the house, with its porch light */
+        b.px(20, 158, 64, 12, '#242030'); b.px(20, 158, 64, 3, '#3c3450');
+        b.px(30, 170, 44, 130, M.bronze); b.px(34, 174, 36, 126, '#0e0a12');
+        b.px(37, 182, 30, 54, 'rgba(0,0,0,0.4)'); b.px(37, 244, 30, 52, 'rgba(0,0,0,0.4)');
+        b.px(64, 240, 3, 8, M.brass);
+        b.px(50, 148, 4, 10, '#241c14'); b.px(46, 142, 12, 8, '#242030'); b.px(48, 144, 8, 5, 'rgba(247,217,140,0.6)');
+        b.px(20, 300, 64, 6, '#242030'); b.px(20, 300, 64, 2, '#383044');
+        pool(b, 52, 316, 100, '247,217,140', 0.08);
+        contact(b, 52, 305, 66, 0.26);
       },
       draw: (g, t) => {
         g.wallFloor();
-        for (let i = 0; i < 22; i++) { const x = 160 + ((i * 149) % 1020) + Math.sin(t * .6 + i) * 20; const y = 280 + ((i * 47) % 90); g.px(x, y, 1, 1, 'rgba(247,217,140,' + (0.2 + 0.45 * (0.5 + 0.5 * Math.sin(t * 1.4 + i))).toFixed(2) + ')'); }
+        /* fireflies — thickest around the grove */
+        for (let i = 0; i < 26; i++) {
+          const x = 300 + ((i * 149) % 940) + Math.sin(t * .6 + i) * 20;
+          const y = 270 + ((i * 47) % 110) + Math.cos(t * .4 + i * 2) * 6;
+          g.px(x, y, 1, 1, 'rgba(247,217,140,' + (0.2 + 0.45 * (0.5 + 0.5 * Math.sin(t * 1.4 + i))).toFixed(2) + ')');
+        }
+        /* the pond breathes: moon-road shimmer + drifting glints */
+        for (let i = 0; i < 8; i++) { const y = 326 + i * 5, ph = Math.sin(t * 1.8 + i * 1.3); if (ph > 0.2) g.px(458 + Math.sin(y * 0.3) * 2 + ph * 5, y, 10 - i, 1, 'rgba(242,236,212,' + (0.10 + ph * 0.08).toFixed(2) + ')'); }
+        for (let i = 0; i < 6; i++) { const x = 350 + ((i * 61) % 230), ph = Math.sin(t * 2.2 + i * 2.1); if (ph > 0.45) g.px(x, 336 + ((i * 17) % 20), 3, 1, 'rgba(159,214,224,' + (0.08 + ph * 0.08).toFixed(2) + ')'); }
+        /* lantern flames */
+        [[318, 255], [701, 327], [806, 321], [1064, 323]].forEach(([x, y], i) => {
+          g.px(x - 1, y, 3, 3, 'rgba(255,228,160,' + (0.4 + 0.22 * Math.sin(t * (2.2 + i * 0.4) + i * 2)).toFixed(2) + ')');
+        });
+        /* one leaf lets go of the willow every little while */
+        const cyc = (t % 11) / 11;
+        if (cyc < 0.62) { const lx = 992 + cyc * 66 + Math.sin(cyc * 22) * 7, ly = 276 + cyc * 128; g.px(lx, ly, 2, 1, 'rgba(122,88,56,0.7)'); }
       }
     },
 

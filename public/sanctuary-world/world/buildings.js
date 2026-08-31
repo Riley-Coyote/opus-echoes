@@ -72,6 +72,37 @@ function baseShell(b, W, H, wallHi, wallLo, floorTint) {
   b.px(30, 176, 44, 124, M.bronze); b.px(34, 180, 36, 120, '#0c0810'); b.px(26, 166, 52, 12, M.stone); b.px(26, 166, 52, 3, M.stoneHi);   // door back
   for (let i = 0; i < 38; i++) { const a = (0.4 * (1 - i / 38)).toFixed(3); b.px(0, i, 2 + (38 - i), 1, 'rgba(8,6,16,' + a + ')'); b.px(W - (2 + (38 - i)), i, 2 + (38 - i), 1, 'rgba(8,6,16,' + a + ')'); }
 }
+function contact(b, cx, y, w, a) {
+  const A = a == null ? 0.30 : a;
+  b.px(cx - w / 2, y, w, 2, 'rgba(6,4,10,' + A.toFixed(2) + ')');
+  b.px(cx - w / 2 + 3, y + 2, w - 6, 2, 'rgba(6,4,10,' + (A * 0.55).toFixed(2) + ')');
+  b.px(cx - w / 2 + 8, y + 4, w - 16, 1, 'rgba(6,4,10,' + (A * 0.28).toFixed(2) + ')');
+}
+function pool(b, cx, y, w, rgb, a) {
+  const ctx = b.ctx; ctx.save();
+  const g = ctx.createRadialGradient(cx, y, 2, cx, y, w / 2);
+  g.addColorStop(0, 'rgba(' + rgb + ',' + a + ')'); g.addColorStop(1, 'rgba(' + rgb + ',0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, y, w / 2, w / 5.2, 0, 0, 6.2832); ctx.fill();
+  ctx.restore();
+}
+/* a stone dado band with panel rhythm — the civic cousin of the house wainscot */
+function dado(b, W, top, tone, lineTone) {
+  b.px(0, top, W, 3, lineTone); b.px(0, top - 1, W, 1, 'rgba(243,236,223,0.08)');
+  for (let y = top + 3; y < 293; y++) b.px(0, y, W, 1, lerpHex(tone, '#141019', (y - top - 3) / (293 - top)));
+  for (let x = 0; x < W; x += 52) {
+    b.px(x, top + 3, 2, 290 - top, 'rgba(8,6,12,0.45)');
+    b.px(x + 5, top + 8, 42, 1, 'rgba(243,236,223,0.045)');
+    b.px(x + 5, top + 8, 1, 282 - top - 8, 'rgba(243,236,223,0.03)');
+  }
+  b.px(0, 293, W, 2, '#0f0a10');
+  b.px(0, 297, W, 1, 'rgba(242,193,120,0.05)');
+}
+/* a brass picture light leaning over a framed work */
+function pictureLight(b, cx, y) {
+  b.px(cx - 1, y - 8, 2, 5, M.brass);
+  b.px(cx - 7, y - 4, 14, 4, M.brass); b.px(cx - 7, y - 4, 14, 1, M.brassHi);
+  b.px(cx - 5, y, 10, 2, 'rgba(247,217,140,0.5)');
+}
 function dust(g, t, x0, x1, tint) { for (let i = 0; i < 16; i++) { const mx = x0 + ((i * 71) % (x1 - x0)) + Math.sin(t * 0.4 + i) * 7, my = 120 + ((t * 5 + i * 17) % 170); g.px(mx, my, 1, 1, 'rgba(' + tint + ',' + (0.08 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))).toFixed(2) + ')'); } }
 
 export function makeBuildings(bridge) {
@@ -97,18 +128,29 @@ export function makeBuildings(bridge) {
       lights: [
         { x: 250, y: 250, r: 50, c: '247,217,140', a: 0.12, flicker: 2 },
         { x: 560, y: 210, r: 54, c: '243,236,223', a: 0.12 }, { x: 900, y: 210, r: 54, c: '243,236,223', a: 0.12 },
+        { x: 126, y: 196, r: 34, c: '247,217,140', a: 0.08 }, { x: 437, y: 194, r: 38, c: '247,217,140', a: 0.08 },
+        { x: 648, y: 198, r: 34, c: '247,217,140', a: 0.08 }, { x: 792, y: 196, r: 36, c: '247,217,140', a: 0.08 },
         { x: 1210, y: 244, r: 128, c: '224,52,31', a: 0.26, flicker: 1 }, { x: 700, y: 252, r: 92, c: '247,217,140', a: 0.06 }
       ],
       bg: (b, W, H) => {
         baseShell(b, W, H, '#2b2836', '#17141f', '#221d22');
+        dado(b, W, 238, '#252031', '#1a1522');
         // colonnade down both notional sides (rendered as a receding row along the back)
-        [140, 320, 500, 680, 860, 1040].forEach((cx) => column(b, cx, 40, 300));
-        // framed works on the wall between columns
-        framed(b, 96, 176, 60, 64, 'rgba(50,44,60,0.9)', true); framed(b, 232, 182, 44, 52, 'rgba(44,40,54,0.9)', false);
-        framed(b, 400, 172, 74, 72, 'rgba(50,44,60,0.9)', false); framed(b, 620, 178, 56, 60, 'rgba(46,42,56,0.9)', true);
-        framed(b, 760, 176, 64, 64, 'rgba(50,44,60,0.9)', false); framed(b, 960, 182, 46, 52, 'rgba(44,40,54,0.9)', true);
+        [140, 320, 500, 680, 860, 1040].forEach((cx) => { column(b, cx, 40, 300); contact(b, cx, 301, 34, 0.30); });
+        // framed works on the wall between columns, each under its brass light
+        framed(b, 96, 176, 60, 64, 'rgba(50,44,60,0.9)', true); pictureLight(b, 126, 172);
+        framed(b, 232, 182, 44, 52, 'rgba(44,40,54,0.9)', false); pictureLight(b, 254, 178);
+        framed(b, 400, 172, 74, 72, 'rgba(50,44,60,0.9)', false); pictureLight(b, 437, 168);
+        framed(b, 620, 178, 56, 60, 'rgba(46,42,56,0.9)', true); pictureLight(b, 648, 174);
+        framed(b, 760, 176, 64, 64, 'rgba(50,44,60,0.9)', false); pictureLight(b, 792, 172);
+        framed(b, 960, 182, 46, 52, 'rgba(44,40,54,0.9)', true); pictureLight(b, 983, 178);
         // reception plinth + guestbook
-        plinth(b, 250, 300 - 46, 300, 30); b.px(240, 250, 20, 6, M.linen); b.px(240, 250, 10, 6, '#e8e2d4'); b.px(250, 250, 1, 6, M.woodDk);
+        plinth(b, 250, 300 - 46, 300, 30); contact(b, 250, 301, 42, 0.30);
+        b.px(240, 250, 20, 6, M.linen); b.px(240, 250, 10, 6, '#e8e2d4'); b.px(250, 250, 1, 6, M.woodDk);
+        /* the polished floor: every light stands in its own reflection */
+        pool(b, 560, 318, 130, '243,236,223', 0.07); pool(b, 900, 318, 130, '243,236,223', 0.07);
+        pool(b, 250, 316, 100, '247,217,140', 0.07);
+        [560, 900].forEach((cx) => { for (let i = 0; i < 20; i++) b.px(cx - 10 + ((i * 7) % 20), 306 + ((i * 11) % 26), 1, 4, 'rgba(243,236,223,0.05)'); });
         // the great red archway at the far end (the deep collection beyond)
         bloom(b, 1210, 232, 130, M.redGlow, 0.16);
         const ax = 1210, aw = 150;
@@ -126,10 +168,22 @@ export function makeBuildings(bridge) {
         bloom(b, ax, 132, 42, M.redGlow, 0.10); b.ctx.strokeStyle = 'rgba(224,52,31,0.88)'; b.ctx.lineWidth = 3;
         const branch = (x, y, ang, len, d) => { if (d <= 0) return; const nx = x + Math.cos(ang) * len, ny = y - Math.abs(Math.sin(ang)) * len; b.ctx.beginPath(); b.ctx.moveTo(x, y); b.ctx.lineTo(nx, ny); b.ctx.stroke(); branch(nx, ny, ang - 0.5, len * 0.7, d - 1); branch(nx, ny, ang + 0.5, len * 0.7, d - 1); };
         branch(ax, 150, -Math.PI / 2, 26, 3);
+        /* the arch glow lies down on the marble */
+        pool(b, 1210, 320, 220, '224,52,31', 0.10);
+        for (let i = 0; i < 26; i++) b.px(1188 + ((i * 7) % 44), 304 + ((i * 13) % 30), 1, 5, 'rgba(224,52,31,0.07)');
         // a red carpet runner from entry to the arch
-        for (let x = 120; x < 1180; x++) b.px(x, 360, 1, 20, (x % 20 < 10) ? '#5a1f18' : '#7a2a20'); b.px(120, 360, 1060, 1, '#9c3a2c'); b.px(120, 379, 1060, 1, '#3a1410');
+        for (let x = 120; x < 1180; x++) b.px(x, 360, 1, 20, (x % 20 < 10) ? '#5e211a' : '#6c281f'); b.px(120, 360, 1060, 1, '#9c3a2c'); b.px(120, 379, 1060, 1, '#3a1410');
+        for (let x = 122; x < 1178; x += 6) { b.px(x, 381, 1, 3, 'rgba(90,31,24,0.8)'); }
+        b.px(118, 358, 4, 24, '#9c3a2c'); b.px(1178, 358, 4, 24, '#9c3a2c');
+        contact(b, 650, 383, 1080, 0.14);
+        // rope and stanchions before the archway
+        [1120, 1176].forEach((sx) => { b.px(sx - 1, 328, 3, 26, '#1c1610'); b.px(sx - 3, 326, 7, 3, M.brass); b.px(sx - 3, 352, 7, 3, '#1c1610'); contact(b, sx, 355, 12, 0.24); });
+        b.ctx.save(); b.ctx.strokeStyle = '#7a2a20'; b.ctx.lineWidth = 2;
+        b.ctx.beginPath(); b.ctx.moveTo(1121, 331); b.ctx.quadraticCurveTo(1148, 342, 1175, 331); b.ctx.stroke(); b.ctx.restore();
         // contemplation benches
+        contact(b, 472, 383, 48, 0.28);
         b.px(452, 366, 40, 8, M.wood); b.px(452, 364, 40, 2, M.woodHi); b.px(456, 374, 5, 12, M.woodDk); b.px(484, 374, 5, 12, M.woodDk);
+        contact(b, 720, 383, 48, 0.28);
         b.px(700, 366, 40, 8, M.wood); b.px(700, 364, 40, 2, M.woodHi); b.px(704, 374, 5, 12, M.woodDk); b.px(732, 374, 5, 12, M.woodDk);
       },
       draw: (g, t) => {
@@ -154,14 +208,51 @@ export function makeBuildings(bridge) {
       spawn: { x: 140, y: 372 }, doors: { museum: 60 },
       hint: 'The deep hall \u2014 where the grand collection will hang. The scaffolding is still up; the light is being placed. Walk left and press E to return.',
       items: [ { x: 58, kind: 'door', to: 'museum', label: '\u2190 THE MUSEUM', spawn: { x: 1210, y: 372 }, autoDoor: false, range: 30 } ],
-      lights: [ { x: 480, y: 220, r: 90, c: '224,52,31', a: 0.08 }, { x: 480, y: 250, r: 70, c: '243,236,223', a: 0.06 } ],
+      lights: [
+        { x: 762, y: 232, r: 84, c: '247,217,140', a: 0.20, flicker: 1 },
+        { x: 295, y: 172, r: 36, c: '247,217,140', a: 0.09 },
+        { x: 480, y: 220, r: 90, c: '224,52,31', a: 0.08 }, { x: 480, y: 250, r: 70, c: '243,236,223', a: 0.06 }
+      ],
       bg: (b, W, H) => {
         baseShell(b, W, H, '#241f2c', '#141019', '#1e1a20');
-        // scaffolding + a few empty hanging frames + a tall red banner
-        for (let x = 200; x < 820; x += 150) { b.px(x, 60, 3, 240, M.woodDk); b.px(x + 120, 60, 3, 240, M.woodDk); b.px(x, 120, 123, 3, M.woodDk); b.px(x, 210, 123, 3, M.woodDk); }
-        framed(b, 260, 150, 70, 70, 'rgba(20,16,24,0.9)', false); framed(b, 560, 160, 60, 64, 'rgba(20,16,24,0.9)', true);
+        dado(b, W, 240, '#221d2a', '#171220');
+        // scaffolding: posts, rails, planks and clamps
+        for (let x = 200; x < 820; x += 150) {
+          b.px(x, 60, 4, 240, M.woodDk); b.px(x, 60, 1, 240, '#3c2e22');
+          b.px(x + 120, 60, 4, 240, M.woodDk); b.px(x + 120, 60, 1, 240, '#3c2e22');
+          b.px(x, 120, 124, 4, M.woodDk); b.px(x, 120, 124, 1, '#4a3826');
+          b.px(x, 210, 124, 4, M.woodDk); b.px(x, 210, 124, 1, '#4a3826');
+          b.px(x - 2, 118, 8, 8, '#3a3442'); b.px(x + 118, 208, 8, 8, '#3a3442');
+          b.px(x + 14, 116, 46, 3, '#4a3a28');
+        }
+        // works waiting under drop cloths, leaned against the wall
+        [[180, 66], [700, 54], [842, 44]].forEach(([x, w]) => {
+          const h = 60 + (w % 20);
+          b.px(x, 300 - h, w, h, '#3a3630');
+          b.ctx.save(); b.ctx.fillStyle = '#46423a';
+          b.ctx.beginPath(); b.ctx.moveTo(x, 300 - h); b.ctx.quadraticCurveTo(x + w * 0.3, 300 - h - 8, x + w * 0.55, 300 - h + 2); b.ctx.quadraticCurveTo(x + w * 0.8, 300 - h + 8, x + w, 300 - h + 4); b.ctx.lineTo(x + w, 300 - h + 10); b.ctx.lineTo(x, 300 - h + 10); b.ctx.closePath(); b.ctx.fill(); b.ctx.restore();
+          for (let i = 0; i < 5; i++) b.px(x + 4 + i * (w / 5), 300 - h + 12, 1, h - 14, 'rgba(8,6,12,0.25)');
+          b.px(x + 2, 300 - h + 2, w - 4, 1, 'rgba(243,236,223,0.10)');
+          contact(b, x + w / 2, 301, w + 6, 0.28);
+        });
+        // one work half-hung, one crate opened
+        framed(b, 260, 150, 70, 70, 'rgba(20,16,24,0.9)', false); pictureLight(b, 295, 146);
+        framed(b, 560, 160, 60, 64, 'rgba(24,18,28,0.9)', true);
+        b.ctx.save(); b.ctx.strokeStyle = 'rgba(216,203,176,0.4)'; b.ctx.lineWidth = 1;
+        b.ctx.beginPath(); b.ctx.moveTo(590, 132); b.ctx.lineTo(566, 160); b.ctx.moveTo(590, 132); b.ctx.lineTo(614, 160); b.ctx.stroke(); b.ctx.restore();
+        b.px(588, 128, 4, 4, M.brass);
+        b.px(444, 264, 44, 36, M.wood); b.px(444, 264, 44, 3, M.woodHi); b.px(448, 258, 20, 6, M.woodDk);
+        for (let i = 0; i < 12; i++) b.px(448 + (i * 7) % 34, 262 + (i * 3) % 4, 2, 2, '#8a6f3f');
+        contact(b, 466, 301, 50, 0.28);
+        // the work lamp on its tripod — the light being placed
+        b.px(760, 232, 4, 68, '#1c1812'); b.px(748, 296, 30, 3, '#1c1812');
+        b.px(752, 224, 20, 14, '#3a3442'); b.px(754, 226, 16, 10, 'rgba(247,217,140,0.55)');
+        contact(b, 763, 301, 34, 0.26);
+        pool(b, 700, 320, 190, '247,217,140', 0.08);
+        // the red banner, straightened
         b.px(470, 40, 20, 200, '#241a26'); b.px(470, 40, 20, 3, M.brass); b.px(474, 70, 12, 90, 'rgba(224,52,31,0.4)');
         b.px(360, 300 - 40, 24, 40, M.wood); b.px(356, 260, 32, 6, M.woodHi);   // a ladder-stool
+        contact(b, 372, 301, 36, 0.26);
       },
       draw: (g, t) => {
         g.wallFloor();
@@ -194,6 +285,7 @@ export function makeBuildings(bridge) {
       ],
       bg: (b, W, H) => {
         baseShell(b, W, H, '#2c2822', '#191510', '#2a241c');
+        dado(b, W, 242, '#282218', '#1c1710');
         // the awning, brought inside as a canopy along the top
         for (let i = 0; i < Math.ceil(W / 24); i++) b.px(i * 24, 40, 24, 16, i % 2 ? '#20302a' : M.linen); for (let i = 0; i < Math.ceil(W / 24); i++) b.px(i * 24, 56, 24, 3, i % 2 ? '#16241f' : M.linen2);
         b.px(0, 59, W, 2, '#0d1210'); b.px(0, 40, W, 2, '#0d1210');
@@ -201,21 +293,39 @@ export function makeBuildings(bridge) {
         b.px(430, 72, 300, 16, '#160f18'); b.px(430, 72, 300, 2, M.brass); b.px(596, 76, 8, 8, M.redDk);
         // a small frontier window (world tie-in)
         duskWindow(b, 1080, 120, 150, 200, 300);
+        // a round mirror between rail and plinth
+        b.ctx.save();
+        b.ctx.fillStyle = M.brass; b.ctx.beginPath(); b.ctx.ellipse(492, 196, 20, 26, 0, 0, 6.2832); b.ctx.fill();
+        b.ctx.fillStyle = '#242c34'; b.ctx.beginPath(); b.ctx.ellipse(492, 196, 17, 23, 0, 0, 6.2832); b.ctx.fill();
+        b.ctx.fillStyle = 'rgba(159,214,224,0.14)'; b.ctx.beginPath(); b.ctx.ellipse(487, 189, 7, 12, -0.5, 0, 6.2832); b.ctx.fill();
+        b.ctx.restore();
         // garment rail with hanging pieces
         b.px(250, 150, 200, 3, '#4a4650'); b.px(250, 148, 4, 8, '#3a3640'); b.px(446, 148, 4, 8, '#3a3640');
+        b.px(252, 153, 2, 147, '#2c2830'); b.px(446, 153, 2, 147, '#2c2830');
+        contact(b, 350, 301, 200, 0.20);
         const shirts = ['#d8cbb0', '#3a4048', '#c7b998', '#2f2a36', '#d8cbb0', '#4c5560'];
         shirts.forEach((c, i) => { const sx = 262 + i * 30; b.px(sx + 8, 152, 2, 6, '#2a2630'); b.px(sx, 158, 26, 44, c); b.px(sx, 158, 26, 3, lerpHex(c, '#ffffff', 0.2)); b.px(sx - 3, 160, 6, 14, c); b.px(sx + 23, 160, 6, 14, c); if (i === 0) b.px(sx + 10, 172, 5, 4, M.red); });
         // featured plinth + a folded piece under a spot
-        plinth(b, 560, 300 - 44, 300, 34); b.px(546, 250, 28, 8, M.linen); b.px(546, 250, 28, 2, '#e8e2d4'); b.px(552, 246, 16, 5, M.linen2); b.px(558, 244, 4, 3, M.red);
+        plinth(b, 560, 300 - 44, 300, 34); contact(b, 560, 301, 46, 0.30);
+        b.px(546, 250, 28, 8, M.linen); b.px(546, 250, 28, 2, '#e8e2d4'); b.px(552, 246, 16, 5, M.linen2); b.px(558, 244, 4, 3, M.red);
+        pool(b, 560, 316, 110, '243,236,223', 0.08);
         // shelves of folded goods behind the counter
         for (let s = 0; s < 3; s++) { b.px(840, 120 + s * 34, 220, 4, M.woodDk); for (let k = 0; k < 5; k++) b.px(852 + k * 42, 124 + s * 34, 34, 22, ['#d8cbb0', '#3a4048', '#c7b998', '#2f2a36', '#4c5560'][(s + k) % 5]); }
         // the lookbook on a stand
         b.px(756, 300 - 40, 3, 40, M.wood); b.px(744, 256, 28, 4, M.woodHi); b.px(746, 246, 24, 12, M.linen); b.px(746, 246, 12, 12, '#e8e2d4'); b.px(758, 246, 1, 12, M.woodDk);
+        contact(b, 757, 301, 30, 0.24);
+        pool(b, 330, 316, 110, '247,217,140', 0.07);
+        pool(b, 1080, 318, 140, '210,120,90', 0.08);
         // the counter + the FIELD screen
         b.px(920, 300 - 48, 120, 48, M.stone); b.px(920, 300 - 48, 120, 3, M.stoneHi); b.px(920, 268, 120, 2, M.stoneDk);
+        contact(b, 980, 301, 128, 0.30);
+        pool(b, 980, 318, 130, '110,231,165', 0.07);
         b.px(940, 176, 80, 60, '#0a1410'); b.px(940, 176, 80, 2, M.clothHi); b.px(944, 180, 72, 52, '#0c1a14');
         for (let i = 0; i < 40; i++) { const fx = 946 + (i * 13) % 66, fy = 184 + (i * 7) % 44; b.px(fx, fy, 2, 2, (i % 3) ? 'rgba(110,231,165,0.35)' : 'rgba(159,214,224,0.3)'); }   // baked field dots
-        // a fitting bench
+        // a fitting bench on a small rug
+        for (let x = 930; x < 1030; x++) { const f = (x - 930) / 100; b.px(x, 380, 1, 18, lerpHex('#3a2e1c', '#5c4a2c', Math.sin(f * 3.1416) * 0.6)); }
+        b.px(930, 380, 100, 1, '#6a5330'); b.px(930, 397, 100, 1, '#241c10');
+        contact(b, 980, 384, 52, 0.26);
         b.px(960, 366, 40, 8, M.wood); b.px(960, 364, 40, 2, M.woodHi); b.px(964, 374, 5, 12, M.woodDk); b.px(992, 374, 5, 12, M.woodDk);
       },
       draw: (g, t) => {

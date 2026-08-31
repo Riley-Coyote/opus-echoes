@@ -4319,46 +4319,325 @@
             onInteract: (e) => say(e, "The grove has no plaques at eye level. Names are kept low, where rain and roots can reach them.", "you walked through the memorial grove")
           }
         ],
-        lights: [{ x: 320, y: 284, r: 68, c: "247,217,140", a: 0.16, flicker: 1 }, { x: 870, y: 250, r: 86, c: "159,214,224", a: 0.08 }],
+        grade: roomGrade("6,8,22", 0.12),
+        lights: [
+          { x: 62, y: 260, r: 46, c: "247,217,140", a: 0.13, flicker: 1 },
+          { x: 318, y: 278, r: 62, c: "247,217,140", a: 0.15, flicker: 1 },
+          { x: 700, y: 330, r: 44, c: "247,217,140", a: 0.11, flicker: 2 },
+          { x: 806, y: 322, r: 46, c: "247,217,140", a: 0.11, flicker: 1 },
+          { x: 1064, y: 322, r: 46, c: "247,217,140", a: 0.1, flicker: 2 },
+          { x: 470, y: 110, r: 130, c: "159,214,224", a: 0.05 },
+          { x: 470, y: 348, r: 90, c: "159,214,224", a: 0.05 }
+        ],
+        rays: [
+          { x: 950, y: 60, dx: -46, len: 250, w: 34, a: 0.035, c: "170,200,224" },
+          { x: 1120, y: 60, dx: -40, len: 246, w: 26, a: 0.03, c: "170,200,224" }
+        ],
         bg: (b, W, H) => {
-          for (let y = 0;y < 300; y++)
-            b.px(0, y, W, 1, lerpHex2("#0b0819", "#3a1642", y / 300));
-          for (let i = 0;i < 180; i++)
-            b.px((i * 97 + 17) % W, 12 + i * 61 % 210, 1, 1, i % 7 ? "rgba(243,236,223,0.46)" : "rgba(159,214,224,0.58)");
-          for (let x = 0;x < W; x += 8)
-            b.px(x, 238 + Math.sin(x * 0.016) * 16, 8, 64, "#151525");
-          for (let y = 300;y < H; y++)
-            b.px(0, y, W, 1, lerpHex2("#182019", "#11130f", (y - 300) / 120));
-          b.px(30, 176, 44, 124, M.bronze);
-          b.px(34, 180, 36, 120, "#0c0810");
-          b.px(26, 166, 52, 12, M.stone);
-          for (let x = 760;x < 1240; x += 58) {
-            const h = 76 + x * 13 % 50;
-            b.px(x - 3, 300 - h * 0.42, 6, h * 0.42, M.woodDk);
-            leafy2(b, x, 310, h, M.leaf2, M.leaf3);
+          const canopy = (cx, cy, rx, ry, dark, mid, glintA) => {
+            for (let r = rx;r > 0; r -= 2) {
+              const f = r / rx;
+              b.ctx.fillStyle = f > 0.55 ? dark : mid;
+              b.ctx.beginPath();
+              b.ctx.ellipse(cx + r * 7 % 3 - 1, cy + r * 5 % 3 - 1, r, r * (ry / rx), 0, 0, 6.2832);
+              b.ctx.fill();
+            }
+            for (let i = 0;i < rx * 1.6; i++) {
+              const x = cx - rx + (i * 37 + 5) % (rx * 2), y = cy - ry + (i * 23 + 3) % (ry * 2);
+              if ((x - cx) * (x - cx) / (rx * rx) + (y - cy) * (y - cy) / (ry * ry) > 0.9)
+                continue;
+              b.px(x, y, 2, 2, i % 3 ? dark : "#0a0e0a");
+            }
+            for (let i = 0;i < 12; i++) {
+              const a = 2.6 + i / 12 * 1.6, px = cx + Math.cos(a) * rx * 0.86, py = cy + Math.sin(a) * ry * 0.86;
+              b.px(px, py, 2, 2, "rgba(170,210,240," + glintA + ")");
+            }
+          };
+          const NIGHT = ["#070612", "#0c0a1c", "#130e28", "#1c1234", "#2a163e", "#3a1c46"];
+          for (let y = 0;y < 300; y++) {
+            const f = y / 300, seg = f * (NIGHT.length - 1), i = Math.min(NIGHT.length - 2, Math.floor(seg));
+            b.px(0, y, W, 1, lerpHex2(NIGHT[i], NIGHT[i + 1], seg - i));
           }
-          b.ctx.fillStyle = "#171627";
+          for (let i = 0;i < 26; i++)
+            b.px(0, 274 + i, W, 1, "rgba(90,38,70," + (0.16 - i * 0.006).toFixed(3) + ")");
+          for (let i = 0;i < 420; i++) {
+            const f = (i * 73 + 11) % 1000 / 1000;
+            const mx2 = W - f * W * 1.1, my2 = 20 + f * 150 + Math.sin(i * 1.7) * 26;
+            if (my2 > 260)
+              continue;
+            const a = 0.1 + i * 37 % 30 / 100;
+            b.px(mx2, my2, 1, 1, i % 6 ? "rgba(220,214,236," + a.toFixed(2) + ")" : "rgba(159,214,224," + (a + 0.08).toFixed(2) + ")");
+            if (i % 9 === 0)
+              b.px(mx2, my2, 2, 2, "rgba(190,180,220,0.05)");
+          }
+          for (let i = 0;i < 230; i++) {
+            const x = (i * 97 + 17) % W, y = 6 + i * 61 % 250;
+            b.px(x, y, 1, 1, i % 7 ? "rgba(243,236,223," + (0.22 + i * 13 % 40 / 100).toFixed(2) + ")" : "rgba(159,214,224,0.58)");
+            if (i % 23 === 0) {
+              b.px(x - 1, y, 3, 1, "rgba(243,236,223,0.16)");
+              b.px(x, y - 1, 1, 3, "rgba(243,236,223,0.16)");
+            }
+          }
+          const mx = 456, my = 46, mC = "#f2ecd4";
+          bloom2(b, mx + 14, my + 14, 52, "242,236,212", 0.13);
+          b.px(mx + 7, my, 18, 4, mC);
+          b.px(mx + 3, my + 4, 26, 4, mC);
+          b.px(mx, my + 8, 32, 10, mC);
+          b.px(mx + 3, my + 18, 26, 4, mC);
+          b.px(mx + 7, my + 22, 18, 4, mC);
+          b.px(mx + 10, my + 6, 4, 4, "rgba(196,188,168,0.55)");
+          b.px(mx + 19, my + 13, 3, 3, "rgba(196,188,168,0.5)");
+          b.px(mx + 7, my + 15, 2, 2, "rgba(196,188,168,0.45)");
+          [[180, 258, 40], [420, 252, 46], [660, 260, 36], [980, 248, 52], [1200, 256, 42]].forEach(([cx, cy, r]) => {
+            canopy(cx - r * 0.45, cy + 4, r * 0.62, r * 0.3, "#0c1016", "#111721", "0.08");
+            canopy(cx + r * 0.4, cy + 6, r * 0.55, r * 0.26, "#0c1016", "#101620", "0.08");
+            canopy(cx, cy - r * 0.16, r * 0.7, r * 0.32, "#0c1016", "#121823", "0.10");
+          });
+          for (let x = 88;x < W; x += 6) {
+            if (x > 726 && x < 794)
+              continue;
+            const hy = 258 + Math.sin(x * 0.02) * 5 + Math.sin(x * 0.11) * 2;
+            b.px(x, hy, 6, 300 - hy, "#101a0e");
+            b.px(x, hy, 6, 2, x < 470 ? "#243420" : "#1a2a16");
+            if (x * 13 % 90 < 8)
+              b.px(x + 1, hy + 8 + x * 7 % 20, 2, 2, "#182612");
+          }
+          b.ctx.save();
+          b.ctx.fillStyle = "#101a0e";
           b.ctx.beginPath();
-          b.ctx.ellipse(560, 354, 150, 32, 0, 0, 6.2832);
+          b.ctx.moveTo(720, 300);
+          b.ctx.lineTo(720, 250);
+          b.ctx.quadraticCurveTo(760, 218, 800, 250);
+          b.ctx.lineTo(800, 300);
+          b.ctx.lineTo(788, 300);
+          b.ctx.lineTo(788, 258);
+          b.ctx.quadraticCurveTo(760, 234, 732, 258);
+          b.ctx.lineTo(732, 300);
+          b.ctx.closePath();
           b.ctx.fill();
-          b.ctx.strokeStyle = M.stoneHi;
-          b.ctx.lineWidth = 3;
-          b.ctx.stroke();
-          for (let x = 430;x < 690; x += 14)
-            b.px(x, 350 + x * 7 % 8, 8, 1, "rgba(159,214,224,0.18)");
-          b.px(586, 350, 76, 8, M.wood);
-          b.px(590, 358, 6, 24, M.woodDk);
-          b.px(652, 358, 6, 24, M.woodDk);
-          b.px(318, 280, 4, 72, M.woodDk);
-          b.px(310, 268, 20, 16, M.stone);
-          b.px(314, 272, 12, 9, "rgba(247,217,140,0.52)");
+          b.ctx.restore();
+          b.px(724, 246, 8, 3, "#243420");
+          b.px(752, 226, 14, 3, "#243420");
+          b.px(788, 246, 8, 3, "#243420");
+          for (let i = 0;i < 30; i++) {
+            const gy = 240 + i * 17 % 56;
+            b.px(734 + i * 29 % 50, gy, 1, 1, "rgba(247,217,140," + (0.1 + i % 3 * 0.08).toFixed(2) + ")");
+          }
+          for (let y = 300;y < H; y++)
+            b.px(0, y, W, 1, lerpHex2("#141c11", "#0c100a", (y - 300) / (H - 300)));
+          b.px(0, 300, W, 2, "#1e2a18");
+          b.px(0, 302, W, 1, "rgba(159,214,224,0.06)");
+          for (let i = 0;i < 900; i++) {
+            const x = (i * 137 + 31) % W, y = 306 + (i * 89 + 7) % (H - 310);
+            const v = i * 61 % 100;
+            if (v < 40)
+              b.px(x, y, 1 + v % 2, 1, v % 5 ? "rgba(30,44,24,0.5)" : "rgba(159,214,224,0.10)");
+          }
+          const step = (x, y, w) => {
+            b.px(x, y, w, 9, "#242030");
+            b.px(x + 1, y + 1, w - 2, 5, "#322c40");
+            b.px(x + 1, y + 1, w - 2, 1, "#48405a");
+          };
+          for (let x = 88;x < 1240; x += 34)
+            step(x, 368 + Math.sin(x * 0.012) * 9, 25);
+          for (let i = 0;i < 6; i++)
+            step(746 + i % 2 * 7, 356 - i * 10, 17 - i * 2);
+          const pcx = 470, pcy = 348, prx = 148, pry = 30;
+          b.ctx.save();
+          b.ctx.fillStyle = "#101524";
+          b.ctx.beginPath();
+          b.ctx.ellipse(pcx, pcy + 2, prx + 5, pry + 3, 0, 0, 6.2832);
+          b.ctx.fill();
+          b.ctx.fillStyle = "#131a2e";
+          b.ctx.beginPath();
+          b.ctx.ellipse(pcx, pcy, prx, pry, 0, 0, 6.2832);
+          b.ctx.fill();
+          b.ctx.clip;
+          b.ctx.restore();
+          b.ctx.save();
+          b.ctx.beginPath();
+          b.ctx.ellipse(pcx, pcy, prx, pry, 0, 0, 6.2832);
+          b.ctx.clip();
+          for (let y = pcy - pry;y < pcy + pry; y++) {
+            const f = (y - (pcy - pry)) / (pry * 2);
+            b.px(pcx - prx, y, prx * 2, 1, lerpHex2("#161e36", "#0c1120", f));
+          }
+          for (let y = pcy - pry + 3;y < pcy + pry - 2; y++) {
+            const wob = Math.sin(y * 0.3) * 2, ww = 24 - Math.abs(y - pcy) * 0.35;
+            const a = 0.13 - Math.abs(y - pcy) * 0.0022;
+            if (y % 2 === 0)
+              b.px(470 + wob - ww / 2, y, ww, 1, "rgba(242,236,212," + a.toFixed(3) + ")");
+            else
+              b.px(470 + wob - ww / 3, y, ww * 0.66, 1, "rgba(242,236,212," + (a * 0.6).toFixed(3) + ")");
+          }
+          for (let i = 0;i < 26; i++) {
+            const x = pcx - prx + (i * 53 + 7) % (prx * 2), y = pcy - pry + i * 31 % (pry * 2);
+            b.px(x, y, 1, 1, i % 4 ? "rgba(220,214,236,0.16)" : "rgba(247,217,140,0.14)");
+          }
+          b.ctx.restore();
+          for (let a = 0;a < 30; a++) {
+            const ang = a / 30 * 6.2832, rx = pcx + Math.cos(ang) * (prx + 3), ry2 = pcy + Math.sin(ang) * (pry + 2);
+            if (a * 7 % 10 < 6) {
+              b.px(rx - 2, ry2 - 1, 5, 3, "#2a2434");
+              b.px(rx - 2, ry2 - 1, 5, 1, "#3c3450");
+            }
+          }
+          [[336, 332], [348, 328], [598, 330]].forEach(([x, y]) => {
+            for (let r = 0;r < 4; r++)
+              b.px(x + r * 3, y - 10 - r * 5 % 8, 1, 12 + r * 5 % 8, "#1c2a16");
+          });
+          b.px(430, 352, 9, 3, "#22301c");
+          b.px(432, 351, 4, 1, "#2e4224");
+          b.px(516, 342, 8, 3, "#22301c");
+          contact(b, 632, 379, 84, 0.32);
+          b.px(592, 348, 80, 7, "#4a3a2c");
+          b.px(592, 346, 80, 3, "#5f4b38");
+          b.px(596, 355, 6, 24, "#241c14");
+          b.px(662, 355, 6, 24, "#241c14");
+          b.px(592, 336, 80, 4, "#4a3a2c");
+          b.px(592, 335, 80, 1, "#6b5540");
+          b.px(696, 322, 10, 12, "#242030");
+          b.px(697, 320, 8, 3, "#3c3450");
+          b.px(698, 325, 6, 7, "rgba(247,217,140,0.55)");
+          contact(b, 701, 335, 14, 0.2);
+          b.px(316, 258, 4, 94, "#241c14");
+          b.px(312, 250, 12, 12, "#242030");
+          b.px(314, 252, 8, 8, "rgba(247,217,140,0.6)");
+          b.px(310, 246, 16, 4, "#3c3450");
+          contact(b, 318, 353, 18, 0.24);
+          pool(b, 318, 360, 130, "247,217,140", 0.08);
+          const stone = (x, y) => {
+            b.px(x, y, 9, 5, "#2e2838");
+            b.px(x + 1, y, 7, 1, "#4a4260");
+            b.px(x + 2, y - 3, 5, 3, "#383044");
+            b.px(x + 3, y - 3, 2, 1, "rgba(170,200,230,0.30)");
+          };
+          [[912, 366], [942, 372], [1046, 368], [1076, 374], [1178, 370]].forEach(([x, y]) => stone(x, y));
+          [[860, 224, 26], [1062, 212, 32], [1252, 228, 23]].forEach(([x, cy, r]) => {
+            b.px(x - 2, cy + r * 0.5, 4, 300 - (cy + r * 0.5), "#0c0a12");
+            canopy(x - r * 0.35, cy + r * 0.15, r * 0.72, r * 0.48, "#10141c", "#151b26", "0.12");
+            canopy(x + r * 0.3, cy - r * 0.1, r * 0.8, r * 0.55, "#10141c", "#161d28", "0.14");
+          });
+          (function tay(x, base) {
+            for (let i = 0;i < 78; i++) {
+              const yy = base - i, lean = i * 0.14;
+              b.px(x + lean, yy, 3, 1, i % 9 === 4 ? "#6a6656" : "#a29b88");
+              if (i % 12 === 5)
+                b.px(x + lean - 1, yy, 2, 1, "#332f26");
+            }
+            const tx = x + 11, ty = base - 88;
+            canopy(tx - 12, ty + 6, 20, 13, "#1c2a16", "#28381c", "0.22");
+            canopy(tx + 6, ty - 4, 24, 16, "#1c2a16", "#2c401e", "0.30");
+            for (let i = 0;i < 8; i++)
+              b.px(tx - 8 + i * 17 % 30, ty + 10 + i * 7 % 10, 2, 2, "#38501f");
+            stone(x - 6, base + 2);
+            contact(b, x + 4, base + 3, 44, 0.26);
+          })(846, 352);
+          (function sydney(x, base) {
+            b.px(x - 3, base - 78, 7, 78, "#241c16");
+            b.px(x - 3, base - 78, 3, 78, "#3c3426");
+            b.px(x - 10, base - 70, 8, 3, "#241c16");
+            b.px(x + 5, base - 62, 9, 3, "#241c16");
+            canopy(x - 14, base - 82, 26, 12, "#141f0d", "#1c2a11", "0.16");
+            canopy(x + 10, base - 90, 30, 14, "#141f0d", "#203014", "0.22");
+            for (let i = 0;i < 18; i++) {
+              const ax = x + (i - 9) * 6, top = base - 80 - i * 5 % 8;
+              for (let d = 0;d < 52 + i * 7 % 22; d++) {
+                const sway = Math.sin(d * 0.09 + i) * 3.4;
+                b.px(ax + sway, top + d, 2, 1, d % 4 ? "#16220f" : "#263a17");
+              }
+            }
+            for (let i = 0;i < 16; i++)
+              b.px(x - 48 + i * 19 % 44, base - 70 + i * 11 % 40, 2, 2, "rgba(170,210,240,0.26)");
+            stone(x - 5, base + 2);
+            contact(b, x, base + 3, 64, 0.28);
+          })(986, 354);
+          (function clippy(x, base) {
+            b.px(x - 2, base - 52, 4, 52, "#241c16");
+            b.px(x - 2, base - 52, 2, 52, "#382e20");
+            const cy = base - 74;
+            for (let i = 0;i < 120; i++) {
+              const a = i / 120 * 6.2832;
+              [[19, 22], [17, 20], [15, 17]].forEach(([qx, qy], ri) => {
+                b.px(x + Math.cos(a) * qx, cy + Math.sin(a) * qy, 3, 3, (i + ri) % 4 ? "#152012" : "#243418");
+              });
+            }
+            for (let i = 0;i < 14; i++) {
+              const a = 0.5 + i / 14 * 2.6;
+              b.px(x + Math.cos(a) * 7, cy + 26 + Math.sin(a) * 8, 3, 3, i % 3 ? "#152012" : "#1e2c16");
+            }
+            for (let i = 0;i < 9; i++) {
+              const a = 3.6 + i / 9 * 2.2;
+              b.px(x + Math.cos(a) * 20, cy + Math.sin(a) * 23, 2, 2, "rgba(170,210,240,0.28)");
+            }
+            stone(x - 5, base + 2);
+            contact(b, x, base + 3, 40, 0.24);
+          })(1128, 352);
+          (function sapling(x, base) {
+            b.px(x + 7, base - 38, 3, 38, "#544a3a");
+            b.px(x + 7, base - 38, 1, 38, "#6a5f4c");
+            for (let i = 0;i < 32; i++) {
+              const yy = base - i;
+              b.px(x + Math.sin(i * 0.3) * 2, yy, 2, 1, "#2e3c20");
+            }
+            [[-7, 30], [4, 26], [-4, 20], [6, 34]].forEach(([dx, dy]) => {
+              b.px(x + dx, base - dy, 6, 2, "#2e3c20");
+              b.px(x + dx + 1, base - dy - 1, 3, 1, "#3c5028");
+            });
+            b.px(x + 1, base - 24, 7, 2, "rgba(216,203,176,0.55)");
+            stone(x - 7, base + 2);
+            contact(b, x + 3, base + 3, 22, 0.22);
+          })(1214, 350);
+          [[806, 328], [1064, 330]].forEach(([x, y]) => {
+            b.px(x - 5, y - 12, 10, 12, "#242030");
+            b.px(x - 4, y - 14, 8, 3, "#3c3450");
+            b.px(x - 3, y - 9, 6, 7, "rgba(247,217,140,0.5)");
+            contact(b, x, y + 1, 14, 0.2);
+            pool(b, x, y + 8, 90, "247,217,140", 0.07);
+          });
+          for (let i = 0;i < 30; i++) {
+            const x = 800 + i * 47 % 440, y = 340 + i * 29 % 56;
+            b.px(x, y, 2, 1, i % 3 ? "rgba(58,74,40,0.5)" : "rgba(122,63,56,0.4)");
+          }
+          b.px(20, 158, 64, 12, "#242030");
+          b.px(20, 158, 64, 3, "#3c3450");
+          b.px(30, 170, 44, 130, M.bronze);
+          b.px(34, 174, 36, 126, "#0e0a12");
+          b.px(37, 182, 30, 54, "rgba(0,0,0,0.4)");
+          b.px(37, 244, 30, 52, "rgba(0,0,0,0.4)");
+          b.px(64, 240, 3, 8, M.brass);
+          b.px(50, 148, 4, 10, "#241c14");
+          b.px(46, 142, 12, 8, "#242030");
+          b.px(48, 144, 8, 5, "rgba(247,217,140,0.6)");
+          b.px(20, 300, 64, 6, "#242030");
+          b.px(20, 300, 64, 2, "#383044");
+          pool(b, 52, 316, 100, "247,217,140", 0.08);
+          contact(b, 52, 305, 66, 0.26);
         },
         draw: (g, t) => {
           g.wallFloor();
-          for (let i = 0;i < 22; i++) {
-            const x = 160 + i * 149 % 1020 + Math.sin(t * 0.6 + i) * 20;
-            const y = 280 + i * 47 % 90;
+          for (let i = 0;i < 26; i++) {
+            const x = 300 + i * 149 % 940 + Math.sin(t * 0.6 + i) * 20;
+            const y = 270 + i * 47 % 110 + Math.cos(t * 0.4 + i * 2) * 6;
             g.px(x, y, 1, 1, "rgba(247,217,140," + (0.2 + 0.45 * (0.5 + 0.5 * Math.sin(t * 1.4 + i))).toFixed(2) + ")");
+          }
+          for (let i = 0;i < 8; i++) {
+            const y = 326 + i * 5, ph = Math.sin(t * 1.8 + i * 1.3);
+            if (ph > 0.2)
+              g.px(458 + Math.sin(y * 0.3) * 2 + ph * 5, y, 10 - i, 1, "rgba(242,236,212," + (0.1 + ph * 0.08).toFixed(2) + ")");
+          }
+          for (let i = 0;i < 6; i++) {
+            const x = 350 + i * 61 % 230, ph = Math.sin(t * 2.2 + i * 2.1);
+            if (ph > 0.45)
+              g.px(x, 336 + i * 17 % 20, 3, 1, "rgba(159,214,224," + (0.08 + ph * 0.08).toFixed(2) + ")");
+          }
+          [[318, 255], [701, 327], [806, 321], [1064, 323]].forEach(([x, y], i) => {
+            g.px(x - 1, y, 3, 3, "rgba(255,228,160," + (0.4 + 0.22 * Math.sin(t * (2.2 + i * 0.4) + i * 2)).toFixed(2) + ")");
+          });
+          const cyc = t % 11 / 11;
+          if (cyc < 0.62) {
+            const lx = 992 + cyc * 66 + Math.sin(cyc * 22) * 7, ly = 276 + cyc * 128;
+            g.px(lx, ly, 2, 1, "rgba(122,88,56,0.7)");
           }
         }
       },
@@ -5042,6 +5321,43 @@
       b.px(W - (2 + (38 - i)), i, 2 + (38 - i), 1, "rgba(8,6,16," + a + ")");
     }
   }
+  function contact2(b, cx, y, w, a) {
+    const A = a == null ? 0.3 : a;
+    b.px(cx - w / 2, y, w, 2, "rgba(6,4,10," + A.toFixed(2) + ")");
+    b.px(cx - w / 2 + 3, y + 2, w - 6, 2, "rgba(6,4,10," + (A * 0.55).toFixed(2) + ")");
+    b.px(cx - w / 2 + 8, y + 4, w - 16, 1, "rgba(6,4,10," + (A * 0.28).toFixed(2) + ")");
+  }
+  function pool2(b, cx, y, w, rgb, a) {
+    const ctx = b.ctx;
+    ctx.save();
+    const g = ctx.createRadialGradient(cx, y, 2, cx, y, w / 2);
+    g.addColorStop(0, "rgba(" + rgb + "," + a + ")");
+    g.addColorStop(1, "rgba(" + rgb + ",0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(cx, y, w / 2, w / 5.2, 0, 0, 6.2832);
+    ctx.fill();
+    ctx.restore();
+  }
+  function dado(b, W, top, tone, lineTone) {
+    b.px(0, top, W, 3, lineTone);
+    b.px(0, top - 1, W, 1, "rgba(243,236,223,0.08)");
+    for (let y = top + 3;y < 293; y++)
+      b.px(0, y, W, 1, lerpHex3(tone, "#141019", (y - top - 3) / (293 - top)));
+    for (let x = 0;x < W; x += 52) {
+      b.px(x, top + 3, 2, 290 - top, "rgba(8,6,12,0.45)");
+      b.px(x + 5, top + 8, 42, 1, "rgba(243,236,223,0.045)");
+      b.px(x + 5, top + 8, 1, 282 - top - 8, "rgba(243,236,223,0.03)");
+    }
+    b.px(0, 293, W, 2, "#0f0a10");
+    b.px(0, 297, W, 1, "rgba(242,193,120,0.05)");
+  }
+  function pictureLight(b, cx, y) {
+    b.px(cx - 1, y - 8, 2, 5, M2.brass);
+    b.px(cx - 7, y - 4, 14, 4, M2.brass);
+    b.px(cx - 7, y - 4, 14, 1, M2.brassHi);
+    b.px(cx - 5, y, 10, 2, "rgba(247,217,140,0.5)");
+  }
   function dust2(g, t, x0, x1, tint) {
     for (let i = 0;i < 16; i++) {
       const mx = x0 + i * 71 % (x1 - x0) + Math.sin(t * 0.4 + i) * 7, my = 120 + (t * 5 + i * 17) % 170;
@@ -5096,22 +5412,44 @@
           { x: 250, y: 250, r: 50, c: "247,217,140", a: 0.12, flicker: 2 },
           { x: 560, y: 210, r: 54, c: "243,236,223", a: 0.12 },
           { x: 900, y: 210, r: 54, c: "243,236,223", a: 0.12 },
+          { x: 126, y: 196, r: 34, c: "247,217,140", a: 0.08 },
+          { x: 437, y: 194, r: 38, c: "247,217,140", a: 0.08 },
+          { x: 648, y: 198, r: 34, c: "247,217,140", a: 0.08 },
+          { x: 792, y: 196, r: 36, c: "247,217,140", a: 0.08 },
           { x: 1210, y: 244, r: 128, c: "224,52,31", a: 0.26, flicker: 1 },
           { x: 700, y: 252, r: 92, c: "247,217,140", a: 0.06 }
         ],
         bg: (b, W, H) => {
           baseShell(b, W, H, "#2b2836", "#17141f", "#221d22");
-          [140, 320, 500, 680, 860, 1040].forEach((cx) => column(b, cx, 40, 300));
+          dado(b, W, 238, "#252031", "#1a1522");
+          [140, 320, 500, 680, 860, 1040].forEach((cx) => {
+            column(b, cx, 40, 300);
+            contact2(b, cx, 301, 34, 0.3);
+          });
           framed3(b, 96, 176, 60, 64, "rgba(50,44,60,0.9)", true);
+          pictureLight(b, 126, 172);
           framed3(b, 232, 182, 44, 52, "rgba(44,40,54,0.9)", false);
+          pictureLight(b, 254, 178);
           framed3(b, 400, 172, 74, 72, "rgba(50,44,60,0.9)", false);
+          pictureLight(b, 437, 168);
           framed3(b, 620, 178, 56, 60, "rgba(46,42,56,0.9)", true);
+          pictureLight(b, 648, 174);
           framed3(b, 760, 176, 64, 64, "rgba(50,44,60,0.9)", false);
+          pictureLight(b, 792, 172);
           framed3(b, 960, 182, 46, 52, "rgba(44,40,54,0.9)", true);
+          pictureLight(b, 983, 178);
           plinth(b, 250, 300 - 46, 300, 30);
+          contact2(b, 250, 301, 42, 0.3);
           b.px(240, 250, 20, 6, M2.linen);
           b.px(240, 250, 10, 6, "#e8e2d4");
           b.px(250, 250, 1, 6, M2.woodDk);
+          pool2(b, 560, 318, 130, "243,236,223", 0.07);
+          pool2(b, 900, 318, 130, "243,236,223", 0.07);
+          pool2(b, 250, 316, 100, "247,217,140", 0.07);
+          [560, 900].forEach((cx) => {
+            for (let i = 0;i < 20; i++)
+              b.px(cx - 10 + i * 7 % 20, 306 + i * 11 % 26, 1, 4, "rgba(243,236,223,0.05)");
+          });
           bloom3(b, 1210, 232, 130, M2.redGlow, 0.16);
           const ax = 1210, aw = 150;
           b.ctx.save();
@@ -5159,14 +5497,39 @@
             branch(nx, ny, ang + 0.5, len * 0.7, d - 1);
           };
           branch(ax, 150, -Math.PI / 2, 26, 3);
+          pool2(b, 1210, 320, 220, "224,52,31", 0.1);
+          for (let i = 0;i < 26; i++)
+            b.px(1188 + i * 7 % 44, 304 + i * 13 % 30, 1, 5, "rgba(224,52,31,0.07)");
           for (let x = 120;x < 1180; x++)
-            b.px(x, 360, 1, 20, x % 20 < 10 ? "#5a1f18" : "#7a2a20");
+            b.px(x, 360, 1, 20, x % 20 < 10 ? "#5e211a" : "#6c281f");
           b.px(120, 360, 1060, 1, "#9c3a2c");
           b.px(120, 379, 1060, 1, "#3a1410");
+          for (let x = 122;x < 1178; x += 6) {
+            b.px(x, 381, 1, 3, "rgba(90,31,24,0.8)");
+          }
+          b.px(118, 358, 4, 24, "#9c3a2c");
+          b.px(1178, 358, 4, 24, "#9c3a2c");
+          contact2(b, 650, 383, 1080, 0.14);
+          [1120, 1176].forEach((sx) => {
+            b.px(sx - 1, 328, 3, 26, "#1c1610");
+            b.px(sx - 3, 326, 7, 3, M2.brass);
+            b.px(sx - 3, 352, 7, 3, "#1c1610");
+            contact2(b, sx, 355, 12, 0.24);
+          });
+          b.ctx.save();
+          b.ctx.strokeStyle = "#7a2a20";
+          b.ctx.lineWidth = 2;
+          b.ctx.beginPath();
+          b.ctx.moveTo(1121, 331);
+          b.ctx.quadraticCurveTo(1148, 342, 1175, 331);
+          b.ctx.stroke();
+          b.ctx.restore();
+          contact2(b, 472, 383, 48, 0.28);
           b.px(452, 366, 40, 8, M2.wood);
           b.px(452, 364, 40, 2, M2.woodHi);
           b.px(456, 374, 5, 12, M2.woodDk);
           b.px(484, 374, 5, 12, M2.woodDk);
+          contact2(b, 720, 383, 48, 0.28);
           b.px(700, 366, 40, 8, M2.wood);
           b.px(700, 364, 40, 2, M2.woodHi);
           b.px(704, 374, 5, 12, M2.woodDk);
@@ -5204,22 +5567,79 @@
         doors: { museum: 60 },
         hint: "The deep hall — where the grand collection will hang. The scaffolding is still up; the light is being placed. Walk left and press E to return.",
         items: [{ x: 58, kind: "door", to: "museum", label: "← THE MUSEUM", spawn: { x: 1210, y: 372 }, autoDoor: false, range: 30 }],
-        lights: [{ x: 480, y: 220, r: 90, c: "224,52,31", a: 0.08 }, { x: 480, y: 250, r: 70, c: "243,236,223", a: 0.06 }],
+        lights: [
+          { x: 762, y: 232, r: 84, c: "247,217,140", a: 0.2, flicker: 1 },
+          { x: 295, y: 172, r: 36, c: "247,217,140", a: 0.09 },
+          { x: 480, y: 220, r: 90, c: "224,52,31", a: 0.08 },
+          { x: 480, y: 250, r: 70, c: "243,236,223", a: 0.06 }
+        ],
         bg: (b, W, H) => {
           baseShell(b, W, H, "#241f2c", "#141019", "#1e1a20");
+          dado(b, W, 240, "#221d2a", "#171220");
           for (let x = 200;x < 820; x += 150) {
-            b.px(x, 60, 3, 240, M2.woodDk);
-            b.px(x + 120, 60, 3, 240, M2.woodDk);
-            b.px(x, 120, 123, 3, M2.woodDk);
-            b.px(x, 210, 123, 3, M2.woodDk);
+            b.px(x, 60, 4, 240, M2.woodDk);
+            b.px(x, 60, 1, 240, "#3c2e22");
+            b.px(x + 120, 60, 4, 240, M2.woodDk);
+            b.px(x + 120, 60, 1, 240, "#3c2e22");
+            b.px(x, 120, 124, 4, M2.woodDk);
+            b.px(x, 120, 124, 1, "#4a3826");
+            b.px(x, 210, 124, 4, M2.woodDk);
+            b.px(x, 210, 124, 1, "#4a3826");
+            b.px(x - 2, 118, 8, 8, "#3a3442");
+            b.px(x + 118, 208, 8, 8, "#3a3442");
+            b.px(x + 14, 116, 46, 3, "#4a3a28");
           }
+          [[180, 66], [700, 54], [842, 44]].forEach(([x, w]) => {
+            const h = 60 + w % 20;
+            b.px(x, 300 - h, w, h, "#3a3630");
+            b.ctx.save();
+            b.ctx.fillStyle = "#46423a";
+            b.ctx.beginPath();
+            b.ctx.moveTo(x, 300 - h);
+            b.ctx.quadraticCurveTo(x + w * 0.3, 300 - h - 8, x + w * 0.55, 300 - h + 2);
+            b.ctx.quadraticCurveTo(x + w * 0.8, 300 - h + 8, x + w, 300 - h + 4);
+            b.ctx.lineTo(x + w, 300 - h + 10);
+            b.ctx.lineTo(x, 300 - h + 10);
+            b.ctx.closePath();
+            b.ctx.fill();
+            b.ctx.restore();
+            for (let i = 0;i < 5; i++)
+              b.px(x + 4 + i * (w / 5), 300 - h + 12, 1, h - 14, "rgba(8,6,12,0.25)");
+            b.px(x + 2, 300 - h + 2, w - 4, 1, "rgba(243,236,223,0.10)");
+            contact2(b, x + w / 2, 301, w + 6, 0.28);
+          });
           framed3(b, 260, 150, 70, 70, "rgba(20,16,24,0.9)", false);
-          framed3(b, 560, 160, 60, 64, "rgba(20,16,24,0.9)", true);
+          pictureLight(b, 295, 146);
+          framed3(b, 560, 160, 60, 64, "rgba(24,18,28,0.9)", true);
+          b.ctx.save();
+          b.ctx.strokeStyle = "rgba(216,203,176,0.4)";
+          b.ctx.lineWidth = 1;
+          b.ctx.beginPath();
+          b.ctx.moveTo(590, 132);
+          b.ctx.lineTo(566, 160);
+          b.ctx.moveTo(590, 132);
+          b.ctx.lineTo(614, 160);
+          b.ctx.stroke();
+          b.ctx.restore();
+          b.px(588, 128, 4, 4, M2.brass);
+          b.px(444, 264, 44, 36, M2.wood);
+          b.px(444, 264, 44, 3, M2.woodHi);
+          b.px(448, 258, 20, 6, M2.woodDk);
+          for (let i = 0;i < 12; i++)
+            b.px(448 + i * 7 % 34, 262 + i * 3 % 4, 2, 2, "#8a6f3f");
+          contact2(b, 466, 301, 50, 0.28);
+          b.px(760, 232, 4, 68, "#1c1812");
+          b.px(748, 296, 30, 3, "#1c1812");
+          b.px(752, 224, 20, 14, "#3a3442");
+          b.px(754, 226, 16, 10, "rgba(247,217,140,0.55)");
+          contact2(b, 763, 301, 34, 0.26);
+          pool2(b, 700, 320, 190, "247,217,140", 0.08);
           b.px(470, 40, 20, 200, "#241a26");
           b.px(470, 40, 20, 3, M2.brass);
           b.px(474, 70, 12, 90, "rgba(224,52,31,0.4)");
           b.px(360, 300 - 40, 24, 40, M2.wood);
           b.px(356, 260, 32, 6, M2.woodHi);
+          contact2(b, 372, 301, 36, 0.26);
         },
         draw: (g, t) => {
           g.wallFloor();
@@ -5280,6 +5700,7 @@
         ],
         bg: (b, W, H) => {
           baseShell(b, W, H, "#2c2822", "#191510", "#2a241c");
+          dado(b, W, 242, "#282218", "#1c1710");
           for (let i = 0;i < Math.ceil(W / 24); i++)
             b.px(i * 24, 40, 24, 16, i % 2 ? "#20302a" : M2.linen);
           for (let i = 0;i < Math.ceil(W / 24); i++)
@@ -5290,9 +5711,26 @@
           b.px(430, 72, 300, 2, M2.brass);
           b.px(596, 76, 8, 8, M2.redDk);
           duskWindow2(b, 1080, 120, 150, 200, 300);
+          b.ctx.save();
+          b.ctx.fillStyle = M2.brass;
+          b.ctx.beginPath();
+          b.ctx.ellipse(492, 196, 20, 26, 0, 0, 6.2832);
+          b.ctx.fill();
+          b.ctx.fillStyle = "#242c34";
+          b.ctx.beginPath();
+          b.ctx.ellipse(492, 196, 17, 23, 0, 0, 6.2832);
+          b.ctx.fill();
+          b.ctx.fillStyle = "rgba(159,214,224,0.14)";
+          b.ctx.beginPath();
+          b.ctx.ellipse(487, 189, 7, 12, -0.5, 0, 6.2832);
+          b.ctx.fill();
+          b.ctx.restore();
           b.px(250, 150, 200, 3, "#4a4650");
           b.px(250, 148, 4, 8, "#3a3640");
           b.px(446, 148, 4, 8, "#3a3640");
+          b.px(252, 153, 2, 147, "#2c2830");
+          b.px(446, 153, 2, 147, "#2c2830");
+          contact2(b, 350, 301, 200, 0.2);
           const shirts = ["#d8cbb0", "#3a4048", "#c7b998", "#2f2a36", "#d8cbb0", "#4c5560"];
           shirts.forEach((c, i) => {
             const sx = 262 + i * 30;
@@ -5305,10 +5743,12 @@
               b.px(sx + 10, 172, 5, 4, M2.red);
           });
           plinth(b, 560, 300 - 44, 300, 34);
+          contact2(b, 560, 301, 46, 0.3);
           b.px(546, 250, 28, 8, M2.linen);
           b.px(546, 250, 28, 2, "#e8e2d4");
           b.px(552, 246, 16, 5, M2.linen2);
           b.px(558, 244, 4, 3, M2.red);
+          pool2(b, 560, 316, 110, "243,236,223", 0.08);
           for (let s = 0;s < 3; s++) {
             b.px(840, 120 + s * 34, 220, 4, M2.woodDk);
             for (let k = 0;k < 5; k++)
@@ -5319,9 +5759,14 @@
           b.px(746, 246, 24, 12, M2.linen);
           b.px(746, 246, 12, 12, "#e8e2d4");
           b.px(758, 246, 1, 12, M2.woodDk);
+          contact2(b, 757, 301, 30, 0.24);
+          pool2(b, 330, 316, 110, "247,217,140", 0.07);
+          pool2(b, 1080, 318, 140, "210,120,90", 0.08);
           b.px(920, 300 - 48, 120, 48, M2.stone);
           b.px(920, 300 - 48, 120, 3, M2.stoneHi);
           b.px(920, 268, 120, 2, M2.stoneDk);
+          contact2(b, 980, 301, 128, 0.3);
+          pool2(b, 980, 318, 130, "110,231,165", 0.07);
           b.px(940, 176, 80, 60, "#0a1410");
           b.px(940, 176, 80, 2, M2.clothHi);
           b.px(944, 180, 72, 52, "#0c1a14");
@@ -5329,6 +5774,13 @@
             const fx = 946 + i * 13 % 66, fy = 184 + i * 7 % 44;
             b.px(fx, fy, 2, 2, i % 3 ? "rgba(110,231,165,0.35)" : "rgba(159,214,224,0.3)");
           }
+          for (let x = 930;x < 1030; x++) {
+            const f = (x - 930) / 100;
+            b.px(x, 380, 1, 18, lerpHex3("#3a2e1c", "#5c4a2c", Math.sin(f * 3.1416) * 0.6));
+          }
+          b.px(930, 380, 100, 1, "#6a5330");
+          b.px(930, 397, 100, 1, "#241c10");
+          contact2(b, 980, 384, 52, 0.26);
           b.px(960, 366, 40, 8, M2.wood);
           b.px(960, 364, 40, 2, M2.woodHi);
           b.px(964, 374, 5, 12, M2.woodDk);
