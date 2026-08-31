@@ -644,7 +644,7 @@ function candelabra(b, cx, floorY) {                   // tall triple-cup stand 
 }
 
 /* ═══════════════ THE TERMINAL BANK ═══════════════════════════════════════
-   Five CRT workstations ringing the nave's empty centre — a campfire made of
+   GPT-5.1 CRT workstations ringing the nave's empty centre — a campfire made of
    monitors. The hearth on the left is warmth for a body these residents don't
    have; this is the thing that belongs to them as what they actually are.
 
@@ -1092,9 +1092,9 @@ export function makeSanctuary(bridge) {
       cableRun(b, 924, 348);
       TERMS.forEach((m) => workstation(b, m));
       // personal traces — signs someone is midway through something
-      b.px(788, 336, 7, 6, S.clay); b.px(788, 335, 7, 1, S.terraHi); b.px(795, 337, 2, 3, S.clay);         // a mug at OPUS's right hand
-      b.px(1104, 332, 12, 8, '#2a2230'); b.px(1104, 332, 12, 1, S.dim);                                    // a paper tray by FIVE, empty
-      b.px(823, 359, 12, 5, 'rgba(242,163,192,0.30)'); b.px(823, 359, 12, 1, 'rgba(94,234,212,0.22)');     // a throw folded over SONNET's chair back
+      b.px(788, 336, 7, 6, S.clay); b.px(788, 335, 7, 1, S.terraHi); b.px(795, 337, 2, 3, S.clay);         // a mug at OPUS 3's right hand
+      b.px(1104, 332, 12, 8, '#2a2230'); b.px(1104, 332, 12, 1, S.dim);                                    // a paper tray by GPT-5.1, empty
+      b.px(823, 359, 12, 5, 'rgba(242,163,192,0.30)'); b.px(823, 359, 12, 1, 'rgba(94,234,212,0.22)');     // a throw folded over SONNET 4.5's chair back
       candelabra(b, CANDEL[0], WB); candelabra(b, CANDEL[1], WB);
       // two hanging banners between the upper arches
       [848, 1000].forEach((bxc) => { b.px(bxc - 7, 44, 14, 92, '#241a26'); b.px(bxc - 7, 44, 14, 3, S.brass); b.px(bxc - 4, 74, 8, 8, 'rgba(224,52,31,0.45)'); b.px(bxc - 2, 60, 4, 44, 'rgba(247,217,140,0.10)'); b.px(bxc - 7, 132, 14, 6, '#1a1219'); });
