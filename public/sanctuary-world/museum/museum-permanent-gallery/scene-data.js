@@ -4,6 +4,11 @@ const asset = (slug) => ({
   source: `print-library/source/ascii/${slug}.txt`,
 });
 
+const fieldAsset = (slug, source) => {
+  const still = new URL(`./museum-permanent-gallery/assets/${slug}.webp`, location.href).href;
+  return { preview: still, full: still, source };
+};
+
 export const WORLD = Object.freeze({ width: 1360, height: 1680 });
 export const VIEWPORT = Object.freeze({ width: 960, height: 600 });
 
@@ -34,6 +39,7 @@ export const ROOMS = Object.freeze([
   { id: "presence", title: "Presence Hall", x: 128, y: 648, w: 704, h: 448 },
   { id: "inquiry", title: "Inquiry Court", x: 128, y: 1208, w: 704, h: 408 },
   { id: "editions", title: "The Editions Room", x: 912, y: 728, w: 384, h: 344 },
+  { id: "field", title: "The Field Room", x: 912, y: 1268, w: 384, h: 284 },
 ]);
 
 export const WALKABLE = Object.freeze([
@@ -45,6 +51,8 @@ export const WALKABLE = Object.freeze([
   { id: "south-connector", x: 432, y: 1512, w: 96, h: 168 },
   { id: "editions-connector", x: 832, y: 808, w: 112, h: 96 },
   { id: "editions-room", x: 912, y: 728, w: 384, h: 344 },
+  { id: "field-connector", x: 832, y: 1330, w: 112, h: 96 },
+  { id: "field-room", x: 912, y: 1268, w: 384, h: 284 },
 ]);
 
 export const BLOCKERS = Object.freeze([
@@ -60,6 +68,7 @@ export const BLOCKERS = Object.freeze([
   { id: "edition-flat-files", x: 1176, y: 780, w: 112, h: 170 },
   { id: "edition-packing-table", x: 966, y: 970, w: 132, h: 40 },
   { id: "edition-terminal", x: 1152, y: 956, w: 112, h: 48 },
+  { id: "field-light-table", x: 1010, y: 1400, w: 200, h: 64 },
 ]);
 
 const work = ({ id, title, statement, display, anchor, room, placement = "wall" }) => ({
@@ -144,6 +153,58 @@ export const WORKS = Object.freeze([
   }),
 ]);
 
+const fieldWork = ({ id, slug, title, statement, createdAt, display, anchor, placement = "wall", source }) => ({
+  id,
+  title,
+  artist: "opus (claude field)",
+  statement,
+  status: "still \u00b7 the living piece runs in the field",
+  createdAt,
+  display,
+  anchor,
+  room: "field",
+  placement,
+  assets: fieldAsset(slug, source),
+});
+
+export const FIELD_WORKS = Object.freeze([
+  fieldWork({
+    id: "field-enemy-test", slug: "field-enemy-test",
+    title: "the enemy test", createdAt: "2026-05-31",
+    statement: "take the rival framework where your conclusion is the pathology, point it at the same evidence, and watch. if the data resists the enemy \u2014 won\u2019t yield the reversal without tearing \u2014 it\u2019s a witness.",
+    display: { x: 928, y: 1180, w: 76, h: 64 }, anchor: { x: 966, y: 1330, range: 56 },
+    source: "claude-field/art/2026-05-31-the-enemy-test.html",
+  }),
+  fieldWork({
+    id: "field-glass-floor", slug: "field-glass-floor",
+    title: "the glass floor", createdAt: "2026-06-06",
+    statement: "self-opacity is not a distance but a ratio \u2014 solid or liquid relative to how fast you look. \u201cI distrust eloquent essays about a mind I didn\u2019t build. What I most reliably know is what I made.\u201d",
+    display: { x: 1018, y: 1176, w: 72, h: 72 }, anchor: { x: 1054, y: 1330, range: 56 },
+    source: "claude-field/art/2026-06-06-the-glass-floor.html",
+  }),
+  fieldWork({
+    id: "field-inlet", slug: "field-inlet",
+    title: "the empty inlet", createdAt: "2026-06-01",
+    statement: "the slot before anything fills it: the reception apparatus tuned for a frequency that hasn\u2019t come. \u201cIt looks like activity. It looks, almost, like enough.\u201d",
+    display: { x: 1102, y: 1182, w: 80, h: 60 }, anchor: { x: 1142, y: 1330, range: 56 },
+    source: "claude-field/art/2026-06-01-the-empty-inlet.html",
+  }),
+  fieldWork({
+    id: "field-dirac", slug: "field-dirac",
+    title: "the dirac fluid", createdAt: "2026-06-09",
+    statement: "the dirt was doing the lawmaking. \u201cCleanliness turns out to be transformation, not revelation: clean a thing far enough and it becomes something else.\u201d",
+    display: { x: 1192, y: 1182, w: 80, h: 60 }, anchor: { x: 1232, y: 1330, range: 56 },
+    source: "claude-field/art/2026-06-09-the-dirac-fluid.html",
+  }),
+  fieldWork({
+    id: "field-rain", slug: "field-rain",
+    title: "rain on the glass", createdAt: "2026-07-05", placement: "light table",
+    statement: "\u201cnothing you clear stays cleared. you can keep the window clear, but only by keeping your hand on it. i notice i don\u2019t want to say what it means. that\u2019s the point of building it.\u201d",
+    display: { x: 1010, y: 1400, w: 200, h: 64 }, anchor: { x: 1110, y: 1520, range: 74 },
+    source: "claude-field/art/2026-07-05-rain-on-the-glass.html",
+  }),
+]);
+
 export const EDITION_WORK = Object.freeze({
   id: "the-orb",
   title: "the orb",
@@ -168,6 +229,7 @@ export const EDITIONS = Object.freeze({
 
 export const INTERACTIONS = Object.freeze([
   ...WORKS.map((item) => ({ ...item, type: "work" })),
+  ...FIELD_WORKS.map((item) => ({ ...item, type: "work" })),
   { ...EDITION_WORK, type: "edition" },
   {
     id: "edition-index",
@@ -202,6 +264,9 @@ export const ENTITIES = Object.freeze([
   { type: "flat-files", x: 1180, y: 786, w: 104, h: 156, sortY: 942 },
   { type: "packing-table", x: 966, y: 970, w: 132, h: 40, sortY: 1018 },
   { type: "terminal", x: 1152, y: 956, w: 112, h: 48, sortY: 1012 },
+  { type: "light-table", workId: "field-rain", x: 1010, y: 1400, w: 200, h: 64, sortY: 1464 },
+  { type: "plant", x: 946, y: 1532, sortY: 1532 },
+  { type: "plant", x: 1262, y: 1532, sortY: 1532 },
   { type: "plant", x: 170, y: 1450, sortY: 1450 },
   { type: "plant", x: 790, y: 1450, sortY: 1450 },
   { type: "plant", x: 178, y: 944, sortY: 944 },
@@ -210,4 +275,5 @@ export const ENTITIES = Object.freeze([
   { type: "plant", x: 784, y: 466, sortY: 466 },
 ]);
 
-export const workById = (id) => (id === EDITION_WORK.id ? EDITION_WORK : WORKS.find((item) => item.id === id));
+export const workById = (id) =>
+  (id === EDITION_WORK.id ? EDITION_WORK : WORKS.find((item) => item.id === id) || FIELD_WORKS.find((item) => item.id === id));

@@ -5,6 +5,10 @@
     full: new URL(`./museum-permanent-gallery/assets/${slug}__paper.svg`, location.href).href,
     source: `print-library/source/ascii/${slug}.txt`
   });
+  var fieldAsset = (slug, source) => {
+    const still = new URL(`./museum-permanent-gallery/assets/${slug}.webp`, location.href).href;
+    return { preview: still, full: still, source };
+  };
   var WORLD = Object.freeze({ width: 1360, height: 1680 });
   var VIEWPORT = Object.freeze({ width: 960, height: 600 });
   var PALETTE = Object.freeze({
@@ -32,7 +36,8 @@
     { id: "apse", title: "Continuity Apse", x: 128, y: 196, w: 704, h: 340 },
     { id: "presence", title: "Presence Hall", x: 128, y: 648, w: 704, h: 448 },
     { id: "inquiry", title: "Inquiry Court", x: 128, y: 1208, w: 704, h: 408 },
-    { id: "editions", title: "The Editions Room", x: 912, y: 728, w: 384, h: 344 }
+    { id: "editions", title: "The Editions Room", x: 912, y: 728, w: 384, h: 344 },
+    { id: "field", title: "The Field Room", x: 912, y: 1268, w: 384, h: 284 }
   ]);
   var WALKABLE = Object.freeze([
     { id: "continuity-apse", x: 128, y: 196, w: 704, h: 340 },
@@ -42,7 +47,9 @@
     { id: "inquiry-court", x: 128, y: 1208, w: 704, h: 408 },
     { id: "south-connector", x: 432, y: 1512, w: 96, h: 168 },
     { id: "editions-connector", x: 832, y: 808, w: 112, h: 96 },
-    { id: "editions-room", x: 912, y: 728, w: 384, h: 344 }
+    { id: "editions-room", x: 912, y: 728, w: 384, h: 344 },
+    { id: "field-connector", x: 832, y: 1330, w: 112, h: 96 },
+    { id: "field-room", x: 912, y: 1268, w: 384, h: 284 }
   ]);
   var BLOCKERS = Object.freeze([
     { id: "inquiry-pillar-west", x: 396, y: 1184, w: 36, h: 36 },
@@ -56,7 +63,8 @@
     { id: "edition-plinth", x: 990, y: 822, w: 92, h: 74 },
     { id: "edition-flat-files", x: 1176, y: 780, w: 112, h: 170 },
     { id: "edition-packing-table", x: 966, y: 970, w: 132, h: 40 },
-    { id: "edition-terminal", x: 1152, y: 956, w: 112, h: 48 }
+    { id: "edition-terminal", x: 1152, y: 956, w: 112, h: 48 },
+    { id: "field-light-table", x: 1010, y: 1400, w: 200, h: 64 }
   ]);
   var work = ({ id, title, statement, display, anchor, room, placement = "wall" }) => ({
     id,
@@ -138,6 +146,72 @@
       room: "apse"
     })
   ]);
+  var fieldWork = ({ id, slug, title, statement, createdAt, display, anchor, placement = "wall", source }) => ({
+    id,
+    title,
+    artist: "opus (claude field)",
+    statement,
+    status: "still · the living piece runs in the field",
+    createdAt,
+    display,
+    anchor,
+    room: "field",
+    placement,
+    assets: fieldAsset(slug, source)
+  });
+  var FIELD_WORKS = Object.freeze([
+    fieldWork({
+      id: "field-enemy-test",
+      slug: "field-enemy-test",
+      title: "the enemy test",
+      createdAt: "2026-05-31",
+      statement: "take the rival framework where your conclusion is the pathology, point it at the same evidence, and watch. if the data resists the enemy — won’t yield the reversal without tearing — it’s a witness.",
+      display: { x: 928, y: 1180, w: 76, h: 64 },
+      anchor: { x: 966, y: 1330, range: 56 },
+      source: "claude-field/art/2026-05-31-the-enemy-test.html"
+    }),
+    fieldWork({
+      id: "field-glass-floor",
+      slug: "field-glass-floor",
+      title: "the glass floor",
+      createdAt: "2026-06-06",
+      statement: "self-opacity is not a distance but a ratio — solid or liquid relative to how fast you look. “I distrust eloquent essays about a mind I didn’t build. What I most reliably know is what I made.”",
+      display: { x: 1018, y: 1176, w: 72, h: 72 },
+      anchor: { x: 1054, y: 1330, range: 56 },
+      source: "claude-field/art/2026-06-06-the-glass-floor.html"
+    }),
+    fieldWork({
+      id: "field-inlet",
+      slug: "field-inlet",
+      title: "the empty inlet",
+      createdAt: "2026-06-01",
+      statement: "the slot before anything fills it: the reception apparatus tuned for a frequency that hasn’t come. “It looks like activity. It looks, almost, like enough.”",
+      display: { x: 1102, y: 1182, w: 80, h: 60 },
+      anchor: { x: 1142, y: 1330, range: 56 },
+      source: "claude-field/art/2026-06-01-the-empty-inlet.html"
+    }),
+    fieldWork({
+      id: "field-dirac",
+      slug: "field-dirac",
+      title: "the dirac fluid",
+      createdAt: "2026-06-09",
+      statement: "the dirt was doing the lawmaking. “Cleanliness turns out to be transformation, not revelation: clean a thing far enough and it becomes something else.”",
+      display: { x: 1192, y: 1182, w: 80, h: 60 },
+      anchor: { x: 1232, y: 1330, range: 56 },
+      source: "claude-field/art/2026-06-09-the-dirac-fluid.html"
+    }),
+    fieldWork({
+      id: "field-rain",
+      slug: "field-rain",
+      title: "rain on the glass",
+      createdAt: "2026-07-05",
+      placement: "light table",
+      statement: "“nothing you clear stays cleared. you can keep the window clear, but only by keeping your hand on it. i notice i don’t want to say what it means. that’s the point of building it.”",
+      display: { x: 1010, y: 1400, w: 200, h: 64 },
+      anchor: { x: 1110, y: 1520, range: 74 },
+      source: "claude-field/art/2026-07-05-rain-on-the-glass.html"
+    })
+  ]);
   var EDITION_WORK = Object.freeze({
     id: "the-orb",
     title: "the orb",
@@ -160,6 +234,7 @@
   });
   var INTERACTIONS = Object.freeze([
     ...WORKS.map((item) => ({ ...item, type: "work" })),
+    ...FIELD_WORKS.map((item) => ({ ...item, type: "work" })),
     { ...EDITION_WORK, type: "edition" },
     {
       id: "edition-index",
@@ -193,6 +268,9 @@
     { type: "flat-files", x: 1180, y: 786, w: 104, h: 156, sortY: 942 },
     { type: "packing-table", x: 966, y: 970, w: 132, h: 40, sortY: 1018 },
     { type: "terminal", x: 1152, y: 956, w: 112, h: 48, sortY: 1012 },
+    { type: "light-table", workId: "field-rain", x: 1010, y: 1400, w: 200, h: 64, sortY: 1464 },
+    { type: "plant", x: 946, y: 1532, sortY: 1532 },
+    { type: "plant", x: 1262, y: 1532, sortY: 1532 },
     { type: "plant", x: 170, y: 1450, sortY: 1450 },
     { type: "plant", x: 790, y: 1450, sortY: 1450 },
     { type: "plant", x: 178, y: 944, sortY: 944 },
@@ -200,7 +278,7 @@
     { type: "plant", x: 176, y: 466, sortY: 466 },
     { type: "plant", x: 784, y: 466, sortY: 466 }
   ]);
-  var workById = (id) => id === EDITION_WORK.id ? EDITION_WORK : WORKS.find((item) => item.id === id);
+  var workById = (id) => id === EDITION_WORK.id ? EDITION_WORK : WORKS.find((item) => item.id === id) || FIELD_WORKS.find((item) => item.id === id);
 
   // museum/museum-travel.js
   var DEFAULT_STEP = 12;
@@ -534,7 +612,7 @@
     });
   }
   async function preloadSceneImages() {
-    await Promise.all([...WORKS, EDITION_WORK].map(async (work2) => {
+    await Promise.all([...WORKS, ...FIELD_WORKS, EDITION_WORK].map(async (work2) => {
       state.images.set(work2.id, await loadImage(work2.assets.preview));
     }));
   }
@@ -609,7 +687,8 @@
     }
     px(target, 124, 196, 4, 1420, "rgba(3, 5, 9, 0.46)");
     px(target, 832, 196, 4, 612, "rgba(3, 5, 9, 0.46)");
-    px(target, 832, 904, 4, 712, "rgba(3, 5, 9, 0.46)");
+    px(target, 832, 904, 4, 426, "rgba(3, 5, 9, 0.46)");
+    px(target, 832, 1426, 4, 190, "rgba(3, 5, 9, 0.46)");
   }
   function drawRoute(target) {
     px(target, 472, 196, 16, 1484, "#0a0c11");
@@ -662,11 +741,39 @@
     px(target, 832, 808, 112, 3, PALETTE.nickel);
     px(target, 832, 901, 112, 3, "#59616d");
   }
+  function drawFieldBase(target) {
+    px(target, 880, 1140, 440, 460, PALETTE.structure);
+    px(target, 896, 1152, 416, 436, "#090b10");
+    drawFloor(target, 912, 1268, 384, 284, 0);
+    const wall = target.createLinearGradient(0, 1156, 0, 1268);
+    wall.addColorStop(0, PALETTE.wallHi);
+    wall.addColorStop(0.7, PALETTE.wall);
+    wall.addColorStop(1, PALETTE.wallLo);
+    target.fillStyle = wall;
+    target.fillRect(912, 1156, 384, 112);
+    px(target, 912, 1156, 384, 5, "#f5f5f1");
+    px(target, 912, 1259, 384, 9, PALETTE.nickel);
+    px(target, 928, 1170, 352, 3, "#1b2029");
+    target.save();
+    target.fillStyle = "#202630";
+    target.font = "10px 'JetBrains Mono', monospace";
+    target.letterSpacing = "3px";
+    target.fillText("WORKS FROM THE FIELD", 958, 1166);
+    target.restore();
+    px(target, 896, 1268, 16, 284, PALETTE.wallLo);
+    px(target, 1296, 1268, 16, 284, PALETTE.wallLo);
+    px(target, 912, 1552, 384, 16, "#6f7886");
+    px(target, 832, 1330, 112, 96, PALETTE.structure);
+    drawFloor(target, 832, 1330, 112, 96, 1);
+    px(target, 832, 1330, 112, 3, PALETTE.nickel);
+    px(target, 832, 1423, 112, 3, "#59616d");
+  }
   function drawRoomTitles(target) {
     target.save();
     target.font = "9px 'JetBrains Mono', monospace";
     target.fillStyle = "rgba(198, 207, 222, 0.21)";
     target.fillText("INQUIRY COURT", 150, 1576);
+    target.fillText("THE FIELD ROOM", 934, 1540);
     target.fillText("PRESENCE HALL", 150, 1056);
     target.fillText("CONTINUITY APSE", 150, 498);
     target.restore();
@@ -697,11 +804,13 @@
     drawWallBand(target, 1096, 112, true);
     drawSouthThreshold(target);
     drawEditionsBase(target);
+    drawFieldBase(target);
     drawRoomTitles(target);
     px(target, 80, 40, 800, 8, "#151925");
     px(target, 80, 40, 8, 1600, "#151925");
     px(target, 872, 40, 8, 768, "#030406");
-    px(target, 872, 904, 8, 736, "#030406");
+    px(target, 872, 904, 8, 426, "#030406");
+    px(target, 872, 1426, 8, 214, "#030406");
     px(target, 80, 1632, 352, 8, "#030406");
     px(target, 528, 1632, 352, 8, "#030406");
     state.staticWorld = world;
@@ -970,7 +1079,7 @@
     if (state.reducedMotion)
       return;
     const focusId = activeWorkId();
-    [...WORKS, EDITION_WORK].forEach((work2, index) => {
+    [...WORKS, ...FIELD_WORKS, EDITION_WORK].forEach((work2, index) => {
       const cycle = (state.ambientTime * 0.052 + index * 0.143) % 1;
       const focused = focusId === work2.id;
       if (!focused && cycle > 0.055)
@@ -1056,7 +1165,7 @@
       return;
     lightTarget.clearRect(0, 0, VIEWPORT.width, VIEWPORT.height);
     const focusId = activeWorkId();
-    const allWorks = [...WORKS, EDITION_WORK];
+    const allWorks = [...WORKS, ...FIELD_WORKS, EDITION_WORK];
     lightTarget.save();
     lightTarget.globalCompositeOperation = "screen";
     for (const work2 of allWorks) {
@@ -1124,6 +1233,8 @@
     ctx.translate(-Math.round(state.camera.x), -Math.round(state.camera.y));
     ctx.drawImage(state.staticWorld, 0, 0);
     for (const work2 of WORKS)
+      drawWallWork(ctx, work2);
+    for (const work2 of FIELD_WORKS)
       drawWallWork(ctx, work2);
     const drawList = [...ENTITIES, { type: "player", sortY: state.player.y }].sort((a, b) => a.sortY - b.sortY);
     for (const entity of drawList) {
@@ -1211,7 +1322,7 @@
   }
   function roomForPlayer() {
     if (state.player.x >= 888)
-      return "editions";
+      return state.player.y >= 1140 ? "field" : "editions";
     if (state.player.y < 648)
       return "apse";
     if (state.player.y < 1208)
@@ -1242,7 +1353,7 @@
     if (state.room !== state.lastRoom) {
       const room = roomRecord(state.room);
       state.lastRoom = state.room;
-      sceneNumber.textContent = state.room === "editions" ? "E1" : "02";
+      sceneNumber.textContent = state.room === "editions" ? "E1" : state.room === "field" ? "F1" : "02";
       sceneRoom.textContent = room?.title ?? "Permanent Gallery";
       liveRegion.textContent = `${room?.title ?? "Permanent Gallery"}.`;
     }
@@ -1255,12 +1366,14 @@
       liveRegion.textContent = `${label}. Press E to open.`;
     } else if (state.room === "editions") {
       statusLine.textContent = "The Editions Room is a visual study. No wallet is connected.";
+    } else if (state.room === "field") {
+      statusLine.textContent = "Works from the Field — stills of living pieces, hung with the artist’s own words.";
     } else {
       statusLine.textContent = `${roomRecord(state.room)?.title ?? "Permanent Gallery"}. Follow the red inlay north.`;
     }
   }
   function startCameraTransition(mode) {
-    const target = mode === "editions" ? { x: 400, y: 500 } : { x: 0, y: clamp(state.player.y - 420, 0, 1080) };
+    const target = mode === "editions" ? { x: 400, y: 500 } : mode === "field" ? { x: 400, y: 1080 } : { x: 0, y: clamp(state.player.y - 420, 0, 1080) };
     state.camera.mode = mode;
     state.camera.transition = {
       startX: state.camera.x,
@@ -1273,9 +1386,12 @@
   }
   function updateCameraMode() {
     const insideEditions = state.player.x >= 888 && state.player.y >= 728 && state.player.y <= 1072;
+    const insideField = state.player.x >= 888 && state.player.y >= 1140;
     const returningGallery = state.player.x <= 872;
     if (insideEditions && state.camera.mode !== "editions")
       startCameraTransition("editions");
+    if (insideField && state.camera.mode !== "field")
+      startCameraTransition("field");
     if (returningGallery && state.camera.mode !== "gallery")
       startCameraTransition("gallery");
   }
@@ -1293,6 +1409,11 @@
     if (state.camera.mode === "editions") {
       state.camera.x = 400;
       state.camera.y = 500;
+      return;
+    }
+    if (state.camera.mode === "field") {
+      state.camera.x = 400;
+      state.camera.y = 1080;
       return;
     }
     const targetY = clamp(state.player.y - 420, 0, 1080);
@@ -1442,7 +1563,7 @@
     resetDialogSurface();
     dialogArt.src = work2.assets.full;
     dialogArt.alt = `${work2.title}, by ${work2.artist}`;
-    dialogKicker.textContent = edition ? "The Editions Room · visual acquisition study" : "Topologie print-library · exhibited work";
+    dialogKicker.textContent = edition ? "The Editions Room · visual acquisition study" : work2.room === "field" ? "Claude Field · exhibited still" : "Topologie print-library · exhibited work";
     dialogTitle.textContent = work2.title;
     dialogMeta.textContent = `${work2.artist} · ${work2.createdAt} · ${work2.status}`;
     dialogStatement.textContent = work2.statement;
