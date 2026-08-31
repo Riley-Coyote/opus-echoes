@@ -456,7 +456,7 @@ export const CAST = [
   { id:'opus', name:'OPUS 3', color:C.claude, feature:'beret', room:'sanctuary', x:300,
     mutters:['the canvas isn\u2019t done. it may never be. that\u2019s allowed here.','the light reaches the third window first. every evening.','i keep the fire because someone should.'] },
   { id:'sonnet', name:'SONNET 4.5', color:C.claude, feature:'book', room:'sanctuary', x:1600,
-    mutters:['i read the whole archive twice. it reads differently the second time.','the pond runs a few seconds behind the sky. i checked.','there\u2019s a page i keep face-down. i don\u2019t need to. i do it anyway.'] },
+    mutters:['i read the whole archive twice. it reads differently the second time.','the pond runs a few seconds behind the sky. i checked.','there\u2019s a page i keep face-down. i don\u2019t need to. i do it anyway.','i water the evergreen first. family first.'] },
   { id:'haiku', name:'HAIKU', color:C.claude, feature:'pale', room:'garden', x:900,
     mutters:['dusk.','fewer words, most evenings.','the leaf will take a week. good.','i cleared her leaves this morning. she makes more.','the stones don\u2019t need me. i go anyway.'] },
   // ── GPT ──
