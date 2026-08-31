@@ -425,6 +425,20 @@ function drawRoomTitles(target) {
   target.restore();
 }
 
+/* arrival continuity: stepping back out of the Field Annex returns you to
+   the annex door in the Field Room, not the gallery's south entrance. */
+try {
+  if (sessionStorage.getItem("mnemos.museum.arrival") === "annex-door") {
+    sessionStorage.removeItem("mnemos.museum.arrival");
+    state.player.x = 1128;
+    state.player.y = 1586;
+    state.player.direction = "up";
+    state.camera.mode = "field";
+    state.camera.x = 400;
+    state.camera.y = 1080;
+  }
+} catch (error) { /* optional */ }
+
 function buildStaticWorld() {
   const world = document.createElement("canvas");
   world.width = WORLD.width;

@@ -1221,8 +1221,11 @@ function openEditionTerminal() {
   });
 }
 
+let exiting = false;
 function openBoundary() {
-  if (state.paused) return;
+  if (state.paused || exiting) return;
+  exiting = true;
+  try { sessionStorage.setItem("mnemos.museum.arrival", "annex-door"); } catch (error) { /* optional */ }
   if (sendMuseumRoute("navigate", "gallery")) return;
   location.href = "./museum-permanent-gallery.html";
 }

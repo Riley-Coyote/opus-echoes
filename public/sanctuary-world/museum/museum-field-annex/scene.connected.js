@@ -1541,9 +1541,14 @@
       action: "Return to the Editions Room"
     });
   }
+  var exiting = false;
   function openBoundary() {
-    if (state.paused)
+    if (state.paused || exiting)
       return;
+    exiting = true;
+    try {
+      sessionStorage.setItem("mnemos.museum.arrival", "annex-door");
+    } catch (error) {}
     if (sendMuseumRoute("navigate", "gallery"))
       return;
     location.href = "./museum-permanent-gallery.html";
