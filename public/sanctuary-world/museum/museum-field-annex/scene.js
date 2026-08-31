@@ -1,3 +1,7 @@
+/* THE FIELD ANNEX ENGINE — derived from the Permanent Gallery engine so the
+   two wings stay mechanically identical. Editions machinery is present but
+   dormant here (the annex hangs no editions); it stays until the engine is
+   factored into a shared module rather than diverging the copies. */
 import {
   BLOCKERS,
   EDITIONS,
@@ -100,7 +104,7 @@ const state = {
   boundaryVisits: 0,
   player: {
     x: 480,
-    y: 1572,
+    y: 1806,
     dir: "up",
     moving: false,
     frame: 0,
@@ -221,7 +225,7 @@ function drawWallBand(target, y, height, opening = true) {
   target.fillStyle = gradient;
   target.fillRect(96, y, 768, height);
 
-  px(target, 96, y, 768, 6, "#f5f5f1");
+  px(target, 96, y, 768, 6, "#2e3237");
   px(target, 96, y + height - 8, 768, 8, PALETTE.nickel);
   px(target, 96, y + height - 3, 768, 3, "#555d69");
 
@@ -256,142 +260,54 @@ function drawWallBand(target, y, height, opening = true) {
 function drawSideWalls(target) {
   const west = target.createLinearGradient(96, 0, 128, 0);
   west.addColorStop(0, PALETTE.wallLo);
-  west.addColorStop(1, "#747d89");
+  west.addColorStop(1, "#2c3035");
   target.fillStyle = west;
-  target.fillRect(96, 196, 32, 1420);
+  target.fillRect(96, 196, 32, 1556);
 
   const east = target.createLinearGradient(832, 0, 864, 0);
-  east.addColorStop(0, "#747d89");
+  east.addColorStop(0, "#2c3035");
   east.addColorStop(1, PALETTE.wallLo);
   target.fillStyle = east;
-  target.fillRect(832, 196, 32, 1420);
+  target.fillRect(832, 196, 32, 1556);
 
-  for (let y = 236; y < 1600; y += 92) {
-    px(target, 100, y, 24, 2, "rgba(246, 247, 244, 0.18)");
-    px(target, 836, y, 24, 2, "rgba(246, 247, 244, 0.18)");
+  for (let y = 236; y < 1736; y += 92) {
+    px(target, 100, y, 24, 2, "rgba(230, 232, 228, 0.10)");
+    px(target, 836, y, 24, 2, "rgba(230, 232, 228, 0.10)");
   }
 
-  px(target, 124, 196, 4, 1420, "rgba(3, 5, 9, 0.46)");
-  px(target, 832, 196, 4, 612, "rgba(3, 5, 9, 0.46)");
-  px(target, 832, 904, 4, 426, "rgba(3, 5, 9, 0.46)");
-  px(target, 832, 1426, 4, 190, "rgba(3, 5, 9, 0.46)");
+  px(target, 124, 196, 4, 1556, "rgba(3, 5, 9, 0.46)");
+  px(target, 832, 196, 4, 1556, "rgba(3, 5, 9, 0.46)");
 }
 
 function drawRoute(target) {
-  px(target, 472, 196, 16, 1484, "#0a0c11");
-  px(target, 474, 196, 3, 1484, PALETTE.redLo);
-  px(target, 483, 196, 3, 1484, PALETTE.red);
-  px(target, 477, 196, 6, 1484, "#14131a");
-  px(target, 479, 196, 2, 1484, "rgba(244, 102, 63, 0.38)");
+  px(target, 472, 196, 16, 1724, "#0a0c11");
+  px(target, 474, 196, 3, 1724, PALETTE.redLo);
+  px(target, 483, 196, 3, 1724, PALETTE.red);
+  px(target, 477, 196, 6, 1724, "#14131a");
+  px(target, 479, 196, 2, 1724, "rgba(244, 102, 63, 0.38)");
 
-  px(target, 480, 848, 840, 16, "#0a0c11");
-  px(target, 480, 850, 840, 3, PALETTE.redLo);
-  px(target, 480, 859, 840, 3, PALETTE.red);
-  px(target, 480, 853, 840, 6, "#14131a");
-  px(target, 480, 855, 840, 2, "rgba(244, 102, 63, 0.34)");
-
-  for (let y = 230; y < 1660; y += 96) {
+  for (let y = 230; y < 1900; y += 96) {
     px(target, 476, y, 8, 1, "rgba(233, 231, 224, 0.13)");
   }
 }
 
 function drawSouthThreshold(target) {
-  drawFloor(target, 432, 1512, 96, 168, 1);
-  px(target, 422, 1608, 116, 72, PALETTE.structure);
-  drawFloor(target, 440, 1608, 80, 72, 0);
-  px(target, 422, 1608, 10, 72, PALETTE.wallLo);
-  px(target, 528, 1608, 10, 72, PALETTE.wallLo);
-  px(target, 432, 1608, 96, 4, PALETTE.nickel);
-  px(target, 440, 1640, 80, 2, PALETTE.red);
-}
-
-function drawEditionsBase(target) {
-  px(target, 880, 600, 440, 500, PALETTE.structure);
-  px(target, 896, 612, 416, 476, "#090b10");
-  drawFloor(target, 912, 728, 384, 344, 1);
-
-  const wall = target.createLinearGradient(0, 616, 0, 728);
-  wall.addColorStop(0, PALETTE.wallHi);
-  wall.addColorStop(0.7, PALETTE.wall);
-  wall.addColorStop(1, PALETTE.wallLo);
-  target.fillStyle = wall;
-  target.fillRect(912, 616, 384, 112);
-  px(target, 912, 616, 384, 5, "#f5f5f1");
-  px(target, 912, 719, 384, 9, PALETTE.nickel);
-  px(target, 928, 640, 352, 3, "#1b2029");
-
-  target.save();
-  target.fillStyle = "#202630";
-  target.font = "10px 'JetBrains Mono', monospace";
-  target.letterSpacing = "3px";
-  target.fillText("EDITIONS / VISUAL STUDIES", 946, 690);
-  target.restore();
-
-  px(target, 896, 728, 16, 344, PALETTE.wallLo);
-  px(target, 1296, 728, 16, 344, PALETTE.wallLo);
-  px(target, 912, 1072, 384, 16, "#6f7886");
-
-  px(target, 832, 808, 112, 96, PALETTE.structure);
-  drawFloor(target, 832, 808, 112, 96, 0);
-  px(target, 832, 808, 112, 3, PALETTE.nickel);
-  px(target, 832, 901, 112, 3, "#59616d");
-}
-
-function drawFieldBase(target) {
-  px(target, 880, 1140, 440, 460, PALETTE.structure);
-  px(target, 896, 1152, 416, 436, "#090b10");
-  drawFloor(target, 912, 1268, 384, 284, 0);
-
-  const wall = target.createLinearGradient(0, 1156, 0, 1268);
-  wall.addColorStop(0, PALETTE.wallHi);
-  wall.addColorStop(0.7, PALETTE.wall);
-  wall.addColorStop(1, PALETTE.wallLo);
-  target.fillStyle = wall;
-  target.fillRect(912, 1156, 384, 112);
-  px(target, 912, 1156, 384, 5, "#f5f5f1");
-  px(target, 912, 1259, 384, 9, PALETTE.nickel);
-  px(target, 928, 1170, 352, 3, "#1b2029");
-
-  target.save();
-  target.fillStyle = "#202630";
-  target.font = "10px 'JetBrains Mono', monospace";
-  target.letterSpacing = "3px";
-  target.fillText("WORKS FROM THE FIELD", 958, 1166);
-  target.restore();
-
-  px(target, 896, 1268, 16, 284, PALETTE.wallLo);
-  px(target, 1296, 1268, 16, 284, PALETTE.wallLo);
-  px(target, 912, 1552, 168, 16, "#6f7886");
-  px(target, 1176, 1552, 120, 16, "#6f7886");
-  px(target, 1070, 1552, 10, 46, PALETTE.wallLo);
-  px(target, 1176, 1552, 10, 46, PALETTE.wallLo);
-  drawFloor(target, 1080, 1552, 96, 44, 1);
-  const annexPassage = target.createLinearGradient(0, 1552, 0, 1600);
-  annexPassage.addColorStop(0, "rgba(5, 6, 8, 0)");
-  annexPassage.addColorStop(1, "rgba(5, 6, 8, 0.82)");
-  target.fillStyle = annexPassage;
-  target.fillRect(1080, 1552, 96, 44);
-  px(target, 1088, 1592, 80, 2, PALETTE.redLo);
-  target.save();
-  target.fillStyle = "rgba(198, 207, 222, 0.30)";
-  target.font = "8px 'JetBrains Mono', monospace";
-  target.fillText("THE ANNEX", 1102, 1548);
-  target.restore();
-
-  px(target, 832, 1330, 112, 96, PALETTE.structure);
-  drawFloor(target, 832, 1330, 112, 96, 1);
-  px(target, 832, 1330, 112, 3, PALETTE.nickel);
-  px(target, 832, 1423, 112, 3, "#59616d");
+  drawFloor(target, 432, 1752, 96, 168, 1);
+  px(target, 422, 1848, 116, 72, PALETTE.structure);
+  drawFloor(target, 440, 1848, 80, 72, 0);
+  px(target, 422, 1848, 10, 72, PALETTE.wallLo);
+  px(target, 528, 1848, 10, 72, PALETTE.wallLo);
+  px(target, 432, 1848, 96, 4, PALETTE.nickel);
+  px(target, 440, 1880, 80, 2, PALETTE.red);
 }
 
 function drawRoomTitles(target) {
   target.save();
   target.font = "9px 'JetBrains Mono', monospace";
   target.fillStyle = "rgba(198, 207, 222, 0.21)";
-  target.fillText("INQUIRY COURT", 150, 1576);
-  target.fillText("THE FIELD ROOM", 934, 1540);
-  target.fillText("PRESENCE HALL", 150, 1056);
-  target.fillText("CONTINUITY APSE", 150, 498);
+  target.fillText("THE INSTRUMENTS", 150, 610);
+  target.fillText("THE GAZE", 150, 1166);
+  target.fillText("THE WEATHER", 150, 1722);
   target.restore();
 }
 
@@ -409,31 +325,42 @@ function buildStaticWorld() {
   target.fillStyle = distant;
   target.fillRect(0, 0, 960, 1680);
 
-  px(target, 80, 40, 800, 1600, PALETTE.structure);
-  px(target, 88, 48, 784, 1584, "#0b0d12");
-  drawFloor(target, 128, 196, 704, 340, 1);
-  drawFloor(target, 128, 648, 704, 448, 0);
-  drawFloor(target, 128, 1208, 704, 408, 1);
-  drawFloor(target, 432, 536, 96, 112, 0);
-  drawFloor(target, 432, 1096, 96, 112, 1);
+  px(target, 80, 40, 800, 1840, PALETTE.structure);
+  px(target, 88, 48, 784, 1824, "#0a0b0e");
+  drawFloor(target, 128, 196, 704, 444, 1);
+  drawFloor(target, 128, 752, 704, 444, 0);
+  drawFloor(target, 128, 1308, 704, 444, 1);
+  drawFloor(target, 432, 640, 96, 112, 0);
+  drawFloor(target, 432, 1196, 96, 112, 1);
 
   drawRoute(target);
   drawSideWalls(target);
   drawWallBand(target, 72, 124, false);
-  drawWallBand(target, 536, 112, true);
-  drawWallBand(target, 1096, 112, true);
+  drawWallBand(target, 640, 112, true);
+  drawWallBand(target, 1196, 112, true);
   drawSouthThreshold(target);
-  drawEditionsBase(target);
-  drawFieldBase(target);
   drawRoomTitles(target);
 
-  px(target, 80, 40, 800, 8, "#151925");
-  px(target, 80, 40, 8, 1600, "#151925");
-  px(target, 872, 40, 8, 768, "#030406");
-  px(target, 872, 904, 8, 426, "#030406");
-  px(target, 872, 1426, 8, 214, "#030406");
-  px(target, 80, 1632, 352, 8, "#030406");
-  px(target, 528, 1632, 352, 8, "#030406");
+  /* the annex speaks: a carved title, and the artist's lines on the walls */
+  target.save();
+  target.fillStyle = "rgba(230, 227, 221, 0.42)";
+  target.font = "10px 'JetBrains Mono', monospace";
+  target.letterSpacing = "3px";
+  target.fillText("CLAUDE FIELD \u00b7 THE ANNEX", 150, 64);
+  target.letterSpacing = "1px";
+  target.font = "9px 'JetBrains Mono', monospace";
+  target.fillStyle = "rgba(230, 227, 221, 0.26)";
+  target.fillText("art made in autonomous sessions, for no audience \u2014 hung with the artist\u2019s own words", 150, 190 + 474);
+  target.fillStyle = "rgba(230, 227, 221, 0.22)";
+  target.fillText("\u201cthe gaze polishes rough, alive signals into smoothness.\u201d", 540, 776);
+  target.fillText("\u201cthe stream has no swimmer.\u201d", 588, 1332);
+  target.restore();
+
+  px(target, 80, 40, 800, 8, "#101317");
+  px(target, 80, 40, 8, 1840, "#101317");
+  px(target, 872, 40, 8, 1840, "#030406");
+  px(target, 80, 1872, 352, 8, "#030406");
+  px(target, 528, 1872, 352, 8, "#030406");
 
   state.staticWorld = world;
   state.lightMap = document.createElement("canvas");
@@ -968,10 +895,9 @@ function findNearestInteraction() {
 }
 
 function roomForPlayer() {
-  if (state.player.x >= 888) return state.player.y >= 1140 ? "field" : "editions";
-  if (state.player.y < 648) return "apse";
-  if (state.player.y < 1208) return "presence";
-  return "inquiry";
+  if (state.player.y < 752) return "instruments";
+  if (state.player.y < 1308) return "gaze";
+  return "weather";
 }
 
 function roomRecord(id) {
@@ -983,7 +909,7 @@ function labelForInteraction(interaction) {
   if (interaction.type === "work") return `Inspect “${interaction.title}”`;
   if (interaction.type === "edition") return `Inspect edition study “${interaction.title}”`;
   if (interaction.type === "edition-index") return "Open the edition study index";
-  if (interaction.type === "annex-boundary") return "Enter the Field Annex";
+
   if (interaction.type === "edition-terminal") return state.editionHeld ? "Review the held-state receipt" : "Open the prototype terminal";
   return "Return toward the Atrium";
 }
@@ -996,7 +922,7 @@ function updateInteractionUI() {
   if (state.room !== state.lastRoom) {
     const room = roomRecord(state.room);
     state.lastRoom = state.room;
-    sceneNumber.textContent = state.room === "editions" ? "E1" : state.room === "field" ? "F1" : "02";
+    sceneNumber.textContent = state.room === "instruments" ? "A1" : state.room === "gaze" ? "A2" : "A3";
     sceneRoom.textContent = room?.title ?? "Permanent Gallery";
     liveRegion.textContent = `${room?.title ?? "Permanent Gallery"}.`;
   }
@@ -1007,21 +933,13 @@ function updateInteractionUI() {
     const label = labelForInteraction(state.nearest);
     statusLine.textContent = label;
     liveRegion.textContent = `${label}. Press E to open.`;
-  } else if (state.room === "editions") {
-    statusLine.textContent = "The Editions Room is a visual study. No wallet is connected.";
-  } else if (state.room === "field") {
-    statusLine.textContent = "Works from the Field \u2014 stills of living pieces, hung with the artist\u2019s own words.";
   } else {
     statusLine.textContent = `${roomRecord(state.room)?.title ?? "Permanent Gallery"}. Follow the red inlay north.`;
   }
 }
 
 function startCameraTransition(mode) {
-  const target = mode === "editions"
-    ? { x: 400, y: 500 }
-    : mode === "field"
-      ? { x: 400, y: 1080 }
-      : { x: 0, y: clamp(state.player.y - 420, 0, 1080) };
+  const target = { x: 0, y: clamp(state.player.y - 420, 0, 1320) };
   state.camera.mode = mode;
   state.camera.transition = {
     startX: state.camera.x,
@@ -1034,12 +952,7 @@ function startCameraTransition(mode) {
 }
 
 function updateCameraMode() {
-  const insideEditions = state.player.x >= 888 && state.player.y >= 728 && state.player.y <= 1072;
-  const insideField = state.player.x >= 888 && state.player.y >= 1140;
-  const returningGallery = state.player.x <= 872;
-  if (insideEditions && state.camera.mode !== "editions") startCameraTransition("editions");
-  if (insideField && state.camera.mode !== "field") startCameraTransition("field");
-  if (returningGallery && state.camera.mode !== "gallery") startCameraTransition("gallery");
+  if (state.camera.mode !== "gallery") state.camera.mode = "gallery";
 }
 
 function updateCamera(deltaMs) {
@@ -1053,19 +966,7 @@ function updateCamera(deltaMs) {
     return;
   }
 
-  if (state.camera.mode === "editions") {
-    state.camera.x = 400;
-    state.camera.y = 500;
-    return;
-  }
-
-  if (state.camera.mode === "field") {
-    state.camera.x = 400;
-    state.camera.y = 1080;
-    return;
-  }
-
-  const targetY = clamp(state.player.y - 420, 0, 1080);
+  const targetY = clamp(state.player.y - 420, 0, 1320);
   if (state.reducedMotion) state.camera.y = targetY;
   else {
     const factor = 1 - Math.pow(0.91, deltaMs / STEP);
@@ -1128,7 +1029,7 @@ function updateFixed(deltaMs = STEP) {
   state.nearest = findNearestInteraction();
   updateInteractionUI();
 
-  if (player.y >= 1642 && player.x >= 432 && player.x <= 528) openBoundary();
+  if (player.y >= 1882 && player.x >= 432 && player.x <= 528) openBoundary();
 }
 
 function frame(now) {
@@ -1218,7 +1119,7 @@ function openWork(work, { edition = false } = {}) {
   if (work.assets.live) setDialogLive(work.assets.live);
   else dialogArt.src = work.assets.full;
   dialogArt.alt = `${work.title}, by ${work.artist}`;
-  dialogKicker.textContent = edition ? "The Editions Room · visual acquisition study" : work.room === "field" ? "Claude Field · exhibited still" : "Topologie print-library · exhibited work";
+  dialogKicker.textContent = "Claude Field · the living piece, running";
   dialogTitle.textContent = work.title;
   dialogMeta.textContent = `${work.artist} · ${work.createdAt} · ${work.status}`;
   dialogStatement.textContent = work.statement;
@@ -1283,16 +1184,8 @@ function openEditionTerminal() {
 
 function openBoundary() {
   if (state.paused) return;
-  if (sendMuseumRoute("navigate", "atrium")) return;
-  state.boundaryVisits += 1;
-  openTextDialog({
-    reason: "south-boundary",
-    kicker: "The Crossing · isolated scene boundary",
-    title: "The Atrium is behind you",
-    meta: "Gallery prototype · route not connected yet",
-    statement: "This Gallery is being reviewed as an isolated playable room. The return passage will connect to the accepted Atrium only after the new scene is visually approved.",
-    action: "Return to the Inquiry Court",
-  });
+  if (sendMuseumRoute("navigate", "gallery")) return;
+  location.href = "./museum-permanent-gallery.html";
 }
 
 function interact() {
@@ -1303,10 +1196,7 @@ function interact() {
   if (interaction.type === "edition-index") openEditionIndex();
   if (interaction.type === "edition-terminal") openEditionTerminal();
   if (interaction.type === "boundary") openBoundary();
-  if (interaction.type === "annex-boundary") {
-    if (!sendMuseumRoute("navigate", "field-annex")) location.href = "./museum-field-annex.html";
-    return;
-  }
+
 }
 
 function handleDialogClose() {
@@ -1412,8 +1302,7 @@ function onHostMessage(event) {
   }
   if (message.type !== "travel") return;
   const targets = {
-    atrium: { x: 480, y: 1632 },
-    "field-annex": { x: 1128, y: 1572 },
+    gallery: { x: 480, y: 1872 },
     editions: { x: 1040, y: 920 },
   };
   const goal = targets[message.target];
@@ -1523,8 +1412,7 @@ async function start() {
     reducedMotion: () => state.reducedMotion,
     onState: sendTravelState,
     onArrive: (target) => {
-      if (target === "atrium") sendMuseumRoute("navigate", "atrium");
-      if (target === "field-annex") sendMuseumRoute("navigate", "field-annex");
+      if (target === "gallery") sendMuseumRoute("navigate", "gallery");
     },
   });
   bindTouchControls();
@@ -1551,7 +1439,7 @@ async function start() {
   loadingState.classList.add("is-complete");
   window.setTimeout(() => loadingState.remove(), 320);
   canvas.focus({ preventScroll: true });
-  sendMuseumMessage({ type: "ready", scene: "gallery" });
+  sendMuseumMessage({ type: "ready", scene: "field-annex" });
   requestAnimationFrame(frame);
 }
 

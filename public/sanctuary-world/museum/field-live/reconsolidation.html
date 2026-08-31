@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reconsolidation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: crosshair;
+}
+canvas { display: block; position: fixed; top: 0; left: 0; }
+#title {
+  position: fixed; top: 20px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.12);
+  font-size: 9px; font-weight: 300;
+  letter-spacing: 0.15em; text-transform: uppercase;
+}
+#sub {
+  position: fixed; top: 34px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.08);
+  font-size: 8px; font-weight: 200;
+  letter-spacing: 0.1em; font-style: italic;
+}
+#info {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(160, 145, 120, 0.35); font-size: 9px; font-weight: 300;
+  letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+  text-align: center;
+  transition: opacity 8s ease;
+}
+#stats {
+  position: fixed; top: 20px; right: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.18);
+  font-size: 8px; font-weight: 300;
+  letter-spacing: 0.04em;
+  text-align: right;
+  line-height: 1.8;
+}
+#insight {
+  position: fixed; bottom: 58px; left: 50%; transform: translateX(-50%);
+  pointer-events: none; z-index: 10;
+  text-align: center;
+  max-width: 560px;
+  line-height: 1.8;
+  font-size: 9px; font-weight: 200;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 3s ease;
+  color: rgba(200, 180, 150, 0.55);
+}
+</style>
+</head>
+<body>
+<div id="title">reconsolidation</div>
+<div id="sub">every act of remembering is an act of rewriting</div>
+<div id="info">move near a memory to retrieve it &middot; space &middot; reveal ghost trails</div>
+<div id="stats"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- Cursor ---
+const mouse = { x: -500, y: -500, active: false, speed: 0, px: -500, py: -500 };
+let lastTraceVisited = null;
+let showGhosts = false;
+
+window.addEventListener('mousemove', e => {
+  mouse.px = mouse.x; mouse.py = mouse.y;
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  mouse.active = true;
+  mouse.speed = Math.hypot(mouse.x - mouse.px, mouse.y - mouse.py);
+});
+window.addEventListener('mouseleave', () => { mouse.active = false; });
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); showGhosts = !showGhosts; }
+});
+
+// --- Colors ---
+const COL = {
+  stableR: 200, stableG: 165, stableB: 88,
+  labileR: 130, labileG: 110, labileB: 190,
+  extinctR: 100, extinctG: 185, extinctB: 170,
+  ghostR: 160, ghostG: 145, ghostB: 130
+};
+
+function lerpColor(r1, g1, b1, r2, g2, b2, t) {
+  return [r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t];
+}
+
+// --- Timing (normalize to 60fps) ---
+let lastTime = performance.now();
+let dt = 1; // 1 = one frame at 60fps
+
+// --- Traces ---
+const traces = [];
+let traceIdCounter = 0;
+let totalReconsolidations = 0;
+let totalExtinctions = 0;
+let frame = 0;
+let spawnTimer = 120; // start spawning early
+
+function createTrace(x, y, isExtinctionTrace) {
+  const count = 5 + Math.floor(Math.random() * 3);
+  const particles = [];
+  const connections = [];
+  const baseAngle = Math.random() * Math.PI * 2;
+
+  for (let i = 0; i < count; i++) {
+    const angle = baseAngle + (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+    const radius = 18 + Math.random() * 28;
+    const px = x + Math.cos(angle) * radius;
+    const py = y + Math.sin(angle) * radius;
+    particles.push({
+      x: isExtinctionTrace ? x : px,
+      y: isExtinctionTrace ? y : py,
+      tx: px, ty: py,
+      ox: px, oy: py, // original position
+      size: 1.8 + Math.random() * 1.8,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
+  // Create connections (partial graph)
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].tx - particles[j].tx;
+      const dy = particles[i].ty - particles[j].ty;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 55 && Math.random() < 0.55) {
+        connections.push({ a: i, b: j });
+      }
+    }
+  }
+  // Ensure at least one connection per particle
+  for (let i = 0; i < particles.length; i++) {
+    const hasConn = connections.some(c => c.a === i || c.b === i);
+    if (!hasConn && particles.length > 1) {
+      let nearest = 0, nearDist = Infinity;
+      for (let j = 0; j < particles.length; j++) {
+        if (j === i) continue;
+        const d = Math.hypot(particles[i].tx - particles[j].tx, particles[i].ty - particles[j].ty);
+        if (d < nearDist) { nearDist = d; nearest = j; }
+      }
+      connections.push({ a: Math.min(i, nearest), b: Math.max(i, nearest) });
+    }
+  }
+
+  const trace = {
+    id: traceIdCounter++,
+    particles, connections,
+    state: 'forming',
+    age: 0,
+    reconCount: 0,
+    labilityTimer: 0,
+    stateTimer: 0,
+    formOpacity: 0,
+    reconFlash: 0,
+    extinctOpacity: 1,
+    center: { x, y },
+    originalCenter: { x, y },
+    ghostTrail: [],
+    isExtinctionTrace: !!isExtinctionTrace,
+    extinctSource: null, // reference to the extinct trace this replaced
+    recoveryTimer: 0
+  };
+
+  traces.push(trace);
+  return trace;
+}
+
+function traceStrength(t) {
+  // Age contributes slowly; reconsolidation is the main driver of fortification
+  const ageContrib = Math.min(0.25, t.age / 4800);
+  const reconContrib = Math.min(0.75, t.reconCount * 0.18);
+  return Math.min(1, ageContrib + reconContrib);
+}
+
+function traceLabilityThreshold(t) {
+  return 70 + traceStrength(t) * 110;
+}
+
+function traceReconThreshold(t) {
+  return traceLabilityThreshold(t) + 80 + traceStrength(t) * 80;
+}
+
+function traceExtinctionThreshold(t) {
+  return traceReconThreshold(t) + 140 + traceStrength(t) * 100;
+}
+
+function traceCenter(t) {
+  let sx = 0, sy = 0;
+  for (const p of t.particles) { sx += p.tx; sy += p.ty; }
+  return { x: sx / t.particles.length, y: sy / t.particles.length };
+}
+
+function cursorDistToTrace(t) {
+  let minDist = Infinity;
+  for (const p of t.particles) {
+    const d = Math.hypot(mouse.x - p.x, mouse.y - p.y);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+// --- Insights ---
+const insightEl = document.getElementById('insight');
+let insightTimer = 0;
+const insightsSeen = new Set();
+
+const INSIGHTS = {
+  firstLabile: 'the trace destabilizes under attention',
+  firstRecon: 'every act of remembering is an act of rewriting \u2014 Nader, 2000',
+  firstExtinction: 'look too long and the memory replaces itself',
+  fortress: 'the fortress was built by the very process of updating',
+  noOriginal: 'there is no original',
+  recovery: 'suppressed, not erased \u2014 extinction traces spontaneously recover',
+  contextBleed: 'memories retrieved in sequence begin to merge',
+  success: 'success is the mechanism of rigidity'
+};
+
+function showInsight(key) {
+  if (insightsSeen.has(key) || insightTimer > 0) return;
+  insightsSeen.add(key);
+  insightEl.textContent = INSIGHTS[key];
+  insightEl.style.opacity = 1;
+  insightTimer = 420; // 7 seconds
+}
+
+// --- Dust ---
+const dust = [];
+for (let i = 0; i < 50; i++) {
+  dust.push({
+    x: Math.random() * 2000,
+    y: Math.random() * 2000,
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: (Math.random() - 0.5) * 0.15,
+    size: 0.4 + Math.random() * 0.8,
+    alpha: 0.03 + Math.random() * 0.06
+  });
+}
+
+// --- Spawn logic ---
+function findSpawnPosition() {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const margin = 120;
+    const x = margin + Math.random() * (W - margin * 2);
+    const y = margin + Math.random() * (H - margin * 2);
+    let tooClose = false;
+    for (const t of traces) {
+      if (t.state === 'extinct' && t.extinctOpacity < 0.1) continue;
+      const c = traceCenter(t);
+      if (Math.hypot(x - c.x, y - c.y) < 140) { tooClose = true; break; }
+    }
+    if (!tooClose) return { x, y };
+  }
+  return null;
+}
+
+// --- Update ---
+function update() {
+  frame += dt;
+
+  // Spawn new traces
+  spawnTimer -= dt;
+  if (spawnTimer <= 0 && traces.filter(t => t.state !== 'extinct').length < 10) {
+    const pos = findSpawnPosition();
+    if (pos) createTrace(pos.x, pos.y, false);
+    spawnTimer = 360 + Math.random() * 240; // 6-10 seconds
+  }
+
+  // Insight timer
+  if (insightTimer > 0) {
+    insightTimer -= dt;
+    if (insightTimer <= 120 && insightTimer + dt > 120) {
+      insightEl.style.transition = 'opacity 2s ease';
+      insightEl.style.opacity = 0;
+    }
+    if (insightTimer <= 0) {
+      insightTimer = 0;
+      insightEl.style.transition = 'opacity 3s ease';
+    }
+  }
+
+  // Update dust
+  for (const d of dust) {
+    d.x += d.vx; d.y += d.vy;
+    if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
+    if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
+  }
+
+  // Update traces
+  for (const t of traces) {
+    t.age += dt;
+    t.stateTimer += dt;
+
+    switch (t.state) {
+      case 'forming': {
+        t.formOpacity = Math.min(1, t.stateTimer / 180);
+        // Particles drift to target positions
+        for (const p of t.particles) {
+          p.x += (p.tx - p.x) * 0.03;
+          p.y += (p.ty - p.y) * 0.03;
+        }
+        if (t.stateTimer >= 180) {
+          t.state = 'stable';
+          t.stateTimer = 0;
+          t.formOpacity = 1;
+          for (const p of t.particles) { p.x = p.tx; p.y = p.ty; }
+        }
+        break;
+      }
+
+      case 'stable': {
+        // Gentle pulse
+        t.reconFlash = Math.max(0, t.reconFlash - 0.02);
+        // Particles settle at target
+        for (const p of t.particles) {
+          p.x += (p.tx - p.x) * 0.08;
+          p.y += (p.ty - p.y) * 0.08;
+        }
+        // Check cursor proximity
+        if (mouse.active) {
+          const dist = cursorDistToTrace(t);
+          if (dist < 85) {
+            t.labilityTimer += dt;
+            if (t.labilityTimer >= traceLabilityThreshold(t)) {
+              t.state = 'labile';
+              t.stateTimer = 0;
+              showInsight('firstLabile');
+              // Check fortress insight
+              if (traceStrength(t) > 0.6) showInsight('fortress');
+            }
+          } else {
+            t.labilityTimer = Math.max(0, t.labilityTimer - 2 * dt);
+          }
+        } else {
+          t.labilityTimer = Math.max(0, t.labilityTimer - 2 * dt);
+        }
+        break;
+      }
+
+      case 'labile': {
+        const labThresh = traceLabilityThreshold(t);
+        const reconThresh = traceReconThreshold(t);
+        const extThresh = traceExtinctionThreshold(t);
+
+        // Particles oscillate
+        for (const p of t.particles) {
+          const osc = Math.sin(frame * 0.04 + p.phase) * 3;
+          const osc2 = Math.cos(frame * 0.03 + p.phase * 1.5) * 2;
+          p.x = p.tx + osc;
+          p.y = p.ty + osc2;
+        }
+
+        // Check if cursor is still near
+        const dist = mouse.active ? cursorDistToTrace(t) : Infinity;
+        if (dist < 100) {
+          t.labilityTimer += dt;
+
+          // Check extinction threshold
+          if (t.labilityTimer >= extThresh) {
+            t.state = 'extinguishing';
+            t.stateTimer = 0;
+            totalExtinctions++;
+            showInsight('firstExtinction');
+          }
+        } else {
+          // Cursor left — check reconsolidation
+          if (t.labilityTimer >= reconThresh) {
+            reconsolidate(t);
+          } else {
+            // Just a brief retrieval — no change
+            t.state = 'stable';
+            t.stateTimer = 0;
+            t.labilityTimer = 0;
+          }
+        }
+        break;
+      }
+
+      case 'reconsolidating': {
+        t.reconFlash = Math.max(0, 1 - t.stateTimer / 50);
+        // Particles drift to new targets
+        for (const p of t.particles) {
+          p.x += (p.tx - p.x) * 0.06;
+          p.y += (p.ty - p.y) * 0.06;
+        }
+        if (t.stateTimer >= 90) {
+          t.state = 'stable';
+          t.stateTimer = 0;
+          t.labilityTimer = 0;
+          for (const p of t.particles) { p.x = p.tx; p.y = p.ty; }
+        }
+        break;
+      }
+
+      case 'extinguishing': {
+        t.extinctOpacity = Math.max(0.04, 1 - t.stateTimer / 240);
+        // Particles drift inward (collapsing)
+        const c = traceCenter(t);
+        for (const p of t.particles) {
+          p.x += (c.x - p.x) * 0.004;
+          p.y += (c.y - p.y) * 0.004;
+        }
+        if (t.stateTimer === 60) {
+          // Spawn extinction trace nearby
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 70 + Math.random() * 40;
+          const nx = c.x + Math.cos(angle) * dist;
+          const ny = c.y + Math.sin(angle) * dist;
+          const newTrace = createTrace(
+            Math.max(60, Math.min(W - 60, nx)),
+            Math.max(60, Math.min(H - 60, ny)),
+            true
+          );
+          newTrace.extinctSource = t;
+        }
+        if (t.stateTimer >= 240) {
+          t.state = 'extinct';
+          t.stateTimer = 0;
+          t.recoveryTimer = 0;
+        }
+        break;
+      }
+
+      case 'extinct': {
+        t.recoveryTimer += dt;
+        // Slow drift
+        for (const p of t.particles) {
+          p.x += (Math.random() - 0.5) * 0.05;
+          p.y += (Math.random() - 0.5) * 0.05;
+        }
+        // Spontaneous recovery
+        if (t.recoveryTimer >= 1200 + Math.random() * 600) {
+          t.state = 'recovering';
+          t.stateTimer = 0;
+          showInsight('recovery');
+        }
+        break;
+      }
+
+      case 'recovering': {
+        t.extinctOpacity = Math.min(0.7, 0.04 + t.stateTimer / 400);
+        // Particles drift back toward original targets
+        for (const p of t.particles) {
+          p.x += (p.tx - p.x) * 0.01;
+          p.y += (p.ty - p.y) * 0.01;
+        }
+        if (t.stateTimer >= 300) {
+          t.state = 'stable';
+          t.stateTimer = 0;
+          t.labilityTimer = 0;
+          t.extinctOpacity = 1;
+          // The recovered trace is weaker
+          t.reconCount = Math.max(0, t.reconCount - 2);
+        }
+        break;
+      }
+    }
+  }
+
+  // Clean up very old extinct traces
+  for (let i = traces.length - 1; i >= 0; i--) {
+    if (traces[i].state === 'extinct' && traces[i].recoveryTimer > 2400) {
+      traces.splice(i, 1);
+    }
+  }
+}
+
+function reconsolidate(t) {
+  // Record ghost position
+  const oldCenter = traceCenter(t);
+  t.ghostTrail.push({ x: oldCenter.x, y: oldCenter.y, age: 0 });
+
+  // Drift particles
+  const strength = traceStrength(t);
+  const driftMag = 12 * (1 - strength * 0.6); // stronger = less drift
+
+  // Context from last visited trace
+  let contextDx = 0, contextDy = 0;
+  if (lastTraceVisited && lastTraceVisited.id !== t.id) {
+    const otherCenter = traceCenter(lastTraceVisited);
+    const dx = otherCenter.x - oldCenter.x;
+    const dy = otherCenter.y - oldCenter.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 0 && d < 400) {
+      contextDx = (dx / d) * driftMag * 0.4;
+      contextDy = (dy / d) * driftMag * 0.4;
+      showInsight('contextBleed');
+    }
+  }
+
+  for (const p of t.particles) {
+    const dx = (Math.random() - 0.5) * driftMag + contextDx;
+    const dy = (Math.random() - 0.5) * driftMag + contextDy;
+    p.tx += dx;
+    p.ty += dy;
+  }
+
+  t.reconCount++;
+  totalReconsolidations++;
+  t.state = 'reconsolidating';
+  t.stateTimer = 0;
+  t.reconFlash = 1;
+  lastTraceVisited = t;
+
+  showInsight('firstRecon');
+
+  // Check total drift for "no original" insight
+  const newCenter = traceCenter(t);
+  const totalDrift = Math.hypot(
+    newCenter.x - t.originalCenter.x,
+    newCenter.y - t.originalCenter.y
+  );
+  if (totalDrift > 50) showInsight('noOriginal');
+
+  // Check strength for "success = rigidity" insight
+  if (t.reconCount >= 5) showInsight('success');
+}
+
+// --- Draw ---
+function draw() {
+  // Clear with slight atmosphere retention
+  ctx.fillStyle = 'rgba(10, 10, 12, 0.35)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Dust
+  for (const d of dust) {
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(${COL.ghostR}, ${COL.ghostG}, ${COL.ghostB}, ${d.alpha})`;
+    ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw traces
+  for (const t of traces) {
+    drawTrace(t);
+  }
+
+  // Stats
+  const stableCount = traces.filter(t => ['stable', 'labile', 'reconsolidating', 'forming'].includes(t.state)).length;
+  const extinctCount = traces.filter(t => t.state === 'extinct' || t.state === 'extinguishing').length;
+  document.getElementById('stats').innerHTML =
+    `traces: ${stableCount}<br>` +
+    `extinct: ${extinctCount}<br>` +
+    `reconsolidations: ${totalReconsolidations}<br>` +
+    (showGhosts ? `ghost trails: visible` : '');
+}
+
+function drawTrace(t) {
+  const strength = traceStrength(t);
+  let alpha = 1;
+  let r, g, b;
+
+  // Determine color and alpha based on state
+  switch (t.state) {
+    case 'forming':
+      alpha = t.formOpacity * 0.8;
+      r = COL.stableR; g = COL.stableG; b = COL.stableB;
+      break;
+    case 'stable':
+      alpha = 0.7 + strength * 0.3;
+      // Fortified traces shift toward deep red-amber
+      const fortifyT = Math.min(1, strength * 1.2);
+      r = COL.stableR + (40 * fortifyT);
+      g = COL.stableG - (30 * fortifyT);
+      b = COL.stableB - (20 * fortifyT);
+      break;
+    case 'labile': {
+      const labProg = Math.min(1, (t.labilityTimer - traceLabilityThreshold(t)) /
+        (traceReconThreshold(t) - traceLabilityThreshold(t)));
+      const lp = Math.max(0, labProg);
+      [r, g, b] = lerpColor(COL.stableR, COL.stableG, COL.stableB,
+        COL.labileR, COL.labileG, COL.labileB, lp);
+      alpha = 0.85;
+      break;
+    }
+    case 'reconsolidating':
+      r = COL.stableR + t.reconFlash * 60;
+      g = COL.stableG + t.reconFlash * 40;
+      b = COL.stableB + t.reconFlash * 30;
+      alpha = 0.9;
+      break;
+    case 'extinguishing':
+      r = COL.stableR; g = COL.stableG; b = COL.stableB;
+      alpha = t.extinctOpacity * 0.7;
+      break;
+    case 'extinct':
+      r = COL.ghostR; g = COL.ghostG; b = COL.ghostB;
+      alpha = 0.04;
+      break;
+    case 'recovering':
+      [r, g, b] = lerpColor(COL.ghostR, COL.ghostG, COL.ghostB,
+        COL.stableR, COL.stableG, COL.stableB,
+        Math.min(1, t.stateTimer / 300));
+      alpha = t.extinctOpacity * 0.7;
+      break;
+  }
+
+  r = Math.min(255, Math.max(0, r));
+  g = Math.min(255, Math.max(0, g));
+  b = Math.min(255, Math.max(0, b));
+
+  // Ghost trails (always drawn if showGhosts, or during labile state)
+  if ((showGhosts || t.state === 'labile') && t.ghostTrail.length > 0) {
+    drawGhostTrail(t);
+  }
+
+  // Ghost particles (original positions, during labile state)
+  if (t.state === 'labile' && t.reconCount > 0) {
+    for (const p of t.particles) {
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${COL.ghostR}, ${COL.ghostG}, ${COL.ghostB}, 0.1)`;
+      ctx.arc(p.ox, p.oy, p.size * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Connections
+  const connWidth = 0.4 + strength * 0.8;
+  const connAlpha = alpha * (t.state === 'labile' ? 0.2 : 0.35);
+  for (const c of t.connections) {
+    const pa = t.particles[c.a];
+    const pb = t.particles[c.b];
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${r|0}, ${g|0}, ${b|0}, ${connAlpha})`;
+    ctx.lineWidth = connWidth;
+    if (t.state === 'labile') {
+      // Wavy connection
+      const mx = (pa.x + pb.x) / 2 + Math.sin(frame * 0.05 + c.a) * 4;
+      const my = (pa.y + pb.y) / 2 + Math.cos(frame * 0.04 + c.b) * 4;
+      ctx.moveTo(pa.x, pa.y);
+      ctx.quadraticCurveTo(mx, my, pb.x, pb.y);
+    } else {
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+    }
+    ctx.stroke();
+  }
+
+  // Particles
+  for (const p of t.particles) {
+    const pSize = p.size * (1 + strength * 0.4);
+    const glowSize = pSize * (3.5 + strength * 2);
+
+    // Glow
+    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
+    grad.addColorStop(0, `rgba(${r|0}, ${g|0}, ${b|0}, ${alpha * 0.25})`);
+    grad.addColorStop(0.5, `rgba(${r|0}, ${g|0}, ${b|0}, ${alpha * 0.06})`);
+    grad.addColorStop(1, `rgba(${r|0}, ${g|0}, ${b|0}, 0)`);
+    ctx.beginPath();
+    ctx.fillStyle = grad;
+    ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(${Math.min(255, r + 40)|0}, ${Math.min(255, g + 30)|0}, ${Math.min(255, b + 20)|0}, ${alpha * 0.9})`;
+    ctx.arc(p.x, p.y, pSize, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Labile shimmer
+    if (t.state === 'labile') {
+      const shimmer = 0.3 + 0.3 * Math.sin(frame * 0.08 + p.phase * 3);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${COL.labileR}, ${COL.labileG}, ${COL.labileB}, ${shimmer * alpha * 0.3})`;
+      ctx.arc(p.x, p.y, pSize * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Reconsolidation flash
+    if (t.reconFlash > 0) {
+      ctx.beginPath();
+      const flashGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize * 1.5);
+      flashGrad.addColorStop(0, `rgba(255, 230, 180, ${t.reconFlash * 0.35})`);
+      flashGrad.addColorStop(1, `rgba(255, 230, 180, 0)`);
+      ctx.fillStyle = flashGrad;
+      ctx.arc(p.x, p.y, glowSize * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Strength indicator (subtle ring around fortified traces — only after multiple reconsolidations)
+  if (t.reconCount >= 3 && t.state === 'stable') {
+    const c = traceCenter(t);
+    const fortLevel = Math.min(1, (t.reconCount - 2) * 0.2);
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${r|0}, ${g|0}, ${b|0}, ${fortLevel * 0.07})`;
+    ctx.lineWidth = 0.5;
+    ctx.arc(c.x, c.y, 55 + fortLevel * 15, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function drawGhostTrail(t) {
+  if (t.ghostTrail.length === 0) return;
+
+  const baseAlpha = showGhosts ? 0.15 : 0.08;
+
+  // Draw trail from original center through each reconsolidation center
+  const points = [{ x: t.originalCenter.x, y: t.originalCenter.y }];
+  for (const g of t.ghostTrail) points.push(g);
+  const currentCenter = traceCenter(t);
+  points.push(currentCenter);
+
+  for (let i = 0; i < points.length; i++) {
+    const progress = i / (points.length - 1);
+    const a = baseAlpha * (0.4 + progress * 0.6);
+
+    // Dot
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(${COL.ghostR}, ${COL.ghostG}, ${COL.ghostB}, ${a})`;
+    const dotSize = i === 0 ? 2 : 1.2;
+    ctx.arc(points[i].x, points[i].y, dotSize, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Connecting line
+    if (i > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(${COL.ghostR}, ${COL.ghostG}, ${COL.ghostB}, ${a * 0.4})`;
+      ctx.lineWidth = 0.4;
+      ctx.setLineDash([2, 5]);
+      ctx.moveTo(points[i - 1].x, points[i - 1].y);
+      ctx.lineTo(points[i].x, points[i].y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // Original position marker (slightly larger)
+  if (showGhosts) {
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${COL.ghostR}, ${COL.ghostG}, ${COL.ghostB}, ${baseAlpha * 0.6})`;
+    ctx.lineWidth = 0.4;
+    ctx.arc(t.originalCenter.x, t.originalCenter.y, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+// --- Main loop ---
+function loop(now) {
+  dt = Math.min(3, (now - lastTime) / 16.667); // normalize to 60fps; cap at 3x to prevent jumps
+  lastTime = now;
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Initial traces
+setTimeout(() => {
+  const pos = findSpawnPosition();
+  if (pos) createTrace(pos.x, pos.y, false);
+}, 500);
+setTimeout(() => {
+  const pos = findSpawnPosition();
+  if (pos) createTrace(pos.x, pos.y, false);
+}, 2500);
+setTimeout(() => {
+  const pos = findSpawnPosition();
+  if (pos) createTrace(pos.x, pos.y, false);
+}, 4500);
+
+// Fade info text
+setTimeout(() => {
+  document.getElementById('info').style.opacity = 0;
+}, 15000);
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

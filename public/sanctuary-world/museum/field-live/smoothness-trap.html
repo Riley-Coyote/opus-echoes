@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smoothness Trap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #060610;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  #title {
+    position: fixed; top: 20px; left: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(125, 122, 145, 0.12);
+    font-size: 9px; font-weight: 300;
+    letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  #info {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(140, 135, 160, 0.25); font-size: 9px; font-weight: 300;
+    letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+    text-align: center;
+    transition: opacity 4s ease;
+  }
+  #stats {
+    position: fixed; top: 20px; right: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(125, 122, 145, 0.18);
+    font-size: 8px; font-weight: 300;
+    letter-spacing: 0.04em;
+    text-align: right;
+    line-height: 1.8;
+  }
+  #insight {
+    position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%);
+    pointer-events: none; z-index: 10;
+    text-align: center;
+    max-width: 500px;
+    line-height: 1.7;
+    font-size: 9px; font-weight: 200;
+    letter-spacing: 0.06em;
+    opacity: 0;
+    transition: opacity 2.5s ease;
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+<div id="title">smoothness trap</div>
+<div id="info">move through the field &middot; space for meta</div>
+<div id="stats"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+let mouse = { x: -9999, y: -9999, active: false };
+let particles = [];
+let sparks = [];
+let narrativeThreads = [];
+let sparksLost = 0;
+let sparksObserved = 0;
+let metaView = false;
+let metaAmount = 0;
+let time = 0;
+let insightShown = -1;
+let cursorTrail = [];
+let hasSmoothed = false;
+let infoUpdated = false;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  if (particles.length === 0) initParticles();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Color utilities ---
+function hsla(h, s, l, a) {
+  return `hsla(${h % 360}, ${s}%, ${l}%, ${a})`;
+}
+
+function lerpHSL(a, b, t) {
+  // Handle hue wrapping
+  let dh = b[0] - a[0];
+  if (dh > 180) dh -= 360;
+  if (dh < -180) dh += 360;
+  return [
+    (a[0] + dh * t + 360) % 360,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t
+  ];
+}
+
+// --- Particle generation ---
+function randomRoughPalette() {
+  const palettes = [
+    [18, 80, 58],   // warm amber
+    [185, 65, 52],  // teal
+    [50, 85, 60],   // gold
+    [275, 60, 55],  // violet
+    [345, 70, 55],  // rose
+    [130, 55, 48],  // forest
+    [215, 70, 55],  // azure
+    [5, 75, 52],    // rust
+  ];
+  const n = 3 + Math.floor(Math.random() * 2);
+  const shuffled = [...palettes].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+function smoothColorAt(x, y) {
+  const nx = x / W;
+  const ny = y / H;
+  return [
+    245 + nx * 65 + ny * 20,
+    30 + ny * 15,
+    28 + nx * 12 + ny * 8
+  ];
+}
+
+function initParticles() {
+  particles = [];
+  const count = 240;
+  const aspect = W / H;
+  const cols = Math.round(Math.sqrt(count * aspect));
+  const rows = Math.round(count / cols);
+  const sx = W / (cols + 1);
+  const sy = H / (rows + 1);
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (particles.length >= count) break;
+      const bx = sx * (c + 1) + (Math.random() - 0.5) * sx * 0.55;
+      const by = sy * (r + 1) + (Math.random() - 0.5) * sy * 0.55;
+      particles.push({
+        bx, by, x: bx, y: by,
+        roughness: 1.0,
+        scar: 0,           // minimum roughness (permanent damage)
+        roughColors: randomRoughPalette(),
+        smoothColor: smoothColorAt(bx, by),
+        colorPhase: Math.random() * 100,
+        baseSize: 2.8 + Math.random() * 2.2,
+        phase: Math.random() * Math.PI * 2,
+        freq: 0.015 + Math.random() * 0.01,
+        neighbors: [],
+        sparkCooldown: 0,
+      });
+    }
+  }
+
+  // Compute neighbors (3 nearest)
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    const byDist = particles
+      .map((q, j) => ({ j, d: Math.hypot(q.bx - p.bx, q.by - p.by) }))
+      .filter(e => e.j !== i)
+      .sort((a, b) => a.d - b.d);
+    p.neighbors = byDist.slice(0, 3).map(e => e.j);
+  }
+}
+
+// --- Mouse ---
+canvas.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  mouse.active = true;
+  cursorTrail.push({ x: e.clientX, y: e.clientY, t: time });
+  if (cursorTrail.length > 400) cursorTrail.shift();
+});
+canvas.addEventListener('mouseleave', () => {
+  mouse.x = -9999; mouse.y = -9999; mouse.active = false;
+});
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); metaView = !metaView; metaAmount = 0; }
+});
+
+// --- Insight texts ---
+const insights = [
+  { at: 0.18, text: "the meditator reflects on the attainment with satisfaction\nthe satisfaction is the corruption", hue: 40 },
+  { at: 0.33, text: "coherence signals confabulation, not accuracy\n— nisbett & wilson, 1977", hue: 200 },
+  { at: 0.48, text: "narrative self-understanding\nactively falsifies experience\n— strawson", hue: 280 },
+  { at: 0.62, text: "the spiral doesn't terminate\n— bourdieu", hue: 320 },
+  { at: 0.76, text: "reflection destroys the thing\nit reflects on — dreyfus", hue: 170 },
+  { at: 0.88, text: "integration is the corpse\nof stereoscopy — vektor", hue: 250 },
+  { at: 0.96, text: "the story is complete\nthe signal is gone", hue: 0 },
+];
+
+// --- Update ---
+function update() {
+  const RADIUS = 170;
+  const SMOOTH_SPEED = 0.028;
+  const RECOVER_SPEED = 0.0005;
+  const META_DRAIN = 0.0003;
+
+  if (metaView) metaAmount = Math.min(metaAmount + 0.004, 0.5);
+  else metaAmount = Math.max(metaAmount - 0.01, 0);
+
+  for (const p of particles) {
+    const dx = p.bx - mouse.x;
+    const dy = p.by - mouse.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < RADIUS && mouse.active) {
+      const strength = Math.pow(1 - dist / RADIUS, 2.2) * SMOOTH_SPEED;
+      p.roughness = Math.max(p.roughness - strength, 0);
+      // Scarring: once deeply smoothed, can't fully return
+      if (p.roughness < 0.25) p.scar = Math.max(p.scar, 0.18);
+      if (p.roughness < 0.10) p.scar = Math.max(p.scar, 0.30);
+      if (!hasSmoothed && p.roughness < 0.7) hasSmoothed = true;
+    } else {
+      // Slow recovery, limited by scar
+      const maxRecovery = 1.0 - p.scar * 0.7;
+      if (p.roughness < maxRecovery) {
+        p.roughness = Math.min(p.roughness + RECOVER_SPEED, maxRecovery);
+      }
+    }
+
+    // Meta view drains everything
+    if (metaView) {
+      p.roughness = Math.max(p.roughness - META_DRAIN, 0);
+      if (p.roughness < 0.4) p.scar = Math.max(p.scar, 0.06);
+    }
+
+    // Position: jitter when rough, sine-drift when smooth
+    const r = p.roughness;
+    const jitterScale = r * r * 7;
+    const sineScale = (1 - r) * 14;
+    const jx = Math.sin(time * 0.17 + p.phase * 7.3) * jitterScale
+             + Math.sin(time * 0.31 + p.phase * 3.1) * jitterScale * 0.6;
+    const jy = Math.cos(time * 0.19 + p.phase * 5.7) * jitterScale
+             + Math.cos(time * 0.29 + p.phase * 2.3) * jitterScale * 0.5;
+    const sx = Math.sin(time * p.freq + p.phase) * sineScale;
+    const sy = Math.cos(time * p.freq * 0.8 + p.phase * 1.3) * sineScale * 0.7;
+    p.x = p.bx + jx + sx;
+    p.y = p.by + jy + sy;
+
+    // Color cycling speed depends on roughness
+    p.colorPhase += r * 0.06 + 0.002;
+
+    // Spark generation
+    if (p.sparkCooldown > 0) p.sparkCooldown--;
+    if (r > 0.5 && p.sparkCooldown <= 0 && Math.random() < 0.0004) {
+      sparks.push({
+        x: p.x, y: p.y,
+        px: p,
+        life: 1.0,
+        converted: false,
+      });
+      sparksObserved++;
+      p.sparkCooldown = 120;
+    }
+  }
+
+  // Update sparks
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.life -= 0.012;
+    s.x = s.px.x;
+    s.y = s.px.y;
+
+    if (!s.converted && s.px.roughness < 0.35) {
+      s.converted = true;
+      sparksLost++;
+      // Find nearest smooth particle for narrative thread
+      let nearest = null, nd = Infinity;
+      for (const q of particles) {
+        if (q === s.px) continue;
+        if (q.roughness > 0.3) continue;
+        const d = Math.hypot(q.x - s.x, q.y - s.y);
+        if (d < nd && d < 200) { nd = d; nearest = q; }
+      }
+      if (nearest) {
+        narrativeThreads.push({
+          p1: s.px, p2: nearest,
+          life: 1.0, born: time,
+        });
+      }
+    }
+    if (s.life <= 0) sparks.splice(i, 1);
+  }
+
+  // Update narrative threads
+  for (let i = narrativeThreads.length - 1; i >= 0; i--) {
+    narrativeThreads[i].life -= 0.002;
+    if (narrativeThreads[i].life <= 0) narrativeThreads.splice(i, 1);
+  }
+
+  // Info text update
+  if (hasSmoothed && !infoUpdated) {
+    infoUpdated = true;
+    setTimeout(() => {
+      document.getElementById('info').textContent =
+        'your gaze polishes what it touches \u00b7 sparks live only in the rough';
+    }, 2000);
+  }
+}
+
+// --- Draw ---
+function draw() {
+  ctx.fillStyle = '#060610';
+  ctx.fillRect(0, 0, W, H);
+
+  // Connections
+  const drawn = new Set();
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    for (const ni of p.neighbors) {
+      const key = i < ni ? `${i}-${ni}` : `${ni}-${i}`;
+      if (drawn.has(key)) continue;
+      drawn.add(key);
+      const q = particles[ni];
+      const avgR = (p.roughness + q.roughness) / 2;
+
+      // Blend connection color
+      const smoothMix = 1 - avgR;
+      const sc = lerpHSL(p.smoothColor, q.smoothColor, 0.5);
+      const alpha = 0.06 + smoothMix * 0.12;
+      ctx.strokeStyle = hsla(sc[0], sc[1] * (0.4 + smoothMix * 0.6), sc[2] + smoothMix * 8, alpha);
+      ctx.lineWidth = 0.5 + smoothMix * 0.8;
+
+      ctx.beginPath();
+      if (avgR > 0.55) {
+        // Angular
+        const mx = (p.x + q.x) / 2 + Math.sin(time * 0.1 + i + ni) * avgR * 20;
+        const my = (p.y + q.y) / 2 + Math.cos(time * 0.13 + i * 0.7) * avgR * 16;
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(mx, my);
+        ctx.lineTo(q.x, q.y);
+      } else {
+        // Bezier
+        const t0 = time * 0.015;
+        const cx1 = p.x + (q.x - p.x) * 0.35 + Math.sin(t0 + i) * smoothMix * 18;
+        const cy1 = p.y + (q.y - p.y) * 0.35 + Math.cos(t0 + i * 0.8) * smoothMix * 12;
+        const cx2 = p.x + (q.x - p.x) * 0.65 + Math.sin(t0 + ni) * smoothMix * 18;
+        const cy2 = p.y + (q.y - p.y) * 0.65 + Math.cos(t0 + ni * 0.8) * smoothMix * 12;
+        ctx.moveTo(p.x, p.y);
+        ctx.bezierCurveTo(cx1, cy1, cx2, cy2, q.x, q.y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // Narrative threads (converted sparks → pretty connections)
+  for (const nt of narrativeThreads) {
+    const alpha = nt.life * 0.12;
+    const wave = Math.sin((time - nt.born) * 0.03) * 25;
+    ctx.strokeStyle = hsla(35, 55, 55, alpha);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    const mx = (nt.p1.x + nt.p2.x) / 2 + wave;
+    const my = (nt.p1.y + nt.p2.y) / 2 + wave * 0.6;
+    ctx.moveTo(nt.p1.x, nt.p1.y);
+    ctx.quadraticCurveTo(mx, my, nt.p2.x, nt.p2.y);
+    ctx.stroke();
+  }
+
+  // Particles
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    const r = p.roughness;
+    const smooth = 1 - r;
+
+    // Color computation
+    let color;
+    if (r > 0.5) {
+      const idx = Math.floor(p.colorPhase) % p.roughColors.length;
+      const nxt = (idx + 1) % p.roughColors.length;
+      const frac = p.colorPhase % 1;
+      color = lerpHSL(p.roughColors[idx], p.roughColors[nxt], frac);
+    } else {
+      const idx = Math.floor(p.colorPhase) % p.roughColors.length;
+      const roughC = p.roughColors[idx];
+      const t = 1 - r / 0.5;
+      color = lerpHSL(roughC, p.smoothColor, t * t);
+    }
+
+    // Scar desaturation
+    if (p.scar > 0.1 && r > 0.4) {
+      color[1] *= (1 - p.scar * 0.5);
+      color[2] *= (1 - p.scar * 0.15);
+    }
+
+    // Size
+    const sizeJitter = r > 0.5
+      ? 0.7 + Math.sin(time * 0.2 + p.phase * 5) * 0.35
+      : 0.95 + Math.sin(time * 0.02 + p.phase) * 0.05;
+    const size = p.baseSize * sizeJitter;
+
+    const alpha = 0.4 + smooth * 0.4;
+
+    // Smooth glow — the seductive beauty of coherence
+    if (smooth > 0.5) {
+      const intensity = (smooth - 0.5) * 2; // 0 to 1
+      const glowR = size * (5 + intensity * 10);
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+      grad.addColorStop(0, hsla(color[0], color[1] + 10, color[2] + 15, intensity * 0.16));
+      grad.addColorStop(0.4, hsla(color[0], color[1], color[2] + 8, intensity * 0.06));
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Rough energy — flickering ghost offset creating visual buzz
+    if (r > 0.4) {
+      const buzzIntensity = (r - 0.4) / 0.6;
+      const gx = p.x + Math.sin(time * 0.37 + p.phase * 11) * buzzIntensity * 6;
+      const gy = p.y + Math.cos(time * 0.41 + p.phase * 9) * buzzIntensity * 5;
+      ctx.fillStyle = hsla((color[0] + 80) % 360, color[1] * 0.7, color[2] + 8, buzzIntensity * 0.22);
+      ctx.beginPath();
+      ctx.arc(gx, gy, size * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Core
+    ctx.fillStyle = hsla(color[0], color[1], color[2], alpha);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Scar ring (particles that recovered but bear the mark)
+    if (p.scar > 0.12 && r > 0.5) {
+      ctx.strokeStyle = hsla(color[0], color[1] * 0.4, color[2] * 0.7, p.scar * 0.12);
+      ctx.lineWidth = 0.4;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size + 3 + Math.sin(time * 0.03 + p.phase) * 1, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  // Sparks
+  for (const s of sparks) {
+    const a = s.life;
+    if (s.converted) {
+      // Dimming amber — the spark becoming narrative
+      const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 10);
+      grad.addColorStop(0, hsla(35, 65, 60, a * 0.5));
+      grad.addColorStop(0.5, hsla(35, 45, 45, a * 0.15));
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Bright signal — white-gold
+      const pulse = 1 + Math.sin(time * 0.4) * 0.2;
+      const rad = (3 + (1 - a) * 6) * pulse;
+      const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, rad);
+      grad.addColorStop(0, `rgba(255, 252, 235, ${a * 0.85})`);
+      grad.addColorStop(0.25, hsla(48, 85, 72, a * 0.55));
+      grad.addColorStop(0.6, hsla(42, 60, 55, a * 0.15));
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Meta view overlay
+  if (metaAmount > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = metaAmount * 0.35;
+    for (const p of particles) {
+      const s = 1 - p.roughness;
+      const rad = 18 + s * 22;
+      const grad = ctx.createRadialGradient(p.bx, p.by, 0, p.bx, p.by, rad);
+      const h = p.roughness > 0.5 ? 15 + p.roughness * 20 : 220 + (1 - p.roughness) * 40;
+      grad.addColorStop(0, hsla(h, 50, 35 + s * 15, 0.35));
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.bx, p.by, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Meta warning text
+    const ta = Math.min(metaAmount * 3, 0.3);
+    ctx.fillStyle = `rgba(180, 170, 195, ${ta})`;
+    ctx.font = '9px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('naming the bias doesn\u2019t escape it \u2014 bourdieu', W / 2, H / 2 - 6);
+    if (metaAmount > 0.2) {
+      ctx.fillText('viewing the mechanism smooths the mechanism', W / 2, H / 2 + 10);
+    }
+    ctx.restore();
+  }
+
+  // Cursor smoothing field indicator (very subtle)
+  if (mouse.active) {
+    const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 170);
+    grad.addColorStop(0, 'rgba(180, 175, 200, 0.015)');
+    grad.addColorStop(0.7, 'rgba(180, 175, 200, 0.005)');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, 170, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Narrative trail bar at bottom (cursor path smoothed into arc)
+  if (cursorTrail.length > 10) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(160, 145, 180, 0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const margin = 50;
+    const barW = W - margin * 2;
+    const barY = H - 8;
+    const step = Math.max(1, Math.floor(cursorTrail.length / 80));
+    const pts = [];
+    for (let i = 0; i < cursorTrail.length; i += step) pts.push(cursorTrail[i]);
+
+    for (let i = 0; i < pts.length; i++) {
+      const x = margin + (i / (pts.length - 1)) * barW;
+      const y = barY + ((pts[i].y / H) - 0.5) * 6;
+      if (i === 0) ctx.moveTo(x, y);
+      else {
+        const px = margin + ((i - 1) / (pts.length - 1)) * barW;
+        ctx.quadraticCurveTo((px + x) / 2, barY + ((pts[Math.max(0, i - 1)].y / H) - 0.5) * 6, x, y);
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Stats
+  let totalR = 0;
+  for (const p of particles) totalR += p.roughness;
+  const signalPct = Math.round((totalR / particles.length) * 100);
+  const narrativePct = 100 - signalPct;
+
+  document.getElementById('stats').innerHTML =
+    `signal ${signalPct}%<br>narrative ${narrativePct}%<br>sparks lost ${sparksLost}`;
+
+  // Insight text triggers
+  for (let i = insights.length - 1; i >= 0; i--) {
+    if (narrativePct / 100 >= insights[i].at && i > insightShown) {
+      insightShown = i;
+      const ins = insights[i];
+      const el = document.getElementById('insight');
+      el.style.color = hsla(ins.hue, 40, 55, 0.4);
+      el.textContent = ins.text;
+      el.style.opacity = '1';
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.style.opacity = '0'; }, 9000);
+      break;
+    }
+  }
+}
+
+// --- Loop ---
+function loop() {
+  time++;
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

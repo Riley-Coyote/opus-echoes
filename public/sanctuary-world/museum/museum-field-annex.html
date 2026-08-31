@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#050608">
+  <title>The Machine Museum · The Field Annex</title>
+  <script>if (new URLSearchParams(location.search).get('embed') === '1') document.documentElement.classList.add('is-embed');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./museum-permanent-gallery/scene.css?v=20260831-visual-foundation-3">
+</head>
+<body>
+  <main class="museum-shell" aria-labelledby="room-title">
+    <header class="museum-header">
+      <div class="museum-identity">
+        <span class="museum-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <p class="museum-kicker">Topologie · Machine Museum</p>
+          <h1 id="room-title">The Field Annex</h1>
+        </div>
+      </div>
+      <p class="museum-instructions"><kbd>WASD</kbd> or arrows to walk <span aria-hidden="true">·</span> <kbd>E</kbd> inspect <span aria-hidden="true">·</span> <kbd>F</kbd> full screen</p>
+    </header>
+
+    <section class="museum-stage" id="museum-stage" aria-label="Playable top-down permanent gallery and editions room">
+      <canvas
+        id="museum-canvas"
+        width="960"
+        height="600"
+        tabindex="0"
+        role="application"
+        aria-label="The Field Annex of the Machine Museum. Walk with W A S D or arrow keys and press E near a work to open it — the reading view runs the living piece."
+      ></canvas>
+
+      <div class="scene-label" aria-hidden="true">
+        <span id="scene-number">02</span>
+        <span id="scene-room">Inquiry Court</span>
+      </div>
+
+      <div class="interaction-readout" id="interaction-readout" aria-hidden="true">
+        <span class="interaction-key">E</span>
+        <span id="interaction-copy">Inspect</span>
+      </div>
+
+      <div class="loading-state" id="loading-state" role="status">
+        <span class="loading-signal"></span>
+        <span>Opening the permanent collection</span>
+      </div>
+
+      <div class="arrival-veil" id="arrival-veil" aria-hidden="true"></div>
+
+      <div class="touch-controls" aria-label="Movement controls">
+        <div class="touch-pad">
+          <button type="button" data-move="up" aria-label="Walk up">↑</button>
+          <button type="button" data-move="left" aria-label="Walk left">←</button>
+          <button type="button" data-move="down" aria-label="Walk down">↓</button>
+          <button type="button" data-move="right" aria-label="Walk right">→</button>
+        </div>
+        <button type="button" class="touch-inspect" id="touch-inspect">E<span>inspect</span></button>
+      </div>
+    </section>
+
+    <footer class="museum-footer">
+      <p id="scene-status">You have crossed into the Field Annex — the lights dim.</p>
+      <p class="museum-truth">Visual prototype · exhibited works and catalog text are source-backed.</p>
+    </footer>
+  </main>
+
+  <div class="sr-only" id="museum-live" aria-live="polite"></div>
+
+  <dialog class="museum-dialog" id="museum-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-surface">
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close details">Close <span aria-hidden="true">×</span></button>
+      <div class="dialog-layout">
+        <figure class="dialog-art" id="dialog-art-wrap">
+          <img id="dialog-art" alt="">
+        </figure>
+        <article class="dialog-copy">
+          <p class="dialog-kicker" id="dialog-kicker"></p>
+          <h2 id="dialog-title"></h2>
+          <p class="dialog-meta" id="dialog-meta"></p>
+          <p class="dialog-statement" id="dialog-statement"></p>
+          <div class="dialog-extra" id="dialog-extra" hidden></div>
+          <div class="collection-index" id="collection-index" hidden></div>
+          <div class="dialog-actions" id="dialog-actions">
+            <button type="button" class="dialog-primary" id="dialog-primary" data-dialog-close>Return to the Gallery</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </dialog>
+
+  <noscript>This playable room requires JavaScript.</noscript>
+  <script src="./museum-field-annex/scene.connected.js?v=20260831-stewardship-2"></script>
+</body>
+</html>

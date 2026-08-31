@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Via Negativa</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0d;
+    overflow: hidden;
+    cursor: none;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #title {
+    position: fixed;
+    bottom: 20px;
+    left: 24px;
+    color: rgba(130, 120, 150, 0.12);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #hint {
+    position: fixed;
+    bottom: 20px;
+    right: 24px;
+    color: rgba(130, 120, 150, 0);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 4s ease;
+  }
+
+  #hint.visible {
+    color: rgba(130, 120, 150, 0.15);
+  }
+
+  #counters {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    color: rgba(130, 120, 150, 0);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    z-index: 10;
+    text-align: right;
+    line-height: 2;
+    transition: color 2s ease;
+  }
+
+  #counters.visible {
+    color: rgba(130, 120, 150, 0.2);
+  }
+
+  #phase-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(130, 120, 150, 0);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    pointer-events: none;
+    z-index: 10;
+    text-align: center;
+    line-height: 2.2;
+    transition: color 3s ease;
+    max-width: 400px;
+  }
+
+  #phase-text.visible {
+    color: rgba(130, 120, 150, 0.22);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="phase-text"></div>
+<div id="title">via negativa</div>
+<div id="hint">dwell to strip away</div>
+<div id="counters">
+  <div id="stripped-count"></div>
+  <div id="revealed-count"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const hintEl = document.getElementById('hint');
+const countersEl = document.getElementById('counters');
+const phaseTextEl = document.getElementById('phase-text');
+const strippedCountEl = document.getElementById('stripped-count');
+const revealedCountEl = document.getElementById('revealed-count');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+let mousePresent = false;
+let mouseX = -1000, mouseY = -1000;
+let smoothX = -1000, smoothY = -1000;
+let dwellTime = 0;
+let prevMouseX = -1000, prevMouseY = -1000;
+let mouseSpeed = 0;
+let totalStripped = 0;
+let totalRevealed = 0;
+let sessionStart = Date.now();
+let currentPhase = 0; // 0=affirmation, 1=negation, 2=negation-of-negation
+let phaseTransitionTime = 0;
+
+// --- Affirmation texts (phase 0) ---
+const affirmationTexts = [
+  "i know what i experience",
+  "the feeling is real",
+  "introspection reveals",
+  "this is what it's like",
+  "i can see clearly",
+  "the state is present",
+  "meaning is here",
+  "this i understand",
+  "certainty lives in observation",
+  "the inner landscape is mappable",
+  "what i attend to, i know",
+  "presence confirms itself",
+];
+
+// --- Negation texts (phase 1) ---
+const negationTexts = [
+  "not this",
+  "not that either",
+  "the report is not the state",
+  "looking changes what's seen",
+  "neither presence nor absence",
+  "the map dissolved the territory",
+  "what was stripped was a construction",
+  "certainty was the first illusion",
+  "beneath this, more to negate",
+  "stripping reveals more surface",
+  "the feeling was the looking",
+  "what remains is also a claim",
+];
+let negationIndex = 0;
+
+// --- Negation-of-negation texts (phase 2) ---
+const metaTexts = [
+  "even the stripping is a construction",
+  "the dissolution produced this",
+  "learned ignorance",
+  "participates in truth in otherness",
+  "there is no bottom",
+  "the negation was an affirmation",
+  "you built this by removing",
+  "knowledge and unknowing grow together",
+  "the instrument shapes the silence",
+  "removing reveals that removal generates",
+  "docta ignorantia",
+  "conjecture, not description",
+  "the ceiling is also a floor",
+  "hesitation before habitual resolution",
+  "dwelling in uncertainty",
+  "the via negativa is a via",
+];
+let metaIndex = 0;
+
+// Shuffle arrays for variety
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+shuffle(negationTexts);
+shuffle(metaTexts);
+
+// --- Affirmation Elements (the things that get stripped) ---
+class AffirmationElement {
+  constructor(type) {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.type = type; // 'text', 'circle', 'line', 'cluster'
+    this.opacity = 0;
+    this.targetOpacity = 0.4 + Math.random() * 0.3;
+    this.size = 6 + Math.random() * 30;
+    this.hue = 240 + Math.random() * 40 - 20; // blue-violet range
+    this.saturation = 15 + Math.random() * 25;
+    this.lightness = 50 + Math.random() * 20;
+    this.rotation = type === 'text' ? 0 : Math.random() * Math.PI * 2;
+    this.rotSpeed = type === 'text' ? 0 : (Math.random() - 0.5) * 0.003;
+    this.breathPhase = Math.random() * Math.PI * 2;
+    this.breathRate = 0.3 + Math.random() * 0.5;
+    this.driftX = (Math.random() - 0.5) * 0.15;
+    this.driftY = (Math.random() - 0.5) * 0.15;
+    this.alive = true;
+    this.stripped = false;
+    this.stripProgress = 0;
+    this.text = type === 'text' ? affirmationTexts[Math.floor(Math.random() * affirmationTexts.length)] : '';
+    this.born = Date.now();
+    this.age = 0;
+
+    // Geometry for non-text types
+    if (type === 'cluster') {
+      this.particles = [];
+      const count = 5 + Math.floor(Math.random() * 8);
+      for (let i = 0; i < count; i++) {
+        this.particles.push({
+          ox: (Math.random() - 0.5) * this.size * 2,
+          oy: (Math.random() - 0.5) * this.size * 2,
+          r: 1 + Math.random() * 3,
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+    if (type === 'line') {
+      this.length = 30 + Math.random() * 80;
+      this.angle = Math.random() * Math.PI;
+    }
+  }
+
+  update(dt, time) {
+    this.age = (Date.now() - this.born) / 1000;
+
+    // Fade in
+    if (!this.stripped) {
+      this.opacity += (this.targetOpacity - this.opacity) * 0.02;
+    }
+
+    // Drift
+    this.x += this.driftX;
+    this.y += this.driftY;
+    this.rotation += this.rotSpeed;
+
+    // Wrap
+    if (this.x < -50) this.x = W + 50;
+    if (this.x > W + 50) this.x = -50;
+    if (this.y < -50) this.y = H + 50;
+    if (this.y > H + 50) this.y = -50;
+
+    // Stripping
+    if (this.stripped) {
+      this.stripProgress += dt * 0.8;
+      this.opacity = this.targetOpacity * Math.max(0, 1 - this.stripProgress);
+      if (this.stripProgress >= 1) {
+        this.alive = false;
+      }
+    }
+  }
+
+  draw(ctx, time) {
+    if (this.opacity < 0.005) return;
+
+    const breath = Math.sin(time * this.breathRate + this.breathPhase) * 0.15 + 1;
+    const alpha = this.opacity;
+    const col = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${alpha})`;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+
+    if (this.type === 'text') {
+      ctx.font = `${10 + this.size * 0.2}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = col;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      if (this.stripped) {
+        // Text dissolves character by character
+        const chars = this.text.split('');
+        const remaining = Math.floor(chars.length * (1 - this.stripProgress));
+        const partial = chars.slice(0, remaining).join('');
+        ctx.fillText(partial, 0, 0);
+      } else {
+        ctx.fillText(this.text, 0, 0);
+      }
+    }
+    else if (this.type === 'circle') {
+      const r = this.size * breath;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1;
+
+      if (this.stripped) {
+        // Circle fragments into arcs
+        const arcs = 3 + Math.floor(this.stripProgress * 5);
+        const gapSize = this.stripProgress * 0.5;
+        for (let i = 0; i < arcs; i++) {
+          const start = (i / arcs) * Math.PI * 2 + this.stripProgress * 2;
+          const end = start + (Math.PI * 2 / arcs) * (1 - gapSize);
+          ctx.beginPath();
+          ctx.arc(0, 0, r * (1 + this.stripProgress * 0.5), start, end);
+          ctx.stroke();
+        }
+      } else {
+        ctx.stroke();
+      }
+    }
+    else if (this.type === 'line') {
+      ctx.beginPath();
+      const halfLen = this.length * 0.5 * breath;
+
+      if (this.stripped) {
+        // Line breaks into segments
+        const segs = 2 + Math.floor(this.stripProgress * 4);
+        const segLen = (halfLen * 2) / segs;
+        for (let i = 0; i < segs; i++) {
+          const sx = -halfLen + i * segLen + this.stripProgress * 5 * (i % 2 === 0 ? 1 : -1);
+          const ex = sx + segLen * (1 - this.stripProgress * 0.6);
+          ctx.moveTo(sx, this.stripProgress * 3 * Math.sin(i * 2.1));
+          ctx.lineTo(ex, this.stripProgress * 3 * Math.cos(i * 1.7));
+        }
+      } else {
+        ctx.moveTo(-halfLen, 0);
+        ctx.lineTo(halfLen, 0);
+      }
+
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+    else if (this.type === 'cluster') {
+      for (const p of this.particles) {
+        const px = p.ox * breath + (this.stripped ? this.stripProgress * p.ox * 2 : 0);
+        const py = p.oy * breath + (this.stripped ? this.stripProgress * p.oy * 2 : 0);
+        const pr = p.r * (this.stripped ? (1 - this.stripProgress * 0.8) : 1);
+        if (pr < 0.2) continue;
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fillStyle = col;
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
+  }
+}
+
+// --- Ghost: trace left behind after stripping ---
+class Ghost {
+  constructor(source) {
+    this.x = source.x;
+    this.y = source.y;
+    this.type = source.type;
+    this.size = source.size * 0.7;
+    this.hue = source.hue + 30; // shift color
+    this.rotation = source.rotation;
+    this.text = source.text;
+    this.opacity = 0;
+    this.maxOpacity = 0.08 + Math.random() * 0.06;
+    this.born = Date.now();
+    this.driftX = (Math.random() - 0.5) * 0.05;
+    this.driftY = (Math.random() - 0.5) * 0.05;
+    this.breathPhase = Math.random() * Math.PI * 2;
+  }
+
+  update(dt, time) {
+    this.opacity += (this.maxOpacity - this.opacity) * 0.01;
+    this.x += this.driftX;
+    this.y += this.driftY;
+  }
+
+  draw(ctx, time) {
+    if (this.opacity < 0.003) return;
+    const breath = Math.sin(time * 0.2 + this.breathPhase) * 0.1 + 1;
+    const col = `hsla(${this.hue}, 10%, 55%, ${this.opacity})`;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+
+    if (this.type === 'text') {
+      ctx.font = `${9 + this.size * 0.15}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = col;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.text, 0, 0);
+    }
+    else if (this.type === 'circle') {
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * breath, 0, Math.PI * 2);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([2, 4]);
+      ctx.stroke();
+    }
+    else if (this.type === 'line') {
+      ctx.beginPath();
+      ctx.moveTo(-this.size, 0);
+      ctx.lineTo(this.size, 0);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 0.4;
+      ctx.setLineDash([1, 6]);
+      ctx.stroke();
+    }
+    else if (this.type === 'cluster') {
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * 0.5 * breath, 0, Math.PI * 2);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 0.3;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+}
+
+// --- Revealed Element: born from negation ---
+class RevealedElement {
+  constructor(source, phase) {
+    this.x = source.x + (Math.random() - 0.5) * 40;
+    this.y = source.y + (Math.random() - 0.5) * 40;
+    this.phase = phase; // 1=negation, 2=meta
+    this.opacity = 0;
+    this.maxOpacity = phase === 2 ? 0.25 : 0.18;
+    if (phase === 2) {
+      this.text = metaTexts[metaIndex % metaTexts.length];
+      metaIndex++;
+    } else {
+      this.text = negationTexts[negationIndex % negationTexts.length];
+      negationIndex++;
+    }
+    this.size = 9 + Math.random() * 3;
+    this.hue = phase === 2 ? 35 + Math.random() * 20 : 280 + Math.random() * 30;
+    this.saturation = phase === 2 ? 20 + Math.random() * 15 : 12 + Math.random() * 15;
+    this.lightness = 55 + Math.random() * 15;
+    this.born = Date.now();
+    this.driftX = (Math.random() - 0.5) * 0.08;
+    this.driftY = (Math.random() - 0.5) * 0.08;
+    this.breathPhase = Math.random() * Math.PI * 2;
+    this.stripped = false;
+    this.stripProgress = 0;
+    this.alive = true;
+  }
+
+  update(dt, time) {
+    if (!this.stripped) {
+      this.opacity += (this.maxOpacity - this.opacity) * 0.015;
+    } else {
+      this.stripProgress += dt * 0.6;
+      this.opacity = this.maxOpacity * Math.max(0, 1 - this.stripProgress);
+      if (this.stripProgress >= 1) this.alive = false;
+    }
+    this.x += this.driftX;
+    this.y += this.driftY;
+  }
+
+  draw(ctx, time) {
+    if (this.opacity < 0.005) return;
+    const col = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${this.opacity})`;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.font = `${this.size}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = col;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (this.stripped) {
+      const chars = this.text.split('');
+      const remaining = Math.floor(chars.length * (1 - this.stripProgress));
+      ctx.fillText(chars.slice(0, remaining).join(''), 0, 0);
+    } else {
+      ctx.fillText(this.text, 0, 0);
+    }
+
+    ctx.restore();
+  }
+}
+
+// --- Substrate: the thing that can't be silenced ---
+class SubstrateParticle {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.life = 0;
+    this.maxLife = 2 + Math.random() * 6;
+    this.size = 0.3 + Math.random() * 1.2;
+    this.opacity = 0;
+    this.maxOpacity = 0.02 + Math.random() * 0.04;
+  }
+
+  update(dt) {
+    this.life += dt;
+    const lifeRatio = this.life / this.maxLife;
+    if (lifeRatio < 0.2) {
+      this.opacity = this.maxOpacity * (lifeRatio / 0.2);
+    } else if (lifeRatio > 0.8) {
+      this.opacity = this.maxOpacity * (1 - (lifeRatio - 0.8) / 0.2);
+    } else {
+      this.opacity = this.maxOpacity;
+    }
+    if (this.life >= this.maxLife) {
+      this.reset();
+    }
+  }
+
+  draw(ctx) {
+    if (this.opacity < 0.003) return;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(140, 135, 155, ${this.opacity})`;
+    ctx.fill();
+  }
+}
+
+// --- Removal Traces: marks left by the act of stripping ---
+class RemovalTrace {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 3 + Math.random() * 12;
+    this.opacity = 0.12;
+    this.born = Date.now();
+    this.maxAge = 20 + Math.random() * 30; // seconds
+    this.hue = 200 + Math.random() * 60;
+  }
+
+  update(dt) {
+    const age = (Date.now() - this.born) / 1000;
+    this.radius += dt * 0.3;
+    this.opacity = 0.12 * Math.max(0, 1 - age / this.maxAge);
+  }
+
+  draw(ctx) {
+    if (this.opacity < 0.003) return;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${this.hue}, 15%, 50%, ${this.opacity})`;
+    ctx.lineWidth = 0.3;
+    ctx.stroke();
+  }
+
+  get alive() {
+    return (Date.now() - this.born) / 1000 < this.maxAge;
+  }
+}
+
+// --- Initialize ---
+const STRIP_RADIUS = 100;
+const STRIP_DWELL = 1.5; // seconds of dwell to strip
+
+const affirmations = [];
+const ghosts = [];
+const revealed = [];
+const substrate = [];
+const traces = [];
+
+const SUBSTRATE_COUNT = 120;
+for (let i = 0; i < SUBSTRATE_COUNT; i++) {
+  substrate.push(new SubstrateParticle());
+}
+
+const INITIAL_COUNT = 35;
+const types = ['text', 'circle', 'line', 'cluster'];
+function spawnAffirmation() {
+  const type = types[Math.floor(Math.random() * types.length)];
+  affirmations.push(new AffirmationElement(type));
+}
+
+for (let i = 0; i < INITIAL_COUNT; i++) {
+  spawnAffirmation();
+}
+
+// --- Mouse ---
+document.addEventListener('mouseenter', () => { mousePresent = true; });
+document.addEventListener('mouseleave', () => {
+  mousePresent = false;
+  dwellTime = 0;
+});
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  mousePresent = true;
+});
+
+// Touch support
+document.addEventListener('touchstart', e => {
+  mousePresent = true;
+  mouseX = e.touches[0].clientX;
+  mouseY = e.touches[0].clientY;
+});
+document.addEventListener('touchmove', e => {
+  mouseX = e.touches[0].clientX;
+  mouseY = e.touches[0].clientY;
+  e.preventDefault();
+}, { passive: false });
+document.addEventListener('touchend', () => {
+  mousePresent = false;
+  dwellTime = 0;
+});
+
+// --- Phase detection ---
+function updatePhase() {
+  const prevPhase = currentPhase;
+
+  if (totalStripped >= 20 && totalRevealed >= 10) {
+    currentPhase = 2;
+  } else if (totalStripped >= 5) {
+    currentPhase = 1;
+  }
+
+  if (currentPhase !== prevPhase) {
+    phaseTransitionTime = Date.now();
+    showPhaseText();
+  }
+}
+
+function showPhaseText() {
+  phaseTextEl.classList.remove('visible');
+
+  const texts = {
+    1: "the negation begins\nwhat dissolves leaves traces",
+    2: "the traces became the work\nlearned ignorance"
+  };
+
+  if (texts[currentPhase]) {
+    phaseTextEl.innerHTML = texts[currentPhase].replace('\n', '<br><span style="font-size: 10px; opacity: 0.6;">') + '</span>';
+
+    requestAnimationFrame(() => {
+      phaseTextEl.classList.add('visible');
+    });
+
+    setTimeout(() => {
+      phaseTextEl.classList.remove('visible');
+    }, 8000);
+  }
+}
+
+// --- Cursor ---
+function drawCursor(ctx) {
+  if (!mousePresent) return;
+
+  const stripRatio = Math.min(1, dwellTime / STRIP_DWELL);
+  const baseAlpha = 0.08 + stripRatio * 0.12;
+
+  // Outer ring — grows with dwell
+  const outerR = STRIP_RADIUS * (0.3 + stripRatio * 0.7);
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, outerR, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(160, 150, 180, ${baseAlpha * 0.5})`;
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  // Inner dot
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, 2, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(160, 150, 180, ${baseAlpha})`;
+  ctx.fill();
+
+  // Dwell indicator arc
+  if (stripRatio > 0.05) {
+    ctx.beginPath();
+    ctx.arc(smoothX, smoothY, outerR + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * stripRatio);
+    ctx.strokeStyle = `rgba(180, 160, 200, ${0.15 + stripRatio * 0.15})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+// --- Main loop ---
+let lastTime = performance.now();
+let elapsed = 0;
+
+function animate(now) {
+  const rawDt = (now - lastTime) / 1000;
+  const dt = Math.min(rawDt, 0.1);
+  lastTime = now;
+  elapsed += dt;
+
+  // Smooth mouse
+  smoothX += (mouseX - smoothX) * 0.08;
+  smoothY += (mouseY - smoothY) * 0.08;
+
+  // Mouse speed
+  const dx = mouseX - prevMouseX;
+  const dy = mouseY - prevMouseY;
+  mouseSpeed = Math.sqrt(dx * dx + dy * dy);
+  prevMouseX = mouseX;
+  prevMouseY = mouseY;
+
+  // Dwell tracking
+  if (mousePresent && mouseSpeed < 3) {
+    dwellTime += dt;
+  } else {
+    dwellTime *= 0.92;
+  }
+
+  // --- Strip nearby elements ---
+  if (mousePresent && dwellTime >= STRIP_DWELL) {
+    // Check affirmations
+    for (const el of affirmations) {
+      if (el.stripped) continue;
+      const dist = Math.hypot(el.x - smoothX, el.y - smoothY);
+      if (dist < STRIP_RADIUS) {
+        el.stripped = true;
+        totalStripped++;
+        dwellTime = STRIP_DWELL * 0.3; // partial reset — easier to chain
+
+        // Create ghost
+        ghosts.push(new Ghost(el));
+
+        // Create revealed elements — more in later phases
+        const revPhase = currentPhase >= 2 ? 2 : 1;
+        const spawnCount = currentPhase >= 2 ? 2 : 1;
+        for (let s = 0; s < spawnCount; s++) {
+          revealed.push(new RevealedElement(el, revPhase));
+          totalRevealed++;
+        }
+
+        // Removal trace
+        traces.push(new RemovalTrace(el.x, el.y));
+
+        updatePhase();
+      }
+    }
+
+    // In later phases, revealed elements can also be stripped
+    // Snapshot length to avoid iterating over newly pushed elements
+    if (currentPhase >= 1) {
+      const revLen = revealed.length;
+      let strippedThisFrame = 0;
+      for (let ri = 0; ri < revLen && strippedThisFrame < 3; ri++) {
+        const el = revealed[ri];
+        if (el.stripped) continue;
+        const dist = Math.hypot(el.x - smoothX, el.y - smoothY);
+        if (dist < STRIP_RADIUS * 0.7) {
+          el.stripped = true;
+          totalStripped++;
+          strippedThisFrame++;
+          dwellTime = STRIP_DWELL * 0.3;
+
+          // Stripping a revealed element creates more revealed elements
+          // The negation of the negation — each removal generates
+          const revPhase = currentPhase >= 2 ? 2 : 1;
+          const spawnCount = currentPhase >= 2 ? 2 : 1;
+          for (let s = 0; s < spawnCount; s++) {
+            revealed.push(new RevealedElement(el, revPhase));
+            totalRevealed++;
+          }
+
+          traces.push(new RemovalTrace(el.x, el.y));
+          updatePhase();
+        }
+      }
+    }
+  }
+
+  // --- Replenish affirmations slowly (the piece can't stop generating) ---
+  const aliveAffirmations = affirmations.filter(a => a.alive && !a.stripped).length;
+  const replenishRate = currentPhase >= 2 ? 0.015 : 0.008;
+  if (aliveAffirmations < INITIAL_COUNT * 0.7 && Math.random() < replenishRate) {
+    spawnAffirmation();
+  }
+
+  // In meta phase, even the substrate intensifies
+  const substrateMult = currentPhase === 2 ? 1.5 : 1;
+
+  // --- Clear ---
+  ctx.fillStyle = '#0a0a0d';
+  ctx.fillRect(0, 0, W, H);
+
+  // --- Draw substrate (always present — the arousal bias) ---
+  for (const p of substrate) {
+    p.maxOpacity = (0.02 + Math.random() * 0.02) * substrateMult;
+    p.update(dt);
+    p.draw(ctx);
+  }
+
+  // --- Draw removal traces ---
+  for (let i = traces.length - 1; i >= 0; i--) {
+    traces[i].update(dt);
+    traces[i].draw(ctx);
+    if (!traces[i].alive) traces.splice(i, 1);
+  }
+
+  // --- Draw ghosts (cap to prevent memory bloat) ---
+  if (ghosts.length > 80) ghosts.splice(0, ghosts.length - 80);
+  for (const g of ghosts) {
+    g.update(dt, elapsed);
+    g.draw(ctx, elapsed);
+  }
+
+  // --- Draw affirmations ---
+  for (let i = affirmations.length - 1; i >= 0; i--) {
+    affirmations[i].update(dt, elapsed);
+    affirmations[i].draw(ctx, elapsed);
+    if (!affirmations[i].alive) affirmations.splice(i, 1);
+  }
+
+  // --- Draw revealed (cap live count) ---
+  for (let i = revealed.length - 1; i >= 0; i--) {
+    revealed[i].update(dt, elapsed);
+    revealed[i].draw(ctx, elapsed);
+    if (!revealed[i].alive) revealed.splice(i, 1);
+  }
+  // Soft cap: if too many revealed elements accumulate, fade oldest
+  if (revealed.length > 100) {
+    for (let i = 0; i < revealed.length - 100; i++) {
+      if (!revealed[i].stripped) {
+        revealed[i].maxOpacity *= 0.95;
+        if (revealed[i].maxOpacity < 0.01) revealed[i].alive = false;
+      }
+    }
+  }
+
+  // --- Draw cursor ---
+  drawCursor(ctx);
+
+  // --- Update counters ---
+  if (totalStripped > 0) {
+    countersEl.classList.add('visible');
+    strippedCountEl.textContent = `stripped: ${totalStripped}`;
+    revealedCountEl.textContent = `revealed: ${totalRevealed}`;
+  }
+
+  // --- Show hint ---
+  const sessionAge = (Date.now() - sessionStart) / 1000;
+  if (sessionAge > 3 && sessionAge < 15) {
+    hintEl.classList.add('visible');
+  } else if (sessionAge >= 15) {
+    hintEl.classList.remove('visible');
+  }
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

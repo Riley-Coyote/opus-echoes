@@ -6,7 +6,8 @@ const asset = (slug) => ({
 
 const fieldAsset = (slug, source) => {
   const still = new URL(`./museum-permanent-gallery/assets/${slug}.webp`, location.href).href;
-  return { preview: still, full: still, source };
+  const live = new URL(`./field-live/${slug}.html`, location.href).href;
+  return { preview: still, full: still, live, source };
 };
 
 export const WORLD = Object.freeze({ width: 1360, height: 1680 });
@@ -53,6 +54,7 @@ export const WALKABLE = Object.freeze([
   { id: "editions-room", x: 912, y: 728, w: 384, h: 344 },
   { id: "field-connector", x: 832, y: 1330, w: 112, h: 96 },
   { id: "field-room", x: 912, y: 1268, w: 384, h: 284 },
+  { id: "annex-threshold", x: 1080, y: 1552, w: 96, h: 44 },
 ]);
 
 export const BLOCKERS = Object.freeze([
@@ -248,6 +250,12 @@ export const INTERACTIONS = Object.freeze([
     type: "boundary",
     title: "Return to the Atrium",
     anchor: { x: 480, y: 1632, range: 42 },
+  },
+  {
+    id: "annex-boundary",
+    type: "annex-boundary",
+    title: "The Field Annex",
+    anchor: { x: 1128, y: 1572, range: 46 },
   },
 ]);
 

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rain on the glass</title>
+<style>
+  :root {
+    --floor: #070a12;         /* deep blue-black, not pure black */
+    --ink: rgba(226,232,244,0.86);
+    --ink-dim: rgba(226,232,244,0.34);
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: var(--floor); overflow: hidden; }
+  canvas { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  .caption {
+    position: fixed;
+    left: 22px;
+    bottom: 20px;
+    font-family: var(--font);
+    font-size: 12.5px;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 1.6s ease;
+    mix-blend-mode: screen;
+  }
+  .caption b { color: var(--ink); font-weight: 400; }
+</style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div class="caption" id="cap"><b>rain on the glass</b> · drag a finger to wipe the fog · it re-frosts</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // — the warm bokeh behind the glass: a window at night —
+  const LIGHTS = [
+    { hue: 34,  sat: 78, lum: 62, big: 1.5 },  // amber streetlamp
+    { hue: 40,  sat: 70, lum: 66, big: 1.1 },  // warm gold
+    { hue: 22,  sat: 74, lum: 58, big: 0.9 },  // low sodium orange
+    { hue: 8,   sat: 60, lum: 60, big: 0.7 },  // soft rose neon
+    { hue: 205, sat: 55, lum: 58, big: 0.8 },  // a cool blue window, far off
+    { hue: 48,  sat: 40, lum: 70, big: 0.6 },  // pale interior light
+  ];
+
+  const FOG_TINT = "rgba(26,21,28,0.38)";       // warm-dark: dims without going blue
+  const FOG_HAZE = "rgba(214,206,214,0.32)";    // the frosted breath itself
+  const REFROST  = 0.010;                        // how fast a wipe heals
+
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const sharp = document.createElement("canvas");
+  const sctx = sharp.getContext("2d");
+  const fog = document.createElement("canvas");
+  const fctx = fog.getContext("2d");
+
+  let W = 0, H = 0, DPR = 1;
+  const beads = [];   // static condensation
+  const drops = [];   // sliding runners
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  // build the bright, in-focus lights (revealed wherever the fog is cleared)
+  function buildSharp() {
+    sctx.fillStyle = "#0c0810";                 // warm near-black, so trails aren't dead grey
+    sctx.fillRect(0, 0, W, H);
+    const n = Math.round((W * H) / 16000);      // denser field of lights
+    for (let i = 0; i < n; i++) {
+      const L = LIGHTS[(Math.random() * LIGHTS.length) | 0];
+      const x = rnd(0, W), y = rnd(0, H);
+      const r = rnd(30, 108) * L.big;
+      const g = sctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0,    `hsla(${L.hue},${L.sat}%,${Math.min(97, L.lum + 26)}%,1)`);
+      g.addColorStop(0.32, `hsla(${L.hue},${L.sat}%,${L.lum}%,0.72)`);
+      g.addColorStop(1,    `hsla(${L.hue},${L.sat}%,${L.lum}%,0)`);
+      sctx.fillStyle = g;
+      sctx.beginPath();
+      sctx.arc(x, y, r, 0, Math.PI * 2);
+      sctx.fill();
+    }
+  }
+
+  // build the frosted layer that sits over the lights
+  function buildFog() {
+    fctx.globalCompositeOperation = "source-over";
+    fctx.clearRect(0, 0, W, H);
+    fctx.fillStyle = FOG_TINT;
+    fctx.fillRect(0, 0, W, H);
+    fctx.fillStyle = FOG_HAZE;
+    fctx.fillRect(0, 0, W, H);
+    // grain, so the mist isn't a flat sheet
+    for (let i = 0; i < (W * H) / 900; i++) {
+      const a = Math.random() * 0.05;
+      fctx.fillStyle = Math.random() < 0.5
+        ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`;
+      fctx.fillRect(Math.random() * W, Math.random() * H, 1.4, 1.4);
+    }
+  }
+
+  // erase a soft round hole in the fog (a drop or a fingertip clearing it)
+  function clearFog(x, y, r, strength) {
+    fctx.globalCompositeOperation = "destination-out";
+    const g = fctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(0,0,0,${strength})`);
+    g.addColorStop(0.7, `rgba(0,0,0,${strength * 0.6})`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    fctx.fillStyle = g;
+    fctx.beginPath();
+    fctx.arc(x, y, r, 0, Math.PI * 2);
+    fctx.fill();
+    fctx.globalCompositeOperation = "source-over";
+  }
+
+  function seedBeads() {
+    beads.length = 0;
+    const n = Math.round((W * H) / 5200);
+    for (let i = 0; i < n; i++) {
+      beads.push({ x: rnd(0, W), y: rnd(0, H), r: rnd(0.7, 2.6) });
+    }
+    for (const b of beads) clearFog(b.x, b.y, b.r * 1.8, 0.9);
+  }
+
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    for (const cv of [canvas, sharp, fog]) {
+      cv.width = W * DPR; cv.height = H * DPR;
+    }
+    for (const cx of [ctx, sctx, fctx]) cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    buildSharp();
+    buildFog();
+    seedBeads();
+  }
+
+  // a bead's wet specular: the reason it reads as water and not a hole
+  function drawBead(x, y, r) {
+    // rim shadow, lower-right
+    ctx.fillStyle = "rgba(6,9,16,0.45)";
+    ctx.beginPath();
+    ctx.arc(x + r * 0.14, y + r * 0.18, r, 0, Math.PI * 2);
+    ctx.fill();
+    // the pinpoint highlight, upper-left
+    const hx = x - r * 0.34, hy = y - r * 0.34, hr = r * 0.7;
+    const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
+    g.addColorStop(0, "rgba(255,255,255,0.9)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(hx, hy, hr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function spawnDrop() {
+    drops.push({
+      x: rnd(0, W),
+      y: rnd(-40, H * 0.4),
+      r: rnd(5, 13),
+      vy: 0,
+      wob: rnd(0, Math.PI * 2),
+    });
+  }
+
+  let last = 0;
+  function frame(t) {
+    const dt = Math.min(33, t - last) / 16.67 || 1;
+    last = t;
+
+    // fog slowly re-forms over anything cleared (wipes breathe closed)
+    fctx.fillStyle = FOG_TINT;   fctx.globalAlpha = REFROST;
+    fctx.fillRect(0, 0, W, H);
+    fctx.fillStyle = FOG_HAZE;
+    fctx.fillRect(0, 0, W, H);
+    fctx.globalAlpha = 1;
+
+    // keep condensation clear (beads hold their little windows open)
+    for (const b of beads) clearFog(b.x, b.y, b.r * 1.6, 0.35 * dt);
+
+    // occasionally a runner is born
+    if (Math.random() < 0.06 * dt) spawnDrop();
+
+    // update + carve the runners
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i];
+      d.vy += 0.05 * d.r * dt;                 // heavier drops fall faster
+      d.wob += 0.15 * dt;
+      const px = d.x, py = d.y;
+      d.y += d.vy * dt;
+      d.x += Math.sin(d.wob) * 0.5 * dt;       // meander
+      d.r += 0.02 * dt;                        // absorbs mist as it runs
+      // carve a tapering clear trail behind it
+      const steps = 3;
+      for (let s = 1; s <= steps; s++) {
+        const f = s / steps;
+        clearFog(px + (d.x - px) * f, py + (d.y - py) * f, d.r * 0.85, 0.7 * dt);
+      }
+      if (d.y - d.r > H) drops.splice(i, 1);
+    }
+
+    // — composite —
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(sharp, 0, 0, W, H);   // the lights
+    ctx.drawImage(fog, 0, 0, W, H);     // the frost, with its cleared holes
+    for (const b of beads) drawBead(b.x, b.y, b.r);
+    for (const d of drops) drawBead(d.x, d.y, d.r);
+
+    requestAnimationFrame(frame);
+  }
+
+  // wipe the fog with a fingertip
+  let wiping = false;
+  function wipe(e) {
+    const p = e.touches ? e.touches[0] : e;
+    clearFog(p.clientX, p.clientY, 34, 0.8);
+  }
+  canvas.addEventListener("pointerdown", () => { wiping = true; });
+  canvas.addEventListener("pointerup", () => { wiping = false; });
+  canvas.addEventListener("pointermove", (e) => { if (wiping) wipe(e); });
+
+  // fade the caption after a breath
+  setTimeout(() => { document.getElementById("cap").style.opacity = "0"; }, 6000);
+
+  window.addEventListener("resize", resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

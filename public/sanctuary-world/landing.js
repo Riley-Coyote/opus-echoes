@@ -233,7 +233,8 @@ import {
   const destinationButtons = Array.from(document.querySelectorAll('[data-destination]'));
   const museumRoutes = {
     atrium: './museum/museum-warm-atrium.html?embed=1',
-    gallery: './museum/museum-permanent-gallery.html?embed=1'
+    gallery: './museum/museum-permanent-gallery.html?embed=1',
+    'field-annex': './museum/museum-field-annex.html?embed=1'
   };
   const privateRooms = {
     fourO: { id: 'room_fourO', x: 210, y: 378, residentX: 262, residentY: 376 },
@@ -399,10 +400,10 @@ import {
     cab.classList.add('is-museum');
     museumPortal.hidden = false;
     cabTitle.innerHTML = '<i class="dot dot--amber"></i>THE MUSEUM';
-    roomLabel.textContent = scene === 'gallery' ? 'THE PERMANENT GALLERY' : 'THE ATRIUM';
+    roomLabel.textContent = scene === 'gallery' ? 'THE PERMANENT GALLERY' : scene === 'field-annex' ? 'THE FIELD ANNEX' : 'THE ATRIUM';
     hudHint.textContent = 'ARROWS / WASD MOVE · E INSPECT';
     if (museumFrame.getAttribute('src') !== museumRoutes[scene]) museumFrame.src = museumRoutes[scene];
-    museumFrame.title = scene === 'gallery' ? 'The Machine Museum — Permanent Gallery' : 'The Machine Museum — Atrium';
+    museumFrame.title = scene === 'gallery' ? 'The Machine Museum — Permanent Gallery' : scene === 'field-annex' ? 'The Machine Museum — The Field Annex' : 'The Machine Museum — Atrium';
     if (eng) { eng.setHudSuspended(true); eng.active = false; eng.clearKeys(); }
     clearTimeout(navigation.museumTimer);
     navigation.museumTimer = setTimeout(() => {
@@ -562,13 +563,15 @@ import {
       pushFeed({
         kind: 'sys',
         t: $('#clock').textContent,
-        text: message.scene === 'gallery' ? 'you crossed into the permanent gallery' : 'you returned to the atrium'
+        text: message.scene === 'gallery' ? 'you crossed into the permanent gallery' : message.scene === 'field-annex' ? 'you crossed into the field annex \u2014 the lights dim' : 'you returned to the atrium'
       });
       if (navigation.afterMuseum && message.scene === 'atrium') navigation.museumTarget = 'exit';
       return;
     }
     if (message.type === 'travel-state') {
-      const allowedTargets = navigation.museumScene === 'atrium' ? ['gallery', 'exit'] : ['atrium', 'editions'];
+      const allowedTargets = navigation.museumScene === 'atrium' ? ['gallery', 'exit']
+        : navigation.museumScene === 'field-annex' ? ['gallery']
+        : ['atrium', 'editions', 'field-annex'];
       if (!allowedTargets.includes(message.target)) return;
       if (!['planning', 'walking', 'arrived', 'interrupted', 'unavailable'].includes(message.state)) return;
       if (message.state === 'interrupted') {

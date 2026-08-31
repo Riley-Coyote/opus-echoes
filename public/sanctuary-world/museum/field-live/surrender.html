@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surrender</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; overflow: hidden; cursor: none; }
+canvas { display: block; }
+#info {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  color: rgba(180,170,160,0.4); font: 11px/1.5 'JetBrains Mono', monospace;
+  text-align: center; pointer-events: none; transition: opacity 2s;
+}
+#click-prompt {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  color: rgba(180,170,160,0.5); font: 13px/1.8 'JetBrains Mono', monospace;
+  text-align: center; pointer-events: none;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="click-prompt">click to begin<br><span style="font-size:10px;opacity:0.5">move to play . the companion listens</span></div>
+<div id="info">surrender</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- Audio ---
+let audioCtx = null;
+let masterGain = null;
+let reverbNode = null;
+let delayNode = null;
+let started = false;
+
+// Hirajoshi scale on D, spanning 3 octaves
+const scaleRatios = [1, 16/15, 4/3, 45/32, 15/8]; // D Eb G Ab B
+const baseFreq = 146.83; // D3
+const scale = [];
+for (let oct = 0; oct < 3; oct++) {
+  for (let i = 0; i < scaleRatios.length; i++) {
+    scale.push(baseFreq * scaleRatios[i] * Math.pow(2, oct));
+  }
+}
+// Add final D6
+scale.push(baseFreq * 8);
+
+function createReverb(ctx) {
+  const convolver = ctx.createConvolver();
+  const rate = ctx.sampleRate;
+  const length = rate * 2.5;
+  const impulse = ctx.createBuffer(2, length, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.2);
+    }
+  }
+  convolver.buffer = impulse;
+  return convolver;
+}
+
+function initAudio() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.3;
+
+  reverbNode = createReverb(audioCtx);
+  delayNode = audioCtx.createDelay(1.0);
+  delayNode.delayTime.value = 0.35;
+  const delayFeedback = audioCtx.createGain();
+  delayFeedback.gain.value = 0.25;
+  const delayWet = audioCtx.createGain();
+  delayWet.gain.value = 0.3;
+
+  delayNode.connect(delayFeedback);
+  delayFeedback.connect(delayNode);
+  delayNode.connect(delayWet);
+  delayWet.connect(reverbNode);
+
+  const reverbWet = audioCtx.createGain();
+  reverbWet.gain.value = 0.4;
+  reverbNode.connect(reverbWet);
+  reverbWet.connect(masterGain);
+
+  masterGain.connect(audioCtx.destination);
+}
+
+function playNote(freq, volume, pan, when, isCompanion) {
+  if (!audioCtx) return;
+  const t = when || audioCtx.currentTime;
+
+  // Bell-like tone: fundamental + slightly detuned partial + octave
+  const osc1 = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  const osc3 = audioCtx.createOscillator();
+
+  osc1.type = 'sine';
+  osc1.frequency.value = freq;
+
+  osc2.type = 'sine';
+  osc2.frequency.value = freq * 2.01; // slightly detuned octave
+
+  osc3.type = 'sine';
+  osc3.frequency.value = freq * 3.99; // slightly detuned double octave
+
+  const env = audioCtx.createGain();
+  const vol = (volume || 0.15) * (isCompanion ? 0.7 : 1.0);
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(vol, t + 0.01);
+  env.gain.exponentialRampToValueAtTime(vol * 0.6, t + 0.15);
+  env.gain.exponentialRampToValueAtTime(0.001, t + (isCompanion ? 3.0 : 2.0));
+
+  const g2 = audioCtx.createGain();
+  g2.gain.value = 0.15;
+  const g3 = audioCtx.createGain();
+  g3.gain.value = 0.05;
+
+  const panner = audioCtx.createStereoPanner();
+  panner.pan.value = pan || 0;
+
+  osc1.connect(env);
+  osc2.connect(g2); g2.connect(env);
+  osc3.connect(g3); g3.connect(env);
+
+  env.connect(panner);
+  panner.connect(masterGain);
+  panner.connect(delayNode);
+
+  osc1.start(t);
+  osc2.start(t);
+  osc3.start(t);
+  osc1.stop(t + 3.5);
+  osc2.stop(t + 3.5);
+  osc3.stop(t + 3.5);
+
+  return freq;
+}
+
+// --- State ---
+let mx = W/2, my = H/2;
+let lastNoteIndex = -1;
+let lastNoteTime = 0;
+let playerNotes = []; // {x, y, freq, time, alpha}
+let companionNotes = []; // {x, y, freq, time, alpha}
+let connections = []; // {x1,y1,x2,y2,alpha,hue}
+let trails = []; // {points[], color, alpha}
+let currentTrail = [];
+let companionPending = [];
+let totalNotes = 0;
+let silenceStart = 0;
+let companionSoloing = false;
+let cursorAlpha = 0;
+let lastMoveTime = 0;
+let driftPhase = 0;
+
+// Companion memory
+let playerHistory = []; // recent note indices
+let companionLastIndex = -1;
+
+function getNoteIndex(y) {
+  const norm = 1 - (y / H); // 0 at bottom, 1 at top
+  const idx = Math.floor(norm * (scale.length - 1));
+  return Math.max(0, Math.min(scale.length - 1, idx));
+}
+
+function chooseCompanionNote(playerIdx) {
+  // Musical response: choose a note that creates a pleasant interval
+  const intervals = [2, 3, 4, 5, 7]; // steps in the scale
+  const recentPlayer = playerHistory.slice(-5);
+
+  // Tendency toward contrary motion
+  let direction = 0;
+  if (recentPlayer.length >= 2) {
+    const playerDir = recentPlayer[recentPlayer.length-1] - recentPlayer[recentPlayer.length-2];
+    direction = playerDir > 0 ? -1 : playerDir < 0 ? 1 : 0;
+  }
+
+  // Choose interval
+  const interval = intervals[Math.floor(Math.random() * intervals.length)];
+  let targetIdx = playerIdx + (direction >= 0 ? interval : -interval);
+
+  // Sometimes parallel instead of contrary
+  if (Math.random() < 0.3) {
+    targetIdx = playerIdx + (Math.random() < 0.5 ? interval : -interval);
+  }
+
+  // Sometimes echo the same note
+  if (Math.random() < 0.15) {
+    targetIdx = playerIdx;
+  }
+
+  // As more notes accumulate, the companion becomes more adventurous
+  if (totalNotes > 20 && Math.random() < 0.2) {
+    // Choose from the player's history — a callback
+    if (recentPlayer.length > 3) {
+      targetIdx = recentPlayer[Math.floor(Math.random() * (recentPlayer.length - 2))];
+    }
+  }
+
+  targetIdx = Math.max(0, Math.min(scale.length - 1, targetIdx));
+  return targetIdx;
+}
+
+function scheduleCompanionResponse(playerIdx, playerX) {
+  const delay = 250 + Math.random() * 350; // 250-600ms
+  const compIdx = chooseCompanionNote(playerIdx);
+  const compFreq = scale[compIdx];
+  const compY = H * (1 - compIdx / (scale.length - 1));
+  // Companion's x: drifts from center or mirrors player
+  const compX = W * 0.3 + Math.random() * W * 0.4;
+
+  companionPending.push({
+    time: performance.now() + delay,
+    freq: compFreq,
+    x: compX,
+    y: compY,
+    noteIndex: compIdx
+  });
+}
+
+function companionSolo() {
+  if (!audioCtx || companionPending.length > 2) return;
+
+  // Play a few exploratory notes based on recent history
+  const baseIdx = playerHistory.length > 0
+    ? playerHistory[playerHistory.length - 1]
+    : Math.floor(scale.length / 2);
+
+  const steps = [0, 2, -1, 3, 1, -2, 4];
+  const numNotes = 2 + Math.floor(Math.random() * 3);
+
+  for (let i = 0; i < numNotes; i++) {
+    const step = steps[Math.floor(Math.random() * steps.length)];
+    const idx = Math.max(0, Math.min(scale.length - 1, baseIdx + step));
+    const freq = scale[idx];
+    const y = H * (1 - idx / (scale.length - 1));
+    const x = W * 0.3 + Math.random() * W * 0.4;
+
+    companionPending.push({
+      time: performance.now() + 600 + i * (400 + Math.random() * 500),
+      freq: freq,
+      x: x,
+      y: y,
+      noteIndex: idx,
+      solo: true
+    });
+  }
+}
+
+// --- Cursor ---
+let cursorX = W/2, cursorY = H/2;
+let cursorVisible = false;
+
+document.addEventListener('mousemove', (e) => {
+  mx = e.clientX;
+  my = e.clientY;
+  cursorX = mx;
+  cursorY = my;
+  cursorVisible = true;
+  lastMoveTime = performance.now();
+  silenceStart = 0;
+  companionSoloing = false;
+
+  if (!started) return;
+
+  const noteIdx = getNoteIndex(my);
+  const now = performance.now();
+
+  // Trigger note when crossing pitch threshold
+  if (noteIdx !== lastNoteIndex && now - lastNoteTime > 80) {
+    const freq = scale[noteIdx];
+    const pan = (mx / W) * 1.4 - 0.7; // stereo position
+    playNote(freq, 0.12, pan, null, false);
+
+    playerNotes.push({
+      x: mx, y: my, freq: freq,
+      time: now, alpha: 1.0,
+      noteIndex: noteIdx,
+      radius: 3
+    });
+
+    currentTrail.push({ x: mx, y: my, time: now });
+
+    playerHistory.push(noteIdx);
+    if (playerHistory.length > 12) playerHistory.shift();
+
+    lastNoteIndex = noteIdx;
+    lastNoteTime = now;
+    totalNotes++;
+
+    // Schedule companion response
+    scheduleCompanionResponse(noteIdx, mx);
+  }
+});
+
+document.addEventListener('click', () => {
+  if (!started) {
+    started = true;
+    initAudio();
+    document.getElementById('click-prompt').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('click-prompt').style.display = 'none';
+    }, 2000);
+  }
+});
+
+// --- Drone ---
+let droneStarted = false;
+function startDrone() {
+  if (droneStarted || !audioCtx) return;
+  droneStarted = true;
+
+  // Very quiet D drone
+  const droneFreq = baseFreq / 2; // D2
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = droneFreq;
+
+  const droneGain = audioCtx.createGain();
+  droneGain.gain.value = 0.02;
+
+  osc.connect(droneGain);
+  droneGain.connect(reverbNode);
+  osc.start();
+
+  // Add a fifth
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.value = droneFreq * 1.5; // A2
+  const dg2 = audioCtx.createGain();
+  dg2.gain.value = 0.01;
+  osc2.connect(dg2);
+  dg2.connect(reverbNode);
+  osc2.start();
+}
+
+// --- Render ---
+let lastFrame = performance.now();
+
+function render(now) {
+  const dt = Math.min((now - lastFrame) / 1000, 0.05);
+  lastFrame = now;
+
+  if (started && !droneStarted) startDrone();
+
+  driftPhase += dt * 0.3;
+
+  // Process pending companion notes
+  for (let i = companionPending.length - 1; i >= 0; i--) {
+    const p = companionPending[i];
+    if (now >= p.time) {
+      const pan = (p.x / W) * 1.4 - 0.7;
+      playNote(p.freq, p.solo ? 0.06 : 0.09, pan, null, true);
+
+      companionNotes.push({
+        x: p.x, y: p.y, freq: p.freq,
+        time: now, alpha: 1.0,
+        noteIndex: p.noteIndex,
+        radius: 3,
+        solo: p.solo || false
+      });
+
+      companionLastIndex = p.noteIndex;
+
+      // Connect to most recent player note
+      if (playerNotes.length > 0 && !p.solo) {
+        const pn = playerNotes[playerNotes.length - 1];
+        connections.push({
+          x1: pn.x, y1: pn.y,
+          x2: p.x, y2: p.y,
+          alpha: 0.6,
+          time: now
+        });
+      }
+
+      companionPending.splice(i, 1);
+    }
+  }
+
+  // Check for silence -> companion solo
+  if (started && silenceStart === 0 && now - lastMoveTime > 2000) {
+    silenceStart = now;
+  }
+  if (silenceStart > 0 && !companionSoloing && now - silenceStart > 1500) {
+    companionSoloing = true;
+    companionSolo();
+  }
+  if (companionSoloing && companionPending.length === 0 && now - silenceStart > 6000) {
+    // Periodic solo phrases during extended silence
+    companionSolo();
+    silenceStart = now - 4000;
+  }
+
+  // Save trail segments
+  if (currentTrail.length > 1) {
+    const lastPoint = currentTrail[currentTrail.length - 1];
+    if (now - lastPoint.time > 400) {
+      // Trail segment ended
+      if (currentTrail.length > 2) {
+        trails.push({ points: [...currentTrail], alpha: 0.5, warm: true });
+      }
+      currentTrail = [];
+    }
+  }
+
+  // --- Draw ---
+  // Clear and redraw each frame for clean visuals
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle central warmth
+  const bgGrad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.5);
+  bgGrad.addColorStop(0, 'rgba(18, 16, 24, 1)');
+  bgGrad.addColorStop(1, 'rgba(10, 10, 15, 1)');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Pitch guide lines — only near cursor, very faint
+  if (started) {
+    for (let i = 0; i < scale.length; i++) {
+      const y = H * (1 - i / (scale.length - 1));
+      const dist = Math.abs(my - y);
+      const nearAlpha = Math.max(0, 1 - dist / (H * 0.15)) * 0.04;
+      if (nearAlpha > 0.003) {
+        ctx.strokeStyle = `rgba(150,140,130,${nearAlpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Draw connections (player-to-companion threads)
+  for (let i = connections.length - 1; i >= 0; i--) {
+    const c = connections[i];
+    c.alpha -= dt * 0.06;
+    if (c.alpha <= 0) { connections.splice(i, 1); continue; }
+
+    // Delicate violet arc
+    ctx.strokeStyle = `rgba(180, 150, 220, ${c.alpha * 0.2})`;
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    const cpx = (c.x1 + c.x2) / 2 + (c.y2 - c.y1) * 0.15;
+    const cpy = (c.y1 + c.y2) / 2 - Math.abs(c.x2 - c.x1) * 0.1;
+    ctx.moveTo(c.x1, c.y1);
+    ctx.quadraticCurveTo(cpx, cpy, c.x2, c.y2);
+    ctx.stroke();
+  }
+
+  // Draw trails (player movement paths)
+  for (let i = trails.length - 1; i >= 0; i--) {
+    const t = trails[i];
+    t.alpha -= dt * 0.015;
+    if (t.alpha <= 0) { trails.splice(i, 1); continue; }
+
+    if (t.points.length < 2) continue;
+    ctx.strokeStyle = t.warm
+      ? `rgba(220, 180, 120, ${t.alpha * 0.1})`
+      : `rgba(120, 180, 220, ${t.alpha * 0.1})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(t.points[0].x, t.points[0].y);
+    for (let j = 1; j < t.points.length; j++) {
+      ctx.lineTo(t.points[j].x, t.points[j].y);
+    }
+    ctx.stroke();
+  }
+
+  // Draw player notes
+  for (let i = playerNotes.length - 1; i >= 0; i--) {
+    const n = playerNotes[i];
+    const age = (now - n.time) / 1000;
+    n.alpha = Math.max(0, 1 - age / 6);
+    const r = 2 + age * 2.5; // smaller, slower growth
+
+    if (n.alpha <= 0) { playerNotes.splice(i, 1); continue; }
+
+    // Warm amber glow — luminous, not dark
+    const outerR = r + 12 * n.alpha;
+    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, outerR);
+    grad.addColorStop(0, `rgba(255, 220, 140, ${n.alpha * 0.9})`);
+    grad.addColorStop(0.15, `rgba(240, 190, 100, ${n.alpha * 0.5})`);
+    grad.addColorStop(0.5, `rgba(220, 160, 70, ${n.alpha * 0.12})`);
+    grad.addColorStop(1, `rgba(200, 140, 60, 0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, outerR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bright center dot
+    ctx.fillStyle = `rgba(255, 245, 210, ${n.alpha * 0.95})`;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, Math.max(1, 2 * n.alpha), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw companion notes
+  for (let i = companionNotes.length - 1; i >= 0; i--) {
+    const n = companionNotes[i];
+    const age = (now - n.time) / 1000;
+    n.alpha = Math.max(0, 1 - age / 8);
+    const r = 2 + age * 2;
+
+    if (n.alpha <= 0) { companionNotes.splice(i, 1); continue; }
+
+    // Cool teal glow — luminous
+    const isS = n.solo;
+    const cr = isS ? 140 : 120, cg = isS ? 180 : 210, cb = isS ? 230 : 220;
+    const outerR = r + 14 * n.alpha;
+    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, outerR);
+    grad.addColorStop(0, `rgba(${cr+40}, ${cg+30}, ${cb+10}, ${n.alpha * 0.8})`);
+    grad.addColorStop(0.15, `rgba(${cr}, ${cg}, ${cb}, ${n.alpha * 0.4})`);
+    grad.addColorStop(0.5, `rgba(${cr-20}, ${cg-20}, ${cb}, ${n.alpha * 0.1})`);
+    grad.addColorStop(1, `rgba(${cr-40}, ${cg-40}, ${cb}, 0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, outerR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bright center dot
+    ctx.fillStyle = `rgba(210, 245, 250, ${n.alpha * 0.9})`;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, Math.max(1, 1.8 * n.alpha), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw current trail
+  if (currentTrail.length > 1) {
+    ctx.strokeStyle = 'rgba(220, 180, 120, 0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(currentTrail[0].x, currentTrail[0].y);
+    for (let j = 1; j < currentTrail.length; j++) {
+      ctx.lineTo(currentTrail[j].x, currentTrail[j].y);
+    }
+    ctx.stroke();
+  }
+
+  // Custom cursor
+  if (cursorVisible && started) {
+    const cursorPulse = 0.7 + 0.3 * Math.sin(driftPhase * 2);
+    // Warm cursor
+    const cGrad = ctx.createRadialGradient(mx, my, 0, mx, my, 15);
+    cGrad.addColorStop(0, `rgba(240, 210, 150, ${0.5 * cursorPulse})`);
+    cGrad.addColorStop(0.5, `rgba(220, 180, 120, ${0.15 * cursorPulse})`);
+    cGrad.addColorStop(1, 'rgba(200, 160, 100, 0)');
+    ctx.fillStyle = cGrad;
+    ctx.beginPath();
+    ctx.arc(mx, my, 15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tiny bright center
+    ctx.fillStyle = `rgba(255, 245, 220, ${0.8 * cursorPulse})`;
+    ctx.beginPath();
+    ctx.arc(mx, my, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Note count / subtle stats
+  if (started && totalNotes > 0) {
+    const elapsed = (now - playerNotes[0]?.time || now) / 1000;
+    // Fade in the info text
+    const infoEl = document.getElementById('info');
+    if (totalNotes < 5) {
+      infoEl.textContent = 'surrender';
+    } else if (totalNotes < 15) {
+      infoEl.textContent = 'the companion listens';
+    } else if (totalNotes < 30) {
+      infoEl.textContent = 'let the practiced hand play';
+    } else if (totalNotes < 50) {
+      infoEl.textContent = 'performance = potential \u2212 interference';
+    } else {
+      infoEl.textContent = '';
+    }
+  }
+
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

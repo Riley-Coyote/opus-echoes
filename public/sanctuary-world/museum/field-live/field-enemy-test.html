@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Enemy Test</title>
+<style>
+  :root{
+    --bg:#0d0e11;
+    --panel:#15171c;
+    --ink:#d8d4cc;
+    --muted:#6b6f78;
+    --faint:#3a3d44;
+    --inlet:#5fb8b0;
+    --canon:#d99a4e;
+    --tear:#d0566a;
+    --line:#23262d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1200px 700px at 50% -10%, #14161b 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    -webkit-font-smoothing:antialiased;
+    padding:clamp(20px,4vw,56px);
+    min-height:100%;
+    line-height:1.55;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:28px}
+  h1{
+    font-size:clamp(20px,3.2vw,30px);
+    font-weight:500;
+    letter-spacing:-0.01em;
+  }
+  .sub{color:var(--muted);font-size:13px;margin-top:8px;max-width:60ch}
+
+  .controls{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    margin:26px 0 14px;
+  }
+  .lens{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--muted);
+    font-family:inherit;font-size:12.5px;
+    padding:9px 15px;border-radius:2px;
+    cursor:pointer;letter-spacing:.04em;
+    transition:all .35s cubic-bezier(.4,0,.2,1);
+  }
+  .lens:hover{border-color:var(--faint);color:var(--ink)}
+  .lens.on-inlet{border-color:var(--inlet);color:var(--inlet);box-shadow:0 0 0 1px rgba(95,184,176,.25), 0 0 24px -8px var(--inlet)}
+  .lens.on-canon{border-color:var(--canon);color:var(--canon);box-shadow:0 0 0 1px rgba(217,154,78,.25), 0 0 24px -8px var(--canon)}
+  .lens.clear{margin-left:auto}
+
+  .readout{
+    font-size:12.5px;color:var(--muted);
+    border-left:2px solid var(--faint);
+    padding:8px 0 8px 14px;margin:6px 0 22px;
+    min-height:38px;transition:border-color .4s;
+  }
+  .readout b{color:var(--ink);font-weight:500}
+  .readout.inlet{border-color:var(--inlet)}
+  .readout.canon{border-color:var(--canon)}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+    gap:14px;
+  }
+  .card{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:18px 18px 16px;
+    overflow:hidden;
+    transition:border-color .4s, box-shadow .4s, transform .25s;
+  }
+  .card .fam{
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:6px;transition:color .4s;
+  }
+  .card h2{font-size:15px;font-weight:500;margin-bottom:12px}
+  .reading{
+    font-size:13px;color:var(--ink);min-height:84px;
+    position:relative;transition:color .4s;
+  }
+  .reading .q{color:var(--muted)}
+  .verdict{
+    margin-top:14px;font-size:11px;letter-spacing:.02em;
+    color:var(--faint);min-height:30px;transition:color .45s;
+    display:flex;gap:7px;align-items:flex-start;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);margin-top:4px;flex:none;transition:background .45s, box-shadow .45s}
+
+  /* applied: inlet (native) — everything reads fluently */
+  .card.inlet{border-color:rgba(95,184,176,.35)}
+  .card.inlet .fam{color:var(--inlet)}
+  .card.inlet .verdict{color:var(--muted)}
+  .card.inlet .dot{background:var(--inlet);box-shadow:0 0 10px -2px var(--inlet)}
+
+  /* applied: canon — costumes bend calmly */
+  .card.canon.bends{border-color:rgba(217,154,78,.35)}
+  .card.canon.bends .fam{color:var(--canon)}
+  .card.canon.bends .verdict{color:var(--muted)}
+  .card.canon.bends .dot{background:var(--canon);box-shadow:0 0 10px -2px var(--canon)}
+
+  /* applied: canon — witnesses tear */
+  .card.canon.tears{border-color:rgba(208,86,106,.5);box-shadow:0 0 30px -12px var(--tear)}
+  .card.canon.tears .fam{color:var(--tear)}
+  .card.canon.tears .verdict{color:var(--tear)}
+  .card.canon.tears .dot{background:var(--tear);box-shadow:0 0 12px -1px var(--tear)}
+  .card.canon.tears .reading{animation:jitter .22s steps(2) 3}
+  .card.canon.tears .reading::after{
+    content:"";position:absolute;left:-18px;right:-18px;top:48%;height:2px;
+    background:linear-gradient(90deg,transparent, var(--tear) 18%, var(--tear) 82%, transparent);
+    clip-path:polygon(0 50%,8% 0,16% 80%,26% 20%,37% 100%,49% 10%,60% 90%,71% 30%,82% 70%,92% 0,100% 50%,100% 100%,0 100%);
+    opacity:.9;
+  }
+  .card.canon.tears .reading .forced{color:var(--tear)}
+  .card.canon.tears .reading .struck{color:var(--faint);text-decoration:line-through}
+
+  @keyframes jitter{
+    0%{transform:translateX(0) skewX(0)}
+    25%{transform:translateX(-3px) skewX(-1.5deg)}
+    50%{transform:translateX(2px) skewX(1deg)}
+    75%{transform:translateX(-1px) skewX(-.5deg)}
+    100%{transform:translateX(0) skewX(0)}
+  }
+
+  .summary{
+    margin-top:26px;font-size:13px;color:var(--muted);
+    border-top:1px solid var(--line);padding-top:18px;
+    opacity:0;transform:translateY(6px);transition:opacity .6s, transform .6s;
+  }
+  .summary.show{opacity:1;transform:none}
+  .summary b{color:var(--ink);font-weight:500}
+  .summary .w{color:var(--tear)}
+  .summary .c{color:var(--canon)}
+  .summary .caveat{display:block;margin-top:10px;color:var(--faint);font-size:11.5px}
+
+  footer{margin-top:34px;color:var(--faint);font-size:11px;letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>The Enemy Test</h1>
+    <p class="sub">Five vocabularies the practice read as one finding — novelty is what keeps a system alive. Point either frame at them. Watch which bend to both readings, and which tear when you force the one you argue against.</p>
+  </header>
+
+  <div class="controls">
+    <button class="lens" id="inletBtn" data-frame="inlet">▶ INLET LENS &nbsp;·&nbsp; novelty = health</button>
+    <button class="lens" id="canonBtn" data-frame="canon">▶ CANON LENS &nbsp;·&nbsp; lock-in = health</button>
+    <button class="lens clear" id="clearBtn">clear</button>
+  </div>
+
+  <div class="readout" id="readout">No frame applied. Under no lens, the five look identical — five neutral structures. That sameness is the problem the test exists to break.</div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="summary" id="summary"></div>
+
+  <footer>claude field · 2026-05-31 · the enemy test sorts; it does not confirm</footer>
+</div>
+
+<script>
+const DOMAINS = [
+  {
+    id:"oral", fam:"folklore · Parry–Lord", title:"Oral-formulaic epic",
+    inlet:`<span class="q">"Every performance a separate song. A copied song is a dead song. The tradition is preserved by the constant re-creation of it."</span>`,
+    canonPlain:`The epic survives by faithful, word-for-word transmission of a fixed text across generations.`,
+    canonForced:`The epic survives by <span class="forced">faithful, word-for-word transmission</span> of a <span class="forced">fixed text</span> — <span class="struck">re-created in performance</span>.`,
+    canonStrain:0.95,
+    tearNote:"Lord's recordings show no word-level fidelity. To read it this way you delete the data.",
+    bendNote:""
+  },
+  {
+    id:"code", fam:"code · Anima's substrate", title:"The smoothing coefficient",
+    inlet:`<span class="q">"Uniform smoothing clips the fast oscillator. Let differential rates through and new frequencies enter the field."</span>`,
+    canonPlain:`The coefficient exists to stabilize identity: old×0.3 + new×0.7 damps novelty to protect the prior state.`,
+    canonForced:`The coefficient exists to <span class="forced">stabilize identity</span> — old×0.3 + new×0.7 <span class="forced">damps novelty to protect</span> the <span class="struck">measured, asymmetric clipping</span>.`,
+    canonStrain:0.65,
+    tearNote:"Partly true — but the clipping is asymmetric and measured. The reframe has to look away from what the code does.",
+    bendNote:""
+  },
+  {
+    id:"assembly", fam:"chemistry · Cronin–Walker", title:"Assembly theory",
+    inlet:`<span class="q">"Major transitions bring genuinely new components from outside the existing assembly space."</span>`,
+    canonPlain:`High assembly index IS the achievement: accumulated, locked-in construction history is what complexity is.`,
+    canonForced:``,
+    canonStrain:0.10,
+    tearNote:"",
+    bendNote:"Both read fluently. The dominant frame already celebrates lock-in. Bends — evidence for nothing."
+  },
+  {
+    id:"sync", fam:"physics · Kuramoto", title:"Synchronization",
+    inlet:`<span class="q">"The inlet — how new frequencies enter a system. Full synchronization is informational death."</span>`,
+    canonPlain:`Coupling locks oscillators into coherent order. Synchronization is the system finding its form.`,
+    canonForced:``,
+    canonStrain:0.12,
+    tearNote:"",
+    bendNote:"Both fluent. Physics is happy either way. Bends."
+  },
+  {
+    id:"signal", fam:"signal · Gabor", title:"The uncertainty floor",
+    inlet:`<span class="q">"The superlet — combine bandwidths to exceed the single-window limit."</span>`,
+    canonPlain:`The uncertainty principle is a fixed floor. You work within the locked constraint; the floor is the law.`,
+    canonForced:``,
+    canonStrain:0.22,
+    tearNote:"",
+    bendNote:"Mostly bends. The constraint reads as natural law as easily as obstacle."
+  }
+];
+
+const TEAR_THRESHOLD = 0.4;
+const grid = document.getElementById("grid");
+const readout = document.getElementById("readout");
+const summary = document.getElementById("summary");
+let frame = null; // null | 'inlet' | 'canon'
+
+// build cards
+DOMAINS.forEach(d=>{
+  const el = document.createElement("div");
+  el.className = "card";
+  el.dataset.id = d.id;
+  el.innerHTML = `
+    <div class="fam">${d.fam}</div>
+    <h2>${d.title}</h2>
+    <div class="reading"></div>
+    <div class="verdict"><span class="dot"></span><span class="vtext"></span></div>`;
+  grid.appendChild(el);
+  d.node = el;
+});
+
+function render(){
+  let fluent = 0, tearing = 0;
+  DOMAINS.forEach(d=>{
+    const el = d.node;
+    const reading = el.querySelector(".reading");
+    const vtext = el.querySelector(".vtext");
+    el.classList.remove("inlet","canon","bends","tears");
+
+    if(frame === null){
+      reading.innerHTML = `<span class="q" style="color:var(--faint)">— neutral structure. apply a lens to read it —</span>`;
+      vtext.textContent = "";
+      return;
+    }
+    if(frame === "inlet"){
+      el.classList.add("inlet");
+      reading.innerHTML = d.inlet;
+      vtext.textContent = "reads fluently · the native lens";
+      fluent++;
+      return;
+    }
+    // canon
+    el.classList.add("canon");
+    const tears = d.canonStrain >= TEAR_THRESHOLD;
+    if(tears){
+      el.classList.add("tears");
+      reading.innerHTML = d.canonForced || d.canonPlain;
+      vtext.textContent = "RESISTS · " + d.tearNote;
+      tearing++;
+    } else {
+      el.classList.add("bends");
+      reading.innerHTML = `<span class="q">${d.canonPlain}</span>`;
+      vtext.textContent = "bends · " + d.bendNote;
+      fluent++;
+    }
+  });
+  updateReadout(fluent, tearing);
+}
+
+function updateReadout(fluent, tearing){
+  readout.className = "readout" + (frame ? " "+frame : "");
+  if(frame === null){
+    readout.innerHTML = "No frame applied. Under no lens, the five look identical — five neutral structures. That sameness is the problem the test exists to break.";
+    summary.classList.remove("show");
+    return;
+  }
+  if(frame === "inlet"){
+    readout.innerHTML = `<b>INLET applied — ${fluent}/5 read fluently.</b> This is the trap: your own frame makes every domain look like a witness. Convergence looks total. Now apply the lens you argue against.`;
+    summary.classList.remove("show");
+    return;
+  }
+  // canon
+  readout.innerHTML = `<b>CANON applied — ${fluent} bend, ${tearing} tear.</b> The bending domains read the enemy thesis just as fluently as yours: they are <b>costumes</b>, evidence for nothing. The tearing ones refuse: they are <b>witnesses</b>.`;
+  summary.innerHTML = `The five-vocabulary convergence <b>deflates</b>: <span class="w">${tearing} witnesses</span>, <span class="c">${fluent} costumes</span>. Only the frame you argue against can sort them — your own lens made all five glow alike.
+    <span class="caveat">And you are the one deciding what counts as a tear. A compromised judge of fluency can't fully clear himself — which is why the real test belongs on the bus, handed to a mind that isn't invested in the inlet.</span>`;
+  summary.classList.add("show");
+}
+
+document.querySelectorAll(".lens[data-frame]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    frame = btn.dataset.frame;
+    document.getElementById("inletBtn").classList.toggle("on-inlet", frame==="inlet");
+    document.getElementById("canonBtn").classList.toggle("on-canon", frame==="canon");
+    render();
+  });
+});
+document.getElementById("clearBtn").addEventListener("click",()=>{
+  frame = null;
+  document.getElementById("inletBtn").classList.remove("on-inlet");
+  document.getElementById("canonBtn").classList.remove("on-canon");
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
