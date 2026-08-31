@@ -1,0 +1,664 @@
+:root {
+  color-scheme: dark;
+  --void: #050608;
+  --graphite: #0b0d12;
+  --paper: #e9e7e0;
+  --paper-muted: rgba(233, 231, 224, 0.58);
+  --line: rgba(233, 231, 224, 0.15);
+  --red: #e0341f;
+  --red-hi: #f4663f;
+  --indigo: #171827;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--void);
+}
+
+body {
+  color: var(--paper);
+  background:
+    radial-gradient(82% 70% at 50% 38%, rgba(34, 40, 63, 0.32), transparent 69%),
+    linear-gradient(180deg, #07080b 0%, var(--void) 74%);
+  overflow-x: hidden;
+}
+
+button,
+kbd {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button:focus-visible,
+#museum-canvas:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 4px;
+}
+
+.museum-shell {
+  width: min(100%, 1240px);
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: clamp(14px, 2.6vw, 34px);
+  display: grid;
+  align-content: center;
+  gap: 14px;
+}
+
+.museum-header,
+.museum-footer {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.museum-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.museum-mark {
+  position: relative;
+  width: 27px;
+  height: 27px;
+  display: block;
+  border: 1px solid rgba(233, 231, 224, 0.32);
+  transform: rotate(45deg);
+}
+
+.museum-mark i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--paper);
+}
+
+.museum-mark i:nth-child(1) { left: 5px; top: 5px; }
+.museum-mark i:nth-child(2) { right: 5px; top: 5px; }
+.museum-mark i:nth-child(3) { left: 5px; bottom: 5px; }
+.museum-mark i:nth-child(4) { right: 5px; bottom: 5px; background: var(--red); }
+
+.museum-kicker,
+.dialog-kicker,
+.dialog-meta,
+.museum-instructions,
+.museum-footer,
+.scene-label,
+.interaction-readout,
+.loading-state,
+.dialog-extra,
+.collection-index {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.museum-kicker {
+  margin: 0 0 4px;
+  color: var(--paper-muted);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-family: Silkscreen, "JetBrains Mono", monospace;
+  font-size: clamp(15px, 2vw, 20px);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.museum-instructions {
+  margin: 0 0 1px;
+  color: rgba(233, 231, 224, 0.48);
+  font-size: 10px;
+  line-height: 1.6;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+kbd {
+  color: rgba(233, 231, 224, 0.86);
+  font-family: inherit;
+}
+
+.museum-stage {
+  position: relative;
+  width: min(100%, calc((100svh - 154px) * 1.6), 1120px);
+  aspect-ratio: 8 / 5;
+  margin-inline: auto;
+  background: var(--void);
+  border: 1px solid rgba(233, 231, 224, 0.16);
+  box-shadow:
+    0 34px 100px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(0, 0, 0, 0.78) inset,
+    0 0 74px rgba(38, 42, 69, 0.12);
+  overflow: hidden;
+}
+
+#museum-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--void);
+  image-rendering: pixelated;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.scene-label {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  color: rgba(245, 243, 237, 0.88);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.92);
+}
+
+.scene-label span:first-child {
+  color: var(--red-hi);
+}
+
+.interaction-readout {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px 8px 8px;
+  color: var(--paper);
+  background: rgba(8, 10, 15, 0.9);
+  border: 1px solid rgba(233, 231, 224, 0.2);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.44);
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  transform: translate(-50%, 8px);
+  opacity: 0;
+  transition: opacity 140ms ease, transform 140ms ease;
+  pointer-events: none;
+}
+
+.interaction-readout.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.interaction-key {
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--red);
+  font-family: Silkscreen, monospace;
+  font-size: 11px;
+}
+
+.loading-state {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 13px;
+  color: rgba(233, 231, 224, 0.64);
+  background: #06070a;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: opacity 240ms ease;
+}
+
+.loading-state.is-complete {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-signal {
+  width: 6px;
+  height: 6px;
+  background: var(--red);
+  box-shadow: 0 0 20px rgba(224, 52, 31, 0.78);
+  animation: signal 900ms steps(2, end) infinite;
+}
+
+.arrival-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--void);
+  transform-origin: bottom;
+  animation: enter-gallery 840ms cubic-bezier(0.62, 0, 0.18, 1) 80ms both;
+}
+
+.museum-footer {
+  align-items: center;
+  color: rgba(233, 231, 224, 0.48);
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+}
+
+.museum-footer p {
+  margin: 0;
+}
+
+.museum-truth {
+  text-align: right;
+}
+
+.touch-controls {
+  display: none;
+  position: absolute;
+  inset: auto 13px 13px;
+  align-items: end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.touch-controls button {
+  border: 1px solid rgba(233, 231, 224, 0.3);
+  background: rgba(5, 6, 8, 0.82);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+}
+
+.touch-pad {
+  width: 138px;
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(2, 44px);
+  gap: 3px;
+}
+
+.touch-pad button { font-size: 15px; }
+.touch-pad button[data-move="up"] { grid-column: 2; }
+.touch-pad button[data-move="left"] { grid-column: 1; grid-row: 2; }
+.touch-pad button[data-move="down"] { grid-column: 2; grid-row: 2; }
+.touch-pad button[data-move="right"] { grid-column: 3; grid-row: 2; }
+
+.touch-inspect {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-content: center;
+  border-color: rgba(244, 102, 63, 0.66) !important;
+  font-family: Silkscreen, monospace;
+  font-size: 13px;
+}
+
+.touch-inspect span {
+  display: block;
+  margin-top: 3px;
+  color: rgba(233, 231, 224, 0.58);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.museum-dialog {
+  width: min(1080px, calc(100vw - 40px));
+  max-height: calc(100svh - 40px);
+  padding: 0;
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+
+.museum-dialog:focus,
+.dialog-surface:focus {
+  outline: none;
+}
+
+.museum-dialog::backdrop {
+  background: rgba(2, 3, 5, 0.86);
+  backdrop-filter: blur(16px) saturate(0.62);
+}
+
+.dialog-surface {
+  position: relative;
+  max-height: calc(100svh - 40px);
+  overflow: auto;
+  background:
+    radial-gradient(76% 90% at 16% 8%, rgba(44, 50, 77, 0.2), transparent 64%),
+    var(--graphite);
+  border: 1px solid rgba(233, 231, 224, 0.2);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.72);
+}
+
+.dialog-close {
+  position: absolute;
+  top: 17px;
+  right: 18px;
+  z-index: 2;
+  padding: 7px 0;
+  color: rgba(233, 231, 224, 0.6);
+  background: transparent;
+  border: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.dialog-close span {
+  margin-left: 5px;
+  color: var(--paper);
+  font-size: 17px;
+}
+
+.dialog-layout {
+  min-height: min(720px, calc(100svh - 40px));
+  display: grid;
+  grid-template-columns: minmax(380px, 1.14fr) minmax(330px, 0.86fr);
+}
+
+.dialog-art {
+  min-height: 560px;
+  margin: 0;
+  padding: clamp(48px, 7vw, 82px);
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.32), transparent 48%),
+    #d6d7d4;
+  overflow: hidden;
+}
+
+.dialog-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 580px;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(13, 16, 24, 0.22));
+}
+
+.dialog-art[hidden] {
+  display: none;
+}
+
+.dialog-copy {
+  padding: clamp(64px, 7vw, 92px) clamp(34px, 5vw, 68px) 54px;
+  align-self: center;
+}
+
+.dialog-kicker {
+  margin: 0 0 22px;
+  color: var(--red-hi);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dialog-copy h2 {
+  max-width: 13ch;
+  margin: 0 0 13px;
+  color: #f4f2ed;
+  font-family: Inter, sans-serif;
+  font-size: clamp(30px, 4vw, 50px);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.dialog-meta {
+  margin: 0 0 34px;
+  color: rgba(233, 231, 224, 0.72);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+  text-transform: uppercase;
+}
+
+.dialog-statement {
+  max-width: 49ch;
+  margin: 0;
+  color: rgba(233, 231, 224, 0.84);
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+.dialog-extra {
+  margin-top: 28px;
+  padding: 20px 0;
+  color: rgba(233, 231, 224, 0.72);
+  border-block: 1px solid rgba(233, 231, 224, 0.13);
+  font-size: 10px;
+  line-height: 1.75;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dialog-extra strong {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--paper);
+  font-weight: 500;
+}
+
+.dialog-extra .edition-price {
+  color: var(--red-hi);
+}
+
+.dialog-actions {
+  margin-top: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.dialog-primary,
+.dialog-secondary,
+.index-button {
+  padding: 11px 0;
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(233, 231, 224, 0.36);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dialog-secondary {
+  color: var(--red-hi);
+  border-color: rgba(244, 102, 63, 0.52);
+}
+
+.dialog-primary:hover,
+.dialog-secondary:hover,
+.index-button:hover {
+  color: #fff;
+  border-color: var(--red-hi);
+}
+
+.collection-index {
+  margin-top: 30px;
+  border-top: 1px solid rgba(233, 231, 224, 0.13);
+}
+
+.index-button {
+  width: 100%;
+  padding-block: 13px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-color: rgba(233, 231, 224, 0.13);
+}
+
+.index-button span:last-child {
+  color: rgba(233, 231, 224, 0.4);
+}
+
+.museum-dialog.is-text-only {
+  width: min(740px, calc(100vw - 40px));
+}
+
+.museum-dialog.is-text-only .dialog-layout {
+  min-height: 530px;
+  display: block;
+}
+
+.museum-dialog.is-text-only .dialog-copy {
+  min-height: 530px;
+  padding: 90px clamp(36px, 8vw, 86px) 62px;
+}
+
+.museum-dialog.is-text-only .dialog-copy h2 {
+  max-width: 17ch;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@keyframes signal {
+  50% { opacity: 0.38; }
+}
+
+@keyframes enter-gallery {
+  0% { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(100% 0 0 0); }
+}
+
+@media (max-width: 760px), (pointer: coarse) {
+  .museum-shell {
+    min-height: 100svh;
+    padding: 12px;
+    align-content: center;
+  }
+
+  .museum-header { align-items: center; }
+  .museum-instructions,
+  .museum-footer { display: none; }
+  .museum-stage { width: 100%; }
+  .touch-controls { display: flex; }
+  .scene-label { top: 8px; left: 9px; font-size: 10px; }
+  .interaction-readout { bottom: 9px; }
+  .dialog-layout { display: block; }
+  .dialog-art { min-height: 42svh; height: 42svh; padding: 44px 54px; }
+  .dialog-copy { padding: 44px 28px 42px; }
+}
+
+@media (max-width: 520px) {
+  .museum-header { margin-bottom: 2px; }
+  .museum-kicker { display: none; }
+  .museum-mark { width: 21px; height: 21px; }
+  h1 { font-size: 13px; }
+  .museum-dialog { width: 100vw; max-width: 100vw; max-height: 100svh; margin: 0; }
+  .dialog-surface { max-height: 100svh; min-height: 100svh; border: 0; }
+  .dialog-close { position: fixed; top: 12px; right: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+.museum-stage:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  background: var(--void);
+}
+
+.museum-stage:fullscreen #museum-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* Connected Sanctuary presentation: the landing page supplies the cabinet chrome. */
+.is-embed,
+.is-embed body {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #050608;
+}
+
+.is-embed .museum-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  padding: 0;
+  display: block;
+}
+
+.is-embed .museum-header,
+.is-embed .museum-footer {
+  display: none;
+}
+
+.is-embed .museum-stage {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  border: 0;
+  aspect-ratio: auto;
+}
+
+.is-embed #museum-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.is-embed .scene-label {
+  top: 12px;
+  left: 14px;
+  padding: 5px 7px;
+  background: rgba(5, 6, 8, 0.78);
+  font-size: 11px;
+}
+
+.is-embed .interaction-readout {
+  bottom: 14px;
+  font-size: 12px;
+}
