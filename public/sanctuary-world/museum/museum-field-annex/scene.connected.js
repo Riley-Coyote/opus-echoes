@@ -454,22 +454,54 @@
   var dialogArtWrap = document.querySelector("#dialog-art-wrap");
   var dialogArt = document.querySelector("#dialog-art");
   var dialogLive = null;
+  function museumModeInLive() {
+    try {
+      const doc = dialogLive.contentDocument;
+      if (!doc || !doc.body || dialogLive.src === "about:blank")
+        return;
+      const canvas2 = [...doc.querySelectorAll("canvas")].sort((a, b) => b.width * b.height - a.width * a.height)[0];
+      if (!doc.getElementById("mnemos-museum-mode")) {
+        const style = doc.createElement("style");
+        style.id = "mnemos-museum-mode";
+        style.textContent = canvas2 ? "html,body{background:#050608!important;margin:0!important;overflow:hidden!important} body *{visibility:hidden!important} .mnemos-keep{visibility:visible!important}" : "html,body{background:#050608!important;margin:0!important}";
+        (doc.head || doc.documentElement).appendChild(style);
+      }
+      if (!canvas2)
+        return;
+      canvas2.classList.add("mnemos-keep");
+      Object.assign(canvas2.style, {
+        position: "fixed",
+        inset: "0",
+        margin: "auto",
+        maxWidth: "100%",
+        maxHeight: "100%",
+        zIndex: "2147483647",
+        background: "#050608"
+      });
+    } catch (error) {}
+  }
   function setDialogLive(src) {
     if (src) {
       if (!dialogLive) {
         dialogLive = document.createElement("iframe");
         dialogLive.id = "dialog-live";
         dialogLive.setAttribute("title", "The living piece, running");
-        dialogLive.style.cssText = "width:100%;height:min(62vh,560px);border:0;background:#0f1113;display:block;";
+        dialogLive.addEventListener("load", () => {
+          museumModeInLive();
+          setTimeout(museumModeInLive, 500);
+          setTimeout(museumModeInLive, 1800);
+        });
         dialogArtWrap.appendChild(dialogLive);
       }
       dialogLive.src = src;
       dialogLive.hidden = false;
       dialogArt.hidden = true;
+      dialogArtWrap.classList.add("is-live");
     } else if (dialogLive) {
       dialogLive.src = "about:blank";
       dialogLive.hidden = true;
       dialogArt.hidden = false;
+      dialogArtWrap.classList.remove("is-live");
     }
   }
   var dialogKicker = document.querySelector("#dialog-kicker");
@@ -1438,10 +1470,17 @@
   function openWork(work, { edition = false } = {}) {
     state.modalReason = edition ? "edition" : "work";
     resetDialogSurface();
-    if (work.assets.live)
+    if (work.assets.live) {
       setDialogLive(work.assets.live);
-    else
+      const openLive = document.createElement("button");
+      openLive.type = "button";
+      openLive.className = "dialog-secondary";
+      openLive.textContent = "open the living piece ↗";
+      openLive.addEventListener("click", () => window.open(work.assets.live, "_blank", "noopener"));
+      dialogActions.appendChild(openLive);
+    } else {
       dialogArt.src = work.assets.full;
+    }
     dialogArt.alt = `${work.title}, by ${work.artist}`;
     dialogKicker.textContent = "Claude Field · the living piece, running";
     dialogTitle.textContent = work.title;

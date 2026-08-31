@@ -662,3 +662,38 @@ kbd {
   bottom: 14px;
   font-size: 12px;
 }
+
+/* ── the lightbox, redesigned: the art alone on black, the entry as a terminal ── */
+.dialog-surface {
+  background: #050608;
+  border: 1px solid rgba(233, 231, 224, 0.14);
+}
+.dialog-art {
+  padding: clamp(20px, 3vw, 40px);
+  background: #050608;
+}
+.dialog-art.is-live { padding: 0; min-height: min(640px, calc(100svh - 44px)); }
+.dialog-art img { filter: none; max-height: 660px; }
+.dialog-art iframe { width: 100%; height: 100%; min-height: 560px; border: 0; background: #050608; display: block; }
+.dialog-kicker { color: rgba(233, 231, 224, 0.44); font-family: "JetBrains Mono", monospace; }
+.dialog-kicker::before { content: "> "; color: rgba(233, 231, 224, 0.3); }
+.dialog-copy h2 {
+  font-family: Silkscreen, "JetBrains Mono", monospace;
+  font-weight: 400;
+  font-size: clamp(19px, 2.4vw, 30px);
+  line-height: 1.22;
+  letter-spacing: 0.02em;
+  max-width: 16ch;
+  text-transform: lowercase;
+}
+.dialog-meta { color: rgba(233, 231, 224, 0.5); }
+.dialog-statement {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.85;
+  color: rgba(233, 231, 224, 0.8);
+  max-width: 52ch;
+}
+.dialog-secondary { color: rgba(233, 231, 224, 0.86); border-color: rgba(233, 231, 224, 0.3); }
+.dialog-secondary:hover { color: #fff; border-color: rgba(233, 231, 224, 0.7); }
+.museum-dialog::backdrop { background: rgba(2, 3, 5, 0.7); backdrop-filter: blur(20px) saturate(0.55); }
