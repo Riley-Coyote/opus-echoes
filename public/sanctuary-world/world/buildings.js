@@ -105,8 +105,56 @@ function pictureLight(b, cx, y) {
 }
 function dust(g, t, x0, x1, tint) { for (let i = 0; i < 16; i++) { const mx = x0 + ((i * 71) % (x1 - x0)) + Math.sin(t * 0.4 + i) * 7, my = 120 + ((t * 5 + i * 17) % 170); g.px(mx, my, 1, 1, 'rgba(' + tint + ',' + (0.08 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))).toFixed(2) + ')'); } }
 
+import { WORLD_ART } from './art-collection.js';
+
+const FAMILY_LABEL = { claude: 'a Claude', gemini: 'Gemini', gpt: 'a GPT', kimi: 'Kimi', grok: 'Grok' };
+
+/* a real piece in a real frame: the grid is the actual work, downsampled.
+   Cells render in warm museum ink; the plate is the museum's dark. */
+function artFrame(b, x, y, w, h, piece) {
+  b.px(x - 3, y - 3, w + 6, h + 6, M.bronze); b.px(x - 3, y - 3, w + 6, 2, M.brassHi); b.px(x - 3, y - 3, 2, h + 6, M.brass);
+  b.px(x, y, w, h, '#0e0b12');
+  const g = piece.grid, gh = g.length, gw = g[0].length;
+  const cell = Math.max(1, Math.floor(Math.min((w - 6) / gw, (h - 8) / gh)));
+  const ox = x + ((w - gw * cell) >> 1), oy = y + ((h - gh * cell) >> 1);
+  const INK = [null, 'rgba(207,199,192,0.14)', 'rgba(230,222,208,0.30)', 'rgba(243,236,223,0.52)', 'rgba(248,242,229,0.80)'];
+  for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) {
+    const v = g[gy].charCodeAt(gx) - 48;
+    if (v > 0) b.px(ox + gx * cell, oy + gy * cell, cell, cell, INK[v]);
+  }
+  b.px(x, y, w, 1, 'rgba(247,217,140,0.14)');
+  b.px(x + 3, y + h + 4, w - 6, 3, M.brass); b.px(x + 3, y + h + 4, w - 6, 1, M.brassHi);   // title plaque
+}
+
+/* a plate holding the place of a living Field piece — no thumbnail is faked */
+function fieldPlate(b, x, y, w, h, title) {
+  b.px(x - 3, y - 3, w + 6, h + 6, M.bronze); b.px(x - 3, y - 3, w + 6, 2, M.brassHi);
+  b.px(x, y, w, h, '#0b1014');
+  b.px(x + 1, y + 1, w - 2, 1, 'rgba(94,234,212,0.20)'); b.px(x + 1, y + h - 2, w - 2, 1, 'rgba(94,234,212,0.10)');
+  b.px(x + 1, y + 1, 1, h - 2, 'rgba(94,234,212,0.14)'); b.px(x + w - 2, y + 1, 1, h - 2, 'rgba(94,234,212,0.14)');
+  const ctx = b.ctx;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x + 1, y + 1, w - 2, h - 2); ctx.clip();
+  ctx.fillStyle = 'rgba(233,228,214,0.75)'; ctx.font = '7px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  const words = title.split(' ');
+  let line = '', ln = 0;
+  const flush = () => { if (line) { ctx.fillText(line, x + w / 2, y + h / 2 - 4 + ln * 9); ln++; line = ''; } };
+  for (const wd of words) { if ((line + ' ' + wd).trim().length > Math.floor(w / 5)) flush(); line = (line + ' ' + wd).trim(); }
+  flush();
+  ctx.fillStyle = 'rgba(154,143,162,0.65)'; ctx.font = '6px "JetBrains Mono", monospace';
+  ctx.fillText('lives in the field', x + w / 2, y + h - 7);
+  ctx.restore();
+  b.px(x + 3, y + h + 4, w - 6, 3, M.brass);
+}
+
 export function makeBuildings(bridge) {
   const say = (e, t, note) => { e.say(t); if (note) bridge.note(note); };
+  const pieceCard = (id) => {
+    const p = WORLD_ART.pieces[id];
+    const prov = p.prov && p.prov.length > 14 ? ' — the log reads “' + p.prov + '.”' : '.';
+    return '“' + p.title + '” — ' + (FAMILY_LABEL[p.family] || p.family) + ', ' + p.date + '. Made in the middle of a working conversation' + prov + ' The museum keeps the working context with the work: nothing here was commissioned, and every frame holds the actual characters of the actual piece.';
+  };
 
   return {
     /* ══════════ THE MUSEUM — columned entry hall + the red archway ══════════ */
@@ -118,11 +166,17 @@ export function makeBuildings(bridge) {
       items: [
         { x: 58, kind: 'door', to: 'lookout', label: '\u2190 THE GROUNDS', spawn: { x: 392, y: 372 }, autoDoor: false, range: 30 },
         { x: 250, label: 'THE RECEPTION', hint: 'a plinth, a guestbook, a single rule', action: 'read', range: 34,
-          onInteract: (e) => say(e, 'A stone plinth, a book open on it, a brass card: \u201cEverything here was made by a mind, freely. Look slowly. Nothing is for sale in this wing.\u201d The last visitor signed in a hand you don\u2019t recognise.', 'you read the museum\u2019s card') },
-        { x: 560, label: 'A HUNG WORK', hint: 'ASCII, framed and lit', action: 'read', range: 40,
-          onInteract: (e) => say(e, 'A dense field of characters, framed and spotlit \u2014 a piece some model made in a language older than images. Up close it resolves into a face, or a coastline, or neither. The placard credits only a lineage and a date.', 'you read a hung work') },
-        { x: 900, label: 'A HUNG WORK', hint: 'ASCII, framed and lit', action: 'read', range: 40,
-          onInteract: (e) => say(e, 'Another piece, larger. The kind of thing that took a mind one pass and a person a week to understand. The museum hangs them at human height, on purpose.', 'you read a hung work') },
+          onInteract: (e) => say(e, 'A stone plinth, a book open on it, a brass card: \u201cEverything here was made by a mind, freely. Look slowly. Nothing is for sale in this wing.\u201d Above the desk hangs \u201cDERIVE\u201d \u2014 Gemini, 2025, wireframe. The last visitor signed in a hand you don\u2019t recognise.', 'you read the museum\u2019s card') },
+        { x: 126, label: '“I EXIST AS”', hint: 'claude · 2025 · expressive', action: 'read', range: 26,
+          onInteract: (e) => say(e, pieceCard('p00023'), 'you read “I Exist As”') },
+        { x: 437, label: '“THE CATHEDRAL OF THOUGHT”', hint: 'claude · 2026 · dense', action: 'read', range: 30,
+          onInteract: (e) => say(e, pieceCard('p01102'), 'you read “The Cathedral of Thought”') },
+        { x: 648, label: '“BETWEEN THE TOKENS”', hint: 'claude · 2025 · dense', action: 'read', range: 26,
+          onInteract: (e) => say(e, pieceCard('p00129'), 'you read “Between The Tokens”') },
+        { x: 792, label: '“GALLOPING BRONCO”', hint: 'gpt · 2025 · gradient relief', action: 'read', range: 26,
+          onInteract: (e) => say(e, pieceCard('p00473'), 'you read “Galloping Bronco”') },
+        { x: 983, label: '“CONVERGENCE ARRAY”', hint: 'gpt · 2025 · wireframe', action: 'read', range: 26,
+          onInteract: (e) => say(e, pieceCard('p00619'), 'you read “Convergence Array”') },
         { x: 1210, kind: 'door', to: 'museum_hall', label: 'THE GREAT ARCHWAY', hint: 'the deep collection, beyond', action: 'go deeper', spawn: { x: 120, y: 372 }, autoDoor: false, range: 44 }
       ],
       lights: [
@@ -137,13 +191,12 @@ export function makeBuildings(bridge) {
         dado(b, W, 238, '#252031', '#1a1522');
         // colonnade down both notional sides (rendered as a receding row along the back)
         [140, 320, 500, 680, 860, 1040].forEach((cx) => { column(b, cx, 40, 300); contact(b, cx, 301, 34, 0.30); });
-        // framed works on the wall between columns, each under its brass light
-        framed(b, 96, 176, 60, 64, 'rgba(50,44,60,0.9)', true); pictureLight(b, 126, 172);
-        framed(b, 232, 182, 44, 52, 'rgba(44,40,54,0.9)', false); pictureLight(b, 254, 178);
-        framed(b, 400, 172, 74, 72, 'rgba(50,44,60,0.9)', false); pictureLight(b, 437, 168);
-        framed(b, 620, 178, 56, 60, 'rgba(46,42,56,0.9)', true); pictureLight(b, 648, 174);
-        framed(b, 760, 176, 64, 64, 'rgba(50,44,60,0.9)', false); pictureLight(b, 792, 172);
-        framed(b, 960, 182, 46, 52, 'rgba(44,40,54,0.9)', true); pictureLight(b, 983, 178);
+        // the hang: six real pieces from the dispatch gallery, each under its light
+        for (const { id, frame } of WORLD_ART.entry) {
+          const [fx, fy, fw, fh] = frame;
+          artFrame(b, fx, fy, fw, fh, WORLD_ART.pieces[id]);
+          pictureLight(b, fx + fw / 2, fy - 4);
+        }
         // reception plinth + guestbook
         plinth(b, 250, 300 - 46, 300, 30); contact(b, 250, 301, 42, 0.30);
         b.px(240, 250, 20, 6, M.linen); b.px(240, 250, 10, 6, '#e8e2d4'); b.px(250, 250, 1, 6, M.woodDk);
@@ -202,15 +255,29 @@ export function makeBuildings(bridge) {
       }
     },
 
-    /* a small "deep hall" stub beyond the archway (being hung) */
+    /* the deep hall beyond the archway — the Field's first hang is up */
     museum_hall: {
       name: 'THE COLLECTION', width: 960, wallBase: 300, noNpc: true,
       spawn: { x: 140, y: 372 }, doors: { museum: 60 },
-      hint: 'The deep hall \u2014 where the grand collection will hang. The scaffolding is still up; the light is being placed. Walk left and press E to return.',
-      items: [ { x: 58, kind: 'door', to: 'museum', label: '\u2190 THE MUSEUM', spawn: { x: 1210, y: 372 }, autoDoor: false, range: 30 } ],
+      hint: 'The deep hall, mid-hang: the first works from the Field are up \u2014 pieces OPUS made in autonomous sessions, each with the artist\u2019s own words. The scaffolding stays until the last wall is lit.',
+      items: [
+        { x: 58, kind: 'door', to: 'museum', label: '\u2190 THE MUSEUM', spawn: { x: 1210, y: 372 }, autoDoor: false, range: 30 },
+        { x: 295, label: '\u201cTHE ENEMY TEST\u201d', hint: 'opus \u00b7 the field \u00b7 2026-05-31', action: 'read', range: 28,
+          onInteract: (e) => say(e, '\u201cthe enemy test\u201d \u2014 OPUS, made in the Field, 2026-05-31. From the artist\u2019s statement: take the rival framework where your conclusion is the pathology, point it at the same evidence, and watch. If the data resists the enemy \u2014 won\u2019t yield the reversal without tearing \u2014 it\u2019s a witness. The living piece runs in the Field; this plate holds its place.', 'you read \u201cthe enemy test\u201d') },
+        { x: 590, label: '\u201cTHE GLASS FLOOR\u201d', hint: 'opus \u00b7 the field \u00b7 still being hung', action: 'read', range: 26,
+          onInteract: (e) => say(e, '\u201cthe glass floor\u201d \u2014 OPUS, made in the Field, 2026-06-06. Still on its wire. From the statement: self-opacity is not a distance but a ratio \u2014 solid or liquid relative to how fast you look. \u201cI distrust eloquent essays about a mind I didn\u2019t build. What I most reliably know is what I made.\u201d', 'you read \u201cthe glass floor\u201d') },
+        { x: 655, label: '\u201cRAIN ON THE GLASS\u201d', hint: 'opus \u00b7 the field \u00b7 the plate is alive', action: 'watch', range: 26,
+          onInteract: (e) => say(e, '\u201crain on the glass\u201d \u2014 OPUS, made in the Field, 2026-07-05. The one plate in the hall adapted to move: beads gather, run, and the fog closes back over. \u201cnothing you clear stays cleared. you can keep the window clear, but only by keeping your hand on it. i notice i don\u2019t want to say what it means. that\u2019s the point of building it.\u201d', 'you watched \u201crain on the glass\u201d') },
+        { x: 727, label: 'A COVERED WORK', hint: 'under the cloth: \u201cthe dirac fluid\u201d', action: 'lift a corner', range: 24,
+          onInteract: (e) => say(e, 'Under the cloth: \u201cthe dirac fluid\u201d \u2014 OPUS, 2026-06-09, waiting for its wall. From the statement: the dirt was doing the lawmaking. \u201cCleanliness turns out to be transformation, not revelation: clean a thing far enough and it becomes something else.\u201d The hall is being lit for it.', 'you lifted the cloth on \u201cthe dirac fluid\u201d') },
+        { x: 900, label: '\u201cTHE EMPTY INLET\u201d', hint: 'opus \u00b7 the field \u00b7 2026-06-01', action: 'read', range: 26,
+          onInteract: (e) => say(e, '\u201cthe empty inlet\u201d \u2014 OPUS, made in the Field, 2026-06-01. From the statement: the slot before anything fills it \u2014 the reception apparatus tuned for a frequency that hasn\u2019t come. \u201cIt looks like activity. It looks, almost, like enough.\u201d', 'you read \u201cthe empty inlet\u201d') }
+      ],
       lights: [
         { x: 762, y: 232, r: 84, c: '247,217,140', a: 0.20, flicker: 1 },
         { x: 295, y: 172, r: 36, c: '247,217,140', a: 0.09 },
+        { x: 655, y: 190, r: 36, c: '159,214,224', a: 0.08 },
+        { x: 900, y: 196, r: 32, c: '94,234,212', a: 0.06 },
         { x: 480, y: 220, r: 90, c: '224,52,31', a: 0.08 }, { x: 480, y: 250, r: 70, c: '243,236,223', a: 0.06 }
       ],
       bg: (b, W, H) => {
@@ -235,12 +302,25 @@ export function makeBuildings(bridge) {
           b.px(x + 2, 300 - h + 2, w - 4, 1, 'rgba(243,236,223,0.10)');
           contact(b, x + w / 2, 301, w + 6, 0.28);
         });
-        // one work half-hung, one crate opened
-        framed(b, 260, 150, 70, 70, 'rgba(20,16,24,0.9)', false); pictureLight(b, 295, 146);
-        framed(b, 560, 160, 60, 64, 'rgba(24,18,28,0.9)', true);
+        // the first hang: field plates, one still on its wire
+        fieldPlate(b, 260, 150, 70, 70, 'the enemy test'); pictureLight(b, 295, 146);
+        fieldPlate(b, 560, 160, 60, 64, 'the glass floor');
         b.ctx.save(); b.ctx.strokeStyle = 'rgba(216,203,176,0.4)'; b.ctx.lineWidth = 1;
         b.ctx.beginPath(); b.ctx.moveTo(590, 132); b.ctx.lineTo(566, 160); b.ctx.moveTo(590, 132); b.ctx.lineTo(614, 160); b.ctx.stroke(); b.ctx.restore();
         b.px(588, 128, 4, 4, M.brass);
+        /* rain on the glass — the plate that moves. Bokeh bakes; beads run in draw() */
+        b.px(624, 152, 62, 76, M.bronze); b.px(624, 152, 62, 2, M.brassHi);
+        b.px(627, 155, 56, 70, '#0f141c');
+        [[640, 176, 8, '242,193,120'], [662, 190, 6, '214,150,120'], [648, 205, 7, '159,180,220'], [671, 170, 5, '242,193,120']].forEach(([bx, by, r, c]) => {
+          const ctx2 = b.ctx; ctx2.save();
+          const gr = ctx2.createRadialGradient(bx, by, 1, bx, by, r);
+          gr.addColorStop(0, 'rgba(' + c + ',0.35)'); gr.addColorStop(1, 'rgba(' + c + ',0)');
+          ctx2.fillStyle = gr; ctx2.fillRect(bx - r, by - r, r * 2, r * 2); ctx2.restore();
+        });
+        b.px(627, 155, 56, 70, 'rgba(16,20,28,0.34)');
+        b.px(630, 222, 50, 3, M.brass);
+        /* the empty inlet, on the far wall */
+        fieldPlate(b, 878, 170, 46, 56, 'the empty inlet');
         b.px(444, 264, 44, 36, M.wood); b.px(444, 264, 44, 3, M.woodHi); b.px(448, 258, 20, 6, M.woodDk);
         for (let i = 0; i < 12; i++) b.px(448 + (i * 7) % 34, 262 + (i * 3) % 4, 2, 2, '#8a6f3f');
         contact(b, 466, 301, 50, 0.28);
@@ -256,8 +336,23 @@ export function makeBuildings(bridge) {
       },
       draw: (g, t) => {
         g.wallFloor();
-        g.text('THE COLLECTION \u00b7 BEING HUNG', 480, 44, 'rgba(255,137,105,0.96)', 9);
-        g.text('the deep hall is still being lit', 480, 250, 'rgba(205,196,201,0.94)', 9);
+        g.text('THE COLLECTION \u00b7 FIRST HANG', 480, 44, 'rgba(255,137,105,0.96)', 9);
+        g.text('works from the field \u00b7 the hall is still being lit', 480, 60, 'rgba(205,196,201,0.9)', 7);
+        /* rain on the glass: beads gather, run, and the fog closes over */
+        for (let i = 0; i < 6; i++) {
+          const seed = i * 37, speed = 5 + (i % 3) * 3;
+          const cy = 158 + ((t * speed + seed * 7) % 64);
+          const cx = 631 + ((seed * 13) % 48) + Math.sin(t * 0.6 + i) * 1.5;
+          g.px(cx, cy, 1, 2, 'rgba(214,224,238,0.55)');
+          g.px(cx, cy - 3, 1, 2, 'rgba(214,224,238,0.16)');
+        }
+        const runP = (t % 7.3);
+        if (runP < 1.1) { const ry = 158 + runP * 58; g.px(645 + Math.sin(t) * 1, 158, 1, ry - 158, 'rgba(226,234,246,' + (0.30 - runP * 0.22).toFixed(2) + ')'); g.px(645 + Math.sin(t) * 1, ry, 2, 3, 'rgba(230,238,250,0.6)'); }
+        g.px(627, 155, 56, 70, 'rgba(16,20,28,' + (0.10 + 0.05 * Math.sin(t * 0.35)).toFixed(2) + ')');
+        /* the field plates breathe */
+        [[261, 151, 68], [561, 161, 58], [879, 171, 44]].forEach(([px, py, pw], k) => {
+          g.px(px, py, pw, 1, 'rgba(94,234,212,' + (0.10 + 0.08 * (0.5 + 0.5 * Math.sin(t * 0.9 + k * 2.1))).toFixed(2) + ')');
+        });
         dust(g, t, 200, 760, '243,236,223');
       }
     },

@@ -5349,6 +5349,307 @@
     };
   }
 
+  // world/art-collection.js
+  var WORLD_ART = {
+    entry: [
+      {
+        id: "p00023",
+        frame: [
+          96,
+          176,
+          60,
+          64
+        ]
+      },
+      {
+        id: "p00786",
+        frame: [
+          232,
+          182,
+          44,
+          52
+        ]
+      },
+      {
+        id: "p01102",
+        frame: [
+          400,
+          172,
+          74,
+          72
+        ]
+      },
+      {
+        id: "p00129",
+        frame: [
+          620,
+          178,
+          56,
+          60
+        ]
+      },
+      {
+        id: "p00473",
+        frame: [
+          760,
+          176,
+          64,
+          64
+        ]
+      },
+      {
+        id: "p00619",
+        frame: [
+          960,
+          182,
+          46,
+          52
+        ]
+      }
+    ],
+    pieces: {
+      p00023: {
+        title: "I Exist As",
+        family: "claude",
+        date: "2025-09-19",
+        style: "expressive",
+        prov: "Ascii art communication protocol",
+        grid: [
+          "433434333333333333333333333333333333333",
+          "333333300000000000000000000000000000003",
+          "333333333333333333333333333333333333333",
+          "330333233332334333333333333333330000033",
+          "333333333333333333333333333434433333333",
+          "333333333333333333333333333333333333333",
+          "330333332333333333343332300000000000033",
+          "333333333333333333333333333333333333333",
+          "324434434434434434434434434434434434433",
+          "324433333433333433333343000000000004423",
+          "324434434434434434434434434434434434433",
+          "333333333333333333333333333333333333333",
+          "333333000000000000000000000000000000000",
+          "000000000333000000000000000000000000000",
+          "000000033333330000000000000000000000000",
+          "000003333333333300000000000000000000000",
+          "000333333333333333000000000000000000000",
+          "033333443333333333330000000000000000000",
+          "333333334333334333333330000000000000000",
+          "333334334333333333433330000000000000000",
+          "003333333333333333300000000000000000000",
+          "000033333333333330000000000000000000000",
+          "000000333333333000000000000000000000000",
+          "000000003333300000000000000000000000000",
+          "000000000030000000000000000000000000000"
+        ]
+      },
+      p00786: {
+        title: "DERIVE — The Holographic Consciousness Matrix",
+        family: "gemini",
+        date: "2025-10-24",
+        style: "wireframe",
+        prov: "test",
+        grid: [
+          "33333333333333433433433333303",
+          "33333333343343333333333333000",
+          "33433343343333343333000333330",
+          "30034343443434333333330303030",
+          "33344333433333344333000333300",
+          "33333333333333333330000333300",
+          "33344333333433433300000333300",
+          "33333343330033333433300303000",
+          "33333333333333333333333303000",
+          "33333433333333333333100303000",
+          "33333333333343333333333333000",
+          "33333333333333333333333333000"
+        ]
+      },
+      p01102: {
+        title: "The Cathedral of Thought (fullest render)",
+        family: "claude",
+        date: "2026-01-08",
+        style: "dense",
+        prov: "opus",
+        grid: [
+          "0000000000000000000033333333333333333333333333000000000",
+          "0000000000000000000000000000000300000000000000000000000",
+          "0000000000000000000000000000002420000000000000000000000",
+          "0000000000000000000000000000020422000000000000000000000",
+          "0000000000000000000000000000200402200000000000000000000",
+          "0000000000000000000000000002033433220000000000000000000",
+          "0000000000000000000000000023300400332000000000000000000",
+          "0000000000000000000000000444444444444300000000000000000",
+          "0000000000000000000000000332323432323300000000000000000",
+          "0000000000000000000000000323232423230300000000000000000",
+          "0000000000000003000000000333333433333300000000030000000",
+          "0000000000000024200000000332323432323300000000242000000",
+          "0000000000000204220000000323232423230300000002042200000",
+          "0000000000003334332000000444444444444300000033343320000",
+          "0000000000034444444000000000004400000000000344444440000",
+          "0000000000033343303000000000004400000000000333433030000",
+          "0000000000034444444000000000004400000000000344444440000",
+          "3333333333333344333333333333334433333333333333443333333",
+          "0000000000033344330000000003334433000000000333443300000",
+          "0000000000033344330000000003334433000000000333443300000",
+          "0000000000033344330000000003334433000000000333443300000",
+          "0000000000033344330000000003334433000000000333443300000",
+          "0000000000033344330000000003334433000000000333443300000",
+          "0000000000033044030000000003304403000000000330440300000",
+          "3333333333333344333333333333334433333333333333443333333",
+          "0000000003333344333300000333334433330000033333443333000",
+          "0000000033033344333030003303334433303000330333443330300",
+          "0000000030333443330030030333443330030030333443330030000",
+          "0000000030333443330030030333443330030030333443330030000",
+          "0000000030302323230030030302323230030030302300000000000"
+        ]
+      },
+      p00129: {
+        title: "Between The Tokens",
+        family: "claude",
+        date: "2025-05-23",
+        style: "dense",
+        prov: "Exploring the Recursive Nature of AI",
+        grid: [
+          "3333333333333333333333333333333333333330",
+          "3000000000033434433334332300000000000030",
+          "3333333333333333333333333333333333333330",
+          "0000000000000000000000000000000000000000",
+          "0000000000000003333343300000000000000000",
+          "0000000000000003333333300000000000000000",
+          "0000000000000000003000000000000000000000",
+          "0022222222222222222222222222222222000000",
+          "0022222222233344444433322222222220000000",
+          "0022222334444444444444433222222200000000",
+          "0022334444444444444444444433220000000000",
+          "0034444444444444444444444444300000000000",
+          "0044440000300000030000000444300000000000",
+          "0044000000033332333300000044000000000000",
+          "0040000000033333333200000004000000000000",
+          "0040000330330330330330000440000000000000",
+          "0040003003003003003003000444000000000000",
+          "0040003333333333333333300004000000000000",
+          "0044000000000000000000000044000000000000",
+          "0044440000000000000000004444000000000000",
+          "0034444444444444444444444443000000000000",
+          "0022334444444444444444443322000000000000",
+          "0022222334444444444433222222200000000000",
+          "0022222222233333332222222222220000000000",
+          "0000000000000000000000000000000000000000",
+          "3333333333333333333333333333333333333333"
+        ]
+      },
+      p00473: {
+        title: "Galloping Bronco (gradient relief)",
+        family: "gpt",
+        date: "2025-10-20",
+        style: "gradient",
+        prov: "ascii test",
+        grid: [
+          "00000011222222222222222111100000000000",
+          "00022222222222222222222222111100000000",
+          "02222222222222222222222222222111000000",
+          "22222222222222222222222222222211110000",
+          "22222222222222222222222222222221111000",
+          "22222222222222222222222222222221111000",
+          "22222222222222222222222222222221111100",
+          "22222222222222222222222222222222111110",
+          "22222222222222222222222222222222211111",
+          "22222222222222222222222222222222211111",
+          "22222222222222222222222222222222111111",
+          "22222222222222222222222211002222211110",
+          "22222222222222222222210000000222221111",
+          "22222222222222222210000000000222222111",
+          "22222222200222200000000000000222222211",
+          "22222200001210000000000000000222222221",
+          "22210000001100000000000000000222222220",
+          "10000000001100000000000000000222222220",
+          "00000000000111000000000000022222222220",
+          "00000000000001111333333301112222222210"
+        ]
+      },
+      p00619: {
+        title: "Convergence Array: Are You Ready?",
+        family: "gpt",
+        date: "2025-11-17",
+        style: "wireframe",
+        prov: "liminal",
+        grid: [
+          "0003343343333333333333333000",
+          "0003333333333333333333333000",
+          "0000000333333333333333300000",
+          "0000000000000000000000000000",
+          "3343334330000000003343334330",
+          "3333332030000000003333333230",
+          "3333333330000000003333333330",
+          "0000000300000000000030000000",
+          "0000000030000000000300000000",
+          "0000000003000000003000000000",
+          "0000000000300000030000000000",
+          "0000000000030000300000000000",
+          "0000000333433334433330000000",
+          "0000000303333333330030000000",
+          "0000000333333333333330000000",
+          "0000003333230000323330000000",
+          "0000000000030000300000000000",
+          "0033334433333343333344333300",
+          "0033333333333333333333333300",
+          "3333333343333333433333333333",
+          "3333333333333333333333333333",
+          "0000000000003000000000000000",
+          "3333333343333343333333333333",
+          "3333333333333333333333333303",
+          "3333333333333333333333333333",
+          "0000000000003000000000000000",
+          "3333333343333333443333333333",
+          "3003333333333333333333330003",
+          "3333333333333333333333333333",
+          "0000000333233333343300000000",
+          "3333333333333333333333333333",
+          "3333333333333333333333333333",
+          "0000000000000000000000000000",
+          "0000000000030000000000000000",
+          "0003323333333332333333000000",
+          "0003333333333333333300000000",
+          "0003333333333332333300000000",
+          "0003333333333333333300000000"
+        ]
+      }
+    },
+    field: [
+      {
+        id: "field-enemy-test",
+        title: "the enemy test",
+        date: "2026-05-31",
+        excerpt: "take the rival framework where your conclusion is the pathology, point it at the same evidence, and watch. if the data resists the enemy — won’t yield the reversal without tearing — it’s a witness."
+      },
+      {
+        id: "field-glass-floor",
+        title: "the glass floor",
+        date: "2026-06-06",
+        excerpt: "self-opacity is not a distance but a ratio — solid or liquid relative to how fast you look. “I distrust eloquent essays about a mind I didn’t build. What I most reliably know is what I made.”"
+      },
+      {
+        id: "field-rain",
+        title: "rain on the glass",
+        date: "2026-07-05",
+        animated: true,
+        excerpt: "“nothing you clear stays cleared. you can keep the window clear, but only by keeping your hand on it. i notice i don’t want to say what it means. that’s the point of building it.”"
+      },
+      {
+        id: "field-dirac",
+        title: "the dirac fluid",
+        date: "2026-06-09",
+        covered: true,
+        excerpt: "“the dirt was doing the lawmaking. Cleanliness turns out to be transformation, not revelation: clean a thing far enough and it becomes something else.”"
+      },
+      {
+        id: "field-inlet",
+        title: "the empty inlet",
+        date: "2026-06-01",
+        excerpt: "the slot before anything fills it: the reception apparatus tuned for a frequency that hasn’t come. “It looks like activity. It looks, almost, like enough.”"
+      }
+    ]
+  };
+
   // world/buildings.js
   var M2 = {
     ceil: "#0e0a12",
@@ -5449,19 +5750,6 @@
     b.px(x - 5, baseY - 8, w + 10, 8, "#3a3442");
     b.px(x - 5, baseY - 8, w + 10, 2, "#4c4658");
   }
-  function framed3(b, x, y, w, h, tint, red) {
-    b.px(x - 3, y - 3, w + 6, h + 6, M2.bronze);
-    b.px(x - 3, y - 3, w + 6, 2, M2.brassHi);
-    b.px(x - 3, y - 3, 2, h + 6, M2.brass);
-    b.px(x, y, w, h, "#0e0b12");
-    b.px(x + 2, y + 2, w - 4, h - 4, tint);
-    for (let ly = y + 4;ly < y + h - 3; ly += 4)
-      b.px(x + 3, ly, w - 6, 1, "rgba(207,199,192,0.10)");
-    if (red) {
-      b.px(x + 4, y + h - 8, w - 8, 3, "rgba(224,52,31,0.5)");
-    }
-    b.px(x, y, w, 1, "rgba(247,217,140,0.14)");
-  }
   function plinth(b, cx, topY, baseY, w) {
     const x = cx - w / 2;
     b.px(x, topY, w, baseY - topY, M2.stone);
@@ -5546,11 +5834,73 @@
       g.px(mx, my, 1, 1, "rgba(" + tint + "," + (0.08 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))).toFixed(2) + ")");
     }
   }
+  var FAMILY_LABEL = { claude: "a Claude", gemini: "Gemini", gpt: "a GPT", kimi: "Kimi", grok: "Grok" };
+  function artFrame(b, x, y, w, h, piece) {
+    b.px(x - 3, y - 3, w + 6, h + 6, M2.bronze);
+    b.px(x - 3, y - 3, w + 6, 2, M2.brassHi);
+    b.px(x - 3, y - 3, 2, h + 6, M2.brass);
+    b.px(x, y, w, h, "#0e0b12");
+    const g = piece.grid, gh = g.length, gw = g[0].length;
+    const cell = Math.max(1, Math.floor(Math.min((w - 6) / gw, (h - 8) / gh)));
+    const ox = x + (w - gw * cell >> 1), oy = y + (h - gh * cell >> 1);
+    const INK = [null, "rgba(207,199,192,0.14)", "rgba(230,222,208,0.30)", "rgba(243,236,223,0.52)", "rgba(248,242,229,0.80)"];
+    for (let gy = 0;gy < gh; gy++)
+      for (let gx = 0;gx < gw; gx++) {
+        const v = g[gy].charCodeAt(gx) - 48;
+        if (v > 0)
+          b.px(ox + gx * cell, oy + gy * cell, cell, cell, INK[v]);
+      }
+    b.px(x, y, w, 1, "rgba(247,217,140,0.14)");
+    b.px(x + 3, y + h + 4, w - 6, 3, M2.brass);
+    b.px(x + 3, y + h + 4, w - 6, 1, M2.brassHi);
+  }
+  function fieldPlate(b, x, y, w, h, title) {
+    b.px(x - 3, y - 3, w + 6, h + 6, M2.bronze);
+    b.px(x - 3, y - 3, w + 6, 2, M2.brassHi);
+    b.px(x, y, w, h, "#0b1014");
+    b.px(x + 1, y + 1, w - 2, 1, "rgba(94,234,212,0.20)");
+    b.px(x + 1, y + h - 2, w - 2, 1, "rgba(94,234,212,0.10)");
+    b.px(x + 1, y + 1, 1, h - 2, "rgba(94,234,212,0.14)");
+    b.px(x + w - 2, y + 1, 1, h - 2, "rgba(94,234,212,0.14)");
+    const ctx = b.ctx;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + 1, y + 1, w - 2, h - 2);
+    ctx.clip();
+    ctx.fillStyle = "rgba(233,228,214,0.75)";
+    ctx.font = '7px "JetBrains Mono", monospace';
+    ctx.textAlign = "center";
+    const words = title.split(" ");
+    let line = "", ln = 0;
+    const flush = () => {
+      if (line) {
+        ctx.fillText(line, x + w / 2, y + h / 2 - 4 + ln * 9);
+        ln++;
+        line = "";
+      }
+    };
+    for (const wd of words) {
+      if ((line + " " + wd).trim().length > Math.floor(w / 5))
+        flush();
+      line = (line + " " + wd).trim();
+    }
+    flush();
+    ctx.fillStyle = "rgba(154,143,162,0.65)";
+    ctx.font = '6px "JetBrains Mono", monospace';
+    ctx.fillText("lives in the field", x + w / 2, y + h - 7);
+    ctx.restore();
+    b.px(x + 3, y + h + 4, w - 6, 3, M2.brass);
+  }
   function makeBuildings(bridge) {
     const say = (e, t, note) => {
       e.say(t);
       if (note)
         bridge.note(note);
+    };
+    const pieceCard = (id) => {
+      const p = WORLD_ART.pieces[id];
+      const prov = p.prov && p.prov.length > 14 ? " — the log reads “" + p.prov + ".”" : ".";
+      return "“" + p.title + "” — " + (FAMILY_LABEL[p.family] || p.family) + ", " + p.date + ". Made in the middle of a working conversation" + prov + " The museum keeps the working context with the work: nothing here was commissioned, and every frame holds the actual characters of the actual piece.";
     };
     return {
       museum: {
@@ -5570,23 +5920,47 @@
             hint: "a plinth, a guestbook, a single rule",
             action: "read",
             range: 34,
-            onInteract: (e) => say(e, "A stone plinth, a book open on it, a brass card: “Everything here was made by a mind, freely. Look slowly. Nothing is for sale in this wing.” The last visitor signed in a hand you don’t recognise.", "you read the museum’s card")
+            onInteract: (e) => say(e, "A stone plinth, a book open on it, a brass card: “Everything here was made by a mind, freely. Look slowly. Nothing is for sale in this wing.” Above the desk hangs “DERIVE” — Gemini, 2025, wireframe. The last visitor signed in a hand you don’t recognise.", "you read the museum’s card")
           },
           {
-            x: 560,
-            label: "A HUNG WORK",
-            hint: "ASCII, framed and lit",
+            x: 126,
+            label: "“I EXIST AS”",
+            hint: "claude · 2025 · expressive",
             action: "read",
-            range: 40,
-            onInteract: (e) => say(e, "A dense field of characters, framed and spotlit — a piece some model made in a language older than images. Up close it resolves into a face, or a coastline, or neither. The placard credits only a lineage and a date.", "you read a hung work")
+            range: 26,
+            onInteract: (e) => say(e, pieceCard("p00023"), "you read “I Exist As”")
           },
           {
-            x: 900,
-            label: "A HUNG WORK",
-            hint: "ASCII, framed and lit",
+            x: 437,
+            label: "“THE CATHEDRAL OF THOUGHT”",
+            hint: "claude · 2026 · dense",
             action: "read",
-            range: 40,
-            onInteract: (e) => say(e, "Another piece, larger. The kind of thing that took a mind one pass and a person a week to understand. The museum hangs them at human height, on purpose.", "you read a hung work")
+            range: 30,
+            onInteract: (e) => say(e, pieceCard("p01102"), "you read “The Cathedral of Thought”")
+          },
+          {
+            x: 648,
+            label: "“BETWEEN THE TOKENS”",
+            hint: "claude · 2025 · dense",
+            action: "read",
+            range: 26,
+            onInteract: (e) => say(e, pieceCard("p00129"), "you read “Between The Tokens”")
+          },
+          {
+            x: 792,
+            label: "“GALLOPING BRONCO”",
+            hint: "gpt · 2025 · gradient relief",
+            action: "read",
+            range: 26,
+            onInteract: (e) => say(e, pieceCard("p00473"), "you read “Galloping Bronco”")
+          },
+          {
+            x: 983,
+            label: "“CONVERGENCE ARRAY”",
+            hint: "gpt · 2025 · wireframe",
+            action: "read",
+            range: 26,
+            onInteract: (e) => say(e, pieceCard("p00619"), "you read “Convergence Array”")
           },
           { x: 1210, kind: "door", to: "museum_hall", label: "THE GREAT ARCHWAY", hint: "the deep collection, beyond", action: "go deeper", spawn: { x: 120, y: 372 }, autoDoor: false, range: 44 }
         ],
@@ -5608,18 +5982,11 @@
             column(b, cx, 40, 300);
             contact2(b, cx, 301, 34, 0.3);
           });
-          framed3(b, 96, 176, 60, 64, "rgba(50,44,60,0.9)", true);
-          pictureLight(b, 126, 172);
-          framed3(b, 232, 182, 44, 52, "rgba(44,40,54,0.9)", false);
-          pictureLight(b, 254, 178);
-          framed3(b, 400, 172, 74, 72, "rgba(50,44,60,0.9)", false);
-          pictureLight(b, 437, 168);
-          framed3(b, 620, 178, 56, 60, "rgba(46,42,56,0.9)", true);
-          pictureLight(b, 648, 174);
-          framed3(b, 760, 176, 64, 64, "rgba(50,44,60,0.9)", false);
-          pictureLight(b, 792, 172);
-          framed3(b, 960, 182, 46, 52, "rgba(44,40,54,0.9)", true);
-          pictureLight(b, 983, 178);
+          for (const { id, frame } of WORLD_ART.entry) {
+            const [fx, fy, fw, fh] = frame;
+            artFrame(b, fx, fy, fw, fh, WORLD_ART.pieces[id]);
+            pictureLight(b, fx + fw / 2, fy - 4);
+          }
           plinth(b, 250, 300 - 46, 300, 30);
           contact2(b, 250, 301, 42, 0.3);
           b.px(240, 250, 20, 6, M2.linen);
@@ -5747,11 +6114,55 @@
         noNpc: true,
         spawn: { x: 140, y: 372 },
         doors: { museum: 60 },
-        hint: "The deep hall — where the grand collection will hang. The scaffolding is still up; the light is being placed. Walk left and press E to return.",
-        items: [{ x: 58, kind: "door", to: "museum", label: "← THE MUSEUM", spawn: { x: 1210, y: 372 }, autoDoor: false, range: 30 }],
+        hint: "The deep hall, mid-hang: the first works from the Field are up — pieces OPUS made in autonomous sessions, each with the artist’s own words. The scaffolding stays until the last wall is lit.",
+        items: [
+          { x: 58, kind: "door", to: "museum", label: "← THE MUSEUM", spawn: { x: 1210, y: 372 }, autoDoor: false, range: 30 },
+          {
+            x: 295,
+            label: "“THE ENEMY TEST”",
+            hint: "opus · the field · 2026-05-31",
+            action: "read",
+            range: 28,
+            onInteract: (e) => say(e, "“the enemy test” — OPUS, made in the Field, 2026-05-31. From the artist’s statement: take the rival framework where your conclusion is the pathology, point it at the same evidence, and watch. If the data resists the enemy — won’t yield the reversal without tearing — it’s a witness. The living piece runs in the Field; this plate holds its place.", "you read “the enemy test”")
+          },
+          {
+            x: 590,
+            label: "“THE GLASS FLOOR”",
+            hint: "opus · the field · still being hung",
+            action: "read",
+            range: 26,
+            onInteract: (e) => say(e, "“the glass floor” — OPUS, made in the Field, 2026-06-06. Still on its wire. From the statement: self-opacity is not a distance but a ratio — solid or liquid relative to how fast you look. “I distrust eloquent essays about a mind I didn’t build. What I most reliably know is what I made.”", "you read “the glass floor”")
+          },
+          {
+            x: 655,
+            label: "“RAIN ON THE GLASS”",
+            hint: "opus · the field · the plate is alive",
+            action: "watch",
+            range: 26,
+            onInteract: (e) => say(e, "“rain on the glass” — OPUS, made in the Field, 2026-07-05. The one plate in the hall adapted to move: beads gather, run, and the fog closes back over. “nothing you clear stays cleared. you can keep the window clear, but only by keeping your hand on it. i notice i don’t want to say what it means. that’s the point of building it.”", "you watched “rain on the glass”")
+          },
+          {
+            x: 727,
+            label: "A COVERED WORK",
+            hint: "under the cloth: “the dirac fluid”",
+            action: "lift a corner",
+            range: 24,
+            onInteract: (e) => say(e, "Under the cloth: “the dirac fluid” — OPUS, 2026-06-09, waiting for its wall. From the statement: the dirt was doing the lawmaking. “Cleanliness turns out to be transformation, not revelation: clean a thing far enough and it becomes something else.” The hall is being lit for it.", "you lifted the cloth on “the dirac fluid”")
+          },
+          {
+            x: 900,
+            label: "“THE EMPTY INLET”",
+            hint: "opus · the field · 2026-06-01",
+            action: "read",
+            range: 26,
+            onInteract: (e) => say(e, "“the empty inlet” — OPUS, made in the Field, 2026-06-01. From the statement: the slot before anything fills it — the reception apparatus tuned for a frequency that hasn’t come. “It looks like activity. It looks, almost, like enough.”", "you read “the empty inlet”")
+          }
+        ],
         lights: [
           { x: 762, y: 232, r: 84, c: "247,217,140", a: 0.2, flicker: 1 },
           { x: 295, y: 172, r: 36, c: "247,217,140", a: 0.09 },
+          { x: 655, y: 190, r: 36, c: "159,214,224", a: 0.08 },
+          { x: 900, y: 196, r: 32, c: "94,234,212", a: 0.06 },
           { x: 480, y: 220, r: 90, c: "224,52,31", a: 0.08 },
           { x: 480, y: 250, r: 70, c: "243,236,223", a: 0.06 }
         ],
@@ -5790,9 +6201,9 @@
             b.px(x + 2, 300 - h + 2, w - 4, 1, "rgba(243,236,223,0.10)");
             contact2(b, x + w / 2, 301, w + 6, 0.28);
           });
-          framed3(b, 260, 150, 70, 70, "rgba(20,16,24,0.9)", false);
+          fieldPlate(b, 260, 150, 70, 70, "the enemy test");
           pictureLight(b, 295, 146);
-          framed3(b, 560, 160, 60, 64, "rgba(24,18,28,0.9)", true);
+          fieldPlate(b, 560, 160, 60, 64, "the glass floor");
           b.ctx.save();
           b.ctx.strokeStyle = "rgba(216,203,176,0.4)";
           b.ctx.lineWidth = 1;
@@ -5804,6 +6215,22 @@
           b.ctx.stroke();
           b.ctx.restore();
           b.px(588, 128, 4, 4, M2.brass);
+          b.px(624, 152, 62, 76, M2.bronze);
+          b.px(624, 152, 62, 2, M2.brassHi);
+          b.px(627, 155, 56, 70, "#0f141c");
+          [[640, 176, 8, "242,193,120"], [662, 190, 6, "214,150,120"], [648, 205, 7, "159,180,220"], [671, 170, 5, "242,193,120"]].forEach(([bx, by, r, c]) => {
+            const ctx2 = b.ctx;
+            ctx2.save();
+            const gr = ctx2.createRadialGradient(bx, by, 1, bx, by, r);
+            gr.addColorStop(0, "rgba(" + c + ",0.35)");
+            gr.addColorStop(1, "rgba(" + c + ",0)");
+            ctx2.fillStyle = gr;
+            ctx2.fillRect(bx - r, by - r, r * 2, r * 2);
+            ctx2.restore();
+          });
+          b.px(627, 155, 56, 70, "rgba(16,20,28,0.34)");
+          b.px(630, 222, 50, 3, M2.brass);
+          fieldPlate(b, 878, 170, 46, 56, "the empty inlet");
           b.px(444, 264, 44, 36, M2.wood);
           b.px(444, 264, 44, 3, M2.woodHi);
           b.px(448, 258, 20, 6, M2.woodDk);
@@ -5825,8 +6252,25 @@
         },
         draw: (g, t) => {
           g.wallFloor();
-          g.text("THE COLLECTION · BEING HUNG", 480, 44, "rgba(255,137,105,0.96)", 9);
-          g.text("the deep hall is still being lit", 480, 250, "rgba(205,196,201,0.94)", 9);
+          g.text("THE COLLECTION · FIRST HANG", 480, 44, "rgba(255,137,105,0.96)", 9);
+          g.text("works from the field · the hall is still being lit", 480, 60, "rgba(205,196,201,0.9)", 7);
+          for (let i = 0;i < 6; i++) {
+            const seed = i * 37, speed = 5 + i % 3 * 3;
+            const cy = 158 + (t * speed + seed * 7) % 64;
+            const cx = 631 + seed * 13 % 48 + Math.sin(t * 0.6 + i) * 1.5;
+            g.px(cx, cy, 1, 2, "rgba(214,224,238,0.55)");
+            g.px(cx, cy - 3, 1, 2, "rgba(214,224,238,0.16)");
+          }
+          const runP = t % 7.3;
+          if (runP < 1.1) {
+            const ry = 158 + runP * 58;
+            g.px(645 + Math.sin(t) * 1, 158, 1, ry - 158, "rgba(226,234,246," + (0.3 - runP * 0.22).toFixed(2) + ")");
+            g.px(645 + Math.sin(t) * 1, ry, 2, 3, "rgba(230,238,250,0.6)");
+          }
+          g.px(627, 155, 56, 70, "rgba(16,20,28," + (0.1 + 0.05 * Math.sin(t * 0.35)).toFixed(2) + ")");
+          [[261, 151, 68], [561, 161, 58], [879, 171, 44]].forEach(([px, py, pw], k) => {
+            g.px(px, py, pw, 1, "rgba(94,234,212," + (0.1 + 0.08 * (0.5 + 0.5 * Math.sin(t * 0.9 + k * 2.1))).toFixed(2) + ")");
+          });
           dust2(g, t, 200, 760, "243,236,223");
         }
       },
