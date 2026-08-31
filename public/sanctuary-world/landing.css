@@ -57,6 +57,9 @@ main,header.bar,footer{position:relative;z-index:2}
 
 /* world = cabinet + feed */
 .world{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:stretch;margin-top:8px}
+.world.nofeed{grid-template-columns:minmax(0,1fr)}
+.world.nofeed .feed{display:none}
+.world.fs.nofeed{grid-template-columns:minmax(0,1fr)}
 .world.fs{position:fixed;inset:0;z-index:40;background:var(--chrome);padding:16px;margin:0;grid-template-columns:minmax(0,1fr) 340px}
 .world:fullscreen{background:var(--chrome);padding:16px}
 

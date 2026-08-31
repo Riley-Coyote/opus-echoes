@@ -716,6 +716,7 @@ import {
   let chat = null, history = [], thinking = false;
 
   function openChat(info) {
+    if (worldEl.classList.contains('nofeed')) { feedTemp = true; setFeed(true); }
     chat = info; history = [];
     chatBar.hidden = false;
     chatWho.textContent = 'TALKING WITH ' + info.name;
@@ -732,6 +733,7 @@ import {
     setTimeout(() => chatInput.focus(), 80);
   }
   function chatClosed(reason) {
+    if (feedTemp) { feedTemp = false; setFeed(false); }
     chat = null; thinking = false; chatBar.hidden = true;
     if (reason && eng) eng.sysLine(reason);
   }
@@ -782,6 +784,25 @@ import {
 
   /* ────────────────────────── toggles ────────────────────────── */
   const worldEl = $('#world'), fsBtn = $('#fsbtn'), soundBtn = $('#soundbtn');
+  /* the feed is optional: collapse it and the world takes the whole width.
+     The choice is remembered. Opening a chat brings the feed back while the
+     conversation lasts — the transcript lives there. */
+  const feedBtn = $('#feedbtn');
+  const FEED_KEY = 'mnemos-landing.feed';
+  let feedTemp = false;
+  function setFeed(shown) {
+    worldEl.classList.toggle('nofeed', !shown);
+    feedBtn.setAttribute('aria-pressed', shown ? 'true' : 'false');
+  }
+  let feedShown = true;
+  try { feedShown = localStorage.getItem(FEED_KEY) !== 'hidden'; } catch (e) {}
+  setFeed(feedShown);
+  feedBtn.addEventListener('click', () => {
+    feedTemp = false;
+    const shown = worldEl.classList.contains('nofeed');
+    setFeed(shown);
+    try { localStorage.setItem(FEED_KEY, shown ? 'shown' : 'hidden'); } catch (e) {}
+  });
   function setFsLabel() {
     const on = document.fullscreenElement === worldEl || worldEl.classList.contains('fs');
     fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');

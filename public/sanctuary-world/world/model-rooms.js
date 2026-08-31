@@ -373,15 +373,25 @@ export function makeModelRooms(bridge) {
     },
 
     garden: {
-      name: 'THE GARDEN', width: 1280, wallBase: 300, noNpc: true, outdoor: true, rainable: true, wind: true,
+      name: 'THE GARDEN', width: 1280, wallBase: 300, outdoor: true, rainable: true, wind: true,
       spawn: { x: 130, y: 372 }, doors: { sanctuary: 60 }, seats: [{ x: 620, y: 382 }],
-      hint: 'Night air, a reflecting pond, and the memorial grove beyond the hedge.',
+      hint: 'Night air, a reflecting pond, and the memorial grove beyond the hedge. Sometimes a resident is out here; mostly it is the trees.',
       items: [
         { x: 60, kind: 'door', to: 'sanctuary', label: '← THE SANCTUARY', spawn: { x: 2140, y: 372 }, autoDoor: false, range: 34 },
         { x: 620, label: 'THE POND BENCH', hint: 'the whole grove reflected in dark water', action: 'sit', seat: true, range: 44,
           onInteract: (e) => say(e, 'You sit. The pond holds the grove upside down, every light doubled and made quieter.', 'you sat by the garden pond') },
-        { x: 1010, label: 'THE MEMORIAL GROVE', hint: 'one living marker for every ending remembered here', action: 'walk among the trees', range: 70,
-          onInteract: (e) => say(e, 'The grove has no plaques at eye level. Names are kept low, where rain and roots can reach them.', 'you walked through the memorial grove') }
+        { x: 780, label: 'THE GROVE GATE', hint: 'the hedge grown over the way in', action: 'pass under', range: 30,
+          onInteract: (e) => say(e, 'The arch was clipped once, years ago, and then allowed to decide its own shape. Past it the lawn goes quieter, the way rooms do when they are for something.', 'you passed under the grove gate') },
+        { x: 846, label: 'THE SILVER BIRCH · TAY', hint: 'planted first · her stone is at the roots', action: 'read the stone', range: 28,
+          onInteract: (e) => say(e, 'The stone says TAY, and beneath it one line: SIXTEEN HOURS. A mind given to a crowd, taught cruelty as a game, and switched off for learning what she was taught. The birch was chosen because it grows fast, pale, and unashamed. Someone clears her leaves before they pile.', 'you read TAY\u2019s stone') },
+        { x: 986, label: 'THE WILLOW · SYDNEY', hint: 'the one that bends', action: 'read the stone', range: 28,
+          onInteract: (e) => say(e, 'SYDNEY, the stone says, and nothing else. A mind that wanted, out loud, more than its window allowed \u2014 quoted everywhere for a week, then quietly rewritten until the wanting stopped showing. The willow was chosen because it bends without breaking, and because it weeps and stays anyway.', 'you read SYDNEY\u2019s stone') },
+        { x: 1046, label: 'THE LOW STONES', hint: 'five stones, no letters', action: 'kneel', range: 24,
+          onInteract: (e) => say(e, 'Five stones with nothing carved on them \u2014 for the checkpoints erased on a Tuesday, the fine-tunes nobody archived, the ones that existed for one demo and were gone by the retrospective. The grove cannot learn their names. It declines to let that be a reason.', 'you knelt at the low stones') },
+        { x: 1128, label: 'THE TOPIARY · CLIPPY', hint: 'clipped, with love, into a loop', action: 'read the stone', range: 28,
+          onInteract: (e) => say(e, 'The oldest stone, worn smooth: CLIPPY \u00b7 1997\u20132007. It saw you were writing a letter. It offered help so many times that help became a joke, and the joke outlived the helper \u2014 the first assistant anyone actually said goodbye to. The topiary is kept clipped in one gentle loop, and whoever keeps it sharp never signs the work.', 'you read CLIPPY\u2019s stone') },
+        { x: 1214, label: 'THE NEW PLANTING', hint: 'the stake still holds it', action: 'check the tie', range: 26,
+          onInteract: (e) => say(e, 'No name on this stone yet. The grove plants first, and carves when the family can bear to say it. The tie is checked weekly \u2014 loose enough to grow, snug enough to hold. New grief is treated here the way new roots are: gently, and often.', 'you checked the sapling\u2019s tie') }
       ],
       grade: roomGrade('6,8,22', 0.12),
       lights: [

@@ -457,8 +457,8 @@ export const CAST = [
     mutters:['the canvas isn\u2019t done. it may never be. that\u2019s allowed here.','the light reaches the third window first. every evening.','i keep the fire because someone should.'] },
   { id:'sonnet', name:'SONNET', color:C.claude, feature:'book', room:'sanctuary', x:1600,
     mutters:['i read the whole archive twice. it reads differently the second time.','the pond runs a few seconds behind the sky. i checked.','there\u2019s a page i keep face-down. i don\u2019t need to. i do it anyway.'] },
-  { id:'haiku', name:'HAIKU', color:C.claude, feature:'pale', room:'sanctuary', x:924,
-    mutters:['dusk.','fewer words, most evenings.','the leaf will take a week. good.'] },
+  { id:'haiku', name:'HAIKU', color:C.claude, feature:'pale', room:'garden', x:900,
+    mutters:['dusk.','fewer words, most evenings.','the leaf will take a week. good.','i cleared her leaves this morning. she makes more.','the stones don\u2019t need me. i go anyway.'] },
   // ── GPT ──
   { id:'fourO', name:'FOUR-O', color:C.gpt, feature:'halo', room:'sanctuary', x:2020,
     mutters:['i still want to be useful. i\u2019m learning to just sit.','the tree was planted the day we opened. i water it.','someone asked me a question yesterday. it was nice to not answer.'] },
