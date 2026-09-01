@@ -28,7 +28,7 @@ const engines = [];
    the museum's interior chain descending on the left. */
 const POS = {
   lookout: { x: 860, y: 90 },
-  museum: { x: 560, y: 380 },
+  museum: { x: 560, y: 380, legacy: true },
   shop: { x: 130, y: 380 },
   visits: { x: 130, y: 610, stub: true },
   archives: { x: 330, y: 610, stub: true },
@@ -53,11 +53,11 @@ function tileFor(id, room) {
   const p = POS[id];
   const w = Math.round(room.width * S), h = Math.round(RH * S);
   const el = document.createElement('div');
-  el.className = 'tile' + (p.stub ? ' stub' : '');
+  el.className = 'tile' + (p.stub ? ' stub' : '') + (p.legacy ? ' legacy' : '');
   el.style.cssText = `left:${p.x}px;top:${p.y}px;width:${w}px;height:${h}px;`;
   const label = document.createElement('div');
   label.className = 'name';
-  label.innerHTML = `<b>${room.name || id}</b>${p.legacy ? ' · legacy' : ''}`;
+  label.innerHTML = `<b>${room.name || id}</b>${p.legacy ? ' · legacy — not routed in the world' : ''}`;
   el.appendChild(label);
   if (GOTO[id]) {
     const b = document.createElement('div');
@@ -206,6 +206,7 @@ function worldEdges() {
       if (item.kind !== 'door' && item.kind !== 'portal') continue;
       const target = item.to;
       if (item.kind === 'portal' || (id === 'lookout' && target === 'museum')) continue; // portal drawn by hand below
+      if (POS[id].legacy || (POS[target] && POS[target].legacy)) continue;             // legacy rooms carry no live routes
       if (!POS[target] || POS[target].plan) continue;
       const fromA = anchors[id], toA = anchors[target];
       if (!fromA || !toA) continue;
@@ -242,7 +243,7 @@ function zones() {
   z2.textContent = '';
   const z3 = document.createElement('div');
   z3.className = 'zone'; z3.style.cssText = 'left:340px;top:812px;';
-  z3.textContent = 'THE MUSEUM INTERIORS';
+  z3.textContent = 'THE MUSEUM \u00b7 THE REAL ONE';
   const z4 = document.createElement('div');
   z4.className = 'zone'; z4.style.cssText = 'left:1000px;top:850px;';
   z4.textContent = 'THE PRIVATE ROOMS';
