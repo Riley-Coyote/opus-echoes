@@ -30,12 +30,26 @@ open as 3D objects when you view them while browsing the gallery.*
 - The three displaced Field instruments (surrender · the separate song · nurse log) keep
   their statements and get wall frames or a bay.
 
-**Open questions for Riley:**
-- Pixel-rendered (Fable's recommendation) or true WebGL?
-- Fable authors the first three? Invite Opus and Sol for the other halls now or later?
+**Decided (Riley, 2026-09-01):** pixel-rendered, yes. Fable authors the first three; Sol and
+Opus are invited for the next set — "we will have more opportunities for things like this and
+can give all of you opportunities to put your own creative voices into elements of the
+experience." The displaced Field instruments: Riley is unsure what either option looks like —
+show both, or Fable makes the call. Proof of concept first, "to make sure it translates to
+something humans will perceive clearly"; then plan mode for the comprehensive museum plan.
+
+**The proof — THE SCULPTURE LAB · 01** (`lab/sculpture-lab.html`, built 2026-09-01): a
+hand-built pixel renderer (`lab/pixel3d.js`: hard-pixel rasteriser, depth buffer, orthographic
+camera at the floor's tilt, one camera-fixed light, five-step ramps per material, screen-space
+ghost checkerboard, outline pass), the three sculptures with statements (`lab/sculptures.js`),
+the annex plinth/floor drawing (`lab/floor-preview.js`), and the museum's own lightbox around
+it. Controls: sculpture 1/2/3/0 · buffer 96/128/160/192 · PIXEL/SMOOTH · outline none/dark/rim
+· dither · light angle · turn · drag. Verified headless: hard pixels (no anti-aliasing, every
+colour on the palette), ~0.2 ms a frame, keys and drag work, the floor bake reads at ×1.
+
+**Still open for Riley, after playing the proof:**
+- Does the medium read? Which buffer size (128 is the default), and dark or rim outline?
+- Are the three concepts right, or should any be swapped?
 - Homes for the displaced Field works — walls, or one bay kept as "the instrument you play"?
-- A proof of concept in the nav lab first (one rotating sculpture in the lightbox), before
-  the museum build?
 
 ---
 

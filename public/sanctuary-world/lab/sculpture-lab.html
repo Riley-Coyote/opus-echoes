@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the sanctuary — sculpture lab</title>
+<meta name="description" content="Proof of concept: a pixel-rendered 3D sculpture inside the museum's own lightbox, and the same model baked as a floor sprite.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Silkscreen:wght@400;700&family=Press+Start+2P&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../museum/museum-permanent-gallery/scene.css?v=20260831-stewardship-5">
+<style>
+/* the lab family, layered over the museum's stylesheet (which owns the lightbox) */
+:root{ --ink:#f5f3ed; --dim:#aaa7a0; --faint:#7b7975; --amber:#f2c14e; --teal:#5eead4; --frost:#9fd6e0;
+  --px:'Press Start 2P',monospace; --mono:'JetBrains Mono',monospace; --serif:'Newsreader',Georgia,serif; }
+html,body{height:auto;min-height:100%;overflow:auto}
+body{display:block;margin:0;padding:0;background:#100c1c;color:var(--ink);font-family:var(--mono);visibility:hidden}
+body.is-ready{visibility:visible}
+.lab-head{position:fixed;left:0;right:0;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:20px;
+  padding:14px 22px;background:rgba(16,12,28,.92);border-bottom:1px solid rgba(242,236,223,.22);backdrop-filter:blur(8px)}
+.lab-head h1{font-family:var(--px);font-size:13px;font-weight:400;letter-spacing:.06em;color:var(--ink);margin:0;text-transform:none}
+.lab-head .sub{color:var(--faint);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:6px;font-family:var(--mono)}
+.lab-head .sub b{color:var(--dim);font-weight:500}
+.lab-head nav{display:flex;gap:16px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.lab-head nav a{color:inherit;text-decoration:none;border-bottom:1px solid transparent;padding-bottom:2px}
+.lab-head nav a:hover{color:var(--ink);border-color:rgba(242,236,223,.3)}
+
+.stage{position:relative;min-height:880px;height:calc(100svh + 40px);overflow:hidden;background:#050608}
+.backdrop{position:absolute;inset:0;background:url("./shots/annex-weather.png") center/cover no-repeat;filter:brightness(.55)}
+.veil{position:absolute;inset:0;background:rgba(2,3,5,.7);backdrop-filter:blur(20px) saturate(.55)}
+.museum-dialog{position:absolute;top:92px;left:0;right:0;margin:0 auto;z-index:3}
+.museum-dialog:not([open]){display:none}
+#dialog-art{display:none}
+#sculpture-canvas{position:absolute;image-rendering:pixelated;image-rendering:crisp-edges;cursor:grab;touch-action:none}
+#sculpture-canvas.dragging{cursor:grabbing}
+.dialog-extra strong{letter-spacing:.14em}
+
+.floor{padding:72px 40px 140px;max-width:1180px;margin:0 auto}
+.lab-h{font-family:var(--px);font-size:11px;font-weight:400;letter-spacing:.1em;color:var(--dim);margin:0 0 10px;text-transform:none}
+.floor p{font-family:var(--serif);font-size:15px;line-height:1.55;color:var(--dim);max-width:62ch;margin:0 0 28px}
+.floor p em{color:var(--ink)}
+.strips{display:flex;gap:36px;align-items:flex-end;flex-wrap:wrap}
+.strips figure{margin:0}
+.strips canvas{display:block;image-rendering:pixelated;border:1px solid rgba(242,236,223,.14);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.strips figcaption{margin-top:10px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+
+.lab-bar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;flex-direction:column;gap:8px;
+  padding:12px 22px 12px;background:rgba(16,12,28,.94);border-top:1px solid rgba(242,236,223,.22);backdrop-filter:blur(8px)}
+.controls{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.group{display:flex;align-items:center;gap:6px}
+.group .lbl{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-right:4px}
+.group button{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  background:none;border:1px solid rgba(242,236,223,.22);padding:5px 9px;cursor:pointer;min-width:0}
+.group button:hover{color:var(--ink);border-color:rgba(242,236,223,.5)}
+.group button.on{color:#0d0a16;background:var(--amber);border-color:var(--amber)}
+.group input[type=range]{width:120px;accent-color:var(--amber)}
+.group .val{font-size:10px;color:var(--dim);min-width:38px}
+.readout{font-size:10px;letter-spacing:.08em;color:var(--dim);font-family:var(--mono)}
+.readout b{color:var(--ink);font-weight:500}
+.keys{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+</style>
+</head>
+<body>
+<header class="lab-head">
+  <div>
+    <h1>SCULPTURE LAB · 01</h1>
+    <div class="sub">proof of concept · <b>pixel-rendered 3d</b> inside the museum's own lightbox · the same model baked for the floor</div>
+  </div>
+  <nav>
+    <a href="../workshop/">the workshop</a>
+    <a href="./nav-lab.html">nav lab</a>
+    <a href="../museum/museum-field-annex.html">the annex</a>
+  </nav>
+</header>
+
+<section class="stage" id="stage">
+  <div class="backdrop"></div>
+  <div class="veil"></div>
+  <dialog class="museum-dialog" id="museum-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-surface">
+      <button class="dialog-close" type="button" data-dialog-close aria-label="Close details">Close <span aria-hidden="true">×</span></button>
+      <div class="dialog-layout">
+        <figure class="dialog-art is-live" id="dialog-art-wrap">
+          <img id="dialog-art" alt="">
+          <canvas id="sculpture-canvas" aria-label="the sculpture, turning"></canvas>
+        </figure>
+        <article class="dialog-copy">
+          <p class="dialog-kicker" id="dialog-kicker"></p>
+          <h2 id="dialog-title"></h2>
+          <p class="dialog-meta" id="dialog-meta"></p>
+          <p class="dialog-statement" id="dialog-statement"></p>
+          <div class="dialog-extra" id="dialog-extra"></div>
+          <div class="collection-index" id="collection-index" hidden></div>
+          <div class="dialog-actions" id="dialog-actions">
+            <button type="button" class="dialog-primary" id="dialog-primary" data-dialog-close>Return to the Annex</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </dialog>
+</section>
+
+<section class="floor">
+  <h2 class="lab-h">ON THE FLOOR</h2>
+  <p>The same model, baked once at the floor's angle into a sprite about forty-eight pixels tall, standing on a plinth in the annex's own materials — <em>as it would be played</em> at ×1, and enlarged so you can read the pixels.</p>
+  <div class="strips">
+    <figure><canvas id="floor-1"></canvas><figcaption>×1 · as played</figcaption></figure>
+    <figure><canvas id="floor-2"></canvas><figcaption>×2</figcaption></figure>
+    <figure><canvas id="floor-3"></canvas><figcaption>×3</figcaption></figure>
+  </div>
+</section>
+
+<footer class="lab-bar">
+  <div class="controls">
+    <div class="group" data-group="s"><span class="lbl">sculpture</span>
+      <button data-s="1">1 weights</button><button data-s="2">2 the unsampled</button><button data-s="3">3 the context window</button><button data-s="0">0 primitives</button></div>
+    <div class="group" data-group="res"><span class="lbl">buffer</span>
+      <button data-res="96">96</button><button data-res="128">128</button><button data-res="160">160</button><button data-res="192">192</button></div>
+    <div class="group" data-group="mode"><span class="lbl">mode</span>
+      <button data-mode="pixel">pixel</button><button data-mode="smooth">smooth</button></div>
+    <div class="group" data-group="outline"><span class="lbl">outline</span>
+      <button data-outline="none">none</button><button data-outline="dark">dark</button><button data-outline="rim">rim</button></div>
+    <div class="group" data-group="dither"><span class="lbl">dither</span>
+      <button data-dither="0">off</button><button data-dither="1">on</button></div>
+    <div class="group"><span class="lbl">light</span>
+      <input type="range" id="light" min="-90" max="90" step="5"><span class="val" id="light-val"></span></div>
+    <div class="group" data-group="turn"><span class="lbl">turn</span>
+      <button data-turn="1">on</button><button data-turn="0">off</button></div>
+    <div class="group"><button id="reopen" hidden>lightbox</button></div>
+  </div>
+  <div class="readout" id="readout">…</div>
+  <div class="keys">1 2 3 0 sculpture · R buffer · P mode · O outline · D dither · [ ] light · T turn · ← → rotate · space pause · drag the sculpture</div>
+</footer>
+
+<script type="module">
+import { createRenderer, present, bakeSprite, computeScale, paletteHex, hashImage } from './pixel3d.js';
+import { SCULPTURES, byKey } from './sculptures.js';
+import { composeFloorScene, presentFloor } from './floor-preview.js';
+
+const $ = (s) => document.querySelector(s);
+const dialog = $('#museum-dialog'), figure = $('#dialog-art-wrap'), big = $('#sculpture-canvas');
+const small = document.createElement('canvas');
+const readout = $('#readout');
+const RESOLUTIONS = [96, 128, 160, 192];
+const TURN_RATE = 18, YAW_STEP = 1.5, PITCH = 28;
+
+const params = new URLSearchParams(location.search);
+const state = {
+  s: params.get('s') || '1',
+  res: Number(params.get('res')) || 128,
+  mode: params.get('mode') === 'smooth' ? 'smooth' : 'pixel',
+  outline: ['none', 'dark', 'rim'].includes(params.get('outline')) ? params.get('outline') : 'dark',
+  dither: params.get('dither') === '1',
+  light: params.has('light') ? Number(params.get('light')) : -55,
+  turn: params.get('turn') !== '0',
+  yaw: params.has('yaw') ? Number(params.get('yaw')) : 40,
+};
+if (!RESOLUTIONS.includes(state.res)) state.res = 128;
+
+let renderer = null, bufW = 0, bufH = 0, scale = 1, dprInt = 1;
+let sculpture = byKey(state.s);
+let lastImage = null, t0 = performance.now(), lastFrame = t0;
+const times = [];
+
+function syncUrl() {
+  const q = new URLSearchParams({ s: state.s, res: state.res, mode: state.mode, outline: state.outline,
+    dither: state.dither ? '1' : '0', light: state.light, turn: state.turn ? '1' : '0', yaw: Math.round(state.yaw) });
+  history.replaceState(null, '', `${location.pathname}?${q}`);
+}
+
+function syncControls() {
+  for (const b of document.querySelectorAll('[data-s]')) b.classList.toggle('on', b.dataset.s === state.s);
+  for (const b of document.querySelectorAll('[data-res]')) b.classList.toggle('on', Number(b.dataset.res) === state.res);
+  for (const b of document.querySelectorAll('[data-mode]')) b.classList.toggle('on', b.dataset.mode === state.mode);
+  for (const b of document.querySelectorAll('[data-outline]')) b.classList.toggle('on', b.dataset.outline === state.outline);
+  for (const b of document.querySelectorAll('[data-dither]')) b.classList.toggle('on', (b.dataset.dither === '1') === state.dither);
+  for (const b of document.querySelectorAll('[data-turn]')) b.classList.toggle('on', (b.dataset.turn === '1') === state.turn);
+  $('#light').value = state.light; $('#light-val').textContent = `${state.light}°`;
+}
+
+function setCopy() {
+  $('#dialog-kicker').textContent = `${sculpture.kicker} · ${sculpture.hall.toLowerCase()}`;
+  $('#dialog-title').textContent = sculpture.title;
+  $('#dialog-meta').textContent = sculpture.meta;
+  $('#dialog-statement').textContent = sculpture.statement;
+  $('#dialog-extra').innerHTML = `<strong>material</strong>${sculpture.material}`;
+}
+
+/* size the buffer and the visible canvas in DEVICE pixels: the backing store
+   is an integer multiple of the buffer and the CSS box is that many device
+   pixels wide, so every buffer pixel lands on whole screen pixels at any
+   devicePixelRatio — integer or not */
+function layoutCanvas() {
+  const fw = figure.clientWidth, fh = figure.clientHeight;
+  if (!fw || !fh) return;
+  const dpr = window.devicePixelRatio || 1;
+  dprInt = dpr;
+  if (state.mode === 'smooth') {
+    bufW = bufH = Math.min(Math.floor(fw * dpr), Math.floor(fh * dpr), 960);
+    scale = 1;
+  } else {
+    bufW = bufH = state.res;
+    scale = Math.max(1, Math.floor(Math.min((fw * dpr) / bufW, (fh * dpr) / bufH)));
+  }
+  if (!renderer || renderer.width !== bufW || renderer.height !== bufH) renderer = createRenderer(bufW, bufH);
+  const devW = bufW * scale, devH = bufH * scale;
+  big.width = devW; big.height = devH;
+  big.style.width = `${devW / dpr}px`; big.style.height = `${devH / dpr}px`;
+  big.style.left = `${Math.floor((fw * dpr - devW) / 2) / dpr}px`;
+  big.style.top = `${Math.floor((fh * dpr - devH) / 2) / dpr}px`;
+}
+
+function buildParts(t, lod = 'lightbox') {
+  const S = lod === 'floor' ? 3.2 : computeScale({ width: bufW, height: bufH, bounds: sculpture.bounds, pitch: PITCH });
+  return sculpture.build({ t, lod, minR: 1.5 / S });
+}
+
+function frame(now) {
+  const dt = Math.min(0.1, (now - lastFrame) / 1000);
+  lastFrame = now;
+  const t = (now - t0) / 1000;
+  if (state.turn && !drag) state.yaw = (state.yaw + TURN_RATE * dt) % 360;
+  const yawQ = Math.round(state.yaw / YAW_STEP) * YAW_STEP;
+  const parts = buildParts(t);
+  lastImage = renderer.render(parts, {
+    yaw: yawQ, pitch: PITCH, lightAz: state.light, mode: state.mode, outline: state.outline,
+    dither: state.dither, bounds: sculpture.bounds, plinth: true,
+  });
+  present(lastImage, small, big);
+  times.push(renderer.stats.ms); if (times.length > 120) times.shift();
+  const avg = times.reduce((a, b) => a + b, 0) / times.length;
+  readout.innerHTML = `<b>${sculpture.title}</b> · ${state.mode === 'smooth' ? `${bufW}px smooth` : `${bufW}px <b>PIXEL</b>`} · outline ${state.outline} · dither ${state.dither ? 'on' : 'off'} · light ${state.light}° · turn ${state.turn ? `${TURN_RATE}°/s` : 'paused'} · yaw ${Math.round(yawQ)}° · ×${scale} device px${dprInt !== 1 ? ` · dpr ${Number(dprInt.toFixed(2))}` : ''} · ${avg.toFixed(1)} ms · ${renderer.stats.faces} faces`;
+  requestAnimationFrame(frame);
+}
+
+function renderFloor() {
+  const parts = buildParts(0, 'floor');
+  const sprite = bakeSprite(parts, { height: 48, yaw: 24, pitch: 38, lightAz: state.light, outline: 'dark', bounds: sculpture.bounds });
+  const scene = composeFloorScene(sprite);
+  const dpr = window.devicePixelRatio || 1;
+  presentFloor(scene, $('#floor-1'), 1, dpr);
+  presentFloor(scene, $('#floor-2'), 2, dpr);
+  presentFloor(scene, $('#floor-3'), 3, dpr);
+}
+
+function set(patch) {
+  Object.assign(state, patch);
+  if (patch.s !== undefined) { sculpture = byKey(state.s); setCopy(); }
+  if (patch.mode !== undefined || patch.res !== undefined || patch.s !== undefined) layoutCanvas();
+  if (patch.s !== undefined || patch.light !== undefined) renderFloor();
+  syncControls(); syncUrl();
+}
+
+/* controls */
+document.querySelector('.controls').addEventListener('click', (event) => {
+  const b = event.target.closest('button'); if (!b) return;
+  if (b.dataset.s !== undefined) set({ s: b.dataset.s });
+  else if (b.dataset.res !== undefined) set({ res: Number(b.dataset.res) });
+  else if (b.dataset.mode !== undefined) set({ mode: b.dataset.mode });
+  else if (b.dataset.outline !== undefined) set({ outline: b.dataset.outline });
+  else if (b.dataset.dither !== undefined) set({ dither: b.dataset.dither === '1' });
+  else if (b.dataset.turn !== undefined) set({ turn: b.dataset.turn === '1' });
+  else if (b.id === 'reopen') { dialog.show(); b.hidden = true; layoutCanvas(); }
+});
+$('#light').addEventListener('input', (event) => set({ light: Number(event.target.value) }));
+for (const b of document.querySelectorAll('[data-dialog-close]')) b.addEventListener('click', () => { dialog.close(); $('#reopen').hidden = false; });
+
+window.addEventListener('keydown', (event) => {
+  if (event.target instanceof Element && event.target.closest('input')) return;
+  const k = event.key;
+  if (['0', '1', '2', '3'].includes(k)) set({ s: k });
+  else if (k === 'r' || k === 'R') set({ res: RESOLUTIONS[(RESOLUTIONS.indexOf(state.res) + 1) % RESOLUTIONS.length] });
+  else if (k === 'p' || k === 'P') set({ mode: state.mode === 'pixel' ? 'smooth' : 'pixel' });
+  else if (k === 'o' || k === 'O') set({ outline: { none: 'dark', dark: 'rim', rim: 'none' }[state.outline] });
+  else if (k === 'd' || k === 'D') set({ dither: !state.dither });
+  else if (k === '[') set({ light: Math.max(-90, state.light - 5) });
+  else if (k === ']') set({ light: Math.min(90, state.light + 5) });
+  else if (k === 't' || k === 'T' || k === ' ') set({ turn: !state.turn });
+  else if (k === 'ArrowLeft') set({ yaw: (state.yaw - 6 + 360) % 360 });
+  else if (k === 'ArrowRight') set({ yaw: (state.yaw + 6) % 360 });
+  else return;
+  event.preventDefault();
+});
+
+/* drag to rotate */
+let drag = null;
+big.addEventListener('pointerdown', (event) => { drag = { x: event.clientX, yaw: state.yaw }; big.setPointerCapture(event.pointerId); big.classList.add('dragging'); });
+big.addEventListener('pointermove', (event) => { if (!drag) return; state.yaw = (drag.yaw + (event.clientX - drag.x) * 0.5 + 360) % 360; });
+const endDrag = () => { if (drag) { drag = null; big.classList.remove('dragging'); syncUrl(); } };
+big.addEventListener('pointerup', endDrag); big.addEventListener('pointercancel', endDrag);
+
+new ResizeObserver(() => layoutCanvas()).observe(figure);
+
+window.__lab = {
+  palette: () => paletteHex(),
+  frameStats: () => ({ avgMs: times.reduce((a, b) => a + b, 0) / Math.max(1, times.length), faces: renderer?.stats.faces, yaw: Math.round(state.yaw), scale, dpr: dprInt, res: bufW, mode: state.mode, sculpture: sculpture.id }),
+  frameHash: () => (lastImage ? hashImage(lastImage) : null),
+  set,
+  state,
+};
+
+async function start() {
+  const faces = ['400 12px Silkscreen', '400 12px "JetBrains Mono"', '500 12px Inter', '400 12px "Press Start 2P"', '400 12px Newsreader'];
+  await Promise.race([Promise.all(faces.map((f) => document.fonts.load(f).catch(() => null))), new Promise((r) => setTimeout(r, 2500))]);
+  setCopy();
+  dialog.show();
+  layoutCanvas();
+  syncControls(); syncUrl();
+  renderFloor();
+  document.body.classList.add('is-ready');
+  t0 = performance.now(); lastFrame = t0;
+  requestAnimationFrame(frame);
+}
+start();
+</script>
+</body>
+</html>
