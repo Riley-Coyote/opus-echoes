@@ -1960,6 +1960,42 @@
       render();
       return window.render_game_to_text();
     };
+    window.__workshopRender = () => {
+      if (!state.staticWorld)
+        return null;
+      const out = document.createElement("canvas");
+      out.width = WORLD.width;
+      out.height = WORLD.height;
+      const target = out.getContext("2d");
+      target.imageSmoothingEnabled = false;
+      px(target, 0, 0, WORLD.width, WORLD.height, PALETTE.void);
+      target.drawImage(state.staticWorld, 0, 0);
+      for (const work2 of WORKS)
+        drawWallWork(target, work2);
+      for (const work2 of FIELD_WORKS)
+        drawWallWork(target, work2);
+      for (const entity of [...ENTITIES].sort((a, b) => a.sortY - b.sortY)) {
+        if (entity.type === "bench")
+          drawBench(target, entity);
+        if (entity.type === "arch-pillar")
+          drawArchPillar(target, entity);
+        if (entity.type === "light-table")
+          drawLightTable(target, entity);
+        if (entity.type === "plant")
+          drawPlant(target, entity);
+        if (entity.type === "edition-plinth")
+          drawEditionPlinth(target, entity);
+        if (entity.type === "flat-files")
+          drawFlatFiles(target, entity);
+        if (entity.type === "packing-table")
+          drawPackingTable(target, entity);
+        if (entity.type === "terminal")
+          drawTerminal(target, entity);
+      }
+      drawForegroundArchitecture(target);
+      px(target, 0, 0, WORLD.width, WORLD.height, "rgba(3, 5, 9, 0.13)");
+      return out.toDataURL("image/png");
+    };
   }
   async function start() {
     exposeTestContract();

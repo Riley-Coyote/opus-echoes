@@ -1713,6 +1713,21 @@
       render();
       return window.render_game_to_text();
     };
+    window.__workshopRender = () => {
+      if (!state.background)
+        return null;
+      const held = { x: state.player.x, y: state.player.y, nearest: state.nearest };
+      state.player.x = -1000;
+      state.player.y = 1e4;
+      state.nearest = null;
+      render();
+      const still = canvas.toDataURL("image/png");
+      state.player.x = held.x;
+      state.player.y = held.y;
+      state.nearest = held.nearest;
+      render();
+      return still;
+    };
   }
   async function start() {
     exposeTestContract();
