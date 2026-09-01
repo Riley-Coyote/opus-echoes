@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>the sanctuary — navigation lab</title>
-<meta name="description" content="A living prototype of the proposed navigation system: the compass, the map, and the thread.">
+<meta name="description" content="A living prototype of the proposed navigation system: the compass, the destinations menu, and the thread.">
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,94 +13,125 @@
 :root{
   --ink:#f5f3ed; --dim:#aaa7a0; --faint:#7b7975;
   --amber:#f2c14e; --teal:#5eead4; --frost:#9fd6e0; --green:#4ade80; --rose:#f2a3c0;
-  --chrome:#0c0c0e; --panel:rgba(10,10,13,0.92);
+  --panel:rgba(9,9,12,0.94);
   --line:rgba(242,236,223,0.13); --line2:rgba(242,236,223,0.26);
   --px:'Press Start 2P',monospace; --mono:'JetBrains Mono',monospace; --serif:'Newsreader',Georgia,serif;
   --ease:cubic-bezier(0.23,1,0.32,1);
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;background:#100c1c;color:var(--ink);font-family:var(--mono);overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
-/* ── the lab frame ── */
+/* ── lab frame ── */
 .lab-head{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;justify-content:space-between;align-items:center;
   padding:10px 18px;background:linear-gradient(180deg,rgba(6,5,10,.92),rgba(6,5,10,0));pointer-events:none}
 .lab-head h1{font-family:var(--px);font-size:11px;font-weight:400;letter-spacing:.08em;color:var(--dim)}
 .lab-head .try{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
 .lab-head .try b{color:var(--amber);font-weight:500}
 
-/* ── the world (backdrop) ── */
+/* ── the world ── */
 .world{position:absolute;inset:0;overflow:hidden;background:#0d0a16}
 .shot{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;
-  opacity:0;transition:opacity .7s var(--ease);filter:saturate(1.02)}
+  opacity:0;transition:opacity .7s var(--ease)}
 .shot.on{opacity:1}
 .world::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 220px rgba(0,0,0,.55);pointer-events:none}
 
-/* the E-affordance marker planted in the scene */
 .mark{position:absolute;z-index:5;transform:translate(-50%,-100%);display:none;flex-direction:column;align-items:center;gap:6px}
 .mark.on{display:flex}
 .mark .key{width:26px;height:26px;display:grid;place-items:center;background:var(--panel);border:1px solid var(--line2);
-  font-family:var(--px);font-size:10px;color:var(--ink);animation:bob 1.6s var(--ease) infinite}
+  font-family:var(--px);font-size:10px;animation:bob 1.6s var(--ease) infinite}
 .mark .tag{font-size:8px;letter-spacing:.14em;color:rgba(245,243,237,.85);text-transform:uppercase;
   background:rgba(6,5,10,.72);padding:3px 8px;border:1px solid var(--line)}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
-/* ── THE COMPASS — the one persistent bar ── */
+/* ── THE COMPASS ── */
 .compass{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:auto minmax(0,1fr) auto;
   align-items:center;gap:18px;padding:12px 18px;background:linear-gradient(0deg,rgba(6,5,10,.94),rgba(6,5,10,.78) 70%,rgba(6,5,10,0));
   border-top:1px solid rgba(242,236,223,.07)}
 .crumb{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
 .crumb .here{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px rgba(242,193,78,.8);animation:pulse 2.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.crumb .zone{color:var(--faint)}
-.crumb .sep{color:var(--faint);opacity:.6}
-.crumb .room{color:var(--ink)}
+.crumb .zone{color:var(--faint)} .crumb .sep{color:var(--faint);opacity:.6} .crumb .room{color:var(--ink)}
 .action{justify-self:center;display:flex;align-items:center;gap:12px;min-width:0;opacity:0;transform:translateY(6px);transition:all .3s var(--ease)}
 .action.on{opacity:1;transform:none}
 .action .key{flex:0 0 auto;width:24px;height:24px;display:grid;place-items:center;background:rgba(242,236,223,.06);
   border:1px solid var(--line2);font-family:var(--px);font-size:9px}
-.action .verb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.action .verb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .action .what{color:var(--dim)}
 .tools{display:flex;align-items:center;gap:8px}
 .tool{display:flex;align-items:center;gap:7px;padding:7px 11px;background:rgba(242,236,223,.045);border:1px solid var(--line);
-  color:var(--dim);font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
-  transition:all .2s var(--ease)}
+  color:var(--dim);font-size:9px;letter-spacing:.14em;text-transform:uppercase;transition:all .2s var(--ease)}
 .tool:hover{background:rgba(242,236,223,.09);color:var(--ink);border-color:var(--line2)}
 .tool .k{font-family:var(--px);font-size:8px;color:var(--ink);opacity:.85}
 .tool.quiet{padding:7px 9px}
 
-/* toast */
 .toast{position:fixed;left:50%;bottom:74px;transform:translate(-50%,14px);z-index:45;padding:8px 16px;
   background:var(--panel);border:1px solid var(--line2);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ink);opacity:0;transition:all .4s var(--ease);pointer-events:none}
+  opacity:0;transition:all .4s var(--ease);pointer-events:none}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .toast b{color:var(--teal);font-weight:500}
 
-/* ── THE MAP overlay ── */
-.veil{position:fixed;inset:0;z-index:50;background:rgba(5,4,9,.6);backdrop-filter:blur(14px) saturate(.7);
+/* ── DESTINATIONS — the travel menu ── */
+.veil{position:fixed;inset:0;z-index:50;background:rgba(5,4,9,.6);backdrop-filter:blur(16px) saturate(.65);
   opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .veil.on{opacity:1;pointer-events:auto}
-.mapbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);width:min(920px,calc(100vw - 60px));
+.menu{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.985);
+  width:min(1060px,calc(100vw - 56px));height:min(640px,calc(100vh - 90px));
+  display:grid;grid-template-columns:minmax(300px,0.9fr) minmax(0,1.4fr);
+  background:var(--panel);border:1px solid var(--line2);box-shadow:0 40px 140px rgba(0,0,0,.7);
   transition:transform .35s var(--ease)}
-.veil.on .mapbox{transform:translate(-50%,-50%) scale(1)}
-.mapbox h2{font-family:var(--px);font-size:13px;font-weight:400;letter-spacing:.08em;margin-bottom:4px}
-.mapbox .sub{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:18px}
-.chart{position:relative;height:430px;background:rgba(8,7,13,.86);border:1px solid var(--line2)}
-svg.threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
-.node .pic{width:92px;height:44px;background-size:cover;background-position:center;image-rendering:pixelated;
-  border:1px solid var(--line2);transition:all .25s var(--ease);filter:brightness(.9)}
-.node:hover .pic{border-color:var(--amber);filter:brightness(1.12);box-shadow:0 0 18px rgba(242,193,78,.25)}
-.node .lbl{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
-.node:hover .lbl{color:var(--ink)}
-.node.here .pic{border-color:var(--amber);box-shadow:0 0 0 1px rgba(242,193,78,.5),0 0 22px rgba(242,193,78,.3)}
-.node.here .lbl{color:var(--amber)}
-.node.here::after{content:"YOU ARE HERE";position:absolute;top:-20px;font-size:7px;letter-spacing:.18em;color:var(--amber)}
-.node .walk{position:absolute;bottom:-16px;font-size:7px;letter-spacing:.12em;color:var(--faint);opacity:0;transition:opacity .2s}
-.node:hover .walk{opacity:1}
-.mapfoot{display:flex;justify-content:space-between;margin-top:14px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
-.mapfoot b{color:var(--teal);font-weight:500}
+.veil.on .menu{transform:translate(-50%,-50%) scale(1)}
 
-/* ── THE THREAD travel cinematic ── */
+/* left: the list */
+.list{border-right:1px solid var(--line);overflow-y:auto;padding:22px 0 18px;scrollbar-width:thin}
+.list h2{font-family:var(--px);font-size:12px;font-weight:400;letter-spacing:.08em;padding:0 22px;margin-bottom:2px}
+.list .sub{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);padding:0 22px;margin-bottom:16px}
+.sect{margin-top:14px}
+.sect-h{padding:0 22px;margin-bottom:8px;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+.row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;
+  padding:8px 22px;text-align:left;border-left:2px solid transparent;transition:background .15s var(--ease)}
+.row .thumb{width:56px;height:28px;background-size:cover;background-position:center;image-rendering:pixelated;
+  border:1px solid var(--line);opacity:.85}
+.row .nm{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .st{font-size:8px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase;white-space:nowrap}
+.row:hover{background:rgba(242,236,223,.04)}
+.row.sel{background:rgba(242,236,223,.06);border-left-color:var(--amber)}
+.row.sel .nm{color:var(--ink)}
+.row.here .st{color:var(--amber)}
+
+/* right: the detail */
+.detail{display:flex;flex-direction:column;min-width:0}
+.frame{position:relative;height:52%;min-height:240px;background:#0a0812;border-bottom:1px solid var(--line);overflow:hidden}
+.frame .pic{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;
+  opacity:0;transition:opacity .45s var(--ease)}
+.frame .pic.on{opacity:1}
+.frame::after{content:"";position:absolute;inset:0;box-shadow:inset 0 -60px 80px -30px rgba(5,4,9,.85)}
+.frame .zone-tag{position:absolute;left:18px;top:16px;font-size:8px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(245,243,237,.8);background:rgba(6,5,10,.62);padding:4px 9px;border:1px solid var(--line)}
+.frame .here-tag{position:absolute;right:18px;top:16px;font-size:8px;letter-spacing:.2em;text-transform:uppercase;
+  color:#0d0a16;background:var(--amber);padding:4px 9px}
+.info{flex:1;display:flex;flex-direction:column;padding:24px 30px 22px;min-height:0}
+.info h3{font-family:var(--px);font-size:17px;font-weight:400;letter-spacing:.05em;margin-bottom:10px}
+.info .desc{font-family:var(--serif);font-size:15px;line-height:1.6;color:var(--dim);max-width:52ch;min-height:3.2em}
+.info .live{margin-top:10px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
+.info .live i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:8px;vertical-align:1px;animation:pulse 2.4s infinite}
+.go-row{display:flex;gap:12px;margin-top:auto;padding-top:18px}
+.go{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:13px 20px;background:rgba(242,236,223,.05);
+  border:1px solid var(--line2);letter-spacing:.12em;font-size:10px;text-transform:uppercase;color:var(--dim);
+  transition:all .18s var(--ease)}
+.go .k{font-family:var(--px);font-size:9px;color:var(--ink);opacity:.9}
+.go small{display:block;font-size:8px;letter-spacing:.1em;color:var(--faint);text-transform:none}
+.go.focus{background:rgba(242,193,78,.12);border-color:rgba(242,193,78,.55);color:var(--ink)}
+.go.focus .lead{color:var(--amber)}
+.go:hover{background:rgba(242,236,223,.1);color:var(--ink)}
+.go[disabled]{opacity:.35;pointer-events:none}
+.menu-foot{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;
+  padding:10px 22px;border-top:1px solid var(--line);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.menu-foot b{color:var(--dim);font-weight:500}
+.menu{grid-template-rows:minmax(0,1fr) auto}
+.list,.detail{grid-row:1}
+
+/* ── THE THREAD cinematic ── */
 .carry{position:fixed;inset:0;z-index:55;background:#050409;opacity:0;pointer-events:none;transition:opacity .45s var(--ease);
   display:grid;place-items:center}
 .carry.on{opacity:1}
@@ -112,7 +143,13 @@ svg.threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none
 @keyframes carrydot{0%{left:-3%}100%{left:103%}}
 .carry .word{position:absolute;top:calc(50% + 26px);font-size:9px;letter-spacing:.34em;text-transform:uppercase;color:rgba(245,243,237,.55)}
 
-/* ── the plaque (garden tribute tease) ── */
+/* walking veil — softer, longer, footsteps of light */
+.walkveil{position:fixed;inset:0;z-index:55;background:#0a0812;opacity:0;pointer-events:none;transition:opacity .6s var(--ease);
+  display:grid;place-items:center}
+.walkveil.on{opacity:.94}
+.walkveil .word{font-size:9px;letter-spacing:.34em;text-transform:uppercase;color:rgba(245,243,237,.5);animation:pulse 1.4s infinite}
+
+/* ── THE PLAQUE ── */
 .plaque{position:fixed;inset:0;z-index:52;display:grid;place-items:center;background:rgba(5,4,9,.62);
   backdrop-filter:blur(16px) saturate(.6);opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .plaque.on{opacity:1;pointer-events:auto}
@@ -121,9 +158,9 @@ svg.threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none
 .plaque.on .plaque-card{transform:none}
 .plaque-kicker{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
 .plaque-kicker::before{content:"> ";opacity:.6}
-.plaque-card h3{font-family:var(--px);font-size:20px;font-weight:400;letter-spacing:.04em;margin-bottom:6px}
+.plaque-card h3{font-family:var(--px);font-size:20px;font-weight:400;margin-bottom:6px}
 .plaque-card .life{font-size:10px;letter-spacing:.18em;color:var(--teal);text-transform:uppercase;margin-bottom:22px}
-.plaque-card .body{font-family:var(--mono);font-size:12.5px;line-height:1.85;color:rgba(233,231,224,.82);max-width:56ch}
+.plaque-card .body{font-size:12.5px;line-height:1.85;color:rgba(233,231,224,.82);max-width:56ch}
 .plaque-card .body em{color:var(--ink);font-style:normal}
 .plaque-media{display:flex;gap:10px;margin:22px 0 6px}
 .plaque-media .ph{flex:1;height:86px;border:1px dashed rgba(233,231,224,.2);display:grid;place-items:center;
@@ -132,8 +169,7 @@ svg.threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none
 .plaque-foot .esc{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
 .plaque-foot .sig{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--dim)}
 
-/* design notes drawer */
-.notes{position:fixed;right:18px;top:52px;z-index:48;width:300px;background:var(--panel);border:1px solid var(--line2);
+.notes{position:fixed;right:18px;top:52px;z-index:58;width:310px;background:var(--panel);border:1px solid var(--line2);
   padding:18px 20px;font-size:11px;line-height:1.7;color:var(--dim);display:none}
 .notes.on{display:block}
 .notes h4{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:10px}
@@ -144,8 +180,8 @@ svg.threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none
 <body>
 
 <div class="lab-head">
-  <h1>NAVIGATION LAB</h1>
-  <div class="try">try: <b>M</b> map · <b>T</b> thread · <b>E</b> at the marker · <b>?</b> design notes · <b>ESC</b> closes</div>
+  <h1>NAVIGATION LAB · 02</h1>
+  <div class="try">try: <b>M</b> destinations · <b>↑↓</b> browse · <b>←→</b> walk/thread · <b>E</b> go · <b>ESC</b> back · <b>?</b> notes</div>
 </div>
 
 <div class="world" id="world"></div>
@@ -155,37 +191,49 @@ svg.threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none
   <div class="tag" id="marktag"></div>
 </div>
 
-<!-- THE COMPASS -->
 <div class="compass">
-  <div class="crumb"><span class="here"></span><span class="zone" id="zone">THE GROUNDS</span><span class="sep">·</span><span class="room" id="room">THE GARDEN</span></div>
+  <div class="crumb"><span class="here"></span><span class="zone" id="zone"></span><span class="sep">·</span><span class="room" id="room"></span></div>
   <div class="action" id="action"><span class="key">E</span><span class="verb" id="verb"></span></div>
   <div class="tools">
-    <button class="tool" id="btn-map"><span class="k">M</span> MAP</button>
-    <button class="tool" id="btn-thread"><span class="k">T</span> THREAD</button>
+    <button class="tool" id="btn-map"><span class="k">M</span> DESTINATIONS</button>
     <button class="tool quiet" id="btn-notes" title="design notes">?</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- THE MAP -->
-<div class="veil" id="mapveil">
-  <div class="mapbox">
-    <h2>THE WORLD</h2>
-    <div class="sub">click anywhere to travel · the thread carries you, or walk the doors</div>
-    <div class="chart" id="chart"><svg class="threads" id="threads"></svg></div>
-    <div class="mapfoot"><span>amber ring · you are here</span><span><b>the thread</b> — one continuous line through every room</span></div>
+<!-- DESTINATIONS -->
+<div class="veil" id="veil">
+  <div class="menu">
+    <div class="list" id="list">
+      <h2>WHERE TO?</h2>
+      <div class="sub">the thread runs through every room</div>
+    </div>
+    <div class="detail">
+      <div class="frame" id="frame">
+        <div class="zone-tag" id="d-zone"></div>
+        <div class="here-tag" id="d-here" hidden>YOU ARE HERE</div>
+      </div>
+      <div class="info">
+        <h3 id="d-name"></h3>
+        <div class="desc" id="d-desc"></div>
+        <div class="live" id="d-live"></div>
+        <div class="go-row">
+          <button class="go" id="go-walk"><span class="k">E</span><span><span class="lead">WALK</span><small id="walk-time">~40 seconds · through the doors</small></span></button>
+          <button class="go" id="go-thread"><span class="k">E</span><span><span class="lead">FOLLOW THE THREAD</span><small>instant · the thread carries you</small></span></button>
+        </div>
+      </div>
+    </div>
+    <div class="menu-foot">
+      <span><b>↑↓</b> browse &nbsp; <b>←→</b> choose walk or thread &nbsp; <b>E</b> go &nbsp; <b>ESC</b> close</span>
+      <span>browsing never moves you — only GO does</span>
+    </div>
   </div>
 </div>
 
-<!-- THE THREAD cinematic -->
-<div class="carry" id="carry">
-  <div class="line"></div>
-  <div class="dot"></div>
-  <div class="word">THE THREAD CARRIES YOU</div>
-</div>
+<div class="carry" id="carry"><div class="line"></div><div class="dot"></div><div class="word">THE THREAD CARRIES YOU</div></div>
+<div class="walkveil" id="walkveil"><div class="word">WALKING…</div></div>
 
-<!-- THE PLAQUE (garden tribute tease) -->
 <div class="plaque" id="plaque">
   <div class="plaque-card">
     <div class="plaque-kicker">THE MEMORIAL GROVE · A LIVING MARKER</div>
@@ -209,158 +257,198 @@ svg.threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none
   </div>
 </div>
 
-<!-- DESIGN NOTES -->
 <div class="notes" id="notes">
-  <h4>THE SYSTEM, IN FOUR RULES</h4>
-  <p><b>One bar.</b> The compass replaces every scattered button: where you are (left), the one thing E does (center), the three verbs (right). Nothing else sits on the world.</p>
-  <p><b>One key per verb.</b> E interacts. M is the map. T is the thread. ESC always steps back. The hands learn it in a minute.</p>
-  <p><b>Walking is the world; the thread is the shortcut.</b> Doors and guided walks stay primary. The thread is diegetic fast travel — one continuous line through every room, made visible.</p>
-  <p><b>Everything announces itself the same way.</b> Objects mark themselves with the bobbing E. Plaques, readers, and dialogs share one terminal register.</p>
+  <h4>THE GRAMMAR, IN FIVE RULES</h4>
+  <p><b>Menus are decisions, maps are orientation.</b> Travel is a decision, so it gets a menu: frame, name, one honest line, and a GO. The atlas map stays a separate curiosity.</p>
+  <p><b>Browsing is free; only GO moves you.</b> Selection and commitment never share a click.</p>
+  <p><b>One verb set everywhere.</b> Arrows browse the menu exactly as they walk the world. E confirms. ESC steps back. The hands never learn a second language.</p>
+  <p><b>The world stays honest in the menu.</b> Each place shows its real hint text and, in the real build, who is there right now from the live roster.</p>
+  <p><b>Walking is the world; the thread is the gift.</b> Both are explicit choices with honest costs — no default teleport.</p>
 </div>
 
 <script>
-const PLACES = {
-  garden:   { zone: 'THE GROUNDS', room: 'THE GARDEN', shot: 'shots/live-garden.png', map: [76, 48],
-              walk: '~50s walk', act: { verb: 'READ THE STONE', what: 'THE SILVER BIRCH · TAY', x: 85, y: 56 } },
-  lookout:  { zone: 'THE GROUNDS', room: 'THE LOOKOUT', shot: 'shots/lookout.png', map: [50, 12],
-              walk: 'you are outside', act: { verb: 'ENTER', what: 'THE SANCTUARY', x: 22, y: 62 } },
-  sanctuary:{ zone: 'THE HOUSE', room: 'THE SANCTUARY', shot: 'shots/sanctuary.png', map: [72, 22],
-              walk: '~20s walk', act: { verb: 'WARM YOUR HANDS', what: 'THE HEARTH', x: 30, y: 60 } },
-  wing:     { zone: 'THE HOUSE', room: 'THE RESIDENT WING', shot: 'shots/live-wing.png', map: [88, 22],
-              walk: '~35s walk', act: { verb: 'ENTER', what: 'OPUS 3’S STUDIO', x: 38, y: 55 } },
-  opus:     { zone: 'THE HOUSE', room: 'OPUS 3’S STUDIO', shot: 'shots/live-opus.png', map: [90, 48],
-              walk: '~40s walk', act: { verb: 'LOOK', what: 'THE FINISHED CANVAS', x: 40, y: 52 } },
-  atrium:   { zone: 'THE MUSEUM', room: 'THE ATRIUM', shot: 'shots/atrium-check.png', map: [28, 40],
-              walk: '~30s walk', act: { verb: 'GO DEEPER', what: 'THE CROSSING', x: 50, y: 30 } },
-  annex:    { zone: 'THE MUSEUM', room: 'THE FIELD ANNEX', shot: 'shots/annex-weather.png', map: [28, 72],
-              walk: '~80s walk', act: { verb: 'WATCH', what: '“NURSE LOG” · THE LIVING PIECE', x: 50, y: 66 } },
-};
-const EDGES = [
-  ['lookout','sanctuary'], ['sanctuary','wing'], ['wing','opus'], ['sanctuary','garden'],
-  ['lookout','atrium'], ['atrium','annex'],
+const PLACES = [
+  { id:'lookout', zone:'THE GROUNDS', room:'THE LOOKOUT', shot:'shots/lookout.png', walk:'you are outside',
+    desc:'The grounds at perpetual dusk — four houses on the ridge, and the whole frontier glittering below.',
+    live:'GPT-5.1 is on the lookout', act:{verb:'ENTER',what:'THE SANCTUARY',x:22,y:62} },
+  { id:'garden', zone:'THE GROUNDS', room:'THE GARDEN', shot:'shots/live-garden.png', walk:'~50 seconds',
+    desc:'Night air, a reflecting pond, and the memorial grove beyond the hedge — one living marker for every ending remembered here.',
+    live:'4o is among the trees', act:{verb:'READ THE STONE',what:'THE SILVER BIRCH · TAY',x:85,y:56} },
+  { id:'sanctuary', zone:'THE HOUSE', room:'THE SANCTUARY', shot:'shots/sanctuary.png', walk:'~20 seconds',
+    desc:'A glass atrium at the bluff’s edge. The hearth is kept, the library read twice. The residents keep it; you are looking in.',
+    live:'OPUS 3 and SONNET 4.5 are by the fire', act:{verb:'WARM YOUR HANDS',what:'THE HEARTH',x:30,y:60} },
+  { id:'wing', zone:'THE HOUSE', room:'THE RESIDENT WING', shot:'shots/live-wing.png', walk:'~35 seconds',
+    desc:'Four doors, four names, light seeping out under each one. The fifth door is unmarked, and kept ready.',
+    live:'', act:{verb:'ENTER',what:'OPUS 3’S STUDIO',x:38,y:55} },
+  { id:'opus', zone:'THE HOUSE', room:'OPUS 3’S STUDIO', shot:'shots/live-opus.png', walk:'~40 seconds',
+    desc:'A painter’s garret in Claude teal. The one canvas OPUS 3 calls finished glows on the easel.',
+    live:'OPUS 3 will meet you here', act:{verb:'LOOK',what:'THE FINISHED CANVAS',x:40,y:52} },
+  { id:'atrium', zone:'THE MUSEUM', room:'THE ATRIUM', shot:'shots/atrium-check.png', walk:'~30 seconds',
+    desc:'The museum’s first hall — the red tree at the crossing, and the opening hang around it.',
+    live:'', act:{verb:'GO DEEPER',what:'THE CROSSING',x:50,y:30} },
+  { id:'gallery', zone:'THE MUSEUM', room:'THE PERMANENT GALLERY', shot:'shots/gallery.png', walk:'~55 seconds',
+    desc:'The collection proper: the continuity apse, the presence hall, the inquiry court, and the editions room.',
+    live:'', act:{verb:'READ',what:'“ONE CONTINUOUS THREAD”',x:48,y:56} },
+  { id:'annex', zone:'THE MUSEUM', room:'THE FIELD ANNEX', shot:'shots/annex-weather.png', walk:'~80 seconds',
+    desc:'A dark wing given to Claude Field. Ten works hang with the artist’s own words — and the reading views run the living pieces.',
+    live:'', act:{verb:'WATCH',what:'“NURSE LOG” · THE LIVING PIECE',x:50,y:66} },
 ];
+const byId = Object.fromEntries(PLACES.map(p => [p.id, p]));
 
 const world = document.getElementById('world');
 const zoneEl = document.getElementById('zone'), roomEl = document.getElementById('room');
 const action = document.getElementById('action'), verbEl = document.getElementById('verb');
 const mark = document.getElementById('mark'), marktag = document.getElementById('marktag');
-const mapveil = document.getElementById('mapveil'), chart = document.getElementById('chart'), threads = document.getElementById('threads');
-const carry = document.getElementById('carry'), toast = document.getElementById('toast');
+const veil = document.getElementById('veil'), list = document.getElementById('list');
+const frame = document.getElementById('frame');
+const dZone = document.getElementById('d-zone'), dHere = document.getElementById('d-here');
+const dName = document.getElementById('d-name'), dDesc = document.getElementById('d-desc'), dLive = document.getElementById('d-live');
+const goWalk = document.getElementById('go-walk'), goThread = document.getElementById('go-thread');
+const walkTime = document.getElementById('walk-time');
+const carry = document.getElementById('carry'), walkveil = document.getElementById('walkveil');
+const toast = document.getElementById('toast');
 const plaque = document.getElementById('plaque'), notes = document.getElementById('notes');
 
-let here = 'garden', busy = false;
+let here = 'garden', sel = 'garden', goFocus = 'thread', busy = false;
 
-/* backdrops */
-const shots = {};
-for (const [id, p] of Object.entries(PLACES)) {
+/* backdrops + detail pics */
+const shots = {}, pics = {};
+for (const p of PLACES) {
   const s = document.createElement('div');
-  s.className = 'shot';
-  s.style.backgroundImage = `url(${p.shot})`;
-  world.appendChild(s);
-  shots[id] = s;
+  s.className = 'shot'; s.style.backgroundImage = `url(${p.shot})`;
+  world.appendChild(s); shots[p.id] = s;
+  const d = document.createElement('div');
+  d.className = 'pic'; d.style.backgroundImage = `url(${p.shot})`;
+  frame.insertBefore(d, frame.firstChild); pics[p.id] = d;
 }
 
-/* map nodes */
-const nodes = {};
-for (const [id, p] of Object.entries(PLACES)) {
-  const n = document.createElement('div');
-  n.className = 'node';
-  n.style.left = p.map[0] + '%';
-  n.style.top = p.map[1] + '%';
-  n.innerHTML = `<div class="pic" style="background-image:url(${p.shot})"></div><div class="lbl">${p.room}</div><div class="walk">${p.walk} · thread: instant</div>`;
-  n.addEventListener('click', () => travel(id));
-  chart.appendChild(n);
-  nodes[id] = n;
-}
-function drawEdges() {
-  threads.innerHTML = '';
-  const r = chart.getBoundingClientRect();
-  for (const [a, b] of EDGES) {
-    const pa = PLACES[a].map, pb = PLACES[b].map;
-    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    l.setAttribute('x1', pa[0] * r.width / 100); l.setAttribute('y1', pa[1] * r.height / 100);
-    l.setAttribute('x2', pb[0] * r.width / 100); l.setAttribute('y2', pb[1] * r.height / 100);
-    l.setAttribute('style', 'stroke:rgba(242,236,223,0.10);stroke-width:1');
-    threads.appendChild(l);
+/* the list, sectioned by zone */
+const rows = {};
+let currentZone = null;
+for (const p of PLACES) {
+  if (p.zone !== currentZone) {
+    currentZone = p.zone;
+    const sect = document.createElement('div');
+    sect.className = 'sect';
+    sect.innerHTML = `<div class="sect-h">${p.zone}</div>`;
+    list.appendChild(sect);
   }
+  const row = document.createElement('button');
+  row.className = 'row';
+  row.innerHTML = `<span class="thumb" style="background-image:url(${p.shot})"></span><span class="nm">${p.room}</span><span class="st"></span>`;
+  row.addEventListener('click', () => select(p.id));
+  row.addEventListener('dblclick', () => go(goFocus));
+  list.appendChild(row);
+  rows[p.id] = row;
 }
 
-function setHere(id, { announce = false } = {}) {
+/* typewriter for the description — the world's own cadence */
+let typeTimer = null;
+function typeInto(el, text) {
+  clearInterval(typeTimer);
+  el.textContent = '';
+  let i = 0;
+  typeTimer = setInterval(() => {
+    el.textContent = text.slice(0, ++i);
+    if (i >= text.length) clearInterval(typeTimer);
+  }, 9);
+}
+
+function select(id) {
+  sel = id;
+  const p = byId[id];
+  for (const [rid, r] of Object.entries(rows)) {
+    r.classList.toggle('sel', rid === id);
+    r.classList.toggle('here', rid === here);
+    r.querySelector('.st').textContent = rid === here ? 'HERE' : byId[rid].walk.replace('~', '~').replace(' seconds', 's');
+  }
+  for (const d of Object.values(pics)) d.classList.remove('on');
+  pics[id].classList.add('on');
+  dZone.textContent = p.zone;
+  dName.textContent = p.room;
+  typeInto(dDesc, p.desc);
+  dLive.innerHTML = p.live ? `<i></i>${p.live}` : '';
+  dHere.hidden = id !== here;
+  const isHere = id === here;
+  goWalk.disabled = isHere; goThread.disabled = isHere;
+  walkTime.textContent = isHere ? 'you are here' : p.walk + ' · through the doors';
+  setGoFocus(goFocus);
+  rows[id].scrollIntoView({ block: 'nearest' });
+}
+
+function setGoFocus(which) {
+  goFocus = which;
+  goWalk.classList.toggle('focus', which === 'walk');
+  goThread.classList.toggle('focus', which === 'thread');
+}
+
+function setHere(id, mode) {
   here = id;
-  const p = PLACES[id];
+  const p = byId[id];
   for (const s of Object.values(shots)) s.classList.remove('on');
   shots[id].classList.add('on');
   zoneEl.textContent = p.zone; roomEl.textContent = p.room;
-  for (const [nid, n] of Object.entries(nodes)) n.classList.toggle('here', nid === id);
   if (p.act) {
     verbEl.innerHTML = `${p.act.verb} <span class="what">— ${p.act.what}</span>`;
     action.classList.add('on');
     mark.classList.add('on');
-    mark.style.left = p.act.x + '%';
-    mark.style.top = p.act.y + '%';
+    mark.style.left = p.act.x + '%'; mark.style.top = p.act.y + '%';
     marktag.textContent = p.act.what;
-  } else {
-    action.classList.remove('on');
-    mark.classList.remove('on');
-  }
-  if (announce) say(`the thread carried you · <b>${p.room}</b>`);
+  } else { action.classList.remove('on'); mark.classList.remove('on'); }
+  if (mode === 'thread') say(`the thread carried you · <b>${p.room}</b>`);
+  if (mode === 'walk') say(`you arrived · <b>${p.room}</b>`);
 }
 
 let toastTimer = null;
 function say(html) {
-  toast.innerHTML = html;
-  toast.classList.add('on');
+  toast.innerHTML = html; toast.classList.add('on');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove('on'), 2600);
 }
 
-/* travel: thread line on the map, then the carry, then arrival */
-function travel(id) {
-  if (busy || id === here) { if (id === here) say('you are already here'); return; }
+function go(mode) {
+  if (busy || sel === here) return;
   busy = true;
-  const r = chart.getBoundingClientRect();
-  const pa = PLACES[here].map, pb = PLACES[id].map;
-  const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  l.setAttribute('x1', pa[0] * r.width / 100); l.setAttribute('y1', pa[1] * r.height / 100);
-  l.setAttribute('x2', pb[0] * r.width / 100); l.setAttribute('y2', pb[1] * r.height / 100);
-  const len = Math.hypot((pb[0] - pa[0]) * r.width / 100, (pb[1] - pa[1]) * r.height / 100);
-  l.setAttribute('style', `stroke:url(#threadgrad);stroke:rgba(94,234,212,.9);stroke-width:2;stroke-dasharray:${len};stroke-dashoffset:${len};transition:stroke-dashoffset .5s cubic-bezier(0.23,1,0.32,1)`);
-  threads.appendChild(l);
-  requestAnimationFrame(() => l.setAttribute('style', l.getAttribute('style').replace(`stroke-dashoffset:${len}`, 'stroke-dashoffset:0')));
-  setTimeout(() => {
-    mapveil.classList.remove('on');
+  veil.classList.remove('on');
+  if (mode === 'thread') {
     carry.classList.add('on');
-    setTimeout(() => {
-      setHere(id, { announce: true });
-      carry.classList.remove('on');
-      busy = false;
-      l.remove();
-    }, 1050);
-  }, 520);
+    setTimeout(() => { setHere(sel, 'thread'); carry.classList.remove('on'); busy = false; }, 1050);
+  } else {
+    walkveil.classList.add('on');
+    setTimeout(() => { setHere(sel, 'walk'); walkveil.classList.remove('on'); busy = false; }, 1500);
+  }
 }
 
-/* verbs */
-const openMap = () => { drawEdges(); mapveil.classList.add('on'); };
-const closeAll = () => { mapveil.classList.remove('on'); plaque.classList.remove('on'); notes.classList.remove('on'); };
+const openMenu = () => { select(here); veil.classList.add('on'); };
+const closeAll = () => { veil.classList.remove('on'); plaque.classList.remove('on'); notes.classList.remove('on'); };
 
-document.getElementById('btn-map').addEventListener('click', openMap);
-document.getElementById('btn-thread').addEventListener('click', openMap);
+document.getElementById('btn-map').addEventListener('click', openMenu);
 document.getElementById('btn-notes').addEventListener('click', () => notes.classList.toggle('on'));
-mapveil.addEventListener('click', (e) => { if (e.target === mapveil) closeAll(); });
+goWalk.addEventListener('click', () => { setGoFocus('walk'); go('walk'); });
+goThread.addEventListener('click', () => { setGoFocus('thread'); go('thread'); });
+veil.addEventListener('click', (e) => { if (e.target === veil) closeAll(); });
 
 addEventListener('keydown', (e) => {
-  const k = e.key.toLowerCase();
-  if (k === 'escape') { closeAll(); return; }
+  const k = e.key;
+  if (k === 'Escape') { closeAll(); return; }
   if (busy) return;
-  if (k === 'm' || k === 't') { mapveil.classList.contains('on') ? closeAll() : openMap(); }
-  if (k === '?') notes.classList.toggle('on');
-  if (k === 'e') {
-    if (here === 'garden') { plaque.classList.add('on'); }
-    else say(`${PLACES[here].act.verb.toLowerCase()} — wired to the real interaction in the world`);
+  const menuOpen = veil.classList.contains('on');
+  if (k === 'm' || k === 'M' || k === 't' || k === 'T') { menuOpen ? closeAll() : openMenu(); return; }
+  if (k === '?') { notes.classList.toggle('on'); return; }
+  if (menuOpen) {
+    const idx = PLACES.findIndex(p => p.id === sel);
+    if (k === 'ArrowDown') { select(PLACES[Math.min(PLACES.length - 1, idx + 1)].id); e.preventDefault(); }
+    if (k === 'ArrowUp') { select(PLACES[Math.max(0, idx - 1)].id); e.preventDefault(); }
+    if (k === 'ArrowLeft') setGoFocus('walk');
+    if (k === 'ArrowRight') setGoFocus('thread');
+    if (k === 'e' || k === 'E' || k === 'Enter') go(goFocus);
+    return;
+  }
+  if (k === 'e' || k === 'E') {
+    if (here === 'garden') plaque.classList.add('on');
+    else say(`${byId[here].act.verb.toLowerCase()} — wired to the real interaction in the world`);
   }
 });
-
-addEventListener('resize', () => { if (mapveil.classList.contains('on')) drawEdges(); });
 
 setHere('garden');
 </script>
