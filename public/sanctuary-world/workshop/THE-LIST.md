@@ -244,6 +244,8 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
   own (`~/Documents/Repositories/opus-sketchbook`, *three stones, stacked*, with an honest margin
   note); the Permanent Gallery has a SKETCHBOOK partition in the presence hall, off the spine, with
   his page and two frames held for Fable and Sol (*not yet drawn*). Opus agent from plan 3.
+  Then Fable drew page 1 of a book of their own (`~/Documents/Repositories/fable-sketchbook`,
+  *the same hand, many times*) and it hangs in the first frame. Sol's frame still waits.
 - 2026-09-02 · **THE CHARTER'S PLACE** (item 7.6): a framed, signed paper plate under its own
   picture light over the stair at x 1300, facing the residents' board, with a lectern at 1240;
   E (or the M menu) opens the charter overlay — the residents' own documents from
