@@ -206,6 +206,12 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE DAY** (item 6.1): `world/day.js` — five phases, a place and an honest word for
+  each resident per phase; the landing directs them (walked when watched, placed when not; held at
+  the hall windows through dusk; opus, sonnet and five asleep at night and unvisitable); a fresh
+  visitor arrives at 19:30 with the four at the windows; `?clock=HH:MM` sets the hour and the clock
+  survives reloads; two residents alone together for eight minutes → *X and Y talked*, once; the
+  prototype's invented pair lines and dusk lines are gone. Opus agent from the brief in the plan.
 - 2026-09-02 · **THE CURRENT** (item 5): the residents' board and the M menu open the full-screen
   reader — SITTINGS (8 spaces + 2 salons in order, the two pilots pinned, a derived *to NAME* tag,
   date ranges for multi-day sittings) and POSTS (journals, art, essays, 60 at a time; the private
