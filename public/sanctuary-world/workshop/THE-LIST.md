@@ -150,6 +150,10 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE COMPASS, DESTINATIONS, THE THREAD — in the real world** (item 2): the
+  compass bar in the cab, M opens the travel menu with live frames and the roster, WALK through
+  the doors or FOLLOW THE THREAD; the placeholder controls retired (`3922b65`, polish `d2a07bc`).
+  Opus agent from the brief in the plan.
 - 2026-09-02 · **THE ANNEX UNDER THE SIX RULES** — hero wall (observer effect, flanked), the
   surrender console in the west bay, the gaze partition with hysteresis + indeterminacy, floor
   tones per hall (`6a0ccef`); the indeterminacy copy repaired so the living piece starts (`63ceb6c`).
