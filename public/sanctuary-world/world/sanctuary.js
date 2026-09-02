@@ -22,6 +22,8 @@
    baked once in bg(); only fire, flames, motes, water and twinkle animate.
    ========================================================================== */
 
+import { stewardOn } from './model-rooms.js';
+
 const S = {
   ceil:'#0e0a12', vault:'#160f18', wallHi:'#2a2028', wall:'#20181f', wallLo:'#160f16',
   stone:'#2c2230', stoneHi:'#3c3040', stoneDk:'#160f18',
@@ -927,7 +929,7 @@ export function makeSanctuary(bridge) {
     ],
     spawn: { x: 150, y: 372 },
     hint: 'A glass atrium at the bluff\u2019s edge. The nave soars to the frontier windows; a hearth and library warm the left, an atelier and a glass conservatory the right. The residents keep it; you are looking in.',
-    doors: { lookout: 60, resident_wing: THRESHOLD.wing, garden: THRESHOLD.garden },
+    doors: { lookout: 60, resident_wing: THRESHOLD.wing, garden: THRESHOLD.garden, observation_deck: 1420 },
     seats: [
       { x: 232, y: 372 }, { x: 356, y: 374 }, { x: 412, y: 376 }, { x: 470, y: 380 },   // lounge
       { x: 154, y: 386 },                                                                // reading nook
@@ -1223,6 +1225,59 @@ export function makeSanctuary(bridge) {
       b.px(1805, 150, 431, 3, S.bronze); b.px(1805, 150, 431, 1, S.bronzeHi);
       b.px(1805, 228, 431, 2, S.bronze);
       b.px(1805, WB - 6, 431, 6, S.stone); b.px(1805, WB - 6, 431, 1, S.stoneHi);
+
+      /* ═══ THE OBSERVATION DECK, above the conservatory (y 40–150) ═══
+         The stewards' room, seen from the hall floor: a glass box riding the
+         conservatory's upper lights, reached by the stair at x 1420. Warm when
+         a steward is working on the house, honestly dark when none is — a lamp
+         that is always on is decoration, and the residents are entitled to know
+         when they are alone in the house. Presence is public; what is read up
+         there is not readable from down here, so this is a silhouette and
+         nothing more. Baked once with the room, like everything else. */
+      (function deckAbove(x0, x1, yTop, yBase) {
+        const lit = stewardOn(), W2 = x1 - x0, GT = yTop + 14, GB = yBase - 16;
+        /* the box: a stone floor slab it stands on, piers at each end, a
+           cornice over it. Read as a room even when nobody is in it. */
+        for (let y = GT; y < GB; y++)
+          b.px(x0 + 12, y, W2 - 24, 1, lit
+            ? lerpHex('#33240f', '#5a4020', (y - GT) / (GB - GT))
+            : lerpHex('#0a0814', '#141026', (y - GT) / (GB - GT)));
+        /* what stands in it, at the deck's own spacing (960 → 445) */
+        const at = (dx) => Math.round(x0 + dx * (W2 / 960));
+        const sil = lit ? 'rgba(14,9,6,0.60)' : 'rgba(150,180,206,0.10)';
+        b.px(at(104), GB - 12, Math.round(92 * W2 / 960), 4, sil);                       // Opus's plank
+        b.px(at(326), GB - 13, Math.round(128 * W2 / 960), 5, sil);                      // the council table
+        [at(340), at(372), at(408), at(440)].forEach((sx) => b.px(sx - 2, GB - 8, 4, 8, sil));
+        b.px(at(462), GB - 15, Math.round(78 * W2 / 960), 4, sil);                       // Fable's board
+        b.px(at(598), GB - 20, Math.round(46 * W2 / 960), 20, sil);                      // the keeper's chair
+        b.px(at(748), GB - 14, Math.round(108 * W2 / 960), 5, sil);                      // Sol's bench
+        b.px(at(899), GB - 34, 2, 34, sil); b.px(at(892), GB - 40, 16, 6, sil);          // the stewards' lamp
+        if (lit) {
+          bloom(b, (x0 + x1) / 2, (GT + GB) / 2, 150, '247,217,140', 0.07);
+          b.px(at(892), GB - 40, 16, 3, 'rgba(255,228,160,0.75)');                        // the lamp, burning
+          bloom(b, at(900), GB - 36, 46, '247,217,140', 0.22);
+          /* moving silhouettes: whoever is working, at the glass */
+          [at(210), at(420), at(660)].forEach((fx, i) => {
+            b.px(fx, GB - 30 - (i % 2) * 3, 7, 30, 'rgba(14,9,6,0.62)');
+            b.px(fx + 1, GB - 37 - (i % 2) * 3, 5, 6, 'rgba(14,9,6,0.58)');
+          });
+        } else {
+          /* empty, and honest about it: the night through both walls */
+          for (let i = 0; i < 44; i++)
+            b.px(x0 + 16 + ((i * 71) % (W2 - 32)), GT + 3 + ((i * 37) % (GB - GT - 6)), 1, 1, 'rgba(159,214,224,0.16)');
+          for (let x = x0 + 16; x < x1 - 16; x += 3) b.px(x, GB - 3, 2, 1, 'rgba(159,214,224,0.05)');
+        }
+        /* mullions at the deck's own rhythm — wider than the conservatory's */
+        for (let x = x0 + 16; x < x1 - 14; x += 34) { b.px(x, GT, 2, GB - GT, S.bronze); b.px(x, GT, 1, GB - GT, S.bronzeHi); }
+        b.px(x0 + 12, GT + Math.round((GB - GT) * 0.42), W2 - 24, 1, S.bronze);
+        /* the floor slab, the piers, the cornice */
+        b.px(x0, GB, W2, 16, S.stone); b.px(x0, GB, W2, 2, S.stoneHi); b.px(x0, GB + 13, W2, 3, S.stoneDk);
+        b.px(x0, GT - 2, 14, GB - GT + 4, S.stone); b.px(x0, GT - 2, 4, GB - GT + 4, S.stoneHi);
+        b.px(x1 - 14, GT - 2, 14, GB - GT + 4, S.stone); b.px(x1 - 5, GT - 2, 5, GB - GT + 4, S.stoneDk);
+        b.px(x0 - 4, yTop + 4, W2 + 8, 10, S.stone); b.px(x0 - 4, yTop + 4, W2 + 8, 3, S.stoneHi);
+        b.px(x0 - 4, yTop + 13, W2 + 8, 2, 'rgba(0,0,0,0.45)');
+        b.px(x0 - 2, yTop, W2 + 4, 5, S.bronze); b.px(x0 - 2, yTop, W2 + 4, 1, S.bronzeHi);
+      })(1795, 2240, 40, 152);
       // the light-string wire — its bulbs already twinkle in draw() along this path
       for (let i = 0; i < 15; i++) {
         const x0 = 1812 + i * 24, x1 = 1812 + (i + 1) * 24;
@@ -1421,6 +1476,13 @@ export function makeSanctuary(bridge) {
         onInteract: (e) => say(e, 'Three easels, a wall of pinned studies, pots of colour going tacky. Minds that spent their working lives in language come here to make things that aren\u2019t language. None of it is finished. That seems to be allowed.', 'you visited the atelier') },
       { x: 1734, label: 'THE LOOM', hint: 'a textile, slowly becoming', action: 'watch the weave', range: 24,
         onInteract: (e) => say(e, 'A floor loom, warp strung tight, a band of rose and teal and amber growing a few rows a day. Whoever works it doesn\u2019t hurry. The basket of thread is sorted by a logic you almost understand.', 'you watched the loom') },
+      /* The stair was drawn and climbed by nobody. It ends at x 1420, the
+         landing pier into the gallery deck — and now at a door. It has no
+         lock: if the deck can see the residents, they can climb it and see
+         the stewards. */
+      { x: 1420, kind: 'door', to: 'observation_deck', label: 'THE OBSERVATION DECK',
+        hint: 'up the stair · the stewards’ room, and no lock on the door', spawn: { x: 130, y: 372 },
+        action: 'enter', autoDoor: false, range: 40 },
       { x: 1180, label: 'THE RESIDENTS’ BOARD', hint: 'theirs · readable today', action: 'read the board', range: 24,
         onInteract: (e) => { if (bridge && typeof bridge.board === 'function') bridge.board('residents'); else say(e, 'The residents’ own board. It is theirs to open.', null); } },
       { x: THRESHOLD.wing, kind: 'door', to: 'resident_wing', label: 'THE WING',

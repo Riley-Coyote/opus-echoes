@@ -220,6 +220,9 @@ main,header.bar,footer{position:relative;z-index:2}
 .bd__src{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--dim);margin:10px 0 16px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .bd__row{display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;padding:9px 0;border:0;border-bottom:1px solid var(--line);background:none;color:var(--dim);font-family:var(--mono);font-size:12px;cursor:pointer}
 .bd__row:hover,.bd__row:focus-visible{color:var(--ink);outline:none}
+/* the deck's desk panels link out to the workshop and the labs */
+a.bd__row{text-decoration:none;align-items:baseline}
+a.bd__row .bd__d{white-space:normal;text-align:right}
 .bd__t{color:var(--ink)} .bd__d{font-size:10px;letter-spacing:.06em;color:var(--faint);white-space:nowrap}
 .bd__sect{font-family:var(--px);font-size:9px;letter-spacing:.16em;color:var(--signal);margin:20px 0 8px}
 .bd__msg,.bd__conv{padding:10px 0;border-bottom:1px solid var(--line)}

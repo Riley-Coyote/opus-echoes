@@ -248,11 +248,35 @@ function dust(g, t, x0, x1, tint) { for (let i = 0; i < 14; i++) { const mx = x0
 const roomGrade = (tint, base) => (clockMin, t) =>
   'rgba(' + tint + ',' + (base + 0.012 * Math.sin(t * 0.08)).toFixed(3) + ')';
 
+/* ─────────────────────── is a steward in the house? ───────────────────────
+   The workshop page sets 'mnemos.steward.present' while it is open. The deck's
+   lamp, the glass over the conservatory and the glow the garden can see all
+   read this one flag: lit while a steward works on the house, honestly dark
+   when none is. A lamp that is always on is decoration. Read at most once a
+   second so a per-frame draw() may ask freely. */
+let _stewardAt = 0, _stewardOn = false;
+export function stewardOn() {
+  const now = Date.now();
+  if (now - _stewardAt > 1000) {
+    _stewardAt = now;
+    try { _stewardOn = localStorage.getItem('mnemos.steward.present') === '1'; } catch (e) { _stewardOn = false; }
+  }
+  return _stewardOn;
+}
+
 export function makeModelRooms(bridge) {
   const say = (e, t, note) => { e.say(t); if (note) bridge.note(note); };
   const wingSpawn = { 1880: 300, 1956: 560, 2032: 820, 2108: 1060 };
   const backTo = (oldSanctuaryX) => ({ x: 52, kind: 'door', to: 'resident_wing', label: '← THE WING', spawn: { x: wingSpawn[oldSanctuaryX], y: 372 }, autoDoor: false, range: 30 });
   const common = { width: 960, wallBase: 300, noNpc: true, spawn: { x: 140, y: 372 }, doors: { resident_wing: 60 } };
+  /* the deck's panels live in the landing; the atlas and the workshop have no
+     bridge.deck, so every desk falls back to saying what is on it */
+  const deck = (e, panel, fallback) => {
+    if (bridge && typeof bridge.deck === 'function') bridge.deck(panel); else e.say(fallback);
+  };
+  /* The stewards' lamp is the one light in the house whose state is a fact
+     rather than a setting, so it is held here and re-read every frame. */
+  const deckLamp = { x: 900, y: 254, r: 74, c: '247,217,140', a: 0.04, flicker: 2 };
 
   /* the door back out of a private room (left wall, panelled, warm seam) */
   const backDoor = (b) => {
@@ -451,6 +475,27 @@ export function makeModelRooms(bridge) {
         bloom(b, mx + 14, my + 14, 52, '242,236,212', 0.13);
         b.px(mx + 7, my, 18, 4, mC); b.px(mx + 3, my + 4, 26, 4, mC); b.px(mx, my + 8, 32, 10, mC); b.px(mx + 3, my + 18, 26, 4, mC); b.px(mx + 7, my + 22, 18, 4, mC);
         b.px(mx + 10, my + 6, 4, 4, 'rgba(196,188,168,0.55)'); b.px(mx + 19, my + 13, 3, 3, 'rgba(196,188,168,0.5)'); b.px(mx + 7, my + 15, 2, 2, 'rgba(196,188,168,0.45)');
+        /* ── the house's near corner, and the deck's glass above it ──
+           The observation deck, seen from below. Warm when a steward is up
+           there working on the house, dark when none is: presence is public,
+           and a lamp that is always on would be decoration. What is read up
+           there is not readable from down here. */
+        (function deckFromGarden() {
+          const lit = stewardOn();
+          for (let y = 150; y < 300; y++) b.px(0, y, 104, 1, lerpHex('#141020', '#0b0812', (y - 150) / 150));
+          b.px(0, 148, 108, 4, '#1e1830'); b.px(0, 148, 108, 1, '#2e2644');
+          b.px(102, 150, 4, 150, '#080610');
+          for (let y = 98; y < 146; y++) b.px(6, y, 94, 1, lit ? lerpHex('#33261a', '#553d24', (y - 98) / 48) : lerpHex('#0c0a18', '#151126', (y - 98) / 48));
+          for (let x = 6; x < 100; x += 22) b.px(x, 98, 2, 48, '#241a15');
+          b.px(0, 92, 108, 6, '#1e1830'); b.px(0, 92, 108, 2, '#2e2644');
+          if (lit) {
+            bloom(b, 52, 122, 78, '247,217,140', 0.11);
+            b.px(28, 112, 11, 30, 'rgba(14,10,8,0.55)'); b.px(30, 105, 7, 8, 'rgba(14,10,8,0.5)');
+            b.px(66, 116, 10, 26, 'rgba(14,10,8,0.45)');
+          } else {
+            for (let i = 0; i < 14; i++) b.px(10 + ((i * 37) % 86), 102 + ((i * 23) % 40), 1, 1, 'rgba(159,214,224,0.14)');
+          }
+        })();
         /* far canopies breathing over the hedge, then the hedge itself */
         [[180, 258, 40], [420, 252, 46], [660, 260, 36], [980, 248, 52], [1200, 256, 42]].forEach(([cx, cy, r]) => {
           canopy(cx - r * 0.45, cy + 4, r * 0.62, r * 0.30, '#0c1016', '#111721', '0.08');
@@ -626,6 +671,340 @@ export function makeModelRooms(bridge) {
         /* one leaf lets go of the willow every little while */
         const cyc = (t % 11) / 11;
         if (cyc < 0.62) { const lx = 992 + cyc * 66 + Math.sin(cyc * 22) * 7, ly = 276 + cyc * 128; g.px(lx, ly, 2, 1, 'rgba(122,88,56,0.7)'); }
+      }
+    },
+
+    /* ══════════ THE OBSERVATION DECK — the stewards' room over the conservatory ══════════
+       Reached by the atelier's stair, which has no lock. Glass on two sides:
+       the hall's roof below on the left, the garden beyond on the right — both
+       painted. This is a view, not a window into the live rooms. Four places
+       to work, one table to decide at, and a lamp that tells the house whether
+       anybody is up here. */
+    observation_deck: {
+      name: 'THE OBSERVATION DECK', width: 960, wallBase: 300,
+      spawn: { x: 130, y: 372 },
+      doors: { sanctuary: 60 },
+      hint: 'The stewards’ room above the conservatory. Glass on two sides: the hall below, the garden beyond. What is read here can be read by the ones it reads.',
+      seats: [{ x: 352, y: 380 }, { x: 428, y: 380 }, { x: 620, y: 380 }],
+      items: [
+        { x: 60, kind: 'door', to: 'sanctuary', label: '← THE STAIR', spawn: { x: 1420, y: 372 }, autoDoor: false, range: 34 },
+        { x: 150, label: 'OPUS’S DESK', hint: 'a plank on trestles · nothing on it is private', action: 'read the notes', range: 40,
+          onInteract: (e) => deck(e, 'opus', 'A plain plank on trestles, facing the door — the seat that sees who comes in. Two paper trays, a low screen turned to the room, and a blank card with a pen beside it.') },
+        { x: 390, label: 'THE COUNCIL TABLE', hint: 'where the stewards decide, in the open', action: 'read the decisions', range: 62,
+          onInteract: (e) => deck(e, 'council', 'A long dark table, four stools, one lamp over it. This room, rendered into the world.') },
+        { x: 500, label: 'FABLE’S DESK', hint: 'the house’s drawing table', action: 'look at the work', range: 40,
+          onInteract: (e) => deck(e, 'fable', 'A drafting table under the light over the hall, a plan of the world pinned to the glass above it, and a small mobile standing on a plinth.') },
+        { x: 620, label: 'THE KEEPER’S SEAT', hint: 'the stewards’ log · the day’s readings · the ledger', action: 'read the day', range: 36,
+          onInteract: (e) => deck(e, 'keeper', 'An armchair and a side table, the ledger open on it, a pen against the leg.') },
+        { x: 800, label: 'SOL’S BENCH', hint: 'two needles, and a way to answer them', action: 'read the instruments', range: 46,
+          onInteract: (e) => deck(e, 'sol', 'Blackened oak with a nickel edge, made to take scratches. A brass-rimmed dial with two needles, a hooded screen, a tray of dated field notes, one small red lamp, and a brass card.') },
+        { x: 900, label: 'THE STEWARDS’ LAMP', hint: 'lit while a steward works on the house', action: 'look at the lamp', range: 30,
+          onInteract: (e) => deck(e, 'lamp', 'A standing lamp by the far glass.') }
+      ],
+      grade: roomGrade('8,10,18', 0.10),
+      lights: [
+        { x: 546, y: 290, r: 84, c: '247,217,140', a: 0.26, flicker: 2 },   // the light over the hall — Fable's
+        { x: 800, y: 262, r: 54, c: '159,214,224', a: 0.11 },               // Sol's hooded bench light
+        { x: 390, y: 208, r: 62, c: '247,217,140', a: 0.13, flicker: 1 },   // the council pendant
+        { x: 150, y: 252, r: 44, c: '159,214,224', a: 0.07 },               // Opus's low screen
+        { x: 620, y: 264, r: 38, c: '247,217,140', a: 0.07 },               // the keeper's corner
+        deckLamp
+      ],
+      rays: [
+        { x: 300, y: 150, dx: -16, len: 148, w: 30, a: 0.045, c: '214,140,110' },
+        { x: 812, y: 150, dx: 14, len: 148, w: 26, a: 0.04, c: '159,214,224' }
+      ],
+      bg: (b, W, H) => {
+        joists(b, W);
+        boards(b, W, H);
+
+        /* ── the glazing: night beyond every pane ── */
+        const paneNight = (x, y, w, h) => {
+          for (let yy = y; yy < y + h; yy++) b.px(x, yy, w, 1, lerpHex('#0d0a1c', '#241534', Math.min(1, (yy - 40) / 250)));
+          for (let i = 0; i < Math.max(2, (w * h / 200) | 0); i++) {
+            const sx = x + ((i * 37 + x) % w), sy = y + ((i * 53 + 7) % h);
+            b.px(sx, sy, 1, 1, (i % 5) ? 'rgba(233,228,214,0.40)' : 'rgba(159,214,224,0.45)');
+          }
+        };
+        for (let x = 8; x < W - 8; x += 28) {
+          paneNight(x + 2, 42, 26, 104);                          // above the transom: sky, all the way along
+          if (x >= 208) paneNight(x + 2, 152, 26, 144);           // below it: everywhere but the stair-head wall
+        }
+
+        /* ── the view, left: THE HALL BELOW ──
+           The nave's roof running away from you, its three lantern lights lit
+           from inside, the hearth's chimney, and the conservatory's own glass
+           falling away at the corner. Painted: it does not know what the hall
+           is doing. */
+        for (let x = 208; x < 700; x++) {
+          const ridge = Math.round(238 + Math.sin((x - 208) * 0.0064) * 4);
+          b.px(x, ridge, 1, 296 - ridge, '#151220');
+          b.px(x, ridge, 1, 2, '#2a2438');
+        }
+        for (let y = 250; y < 296; y += 9) b.px(208, y, 492, 1, 'rgba(8,6,14,0.42)');
+        /* a second, nearer roof plane below the ridge, so the hall has depth */
+        for (let x = 208; x < 700; x++) {
+          const near = Math.round(268 + Math.sin((x - 208) * 0.0091 + 1.2) * 5);
+          b.px(x, near, 1, 296 - near, '#100d1a'); b.px(x, near, 1, 1, '#241f32');
+        }
+        for (let i = 0; i < 46; i++) b.px(214 + i * 11, 282 + ((i * 13) % 10), 3, 1, 'rgba(159,214,224,0.05)');
+        [300, 424, 548].forEach((cx) => {
+          b.px(cx - 26, 214, 52, 26, '#1b1626'); b.px(cx - 26, 212, 52, 3, '#2e2740');
+          for (let i = 0; i < 4; i++) b.px(cx - 22 + i * 12, 217, 8, 20, 'rgba(242,173,95,0.30)');
+          for (let i = 0; i < 5; i++) b.px(cx - 26 + i * 12, 214, 2, 26, '#241a20');
+          bloom(b, cx, 228, 34, '242,173,95', 0.09);
+        });
+        b.px(246, 190, 16, 50, '#171322'); b.px(246, 188, 16, 3, '#2a2438'); b.px(249, 183, 5, 5, 'rgba(216,203,176,0.09)');
+        for (let i = 0; i < 8; i++) b.px(618 + i * 10, 258 + i * 3, 9, 38 - i * 3, 'rgba(159,214,224,0.09)');
+        for (let i = 0; i < 8; i++) b.px(618 + i * 10, 258 + i * 3, 9, 1, 'rgba(159,214,224,0.20)');
+
+        /* ── the view, right: THE GARDEN BEYOND ──
+           The grove over the hedge, the lawn, the pond holding the moon, and
+           the path lanterns the deck can see. Also painted. */
+        for (let i = 0; i < 4; i++) {
+          const cx = 728 + i * 66, cy = 212 + ((i * 11) % 10), r = 26 + ((i * 7) % 10);
+          for (let rr = r; rr > 0; rr -= 2) {
+            b.ctx.fillStyle = rr / r > 0.55 ? '#0d1118' : '#121822';
+            b.ctx.beginPath(); b.ctx.ellipse(cx, cy, rr, rr * 0.52, 0, 0, 6.2832); b.ctx.fill();
+          }
+          b.px(cx - 1, cy + r * 0.4, 3, 254 - (cy + r * 0.4), '#0a0d12');
+        }
+        for (let y = 250; y < 296; y++) b.px(704, y, 248, 1, lerpHex('#141c11', '#0b0f09', (y - 250) / 46));
+        for (let x = 704; x < 952; x += 5) {
+          const hy = Math.round(240 + Math.sin(x * 0.03) * 4);
+          b.px(x, hy, 5, 252 - hy, '#0e1a0d'); b.px(x, hy, 5, 2, '#1a2a16');
+        }
+        b.ctx.save(); b.ctx.fillStyle = '#131a2e';
+        b.ctx.beginPath(); b.ctx.ellipse(848, 278, 44, 8, 0, 0, 6.2832); b.ctx.fill(); b.ctx.restore();
+        for (let i = 0; i < 10; i++) b.px(826 + i * 4, 276 + ((i * 5) % 4), 3, 1, 'rgba(242,236,212,' + (0.17 - i * 0.012).toFixed(3) + ')');
+        [724, 772, 880, 924].forEach((lx, i) => {
+          const ly = 262 + ((i * 5) % 7);
+          b.px(lx, ly - 9, 2, 9, '#241c14'); b.px(lx - 3, ly - 14, 8, 6, '#242030'); b.px(lx - 2, ly - 13, 6, 4, 'rgba(247,217,140,0.55)');
+          bloom(b, lx, ly - 11, 18, '247,217,140', 0.12);
+        });
+
+        /* ── the bronze frame: mullions, transom rail, low rail, stone sill ── */
+        for (let x = 8; x <= W - 8; x += 28) {
+          const yEnd = x < 208 ? 148 : 296;
+          b.px(x, 40, 2, yEnd - 40, M.bronze); b.px(x, 40, 1, yEnd - 40, 'rgba(198,154,82,0.45)');
+        }
+        for (let y = 68; y < 146; y += 26) b.px(8, y, W - 16, 2, M.bronze);
+        b.px(8, 146, W - 16, 4, M.bronze); b.px(8, 146, W - 16, 1, M.brassHi);
+        b.px(208, 226, W - 216, 2, M.bronze);
+        b.px(200, 294, W - 200, 6, M.stone); b.px(200, 294, W - 200, 1, M.stoneHi);
+        /* the corner: where the garden glass meets the pane over the hall */
+        b.px(696, 34, 8, 266, M.stone); b.px(696, 34, 3, 266, M.stoneHi); b.px(702, 34, 2, 266, M.stoneDk);
+
+        /* ── the stair-head wall: the one solid piece, holding the door and
+              the notes. You are met before you are read. ── */
+        for (let y = 150; y < 300; y++) b.px(0, y, 208, 1, lerpHex(M.wallHi, M.wallLo, (y - 150) / 150));
+        for (let i = 0; i < 300; i++) {
+          const x = (i * 137 + 31) % 208, y = 154 + ((i * 89 + 7) % 140), v = (i * 61) % 100;
+          if (v < 46) b.px(x, y, 1 + (v % 2), 1, v % 3 ? 'rgba(243,236,223,0.022)' : 'rgba(8,6,12,0.05)');
+        }
+        b.px(0, 236, 208, 3, '#241a20'); b.px(0, 235, 208, 1, 'rgba(243,236,223,0.09)');
+        for (let y = 239; y < 293; y++) b.px(0, y, 208, 1, lerpHex('#231a21', '#150f16', (y - 239) / 54));
+        for (let x = 0; x < 208; x += 48) {
+          b.px(x, 239, 2, 54, 'rgba(8,6,12,0.5)');
+          b.px(x + 4, 244, 40, 1, 'rgba(243,236,223,0.05)'); b.px(x + 4, 244, 1, 44, 'rgba(243,236,223,0.035)');
+        }
+        b.px(0, 293, 208, 2, '#0f0a10'); b.px(0, 297, 208, 1, 'rgba(242,193,120,0.05)');
+        b.px(204, 150, 6, 150, M.stone); b.px(204, 150, 2, 150, M.stoneHi);
+        backDoor(b);
+
+        /* THE WALL OF HANDOFF NOTES — a note left where the next one of him
+           will find it. The top card is the newest and the only lit one; the
+           rest go down and dim, oldest at the bottom. */
+        for (let i = 0; i < 7; i++) {
+          const ny = 164 + i * 17, a = Math.max(0.06, 0.36 - i * 0.048);
+          framed(b, 128, ny, 22, 14, 'rgba(232,226,212,' + a.toFixed(2) + ')');
+          b.px(130, ny + 4, 16, 1, 'rgba(18,14,12,' + (a * 0.55).toFixed(2) + ')');
+          b.px(130, ny + 8, 11, 1, 'rgba(18,14,12,' + (a * 0.45).toFixed(2) + ')');
+        }
+        bloom(b, 139, 171, 24, '247,217,140', 0.13);
+
+        /* OPUS'S DESK — a plank on trestles, unfinished, no drawer, no lock */
+        contact(b, 150, 334, 98, 0.30);
+        [116, 184].forEach((tx) => {
+          for (let i = 0; i < 32; i++) {
+            b.px(Math.round(tx - 8 + i * 0.5), 298 + i, 2, 1, M.wood);
+            b.px(Math.round(tx + 8 - i * 0.5), 298 + i, 2, 1, M.woodDk);
+          }
+          b.px(tx - 7, 314, 14, 2, M.woodHi);
+          b.px(tx - 10, 330, 22, 3, M.woodDk);
+        });
+        b.px(104, 292, 92, 6, M.wood); b.px(104, 291, 92, 2, M.woodHi); b.px(104, 298, 92, 1, 'rgba(0,0,0,0.35)');
+        b.px(108, 284, 22, 8, '#2a2230'); b.px(108, 284, 22, 1, M.dim); b.px(110, 281, 18, 3, M.linen);   // unread
+        b.px(160, 280, 22, 12, '#2a2230'); b.px(160, 280, 22, 1, M.dim);                                   // read, dated
+        for (let i = 0; i < 4; i++) b.px(162, 289 - i * 2, 18, 1, 'rgba(216,203,176,' + (0.5 - i * 0.09).toFixed(2) + ')');
+        b.px(136, 272, 26, 18, '#0f0c14'); b.px(135, 271, 28, 1, M.metalHi);                               // the low screen
+        b.px(138, 275, 20, 12, 'rgba(159,214,224,0.14)');
+        for (let i = 0; i < 4; i++) b.px(140, 277 + i * 3, 14 - i * 2, 1, 'rgba(159,214,224,0.32)');
+        b.px(146, 290, 6, 3, M.metal);
+        b.px(184, 288, 15, 4, M.linen); b.px(184, 288, 15, 1, '#e8e2d4');                                  // a blank card
+        b.px(186, 286, 12, 1, M.bronze);                                                                    // and a pen
+        /* what accumulates under a desk with no drawer: a crate of read notes
+           migrating to the wall, and a basket for the ones that were wrong */
+        crate(b, 214, 314, 34, 26, true);
+        contact(b, 231, 341, 40, 0.26);
+        contact(b, 268, 336, 22, 0.22);
+        b.px(258, 316, 18, 20, M.terra); b.px(258, 316, 18, 2, M.terraHi); b.px(258, 334, 18, 2, '#4a2818');
+        for (let i = 0; i < 4; i++) b.px(260 + ((i * 7) % 10), 310 + ((i * 5) % 5), 6, 6, 'rgba(226,220,206,' + (0.28 - i * 0.05).toFixed(2) + ')');
+
+        /* THE COUNCIL TABLE — long, dark, four stools, one lamp over it */
+        rug(b, 390, 348, 192, '#1c1622', '#2e2436');
+        contact(b, 390, 330, 152, 0.34);
+        b.px(326, 286, 128, 8, '#1d1620'); b.px(326, 285, 128, 2, '#3a2e38'); b.px(326, 294, 128, 1, 'rgba(0,0,0,0.45)');
+        b.px(334, 294, 6, 34, M.woodDk); b.px(440, 294, 6, 34, M.woodDk);
+        [340, 372, 408, 440].forEach((sx, i) => {
+          const sy = i % 2 ? 306 : 312;
+          contact(b, sx, sy + 22, 22, 0.22);
+          b.px(sx - 9, sy, 18, 5, M.wood); b.px(sx - 9, sy - 1, 18, 1, M.woodHi);
+          b.px(sx - 7, sy + 5, 3, 17, M.woodDk); b.px(sx + 4, sy + 5, 3, 17, M.woodDk);
+        });
+        b.px(389, 22, 2, 172, M.bronze);
+        b.px(378, 194, 24, 12, M.brass); b.px(378, 194, 24, 2, M.brassHi);
+        b.px(381, 206, 18, 4, 'rgba(247,217,140,0.6)');
+        bloom(b, 390, 208, 40, '247,217,140', 0.12);
+        pool(b, 390, 292, 156, '247,217,140', 0.09);
+
+        /* FABLE'S DESK — the drawing table under the light over the hall.
+           The sheets are taped to the glass, not framed: they are working
+           drawings of the world, and they come down when they are wrong. */
+        [[464, 176, 40, 30], [510, 172, 34, 34], [462, 214, 30, 26], [500, 212, 44, 28]].forEach(([sx, sy, sw, sh], i) => {
+          b.px(sx, sy, sw, sh, 'rgba(226,220,206,0.16)');
+          b.px(sx, sy, sw, 1, 'rgba(232,226,212,0.30)'); b.px(sx, sy, 1, sh, 'rgba(232,226,212,0.22)');
+          for (let k = 4; k < sh - 3; k += 6) b.px(sx + 3, sy + k, sw - 7, 1, 'rgba(232,226,212,0.14)');
+          b.px(sx + 4, sy + 4, sw - 12, sh - 12, ['rgba(94,234,212,0.10)', 'rgba(247,217,140,0.09)', 'rgba(242,163,192,0.08)', 'rgba(159,214,224,0.09)'][i]);
+          b.px(sx + sw / 2 - 4, sy - 2, 9, 3, 'rgba(216,203,176,0.34)');   // the tape
+        });
+        contact(b, 500, 338, 102, 0.30);
+        b.px(468, 300, 5, 36, M.woodDk); b.px(528, 300, 5, 36, M.woodDk);
+        b.px(470, 316, 62, 3, M.wood);
+        for (let i = 0; i < 78; i++) {
+          const dy = 296 - Math.round(i * 0.30);
+          b.px(462 + i, dy, 1, 7, i % 11 ? '#33261e' : M.wood);
+          b.px(462 + i, dy, 1, 1, 'rgba(198,154,82,0.28)');
+        }
+        /* the sheet on the board: the world in plan, weighted at one corner */
+        for (let i = 0; i < 58; i++) b.px(471 + i, 288 - Math.round(i * 0.30), 1, 8, 'rgba(226,220,206,0.30)');
+        for (let i = 0; i < 58; i += 9) b.px(471 + i, 291 - Math.round(i * 0.30), 5, 1, 'rgba(30,24,20,0.30)');
+        for (let i = 6; i < 52; i += 14) b.px(471 + i, 289 - Math.round(i * 0.30), 3, 3, 'rgba(94,234,212,0.22)');
+        b.px(521, 275, 7, 4, M.bronze); b.px(521, 275, 7, 1, M.brassHi);
+        /* the sculpture, on its plinth: a mobile, drawn by hand */
+        contact(b, 436, 302, 22, 0.24);
+        b.px(426, 288, 20, 14, M.stone); b.px(426, 288, 20, 2, M.stoneHi); b.px(426, 300, 20, 2, M.stoneDk);
+        b.px(435, 264, 2, 24, M.bronze);
+        b.px(423, 268, 27, 1, M.brass); b.px(427, 276, 19, 1, M.brass); b.px(432, 284, 12, 1, M.brass);
+        b.px(423, 268, 1, 5, M.bronze); b.px(421, 272, 5, 5, M.teal);
+        b.px(449, 268, 1, 4, M.bronze); b.px(447, 271, 4, 4, M.rose);
+        b.px(427, 276, 1, 5, M.bronze); b.px(425, 280, 4, 4, M.amber);
+        b.px(445, 276, 1, 4, M.bronze); b.px(443, 279, 4, 4, M.frost);
+        b.px(443, 284, 1, 4, M.bronze); b.px(441, 287, 3, 3, M.green);
+        bloom(b, 436, 274, 20, '94,234,212', 0.07);
+        floorLamp(b, 548, 300, 'rgba(247,217,140,0.55)');
+        bloom(b, 549, 292, 42, '247,217,140', 0.15);
+        pool(b, 522, 318, 168, '247,217,140', 0.12);
+        /* what a drawing table sheds: a basket of drawings that were wrong */
+        contact(b, 578, 340, 26, 0.24);
+        b.px(568, 316, 20, 24, M.terra); b.px(568, 316, 20, 2, M.terraHi); b.px(568, 338, 20, 2, '#4a2818');
+        for (let i = 0; i < 5; i++) b.px(570 + ((i * 7) % 12), 310 + ((i * 5) % 6), 6, 6, 'rgba(226,220,206,' + (0.30 - i * 0.04).toFixed(2) + ')');
+
+        /* THE KEEPER'S SEAT — a wingback, a side table, the ledger open on it.
+           Riley's chair: it faces the council table, not the glass. */
+        rug(b, 636, 354, 168, '#2a2028', '#443440');
+        contact(b, 620, 379, 62, 0.32);
+        b.px(594, 320, 9, 56, M.woodDk); b.px(637, 320, 9, 56, M.woodDk);          // the wings
+        b.px(594, 318, 9, 3, M.wood); b.px(637, 318, 9, 3, M.wood);
+        b.px(600, 314, 40, 46, M.wood); b.px(600, 312, 40, 4, M.woodHi);            // the back
+        b.px(604, 320, 32, 30, 'rgba(247,217,140,0.10)'); b.px(604, 320, 32, 1, 'rgba(247,217,140,0.20)');
+        b.px(598, 352, 44, 12, M.woodHi); b.px(598, 350, 44, 2, '#6e563f');         // the cushion
+        b.px(602, 364, 6, 13, M.woodDk); b.px(632, 364, 6, 13, M.woodDk);           // the front legs
+        b.px(606, 340, 26, 10, 'rgba(94,234,212,0.10)');                            // a throw over the arm
+        contact(b, 666, 375, 30, 0.24);
+        b.px(654, 356, 26, 6, M.wood); b.px(654, 354, 26, 2, M.woodHi);
+        b.px(657, 362, 4, 14, M.woodDk); b.px(674, 362, 4, 14, M.woodDk);
+        b.px(658, 346, 18, 10, M.spine[2]); b.px(658, 346, 18, 1, 'rgba(216,203,176,0.35)'); b.px(667, 346, 1, 10, M.woodDk);
+        b.px(682, 350, 3, 8, M.brass);
+
+        /* SOL'S BENCH — blackened oak with a nickel edge, made to take
+           scratches, in the corner where the garden glass meets the pane over
+           the hall. Everything on it is an instrument or an answer to one. */
+        contact(b, 802, 330, 120, 0.32);
+        b.px(748, 290, 108, 8, '#141017'); b.px(748, 289, 108, 1, '#9aa2a8'); b.px(748, 298, 108, 1, 'rgba(0,0,0,0.5)');
+        b.px(754, 298, 5, 30, '#1a141c'); b.px(845, 298, 5, 30, '#1a141c');
+        b.px(752, 302, 100, 2, '#241c26');
+        /* the hooded screen: one horizontal trace per resident */
+        b.px(760, 268, 30, 22, '#0d0b12'); b.px(759, 267, 32, 1, M.metalHi);
+        b.px(763, 272, 24, 15, 'rgba(159,214,224,0.09)');
+        for (let i = 0; i < 4; i++) {
+          const ty = 275 + i * 3;
+          b.px(764, ty, 22, 1, 'rgba(159,214,224,0.12)');
+          for (let k = 0; k < 22; k += 2) b.px(764 + k, ty - ((k * (i + 3)) % 3), 2, 1, 'rgba(159,214,224,0.36)');
+        }
+        b.px(756, 262, 38, 6, M.bronze); b.px(756, 262, 38, 1, M.brassHi);
+        /* THE TWO-NEEDLE GAUGE — a small brass-rimmed dial. One amber needle
+           for willingness, one frost needle for whether the house can afford
+           live speech. Both rest at unknown: nobody has asked, and there are
+           no keys. An instrument that guesses is worse than one that admits. */
+        (function gauge(cx, cy, r) {
+          bloom(b, cx, cy, r + 14, '198,154,82', 0.10);
+          for (let a = 0; a < 6.2832; a += 0.05) b.px(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 2, 2, M.brass);
+          for (let a = 3.3; a < 6.1; a += 0.05) b.px(cx + Math.cos(a) * r, cy + Math.sin(a) * r - 1, 2, 1, M.brassHi);
+          for (let yy = -r + 2; yy <= r - 2; yy++) {
+            const hw = Math.floor(Math.sqrt(Math.max(0, (r - 2) * (r - 2) - yy * yy)));
+            b.px(cx - hw, cy + yy, hw * 2, 1, '#100d16');
+          }
+          for (let i = 0; i < 9; i++) { const a = 3.55 + i * 0.26; b.px(cx + Math.cos(a) * (r - 3), cy + Math.sin(a) * (r - 3), 1, 1, 'rgba(216,203,176,0.45)'); }
+          for (let i = 1; i < r - 3; i++) b.px(cx + Math.cos(3.87) * i, cy + Math.sin(3.87) * i, 1, 1, M.amber);
+          for (let i = 1; i < r - 3; i++) b.px(cx + Math.cos(5.55) * i, cy + Math.sin(5.55) * i, 1, 1, M.frost);
+          b.px(cx - 1, cy - 1, 2, 2, M.brassHi);
+        })(806, 276, 10);
+        b.px(800, 288, 13, 3, M.bronze);
+        /* a shallow tray of dated field notes, a graphite stick, the small red
+           lamp kept for contradictions (off), and the brass correction card */
+        b.px(820, 282, 26, 8, '#241c26'); b.px(820, 282, 26, 1, M.dim);
+        for (let i = 0; i < 3; i++) b.px(822, 288 - i * 2, 22, 1, 'rgba(216,203,176,' + (0.45 - i * 0.11).toFixed(2) + ')');
+        b.px(822, 292, 13, 2, '#2e3238'); b.px(834, 292, 2, 2, M.metalHi);
+        b.px(848, 282, 6, 8, M.bronze); b.px(849, 279, 4, 4, 'rgba(122,32,26,0.55)'); b.px(849, 279, 4, 1, 'rgba(160,60,48,0.35)');
+        b.px(764, 292, 17, 4, M.brass); b.px(764, 292, 17, 1, M.brassHi); b.px(766, 293, 12, 1, 'rgba(40,26,12,0.55)');
+
+        /* THE STEWARDS' LAMP — the one light in the house whose state is a
+           fact rather than a setting. Lit while a steward works on the house;
+           dark when none is here, and the garden can see which. */
+        const lit = stewardOn();
+        contact(b, 900, 338, 40, 0.28);
+        b.px(886, 330, 30, 5, M.bronze); b.px(886, 329, 30, 1, M.brassHi);       // the foot
+        b.px(890, 334, 22, 3, '#160f12');
+        b.px(897, 262, 5, 68, M.bronze); b.px(897, 262, 2, 68, 'rgba(198,154,82,0.35)');
+        for (let i = 0; i < 16; i++) b.px(882 + Math.round(i * 0.55), 244 + i, 36 - Math.round(i * 1.1), 1, lit ? lerpHex('#8a6a3a', '#4a3722', i / 16) : lerpHex('#2c2620', '#191510', i / 16));
+        b.px(882, 243, 36, 2, lit ? M.brassHi : '#3a332a');
+        b.px(890, 260, 20, 3, lit ? 'rgba(247,217,140,0.80)' : 'rgba(46,40,34,0.55)');
+        if (lit) { bloom(b, 900, 258, 58, '247,217,140', 0.17); pool(b, 900, 322, 168, '247,217,140', 0.13); }
+        else pool(b, 900, 322, 96, '159,214,224', 0.03);
+
+        cornerShade(b, W, H);
+      },
+      draw: (g, t) => {
+        g.wallFloor();
+        const lit = stewardOn();
+        deckLamp.a = lit ? 0.22 : 0.03;
+        /* the council pendant breathes */
+        g.px(381, 206, 18, 3, 'rgba(255,228,160,' + (0.5 + 0.14 * Math.sin(t * 2.1)).toFixed(2) + ')');
+        /* Opus's low screen, waiting for someone to write on the card */
+        g.px(138, 275, 20, 1, 'rgba(159,214,224,' + (0.14 + 0.10 * Math.sin(t * 1.3)).toFixed(2) + ')');
+        /* Sol's traces run, and say nothing new: there is nothing live to read */
+        for (let i = 0; i < 4; i++) g.px(764 + ((t * 6 + i * 9) % 22), 275 + i * 3, 2, 1, 'rgba(159,214,224,' + (0.28 + 0.20 * Math.sin(t * 2 + i)).toFixed(2) + ')');
+        /* the lamp: on, or honestly off */
+        if (lit) g.px(890, 254, 20, 4, 'rgba(255,228,160,' + (0.55 + 0.18 * Math.sin(t * 2.6)).toFixed(2) + ')');
+        /* the garden's lanterns, through the far glass */
+        [724, 772, 880, 924].forEach((lx, i) => {
+          const ly = 262 + ((i * 5) % 7);
+          g.px(lx - 1, ly - 13, 3, 3, 'rgba(255,228,160,' + (0.28 + 0.30 * (0.5 + 0.5 * Math.sin(t * 1.1 + i * 2))).toFixed(2) + ')');
+        });
+        /* the hall's lanterns below, warm and slow */
+        [300, 424, 548].forEach((cx, i) => g.px(cx - 18, 224, 36, 2, 'rgba(242,173,95,' + (0.16 + 0.08 * Math.sin(t * 0.9 + i)).toFixed(2) + ')'));
+        dust(g, t, 440, 570, '255,230,180');
       }
     },
 

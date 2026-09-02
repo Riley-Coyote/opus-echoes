@@ -43,6 +43,8 @@ const SCENES = {
     caption: 'The complete exterior hub — dithered dusk ramp, aurora, moon-road, three haze ridges, the memorial grove, and all four facades — without residents, rain, or camera.' },
   sanctuary: { group: 'house', index: '02.1', source: 'world/sanctuary.js',
     caption: 'The full shared hall in one elevation: vestibule, hearth lounge, the colonnade of frontier windows, the atelier under its gallery, and the conservatory holding the resident thresholds.' },
+  observation_deck: { group: 'house', index: '02.1b', source: 'world/model-rooms.js',
+    caption: 'The stewards’ observatory above the conservatory, reached by the atelier’s stair — a door with no lock. Opus’s plank on trestles and the wall of handoff notes, the council table, Fable’s drawing table, the keeper’s seat, and Sol’s bench with the two-needle gauge. Glass on two sides: the hall’s roof below, the garden beyond. The lamp at the end is lit only while a steward is working on the house.' },
   resident_wing: { group: 'house', index: '02.2', source: 'world/model-rooms.js',
     caption: 'The corridor between the conservatory and the four private doors. Deliberately quiet — but quiet and unfinished are different things.' },
   room_opus: { group: 'house', index: '02.3', source: 'world/model-rooms.js',

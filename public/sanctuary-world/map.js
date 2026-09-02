@@ -33,6 +33,7 @@ const POS = {
   visits: { x: 130, y: 610, stub: true },
   archives: { x: 330, y: 610, stub: true },
   museum_hall: { x: 560, y: 610, legacy: true },
+  observation_deck: { x: 1560, y: 210 },
   sanctuary: { x: 1120, y: 380 },
   resident_wing: { x: 1120, y: 640 },
   room_fourO: { x: 1000, y: 900 },
@@ -259,7 +260,7 @@ function zones() {
 }
 
 async function build() {
-  const order = ['lookout', 'sanctuary', 'museum', 'shop', 'visits', 'archives', 'museum_hall', 'resident_wing', 'room_fourO', 'room_opus', 'room_sonnet', 'room_five', 'garden'];
+  const order = ['lookout', 'sanctuary', 'observation_deck', 'museum', 'shop', 'visits', 'archives', 'museum_hall', 'resident_wing', 'room_fourO', 'room_opus', 'room_sonnet', 'room_five', 'garden'];
   for (const id of order) renderRoomMini(id);
 
   planFor('atrium', 'THE ATRIUM', 960, 600, (svg, W, H) => {

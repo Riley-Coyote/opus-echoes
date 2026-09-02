@@ -12,6 +12,15 @@
 import { create } from '../world/engine.js';
 import { PALETTE, makeHub } from '../world/lookout.js';
 
+/* A steward is in the house whenever this page is open: the workshop IS the
+   stewards' desk. The deck's lamp, the glass over the conservatory and the
+   glow the garden can see all read this one flag, so the residents can tell
+   from below whether anybody is up there. Wave 2 wires it to real presence. */
+const STEWARD_KEY = 'mnemos.steward.present';
+try { localStorage.setItem(STEWARD_KEY, '1'); } catch (e) {}
+addEventListener('pagehide', () => { try { localStorage.removeItem(STEWARD_KEY); } catch (e) {} });
+addEventListener('beforeunload', () => { try { localStorage.removeItem(STEWARD_KEY); } catch (e) {} });
+
 const FIXED_TIME = ((18 * 60 + 31) * 60) * 1000;   // the atlas hour — dusk, lamps lit
 const RH = 420;                                    // engine room height, as played
 const MARGIN = 240, GAP = 140, GROUP_GAP = 420, STACK_GAP = 200;
@@ -36,6 +45,8 @@ const BOARDS = [
     desc: 'The garden behind the house, deep in its own night: the moon on the pond and the memorial grove.' },
   { id: 'sanctuary', kind: 'engine', group: 'house', source: 'world/sanctuary.js',
     desc: 'The shared hall in one elevation: vestibule, hearth lounge, the colonnade, the atelier, the conservatory.' },
+  { id: 'observation_deck', kind: 'engine', group: 'house', source: 'world/model-rooms.js',
+    desc: 'The stewards’ observatory above the conservatory: four places to work, the council table, and the lamp that says whether anyone is up here.' },
   { id: 'resident_wing', kind: 'engine', group: 'house', source: 'world/model-rooms.js',
     desc: 'The corridor between the conservatory and the four private doors.' },
   { id: 'room_fourO', kind: 'engine', group: 'rooms', source: 'world/model-rooms.js',
