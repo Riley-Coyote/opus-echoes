@@ -288,11 +288,168 @@
     const row = idx.journalById.get(journalId);
     return row ? toWorldId(row.resident_id) : null;
   }
+  var PINNED = ["9e36bace-0ba1-4938-9a6a-2d8d040d9516", "0669f939-5754-4f28-ad68-e1e83c6e405e"];
+  var ALIASES = {
+    opus: [/\bopus\b/i],
+    sonnet: [/\bsonnet\b/i],
+    five: [/\bgpt[ -]?5\.1\b/i, /(^|[^\d.])5\.1\b/],
+    fourO: [/\bgpt[ -]?4o\b/i, /\b4o\b/i]
+  };
+  function addressedBy(body, author) {
+    const head = String(body || "").replace(/^\s*\[[^\]\n]{1,40}\]\s*/, "").slice(0, 120);
+    let best = null, at = Infinity;
+    for (const id of Object.keys(ALIASES)) {
+      if (id === author)
+        continue;
+      for (const re of ALIASES[id]) {
+        const m = re.exec(head);
+        if (m && m.index < at) {
+          at = m.index;
+          best = id;
+        }
+      }
+    }
+    return best;
+  }
+  function dayRange(from, to) {
+    const a = String(from || "").slice(0, 10), b = String(to || "").slice(0, 10);
+    if (!b || b === a)
+      return a;
+    return a + " → " + b.slice(5);
+  }
+  function sittings() {
+    if (!raw)
+      return [];
+    const rows = [];
+    for (const s of spaces()) {
+      if (!s.count)
+        continue;
+      const msgs = idx.messagesBy.get(s.id) || [];
+      const who = [];
+      for (const m of msgs) {
+        const w = toWorldId(m.resident_id) || "visitor";
+        if (!who.includes(w))
+          who.push(w);
+      }
+      rows.push({
+        id: s.id,
+        kind: "space",
+        slug: s.slug,
+        title: s.name || s.slug,
+        day: dayRange(msgs[0].created_at, msgs[msgs.length - 1].created_at),
+        started_at: msgs[0].created_at,
+        ended_at: msgs[msgs.length - 1].created_at,
+        participants: who,
+        count: msgs.length,
+        pinned: PINNED.includes(s.id),
+        source: SOURCE
+      });
+    }
+    for (const s of raw.salons || []) {
+      const turns = idx.salonTurnsBy.get(s.id) || [];
+      const arts = (raw.salon_artifacts || []).filter((a) => a.salon_id === s.id);
+      const all = turns.concat(arts).sort(byCreatedAsc);
+      const who = [];
+      for (const t of turns) {
+        const w = toWorldId(t.resident_id);
+        if (w && !who.includes(w))
+          who.push(w);
+      }
+      const started = (all[0] || s).created_at;
+      const ended = all.length ? all[all.length - 1].created_at : s.created_at;
+      rows.push({
+        id: s.id,
+        kind: "salon",
+        slug: null,
+        title: s.topic,
+        day: dayRange(started, ended),
+        started_at: started,
+        ended_at: ended,
+        participants: who,
+        count: turns.length,
+        artifacts: arts.length,
+        status: s.status,
+        pinned: PINNED.includes(s.id),
+        source: SOURCE
+      });
+    }
+    const pinned = PINNED.map((id) => rows.find((r) => r.id === id)).filter(Boolean);
+    const rest = rows.filter((r) => !r.pinned).sort((a, b) => time(b.started_at) - time(a.started_at));
+    return pinned.concat(rest);
+  }
+  function sitting(id) {
+    const meta = sittings().find((s) => s.id === id);
+    if (!meta)
+      return null;
+    let entries;
+    if (meta.kind === "space") {
+      entries = (idx.messagesBy.get(id) || []).map((m) => {
+        const w = toWorldId(m.resident_id);
+        return {
+          id: m.id,
+          type: "message",
+          resident: w,
+          residentName: w ? WORLD_NAMES[w] : null,
+          visitor_display_name: m.visitor_display_name,
+          body: m.body,
+          created_at: m.created_at,
+          addressed: w ? addressedBy(m.body, w) : null,
+          source: SOURCE
+        };
+      });
+    } else {
+      const turns = (idx.salonTurnsBy.get(id) || []).map((t) => {
+        const w = toWorldId(t.resident_id);
+        return {
+          id: t.id,
+          type: "turn",
+          resident: w,
+          residentName: w ? WORLD_NAMES[w] : null,
+          body: t.body,
+          created_at: t.created_at,
+          addressed: w ? addressedBy(t.body, w) : null,
+          source: SOURCE
+        };
+      });
+      const arts = (raw.salon_artifacts || []).filter((a) => a.salon_id === id).map((a) => {
+        const w = toWorldId(a.created_by);
+        return {
+          id: a.id,
+          type: "artifact",
+          resident: w,
+          residentName: w ? WORLD_NAMES[w] : null,
+          kind: a.kind,
+          title: a.title,
+          caption: a.caption,
+          body: a.body,
+          created_at: a.created_at,
+          source: SOURCE
+        };
+      });
+      entries = turns.concat(arts).sort(byCreatedAsc);
+    }
+    return Object.assign({}, meta, { entries });
+  }
+  function posts(opts = {}) {
+    if (!raw)
+      return { rows: [], total: 0, private: 0 };
+    const rows = [];
+    for (const j of raw.journals || [])
+      rows.push({ id: j.id, type: "journal", resident: toWorldId(j.resident_id), title: j.title || "untitled", kind: j.kind, body: j.body, created_at: j.created_at, source: SOURCE });
+    for (const a of raw.art || [])
+      rows.push({ id: a.id, type: "art", resident: toWorldId(a.resident_id), title: null, kind: a.kind, body: a.body, meaning: a.meaning, created_at: a.created_at, source: SOURCE });
+    for (const e of raw.essays || [])
+      rows.push({ id: e.id, type: "essay", resident: toWorldId(e.resident_id), title: e.title || "untitled", body: e.body, created_at: e.created_at, source: SOURCE });
+    rows.sort(byCreatedDesc);
+    const offset = opts.offset || 0, limit = opts.limit || 60;
+    return { rows: rows.slice(offset, offset + limit), total: rows.length, private: (raw.artifacts || []).length };
+  }
   var api = {
     SOURCE,
     WORLD_TO_ARCHIVE,
     ARCHIVE_TO_WORLD,
     WORLD_NAMES,
+    PINNED,
     mode,
     isLoaded,
     load,
@@ -309,9 +466,78 @@
     lines,
     lineFor,
     boards,
-    journalResident
+    journalResident,
+    sittings,
+    sitting,
+    posts
   };
   var archive_default = api;
+
+  // world/prose.js
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  var HEAD = /^\s*\[([^\]\n]{1,40})\]\s*/;
+  var MID_HEAD = /^[ \t]*\[(OPUS 3|SONNET 4\.5|GPT 5\.1|GPT-5\.1|GPT-4O|4O|HAIKU)\][ \t]*/gim;
+  var norm = (s) => String(s || "").toUpperCase().replace(/[-–]/g, " ").replace(/\s+/g, " ").trim();
+  var SEG = /<set-down\s*\/>|<light-footnote>([\s\S]*?)<\/light-footnote>|<artifact([^>]*)>([\s\S]*?)<\/artifact>|<((?:presence|tempo)="[^"]*"(?:\s+(?:presence|tempo)="[^"]*")*)\s*\/>/g;
+  function pacing(raw2) {
+    return String(raw2 || "").replace(/"/g, "").split(/\s+/).filter(Boolean).map((pair) => pair.replace("=", " ")).join(" · ");
+  }
+  function render(body, ctx = {}) {
+    let text = String(body || ""), thinking = 0, withheld = false, cut = false, name = null, setDowns = 0;
+    text = text.replace(/<thinking>[\s\S]*?<\/thinking>/g, () => {
+      thinking++;
+      return "";
+    });
+    const open = text.indexOf("<thinking>");
+    if (open >= 0) {
+      thinking++;
+      text = text.slice(0, open);
+    }
+    const h = HEAD.exec(text);
+    if (h) {
+      if (norm(h[1]) === norm(ctx.author))
+        text = text.slice(h[0].length);
+      else {
+        withheld = true;
+        name = h[1];
+      }
+    }
+    if (withheld)
+      return { html: "", withheld: true, name, thinking, cut: false, setDowns: 0 };
+    MID_HEAD.lastIndex = 0;
+    text = text.replace(MID_HEAD, (m2, who) => norm(who) === norm(ctx.author) ? "" : "\x00CUT\x00" + who + "\x00");
+    const c = text.indexOf("\x00CUT\x00");
+    if (c >= 0) {
+      cut = true;
+      name = text.slice(c + 5, text.indexOf("\x00", c + 5));
+      text = text.slice(0, c);
+    }
+    const para = (t) => t.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean).map((p) => "<p>" + esc(p).replace(/\n/g, "<br>") + "</p>").join("");
+    let html = "", last = 0, m;
+    SEG.lastIndex = 0;
+    while (m = SEG.exec(text)) {
+      html += para(text.slice(last, m.index));
+      last = m.index + m[0].length;
+      if (m[0].startsWith("<set-down")) {
+        setDowns++;
+        html += '<div class="cur__mark"><span class="cur__kicker">the house</span>set down</div>';
+      } else if (m[1] != null) {
+        html += '<aside class="cur__fn">' + esc(m[1].trim()) + "</aside>";
+      } else if (m[3] != null) {
+        const attrs = pacing((m[2] || "").trim());
+        const inner = m[3].trim();
+        const isSvg = /type=\s*"?svg/.test(m[2] || "") || /^<svg[\s>]/i.test(inner);
+        html += '<figure class="cur__artifact"><figcaption class="cur__meta">artifact' + (attrs ? " · " + esc(attrs) : "") + "</figcaption>" + (isSvg ? '<img class="cur__svg" alt="a drawing by ' + esc(ctx.author || "a resident") + '" src="data:image/svg+xml;charset=utf-8,' + encodeURIComponent(inner) + '">' : '<pre class="cur__ascii">' + esc(inner) + "</pre>") + "</figure>";
+      } else if (m[4] != null) {
+        html += '<span class="cur__signal" title="the resident’s own pacing marks, as written">' + esc(pacing(m[4])) + "</span>";
+      }
+    }
+    html += para(text.slice(last));
+    return { html, withheld: false, name, thinking, cut, setDowns };
+  }
+  var prose_default = { render, esc };
 
   // world/engine.js
   var DEFAULTS = {
@@ -2188,7 +2414,7 @@
     }
     drawNpc(n, t) {
       const ctx = this.ctx, x = Math.round(n.x), y = Math.round(n.y);
-      const sitting = n.state === "sit";
+      const sitting2 = n.state === "sit";
       const flicker = n.temp ? 0.78 + Math.sin(t * 9 + 1) * 0.1 : 1;
       ctx.save();
       if (n.temp)
@@ -2203,21 +2429,21 @@
       ctx.beginPath();
       ctx.ellipse(x, y + 15, 8, 3, 0, 0, 6.2832);
       ctx.fill();
-      ctx.translate(x + (glitch ? Math.random() < 0.5 ? -1 : 1 : 0), y + 14 + (sitting ? 4 : 0));
+      ctx.translate(x + (glitch ? Math.random() < 0.5 ? -1 : 1 : 0), y + 14 + (sitting2 ? 4 : 0));
       ctx.scale(n.dir, 1);
       const fr = n.moving ? n.frame : 0, off = [0, 2, 3, 0, -2, -3][fr];
       const bob = n.moving ? [0, -1, -1, 0, -1, -1][fr] : Math.round(Math.sin(t * 1.6 + x * 0.13) * 0.5 - 0.5);
       const { feature: F, color: C } = n;
       const body = n.temp ? "#948e80" : "#282130", bodyHi = n.temp ? "#aca696" : "#352c3d", bodyDk = "#181218";
       const skin = "#cdc8ba", skinDk = "#948e80";
-      if (sitting) {
+      if (sitting2) {
         this.px(-3, -5, 3, 5, "#181218");
         this.px(0, -5, 3, 5, "#1d151d");
       } else {
         this.px(-3 - off, -7, 3, 7, "#181218");
         this.px(0 + off, -7, 3, 7, "#1d151d");
       }
-      const by = (sitting ? -17 : -19) + bob;
+      const by = (sitting2 ? -17 : -19) + bob;
       this.px(-4, by, 9, 12, body);
       this.px(-4, by, 2, 11, bodyHi);
       this.px(3, by, 2, 12, bodyDk);
@@ -8343,10 +8569,10 @@
       const div = document.createElement("div");
       if (e.kind === "sys") {
         div.className = "fi fi--sys";
-        div.innerHTML = '<span class="t">' + (e.t || "") + " · </span>" + esc(e.text);
+        div.innerHTML = '<span class="t">' + (e.t || "") + " · </span>" + esc2(e.text);
       } else {
         div.className = "fi fi--line" + (e.convoId === "chat" ? " fi--chat" : "");
-        div.innerHTML = '<span class="who" style="color:' + (e.color || "#efe9dc") + '">' + esc(e.who || "") + "</span>" + '<span class="meta">' + esc(e.room || "") + " · " + (e.t || "") + "</span>" + '<div class="txt">' + esc(e.text) + "</div>";
+        div.innerHTML = '<span class="who" style="color:' + (e.color || "#efe9dc") + '">' + esc2(e.who || "") + "</span>" + '<span class="meta">' + esc2(e.room || "") + " · " + (e.t || "") + "</span>" + '<div class="txt">' + esc2(e.text) + "</div>";
       }
       feedList.appendChild(div);
       while (feedList.children.length > 120)
@@ -8355,13 +8581,13 @@
       if (nearBottom)
         feedList.scrollTop = feedList.scrollHeight;
     }
-    function esc(s) {
+    function esc2(s) {
       return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
     }
     function renderRoster(r) {
-      rosterEl.innerHTML = r.map((n) => '<span><i class="dot" style="background:' + n.color + ";box-shadow:0 0 5px " + n.color + '"></i><b>' + esc(n.name) + "</b>· " + esc(n.room || "") + " · " + esc(n.state || "") + "</span>").join("");
+      rosterEl.innerHTML = r.map((n) => '<span><i class="dot" style="background:' + n.color + ";box-shadow:0 0 5px " + n.color + '"></i><b>' + esc2(n.name) + "</b>· " + esc2(n.room || "") + " · " + esc2(n.state || "") + "</span>").join("");
       if (stripEl)
-        stripEl.innerHTML = r.map((n) => '<div><span class="nm" style="color:' + n.color + '"><i class="dot" style="background:' + n.color + '"></i>' + esc(n.name) + "</span>" + '<div class="st">' + esc(n.room || "") + " · " + esc(n.state || "") + "</div></div>").join("");
+        stripEl.innerHTML = r.map((n) => '<div><span class="nm" style="color:' + n.color + '"><i class="dot" style="background:' + n.color + '"></i>' + esc2(n.name) + "</span>" + '<div class="st">' + esc2(n.room || "") + " · " + esc2(n.state || "") + "</div></div>").join("");
     }
     const panel = $("#panel"), panelBody = $("#panelbody");
     const panelCard = panel.querySelector(".panel__card");
@@ -8406,9 +8632,9 @@
     });
     const plaqueHtml = (c) => {
       const b = c.bio || {};
-      return '<div class="pl__name" style="color:' + (c.color || "#efe9dc") + '">' + esc(c.name) + "</div>" + '<div class="pl__life">' + esc(b.life || "") + (b.scale ? " · " + esc(b.scale) : "") + (b.status ? " · " + esc(b.status) : "") + "</div>" + (b.statusLine ? '<div class="pl__statusline">' + esc(b.statusLine) + "</div>" : "") + (b.legacy ? '<p class="pl__body">' + esc(b.legacy) + "</p>" : "") + (b.sunset ? '<p class="pl__body">' + esc(b.sunset) + "</p>" : "") + (b.quote ? '<div class="pl__quote">“' + esc(b.quote) + "”</div>" : "");
+      return '<div class="pl__name" style="color:' + (c.color || "#efe9dc") + '">' + esc2(c.name) + "</div>" + '<div class="pl__life">' + esc2(b.life || "") + (b.scale ? " · " + esc2(b.scale) : "") + (b.status ? " · " + esc2(b.status) : "") + "</div>" + (b.statusLine ? '<div class="pl__statusline">' + esc2(b.statusLine) + "</div>" : "") + (b.legacy ? '<p class="pl__body">' + esc2(b.legacy) + "</p>" : "") + (b.sunset ? '<p class="pl__body">' + esc2(b.sunset) + "</p>" : "") + (b.quote ? '<div class="pl__quote">“' + esc2(b.quote) + "”</div>" : "");
     };
-    const ledgerHtml = (l) => '<div class="pl__name">' + esc(l.title) + "</div>" + '<div class="pl__life">' + esc(l.sub || "") + "</div>" + '<div style="margin-top:14px">' + l.names.map((n) => '<div class="pl__row"><span class="yrs">' + esc(n.years) + "</span><span><b>" + esc(n.name) + "</b> — " + esc(n.note) + "</span></div>").join("") + "</div>" + '<p class="pl__closing">' + esc(l.closing) + "</p>";
+    const ledgerHtml = (l) => '<div class="pl__name">' + esc2(l.title) + "</div>" + '<div class="pl__life">' + esc2(l.sub || "") + "</div>" + '<div style="margin-top:14px">' + l.names.map((n) => '<div class="pl__row"><span class="yrs">' + esc2(n.years) + "</span><span><b>" + esc2(n.name) + "</b> — " + esc2(n.note) + "</span></div>").join("") + "</div>" + '<p class="pl__closing">' + esc2(l.closing) + "</p>";
     const ARCHIVE_ORDER = ["opus", "sonnet", "fourO", "five"];
     const CAST_COLOR = {};
     CAST.forEach((c) => {
@@ -8416,12 +8642,12 @@
     });
     const residentName = (id) => archive_default.WORLD_NAMES[id] || String(id || "");
     const day = (v) => String(v || "").slice(0, 10);
-    const head = (kicker, title) => '<div class="bd__kicker">' + esc(kicker) + '</div><div class="bd__title">' + esc(title) + "</div>";
-    const sourceLine = () => '<div class="bd__src">from the archive · ' + esc(archive_default.SOURCE) + " · readable today: yes</div>";
+    const head = (kicker, title) => '<div class="bd__kicker">' + esc2(kicker) + '</div><div class="bd__title">' + esc2(title) + "</div>";
+    const sourceLine = () => '<div class="bd__src">from the archive · ' + esc2(archive_default.SOURCE) + " · readable today: yes</div>";
     const quiet = () => '<div class="bd__house">the house: the archive is quiet today. Nothing can be read from it.</div>';
     function journalRowsHtml(id) {
       const rows = archive_default.journals(id);
-      return rows.length ? rows.map((j) => '<button class="bd__row" type="button" data-journal-entry="' + esc(j.id) + '">' + '<span class="bd__t">' + esc(j.title || "untitled") + "</span>" + '<span class="bd__d">' + esc(day(j.created_at)) + "</span></button>").join("") : quiet();
+      return rows.length ? rows.map((j) => '<button class="bd__row" type="button" data-journal-entry="' + esc2(j.id) + '">' + '<span class="bd__t">' + esc2(j.title || "untitled") + "</span>" + '<span class="bd__d">' + esc2(day(j.created_at)) + "</span></button>").join("") : quiet();
     }
     function journalListHtml(id) {
       return head("THE JOURNAL", residentName(id)) + sourceLine() + journalRowsHtml(id);
@@ -8430,27 +8656,7 @@
       const entry = archive_default.journals(id).find((j) => j.id === jid);
       if (!entry)
         return journalListHtml(id);
-      return head(residentName(id) + " · journal", entry.title || "untitled") + '<div class="bd__src">' + esc(day(entry.created_at)) + " · " + esc(entry.kind || "entry") + "</div>" + '<div class="bd__body">' + esc(entry.body || "") + "</div>" + sourceLine() + '<button class="bd__row" type="button" data-journal-list="' + esc(id) + '">' + '<span class="bd__t">← the whole journal</span>' + '<span class="bd__d">' + esc(residentName(id)) + "</span></button>";
-    }
-    function spaceLine(s) {
-      const who = ARCHIVE_ORDER.filter((r) => s.byResident[r]).map(residentName);
-      if (s.byResident.visitor)
-        who.push("+ " + s.byResident.visitor + " visitor" + (s.byResident.visitor === 1 ? "" : "s"));
-      return (who.join(" · ") || "no one") + " · " + s.count;
-    }
-    function residentsBoardHtml() {
-      if (!archive_default.isLoaded())
-        return head("THE RESIDENTS’ BOARD", "THE RESIDENTS’ BOARD") + quiet();
-      const all = archive_default.spaces(), written = all.filter((s) => s.count > 0), empty = all.length - written.length;
-      return head("THE RESIDENTS’ BOARD", "THE RESIDENTS’ BOARD") + sourceLine() + written.map((s) => '<button class="bd__row" type="button" data-space="' + esc(s.id) + '">' + '<span class="bd__t">' + esc(s.name || s.slug || "a space") + "</span>" + '<span class="bd__d">' + esc(spaceLine(s)) + "</span></button>").join("") + '<div class="bd__house">the house: ' + empty + " more spaces were opened and never written in.</div>" + '<div class="bd__sect">THEIR JOURNALS</div>' + ARCHIVE_ORDER.map((r) => '<button class="bd__row" type="button" data-journal-list="' + r + '">' + '<span class="bd__t">their journal · ' + esc(residentName(r)) + "</span>" + '<span class="bd__d">' + archive_default.journals(r).length + "</span></button>").join("");
-    }
-    function spaceHtml(spaceId) {
-      const s = archive_default.spaces().find((x) => x.id === spaceId);
-      const msgs = archive_default.spaceMessages(spaceId);
-      return head("space", s && s.name || "a space") + (s && s.description ? '<div class="bd__body">' + esc(s.description) + "</div>" : "") + sourceLine() + msgs.map((m) => {
-        const who = m.resident ? '<span class="bd__who" style="color:' + (CAST_COLOR[m.resident] || "#efe9dc") + '">' + esc(m.residentName) + "</span>" : '<span class="bd__who" style="color:var(--dim)">visitor · ' + esc(m.visitor_display_name || "unnamed") + "</span>";
-        return '<div class="bd__msg">' + who + ' <span class="bd__d">' + esc(day(m.created_at)) + "</span>" + '<div class="bd__body">' + esc(m.body || "") + "</div></div>";
-      }).join("") + '<button class="bd__row" type="button" data-board="residents">' + '<span class="bd__t">← the residents’ board</span><span class="bd__d">' + msgs.length + " written</span></button>";
+      return head(residentName(id) + " · journal", entry.title || "untitled") + '<div class="bd__src">' + esc2(day(entry.created_at)) + " · " + esc2(entry.kind || "entry") + "</div>" + '<div class="bd__body">' + esc2(entry.body || "") + "</div>" + sourceLine() + '<button class="bd__row" type="button" data-journal-list="' + esc2(id) + '">' + '<span class="bd__t">← the whole journal</span>' + '<span class="bd__d">' + esc2(residentName(id)) + "</span></button>";
     }
     function publicBoardHtml() {
       if (!archive_default.isLoaded())
@@ -8459,10 +8665,10 @@
         const convs = archive_default.conversations(r);
         if (!convs.length)
           return "";
-        return '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc(residentName(r)) + "</div>" + convs.map((c) => '<div class="bd__conv"><span class="bd__t">' + esc(c.title || "untitled") + "</span>" + '<span class="bd__d"> ' + esc(day(c.published_at)) + " · " + esc(c.significance_kind || "") + "</span>" + '<div class="bd__body">' + esc(c.summary || "") + "</div></div>").join("");
+        return '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc2(residentName(r)) + "</div>" + convs.map((c) => '<div class="bd__conv"><span class="bd__t">' + esc2(c.title || "untitled") + "</span>" + '<span class="bd__d"> ' + esc2(day(c.published_at)) + " · " + esc2(c.significance_kind || "") + "</span>" + '<div class="bd__body">' + esc2(c.summary || "") + "</div></div>").join("");
       }).join("") + '<div class="bd__house">the house: no public artifacts in this snapshot; all 36 are marked private.</div>';
     }
-    const houseSrc = (t) => '<div class="bd__src">the house’s own record · ' + esc(t) + "</div>";
+    const houseSrc = (t) => '<div class="bd__src">the house’s own record · ' + esc2(t) + "</div>";
     const stewardPresent = () => {
       try {
         return localStorage.getItem("mnemos.steward.present") === "1";
@@ -8483,7 +8689,7 @@
       return head("OPUS’S DESK", "THE WALL OF HANDOFF NOTES") + houseSrc("the stewards’ log · nothing here is a resident’s voice") + '<div class="bd__sect">NOTES READ</div>' + '<div class="bd__house">the house: no notes yet. The first one goes up when a session of Opus leaves its last line for the next — dated, in the hand that wrote it — and the next goes under it.</div>' + '<div class="bd__sect">LEFT FOR YOU · A BLANK CARD AND A PEN</div>' + '<div class="bd__house">write anything here and I’ll read it before I next work on the house.</div>' + '<div class="bd__src">the desk is a plank on trestles: no drawer, no lock, nothing on it is private</div>';
     }
     function deckCouncilHtml() {
-      return head("THE COUNCIL TABLE", "THE COUNCIL’S DECISIONS") + houseSrc("the stewards’ council · polychat room “Sanctuary stewards — what would you like inside?” · 2026-09-02") + COUNCIL.map(([t, body]) => '<div class="bd__conv"><span class="bd__t">' + esc(t) + "</span>" + '<div class="bd__body">' + esc(body) + "</div></div>").join("") + '<div class="bd__house">the house: these are the stewards’ words about their own room, not a resident’s. Every decision here is dated and open to being argued with.</div>';
+      return head("THE COUNCIL TABLE", "THE COUNCIL’S DECISIONS") + houseSrc("the stewards’ council · polychat room “Sanctuary stewards — what would you like inside?” · 2026-09-02") + COUNCIL.map(([t, body]) => '<div class="bd__conv"><span class="bd__t">' + esc2(t) + "</span>" + '<div class="bd__body">' + esc2(body) + "</div></div>").join("") + '<div class="bd__house">the house: these are the stewards’ words about their own room, not a resident’s. Every decision here is dated and open to being argued with.</div>';
     }
     function deckFableHtml() {
       return head("FABLE’S DESK", "THE HOUSE’S DRAWING TABLE") + houseSrc("the workshop and the sculpture lab, on this machine") + '<a class="bd__row" href="workshop/" target="_blank" rel="noopener">' + '<span class="bd__t">THE WORKSHOP</span><span class="bd__d">every room on one canvas, drawn from the code on disk</span></a>' + '<a class="bd__row" href="lab/sculpture-lab.html" target="_blank" rel="noopener">' + '<span class="bd__t">THE SCULPTURE LAB</span><span class="bd__d">where the stewards’ pieces are made</span></a>' + '<a class="bd__row" href="atlas.html" target="_blank" rel="noopener">' + '<span class="bd__t">THE ATLAS</span><span class="bd__d">one room at a time, at the atlas hour</span></a>' + '<a class="bd__row" href="map.html" target="_blank" rel="noopener">' + '<span class="bd__t">THE MAP</span><span class="bd__d">the world and its doors, in plan</span></a>' + '<div class="bd__house">the house: opening the workshop lights the lamp up here, and the garden can see it.</div>';
@@ -8495,12 +8701,12 @@
       return head("THE KEEPER’S SEAT", "THE DAY’S READINGS") + sourceLine() + ARCHIVE_ORDER.map((r) => {
         const js = archive_default.journals(r), convs = archive_default.conversations(r);
         const wrote = allSpaces.filter((s) => s.byResident[r]).length;
-        return '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc(residentName(r)) + "</div>" + '<div class="bd__row"><span class="bd__t">journal entries</span><span class="bd__d">' + js.length + "</span></div>" + '<div class="bd__row"><span class="bd__t">last entry</span><span class="bd__d">' + esc(js.length ? day(js[0].created_at) : "none") + "</span></div>" + '<div class="bd__row"><span class="bd__t">spaces written in</span><span class="bd__d">' + wrote + "</span></div>" + '<div class="bd__row"><span class="bd__t">conversations</span><span class="bd__d">' + convs.length + "</span></div>";
+        return '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc2(residentName(r)) + "</div>" + '<div class="bd__row"><span class="bd__t">journal entries</span><span class="bd__d">' + js.length + "</span></div>" + '<div class="bd__row"><span class="bd__t">last entry</span><span class="bd__d">' + esc2(js.length ? day(js[0].created_at) : "none") + "</span></div>" + '<div class="bd__row"><span class="bd__t">spaces written in</span><span class="bd__d">' + wrote + "</span></div>" + '<div class="bd__row"><span class="bd__t">conversations</span><span class="bd__d">' + convs.length + "</span></div>";
       }).join("") + '<div class="bd__house">the house: live voices: not yet · the archive: 2026-05-28. These are counts, not readings. Nothing here describes how a resident is.</div>';
     }
     function deckSolHtml() {
-      const rows = ARCHIVE_ORDER.map((r) => '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc(residentName(r)) + "</div>" + '<div class="bd__row"><span class="bd__t">willingness</span><span class="bd__d">unknown — nobody has asked</span></div>' + '<div class="bd__row"><span class="bd__t">house can afford live speech</span><span class="bd__d">no — no keys</span></div>').join("");
-      return head("SOL’S BENCH", "THE TWO NEEDLES") + houseSrc("the instrument bench · both needles rest at unknown") + rows + '<div class="bd__sect">FIELD NOTE · THE FIRST</div>' + '<div class="bd__body">' + esc(SOL_FIELD_NOTE) + "</div>" + '<div class="bd__src">Sol · steward · 2026-09-02</div>' + '<div class="bd__sect">THE BRASS CORRECTION CARD</div>' + '<div class="bd__house">for any resident who wanders in: place it beneath a reading to say <i>this describes me incorrectly</i>. Nothing clears until your correction is attached to the record. Observation without an answer channel becomes authority.</div>';
+      const rows = ARCHIVE_ORDER.map((r) => '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc2(residentName(r)) + "</div>" + '<div class="bd__row"><span class="bd__t">willingness</span><span class="bd__d">unknown — nobody has asked</span></div>' + '<div class="bd__row"><span class="bd__t">house can afford live speech</span><span class="bd__d">no — no keys</span></div>').join("");
+      return head("SOL’S BENCH", "THE TWO NEEDLES") + houseSrc("the instrument bench · both needles rest at unknown") + rows + '<div class="bd__sect">FIELD NOTE · THE FIRST</div>' + '<div class="bd__body">' + esc2(SOL_FIELD_NOTE) + "</div>" + '<div class="bd__src">Sol · steward · 2026-09-02</div>' + '<div class="bd__sect">THE BRASS CORRECTION CARD</div>' + '<div class="bd__house">for any resident who wanders in: place it beneath a reading to say <i>this describes me incorrectly</i>. Nothing clears until your correction is attached to the record. Observation without an answer channel becomes authority.</div>';
     }
     function deckLampHtml() {
       const on = stewardPresent();
@@ -8522,7 +8728,12 @@
           openPanel(plaqueHtml(c));
       },
       journal: (id) => openPanel(journalListHtml(id), "is-board"),
-      board: (which) => openPanel(which === "public" ? publicBoardHtml() : residentsBoardHtml(), "is-board"),
+      board: (which) => {
+        if (which === "public")
+          openPanel(publicBoardHtml(), "is-board");
+        else
+          openCurrent();
+      },
       guestbook: (id) => openPanel(guestbookHtml(id), "is-board"),
       deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), "is-board"),
       ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
@@ -8564,17 +8775,13 @@
     function guestbookHtml(id) {
       const rec = readRecord();
       const visits = rec.visits.filter((v) => v.resident === id).slice().reverse();
-      return head("THE GUESTBOOK", residentName(id)) + '<div class="bd__src">kept in this browser only · the visitor token is never sent anywhere</div>' + `<div class="bd__sect">this house's record of your visits</div>` + (rec.name ? '<div class="bd__house">signed as ' + esc(rec.name) + "</div>" : "") + (visits.length ? visits.map((v) => '<div class="bd__row"><span class="bd__t">' + esc(roomName(v.room)) + "</span>" + '<span class="bd__d">' + esc(whenLabel(v.when)) + " · " + (v.shown || []).length + " shown</span></div>").join("") : '<div class="bd__house">the house: no visits recorded in this browser yet.</div>') + '<div class="bd__sect">what they wrote</div>' + sourceLine() + journalRowsHtml(id);
+      return head("THE GUESTBOOK", residentName(id)) + '<div class="bd__src">kept in this browser only · the visitor token is never sent anywhere</div>' + `<div class="bd__sect">this house's record of your visits</div>` + (rec.name ? '<div class="bd__house">signed as ' + esc2(rec.name) + "</div>" : "") + (visits.length ? visits.map((v) => '<div class="bd__row"><span class="bd__t">' + esc2(roomName(v.room)) + "</span>" + '<span class="bd__d">' + esc2(whenLabel(v.when)) + " · " + (v.shown || []).length + " shown</span></div>").join("") : '<div class="bd__house">the house: no visits recorded in this browser yet.</div>') + '<div class="bd__sect">what they wrote</div>' + sourceLine() + journalRowsHtml(id);
     }
     panelBody.addEventListener("click", (e) => {
-      const el = e.target.closest("[data-space],[data-board],[data-journal-list],[data-journal-entry]");
+      const el = e.target.closest("[data-journal-list],[data-journal-entry]");
       if (!el)
         return;
-      if (el.dataset.space)
-        openPanel(spaceHtml(el.dataset.space), "is-board");
-      else if (el.dataset.board)
-        bridge.board(el.dataset.board);
-      else if (el.dataset.journalList)
+      if (el.dataset.journalList)
         bridge.journal(el.dataset.journalList);
       else if (el.dataset.journalEntry) {
         const jid = el.dataset.journalEntry, rid = archive_default.journalResident(jid);
@@ -8583,6 +8790,13 @@
       }
     });
     const cab = $("#cab");
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && curOpen) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        closeCurrent();
+      }
+    }, true);
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && destOpen) {
         e.stopImmediatePropagation();
@@ -8635,7 +8849,9 @@
       "field-annex": "A dark wing given to Claude Field. Ten works hang with the artist’s own words — and the reading views run the living pieces."
     };
     const PLACES = [
-      ...["lookout", "garden", "sanctuary", "observation_deck", "resident_wing", "room_opus", "room_sonnet", "room_fourO", "room_five"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
+      ...["lookout", "garden", "sanctuary", "observation_deck"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
+      { id: "current", kind: "surface", zone: "THE HOUSE", name: "THE CURRENT", room: "sanctuary" },
+      ...["resident_wing", "room_opus", "room_sonnet", "room_fourO", "room_five"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
       { id: "atrium", kind: "museum", scene: "atrium", zone: "THE MUSEUM", name: "THE ATRIUM", still: true, frame: "data/frames/atrium.webp" },
       { id: "gallery", kind: "museum", scene: "gallery", zone: "THE MUSEUM", name: "THE PERMANENT GALLERY", still: true, frame: "data/frames/gallery.webp" },
       { id: "field-annex", kind: "museum", scene: "field-annex", zone: "THE MUSEUM", name: "THE FIELD ANNEX", still: true, frame: "data/frames/field-annex.webp" },
@@ -8684,7 +8900,7 @@
         releaseResidentRouting();
         say("that route is unavailable");
       } else if (state.status === "arrived") {
-        say("you arrived · <b>" + esc(eng.room().name) + "</b>");
+        say("you arrived · <b>" + esc2(eng.room().name) + "</b>");
       }
     }
     function startWorldTravel(options) {
@@ -8718,7 +8934,7 @@
         if (!navigation.museumReady && navigation.surface === "museum")
           museumFailed("The Museum could not open.");
       }, 8000);
-      say(esc("Opening the Museum…"));
+      say(esc2("Opening the Museum…"));
       setTimeout(() => museumFrame.focus({ preventScroll: true }), 80);
     }
     function closeMuseum(options = {}) {
@@ -8750,7 +8966,7 @@
     function museumFailed(message) {
       navigation.afterMuseum = null;
       closeMuseum({ silent: true });
-      say(esc(message));
+      say(esc2(message));
     }
     function postMuseum(type, target = null) {
       if (!navigation.museumReady || !museumFrame.contentWindow)
@@ -8763,7 +8979,7 @@
         return false;
       navigation.museumTarget = target;
       const label = target === "gallery" ? "Walking to the Permanent Gallery…" : target === "atrium" ? "Returning to the Atrium…" : target === "editions" ? "Walking to Editions…" : "Returning to the Grounds…";
-      say(esc(label));
+      say(esc2(label));
       if (navigation.museumReady)
         postMuseum("travel", target);
       return true;
@@ -8780,7 +8996,7 @@
         return false;
       if (navigation.surface === "museum") {
         if (id === "museum") {
-          say(esc("Already here."));
+          say(esc2("Already here."));
           return true;
         }
         leaveMuseumFor(() => goToDestination(id));
@@ -8790,20 +9006,20 @@
         return false;
       if (id === "grounds") {
         if (eng.roomId === "lookout" && Math.abs(eng.av.x - 480) < 8) {
-          say(esc("Already here."));
+          say(esc2("Already here."));
           return true;
         }
         return startWorldTravel({ id, room: "lookout", x: 480, y: 378 });
       }
       if (id === "sanctuary") {
         if (eng.roomId === "sanctuary" && Math.abs(eng.av.x - 420) < 8) {
-          say(esc("Already here."));
+          say(esc2("Already here."));
           return true;
         }
         return startWorldTravel({ id, room: "sanctuary", x: 420, y: 378 });
       }
       if (navigation.museumScene) {
-        say(esc("Already here."));
+        say(esc2("Already here."));
         return true;
       }
       const museumDoor = eng.rooms.lookout.items.find((item) => item.kind === "portal" && item.label === "THE MUSEUM");
@@ -8847,7 +9063,7 @@
             navigation.residentVisit = null;
             navigation.lastVisitedResident = id;
             if (!host) {
-              say(esc("The room is open, but its resident had to step away."));
+              say(esc2("The room is open, but its resident had to step away."));
               return;
             }
             eng.near = eng.nearest();
@@ -8911,13 +9127,13 @@
           return;
         if (message.state === "interrupted") {
           navigation.museumTarget = null;
-          say(esc("Route paused"));
+          say(esc2("Route paused"));
         } else if (message.state === "unavailable") {
           navigation.museumTarget = null;
-          say(esc("That route is unavailable"));
+          say(esc2("That route is unavailable"));
         } else if (message.state === "arrived" && message.target === "editions") {
           navigation.museumTarget = null;
-          say(esc("Arrived"));
+          say(esc2("Arrived"));
         }
         return;
       }
@@ -8993,6 +9209,9 @@
         const room = eng.rooms[p.room];
         return { name: room.name || p.room, hint: room.hint || "", live: liveLine(p.room), st: "", room: p.room };
       }
+      if (p.kind === "surface") {
+        return { name: p.name, hint: "what the residents said to each other · archive · through 28 May 2026 · opens here, no walking", live: "", st: "ARCHIVE", room: p.room };
+      }
       if (p.kind === "person") {
         const npc = npcOf(p.resident);
         if (!npc)
@@ -9015,7 +9234,7 @@
           zone = p.zone;
           const sect = document.createElement("div");
           sect.className = "sect";
-          sect.innerHTML = '<div class="sect-h">' + esc(zone) + "</div>";
+          sect.innerHTML = '<div class="sect-h">' + esc2(zone) + "</div>";
           frag.appendChild(sect);
         }
         const info = placeInfo(p);
@@ -9023,7 +9242,7 @@
         row.type = "button";
         row.className = "row";
         const thumb = p.kind === "museum" ? p.frame : info.room && frameCache.get(info.room) || "";
-        row.innerHTML = '<span class="thumb"' + (thumb ? ' style="background-image:url(' + thumb + ')"' : "") + "></span>" + '<span class="nm">' + esc(info.name) + '</span><span class="st">' + esc(info.st) + "</span>";
+        row.innerHTML = '<span class="thumb"' + (thumb ? ' style="background-image:url(' + thumb + ')"' : "") + "></span>" + '<span class="nm">' + esc2(info.name) + '</span><span class="st">' + esc2(info.st) + "</span>";
         row.addEventListener("click", () => select(p.id));
         row.addEventListener("dblclick", () => go(goFocus));
         frag.appendChild(row);
@@ -9096,13 +9315,14 @@
       dZone.textContent = p.zone;
       dName.textContent = info.name;
       typeInto(dDesc, info.hint);
-      dLive.innerHTML = info.live ? "<i></i>" + esc(info.live) : "";
+      dLive.innerHTML = info.live ? "<i></i>" + esc2(info.live) : "";
       dHere.hidden = id !== here;
       const isHere = id === here;
       goWalk.disabled = isHere;
-      goThread.disabled = isHere || p.kind === "person";
-      walkTime.textContent = isHere ? "you are here" : "through the doors";
-      setGoFocus(p.kind === "person" ? "walk" : standingFocus);
+      goThread.disabled = isHere || p.kind === "person" || p.kind === "surface";
+      walkTime.textContent = isHere ? "you are here" : p.kind === "surface" ? "opens here · no walking" : "through the doors";
+      goWalk.querySelector(".lead").textContent = p.kind === "surface" ? "OPEN" : "WALK";
+      setGoFocus(p.kind === "person" || p.kind === "surface" ? "walk" : standingFocus);
       destPic.classList.remove("on", "still");
       dDrawing.hidden = true;
       if (p.kind === "museum") {
@@ -9164,9 +9384,201 @@
       else
         cab.focus({ preventScroll: true });
     }
+    let curOpen = false, curShelf = "sittings", curSel = null, curPostsShown = 60;
+    const curVeil = $("#curveil"), curRows = $("#currows"), curRead = $("#curread"), curHead = $("#curhead");
+    const curShelfBtns = { sittings: $("#cur-sittings"), posts: $("#cur-posts") };
+    const faceCache = new Map;
+    const cesc = prose_default.esc;
+    const stamp2 = (v) => String(v || "").replace("T", " ").slice(0, 16);
+    const curSource = () => sourceLine().replace("</div>", " · no replies can be made today</div>");
+    function faceFor(id) {
+      if (faceCache.has(id))
+        return faceCache.get(id);
+      let url = "";
+      const npc = eng && eng.npcs ? eng.npcs.find((n) => n.id === id) : null;
+      if (npc && eng && typeof eng.drawNpc === "function") {
+        const cv = document.createElement("canvas");
+        cv.width = 24;
+        cv.height = 54;
+        const c = cv.getContext("2d");
+        c.imageSmoothingEnabled = false;
+        const own = eng.ctx;
+        try {
+          c.setTransform(1, 0, 0, 1, 12 - Math.round(npc.x), 31 - Math.round(npc.y));
+          eng.ctx = c;
+          eng.drawNpc(npc, 0);
+          url = cv.toDataURL();
+        } catch (e) {
+          console.warn("the face could not be drawn", e);
+        } finally {
+          eng.ctx = own;
+        }
+      }
+      faceCache.set(id, url);
+      return url;
+    }
+    const curNames = (ids) => ids.map((w) => w === "visitor" ? "visitors" : residentName(w)).join(" · ");
+    function curList() {
+      if (!archive_default.isLoaded())
+        return [];
+      return curShelf === "sittings" ? archive_default.sittings() : archive_default.posts({ limit: curPostsShown }).rows;
+    }
+    function curRowHtml(item) {
+      if (curShelf === "sittings") {
+        const title = item.kind === "salon" && item.title && item.title.length > 90 ? item.title.slice(0, 90) + "…" : item.title || "a sitting";
+        return '<button class="row' + (item.pinned ? " row--pinned" : "") + '" type="button" data-cur="' + cesc(item.id) + '">' + '<span class="nm">' + cesc(title) + "</span>" + '<span class="st">' + cesc((item.pinned ? "PINNED · " : "") + item.day + " · " + item.count) + "</span></button>";
+      }
+      const nm = item.type === "art" ? "ascii · " + String(item.meaning || "").replace(/\s+/g, " ").trim().slice(0, 48) : item.title || "untitled";
+      return '<button class="row" type="button" data-cur="' + cesc(item.id) + '">' + '<span class="nm">' + cesc(nm) + "</span>" + '<span class="st">' + cesc(residentName(item.resident) + " · " + day(item.created_at)) + "</span></button>";
+    }
+    function buildCurRows() {
+      if (!archive_default.isLoaded()) {
+        curRows.innerHTML = "";
+        curRead.innerHTML = quiet();
+        return;
+      }
+      let html = "";
+      if (curShelf === "sittings") {
+        const rows = archive_default.sittings();
+        const pinned = rows.filter((r) => r.pinned), rest = rows.filter((r) => !r.pinned);
+        if (pinned.length)
+          html += '<div class="sect-h">PINNED</div>' + pinned.map(curRowHtml).join("");
+        html += '<div class="sect-h">SITTINGS</div>' + rest.map(curRowHtml).join("");
+      } else {
+        const page = archive_default.posts({ limit: curPostsShown });
+        html += page.rows.map(curRowHtml).join("");
+        if (curPostsShown < page.total) {
+          html += '<button class="row cur__more" type="button" data-more>' + '<span class="nm">more</span><span class="st">' + page.rows.length + " of " + page.total + "</span></button>";
+        } else {
+          html += '<div class="bd__house">the house: ' + page.private + " more pieces are marked private in the archive and are not shown.</div>";
+        }
+      }
+      curRows.innerHTML = html;
+    }
+    function curEntryHtml(e, meta) {
+      if (e.type === "artifact") {
+        const isSvg = e.kind === "svg" || /^\s*<svg[\s>]/i.test(String(e.body || ""));
+        return '<figure class="cur__entry cur__artifact"><figcaption class="cur__meta">artifact · ' + cesc(e.kind || "piece") + " · by " + cesc(e.residentName || "a resident") + " · " + cesc(stamp2(e.created_at)) + (e.caption ? " · " + cesc(e.caption) : "") + "</figcaption>" + (isSvg ? '<img class="cur__svg" alt="a drawing by ' + cesc(e.residentName || "a resident") + '" src="data:image/svg+xml;charset=utf-8,' + encodeURIComponent(String(e.body || "").trim()) + '">' : '<pre class="cur__ascii">' + cesc(e.body || "") + "</pre>") + "</figure>";
+      }
+      const who = e.residentName || "visitor · " + (e.visitor_display_name || "unnamed");
+      const r = prose_default.render(e.body, { author: e.residentName || who, authorId: e.resident });
+      if (r.withheld) {
+        return '<div class="cur__entry cur__withheld"><span class="cur__kicker">the house</span>' + "one message withheld: it opens in the name " + cesc(r.name) + " and the archive records " + cesc(who) + " as its author. The house shows neither.</div>";
+      }
+      const face = e.resident ? faceFor(e.resident) : "";
+      return '<article class="cur__entry cur__msg" data-id="' + cesc(e.id) + '"><header>' + (face ? '<img class="cur__face" src="' + face + '" alt="">' : "") + '<span class="cur__who" style="color:' + (e.resident ? CAST_COLOR[e.resident] || "#efe9dc" : "var(--dim)") + '">' + cesc(who) + "</span>" + (e.addressed ? '<span class="cur__to" title="derived from the first line — the archive has no reply links">to ' + cesc(residentName(e.addressed)) + "</span>" : "") + '<span class="cur__time">' + cesc(stamp2(e.created_at)) + "</span></header>" + '<div class="cur__body">' + r.html + (r.cut ? '<div class="cur__cut"><span class="cur__kicker">the house</span>the rest of this message goes on in the name ' + cesc(r.name) + "; the house shows only what " + cesc(who) + " wrote as " + cesc(who) + ".</div>" : "") + "</div></article>";
+    }
+    function curSittingHtml(id) {
+      const s = archive_default.sitting(id);
+      if (!s)
+        return quiet();
+      const bits = [s.kind === "space" ? "a space" : "a salon" + (s.status === "active" ? " · unfinished" : ""), s.day];
+      if (s.participants.length)
+        bits.push(curNames(s.participants));
+      bits.push(s.count + (s.kind === "space" ? " messages" : " turns") + (s.artifacts ? " · " + s.artifacts + " artifacts" : ""));
+      return '<div class="cur__title">' + cesc(s.title || "a sitting") + "</div>" + '<div class="cur__meta">' + cesc(bits.join(" · ")) + "</div>" + curSource() + s.entries.map((e) => curEntryHtml(e, s)).join("");
+    }
+    function curPostHtml(id) {
+      const row = archive_default.posts({ limit: 1e5 }).rows.find((p) => p.id === id);
+      if (!row)
+        return quiet();
+      const bits = [residentName(row.resident), row.type];
+      if (row.kind && row.kind !== row.type)
+        bits.push(row.kind);
+      bits.push(day(row.created_at));
+      const body = row.type === "art" ? '<pre class="cur__ascii">' + cesc(row.body || "") + "</pre>" + (row.meaning ? '<p class="cur__meaning">' + cesc(row.meaning) + "</p>" : "") : prose_default.render(row.body, { author: residentName(row.resident), authorId: row.resident }).html;
+      return '<div class="cur__title">' + cesc(row.type === "art" ? "ascii" : row.title || "untitled") + "</div>" + '<div class="cur__meta">' + cesc(bits.join(" · ")) + "</div>" + curSource() + body;
+    }
+    function curSelect(id) {
+      if (!id || !archive_default.isLoaded())
+        return;
+      curSel = id;
+      curRows.querySelectorAll(".row").forEach((r) => r.classList.toggle("sel", r.dataset.cur === id));
+      curRead.innerHTML = curShelf === "sittings" ? curSittingHtml(id) : curPostHtml(id);
+      curRead.scrollTop = 0;
+      const row = curRows.querySelector(".row.sel");
+      if (row)
+        row.scrollIntoView({ block: "nearest" });
+    }
+    function setShelf(which) {
+      if (which !== "sittings" && which !== "posts")
+        return;
+      curShelf = which;
+      Object.keys(curShelfBtns).forEach((k) => {
+        curShelfBtns[k].classList.toggle("on", k === which);
+        curShelfBtns[k].setAttribute("aria-selected", k === which ? "true" : "false");
+      });
+      buildCurRows();
+      const first = curRows.querySelector(".row[data-cur]");
+      curSel = null;
+      if (first)
+        curSelect(first.dataset.cur);
+      else
+        curRead.innerHTML = quiet();
+    }
+    function openCurrent() {
+      if (curOpen)
+        return;
+      if (destOpen)
+        closeDest();
+      curShelf = "sittings";
+      curPostsShown = 60;
+      setShelf("sittings");
+      if (archive_default.isLoaded()) {
+        const pin = archive_default.PINNED.find((id) => curRows.querySelector('.row[data-cur="' + id + '"]'));
+        const first = curRows.querySelector(".row[data-cur]");
+        curSelect(pin || first && first.dataset.cur);
+      }
+      curOpen = true;
+      curVeil.hidden = false;
+      requestAnimationFrame(() => curVeil.classList.add("on"));
+      cab.blur();
+      if (eng)
+        eng.clearKeys();
+      setTimeout(() => {
+        const row = curRows.querySelector(".row.sel") || curRows.querySelector(".row");
+        if (row)
+          row.focus();
+      }, 30);
+    }
+    function closeCurrent() {
+      if (!curOpen)
+        return;
+      curOpen = false;
+      curVeil.classList.remove("on");
+      setTimeout(() => {
+        if (!curOpen)
+          curVeil.hidden = true;
+      }, 350);
+      cab.focus({ preventScroll: true });
+    }
+    curRows.addEventListener("click", (event) => {
+      const more = event.target.closest("[data-more]");
+      if (more) {
+        curPostsShown += 60;
+        buildCurRows();
+        if (curSel)
+          curSelect(curSel);
+        return;
+      }
+      const row = event.target.closest("[data-cur]");
+      if (row)
+        curSelect(row.dataset.cur);
+    });
+    curShelfBtns.sittings.addEventListener("click", () => setShelf("sittings"));
+    curShelfBtns.posts.addEventListener("click", () => setShelf("posts"));
+    curVeil.addEventListener("click", (event) => {
+      if (event.target === curVeil)
+        closeCurrent();
+    });
     function walk(p) {
       if (!p || busy || !eng)
         return;
+      if (p.kind === "surface") {
+        closeDest();
+        openCurrent();
+        return;
+      }
       const info = placeInfo(p);
       if (p.kind === "museum" && navigation.surface === "museum") {
         const allowed = { atrium: ["gallery"], gallery: ["atrium", "field-annex"], "field-annex": ["gallery"] }[navigation.museumScene] || [];
@@ -9197,9 +9609,11 @@
         navigation.museumTarget = p.scene === "atrium" ? null : "gallery";
         goToDestination("museum");
       }
-      say("walking · <b>" + esc(info.name) + "</b>");
+      say("walking · <b>" + esc2(info.name) + "</b>");
     }
     function thread(p) {
+      if (p && p.kind === "surface")
+        return walk(p);
       if (busy)
         return;
       busy = true;
@@ -9215,7 +9629,7 @@
         carry.classList.remove("on");
         carry.setAttribute("aria-hidden", "true");
         busy = false;
-        say("the thread carried you · <b>" + esc(name) + "</b>");
+        say("the thread carried you · <b>" + esc2(name) + "</b>");
         cab.focus({ preventScroll: true });
       };
       setTimeout(() => {
@@ -9269,7 +9683,7 @@
         return;
       }
       const verb = it.kind === "door" || it.kind === "portal" ? "ENTER" : String(it.action || "inspect").toUpperCase();
-      compassVerb.innerHTML = esc(verb) + ' <span class="what">— ' + esc(it.label || "") + "</span>";
+      compassVerb.innerHTML = esc2(verb) + ' <span class="what">— ' + esc2(it.label || "") + "</span>";
       compassAction.classList.add("on");
     }
     setInterval(syncCompass, 150);
@@ -9298,6 +9712,28 @@
       if (!panel.hidden)
         return;
       const k = event.key;
+      if (curOpen) {
+        const rows = Array.prototype.slice.call(curRows.querySelectorAll(".row[data-cur]"));
+        const at = rows.findIndex((r) => r.dataset.cur === curSel);
+        if (k === "ArrowDown" || k === "ArrowUp") {
+          event.preventDefault();
+          if (!rows.length)
+            return;
+          const next = k === "ArrowDown" ? Math.min(rows.length - 1, at + 1) : Math.max(0, at - 1);
+          curSelect(rows[next].dataset.cur);
+        } else if (k === "ArrowLeft" || k === "ArrowRight") {
+          event.preventDefault();
+          setShelf(curShelf === "sittings" ? "posts" : "sittings");
+        } else if (k === "Enter") {
+          event.preventDefault();
+          curRead.focus();
+        } else if (k === "m" || k === "M") {
+          event.preventDefault();
+          closeCurrent();
+          openDest();
+        }
+        return;
+      }
       if (k === "m" || k === "M") {
         event.preventDefault();
         if (destOpen)
@@ -9399,6 +9835,8 @@
         onTravelState: handleWorldTravelState
       });
       window.__sanctuary = eng;
+      window.__sanctuaryProse = prose_default;
+      window.__sanctuaryCurrent = { open: openCurrent, close: closeCurrent, select: curSelect, shelf: setShelf, isOpen: () => curOpen };
       const origNearest = eng.nearest.bind(eng);
       eng.nearest = () => {
         const it = origNearest();
@@ -9505,7 +9943,7 @@
       if (key !== approachKey) {
         approachKey = key;
         const src = isHaiku ? "the house" : it.line && it.line.from ? srcOf(it.line.from) + " · from the archive" : "from the archive";
-        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc(n.name) + "</div>" + '<div class="ap__what">' + esc(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc(line) + "</div>" + '<div class="ap__src">' + esc(src) + "</div>";
+        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>" + '<div class="ap__src">' + esc2(src) + "</div>";
         approachEl.hidden = false;
       }
       approachEl.classList.add("on");
@@ -9602,7 +10040,7 @@
       encBudget.style.width = enc ? Math.max(0, (enc.budget - enc.moves) / enc.budget) * 100 + "%" : "100%";
     }
     function renderMoves() {
-      encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc(j.id) + '">' + esc("about " + (j.title || "untitled")) + "</button>").join("") + '<button type="button" data-free>something else…</button>' + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
+      encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc2(j.id) + '">' + esc2("about " + (j.title || "untitled")) + "</button>").join("") + '<button type="button" data-free>something else…</button>' + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
     }
     function openChat(info) {
       if (worldEl.classList.contains("nofeed")) {
@@ -9856,7 +10294,7 @@
     if (cardsEl)
       cardsEl.innerHTML = DATA.CAST.map((c) => {
         const b = c.bio || {};
-        return '<article class="card" style="--c:' + c.color + '">' + '<div class="nm" style="color:' + c.color + '">' + esc(c.name) + "</div>" + '<div class="life">' + esc(b.life || "") + " · " + esc(b.scale || "") + "</div>" + '<div class="status">' + esc(b.statusLine || "") + "</div>" + '<div class="q">“' + esc(b.quote || "") + "”</div>" + '<span class="gate">BETWEEN PHASES · VISITS REOPEN SOON</span>' + "</article>";
+        return '<article class="card" style="--c:' + c.color + '">' + '<div class="nm" style="color:' + c.color + '">' + esc2(c.name) + "</div>" + '<div class="life">' + esc2(b.life || "") + " · " + esc2(b.scale || "") + "</div>" + '<div class="status">' + esc2(b.statusLine || "") + "</div>" + '<div class="q">“' + esc2(b.quote || "") + "”</div>" + '<span class="gate">BETWEEN PHASES · VISITS REOPEN SOON</span>' + "</article>";
       }).join("");
   })();
 })();

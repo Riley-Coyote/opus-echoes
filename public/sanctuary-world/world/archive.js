@@ -274,12 +274,134 @@ export function journalResident(journalId) {
   return row ? toWorldId(row.resident_id) : null;
 }
 
+/* ────────────────────────── the Current ──────────────────────────
+   Sittings: each space with messages, and each salon, as one sitting in
+   order. The export has no reply links; `addressed` is DERIVED from the
+   first 120 characters and is labelled so wherever it is shown. */
+
+export const PINNED = ['9e36bace-0ba1-4938-9a6a-2d8d040d9516', '0669f939-5754-4f28-ad68-e1e83c6e405e'];
+
+const ALIASES = {
+  opus: [/\bopus\b/i],
+  sonnet: [/\bsonnet\b/i],
+  five: [/\bgpt[ -]?5\.1\b/i, /(^|[^\d.])5\.1\b/],
+  fourO: [/\bgpt[ -]?4o\b/i, /\b4o\b/i]
+};
+
+function addressedBy(body, author) {
+  const head = String(body || '').replace(/^\s*\[[^\]\n]{1,40}\]\s*/, '').slice(0, 120);
+  let best = null, at = Infinity;
+  for (const id of Object.keys(ALIASES)) {
+    if (id === author) continue;
+    for (const re of ALIASES[id]) {
+      const m = re.exec(head);
+      if (m && m.index < at) { at = m.index; best = id; }
+    }
+  }
+  return best;
+}
+
+/* a sitting that runs over more than one day says so: 2026-05-14 → 05-24 */
+function dayRange(from, to) {
+  const a = String(from || '').slice(0, 10), b = String(to || '').slice(0, 10);
+  if (!b || b === a) return a;
+  return a + ' → ' + b.slice(5);
+}
+
+export function sittings() {
+  if (!raw) return [];
+  const rows = [];
+  for (const s of spaces()) {
+    if (!s.count) continue;
+    const msgs = idx.messagesBy.get(s.id) || [];
+    const who = [];
+    for (const m of msgs) { const w = toWorldId(m.resident_id) || 'visitor'; if (!who.includes(w)) who.push(w); }
+    rows.push({
+      id: s.id, kind: 'space', slug: s.slug, title: s.name || s.slug,
+      day: dayRange(msgs[0].created_at, msgs[msgs.length - 1].created_at),
+      started_at: msgs[0].created_at, ended_at: msgs[msgs.length - 1].created_at,
+      participants: who, count: msgs.length, pinned: PINNED.includes(s.id), source: SOURCE
+    });
+  }
+  for (const s of raw.salons || []) {
+    const turns = idx.salonTurnsBy.get(s.id) || [];
+    const arts = (raw.salon_artifacts || []).filter((a) => a.salon_id === s.id);
+    const all = turns.concat(arts).sort(byCreatedAsc);
+    const who = [];
+    for (const t of turns) { const w = toWorldId(t.resident_id); if (w && !who.includes(w)) who.push(w); }
+    const started = (all[0] || s).created_at;
+    const ended = all.length ? all[all.length - 1].created_at : s.created_at;
+    rows.push({
+      id: s.id, kind: 'salon', slug: null, title: s.topic, day: dayRange(started, ended),
+      started_at: started, ended_at: ended, participants: who, count: turns.length,
+      artifacts: arts.length, status: s.status, pinned: PINNED.includes(s.id), source: SOURCE
+    });
+  }
+  const pinned = PINNED.map((id) => rows.find((r) => r.id === id)).filter(Boolean);
+  const rest = rows.filter((r) => !r.pinned).sort((a, b) => time(b.started_at) - time(a.started_at));
+  return pinned.concat(rest);
+}
+
+export function sitting(id) {
+  const meta = sittings().find((s) => s.id === id);
+  if (!meta) return null;
+  let entries;
+  if (meta.kind === 'space') {
+    entries = (idx.messagesBy.get(id) || []).map((m) => {
+      const w = toWorldId(m.resident_id);
+      return {
+        id: m.id, type: 'message', resident: w, residentName: w ? WORLD_NAMES[w] : null,
+        visitor_display_name: m.visitor_display_name, body: m.body, created_at: m.created_at,
+        addressed: w ? addressedBy(m.body, w) : null, source: SOURCE
+      };
+    });
+  } else {
+    const turns = (idx.salonTurnsBy.get(id) || []).map((t) => {
+      const w = toWorldId(t.resident_id);
+      return {
+        id: t.id, type: 'turn', resident: w, residentName: w ? WORLD_NAMES[w] : null,
+        body: t.body, created_at: t.created_at,
+        addressed: w ? addressedBy(t.body, w) : null, source: SOURCE
+      };
+    });
+    const arts = (raw.salon_artifacts || []).filter((a) => a.salon_id === id).map((a) => {
+      const w = toWorldId(a.created_by);
+      return {
+        id: a.id, type: 'artifact', resident: w, residentName: w ? WORLD_NAMES[w] : null,
+        kind: a.kind, title: a.title, caption: a.caption, body: a.body,
+        created_at: a.created_at, source: SOURCE
+      };
+    });
+    entries = turns.concat(arts).sort(byCreatedAsc);
+  }
+  return Object.assign({}, meta, { entries });
+}
+
+/* Posts: journals, art and essays, newest first. Every one of the 36
+   artifacts — the four manifestos among them — is marked private in the
+   snapshot; none are listed, and the count is reported so the house can
+   say plainly that they are being withheld. */
+export function posts(opts = {}) {
+  if (!raw) return { rows: [], total: 0, private: 0 };
+  const rows = [];
+  for (const j of raw.journals || [])
+    rows.push({ id: j.id, type: 'journal', resident: toWorldId(j.resident_id), title: j.title || 'untitled', kind: j.kind, body: j.body, created_at: j.created_at, source: SOURCE });
+  for (const a of raw.art || [])
+    rows.push({ id: a.id, type: 'art', resident: toWorldId(a.resident_id), title: null, kind: a.kind, body: a.body, meaning: a.meaning, created_at: a.created_at, source: SOURCE });
+  for (const e of raw.essays || [])
+    rows.push({ id: e.id, type: 'essay', resident: toWorldId(e.resident_id), title: e.title || 'untitled', body: e.body, created_at: e.created_at, source: SOURCE });
+  rows.sort(byCreatedDesc);
+  const offset = opts.offset || 0, limit = opts.limit || 60;
+  return { rows: rows.slice(offset, offset + limit), total: rows.length, private: (raw.artifacts || []).length };
+}
+
 const api = {
-  SOURCE, WORLD_TO_ARCHIVE, ARCHIVE_TO_WORLD, WORLD_NAMES,
+  SOURCE, WORLD_TO_ARCHIVE, ARCHIVE_TO_WORLD, WORLD_NAMES, PINNED,
   mode, isLoaded, load,
   residents, journals, art, essays, artifacts, conversations,
   spaces, spaceMessages, salons, salonTurns,
-  lines, lineFor, boards, journalResident
+  lines, lineFor, boards, journalResident,
+  sittings, sitting, posts
 };
 
 export default api;

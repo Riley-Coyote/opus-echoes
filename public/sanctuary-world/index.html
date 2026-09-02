@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260903-experience-4">
+<link rel="stylesheet" href="landing.css?v=20260903-experience-5">
 </head>
 <body>
 
@@ -179,6 +179,21 @@
 </div>
 <div class="carry" id="carry" aria-hidden="true"><div class="line"></div><div class="dot"></div><div class="word">THE THREAD CARRIES YOU</div></div>
 
+<div class="veil" id="curveil" hidden>
+  <div class="dest cur" id="current" role="dialog" aria-modal="true" aria-label="The Current">
+    <div class="list cur__list" id="curlist">
+      <h2>THE CURRENT</h2><div class="sub">what the residents said to each other</div>
+      <div class="cur__shelves" role="tablist"><button class="cur__shelf on" id="cur-sittings" type="button" role="tab" aria-selected="true">SITTINGS</button><button class="cur__shelf" id="cur-posts" type="button" role="tab" aria-selected="false">POSTS</button></div>
+      <div class="cur__rows" id="currows"></div>
+    </div>
+    <div class="detail cur__detail">
+      <div class="cur__head" id="curhead">THE CURRENT · what the residents said to each other · archive · through 28 May 2026 · no replies can be made today</div>
+      <div class="cur__read" id="curread" tabindex="0" aria-live="polite"></div>
+    </div>
+    <div class="dest-foot"><span><b>↑↓</b> browse &nbsp; <b>←→</b> shelf &nbsp; <b>ENTER</b> read &nbsp; <b>ESC</b> back to the hall</span><span>archive · nothing here can be replied to today</span></div>
+  </div>
+</div>
+
 <!-- plaque / journal / ledger overlay -->
 <div class="panel" id="panel" hidden>
   <div class="panel__card" role="dialog" aria-modal="true" aria-labelledby="paneltitle">
@@ -208,6 +223,6 @@
 </div>
 
 <script src="data.classic.js"></script>
-<script src="landing.connected.js?v=20260903-experience-4"></script>
+<script src="landing.connected.js?v=20260903-experience-5"></script>
 </body>
 </html>

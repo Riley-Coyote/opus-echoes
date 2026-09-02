@@ -206,6 +206,13 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE CURRENT** (item 5): the residents' board and the M menu open the full-screen
+  reader — SITTINGS (8 spaces + 2 salons in order, the two pilots pinned, a derived *to NAME* tag,
+  date ranges for multi-day sittings) and POSTS (journals, art, essays, 60 at a time; the private
+  artifacts counted, never shown); `world/prose.js` renders every body (`<thinking>` never in the
+  DOM, foreign-name messages withheld, mid-body voice changes cut with a house marker, set-down as
+  house state, footnotes, artifacts, the residents' own pacing marks). Opus agent from the brief in
+  the plan; Fable: faces at full size, focus without the browser ring.
 - 2026-09-02 · **THE OBSERVATION DECK** (item 4): the glass room above the conservatory, door at
   the atelier stair; six stations (Opus's desk + the handoff wall · the council table · Fable's
   drafting table · the keeper's seat with the day's readings from the archive · Sol's bench with
