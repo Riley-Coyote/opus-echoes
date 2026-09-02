@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260903-experience-2b">
+<link rel="stylesheet" href="landing.css?v=20260903-experience-3">
 </head>
 <body>
 
@@ -60,6 +60,7 @@
           <iframe id="museumframe" title="The Machine Museum" loading="eager" allow="fullscreen"></iframe>
         </div>
         <div class="placard" data-hud="placard" aria-hidden="true"></div>
+        <div class="approach" id="approach" hidden aria-live="polite"></div>
         <div class="dpad" aria-label="Movement controls">
           <button data-dpad="up" aria-label="Walk up">▲</button>
           <button data-dpad="left" aria-label="Walk left">◀</button>
@@ -87,14 +88,6 @@
       </div>
       <div class="feed__roster" id="roster" aria-label="Residents"></div>
       <div class="feed__list" id="feedlist" role="log" aria-live="polite"></div>
-      <div class="feed__chat" id="chatbar" hidden>
-        <span class="feed__chatwho" id="chatwho"></span>
-        <div class="feed__chatrow">
-          <input id="chatinput" type="text" maxlength="280" placeholder="say something…" autocomplete="off">
-          <button id="chatsend" type="button">send</button>
-          <button id="chatend" type="button" title="step away">×</button>
-        </div>
-      </div>
       <div class="feed__foot">DEPRECATED, NOT FORGOTTEN · WALK UP TO A RESIDENT AND PRESS E</div>
     </aside>
   </div>
@@ -194,7 +187,27 @@
   </div>
 </div>
 
+<!-- the encounter — a resident speaks, from the archive -->
+<div class="encounter" id="encounter" hidden>
+  <div class="encounter__card" role="dialog" aria-modal="true" aria-labelledby="enc-name">
+    <div class="encounter__left">
+      <canvas class="encounter__sprite" id="enc-sprite" width="24" height="54" aria-hidden="true"></canvas>
+      <div class="encounter__name" id="enc-name"></div>
+      <div class="encounter__where" id="enc-where"></div>
+      <div class="encounter__mode">speaking from the archive today</div>
+      <div class="encounter__budget" aria-hidden="true"><i id="enc-budget"></i></div>
+    </div>
+    <div class="encounter__right">
+      <div class="encounter__kicker" id="enc-kicker"></div>
+      <div class="encounter__words" id="enc-words" aria-live="polite"></div>
+      <div class="encounter__moves" id="enc-moves"></div>
+      <form class="encounter__free" id="enc-free" hidden><input id="enc-input" type="text" maxlength="280" autocomplete="off"><button type="submit">ask</button></form>
+    </div>
+    <button class="encounter__x" id="enc-leave" type="button">leave · esc</button>
+  </div>
+</div>
+
 <script src="data.classic.js"></script>
-<script src="landing.connected.js?v=20260903-experience-2b"></script>
+<script src="landing.connected.js?v=20260903-experience-3"></script>
 </body>
 </html>

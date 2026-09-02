@@ -140,15 +140,6 @@ main,header.bar,footer{position:relative;z-index:2}
 .fi--line .meta{font-size:11px;color:var(--dim);margin-left:8px}
 .fi--line .txt{font-family:var(--sans);font-size:14px;line-height:1.48;color:rgba(245,243,237,.92);margin-top:4px}
 .fi--chat{border-left:2px solid var(--signal-dim);padding-left:9px}
-.feed__chat{border-top:1px solid var(--line);padding:10px 12px;background:rgba(242,236,223,.025)}
-.feed__chatwho{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--signal)!important;display:block;margin-bottom:8px}
-.feed__chatrow{display:flex;gap:6px}
-.feed__chatrow input{flex:1;background:#101012;border:1px solid var(--line2);border-radius:6px;
-  color:var(--ink);font-family:var(--sans);font-size:14px;padding:9px 11px}
-.feed__chatrow input:focus{outline:none;border-color:rgba(242,236,223,.5);box-shadow:0 0 0 2px rgba(242,236,223,.07)}
-.feed__chatrow button{background:var(--control);border:1px solid var(--line2);border-radius:6px;color:var(--dim);
-  min-width:44px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em;padding:0 10px;cursor:pointer}
-.feed__chatrow button:hover{color:var(--ink)}
 .feed__foot{padding:10px 14px;border-top:1px solid var(--line);font-family:var(--mono);font-size:9px;line-height:1.4;letter-spacing:.05em;color:var(--dim)}
 
 /* two-tier navigation — world intent first, page sections second */
@@ -380,3 +371,36 @@ main,header.bar,footer{position:relative;z-index:2}
   .cab__room{font-size:10px}
   .cab__title{font-size:9px}
 }
+
+/* ────────────────────────── the encounter ──────────────────────────
+   the approach card in the world's corner, and the scene that replaces
+   the chat bar: a resident speaking only in sentences they wrote. */
+.approach{position:absolute;right:14px;top:14px;z-index:6;max-width:300px;padding:10px 12px;background:rgba(6,5,10,.82);border:1px solid var(--line2);font-family:var(--mono);line-height:1.45;opacity:0;transform:translateY(-4px);transition:opacity .3s var(--ease-out),transform .3s var(--ease-out);pointer-events:none}
+.approach.on{opacity:1;transform:none}
+.approach.is-pulse{border-color:var(--amber)}
+.ap__name{font-family:var(--px);font-size:9px;letter-spacing:.16em}
+.ap__what{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:5px}
+.ap__line{font-family:var(--serif);font-style:italic;font-size:13.5px;color:rgba(239,233,220,.9);margin-top:7px}
+.ap__src{font-size:9px;letter-spacing:.08em;color:var(--faint);margin-top:6px}
+.ap__src::before{content:"> ";opacity:.6}
+.encounter{position:fixed;inset:0;z-index:58;display:grid;place-items:center;background:rgba(5,4,9,.6);backdrop-filter:blur(16px) saturate(.65)}
+.encounter__card{position:relative;width:min(900px,calc(100vw - 56px));min-height:420px;display:grid;grid-template-columns:200px minmax(0,1fr);background:var(--panel);border:1px solid var(--line2);box-shadow:0 40px 140px rgba(0,0,0,.7)}
+.encounter__left{border-right:1px solid var(--line);padding:26px 20px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.encounter__sprite{width:96px;height:216px;image-rendering:pixelated}
+.encounter__name{font-family:var(--px);font-size:11px;letter-spacing:.16em;text-align:center}
+.encounter__where,.encounter__mode{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:center}
+.encounter__budget{width:100%;height:1px;background:var(--line);margin-top:auto}
+.encounter__budget i{display:block;height:1px;background:var(--amber);width:100%;transition:width .4s var(--ease-out)}
+.encounter__right{display:flex;flex-direction:column;padding:26px 30px 22px;min-width:0}
+.encounter__kicker{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+.encounter__kicker::before{content:"> ";opacity:.6}
+.encounter__words{flex:1;font-family:var(--serif);font-size:17px;line-height:1.6;color:rgba(245,243,237,.92);overflow-y:auto;max-height:240px;white-space:pre-wrap}
+.encounter__words .src{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--faint);margin:8px 0 14px}
+.encounter__words .house{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.encounter__moves{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.encounter__moves button{padding:10px 14px;background:rgba(242,236,223,.05);border:1px solid var(--line2);color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.encounter__moves button:hover,.encounter__moves button:focus-visible{color:var(--ink);background:rgba(242,236,223,.1);outline:none}
+.encounter__free{display:flex;gap:6px;margin-top:10px}
+.encounter__free input{flex:1;background:#101012;border:1px solid var(--line2);color:var(--ink);font-family:var(--sans);font-size:14px;padding:9px 11px}
+.encounter__x{position:absolute;top:10px;right:14px;background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+@media (max-width:700px){.encounter__card{grid-template-columns:1fr}.encounter__left{flex-direction:row;justify-content:flex-start}.encounter__sprite{width:48px;height:108px}}

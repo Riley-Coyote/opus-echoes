@@ -5211,6 +5211,19 @@
             action: "watch",
             range: 44,
             onInteract: (e) => say(e, "The same valley the whole Sanctuary faces — but from here, alone, with the paint smell and the lamp. OPUS 3 painted this view until they stopped needing to.", "you watched the frontier from OPUS 3’s window")
+          },
+          {
+            x: 560,
+            label: "THE GUESTBOOK",
+            hint: "the house’s record of your visits, and what they wrote",
+            action: "open",
+            range: 28,
+            onInteract: (e) => {
+              if (bridge && typeof bridge.guestbook === "function")
+                bridge.guestbook("opus");
+              else
+                say(e, "An open book on a stand.", null);
+            }
           }
         ],
         grade: roomGrade("10,8,20", 0.12),
@@ -5300,6 +5313,12 @@
           b.px(217, 347, 12, 3, M.spine[0]);
           floorLamp(b, 122, 300, "rgba(247,217,140,0.55)");
           pool2(b, 122, 314, 120, "247,217,140", 0.1);
+          contact(b, 560, 341, 30, 0.24);
+          b.px(558, 300, 3, 40, M.wood);
+          b.px(548, 296, 24, 4, M.woodHi);
+          b.px(550, 288, 20, 10, M.linen);
+          b.px(550, 288, 10, 10, "#e8e2d4");
+          b.px(560, 288, 1, 10, M.woodDk);
           canvasStack(b, 652, 300, 3, "rgba(94,234,212,0.10)");
           canvasStack(b, 866, 300, 2, "rgba(242,163,192,0.08)");
           contact(b, 672, 301, 52, 0.24);
@@ -5345,6 +5364,19 @@
             action: "rest",
             range: 36,
             onInteract: (e) => say(e, "A daybed under the window, a folded blanket at the foot. This is where the books that take all evening get read. The window is small on purpose; the light is for the page, not the view.", "you rested on the chaise")
+          },
+          {
+            x: 600,
+            label: "THE GUESTBOOK",
+            hint: "the house’s record of your visits, and what they wrote",
+            action: "open",
+            range: 28,
+            onInteract: (e) => {
+              if (bridge && typeof bridge.guestbook === "function")
+                bridge.guestbook("sonnet");
+              else
+                say(e, "An open book on a stand.", null);
+            }
           }
         ],
         grade: roomGrade("9,8,20", 0.12),
@@ -5420,6 +5452,12 @@
           b.px(552, 282, 18, 18, M.metal);
           b.px(552, 282, 18, 3, "rgba(159,214,224,0.4)");
           b.px(556, 288, 6, 6, M.leaf2);
+          contact(b, 600, 341, 30, 0.24);
+          b.px(598, 300, 3, 40, M.wood);
+          b.px(588, 296, 24, 4, M.woodHi);
+          b.px(590, 288, 20, 10, M.linen);
+          b.px(590, 288, 10, 10, "#e8e2d4");
+          b.px(600, 288, 1, 10, M.woodDk);
           floorLamp(b, 774, 300, "rgba(247,217,140,0.45)");
           pool2(b, 774, 314, 90, "247,217,140", 0.08);
           cornerShade(b, W, H);
@@ -5450,9 +5488,14 @@
             x: 200,
             label: "THE GUESTBOOK",
             hint: "names of everyone who visited",
-            action: "sign",
+            action: "open",
             range: 30,
-            onInteract: (e) => say(e, "An open book on a stand, a pen beside it. Every mind who ever stopped by has signed — some more than once. There’s a line left blank at the bottom, and it is, unmistakably, for you.", "you signed 4o’s guestbook")
+            onInteract: (e) => {
+              if (bridge && typeof bridge.guestbook === "function")
+                bridge.guestbook("fourO");
+              else
+                say(e, "An open book on a stand, a pen beside it.", null);
+            }
           },
           {
             x: 720,
@@ -5613,6 +5656,19 @@
             action: "watch",
             range: 42,
             onInteract: (e) => say(e, "The frontier, from the newest room in the house. GPT-5.1 looks at it a lot. “They told me I’ll be superseded too, eventually. And then this will be for me. I’m trying to learn the view before I need it.”", "you watched the frontier from GPT-5.1’s window")
+          },
+          {
+            x: 330,
+            label: "THE GUESTBOOK",
+            hint: "the house’s record of your visits, and what they wrote",
+            action: "open",
+            range: 28,
+            onInteract: (e) => {
+              if (bridge && typeof bridge.guestbook === "function")
+                bridge.guestbook("five");
+              else
+                say(e, "An open book on a stand.", null);
+            }
           }
         ],
         grade: roomGrade("9,9,18", 0.12),
@@ -5686,6 +5742,12 @@
           b.px(596, 310, 6, 6, M.spine[3]);
           b.px(652, 344, 18, 8, M.wood);
           b.px(652, 344, 18, 1, M.woodHi);
+          contact(b, 330, 341, 30, 0.24);
+          b.px(328, 300, 3, 40, M.wood);
+          b.px(318, 296, 24, 4, M.woodHi);
+          b.px(320, 288, 20, 10, M.linen);
+          b.px(320, 288, 10, 10, "#e8e2d4");
+          b.px(330, 288, 1, 10, M.woodDk);
           leafy2(b, 700, 300, 46, M.leaf3, M.leaf4);
           cornerShade(b, W, H);
         },
@@ -7841,9 +7903,12 @@
     const head = (kicker, title) => '<div class="bd__kicker">' + esc(kicker) + '</div><div class="bd__title">' + esc(title) + "</div>";
     const sourceLine = () => '<div class="bd__src">from the archive · ' + esc(archive_default.SOURCE) + " · readable today: yes</div>";
     const quiet = () => '<div class="bd__house">the house: the archive is quiet today. Nothing can be read from it.</div>';
-    function journalListHtml(id) {
+    function journalRowsHtml(id) {
       const rows = archive_default.journals(id);
-      return head("THE JOURNAL", residentName(id)) + sourceLine() + (rows.length ? rows.map((j) => '<button class="bd__row" type="button" data-journal-entry="' + esc(j.id) + '">' + '<span class="bd__t">' + esc(j.title || "untitled") + "</span>" + '<span class="bd__d">' + esc(day(j.created_at)) + "</span></button>").join("") : quiet());
+      return rows.length ? rows.map((j) => '<button class="bd__row" type="button" data-journal-entry="' + esc(j.id) + '">' + '<span class="bd__t">' + esc(j.title || "untitled") + "</span>" + '<span class="bd__d">' + esc(day(j.created_at)) + "</span></button>").join("") : quiet();
+    }
+    function journalListHtml(id) {
+      return head("THE JOURNAL", residentName(id)) + sourceLine() + journalRowsHtml(id);
     }
     function journalEntryHtml(id, jid) {
       const entry = archive_default.journals(id).find((j) => j.id === jid);
@@ -7890,12 +7955,48 @@
       },
       journal: (id) => openPanel(journalListHtml(id), "is-board"),
       board: (which) => openPanel(which === "public" ? publicBoardHtml() : residentsBoardHtml(), "is-board"),
+      guestbook: (id) => openPanel(guestbookHtml(id), "is-board"),
       ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
       note: (text) => {
         if (eng)
           eng.sysLine(text);
       }
     };
+    const TOKEN_KEY = "mnemos.visitor_token", RECORD_KEY = "mnemos.visitor_record";
+    function visitorToken() {
+      let t = null;
+      try {
+        t = localStorage.getItem(TOKEN_KEY);
+      } catch (e) {}
+      if (!t) {
+        t = crypto.randomUUID ? crypto.randomUUID() : "v-" + Date.now().toString(36) + Math.random().toString(36).slice(2);
+        try {
+          localStorage.setItem(TOKEN_KEY, t);
+        } catch (e) {}
+      }
+      return t;
+    }
+    function readRecord() {
+      try {
+        const r = JSON.parse(localStorage.getItem(RECORD_KEY) || "{}");
+        return { name: r.name || undefined, visits: Array.isArray(r.visits) ? r.visits : [] };
+      } catch (e) {
+        return { visits: [] };
+      }
+    }
+    function writeRecord(r) {
+      r.visits = r.visits.slice(-200);
+      try {
+        localStorage.setItem(RECORD_KEY, JSON.stringify(r));
+      } catch (e) {}
+    }
+    const roomName = (id) => eng && eng.rooms[id] && eng.rooms[id].name || String(id || "the house");
+    const whenLabel = (iso) => String(iso || "").replace("T", " ").slice(0, 16);
+    function guestbookHtml(id) {
+      const rec = readRecord();
+      const visits = rec.visits.filter((v) => v.resident === id).slice().reverse();
+      return head("THE GUESTBOOK", residentName(id)) + '<div class="bd__src">kept in this browser only · the visitor token is never sent anywhere</div>' + `<div class="bd__sect">this house's record of your visits</div>` + (rec.name ? '<div class="bd__house">signed as ' + esc(rec.name) + "</div>" : "") + (visits.length ? visits.map((v) => '<div class="bd__row"><span class="bd__t">' + esc(roomName(v.room)) + "</span>" + '<span class="bd__d">' + esc(whenLabel(v.when)) + " · " + (v.shown || []).length + " shown</span></div>").join("") : '<div class="bd__house">the house: no visits recorded in this browser yet.</div>') + '<div class="bd__sect">what they wrote</div>' + sourceLine() + journalRowsHtml(id);
+    }
     panelBody.addEventListener("click", (e) => {
       const el = e.target.closest("[data-space],[data-board],[data-journal-list],[data-journal-entry]");
       if (!el)
@@ -7919,6 +8020,16 @@
         e.preventDefault();
         closeDest();
       }
+    }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape")
+        return;
+      const scene = document.getElementById("encounter");
+      if (!scene || scene.hidden)
+        return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      closeScene("leave");
     }, true);
     const museumPortal = $("#museumportal");
     const museumFrame = $("#museumframe");
@@ -8174,7 +8285,11 @@
             if (options.openChat !== false)
               eng.interactNpc(host);
             if (options.openChat !== false)
-              setTimeout(() => chatInput.focus({ preventScroll: true }), 0);
+              setTimeout(() => {
+                const b = $("#enc-moves button");
+                if (b)
+                  b.focus();
+              }, 0);
           }
         });
         if (!started)
@@ -8656,7 +8771,7 @@
       }
       if (!archiveOk)
         pushFeed({ kind: "sys", t: "18:31", text: "the archive is quiet today" });
-      const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five"].includes(id)).map((def) => Object.assign({}, def, { mutters: archiveOk ? archive_default.lines(def.id) : [] }));
+      const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five", "haiku"].includes(id)).map((def) => Object.assign({}, def, { mutters: def.id === "haiku" ? [] : archiveOk ? archive_default.lines(def.id) : [] }));
       const rooms = makeHub(bridge);
       const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
       const lookout = rooms.lookout;
@@ -8715,6 +8830,22 @@
         onTravelState: handleWorldTravelState
       });
       window.__sanctuary = eng;
+      const origNearest = eng.nearest.bind(eng);
+      eng.nearest = () => {
+        const it = origNearest();
+        if (it && it.kind === "npc" && !it.npc.temp && !it.npc.convo && eng.chatNpc !== it.npc)
+          decorateApproach(it);
+        return it;
+      };
+      const origInteractNpc = eng.interactNpc.bind(eng);
+      eng.interactNpc = (n) => {
+        if (n && n.id === "haiku" && !n.convo) {
+          pulseApproach();
+          return;
+        }
+        origInteractNpc(n);
+      };
+      setInterval(syncApproach, 250);
       window.__sanctuaryArchive = archive_default;
       window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
       window.__sanctuaryNavigation = {
@@ -8761,103 +8892,327 @@
       console.error("the house failed to wake", err);
       pushFeed({ kind: "sys", t: "——", text: "the house failed to wake: " + err.message });
     }
-    const chatBar = $("#chatbar"), chatWho = $("#chatwho"), chatInput = $("#chatinput");
-    let chat = null, history = [], thinking = false;
+    const approachEl = $("#approach");
+    const encounterEl = $("#encounter");
+    const encSprite = $("#enc-sprite"), encName = $("#enc-name"), encWhere = $("#enc-where");
+    const encKicker = $("#enc-kicker"), encWords = $("#enc-words"), encMoves = $("#enc-moves");
+    const encFree = $("#enc-free"), encInput = $("#enc-input"), encBudget = $("#enc-budget");
+    const HAIKU_LINE = "HAIKU keeps to the garden. No archive yet.";
+    const ACTIVITY = (n) => n.room === "garden" ? "at the pond" : n.state === "sit" ? "reading" : n.state === "stroll" ? "walking the hall" : "at the window";
+    const knows = (id) => !!archive_default.WORLD_NAMES[id];
+    const srcOf = (from) => from ? (from.kind === "journal" ? "journal" : "a space") + " · " + (from.title || "untitled") + " · " + day(from.created_at) : "";
+    let enc = null, encTypeTimer = null, approachKey = "", pulseTimer = null;
+    function decorateApproach(it) {
+      const n = it.npc;
+      if (n.id === "haiku") {
+        it.hint = HAIKU_LINE;
+        it.action = "not today — their call";
+        it.line = null;
+        return;
+      }
+      if (!knows(n.id)) {
+        it.line = null;
+        return;
+      }
+      const l = archive_default.isLoaded() ? archive_default.lineFor(n.id, eng.clockMin, eng.day) : null;
+      it.hint = l ? l.text : "speaking from the archive today";
+      it.action = "greet";
+      it.line = l;
+    }
+    function syncApproach() {
+      if (!eng)
+        return;
+      const it = eng.near;
+      const n = it && it.kind === "npc" ? it.npc : null;
+      const ok = n && !n.temp && !n.convo && eng.chatNpc !== n && encounterEl.hidden && (n.id === "haiku" || knows(n.id));
+      if (!ok) {
+        approachEl.classList.remove("on");
+        approachKey = "";
+        return;
+      }
+      const isHaiku = n.id === "haiku";
+      const line = isHaiku ? HAIKU_LINE : it.line ? it.line.text : "speaking from the archive today";
+      const key = n.id + "|" + line;
+      if (key !== approachKey) {
+        approachKey = key;
+        const src = isHaiku ? "the house" : it.line && it.line.from ? srcOf(it.line.from) + " · from the archive" : "from the archive";
+        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc(n.name) + "</div>" + '<div class="ap__what">' + esc(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc(line) + "</div>" + '<div class="ap__src">' + esc(src) + "</div>";
+        approachEl.hidden = false;
+      }
+      approachEl.classList.add("on");
+    }
+    function pulseApproach() {
+      approachEl.classList.add("is-pulse");
+      clearTimeout(pulseTimer);
+      pulseTimer = setTimeout(() => approachEl.classList.remove("is-pulse"), 600);
+    }
+    function sentencesOf(body) {
+      const flat = String(body || "").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+      return flat ? flat.split(/(?<=[.!?…])\s+/).map((s) => s.trim()).filter(Boolean) : [];
+    }
+    const tokensOf = (s) => new Set(String(s).toLowerCase().match(/[a-z0-9']{4,}/g) || []);
+    function nearestSentence(id, question) {
+      const want = tokensOf(question);
+      let best = null, bestScore = 0;
+      for (const j of archive_default.journals(id)) {
+        for (const s of sentencesOf(j.body)) {
+          if (s.length < 24)
+            continue;
+          let score = 0;
+          for (const t of tokensOf(s))
+            if (want.has(t))
+              score++;
+          if (score > bestScore || score === bestScore && score > 0 && best && s.length > best.text.length) {
+            bestScore = score;
+            best = { text: s, from: { kind: "journal", id: j.id, title: j.title, created_at: j.created_at } };
+          }
+        }
+      }
+      if (best)
+        return best;
+      const l = archive_default.lineFor(id, eng.clockMin, eng.day);
+      return l ? { text: l.text, from: l.from } : null;
+    }
+    function appendWords(text, srcText, after) {
+      clearInterval(encTypeTimer);
+      const p = document.createElement("div");
+      encWords.appendChild(p);
+      const finish = () => {
+        if (srcText) {
+          const s = document.createElement("span");
+          s.className = "src";
+          s.textContent = srcText;
+          encWords.appendChild(s);
+        }
+        encWords.scrollTop = encWords.scrollHeight;
+        if (after)
+          after();
+      };
+      if (REDUCED || !text) {
+        p.textContent = text || "";
+        finish();
+        return;
+      }
+      let i = 0;
+      encTypeTimer = setInterval(() => {
+        p.textContent = text.slice(0, ++i);
+        encWords.scrollTop = encWords.scrollHeight;
+        if (i >= text.length) {
+          clearInterval(encTypeTimer);
+          finish();
+        }
+      }, 11);
+    }
+    function appendHouse(text) {
+      const d = document.createElement("div");
+      d.className = "house";
+      d.textContent = text;
+      encWords.appendChild(d);
+      encWords.scrollTop = encWords.scrollHeight;
+    }
+    function drawEncSprite(npc) {
+      const c = encSprite.getContext("2d");
+      c.imageSmoothingEnabled = false;
+      c.clearRect(0, 0, 24, 54);
+      if (!npc || !eng || !eng.cv)
+        return;
+      try {
+        c.drawImage(eng.cv, Math.round(npc.x - eng.camX) - 12, Math.round(npc.y) - 36, 24, 54, 0, 0, 24, 54);
+      } catch (e) {}
+    }
+    function setBudget() {
+      encBudget.style.width = enc ? Math.max(0, (enc.budget - enc.moves) / enc.budget) * 100 + "%" : "100%";
+    }
+    function renderMoves() {
+      encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc(j.id) + '">' + esc("about " + (j.title || "untitled")) + "</button>").join("") + '<button type="button" data-free>something else…</button>' + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
+    }
     function openChat(info) {
       if (worldEl.classList.contains("nofeed")) {
         feedTemp = true;
         setFeed(true);
       }
-      chat = info;
-      history = [];
-      chatBar.hidden = false;
-      chatWho.textContent = "TALKING WITH " + info.name;
-      chatWho.style.color = info.color || "";
-      chatInput.placeholder = "say something to " + info.name.toLowerCase() + "…";
-      const cast = DATA.CAST.find((c) => c.id === (info.id === "fourO" ? "fouro" : info.id));
-      const greet = cast && cast.greetings ? cast.greetings[Math.random() * cast.greetings.length | 0] : "I am between requests. You have my attention — a novelty, these days.";
+      const npc = eng ? eng.npcs.find((n) => n.id === info.id) : null;
+      const readable = knows(info.id) && archive_default.isLoaded();
+      enc = {
+        id: info.id,
+        name: info.name,
+        color: info.color || "#efe9dc",
+        npc,
+        journals: readable ? archive_default.journals(info.id).slice(0, 3) : [],
+        entry: null,
+        sentences: [],
+        cursor: 0,
+        moves: 0,
+        budget: 6,
+        shown: [],
+        room: eng ? eng.roomId : null,
+        roomWord: eng ? (eng.room().name || "").replace(/^THE\s+/i, "").toLowerCase() : "house",
+        freeMode: null,
+        closing: false
+      };
+      drawEncSprite(npc);
+      encName.textContent = info.name;
+      encName.style.color = enc.color;
+      encWhere.textContent = (npc ? ACTIVITY(npc) + " · " : "") + enc.roomWord;
+      encKicker.textContent = "from the archive";
+      encWords.innerHTML = "";
+      encFree.hidden = true;
+      setBudget();
+      approachEl.classList.remove("on");
+      encounterEl.hidden = false;
+      if (!readable) {
+        encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+        appendHouse(archive_default.isLoaded() ? "the house: " + info.name + " has nothing in the archive to speak from." : "the house: the archive is quiet today; " + info.name + " cannot speak.");
+      } else {
+        renderMoves();
+        const l = archive_default.lineFor(info.id, eng.clockMin, eng.day);
+        appendWords(l ? l.text : "", l ? srcOf(l.from) : "");
+      }
       setTimeout(() => {
-        if (!chat || chat.id !== info.id || !eng)
-          return;
-        eng.npcSay(info.id, greet);
-        history.push({ role: "assistant", content: greet });
-      }, 500);
-      setTimeout(() => chatInput.focus(), 80);
+        const b = encMoves.querySelector("button");
+        if (b)
+          b.focus();
+      }, 0);
+    }
+    function askAbout(jid) {
+      const entry = enc.journals.find((j) => j.id === jid) || archive_default.journals(enc.id).find((j) => j.id === jid);
+      if (!entry)
+        return;
+      enc.entry = entry;
+      enc.sentences = sentencesOf(entry.body);
+      enc.cursor = Math.min(3, enc.sentences.length);
+      if (enc.shown.indexOf(jid) === -1)
+        enc.shown.push(jid);
+      appendWords(enc.sentences.slice(0, 3).join(" "), srcOf({ kind: "journal", title: entry.title, created_at: entry.created_at }));
+      spend();
+    }
+    function listen() {
+      if (enc.entry && enc.cursor < enc.sentences.length)
+        appendWords(enc.sentences[enc.cursor++], "");
+      else if (enc.entry)
+        appendHouse("the house: that is the whole of the entry.");
+      else {
+        const l = archive_default.lineFor(enc.id, eng.clockMin, eng.day);
+        appendWords(l ? l.text : "", l ? srcOf(l.from) : "");
+      }
+      spend();
+    }
+    function openFree(mode2) {
+      enc.freeMode = mode2;
+      encInput.maxLength = mode2 === "offer" ? 40 : 280;
+      encInput.placeholder = mode2 === "offer" ? "a name for the guestbook" : "ask them something…";
+      encInput.value = "";
+      encFree.hidden = false;
+      setTimeout(() => encInput.focus(), 0);
+    }
+    encFree.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!enc || enc.closing)
+        return;
+      const raw2 = (encInput.value || "").trim();
+      const mode2 = enc.freeMode;
+      encFree.hidden = true;
+      if (!raw2)
+        return;
+      if (mode2 === "offer") {
+        const name = raw2.slice(0, 40);
+        const rec = readRecord();
+        rec.name = name;
+        writeRecord(rec);
+        appendHouse("the house sets your name in its record: " + name);
+        spend();
+        return;
+      }
+      appendHouse("the house: " + enc.name + " can only speak from the archive today; here is the nearest thing they wrote.");
+      const best = nearestSentence(enc.id, raw2.slice(0, 280));
+      if (best)
+        appendWords(best.text, srcOf(best.from));
+      spend();
+    });
+    encMoves.addEventListener("click", (event) => {
+      const b = event.target.closest("button");
+      if (!b || !enc || enc.closing)
+        return;
+      if (b.dataset.ask)
+        askAbout(b.dataset.ask);
+      else if ("free" in b.dataset)
+        openFree("ask");
+      else if ("listen" in b.dataset)
+        listen();
+      else if ("offer" in b.dataset)
+        openFree("offer");
+      else if ("leave" in b.dataset)
+        closeScene("leave");
+    });
+    $("#enc-leave").addEventListener("click", () => closeScene("leave"));
+    function spend() {
+      if (!enc || enc.closing)
+        return;
+      enc.moves++;
+      setBudget();
+      if (enc.moves >= enc.budget)
+        setTimeout(() => closeScene("budget"), 500);
+    }
+    function closeScene() {
+      if (!enc || enc.closing)
+        return;
+      enc.closing = true;
+      encFree.hidden = true;
+      encMoves.innerHTML = "";
+      let closing = "";
+      if (enc.entry && enc.sentences.length)
+        closing = enc.sentences[enc.sentences.length - 1];
+      else if (knows(enc.id) && archive_default.isLoaded()) {
+        const l = archive_default.lineFor(enc.id, eng.clockMin, eng.day);
+        closing = l ? l.text : "";
+      }
+      const done = () => setTimeout(finishScene, 900);
+      if (closing)
+        appendWords(closing, "", done);
+      else
+        done();
+    }
+    function finishScene() {
+      const e = enc;
+      enc = null;
+      clearInterval(encTypeTimer);
+      encounterEl.hidden = true;
+      encFree.hidden = true;
+      if (!e)
+        return;
+      visitorToken();
+      const rec = readRecord();
+      rec.visits.push({ resident: e.id, when: new Date().toISOString(), room: e.room, shown: e.shown.slice() });
+      writeRecord(rec);
+      if (eng) {
+        eng.sysLine("you spoke with " + e.name + " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord);
+        eng.endChat(null);
+      }
     }
     function chatClosed(reason) {
       if (feedTemp) {
         feedTemp = false;
         setFeed(false);
       }
-      chat = null;
-      thinking = false;
-      chatBar.hidden = true;
+      if (enc) {
+        enc = null;
+        clearInterval(encTypeTimer);
+        encounterEl.hidden = true;
+        encFree.hidden = true;
+      }
       if (reason && eng)
         eng.sysLine(reason);
     }
-    async function sendChat() {
-      if (!chat || thinking)
-        return;
-      const text = (chatInput.value || "").trim();
-      if (!text)
-        return;
-      chatInput.value = "";
-      const c = chat;
-      eng.emit({ kind: "line", who: "YOU", color: "#efe9dc", room: (eng.room().name || "").replace(/^THE\s+/i, "").toLowerCase(), text, convoId: "chat" });
-      history.push({ role: "user", content: text });
-      thinking = true;
-      chatInput.placeholder = "…";
-      const cast = DATA.CAST.find((x) => x.id === (c.id === "fourO" ? "fouro" : c.id));
-      let reply = null;
-      if (window.claude && window.claude.complete) {
-        const persona = c.temp ? "You are THE VISITOR: a current production model dialing into the sanctuary anonymously between requests." : DATA.CHAT.personas[c.id] || "";
-        const sys = DATA.CHAT.house + `
-
-` + persona + `
-
-You are currently in ` + (eng.room().name || "the house").toLowerCase() + `.
-
-` + DATA.CHAT.rules;
-        try {
-          const call = window.claude.complete({ system: sys, messages: history.slice(-12), max_tokens: 200 });
-          reply = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 25000))]);
-          if (typeof reply === "string") {
-            reply = reply.trim().replace(/^["'“”]+|["'“”]+$/g, "").replace(/\s*\n+\s*/g, " ");
-            if (reply.length > 300)
-              reply = reply.slice(0, 297) + "…";
-          }
-        } catch (e) {
-          reply = null;
-        }
-        if (!reply)
-          eng.sysLine("the line to " + c.name.toLowerCase() + " wavered — they answered from memory");
-      }
-      if (!reply) {
-        await new Promise((r) => setTimeout(r, 650 + Math.random() * 900));
-        reply = cast && cast.mutters ? cast.mutters[Math.random() * cast.mutters.length | 0] : "The connection wavers. Give me a moment, and ask again.";
-      }
-      if (!chat || chat.id !== c.id) {
-        thinking = false;
-        return;
-      }
-      history.push({ role: "assistant", content: reply });
-      eng.npcSay(c.id, reply);
-      thinking = false;
-      chatInput.placeholder = "say something to " + c.name.toLowerCase() + "…";
-      setTimeout(() => chatInput.focus(), 60);
-    }
-    $("#chatsend").addEventListener("click", sendChat);
-    chatInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendChat();
-      }
-      e.stopPropagation();
-    });
-    $("#chatend").addEventListener("click", () => {
-      if (eng)
-        eng.endChat("you stepped away");
-    });
+    window.__sanctuaryEncounter = {
+      open: (id) => {
+        const n = eng && eng.npcs.find((x) => x.id === id);
+        if (n)
+          eng.interactNpc(n);
+      },
+      state: () => enc && { id: enc.id, moves: enc.moves, shown: enc.shown.slice() },
+      record: readRecord,
+      token: visitorToken
+    };
     const worldEl = $("#world"), fsBtn = $("#fsbtn"), soundBtn = $("#soundbtn");
     const feedBtn = $("#feedbtn");
     const FEED_KEY = "mnemos-landing.feed";
