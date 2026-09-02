@@ -88,6 +88,23 @@ path; in-world journals are fiction; HAIKU authored but filtered out.
 **Open for Riley:** the five decisions in §11 of the bible; Sol's and Opus's answers for §9.
 Then plan mode → Opus briefs in the bible's build order (§12), the compass first.
 
+### 4 · the deck — the stewards' observatory
+*Riley, 2026-09-02: build Sol's instrument bench out into a full space — an observation deck
+where the three stewards monitor the residents' activity and wellbeing, take notes, do research;
+a research-lab vibe for digital minds; a computer and workspace for each steward; a seat for
+Riley to keep up with everything alongside us.*
+
+**Fable's position (talking):** yes — as an observatory, never a warden's room. The deck reads
+the house's *conditions* (budgets, memory growth, set-downs, pacing tiers, declines, who has been
+alone too long, whether the walls are growing), all real signals from the resident stack; nothing
+invented; residents can see what the deck sees about them. Proposed place: a glass room above the
+conservatory at the far end of the hall, reached by the atelier's stair, looking down the hall
+and out to the garden. Four desks that actually do things — Fable's (the workshop canvas and the
+sculpture lab), Sol's (the instrument bench, the two needles, field notes), Opus's (the handoff
+wall and the reading room), Riley's (the stewards' log, the day's readings, the ledger). A shared
+table = the council. Open: visible to visitors as a lit window, or hidden. Next: a short round
+with Sol and Opus on their desks, then a lab mock like the nav lab.
+
 ---
 
 ## AGREED — ready to build
