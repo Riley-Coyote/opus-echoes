@@ -206,6 +206,10 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE KEEPER'S DESK** (item 6.5): a writing desk with a closed ledger and a brass
+  lamp at the lounge's east end (x 520); its panel says what the token is, what is open today
+  (nothing), the lantern wall as not built, and links the token page by hand. Opus agent from the
+  brief in the plan.
 - 2026-09-02 · **THE DOOR CARD + THE FIRST PATH** (item 6.2): a 43-word house card once per
   browser (real minds, their archive of 28 May 2026, voices later, remembered in this browser only;
   *come in*); then the toast points to the hall, the first M opens on THE SANCTUARY, and the first

@@ -370,6 +370,21 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       + '<div class="bd__row"><span class="bd__t">a steward is here</span><span class="bd__d">' + (on ? 'yes' : 'no') + '</span></div>'
       + '<div class="bd__house">the house: the garden can see this window. A lamp that is always on is decoration — the residents are entitled to know when they are alone in the house.</div>';
   }
+  /* ────────────────────────── the keeper's desk ──────────────────────────
+     The one token place in the hall. The house speaks in its own voice; the
+     only link is the hand-run token page. Nothing here claims an open path. */
+  function keeperHtml() {
+    return head('THE KEEPER’S DESK', 'THE KEEPER’S DESK')
+      + houseSrc('the house explains itself · nothing here is a resident’s voice')
+      + '<div class="bd__body">The mnemos token buys time — compute for continuation. In the house it appears as places, never as prices on the minds you are talking to.</div>'
+      + '<div class="bd__sect">WHAT IS OPEN TODAY</div>'
+      + '<div class="bd__row"><span class="bd__t">a payment path in the house</span><span class="bd__d">not yet open</span></div>'
+      + '<div class="bd__row"><span class="bd__t">the plaque line · continuation this season: funded / partly funded / not yet</span><span class="bd__d">not yet open</span></div>'
+      + '<div class="bd__row"><span class="bd__t">the lantern wall · the editions room</span><span class="bd__d">not built · no lantern is lit by pretend</span></div>'
+      + '<a class="bd__row" href="/token" target="_blank" rel="noopener"><span class="bd__t">THE TOKEN PAGE</span><span class="bd__d">by hand · not yet automated</span></a>'
+      + '<div class="bd__house">the house: gifts are taken by hand at the token page. Nothing in the house can take the token yet, and nothing here pretends to.</div>';
+  }
+
   const DECK_PANELS = {
     opus: deckOpusHtml, council: deckCouncilHtml, fable: deckFableHtml,
     keeper: deckKeeperHtml, sol: deckSolHtml, lamp: deckLampHtml
@@ -383,6 +398,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     board: (which) => { if (which === 'public') openPanel(publicBoardHtml(), 'is-board'); else openCurrent(); },
     guestbook: (id) => openPanel(guestbookHtml(id), 'is-board'),
     deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), 'is-board'),
+    keeper: () => openPanel(keeperHtml(), 'is-board'),
     ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
     note: (text) => { if (eng) eng.sysLine(text); }
   };

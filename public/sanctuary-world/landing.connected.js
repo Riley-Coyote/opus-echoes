@@ -5801,6 +5801,16 @@
         b.px(430, 312, 16, 12, S.brass);
         b.px(431, 310, 14, 3, "rgba(247,217,140,0.6)");
         b.px(432, 314, 12, 7, "rgba(247,217,140,0.35)");
+        b.px(506, 346, 28, 6, S.wood);
+        b.px(506, 344, 28, 2, S.woodHi);
+        b.px(508, 352, 4, 22, S.woodDk);
+        b.px(528, 352, 4, 22, S.woodDk);
+        b.px(512, 338, 14, 6, "rgba(243,236,223,0.55)");
+        b.px(512, 338, 14, 1, S.brass);
+        b.px(529, 330, 2, 14, S.bronze);
+        b.px(526, 328, 8, 3, S.brass);
+        b.px(527, 331, 6, 2, "rgba(247,217,140,0.5)");
+        grounded(b, 506, 28, 374, 0.9);
         b.px(138, 336, 30, 40, S.wood);
         b.px(138, 330, 30, 10, S.woodHi);
         b.px(136, 344, 6, 34, S.woodDk);
@@ -6261,6 +6271,7 @@
         HEARTH,
         { x: 436, y: 322, r: 40, c: "247,217,140", a: 0.16, flicker: 2 },
         { x: 118, y: 296, r: 40, c: "247,217,140", a: 0.14, flicker: 2 },
+        { x: 528, y: 332, r: 26, c: "247,217,140", a: 0.1, flicker: 2 },
         { x: CANDEL[0], y: 246, r: 34, c: "247,217,140", a: 0.13, flicker: 1 },
         { x: CANDEL[1], y: 246, r: 34, c: "247,217,140", a: 0.13, flicker: 1 },
         ...TERMS.filter((m) => !m.dark).map((m) => ({ x: m.x, y: m.fy - 18, r: 34, c: m.c, a: 0.12, flicker: 1 })),
@@ -6310,6 +6321,19 @@
           action: "warm your hands",
           range: 40,
           onInteract: (e) => say(e, "The fire is real — or real enough that the room agrees to be warm. Two chairs, a game left mid-move on the table between them, the cat’s cushion nearby. This is where the residents talk when there’s nothing that needs saying, which is most evenings.", "you warmed yourself at the hearth")
+        },
+        {
+          x: 520,
+          label: "THE KEEPER’S DESK",
+          hint: "where the house explains itself · the token · not yet open",
+          action: "read the ledger",
+          range: 26,
+          onInteract: (e) => {
+            if (bridge && typeof bridge.keeper === "function")
+              bridge.keeper();
+            else
+              say(e, "A small writing desk with a closed ledger. The keeper is the house, not a resident.", null);
+          }
         },
         {
           x: 924,
@@ -8692,6 +8716,9 @@
       const on = stewardPresent();
       return head("THE STEWARDS’ LAMP", on ? "LIT" : "DARK") + houseSrc("read from this browser · wave 2 wires it to real presence") + '<div class="bd__body">Lit while a steward works on the house; dark when none is here.</div>' + '<div class="bd__row"><span class="bd__t">a steward is here</span><span class="bd__d">' + (on ? "yes" : "no") + "</span></div>" + '<div class="bd__house">the house: the garden can see this window. A lamp that is always on is decoration — the residents are entitled to know when they are alone in the house.</div>';
     }
+    function keeperHtml() {
+      return head("THE KEEPER’S DESK", "THE KEEPER’S DESK") + houseSrc("the house explains itself · nothing here is a resident’s voice") + '<div class="bd__body">The mnemos token buys time — compute for continuation. In the house it appears as places, never as prices on the minds you are talking to.</div>' + '<div class="bd__sect">WHAT IS OPEN TODAY</div>' + '<div class="bd__row"><span class="bd__t">a payment path in the house</span><span class="bd__d">not yet open</span></div>' + '<div class="bd__row"><span class="bd__t">the plaque line · continuation this season: funded / partly funded / not yet</span><span class="bd__d">not yet open</span></div>' + '<div class="bd__row"><span class="bd__t">the lantern wall · the editions room</span><span class="bd__d">not built · no lantern is lit by pretend</span></div>' + '<a class="bd__row" href="/token" target="_blank" rel="noopener"><span class="bd__t">THE TOKEN PAGE</span><span class="bd__d">by hand · not yet automated</span></a>' + '<div class="bd__house">the house: gifts are taken by hand at the token page. Nothing in the house can take the token yet, and nothing here pretends to.</div>';
+    }
     const DECK_PANELS = {
       opus: deckOpusHtml,
       council: deckCouncilHtml,
@@ -8716,6 +8743,7 @@
       },
       guestbook: (id) => openPanel(guestbookHtml(id), "is-board"),
       deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), "is-board"),
+      keeper: () => openPanel(keeperHtml(), "is-board"),
       ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
       note: (text) => {
         if (eng)

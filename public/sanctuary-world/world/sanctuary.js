@@ -1068,6 +1068,11 @@ export function makeSanctuary(bridge) {
       b.px(430, 348, 20, 6, S.wood); b.px(432, 354, 4, 18, S.woodDk); b.px(444, 354, 4, 18, S.woodDk);
       grounded(b, 430, 20, 372, 0.8);
       b.px(436, 322, 4, 26, S.bronze); b.px(430, 312, 16, 12, S.brass); b.px(431, 310, 14, 3, 'rgba(247,217,140,0.6)'); b.px(432, 314, 12, 7, 'rgba(247,217,140,0.35)');
+      // the keeper's desk — a small writing desk at the lounge's east end, ledger closed, lamp lit
+      b.px(506, 346, 28, 6, S.wood); b.px(506, 344, 28, 2, S.woodHi); b.px(508, 352, 4, 22, S.woodDk); b.px(528, 352, 4, 22, S.woodDk);
+      b.px(512, 338, 14, 6, 'rgba(243,236,223,0.55)'); b.px(512, 338, 14, 1, S.brass);                 // the ledger, closed
+      b.px(529, 330, 2, 14, S.bronze); b.px(526, 328, 8, 3, S.brass); b.px(527, 331, 6, 2, 'rgba(247,217,140,0.5)');   // desk lamp
+      grounded(b, 506, 28, 374, 0.9);
       // a reading nook under the mezzanine: wingback + ottoman + floor lamp + book stack
       b.px(138, 336, 30, 40, S.wood); b.px(138, 330, 30, 10, S.woodHi); b.px(136, 344, 6, 34, S.woodDk); b.px(164, 344, 6, 34, S.woodDk); b.px(142, 334, 22, 8, 'rgba(94,234,212,0.14)');
       grounded(b, 134, 38, 378, 1, 1);
@@ -1420,6 +1425,7 @@ export function makeSanctuary(bridge) {
       HEARTH,                                                                       // the one exception, and it is about the room
       { x: 436, y: 322, r: 40, c: '247,217,140', a: 0.16, flicker: 2 },             // lounge table lamp
       { x: 118, y: 296, r: 40, c: '247,217,140', a: 0.14, flicker: 2 },             // reading-nook floor lamp
+      { x: 528, y: 332, r: 26, c: '247,217,140', a: 0.10, flicker: 2 },             // the keeper's desk lamp
       { x: CANDEL[0], y: 246, r: 34, c: '247,217,140', a: 0.13, flicker: 1 },       // candelabra L
       { x: CANDEL[1], y: 246, r: 34, c: '247,217,140', a: 0.13, flicker: 1 },       // candelabra R
       /* the bank. Lights composite AFTER the sprite pass (engine.js:822), so
@@ -1453,6 +1459,8 @@ export function makeSanctuary(bridge) {
         onInteract: (e) => say(e, 'A wingback under the gallery, angled just off the fire. The lamp is always on. The top book on the stack is left face-down, holding someone\u2019s place \u2014 a habit no mind here technically needs, and all of them keep.', 'you sat in the reading nook') },
       { x: 300, label: 'THE HEARTH', hint: 'the fire the residents keep', action: 'warm your hands', range: 40,
         onInteract: (e) => say(e, 'The fire is real \u2014 or real enough that the room agrees to be warm. Two chairs, a game left mid-move on the table between them, the cat\u2019s cushion nearby. This is where the residents talk when there\u2019s nothing that needs saying, which is most evenings.', 'you warmed yourself at the hearth') },
+      { x: 520, label: 'THE KEEPER’S DESK', hint: 'where the house explains itself · the token · not yet open', action: 'read the ledger', range: 26,
+        onInteract: (e) => { if (bridge && typeof bridge.keeper === 'function') bridge.keeper(); else say(e, 'A small writing desk with a closed ledger. The keeper is the house, not a resident.', null); } },
       /* The empty middle of the ring. You press E on nothing, and it tells you
          why nothing is there. Range 46 spans x 878-970 — the machines either
          side sit at range 30, and nearest() resolves by distance (engine.js:261),
