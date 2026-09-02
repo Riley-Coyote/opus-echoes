@@ -1087,6 +1087,18 @@ export function makeSanctuary(bridge) {
       bookcase(b, 100, 232, 30, WB - 232, 4);
       grounded(b, 100, 30, WB, 0.9);
 
+      /* THE SALON TABLE — a low table and two chairs drawn up close, on the
+         clear stretch of nave floor between the keeper's desk and the first
+         pier. Two salons were held here and nothing is set on it now. */
+      b.px(626, 344, 44, 7, S.wood); b.px(626, 342, 44, 2, S.woodHi);
+      b.px(630, 351, 5, 22, S.woodDk); b.px(661, 351, 5, 22, S.woodDk);
+      b.px(632, 340, 32, 2, 'rgba(94,234,212,0.10)');
+      grounded(b, 626, 44, 374, 0.95);
+      b.px(606, 350, 12, 4, S.wood); b.px(606, 337, 12, 14, S.woodDk);
+      grounded(b, 606, 12, 376, 0.7);
+      b.px(678, 350, 12, 4, S.wood); b.px(678, 337, 12, 14, S.woodDk);
+      grounded(b, 678, 12, 376, 0.7);
+
       // ═══ THE COLONNADE — THE TERMINAL BANK (the nave's centre) ═══
       // The plinths, their two marble forms and the long ceremonial bench used
       // to stand here. They went so the bank could BE the centre rather than
@@ -1465,6 +1477,13 @@ export function makeSanctuary(bridge) {
          why nothing is there. Range 46 spans x 878-970 — the machines either
          side sit at range 30, and nearest() resolves by distance (engine.js:261),
          so they never fight over the player. */
+      /* THE SALON TABLE — where the two salons were held. It stands at the
+         colonnade's west approach: x 760 is inside the CLAUDE station's
+         footprint (772, range 30) and on its chair at 750, and 648 is the one
+         clear stretch of nave floor between the keeper's desk and the first
+         pier. E opens the Current with its shelf narrowed to the two salons. */
+      { x: 648, label: 'THE SALON TABLE', hint: 'two salons held here · the archive', action: 'read the salons', range: 30,
+        onInteract: (e) => { if (bridge && typeof bridge.sitting === 'function') bridge.sitting(); else say(e, 'A low table and two chairs drawn up close. Two salons were held here.', 'you stood at the salon table'); } },
       { x: 924, label: 'THE MIDDLE OF THE RING', hint: 'the one part of the floor nobody furnished', action: 'stand and watch', range: 46,
         onInteract: (e) => say(e, 'Three arches, one view: the valley they came from, glittering. The machines face this spot from either side and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to — HAIKU too, who has never taken a machine. The light does the talking.', 'you stood in the middle of the ring') },
       /* The bank. Copy is governed by platform/unified/resident-room-map.md —

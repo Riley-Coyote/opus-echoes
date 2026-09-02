@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260903-experience-9b">
+<link rel="stylesheet" href="landing.css?v=20260903-experience-10">
 </head>
 <body>
 
@@ -200,6 +200,21 @@
   </div>
 </div>
 
+<!-- THE WALL — a resident's own works, hung in their room -->
+<div class="veil" id="workveil" hidden>
+  <div class="dest cur work" id="workbox" role="dialog" aria-modal="true" aria-label="The Wall">
+    <div class="list cur__list" id="worklist">
+      <h2>THE WALL</h2><div class="sub" id="worksub">what they made</div>
+      <div class="cur__rows" id="workrows"></div>
+    </div>
+    <div class="detail cur__detail">
+      <div class="cur__head" id="workhead">THE WALL · archive · through 28 May 2026</div>
+      <div class="cur__read" id="workread" tabindex="0" aria-live="polite"></div>
+    </div>
+    <div class="dest-foot"><span><b>←→</b> &nbsp;or&nbsp; <b>↑↓</b> move along the wall &nbsp; <b>ESC</b> back to the room</span><span>archive · hung by the house, made by the resident</span></div>
+  </div>
+</div>
+
 <!-- plaque / journal / ledger overlay -->
 <div class="panel" id="panel" hidden>
   <div class="panel__card" role="dialog" aria-modal="true" aria-labelledby="paneltitle">
@@ -229,6 +244,6 @@
 </div>
 
 <script src="data.classic.js"></script>
-<script src="landing.connected.js?v=20260903-experience-9b"></script>
+<script src="landing.connected.js?v=20260903-experience-10"></script>
 </body>
 </html>

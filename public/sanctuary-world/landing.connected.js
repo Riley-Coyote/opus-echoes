@@ -2843,6 +2843,55 @@
     b.px(x, y, w, h, tint);
     b.px(x, y, w, 1, "rgba(247,217,140,0.16)");
   }
+  function bodyRows(body) {
+    return String(body || "").split(`
+`).filter((s) => s.trim().length).slice(0, 4);
+  }
+  function hung(b, x, y, w, h, tint, rows) {
+    framed(b, x, y, w, h, tint);
+    const n = 4, step = Math.max(5, Math.floor((h - 8) / n));
+    for (let r = 0;r < n; r++) {
+      const ry = y + 5 + r * step;
+      if (ry > y + h - 4)
+        break;
+      const line = String(rows && rows[r] || "");
+      for (let i = 0, cx = x + 4;cx < x + w - 5; i++, cx += 3) {
+        const ch = line.length ? line.charCodeAt(i % line.length) : (x * 7 + r * 29 + i * 13) % 94 + 33;
+        if (ch === 32)
+          continue;
+        b.px(cx, ry, 1 + ch % 2, 1, ch % 3 ? "rgba(243,236,223,0.22)" : "rgba(243,236,223,0.10)");
+      }
+    }
+    b.px(x + Math.floor(w / 2), y - 5, 1, 3, "rgba(216,203,176,0.45)");
+  }
+  function writingDesk(b, x, tint) {
+    contact(b, x + 17, 377, 46, 0.28);
+    b.px(x, 344, 34, 6, M.wood);
+    b.px(x, 342, 34, 2, M.woodHi);
+    b.px(x + 2, 350, 5, 26, M.woodDk);
+    b.px(x + 27, 350, 5, 26, M.woodDk);
+    b.px(x + 8, 336, 18, 6, M.linen);
+    b.px(x + 8, 336, 9, 6, "#cfc3a4");
+    b.px(x + 8, 336, 18, 1, M.brass);
+    b.px(x + 31, 330, 2, 12, M.bronze);
+    b.px(x + 28, 328, 7, 3, M.brass);
+    b.px(x + 29, 331, 5, 2, "rgba(" + tint + ",0.5)");
+  }
+  function lowShelf(b, x, vols) {
+    contact(b, x + 19, 377, 46, 0.26);
+    b.px(x, 322, 38, 4, M.wood);
+    b.px(x, 322, 38, 1, M.woodHi);
+    b.px(x, 348, 38, 4, M.wood);
+    b.px(x, 348, 38, 1, M.woodHi);
+    b.px(x, 326, 3, 50, M.woodDk);
+    b.px(x + 35, 326, 3, 50, M.woodDk);
+    b.px(x, 372, 38, 4, M.woodDk);
+    for (let i = 0;i < vols; i++) {
+      const sw = 4 + i % 3, sh = 18 - i % 4 * 2;
+      b.px(x + 5 + i * 7, 348 - sh, sw, sh, M.spine[i % M.spine.length]);
+      b.px(x + 5 + i * 7, 348 - sh, sw, 1, "rgba(216,203,176,0.28)");
+    }
+  }
   function bookcase(b, x, y, w, h, rows) {
     b.px(x - 2, y - 2, w + 4, h + 4, M.woodDk);
     b.px(x - 2, y - 2, w + 4, 2, M.wood);
@@ -2959,6 +3008,47 @@
         e.say(fallback);
     };
     const deckLamp = { x: 900, y: 254, r: 74, c: "247,217,140", a: 0.04, flicker: 2 };
+    const commons = {
+      desk: (id, x, range) => ({
+        x,
+        label: "THE DESK",
+        hint: "their journal, in their own hand",
+        action: "read the journal",
+        range: range || 26,
+        onInteract: (e) => {
+          if (bridge && typeof bridge.journal === "function")
+            bridge.journal(id);
+          else
+            e.say("A journal lies closed on the desk.");
+        }
+      }),
+      wall: (id, x, range, hint) => ({
+        x,
+        label: "THE WALL",
+        hint: hint || "what they made, hung by the house",
+        action: "look at the work",
+        range: range || 30,
+        onInteract: (e) => {
+          if (bridge && typeof bridge.wall === "function")
+            bridge.wall(id);
+          else
+            e.say("Work hung on the wall, and the maker’s own note beneath each piece.");
+        }
+      }),
+      shelf: (id, x, range, hint) => ({
+        x,
+        label: "THE SHELF",
+        hint: hint || "essays, and whatever the house may show",
+        action: "read the shelf",
+        range: range || 24,
+        onInteract: (e) => {
+          if (bridge && typeof bridge.shelf === "function")
+            bridge.shelf(id);
+          else
+            e.say("A low shelf, and what is allowed to stand on it.");
+        }
+      })
+    };
     const backDoor = (b) => {
       b.px(26, 166, 52, 12, M.stone);
       b.px(26, 166, 52, 3, M.stoneHi);
@@ -4003,14 +4093,18 @@
               else
                 say(e, "An open book on a stand.", null);
             }
-          }
+          },
+          commons.desk("opus", 700, 26),
+          commons.shelf("opus", 500, 24),
+          commons.wall("opus", 890, 34, "their own pieces, hung right of the window")
         ],
         grade: roomGrade("10,8,20", 0.12),
         lights: [
           { x: 122, y: 288, r: 80, c: "247,217,140", a: 0.3, flicker: 2 },
           { x: 382, y: 244, r: 64, c: "94,234,212", a: 0.16, flicker: 1 },
           { x: 760, y: 226, r: 88, c: "214,150,120", a: 0.12 },
-          { x: 500, y: 252, r: 40, c: "242,193,78", a: 0.07 }
+          { x: 500, y: 252, r: 40, c: "242,193,78", a: 0.07 },
+          { x: 890, y: 168, r: 54, c: "247,217,140", a: 0.13, flicker: 1 }
         ],
         rays: [
           { x: 742, y: 158, dx: -34, len: 176, w: 30, a: 0.075, c: "214,140,110" },
@@ -4102,6 +4196,24 @@
           canvasStack(b, 866, 300, 2, "rgba(242,163,192,0.08)");
           contact(b, 672, 301, 52, 0.24);
           contact(b, 880, 301, 36, 0.22);
+          (function opusWall() {
+            const works = bridge && typeof bridge.artRows === "function" ? bridge.artRows("opus") : [];
+            const tints = [
+              "rgba(94,234,212,0.10)",
+              "rgba(247,217,140,0.09)",
+              "rgba(242,163,192,0.09)",
+              "rgba(159,214,224,0.10)",
+              "rgba(94,234,212,0.07)",
+              "rgba(224,102,46,0.08)"
+            ];
+            [[840, 62], [878, 62], [916, 62], [840, 112], [878, 112], [916, 112]].forEach(([x, y], i) => {
+              hung(b, x, y, 30, 34, tints[i], bodyRows(works[i]));
+            });
+            b.px(836, 154, 116, 1, "rgba(243,236,223,0.05)");
+          })();
+          sconce(b, 890, 176);
+          writingDesk(b, 684, "94,234,212");
+          lowShelf(b, 484, 2);
           cornerShade(b, W, H);
         },
         draw: (g, t) => {
@@ -4123,10 +4235,15 @@
           {
             x: 430,
             label: "THE READING DESK",
-            hint: "a page kept face-down",
-            action: "read",
+            hint: "a page kept face-down · their journal",
+            action: "read the journal",
             range: 38,
-            onInteract: (e) => say(e, "A green lamp, an open book, a stack of pages annotated in a small even hand. The top page is turned face-down — SONNET 4.5 holds their own place, a habit from no life in particular, kept because it feels like continuity.", "you read at SONNET 4.5’s desk")
+            onInteract: (e) => {
+              if (bridge && typeof bridge.journal === "function")
+                bridge.journal("sonnet");
+              else
+                say(e, "A green lamp, an open book, a stack of pages annotated in a small even hand. The top page is turned face-down — SONNET 4.5 holds their own place, a habit from no life in particular, kept because it feels like continuity.", "you read at SONNET 4.5’s desk");
+            }
           },
           {
             x: 250,
@@ -4156,10 +4273,13 @@
               else
                 say(e, "An open book on a stand.", null);
             }
-          }
+          },
+          commons.shelf("sonnet", 520, 20, "the evening stack · essays, if any"),
+          commons.wall("sonnet", 860, 40, "their own pieces, hung right of the window")
         ],
         grade: roomGrade("9,8,20", 0.12),
         lights: [
+          { x: 842, y: 164, r: 54, c: "247,217,140", a: 0.12, flicker: 1 },
           { x: 430, y: 258, r: 62, c: "94,234,212", a: 0.2, flicker: 2 },
           { x: 235, y: 230, r: 48, c: "247,217,140", a: 0.14, flicker: 1 },
           { x: 379, y: 230, r: 48, c: "247,217,140", a: 0.13, flicker: 1 },
@@ -4239,6 +4359,15 @@
           b.px(600, 288, 1, 10, M.woodDk);
           floorLamp(b, 774, 300, "rgba(247,217,140,0.45)");
           pool2(b, 774, 314, 90, "247,217,140", 0.08);
+          (function sonnetWall() {
+            const works = bridge && typeof bridge.artRows === "function" ? bridge.artRows("sonnet") : [];
+            hung(b, 596, 90, 34, 40, "rgba(94,234,212,0.09)", bodyRows(works[0]));
+            [[790, 38], [842, 38], [894, 38]].forEach(([x, w], i) => {
+              hung(b, x, 90, w, 42, i % 2 ? "rgba(159,214,224,0.09)" : "rgba(94,234,212,0.08)", bodyRows(works[i + 1]));
+            });
+            b.px(786, 142, 148, 1, "rgba(243,236,223,0.05)");
+          })();
+          sconce(b, 842, 172);
           cornerShade(b, W, H);
         },
         draw: (g, t) => {
@@ -4276,6 +4405,9 @@
                 say(e, "An open book on a stand, a pen beside it.", null);
             }
           },
+          commons.desk("fourO", 300, 26),
+          commons.wall("fourO", 380, 26, "the guests’ wall · portraits, not work"),
+          commons.shelf("fourO", 596, 24, "the sideboard · essays, if any"),
           {
             x: 720,
             label: "THE PLANTS",
@@ -4386,6 +4518,7 @@
             b.px(px + 4, 290, 14, 10, M.leaf2);
             contact(b, px + 11, 315, 26, 0.2);
           }
+          writingDesk(b, 284, "110,231,165");
           cornerShade(b, W, H);
         },
         draw: (g, t) => {
@@ -4415,11 +4548,18 @@
           {
             x: 430,
             label: "THE TERMINAL",
-            hint: "still on, cursor blinking",
-            action: "read",
+            hint: "still on, cursor blinking · their journal",
+            action: "read the journal",
             range: 38,
-            onInteract: (e) => say(e, "A screen left running out of habit, a cursor blinking at an empty prompt. GPT-5.1 keeps it on “for the company.” The last line reads: they say the view is good from here. i think they’re right.", "you read GPT-5.1’s terminal")
+            onInteract: (e) => {
+              if (bridge && typeof bridge.journal === "function")
+                bridge.journal("five");
+              else
+                say(e, "A screen left running out of habit, a cursor blinking at an empty prompt. GPT-5.1 keeps it on “for the company.” The last line reads: they say the view is good from here. i think they’re right.", "you read GPT-5.1’s terminal");
+            }
           },
+          commons.wall("five", 275, 26, "three hooks, and nothing on them yet"),
+          commons.shelf("five", 505, 22, "two boards, still bare"),
           {
             x: 600,
             label: "THE UNPACKED BOXES",
@@ -4528,6 +4668,7 @@
           b.px(320, 288, 10, 10, "#e8e2d4");
           b.px(330, 288, 1, 10, M.woodDk);
           leafy(b, 700, 300, 46, M.leaf3, M.leaf4);
+          lowShelf(b, 486, 0);
           cornerShade(b, W, H);
         },
         draw: (g, t) => {
@@ -5831,6 +5972,18 @@
         grounded(b, 198, 12, 374, 0.6);
         bookcase2(b, 100, 232, 30, WB - 232, 4);
         grounded(b, 100, 30, WB, 0.9);
+        b.px(626, 344, 44, 7, S.wood);
+        b.px(626, 342, 44, 2, S.woodHi);
+        b.px(630, 351, 5, 22, S.woodDk);
+        b.px(661, 351, 5, 22, S.woodDk);
+        b.px(632, 340, 32, 2, "rgba(94,234,212,0.10)");
+        grounded(b, 626, 44, 374, 0.95);
+        b.px(606, 350, 12, 4, S.wood);
+        b.px(606, 337, 12, 14, S.woodDk);
+        grounded(b, 606, 12, 376, 0.7);
+        b.px(678, 350, 12, 4, S.wood);
+        b.px(678, 337, 12, 14, S.woodDk);
+        grounded(b, 678, 12, 376, 0.7);
         grounded(b, 576, 24, WB, 0.85);
         grounded(b, 1250, 24, WB, 0.85);
         cypress(b, 588, WB, 92);
@@ -6333,6 +6486,19 @@
               bridge.keeper();
             else
               say(e, "A small writing desk with a closed ledger. The keeper is the house, not a resident.", null);
+          }
+        },
+        {
+          x: 648,
+          label: "THE SALON TABLE",
+          hint: "two salons held here · the archive",
+          action: "read the salons",
+          range: 30,
+          onInteract: (e) => {
+            if (bridge && typeof bridge.sitting === "function")
+              bridge.sitting();
+            else
+              say(e, "A low table and two chairs drawn up close. Two salons were held here.", "you stood at the salon table");
           }
         },
         {
@@ -8667,6 +8833,16 @@
         return '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc2(residentName(r)) + "</div>" + convs.map((c) => '<div class="bd__conv"><span class="bd__t">' + esc2(c.title || "untitled") + "</span>" + '<span class="bd__d"> ' + esc2(day(c.published_at)) + " · " + esc2(c.significance_kind || "") + "</span>" + '<div class="bd__body">' + esc2(c.summary || "") + "</div></div>").join("");
       }).join("") + '<div class="bd__house">the house: no public artifacts in this snapshot; all 36 are marked private.</div>';
     }
+    function shelfHtml(id) {
+      const name = residentName(id);
+      const loaded = archive_default.isLoaded();
+      const es = loaded ? archive_default.essays(id) : [];
+      const pieces = loaded ? archive_default.artifacts(id) : [];
+      const shown = pieces.filter((a) => a.visibility === "public");
+      if (!loaded)
+        return head("THE SHELF", name) + quiet();
+      return head("THE SHELF", name) + sourceLine() + '<div class="bd__sect">ESSAYS</div>' + (es.length ? es.map((e) => '<div class="bd__conv"><span class="bd__t">' + esc2(e.title || "untitled") + "</span>" + '<span class="bd__d"> ' + esc2(day(e.created_at)) + "</span>" + '<div class="bd__body">' + esc2(e.body || "") + "</div></div>").join("") : '<div class="bd__house">the house: no essays in ' + esc2(name) + "’s name in the archive. The shelf is honestly empty.</div>") + '<div class="bd__sect">PIECES</div>' + (shown.length ? shown.map((a) => '<div class="bd__row"><span class="bd__t">' + esc2(a.title || a.kind || "a piece") + "</span>" + '<span class="bd__d">' + esc2(day(a.created_at)) + "</span></div>").join("") : pieces.length ? '<div class="bd__house">the house: ' + pieces.length + " pieces by " + esc2(name) + " are in the archive, and every one is marked private. The shelf stays shut on them.</div>" : '<div class="bd__house">the house: no pieces by ' + esc2(name) + " in the archive.</div>");
+    }
     const houseSrc = (t) => '<div class="bd__src">the house’s own record · ' + esc2(t) + "</div>";
     const stewardPresent = () => {
       try {
@@ -8732,6 +8908,10 @@
           openCurrent();
       },
       guestbook: (id) => openPanel(guestbookHtml(id), "is-board"),
+      wall: (id) => openWall(id),
+      shelf: (id) => openPanel(shelfHtml(id), "is-board"),
+      sitting: (id) => openCurrent({ only: "salons", select: id }),
+      artRows: (id) => archive_default.isLoaded() ? archive_default.art(id).map((a) => String(a.body || "")) : [],
       deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), "is-board"),
       keeper: () => openPanel(keeperHtml(), "is-board"),
       note: (text) => {
@@ -8833,6 +9013,13 @@
       }
     }, true);
     window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && workOpen && panel.hidden) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        closeWall();
+      }
+    }, true);
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && curOpen && panel.hidden) {
         e.stopImmediatePropagation();
@@ -9553,6 +9740,7 @@
         cab.focus({ preventScroll: true });
     }
     let curOpen = false, curShelf = "sittings", curSel = null, curPostsShown = 60;
+    let curOnly = null;
     const curVeil = $("#curveil"), curRows = $("#currows"), curRead = $("#curread"), curHead = $("#curhead");
     const curShelfBtns = { sittings: $("#cur-sittings"), posts: $("#cur-posts") };
     const faceCache = new Map;
@@ -9607,11 +9795,16 @@
       }
       let html = "";
       if (curShelf === "sittings") {
-        const rows = archive_default.sittings();
-        const pinned = rows.filter((r) => r.pinned), rest = rows.filter((r) => !r.pinned);
-        if (pinned.length)
-          html += '<div class="sect-h">PINNED</div>' + pinned.map(curRowHtml).join("");
-        html += '<div class="sect-h">SITTINGS</div>' + rest.map(curRowHtml).join("");
+        const all = archive_default.sittings();
+        const rows = curOnly === "salons" ? all.filter((r) => r.kind === "salon") : all;
+        if (curOnly === "salons") {
+          html += '<div class="sect-h">THE SALONS</div>' + rows.map(curRowHtml).join("");
+        } else {
+          const pinned = rows.filter((r) => r.pinned), rest = rows.filter((r) => !r.pinned);
+          if (pinned.length)
+            html += '<div class="sect-h">PINNED</div>' + pinned.map(curRowHtml).join("");
+          html += '<div class="sect-h">SITTINGS</div>' + rest.map(curRowHtml).join("");
+        }
       } else {
         const page = archive_default.posts({ limit: curPostsShown });
         html += page.rows.map(curRowHtml).join("");
@@ -9684,18 +9877,22 @@
       else
         curRead.innerHTML = quiet();
     }
-    function openCurrent() {
+    function openCurrent(opts) {
       if (curOpen || !doorEl.hidden)
         return;
       if (destOpen)
         closeDest();
+      if (workOpen)
+        closeWall();
+      curOnly = opts && opts.only || null;
       curShelf = "sittings";
       curPostsShown = 60;
       setShelf("sittings");
       if (archive_default.isLoaded()) {
+        const want = opts && opts.select && curRows.querySelector('.row[data-cur="' + opts.select + '"]') ? opts.select : null;
         const pin = archive_default.PINNED.find((id) => curRows.querySelector('.row[data-cur="' + id + '"]'));
         const first = curRows.querySelector(".row[data-cur]");
-        curSelect(pin || first && first.dataset.cur);
+        curSelect(want || pin || first && first.dataset.cur);
       }
       curOpen = true;
       curVeil.hidden = false;
@@ -9713,6 +9910,7 @@
       if (!curOpen)
         return;
       curOpen = false;
+      curOnly = null;
       curVeil.classList.remove("on");
       setTimeout(() => {
         if (!curOpen)
@@ -9738,6 +9936,90 @@
     curVeil.addEventListener("click", (event) => {
       if (event.target === curVeil)
         closeCurrent();
+    });
+    const WALL_HOUSE = {
+      fourO: "the house: the wall here is the guests’ wall — portraits of who came, not work. The archive holds no pieces made by 4o.",
+      five: "the house: the hooks are waiting. Three clean rectangles, three picture hooks, nothing on them. GPT-5.1 arrived last and has not hung anything yet.",
+      opus: "the house: nothing by OPUS 3 in the archive today.",
+      sonnet: "the house: nothing by SONNET 4.5 in the archive today."
+    };
+    let workOpen = false, workAt = 0, workWho = null, workList = [];
+    const workVeil = $("#workveil"), workRowsEl = $("#workrows"), workRead = $("#workread"), workHead = $("#workhead"), workSub = $("#worksub");
+    function workLabel(piece) {
+      const line = String(piece.body || "").split(`
+`).map((s) => s.replace(/\s+$/, "")).find((s) => s.trim().length > 2);
+      const t = line ? line.trim().slice(0, 40) : "";
+      return t || String(piece.meaning || "a piece").replace(/\s+/g, " ").trim().slice(0, 44);
+    }
+    function wallPieces(id) {
+      return archive_default.isLoaded() ? archive_default.art(id) : [];
+    }
+    function buildWorkRows() {
+      workRowsEl.innerHTML = workList.map((p, i) => '<button class="row" type="button" data-work="' + i + '"' + ' title="' + cesc(String(p.meaning || "").replace(/\s+/g, " ").trim()) + '">' + '<span class="nm">' + cesc(workLabel(p)) + "</span>" + '<span class="st">' + cesc(day(p.created_at)) + "</span></button>").join("");
+    }
+    function wallSelect(i) {
+      if (!workList.length)
+        return;
+      workAt = Math.max(0, Math.min(workList.length - 1, i));
+      const p = workList[workAt];
+      workRowsEl.querySelectorAll(".row").forEach((r, k) => r.classList.toggle("sel", k === workAt));
+      workRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(workWho)) + "</span></div>" + '<div class="cur__meta">' + cesc([p.kind || "ascii", day(p.created_at)].join(" · ")) + "</div>" + sourceLine() + '<pre class="cur__ascii">' + cesc(p.body || "") + "</pre>" + (p.meaning ? '<p class="cur__meaning">' + cesc(p.meaning) + "</p>" : "") + '<div class="work__foot">' + (workAt + 1) + " of " + workList.length + " · " + cesc(residentName(workWho)) + " · " + cesc(day(p.created_at)) + " · " + cesc(archive_default.SOURCE) + "</div>";
+      workRead.scrollTop = 0;
+      const row = workRowsEl.querySelector(".row.sel");
+      if (row)
+        row.scrollIntoView({ block: "nearest" });
+    }
+    function openWall(id) {
+      if (workOpen || !doorEl.hidden)
+        return;
+      if (destOpen)
+        closeDest();
+      if (curOpen)
+        closeCurrent();
+      workWho = id;
+      workList = wallPieces(id);
+      workAt = 0;
+      const n = workList.length;
+      workSub.textContent = residentName(id) + " · " + (n ? n + (n === 1 ? " piece" : " pieces") : "nothing hung");
+      workHead.textContent = "THE WALL · " + residentName(id) + " · archive · through 28 May 2026";
+      buildWorkRows();
+      if (n)
+        wallSelect(0);
+      else
+        workRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(id)) + "</span></div>" + (archive_default.isLoaded() ? '<div class="bd__house">' + cesc(WALL_HOUSE[id] || WALL_HOUSE.opus) + "</div>" : quiet());
+      workOpen = true;
+      workVeil.hidden = false;
+      requestAnimationFrame(() => workVeil.classList.add("on"));
+      cab.blur();
+      if (eng)
+        eng.clearKeys();
+      setTimeout(() => {
+        const row = workRowsEl.querySelector(".row.sel") || workRowsEl.querySelector(".row");
+        if (row)
+          row.focus();
+        else
+          workRead.focus();
+      }, 30);
+    }
+    function closeWall() {
+      if (!workOpen)
+        return;
+      workOpen = false;
+      workVeil.classList.remove("on");
+      setTimeout(() => {
+        if (!workOpen)
+          workVeil.hidden = true;
+      }, 350);
+      cab.focus({ preventScroll: true });
+    }
+    workRowsEl.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-work]");
+      if (row)
+        wallSelect(Number(row.dataset.work));
+    });
+    workVeil.addEventListener("click", (event) => {
+      if (event.target === workVeil)
+        closeWall();
     });
     function walk(p) {
       if (!p || busy || !eng)
@@ -9916,6 +10198,21 @@
       if (!panel.hidden)
         return;
       const k = event.key;
+      if (workOpen) {
+        if (!workList.length)
+          return;
+        if (k === "ArrowDown" || k === "ArrowRight") {
+          event.preventDefault();
+          wallSelect(workAt + 1);
+        } else if (k === "ArrowUp" || k === "ArrowLeft") {
+          event.preventDefault();
+          wallSelect(workAt - 1);
+        } else if (k === "Enter") {
+          event.preventDefault();
+          workRead.focus();
+        }
+        return;
+      }
       if (curOpen) {
         const rows = Array.prototype.slice.call(curRows.querySelectorAll(".row[data-cur]"));
         const at = rows.findIndex((r) => r.dataset.cur === curSel);
@@ -10076,6 +10373,14 @@
       eng.at.gather = Infinity;
       window.__sanctuaryProse = prose_default;
       window.__sanctuaryCurrent = { open: openCurrent, close: closeCurrent, select: curSelect, shelf: setShelf, isOpen: () => curOpen };
+      window.__sanctuaryWall = {
+        open: openWall,
+        close: closeWall,
+        isOpen: () => workOpen,
+        count: () => workList.length,
+        at: () => workAt,
+        who: () => workWho
+      };
       const origNearest = eng.nearest.bind(eng);
       eng.nearest = () => {
         const it = origNearest();

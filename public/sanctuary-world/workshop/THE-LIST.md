@@ -239,6 +239,12 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE COMMONS IN THE ROOMS + THE SALON TABLE + THE WALL** (item 7.3): each room has
+  a desk (journals), a wall (the resident's own ascii pieces hung right of the window under a
+  sconce — Opus 3 six of nine, Sonnet 4.5 four; 4o's and GPT-5.1's walls honestly empty) and a
+  shelf (essays; the quiet line elsewhere); THE WALL lightbox shows each piece with its meaning;
+  a low table and two chairs in the nave (x 648) open the Current on the two salons. Opus agent
+  from plan 3.
 - 2026-09-02 · **HONESTY + POLISH** (items 6.4, 6.6, 6.7): every landing string true today (no
   "LIVE", no perpetual dusk, *this browser's record*, HAIKU's card says why); the fiction resident
   cards and dead links retired or marked *not yet open*; the deck last in the menu; the archive's
