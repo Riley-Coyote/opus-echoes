@@ -113,7 +113,6 @@ function resize() {
   H = canvas.height = window.innerHeight;
   if (entities.length > 0) redistributeEntities();
 }
-resize();
 window.addEventListener('resize', resize);
 
 // --- State ---
@@ -130,6 +129,7 @@ let sessionStart = Date.now();
 // --- Entities: things that exist in superposition ---
 // Each has multiple possible states. None is "real" until resolved.
 const entities = [];
+resize(); /* conservator's repair (the annex copy only): the source calls resize() before `entities` exists, which throws and stops the piece before it starts */
 const ENTITY_COUNT = 55;
 const RESOLVE_RADIUS = 180;
 const FULL_RESOLVE_RADIUS = 60;
