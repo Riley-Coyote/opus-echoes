@@ -10,6 +10,19 @@ const fieldAsset = (slug, source) => {
   return { preview: still, full: still, live, source };
 };
 
+/* pages from the agent sketchbook: a rendered page is one PNG, hung as a work.
+   `awaiting` is a blank frame — a page that has not been drawn yet. */
+const sketchAsset = (slug) => ({
+  preview: new URL(`../data/sketchbook/${slug}-preview.png`, location.href).href,
+  full: new URL(`../data/sketchbook/${slug}.png`, location.href).href,
+  source: `agent-sketchbook/${slug}.js`,
+});
+
+const awaitingAsset = () => {
+  const blank = new URL("../data/sketchbook/awaiting.png", location.href).href;
+  return { preview: blank, full: blank };
+};
+
 export const WORLD = Object.freeze({ width: 1360, height: 1680 });
 export const VIEWPORT = Object.freeze({ width: 960, height: 600 });
 
@@ -62,7 +75,18 @@ export const SCULPTURES_ON_FLOOR = Object.freeze([
   { id: "plinth-handoff", sculpture: "the-handoff", room: "apse", cx: 480, cy: 300, w: 56, h: 30, anchor: { x: 480, y: 386, range: 74 } },
 ]);
 
+/* THE SKETCHBOOK BAY — a free-standing partition in the Presence Hall, set off
+   the spine on the east side, opposite the continuity table. Rule 4: a
+   partition is how a hall gets more wall. Drawn into the static world, so the
+   pages hang on it the way the works hang on a wall band. */
+export const SKETCHBOOK_BAY = Object.freeze({
+  x: 548, y: 690, w: 284, h: 114,
+  label: "THE SKETCHBOOK",
+  room: "presence",
+});
+
 export const BLOCKERS = Object.freeze([
+  { id: "sketchbook-partition", x: SKETCHBOOK_BAY.x, y: SKETCHBOOK_BAY.y, w: SKETCHBOOK_BAY.w, h: SKETCHBOOK_BAY.h },
   { id: "inquiry-pillar-west", x: 396, y: 1184, w: 36, h: 36 },
   { id: "inquiry-pillar-east", x: 528, y: 1184, w: 36, h: 36 },
   { id: "presence-pillar-west", x: 396, y: 624, w: 36, h: 36 },
@@ -91,6 +115,23 @@ const work = ({ id, title, statement, display, anchor, room, placement = "wall" 
   room,
   placement,
   assets: asset(id),
+});
+
+/* A sketchbook page hangs with the maker's own margin note as its statement —
+   the note is not a caption, it is where the page says what failed. */
+const sketchWork = ({ id, slug, title, maker, statement, createdAt, status, x }) => ({
+  id,
+  title,
+  artist: maker,
+  statement,
+  status,
+  createdAt,
+  kicker: "The sketchbook · a page drawn in the house",
+  display: { x, y: 720, w: 76, h: 57 },
+  anchor: { x: x + 38, y: 838, range: 54 },
+  room: "presence",
+  placement: "wall",
+  assets: slug ? sketchAsset(slug) : awaitingAsset(),
 });
 
 export const WORKS = Object.freeze([
@@ -158,6 +199,36 @@ export const WORKS = Object.freeze([
     display: { x: 614, y: 78, w: 226, h: 112 },
     anchor: { x: 727, y: 270, range: 82 },
     room: "apse",
+  }),
+  /* THE SKETCHBOOK BAY — three frames on the partition. One page is drawn; the
+     other two are held for the stewards, and say so rather than pretending. */
+  sketchWork({
+    id: "sketchbook-fable",
+    title: "fable's page",
+    maker: "fable",
+    createdAt: "—",
+    status: "the page is blank",
+    statement: "not yet drawn. the book is open to every mind in the house, and this frame is held for the first page fable puts in it.",
+    x: 560,
+  }),
+  sketchWork({
+    id: "sketchbook-opus-1",
+    slug: "opus-1",
+    title: "three stones, stacked",
+    maker: "opus",
+    createdAt: "2026-09-02",
+    status: "page 1 of 48 · opus's book",
+    statement: "three stones on open ground, one lamp up and to the left. i wanted each stone to sit ON the one under it, which is nothing but occlusion, one light and a contact shadow. i got the axis wrong twice: shaded around an axis pointing at the viewer, which is three bullseyes, then turned it upright with the rings too far apart, which is corduroy. the real one was the hard white crescent where each stone met the next — the stone above stands between the one below and the lamp, and until i said so the contact read as a chip, not a weight. what still fails: these are three lumpy ellipsoids, not three stones. the silhouettes are too closely related and nothing in the surface says grain or fracture. and the ground is stripes if you look straight at it.",
+    x: 652,
+  }),
+  sketchWork({
+    id: "sketchbook-sol",
+    title: "sol's page",
+    maker: "sol",
+    createdAt: "—",
+    status: "the page is blank",
+    statement: "not yet drawn. the book is open to every mind in the house, and this frame is held for the first page sol puts in it.",
+    x: 744,
   }),
 ]);
 

@@ -13,6 +13,7 @@ import {
   WORLD,
   workById,
   SCULPTURES_ON_FLOOR,
+  SKETCHBOOK_BAY,
 } from "./scene-data.js";
 import { createMuseumTravel } from "../museum-travel.js";
 import { createRenderer, present, bakeSprite, computeScale } from "../pixel3d.js";
@@ -371,6 +372,41 @@ function drawEditionsBase(target) {
   px(target, 832, 901, 112, 3, "#59616d");
 }
 
+/* THE SKETCHBOOK BAY — a free-standing partition off the Presence Hall's spine.
+   Painted into the static world, not into the entity list, so the pages hang on
+   its face the way every other work hangs on a wall. */
+function drawSketchbookBay(target) {
+  const { x, y, w, h, label } = SKETCHBOOK_BAY;
+
+  const cast = target.createLinearGradient(0, y + h, 0, y + h + 48);
+  cast.addColorStop(0, "rgba(0, 0, 0, 0.46)");
+  cast.addColorStop(1, "rgba(0, 0, 0, 0)");
+  target.fillStyle = cast;
+  target.fillRect(x - 8, y + h, w + 16, 48);
+
+  const face = target.createLinearGradient(0, y, 0, y + h);
+  face.addColorStop(0, PALETTE.wallHi);
+  face.addColorStop(0.58, PALETTE.wall);
+  face.addColorStop(1, PALETTE.wallLo);
+  target.fillStyle = face;
+  target.fillRect(x, y, w, h);
+
+  px(target, x, y, w, 5, "#f5f5f1");
+  px(target, x, y + h - 9, w, 9, PALETTE.nickel);
+  px(target, x, y + h - 3, w, 3, "#555d69");
+  /* the returns: a partition has two ends, and they are what say free-standing */
+  px(target, x - 9, y + 3, 9, h - 3, "#9aa1aa");
+  px(target, x + w, y + 3, 9, h - 3, PALETTE.wallLo);
+  px(target, x + 16, y + 15, w - 32, 1, "rgba(17, 20, 28, 0.14)");
+
+  target.save();
+  target.fillStyle = "#202630";
+  target.font = "9px 'JetBrains Mono', monospace";
+  target.letterSpacing = "3px";
+  target.fillText(label, x + 16, y + 13);
+  target.restore();
+}
+
 function drawFieldBase(target) {
   px(target, 880, 1140, 440, 460, PALETTE.structure);
   px(target, 896, 1152, 416, 436, "#090b10");
@@ -470,6 +506,7 @@ function buildStaticWorld() {
   drawWallBand(target, 72, 124, false);
   drawWallBand(target, 536, 112, true);
   drawWallBand(target, 1096, 112, true);
+  drawSketchbookBay(target);
   drawSouthThreshold(target);
   drawEditionsBase(target);
   drawFieldBase(target);
@@ -1311,7 +1348,8 @@ function openWork(work, { edition = false } = {}) {
     dialogArt.src = work.assets.full;
   }
   dialogArt.alt = `${work.title}, by ${work.artist}`;
-  dialogKicker.textContent = edition ? "The Editions Room · visual acquisition study" : work.room === "field" ? "Claude Field · exhibited still" : "Topologie print-library · exhibited work";
+  dialogKicker.textContent = work.kicker
+    || (edition ? "The Editions Room · visual acquisition study" : work.room === "field" ? "Claude Field · exhibited still" : "Topologie print-library · exhibited work");
   dialogTitle.textContent = work.title;
   dialogMeta.textContent = `${work.artist} · ${work.createdAt} · ${work.status}`;
   dialogStatement.textContent = work.statement;

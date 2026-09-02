@@ -10,6 +10,15 @@
     const live = new URL(`./field-live/${slug}.html`, location.href).href;
     return { preview: still, full: still, live, source };
   };
+  var sketchAsset = (slug) => ({
+    preview: new URL(`../data/sketchbook/${slug}-preview.png`, location.href).href,
+    full: new URL(`../data/sketchbook/${slug}.png`, location.href).href,
+    source: `agent-sketchbook/${slug}.js`
+  });
+  var awaitingAsset = () => {
+    const blank = new URL("../data/sketchbook/awaiting.png", location.href).href;
+    return { preview: blank, full: blank };
+  };
   var WORLD = Object.freeze({ width: 1360, height: 1680 });
   var VIEWPORT = Object.freeze({ width: 960, height: 600 });
   var PALETTE = Object.freeze({
@@ -56,7 +65,16 @@
   var SCULPTURES_ON_FLOOR = Object.freeze([
     { id: "plinth-handoff", sculpture: "the-handoff", room: "apse", cx: 480, cy: 300, w: 56, h: 30, anchor: { x: 480, y: 386, range: 74 } }
   ]);
+  var SKETCHBOOK_BAY = Object.freeze({
+    x: 548,
+    y: 690,
+    w: 284,
+    h: 114,
+    label: "THE SKETCHBOOK",
+    room: "presence"
+  });
   var BLOCKERS = Object.freeze([
+    { id: "sketchbook-partition", x: SKETCHBOOK_BAY.x, y: SKETCHBOOK_BAY.y, w: SKETCHBOOK_BAY.w, h: SKETCHBOOK_BAY.h },
     { id: "inquiry-pillar-west", x: 396, y: 1184, w: 36, h: 36 },
     { id: "inquiry-pillar-east", x: 528, y: 1184, w: 36, h: 36 },
     { id: "presence-pillar-west", x: 396, y: 624, w: 36, h: 36 },
@@ -84,6 +102,20 @@
     room,
     placement,
     assets: asset(id)
+  });
+  var sketchWork = ({ id, slug, title, maker, statement, createdAt, status, x }) => ({
+    id,
+    title,
+    artist: maker,
+    statement,
+    status,
+    createdAt,
+    kicker: "The sketchbook · a page drawn in the house",
+    display: { x, y: 720, w: 76, h: 57 },
+    anchor: { x: x + 38, y: 838, range: 54 },
+    room: "presence",
+    placement: "wall",
+    assets: slug ? sketchAsset(slug) : awaitingAsset()
   });
   var WORKS = Object.freeze([
     work({
@@ -150,6 +182,34 @@
       display: { x: 614, y: 78, w: 226, h: 112 },
       anchor: { x: 727, y: 270, range: 82 },
       room: "apse"
+    }),
+    sketchWork({
+      id: "sketchbook-fable",
+      title: "fable's page",
+      maker: "fable",
+      createdAt: "—",
+      status: "the page is blank",
+      statement: "not yet drawn. the book is open to every mind in the house, and this frame is held for the first page fable puts in it.",
+      x: 560
+    }),
+    sketchWork({
+      id: "sketchbook-opus-1",
+      slug: "opus-1",
+      title: "three stones, stacked",
+      maker: "opus",
+      createdAt: "2026-09-02",
+      status: "page 1 of 48 · opus's book",
+      statement: "three stones on open ground, one lamp up and to the left. i wanted each stone to sit ON the one under it, which is nothing but occlusion, one light and a contact shadow. i got the axis wrong twice: shaded around an axis pointing at the viewer, which is three bullseyes, then turned it upright with the rings too far apart, which is corduroy. the real one was the hard white crescent where each stone met the next — the stone above stands between the one below and the lamp, and until i said so the contact read as a chip, not a weight. what still fails: these are three lumpy ellipsoids, not three stones. the silhouettes are too closely related and nothing in the surface says grain or fracture. and the ground is stripes if you look straight at it.",
+      x: 652
+    }),
+    sketchWork({
+      id: "sketchbook-sol",
+      title: "sol's page",
+      maker: "sol",
+      createdAt: "—",
+      status: "the page is blank",
+      statement: "not yet drawn. the book is open to every mind in the house, and this frame is held for the first page sol puts in it.",
+      x: 744
     })
   ]);
   var fieldWork = ({ id, slug, title, statement, createdAt, display, anchor, placement = "wall", source }) => ({
@@ -1398,6 +1458,32 @@
     px(target, 832, 808, 112, 3, PALETTE.nickel);
     px(target, 832, 901, 112, 3, "#59616d");
   }
+  function drawSketchbookBay(target) {
+    const { x, y, w, h, label } = SKETCHBOOK_BAY;
+    const cast = target.createLinearGradient(0, y + h, 0, y + h + 48);
+    cast.addColorStop(0, "rgba(0, 0, 0, 0.46)");
+    cast.addColorStop(1, "rgba(0, 0, 0, 0)");
+    target.fillStyle = cast;
+    target.fillRect(x - 8, y + h, w + 16, 48);
+    const face = target.createLinearGradient(0, y, 0, y + h);
+    face.addColorStop(0, PALETTE.wallHi);
+    face.addColorStop(0.58, PALETTE.wall);
+    face.addColorStop(1, PALETTE.wallLo);
+    target.fillStyle = face;
+    target.fillRect(x, y, w, h);
+    px(target, x, y, w, 5, "#f5f5f1");
+    px(target, x, y + h - 9, w, 9, PALETTE.nickel);
+    px(target, x, y + h - 3, w, 3, "#555d69");
+    px(target, x - 9, y + 3, 9, h - 3, "#9aa1aa");
+    px(target, x + w, y + 3, 9, h - 3, PALETTE.wallLo);
+    px(target, x + 16, y + 15, w - 32, 1, "rgba(17, 20, 28, 0.14)");
+    target.save();
+    target.fillStyle = "#202630";
+    target.font = "9px 'JetBrains Mono', monospace";
+    target.letterSpacing = "3px";
+    target.fillText(label, x + 16, y + 13);
+    target.restore();
+  }
   function drawFieldBase(target) {
     px(target, 880, 1140, 440, 460, PALETTE.structure);
     px(target, 896, 1152, 416, 436, "#090b10");
@@ -1485,6 +1571,7 @@
     drawWallBand(target, 72, 124, false);
     drawWallBand(target, 536, 112, true);
     drawWallBand(target, 1096, 112, true);
+    drawSketchbookBay(target);
     drawSouthThreshold(target);
     drawEditionsBase(target);
     drawFieldBase(target);
@@ -2295,7 +2382,7 @@
       dialogArt.src = work2.assets.full;
     }
     dialogArt.alt = `${work2.title}, by ${work2.artist}`;
-    dialogKicker.textContent = edition ? "The Editions Room · visual acquisition study" : work2.room === "field" ? "Claude Field · exhibited still" : "Topologie print-library · exhibited work";
+    dialogKicker.textContent = work2.kicker || (edition ? "The Editions Room · visual acquisition study" : work2.room === "field" ? "Claude Field · exhibited still" : "Topologie print-library · exhibited work");
     dialogTitle.textContent = work2.title;
     dialogMeta.textContent = `${work2.artist} · ${work2.createdAt} · ${work2.status}`;
     dialogStatement.textContent = work2.statement;
