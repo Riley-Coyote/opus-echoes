@@ -206,6 +206,10 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE DOOR CARD + THE FIRST PATH** (item 6.2): a 43-word house card once per
+  browser (real minds, their archive of 28 May 2026, voices later, remembered in this browser only;
+  *come in*); then the toast points to the hall, the first M opens on THE SANCTUARY, and the first
+  arrival names who is there. Opus agent from the brief in the plan.
 - 2026-09-02 · **THE DAY** (item 6.1): `world/day.js` — five phases, a place and an honest word for
   each resident per phase; the landing directs them (walked when watched, placed when not; held at
   the hall windows through dusk; opus, sonnet and five asleep at night and unvisitable); a fresh

@@ -8595,11 +8595,11 @@
     }
     const toast = $("#toast");
     let toastTimer = null;
-    function say(html) {
+    function say(html, ms) {
       toast.innerHTML = html;
       toast.classList.add("on");
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove("on"), 2600);
+      toastTimer = setTimeout(() => toast.classList.remove("on"), ms || 2600);
     }
     $("#panelclose").addEventListener("click", closePanel);
     panel.addEventListener("click", (e) => {
@@ -8770,6 +8770,48 @@
       }
     });
     const cab = $("#cab");
+    const FIRST = { door: "mnemos-landing.door", m: "mnemos-landing.firstM", hall: "mnemos-landing.firstHall" };
+    const seen = (k) => {
+      try {
+        return localStorage.getItem(k) === "1";
+      } catch (e) {
+        return false;
+      }
+    };
+    const mark = (k) => {
+      try {
+        localStorage.setItem(k, "1");
+      } catch (e) {}
+    };
+    const doorEl = $("#doorcard"), doorIn = $("#door-in");
+    function openDoor() {
+      doorEl.hidden = false;
+      if (eng)
+        eng.clearKeys();
+      setTimeout(() => doorIn.focus(), 30);
+    }
+    function comeIn() {
+      if (doorEl.hidden)
+        return;
+      doorEl.hidden = true;
+      mark(FIRST.door);
+      cab.focus({ preventScroll: true });
+      say("the hall — follow the thread or walk", 5000);
+    }
+    doorIn.addEventListener("click", comeIn);
+    document.addEventListener("keydown", (ev) => {
+      if (doorEl.hidden)
+        return;
+      if (ev.key === "Enter" || ev.key === "e" || ev.key === "E" || ev.key === " ") {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        comeIn();
+      } else if (ev.key === "Escape" || ev.key === "m" || ev.key === "M") {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+      }
+    }, true);
+    window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && curOpen) {
         e.stopImmediatePropagation();
@@ -9449,11 +9491,16 @@
         row.scrollIntoView({ block: "nearest" });
     }
     function openDest() {
-      if (!eng || destOpen)
+      if (!eng || destOpen || !doorEl.hidden)
         return;
       buildRows();
       paintThumbs();
       select(hereId());
+      if (!seen(FIRST.m)) {
+        mark(FIRST.m);
+        if (byId.sanctuary && hereId() !== "sanctuary")
+          select("sanctuary");
+      }
       prewarmFrames();
       destOpen = true;
       destVeil.hidden = false;
@@ -9608,7 +9655,7 @@
         curRead.innerHTML = quiet();
     }
     function openCurrent() {
-      if (curOpen)
+      if (curOpen || !doorEl.hidden)
         return;
       if (destOpen)
         closeDest();
@@ -9760,9 +9807,37 @@
         thread(p);
       }
     }
+    let lastRoom = null;
+    function onRoomChange(room) {
+      if (room !== "sanctuary" || seen(FIRST.hall))
+        return;
+      mark(FIRST.hall);
+      const here = eng.npcs.filter((n) => !n.temp && n.room === "sanctuary");
+      if (here.length) {
+        say(esc2(here[0].name) + " is here · walk up and press E", 5000);
+        return;
+      }
+      const count = new Map;
+      eng.npcs.forEach((n) => {
+        if (n.temp || !n.room || n.room === ASLEEP)
+          return;
+        count.set(n.room, (count.get(n.room) || []).concat([n]));
+      });
+      let best = null;
+      count.forEach((list, rid) => {
+        if (!best || list.length > best.list.length)
+          best = { room: rid, list };
+      });
+      if (best)
+        say("the hall is quiet · " + esc2(best.list[0].name) + " is in the " + roomWordOf(best.room), 5000);
+    }
     function syncCompass() {
       if (!eng)
         return;
+      if (doorEl.hidden && eng.roomId !== lastRoom) {
+        lastRoom = eng.roomId;
+        onRoomChange(eng.roomId);
+      }
       if (navigation.surface === "museum") {
         compassVerb.innerHTML = 'INSPECT<span class="what"></span>';
         compassAction.classList.remove("on");
@@ -9994,6 +10069,8 @@
         said: () => Array.from(DAY.said),
         UNOBSERVED_MIN
       };
+      if (!seen(FIRST.door))
+        openDoor();
       window.__sanctuaryArchive = archive_default;
       window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
       window.__sanctuaryNavigation = {

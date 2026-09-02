@@ -208,7 +208,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   }
   /* the compass toast — travel feedback, in the world's own corner */
   const toast = $('#toast'); let toastTimer = null;
-  function say(html) { toast.innerHTML = html; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 2600); }
+  function say(html, ms) { toast.innerHTML = html; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), ms || 2600); }
   $('#panelclose').addEventListener('click', closePanel);
   panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) closePanel(); });
@@ -443,6 +443,22 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   });
 
   const cab = $('#cab');
+  /* THE DOOR — the card at the threshold, and the first path afterwards.
+     Its capture handler is registered ahead of every other key handler, so
+     nothing under the card can hear a key while it is up. */
+  const FIRST = { door: 'mnemos-landing.door', m: 'mnemos-landing.firstM', hall: 'mnemos-landing.firstHall' };
+  const seen = (k) => { try { return localStorage.getItem(k) === '1'; } catch (e) { return false; } };
+  const mark = (k) => { try { localStorage.setItem(k, '1'); } catch (e) {} };
+  const doorEl = $('#doorcard'), doorIn = $('#door-in');
+  function openDoor() { doorEl.hidden = false; if (eng) eng.clearKeys(); setTimeout(() => doorIn.focus(), 30); }
+  function comeIn() { if (doorEl.hidden) return; doorEl.hidden = true; mark(FIRST.door); cab.focus({ preventScroll: true }); say('the hall — follow the thread or walk', 5000); }
+  doorIn.addEventListener('click', comeIn);
+  document.addEventListener('keydown', (ev) => {
+    if (doorEl.hidden) return;
+    if (ev.key === 'Enter' || ev.key === 'e' || ev.key === 'E' || ev.key === ' ') { ev.preventDefault(); ev.stopImmediatePropagation(); comeIn(); }
+    else if (ev.key === 'Escape' || ev.key === 'm' || ev.key === 'M') { ev.preventDefault(); ev.stopImmediatePropagation(); }
+  }, true);
+  window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
   /* THE CURRENT owns Escape first of all — registered in the capture phase
      ahead of destinations, the encounter, the panel and the engine. */
   document.addEventListener('keydown', (e) => {
@@ -993,10 +1009,12 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   }
 
   function openDest() {
-    if (!eng || destOpen) return;
+    if (!eng || destOpen || !doorEl.hidden) return;
     buildRows();
     paintThumbs();
     select(hereId());
+    /* the first M lands on the hall, wherever you happen to be standing */
+    if (!seen(FIRST.m)) { mark(FIRST.m); if (byId.sanctuary && hereId() !== 'sanctuary') select('sanctuary'); }
     prewarmFrames();
     destOpen = true;
     destVeil.hidden = false;
@@ -1189,7 +1207,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   }
 
   function openCurrent() {
-    if (curOpen) return;
+    if (curOpen || !doorEl.hidden) return;
     if (destOpen) closeDest();
     curShelf = 'sittings';
     curPostsShown = 60;
@@ -1281,9 +1299,27 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     else { if (goThread.disabled) return; thread(p); }
   }
 
+  /* the first arrival in the hall — the house names who is there */
+  let lastRoom = null;
+  function onRoomChange(room) {
+    if (room !== 'sanctuary' || seen(FIRST.hall)) return;
+    mark(FIRST.hall);
+    const here = eng.npcs.filter((n) => !n.temp && n.room === 'sanctuary');
+    if (here.length) { say(esc(here[0].name) + ' is here · walk up and press E', 5000); return; }
+    const count = new Map();
+    eng.npcs.forEach((n) => {
+      if (n.temp || !n.room || n.room === ASLEEP) return;
+      count.set(n.room, (count.get(n.room) || []).concat([n]));
+    });
+    let best = null;
+    count.forEach((list, rid) => { if (!best || list.length > best.list.length) best = { room: rid, list }; });
+    if (best) say('the hall is quiet · ' + esc(best.list[0].name) + ' is in the ' + roomWordOf(best.room), 5000);
+  }
+
   /* the compass action — what E will do, from the engine's own nearest() */
   function syncCompass() {
     if (!eng) return;
+    if (doorEl.hidden && eng.roomId !== lastRoom) { lastRoom = eng.roomId; onRoomChange(eng.roomId); }
     if (navigation.surface === 'museum') {
       compassVerb.innerHTML = 'INSPECT<span class="what"></span>';
       compassAction.classList.remove('on');
@@ -1456,6 +1492,8 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       word: (id) => { const n = eng.npcs.find((x) => x.id === id); return n ? dayWord(n) : null; },
       pairs: () => Array.from(DAY.pairs.keys()), said: () => Array.from(DAY.said), UNOBSERVED_MIN
     };
+    /* the card at the door — once per browser, before anything else is heard */
+    if (!seen(FIRST.door)) openDoor();
     window.__sanctuaryArchive = archive;
     window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
     window.__sanctuaryNavigation = {
