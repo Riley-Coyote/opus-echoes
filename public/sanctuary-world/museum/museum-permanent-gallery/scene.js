@@ -12,8 +12,11 @@ import {
   WORKS,
   WORLD,
   workById,
+  SCULPTURES_ON_FLOOR,
 } from "./scene-data.js";
 import { createMuseumTravel } from "../museum-travel.js";
+import { createRenderer, present, bakeSprite, computeScale } from "../pixel3d.js";
+import { byId as sculptureById } from "../sculptures.js";
 
 const CONNECTED = new URLSearchParams(location.search).get("embed") === "1";
 
@@ -113,6 +116,7 @@ const state = {
   reducedMotion: reducedMotion.matches,
   keys: new Set(),
   images: new Map(),
+  sprites: new Map(),
   staticWorld: null,
   lightMap: null,
   lightContext: null,
@@ -559,6 +563,28 @@ function drawLightTable(target, entity) {
   drawPlacard(target, x + w / 2 - 31, y + h + 18, 62, active);
 }
 
+/* a steward's sculpture on its plinth: the baked sprite, the light tables'
+   own metals for the plinth, a placard */
+function drawSculpture(target, entity) {
+  const active = state.nearest?.id === entity.id;
+  const { cx, cy, w, h } = entity;
+  const x = cx - w / 2, y = cy - h / 2;
+  target.fillStyle = "rgba(0, 0, 0, 0.42)";
+  target.beginPath();
+  target.ellipse(cx + 2, y + h + 5, w * 0.64, 8, 0, 0, Math.PI * 2);
+  target.fill();
+  px(target, x, y, w, h, "#1a1d21");
+  px(target, x + 6, y, w - 12, h, PALETTE.stone);
+  px(target, x + 6, y, 6, h, PALETTE.nickel);
+  px(target, x + w - 12, y, 6, h, "#1f2226");
+  px(target, x - 4, y - 8, w + 8, 10, active ? PALETTE.red : PALETTE.nickel);
+  px(target, x - 4, y - 8, w + 8, 2, active ? PALETTE.redHi : "#6f7680");
+  px(target, x - 2, y + h - 3, w + 4, 4, "#111317");
+  const sprite = state.sprites.get(entity.id);
+  if (sprite) target.drawImage(sprite.canvas, Math.round(cx - sprite.width / 2), Math.round(y - 3 - sprite.baseY));
+  drawPlacard(target, cx - 26, y + h + 10, 52, active);
+}
+
 function drawPlant(target, entity) {
   const { x, y } = entity;
   target.fillStyle = "rgba(0, 0, 0, 0.27)";
@@ -887,6 +913,17 @@ function drawMuseumLighting(target) {
       px(lightTarget, x, y, index % 3 === 0 ? 2 : 1, index % 3 === 0 ? 2 : 1, `rgba(232, 240, 255, ${alpha})`);
     }
   }
+  /* the sculptures get their own pools: a narrow beam from above, a pool on the floor */
+  for (const plinth of SCULPTURES_ON_FLOOR) {
+    const poolX = plinth.cx - state.camera.x;
+    const poolY = plinth.cy + 18 - state.camera.y;
+    if (poolY < -200 || poolY > VIEWPORT.height + 200) continue;
+    const focused = state.nearest?.id === plinth.id;
+    const intensity = focused ? 1 : (plinth.room === state.room ? 0.82 : 0.56);
+    const drift = state.reducedMotion ? 1 : 0.985 + Math.sin(state.ambientTime * 0.21 + plinth.cx) * 0.015;
+    drawSoftBeam(lightTarget, poolX, poolY - 132, poolX, poolY - 14, 58, 0.09 * intensity * drift);
+    drawLightPool(lightTarget, poolX, poolY, 98, 40, 0.19 * intensity * drift);
+  }
   lightTarget.restore();
 
   target.save();
@@ -932,6 +969,7 @@ function render() {
     if (entity.type === "bench") drawBench(ctx, entity);
     if (entity.type === "arch-pillar") drawArchPillar(ctx, entity);
     if (entity.type === "light-table") drawLightTable(ctx, entity);
+    if (entity.type === "sculpture") drawSculpture(ctx, entity);
     if (entity.type === "plant") drawPlant(ctx, entity);
     if (entity.type === "edition-plinth") drawEditionPlinth(ctx, entity);
     if (entity.type === "flat-files") drawFlatFiles(ctx, entity);
@@ -1025,6 +1063,7 @@ function roomRecord(id) {
 function labelForInteraction(interaction) {
   if (!interaction) return "";
   if (interaction.type === "work") return `Inspect “${interaction.title}”`;
+  if (interaction.type === "sculpture") return `Look at “${sculptureById(interaction.sculpture)?.title ?? interaction.sculpture}”`;
   if (interaction.type === "edition") return `Inspect edition study “${interaction.title}”`;
   if (interaction.type === "edition-index") return "Open the edition study index";
   if (interaction.type === "annex-boundary") return "Enter the Field Annex";
@@ -1212,6 +1251,7 @@ function resetDialogSurface({ textOnly = false } = {}) {
   dialog.classList.toggle("is-text-only", textOnly);
   dialogArtWrap.hidden = textOnly;
   setDialogLive(null);
+  setDialogSculpture(null);
   if (textOnly) {
     dialogArt.removeAttribute("src");
     dialogArt.alt = "";
@@ -1276,6 +1316,104 @@ function openWork(work, { edition = false } = {}) {
   dialogMeta.textContent = `${work.artist} · ${work.createdAt} · ${work.status}`;
   dialogStatement.textContent = work.statement;
   if (edition) appendEditionDetails();
+  if (!dialog.open) dialog.showModal();
+  queueMicrotask(() => dialogCloseButton.focus({ preventScroll: true }));
+}
+
+/* ── the stewards' sculptures ── */
+const SCULPTURE_BUFFER = 128;
+let dialogSculpture = null;
+
+function bakeSculptureSprites() {
+  for (const plinth of SCULPTURES_ON_FLOOR) {
+    const sculpture = sculptureById(plinth.sculpture);
+    if (!sculpture) continue;
+    const floor = sculpture.floor || {};
+    const parts = sculpture.build({ t: 0, lod: "floor", minR: 0.45 });
+    state.sprites.set(plinth.id, bakeSprite(parts, {
+      height: floor.height || 60, yaw: floor.yaw ?? 24, pitch: 38, lightAz: -55,
+      outline: floor.outline || "rim", bounds: sculpture.bounds,
+    }));
+  }
+}
+
+/* the lightbox's sculpture mode: the object turning on its plinth, drawn
+   pixel by pixel into a small buffer and shown at whole device pixels */
+function setDialogSculpture(sculpture) {
+  if (dialogSculpture) {
+    cancelAnimationFrame(dialogSculpture.raf);
+    dialogSculpture.view.remove();
+    dialogSculpture = null;
+    dialogArt.hidden = false;
+    dialogArtWrap.classList.remove("is-live");
+  }
+  if (!sculpture) return;
+  const view = document.createElement("canvas");
+  view.className = "sculpture-view";
+  view.setAttribute("aria-label", `${sculpture.title}, turning`);
+  dialogArtWrap.appendChild(view);
+  dialogArt.hidden = true;
+  dialogArtWrap.classList.add("is-live");
+  const entry = {
+    view, small: document.createElement("canvas"), renderer: createRenderer(SCULPTURE_BUFFER, SCULPTURE_BUFFER),
+    sculpture, yaw: sculpture.lightbox?.yaw ?? 40, raf: 0, drag: null, held: false, t0: performance.now(), last: performance.now(), fw: 0, fh: 0,
+  };
+  const minR = 1.5 / computeScale({ width: SCULPTURE_BUFFER, height: SCULPTURE_BUFFER, bounds: sculpture.bounds, pitch: 28 });
+  const layout = () => {
+    const fw = dialogArtWrap.clientWidth, fh = dialogArtWrap.clientHeight;
+    if (!fw || !fh || (fw === entry.fw && fh === entry.fh)) return;
+    entry.fw = fw; entry.fh = fh;
+    const dpr = window.devicePixelRatio || 1;
+    const scale = Math.max(1, Math.floor(Math.min((fw * dpr) / SCULPTURE_BUFFER, (fh * dpr) / SCULPTURE_BUFFER)));
+    const dev = SCULPTURE_BUFFER * scale;
+    view.width = dev; view.height = dev;
+    view.style.width = `${dev / dpr}px`; view.style.height = `${dev / dpr}px`;
+    view.style.left = `${Math.floor((fw * dpr - dev) / 2) / dpr}px`;
+    view.style.top = `${Math.floor((fh * dpr - dev) / 2) / dpr}px`;
+  };
+  const frame = (now) => {
+    layout();
+    const dt = Math.min(0.1, (now - entry.last) / 1000);
+    entry.last = now;
+    if (!entry.drag && !state.reducedMotion) entry.yaw = (entry.yaw + 18 * dt) % 360;
+    const t = state.reducedMotion ? 0 : (now - entry.t0) / 1000;
+    const parts = sculpture.build({ t, lod: "lightbox", minR });
+    const image = entry.renderer.render(parts, {
+      yaw: Math.round(entry.yaw / 1.5) * 1.5, pitch: 28, lightAz: -55, outline: "dark",
+      bounds: sculpture.bounds, plinth: true,
+    });
+    if (view.width) present(image, entry.small, view);
+    entry.raf = requestAnimationFrame(frame);
+  };
+  view.addEventListener("pointerdown", (event) => {
+    entry.drag = { x: event.clientX, yaw: entry.yaw };
+    view.setPointerCapture(event.pointerId);
+  });
+  view.addEventListener("pointermove", (event) => {
+    if (entry.drag) entry.yaw = (entry.drag.yaw + (event.clientX - entry.drag.x) * 0.5 + 360) % 360;
+  });
+  const endDrag = () => { entry.drag = null; };
+  view.addEventListener("pointerup", endDrag);
+  view.addEventListener("pointercancel", endDrag);
+  entry.raf = requestAnimationFrame(frame);
+  dialogSculpture = entry;
+}
+
+function openSculpture(plinth) {
+  const sculpture = sculptureById(plinth.sculpture);
+  if (!sculpture) return;
+  state.modalReason = "sculpture";
+  resetDialogSurface();
+  setDialogSculpture(sculpture);
+  dialogKicker.textContent = `${sculpture.kicker} · ${sculpture.hall.toLowerCase()}`;
+  dialogTitle.textContent = sculpture.title;
+  dialogMeta.textContent = sculpture.meta;
+  dialogStatement.textContent = sculpture.statement;
+  const material = document.createElement("strong");
+  material.textContent = "material";
+  dialogExtra.replaceChildren(material, document.createTextNode(sculpture.material));
+  dialogExtra.hidden = false;
+  dialogPrimary.textContent = "Return to the Gallery";
   if (!dialog.open) dialog.showModal();
   queueMicrotask(() => dialogCloseButton.focus({ preventScroll: true }));
 }
@@ -1352,6 +1490,7 @@ function interact() {
   if (!state.ready || state.paused || !state.nearest) return;
   const interaction = state.nearest;
   if (interaction.type === "work") openWork(interaction);
+  if (interaction.type === "sculpture") openSculpture(interaction);
   if (interaction.type === "edition") openWork(interaction, { edition: true });
   if (interaction.type === "edition-index") openEditionIndex();
   if (interaction.type === "edition-terminal") openEditionTerminal();
@@ -1363,6 +1502,7 @@ function interact() {
 }
 
 function handleDialogClose() {
+  setDialogSculpture(null);
   if (state.modalReason === "south-boundary") {
     state.player.x = 480;
     state.player.y = 1608;
@@ -1387,7 +1527,14 @@ function directionForKey(key) {
 }
 
 function onKeyDown(event) {
-  if (dialog.open) return;
+  if (dialog.open) {
+    if (dialogSculpture && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      dialogSculpture.yaw = (dialogSculpture.yaw + (event.key === "ArrowLeft" ? -6 : 6) + 360) % 360;
+      dialogSculpture.held = true;
+      event.preventDefault();
+    }
+    return;
+  }
   const direction = directionForKey(event.key);
   if (direction) {
     if (travelController?.active) travelController.cancel("manual");
@@ -1528,6 +1675,9 @@ function exposeTestContract() {
     walkableRegions: WALKABLE,
     blockers: BLOCKERS.map(({ id, x, y, w, h }) => ({ id, x, y, w, h })),
     collection: WORKS.map(({ id, title, artist, room, placement, status }) => ({ id, title, artist, room, placement, status })),
+    sculptures: SCULPTURES_ON_FLOOR.map(({ id, sculpture, room, cx, cy }) => ({
+      id, sculpture, room, x: cx, y: cy, title: sculptureById(sculpture)?.title ?? sculpture, maker: "fable, steward", sprite: state.sprites.has(id),
+    })),
     editions: {
       hero: EDITION_WORK.id,
       price: EDITIONS.price,
@@ -1553,6 +1703,8 @@ function exposeTestContract() {
       ["field-entry", 920, 1378],
       ["field-center", 1104, 1410],
       ["annex-door", 1128, 1586],
+      ["apse-north-strip", 480, 240],
+      ["apse-sculpture-approach", 480, 386],
     ].map(([id, x, y]) => ({ id, x, y, walkable: canOccupy(x, y) })),
   });
 
@@ -1587,6 +1739,7 @@ function exposeTestContract() {
       if (entity.type === "bench") drawBench(target, entity);
       if (entity.type === "arch-pillar") drawArchPillar(target, entity);
       if (entity.type === "light-table") drawLightTable(target, entity);
+      if (entity.type === "sculpture") drawSculpture(target, entity);
       if (entity.type === "plant") drawPlant(target, entity);
       if (entity.type === "edition-plinth") drawEditionPlinth(target, entity);
       if (entity.type === "flat-files") drawFlatFiles(target, entity);
@@ -1628,6 +1781,7 @@ async function start() {
   });
 
   await preloadSceneImages();
+  bakeSculptureSprites();
   buildStaticWorld();
   state.ready = true;
   state.room = roomForPlayer();

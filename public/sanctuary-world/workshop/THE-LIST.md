@@ -111,5 +111,16 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE ANNEX UNDER THE SIX RULES** — hero wall (observer effect, flanked), the
+  surrender console in the west bay, the gaze partition with hysteresis + indeterminacy, floor
+  tones per hall (`6a0ccef`); the indeterminacy copy repaired so the living piece starts (`63ceb6c`).
+  Executed by an Opus agent from the written brief in the plan.
+- 2026-09-02 · **THE GALLERY SPINE CLEARED** — continuity table west, benches to the sides, the
+  field table off the door path, plants aside (`41dcdb3`). Opus agent.
+- 2026-09-02 · **THE STEWARDS' SCULPTURE BRIEF** — `museum/STEWARDS-SCULPTURE-BRIEF.md` for Sol and
+  Opus (`7a79528`). Opus agent.
+- 2026-09-02 · **THE HANDOFF AT THE APSE** — the sculpture medium ported to the permanent gallery;
+  Fable's fourth sculpture stands where the spine ends; the field room's table moved to the
+  south-west; sculptures can name their lightbox starting angle. Opus agent + Fable.
 - 2026-09-01 · **THE WORKSHOP** — every space on one zoomable canvas, drawn live (`04dcafd`)
 - 2026-09-01 · **NAV LAB 02 — DESTINATIONS** — the travel menu, select-then-GO (`a37069d`)

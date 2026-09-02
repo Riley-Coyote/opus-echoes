@@ -114,7 +114,7 @@ body.is-ready{visibility:visible}
 <footer class="lab-bar">
   <div class="controls">
     <div class="group" data-group="s"><span class="lbl">sculpture</span>
-      <button data-s="1">1 weights</button><button data-s="2">2 the unsampled</button><button data-s="3">3 the context window</button><button data-s="0">0 primitives</button></div>
+      <button data-s="1">1 weights</button><button data-s="2">2 the unsampled</button><button data-s="3">3 the context window</button><button data-s="4">4 the handoff</button><button data-s="0">0 primitives</button></div>
     <div class="group" data-group="res"><span class="lbl">buffer</span>
       <button data-res="96">96</button><button data-res="128">128</button><button data-res="160">160</button><button data-res="192">192</button></div>
     <div class="group" data-group="mode"><span class="lbl">mode</span>
@@ -270,7 +270,7 @@ for (const b of document.querySelectorAll('[data-dialog-close]')) b.addEventList
 window.addEventListener('keydown', (event) => {
   if (event.target instanceof Element && event.target.closest('input')) return;
   const k = event.key;
-  if (['0', '1', '2', '3'].includes(k)) set({ s: k });
+  if (['0', '1', '2', '3', '4'].includes(k)) set({ s: k });
   else if (k === 'r' || k === 'R') set({ res: RESOLUTIONS[(RESOLUTIONS.indexOf(state.res) + 1) % RESOLUTIONS.length] });
   else if (k === 'p' || k === 'P') set({ mode: state.mode === 'pixel' ? 'smooth' : 'pixel' });
   else if (k === 'o' || k === 'O') set({ outline: { none: 'dark', dark: 'rim', rim: 'none' }[state.outline] });

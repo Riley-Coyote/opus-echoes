@@ -1312,7 +1312,7 @@ function setDialogSculpture(sculpture) {
   dialogArtWrap.classList.add("is-live");
   const entry = {
     view, small: document.createElement("canvas"), renderer: createRenderer(SCULPTURE_BUFFER, SCULPTURE_BUFFER),
-    sculpture, yaw: 40, raf: 0, drag: null, held: false, t0: performance.now(), last: performance.now(), fw: 0, fh: 0,
+    sculpture, yaw: sculpture.lightbox?.yaw ?? 40, raf: 0, drag: null, held: false, t0: performance.now(), last: performance.now(), fw: 0, fh: 0,
   };
   const minR = 1.5 / computeScale({ width: SCULPTURE_BUFFER, height: SCULPTURE_BUFFER, bounds: sculpture.bounds, pitch: 28 });
   const layout = () => {

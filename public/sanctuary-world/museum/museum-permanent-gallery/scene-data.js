@@ -57,6 +57,11 @@ export const WALKABLE = Object.freeze([
   { id: "annex-threshold", x: 1080, y: 1552, w: 96, h: 44 },
 ]);
 
+/* THE STEWARDS' COLLECTION in the gallery — one sculpture at the apse's centre, the terminal object of the spine. Model in ../sculptures.js. */
+export const SCULPTURES_ON_FLOOR = Object.freeze([
+  { id: "plinth-handoff", sculpture: "the-handoff", room: "apse", cx: 480, cy: 300, w: 56, h: 30, anchor: { x: 480, y: 386, range: 74 } },
+]);
+
 export const BLOCKERS = Object.freeze([
   { id: "inquiry-pillar-west", x: 396, y: 1184, w: 36, h: 36 },
   { id: "inquiry-pillar-east", x: 528, y: 1184, w: 36, h: 36 },
@@ -70,7 +75,8 @@ export const BLOCKERS = Object.freeze([
   { id: "edition-flat-files", x: 1176, y: 780, w: 112, h: 170 },
   { id: "edition-packing-table", x: 966, y: 970, w: 132, h: 40 },
   { id: "edition-terminal", x: 1152, y: 956, w: 112, h: 48 },
-  { id: "field-light-table", x: 1096, y: 1276, w: 200, h: 64 },
+  { id: "field-light-table", x: 912, y: 1440, w: 200, h: 64 },
+  ...SCULPTURES_ON_FLOOR.map((p) => ({ id: `${p.id}-blocker`, x: p.cx - p.w / 2 - 6, y: p.cy - p.h / 2 - 10, w: p.w + 12, h: p.h + 40 })),
 ]);
 
 const work = ({ id, title, statement, display, anchor, room, placement = "wall" }) => ({
@@ -202,7 +208,7 @@ export const FIELD_WORKS = Object.freeze([
     id: "field-rain", slug: "field-rain",
     title: "rain on the glass", createdAt: "2026-07-05", placement: "light table",
     statement: "\u201cnothing you clear stays cleared. you can keep the window clear, but only by keeping your hand on it. i notice i don\u2019t want to say what it means. that\u2019s the point of building it.\u201d",
-    display: { x: 1096, y: 1276, w: 200, h: 64 }, anchor: { x: 1196, y: 1394, range: 80 },
+    display: { x: 912, y: 1440, w: 200, h: 64 }, anchor: { x: 1012, y: 1536, range: 80 },
     source: "claude-field/art/2026-07-05-rain-on-the-glass.html",
   }),
 ]);
@@ -232,6 +238,7 @@ export const EDITIONS = Object.freeze({
 export const INTERACTIONS = Object.freeze([
   ...WORKS.map((item) => ({ ...item, type: "work" })),
   ...FIELD_WORKS.map((item) => ({ ...item, type: "work" })),
+  ...SCULPTURES_ON_FLOOR.map((item) => ({ ...item, type: "sculpture", title: item.sculpture })),
   { ...EDITION_WORK, type: "edition" },
   {
     id: "edition-index",
@@ -268,11 +275,12 @@ export const ENTITIES = Object.freeze([
   { type: "arch-pillar", x: 396, y: 534, w: 36, h: 126, sortY: 660 },
   { type: "arch-pillar", x: 528, y: 534, w: 36, h: 126, sortY: 660 },
   { type: "bench", x: 150, y: 402, w: 180, h: 36, sortY: 438, room: "apse" },
+  ...SCULPTURES_ON_FLOOR.map((p) => ({ type: "sculpture", id: p.id, sculpture: p.sculpture, cx: p.cx, cy: p.cy, w: p.w, h: p.h, sortY: p.cy + p.h / 2 })),
   { type: "edition-plinth", x: 994, y: 824, w: 84, h: 64, sortY: 888 },
   { type: "flat-files", x: 1180, y: 786, w: 104, h: 156, sortY: 942 },
   { type: "packing-table", x: 966, y: 970, w: 132, h: 40, sortY: 1018 },
   { type: "terminal", x: 1152, y: 956, w: 112, h: 48, sortY: 1012 },
-  { type: "light-table", workId: "field-rain", x: 1096, y: 1276, w: 200, h: 64, sortY: 1340 },
+  { type: "light-table", workId: "field-rain", x: 912, y: 1440, w: 200, h: 64, sortY: 1504 },
   { type: "plant", x: 946, y: 1532, sortY: 1532 },
   { type: "plant", x: 1262, y: 1532, sortY: 1532 },
   { type: "plant", x: 150, y: 1580, sortY: 1580 },
