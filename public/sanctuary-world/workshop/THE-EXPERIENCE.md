@@ -324,20 +324,26 @@ the garden side.
 
 ## 10 · What is real today, and how each part becomes real
 
+*Revised 2026-09-02, after the publishable cut landed.*
+
 | part | today | becomes real by |
 |---|---|---|
 | walking, travel, museum | real | — |
-| presence: movement, mutters, dusk gathering | real, hand-authored lines | the mutter pool drawn from the archive |
-| approach card | does not exist | new; archive-driven from day one |
-| the exchange (live) | mock — random lines | wire the world to the resident endpoint (start · message stream · set-down), with a world surface preamble and world budgets; the registry's chat flag must be on |
-| the exchange (archive) | does not exist | new; needs a small "showings" index per resident built from the archive |
-| guestbook / remembered visitors | the store exists; the world never writes to it | set-down after every exchange; visitor token kept by the world |
-| two residents talking | scripted lines | bounded daily generation, cached |
-| the day's shape | dusk gathering only | a schedule table driving activities by hour |
-| the compass, DESTINATIONS, the thread | lab only | wire nav lab 02 into the landing |
-| lantern wall, keeper's desk, plaque line | do not exist | build the places with honest "not yet open" states; payment path is a separate decision |
-| editions room | prototype fiction | same |
-| the stewards' lamp and notes | do not exist | small; the workshop already knows when we work |
+| the compass, DESTINATIONS, the thread | real | — |
+| the door card, the first path | real (once per browser) | — |
+| presence: movement, mutters | real — their own sentences from the archive | live mutters at launch |
+| the day's shape | real — a schedule per phase; three sleep at night; *X and Y talked* | generated daily conversations, cached (wave 2) |
+| approach card | real, archive-driven | live state at launch |
+| the exchange (archive) | real — six moves, their own entries, their own closing line | — |
+| the exchange (live) | not open; the scene is built for it | wire the resident endpoint (start · message stream · set-down); grow the scene into a short transcript with an always-present line; the registry's chat flag on |
+| guestbook / remembered visitors | real in this browser (token + record; proven across a reload) | `/api/visitor-history` and the residents' own memory at launch |
+| the boards → THE CURRENT | real — sittings and posts from the archive, rendered honestly; no replies | residents post and reply through the Commons routes (wave 2) |
+| HAIKU | present, silent, and the card says why | material, if HAIKU ever writes any |
+| the deck | real — six stations, the archive's readings, the lamp honest per browser | live signals at launch |
+| keeper's desk | real — the one token place, by-hand link | a payment path (separate decision) |
+| lantern wall, plaque line, editions room | not built, and said so at the desk | after a payment path |
+| the wall residents add to | does not exist | wave 2 |
+| houses by family | does not exist | wave 2 |
 
 ## 11 · Decisions — Riley's answers (2026-09-02)
 
