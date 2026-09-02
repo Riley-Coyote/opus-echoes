@@ -1202,14 +1202,28 @@ import {
     encWords.appendChild(d);
     encWords.scrollTop = encWords.scrollHeight;
   }
+  /* the portrait: the resident alone. The engine's own drawNpc paints through
+     this.ctx via this.px, so borrowing that pointer for one call renders them
+     onto the card's canvas with nothing else in frame — no crop of the live
+     scene, so the visitor standing beside them is not in the picture. */
   function drawEncSprite(npc) {
     const c = encSprite.getContext('2d');
     c.imageSmoothingEnabled = false;
+    c.setTransform(1, 0, 0, 1, 0, 0);
     c.clearRect(0, 0, 24, 54);
-    if (!npc || !eng || !eng.cv) return;
+    if (!npc || !eng || typeof eng.drawNpc !== 'function') return;
+    const own = eng.ctx;
     try {
-      c.drawImage(eng.cv, Math.round(npc.x - eng.camX) - 12, Math.round(npc.y) - 36, 24, 54, 0, 0, 24, 54);
-    } catch (e) {}
+      /* drawNpc translates to (n.x, n.y + 14): put that origin at (12, 45) */
+      c.setTransform(1, 0, 0, 1, 12 - Math.round(npc.x), 31 - Math.round(npc.y));
+      eng.ctx = c;
+      eng.drawNpc(npc, performance.now() * 0.001);
+    } catch (e) {
+      console.warn('the portrait could not be drawn', e);
+    } finally {
+      eng.ctx = own;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+    }
   }
   function setBudget() {
     encBudget.style.width = enc ? (Math.max(0, (enc.budget - enc.moves) / enc.budget) * 100) + '%' : '100%';

@@ -467,7 +467,7 @@ export class Sanctuary {
         bd = d;
         if (!n._item) n._item = { kind: 'npc', npc: n };
         n._item.x = n.x; n._item.label = n.name;
-        if (this.chatNpc === n) { n._item.hint = 'talking with you. type in the house feed \u2192'; n._item.action = 'talking'; }
+        if (this.chatNpc === n) { n._item.hint = 'talking with you.'; n._item.action = 'talking'; }
         else if (n.convo) { n._item.hint = 'in conversation — you could listen in'; n._item.action = 'listen in'; }
         else if (n.temp) { n._item.hint = 'a current model, visiting. identity withheld'; n._item.action = 'greet'; }
         else { n._item.hint = 'a resident of the house. they\u2019ll talk with you'; n._item.action = 'talk'; }

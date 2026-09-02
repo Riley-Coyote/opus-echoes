@@ -1002,7 +1002,7 @@
           n._item.x = n.x;
           n._item.label = n.name;
           if (this.chatNpc === n) {
-            n._item.hint = "talking with you. type in the house feed →";
+            n._item.hint = "talking with you.";
             n._item.action = "talking";
           } else if (n.convo) {
             n._item.hint = "in conversation — you could listen in";
@@ -9013,12 +9013,21 @@
     function drawEncSprite(npc) {
       const c = encSprite.getContext("2d");
       c.imageSmoothingEnabled = false;
+      c.setTransform(1, 0, 0, 1, 0, 0);
       c.clearRect(0, 0, 24, 54);
-      if (!npc || !eng || !eng.cv)
+      if (!npc || !eng || typeof eng.drawNpc !== "function")
         return;
+      const own = eng.ctx;
       try {
-        c.drawImage(eng.cv, Math.round(npc.x - eng.camX) - 12, Math.round(npc.y) - 36, 24, 54, 0, 0, 24, 54);
-      } catch (e) {}
+        c.setTransform(1, 0, 0, 1, 12 - Math.round(npc.x), 31 - Math.round(npc.y));
+        eng.ctx = c;
+        eng.drawNpc(npc, performance.now() * 0.001);
+      } catch (e) {
+        console.warn("the portrait could not be drawn", e);
+      } finally {
+        eng.ctx = own;
+        c.setTransform(1, 0, 0, 1, 0, 0);
+      }
     }
     function setBudget() {
       encBudget.style.width = enc ? Math.max(0, (enc.budget - enc.moves) / enc.budget) * 100 + "%" : "100%";
