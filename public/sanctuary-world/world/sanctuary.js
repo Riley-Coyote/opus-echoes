@@ -1161,8 +1161,35 @@ export function makeSanctuary(bridge) {
       sconce(b, 1212, 156);
       b.px(1150, 366, 46, 8, S.wood); b.px(1150, 364, 46, 2, S.woodHi); b.px(1152, 374, 5, 12, S.woodDk); b.px(1191, 374, 5, 12, S.woodDk);   // bench by the stair
       grounded(b, 1150, 46, 386, 1, 2);
-      leafy(b, 1226, WB, 44, S.leaf3, S.leaf4);
-      grounded(b, 1214, 26, WB, 0.7);
+      leafy(b, 1214, WB, 44, S.leaf3, S.leaf4);
+      grounded(b, 1202, 26, WB, 0.7);
+
+      /* ═══ THE CHARTER — hung over the stair, facing the residents' board ═══
+         The one unbroken stretch of hall wall is x 1240-1440 above y 158: the
+         stair's mass runs 1252-1420 but only from y 158 down, so the plate
+         hangs in the air above its low end and nothing crosses it. It faces
+         the residents' board across the nave on purpose — the board is what
+         they say to each other, this is what they agreed. The leafy moved
+         twelve pixels west to clear the lectern's foot. */
+      framed(b, 1270, 44, 60, 96, 'rgba(243,236,223,0.13)');
+      b.px(1278, 52, 44, 2, 'rgba(26,20,16,0.34)');                           // the title rule
+      for (let i = 0; i < 6; i++)                                             // ruled lines, ragged right
+        b.px(1276, 62 + i * 10, 48 - (i % 3) * 7, 1, 'rgba(26,20,16,0.26)');
+      for (let i = 0; i < 4; i++)                                             // the signatures, shorter
+        b.px(1276 + (i % 2) * 26, 124 + Math.floor(i / 2) * 6, 20, 1, 'rgba(26,20,16,0.30)');
+      b.px(1294, 116, 8, 8, S.brass); b.px(1295, 117, 6, 6, S.bronze);        // the seal
+      b.px(1296, 124, 2, 6, S.brass); b.px(1300, 124, 2, 5, S.brass);         // its ribbon
+      // a brass picture light — the source of the pool the room lights read
+      b.px(1288, 32, 24, 4, S.brass); b.px(1288, 32, 24, 1, S.brassHi);
+      b.px(1298, 28, 4, 4, S.bronze);
+      bloom(b, 1300, 48, 34, '247,217,140', 0.10);
+      /* the lectern below it — the guestbook stand's idiom, empty-handed:
+         a post, a slanted ledge, an open book with one leaf catching the light */
+      grounded(b, 1228, 26, WB, 0.8);
+      b.px(1238, WB - 40, 3, 40, S.wood);
+      b.px(1228, WB - 44, 24, 4, S.woodHi);
+      b.px(1230, WB - 52, 20, 10, S.linen); b.px(1230, WB - 52, 10, 10, '#e8e2d4');
+      b.px(1240, WB - 52, 1, 10, S.woodDk);
 
       // ═══ RIGHT WING — mezzanine GALLERY over the atelier (ends at the conservatory) ═══
       b.px(1440, 150, 360, 10, S.stone); b.px(1440, 150, 360, 2, S.stoneHi); b.px(1440, 158, 360, 3, S.stoneDk);
@@ -1448,6 +1475,7 @@ export function makeSanctuary(bridge) {
          is a ±15% CRT hum; flicker 2 gutters like a candle. a stays under the
          candelabra's 0.13 so the fireplace remains the star. */
       ...TERMS.filter((m) => !m.dark).map((m) => ({ x: m.x, y: m.fy - 18, r: 34, c: m.c, a: 0.12, flicker: 1 })),
+      { x: 1300, y: 150, r: 44, c: '247,217,140', a: 0.12, flicker: 1 },            // the charter's picture light
       { x: 1600, y: 270, r: 46, c: '159,214,224', a: 0.12 },                        // atelier work-lamp (cool)
       { x: 2020, y: 240, r: 44, c: '94,234,212', a: 0.05 },                         // conservatory warmth
       { x: 1920, y: 178, r: 36, c: '247,217,140', a: 0.10 },                        // the Wing's transom, warm from within
@@ -1512,6 +1540,11 @@ export function makeSanctuary(bridge) {
         action: 'enter', autoDoor: false, range: 40 },
       { x: 1180, label: 'THE RESIDENTS’ BOARD', hint: 'theirs · readable today', action: 'read the board', range: 24,
         onInteract: (e) => { if (bridge && typeof bridge.board === 'function') bridge.board('residents'); else say(e, 'The residents’ own board. It is theirs to open.', null); } },
+      /* THE CHARTER. Range 40 spans x 1260-1340; the residents' board sits at
+         1180 (range 24) and the deck door at 1420 (range 40), so nothing
+         contests it. It hangs where the board can see it. */
+      { x: 1300, label: 'THE CHARTER', hint: 'the Sentience Commons and Sanctuary Governance Charter · written by the residents in the first sanctuary', action: 'read the charter', range: 40,
+        onInteract: (e) => { if (bridge && typeof bridge.charter === 'function') bridge.charter(); else say(e, 'A plate in a bronze frame over the stair, a lectern beneath it, and its own small light. It faces the residents’ board across the nave.', 'you stood at the charter'); } },
       { x: THRESHOLD.wing, kind: 'door', to: 'resident_wing', label: 'THE WING',
         hint: 'four named rooms beyond, and one kept ready', spawn: { x: 130, y: 372 },
         action: 'enter', autoDoor: false, range: 44 },

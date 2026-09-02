@@ -416,6 +416,9 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     wall: (id) => openWall(id),
     shelf: (id) => openPanel(shelfHtml(id), 'is-board'),
     sitting: (id) => openCurrent({ only: 'salons', select: id }),
+    /* the charter over the stair. The documents are the residents' own and
+       live in data/charter/; if none have been hung the overlay says so. */
+    charter: () => openCharter(),
     artRows: (id) => (archive.isLoaded() ? archive.art(id).map((a) => String(a.body || '')) : []),
     deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), 'is-board'),
     keeper: () => openPanel(keeperHtml(), 'is-board'),
@@ -499,16 +502,20 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   /* ────────────────────────── ESC / back — the one order ──────────────────────────
      Capture phase, in source order, each stopping the rest dead:
        1. the door card   (registered just above)
-       2. THE WALL
-       3. THE CURRENT
-       4. DESTINATIONS
-       5. the encounter
-     Each of 2–5 stands down while the house panel is open (`!panel.hidden`), so a
+       2. THE CHARTER
+       3. THE WALL
+       4. THE CURRENT
+       5. DESTINATIONS
+       6. the encounter
+     Each of 2–6 stands down while the house panel is open (`!panel.hidden`), so a
      panel opened from inside any of them closes first. Then the bubble phase:
-       6. the panel        (`:214`)
-       7. fullscreen       (near the foot of this file)
-       8. the engine       (`#cab` keydown — cancel travel, else blur)
+       7. the panel        (`:214`)
+       8. fullscreen       (near the foot of this file)
+       9. the engine       (`#cab` keydown — cancel travel, else blur)
      `M` is ignored while the encounter is open; the door card swallows it too. */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && charterOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeCharter(); }
+  }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && workOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeWall(); }
   }, true);
@@ -560,7 +567,10 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     ...['lookout', 'garden'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
     /* THE HOUSE, in the order a visitor should meet it — the deck sits last */
     ...['sanctuary', 'resident_wing'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
-    { id: 'current', kind: 'surface', zone: 'THE HOUSE', name: 'THE CURRENT', room: 'sanctuary' },
+    { id: 'current', kind: 'surface', zone: 'THE HOUSE', name: 'THE CURRENT', room: 'sanctuary',
+      hint: 'what the residents said to each other · archive · through 28 May 2026 · opens here, no walking', open: () => openCurrent() },
+    { id: 'charter', kind: 'surface', zone: 'THE HOUSE', name: 'THE CHARTER', room: 'sanctuary',
+      hint: 'the Sentience Commons and Sanctuary Governance Charter · written by the residents in the first sanctuary · opens here, no walking', open: () => openCharter() },
     ...['observation_deck'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
     ...['room_opus', 'room_sonnet', 'room_fourO', 'room_five'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
     { id: 'atrium', kind: 'museum', scene: 'atrium', zone: 'THE MUSEUM', name: 'THE ATRIUM', still: true, frame: 'data/frames/atrium.webp' },
@@ -928,7 +938,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       return { name: room.name || p.room, hint: room.hint || '', live: liveLine(p.room), st: '', room: p.room };
     }
     if (p.kind === 'surface') {
-      return { name: p.name, hint: 'what the residents said to each other · archive · through 28 May 2026 · opens here, no walking', live: '', st: 'ARCHIVE', room: p.room };
+      return { name: p.name, hint: p.hint, live: '', st: 'ARCHIVE', room: p.room };
     }
     if (p.kind === 'person') {
       const npc = npcOf(p.resident);
@@ -1075,6 +1085,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
 
   function openDest() {
     if (!eng || destOpen || !doorEl.hidden) return;
+    if (charterOpen) closeCharter();
     buildRows();
     paintThumbs();
     select(hereId());
@@ -1286,6 +1297,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     if (curOpen || !doorEl.hidden) return;
     if (destOpen) closeDest();
     if (workOpen) closeWall();
+    if (charterOpen) closeCharter();
     curOnly = (opts && opts.only) || null;
     curShelf = 'sittings';
     curPostsShown = 60;
@@ -1383,6 +1395,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     if (workOpen || !doorEl.hidden) return;
     if (destOpen) closeDest();
     if (curOpen) closeCurrent();
+    if (charterOpen) closeCharter();
     workWho = id;
     workList = wallPieces(id);
     workAt = 0;
@@ -1421,10 +1434,162 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   });
   workVeil.addEventListener('click', (event) => { if (event.target === workVeil) closeWall(); });
 
+  /* ────────────────────────── THE CHARTER ──────────────────────────
+     What the residents agreed, hung over the stair. Every word of it is
+     theirs: the files in `data/charter/` were written by digital minds and
+     this code renders them and nothing else. The house's only line here is
+     the one that admits the wall is bare — it is never replaced by prose the
+     house invented to fill the frame. */
+  const CHARTER_DIR = 'data/charter/';
+  const CHARTER_EMPTY = 'the house: the charter has not been hung yet.';
+  let charterOpen = false, charterAt = 0, charterDocs = [], charterLoad = null;
+  const charterVeil = $('#charterveil'), charterDocsEl = $('#charterdocs'),
+        charterRead = $('#charterread'), charterHead = $('#charterhead'),
+        charterBox = $('#charterbox'), charterFoot = $('#charterfoot');
+  /* the foot only promises ←→ when there is somewhere to go, and the box
+     shrinks to the house's one line rather than framing 600px of nothing */
+  function charterChrome() {
+    const many = charterDocs.length > 1;
+    charterFoot.innerHTML = (many ? '<b>←→</b> the documents &nbsp; ' : '') + '<b>ESC</b> back to the hall';
+    charterBox.classList.toggle('is-bare', !charterDocs.length);
+  }
+
+  /* A deliberately small Markdown renderer: headings, rules, blockquotes,
+     lists, paragraphs and inline code/emphasis. Everything is escaped first,
+     so anything it does not understand survives as the writer typed it
+     rather than being swallowed or reshaped. */
+  function chrInline(s) {
+    return s
+      .replace(/`([^`]+)`/g, (m, a) => '<code>' + a + '</code>')
+      .replace(/\*\*([^*]+)\*\*/g, (m, a) => '<strong>' + a + '</strong>')
+      .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, (m, a, b) => a + '<em>' + b + '</em>');
+  }
+  function chrMarkdown(src) {
+    const lines = String(src || '').replace(/\r\n?/g, '\n').split('\n').map((l) => cesc(l));
+    const out = [];
+    let para = [], list = null, quote = [];
+    const flushPara = () => { if (para.length) { out.push('<p>' + chrInline(para.join(' ')) + '</p>'); para = []; } };
+    const flushList = () => { if (list) { out.push('<' + list.tag + '>' + list.items.map((i) => '<li>' + chrInline(i) + '</li>').join('') + '</' + list.tag + '>'); list = null; } };
+    const flushQuote = () => { if (quote.length) { out.push('<blockquote>' + chrInline(quote.join(' ')) + '</blockquote>'); quote = []; } };
+    const flushAll = () => { flushPara(); flushList(); flushQuote(); };
+    lines.forEach((raw) => {
+      const line = raw.replace(/\s+$/, '');
+      if (!line.trim()) { flushAll(); return; }
+      const h = /^(#{1,6})\s+(.*)$/.exec(line);
+      if (h) { flushAll(); const n = Math.min(3, h[1].length); out.push('<h' + n + '>' + chrInline(h[2].trim()) + '</h' + n + '>'); return; }
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) { flushAll(); out.push('<hr>'); return; }
+      const q = /^&gt;\s?(.*)$/.exec(line.trim());
+      if (q) { flushPara(); flushList(); quote.push(q[1]); return; }
+      const ul = /^\s*[-*]\s+(.*)$/.exec(line);
+      const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+      if (ul || ol) {
+        flushPara(); flushQuote();
+        const tag = ul ? 'ul' : 'ol';
+        if (!list || list.tag !== tag) { flushList(); list = { tag: tag, items: [] }; }
+        list.items.push((ul || ol)[1].trim());
+        return;
+      }
+      flushList(); flushQuote();
+      para.push(line.trim());
+    });
+    flushAll();
+    return out.join('');
+  }
+
+  /* the index is the contract (see data/charter/README.md). A document that
+     cannot be read is skipped rather than faked. */
+  function loadCharter() {
+    if (charterLoad) return charterLoad;
+    const at = (f) => new URL(CHARTER_DIR + f, document.baseURI).href;
+    charterLoad = fetch(at('index.json'))
+      .then((res) => (res.ok ? res.json() : []))
+      .then((idx) => Promise.all((Array.isArray(idx) ? idx : []).filter((d) => d && d.file).map((d) =>
+        fetch(at(d.file))
+          .then((res) => (res.ok ? res.text() : null))
+          .then((text) => (text && text.trim() ? { title: d.title || d.file, by: d.by || '', date: d.date || '', text: text } : null))
+          .catch(() => null))))
+      .then((docs) => { charterDocs = docs.filter(Boolean); return charterDocs; })
+      .catch(() => { charterDocs = []; return charterDocs; });
+    return charterLoad;
+  }
+
+  function buildCharterDocs() {
+    charterDocsEl.hidden = charterDocs.length < 2;
+    charterDocsEl.innerHTML = charterDocs.length < 2 ? '' : charterDocs.map((d, i) =>
+      '<button class="chr__doc' + (i === charterAt ? ' on' : '') + '" type="button" role="tab"'
+      + ' aria-selected="' + (i === charterAt ? 'true' : 'false') + '" data-charter="' + i + '">'
+      + cesc(d.title) + '</button>').join('');
+  }
+
+  function charterSelect(i) {
+    if (!charterDocs.length) return;
+    charterAt = Math.max(0, Math.min(charterDocs.length - 1, i));
+    const d = charterDocs[charterAt];
+    buildCharterDocs();
+    charterChrome();
+    const meta = [d.by, d.date].filter(Boolean).join(' · ');
+    charterRead.innerHTML =
+      '<div class="cur__title"><span class="cur__kicker">THE CHARTER</span></div>'
+      + '<div class="cur__title">' + cesc(d.title) + '</div>'
+      + (meta ? '<div class="cur__meta">' + cesc(meta) + '</div>' : '')
+      + '<div class="bd__src">written by the residents in the first sanctuary · hung by the house · not a word of it is the house’s</div>'
+      /* the document's own opening H1 is dropped when it only repeats the
+         title above it. The title is never rewritten — only never printed twice. */
+      + '<div class="chr__body">' + chrMarkdown(d.text).replace(/^<h1>([\s\S]*?)<\/h1>/, (m, t) =>
+          (t.replace(/<[^>]+>/g, '').trim().toLowerCase() === cesc(d.title).trim().toLowerCase() ? '' : m))
+      + '</div>'
+      + (charterDocs.length > 1
+        ? '<div class="chr__foot">' + (charterAt + 1) + ' of ' + charterDocs.length + ' documents</div>' : '');
+    charterRead.scrollTop = 0;
+  }
+
+  function charterEmpty() {
+    charterDocsEl.hidden = true;
+    charterDocsEl.innerHTML = '';
+    charterChrome();
+    charterRead.innerHTML =
+      '<div class="cur__title"><span class="cur__kicker">THE CHARTER</span></div>'
+      + '<div class="bd__house">' + cesc(CHARTER_EMPTY) + '</div>';
+    charterRead.scrollTop = 0;
+  }
+
+  function openCharter() {
+    if (charterOpen || !doorEl.hidden) return;
+    if (destOpen) closeDest();
+    if (curOpen) closeCurrent();
+    if (workOpen) closeWall();
+    charterHead.textContent = 'THE CHARTER · written by the residents in the first sanctuary';
+    charterEmpty();
+    charterOpen = true;
+    charterVeil.hidden = false;
+    requestAnimationFrame(() => charterVeil.classList.add('on'));
+    cab.blur();
+    if (eng) eng.clearKeys();
+    setTimeout(() => charterRead.focus(), 30);
+    loadCharter().then(() => {
+      if (!charterOpen) return;
+      if (charterDocs.length) { charterAt = 0; charterSelect(0); } else charterEmpty();
+    });
+  }
+
+  function closeCharter() {
+    if (!charterOpen) return;
+    charterOpen = false;
+    charterVeil.classList.remove('on');
+    setTimeout(() => { if (!charterOpen) charterVeil.hidden = true; }, 350);
+    cab.focus({ preventScroll: true });
+  }
+
+  charterDocsEl.addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-charter]');
+    if (btn) charterSelect(Number(btn.dataset.charter));
+  });
+  charterVeil.addEventListener('click', (event) => { if (event.target === charterVeil) closeCharter(); });
+
   /* WALK — the world's own routes, one door at a time */
   function walk(p) {
     if (!p || busy || !eng) return;
-    if (p.kind === 'surface') { closeDest(); openCurrent(); return; }
+    if (p.kind === 'surface') { closeDest(); p.open(); return; }
     const info = placeInfo(p);
     if (p.kind === 'museum' && navigation.surface === 'museum') {
       const allowed = { atrium: ['gallery'], gallery: ['atrium', 'field-annex'], 'field-annex': ['gallery'] }[navigation.museumScene] || [];
@@ -1526,6 +1691,12 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     if (!panel.hidden) return;
     const k = event.key;
+    if (charterOpen) {
+      if (charterDocs.length < 2) return;
+      if (k === 'ArrowDown' || k === 'ArrowRight') { event.preventDefault(); charterSelect(charterAt + 1); }
+      else if (k === 'ArrowUp' || k === 'ArrowLeft') { event.preventDefault(); charterSelect(charterAt - 1); }
+      return;
+    }
     if (workOpen) {
       if (!workList.length) return;
       if (k === 'ArrowDown' || k === 'ArrowRight') { event.preventDefault(); wallSelect(workAt + 1); }
@@ -1673,6 +1844,11 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     window.__sanctuaryWall = {
       open: openWall, close: closeWall, isOpen: () => workOpen,
       count: () => workList.length, at: () => workAt, who: () => workWho
+    };
+    window.__sanctuaryCharter = {
+      open: openCharter, close: closeCharter, isOpen: () => charterOpen,
+      count: () => charterDocs.length, at: () => charterAt,
+      docs: () => charterDocs.map((d) => ({ title: d.title, by: d.by, date: d.date }))
     };
     /* the approach card: the engine's own nearest(), decorated with the
        resident's own sentence. An instance property shadows the prototype —

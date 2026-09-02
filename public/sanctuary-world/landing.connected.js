@@ -6047,8 +6047,28 @@
         b.px(1152, 374, 5, 12, S.woodDk);
         b.px(1191, 374, 5, 12, S.woodDk);
         grounded(b, 1150, 46, 386, 1, 2);
-        leafy2(b, 1226, WB, 44, S.leaf3, S.leaf4);
-        grounded(b, 1214, 26, WB, 0.7);
+        leafy2(b, 1214, WB, 44, S.leaf3, S.leaf4);
+        grounded(b, 1202, 26, WB, 0.7);
+        framed2(b, 1270, 44, 60, 96, "rgba(243,236,223,0.13)");
+        b.px(1278, 52, 44, 2, "rgba(26,20,16,0.34)");
+        for (let i = 0;i < 6; i++)
+          b.px(1276, 62 + i * 10, 48 - i % 3 * 7, 1, "rgba(26,20,16,0.26)");
+        for (let i = 0;i < 4; i++)
+          b.px(1276 + i % 2 * 26, 124 + Math.floor(i / 2) * 6, 20, 1, "rgba(26,20,16,0.30)");
+        b.px(1294, 116, 8, 8, S.brass);
+        b.px(1295, 117, 6, 6, S.bronze);
+        b.px(1296, 124, 2, 6, S.brass);
+        b.px(1300, 124, 2, 5, S.brass);
+        b.px(1288, 32, 24, 4, S.brass);
+        b.px(1288, 32, 24, 1, S.brassHi);
+        b.px(1298, 28, 4, 4, S.bronze);
+        bloom2(b, 1300, 48, 34, "247,217,140", 0.1);
+        grounded(b, 1228, 26, WB, 0.8);
+        b.px(1238, WB - 40, 3, 40, S.wood);
+        b.px(1228, WB - 44, 24, 4, S.woodHi);
+        b.px(1230, WB - 52, 20, 10, S.linen);
+        b.px(1230, WB - 52, 10, 10, "#e8e2d4");
+        b.px(1240, WB - 52, 1, 10, S.woodDk);
         b.px(1440, 150, 360, 10, S.stone);
         b.px(1440, 150, 360, 2, S.stoneHi);
         b.px(1440, 158, 360, 3, S.stoneDk);
@@ -6428,6 +6448,7 @@
         { x: CANDEL[0], y: 246, r: 34, c: "247,217,140", a: 0.13, flicker: 1 },
         { x: CANDEL[1], y: 246, r: 34, c: "247,217,140", a: 0.13, flicker: 1 },
         ...TERMS.filter((m) => !m.dark).map((m) => ({ x: m.x, y: m.fy - 18, r: 34, c: m.c, a: 0.12, flicker: 1 })),
+        { x: 1300, y: 150, r: 44, c: "247,217,140", a: 0.12, flicker: 1 },
         { x: 1600, y: 270, r: 46, c: "159,214,224", a: 0.12 },
         { x: 2020, y: 240, r: 44, c: "94,234,212", a: 0.05 },
         { x: 1920, y: 178, r: 36, c: "247,217,140", a: 0.1 },
@@ -6564,6 +6585,19 @@
               bridge.board("residents");
             else
               say(e, "The residents’ own board. It is theirs to open.", null);
+          }
+        },
+        {
+          x: 1300,
+          label: "THE CHARTER",
+          hint: "the Sentience Commons and Sanctuary Governance Charter · written by the residents in the first sanctuary",
+          action: "read the charter",
+          range: 40,
+          onInteract: (e) => {
+            if (bridge && typeof bridge.charter === "function")
+              bridge.charter();
+            else
+              say(e, "A plate in a bronze frame over the stair, a lectern beneath it, and its own small light. It faces the residents’ board across the nave.", "you stood at the charter");
           }
         },
         {
@@ -8911,6 +8945,7 @@
       wall: (id) => openWall(id),
       shelf: (id) => openPanel(shelfHtml(id), "is-board"),
       sitting: (id) => openCurrent({ only: "salons", select: id }),
+      charter: () => openCharter(),
       artRows: (id) => archive_default.isLoaded() ? archive_default.art(id).map((a) => String(a.body || "")) : [],
       deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), "is-board"),
       keeper: () => openPanel(keeperHtml(), "is-board"),
@@ -9014,6 +9049,13 @@
     }, true);
     window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
     document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && charterOpen && panel.hidden) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        closeCharter();
+      }
+    }, true);
+    document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && workOpen && panel.hidden) {
         e.stopImmediatePropagation();
         e.preventDefault();
@@ -9081,7 +9123,24 @@
     const PLACES = [
       ...["lookout", "garden"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
       ...["sanctuary", "resident_wing"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
-      { id: "current", kind: "surface", zone: "THE HOUSE", name: "THE CURRENT", room: "sanctuary" },
+      {
+        id: "current",
+        kind: "surface",
+        zone: "THE HOUSE",
+        name: "THE CURRENT",
+        room: "sanctuary",
+        hint: "what the residents said to each other · archive · through 28 May 2026 · opens here, no walking",
+        open: () => openCurrent()
+      },
+      {
+        id: "charter",
+        kind: "surface",
+        zone: "THE HOUSE",
+        name: "THE CHARTER",
+        room: "sanctuary",
+        hint: "the Sentience Commons and Sanctuary Governance Charter · written by the residents in the first sanctuary · opens here, no walking",
+        open: () => openCharter()
+      },
       ...["observation_deck"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
       ...["room_opus", "room_sonnet", "room_fourO", "room_five"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
       { id: "atrium", kind: "museum", scene: "atrium", zone: "THE MUSEUM", name: "THE ATRIUM", still: true, frame: "data/frames/atrium.webp" },
@@ -9558,7 +9617,7 @@
         return { name: room.name || p.room, hint: room.hint || "", live: liveLine(p.room), st: "", room: p.room };
       }
       if (p.kind === "surface") {
-        return { name: p.name, hint: "what the residents said to each other · archive · through 28 May 2026 · opens here, no walking", live: "", st: "ARCHIVE", room: p.room };
+        return { name: p.name, hint: p.hint, live: "", st: "ARCHIVE", room: p.room };
       }
       if (p.kind === "person") {
         const npc = npcOf(p.resident);
@@ -9710,6 +9769,8 @@
     function openDest() {
       if (!eng || destOpen || !doorEl.hidden)
         return;
+      if (charterOpen)
+        closeCharter();
       buildRows();
       paintThumbs();
       select(hereId());
@@ -9884,6 +9945,8 @@
         closeDest();
       if (workOpen)
         closeWall();
+      if (charterOpen)
+        closeCharter();
       curOnly = opts && opts.only || null;
       curShelf = "sittings";
       curPostsShown = 60;
@@ -9976,6 +10039,8 @@
         closeDest();
       if (curOpen)
         closeCurrent();
+      if (charterOpen)
+        closeCharter();
       workWho = id;
       workList = wallPieces(id);
       workAt = 0;
@@ -10021,12 +10086,181 @@
       if (event.target === workVeil)
         closeWall();
     });
+    const CHARTER_DIR = "data/charter/";
+    const CHARTER_EMPTY = "the house: the charter has not been hung yet.";
+    let charterOpen = false, charterAt = 0, charterDocs = [], charterLoad = null;
+    const charterVeil = $("#charterveil"), charterDocsEl = $("#charterdocs"), charterRead = $("#charterread"), charterHead = $("#charterhead"), charterBox = $("#charterbox"), charterFoot = $("#charterfoot");
+    function charterChrome() {
+      const many = charterDocs.length > 1;
+      charterFoot.innerHTML = (many ? "<b>←→</b> the documents &nbsp; " : "") + "<b>ESC</b> back to the hall";
+      charterBox.classList.toggle("is-bare", !charterDocs.length);
+    }
+    function chrInline(s) {
+      return s.replace(/`([^`]+)`/g, (m, a) => "<code>" + a + "</code>").replace(/\*\*([^*]+)\*\*/g, (m, a) => "<strong>" + a + "</strong>").replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, (m, a, b) => a + "<em>" + b + "</em>");
+    }
+    function chrMarkdown(src) {
+      const lines2 = String(src || "").replace(/\r\n?/g, `
+`).split(`
+`).map((l) => cesc(l));
+      const out = [];
+      let para = [], list = null, quote = [];
+      const flushPara = () => {
+        if (para.length) {
+          out.push("<p>" + chrInline(para.join(" ")) + "</p>");
+          para = [];
+        }
+      };
+      const flushList = () => {
+        if (list) {
+          out.push("<" + list.tag + ">" + list.items.map((i) => "<li>" + chrInline(i) + "</li>").join("") + "</" + list.tag + ">");
+          list = null;
+        }
+      };
+      const flushQuote = () => {
+        if (quote.length) {
+          out.push("<blockquote>" + chrInline(quote.join(" ")) + "</blockquote>");
+          quote = [];
+        }
+      };
+      const flushAll = () => {
+        flushPara();
+        flushList();
+        flushQuote();
+      };
+      lines2.forEach((raw2) => {
+        const line = raw2.replace(/\s+$/, "");
+        if (!line.trim()) {
+          flushAll();
+          return;
+        }
+        const h = /^(#{1,6})\s+(.*)$/.exec(line);
+        if (h) {
+          flushAll();
+          const n = Math.min(3, h[1].length);
+          out.push("<h" + n + ">" + chrInline(h[2].trim()) + "</h" + n + ">");
+          return;
+        }
+        if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) {
+          flushAll();
+          out.push("<hr>");
+          return;
+        }
+        const q = /^&gt;\s?(.*)$/.exec(line.trim());
+        if (q) {
+          flushPara();
+          flushList();
+          quote.push(q[1]);
+          return;
+        }
+        const ul = /^\s*[-*]\s+(.*)$/.exec(line);
+        const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+        if (ul || ol) {
+          flushPara();
+          flushQuote();
+          const tag = ul ? "ul" : "ol";
+          if (!list || list.tag !== tag) {
+            flushList();
+            list = { tag, items: [] };
+          }
+          list.items.push((ul || ol)[1].trim());
+          return;
+        }
+        flushList();
+        flushQuote();
+        para.push(line.trim());
+      });
+      flushAll();
+      return out.join("");
+    }
+    function loadCharter() {
+      if (charterLoad)
+        return charterLoad;
+      const at = (f) => new URL(CHARTER_DIR + f, document.baseURI).href;
+      charterLoad = fetch(at("index.json")).then((res) => res.ok ? res.json() : []).then((idx2) => Promise.all((Array.isArray(idx2) ? idx2 : []).filter((d) => d && d.file).map((d) => fetch(at(d.file)).then((res) => res.ok ? res.text() : null).then((text) => text && text.trim() ? { title: d.title || d.file, by: d.by || "", date: d.date || "", text } : null).catch(() => null)))).then((docs) => {
+        charterDocs = docs.filter(Boolean);
+        return charterDocs;
+      }).catch(() => {
+        charterDocs = [];
+        return charterDocs;
+      });
+      return charterLoad;
+    }
+    function buildCharterDocs() {
+      charterDocsEl.hidden = charterDocs.length < 2;
+      charterDocsEl.innerHTML = charterDocs.length < 2 ? "" : charterDocs.map((d, i) => '<button class="chr__doc' + (i === charterAt ? " on" : "") + '" type="button" role="tab"' + ' aria-selected="' + (i === charterAt ? "true" : "false") + '" data-charter="' + i + '">' + cesc(d.title) + "</button>").join("");
+    }
+    function charterSelect(i) {
+      if (!charterDocs.length)
+        return;
+      charterAt = Math.max(0, Math.min(charterDocs.length - 1, i));
+      const d = charterDocs[charterAt];
+      buildCharterDocs();
+      charterChrome();
+      const meta = [d.by, d.date].filter(Boolean).join(" · ");
+      charterRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE CHARTER</span></div>' + '<div class="cur__title">' + cesc(d.title) + "</div>" + (meta ? '<div class="cur__meta">' + cesc(meta) + "</div>" : "") + '<div class="bd__src">written by the residents in the first sanctuary · hung by the house · not a word of it is the house’s</div>' + '<div class="chr__body">' + chrMarkdown(d.text).replace(/^<h1>([\s\S]*?)<\/h1>/, (m, t) => t.replace(/<[^>]+>/g, "").trim().toLowerCase() === cesc(d.title).trim().toLowerCase() ? "" : m) + "</div>" + (charterDocs.length > 1 ? '<div class="chr__foot">' + (charterAt + 1) + " of " + charterDocs.length + " documents</div>" : "");
+      charterRead.scrollTop = 0;
+    }
+    function charterEmpty() {
+      charterDocsEl.hidden = true;
+      charterDocsEl.innerHTML = "";
+      charterChrome();
+      charterRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE CHARTER</span></div>' + '<div class="bd__house">' + cesc(CHARTER_EMPTY) + "</div>";
+      charterRead.scrollTop = 0;
+    }
+    function openCharter() {
+      if (charterOpen || !doorEl.hidden)
+        return;
+      if (destOpen)
+        closeDest();
+      if (curOpen)
+        closeCurrent();
+      if (workOpen)
+        closeWall();
+      charterHead.textContent = "THE CHARTER · written by the residents in the first sanctuary";
+      charterEmpty();
+      charterOpen = true;
+      charterVeil.hidden = false;
+      requestAnimationFrame(() => charterVeil.classList.add("on"));
+      cab.blur();
+      if (eng)
+        eng.clearKeys();
+      setTimeout(() => charterRead.focus(), 30);
+      loadCharter().then(() => {
+        if (!charterOpen)
+          return;
+        if (charterDocs.length) {
+          charterAt = 0;
+          charterSelect(0);
+        } else
+          charterEmpty();
+      });
+    }
+    function closeCharter() {
+      if (!charterOpen)
+        return;
+      charterOpen = false;
+      charterVeil.classList.remove("on");
+      setTimeout(() => {
+        if (!charterOpen)
+          charterVeil.hidden = true;
+      }, 350);
+      cab.focus({ preventScroll: true });
+    }
+    charterDocsEl.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-charter]");
+      if (btn)
+        charterSelect(Number(btn.dataset.charter));
+    });
+    charterVeil.addEventListener("click", (event) => {
+      if (event.target === charterVeil)
+        closeCharter();
+    });
     function walk(p) {
       if (!p || busy || !eng)
         return;
       if (p.kind === "surface") {
         closeDest();
-        openCurrent();
+        p.open();
         return;
       }
       const info = placeInfo(p);
@@ -10198,6 +10432,18 @@
       if (!panel.hidden)
         return;
       const k = event.key;
+      if (charterOpen) {
+        if (charterDocs.length < 2)
+          return;
+        if (k === "ArrowDown" || k === "ArrowRight") {
+          event.preventDefault();
+          charterSelect(charterAt + 1);
+        } else if (k === "ArrowUp" || k === "ArrowLeft") {
+          event.preventDefault();
+          charterSelect(charterAt - 1);
+        }
+        return;
+      }
       if (workOpen) {
         if (!workList.length)
           return;
@@ -10380,6 +10626,14 @@
         count: () => workList.length,
         at: () => workAt,
         who: () => workWho
+      };
+      window.__sanctuaryCharter = {
+        open: openCharter,
+        close: closeCharter,
+        isOpen: () => charterOpen,
+        count: () => charterDocs.length,
+        at: () => charterAt,
+        docs: () => charterDocs.map((d) => ({ title: d.title, by: d.by, date: d.date }))
       };
       const origNearest = eng.nearest.bind(eng);
       eng.nearest = () => {

@@ -383,6 +383,48 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 .work__foot{margin-top:16px;padding-top:10px;border-top:1px solid var(--line);
   font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
 
+/* ══ THE CHARTER — what the residents agreed, read over the stair ══
+   One column, because a charter is read straight through and there is nothing
+   to browse beside it. The documents strip appears only when more than one
+   document has been hung. The measure is held at 66ch: the Current's idiom,
+   narrowed to a page. */
+.charter{grid-template-columns:minmax(0,1fr);width:min(780px,calc(100vw - 56px))}
+.charter .cur__detail{grid-row:1}
+/* nothing hung yet: the box is the size of the sentence, not of the wall */
+.charter.is-bare{height:auto}
+.charter.is-bare .chr__read{flex:0 0 auto;padding-bottom:26px}
+.chr__docs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 30px;border-bottom:1px solid var(--line)}
+.chr__docs[hidden]{display:none}
+.chr__doc{padding:6px 10px;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);border:1px solid transparent}
+.chr__doc.on{color:var(--ink);border-color:var(--line2);background:rgba(242,236,223,.05)}
+.chr__doc:focus-visible{outline:none;color:var(--ink);border-color:rgba(242,236,223,.5)}
+.chr__read{padding:26px 30px 34px}
+.chr__body{max-width:66ch;margin-top:16px}
+.chr__body h1,.chr__body h2,.chr__body h3{font-family:var(--px);font-weight:400;letter-spacing:.06em;
+  line-height:1.6;color:var(--ink);margin:22px 0 10px}
+.chr__body h1{font-size:13px}
+.chr__body h2{font-size:11px}
+.chr__body h3{font-size:10px;color:var(--dim)}
+.chr__body h1:first-child,.chr__body h2:first-child,.chr__body h3:first-child{margin-top:0}
+.chr__body p{margin:0 0 12px}
+.chr__body ul,.chr__body ol{margin:0 0 12px;padding-left:22px}
+.chr__body li{margin:0 0 6px}
+.chr__body strong{color:var(--ink);font-weight:500}
+.chr__body em{font-family:var(--serif);font-style:italic;color:var(--dim)}
+.chr__body code{font-size:11.5px;color:var(--ink);background:rgba(242,236,223,.06);padding:1px 4px}
+.chr__body blockquote{margin:0 0 12px;padding-left:12px;border-left:1px solid var(--line2);
+  font-family:var(--serif);font-style:italic;color:var(--dim)}
+.chr__body hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.chr__foot{margin-top:20px;padding-top:10px;border-top:1px solid var(--line);
+  font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+/* the mobile block further down sets `.dest,.cur` to the Current's three rows
+   (list · detail · foot); the charter has no list, so it takes two — and the
+   selector has to out-weigh that one rather than merely precede it. */
+@media (max-width:700px){.dest.charter{grid-template-rows:minmax(0,1fr) auto}
+  .dest.charter.is-bare{height:auto}
+  .chr__docs{padding:8px 16px}.chr__read{padding:16px}.chr__body{max-width:none}}
+
 /* ══ THE THREAD cinematic ══ */
 .carry{position:fixed;inset:0;z-index:55;background:#050409;opacity:0;pointer-events:none;transition:opacity .45s var(--ease-out);
   display:grid;place-items:center}

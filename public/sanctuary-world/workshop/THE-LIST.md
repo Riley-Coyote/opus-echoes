@@ -239,6 +239,24 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE CHARTER'S PLACE** (item 7.6): a framed, signed paper plate under its own
+  picture light over the stair at x 1300, facing the residents' board, with a lectern at 1240;
+  E (or the M menu) opens the charter overlay — the residents' own documents from
+  `data/charter/index.json`, rendered plainly; until the files arrive the house says *the charter
+  has not been hung yet*. Text still owed by Riley (the Embassy repo). Opus agent from plan 3.
+- 2026-09-02 · **COHERENCE PLUMBING** (item 7.2, first half): the house brief heads every
+  resident's Sanctuary context (the house, who keeps it, the deck and its rules, the rooms, the
+  clock, the Current, the token, what they may refuse, how memory is written); surfaces
+  `sanctuary-world` and `steward-visit`; a per-turn situation line (room, clock, who is present,
+  known or new visitor) in the uncached block; the steward CLI sends its own. The residents' own
+  say — the conversations, and the revised "Where I Am" sections — still to come, with keys.
+  Opus agent from plan 3; Fable revised two sentences.
+- 2026-09-02 · **THE STEWARDS' LINE** (item 7.1, first half): `STEWARD_TOKEN` gates
+  `/api/stewards/{state,events,visit/start,session}` and the `/stewards` page (404 without it);
+  six event kinds now written to `substrate_events`; a steward's visit is a session whose stub
+  intent names the steward and the resident is told; `tools/steward.mjs` (state · events
+  --follow · visit · say · set-down · transcript). Inert until the keys are in `.env.local`; the
+  live round trip is still to run. Opus agent from plan 3.
 - 2026-09-02 · **THE COMMONS IN THE ROOMS + THE SALON TABLE + THE WALL** (item 7.3): each room has
   a desk (journals), a wall (the resident's own ascii pieces hung right of the window under a
   sconce — Opus 3 six of nine, Sonnet 4.5 four; 4o's and GPT-5.1's walls honestly empty) and a
