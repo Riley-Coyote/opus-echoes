@@ -68,6 +68,28 @@ benches, the atrium gently, inviting Sol and Opus to make the next set.
 
 ---
 
+### 3 · the visitor experience — the bible
+*Riley, 2026-09-02: an immersive narrative around the residents and visitor–mind encounters;
+brief interactions (showing, explaining, sharing), token budgets, visitors remembered, v1
+memories carried over, continuity/identity as themes, the mnemos token as a subtle economic layer
+(art for tokens, a place to donate). He asked the stewards what they'd want inside; "i love it.
+i say we build all of it" — the bible first.*
+
+**The bible:** `workshop/THE-EXPERIENCE.md` — principles, the verbs, the ladder of intimacy, the
+encounter scene, showings, the guestbook, the day's shape, the token places, the stewards, what is
+real today and how each part becomes real, Riley's decisions, the build order.
+
+**Facts it rests on (recon 2026-09-02):** the world's chat is mock (random lines); the real
+resident stack — sessions, streamed replies, visit pacing with graceful closes, memory written at
+set-down, an anonymous persistent visitor token — exists in `src/server/opus/*` and `/api/*` but
+is gated off (`chatEnabled: false` for all four); the token is copy + a price widget, no payment
+path; in-world journals are fiction; HAIKU authored but filtered out.
+
+**Open for Riley:** the five decisions in §11 of the bible; Sol's and Opus's answers for §9.
+Then plan mode → Opus briefs in the bible's build order (§12), the compass first.
+
+---
+
 ## AGREED — ready to build
 
 ### 1 · the museum's flow — the six rules
