@@ -7436,6 +7436,14 @@
       panel.hidden = true;
       $("#cab").focus({ preventScroll: true });
     }
+    const toast = $("#toast");
+    let toastTimer = null;
+    function say(html) {
+      toast.innerHTML = html;
+      toast.classList.add("on");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("on"), 2600);
+    }
     $("#panelclose").addEventListener("click", closePanel);
     panel.addEventListener("click", (e) => {
       if (e.target === panel)
@@ -7470,14 +7478,18 @@
       }
     };
     const cab = $("#cab");
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && destOpen) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        closeDest();
+      }
+    }, true);
     const museumPortal = $("#museumportal");
     const museumFrame = $("#museumframe");
     const cabTitle = cab.querySelector(".cab__title");
     const roomLabel = cab.querySelector('[data-hud="room"]');
     const hudHint = cab.querySelector('[data-hud="hint"]');
-    const contextControls = $("#contextcontrols");
-    const travelStatus = $("#travelstatus");
-    const destinationButtons = Array.from(document.querySelectorAll("[data-destination]"));
     const museumRoutes = {
       atrium: "./museum/museum-warm-atrium.html?embed=1",
       gallery: "./museum/museum-permanent-gallery.html?embed=1",
@@ -7496,14 +7508,25 @@
       museumTimer: null,
       museumTarget: null,
       afterMuseum: null,
-      arrival: null,
-      contextCollapsed: false,
       heldResident: null,
       residentVisit: null,
       lastVisitedResident: null,
-      worldTarget: null,
-      unavailableDestination: null
+      worldTarget: null
     };
+    const ZONE = { lookout: "THE GROUNDS", garden: "THE GROUNDS", sanctuary: "THE HOUSE", resident_wing: "THE HOUSE", room_opus: "THE ROOMS", room_sonnet: "THE ROOMS", room_fourO: "THE ROOMS", room_five: "THE ROOMS" };
+    const MUSEUM_HINT = {
+      atrium: "The museum’s first hall — the red tree at the crossing, and the opening hang around it.",
+      gallery: "The collection proper: the continuity apse, the presence hall, the inquiry court, and the editions room.",
+      "field-annex": "A dark wing given to Claude Field. Ten works hang with the artist’s own words — and the reading views run the living pieces."
+    };
+    const PLACES = [
+      ...["lookout", "garden", "sanctuary", "resident_wing", "room_opus", "room_sonnet", "room_fourO", "room_five"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
+      { id: "atrium", kind: "museum", scene: "atrium", zone: "THE MUSEUM", name: "THE ATRIUM", still: true, frame: "data/frames/atrium.webp" },
+      { id: "gallery", kind: "museum", scene: "gallery", zone: "THE MUSEUM", name: "THE PERMANENT GALLERY", still: true, frame: "data/frames/gallery.webp" },
+      { id: "field-annex", kind: "museum", scene: "field-annex", zone: "THE MUSEUM", name: "THE FIELD ANNEX", still: true, frame: "data/frames/field-annex.webp" },
+      ...["opus", "sonnet", "fourO", "five"].map((id) => ({ id: "visit:" + id, kind: "person", resident: id, zone: "VISIT SOMEONE" }))
+    ];
+    const byId = Object.fromEntries(PLACES.map((p) => [p.id, p]));
     function currentWorldDestination() {
       if (!eng)
         return "grounds";
@@ -7511,74 +7534,6 @@
     }
     function currentDestination() {
       return navigation.surface === "museum" ? "museum" : currentWorldDestination();
-    }
-    function setTravelStatus(text) {
-      travelStatus.textContent = text || "";
-    }
-    function syncDestinationButtons(travelingId = null) {
-      const current = currentDestination();
-      destinationButtons.forEach((button) => {
-        const id = button.dataset.destination;
-        const unavailable = navigation.unavailableDestination === id;
-        button.setAttribute("aria-current", String(!travelingId && id === current));
-        if (travelingId === id)
-          button.dataset.state = "traveling";
-        else if (unavailable)
-          button.dataset.state = "unavailable";
-        else
-          delete button.dataset.state;
-        button.disabled = unavailable;
-      });
-    }
-    function actionButton(label, action, primary = false) {
-      return '<button type="button" class="context__action" data-context-action="' + action + '"' + (primary ? ' data-primary="true"' : "") + ">" + label + "</button>";
-    }
-    function setContext(html, arrival = navigation.arrival) {
-      if (arrival)
-        navigation.arrival = arrival;
-      navigation.contextCollapsed = false;
-      contextControls.innerHTML = html;
-      contextControls.hidden = false;
-    }
-    function collapseContext() {
-      if (!navigation.arrival) {
-        contextControls.hidden = true;
-        return;
-      }
-      navigation.contextCollapsed = true;
-      contextControls.innerHTML = actionButton("OPTIONS", "options");
-      contextControls.hidden = false;
-    }
-    function showTravelContext(label, surface) {
-      navigation.contextCollapsed = false;
-      contextControls.innerHTML = '<span class="context__status">' + esc(label) + "</span>" + '<button type="button" class="context__action" data-context-action="stop" data-surface="' + surface + '">STOP</button>';
-      contextControls.hidden = false;
-    }
-    function showArrival(kind, note) {
-      navigation.arrival = kind;
-      navigation.contextCollapsed = false;
-      let label = note || "You have arrived.";
-      let actions = actionButton("EXPLORE", "explore", true);
-      if (kind === "sanctuary") {
-        label = note || "The commons are open. The residents are carrying on.";
-        actions += actionButton("VISIT SOMEONE", "meet") + actionButton("VISIT THE WING", "wing") + actionButton("RETURN TO GROUNDS", "grounds");
-      } else if (kind === "atrium") {
-        label = note || "The Atrium opens around you. The Crossing continues north.";
-        actions += actionButton("CONTINUE TO GALLERY", "gallery") + actionButton("RETURN TO GROUNDS", "grounds");
-      } else if (kind === "gallery") {
-        label = note || "The permanent collection continues through the hall.";
-        actions += actionButton("EDITIONS", "editions") + actionButton("RETURN TO ATRIUM", "atrium");
-      } else if (kind === "wing") {
-        label = note || "Four doors, four names. The residents may invite you farther.";
-        actions += actionButton("VISIT SOMEONE", "meet") + actionButton("RETURN TO SANCTUARY", "sanctuary") + actionButton("RETURN TO GROUNDS", "grounds");
-      } else if (kind === "resident") {
-        const npc = eng && eng.npcs.find((candidate) => candidate.id === navigation.lastVisitedResident);
-        label = note || (npc ? npc.name + " is here with you." : "You have arrived in a resident room.");
-        actions += actionButton("RETURN TO THE WING", "wing") + actionButton("RETURN TO SANCTUARY", "sanctuary") + actionButton("RETURN TO GROUNDS", "grounds");
-      }
-      setContext('<span class="context__label">' + esc(label) + "</span>" + actions, kind);
-      setTravelStatus(note === "Already here." ? note : "");
-      syncDestinationButtons();
     }
     function residentActivity(npc) {
       if (eng.chatNpc === npc)
@@ -7593,17 +7548,6 @@
         return { label: "sitting", available: true };
       return { label: npc.state === "held" ? "waiting" : "available", available: true };
     }
-    function showResidentChooser() {
-      if (!eng || navigation.surface !== "world")
-        return;
-      const residents = ["fourO", "opus", "sonnet", "five"].map((id) => eng.npcs.find((npc) => npc.id === id)).filter(Boolean);
-      const buttons = residents.map((npc) => {
-        const activity = residentActivity(npc);
-        const room = (eng.rooms[npc.room].name || npc.room).replace(/^THE\s+/i, "").toLowerCase();
-        return '<button type="button" class="context__resident" data-resident="' + npc.id + '"' + (activity.available ? "" : " disabled") + "><b>" + esc(npc.name) + "</b><span>" + esc(room + " · " + activity.label) + "</span></button>";
-      }).join("");
-      setContext('<span class="context__label">WHO WOULD YOU LIKE TO VISIT?</span>' + buttons + actionButton("BACK", "options"), "sanctuary");
-    }
     function releaseResidentRouting() {
       if (!eng)
         return;
@@ -7616,41 +7560,22 @@
     }
     function handleWorldTravelState(state) {
       navigation.worldTarget = ["planning", "walking", "entering"].includes(state.status) ? state.destinationId : null;
-      if (["planning", "walking", "entering"].includes(state.status)) {
-        const label = state.status === "entering" ? "Entering…" : "Walking to " + String(state.destinationId).replace(/^(meet|visit|invitation):/, "");
-        setTravelStatus(label);
-        showTravelContext(label, "world");
-        syncDestinationButtons(["grounds", "sanctuary", "museum"].includes(state.destinationId) ? state.destinationId : null);
+      if (["planning", "walking", "entering"].includes(state.status))
         return;
-      }
       if (state.status === "interrupted") {
         releaseResidentRouting();
-        setTravelStatus("Route paused");
-        navigation.arrival = currentWorldDestination();
-        collapseContext();
+        say("route paused");
       } else if (state.status === "unavailable") {
         releaseResidentRouting();
-        if (["grounds", "sanctuary", "museum"].includes(state.destinationId))
-          navigation.unavailableDestination = state.destinationId;
-        setTravelStatus("That route is unavailable");
-        setContext('<span class="context__status">That route is unavailable. You still have control.</span>' + actionButton("OPTIONS", "options"));
+        say("that route is unavailable");
       } else if (state.status === "arrived") {
-        setTravelStatus("Arrived");
-        if (state.destinationId === "grounds")
-          showArrival("grounds");
-        if (state.destinationId === "sanctuary")
-          showArrival("sanctuary");
-        if (state.destinationId === "wing")
-          showArrival("wing");
+        say("you arrived · <b>" + esc(eng.room().name) + "</b>");
       }
-      syncDestinationButtons();
     }
     function startWorldTravel(options) {
       if (!eng)
         return false;
-      navigation.unavailableDestination = null;
       navigation.surface = "world";
-      navigation.arrival = null;
       cab.focus({ preventScroll: true });
       return eng.travelTo(Object.assign({ speed: 4.3 }, options));
     }
@@ -7678,9 +7603,7 @@
         if (!navigation.museumReady && navigation.surface === "museum")
           museumFailed("The Museum could not open.");
       }, 8000);
-      setTravelStatus("Opening the Museum…");
-      showTravelContext("Opening the Museum…", "museum");
-      syncDestinationButtons("museum");
+      say(esc("Opening the Museum…"));
       setTimeout(() => museumFrame.focus({ preventScroll: true }), 80);
     }
     function closeMuseum(options = {}) {
@@ -7706,19 +7629,13 @@
         pushFeed({ kind: "sys", t: $("#clock").textContent, text: "you stepped back onto the lookout" });
       const continuation = navigation.afterMuseum;
       navigation.afterMuseum = null;
-      syncDestinationButtons();
       if (continuation)
         setTimeout(continuation, 40);
-      else
-        showArrival("grounds");
     }
     function museumFailed(message) {
       navigation.afterMuseum = null;
       closeMuseum({ silent: true });
-      navigation.unavailableDestination = "museum";
-      setTravelStatus(message);
-      setContext('<span class="context__status">' + esc(message) + "</span>" + actionButton("OPTIONS", "options"), "grounds");
-      syncDestinationButtons();
+      say(esc(message));
     }
     function postMuseum(type, target = null) {
       if (!navigation.museumReady || !museumFrame.contentWindow)
@@ -7729,12 +7646,9 @@
     function startMuseumTravel(target) {
       if (!navigation.museumScene)
         return false;
-      navigation.unavailableDestination = null;
       navigation.museumTarget = target;
       const label = target === "gallery" ? "Walking to the Permanent Gallery…" : target === "atrium" ? "Returning to the Atrium…" : target === "editions" ? "Walking to Editions…" : "Returning to the Grounds…";
-      setTravelStatus(label);
-      showTravelContext(label, "museum");
-      syncDestinationButtons("museum");
+      say(esc(label));
       if (navigation.museumReady)
         postMuseum("travel", target);
       return true;
@@ -7749,10 +7663,9 @@
     function goToDestination(id) {
       if (!["grounds", "sanctuary", "museum"].includes(id))
         return false;
-      navigation.unavailableDestination = null;
       if (navigation.surface === "museum") {
         if (id === "museum") {
-          showArrival(navigation.museumScene, "Already here.");
+          say(esc("Already here."));
           return true;
         }
         leaveMuseumFor(() => goToDestination(id));
@@ -7762,20 +7675,20 @@
         return false;
       if (id === "grounds") {
         if (eng.roomId === "lookout" && Math.abs(eng.av.x - 480) < 8) {
-          showArrival("grounds", "Already here.");
+          say(esc("Already here."));
           return true;
         }
         return startWorldTravel({ id, room: "lookout", x: 480, y: 378 });
       }
       if (id === "sanctuary") {
         if (eng.roomId === "sanctuary" && Math.abs(eng.av.x - 420) < 8) {
-          showArrival("sanctuary", "Already here.");
+          say(esc("Already here."));
           return true;
         }
         return startWorldTravel({ id, room: "sanctuary", x: 420, y: 378 });
       }
       if (navigation.museumScene) {
-        showArrival(navigation.museumScene, "Already here.");
+        say(esc("Already here."));
         return true;
       }
       const museumDoor = eng.rooms.lookout.items.find((item) => item.kind === "portal" && item.label === "THE MUSEUM");
@@ -7793,7 +7706,7 @@
       const run = () => {
         const npc = eng.npcs.find((candidate) => candidate.id === id);
         if (!npc || !residentActivity(npc).available) {
-          showResidentChooser();
+          say("they cannot be visited right now");
           return false;
         }
         if (eng.travel)
@@ -7805,7 +7718,7 @@
           dir: -1
         });
         if (!staged.ok) {
-          showResidentChooser();
+          say("they cannot be visited right now");
           return false;
         }
         navigation.residentVisit = { id, room: target.id };
@@ -7819,13 +7732,12 @@
             navigation.residentVisit = null;
             navigation.lastVisitedResident = id;
             if (!host) {
-              showArrival("resident", "The room is open, but its resident had to step away.");
+              say(esc("The room is open, but its resident had to step away."));
               return;
             }
             eng.near = eng.nearest();
             if (options.openChat !== false)
               eng.interactNpc(host);
-            showArrival("resident");
             if (options.openChat !== false)
               setTimeout(() => chatInput.focus({ preventScroll: true }), 0);
           }
@@ -7854,11 +7766,8 @@
         clearTimeout(navigation.museumTimer);
         navigation.museumReady = true;
         hudHint.textContent = "ARROWS / WASD MOVE · E INSPECT";
-        setTravelStatus("");
         if (navigation.museumTarget)
           postMuseum("travel", navigation.museumTarget);
-        else
-          showArrival(navigation.museumScene);
         return;
       }
       if (message.type === "navigate" && museumRoutes[message.scene]) {
@@ -7883,79 +7792,390 @@
           return;
         if (message.state === "interrupted") {
           navigation.museumTarget = null;
-          navigation.arrival = navigation.museumScene;
-          setTravelStatus("Route paused");
-          collapseContext();
+          say(esc("Route paused"));
         } else if (message.state === "unavailable") {
           navigation.museumTarget = null;
-          setTravelStatus("That route is unavailable");
-          showArrival(navigation.museumScene);
+          say(esc("That route is unavailable"));
         } else if (message.state === "arrived" && message.target === "editions") {
           navigation.museumTarget = null;
-          setTravelStatus("Arrived");
-          showArrival("gallery");
+          say(esc("Arrived"));
         }
         return;
       }
       if (message.type === "manual") {
         navigation.museumTarget = null;
-        navigation.arrival = navigation.museumScene;
-        collapseContext();
         return;
       }
       if (message.type === "exit" && navigation.museumScene === "atrium")
         closeMuseum();
     });
-    destinationButtons.forEach((button) => button.addEventListener("click", () => goToDestination(button.dataset.destination)));
-    contextControls.addEventListener("click", (event) => {
-      const resident = event.target.closest("[data-resident]");
-      if (resident) {
-        meetResident(resident.dataset.resident);
-        return;
+    const destVeil = $("#destveil"), destList = $("#destlist"), destPic = $("#destpic");
+    const dZone = $("#d-zone"), dHere = $("#d-here"), dDrawing = $("#d-drawing");
+    const dName = $("#d-name"), dDesc = $("#d-desc"), dLive = $("#d-live");
+    const goWalk = $("#go-walk"), goThread = $("#go-thread"), walkTime = $("#walk-time");
+    const carry = $("#carry"), mapBtn = $("#mapbtn");
+    const compassAction = $("#compassaction"), compassVerb = $("#compassverb");
+    const rowEls = new Map;
+    let destOpen = false, sel = null, goFocus = "thread", busy = false;
+    const FIXED_TIME = (18 * 60 + 31) * 60 * 1000, frameCache = new Map;
+    function frameFor(roomId) {
+      if (frameCache.has(roomId))
+        return frameCache.get(roomId);
+      const room = eng.rooms[roomId];
+      const holder = document.createElement("div");
+      holder.style.cssText = "position:absolute;left:-40000px;top:0;";
+      holder.appendChild(document.createElement("canvas"));
+      document.body.appendChild(holder);
+      let url = "";
+      try {
+        const key = "mnemos:dest:" + roomId;
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+        const engine = create({ mount: holder, palette: PALETTE, rooms: eng.rooms, start: roomId, width: room.width, height: 420, walkBand: [352, 402], wallBase: 300, storageKey: key, cast: [], cat: null, scripts: [], groupScripts: [], ambient: [], bubbles: false, sound: false });
+        engine.destroy();
+        engine.roomId = roomId;
+        engine.camX = 0;
+        engine.npcs = [];
+        engine.cat = null;
+        engine.av.x = -1000;
+        engine.av.y = -1000;
+        engine.weather.raining = false;
+        engine.drawVignette = () => {};
+        engine._bg = null;
+        engine.bgRoom = null;
+        engine._vig = null;
+        engine.drawScene(FIXED_TIME);
+        url = holder.querySelector("canvas").toDataURL("image/png");
+      } catch (err) {
+        console.error("destinations: frame failed", roomId, err);
+      } finally {
+        holder.remove();
       }
-      const button = event.target.closest("[data-context-action]");
-      if (!button)
+      frameCache.set(roomId, url);
+      return url;
+    }
+    function residentOf(roomId) {
+      return Object.keys(privateRooms).find((id) => privateRooms[id].id === roomId) || null;
+    }
+    function npcOf(id) {
+      return eng ? eng.npcs.find((n) => n.id === id) : null;
+    }
+    function liveLine(roomId) {
+      if (!eng || !roomId)
+        return "";
+      const names = eng.npcs.filter((n) => !n.temp && n.room === roomId).map((n) => n.name);
+      if (!names.length)
+        return "";
+      return names.join(" · ") + (names.length > 1 ? " are here" : " is here");
+    }
+    function placeInfo(p) {
+      if (p.kind === "room") {
+        const room = eng.rooms[p.room];
+        return { name: room.name || p.room, hint: room.hint || "", live: liveLine(p.room), st: "", room: p.room };
+      }
+      if (p.kind === "person") {
+        const npc = npcOf(p.resident);
+        if (!npc)
+          return { name: p.resident.toUpperCase(), hint: "", live: "", st: "", room: null };
+        const activity = residentActivity(npc);
+        const room = eng.rooms[npc.room];
+        return { name: npc.name, hint: (room.name || npc.room) + " · " + activity.label, live: liveLine(npc.room), st: activity.label, room: npc.room };
+      }
+      return { name: p.name, hint: MUSEUM_HINT[p.scene] || "", live: "", st: "STILL", room: null };
+    }
+    function hereId() {
+      return navigation.surface === "museum" ? navigation.museumScene : eng.roomId;
+    }
+    function buildRows() {
+      rowEls.clear();
+      let zone = null;
+      const frag = document.createDocumentFragment();
+      for (const p of PLACES) {
+        if (p.zone !== zone) {
+          zone = p.zone;
+          const sect = document.createElement("div");
+          sect.className = "sect";
+          sect.innerHTML = '<div class="sect-h">' + esc(zone) + "</div>";
+          frag.appendChild(sect);
+        }
+        const info = placeInfo(p);
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "row";
+        const thumb = p.kind === "museum" ? p.frame : info.room && frameCache.get(info.room) || "";
+        row.innerHTML = '<span class="thumb"' + (thumb ? ' style="background-image:url(' + thumb + ')"' : "") + "></span>" + '<span class="nm">' + esc(info.name) + '</span><span class="st">' + esc(info.st) + "</span>";
+        row.addEventListener("click", () => select(p.id));
+        row.addEventListener("dblclick", () => go(goFocus));
+        frag.appendChild(row);
+        rowEls.set(p.id, row);
+      }
+      while (destList.children.length > 2)
+        destList.removeChild(destList.lastChild);
+      destList.appendChild(frag);
+    }
+    let typeTimer = null;
+    function typeInto(el, text) {
+      clearInterval(typeTimer);
+      el.textContent = "";
+      let i = 0;
+      typeTimer = setInterval(() => {
+        el.textContent = text.slice(0, ++i);
+        if (i >= text.length)
+          clearInterval(typeTimer);
+      }, 9);
+    }
+    function setGoFocus(which) {
+      goFocus = which;
+      goWalk.classList.toggle("focus", which === "walk");
+      goThread.classList.toggle("focus", which === "thread");
+    }
+    function select(id) {
+      const p = byId[id];
+      if (!p || !eng)
         return;
-      const action = button.dataset.contextAction;
-      if (action === "explore") {
-        setTravelStatus("");
-        collapseContext();
+      sel = id;
+      const info = placeInfo(p);
+      const here = hereId();
+      rowEls.forEach((row2, rid) => {
+        const isHere2 = rid === here;
+        row2.classList.toggle("sel", rid === id);
+        row2.classList.toggle("here", isHere2);
+        row2.querySelector(".st").textContent = isHere2 ? "HERE" : placeInfo(byId[rid]).st;
+      });
+      dZone.textContent = p.zone;
+      dName.textContent = info.name;
+      typeInto(dDesc, info.hint);
+      dLive.innerHTML = info.live ? "<i></i>" + esc(info.live) : "";
+      dHere.hidden = id !== here;
+      const isHere = id === here;
+      goWalk.disabled = isHere;
+      goThread.disabled = isHere || p.kind === "person";
+      walkTime.textContent = isHere ? "you are here" : "through the doors";
+      setGoFocus(p.kind === "person" ? "walk" : goFocus);
+      destPic.classList.remove("on", "still");
+      dDrawing.hidden = true;
+      if (p.kind === "museum") {
+        destPic.style.backgroundImage = "url(" + p.frame + ")";
+        destPic.classList.add("on", "still");
+      } else if (info.room) {
+        const cached = frameCache.get(info.room);
+        if (cached) {
+          destPic.style.backgroundImage = "url(" + cached + ")";
+          destPic.classList.add("on");
+        } else {
+          destPic.style.backgroundImage = "";
+          dDrawing.hidden = false;
+          requestAnimationFrame(() => {
+            const url = frameFor(info.room);
+            if (sel !== id)
+              return;
+            if (url) {
+              destPic.style.backgroundImage = "url(" + url + ")";
+              destPic.classList.add("on");
+              const row2 = rowEls.get(id);
+              if (row2)
+                row2.querySelector(".thumb").style.backgroundImage = "url(" + url + ")";
+            }
+            dDrawing.hidden = true;
+          });
+        }
+      } else {
+        destPic.style.backgroundImage = "";
+      }
+      const row = rowEls.get(id);
+      if (row)
+        row.scrollIntoView({ block: "nearest" });
+    }
+    function openDest() {
+      if (!eng || destOpen)
+        return;
+      buildRows();
+      select(hereId());
+      destOpen = true;
+      destVeil.hidden = false;
+      requestAnimationFrame(() => destVeil.classList.add("on"));
+      cab.blur();
+      eng.clearKeys();
+    }
+    function closeDest() {
+      if (!destOpen)
+        return;
+      destOpen = false;
+      destVeil.classList.remove("on");
+      setTimeout(() => {
+        if (!destOpen)
+          destVeil.hidden = true;
+      }, 350);
+      if (navigation.surface === "museum")
+        museumFrame.focus({ preventScroll: true });
+      else
+        cab.focus({ preventScroll: true });
+    }
+    function walk(p) {
+      if (!p || busy || !eng)
+        return;
+      const info = placeInfo(p);
+      if (p.kind === "museum" && navigation.surface === "museum") {
+        const allowed = { atrium: ["gallery"], gallery: ["atrium", "field-annex"], "field-annex": ["gallery"] }[navigation.museumScene] || [];
+        if (!allowed.includes(p.scene)) {
+          closeDest();
+          say("the annex is reached through the gallery");
+          return;
+        }
+      }
+      closeDest();
+      if (p.kind === "room") {
+        if (p.room === "lookout")
+          goToDestination("grounds");
+        else if (p.room === "sanctuary")
+          goToDestination("sanctuary");
+        else if (p.room === "resident_wing" || p.room === "garden")
+          startWorldTravel({ id: p.room, room: p.room, x: eng.rooms[p.room].spawn.x, y: 378 });
+        else {
+          const resident = residentOf(p.room);
+          if (resident)
+            visitResidentRoom(resident, { openChat: false });
+        }
+      } else if (p.kind === "person") {
+        visitResidentRoom(p.resident, { openChat: false });
+      } else if (navigation.surface === "museum") {
+        startMuseumTravel(p.scene);
+      } else {
+        navigation.museumTarget = p.scene === "atrium" ? null : "gallery";
+        goToDestination("museum");
+      }
+      say("walking · <b>" + esc(info.name) + "</b>");
+    }
+    function thread(p) {
+      if (busy)
+        return;
+      busy = true;
+      closeDest();
+      carry.classList.add("on");
+      carry.setAttribute("aria-hidden", "false");
+      const land = (fn) => {
+        if (eng.trans)
+          return setTimeout(() => land(fn), 40);
+        fn();
+      };
+      const finish = (name) => {
+        carry.classList.remove("on");
+        carry.setAttribute("aria-hidden", "true");
+        busy = false;
+        say("the thread carried you · <b>" + esc(name) + "</b>");
+        cab.focus({ preventScroll: true });
+      };
+      setTimeout(() => {
+        if (eng.travel)
+          eng.cancelTravel("thread");
+        releaseResidentRouting();
+        if (p.kind === "museum") {
+          navigation.museumTarget = null;
+          openMuseum(p.scene);
+          setTimeout(() => finish(p.name), 525);
+          return;
+        }
+        const room = p.kind === "person" ? eng.npcs.find((n) => n.id === p.resident).room : p.room;
+        const jump = () => land(() => {
+          eng.go(room, eng.rooms[room].spawn);
+          setTimeout(() => finish(eng.rooms[room].name), 525);
+        });
         if (navigation.surface === "museum")
-          museumFrame.focus();
+          leaveMuseumFor(jump);
         else
-          cab.focus();
+          jump();
+      }, 525);
+    }
+    function go(mode) {
+      if (busy || !sel)
+        return;
+      const p = byId[sel];
+      if (!p)
+        return;
+      if (mode === "walk") {
+        if (goWalk.disabled)
+          return;
+        walk(p);
+      } else {
+        if (goThread.disabled)
+          return;
+        thread(p);
       }
-      if (action === "options")
-        showArrival(navigation.arrival || (navigation.museumScene || currentWorldDestination()));
-      if (action === "meet")
-        showResidentChooser();
-      if (action === "wing")
-        startWorldTravel({ id: "wing", room: "resident_wing", x: 680, y: 378 });
-      if (action === "sanctuary")
-        goToDestination("sanctuary");
-      if (action === "grounds")
-        goToDestination("grounds");
-      if (action === "gallery")
-        startMuseumTravel("gallery");
-      if (action === "atrium")
-        startMuseumTravel("atrium");
-      if (action === "editions")
-        startMuseumTravel("editions");
-      if (action === "stop") {
-        if (navigation.surface === "museum")
-          postMuseum("cancel-travel");
-        else if (eng)
-          eng.cancelTravel("control");
+    }
+    function syncCompass() {
+      if (!eng)
+        return;
+      if (navigation.surface === "museum") {
+        compassVerb.innerHTML = 'INSPECT<span class="what"></span>';
+        compassAction.classList.remove("on");
+        return;
+      }
+      const it = eng.near;
+      if (!it) {
+        compassAction.classList.remove("on");
+        return;
+      }
+      const verb = it.kind === "door" || it.kind === "portal" ? "ENTER" : String(it.action || "inspect").toUpperCase();
+      compassVerb.innerHTML = esc(verb) + ' <span class="what">— ' + esc(it.label || "") + "</span>";
+      compassAction.classList.add("on");
+    }
+    setInterval(syncCompass, 150);
+    mapBtn.addEventListener("click", () => {
+      if (destOpen)
+        closeDest();
+      else
+        openDest();
+    });
+    goWalk.addEventListener("click", () => {
+      setGoFocus("walk");
+      go("walk");
+    });
+    goThread.addEventListener("click", () => {
+      setGoFocus("thread");
+      go("thread");
+    });
+    destVeil.addEventListener("click", (event) => {
+      if (event.target === destVeil)
+        closeDest();
+    });
+    document.addEventListener("keydown", (event) => {
+      const tag = event.target && event.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA")
+        return;
+      if (!panel.hidden)
+        return;
+      const k = event.key;
+      if (k === "m" || k === "M") {
+        event.preventDefault();
+        if (destOpen)
+          closeDest();
+        else
+          openDest();
+        return;
+      }
+      if (!destOpen)
+        return;
+      const idx = PLACES.findIndex((p) => p.id === sel);
+      if (k === "ArrowDown") {
+        event.preventDefault();
+        select(PLACES[Math.min(PLACES.length - 1, idx + 1)].id);
+      } else if (k === "ArrowUp") {
+        event.preventDefault();
+        select(PLACES[Math.max(0, idx - 1)].id);
+      } else if (k === "ArrowLeft") {
+        event.preventDefault();
+        if (!goWalk.disabled)
+          setGoFocus("walk");
+      } else if (k === "ArrowRight") {
+        event.preventDefault();
+        if (!goThread.disabled)
+          setGoFocus("thread");
+      } else if (k === "e" || k === "E" || k === "Enter") {
+        event.preventDefault();
+        go(goFocus);
       }
     });
-    cab.addEventListener("keydown", (event) => {
-      if (!navigation.contextCollapsed && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "a", "A", "d", "D", "w", "W", "s", "S"].includes(event.key))
-        collapseContext();
-    }, true);
-    cab.addEventListener("pointerdown", (event) => {
-      if (!navigation.contextCollapsed && event.target.closest("[data-dpad]"))
-        collapseContext();
-    }, true);
     pushFeed({ kind: "sys", t: "18:31", text: "the lookout · perpetual dusk · the sanctuary is lit" });
     pushFeed({ kind: "sys", t: "18:31", text: "four residents home. walk up to anyone and press E to talk" });
     try {
@@ -8023,11 +8243,17 @@
         meetResident,
         visitResidentRoom,
         privateRooms: Object.freeze(Object.assign({}, privateRooms)),
+        openDestinations: openDest,
+        closeDestinations: closeDest,
+        places: () => PLACES.map((p) => p.id),
+        thread: (id) => thread(byId[id]),
+        walk: (id) => walk(byId[id]),
         getState: () => ({
           surface: navigation.surface,
           room: eng.roomId,
           destination: currentDestination(),
           museumScene: navigation.museumScene,
+          destinationsOpen: destOpen,
           travel: eng.getTravelState()
         })
       };
@@ -8052,8 +8278,6 @@
         }
         await Promise.resolve();
       };
-      syncDestinationButtons();
-      showArrival(currentWorldDestination());
     } catch (err) {
       console.error("the house failed to wake", err);
       pushFeed({ kind: "sys", t: "——", text: "the house failed to wake: " + err.message });
