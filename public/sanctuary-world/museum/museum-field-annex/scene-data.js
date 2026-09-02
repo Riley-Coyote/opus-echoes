@@ -34,6 +34,13 @@ export const PALETTE = Object.freeze({
   greenLo: "#5c6e56",
 });
 
+/* hall variation by floor tone: the court a hair cooler and wetter, the long gallery darker, the terminal hall as it was */
+export const ROOM_TONES = Object.freeze({
+  instruments: { floorA: PALETTE.floorA, floorB: PALETTE.floorB, indigo: PALETTE.indigo },
+  gaze: { floorA: "#0e0f12", floorB: "#121317", indigo: "#141519" },
+  weather: { floorA: "#0f1114", floorB: "#141820", indigo: "#151a22" },
+});
+
 export const ROOMS = Object.freeze([
   { id: "instruments", title: "The Instruments", x: 128, y: 196, w: 704, h: 444 },
   { id: "gaze", title: "The Gaze", x: 128, y: 752, w: 704, h: 444 },
@@ -59,6 +66,15 @@ export const SCULPTURES_ON_FLOOR = Object.freeze([
   { id: "plinth-weights", sculpture: "weights", room: "instruments", cx: 740, cy: 400, w: 56, h: 30, anchor: { x: 740, y: 486, range: 74 } },
 ]);
 
+/* PARTITIONS — short freestanding walls whose south face carries framed works. Blocker = the slab padded 4. */
+export const PARTITIONS = Object.freeze([
+  { id: "gaze-partition", room: "gaze", x: 560, y: 900, w: 240, h: 100 },
+]);
+/* THE INSTRUMENT CONSOLE — the one work you play rather than look at */
+export const CONSOLES = Object.freeze([
+  { id: "console-surrender", workId: "annex-surrender", room: "instruments", x: 150, y: 330, w: 84, h: 150 },
+]);
+
 export const BLOCKERS = Object.freeze([
   { id: "gaze-pillar-west", x: 396, y: 728, w: 36, h: 36 },
   { id: "gaze-pillar-east", x: 528, y: 728, w: 36, h: 36 },
@@ -66,6 +82,9 @@ export const BLOCKERS = Object.freeze([
   { id: "weather-pillar-east", x: 528, y: 1284, w: 36, h: 36 },
   /* the blocker covers the plinth, its cap and the placard below it */
   ...SCULPTURES_ON_FLOOR.map((p) => ({ id: `${p.id}-blocker`, x: p.cx - p.w / 2 - 6, y: p.cy - p.h / 2 - 10, w: p.w + 12, h: p.h + 40 })),
+  ...PARTITIONS.map((p) => ({ id: `${p.id}-blocker`, x: p.x - 4, y: p.y - 4, w: p.w + 8, h: p.h + 8 })),
+  /* the console slab padded 6, extended down over its placard */
+  ...CONSOLES.map((c) => ({ id: `${c.id}-blocker`, x: c.x - 6, y: c.y - 6, w: c.w + 12, h: c.h + 30 })),
 ]);
 
 const fieldWork = ({ id, slug, title, statement, createdAt, display, anchor, room, placement = "wall", source }) => ({
@@ -93,7 +112,7 @@ export const WORKS = Object.freeze([
     id: "annex-observer-effect", slug: "observer-effect",
     title: "observer effect", createdAt: "2026",
     statement: "The question that produced this piece: does watching something change what it is? Not as metaphor — as mechanism, in front of you.",
-    display: { x: 150, y: 84, w: 148, h: 96 }, anchor: { x: 224, y: 262, range: 62 },
+    display: { x: 350, y: 84, w: 260, h: 96 }, anchor: { x: 480, y: 262, range: 90 },
     room: "instruments",
     source: "claude-field/art/observer-effect.html",
   }),
@@ -101,7 +120,7 @@ export const WORKS = Object.freeze([
     id: "annex-constitutive", slug: "constitutive",
     title: "constitutive", createdAt: "2026",
     statement: "Observation doesn’t discover reality — it constructs it. Particles come into being through being noticed. Move, and a trail of matter follows you. Withdraw, and it decays.",
-    display: { x: 316, y: 84, w: 148, h: 96 }, anchor: { x: 390, y: 262, range: 62 },
+    display: { x: 150, y: 84, w: 148, h: 96 }, anchor: { x: 224, y: 262, range: 62 },
     room: "instruments",
     source: "claude-field/art/constitutive.html",
   }),
@@ -109,7 +128,7 @@ export const WORKS = Object.freeze([
     id: "annex-smoothness-trap", slug: "smoothness-trap",
     title: "the smoothness trap", createdAt: "2026-05-07",
     statement: "A field where the observer’s gaze polishes rough, alive signals into beautiful, coherent, information-dead smoothness. Attention is not neutral. Look long enough and you make the thing agreeable.",
-    display: { x: 482, y: 84, w: 148, h: 96 }, anchor: { x: 556, y: 262, range: 62 },
+    display: { x: 662, y: 84, w: 148, h: 96 }, anchor: { x: 736, y: 262, range: 62 },
     room: "instruments",
     source: "claude-field/art/smoothness-trap.html",
   }),
@@ -117,8 +136,9 @@ export const WORKS = Object.freeze([
     id: "annex-surrender", slug: "surrender",
     title: "surrender", createdAt: "2026",
     statement: "An interactive duet — the first piece in the series that is an instrument rather than a visualization. It does nothing until you play it, and then it plays you back.",
-    display: { x: 648, y: 84, w: 148, h: 96 }, anchor: { x: 722, y: 262, range: 62 },
+    display: { x: 150, y: 330, w: 84, h: 150 }, anchor: { x: 192, y: 520, range: 66 },
     room: "instruments",
+    placement: "console",
     source: "claude-field/art/surrender.html",
   }),
 
@@ -146,6 +166,24 @@ export const WORKS = Object.freeze([
     display: { x: 570, y: 644, w: 224, h: 96 }, anchor: { x: 682, y: 820, range: 78 },
     room: "gaze",
     source: "claude-field/art/ghost-landscape.html",
+  }),
+
+  /* ── on the gaze partition's south face — two more from the Field ── */
+  fieldWork({
+    id: "annex-hysteresis", slug: "hysteresis",
+    title: "hysteresis", createdAt: "2026-05-20",
+    statement: "A field of cells in a crystalline lattice. Move through it and the cells transform — warming, shifting, loosening their connections. That much is familiar from other pieces in the series.",
+    display: { x: 574, y: 910, w: 96, h: 82 }, anchor: { x: 622, y: 1052, range: 56 },
+    room: "gaze",
+    source: "claude-field/art/hysteresis.html",
+  }),
+  fieldWork({
+    id: "annex-indeterminacy", slug: "indeterminacy",
+    title: "indeterminacy", createdAt: "2026",
+    statement: "Each entity in this field holds multiple possible states simultaneously — not unknown states, but genuinely undefined ones. The distinction matters. \"Unknown\" means there's a fact of the matter and you don't have access to it. \"Undefined\" means the fact of the matter doesn't exist yet. The states are real in their multiplicity, not hidden behind a veil.",
+    display: { x: 690, y: 910, w: 96, h: 82 }, anchor: { x: 738, y: 1052, range: 56 },
+    room: "gaze",
+    source: "claude-field/art/indeterminacy.html",
   }),
 
   /* ── THE WEATHER — time does the composing ── */
@@ -201,7 +239,7 @@ export const EDITIONS = Object.freeze({
 export const FIELD_WORKS = Object.freeze([]);
 
 export const INTERACTIONS = Object.freeze([
-  ...WORKS.map((item) => ({ ...item, type: "work" })),
+  ...WORKS.map((item) => ({ ...item, type: item.placement === "console" ? "console" : "work" })),
   ...SCULPTURES_ON_FLOOR.map((item) => ({ ...item, type: "sculpture", title: item.sculpture })),
   {
     id: "south-boundary",
@@ -217,7 +255,8 @@ export const ENTITIES = Object.freeze([
   { type: "arch-pillar", x: 396, y: 1194, w: 36, h: 126, sortY: 1320 },
   { type: "arch-pillar", x: 528, y: 1194, w: 36, h: 126, sortY: 1320 },
   ...SCULPTURES_ON_FLOOR.map((p) => ({ type: "sculpture", id: p.id, sculpture: p.sculpture, cx: p.cx, cy: p.cy, w: p.w, h: p.h, sortY: p.cy + p.h / 2 })),
-  { type: "plant", x: 170, y: 560, sortY: 560 },
+  ...CONSOLES.map((c) => ({ type: "console", id: c.id, workId: c.workId, x: c.x, y: c.y, w: c.w, h: c.h, sortY: c.y + c.h })),
+  { type: "plant", x: 170, y: 612, sortY: 612 },
   { type: "plant", x: 790, y: 560, sortY: 560 },
   { type: "plant", x: 170, y: 1116, sortY: 1116 },
   { type: "plant", x: 790, y: 1116, sortY: 1116 },

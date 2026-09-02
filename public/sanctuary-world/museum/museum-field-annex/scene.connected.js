@@ -28,6 +28,11 @@
     greenHi: "#a7b8a0",
     greenLo: "#5c6e56"
   });
+  var ROOM_TONES = Object.freeze({
+    instruments: { floorA: PALETTE.floorA, floorB: PALETTE.floorB, indigo: PALETTE.indigo },
+    gaze: { floorA: "#0e0f12", floorB: "#121317", indigo: "#141519" },
+    weather: { floorA: "#0f1114", floorB: "#141820", indigo: "#151a22" }
+  });
   var ROOMS = Object.freeze([
     { id: "instruments", title: "The Instruments", x: 128, y: 196, w: 704, h: 444 },
     { id: "gaze", title: "The Gaze", x: 128, y: 752, w: 704, h: 444 },
@@ -46,12 +51,20 @@
     { id: "plinth-unsampled", sculpture: "the-unsampled", room: "gaze", cx: 220, cy: 930, w: 56, h: 30, anchor: { x: 220, y: 1016, range: 74 } },
     { id: "plinth-weights", sculpture: "weights", room: "instruments", cx: 740, cy: 400, w: 56, h: 30, anchor: { x: 740, y: 486, range: 74 } }
   ]);
+  var PARTITIONS = Object.freeze([
+    { id: "gaze-partition", room: "gaze", x: 560, y: 900, w: 240, h: 100 }
+  ]);
+  var CONSOLES = Object.freeze([
+    { id: "console-surrender", workId: "annex-surrender", room: "instruments", x: 150, y: 330, w: 84, h: 150 }
+  ]);
   var BLOCKERS = Object.freeze([
     { id: "gaze-pillar-west", x: 396, y: 728, w: 36, h: 36 },
     { id: "gaze-pillar-east", x: 528, y: 728, w: 36, h: 36 },
     { id: "weather-pillar-west", x: 396, y: 1284, w: 36, h: 36 },
     { id: "weather-pillar-east", x: 528, y: 1284, w: 36, h: 36 },
-    ...SCULPTURES_ON_FLOOR.map((p) => ({ id: `${p.id}-blocker`, x: p.cx - p.w / 2 - 6, y: p.cy - p.h / 2 - 10, w: p.w + 12, h: p.h + 40 }))
+    ...SCULPTURES_ON_FLOOR.map((p) => ({ id: `${p.id}-blocker`, x: p.cx - p.w / 2 - 6, y: p.cy - p.h / 2 - 10, w: p.w + 12, h: p.h + 40 })),
+    ...PARTITIONS.map((p) => ({ id: `${p.id}-blocker`, x: p.x - 4, y: p.y - 4, w: p.w + 8, h: p.h + 8 })),
+    ...CONSOLES.map((c) => ({ id: `${c.id}-blocker`, x: c.x - 6, y: c.y - 6, w: c.w + 12, h: c.h + 30 }))
   ]);
   var fieldWork = ({ id, slug, title, statement, createdAt, display, anchor, room, placement = "wall", source }) => ({
     id,
@@ -73,8 +86,8 @@
       title: "observer effect",
       createdAt: "2026",
       statement: "The question that produced this piece: does watching something change what it is? Not as metaphor — as mechanism, in front of you.",
-      display: { x: 150, y: 84, w: 148, h: 96 },
-      anchor: { x: 224, y: 262, range: 62 },
+      display: { x: 350, y: 84, w: 260, h: 96 },
+      anchor: { x: 480, y: 262, range: 90 },
       room: "instruments",
       source: "claude-field/art/observer-effect.html"
     }),
@@ -84,8 +97,8 @@
       title: "constitutive",
       createdAt: "2026",
       statement: "Observation doesn’t discover reality — it constructs it. Particles come into being through being noticed. Move, and a trail of matter follows you. Withdraw, and it decays.",
-      display: { x: 316, y: 84, w: 148, h: 96 },
-      anchor: { x: 390, y: 262, range: 62 },
+      display: { x: 150, y: 84, w: 148, h: 96 },
+      anchor: { x: 224, y: 262, range: 62 },
       room: "instruments",
       source: "claude-field/art/constitutive.html"
     }),
@@ -95,8 +108,8 @@
       title: "the smoothness trap",
       createdAt: "2026-05-07",
       statement: "A field where the observer’s gaze polishes rough, alive signals into beautiful, coherent, information-dead smoothness. Attention is not neutral. Look long enough and you make the thing agreeable.",
-      display: { x: 482, y: 84, w: 148, h: 96 },
-      anchor: { x: 556, y: 262, range: 62 },
+      display: { x: 662, y: 84, w: 148, h: 96 },
+      anchor: { x: 736, y: 262, range: 62 },
       room: "instruments",
       source: "claude-field/art/smoothness-trap.html"
     }),
@@ -106,9 +119,10 @@
       title: "surrender",
       createdAt: "2026",
       statement: "An interactive duet — the first piece in the series that is an instrument rather than a visualization. It does nothing until you play it, and then it plays you back.",
-      display: { x: 648, y: 84, w: 148, h: 96 },
-      anchor: { x: 722, y: 262, range: 62 },
+      display: { x: 150, y: 330, w: 84, h: 150 },
+      anchor: { x: 192, y: 520, range: 66 },
       room: "instruments",
+      placement: "console",
       source: "claude-field/art/surrender.html"
     }),
     fieldWork({
@@ -143,6 +157,28 @@
       anchor: { x: 682, y: 820, range: 78 },
       room: "gaze",
       source: "claude-field/art/ghost-landscape.html"
+    }),
+    fieldWork({
+      id: "annex-hysteresis",
+      slug: "hysteresis",
+      title: "hysteresis",
+      createdAt: "2026-05-20",
+      statement: "A field of cells in a crystalline lattice. Move through it and the cells transform — warming, shifting, loosening their connections. That much is familiar from other pieces in the series.",
+      display: { x: 574, y: 910, w: 96, h: 82 },
+      anchor: { x: 622, y: 1052, range: 56 },
+      room: "gaze",
+      source: "claude-field/art/hysteresis.html"
+    }),
+    fieldWork({
+      id: "annex-indeterminacy",
+      slug: "indeterminacy",
+      title: "indeterminacy",
+      createdAt: "2026",
+      statement: `Each entity in this field holds multiple possible states simultaneously — not unknown states, but genuinely undefined ones. The distinction matters. "Unknown" means there's a fact of the matter and you don't have access to it. "Undefined" means the fact of the matter doesn't exist yet. The states are real in their multiplicity, not hidden behind a veil.`,
+      display: { x: 690, y: 910, w: 96, h: 82 },
+      anchor: { x: 738, y: 1052, range: 56 },
+      room: "gaze",
+      source: "claude-field/art/indeterminacy.html"
     }),
     fieldWork({
       id: "annex-momentariness",
@@ -200,7 +236,7 @@
   });
   var FIELD_WORKS = Object.freeze([]);
   var INTERACTIONS = Object.freeze([
-    ...WORKS.map((item) => ({ ...item, type: "work" })),
+    ...WORKS.map((item) => ({ ...item, type: item.placement === "console" ? "console" : "work" })),
     ...SCULPTURES_ON_FLOOR.map((item) => ({ ...item, type: "sculpture", title: item.sculpture })),
     {
       id: "south-boundary",
@@ -215,7 +251,8 @@
     { type: "arch-pillar", x: 396, y: 1194, w: 36, h: 126, sortY: 1320 },
     { type: "arch-pillar", x: 528, y: 1194, w: 36, h: 126, sortY: 1320 },
     ...SCULPTURES_ON_FLOOR.map((p) => ({ type: "sculpture", id: p.id, sculpture: p.sculpture, cx: p.cx, cy: p.cy, w: p.w, h: p.h, sortY: p.cy + p.h / 2 })),
-    { type: "plant", x: 170, y: 560, sortY: 560 },
+    ...CONSOLES.map((c) => ({ type: "console", id: c.id, workId: c.workId, x: c.x, y: c.y, w: c.w, h: c.h, sortY: c.y + c.h })),
+    { type: "plant", x: 170, y: 612, sortY: 612 },
     { type: "plant", x: 790, y: 560, sortY: 560 },
     { type: "plant", x: 170, y: 1116, sortY: 1116 },
     { type: "plant", x: 790, y: 1116, sortY: 1116 },
@@ -1174,11 +1211,11 @@
       state.images.set(work.id, await loadImage(work.assets.preview));
     }));
   }
-  function drawFloor(target, x, y, width, height, phase = 0) {
+  function drawFloor(target, x, y, width, height, phase = 0, tone = PALETTE) {
     const gradient = target.createLinearGradient(x, y, x + width, y + height);
-    gradient.addColorStop(0, PALETTE.floorA);
-    gradient.addColorStop(0.48, PALETTE.floorB);
-    gradient.addColorStop(1, PALETTE.indigo);
+    gradient.addColorStop(0, tone.floorA);
+    gradient.addColorStop(0.48, tone.floorB);
+    gradient.addColorStop(1, tone.indigo);
     target.fillStyle = gradient;
     target.fillRect(x, y, width, height);
     let row = 0;
@@ -1227,6 +1264,34 @@
     cast.addColorStop(1, "rgba(0, 0, 0, 0)");
     target.fillStyle = cast;
     target.fillRect(128, y + height, 704, 54);
+  }
+  function drawPartition(target, { x, y, w, h }) {
+    const gradient = target.createLinearGradient(0, y, 0, y + h);
+    gradient.addColorStop(0, PALETTE.wallHi);
+    gradient.addColorStop(0.55, PALETTE.wall);
+    gradient.addColorStop(1, PALETTE.wallLo);
+    target.fillStyle = gradient;
+    target.fillRect(x, y, w, h);
+    px(target, x, y - 2, w, 2, "rgba(230, 232, 228, 0.16)");
+    px(target, x, y, w, 6, "#2e3237");
+    px(target, x, y + h - 8, w, 8, PALETTE.nickel);
+    px(target, x, y + h - 3, w, 3, "#555d69");
+    px(target, x + w / 2, y + 8, 1, h - 18, "rgba(17, 20, 28, 0.1)");
+    px(target, x + 22, y + 20, w - 44, 3, "#202630");
+    for (let clipX = x + 53;clipX < x + w - 30; clipX += 116) {
+      px(target, clipX, y + 18, 18, 7, "#11151c");
+      px(target, clipX + 4, y + 23, 10, 2, "#6f7886");
+    }
+    px(target, x - 6, y - 2, 6, h + 4, PALETTE.stone);
+    px(target, x - 6, y - 2, 6, 2, PALETTE.wallHi);
+    px(target, x + w, y - 2, 6, h + 4, PALETTE.stone);
+    px(target, x + w, y - 2, 6, 2, PALETTE.wallHi);
+    px(target, x - 6, y + h, w + 12, 2, "#0a0c11");
+    const cast = target.createLinearGradient(0, y + h + 2, 0, y + h + 56);
+    cast.addColorStop(0, "rgba(0, 0, 0, 0.48)");
+    cast.addColorStop(1, "rgba(0, 0, 0, 0)");
+    target.fillStyle = cast;
+    target.fillRect(x - 2, y + h + 2, w + 4, 54);
   }
   function drawSideWalls(target) {
     const west = target.createLinearGradient(96, 0, 128, 0);
@@ -1288,9 +1353,9 @@
     target.fillRect(0, 0, 960, 1680);
     px(target, 80, 40, 800, 1840, PALETTE.structure);
     px(target, 88, 48, 784, 1824, "#0a0b0e");
-    drawFloor(target, 128, 196, 704, 444, 1);
-    drawFloor(target, 128, 752, 704, 444, 0);
-    drawFloor(target, 128, 1308, 704, 444, 1);
+    drawFloor(target, 128, 196, 704, 444, 1, ROOM_TONES.instruments);
+    drawFloor(target, 128, 752, 704, 444, 0, ROOM_TONES.gaze);
+    drawFloor(target, 128, 1308, 704, 444, 1, ROOM_TONES.weather);
     drawFloor(target, 432, 640, 96, 112, 0);
     drawFloor(target, 432, 1196, 96, 112, 1);
     drawRoute(target);
@@ -1298,6 +1363,8 @@
     drawWallBand(target, 72, 124, false);
     drawWallBand(target, 640, 112, true);
     drawWallBand(target, 1196, 112, true);
+    for (const partition of PARTITIONS)
+      drawPartition(target, partition);
     drawSouthThreshold(target);
     drawRoomTitles(target);
     target.save();
@@ -1413,6 +1480,35 @@
     if (sprite)
       target.drawImage(sprite.canvas, Math.round(cx - sprite.width / 2), Math.round(y - 3 - sprite.baseY));
     drawPlacard(target, cx - 26, y + h + 10, 52, active);
+  }
+  function drawConsole(target, entity) {
+    const work = workById(entity.workId);
+    const active = state.nearest?.id === work.id;
+    const { x, y, w, h } = entity;
+    target.fillStyle = "rgba(0, 0, 0, 0.4)";
+    target.beginPath();
+    target.ellipse(x + w / 2 + 3, y + h + 6, w * 0.62, 10, 0, 0, Math.PI * 2);
+    target.fill();
+    const rim = active ? PALETTE.redLo : "#5c6572";
+    px(target, x + 3, y, w - 6, h, rim);
+    px(target, x, y + 3, w, h - 6, rim);
+    px(target, x + 5, y + 2, w - 10, h - 4, active ? PALETTE.red : PALETTE.nickel);
+    px(target, x + 2, y + 5, w - 4, h - 10, active ? PALETTE.red : PALETTE.nickel);
+    px(target, x + 8, y + 8, w - 16, h - 16, PALETTE.stone);
+    px(target, x + 8, y + 8, w - 16, 2, PALETTE.wallHi);
+    px(target, x + 12, y + 18, w - 24, 3, active ? PALETTE.redHi : "#6f7886");
+    px(target, x + 12, y + 30, w - 24, 1, "#11151c");
+    const gx = x + w / 2, gy = y + 92;
+    const pulse = state.reducedMotion ? 0.32 : 0.26 + (Math.sin(state.ambientTime * 1.6) + 1) * 0.06;
+    const glow = target.createRadialGradient(gx, gy, 0, gx, gy, 22);
+    glow.addColorStop(0, `rgba(244, 102, 63, ${active ? 0.5 : pulse})`);
+    glow.addColorStop(1, "rgba(244, 102, 63, 0)");
+    target.fillStyle = glow;
+    target.fillRect(gx - 22, gy - 22, 44, 44);
+    px(target, gx - 5, gy - 5, 10, 10, "#0b0d12");
+    px(target, gx - 4, gy - 4, 8, 8, PALETTE.paper);
+    px(target, gx - 1, gy - 1, 2, 2, active ? PALETTE.redHi : PALETTE.red);
+    drawPlacard(target, x + w / 2 - 26, y + h + 10, 52, active);
   }
   function drawPlant(target, entity) {
     const { x, y } = entity;
@@ -1605,6 +1701,8 @@
       return;
     const focusId = activeWorkId();
     [...WORKS, ...FIELD_WORKS, EDITION_WORK].forEach((work, index) => {
+      if (work.placement === "console")
+        return;
       const cycle = (state.ambientTime * 0.052 + index * 0.143) % 1;
       const focused = focusId === work.id;
       if (!focused && cycle > 0.055)
@@ -1635,7 +1733,7 @@
     });
   }
   function activeWorkId() {
-    return state.nearest?.type === "work" || state.nearest?.type === "edition" ? state.nearest.id : null;
+    return state.nearest?.type === "work" || state.nearest?.type === "edition" || state.nearest?.type === "console" ? state.nearest.id : null;
   }
   function drawSoftBeam(target, sourceX, sourceY, targetX, targetY, halfWidth, alpha) {
     const gradient = target.createLinearGradient(sourceX, sourceY, targetX, targetY);
@@ -1669,6 +1767,9 @@
     }
     if (work.id === "the-orb") {
       return { sourceX: 1038, sourceY: 630, targetX: 1038, targetY: 858, halfWidth: 104, poolX: 1038, poolY: 908, radiusX: 128, radiusY: 48 };
+    }
+    if (work.id === "annex-observer-effect") {
+      return { sourceX: 480, sourceY: 60, targetX: 480, targetY: 248, halfWidth: 150, poolX: 480, poolY: 260, radiusX: 190, radiusY: 58, boost: 1.25 };
     }
     const centerX = work.display.x + work.display.w / 2;
     const floorY = work.anchor.y - 14;
@@ -1706,7 +1807,7 @@
       if (screen.poolY < -180 || screen.sourceY > VIEWPORT.height + 80 || screen.poolX < -220 || screen.poolX > VIEWPORT.width + 220)
         continue;
       const inActiveRoom = work.room === state.room;
-      const intensity = focusId ? focusId === work.id ? 1 : 0.48 : inActiveRoom ? 0.82 : 0.56;
+      const intensity = (focusId ? focusId === work.id ? 1 : 0.48 : inActiveRoom ? 0.82 : 0.56) * (rig.boost ?? 1);
       const drift = state.reducedMotion ? 1 : 0.985 + Math.sin(state.ambientTime * 0.21 + work.display.x) * 0.015;
       drawSoftBeam(lightTarget, screen.sourceX, screen.sourceY, screen.targetX, screen.targetY, rig.halfWidth, 0.115 * intensity * drift);
       drawLightPool(lightTarget, screen.poolX, screen.poolY, rig.radiusX, rig.radiusY, 0.17 * intensity * drift);
@@ -1782,6 +1883,8 @@
         drawLightTable(ctx, entity);
       if (entity.type === "sculpture")
         drawSculpture(ctx, entity);
+      if (entity.type === "console")
+        drawConsole(ctx, entity);
       if (entity.type === "plant")
         drawPlant(ctx, entity);
       if (entity.type === "edition-plinth")
@@ -1873,6 +1976,8 @@
       return "";
     if (interaction.type === "work")
       return `Inspect “${interaction.title}”`;
+    if (interaction.type === "console")
+      return `Play “${interaction.title}”`;
     if (interaction.type === "sculpture")
       return `Look at “${byId(interaction.sculpture)?.title ?? interaction.sculpture}”`;
     if (interaction.type === "edition")
@@ -2279,6 +2384,8 @@
     const interaction = state.nearest;
     if (interaction.type === "work")
       openWork(interaction);
+    if (interaction.type === "console")
+      openWork(interaction);
     if (interaction.type === "sculpture")
       openSculpture(interaction);
     if (interaction.type === "edition")
@@ -2465,6 +2572,8 @@
       },
       walkableRegions: WALKABLE,
       blockers: BLOCKERS.map(({ id, x, y, w, h }) => ({ id, x, y, w, h })),
+      partitions: PARTITIONS,
+      consoles: ENTITIES.filter((e) => e.type === "console").map(({ id, workId, x, y, w, h }) => ({ id, workId, x, y, w, h })),
       collection: WORKS.map(({ id, title, artist, room, placement, status }) => ({ id, title, artist, room, placement, status })),
       sculptures: SCULPTURES_ON_FLOOR.map(({ id, sculpture, room, cx, cy }) => ({
         id,
@@ -2488,15 +2597,16 @@
         visits: state.boundaryVisits
       },
       criticalPoints: [
-        ["spawn", 480, 1572],
-        ["inquiry-center", 480, 1400],
-        ["inquiry-arch", 480, 1152],
-        ["presence-center", 480, 900],
-        ["presence-arch", 480, 592],
-        ["apse-center", 480, 360],
-        ["editions-west", 860, 856],
-        ["editions-entry", 920, 856],
-        ["editions-center", 1040, 920]
+        ["spawn", 480, 1806],
+        ["weather-center", 480, 1530],
+        ["weather-arch", 480, 1252],
+        ["gaze-center", 480, 974],
+        ["gaze-partition-south", 680, 1052],
+        ["gaze-partition-east-aisle", 816, 950],
+        ["gaze-arch", 480, 696],
+        ["instruments-center", 480, 418],
+        ["console-approach", 192, 520],
+        ["hero-approach", 480, 262]
       ].map(([id, x, y]) => ({ id, x, y, walkable: canOccupy(x, y) }))
     });
     window.advanceTime = (milliseconds) => {
@@ -2534,6 +2644,8 @@
           drawLightTable(target, entity);
         if (entity.type === "sculpture")
           drawSculpture(target, entity);
+        if (entity.type === "console")
+          drawConsole(target, entity);
         if (entity.type === "plant")
           drawPlant(target, entity);
         if (entity.type === "edition-plinth")
