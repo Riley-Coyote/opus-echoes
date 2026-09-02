@@ -326,7 +326,7 @@ import {
     navigation.museumReady = false;
     cab.classList.add('is-museum');
     museumPortal.hidden = false;
-    cabTitle.innerHTML = '<i class="dot dot--amber"></i>THE MUSEUM';
+    cabTitle.textContent = 'THE MUSEUM';
     roomLabel.textContent = scene === 'gallery' ? 'THE PERMANENT GALLERY' : scene === 'field-annex' ? 'THE FIELD ANNEX' : 'THE ATRIUM';
     hudHint.textContent = 'ARROWS / WASD MOVE · E INSPECT';
     if (museumFrame.getAttribute('src') !== museumRoutes[scene]) museumFrame.src = museumRoutes[scene];
@@ -350,7 +350,7 @@ import {
     museumFrame.src = 'about:blank';
     museumPortal.hidden = true;
     cab.classList.remove('is-museum');
-    cabTitle.innerHTML = '<i class="dot dot--amber"></i>THE GROUNDS';
+    cabTitle.textContent = 'THE GROUNDS';
     if (eng) {
       eng.setHudSuspended(false);
       eng.setRoomLabel();
@@ -511,7 +511,9 @@ import {
   const carry = $('#carry'), mapBtn = $('#mapbtn');
   const compassAction = $('#compassaction'), compassVerb = $('#compassverb');
   const rowEls = new Map();
-  let destOpen = false, sel = null, goFocus = 'thread', busy = false;
+  /* goFocus is the visitor's standing choice; person rows force WALK (they have
+     no thread) but the standing choice comes back on the next ordinary row. */
+  let destOpen = false, sel = null, goFocus = 'thread', standingFocus = 'thread', busy = false, prewarmed = false;
 
   /* the frames: engine rooms drawn live by a throwaway engine (the atlas
      technique), museum scenes from the stills in data/frames/ */
@@ -587,6 +589,35 @@ import {
     destList.appendChild(frag);
   }
 
+  /* Paint every row's thumb from the cache — cheap, called as frames arrive. */
+  function paintThumbs() {
+    rowEls.forEach((row, id) => {
+      const p = byId[id];
+      if (!p || p.kind === 'museum') return;
+      const roomId = placeInfo(p).room;
+      const url = roomId && frameCache.get(roomId);
+      if (!url) return;
+      const thumb = row.querySelector('.thumb');
+      const want = 'url(' + url + ')';
+      if (thumb.style.backgroundImage !== want) thumb.style.backgroundImage = want;
+    });
+  }
+
+  /* First open of a session: draw every engine room ahead of the visitor, one
+     room per animation frame, so the list fills in without stalling the overlay. */
+  function prewarmFrames() {
+    if (prewarmed || !eng) return;
+    prewarmed = true;
+    const queue = Object.keys(ZONE).filter((roomId) => eng.rooms[roomId] && !frameCache.has(roomId));
+    const step = () => {
+      if (!queue.length) return;
+      frameFor(queue.shift());
+      paintThumbs();
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
   let typeTimer = null;
   function typeInto(el, text) {
     clearInterval(typeTimer);
@@ -598,8 +629,9 @@ import {
     }, 9);
   }
 
-  function setGoFocus(which) {
+  function setGoFocus(which, standing = false) {
     goFocus = which;
+    if (standing) standingFocus = which;
     goWalk.classList.toggle('focus', which === 'walk');
     goThread.classList.toggle('focus', which === 'thread');
   }
@@ -625,7 +657,7 @@ import {
     goWalk.disabled = isHere;
     goThread.disabled = isHere || p.kind === 'person';
     walkTime.textContent = isHere ? 'you are here' : 'through the doors';
-    setGoFocus(p.kind === 'person' ? 'walk' : goFocus);
+    setGoFocus(p.kind === 'person' ? 'walk' : standingFocus);
     /* the frame */
     destPic.classList.remove('on', 'still');
     dDrawing.hidden = true;
@@ -662,7 +694,9 @@ import {
   function openDest() {
     if (!eng || destOpen) return;
     buildRows();
+    paintThumbs();
     select(hereId());
+    prewarmFrames();
     destOpen = true;
     destVeil.hidden = false;
     requestAnimationFrame(() => destVeil.classList.add('on'));
@@ -747,8 +781,8 @@ import {
   setInterval(syncCompass, 150);
 
   mapBtn.addEventListener('click', () => { if (destOpen) closeDest(); else openDest(); });
-  goWalk.addEventListener('click', () => { setGoFocus('walk'); go('walk'); });
-  goThread.addEventListener('click', () => { setGoFocus('thread'); go('thread'); });
+  goWalk.addEventListener('click', () => { setGoFocus('walk', true); go('walk'); });
+  goThread.addEventListener('click', () => { setGoFocus('thread', true); go('thread'); });
   destVeil.addEventListener('click', (event) => { if (event.target === destVeil) closeDest(); });
 
   document.addEventListener('keydown', (event) => {
@@ -761,8 +795,8 @@ import {
     const idx = PLACES.findIndex((p) => p.id === sel);
     if (k === 'ArrowDown') { event.preventDefault(); select(PLACES[Math.min(PLACES.length - 1, idx + 1)].id); }
     else if (k === 'ArrowUp') { event.preventDefault(); select(PLACES[Math.max(0, idx - 1)].id); }
-    else if (k === 'ArrowLeft') { event.preventDefault(); if (!goWalk.disabled) setGoFocus('walk'); }
-    else if (k === 'ArrowRight') { event.preventDefault(); if (!goThread.disabled) setGoFocus('thread'); }
+    else if (k === 'ArrowLeft') { event.preventDefault(); if (!goWalk.disabled) setGoFocus('walk', true); }
+    else if (k === 'ArrowRight') { event.preventDefault(); if (!goThread.disabled) setGoFocus('thread', true); }
     else if (k === 'e' || k === 'E' || k === 'Enter') { event.preventDefault(); go(goFocus); }
   });
 

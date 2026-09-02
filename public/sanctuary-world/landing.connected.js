@@ -7587,7 +7587,7 @@
       navigation.museumReady = false;
       cab.classList.add("is-museum");
       museumPortal.hidden = false;
-      cabTitle.innerHTML = '<i class="dot dot--amber"></i>THE MUSEUM';
+      cabTitle.textContent = "THE MUSEUM";
       roomLabel.textContent = scene === "gallery" ? "THE PERMANENT GALLERY" : scene === "field-annex" ? "THE FIELD ANNEX" : "THE ATRIUM";
       hudHint.textContent = "ARROWS / WASD MOVE · E INSPECT";
       if (museumFrame.getAttribute("src") !== museumRoutes[scene])
@@ -7617,7 +7617,7 @@
       museumFrame.src = "about:blank";
       museumPortal.hidden = true;
       cab.classList.remove("is-museum");
-      cabTitle.innerHTML = '<i class="dot dot--amber"></i>THE GROUNDS';
+      cabTitle.textContent = "THE GROUNDS";
       if (eng) {
         eng.setHudSuspended(false);
         eng.setRoomLabel();
@@ -7816,7 +7816,7 @@
     const carry = $("#carry"), mapBtn = $("#mapbtn");
     const compassAction = $("#compassaction"), compassVerb = $("#compassverb");
     const rowEls = new Map;
-    let destOpen = false, sel = null, goFocus = "thread", busy = false;
+    let destOpen = false, sel = null, goFocus = "thread", standingFocus = "thread", busy = false, prewarmed = false;
     const FIXED_TIME = (18 * 60 + 31) * 60 * 1000, frameCache = new Map;
     function frameFor(roomId) {
       if (frameCache.has(roomId))
@@ -7914,6 +7914,35 @@
         destList.removeChild(destList.lastChild);
       destList.appendChild(frag);
     }
+    function paintThumbs() {
+      rowEls.forEach((row, id) => {
+        const p = byId[id];
+        if (!p || p.kind === "museum")
+          return;
+        const roomId = placeInfo(p).room;
+        const url = roomId && frameCache.get(roomId);
+        if (!url)
+          return;
+        const thumb = row.querySelector(".thumb");
+        const want = "url(" + url + ")";
+        if (thumb.style.backgroundImage !== want)
+          thumb.style.backgroundImage = want;
+      });
+    }
+    function prewarmFrames() {
+      if (prewarmed || !eng)
+        return;
+      prewarmed = true;
+      const queue = Object.keys(ZONE).filter((roomId) => eng.rooms[roomId] && !frameCache.has(roomId));
+      const step = () => {
+        if (!queue.length)
+          return;
+        frameFor(queue.shift());
+        paintThumbs();
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
     let typeTimer = null;
     function typeInto(el, text) {
       clearInterval(typeTimer);
@@ -7925,8 +7954,10 @@
           clearInterval(typeTimer);
       }, 9);
     }
-    function setGoFocus(which) {
+    function setGoFocus(which, standing = false) {
       goFocus = which;
+      if (standing)
+        standingFocus = which;
       goWalk.classList.toggle("focus", which === "walk");
       goThread.classList.toggle("focus", which === "thread");
     }
@@ -7952,7 +7983,7 @@
       goWalk.disabled = isHere;
       goThread.disabled = isHere || p.kind === "person";
       walkTime.textContent = isHere ? "you are here" : "through the doors";
-      setGoFocus(p.kind === "person" ? "walk" : goFocus);
+      setGoFocus(p.kind === "person" ? "walk" : standingFocus);
       destPic.classList.remove("on", "still");
       dDrawing.hidden = true;
       if (p.kind === "museum") {
@@ -7991,7 +8022,9 @@
       if (!eng || destOpen)
         return;
       buildRows();
+      paintThumbs();
       select(hereId());
+      prewarmFrames();
       destOpen = true;
       destVeil.hidden = false;
       requestAnimationFrame(() => destVeil.classList.add("on"));
@@ -8128,11 +8161,11 @@
         openDest();
     });
     goWalk.addEventListener("click", () => {
-      setGoFocus("walk");
+      setGoFocus("walk", true);
       go("walk");
     });
     goThread.addEventListener("click", () => {
-      setGoFocus("thread");
+      setGoFocus("thread", true);
       go("thread");
     });
     destVeil.addEventListener("click", (event) => {
@@ -8166,11 +8199,11 @@
       } else if (k === "ArrowLeft") {
         event.preventDefault();
         if (!goWalk.disabled)
-          setGoFocus("walk");
+          setGoFocus("walk", true);
       } else if (k === "ArrowRight") {
         event.preventDefault();
         if (!goThread.disabled)
-          setGoFocus("thread");
+          setGoFocus("thread", true);
       } else if (k === "e" || k === "E" || k === "Enter") {
         event.preventDefault();
         go(goFocus);
