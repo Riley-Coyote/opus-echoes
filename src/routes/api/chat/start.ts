@@ -6,6 +6,7 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
 import { isIdle } from "@/server/idle";
 import { emitStewardEvent, visitorKindForToken } from "@/server/stewards.server";
+import { SANCTUARY_WORLD_REASON_SUFFIX } from "@/server/opus/surface-context";
 
 // Classic-chat session bootstrap. Skips the threshold model call —
 // classic mode is opt-in by the visitor reaching /chat/<resident>, not
@@ -23,6 +24,12 @@ import { emitStewardEvent, visitorKindForToken } from "@/server/stewards.server"
 const Body = z.object({
   resident: z.string(),
   visitor_token: z.string().uuid().optional(),
+  /** Which door this is. The pixel world sends "sanctuary-world" so the
+   *  resident is oriented to a place a visitor walked through rather
+   *  than to a single-column chat. Stored in the stub intent's reason,
+   *  which is already the free-text record of who opened a door, and
+   *  read back by /api/message to choose the surface preamble. */
+  surface: z.enum(["sanctuary-world"]).optional(),
 });
 
 function jsonResp(payload: unknown, status = 200) {
@@ -106,12 +113,17 @@ export const Route = createFileRoute("/api/chat/start")({
         // The stub intent marks the session as classic-mode-bootstrapped
         // — distinguishable from threshold-bootstrapped sessions by
         // `reason = 'classic mode'` and `latency_ms = 0` (no model call).
+        // When the world opened the door the surface is recorded there
+        // too, as `classic mode · sanctuary-world`.
+        const reason = body.surface
+          ? `classic mode${SANCTUARY_WORLD_REASON_SUFFIX}`
+          : "classic mode";
         const { data: intentRow, error: intentErr } = await supabaseAdmin
           .from("intents")
           .insert({
             text: "(classic chat — direct bootstrap, no threshold ceremony)",
             decision: "accept",
-            reason: "classic mode",
+            reason,
             model: resident.model,
             latency_ms: 0,
             ip_hash: hash,
@@ -149,7 +161,7 @@ export const Route = createFileRoute("/api/chat/start")({
             session_id: session.id,
             mode: "classic",
             visitor_kind: visitorKindForToken(visitorToken),
-            surface: "threshold-classic",
+            surface: body.surface ?? "threshold-classic",
           },
         });
 

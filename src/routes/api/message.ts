@@ -5,7 +5,7 @@ import { anthropic } from "@/server/anthropic.server";
 import { openrouter } from "@/server/openai.server";
 import type { ModelProvider } from "@/server/opus/residents";
 import { buildSystemBlocksForResident, buildSystemPromptForResident } from "@/server/opus/soul";
-import { sanctuarySurfacePreamble } from "@/server/opus/surface-context";
+import { renderSituation, surfaceForSession, surfacePreamble } from "@/server/opus/surface-context";
 import {
   composeMemoryPool,
   composeThreeLayerMemoryPool,
@@ -39,7 +39,6 @@ import { idleCutoffMsForMode } from "@/server/idle";
 import {
   emitStewardEvent,
   stewardNameFromReason,
-  stewardVisitNote,
   visitorKindForToken,
 } from "@/server/stewards.server";
 import {
@@ -73,10 +72,24 @@ const PreviewTurn = z.object({
   body: z.string().trim().min(1).max(8000),
 });
 
+/** Where this turn is happening, as the caller understands it. The
+ *  pixel world knows the room, the clock and who else is standing
+ *  there; the steward CLI knows it is a steward on the deck; the plain
+ *  chat surfaces know none of it and send nothing. Rendered into one
+ *  prose sentence for the per-turn (uncached) prompt slot. */
+const Situation = z.object({
+  room: z.string().trim().min(1).max(80).optional(),
+  clock: z.string().trim().min(1).max(40).optional(),
+  present: z.array(z.string().trim().min(1).max(60)).max(8).optional(),
+  visitor: z.enum(["new", "known"]).optional(),
+  kind: z.enum(["visitor", "steward"]).optional(),
+});
+
 const Body = z.object({
   session_id: z.string().trim().min(1).max(128),
   body: z.string().trim().min(1).max(8000),
   preview_turns: z.array(PreviewTurn).max(24).optional(),
+  situation: Situation.optional(),
 });
 
 /** Shape of the NDJSON pacing event emitted before the first text token. */
@@ -863,19 +876,56 @@ export const Route = createFileRoute("/api/message")({
         // by ~60% across multi-turn visits because the static prefix is
         // most of the input by token count.
         //
-        // surfacePreamble lives at the top of the static block — it's
-        // stable per surface (experiment vs classic) so it doesn't
-        // fragment the cache; each surface gets reuse within its
-        // sessions. Tells the resident which Sanctuary surface they're
-        // in and that they are NOT in The Commons.
+        // surfacePreamble lives at the top of the static block — the
+        // house brief plus the surface's own orientation. It's stable
+        // per surface (there are four Sanctuary doors: experiment,
+        // classic, the pixel world, a steward's key) so it doesn't
+        // fragment the cache; each surface gets reuse within its own
+        // sessions. Tells the resident where they live, which door
+        // they're standing in, and that they are NOT in The Commons.
+        //
+        // The situation line is the opposite: per-turn, so it goes in
+        // the uncached variable block.
+        const surface = surfaceForSession({
+          mode: sessMode,
+          intentReason: intentRow?.reason,
+          stewardName,
+        });
+        const situationLine = renderSituation(
+          body.situation
+            ? {
+                ...body.situation,
+                kind: body.situation.kind ?? (stewardName ? "steward" : "visitor"),
+                stewardName: stewardName ?? undefined,
+              }
+            : stewardName
+              ? { kind: "steward", stewardName }
+              : null,
+        );
         const systemBlocks = buildSystemBlocksForResident(resident, {
-          surfacePreamble:
-            sanctuarySurfacePreamble(sessMode, resident) +
-            (stewardName ? stewardVisitNote(stewardName) : ""),
+          surfacePreamble: surfacePreamble(surface, {
+            resident,
+            stewardName: stewardName ?? undefined,
+          }),
           selfModel: selfModelBlock,
           interiorContinuity: interior.block,
+          situation: situationLine,
           visitPacing: visitPacingBlock,
         });
+
+        // Local-dev inspection hatch: `?debug=1` on a dev server prints
+        // the assembled blocks so the prompt can be read as the
+        // resident receives it. Never enabled in production, and the
+        // blocks hold no secrets — soul, memory and orientation only.
+        if (isLocalDev() && new URL(request.url).searchParams.get("debug") === "1") {
+          console.log(
+            `[message/debug] surface=${surface} steward=${stewardName ?? "—"}\n` +
+              `--- static (${systemBlocks.static.length} chars) ---\n${systemBlocks.static}\n` +
+              `--- semiStatic (${systemBlocks.semiStatic.length} chars) ---\n${systemBlocks.semiStatic}\n` +
+              `--- variable (${systemBlocks.variable.length} chars) ---\n${systemBlocks.variable}\n` +
+              `--- end ---`,
+          );
+        }
         const cacheableSystem: SystemBlock[] = [
           {
             type: "text",

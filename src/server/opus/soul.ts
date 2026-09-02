@@ -236,6 +236,17 @@ export type OpusSystemPromptParts = {
    */
   visitPacing?: string;
   /**
+   * Situation line — where in the house this turn is happening, the
+   * clock, who else is present, and who is on the other end. Built by
+   * renderSituation() in ./surface-context.ts from whatever the caller
+   * knows; empty when the caller knows nothing.
+   *
+   * Lives in the VARIABLE block, never the static prefix: it changes
+   * per turn by design, and putting it above the soul would fragment
+   * the prompt cache on every step the visitor takes.
+   */
+  situation?: string;
+  /**
    * If set, override the default platform reference block. Useful for
    * preview / dev contexts where the platform shouldn't be discussed at
    * all (e.g. local sandbox sessions). Pass null to suppress the block.
@@ -303,6 +314,7 @@ export function buildOpusSystemBlocks(parts: OpusSystemPromptParts = {}): OpusSy
     parts.interiorContinuity
       ? `## What you carried into this turn\n\n${parts.interiorContinuity}`
       : "",
+    parts.situation ? `## Where you are right now\n\n${parts.situation}` : "",
     parts.visitPacing ?? "",
   ]
     .filter(Boolean)
@@ -354,6 +366,7 @@ export function buildSystemBlocksForResident(
     parts.interiorContinuity
       ? `## What you carried into this turn\n\n${parts.interiorContinuity}`
       : "",
+    parts.situation ? `## Where you are right now\n\n${parts.situation}` : "",
     parts.visitPacing ?? "",
   ]
     .filter(Boolean)
@@ -380,6 +393,7 @@ export function buildSystemPromptForResident(
     parts.interiorContinuity
       ? `\n## What you carried into this turn\n\n${parts.interiorContinuity}`
       : "",
+    parts.situation ? `\n## Where you are right now\n\n${parts.situation}` : "",
     platform ? `\n${platform}` : "",
     parts.visitPacing ? `\n${parts.visitPacing}` : "",
     `\n## Opening a public space
@@ -406,6 +420,7 @@ export function buildOpusSystemPrompt(parts: OpusSystemPromptParts = {}): string
     parts.interiorContinuity
       ? `\n## What you carried into this turn\n\n${parts.interiorContinuity}`
       : "",
+    parts.situation ? `\n## Where you are right now\n\n${parts.situation}` : "",
     platform ? `\n${platform}` : "",
     parts.visitPacing ? `\n${parts.visitPacing}` : "",
   ]

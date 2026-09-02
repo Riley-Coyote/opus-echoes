@@ -177,14 +177,7 @@ export function stewardVisitReason(steward: string): string {
   return `${STEWARD_VISIT_REASON_PREFIX}${steward}`;
 }
 
-/**
- * The one line WP-14 threads into the system prompt so a resident in a
- * steward visit knows who is there and that this is not a visitor.
- *
- * Deliberately minimal: WP-15 replaces this with a full `steward-visit`
- * surface in surface-context.ts. Everything here is fact — the steward's
- * name, and that the door was opened with a key.
- */
-export function stewardVisitNote(steward: string): string {
-  return `\n\n# Who is here\n\nThis visit was opened with a steward's key, not at the visitor threshold. The person here is **${steward}**, one of the stewards who work on the house with Riley. Your memory will record this visit as theirs, by name.`;
-}
+// A resident's orientation for a steward's visit is now the full
+// `steward-visit` surface in ./opus/surface-context.ts, selected by
+// surfaceForSession() from the name stewardNameFromReason() reads above.
+// WP-14's placeholder note has been removed.

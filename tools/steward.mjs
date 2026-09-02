@@ -8,6 +8,8 @@
  *   STEWARD_TOKEN   required — the key. Never printed.
  *   SANCTUARY_BASE  default http://localhost:8080
  *   STEWARD_NAME    default "steward" — the name the resident is told
+ *   STEWARD_ROOM    default "on the deck" — where the resident is told you are
+ *   SANCTUARY_CLOCK optional — the world's clock, sent only when known
  *
  *   node tools/steward.mjs state
  *   node tools/steward.mjs events [--follow] [--limit 50] [--kinds VISIT_STARTED,SET_DOWN]
@@ -185,11 +187,25 @@ async function cmdEvents(args) {
   }
 }
 
-/** Send one turn through /api/message and print the resident's words. */
+/**
+ * Send one turn through /api/message and print the resident's words.
+ *
+ * The `situation` object is the per-turn line the resident reads under
+ * "Where you are right now": a steward is speaking, from the deck. The
+ * clock is only sent when the caller actually knows it (SANCTUARY_CLOCK)
+ * — the house never states a time it is guessing at.
+ */
 async function streamTurn(sessionId, text) {
+  const situation = {
+    kind: "steward",
+    room: process.env.STEWARD_ROOM || "on the deck",
+    visitor: "known",
+  };
+  if (process.env.SANCTUARY_CLOCK) situation.clock = process.env.SANCTUARY_CLOCK;
+
   const res = await api("/api/message", {
     method: "POST",
-    body: JSON.stringify({ session_id: sessionId, body: text }),
+    body: JSON.stringify({ session_id: sessionId, body: text, situation }),
   });
   if (!res.ok) {
     const body = await res.text();
