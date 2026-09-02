@@ -150,6 +150,11 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE ENCOUNTERS + HAIKU** (item 3, second package): the approach card (their
+  own sentence, sourced), the encounter scene in archive mode (ask about their real entries ·
+  something else · listen · offer · leave; six moves; their own closing line), the visitor record
+  and a guestbook in each room, HAIKU present in the garden and declining, honestly. The chat bar
+  is gone. Opus agent from the brief in the plan.
 - 2026-09-02 · **THE ARCHIVE** (item 3, first package): the first sanctuary's real export in
   `data/archive/`, one adapter (`world/archive.js`), the residents' own sentences as their voices,
   real journals in the overlay, the public board and the residents' board in the hall (`8eb7870`).
