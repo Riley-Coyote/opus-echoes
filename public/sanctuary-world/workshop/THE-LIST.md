@@ -150,6 +150,10 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE ARCHIVE** (item 3, first package): the first sanctuary's real export in
+  `data/archive/`, one adapter (`world/archive.js`), the residents' own sentences as their voices,
+  real journals in the overlay, the public board and the residents' board in the hall (`8eb7870`).
+  Opus agent from the brief in the plan.
 - 2026-09-02 · **THE COMPASS, DESTINATIONS, THE THREAD — in the real world** (item 2): the
   compass bar in the cab, M opens the travel menu with live frames and the roster, WALK through
   the doors or FOLLOW THE THREAD; the placeholder controls retired (`3922b65`, polish `d2a07bc`).
