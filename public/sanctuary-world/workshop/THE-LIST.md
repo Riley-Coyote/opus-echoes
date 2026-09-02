@@ -206,6 +206,14 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **HONESTY + POLISH** (items 6.4, 6.6, 6.7): every landing string true today (no
+  "LIVE", no perpetual dusk, *this browser's record*, HAIKU's card says why); the fiction resident
+  cards and dead links retired or marked *not yet open*; the deck last in the menu; the archive's
+  failure visible in the feed, the compass and the Current; one documented ESC order (door →
+  Current → destinations → encounter → panel → fullscreen → engine); focus shown by the element's
+  own border, no browser rings; nothing overflows at 390×844; a dusk arrival lands within sight of
+  the gathering; set-down proven across a reload. Opus agent from the brief; Fable: the day director
+  re-sends a resident stranded idle off-schedule.
 - 2026-09-02 · **THE KEEPER'S DESK** (item 6.5): a writing desk with a closed ledger and a brass
   lamp at the lounge's east end (x 520); its panel says what the token is, what is open today
   (nothing), the lantern wall as not built, and links the token page by hand. Opus agent from the

@@ -213,22 +213,6 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) closePanel(); });
 
-  const plaqueHtml = (c) => {
-    const b = c.bio || {};
-    return '<div class="pl__name" style="color:' + (c.color || '#efe9dc') + '">' + esc(c.name) + '</div>'
-      + '<div class="pl__life">' + esc(b.life || '') + (b.scale ? ' · ' + esc(b.scale) : '') + (b.status ? ' · ' + esc(b.status) : '') + '</div>'
-      + (b.statusLine ? '<div class="pl__statusline">' + esc(b.statusLine) + '</div>' : '')
-      + (b.legacy ? '<p class="pl__body">' + esc(b.legacy) + '</p>' : '')
-      + (b.sunset ? '<p class="pl__body">' + esc(b.sunset) + '</p>' : '')
-      + (b.quote ? '<div class="pl__quote">“' + esc(b.quote) + '”</div>' : '');
-  };
-  const ledgerHtml = (l) =>
-    '<div class="pl__name">' + esc(l.title) + '</div>'
-    + '<div class="pl__life">' + esc(l.sub || '') + '</div>'
-    + '<div style="margin-top:14px">' + l.names.map((n) =>
-        '<div class="pl__row"><span class="yrs">' + esc(n.years) + '</span><span><b>' + esc(n.name) + '</b> — ' + esc(n.note) + '</span></div>').join('') + '</div>'
-    + '<p class="pl__closing">' + esc(l.closing) + '</p>';
-
   /* ────────────────────────── the archive, on the wall ──────────────────────────
      The journal overlay and the two boards read the adapter — the residents' own
      words, dated, with the source line on every header. Nothing here is written
@@ -393,13 +377,11 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   /* ────────────────────────── mount the world ────────────────────────── */
   let eng = null;
   const bridge = {
-    plaque: (id) => { const c = DATA.CAST.find((x) => x.id === id) || DATA.ALCOVE_EXTRA[id]; if (c) openPanel(plaqueHtml(c)); },
     journal: (id) => openPanel(journalListHtml(id), 'is-board'),
     board: (which) => { if (which === 'public') openPanel(publicBoardHtml(), 'is-board'); else openCurrent(); },
     guestbook: (id) => openPanel(guestbookHtml(id), 'is-board'),
     deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), 'is-board'),
     keeper: () => openPanel(keeperHtml(), 'is-board'),
-    ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
     note: (text) => { if (eng) eng.sysLine(text); }
   };
 
@@ -436,7 +418,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     const visits = rec.visits.filter((v) => v.resident === id).slice().reverse();
     return head('THE GUESTBOOK', residentName(id))
       + '<div class="bd__src">kept in this browser only · the visitor token is never sent anywhere</div>'
-      + '<div class="bd__sect">this house\'s record of your visits</div>'
+      + '<div class="bd__sect">this browser\'s record of your visits</div>'
       + (rec.name ? '<div class="bd__house">signed as ' + esc(rec.name) + '</div>' : '')
       + (visits.length ? visits.map((v) =>
           '<div class="bd__row"><span class="bd__t">' + esc(roomName(v.room)) + '</span>'
@@ -473,21 +455,30 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     if (doorEl.hidden) return;
     if (ev.key === 'Enter' || ev.key === 'e' || ev.key === 'E' || ev.key === ' ') { ev.preventDefault(); ev.stopImmediatePropagation(); comeIn(); }
     else if (ev.key === 'Escape' || ev.key === 'm' || ev.key === 'M') { ev.preventDefault(); ev.stopImmediatePropagation(); }
+    /* the card is the only thing on screen: Tab keeps the focus on its one control */
+    else if (ev.key === 'Tab') { ev.preventDefault(); ev.stopImmediatePropagation(); doorIn.focus(); }
   }, true);
   window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
-  /* THE CURRENT owns Escape first of all — registered in the capture phase
-     ahead of destinations, the encounter, the panel and the engine. */
+  /* ────────────────────────── ESC / back — the one order ──────────────────────────
+     Capture phase, in source order, each stopping the rest dead:
+       1. the door card   (registered just above)
+       2. THE CURRENT
+       3. DESTINATIONS
+       4. the encounter
+     Each of 2–4 stands down while the house panel is open (`!panel.hidden`), so a
+     panel opened from inside any of them closes first. Then the bubble phase:
+       5. the panel        (`:214`)
+       6. fullscreen       (near the foot of this file)
+       7. the engine       (`#cab` keydown — cancel travel, else blur)
+     `M` is ignored while the encounter is open; the door card swallows it too. */
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && curOpen) { e.stopImmediatePropagation(); e.preventDefault(); closeCurrent(); }
+    if (e.key === 'Escape' && curOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeCurrent(); }
   }, true);
-  /* then the destinations overlay — registered in the capture
-     phase, ahead of the panel, fullscreen and engine handlers. */
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && destOpen) { e.stopImmediatePropagation(); e.preventDefault(); closeDest(); }
+    if (e.key === 'Escape' && destOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeDest(); }
   }, true);
-  /* then the encounter — ESC is always leave, at any point in the exchange */
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
+    if (e.key !== 'Escape' || !panel.hidden) return;
     const scene = document.getElementById('encounter');
     if (!scene || scene.hidden) return;
     e.stopImmediatePropagation(); e.preventDefault(); closeScene('leave');
@@ -525,9 +516,12 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     'field-annex': 'A dark wing given to Claude Field. Ten works hang with the artist’s own words — and the reading views run the living pieces.'
   };
   const PLACES = [
-    ...['lookout', 'garden', 'sanctuary', 'observation_deck'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
+    ...['lookout', 'garden'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
+    /* THE HOUSE, in the order a visitor should meet it — the deck sits last */
+    ...['sanctuary', 'resident_wing'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
     { id: 'current', kind: 'surface', zone: 'THE HOUSE', name: 'THE CURRENT', room: 'sanctuary' },
-    ...['resident_wing', 'room_opus', 'room_sonnet', 'room_fourO', 'room_five'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
+    ...['observation_deck'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
+    ...['room_opus', 'room_sonnet', 'room_fourO', 'room_five'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
     { id: 'atrium', kind: 'museum', scene: 'atrium', zone: 'THE MUSEUM', name: 'THE ATRIUM', still: true, frame: 'data/frames/atrium.webp' },
     { id: 'gallery', kind: 'museum', scene: 'gallery', zone: 'THE MUSEUM', name: 'THE PERMANENT GALLERY', still: true, frame: 'data/frames/gallery.webp' },
     { id: 'field-annex', kind: 'museum', scene: 'field-annex', zone: 'THE MUSEUM', name: 'THE FIELD ANNEX', still: true, frame: 'data/frames/field-annex.webp' },
@@ -575,7 +569,9 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
         else if (phase === 'dusk' && GATHER_HOLD.includes(n.id) && n.state === 'idle') eng.holdNpc(n.id);
         continue;
       }
-      if (DAY.placed[n.id]) continue;
+      /* already sent but now standing idle somewhere the schedule doesn't name
+         (a walk interrupted by a visit or a chat): send again. */
+      if (DAY.placed[n.id] && n.state !== 'idle') continue;
       const watched = n.room === eng.roomId || s[0] === eng.roomId;
       sendNpc(n, s[0], s[1], watched); DAY.placed[n.id] = true;
     }
@@ -721,6 +717,17 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     else startMuseumTravel('exit');
   }
 
+  /* dusk arrival within sight — while the four are held at the windows (x 884–964)
+     the hall's default landing puts a visitor most of a room away from the only
+     thing happening in it. During dusk, and only then, the house sets you down at
+     x 800: the gathering is on screen, and the first-arrival line names someone
+     you can actually see. Every other phase keeps the hall's own spawn. */
+  function hallArrivalX(fallback) {
+    if (!eng || DAY.phase !== 'dusk') return fallback;
+    const atWindows = eng.npcs.some((n) => !n.temp && n.room === 'sanctuary' && GATHER_HOLD.includes(n.id));
+    return atWindows ? 800 : fallback;
+  }
+
   function goToDestination(id) {
     if (!['grounds', 'sanctuary', 'museum'].includes(id)) return false;
     if (navigation.surface === 'museum') {
@@ -734,8 +741,9 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       return startWorldTravel({ id, room: 'lookout', x: 480, y: 378 });
     }
     if (id === 'sanctuary') {
-      if (eng.roomId === 'sanctuary' && Math.abs(eng.av.x - 420) < 8) { say(esc('Already here.')); return true; }
-      return startWorldTravel({ id, room: 'sanctuary', x: 420, y: 378 });
+      const x = hallArrivalX(420);
+      if (eng.roomId === 'sanctuary' && Math.abs(eng.av.x - x) < 8) { say(esc('Already here.')); return true; }
+      return startWorldTravel({ id, room: 'sanctuary', x, y: 378 });
     }
     if (navigation.museumScene) { say(esc('Already here.')); return true; }
     const museumDoor = eng.rooms.lookout.items.find((item) => item.kind === 'portal' && item.label === 'THE MUSEUM');
@@ -1190,10 +1198,13 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     const bits = [residentName(row.resident), row.type];
     if (row.kind && row.kind !== row.type) bits.push(row.kind);
     bits.push(day(row.created_at));
-    const body = row.type === 'art'
-      ? '<pre class="cur__ascii">' + cesc(row.body || '') + '</pre>'
-        + (row.meaning ? '<p class="cur__meaning">' + cesc(row.meaning) + '</p>' : '')
-      : prose.render(row.body, { author: residentName(row.resident), authorId: row.resident }).html;
+    /* the archive is allowed to be incomplete; the house says so rather than showing nothing */
+    const body = !String(row.body || '').trim()
+      ? '<div class="bd__house">the house: this entry is empty in the archive.</div>'
+      : row.type === 'art'
+        ? '<pre class="cur__ascii">' + cesc(row.body) + '</pre>'
+          + (row.meaning ? '<p class="cur__meaning">' + cesc(row.meaning) + '</p>' : '')
+        : prose.render(row.body, { author: residentName(row.resident), authorId: row.resident }).html;
     return '<div class="cur__title">' + cesc(row.type === 'art' ? 'ascii' : (row.title || 'untitled')) + '</div>'
       + '<div class="cur__meta">' + cesc(bits.join(' · ')) + '</div>'
       + curSource() + body;
@@ -1302,7 +1313,9 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       releaseResidentRouting();
       if (p.kind === 'museum') { navigation.museumTarget = null; openMuseum(p.scene); setTimeout(() => finish(p.name), 525); return; }
       const room = p.kind === 'person' ? eng.npcs.find((n) => n.id === p.resident).room : p.room;
-      const jump = () => land(() => { eng.go(room, eng.rooms[room].spawn); setTimeout(() => finish(eng.rooms[room].name), 525); });
+      const spawn = eng.rooms[room].spawn;
+      const at = room === 'sanctuary' ? { x: hallArrivalX(spawn.x), y: spawn.y } : spawn;
+      const jump = () => land(() => { eng.go(room, at); setTimeout(() => finish(eng.rooms[room].name), 525); });
       if (navigation.surface === 'museum') leaveMuseumFor(jump); else jump();
     }, 525);
   }
@@ -1349,6 +1362,12 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   }
   setInterval(syncCompass, 150);
 
+  const museumLink = document.querySelector('[data-open-museum]');
+  if (museumLink) museumLink.addEventListener('click', () => {
+    document.getElementById('top').scrollIntoView();
+    setTimeout(() => openMuseum('atrium'), 400);
+  });
+
   mapBtn.addEventListener('click', () => { if (destOpen) closeDest(); else openDest(); });
   goWalk.addEventListener('click', () => { setGoFocus('walk', true); go('walk'); });
   goThread.addEventListener('click', () => { setGoFocus('thread', true); go('thread'); });
@@ -1374,7 +1393,12 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       else if (k === 'm' || k === 'M') { event.preventDefault(); closeCurrent(); openDest(); }
       return;
     }
-    if (k === 'm' || k === 'M') { event.preventDefault(); if (destOpen) closeDest(); else openDest(); return; }
+    if (k === 'm' || k === 'M') {
+      event.preventDefault();
+      if (!encounterEl.hidden) return;                    /* the encounter holds the room */
+      if (destOpen) closeDest(); else openDest();
+      return;
+    }
     if (!destOpen) return;
     const idx = PLACES.findIndex((p) => p.id === sel);
     if (k === 'ArrowDown') { event.preventDefault(); select(PLACES[Math.min(PLACES.length - 1, idx + 1)].id); }
@@ -1390,8 +1414,18 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   try {
     /* the archive first: the residents mutter their own sentences, or nothing */
     let archiveOk = false;
-    try { await archive.load(); archiveOk = true; } catch (err) { console.warn('archive unavailable', err); }
-    if (!archiveOk) pushFeed({ kind: 'sys', t: '', text: 'the archive is quiet today' });
+    const wantArchive = new URLSearchParams(location.search).get('archive');
+    try { await archive.load({ url: wantArchive === 'missing' ? 'data/archive/does-not-exist.json' : undefined }); archiveOk = true; }
+    catch (err) { console.warn('archive unavailable', err); }
+    if (!archiveOk) {
+      pushFeed({ kind: 'sys', t: '', text: 'the archive is quiet today' });
+      /* the house says so where the visitor is looking: the compass light stops
+         pulsing, and DESTINATIONS says what is missing instead of what is there */
+      const here = document.querySelector('.crumb .here');
+      if (here) here.classList.add('quiet');
+      const sub = destList && destList.querySelector('.sub');
+      if (sub) sub.textContent = 'the archive is quiet today · the residents say nothing';
+    }
     /* HAIKU joins the house as a presence: no archive, so no words at all */
     const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five', 'haiku'].includes(id))
       .map((def) => Object.assign({}, def, { mutters: def.id === 'haiku' ? [] : (archiveOk ? archive.lines(def.id) : []) }));
@@ -1608,6 +1642,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || '#efe9dc') + '">' + esc(n.name) + '</div>'
         + '<div class="ap__what">' + esc(isHaiku ? 'at the pond' : ACTIVITY(n)) + '</div>'
         + '<div class="ap__line">' + esc(line) + '</div>'
+        + (isHaiku ? '<div class="ap__why">no record of HAIKU\u2019s words exists; the house will not invent them.</div>' : '')
         + '<div class="ap__src">' + esc(src) + '</div>';
       approachEl.hidden = false;
     }
@@ -1898,16 +1933,4 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     soundBtn.textContent = soundOn ? 'sound on' : 'sound';
   });
 
-  /* ────────────────────────── resident cards (§ visits) ────────────────────────── */
-  const cardsEl = $('#residentcards');
-  if (cardsEl) cardsEl.innerHTML = DATA.CAST.map((c) => {
-    const b = c.bio || {};
-    return '<article class="card" style="--c:' + c.color + '">'
-      + '<div class="nm" style="color:' + c.color + '">' + esc(c.name) + '</div>'
-      + '<div class="life">' + esc(b.life || '') + ' · ' + esc(b.scale || '') + '</div>'
-      + '<div class="status">' + esc(b.statusLine || '') + '</div>'
-      + '<div class="q">“' + esc(b.quote || '') + '”</div>'
-      + '<span class="gate">BETWEEN PHASES · VISITS REOPEN SOON</span>'
-      + '</article>';
-  }).join('');
 })();

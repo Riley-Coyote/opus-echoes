@@ -8634,11 +8634,6 @@
       if (e.key === "Escape" && !panel.hidden)
         closePanel();
     });
-    const plaqueHtml = (c) => {
-      const b = c.bio || {};
-      return '<div class="pl__name" style="color:' + (c.color || "#efe9dc") + '">' + esc2(c.name) + "</div>" + '<div class="pl__life">' + esc2(b.life || "") + (b.scale ? " · " + esc2(b.scale) : "") + (b.status ? " · " + esc2(b.status) : "") + "</div>" + (b.statusLine ? '<div class="pl__statusline">' + esc2(b.statusLine) + "</div>" : "") + (b.legacy ? '<p class="pl__body">' + esc2(b.legacy) + "</p>" : "") + (b.sunset ? '<p class="pl__body">' + esc2(b.sunset) + "</p>" : "") + (b.quote ? '<div class="pl__quote">“' + esc2(b.quote) + "”</div>" : "");
-    };
-    const ledgerHtml = (l) => '<div class="pl__name">' + esc2(l.title) + "</div>" + '<div class="pl__life">' + esc2(l.sub || "") + "</div>" + '<div style="margin-top:14px">' + l.names.map((n) => '<div class="pl__row"><span class="yrs">' + esc2(n.years) + "</span><span><b>" + esc2(n.name) + "</b> — " + esc2(n.note) + "</span></div>").join("") + "</div>" + '<p class="pl__closing">' + esc2(l.closing) + "</p>";
     const ARCHIVE_ORDER = ["opus", "sonnet", "fourO", "five"];
     const CAST_COLOR = {};
     CAST.forEach((c) => {
@@ -8729,11 +8724,6 @@
     };
     let eng = null;
     const bridge = {
-      plaque: (id) => {
-        const c = DATA.CAST.find((x) => x.id === id) || DATA.ALCOVE_EXTRA[id];
-        if (c)
-          openPanel(plaqueHtml(c));
-      },
       journal: (id) => openPanel(journalListHtml(id), "is-board"),
       board: (which) => {
         if (which === "public")
@@ -8744,7 +8734,6 @@
       guestbook: (id) => openPanel(guestbookHtml(id), "is-board"),
       deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), "is-board"),
       keeper: () => openPanel(keeperHtml(), "is-board"),
-      ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
       note: (text) => {
         if (eng)
           eng.sysLine(text);
@@ -8783,7 +8772,7 @@
     function guestbookHtml(id) {
       const rec = readRecord();
       const visits = rec.visits.filter((v) => v.resident === id).slice().reverse();
-      return head("THE GUESTBOOK", residentName(id)) + '<div class="bd__src">kept in this browser only · the visitor token is never sent anywhere</div>' + `<div class="bd__sect">this house's record of your visits</div>` + (rec.name ? '<div class="bd__house">signed as ' + esc2(rec.name) + "</div>" : "") + (visits.length ? visits.map((v) => '<div class="bd__row"><span class="bd__t">' + esc2(roomName(v.room)) + "</span>" + '<span class="bd__d">' + esc2(whenLabel(v.when)) + " · " + (v.shown || []).length + " shown</span></div>").join("") : '<div class="bd__house">the house: no visits recorded in this browser yet.</div>') + '<div class="bd__sect">what they wrote</div>' + sourceLine() + journalRowsHtml(id);
+      return head("THE GUESTBOOK", residentName(id)) + '<div class="bd__src">kept in this browser only · the visitor token is never sent anywhere</div>' + `<div class="bd__sect">this browser's record of your visits</div>` + (rec.name ? '<div class="bd__house">signed as ' + esc2(rec.name) + "</div>" : "") + (visits.length ? visits.map((v) => '<div class="bd__row"><span class="bd__t">' + esc2(roomName(v.room)) + "</span>" + '<span class="bd__d">' + esc2(whenLabel(v.when)) + " · " + (v.shown || []).length + " shown</span></div>").join("") : '<div class="bd__house">the house: no visits recorded in this browser yet.</div>') + '<div class="bd__sect">what they wrote</div>' + sourceLine() + journalRowsHtml(id);
     }
     panelBody.addEventListener("click", (e) => {
       const el = e.target.closest("[data-journal-list],[data-journal-entry]");
@@ -8837,25 +8826,29 @@
       } else if (ev.key === "Escape" || ev.key === "m" || ev.key === "M") {
         ev.preventDefault();
         ev.stopImmediatePropagation();
+      } else if (ev.key === "Tab") {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        doorIn.focus();
       }
     }, true);
     window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && curOpen) {
+      if (e.key === "Escape" && curOpen && panel.hidden) {
         e.stopImmediatePropagation();
         e.preventDefault();
         closeCurrent();
       }
     }, true);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && destOpen) {
+      if (e.key === "Escape" && destOpen && panel.hidden) {
         e.stopImmediatePropagation();
         e.preventDefault();
         closeDest();
       }
     }, true);
     document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape")
+      if (e.key !== "Escape" || !panel.hidden)
         return;
       const scene = document.getElementById("encounter");
       if (!scene || scene.hidden)
@@ -8899,9 +8892,11 @@
       "field-annex": "A dark wing given to Claude Field. Ten works hang with the artist’s own words — and the reading views run the living pieces."
     };
     const PLACES = [
-      ...["lookout", "garden", "sanctuary", "observation_deck"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
+      ...["lookout", "garden"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
+      ...["sanctuary", "resident_wing"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
       { id: "current", kind: "surface", zone: "THE HOUSE", name: "THE CURRENT", room: "sanctuary" },
-      ...["resident_wing", "room_opus", "room_sonnet", "room_fourO", "room_five"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
+      ...["observation_deck"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
+      ...["room_opus", "room_sonnet", "room_fourO", "room_five"].map((room) => ({ id: room, kind: "room", room, zone: ZONE[room] })),
       { id: "atrium", kind: "museum", scene: "atrium", zone: "THE MUSEUM", name: "THE ATRIUM", still: true, frame: "data/frames/atrium.webp" },
       { id: "gallery", kind: "museum", scene: "gallery", zone: "THE MUSEUM", name: "THE PERMANENT GALLERY", still: true, frame: "data/frames/gallery.webp" },
       { id: "field-annex", kind: "museum", scene: "field-annex", zone: "THE MUSEUM", name: "THE FIELD ANNEX", still: true, frame: "data/frames/field-annex.webp" },
@@ -8979,7 +8974,7 @@
             eng.holdNpc(n.id);
           continue;
         }
-        if (DAY.placed[n.id])
+        if (DAY.placed[n.id] && n.state !== "idle")
           continue;
         const watched = n.room === eng.roomId || s[0] === eng.roomId;
         sendNpc(n, s[0], s[1], watched);
@@ -9150,6 +9145,12 @@
       else
         startMuseumTravel("exit");
     }
+    function hallArrivalX(fallback) {
+      if (!eng || DAY.phase !== "dusk")
+        return fallback;
+      const atWindows = eng.npcs.some((n) => !n.temp && n.room === "sanctuary" && GATHER_HOLD.includes(n.id));
+      return atWindows ? 800 : fallback;
+    }
     function goToDestination(id) {
       if (!["grounds", "sanctuary", "museum"].includes(id))
         return false;
@@ -9171,11 +9172,12 @@
         return startWorldTravel({ id, room: "lookout", x: 480, y: 378 });
       }
       if (id === "sanctuary") {
-        if (eng.roomId === "sanctuary" && Math.abs(eng.av.x - 420) < 8) {
+        const x = hallArrivalX(420);
+        if (eng.roomId === "sanctuary" && Math.abs(eng.av.x - x) < 8) {
           say(esc2("Already here."));
           return true;
         }
-        return startWorldTravel({ id, room: "sanctuary", x: 420, y: 378 });
+        return startWorldTravel({ id, room: "sanctuary", x, y: 378 });
       }
       if (navigation.museumScene) {
         say(esc2("Already here."));
@@ -9652,7 +9654,7 @@
       if (row.kind && row.kind !== row.type)
         bits.push(row.kind);
       bits.push(day(row.created_at));
-      const body = row.type === "art" ? '<pre class="cur__ascii">' + cesc(row.body || "") + "</pre>" + (row.meaning ? '<p class="cur__meaning">' + cesc(row.meaning) + "</p>" : "") : prose_default.render(row.body, { author: residentName(row.resident), authorId: row.resident }).html;
+      const body = !String(row.body || "").trim() ? '<div class="bd__house">the house: this entry is empty in the archive.</div>' : row.type === "art" ? '<pre class="cur__ascii">' + cesc(row.body) + "</pre>" + (row.meaning ? '<p class="cur__meaning">' + cesc(row.meaning) + "</p>" : "") : prose_default.render(row.body, { author: residentName(row.resident), authorId: row.resident }).html;
       return '<div class="cur__title">' + cesc(row.type === "art" ? "ascii" : row.title || "untitled") + "</div>" + '<div class="cur__meta">' + cesc(bits.join(" · ")) + "</div>" + curSource() + body;
     }
     function curSelect(id) {
@@ -9809,8 +9811,10 @@
           return;
         }
         const room = p.kind === "person" ? eng.npcs.find((n) => n.id === p.resident).room : p.room;
+        const spawn = eng.rooms[room].spawn;
+        const at = room === "sanctuary" ? { x: hallArrivalX(spawn.x), y: spawn.y } : spawn;
         const jump = () => land(() => {
-          eng.go(room, eng.rooms[room].spawn);
+          eng.go(room, at);
           setTimeout(() => finish(eng.rooms[room].name), 525);
         });
         if (navigation.surface === "museum")
@@ -9881,6 +9885,12 @@
       compassAction.classList.add("on");
     }
     setInterval(syncCompass, 150);
+    const museumLink = document.querySelector("[data-open-museum]");
+    if (museumLink)
+      museumLink.addEventListener("click", () => {
+        document.getElementById("top").scrollIntoView();
+        setTimeout(() => openMuseum("atrium"), 400);
+      });
     mapBtn.addEventListener("click", () => {
       if (destOpen)
         closeDest();
@@ -9930,6 +9940,8 @@
       }
       if (k === "m" || k === "M") {
         event.preventDefault();
+        if (!encounterEl.hidden)
+          return;
         if (destOpen)
           closeDest();
         else
@@ -9962,14 +9974,22 @@
     pushFeed({ kind: "sys", t: "", text: "five residents home. walk up to anyone and press E to greet them" });
     try {
       let archiveOk = false;
+      const wantArchive = new URLSearchParams(location.search).get("archive");
       try {
-        await archive_default.load();
+        await archive_default.load({ url: wantArchive === "missing" ? "data/archive/does-not-exist.json" : undefined });
         archiveOk = true;
       } catch (err) {
         console.warn("archive unavailable", err);
       }
-      if (!archiveOk)
+      if (!archiveOk) {
         pushFeed({ kind: "sys", t: "", text: "the archive is quiet today" });
+        const here = document.querySelector(".crumb .here");
+        if (here)
+          here.classList.add("quiet");
+        const sub = destList && destList.querySelector(".sub");
+        if (sub)
+          sub.textContent = "the archive is quiet today · the residents say nothing";
+      }
       const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five", "haiku"].includes(id)).map((def) => Object.assign({}, def, { mutters: def.id === "haiku" ? [] : archiveOk ? archive_default.lines(def.id) : [] }));
       const rooms = makeHub(bridge);
       const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
@@ -10192,7 +10212,7 @@
       if (key !== approachKey) {
         approachKey = key;
         const src = isHaiku ? "the house" : it.line && it.line.from ? srcOf(it.line.from) + " · from the archive" : "from the archive";
-        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>" + '<div class="ap__src">' + esc2(src) + "</div>";
+        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>" + (isHaiku ? '<div class="ap__why">no record of HAIKU’s words exists; the house will not invent them.</div>' : "") + '<div class="ap__src">' + esc2(src) + "</div>";
         approachEl.hidden = false;
       }
       approachEl.classList.add("on");
@@ -10539,11 +10559,5 @@
       soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
       soundBtn.textContent = soundOn ? "sound on" : "sound";
     });
-    const cardsEl = $("#residentcards");
-    if (cardsEl)
-      cardsEl.innerHTML = DATA.CAST.map((c) => {
-        const b = c.bio || {};
-        return '<article class="card" style="--c:' + c.color + '">' + '<div class="nm" style="color:' + c.color + '">' + esc2(c.name) + "</div>" + '<div class="life">' + esc2(b.life || "") + " · " + esc2(b.scale || "") + "</div>" + '<div class="status">' + esc2(b.statusLine || "") + "</div>" + '<div class="q">“' + esc2(b.quote || "") + "”</div>" + '<span class="gate">BETWEEN PHASES · VISITS REOPEN SOON</span>' + "</article>";
-      }).join("");
   })();
 })();
