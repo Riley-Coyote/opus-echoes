@@ -150,6 +150,12 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE OBSERVATION DECK** (item 4): the glass room above the conservatory, door at
+  the atelier stair; six stations (Opus's desk + the handoff wall · the council table · Fable's
+  drafting table · the keeper's seat with the day's readings from the archive · Sol's bench with
+  the two needles and the brass correction card · the stewards' lamp, lit only while the workshop
+  is open, seen from the hall and the garden). In the map, atlas, workshop and DESTINATIONS
+  (`225a0e0`). Opus agent from the brief in the plan.
 - 2026-09-02 · **THE ENCOUNTERS + HAIKU** (item 3, second package): the approach card (their
   own sentence, sourced), the encounter scene in archive mode (ask about their real entries ·
   something else · listen · offer · leave; six moves; their own closing line), the visitor record
