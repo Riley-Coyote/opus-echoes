@@ -724,7 +724,7 @@ export class Sanctuary {
 
     /* mutters */
     if (now >= this.at.mutter) {
-      const idle = this.npcs.filter((n) => n.state === 'idle' && !n.temp && n.def.mutters);
+      const idle = this.npcs.filter((n) => n.state === 'idle' && !n.temp && n.def.mutters && n.def.mutters.length);
       if (idle.length) { const n = pick(idle); this.speak(n, pick(n.def.mutters), null); }
       this.at.mutter = now + rnd(17000, 32000) / pace;
     }

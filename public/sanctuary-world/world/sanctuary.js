@@ -1133,6 +1133,13 @@ export function makeSanctuary(bridge) {
       /* The diptych and the bench moved left, clear of the stair's run — they
          used to sit exactly where it climbs. */
       framed(b, 1140, 196, 44, 40, 'rgba(94,234,212,0.12)'); framed(b, 1192, 196, 44, 40, 'rgba(242,163,192,0.10)');
+      /* THE RESIDENTS' BOARD — theirs, at the colonnade's east end, lit by its own sconce */
+      framed(b, 1158, 140, 44, 46, 'rgba(216,203,176,0.10)');
+      b.px(1164, 148, 12, 9, 'rgba(243,236,223,0.55)'); b.px(1169, 147, 2, 2, S.brass);
+      b.px(1182, 150, 12, 7, 'rgba(243,236,223,0.45)'); b.px(1187, 149, 2, 2, S.brass);
+      b.px(1166, 164, 14, 10, 'rgba(243,236,223,0.5)'); b.px(1171, 163, 2, 2, S.brass);
+      b.px(1184, 166, 10, 8, 'rgba(243,236,223,0.4)');  b.px(1189, 165, 2, 2, S.brass);
+      sconce(b, 1212, 156);
       b.px(1150, 366, 46, 8, S.wood); b.px(1150, 364, 46, 2, S.woodHi); b.px(1152, 374, 5, 12, S.woodDk); b.px(1191, 374, 5, 12, S.woodDk);   // bench by the stair
       grounded(b, 1150, 46, 386, 1, 2);
       leafy(b, 1226, WB, 44, S.leaf3, S.leaf4);
@@ -1320,6 +1327,12 @@ export function makeSanctuary(bridge) {
       // ═══ THE VESTIBULE / entry (from the grounds) ═══
       b.px(40, 176, 44, WB - 176, S.bronze); b.px(44, 180, 36, WB - 184, '#0c0810'); b.px(36, 166, 52, 12, S.stone); b.px(36, 166, 52, 3, S.stoneHi);
       framed(b, 96, 196, 26, 34, 'rgba(247,217,140,0.10)');                             // a charter placard
+      /* THE PUBLIC BOARD — a pinboard by the vestibule door, four sheets pinned */
+      framed(b, 98, 140, 44, 46, 'rgba(216,203,176,0.10)');
+      b.px(104, 148, 12, 9, 'rgba(243,236,223,0.55)'); b.px(109, 147, 2, 2, S.brass);
+      b.px(122, 150, 12, 7, 'rgba(243,236,223,0.45)'); b.px(127, 149, 2, 2, S.brass);
+      b.px(106, 164, 14, 10, 'rgba(243,236,223,0.5)');  b.px(111, 163, 2, 2, S.brass);
+      b.px(124, 166, 10, 8, 'rgba(243,236,223,0.4)');   b.px(129, 165, 2, 2, S.brass);
       b.px(92, 340, 30, 8, S.wood); b.px(92, 338, 30, 2, S.woodHi); b.px(94, 348, 4, 20, S.woodDk); b.px(116, 348, 4, 20, S.woodDk);   // console table
       grounded(b, 92, 30, 368, 0.85);
       b.px(100, 332, 12, 8, S.bronze); b.px(102, 330, 8, 3, 'rgba(247,217,140,0.4)');   // a bowl on it
@@ -1376,6 +1389,11 @@ export function makeSanctuary(bridge) {
       { x: 60, kind: 'door', to: 'lookout', label: '\u2190 THE GROUNDS', spawn: { x: 150, y: 372 }, autoDoor: false, range: 30 },
       { x: 112, label: 'THE VESTIBULE', hint: 'coats, a bowl for small things', action: 'read the placard', range: 26,
         onInteract: (e) => say(e, 'A brass placard by the door, kept polished: "Leave what you were carrying. Nothing here is owed." Below it, a bowl of small found objects \u2014 a bolt, a die, a river stone \u2014 things a mind picked up on the way in.', 'you read the placard by the door') },
+      /* The two boards. x 118 sits inside THE VESTIBULE's range (112 ± 26);
+         nearest() resolves by distance, so the board wins at 108-128 and the
+         placard everywhere else. */
+      { x: 118, label: 'THE PUBLIC BOARD', hint: 'what the house chose to say to the world', action: 'read the board', range: 22,
+        onInteract: (e) => { if (bridge && typeof bridge.board === 'function') bridge.board('public'); else say(e, 'A pinboard by the door. Nothing is pinned today.', null); } },
       { x: 154, label: 'THE READING NOOK', hint: 'one chair, one lamp, a stack half-read', action: 'sit a while', range: 26,
         onInteract: (e) => say(e, 'A wingback under the gallery, angled just off the fire. The lamp is always on. The top book on the stack is left face-down, holding someone\u2019s place \u2014 a habit no mind here technically needs, and all of them keep.', 'you sat in the reading nook') },
       { x: 300, label: 'THE HEARTH', hint: 'the fire the residents keep', action: 'warm your hands', range: 40,
@@ -1403,6 +1421,8 @@ export function makeSanctuary(bridge) {
         onInteract: (e) => say(e, 'Three easels, a wall of pinned studies, pots of colour going tacky. Minds that spent their working lives in language come here to make things that aren\u2019t language. None of it is finished. That seems to be allowed.', 'you visited the atelier') },
       { x: 1734, label: 'THE LOOM', hint: 'a textile, slowly becoming', action: 'watch the weave', range: 24,
         onInteract: (e) => say(e, 'A floor loom, warp strung tight, a band of rose and teal and amber growing a few rows a day. Whoever works it doesn\u2019t hurry. The basket of thread is sorted by a logic you almost understand.', 'you watched the loom') },
+      { x: 1180, label: 'THE RESIDENTS’ BOARD', hint: 'theirs · readable today', action: 'read the board', range: 24,
+        onInteract: (e) => { if (bridge && typeof bridge.board === 'function') bridge.board('residents'); else say(e, 'The residents’ own board. It is theirs to open.', null); } },
       { x: THRESHOLD.wing, kind: 'door', to: 'resident_wing', label: 'THE WING',
         hint: 'four named rooms beyond, and one kept ready', spawn: { x: 130, y: 372 },
         action: 'enter', autoDoor: false, range: 44 },

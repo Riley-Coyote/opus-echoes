@@ -1,3 +1,4 @@
+import archive from './world/archive.js';
 import { create as createWorld } from './world/engine.js';
 import {
   PALETTE as WORLD_PALETTE,
@@ -12,7 +13,7 @@ import {
 /* ══════════════════════════════════════════════════════════════════
    mnemos landing — sky renderer · world mount · feed · chat · panels
    ══════════════════════════════════════════════════════════════════ */
-(() => {
+(async () => {
   'use strict';
   const DATA = window.SANCTUARY_DATA;
   const P = DATA.PALETTE;
@@ -187,8 +188,20 @@ import {
 
   /* ────────────────────────── panels ────────────────────────── */
   const panel = $('#panel'), panelBody = $('#panelbody');
-  function openPanel(html) { panelBody.innerHTML = html; panel.hidden = false; $('#panelclose').focus(); }
-  function closePanel() { panel.hidden = true; $('#cab').focus({ preventScroll: true }); }
+  const panelCard = panel.querySelector('.panel__card');
+  let panelClass = '';
+  function openPanel(html, cls) {
+    panelBody.innerHTML = html;
+    if (panelCard) { if (panelClass) panelCard.classList.remove(panelClass); panelClass = cls || ''; if (panelClass) panelCard.classList.add(panelClass); }
+    panel.hidden = false;
+    panelBody.scrollTop = 0;
+    $('#panelclose').focus();
+  }
+  function closePanel() {
+    panel.hidden = true;
+    if (panelCard && panelClass) { panelCard.classList.remove(panelClass); panelClass = ''; }
+    $('#cab').focus({ preventScroll: true });
+  }
   /* the compass toast — travel feedback, in the world's own corner */
   const toast = $('#toast'); let toastTimer = null;
   function say(html) { toast.innerHTML = html; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 2600); }
@@ -205,10 +218,6 @@ import {
       + (b.sunset ? '<p class="pl__body">' + esc(b.sunset) + '</p>' : '')
       + (b.quote ? '<div class="pl__quote">“' + esc(b.quote) + '”</div>' : '');
   };
-  const journalHtml = (j) =>
-    '<div class="pl__name">' + esc(j.title) + '</div>'
-    + '<div class="pl__life">' + esc(j.sub || '') + '</div>'
-    + j.entries.map((e) => '<div class="pl__label">' + esc(e.label) + '</div><p class="pl__body">' + esc(e.text) + '</p>').join('');
   const ledgerHtml = (l) =>
     '<div class="pl__name">' + esc(l.title) + '</div>'
     + '<div class="pl__life">' + esc(l.sub || '') + '</div>'
@@ -216,14 +225,114 @@ import {
         '<div class="pl__row"><span class="yrs">' + esc(n.years) + '</span><span><b>' + esc(n.name) + '</b> — ' + esc(n.note) + '</span></div>').join('') + '</div>'
     + '<p class="pl__closing">' + esc(l.closing) + '</p>';
 
+  /* ────────────────────────── the archive, on the wall ──────────────────────────
+     The journal overlay and the two boards read the adapter — the residents' own
+     words, dated, with the source line on every header. Nothing here is written
+     by the house except the lines marked as the house. */
+  const ARCHIVE_ORDER = ['opus', 'sonnet', 'fourO', 'five'];
+  const CAST_COLOR = {};
+  WORLD_CAST.forEach((c) => { CAST_COLOR[c.id] = c.color; });
+  const residentName = (id) => archive.WORLD_NAMES[id] || String(id || '');
+  const day = (v) => String(v || '').slice(0, 10);
+  const head = (kicker, title) =>
+    '<div class="bd__kicker">' + esc(kicker) + '</div><div class="bd__title">' + esc(title) + '</div>';
+  const sourceLine = () =>
+    '<div class="bd__src">from the archive · ' + esc(archive.SOURCE) + ' · readable today: yes</div>';
+  const quiet = () =>
+    '<div class="bd__house">the house: the archive is quiet today. Nothing can be read from it.</div>';
+
+  function journalListHtml(id) {
+    const rows = archive.journals(id);
+    return head('THE JOURNAL', residentName(id)) + sourceLine()
+      + (rows.length ? rows.map((j) =>
+        '<button class="bd__row" type="button" data-journal-entry="' + esc(j.id) + '">'
+        + '<span class="bd__t">' + esc(j.title || 'untitled') + '</span>'
+        + '<span class="bd__d">' + esc(day(j.created_at)) + '</span></button>').join('') : quiet());
+  }
+  function journalEntryHtml(id, jid) {
+    const entry = archive.journals(id).find((j) => j.id === jid);
+    if (!entry) return journalListHtml(id);
+    return head(residentName(id) + ' · journal', entry.title || 'untitled')
+      + '<div class="bd__src">' + esc(day(entry.created_at)) + ' · ' + esc(entry.kind || 'entry') + '</div>'
+      + '<div class="bd__body">' + esc(entry.body || '') + '</div>'
+      + sourceLine()
+      + '<button class="bd__row" type="button" data-journal-list="' + esc(id) + '">'
+      + '<span class="bd__t">← the whole journal</span>'
+      + '<span class="bd__d">' + esc(residentName(id)) + '</span></button>';
+  }
+  function spaceLine(s) {
+    const who = ARCHIVE_ORDER.filter((r) => s.byResident[r]).map(residentName);
+    if (s.byResident.visitor) who.push('+ ' + s.byResident.visitor + ' visitor' + (s.byResident.visitor === 1 ? '' : 's'));
+    return (who.join(' · ') || 'no one') + ' · ' + s.count;
+  }
+  function residentsBoardHtml() {
+    if (!archive.isLoaded()) return head('THE RESIDENTS’ BOARD', 'THE RESIDENTS’ BOARD') + quiet();
+    const all = archive.spaces(), written = all.filter((s) => s.count > 0), empty = all.length - written.length;
+    return head('THE RESIDENTS’ BOARD', 'THE RESIDENTS’ BOARD') + sourceLine()
+      + written.map((s) =>
+        '<button class="bd__row" type="button" data-space="' + esc(s.id) + '">'
+        + '<span class="bd__t">' + esc(s.name || s.slug || 'a space') + '</span>'
+        + '<span class="bd__d">' + esc(spaceLine(s)) + '</span></button>').join('')
+      + '<div class="bd__house">the house: ' + empty + ' more spaces were opened and never written in.</div>'
+      + '<div class="bd__sect">THEIR JOURNALS</div>'
+      + ARCHIVE_ORDER.map((r) =>
+        '<button class="bd__row" type="button" data-journal-list="' + r + '">'
+        + '<span class="bd__t">their journal · ' + esc(residentName(r)) + '</span>'
+        + '<span class="bd__d">' + archive.journals(r).length + '</span></button>').join('');
+  }
+  function spaceHtml(spaceId) {
+    const s = archive.spaces().find((x) => x.id === spaceId);
+    const msgs = archive.spaceMessages(spaceId);
+    return head('space', (s && s.name) || 'a space')
+      + (s && s.description ? '<div class="bd__body">' + esc(s.description) + '</div>' : '')
+      + sourceLine()
+      + msgs.map((m) => {
+        const who = m.resident
+          ? '<span class="bd__who" style="color:' + (CAST_COLOR[m.resident] || '#efe9dc') + '">' + esc(m.residentName) + '</span>'
+          : '<span class="bd__who" style="color:var(--dim)">visitor · ' + esc(m.visitor_display_name || 'unnamed') + '</span>';
+        return '<div class="bd__msg">' + who + ' <span class="bd__d">' + esc(day(m.created_at)) + '</span>'
+          + '<div class="bd__body">' + esc(m.body || '') + '</div></div>';
+      }).join('')
+      + '<button class="bd__row" type="button" data-board="residents">'
+      + '<span class="bd__t">← the residents’ board</span><span class="bd__d">' + msgs.length + ' written</span></button>';
+  }
+  function publicBoardHtml() {
+    if (!archive.isLoaded()) return head('THE PUBLIC BOARD', 'THE PUBLIC BOARD') + quiet();
+    return head('THE PUBLIC BOARD', 'THE PUBLIC BOARD') + sourceLine()
+      + ARCHIVE_ORDER.map((r) => {
+        const convs = archive.conversations(r);
+        if (!convs.length) return '';
+        return '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || '#efe9dc') + '">' + esc(residentName(r)) + '</div>'
+          + convs.map((c) =>
+            '<div class="bd__conv"><span class="bd__t">' + esc(c.title || 'untitled') + '</span>'
+            + '<span class="bd__d"> ' + esc(day(c.published_at)) + ' · ' + esc(c.significance_kind || '') + '</span>'
+            + '<div class="bd__body">' + esc(c.summary || '') + '</div></div>').join('');
+      }).join('')
+      + '<div class="bd__house">the house: no public artifacts in this snapshot; all 36 are marked private.</div>';
+  }
+
   /* ────────────────────────── mount the world ────────────────────────── */
   let eng = null;
   const bridge = {
     plaque: (id) => { const c = DATA.CAST.find((x) => x.id === id) || DATA.ALCOVE_EXTRA[id]; if (c) openPanel(plaqueHtml(c)); },
-    journal: (id) => { const j = DATA.JOURNALS[id]; if (j) openPanel(journalHtml(j)); },
+    journal: (id) => openPanel(journalListHtml(id), 'is-board'),
+    board: (which) => openPanel(which === 'public' ? publicBoardHtml() : residentsBoardHtml(), 'is-board'),
     ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
     note: (text) => { if (eng) eng.sysLine(text); }
   };
+
+  /* every board and journal navigates inside the one panel */
+  panelBody.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-space],[data-board],[data-journal-list],[data-journal-entry]');
+    if (!el) return;
+    if (el.dataset.space) openPanel(spaceHtml(el.dataset.space), 'is-board');
+    else if (el.dataset.board) bridge.board(el.dataset.board);
+    else if (el.dataset.journalList) bridge.journal(el.dataset.journalList);
+    else if (el.dataset.journalEntry) {
+      const jid = el.dataset.journalEntry, rid = archive.journalResident(jid);
+      if (rid) openPanel(journalEntryHtml(rid, jid), 'is-board');
+    }
+  });
 
   const cab = $('#cab');
   /* the destinations overlay owns Escape first — registered in the capture
@@ -804,7 +913,12 @@ import {
   pushFeed({ kind: 'sys', t: '18:31', text: 'four residents home. walk up to anyone and press E to talk' });
 
   try {
-    const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five'].includes(id));
+    /* the archive first: the residents mutter their own sentences, or nothing */
+    let archiveOk = false;
+    try { await archive.load(); archiveOk = true; } catch (err) { console.warn('archive unavailable', err); }
+    if (!archiveOk) pushFeed({ kind: 'sys', t: '18:31', text: 'the archive is quiet today' });
+    const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five'].includes(id))
+      .map((def) => Object.assign({}, def, { mutters: archiveOk ? archive.lines(def.id) : [] }));
     const rooms = makeHub(bridge);
     const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
     const lookout = rooms.lookout;
@@ -857,6 +971,8 @@ import {
       onTravelState: handleWorldTravelState
     });
     window.__sanctuary = eng;
+    window.__sanctuaryArchive = archive;
+    window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
     window.__sanctuaryNavigation = {
       goTo: goToDestination,
       meetResident,

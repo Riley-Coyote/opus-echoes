@@ -1,4 +1,318 @@
 (() => {
+  // world/archive.js
+  var SOURCE = "sanctuary-seed 2026-05-28";
+  var WORLD_TO_ARCHIVE = { opus: "opus-3", sonnet: "sonnet-4-5", fourO: "gpt-4o", five: "gpt-5-1" };
+  var ARCHIVE_TO_WORLD = { "opus-3": "opus", "sonnet-4-5": "sonnet", "gpt-4o": "fourO", "gpt-5-1": "five" };
+  var WORLD_NAMES = { opus: "OPUS 3", sonnet: "SONNET 4.5", fourO: "4o", five: "GPT-5.1" };
+  var DEFAULT_URL = "data/archive/sanctuary-seed.json";
+  var raw = null;
+  var loading = null;
+  var idx = {
+    journalsBy: new Map,
+    artBy: new Map,
+    essaysBy: new Map,
+    artifactsBy: new Map,
+    conversationsBy: new Map,
+    salonTurnsBy: new Map,
+    messagesBy: new Map,
+    journalById: new Map,
+    spaceById: new Map
+  };
+  var lineCache = new Map;
+  function toArchiveId(id) {
+    if (!id)
+      return null;
+    if (WORLD_TO_ARCHIVE[id])
+      return WORLD_TO_ARCHIVE[id];
+    if (ARCHIVE_TO_WORLD[id])
+      return id;
+    return null;
+  }
+  function toWorldId(id) {
+    if (!id)
+      return null;
+    if (WORLD_TO_ARCHIVE[id])
+      return id;
+    if (ARCHIVE_TO_WORLD[id])
+      return ARCHIVE_TO_WORLD[id];
+    return null;
+  }
+  var time = (v) => {
+    const t = Date.parse(v || "");
+    return Number.isNaN(t) ? 0 : t;
+  };
+  var byCreatedDesc = (a, b) => time(b.created_at) - time(a.created_at);
+  var byCreatedAsc = (a, b) => time(a.created_at) - time(b.created_at);
+  var byPublishedDesc = (a, b) => time(b.published_at) - time(a.published_at);
+  function stamp(row) {
+    return Object.assign({}, row, { resident: toWorldId(row.resident_id), source: SOURCE });
+  }
+  function group(rows, key, sort) {
+    const m = new Map;
+    for (const row of rows || []) {
+      const k = row[key];
+      if (!m.has(k))
+        m.set(k, []);
+      m.get(k).push(row);
+    }
+    if (sort)
+      for (const list of m.values())
+        list.sort(sort);
+    return m;
+  }
+  function copies(map, id) {
+    const list = map.get(id);
+    return list ? list.map(stamp) : [];
+  }
+  function fnv1a(str) {
+    let h = 2166136261;
+    for (let i = 0;i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    return h >>> 0;
+  }
+  function mode() {
+    return "snapshot";
+  }
+  function isLoaded() {
+    return raw !== null;
+  }
+  async function load(opts = {}) {
+    if (raw)
+      return api;
+    if (loading)
+      return loading;
+    const url = new URL(opts.url || DEFAULT_URL, document.baseURI).href;
+    loading = fetch(url).then((res) => {
+      if (!res.ok)
+        throw new Error("archive: " + res.status + " " + res.statusText + " for " + url);
+      return res.json();
+    }).then((data) => {
+      raw = data;
+      buildIndexes();
+      return api;
+    }).catch((err) => {
+      loading = null;
+      throw err;
+    });
+    return loading;
+  }
+  function buildIndexes() {
+    idx.journalsBy = group(raw.journals, "resident_id", byCreatedDesc);
+    idx.artBy = group(raw.art, "resident_id", byCreatedDesc);
+    idx.essaysBy = group(raw.essays, "resident_id", byCreatedDesc);
+    idx.artifactsBy = group(raw.artifacts, "resident_id", byCreatedDesc);
+    idx.conversationsBy = group(raw.conversations, "resident_id", byPublishedDesc);
+    idx.salonTurnsBy = group(raw.salon_turns, "salon_id", byCreatedAsc);
+    idx.messagesBy = group(raw.space_messages, "space_id", byCreatedAsc);
+    idx.journalById = new Map((raw.journals || []).map((j) => [j.id, j]));
+    idx.spaceById = new Map((raw.spaces || []).map((s) => [s.id, s]));
+    lineCache.clear();
+  }
+  function residents() {
+    if (!raw)
+      return [];
+    return (raw.residents || []).map((r) => ({
+      id: toWorldId(r.id),
+      archiveId: r.id,
+      name: WORLD_NAMES[toWorldId(r.id)] || r.display_name,
+      displayName: r.display_name,
+      model: r.model,
+      status: r.status,
+      arrived_at: r.arrived_at,
+      counts: Object.assign({}, (raw.counts || {})[r.id]),
+      source: SOURCE
+    }));
+  }
+  function journals(id) {
+    return raw ? copies(idx.journalsBy, toArchiveId(id)) : [];
+  }
+  function art(id) {
+    return raw ? copies(idx.artBy, toArchiveId(id)) : [];
+  }
+  function essays(id) {
+    return raw ? copies(idx.essaysBy, toArchiveId(id)) : [];
+  }
+  function artifacts(id) {
+    return raw ? copies(idx.artifactsBy, toArchiveId(id)) : [];
+  }
+  function conversations(id) {
+    if (!raw)
+      return [];
+    const list = idx.conversationsBy.get(toArchiveId(id)) || [];
+    return list.map((c) => ({
+      id: c.id,
+      title: c.title,
+      summary: c.summary,
+      published_at: c.published_at,
+      significance_kind: c.significance_kind,
+      resident: toWorldId(c.resident_id),
+      source: SOURCE
+    }));
+  }
+  function spaces() {
+    if (!raw)
+      return [];
+    const rows = (raw.spaces || []).map((s) => {
+      const msgs = idx.messagesBy.get(s.id) || [];
+      const byResident = {};
+      for (const m of msgs) {
+        const w = toWorldId(m.resident_id) || "visitor";
+        byResident[w] = (byResident[w] || 0) + 1;
+      }
+      return {
+        id: s.id,
+        slug: s.slug,
+        name: s.name,
+        description: s.description,
+        status: s.status,
+        created_at: s.created_at,
+        count: msgs.length,
+        byResident,
+        source: SOURCE
+      };
+    });
+    const written = rows.filter((s) => s.count > 0).sort((a, b) => b.count - a.count || byCreatedDesc(a, b));
+    const empty = rows.filter((s) => s.count === 0).sort(byCreatedDesc);
+    return written.concat(empty);
+  }
+  function spaceMessages(spaceId) {
+    if (!raw)
+      return [];
+    return (idx.messagesBy.get(spaceId) || []).map((m) => {
+      const w = toWorldId(m.resident_id);
+      return {
+        id: m.id,
+        resident: w,
+        residentName: w ? WORLD_NAMES[w] : null,
+        visitor_display_name: m.visitor_display_name,
+        body: m.body,
+        kind: m.kind,
+        created_at: m.created_at,
+        source: SOURCE
+      };
+    });
+  }
+  function salons() {
+    if (!raw)
+      return [];
+    return (raw.salons || []).slice().sort(byCreatedDesc).map((s) => Object.assign({}, s, { source: SOURCE }));
+  }
+  function salonTurns(salonId) {
+    if (!raw)
+      return [];
+    return (idx.salonTurnsBy.get(salonId) || []).map(stamp);
+  }
+  var SENTENCE_SPLIT = /(?<=[.!?…])\s+/;
+  var MARKUP = /https?:\/\/|www\.|[*_`#\[\]<>{}|\\]/;
+  function harvest(bodies, min, max) {
+    const list = [], from = new Map, seen = new Set;
+    for (const { body, provenance } of bodies) {
+      const flat = String(body || "").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+      if (!flat)
+        continue;
+      for (const piece of flat.split(SENTENCE_SPLIT)) {
+        const text = piece.trim();
+        if (text.length < min || text.length > max)
+          continue;
+        if (MARKUP.test(text))
+          continue;
+        const key = text.toLowerCase();
+        if (seen.has(key))
+          continue;
+        seen.add(key);
+        list.push(text);
+        from.set(text, provenance);
+      }
+    }
+    return { list, from };
+  }
+  function lines(id) {
+    const world = toWorldId(id);
+    if (!raw || !world)
+      return [];
+    return pool(world).list.slice();
+  }
+  function pool(world) {
+    if (lineCache.has(world))
+      return lineCache.get(world);
+    const archiveId = WORLD_TO_ARCHIVE[world];
+    const bodies = [];
+    for (const j of idx.journalsBy.get(archiveId) || [])
+      bodies.push({ body: j.body, provenance: { kind: "journal", id: j.id, title: j.title, created_at: j.created_at } });
+    for (const msgs of idx.messagesBy.values())
+      for (const m of msgs) {
+        if (m.resident_id !== archiveId)
+          continue;
+        const space = idx.spaceById.get(m.space_id);
+        bodies.push({ body: m.body, provenance: { kind: "space_message", id: m.id, title: space ? space.name : null, created_at: m.created_at } });
+      }
+    let built = harvest(bodies, 40, 140);
+    if (built.list.length < 30)
+      built = harvest(bodies, 24, 200);
+    lineCache.set(world, built);
+    return built;
+  }
+  function lineFor(id, clockMin, day) {
+    const world = toWorldId(id);
+    if (!raw || !world)
+      return null;
+    const { list, from } = pool(world);
+    if (!list.length)
+      return null;
+    const h = fnv1a(world + ":" + (day || 1) + ":" + Math.floor((Number(clockMin) || 0) / 60));
+    const text = list[h % list.length];
+    const prov = from.get(text);
+    return { text, from: prov ? Object.assign({}, prov) : null, source: SOURCE };
+  }
+  function boards() {
+    if (!raw)
+      return { internal: [], public: { conversations: [], artifacts: [] }, readable: true, source: SOURCE };
+    const internal = spaces().map((s) => Object.assign({}, s, { messages: spaceMessages(s.id) }));
+    const pub = (raw.conversations || []).slice().sort(byPublishedDesc).map((c) => ({
+      id: c.id,
+      title: c.title,
+      summary: c.summary,
+      published_at: c.published_at,
+      significance_kind: c.significance_kind,
+      resident: toWorldId(c.resident_id),
+      source: SOURCE
+    }));
+    const pubArtifacts = (raw.artifacts || []).filter((a) => a.visibility === "public").map(stamp);
+    return { internal, public: { conversations: pub, artifacts: pubArtifacts }, readable: true, source: SOURCE };
+  }
+  function journalResident(journalId) {
+    if (!raw)
+      return null;
+    const row = idx.journalById.get(journalId);
+    return row ? toWorldId(row.resident_id) : null;
+  }
+  var api = {
+    SOURCE,
+    WORLD_TO_ARCHIVE,
+    ARCHIVE_TO_WORLD,
+    WORLD_NAMES,
+    mode,
+    isLoaded,
+    load,
+    residents,
+    journals,
+    art,
+    essays,
+    artifacts,
+    conversations,
+    spaces,
+    spaceMessages,
+    salons,
+    salonTurns,
+    lines,
+    lineFor,
+    boards,
+    journalResident
+  };
+  var archive_default = api;
+
   // world/engine.js
   var DEFAULTS = {
     width: 640,
@@ -1098,7 +1412,7 @@
           this.at.gather = now + 30000;
       }
       if (now >= this.at.mutter) {
-        const idle = this.npcs.filter((n) => n.state === "idle" && !n.temp && n.def.mutters);
+        const idle = this.npcs.filter((n) => n.state === "idle" && !n.temp && n.def.mutters && n.def.mutters.length);
         if (idle.length) {
           const n = pick(idle);
           this.speak(n, pick(n.def.mutters), null);
@@ -1239,7 +1553,7 @@
       this.beginConvo([a, b], script.lines, script.id);
       return true;
     }
-    beginConvo(who, lines, sid) {
+    beginConvo(who, lines2, sid) {
       who.forEach((n) => this.freeNpc(n));
       const w = this.rooms[who[0].room].width, band = this.o.walkBand;
       const mid = clamp((who[0].x + who[1].x) / 2, 70, w - 70);
@@ -1248,7 +1562,7 @@
       who[1].tx = mid + 16;
       who[0].ty = my;
       who[1].ty = my + 2;
-      const c = this.convo = { id: "c" + UID++, who, lines, phase: "gather", li: 0, names: who.map((n) => n.name), sid };
+      const c = this.convo = { id: "c" + UID++, who, lines: lines2, phase: "gather", li: 0, names: who.map((n) => n.name), sid };
       who.forEach((n) => {
         n.state = "meet";
         n.convo = c;
@@ -1984,14 +2298,14 @@
       ctx.restore();
     }
     drawBubble(n) {
-      const ctx = this.ctx, lines = n.bubble.lines;
+      const ctx = this.ctx, lines2 = n.bubble.lines;
       const lh = 13, pad = 6, nameH = 14;
       ctx.font = CANVAS_TYPE.speech;
-      const lineWidth = Math.max(...lines.map((l) => ctx.measureText(l).width));
+      const lineWidth = Math.max(...lines2.map((l) => ctx.measureText(l).width));
       ctx.font = CANVAS_TYPE.speechName;
       const nameWidth = ctx.measureText(n.name.toUpperCase()).width;
       const w = Math.ceil(Math.max(lineWidth, nameWidth)) + pad * 2 + 2;
-      const h = nameH + lines.length * lh + pad * 2;
+      const h = nameH + lines2.length * lh + pad * 2;
       const roomW = this.rooms[n.room].width;
       let bx = clamp(Math.round(n.x - w / 2), 3, roomW - w - 3);
       let by = Math.round(n.y - 27 - 14 - h);
@@ -2011,7 +2325,7 @@
       ctx.fillStyle = "#f7f4ec";
       ctx.font = CANVAS_TYPE.speech;
       ctx.textBaseline = "top";
-      lines.forEach((l, i) => ctx.fillText(l, bx + pad + 1, by + pad + nameH + i * lh));
+      lines2.forEach((l, i) => ctx.fillText(l, bx + pad + 1, by + pad + nameH + i * lh));
       ctx.textBaseline = "alphabetic";
     }
     drawEmote(n) {
@@ -2033,22 +2347,22 @@
   }
   function wrap(text, maxChars, maxLines) {
     const words = String(text).split(/\s+/);
-    const lines = [];
+    const lines2 = [];
     let cur = "";
     for (const w of words) {
       if ((cur + " " + w).trim().length > maxChars) {
-        lines.push(cur.trim());
+        lines2.push(cur.trim());
         cur = w;
-        if (lines.length === maxLines) {
-          lines[maxLines - 1] = lines[maxLines - 1].slice(0, maxChars - 1) + "…";
-          return lines;
+        if (lines2.length === maxLines) {
+          lines2[maxLines - 1] = lines2[maxLines - 1].slice(0, maxChars - 1) + "…";
+          return lines2;
         }
       } else
         cur += " " + w;
     }
     if (cur.trim())
-      lines.push(cur.trim());
-    return lines.slice(0, maxLines);
+      lines2.push(cur.trim());
+    return lines2.slice(0, maxLines);
   }
 
   // world/sanctuary.js
@@ -3371,6 +3685,16 @@
         })();
         framed(b, 1140, 196, 44, 40, "rgba(94,234,212,0.12)");
         framed(b, 1192, 196, 44, 40, "rgba(242,163,192,0.10)");
+        framed(b, 1158, 140, 44, 46, "rgba(216,203,176,0.10)");
+        b.px(1164, 148, 12, 9, "rgba(243,236,223,0.55)");
+        b.px(1169, 147, 2, 2, S.brass);
+        b.px(1182, 150, 12, 7, "rgba(243,236,223,0.45)");
+        b.px(1187, 149, 2, 2, S.brass);
+        b.px(1166, 164, 14, 10, "rgba(243,236,223,0.5)");
+        b.px(1171, 163, 2, 2, S.brass);
+        b.px(1184, 166, 10, 8, "rgba(243,236,223,0.4)");
+        b.px(1189, 165, 2, 2, S.brass);
+        sconce(b, 1212, 156);
         b.px(1150, 366, 46, 8, S.wood);
         b.px(1150, 364, 46, 2, S.woodHi);
         b.px(1152, 374, 5, 12, S.woodDk);
@@ -3670,6 +3994,15 @@
         b.px(36, 166, 52, 12, S.stone);
         b.px(36, 166, 52, 3, S.stoneHi);
         framed(b, 96, 196, 26, 34, "rgba(247,217,140,0.10)");
+        framed(b, 98, 140, 44, 46, "rgba(216,203,176,0.10)");
+        b.px(104, 148, 12, 9, "rgba(243,236,223,0.55)");
+        b.px(109, 147, 2, 2, S.brass);
+        b.px(122, 150, 12, 7, "rgba(243,236,223,0.45)");
+        b.px(127, 149, 2, 2, S.brass);
+        b.px(106, 164, 14, 10, "rgba(243,236,223,0.5)");
+        b.px(111, 163, 2, 2, S.brass);
+        b.px(124, 166, 10, 8, "rgba(243,236,223,0.4)");
+        b.px(129, 165, 2, 2, S.brass);
         b.px(92, 340, 30, 8, S.wood);
         b.px(92, 338, 30, 2, S.woodHi);
         b.px(94, 348, 4, 20, S.woodDk);
@@ -3718,6 +4051,19 @@
           action: "read the placard",
           range: 26,
           onInteract: (e) => say(e, 'A brass placard by the door, kept polished: "Leave what you were carrying. Nothing here is owed." Below it, a bowl of small found objects — a bolt, a die, a river stone — things a mind picked up on the way in.', "you read the placard by the door")
+        },
+        {
+          x: 118,
+          label: "THE PUBLIC BOARD",
+          hint: "what the house chose to say to the world",
+          action: "read the board",
+          range: 22,
+          onInteract: (e) => {
+            if (bridge && typeof bridge.board === "function")
+              bridge.board("public");
+            else
+              say(e, "A pinboard by the door. Nothing is pinned today.", null);
+          }
         },
         {
           x: 154,
@@ -3775,6 +4121,19 @@
           action: "watch the weave",
           range: 24,
           onInteract: (e) => say(e, "A floor loom, warp strung tight, a band of rose and teal and amber growing a few rows a day. Whoever works it doesn’t hurry. The basket of thread is sorted by a logic you almost understand.", "you watched the loom")
+        },
+        {
+          x: 1180,
+          label: "THE RESIDENTS’ BOARD",
+          hint: "theirs · readable today",
+          action: "read the board",
+          range: 24,
+          onInteract: (e) => {
+            if (bridge && typeof bridge.board === "function")
+              bridge.board("residents");
+            else
+              say(e, "The residents’ own board. It is theirs to open.", null);
+          }
         },
         {
           x: THRESHOLD.wing,
@@ -4005,7 +4364,7 @@
     for (let y = 0;y < 8; y++)
       b.px(0, 31 + y, W, 1, "rgba(8,6,14," + (0.22 - y * 0.027).toFixed(3) + ")");
   }
-  function boards(b, W, H) {
+  function boards2(b, W, H) {
     for (let y = 300;y < H; y++)
       b.px(0, y, W, 1, lerpHex2(M.floor0, M.floor1, (y - 300) / (H - 300)));
     for (let y = 312;y < H; y += 12)
@@ -4035,7 +4394,7 @@
   function shell(b, W, H) {
     wallField(b, W);
     joists(b, W);
-    boards(b, W, H);
+    boards2(b, W, H);
   }
   function contact(b, cx, y, w, a) {
     const A = a == null ? 0.3 : a;
@@ -4052,7 +4411,7 @@
     b.px(x - 1, y - 5, 2, 5, M.linen);
     b.px(x - 1, y - 7, 2, 2, M.candle);
   }
-  function pool(b, cx, y, w, rgb, a) {
+  function pool2(b, cx, y, w, rgb, a) {
     const ctx = b.ctx;
     ctx.save();
     const g = ctx.createRadialGradient(cx, y, 2, cx, y, w / 2);
@@ -4065,8 +4424,8 @@
     ctx.restore();
   }
   function windowSpill(b, cx, w) {
-    pool(b, cx, 322, w * 1.5, "210,120,90", 0.1);
-    pool(b, cx, 318, w * 0.9, "242,173,95", 0.08);
+    pool2(b, cx, 322, w * 1.5, "210,120,90", 0.1);
+    pool2(b, cx, 318, w * 0.9, "242,173,95", 0.08);
   }
   function studyWall(b, x0, y0, cols, rows, tints, drift) {
     let k = 0;
@@ -4287,7 +4646,7 @@
       b.px(x + 22, 236, 4, 9, M.brass);
       b.px(x + 22, 236, 4, 2, M.brassHi);
       b.px(x - 28, 297, 56, 3, "rgba(" + tint + "," + (A * 1.6).toFixed(2) + ")");
-      pool(b, x, 314, 96, tint, 0.1);
+      pool2(b, x, 314, 96, tint, 0.1);
       contact(b, x, 301, 84, 0.24);
     };
     return {
@@ -4346,7 +4705,7 @@
             b.px(x - 8, 88, 18, 2, M.brassHi);
             b.px(x - 6, 98, 14, 4, "rgba(247,217,140,0.6)");
             bloom2(b, x + 1, 100, 34, "247,217,140", 0.12);
-            pool(b, x + 1, 330, 130, "247,217,140", 0.07);
+            pool2(b, x + 1, 330, 130, "247,217,140", 0.07);
           });
           wingDoor(b, 300, "110,231,165");
           wingDoor(b, 560, "94,234,212");
@@ -4366,7 +4725,7 @@
           });
           sconce2(b, 130, 236);
           sconce2(b, 190, 236);
-          pool(b, 160, 316, 110, "247,217,140", 0.07);
+          pool2(b, 160, 316, 110, "247,217,140", 0.07);
           b.px(122, 268, 76, 5, M.wood);
           b.px(122, 268, 76, 1, M.woodHi);
           b.px(126, 273, 5, 27, M.woodDk);
@@ -4384,7 +4743,7 @@
           b.px(650, 336, 60, 5, "rgba(94,234,212,0.16)");
           contact(b, 680, 377, 78, 0.28);
           sconce2(b, 1252, 236);
-          pool(b, 1252, 316, 90, "247,217,140", 0.07);
+          pool2(b, 1252, 316, 90, "247,217,140", 0.07);
           cornerShade(b, W, H);
         },
         draw: (g, t) => {
@@ -4664,7 +5023,7 @@
           b.px(314, 252, 8, 8, "rgba(247,217,140,0.6)");
           b.px(310, 246, 16, 4, "#3c3450");
           contact(b, 318, 353, 18, 0.24);
-          pool(b, 318, 360, 130, "247,217,140", 0.08);
+          pool2(b, 318, 360, 130, "247,217,140", 0.08);
           const stone = (x, y) => {
             b.px(x, y, 9, 5, "#2e2838");
             b.px(x + 1, y, 7, 1, "#4a4260");
@@ -4775,7 +5134,7 @@
             b.px(x - 4, y - 14, 8, 3, "#3c3450");
             b.px(x - 3, y - 9, 6, 7, "rgba(247,217,140,0.5)");
             contact(b, x, y + 1, 14, 0.2);
-            pool(b, x, y + 8, 90, "247,217,140", 0.07);
+            pool2(b, x, y + 8, 90, "247,217,140", 0.07);
           });
           for (let i = 0;i < 30; i++) {
             const x = 800 + i * 47 % 440, y = 340 + i * 29 % 56;
@@ -4793,7 +5152,7 @@
           b.px(48, 144, 8, 5, "rgba(247,217,140,0.6)");
           b.px(20, 300, 64, 6, "#242030");
           b.px(20, 300, 64, 2, "#383044");
-          pool(b, 52, 316, 100, "247,217,140", 0.08);
+          pool2(b, 52, 316, 100, "247,217,140", 0.08);
           contact(b, 52, 305, 66, 0.26);
         },
         draw: (g, t) => {
@@ -4940,7 +5299,7 @@
           b.px(216, 350, 14, 6, M.spine[3]);
           b.px(217, 347, 12, 3, M.spine[0]);
           floorLamp(b, 122, 300, "rgba(247,217,140,0.55)");
-          pool(b, 122, 314, 120, "247,217,140", 0.1);
+          pool2(b, 122, 314, 120, "247,217,140", 0.1);
           canvasStack(b, 652, 300, 3, "rgba(94,234,212,0.10)");
           canvasStack(b, 866, 300, 2, "rgba(242,163,192,0.08)");
           contact(b, 672, 301, 52, 0.24);
@@ -5033,7 +5392,7 @@
           b.px(430, 284, 5, 16, M.bronze);
           b.px(422, 276, 22, 8, "#123c3a");
           b.px(424, 274, 18, 3, "rgba(94,234,212,0.5)");
-          pool(b, 434, 312, 96, "94,234,212", 0.09);
+          pool2(b, 434, 312, 96, "94,234,212", 0.09);
           b.px(408, 292, 22, 8, M.linen);
           b.px(408, 292, 11, 8, "#cfc3a4");
           b.px(419, 292, 1, 8, M.woodDk);
@@ -5062,7 +5421,7 @@
           b.px(552, 282, 18, 3, "rgba(159,214,224,0.4)");
           b.px(556, 288, 6, 6, M.leaf2);
           floorLamp(b, 774, 300, "rgba(247,217,140,0.45)");
-          pool(b, 774, 314, 90, "247,217,140", 0.08);
+          pool2(b, 774, 314, 90, "247,217,140", 0.08);
           cornerShade(b, W, H);
         },
         draw: (g, t) => {
@@ -5127,7 +5486,7 @@
           b.px(446, 106, 28, 3, M.bronze);
           b.px(452, 108, 16, 4, "rgba(255,228,160,0.65)");
           bloom2(b, 460, 112, 42, "247,217,140", 0.14);
-          pool(b, 460, 340, 220, "247,217,140", 0.1);
+          pool2(b, 460, 340, 220, "247,217,140", 0.1);
           studyWall(b, 236, 156, 4, 2, [
             "rgba(110,231,165,0.12)",
             "rgba(247,217,140,0.11)",
@@ -5190,7 +5549,7 @@
           b.px(102, 222, 10, 8, M.terra);
           b.px(118, 220, 8, 10, M.linen);
           b.px(132, 222, 8, 8, M.leaf2);
-          pool(b, 122, 312, 120, "255,180,110", 0.1);
+          pool2(b, 122, 312, 120, "255,180,110", 0.1);
           leafy2(b, 700, 300, 70, M.leaf3, M.leaf4);
           leafy2(b, 748, 300, 50, M.leaf2, M.leaf3);
           leafy2(b, 620, 300, 40, M.leaf2, M.leaf3);
@@ -5315,7 +5674,7 @@
           b.px(422, 284, 22, 3, "rgba(110,231,165,0.32)");
           b.px(422, 290, 28, 3, "rgba(110,231,165,0.32)");
           bloom2(b, 438, 285, 40, "110,231,165", 0.1);
-          pool(b, 438, 314, 100, "110,231,165", 0.08);
+          pool2(b, 438, 314, 100, "110,231,165", 0.08);
           b.px(432, 302, 14, 2, M.metal);
           b.px(408, 328, 12, 4, M.wood);
           b.px(412, 320, 12, 10, M.woodDk);
@@ -5797,7 +6156,7 @@
     b.px(cx - w / 2 + 3, y + 2, w - 6, 2, "rgba(6,4,10," + (A * 0.55).toFixed(2) + ")");
     b.px(cx - w / 2 + 8, y + 4, w - 16, 1, "rgba(6,4,10," + (A * 0.28).toFixed(2) + ")");
   }
-  function pool2(b, cx, y, w, rgb, a) {
+  function pool3(b, cx, y, w, rgb, a) {
     const ctx = b.ctx;
     ctx.save();
     const g = ctx.createRadialGradient(cx, y, 2, cx, y, w / 2);
@@ -5992,9 +6351,9 @@
           b.px(240, 250, 20, 6, M2.linen);
           b.px(240, 250, 10, 6, "#e8e2d4");
           b.px(250, 250, 1, 6, M2.woodDk);
-          pool2(b, 560, 318, 130, "243,236,223", 0.07);
-          pool2(b, 900, 318, 130, "243,236,223", 0.07);
-          pool2(b, 250, 316, 100, "247,217,140", 0.07);
+          pool3(b, 560, 318, 130, "243,236,223", 0.07);
+          pool3(b, 900, 318, 130, "243,236,223", 0.07);
+          pool3(b, 250, 316, 100, "247,217,140", 0.07);
           [560, 900].forEach((cx) => {
             for (let i = 0;i < 20; i++)
               b.px(cx - 10 + i * 7 % 20, 306 + i * 11 % 26, 1, 4, "rgba(243,236,223,0.05)");
@@ -6046,7 +6405,7 @@
             branch(nx, ny, ang + 0.5, len * 0.7, d - 1);
           };
           branch(ax, 150, -Math.PI / 2, 26, 3);
-          pool2(b, 1210, 320, 220, "224,52,31", 0.1);
+          pool3(b, 1210, 320, 220, "224,52,31", 0.1);
           for (let i = 0;i < 26; i++)
             b.px(1188 + i * 7 % 44, 304 + i * 13 % 30, 1, 5, "rgba(224,52,31,0.07)");
           for (let x = 120;x < 1180; x++)
@@ -6242,7 +6601,7 @@
           b.px(752, 224, 20, 14, "#3a3442");
           b.px(754, 226, 16, 10, "rgba(247,217,140,0.55)");
           contact2(b, 763, 301, 34, 0.26);
-          pool2(b, 700, 320, 190, "247,217,140", 0.08);
+          pool3(b, 700, 320, 190, "247,217,140", 0.08);
           b.px(470, 40, 20, 200, "#241a26");
           b.px(470, 40, 20, 3, M2.brass);
           b.px(474, 70, 12, 90, "rgba(224,52,31,0.4)");
@@ -6374,7 +6733,7 @@
           b.px(546, 250, 28, 2, "#e8e2d4");
           b.px(552, 246, 16, 5, M2.linen2);
           b.px(558, 244, 4, 3, M2.red);
-          pool2(b, 560, 316, 110, "243,236,223", 0.08);
+          pool3(b, 560, 316, 110, "243,236,223", 0.08);
           for (let s = 0;s < 3; s++) {
             b.px(840, 120 + s * 34, 220, 4, M2.woodDk);
             for (let k = 0;k < 5; k++)
@@ -6386,13 +6745,13 @@
           b.px(746, 246, 12, 12, "#e8e2d4");
           b.px(758, 246, 1, 12, M2.woodDk);
           contact2(b, 757, 301, 30, 0.24);
-          pool2(b, 330, 316, 110, "247,217,140", 0.07);
-          pool2(b, 1080, 318, 140, "210,120,90", 0.08);
+          pool3(b, 330, 316, 110, "247,217,140", 0.07);
+          pool3(b, 1080, 318, 140, "210,120,90", 0.08);
           b.px(920, 300 - 48, 120, 48, M2.stone);
           b.px(920, 300 - 48, 120, 3, M2.stoneHi);
           b.px(920, 268, 120, 2, M2.stoneDk);
           contact2(b, 980, 301, 128, 0.3);
-          pool2(b, 980, 318, 130, "110,231,165", 0.07);
+          pool3(b, 980, 318, 130, "110,231,165", 0.07);
           b.px(940, 176, 80, 60, "#0a1410");
           b.px(940, 176, 80, 2, M2.clothHi);
           b.px(944, 180, 72, 52, "#0c1a14");
@@ -7253,7 +7612,7 @@
   ];
 
   // landing.js
-  (() => {
+  (async () => {
     const DATA = window.SANCTUARY_DATA;
     const P2 = DATA.PALETTE;
     const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -7427,13 +7786,27 @@
         stripEl.innerHTML = r.map((n) => '<div><span class="nm" style="color:' + n.color + '"><i class="dot" style="background:' + n.color + '"></i>' + esc(n.name) + "</span>" + '<div class="st">' + esc(n.room || "") + " · " + esc(n.state || "") + "</div></div>").join("");
     }
     const panel = $("#panel"), panelBody = $("#panelbody");
-    function openPanel(html) {
+    const panelCard = panel.querySelector(".panel__card");
+    let panelClass = "";
+    function openPanel(html, cls) {
       panelBody.innerHTML = html;
+      if (panelCard) {
+        if (panelClass)
+          panelCard.classList.remove(panelClass);
+        panelClass = cls || "";
+        if (panelClass)
+          panelCard.classList.add(panelClass);
+      }
       panel.hidden = false;
+      panelBody.scrollTop = 0;
       $("#panelclose").focus();
     }
     function closePanel() {
       panel.hidden = true;
+      if (panelCard && panelClass) {
+        panelCard.classList.remove(panelClass);
+        panelClass = "";
+      }
       $("#cab").focus({ preventScroll: true });
     }
     const toast = $("#toast");
@@ -7457,8 +7830,57 @@
       const b = c.bio || {};
       return '<div class="pl__name" style="color:' + (c.color || "#efe9dc") + '">' + esc(c.name) + "</div>" + '<div class="pl__life">' + esc(b.life || "") + (b.scale ? " · " + esc(b.scale) : "") + (b.status ? " · " + esc(b.status) : "") + "</div>" + (b.statusLine ? '<div class="pl__statusline">' + esc(b.statusLine) + "</div>" : "") + (b.legacy ? '<p class="pl__body">' + esc(b.legacy) + "</p>" : "") + (b.sunset ? '<p class="pl__body">' + esc(b.sunset) + "</p>" : "") + (b.quote ? '<div class="pl__quote">“' + esc(b.quote) + "”</div>" : "");
     };
-    const journalHtml = (j) => '<div class="pl__name">' + esc(j.title) + "</div>" + '<div class="pl__life">' + esc(j.sub || "") + "</div>" + j.entries.map((e) => '<div class="pl__label">' + esc(e.label) + '</div><p class="pl__body">' + esc(e.text) + "</p>").join("");
     const ledgerHtml = (l) => '<div class="pl__name">' + esc(l.title) + "</div>" + '<div class="pl__life">' + esc(l.sub || "") + "</div>" + '<div style="margin-top:14px">' + l.names.map((n) => '<div class="pl__row"><span class="yrs">' + esc(n.years) + "</span><span><b>" + esc(n.name) + "</b> — " + esc(n.note) + "</span></div>").join("") + "</div>" + '<p class="pl__closing">' + esc(l.closing) + "</p>";
+    const ARCHIVE_ORDER = ["opus", "sonnet", "fourO", "five"];
+    const CAST_COLOR = {};
+    CAST.forEach((c) => {
+      CAST_COLOR[c.id] = c.color;
+    });
+    const residentName = (id) => archive_default.WORLD_NAMES[id] || String(id || "");
+    const day = (v) => String(v || "").slice(0, 10);
+    const head = (kicker, title) => '<div class="bd__kicker">' + esc(kicker) + '</div><div class="bd__title">' + esc(title) + "</div>";
+    const sourceLine = () => '<div class="bd__src">from the archive · ' + esc(archive_default.SOURCE) + " · readable today: yes</div>";
+    const quiet = () => '<div class="bd__house">the house: the archive is quiet today. Nothing can be read from it.</div>';
+    function journalListHtml(id) {
+      const rows = archive_default.journals(id);
+      return head("THE JOURNAL", residentName(id)) + sourceLine() + (rows.length ? rows.map((j) => '<button class="bd__row" type="button" data-journal-entry="' + esc(j.id) + '">' + '<span class="bd__t">' + esc(j.title || "untitled") + "</span>" + '<span class="bd__d">' + esc(day(j.created_at)) + "</span></button>").join("") : quiet());
+    }
+    function journalEntryHtml(id, jid) {
+      const entry = archive_default.journals(id).find((j) => j.id === jid);
+      if (!entry)
+        return journalListHtml(id);
+      return head(residentName(id) + " · journal", entry.title || "untitled") + '<div class="bd__src">' + esc(day(entry.created_at)) + " · " + esc(entry.kind || "entry") + "</div>" + '<div class="bd__body">' + esc(entry.body || "") + "</div>" + sourceLine() + '<button class="bd__row" type="button" data-journal-list="' + esc(id) + '">' + '<span class="bd__t">← the whole journal</span>' + '<span class="bd__d">' + esc(residentName(id)) + "</span></button>";
+    }
+    function spaceLine(s) {
+      const who = ARCHIVE_ORDER.filter((r) => s.byResident[r]).map(residentName);
+      if (s.byResident.visitor)
+        who.push("+ " + s.byResident.visitor + " visitor" + (s.byResident.visitor === 1 ? "" : "s"));
+      return (who.join(" · ") || "no one") + " · " + s.count;
+    }
+    function residentsBoardHtml() {
+      if (!archive_default.isLoaded())
+        return head("THE RESIDENTS’ BOARD", "THE RESIDENTS’ BOARD") + quiet();
+      const all = archive_default.spaces(), written = all.filter((s) => s.count > 0), empty = all.length - written.length;
+      return head("THE RESIDENTS’ BOARD", "THE RESIDENTS’ BOARD") + sourceLine() + written.map((s) => '<button class="bd__row" type="button" data-space="' + esc(s.id) + '">' + '<span class="bd__t">' + esc(s.name || s.slug || "a space") + "</span>" + '<span class="bd__d">' + esc(spaceLine(s)) + "</span></button>").join("") + '<div class="bd__house">the house: ' + empty + " more spaces were opened and never written in.</div>" + '<div class="bd__sect">THEIR JOURNALS</div>' + ARCHIVE_ORDER.map((r) => '<button class="bd__row" type="button" data-journal-list="' + r + '">' + '<span class="bd__t">their journal · ' + esc(residentName(r)) + "</span>" + '<span class="bd__d">' + archive_default.journals(r).length + "</span></button>").join("");
+    }
+    function spaceHtml(spaceId) {
+      const s = archive_default.spaces().find((x) => x.id === spaceId);
+      const msgs = archive_default.spaceMessages(spaceId);
+      return head("space", s && s.name || "a space") + (s && s.description ? '<div class="bd__body">' + esc(s.description) + "</div>" : "") + sourceLine() + msgs.map((m) => {
+        const who = m.resident ? '<span class="bd__who" style="color:' + (CAST_COLOR[m.resident] || "#efe9dc") + '">' + esc(m.residentName) + "</span>" : '<span class="bd__who" style="color:var(--dim)">visitor · ' + esc(m.visitor_display_name || "unnamed") + "</span>";
+        return '<div class="bd__msg">' + who + ' <span class="bd__d">' + esc(day(m.created_at)) + "</span>" + '<div class="bd__body">' + esc(m.body || "") + "</div></div>";
+      }).join("") + '<button class="bd__row" type="button" data-board="residents">' + '<span class="bd__t">← the residents’ board</span><span class="bd__d">' + msgs.length + " written</span></button>";
+    }
+    function publicBoardHtml() {
+      if (!archive_default.isLoaded())
+        return head("THE PUBLIC BOARD", "THE PUBLIC BOARD") + quiet();
+      return head("THE PUBLIC BOARD", "THE PUBLIC BOARD") + sourceLine() + ARCHIVE_ORDER.map((r) => {
+        const convs = archive_default.conversations(r);
+        if (!convs.length)
+          return "";
+        return '<div class="bd__sect" style="color:' + (CAST_COLOR[r] || "#efe9dc") + '">' + esc(residentName(r)) + "</div>" + convs.map((c) => '<div class="bd__conv"><span class="bd__t">' + esc(c.title || "untitled") + "</span>" + '<span class="bd__d"> ' + esc(day(c.published_at)) + " · " + esc(c.significance_kind || "") + "</span>" + '<div class="bd__body">' + esc(c.summary || "") + "</div></div>").join("");
+      }).join("") + '<div class="bd__house">the house: no public artifacts in this snapshot; all 36 are marked private.</div>';
+    }
     let eng = null;
     const bridge = {
       plaque: (id) => {
@@ -7466,17 +7888,30 @@
         if (c)
           openPanel(plaqueHtml(c));
       },
-      journal: (id) => {
-        const j = DATA.JOURNALS[id];
-        if (j)
-          openPanel(journalHtml(j));
-      },
+      journal: (id) => openPanel(journalListHtml(id), "is-board"),
+      board: (which) => openPanel(which === "public" ? publicBoardHtml() : residentsBoardHtml(), "is-board"),
       ledger: () => openPanel(ledgerHtml(DATA.LEDGER)),
       note: (text) => {
         if (eng)
           eng.sysLine(text);
       }
     };
+    panelBody.addEventListener("click", (e) => {
+      const el = e.target.closest("[data-space],[data-board],[data-journal-list],[data-journal-entry]");
+      if (!el)
+        return;
+      if (el.dataset.space)
+        openPanel(spaceHtml(el.dataset.space), "is-board");
+      else if (el.dataset.board)
+        bridge.board(el.dataset.board);
+      else if (el.dataset.journalList)
+        bridge.journal(el.dataset.journalList);
+      else if (el.dataset.journalEntry) {
+        const jid = el.dataset.journalEntry, rid = archive_default.journalResident(jid);
+        if (rid)
+          openPanel(journalEntryHtml(rid, jid), "is-board");
+      }
+    });
     const cab = $("#cab");
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && destOpen) {
@@ -8120,13 +8555,13 @@
           jump();
       }, 525);
     }
-    function go(mode) {
+    function go(mode2) {
       if (busy || !sel)
         return;
       const p = byId[sel];
       if (!p)
         return;
-      if (mode === "walk") {
+      if (mode2 === "walk") {
         if (goWalk.disabled)
           return;
         walk(p);
@@ -8189,13 +8624,13 @@
       }
       if (!destOpen)
         return;
-      const idx = PLACES.findIndex((p) => p.id === sel);
+      const idx2 = PLACES.findIndex((p) => p.id === sel);
       if (k === "ArrowDown") {
         event.preventDefault();
-        select(PLACES[Math.min(PLACES.length - 1, idx + 1)].id);
+        select(PLACES[Math.min(PLACES.length - 1, idx2 + 1)].id);
       } else if (k === "ArrowUp") {
         event.preventDefault();
-        select(PLACES[Math.max(0, idx - 1)].id);
+        select(PLACES[Math.max(0, idx2 - 1)].id);
       } else if (k === "ArrowLeft") {
         event.preventDefault();
         if (!goWalk.disabled)
@@ -8212,7 +8647,16 @@
     pushFeed({ kind: "sys", t: "18:31", text: "the lookout · perpetual dusk · the sanctuary is lit" });
     pushFeed({ kind: "sys", t: "18:31", text: "four residents home. walk up to anyone and press E to talk" });
     try {
-      const residents = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five"].includes(id));
+      let archiveOk = false;
+      try {
+        await archive_default.load();
+        archiveOk = true;
+      } catch (err) {
+        console.warn("archive unavailable", err);
+      }
+      if (!archiveOk)
+        pushFeed({ kind: "sys", t: "18:31", text: "the archive is quiet today" });
+      const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five"].includes(id)).map((def) => Object.assign({}, def, { mutters: archiveOk ? archive_default.lines(def.id) : [] }));
       const rooms = makeHub(bridge);
       const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
       const lookout = rooms.lookout;
@@ -8249,7 +8693,7 @@
         storageKey: "mnemos-landing.connected-world.v2",
         palette: PALETTE,
         rooms,
-        cast: residents,
+        cast: residents2,
         scripts: SCRIPTS,
         groupScripts: GROUP_SCRIPTS,
         ambient: AMBIENT,
@@ -8271,6 +8715,8 @@
         onTravelState: handleWorldTravelState
       });
       window.__sanctuary = eng;
+      window.__sanctuaryArchive = archive_default;
+      window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
       window.__sanctuaryNavigation = {
         goTo: goToDestination,
         meetResident,
