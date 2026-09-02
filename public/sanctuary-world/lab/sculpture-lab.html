@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Silkscreen:wght@400;700&family=Press+Start+2P&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../museum/museum-permanent-gallery/scene.css?v=20260831-stewardship-5">
+<link rel="stylesheet" href="../museum/museum-permanent-gallery/scene.css?v=20260901-sculpture-1">
 <style>
 /* the lab family, layered over the museum's stylesheet (which owns the lightbox) */
 :root{ --ink:#f5f3ed; --dim:#aaa7a0; --faint:#7b7975; --amber:#f2c14e; --teal:#5eead4; --frost:#9fd6e0;
@@ -103,7 +103,7 @@ body.is-ready{visibility:visible}
 
 <section class="floor">
   <h2 class="lab-h">ON THE FLOOR</h2>
-  <p>The same model, baked once at the floor's angle into a sprite about forty-eight pixels tall, standing on a plinth in the annex's own materials — <em>as it would be played</em> at ×1, and enlarged so you can read the pixels.</p>
+  <p>The same model, baked once at the floor's angle into a sprite about sixty pixels tall, standing on a plinth in the annex's own materials — <em>as it would be played</em> at ×1, and enlarged so you can read the pixels.</p>
   <div class="strips">
     <figure><canvas id="floor-1"></canvas><figcaption>×1 · as played</figcaption></figure>
     <figure><canvas id="floor-2"></canvas><figcaption>×2</figcaption></figure>
@@ -134,8 +134,8 @@ body.is-ready{visibility:visible}
 </footer>
 
 <script type="module">
-import { createRenderer, present, bakeSprite, computeScale, paletteHex, hashImage } from './pixel3d.js';
-import { SCULPTURES, byKey } from './sculptures.js';
+import { createRenderer, present, bakeSprite, computeScale, paletteHex, hashImage } from '../museum/pixel3d.js';
+import { SCULPTURES, byKey } from '../museum/sculptures.js';
 import { composeFloorScene, presentFloor } from './floor-preview.js';
 
 const $ = (s) => document.querySelector(s);
@@ -236,7 +236,8 @@ function frame(now) {
 
 function renderFloor() {
   const parts = buildParts(0, 'floor');
-  const sprite = bakeSprite(parts, { height: 48, yaw: 24, pitch: 38, lightAz: state.light, outline: 'dark', bounds: sculpture.bounds });
+  const floor = sculpture.floor || {};
+  const sprite = bakeSprite(parts, { height: floor.height || 60, yaw: floor.yaw ?? 24, pitch: 38, lightAz: state.light, outline: floor.outline || 'rim', bounds: sculpture.bounds });
   const scene = composeFloorScene(sprite);
   const dpr = window.devicePixelRatio || 1;
   presentFloor(scene, $('#floor-1'), 1, dpr);

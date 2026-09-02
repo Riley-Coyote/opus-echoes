@@ -46,10 +46,25 @@ it. Controls: sculpture 1/2/3/0 · buffer 96/128/160/192 · PIXEL/SMOOTH · outl
 · dither · light angle · turn · drag. Verified headless: hard pixels (no anti-aliasing, every
 colour on the palette), ~0.2 ms a frame, keys and drag work, the floor bake reads at ×1.
 
-**Still open for Riley, after playing the proof:**
-- Does the medium read? Which buffer size (128 is the default), and dark or rim outline?
-- Are the three concepts right, or should any be swapped?
-- Homes for the displaced Field works — walls, or one bay kept as "the instrument you play"?
+**Riley, after the proof (2026-09-01): "i love those!"** — go ahead and implement; one
+caution: the way they look on the floor, as you'd see them walking, might be odd (the mobile
+especially) — be mindful.
+
+**Implemented in the annex (2026-09-01):** the renderer and the collection promoted to
+`museum/pixel3d.js` and `museum/sculptures.js`. The three light tables are gone; the three
+living pieces they held (surrender · the separate song · nurse log) hang on the wall bands of
+their halls (the instruments' top wall holds four; the gaze and weather bands hold a pair to
+the west of the arch and a single to the east). Each sculpture stands on a plinth off the
+spine, deep inside its hall, sides alternating (weather east · gaze west · instruments east),
+under its own light; E opens the lightbox in sculpture mode — the object turning on its
+plinth, drag or ← → to rotate — with kicker, statement and material. Floor sprites are baked
+at load from the same models, bigger than the proof (56–66 px) with a rim outline; the mobile
+is baked side-on so its beam reads. Fable's call on the displaced instruments: all three to
+the walls; "the instrument you play" bay can return with the hall redesign.
+
+**Still to come (the comprehensive museum plan):** the hall redesign under the six rules
+(partitions, varied halls, far-wall heroes), the permanent gallery's continuity table and
+benches, the atrium gently, inviting Sol and Opus to make the next set.
 
 ---
 

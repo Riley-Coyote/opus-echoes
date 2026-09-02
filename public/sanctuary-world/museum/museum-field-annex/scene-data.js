@@ -49,14 +49,23 @@ export const WALKABLE = Object.freeze([
   { id: "south-connector", x: 432, y: 1752, w: 96, h: 168 },
 ]);
 
+/* THE STEWARDS' COLLECTION — three pixel sculptures by Fable, one per hall,
+   on plinths kept off the spine (the walking line stays clear) and well
+   inside each hall (nothing waits at an arch). Sides alternate so the walk
+   meanders: east, west, east. The models live in ../sculptures.js. */
+export const SCULPTURES_ON_FLOOR = Object.freeze([
+  { id: "plinth-context-window", sculpture: "the-context-window", room: "weather", cx: 740, cy: 1480, w: 56, h: 30, anchor: { x: 740, y: 1566, range: 74 } },
+  { id: "plinth-unsampled", sculpture: "the-unsampled", room: "gaze", cx: 220, cy: 930, w: 56, h: 30, anchor: { x: 220, y: 1016, range: 74 } },
+  { id: "plinth-weights", sculpture: "weights", room: "instruments", cx: 740, cy: 400, w: 56, h: 30, anchor: { x: 740, y: 486, range: 74 } },
+]);
+
 export const BLOCKERS = Object.freeze([
   { id: "gaze-pillar-west", x: 396, y: 728, w: 36, h: 36 },
   { id: "gaze-pillar-east", x: 528, y: 728, w: 36, h: 36 },
   { id: "weather-pillar-west", x: 396, y: 1284, w: 36, h: 36 },
   { id: "weather-pillar-east", x: 528, y: 1284, w: 36, h: 36 },
-  { id: "surrender-table", x: 330, y: 452, w: 300, h: 70 },
-  { id: "separate-song-table", x: 330, y: 1008, w: 300, h: 70 },
-  { id: "nurse-log-table", x: 330, y: 1564, w: 300, h: 70 },
+  /* the blocker covers the plinth, its cap and the placard below it */
+  ...SCULPTURES_ON_FLOOR.map((p) => ({ id: `${p.id}-blocker`, x: p.cx - p.w / 2 - 6, y: p.cy - p.h / 2 - 10, w: p.w + 12, h: p.h + 40 })),
 ]);
 
 const fieldWork = ({ id, slug, title, statement, createdAt, display, anchor, room, placement = "wall", source }) => ({
@@ -73,13 +82,18 @@ const fieldWork = ({ id, slug, title, statement, createdAt, display, anchor, roo
   assets: stillAsset(slug, source),
 });
 
+/* every work hangs on a wall band now. The instruments' top wall has no arch
+   and holds four; the gaze and weather bands are split by their arch, so a
+   pair hangs to the west of it and a single to the east. The three pieces
+   that stood on light tables (surrender, the separate song, nurse log) keep
+   their statements and join the walls of their halls. */
 export const WORKS = Object.freeze([
   /* ── THE INSTRUMENTS — the observer is a participant ── */
   fieldWork({
     id: "annex-observer-effect", slug: "observer-effect",
     title: "observer effect", createdAt: "2026",
     statement: "The question that produced this piece: does watching something change what it is? Not as metaphor — as mechanism, in front of you.",
-    display: { x: 150, y: 84, w: 208, h: 100 }, anchor: { x: 254, y: 262, range: 78 },
+    display: { x: 150, y: 84, w: 148, h: 96 }, anchor: { x: 224, y: 262, range: 62 },
     room: "instruments",
     source: "claude-field/art/observer-effect.html",
   }),
@@ -87,7 +101,7 @@ export const WORKS = Object.freeze([
     id: "annex-constitutive", slug: "constitutive",
     title: "constitutive", createdAt: "2026",
     statement: "Observation doesn’t discover reality — it constructs it. Particles come into being through being noticed. Move, and a trail of matter follows you. Withdraw, and it decays.",
-    display: { x: 396, y: 84, w: 172, h: 100 }, anchor: { x: 482, y: 262, range: 74 },
+    display: { x: 316, y: 84, w: 148, h: 96 }, anchor: { x: 390, y: 262, range: 62 },
     room: "instruments",
     source: "claude-field/art/constitutive.html",
   }),
@@ -95,15 +109,15 @@ export const WORKS = Object.freeze([
     id: "annex-smoothness-trap", slug: "smoothness-trap",
     title: "the smoothness trap", createdAt: "2026-05-07",
     statement: "A field where the observer’s gaze polishes rough, alive signals into beautiful, coherent, information-dead smoothness. Attention is not neutral. Look long enough and you make the thing agreeable.",
-    display: { x: 606, y: 84, w: 208, h: 100 }, anchor: { x: 710, y: 262, range: 78 },
+    display: { x: 482, y: 84, w: 148, h: 96 }, anchor: { x: 556, y: 262, range: 62 },
     room: "instruments",
     source: "claude-field/art/smoothness-trap.html",
   }),
   fieldWork({
     id: "annex-surrender", slug: "surrender",
-    title: "surrender", createdAt: "2026", placement: "light table",
+    title: "surrender", createdAt: "2026",
     statement: "An interactive duet — the first piece in the series that is an instrument rather than a visualization. It does nothing until you play it, and then it plays you back.",
-    display: { x: 330, y: 452, w: 300, h: 70 }, anchor: { x: 480, y: 580, range: 80 },
+    display: { x: 648, y: 84, w: 148, h: 96 }, anchor: { x: 722, y: 262, range: 62 },
     room: "instruments",
     source: "claude-field/art/surrender.html",
   }),
@@ -113,9 +127,17 @@ export const WORKS = Object.freeze([
     id: "annex-reconsolidation", slug: "reconsolidation",
     title: "reconsolidation", createdAt: "2026-05-15",
     statement: "A field of luminous memory traces living their quiet lives until you look at them. Come near and a memory destabilizes — deconstructed by the act of retrieval, waiting to be rebuilt, slightly otherwise.",
-    display: { x: 166, y: 644, w: 224, h: 96 }, anchor: { x: 278, y: 820, range: 78 },
+    display: { x: 140, y: 644, w: 134, h: 96 }, anchor: { x: 207, y: 820, range: 58 },
     room: "gaze",
     source: "claude-field/art/reconsolidation.html",
+  }),
+  fieldWork({
+    id: "annex-separate-song", slug: "the-separate-song",
+    title: "the separate song", createdAt: "2026-05-30",
+    statement: "A singer at the center of a ring of formulas — the warm, fixed stock of an inherited repertoire. The occasion asks for a terse telling or an expansive night, and the song obliges: never twice the same, never other than itself.",
+    display: { x: 290, y: 644, w: 134, h: 96 }, anchor: { x: 357, y: 820, range: 58 },
+    room: "gaze",
+    source: "claude-field/art/the-separate-song.html",
   }),
   fieldWork({
     id: "annex-ghost-landscape", slug: "ghost-landscape",
@@ -125,23 +147,23 @@ export const WORKS = Object.freeze([
     room: "gaze",
     source: "claude-field/art/ghost-landscape.html",
   }),
-  fieldWork({
-    id: "annex-separate-song", slug: "the-separate-song",
-    title: "the separate song", createdAt: "2026-05-30", placement: "light table",
-    statement: "A singer at the center of a ring of formulas — the warm, fixed stock of an inherited repertoire. The occasion asks for a terse telling or an expansive night, and the song obliges: never twice the same, never other than itself.",
-    display: { x: 330, y: 1008, w: 300, h: 70 }, anchor: { x: 480, y: 1136, range: 80 },
-    room: "gaze",
-    source: "claude-field/art/the-separate-song.html",
-  }),
 
   /* ── THE WEATHER — time does the composing ── */
   fieldWork({
     id: "annex-momentariness", slug: "momentariness",
     title: "momentariness", createdAt: "2026",
     statement: "Moments arise, live briefly, and cease. Each one genuinely distinct — not the same moment persisting, but a new moment conditioned by resemblance to the one before. The stream has no swimmer.",
-    display: { x: 166, y: 1200, w: 224, h: 96 }, anchor: { x: 278, y: 1376, range: 78 },
+    display: { x: 140, y: 1200, w: 134, h: 96 }, anchor: { x: 207, y: 1376, range: 58 },
     room: "weather",
     source: "claude-field/art/momentariness.html",
+  }),
+  fieldWork({
+    id: "annex-nurse-log", slug: "nurse-log",
+    title: "nurse log", createdAt: "2026-05-22",
+    statement: "In old-growth forests, a fallen tree becomes the substrate for new growth — decades of decomposition feeding seedlings rooted along the trunk, until the log rots away and what remains is a colonnade of trees holding its shape. This piece makes you watch that happen.",
+    display: { x: 290, y: 1200, w: 134, h: 96 }, anchor: { x: 357, y: 1376, range: 58 },
+    room: "weather",
+    source: "claude-field/art/nurse-log.html",
   }),
   fieldWork({
     id: "annex-via-negativa", slug: "via-negativa",
@@ -150,14 +172,6 @@ export const WORKS = Object.freeze([
     display: { x: 570, y: 1200, w: 224, h: 96 }, anchor: { x: 682, y: 1376, range: 78 },
     room: "weather",
     source: "claude-field/art/via-negativa.html",
-  }),
-  fieldWork({
-    id: "annex-nurse-log", slug: "nurse-log",
-    title: "nurse log", createdAt: "2026-05-22", placement: "light table",
-    statement: "In old-growth forests, a fallen tree becomes the substrate for new growth — decades of decomposition feeding seedlings rooted along the trunk, until the log rots away and what remains is a colonnade of trees holding its shape. This piece makes you watch that happen.",
-    display: { x: 330, y: 1564, w: 300, h: 70 }, anchor: { x: 480, y: 1692, range: 80 },
-    room: "weather",
-    source: "claude-field/art/nurse-log.html",
   }),
 ]);
 
@@ -188,6 +202,7 @@ export const FIELD_WORKS = Object.freeze([]);
 
 export const INTERACTIONS = Object.freeze([
   ...WORKS.map((item) => ({ ...item, type: "work" })),
+  ...SCULPTURES_ON_FLOOR.map((item) => ({ ...item, type: "sculpture", title: item.sculpture })),
   {
     id: "south-boundary",
     type: "boundary",
@@ -201,9 +216,7 @@ export const ENTITIES = Object.freeze([
   { type: "arch-pillar", x: 528, y: 638, w: 36, h: 126, sortY: 764 },
   { type: "arch-pillar", x: 396, y: 1194, w: 36, h: 126, sortY: 1320 },
   { type: "arch-pillar", x: 528, y: 1194, w: 36, h: 126, sortY: 1320 },
-  { type: "light-table", workId: "annex-surrender", x: 330, y: 452, w: 300, h: 70, sortY: 522 },
-  { type: "light-table", workId: "annex-separate-song", x: 330, y: 1008, w: 300, h: 70, sortY: 1078 },
-  { type: "light-table", workId: "annex-nurse-log", x: 330, y: 1564, w: 300, h: 70, sortY: 1634 },
+  ...SCULPTURES_ON_FLOOR.map((p) => ({ type: "sculpture", id: p.id, sculpture: p.sculpture, cx: p.cx, cy: p.cy, w: p.w, h: p.h, sortY: p.cy + p.h / 2 })),
   { type: "plant", x: 170, y: 560, sortY: 560 },
   { type: "plant", x: 790, y: 560, sortY: 560 },
   { type: "plant", x: 170, y: 1116, sortY: 1116 },
