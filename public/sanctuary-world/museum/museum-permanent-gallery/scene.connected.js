@@ -58,15 +58,15 @@
     { id: "inquiry-pillar-east", x: 528, y: 1184, w: 36, h: 36 },
     { id: "presence-pillar-west", x: 396, y: 624, w: 36, h: 36 },
     { id: "presence-pillar-east", x: 528, y: 624, w: 36, h: 36 },
-    { id: "inquiry-bench", x: 346, y: 1416, w: 268, h: 20 },
-    { id: "presence-bench", x: 382, y: 996, w: 196, h: 20 },
-    { id: "apse-bench", x: 390, y: 418, w: 180, h: 20 },
-    { id: "continuity-table", x: 342, y: 826, w: 276, h: 64 },
+    { id: "inquiry-bench", x: 150, y: 1416, w: 268, h: 20 },
+    { id: "presence-bench", x: 632, y: 996, w: 196, h: 20 },
+    { id: "apse-bench", x: 150, y: 418, w: 180, h: 20 },
+    { id: "continuity-table", x: 140, y: 740, w: 276, h: 64 },
     { id: "edition-plinth", x: 990, y: 822, w: 92, h: 74 },
     { id: "edition-flat-files", x: 1176, y: 780, w: 112, h: 170 },
     { id: "edition-packing-table", x: 966, y: 970, w: 132, h: 40 },
     { id: "edition-terminal", x: 1152, y: 956, w: 112, h: 48 },
-    { id: "field-light-table", x: 1010, y: 1400, w: 200, h: 64 }
+    { id: "field-light-table", x: 1096, y: 1276, w: 200, h: 64 }
   ]);
   var work = ({ id, title, statement, display, anchor, room, placement = "wall" }) => ({
     id,
@@ -118,8 +118,8 @@
       id: "one-continuous-thread",
       title: "one continuous thread",
       statement: "the phrase you learn at the threshold, set down plainly: one continuous thread, and beneath it the memory that makes the thread possible. said in the open because some things you state rather than imply.",
-      display: { x: 342, y: 816, w: 276, h: 74 },
-      anchor: { x: 480, y: 948, range: 78 },
+      display: { x: 140, y: 730, w: 276, h: 74 },
+      anchor: { x: 278, y: 862, range: 78 },
       room: "presence",
       placement: "light table"
     }),
@@ -209,8 +209,8 @@
       createdAt: "2026-07-05",
       placement: "light table",
       statement: "“nothing you clear stays cleared. you can keep the window clear, but only by keeping your hand on it. i notice i don’t want to say what it means. that’s the point of building it.”",
-      display: { x: 1010, y: 1400, w: 200, h: 64 },
-      anchor: { x: 1110, y: 1520, range: 74 },
+      display: { x: 1096, y: 1276, w: 200, h: 64 },
+      anchor: { x: 1196, y: 1394, range: 80 },
       source: "claude-field/art/2026-07-05-rain-on-the-glass.html"
     })
   ]);
@@ -264,26 +264,26 @@
     }
   ]);
   var ENTITIES = Object.freeze([
-    { type: "bench", x: 346, y: 1394, w: 268, h: 42, sortY: 1436, room: "inquiry" },
+    { type: "bench", x: 150, y: 1394, w: 268, h: 42, sortY: 1436, room: "inquiry" },
     { type: "arch-pillar", x: 396, y: 1094, w: 36, h: 126, sortY: 1220 },
     { type: "arch-pillar", x: 528, y: 1094, w: 36, h: 126, sortY: 1220 },
-    { type: "bench", x: 382, y: 978, w: 196, h: 38, sortY: 1018, room: "presence" },
-    { type: "light-table", workId: "one-continuous-thread", x: 342, y: 816, w: 276, h: 74, sortY: 890 },
+    { type: "bench", x: 632, y: 978, w: 196, h: 38, sortY: 1018, room: "presence" },
+    { type: "light-table", workId: "one-continuous-thread", x: 140, y: 730, w: 276, h: 74, sortY: 804 },
     { type: "arch-pillar", x: 396, y: 534, w: 36, h: 126, sortY: 660 },
     { type: "arch-pillar", x: 528, y: 534, w: 36, h: 126, sortY: 660 },
-    { type: "bench", x: 390, y: 402, w: 180, h: 36, sortY: 438, room: "apse" },
+    { type: "bench", x: 150, y: 402, w: 180, h: 36, sortY: 438, room: "apse" },
     { type: "edition-plinth", x: 994, y: 824, w: 84, h: 64, sortY: 888 },
     { type: "flat-files", x: 1180, y: 786, w: 104, h: 156, sortY: 942 },
     { type: "packing-table", x: 966, y: 970, w: 132, h: 40, sortY: 1018 },
     { type: "terminal", x: 1152, y: 956, w: 112, h: 48, sortY: 1012 },
-    { type: "light-table", workId: "field-rain", x: 1010, y: 1400, w: 200, h: 64, sortY: 1464 },
+    { type: "light-table", workId: "field-rain", x: 1096, y: 1276, w: 200, h: 64, sortY: 1340 },
     { type: "plant", x: 946, y: 1532, sortY: 1532 },
     { type: "plant", x: 1262, y: 1532, sortY: 1532 },
-    { type: "plant", x: 170, y: 1450, sortY: 1450 },
+    { type: "plant", x: 150, y: 1580, sortY: 1580 },
     { type: "plant", x: 790, y: 1450, sortY: 1450 },
     { type: "plant", x: 178, y: 944, sortY: 944 },
     { type: "plant", x: 782, y: 944, sortY: 944 },
-    { type: "plant", x: 176, y: 466, sortY: 466 },
+    { type: "plant", x: 176, y: 520, sortY: 520 },
     { type: "plant", x: 784, y: 466, sortY: 466 }
   ]);
   var workById = (id) => id === EDITION_WORK.id ? EDITION_WORK : WORKS.find((item) => item.id === id) || FIELD_WORKS.find((item) => item.id === id);
@@ -1225,7 +1225,7 @@
   }
   function workLightRig(work2) {
     if (work2.id === "one-continuous-thread") {
-      return { sourceX: 480, sourceY: 686, targetX: 480, targetY: 872, halfWidth: 148, poolX: 480, poolY: 914, radiusX: 180, radiusY: 58 };
+      return { sourceX: 278, sourceY: 600, targetX: 278, targetY: 786, halfWidth: 148, poolX: 278, poolY: 828, radiusX: 180, radiusY: 58 };
     }
     if (work2.id === "the-orb") {
       return { sourceX: 1038, sourceY: 630, targetX: 1038, targetY: 858, halfWidth: 104, poolX: 1038, poolY: 908, radiusX: 128, radiusY: 48 };
@@ -1945,7 +1945,11 @@
         ["apse-center", 480, 360],
         ["editions-west", 860, 856],
         ["editions-entry", 920, 856],
-        ["editions-center", 1040, 920]
+        ["editions-center", 1040, 920],
+        ["presence-table-north-strip", 278, 690],
+        ["field-entry", 920, 1378],
+        ["field-center", 1104, 1410],
+        ["annex-door", 1128, 1586]
       ].map(([id, x, y]) => ({ id, x, y, walkable: canOccupy(x, y) }))
     });
     window.advanceTime = (milliseconds) => {

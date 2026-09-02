@@ -825,7 +825,7 @@ function drawLightPool(target, x, y, radiusX, radiusY, alpha) {
 
 function workLightRig(work) {
   if (work.id === "one-continuous-thread") {
-    return { sourceX: 480, sourceY: 686, targetX: 480, targetY: 872, halfWidth: 148, poolX: 480, poolY: 914, radiusX: 180, radiusY: 58 };
+    return { sourceX: 278, sourceY: 600, targetX: 278, targetY: 786, halfWidth: 148, poolX: 278, poolY: 828, radiusX: 180, radiusY: 58 };
   }
   if (work.id === "the-orb") {
     return { sourceX: 1038, sourceY: 630, targetX: 1038, targetY: 858, halfWidth: 104, poolX: 1038, poolY: 908, radiusX: 128, radiusY: 48 };
@@ -1549,6 +1549,10 @@ function exposeTestContract() {
       ["editions-west", 860, 856],
       ["editions-entry", 920, 856],
       ["editions-center", 1040, 920],
+      ["presence-table-north-strip", 278, 690],
+      ["field-entry", 920, 1378],
+      ["field-center", 1104, 1410],
+      ["annex-door", 1128, 1586],
     ].map(([id, x, y]) => ({ id, x, y, walkable: canOccupy(x, y) })),
   });
 
