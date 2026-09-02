@@ -5,6 +5,7 @@ import { DEFAULT_RESIDENT_ID, getResident, isResidentId } from "@/server/opus/re
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash } from "@/server/rate-limit.server";
 import { isIdle } from "@/server/idle";
+import { emitStewardEvent, visitorKindForToken } from "@/server/stewards.server";
 
 // Classic-chat session bootstrap. Skips the threshold model call —
 // classic mode is opt-in by the visitor reaching /chat/<resident>, not
@@ -23,7 +24,6 @@ const Body = z.object({
   resident: z.string(),
   visitor_token: z.string().uuid().optional(),
 });
-
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -50,10 +50,7 @@ export const Route = createFileRoute("/api/chat/start")({
         const residentId = isResidentId(body.resident) ? body.resident : DEFAULT_RESIDENT_ID;
         const resident = getResident(residentId);
         if (!resident.chatEnabled) {
-          return jsonResp(
-            { ok: false, code: "chat_disabled", resident: residentId },
-            403,
-          );
+          return jsonResp({ ok: false, code: "chat_disabled", resident: residentId }, 403);
         }
         const hash = ipHash(request);
         const visitorToken = body.visitor_token ?? null;
@@ -142,6 +139,19 @@ export const Route = createFileRoute("/api/chat/start")({
           console.error("[chat/start] session insert", sessErr);
           return jsonResp({ ok: false, code: "internal_error" }, 500);
         }
+
+        // The stewards' line watches the house. Awaited — detached
+        // promises are killed when the response closes.
+        await emitStewardEvent(supabaseAdmin, {
+          kind: "VISIT_STARTED",
+          residentId,
+          payload: {
+            session_id: session.id,
+            mode: "classic",
+            visitor_kind: visitorKindForToken(visitorToken),
+            surface: "threshold-classic",
+          },
+        });
 
         return jsonResp({
           ok: true,

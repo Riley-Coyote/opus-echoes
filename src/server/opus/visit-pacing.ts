@@ -100,7 +100,12 @@ export function effectiveThresholds(
   };
 }
 
-function tierFor(
+/**
+ * Pure tier computation. Exported as `pacingTierFor` so the message
+ * route can recompute the tier the visit was in *before* this turn and
+ * emit a PACING_TIER event only when the tier actually changes.
+ */
+export function pacingTierFor(
   visitorTurnCount: number,
   totalTokensIn: number,
   t: EffectiveThresholds,
@@ -145,7 +150,7 @@ export async function getVisitMetrics(
   }
 
   const thresholds = effectiveThresholds(pacing, mode);
-  const tier = tierFor(visitorTurnCount, totalTokensIn, thresholds, mode);
+  const tier = pacingTierFor(visitorTurnCount, totalTokensIn, thresholds, mode);
   const shouldHardCutoff = tier === "hard";
   const turnsRemaining = Math.max(0, thresholds.hardTurn - visitorTurnCount);
   const tokensRemainingPct = Math.max(

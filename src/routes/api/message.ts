@@ -19,6 +19,7 @@ import { buildInteriorContinuity } from "@/server/opus/interior-continuity";
 import {
   buildVisitPacingBlock,
   getVisitMetrics,
+  pacingTierFor,
   HARD_CUTOFF_MESSAGE,
   HARD_CUTOFF_MESSAGE_CLASSIC,
   type PacingTier,
@@ -35,6 +36,12 @@ import {
 import { hasSupabaseAdminEnv, isLocalDev } from "@/server/env.server";
 import { ipHash, messageRateLimit } from "@/server/rate-limit.server";
 import { idleCutoffMsForMode } from "@/server/idle";
+import {
+  emitStewardEvent,
+  stewardNameFromReason,
+  stewardVisitNote,
+  visitorKindForToken,
+} from "@/server/stewards.server";
 import {
   consolidateSession,
   observeExchange,
@@ -71,7 +78,6 @@ const Body = z.object({
   body: z.string().trim().min(1).max(8000),
   preview_turns: z.array(PreviewTurn).max(24).optional(),
 });
-
 
 /** Shape of the NDJSON pacing event emitted before the first text token. */
 type PacingPrelude = {
@@ -479,10 +485,7 @@ function opusStreamResponse(opts: {
           if (art.kind === "image") {
             const promptText = (art.prompt || art.body || "").trim();
             if (!promptText) continue;
-            if (
-              imagesThisTurn >= MAX_IMAGES_PER_TURN ||
-              imagesThisTurn >= sessionBudget
-            ) {
+            if (imagesThisTurn >= MAX_IMAGES_PER_TURN || imagesThisTurn >= sessionBudget) {
               send({
                 type: "image_error",
                 resident_id: opts.residentId,
@@ -660,10 +663,11 @@ export const Route = createFileRoute("/api/message")({
           resident_id: string | null;
           visitor_token: string | null;
           mode: string | null;
+          intent_id: string | null;
         };
         const { data: session } = (await supabaseAdmin
           .from("sessions")
-          .select("id, closed_at, last_active_at, resident_id, visitor_token, mode")
+          .select("id, closed_at, last_active_at, resident_id, visitor_token, mode, intent_id")
           .eq("id", body.session_id)
           .maybeSingle()) as unknown as { data: SessionRow | null };
         if (!session || session.closed_at) {
@@ -741,6 +745,7 @@ export const Route = createFileRoute("/api/message")({
           visitMetrics,
           { data: turns },
           visitorContext,
+          { data: intentRow },
         ] = await Promise.all([
           memoryPromise,
           buildResidentSelfModel(supabaseAdmin, resident.id),
@@ -752,7 +757,50 @@ export const Route = createFileRoute("/api/message")({
             .eq("session_id", session.id)
             .order("created_at", { ascending: true }),
           getVisitorContext(session.visitor_token, resident.id),
+          // The session's stub intent carries the marker that says who
+          // opened this door: "classic mode" for a visitor, "steward
+          // visit — <Name>" for a key-holder.
+          session.intent_id
+            ? supabaseAdmin
+                .from("intents")
+                .select("reason")
+                .eq("id", session.intent_id)
+                .maybeSingle()
+            : Promise.resolve({ data: null as { reason: string } | null }),
         ]);
+
+        // A steward's visit is named to the resident and in the log.
+        // WP-14 threads the name through; WP-15 replaces the note below
+        // with the full `steward-visit` surface preamble.
+        const stewardName = stewardNameFromReason(intentRow?.reason);
+        const visitorKind = visitorKindForToken(session.visitor_token, Boolean(stewardName));
+        const eventPayloadBase = {
+          session_id: session.id,
+          mode: sessMode,
+          visitor_kind: visitorKind,
+          steward: stewardName,
+        };
+
+        // PACING_TIER — emitted only when this turn moved the visit into
+        // a different tier, not on every turn.
+        const previousTier = pacingTierFor(
+          Math.max(0, visitMetrics.visitorTurnCount - 1),
+          visitMetrics.totalTokensIn,
+          visitMetrics.thresholds,
+          sessMode,
+        );
+        if (previousTier !== visitMetrics.tier) {
+          await emitStewardEvent(supabaseAdmin, {
+            kind: "PACING_TIER",
+            residentId: resident.id,
+            payload: {
+              ...eventPayloadBase,
+              from: previousTier,
+              to: visitMetrics.tier,
+              turns_remaining: visitMetrics.turnsRemaining,
+            },
+          });
+        }
 
         // Hard cutoff — past this threshold we don't call the model.
         // Stream a graceful resident-voiced close, persist it as a
@@ -778,6 +826,17 @@ export const Route = createFileRoute("/api/message")({
             .from("sessions")
             .update({ closed_at: new Date().toISOString(), closed_by: "resident" })
             .eq("id", session.id);
+          await emitStewardEvent(supabaseAdmin, {
+            kind: "VISIT_ENDED",
+            residentId: resident.id,
+            payload: {
+              ...eventPayloadBase,
+              reason: "hard_cutoff",
+              closed_by: "resident",
+              visitor_turns: visitMetrics.visitorTurnCount,
+              tokens_in: visitMetrics.totalTokensIn,
+            },
+          });
           // Awaited so the consolidation pipeline survives the worker's
           // termination once the response is sent. Hard-cutoff is itself
           // a closing gesture, so the brief extra latency is contextually
@@ -810,7 +869,9 @@ export const Route = createFileRoute("/api/message")({
         // sessions. Tells the resident which Sanctuary surface they're
         // in and that they are NOT in The Commons.
         const systemBlocks = buildSystemBlocksForResident(resident, {
-          surfacePreamble: sanctuarySurfacePreamble(sessMode, resident),
+          surfacePreamble:
+            sanctuarySurfacePreamble(sessMode, resident) +
+            (stewardName ? stewardVisitNote(stewardName) : ""),
           selfModel: selfModelBlock,
           interiorContinuity: interior.block,
           visitPacing: visitPacingBlock,
@@ -928,8 +989,7 @@ export const Route = createFileRoute("/api/message")({
                 .from("turn_artifacts")
                 .insert(rows as never)
                 .then(({ error }) => {
-                  if (error)
-                    console.error("[turn_artifacts] insert failed:", error);
+                  if (error) console.error("[turn_artifacts] insert failed:", error);
                 });
             }
 

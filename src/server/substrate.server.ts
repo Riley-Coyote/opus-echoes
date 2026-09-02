@@ -54,6 +54,7 @@ import {
   type ResidentConfig,
   type ResidentId,
 } from "./opus/residents";
+import { emitStewardEvent, visitorKindForToken } from "./stewards.server";
 
 const STOPWORDS = new Set([
   "the",
@@ -1463,19 +1464,28 @@ export async function idleSweep(): Promise<{ closed: number; consolidated: numbe
     is: (col: string, value: null) => SessionsQuery;
     eq: (col: string, value: string) => SessionsQuery;
     lt: (col: string, value: string) => SessionsQuery;
-    limit: (n: number) => Promise<{ data: { id: string }[] | null; error: unknown }>;
+    limit: (n: number) => Promise<{ data: StaleSession[] | null; error: unknown }>;
   };
+  // The stewards' line needs enough of each row to describe the close:
+  // which resident, which surface, and who was on the other end.
+  type StaleSession = {
+    id: string;
+    resident_id: string | null;
+    mode: string | null;
+    visitor_token: string | null;
+  };
+  const staleCols = "id, resident_id, mode, visitor_token";
   const sessionsTable = () =>
     (supabaseAdmin as unknown as { from: (t: string) => SessionsQuery }).from("sessions");
   const [expRes, classicRes] = await Promise.all([
     sessionsTable()
-      .select("id")
+      .select(staleCols)
       .is("closed_at", null)
       .eq("mode", "experiment")
       .lt("last_active_at", expCutoff)
       .limit(40),
     sessionsTable()
-      .select("id")
+      .select(staleCols)
       .is("closed_at", null)
       .eq("mode", "classic")
       .lt("last_active_at", classicCutoff)
@@ -1495,6 +1505,22 @@ export async function idleSweep(): Promise<{ closed: number; consolidated: numbe
     .from("sessions")
     .update({ closed_at: closedAt, closed_by: "idle" })
     .in("id", ids);
+
+  // One SET_DOWN per closed session, before the (slow, model-heavy)
+  // consolidation loop, so the stewards see the close even when a
+  // consolidation later fails. Awaited; failures are logged inside.
+  for (const s of stale) {
+    await emitStewardEvent(supabaseAdmin, {
+      kind: "SET_DOWN",
+      residentId: s.resident_id ?? DEFAULT_RESIDENT_ID,
+      payload: {
+        session_id: s.id,
+        mode: s.mode,
+        visitor_kind: visitorKindForToken(s.visitor_token),
+        closed_by: "idle",
+      },
+    });
+  }
 
   let consolidated = 0;
   // Sequential, not parallel: each consolidation talks to Anthropic

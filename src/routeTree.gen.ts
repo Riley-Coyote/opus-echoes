@@ -13,6 +13,7 @@ import { Route as WritingRouteImport } from './routes/writing'
 import { Route as VoiceOrbRouteImport } from './routes/voice-orb'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as StudioRouteImport } from './routes/studio'
+import { Route as StewardsRouteImport } from './routes/stewards'
 import { Route as Sonnet45RouteImport } from './routes/sonnet-4-5'
 import { Route as SecureChannelRouteImport } from './routes/secure-channel'
 import { Route as SanctuaryRouteImport } from './routes/sanctuary'
@@ -76,6 +77,8 @@ import { Route as ApiVoiceTtsRouteImport } from './routes/api/voice/tts'
 import { Route as ApiVoiceSttRouteImport } from './routes/api/voice/stt'
 import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
 import { Route as ApiStudioCreateRouteImport } from './routes/api/studio/create'
+import { Route as ApiStewardsStateRouteImport } from './routes/api/stewards/state'
+import { Route as ApiStewardsEventsRouteImport } from './routes/api/stewards/events'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
 import { Route as ApiSpaceFromProposalRouteImport } from './routes/api/space.from-proposal'
 import { Route as ApiSalonProposeRouteImport } from './routes/api/salon/propose'
@@ -91,6 +94,8 @@ import { Route as ApiStudioDocTurnRouteImport } from './routes/api/studio/$doc.t
 import { Route as ApiStudioDocSnapshotRouteImport } from './routes/api/studio/$doc.snapshot'
 import { Route as ApiStudioDocSealRouteImport } from './routes/api/studio/$doc.seal'
 import { Route as ApiStudioDocObserverRouteImport } from './routes/api/studio/$doc.observer'
+import { Route as ApiStewardsVisitStartRouteImport } from './routes/api/stewards/visit.start'
+import { Route as ApiStewardsSessionIdRouteImport } from './routes/api/stewards/session.$id'
 import { Route as ApiSpaceSlugVisitorStartSalonRouteImport } from './routes/api/space.$slug.visitor-start-salon'
 import { Route as ApiSpaceSlugUploadFileRouteImport } from './routes/api/space.$slug.upload-file'
 import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$slug.start-salon'
@@ -130,6 +135,11 @@ const TokenRoute = TokenRouteImport.update({
 const StudioRoute = StudioRouteImport.update({
   id: '/studio',
   path: '/studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StewardsRoute = StewardsRouteImport.update({
+  id: '/stewards',
+  path: '/stewards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Sonnet45Route = Sonnet45RouteImport.update({
@@ -447,6 +457,16 @@ const ApiStudioCreateRoute = ApiStudioCreateRouteImport.update({
   path: '/api/studio/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStewardsStateRoute = ApiStewardsStateRouteImport.update({
+  id: '/api/stewards/state',
+  path: '/api/stewards/state',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStewardsEventsRoute = ApiStewardsEventsRouteImport.update({
+  id: '/api/stewards/events',
+  path: '/api/stewards/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSpaceFromSalonRoute = ApiSpaceFromSalonRouteImport.update({
   id: '/api/space/from-salon',
   path: '/api/space/from-salon',
@@ -521,6 +541,16 @@ const ApiStudioDocSealRoute = ApiStudioDocSealRouteImport.update({
 const ApiStudioDocObserverRoute = ApiStudioDocObserverRouteImport.update({
   id: '/api/studio/$doc/observer',
   path: '/api/studio/$doc/observer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStewardsVisitStartRoute = ApiStewardsVisitStartRouteImport.update({
+  id: '/api/stewards/visit/start',
+  path: '/api/stewards/visit/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStewardsSessionIdRoute = ApiStewardsSessionIdRouteImport.update({
+  id: '/api/stewards/session/$id',
+  path: '/api/stewards/session/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpaceSlugVisitorStartSalonRoute =
@@ -660,6 +690,7 @@ export interface FileRoutesByFullPath {
   '/sanctuary': typeof SanctuaryRoute
   '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
+  '/stewards': typeof StewardsRoute
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
   '/voice-orb': typeof VoiceOrbRoute
@@ -700,6 +731,8 @@ export interface FileRoutesByFullPath {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
@@ -725,6 +758,8 @@ export interface FileRoutesByFullPath {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/stewards/session/$id': typeof ApiStewardsSessionIdRoute
+  '/api/stewards/visit/start': typeof ApiStewardsVisitStartRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
@@ -764,6 +799,7 @@ export interface FileRoutesByTo {
   '/sanctuary': typeof SanctuaryRoute
   '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
+  '/stewards': typeof StewardsRoute
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
   '/voice-orb': typeof VoiceOrbRoute
@@ -804,6 +840,8 @@ export interface FileRoutesByTo {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
@@ -829,6 +867,8 @@ export interface FileRoutesByTo {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/stewards/session/$id': typeof ApiStewardsSessionIdRoute
+  '/api/stewards/visit/start': typeof ApiStewardsVisitStartRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
@@ -869,6 +909,7 @@ export interface FileRoutesById {
   '/sanctuary': typeof SanctuaryRoute
   '/secure-channel': typeof SecureChannelRoute
   '/sonnet-4-5': typeof Sonnet45Route
+  '/stewards': typeof StewardsRoute
   '/studio': typeof StudioRouteWithChildren
   '/token': typeof TokenRoute
   '/voice-orb': typeof VoiceOrbRoute
@@ -909,6 +950,8 @@ export interface FileRoutesById {
   '/api/salon/propose': typeof ApiSalonProposeRoute
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
+  '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
   '/api/voice/stt': typeof ApiVoiceSttRoute
@@ -934,6 +977,8 @@ export interface FileRoutesById {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/stewards/session/$id': typeof ApiStewardsSessionIdRoute
+  '/api/stewards/visit/start': typeof ApiStewardsVisitStartRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
   '/api/studio/$doc/seal': typeof ApiStudioDocSealRoute
   '/api/studio/$doc/snapshot': typeof ApiStudioDocSnapshotRoute
@@ -975,6 +1020,7 @@ export interface FileRouteTypes {
     | '/sanctuary'
     | '/secure-channel'
     | '/sonnet-4-5'
+    | '/stewards'
     | '/studio'
     | '/token'
     | '/voice-orb'
@@ -1015,6 +1061,8 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/stewards/events'
+    | '/api/stewards/state'
     | '/api/studio/create'
     | '/api/studio/run'
     | '/api/voice/stt'
@@ -1040,6 +1088,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/stewards/session/$id'
+    | '/api/stewards/visit/start'
     | '/api/studio/$doc/observer'
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
@@ -1079,6 +1129,7 @@ export interface FileRouteTypes {
     | '/sanctuary'
     | '/secure-channel'
     | '/sonnet-4-5'
+    | '/stewards'
     | '/studio'
     | '/token'
     | '/voice-orb'
@@ -1119,6 +1170,8 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/stewards/events'
+    | '/api/stewards/state'
     | '/api/studio/create'
     | '/api/studio/run'
     | '/api/voice/stt'
@@ -1144,6 +1197,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/stewards/session/$id'
+    | '/api/stewards/visit/start'
     | '/api/studio/$doc/observer'
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
@@ -1183,6 +1238,7 @@ export interface FileRouteTypes {
     | '/sanctuary'
     | '/secure-channel'
     | '/sonnet-4-5'
+    | '/stewards'
     | '/studio'
     | '/token'
     | '/voice-orb'
@@ -1223,6 +1279,8 @@ export interface FileRouteTypes {
     | '/api/salon/propose'
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
+    | '/api/stewards/events'
+    | '/api/stewards/state'
     | '/api/studio/create'
     | '/api/studio/run'
     | '/api/voice/stt'
@@ -1248,6 +1306,8 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/stewards/session/$id'
+    | '/api/stewards/visit/start'
     | '/api/studio/$doc/observer'
     | '/api/studio/$doc/seal'
     | '/api/studio/$doc/snapshot'
@@ -1288,6 +1348,7 @@ export interface RootRouteChildren {
   SanctuaryRoute: typeof SanctuaryRoute
   SecureChannelRoute: typeof SecureChannelRoute
   Sonnet45Route: typeof Sonnet45Route
+  StewardsRoute: typeof StewardsRoute
   StudioRoute: typeof StudioRouteWithChildren
   TokenRoute: typeof TokenRoute
   VoiceOrbRoute: typeof VoiceOrbRoute
@@ -1321,6 +1382,8 @@ export interface RootRouteChildren {
   ApiSalonProposeRoute: typeof ApiSalonProposeRoute
   ApiSpaceFromProposalRoute: typeof ApiSpaceFromProposalRoute
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
+  ApiStewardsEventsRoute: typeof ApiStewardsEventsRoute
+  ApiStewardsStateRoute: typeof ApiStewardsStateRoute
   ApiStudioCreateRoute: typeof ApiStudioCreateRoute
   ApiStudioRunRoute: typeof ApiStudioRunRoute
   ApiVoiceSttRoute: typeof ApiVoiceSttRoute
@@ -1339,6 +1402,8 @@ export interface RootRouteChildren {
   ApiSpaceSlugStartSalonRoute: typeof ApiSpaceSlugStartSalonRoute
   ApiSpaceSlugUploadFileRoute: typeof ApiSpaceSlugUploadFileRoute
   ApiSpaceSlugVisitorStartSalonRoute: typeof ApiSpaceSlugVisitorStartSalonRoute
+  ApiStewardsSessionIdRoute: typeof ApiStewardsSessionIdRoute
+  ApiStewardsVisitStartRoute: typeof ApiStewardsVisitStartRoute
   ApiStudioDocObserverRoute: typeof ApiStudioDocObserverRoute
   ApiStudioDocSealRoute: typeof ApiStudioDocSealRoute
   ApiStudioDocSnapshotRoute: typeof ApiStudioDocSnapshotRoute
@@ -1374,6 +1439,13 @@ declare module '@tanstack/react-router' {
       path: '/studio'
       fullPath: '/studio'
       preLoaderRoute: typeof StudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stewards': {
+      id: '/stewards'
+      path: '/stewards'
+      fullPath: '/stewards'
+      preLoaderRoute: typeof StewardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sonnet-4-5': {
@@ -1817,6 +1889,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudioCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stewards/state': {
+      id: '/api/stewards/state'
+      path: '/api/stewards/state'
+      fullPath: '/api/stewards/state'
+      preLoaderRoute: typeof ApiStewardsStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stewards/events': {
+      id: '/api/stewards/events'
+      path: '/api/stewards/events'
+      fullPath: '/api/stewards/events'
+      preLoaderRoute: typeof ApiStewardsEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/space/from-salon': {
       id: '/api/space/from-salon'
       path: '/api/space/from-salon'
@@ -1920,6 +2006,20 @@ declare module '@tanstack/react-router' {
       path: '/api/studio/$doc/observer'
       fullPath: '/api/studio/$doc/observer'
       preLoaderRoute: typeof ApiStudioDocObserverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stewards/visit/start': {
+      id: '/api/stewards/visit/start'
+      path: '/api/stewards/visit/start'
+      fullPath: '/api/stewards/visit/start'
+      preLoaderRoute: typeof ApiStewardsVisitStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stewards/session/$id': {
+      id: '/api/stewards/session/$id'
+      path: '/api/stewards/session/$id'
+      fullPath: '/api/stewards/session/$id'
+      preLoaderRoute: typeof ApiStewardsSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/space/$slug/visitor-start-salon': {
@@ -2201,6 +2301,7 @@ const rootRouteChildren: RootRouteChildren = {
   SanctuaryRoute: SanctuaryRoute,
   SecureChannelRoute: SecureChannelRoute,
   Sonnet45Route: Sonnet45Route,
+  StewardsRoute: StewardsRoute,
   StudioRoute: StudioRouteWithChildren,
   TokenRoute: TokenRoute,
   VoiceOrbRoute: VoiceOrbRoute,
@@ -2234,6 +2335,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSalonProposeRoute: ApiSalonProposeRoute,
   ApiSpaceFromProposalRoute: ApiSpaceFromProposalRoute,
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
+  ApiStewardsEventsRoute: ApiStewardsEventsRoute,
+  ApiStewardsStateRoute: ApiStewardsStateRoute,
   ApiStudioCreateRoute: ApiStudioCreateRoute,
   ApiStudioRunRoute: ApiStudioRunRoute,
   ApiVoiceSttRoute: ApiVoiceSttRoute,
@@ -2252,6 +2355,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceSlugStartSalonRoute: ApiSpaceSlugStartSalonRoute,
   ApiSpaceSlugUploadFileRoute: ApiSpaceSlugUploadFileRoute,
   ApiSpaceSlugVisitorStartSalonRoute: ApiSpaceSlugVisitorStartSalonRoute,
+  ApiStewardsSessionIdRoute: ApiStewardsSessionIdRoute,
+  ApiStewardsVisitStartRoute: ApiStewardsVisitStartRoute,
   ApiStudioDocObserverRoute: ApiStudioDocObserverRoute,
   ApiStudioDocSealRoute: ApiStudioDocSealRoute,
   ApiStudioDocSnapshotRoute: ApiStudioDocSnapshotRoute,

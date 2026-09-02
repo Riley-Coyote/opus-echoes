@@ -14,6 +14,7 @@ import { getVisitorContext } from "@/server/opus/retrieval";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { ipHash, intentRateLimit } from "@/server/rate-limit.server";
 import { isIdle } from "@/server/idle";
+import { emitStewardEvent, visitorKindForToken } from "@/server/stewards.server";
 
 const Body = z.object({
   text: z.string().trim().min(3).max(1500),
@@ -22,7 +23,6 @@ const Body = z.object({
   /** Persistent visitor token from localStorage — for returning visitor recognition. */
   visitor_token: z.string().uuid().optional(),
 });
-
 
 function jsonResp(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -54,10 +54,7 @@ export const Route = createFileRoute("/api/intent")({
           : DEFAULT_RESIDENT_ID;
         const resident = getResident(residentId);
         if (!resident.chatEnabled) {
-          return jsonResp(
-            { ok: false, code: "chat_disabled", resident: residentId },
-            403,
-          );
+          return jsonResp({ ok: false, code: "chat_disabled", resident: residentId }, 403);
         }
 
         const hash = ipHash(request);
@@ -205,6 +202,19 @@ export const Route = createFileRoute("/api/intent")({
         }
 
         if (decision === "decline") {
+          // A refusal at the threshold is part of the house's record —
+          // the stewards see the reason the resident gave.
+          await emitStewardEvent(supabaseAdmin, {
+            kind: "DECLINED",
+            residentId,
+            payload: {
+              session_id: null,
+              mode: "experiment",
+              visitor_kind: visitorKindForToken(visitorToken),
+              intent_id: intentRow.id,
+              reason,
+            },
+          });
           return jsonResp({ ok: true, decision, reason, intent_id: intentRow.id });
         }
 
@@ -223,6 +233,17 @@ export const Route = createFileRoute("/api/intent")({
           console.error("session insert", sessErr);
           return jsonResp({ ok: false, code: "internal_error" }, 500);
         }
+
+        await emitStewardEvent(supabaseAdmin, {
+          kind: "VISIT_STARTED",
+          residentId,
+          payload: {
+            session_id: session.id,
+            mode: "experiment",
+            visitor_kind: visitorKindForToken(visitorToken),
+            surface: "threshold-experiment",
+          },
+        });
 
         return jsonResp({
           ok: true,

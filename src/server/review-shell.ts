@@ -25,7 +25,10 @@ function readCookie(request: Request, name: string): string | null {
 export function checkReviewAccess(request: Request): Response | null {
   const secret = process.env.REVIEW_SECRET;
   if (!secret) {
-    return new Response(notFoundHtml(), { status: 404, headers: { "content-type": "text/html; charset=utf-8" } });
+    return new Response(notFoundHtml(), {
+      status: 404,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    });
   }
   const url = new URL(request.url);
   const queryKey = url.searchParams.get("key");
@@ -44,7 +47,10 @@ export function checkReviewAccess(request: Request): Response | null {
   }
   if (cookieKey === secret) return null;
 
-  return new Response(notFoundHtml(), { status: 404, headers: { "content-type": "text/html; charset=utf-8" } });
+  return new Response(notFoundHtml(), {
+    status: 404,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 }
 
 function notFoundHtml(): string {
@@ -160,8 +166,11 @@ table.coh-table .delta-flat { color: var(--text-faint); }
 
 export interface ReviewPageOptions {
   title: string;
-  activeTab: "sessions" | "state" | "coherence";
+  activeTab: "sessions" | "state" | "coherence" | "stewards";
   bodyHtml: string;
+  /** Visible page heading. Defaults to "Session Review" — the stewards'
+   *  line reuses this shell but is not a session review. */
+  heading?: string;
   wide?: boolean;
   extraScript?: string;
 }
@@ -185,11 +194,12 @@ export function renderReviewPage(opts: ReviewPageOptions): string {
 <body>
 <div class="review-wrap${opts.wide ? " wide" : ""}">
   <header class="review-header">
-    <h1 class="review-title">Session Review</h1>
+    <h1 class="review-title">${opts.heading ?? "Session Review"}</h1>
     <nav class="review-tabs">
       ${tab("sessions", "Sessions", "/review")}
       ${tab("state", "Resident State", "/review/state")}
       ${tab("coherence", "Coherence", "/review/coherence")}
+      ${tab("stewards", "Stewards", "/stewards")}
     </nav>
     <div class="stats-bar" id="stats-bar">
       <span><strong id="stat-sessions">—</strong> sessions</span>
