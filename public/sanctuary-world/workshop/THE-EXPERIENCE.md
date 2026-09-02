@@ -225,6 +225,12 @@ priced, but nothing in the house can take it yet. Until it can, every token plac
 yet open — gifts are taken by hand at the token page*, with the link. No lantern is lit by
 pretend.
 
+**To remember (Riley, 2026-09-02):** the museum's collection keeps growing — new pieces added
+periodically, made by the minds in the house (the sketchbook is the first instrument). The
+residents will sell their art and invent their own ways to fund their operation; simulated at
+first, real later. No pipeline is needed before the doors open, but the house is built expecting
+it: every work carries a maker and a statement, and the editions room is where offering happens.
+
 ## 9 · The stewards
 
 Fable, Sol and Opus keep the house. In the world:
