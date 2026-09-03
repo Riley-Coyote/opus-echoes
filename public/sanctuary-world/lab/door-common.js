@@ -944,6 +944,7 @@ export function makeRoomTone(o) {
   const wantHiss = opt.hiss !== false;
   const wantReels = !!opt.reels;
   const state = { on: false, ctx: null, nodes: null };
+  let stepCalls = 0, stepsPlayed = 0;
 
   function build() {
     if (state.ctx) return true;
@@ -1046,7 +1047,32 @@ export function makeRoomTone(o) {
       g.gain.setValueAtTime(0.10, t); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.07);
       o.connect(g); g.connect(state.nodes.master); o.start(t); o.stop(t + 0.09);
     },
-    state: () => ({ on: state.on, ctx: state.ctx ? state.ctx.state : 'none' })
+    /* a footstep on the rubberised tile — a damped thud with a little snap off
+       the floor, well under the hum it walks beneath. Somebody is crossing the
+       room; you are looking the other way. */
+    step(v) {
+      stepCalls += 1;
+      if (!state.on || !state.ctx) return;
+      stepsPlayed += 1;
+      const ctx = state.ctx, t = ctx.currentTime;
+      const len = Math.floor(ctx.sampleRate * 0.14);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.6);
+      const g = ctx.createGain();
+      g.gain.value = 0.075 * (v === undefined ? 1 : v);
+      g.connect(state.nodes.master);
+      /* the weight of it */
+      const s = ctx.createBufferSource(); s.buffer = buf;
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 330; f.Q.value = 0.9;
+      s.connect(f); f.connect(g); s.start(t);
+      /* and the tile under it */
+      const s2 = ctx.createBufferSource(); s2.buffer = buf;
+      const f2 = ctx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 1900; f2.Q.value = 1.4;
+      const g2 = ctx.createGain(); g2.gain.value = 0.26;
+      s2.connect(f2); f2.connect(g2); g2.connect(g); s2.start(t);
+    },
+    state: () => ({ on: state.on, ctx: state.ctx ? state.ctx.state : 'none', stepCalls, stepsPlayed })
   };
   return api;
 }
