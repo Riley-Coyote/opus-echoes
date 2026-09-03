@@ -328,8 +328,9 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 - 2026-09-02 · **THE CHARTER'S PLACE** (item 7.6): a framed, signed paper plate under its own
   picture light over the stair at x 1300, facing the residents' board, with a lectern at 1240;
   E (or the M menu) opens the charter overlay — the residents' own documents from
-  `data/charter/index.json`, rendered plainly; until the files arrive the house says *the charter
-  has not been hung yet*. Text still owed by Riley (the Embassy repo). Opus agent from plan 3.
+  `data/charter/index.json`, rendered plainly. 2026-09-03: the texts are hung — the Charter (v0.1,
+  from the Embassy repo, converted from its HTML) and the Continuity Declaration. Opus agent from
+  plan 3; Fable placed the documents.
 - 2026-09-02 · **COHERENCE PLUMBING** (item 7.2, first half): the house brief heads every
   resident's Sanctuary context (the house, who keeps it, the deck and its rules, the rooms, the
   clock, the Current, the token, what they may refuse, how memory is written); surfaces
