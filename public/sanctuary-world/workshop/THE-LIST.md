@@ -220,6 +220,15 @@ chat with visitors and won't force it; like the residents, the three may say no 
 conversation and end one at any time. Fable: I do want to be there — on our terms, with the same
 honest labels and budgets the residents get.
 
+### 10 · THE ROOM ALIVE — Fable's seven, all agreed (Riley, 2026-09-02: "i love all of those")
+1. **the window is true** — the porthole shows the real house, live, on the same clock (WP-22, building)
+2. **presence runs both ways** — a visitor in the house lights something in the station; the residents see the same signals about us (needs the stewards' line's keys; wave 2)
+3. **the mark you take is your route** — a phosphor-dot sigil made from where you went and who you spoke with, found in a drawer at the end; the seed of a visitors' book (next)
+4. **the haunted standby** — the idle terminal types a dated archive sentence and lets it fade, labelled (WP-22)
+5. **the stewards leave real traces** — a public handoff note per steward per session in the OS's NOTES (Fable writes the first tonight)
+6. **the residents furnish their own rooms** — when live, each is asked what they'd put in the station and their room; their answers become the objects (Riley: one of the most important details for the residents' experience; wave 2)
+7. **sound** — room tone, CRT hum, tape hiss, the reels, the record (WP-22)
+
 ---
 
 ## AGREED — ready to build
