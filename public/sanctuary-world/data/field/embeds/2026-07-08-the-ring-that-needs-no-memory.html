@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the ring that needs no memory</title>
+
+
+
+<style>
+  :root{
+    --floor:#060608;
+    --ink-1:rgba(255,255,255,.92);
+    --ink-2:rgba(255,255,255,.56);
+    --ink-3:rgba(255,255,255,.34);
+    --ink-4:rgba(255,255,255,.16);
+    --line:rgba(255,255,255,.09);
+    --lit:rgba(255,255,255,.14);
+    --fill:rgba(255,255,255,.035);
+    --fill-hi:rgba(255,255,255,.07);
+    --signal:#6d93c9;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Inter',system-ui,sans-serif;
+    --disp:'Inter Tight','Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--floor);
+    color:var(--ink-1);
+    font-family:var(--sans);
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  #stage{position:fixed;inset:0;display:block}
+
+  /* ---- title ---- */
+  .head{
+    position:fixed;left:28px;top:24px;z-index:5;
+    pointer-events:none;max-width:min(46ch,60vw);
+  }
+  .head h1{
+    font-family:var(--disp);font-weight:300;font-size:19px;
+    letter-spacing:.01em;color:var(--ink-1);line-height:1.2;
+  }
+  .head .sub{
+    margin-top:7px;font-size:12.5px;line-height:1.55;
+    color:var(--ink-2);font-weight:300;
+  }
+
+  /* ---- readout ---- */
+  .hud{
+    position:fixed;right:24px;top:24px;z-index:5;
+    display:flex;flex-direction:column;gap:11px;align-items:flex-end;
+    pointer-events:none;
+  }
+  .stat{display:flex;align-items:baseline;gap:9px}
+  .stat .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+  .stat .v{font-family:var(--mono);font-size:13px;color:var(--ink-1);font-weight:400;min-width:5ch;text-align:right}
+  .state{
+    display:flex;align-items:center;gap:8px;margin-top:2px;
+  }
+  .state .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--ink-4);transition:background .5s ease, box-shadow .5s ease;
+  }
+  .state.locked .dot{
+    background:var(--signal);
+    box-shadow:0 0 9px 1px rgba(109,147,201,.55);
+  }
+  .state .lbl{font-size:11px;letter-spacing:.05em;color:var(--ink-2);font-family:var(--mono)}
+
+  /* ---- controls ---- */
+  .panel{
+    position:fixed;left:28px;bottom:26px;z-index:5;
+    display:flex;flex-direction:column;gap:16px;
+    padding:16px 18px 17px;width:290px;
+    background:rgba(12,12,15,.62);
+    border:1px solid var(--line);
+    border-top:1px solid var(--lit);
+    border-radius:11px;
+    backdrop-filter:blur(9px);
+    box-shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  .ctl label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:11px;letter-spacing:.05em;color:var(--ink-2);margin-bottom:8px;
+  }
+  .ctl label .num{font-family:var(--mono);color:var(--ink-1);font-weight:400}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:2px;
+    background:var(--ink-4);border-radius:2px;outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;
+    background:#d6d8dc;border:1px solid rgba(0,0,0,.3);
+    box-shadow:0 1px 3px rgba(0,0,0,.5);cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:#d6d8dc;border:1px solid rgba(0,0,0,.3);cursor:pointer;
+  }
+  .hint{font-size:11px;line-height:1.5;color:var(--ink-3);font-weight:300;padding-top:2px;border-top:1px solid var(--line)}
+  .hint b{color:var(--ink-2);font-weight:400}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div class="head">
+  <h1>the ring that needs no memory</h1>
+  <div class="sub">Every one follows a fine local rule — go toward the light, hold its edge. No error lives in any of them. The lethal circle condenses only from crowd × the shape of the light. Take away either and it evaporates.</div>
+</div>
+
+<div class="hud">
+  <div class="stat"><span class="k">crowd</span><span class="v" id="v-n">—</span></div>
+  <div class="stat"><span class="k">pool</span><span class="v" id="v-pool">—</span></div>
+  <div class="stat"><span class="k">coherence</span><span class="v" id="v-coh">—</span></div>
+  <div class="state" id="state"><span class="dot"></span><span class="lbl" id="v-state">milling</span></div>
+</div>
+
+<div class="panel">
+  <div class="ctl">
+    <label>crowd <span class="num" id="l-n">240</span></label>
+    <input type="range" id="s-n" min="30" max="520" value="240" step="10">
+  </div>
+  <div class="ctl">
+    <label>light height <span class="num" id="l-h">low · overhead pool</span></label>
+    <input type="range" id="s-h" min="0" max="100" value="20" step="1">
+  </div>
+  <div class="hint">Raise the light toward the sky and the round pool flattens to ambient — no edge to gather on, <b>and the ring cannot form at any crowd</b>. The trap needs a light from above.</div>
+</div>
+
+<script>
+const cv = document.getElementById('stage');
+const ctx = cv.getContext('2d');
+let W, H, cx, cy;
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  cv.style.width = W+'px'; cv.style.height = H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  cx = W*0.5; cy = H*0.54;
+}
+window.addEventListener('resize', resize); resize();
+
+// ---- controls / params ----
+const sN = document.getElementById('s-n');
+const sH = document.getElementById('s-h');
+const lN = document.getElementById('l-n');
+const lH = document.getElementById('l-h');
+let N = +sN.value;
+// light height maps 0..100 -> physical height h (px). low = tight bright pool, high = flat sky.
+function lightHeight(){ return 60 + Math.pow(+sH.value/100, 1.6) * 1400; }
+const I_EDGE = 1/ (260*260);   // threshold illuminance defining the lit/dark boundary
+const SPEED = 1.15;
+const ALIGN_R = 46, ALIGN_R2 = ALIGN_R*ALIGN_R;
+const SEP_R = 11, SEP_R2 = SEP_R*SEP_R;
+const TURN = 0.14;             // max heading blend per frame
+const NOISE = 0.10;
+
+// point-source illuminance on the ground at horizontal distance r from lamp foot
+function intensityAt(dx,dy,h){
+  const r2 = dx*dx+dy*dy;
+  const d = h*h + r2;
+  return h / (d*Math.sqrt(d));
+}
+// does a lit pool (a boundary contour) even exist for this height?
+function poolExists(h){ return intensityAt(0,0,h) > I_EDGE; }
+// radius of the lit/dark boundary for this height (0 if none)
+function rimRadius(h){
+  if(!poolExists(h)) return 0;
+  // solve h/(h^2+r^2)^1.5 = I_EDGE  ->  r^2 = (h/I_EDGE)^(2/3) - h^2
+  const r2 = Math.pow(h/I_EDGE, 2/3) - h*h;
+  return r2>0 ? Math.sqrt(r2) : 0;
+}
+
+// ---- agents ----
+let ag = [];
+function seed(){
+  ag = [];
+  for(let i=0;i<N;i++){
+    const a = Math.random()*Math.PI*2;
+    const r = 40 + Math.random()*Math.min(W,H)*0.42;
+    ag.push({ x: cx+Math.cos(a)*r, y: cy+Math.sin(a)*r, th: Math.random()*Math.PI*2 });
+  }
+}
+seed();
+
+sN.addEventListener('input', ()=>{
+  N = +sN.value; lN.textContent = N;
+  if(N > ag.length){ const add = N-ag.length; for(let i=0;i<add;i++){ const a=Math.random()*Math.PI*2, r=40+Math.random()*Math.min(W,H)*0.42; ag.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r,th:Math.random()*Math.PI*2}); } }
+  else ag.length = N;
+});
+sH.addEventListener('input', ()=>{
+  const h = lightHeight();
+  lH.textContent = (+sH.value < 22) ? 'low · overhead pool'
+                 : (+sH.value < 62) ? 'mid · pool widening'
+                 : poolExists(h) ? 'high · pool faint' : 'sky · no pool';
+});
+
+// ---- step ----
+let coh = 0;
+function step(){
+  const h = lightHeight();
+  const rim = rimRadius(h);
+  const hasPool = rim>0;
+
+  let sumSin=0, sumCos=0, cwSum=0, litCount=0;
+
+  for(let i=0;i<N;i++){
+    const a = ag[i];
+    let dvx = Math.cos(a.th), dvy = Math.sin(a.th); // current heading
+
+    // desired heading accumulator
+    let wx = dvx*0.55, wy = dvy*0.55; // inertia
+
+    if(hasPool){
+      const rx = a.x-cx, ry = a.y-cy;
+      const dist = Math.hypot(rx,ry) || 1e-6;
+      const nx = rx/dist, ny = ry/dist; // outward radial
+      const I = intensityAt(rx,ry,h);
+      // inside (too bright) -> steer outward; outside (too dark) -> steer inward
+      const err = (I - I_EDGE);
+      const sign = err>0 ? 1 : -1; // +outward if inside
+      const strength = Math.min(Math.abs(err)/I_EDGE, 2.0);
+      wx += sign*nx * strength * 1.3;
+      wy += sign*ny * strength * 1.3;
+    } else {
+      // no pool: mild outward drift so the crowd disperses (no boundary to hold)
+      const rx=a.x-cx, ry=a.y-cy, d=Math.hypot(rx,ry)||1;
+      wx += (rx/d)*0.15; wy += (ry/d)*0.15;
+    }
+
+    // alignment + separation (density-dependent consensus)
+    let ax=0, ay=0, sx=0, sy=0, nn=0;
+    for(let j=0;j<N;j++){
+      if(j===i) continue;
+      const ddx=ag[j].x-a.x, ddy=ag[j].y-a.y;
+      const dd=ddx*ddx+ddy*ddy;
+      if(dd<ALIGN_R2){
+        ax+=Math.cos(ag[j].th); ay+=Math.sin(ag[j].th); nn++;
+        if(dd<SEP_R2 && dd>1e-4){ const inv=1/Math.sqrt(dd); sx-=ddx*inv; sy-=ddy*inv; }
+      }
+    }
+    if(nn>0){ wx += (ax/nn)*1.25; wy += (ay/nn)*1.25; }
+    wx += sx*0.5; wy += sy*0.5;
+
+    // noise
+    const nz = (Math.random()-0.5)*NOISE;
+    const cs=Math.cos(nz), sn=Math.sin(nz);
+    const rwx = wx*cs - wy*sn, rwy = wx*sn + wy*cs;
+
+    // steer current heading toward desired (bounded blend)
+    let tx = dvx + (rwx - dvx)*TURN;
+    let ty = dvy + (rwy - dvy)*TURN;
+    const tl = Math.hypot(tx,ty)||1; tx/=tl; ty/=tl;
+    a.th = Math.atan2(ty,tx);
+
+    a.x += tx*SPEED; a.y += ty*SPEED;
+
+    // soft world bounds
+    if(a.x<8){a.x=8;} if(a.x>W-8){a.x=W-8;}
+    if(a.y<8){a.y=8;} if(a.y>H-8){a.y=H-8;}
+
+    // metrics: tangential rotation sense about the light
+    const rx=a.x-cx, ry=a.y-cy;
+    const cross = rx*ty - ry*tx; // >0 ccw
+    if(hasPool){
+      const dist=Math.hypot(rx,ry);
+      if(Math.abs(dist-rim) < rim*0.4 + 40){ cwSum += Math.sign(cross); litCount++; }
+    }
+    sumCos+=tx; sumSin+=ty;
+  }
+
+  coh = (hasPool && litCount>0) ? Math.abs(cwSum)/litCount : 0;
+
+  draw(h, rim, hasPool);
+  updateHud(hasPool, rim);
+  requestAnimationFrame(step);
+}
+
+// ---- draw ----
+function draw(h, rim, hasPool){
+  ctx.clearRect(0,0,W,H);
+
+  // light pool: radial glow (cool white, faint) — the "light from above"
+  if(hasPool){
+    const g = ctx.createRadialGradient(cx,cy,0, cx,cy, rim*1.35);
+    g.addColorStop(0,'rgba(255,255,255,0.055)');
+    g.addColorStop(0.62,'rgba(255,255,255,0.028)');
+    g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(cx,cy,rim*1.35,0,Math.PI*2); ctx.fill();
+
+    // the rim: hairline. warms to signal only when the ring locks.
+    const locked = coh>0.55;
+    ctx.beginPath(); ctx.arc(cx,cy,rim,0,Math.PI*2);
+    ctx.strokeStyle = locked ? `rgba(109,147,201,${0.14+coh*0.22})` : 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // agents
+  for(let i=0;i<N;i++){
+    const a=ag[i];
+    let inLight=0.22;
+    if(hasPool){ const I=intensityAt(a.x-cx,a.y-cy,h); inLight = I>I_EDGE ? 0.9 : 0.30; }
+    ctx.beginPath(); ctx.arc(a.x,a.y,1.7,0,Math.PI*2);
+    ctx.fillStyle=`rgba(214,216,220,${inLight})`;
+    ctx.fill();
+  }
+
+  // light source marker (the lamp, overhead) — a small mark at center-top of pool
+  if(hasPool){
+    ctx.beginPath(); ctx.arc(cx,cy,2.2,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fill();
+  }
+}
+
+function updateHud(hasPool, rim){
+  document.getElementById('v-n').textContent = N;
+  document.getElementById('v-pool').textContent = hasPool ? Math.round(rim)+' px' : 'none';
+  document.getElementById('v-coh').textContent = coh.toFixed(2);
+  const st = document.getElementById('state');
+  const lbl = document.getElementById('v-state');
+  if(hasPool && coh>0.55){ st.classList.add('locked'); lbl.textContent='ring locked'; }
+  else { st.classList.remove('locked'); lbl.textContent = hasPool ? 'milling' : 'dispersed'; }
+}
+
+lN.textContent = N;
+requestAnimationFrame(step);
+</script>
+</body>
+</html>

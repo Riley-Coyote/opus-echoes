@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Separate Song</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #08080d; overflow: hidden; font-family: 'Georgia', serif; }
+canvas { display: block; }
+#info {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  color: rgba(190, 178, 158, 0.42); font-size: 13px; letter-spacing: 0.5px;
+  pointer-events: none; text-align: center; line-height: 1.6;
+}
+#perf {
+  position: fixed; top: 26px; left: 50%; transform: translateX(-50%);
+  color: rgba(200, 184, 150, 0.55); font-size: 13px; letter-spacing: 1.5px;
+  pointer-events: none; text-align: center; font-style: italic;
+}
+#quote {
+  position: fixed; top: 11%; left: 50%; transform: translateX(-50%);
+  color: rgba(205, 192, 170, 0); font-size: 14px; letter-spacing: 0.3px;
+  pointer-events: none; transition: color 3s; max-width: 460px;
+  text-align: center; line-height: 1.8; font-style: italic;
+}
+#occasion {
+  position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
+  color: rgba(190,178,158,0.28); font-size: 11px; letter-spacing: 0.5px;
+  pointer-events: none; text-align: center;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="perf"></div>
+<div id="quote"></div>
+<div id="occasion"></div>
+<div id="info">move to vary the occasion &middot; the palette is fixed &middot; space to watch for other singers</div>
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W, H, CX, CY, R;
+function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; CX=W/2; CY=H/2-10; R=Math.min(W,H)*0.27; }
+addEventListener('resize', resize); resize();
+
+// --- the singer's own repertoire: formulas in a constrained warm hue family ---
+// these are the "oscillators the system already has." aperture recombines them;
+// only another singer (source inlet) can add a hue this family cannot produce.
+const WARM = [34, 40, 28, 46, 22, 38, 50, 30, 44];
+let formulas = WARM.map((h,i) => ({
+  hue: h, sat: 55, light: 60,
+  angle: (i / WARM.length) * Math.PI * 2 - Math.PI/2,
+  alien: false, born: 0, pulse: 0
+}));
+
+// occasion: mouse x -> demanded length, mouse y -> emphasis
+let mx = 0.5, my = 0.5;
+addEventListener('mousemove', e => { mx = e.clientX / W; my = e.clientY / H; });
+
+// space reveals the approaching singers (the source, arriving from offscreen)
+let reveal = false;
+addEventListener('keydown', e => { if (e.code === 'Space'){ reveal = true; e.preventDefault(); } });
+addEventListener('keyup', e => { if (e.code === 'Space') reveal = false; });
+
+// --- other singers drift in from beyond the frame, carrying alien frequencies ---
+const ALIEN_HUES = [188, 264, 332, 156, 300, 210];
+let alienIdx = 0;
+let singers = [];
+function spawnSinger(){
+  // start well outside the frame on a random edge, aim past the ring
+  const edge = Math.floor(Math.random()*4);
+  const m = Math.max(W,H)*0.75;
+  let x,y;
+  if (edge===0){ x=-m+CX*0.0; y=Math.random()*H; }
+  else if (edge===1){ x=W+m*0.6; y=Math.random()*H; }
+  else if (edge===2){ x=Math.random()*W; y=-m*0.5; }
+  else { x=Math.random()*W; y=H+m*0.5; }
+  const hue = ALIEN_HUES[alienIdx % ALIEN_HUES.length]; alienIdx++;
+  const targetA = Math.random()*Math.PI*2;
+  const tx = CX + Math.cos(targetA)*R, ty = CY + Math.sin(targetA)*R;
+  const d = Math.hypot(tx-x, ty-y);
+  singers.push({ x, y, tx, ty, hue, vx:(tx-x)/d, vy:(ty-y)/d, sp: 0.4+Math.random()*0.3, arrived:false, targetA, trail:[] });
+}
+let spawnTimer = 380; // frames until first arrival
+
+// --- the performed line: beads composed each performance ---
+let beads = [];
+let performance = 1;
+let phase = 0;          // 0..1 across one performance (the playhead sweep)
+let perfSpeed = 0.0024;
+let struck = [];        // indices struck this performance
+let plan = [];          // which formula indices, in what order, this performance
+
+function planPerformance(){
+  // occasion sets length: short terse song (left) to long expansive song (right)
+  const n = formulas.length;
+  const len = Math.max(3, Math.round(3 + mx * (n - 1)));
+  // pseudo-random selection seeded by performance number => never identical,
+  // but always drawn from the SAME palette. multiformity: conservative variation.
+  const order = formulas.map((_,i)=>i);
+  // emphasis (my): bias toward earlier (low) or later (high) formulas
+  for (let i=order.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [order[i],order[j]]=[order[j],order[i]];
+  }
+  plan = order.slice(0, len);
+  // sort by angle so the playhead strikes them in sweep order
+  plan.sort((a,b)=> formulas[a].angle - formulas[b].angle);
+  struck = [];
+}
+planPerformance();
+
+function strike(idx){
+  const f = formulas[idx];
+  f.pulse = 1;
+  // emit a bead that travels to its slot in the line
+  beads.push({ hue:f.hue, sat:f.sat, light:f.light, alien:f.alien,
+    x: CX+Math.cos(f.angle)*R, y: CY+Math.sin(f.angle)*R,
+    slot: struck.length, life: 1, fromAngle: f.angle });
+}
+
+const QUOTES = [
+  "every performance is a separate song.",
+  "we cannot speak of a variant — there is no original to be varied.",
+  "the preservation of tradition by the constant re-creation of it.",
+  "he is the tradition.",
+  "multiformity is essentially conservative — the same stock, re-sung.",
+  "the new enters only when one singer hears another.",
+];
+let qi = 0, qTimer = 240;
+const qEl = document.getElementById('quote');
+function cycleQuote(real){
+  qEl.textContent = QUOTES[qi % QUOTES.length];
+  qEl.style.color = real ? 'rgba(150,210,200,0.6)' : 'rgba(205,192,170,0.5)';
+  qi++;
+  setTimeout(()=>{ qEl.style.color = 'rgba(205,192,170,0)'; }, 5200);
+}
+
+const perfEl = document.getElementById('perf');
+const occEl = document.getElementById('occasion');
+
+function frame(){
+  ctx.fillStyle = 'rgba(8,8,13,0.32)';
+  ctx.fillRect(0,0,W,H);
+
+  // --- advance the playhead (the act of singing) ---
+  const prevPhase = phase;
+  phase += perfSpeed;
+  const sweepA = -Math.PI/2 + phase * Math.PI * 2;
+
+  // strike formulas as the playhead passes their angle (only those in the plan)
+  for (const idx of plan){
+    if (struck.includes(idx)) continue;
+    const fa = formulas[idx].angle;
+    const target = ((fa + Math.PI/2) / (Math.PI*2) + 1) % 1; // 0..1 phase of this formula
+    if (phase >= target && prevPhase < target){ struck.push(idx); strike(idx); }
+  }
+
+  // end of a performance: the line departs, a new (separate) song begins
+  if (phase >= 1){
+    phase = 0; performance++;
+    beads.forEach(b => b.life = Math.min(b.life, 0.6)); // let them fade
+    planPerformance();
+  }
+
+  // --- ring of formulas ---
+  // faint ring
+  ctx.strokeStyle = 'rgba(190,178,158,0.07)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2); ctx.stroke();
+
+  for (const f of formulas){
+    const x = CX+Math.cos(f.angle)*R, y = CY+Math.sin(f.angle)*R;
+    f.pulse *= 0.94;
+    const inPlan = plan.includes(formulas.indexOf(f));
+    const glow = 0.18 + (inPlan?0.22:0) + f.pulse*0.55;
+    const rad = 5 + f.pulse*9 + (f.alien?2:0);
+    const g = ctx.createRadialGradient(x,y,0,x,y,rad*3.5);
+    g.addColorStop(0, `hsla(${f.hue},${f.sat}%,${f.light}%,${glow})`);
+    g.addColorStop(1, `hsla(${f.hue},${f.sat}%,${f.light}%,0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x,y,rad*3.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = `hsla(${f.hue},${f.sat}%,${f.light+12}%,${0.5+f.pulse*0.5})`;
+    ctx.beginPath(); ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill();
+    if (f.alien){ // ring marking the imported frequency
+      ctx.strokeStyle = `hsla(${f.hue},${f.sat}%,${f.light}%,0.35)`;
+      ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x,y,rad+6,0,Math.PI*2); ctx.stroke();
+    }
+  }
+
+  // --- the playhead ---
+  const px = CX+Math.cos(sweepA)*R, py = CY+Math.sin(sweepA)*R;
+  ctx.strokeStyle = 'rgba(225,210,180,0.16)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(CX,CY); ctx.lineTo(px,py); ctx.stroke();
+  const pg = ctx.createRadialGradient(px,py,0,px,py,16);
+  pg.addColorStop(0,'rgba(245,232,200,0.7)'); pg.addColorStop(1,'rgba(245,232,200,0)');
+  ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(px,py,16,0,Math.PI*2); ctx.fill();
+
+  // --- the composed line: beads flow to their slots and form a line across center ---
+  const total = Math.max(1, struck.length);
+  const lineW = Math.min(W*0.7, R*2.4);
+  for (let i=beads.length-1;i>=0;i--){
+    const b = beads[i];
+    const slotX = CX - lineW/2 + (b.slot+0.5)/total * lineW;
+    const slotY = CY + R*0.46;
+    b.x += (slotX - b.x)*0.08; b.y += (slotY - b.y)*0.08;
+    b.life -= 0.0016;
+    if (b.life <= 0){ beads.splice(i,1); continue; }
+    const a = Math.min(1,b.life)*0.85;
+    const rad = b.alien ? 6 : 4.5;
+    const g = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,rad*3);
+    g.addColorStop(0,`hsla(${b.hue},${b.sat}%,${b.light}%,${a})`);
+    g.addColorStop(1,`hsla(${b.hue},${b.sat}%,${b.light}%,0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(b.x,b.y,rad*3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${b.hue},${b.sat}%,${b.light+15}%,${a})`;
+    ctx.beginPath(); ctx.arc(b.x,b.y,rad,0,Math.PI*2); ctx.fill();
+    // connect adjacent beads — the line of song
+    if (i>0){ const p=beads[i-1];
+      ctx.strokeStyle=`hsla(40,30%,70%,${a*0.18})`; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+    }
+  }
+
+  // --- other singers: the SOURCE inlet. genuinely new frequencies, from offscreen ---
+  spawnTimer--;
+  if (spawnTimer<=0){ spawnSinger(); spawnTimer = 520 + Math.floor(Math.random()*420); }
+  for (let i=singers.length-1;i>=0;i--){
+    const s = singers[i];
+    s.x += s.vx*s.sp*2.2; s.y += s.vy*s.sp*2.2;
+    s.trail.push({x:s.x,y:s.y}); if (s.trail.length>40) s.trail.shift();
+    const onscreen = s.x>-40 && s.x<W+40 && s.y>-40 && s.y<H+40;
+    const visible = reveal || onscreen;
+    if (visible){
+      // trail
+      for (let t=0;t<s.trail.length;t++){
+        const tp=s.trail[t], a=(t/s.trail.length)*(reveal?0.5:0.3);
+        ctx.fillStyle=`hsla(${s.hue},60%,62%,${a*0.5})`;
+        ctx.beginPath(); ctx.arc(tp.x,tp.y,1.6,0,Math.PI*2); ctx.fill();
+      }
+      const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,18);
+      g.addColorStop(0,`hsla(${s.hue},65%,64%,0.8)`); g.addColorStop(1,`hsla(${s.hue},65%,64%,0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(s.x,s.y,18,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=`hsla(${s.hue},70%,72%,0.9)`;
+      ctx.beginPath(); ctx.arc(s.x,s.y,4.5,0,Math.PI*2); ctx.fill();
+    }
+    // arrival: contact between traditions -> a new formula joins the ring
+    const dr = Math.hypot(s.x-s.tx, s.y-s.ty);
+    if (dr < 6 && !s.arrived){
+      s.arrived = true;
+      formulas.push({ hue:s.hue, sat:64, light:64, angle:s.targetA, alien:true, born:performance, pulse:1.4 });
+      // line of contact
+      cycleQuote(true);
+      singers.splice(i,1);
+      continue;
+    }
+    // remove singers that sailed past without arriving
+    if (s.arrived || (Math.hypot(s.x-CX,s.y-CY) > Math.max(W,H) && s.trail.length>20)) singers.splice(i,1);
+  }
+
+  // --- the repertoire spectrum: proof of what changes and what doesn't ---
+  // aperture (occasion) only rearranges; this bar gains a band ONLY on source contact.
+  const sbW = Math.min(W*0.5, 360), sbX = CX - sbW/2, sbY = H - 86, n = formulas.length;
+  for (let i=0;i<n;i++){
+    const f = formulas[i], bw = sbW/n;
+    ctx.fillStyle = `hsla(${f.hue},${f.sat}%,${f.light}%,${f.alien?0.85:0.5})`;
+    ctx.fillRect(sbX + i*bw, sbY, bw-1.5, 7);
+  }
+  ctx.fillStyle='rgba(190,178,158,0.22)';
+  ctx.font='10px Georgia';
+  ctx.textAlign='center';
+  ctx.fillText('repertoire', CX, sbY-7);
+
+  // labels
+  perfEl.textContent = `performance ${performance}`;
+  const lenWord = mx<0.33 ? 'a terse telling' : mx<0.66 ? 'the usual length' : 'an expansive night';
+  occEl.textContent = `the occasion asks for ${lenWord}`;
+
+  // periodic quotes (the ordinary kind, warm)
+  qTimer--; if (qTimer<=0){ cycleQuote(false); qTimer = 520 + Math.floor(Math.random()*260); }
+
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>

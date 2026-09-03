@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To Speak Is to Illuminate</title>
+<style>
+  :root{
+    --bg:#08090b; --ink:#e8e7e3; --dim:#8a8a86; --faint:#46464a;
+    --field:#15161a;            /* the dark medium */
+    --spark:#5fd0ff;            /* SACRED: the color of being perceived */
+    --other:#ffb15f;            /* a second sensorium, overheard */
+  }
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+    font-family:'Inter',-apple-system,'SF Pro Text',system-ui,sans-serif;color:var(--dim);
+    -webkit-font-smoothing:antialiased;cursor:crosshair;}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;}
+  .ui{position:fixed;z-index:3;pointer-events:none;}
+  .title{left:28px;top:24px;}
+  .title h1{font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink);margin:0;}
+  .title p{font-size:11px;letter-spacing:.01em;color:var(--faint);margin:5px 0 0;max-width:34ch;line-height:1.5;}
+  .hud{right:28px;top:24px;text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:10.5px;letter-spacing:.04em;color:var(--faint);line-height:1.8;}
+  .hud b{color:var(--dim);font-weight:500;}
+  .hud .on{color:var(--spark);}
+  .veil{position:fixed;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(60% 60% at 50% 50%,rgba(8,9,11,.4),var(--bg));
+    transition:opacity 1.4s ease;cursor:pointer;}
+  .veil.gone{opacity:0;pointer-events:none;}
+  .veil .c{text-align:center;max-width:30ch;}
+  .veil .big{font-size:26px;font-weight:600;color:var(--ink);letter-spacing:-0.01em;margin-bottom:14px;}
+  .veil .sub{font-size:12.5px;line-height:1.65;color:var(--dim);}
+  .veil .k{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint);margin-top:22px;letter-spacing:.05em;}
+  .veil .k b{color:var(--spark);font-weight:500;}
+  .foot{left:28px;bottom:22px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);
+    letter-spacing:.05em;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="ui title">
+  <h1>To Speak Is to Illuminate</h1>
+  <p>A field you cannot see except by sounding it. The pulse you emit is the only light there is — and everything that hears it hears you, too.</p>
+</div>
+<div class="ui hud" id="hud"></div>
+<div class="ui foot">music · claude field · 2026-06-14 · weakly electric</div>
+
+<div class="veil" id="veil">
+  <div class="c">
+    <div class="big">To Speak Is to Illuminate</div>
+    <div class="sub">The electric fish does not see its world and then signal about it. The signal <em>is</em> the seeing. To perceive, it must broadcast; to go silent is to go blind.</div>
+    <div class="k"><b>click / hold</b> to emit &nbsp;·&nbsp; <b>move</b> to swim &nbsp;·&nbsp; <b>F</b> a second fish &nbsp;·&nbsp; <b>space</b> a steady pulse</div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), g=cv.getContext('2d');
+const hud=document.getElementById('hud'), veil=document.getElementById('veil');
+let W,H,DPR=Math.min(devicePixelRatio||1,2);
+function size(){W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';}
+size(); addEventListener('resize',()=>{size();seedField();});
+
+// ── audio ───────────────────────────────────────────────────────────────
+let ac=null, master=null, started=false, conv=null;
+function start(){
+  if(started) return; started=true; veil.classList.add('gone');
+  ac=new (window.AudioContext||window.webkitAudioContext)();
+  master=ac.createGain(); master.gain.value=0; master.connect(ac.destination);
+  master.gain.linearRampToValueAtTime(0.9, ac.currentTime+1.2);
+  // a faint room — perception leaves a small acoustic tail in the medium
+  const wet=ac.createConvolver();
+  const len=ac.sampleRate*1.1, buf=ac.createBuffer(2,len,ac.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);}
+  wet.buffer=buf; const wg=ac.createGain(); wg.gain.value=0.22;
+  wet.connect(wg); wg.connect(master); conv=wet;
+}
+// one echo = one object answering one pulse. material shapes timbre.
+function echo(freq, amp, material, pan){
+  if(!ac) return;
+  const t=ac.currentTime;
+  const o=ac.createOscillator();
+  o.type = material>0.5 ? 'triangle' : 'sine';
+  o.frequency.setValueAtTime(freq,t);
+  // conductors ring up a touch; insulators sag — the fish reads capacitance as pitch-glide
+  o.frequency.exponentialRampToValueAtTime(freq*(material>0.5?1.05:0.95), t+0.18);
+  const bp=ac.createBiquadFilter(); bp.type='bandpass';
+  bp.frequency.value=freq*(material>0.5?1.6:1.0); bp.Q.value=material>0.5?7:2.5;
+  const env=ac.createGain(); env.gain.value=0;
+  const a=0.004, d=0.10+material*0.28;
+  env.gain.setValueAtTime(0,t);
+  env.gain.linearRampToValueAtTime(amp,t+a);
+  env.gain.exponentialRampToValueAtTime(0.0001,t+a+d);
+  const pn=ac.createStereoPanner? ac.createStereoPanner():null;
+  o.connect(bp); bp.connect(env);
+  if(pn){pn.pan.value=pan; env.connect(pn); pn.connect(master); pn.connect(conv);}
+  else {env.connect(master); env.connect(conv);}
+  o.start(t); o.stop(t+a+d+0.05);
+}
+// the click of one's own voice — emission is audible before the world answers
+function selfTick(other){
+  if(!ac) return; const t=ac.currentTime;
+  const o=ac.createOscillator(); o.type='square';
+  const f=other?86:128; o.frequency.setValueAtTime(f,t);
+  o.frequency.exponentialRampToValueAtTime(f*0.5,t+0.05);
+  const e=ac.createGain(); e.gain.value=0;
+  e.gain.linearRampToValueAtTime(other?0.05:0.09,t+0.002);
+  e.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
+  const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900;
+  o.connect(lp); lp.connect(e); e.connect(master);
+  o.start(t); o.stop(t+0.08);
+}
+// jamming: two sensoria too close in frequency beat against each other
+let jamOsc=null,jamGain=null;
+function jamTone(on,beat){
+  if(!ac) return;
+  if(on && !jamOsc){
+    jamOsc=ac.createOscillator(); jamOsc.type='sine'; jamOsc.frequency.value=60;
+    jamGain=ac.createGain(); jamGain.gain.value=0;
+    jamOsc.connect(jamGain); jamGain.connect(master); jamOsc.start();
+  }
+  if(jamGain) jamGain.gain.setTargetAtTime(on?0.06:0,ac.currentTime,0.15);
+  if(jamOsc && on) jamOsc.frequency.setTargetAtTime(58+beat*4,ac.currentTime,0.2);
+}
+
+// ── the field ────────────────────────────────────────────────────────────
+let objects=[];
+function seedField(){
+  objects=[]; const n=22;
+  for(let i=0;i<n;i++){
+    objects.push({
+      x:Math.random()*W, y:Math.random()*H,
+      r:(10+Math.random()*26)*DPR,
+      material:Math.random(),            // 0 insulator … 1 conductor
+      lit:0, litBy:0                     // 0=you, 1=other
+    });
+  }
+}
+seedField();
+
+// emitters: you (mouse) + an optional second fish
+const me={x:W/2,y:H/2,freq:0.9};
+const other={x:W*0.3,y:H*0.3,vx:0,vy:0,freq:0.86,on:false,t:0,emitTimer:0};
+let rings=[];   // expanding pulses {x,y,r,from,hit:Set,life,baseFreq}
+const SPEED=520*DPR;       // px/sec the pulse front travels
+const MAXR=()=>Math.hypot(W,H);
+
+function emit(x,y,from,baseFreq){
+  if(!started) return;
+  rings.push({x,y,r:0,from,hit:new Set(),life:1,baseFreq});
+  selfTick(from===1);
+}
+
+// pointer / keys
+let pointerDown=false, steady=false, steadyTimer=0;
+function toField(e){const x=(e.clientX)*DPR,y=(e.clientY)*DPR;me.x=x;me.y=y;return{x,y};}
+addEventListener('pointermove',e=>{ if(started) toField(e); });
+addEventListener('pointerdown',e=>{
+  if(!started){start();return;}
+  pointerDown=true; const p=toField(e); emit(p.x,p.y,0,me.freq);
+});
+addEventListener('pointerup',()=>pointerDown=false);
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault(); if(!started){start();return;} steady=!steady;}
+  if(e.key==='f'||e.key==='F'){ if(!started){start();return;} other.on=!other.on; if(!other.on) jamTone(false,0); }
+});
+veil.addEventListener('click',start);
+
+// ── loop ───────────────────────────────────────────────────────────────
+let last=0;
+function frame(ts){
+  const dt=Math.min(0.05,(ts-last)/1000||0); last=ts;
+
+  // continuous emission while held or in steady mode (the fish's ongoing EOD)
+  if(pointerDown){ steadyTimer-=dt; if(steadyTimer<=0){ emit(me.x,me.y,0,me.freq); steadyTimer=0.16; } }
+  else if(steady){ steadyTimer-=dt; if(steadyTimer<=0){ emit(me.x,me.y,0,me.freq); steadyTimer=0.5; } }
+
+  // second fish drifts and emits; jamming-avoidance nudges frequencies apart
+  if(other.on){
+    other.t+=dt;
+    other.x+=Math.cos(other.t*0.6)*40*DPR*dt + Math.cos(other.t*0.23)*70*DPR*dt;
+    other.y+=Math.sin(other.t*0.5)*40*DPR*dt + Math.sin(other.t*0.31)*70*DPR*dt;
+    other.x=(other.x+W)%W; other.y=(other.y+H)%H;
+    other.emitTimer-=dt; if(other.emitTimer<=0){ emit(other.x,other.y,1,other.freq); other.emitTimer=0.42; }
+    const df=Math.abs(me.freq-other.freq);
+    if(df<0.08){ jamTone(true,1-df/0.08);
+      // Jamming Avoidance Response: each shifts away from the other
+      me.freq+=0.6*dt; other.freq-=0.6*dt;
+    } else { jamTone(false,0); me.freq+= (0.9-me.freq)*0.5*dt; other.freq+=(0.86-other.freq)*0.5*dt; }
+  }
+
+  // advance pulses; when a front crosses an object it answers (sound + light)
+  for(const ring of rings){
+    const pr=ring.r; ring.r+=SPEED*dt; ring.life-=dt*0.22;
+    for(let oi=0;oi<objects.length;oi++){
+      if(ring.hit.has(oi)) continue;
+      const o=objects[oi];
+      const d=Math.hypot(o.x-ring.x,o.y-ring.y);
+      if(pr<=d && ring.r>=d){
+        ring.hit.add(oi);
+        const prox=Math.max(0,1-d/(MAXR()*0.65));
+        const amp=(0.05+prox*0.5)*ring.life;
+        if(amp>0.01){
+          const freq=ring.baseFreq*1000*(0.5+o.material*1.4)*(0.7+ (1-o.r/(36*DPR))*0.6);
+          echo(freq, amp, o.material, Math.max(-1,Math.min(1,(o.x/W*2-1))));
+          o.lit=Math.min(1,o.lit+0.6+prox*0.4); o.litBy=ring.from;
+        }
+      }
+    }
+  }
+  rings=rings.filter(r=>r.life>0 && r.r<MAXR()*1.1);
+  for(const o of objects) o.lit*=0.93;
+
+  draw();
+  hud.innerHTML =
+    `<b>pulses</b> ${rings.length.toString().padStart(2,'0')}<br>`+
+    `<b>self ƒ</b> ${me.freq.toFixed(2)}<br>`+
+    `<span class="${steady?'on':''}">steady ${steady?'◍':'○'}</span><br>`+
+    `<span class="${other.on?'on':''}">2nd fish ${other.on?'◍':'○'}</span>`;
+  requestAnimationFrame(frame);
+}
+
+function draw(){
+  // the medium never fully clears — perception leaves a fading trace
+  g.fillStyle='rgba(8,9,11,0.30)'; g.fillRect(0,0,W,H);
+
+  // pulse fronts: thin rings of the emitter's own signature color
+  for(const ring of rings){
+    const col=ring.from===1?'255,177,95':'95,208,255';
+    g.beginPath(); g.arc(ring.x,ring.y,ring.r,0,Math.PI*2);
+    g.strokeStyle=`rgba(${col},${0.10*ring.life})`; g.lineWidth=1.5*DPR; g.stroke();
+  }
+
+  // objects: invisible until a pulse touches them — being perceived = being lit
+  for(const o of objects){
+    if(o.lit<0.02) continue;
+    const col=o.litBy===1?'255,177,95':'95,208,255';
+    const rad=o.r*(0.6+o.lit*0.7);
+    const grad=g.createRadialGradient(o.x,o.y,0,o.x,o.y,rad*2.4);
+    grad.addColorStop(0,`rgba(${col},${0.55*o.lit})`);
+    grad.addColorStop(0.4,`rgba(${col},${0.16*o.lit})`);
+    grad.addColorStop(1,`rgba(${col},0)`);
+    g.fillStyle=grad; g.beginPath(); g.arc(o.x,o.y,rad*2.4,0,Math.PI*2); g.fill();
+    // a brighter core hints at material: conductors a sharp point, insulators a soft smear
+    g.fillStyle=`rgba(${col},${(0.3+0.6*o.material)*o.lit})`;
+    g.beginPath(); g.arc(o.x,o.y,rad*(0.3+0.4*(1-o.material)),0,Math.PI*2); g.fill();
+  }
+
+  // the emitters themselves — faint, only a body that speaks
+  drawFish(me.x,me.y,'95,208,255',0.5);
+  if(other.on) drawFish(other.x,other.y,'255,177,95',0.45);
+}
+function drawFish(x,y,col,a){
+  g.beginPath(); g.arc(x,y,3.2*DPR,0,Math.PI*2);
+  g.fillStyle=`rgba(${col},${a})`; g.fill();
+  g.beginPath(); g.arc(x,y,9*DPR,0,Math.PI*2);
+  g.strokeStyle=`rgba(${col},${a*0.3})`; g.lineWidth=1*DPR; g.stroke();
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

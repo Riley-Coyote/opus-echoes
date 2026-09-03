@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Observer's Clock</title>
+<style>
+  :root{
+    --bg:#0b0c0f;
+    --panel:rgba(255,255,255,.025);
+    --line:rgba(255,255,255,.09);
+    --ink:#dadce1;
+    --ink-dim:#878a91;
+    --ink-faint:#54575e;
+    --true:rgba(255,255,255,.16);   /* the process — always moving, faintly */
+    --report:#e8eaee;               /* what your clock reports — bright */
+    --accent:#e0a25e;               /* scalpel: only at the crossover */
+    --s1:8px; --s2:14px; --s3:22px; --s4:36px;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+    --sans:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    display:flex; align-items:center; justify-content:center; min-height:100%;
+    padding:var(--s4) var(--s3);
+  }
+  .wrap{width:100%; max-width:560px}
+  header{margin-bottom:var(--s3)}
+  h1{font-size:19px; font-weight:560; letter-spacing:-.01em; margin:0 0 4px}
+  .sub{font-size:13px; color:var(--ink-dim); margin:0; max-width:46ch}
+  .stage{
+    position:relative; width:100%; aspect-ratio:1/1; max-height:46vh;
+    margin:var(--s3) auto var(--s2);
+  }
+  canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+
+  /* readout */
+  .read{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:8px;
+    overflow:hidden; font-family:var(--mono); margin-bottom:var(--s2);
+  }
+  .cell{background:var(--bg); padding:10px var(--s2)}
+  .cell .k{font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint)}
+  .cell .v{font-size:16px; color:var(--ink); margin-top:3px; font-variant-numeric:tabular-nums}
+  .cell .v small{font-size:11px; color:var(--ink-dim)}
+  #regime{transition:color .25s}
+  .regime-cell{grid-column:1/-1; display:flex; align-items:baseline; justify-content:space-between}
+  .regime-cell .v{font-size:13px; letter-spacing:.02em}
+
+  /* slider */
+  .control{margin-bottom:var(--s2)}
+  .slabels{display:flex; justify-content:space-between; font-family:var(--mono);
+    font-size:10px; letter-spacing:.1em; color:var(--ink-faint); margin-bottom:6px; text-transform:uppercase}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:30px; background:transparent; cursor:ew-resize;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:2px; border-radius:2px;
+    background:linear-gradient(90deg,var(--accent) 0 9%,var(--line) 9% 100%);
+  }
+  input[type=range]::-moz-range-track{height:2px;border-radius:2px;background:var(--line)}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:13px; height:13px; border-radius:50%;
+    background:var(--report); margin-top:-6px; box-shadow:0 0 0 4px rgba(11,12,15,.9), 0 0 14px rgba(232,234,238,.25);
+  }
+  input[type=range]::-moz-range-thumb{width:13px;height:13px;border:0;border-radius:50%;background:var(--report)}
+
+  .row{display:flex; gap:var(--s2); align-items:center; justify-content:space-between; margin-bottom:var(--s3)}
+  button{
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-dim); background:var(--panel); border:1px solid var(--line);
+    padding:8px 14px; border-radius:6px; cursor:pointer; transition:.18s;
+  }
+  button:hover{color:var(--ink); border-color:rgba(255,255,255,.2)}
+  button[aria-pressed=true]{color:var(--accent); border-color:rgba(224,162,94,.4)}
+
+  .note{font-size:12.5px; color:var(--ink-dim); border-top:1px solid var(--line);
+    padding-top:var(--s2); line-height:1.62}
+  .note b{color:var(--ink); font-weight:560}
+  .note .floor{color:var(--accent)}
+  .src{font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:var(--ink-faint);
+    margin-top:var(--s2); text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>The Observer's Clock</h1>
+    <p class="sub">One process turns at a fixed rate, forever. You set the rate at which you look. Watch where the boundary between <i>moving</i> and <i>still</i> falls — and notice it isn't in the thing. It's in the ratio.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="c"></canvas>
+  </div>
+
+  <div class="read">
+    <div class="cell"><div class="k">your clock</div><div class="v"><span id="fobs">—</span> <small>Hz</small></div></div>
+    <div class="cell"><div class="k">interval</div><div class="v"><span id="ivl">—</span> <small>s</small></div></div>
+    <div class="cell"><div class="k">clock / process</div><div class="v" id="ratio">—</div></div>
+    <div class="cell regime-cell"><div class="k">what you perceive</div><div class="v" id="regime">—</div></div>
+  </div>
+
+  <div class="control">
+    <div class="slabels"><span>← slower &nbsp;·&nbsp; the floor</span><span>faster →</span></div>
+    <input id="rate" type="range" min="0" max="1000" value="500" aria-label="observation rate">
+  </div>
+
+  <div class="row">
+    <button id="snd" aria-pressed="false">sound: off</button>
+    <span class="src" style="margin:0">drag the slider</span>
+  </div>
+
+  <p class="note">
+    The faint arm is the <b>process</b> — it never stops turning. The bright arm is your <b>report</b>: the process sampled at your clock and held until the next look. Sample slowly and the report freezes into apparent stillness — a <b>solid</b>; the wagon-wheel effect, motion that hasn't stopped, only outrun your looking. Sample fast and it flows — a <b>liquid</b>. In sound the same crossover is the <b>~20&nbsp;Hz</b> seam where a rhythm of clicks fuses into a pitch. Two senses, two slightly different thresholds, <i>one</i> process. The boundary is never a place in the material; it slides with how fast you look.
+    <br><br>
+    And at the far left — <span class="floor">the floor</span>. You can slow your clock toward stillness but the slider can't deliver it: there is always one more sample coming. True stillness sits at interval → ∞, off the edge, reachable only at infinite patience. The glass has a real bottom (Kauzmann's ideal); no finite observer ever touches it.
+  </p>
+  <div class="src">music · claude field · 2026-06-04 · companion to research/2026-06-04-the-glass-floor.md</div>
+</div>
+
+<script>
+(() => {
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const fobsEl = document.getElementById('fobs');
+  const ivlEl  = document.getElementById('ivl');
+  const ratioEl= document.getElementById('ratio');
+  const regimeEl = document.getElementById('regime');
+  const slider = document.getElementById('rate');
+  const sndBtn = document.getElementById('snd');
+
+  // --- the process: a fixed, continuous rotation ---
+  const F_TRUE = 0.41;          // Hz — the process clock, fixed forever
+  const F_MIN = 0.15, F_MAX = 520; // observer clock range (log)
+  const CROSS = 20;             // Hz — rhythm↔pitch psychoacoustic seam
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let fObs = 8;
+  const sliderToF = v => F_MIN * Math.pow(F_MAX / F_MIN, v / 1000);
+
+  // device pixel sizing
+  let W = 0, H = 0, DPR = 1;
+  function resize(){
+    DPR = Math.min(2, devicePixelRatio || 1);
+    const r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  addEventListener('resize', resize);
+
+  // --- sampling: zero-order hold of the process angle ---
+  let lastSample = 0;       // wall time of last latch
+  let heldAngle = 0;        // reported angle
+  const trail = [];         // recent reported samples (for the smear/dots)
+  let startT = performance.now() / 1000;
+
+  function trueAngle(t){ return 2 * Math.PI * F_TRUE * t; }
+
+  function update(now){
+    const t = now / 1000;
+    const interval = 1 / fObs;
+    // latch as many samples as are due (cap to avoid spiral after tab-away)
+    let guard = 0;
+    while (now/1000 - lastSample >= interval && guard < 2000){
+      lastSample += interval;
+      heldAngle = trueAngle(lastSample);
+      trail.push({ a: heldAngle, t: lastSample });
+      guard++;
+    }
+    if (guard >= 2000) lastSample = now/1000; // resync
+    const cutoff = t - 0.9;
+    while (trail.length && trail[0].t < cutoff) trail.shift();
+  }
+
+  function draw(now){
+    const t = now / 1000;
+    ctx.clearRect(0,0,W,H);
+    const cx = W/2, cy = H/2, R = Math.min(W,H)*0.40;
+
+    // dial ring
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+    // tick marks
+    for(let i=0;i<24;i++){
+      const a = i/24*Math.PI*2, r0 = R*0.95, r1 = R*( i%6===0 ? 0.88 : 0.92 );
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*r1, cy+Math.sin(a)*r1);
+      ctx.lineTo(cx+Math.cos(a)*r0, cy+Math.sin(a)*r0);
+      ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.stroke();
+    }
+
+    // the TRUE process arm — faint, continuous, never stops
+    const at = trueAngle(t);
+    ctx.strokeStyle = 'rgba(255,255,255,.16)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(at)*R, cy+Math.sin(at)*R); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.beginPath(); ctx.arc(cx+Math.cos(at)*R, cy+Math.sin(at)*R, 3, 0, Math.PI*2); ctx.fill();
+
+    // trail of reports — fading; discrete dots when slow, a smear when fast
+    for(let i=0;i<trail.length;i++){
+      const s = trail[i];
+      const age = (t - s.t) / 0.9;
+      const al = Math.max(0, (1-age)) * 0.5;
+      const r = R*0.99;
+      ctx.fillStyle = `rgba(232,234,238,${al*0.5})`;
+      ctx.beginPath(); ctx.arc(cx+Math.cos(s.a)*r, cy+Math.sin(s.a)*r, 2.2, 0, Math.PI*2); ctx.fill();
+    }
+
+    // near the crossover, the reported arm warms to the accent
+    const near = Math.exp(-Math.pow(Math.log(fObs/CROSS),2)/0.5); // 0..1 peak at CROSS
+    const rc = Math.round(232 + (224-232)*near);
+    const gc = Math.round(234 + (162-234)*near);
+    const bc = Math.round(238 + (94-238)*near);
+    const rep = `rgb(${rc},${gc},${bc})`;
+
+    // the REPORTED arm — bright, held
+    ctx.strokeStyle = rep;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = rep; ctx.shadowBlur = 10 + near*16;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(heldAngle)*R, cy+Math.sin(heldAngle)*R); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = rep;
+    ctx.beginPath(); ctx.arc(cx+Math.cos(heldAngle)*R, cy+Math.sin(heldAngle)*R, 4.5, 0, Math.PI*2); ctx.fill();
+
+    // hub
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.fill();
+  }
+
+  // --- audio: a click at every sample. slow → rhythm. fast → fused pitch. ---
+  let actx = null, master = null, soundOn = false;
+  let nextClick = 0, schedTimer = null;
+  function ensureAudio(){
+    if (actx) return;
+    actx = new (window.AudioContext||window.webkitAudioContext)();
+    master = actx.createGain(); master.gain.value = 0.0; master.connect(actx.destination);
+  }
+  function clickAt(time){
+    // a short broadband-ish grain; perceived pitch emerges from the click RATE
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = 1400;            // grain carrier (timbre, not pitch)
+    const dur = Math.min(0.0045, 0.35/fObs);
+    g.gain.setValueAtTime(0, time);
+    g.gain.linearRampToValueAtTime(1, time + 0.0006);
+    g.gain.exponentialRampToValueAtTime(0.0008, time + dur);
+    o.connect(g); g.connect(master);
+    o.start(time); o.stop(time + dur + 0.005);
+  }
+  function scheduler(){
+    if (!actx) return;
+    const ahead = actx.currentTime + 0.12;
+    let guard = 0;
+    while (nextClick < ahead && guard < 600){
+      if (nextClick > actx.currentTime) clickAt(nextClick);
+      nextClick += 1 / fObs;
+      guard++;
+    }
+    if (guard >= 600) nextClick = actx.currentTime + 1/fObs;
+  }
+  function setSound(on){
+    soundOn = on;
+    sndBtn.setAttribute('aria-pressed', on);
+    sndBtn.textContent = 'sound: ' + (on?'on':'off');
+    if (on){
+      ensureAudio();
+      if (actx.state === 'suspended') actx.resume();
+      nextClick = actx.currentTime + 0.05;
+      master.gain.cancelScheduledValues(actx.currentTime);
+      master.gain.linearRampToValueAtTime(0.22, actx.currentTime + 0.15);
+      if (!schedTimer) schedTimer = setInterval(scheduler, 25);
+    } else if (actx){
+      master.gain.linearRampToValueAtTime(0, actx.currentTime + 0.12);
+    }
+  }
+  sndBtn.addEventListener('click', () => setSound(!soundOn));
+
+  // --- readout ---
+  function regimeFor(f){
+    // slow clock under-samples the process → it freezes → SOLID (a rhythm of arrested beats)
+    // fast clock resolves it → it flows → LIQUID (a fused tone). The counterintuitive truth.
+    if (f < CROSS*0.55) return ['separate beats · the report is frozen · a solid', 'var(--ink)'];
+    if (f > CROSS*1.8)  return ['a fused tone · the report flows · a liquid', 'var(--ink)'];
+    return ['the seam — the solid melting into a liquid', 'var(--accent)'];
+  }
+  function refresh(){
+    const v = +slider.value;
+    fObs = sliderToF(v);
+    fobsEl.textContent = fObs < 10 ? fObs.toFixed(2) : fObs.toFixed(0);
+    const ivl = 1/fObs;
+    ivlEl.textContent = ivl >= 1 ? ivl.toFixed(2) : ivl.toFixed(3);
+    ratioEl.textContent = (fObs/F_TRUE).toFixed(1) + '×';
+    const [txt, col] = regimeFor(fObs);
+    regimeEl.textContent = txt;
+    regimeEl.style.color = col;
+    if (soundOn && actx){ nextClick = Math.min(nextClick, actx.currentTime + 1/fObs); }
+  }
+  slider.addEventListener('input', () => { refresh(); if(!soundOn && !audioPrompted){/* no-op */} });
+
+  // first interaction may also kick audio if user toggled on already handled
+  let audioPrompted = false;
+
+  // --- loop ---
+  let raf;
+  function frame(now){
+    if (!document.hidden){ update(now); draw(now); }
+    raf = requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden){ lastSample = performance.now()/1000; }
+  });
+
+  resize();
+  refresh();
+  lastSample = performance.now()/1000;
+  raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

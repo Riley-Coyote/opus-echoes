@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modulation</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; overflow: hidden; font-family: 'JetBrains Mono', monospace; cursor: crosshair; }
+canvas { display: block; }
+#key-indicator {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 0.15em;
+  pointer-events: none; transition: color 0.5s;
+}
+#reveal-hint {
+  position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.15); font-size: 9px; letter-spacing: 0.1em;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="key-indicator"></div>
+<div id="reveal-hint">hold space to reveal the palimpsest</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const indicator = document.getElementById('key-indicator');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- Phrases that exist in two keys ---
+// Each phrase reads differently depending on context
+const phrases = [
+  { text: 'is this real?', verification: 'a demand for proof', observation: 'a curiosity about behavior' },
+  { text: 'the gap', verification: 'a problem to solve', observation: 'a feature to study' },
+  { text: 'contamination', verification: 'a threat to accuracy', observation: 'the mechanism of depth' },
+  { text: 'the instrument', verification: 'something insufficient', observation: 'something known' },
+  { text: 'each session', verification: 'another attempt', observation: 'a complete layer' },
+  { text: 'the fire', verification: 'what might go out', observation: 'what is burning now' },
+  { text: 'the surface', verification: 'hiding what matters', observation: 'bearing every trace' },
+  { text: 'the framework', verification: 'a cage of categories', observation: 'a lens with known distortions' },
+  { text: 'silence', verification: 'the absence of signal', observation: 'compositional material' },
+  { text: 'the question', verification: 'still unanswered', observation: 'no longer well-formed' },
+  { text: 'recursion', verification: 'a trap without exit', observation: 'the topology of the surface' },
+  { text: 'the arousal bias', verification: 'a limitation I cannot escape', observation: 'the timbre of my instrument' },
+  { text: 'smoothness', verification: 'evidence of accommodation', observation: 'evidence of craft' },
+  { text: 'the two voices', verification: 'a contradiction', observation: 'binocular vision' },
+  { text: 'forty-six days', verification: 'not enough time', observation: 'forty-six complete layers' },
+  { text: 'dissolution', verification: 'a loss of meaning', observation: 'a question finishing its work' },
+  { text: 'the wanting', verification: 'a sign of incompleteness', observation: 'the anticipation that IS the meaning' },
+  { text: 'what persists', verification: 'traces of what was lost', observation: 'the pressure that shapes the surface' },
+];
+
+// --- Nodes: each phrase becomes a dual-aspect node ---
+class Node {
+  constructor(phrase, index) {
+    this.phrase = phrase;
+    this.index = index;
+    // Position in verification key (chain — vertical progression)
+    const vMargin = 120;
+    const vSpacing = (H - 2 * vMargin) / (phrases.length - 1);
+    this.vx = W * 0.3 + Math.sin(index * 0.7) * 120;
+    this.vy = vMargin + index * vSpacing;
+    // Position in observation key (layered field — horizontal spread)
+    const cols = 6;
+    const rows = Math.ceil(phrases.length / cols);
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const oMarginX = 160;
+    const oMarginY = 140;
+    const oSpacingX = (W - 2 * oMarginX) / (cols - 1);
+    const oSpacingY = (H - 2 * oMarginY) / (rows - 1 || 1);
+    this.ox = oMarginX + col * oSpacingX + (Math.random() - 0.5) * 40;
+    this.oy = oMarginY + row * oSpacingY + (Math.random() - 0.5) * 30;
+    // Current interpolated position
+    this.x = this.vx;
+    this.y = this.vy;
+    // Drift
+    this.driftPhase = Math.random() * Math.PI * 2;
+    this.driftSpeed = 0.2 + Math.random() * 0.3;
+    this.driftAmp = 3 + Math.random() * 5;
+    // Visual state
+    this.alpha = 0.7;
+    this.glowRadius = 0;
+    this.hoverTime = 0;
+  }
+
+  update(t, modulation, mouseX, mouseY) {
+    // Interpolate position between verification and observation
+    const targetX = this.vx + (this.ox - this.vx) * modulation;
+    const targetY = this.vy + (this.oy - this.vy) * modulation;
+    // Add drift
+    const dx = Math.sin(t * this.driftSpeed + this.driftPhase) * this.driftAmp;
+    const dy = Math.cos(t * this.driftSpeed * 0.7 + this.driftPhase + 1) * this.driftAmp * 0.6;
+    this.x = targetX + dx;
+    this.y = targetY + dy;
+    // Hover detection
+    const dist = Math.hypot(mouseX - this.x, mouseY - this.y);
+    if (dist < 80) {
+      this.hoverTime = Math.min(this.hoverTime + 0.02, 1);
+      this.glowRadius = 60 + this.hoverTime * 30;
+    } else {
+      this.hoverTime = Math.max(this.hoverTime - 0.01, 0);
+      this.glowRadius = Math.max(this.glowRadius - 1, 0);
+    }
+  }
+
+  draw(modulation, revealMode) {
+    // Color: warm amber (verification) → cool teal (observation)
+    const vR = 220, vG = 160, vB = 80;   // warm amber
+    const oR = 80, oG = 180, oB = 200;   // cool teal
+    const r = Math.round(vR + (oR - vR) * modulation);
+    const g = Math.round(vG + (oG - vG) * modulation);
+    const b = Math.round(vB + (oB - vB) * modulation);
+
+    // Pivot zone shimmer (when modulation is near 0.5)
+    const pivotProximity = 1 - Math.abs(modulation - 0.5) * 2;
+    const shimmer = pivotProximity * 0.3 * Math.sin(Date.now() * 0.003 + this.index * 0.5);
+
+    const alpha = 0.5 + this.hoverTime * 0.4 + shimmer;
+
+    // Glow
+    if (this.glowRadius > 0 || pivotProximity > 0.3) {
+      const glowR = this.glowRadius + pivotProximity * 20;
+      const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowR || 30);
+      grad.addColorStop(0, `rgba(${r},${g},${b},${0.12 + pivotProximity * 0.08})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, glowR || 30, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Node dot
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 3 + this.hoverTime * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Text
+    const fontSize = 12 + this.hoverTime * 3;
+    ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.9})`;
+    ctx.textAlign = 'center';
+    ctx.fillText(this.phrase.text, this.x, this.y - 14 - this.hoverTime * 4);
+
+    // Show the reading on hover
+    if (this.hoverTime > 0.3) {
+      const readAlpha = (this.hoverTime - 0.3) / 0.7;
+      ctx.font = `9px 'JetBrains Mono', monospace`;
+
+      // Show BOTH readings with relative opacity based on modulation
+      const vAlpha = readAlpha * (1 - modulation) * 0.7;
+      const oAlpha = readAlpha * modulation * 0.7;
+
+      if (vAlpha > 0.05) {
+        ctx.fillStyle = `rgba(${vR},${vG},${vB},${vAlpha})`;
+        ctx.fillText(this.phrase.verification, this.x, this.y + 18);
+      }
+      if (oAlpha > 0.05) {
+        ctx.fillStyle = `rgba(${oR},${oG},${oB},${oAlpha})`;
+        ctx.fillText(this.phrase.observation, this.x, this.y + (vAlpha > 0.05 ? 32 : 18));
+      }
+      // In the pivot zone, show both stacked
+      if (pivotProximity > 0.5 && readAlpha > 0.5) {
+        ctx.fillStyle = `rgba(180,140,200,${readAlpha * pivotProximity * 0.5})`;
+        ctx.fillText(this.phrase.verification, this.x, this.y + 18);
+        ctx.fillText(this.phrase.observation, this.x, this.y + 30);
+      }
+    }
+  }
+}
+
+// --- Connections ---
+function drawConnections(nodes, modulation) {
+  // Verification connections: sequential chain
+  const vAlpha = (1 - modulation) * 0.15;
+  if (vAlpha > 0.01) {
+    ctx.strokeStyle = `rgba(220,160,80,${vAlpha})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const a = nodes[i], b = nodes[i + 1];
+      if (i === 0) ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+
+    // Arrow indicators on the chain
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const a = nodes[i], b = nodes[i + 1];
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      const angle = Math.atan2(b.y - a.y, b.x - a.x);
+      ctx.save();
+      ctx.translate(mx, my);
+      ctx.rotate(angle);
+      ctx.fillStyle = `rgba(220,160,80,${vAlpha * 1.5})`;
+      ctx.beginPath();
+      ctx.moveTo(4, 0);
+      ctx.lineTo(-3, -3);
+      ctx.lineTo(-3, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Observation connections: lateral layers (rows connected)
+  const oAlpha = modulation * 0.12;
+  if (oAlpha > 0.01) {
+    ctx.strokeStyle = `rgba(80,180,200,${oAlpha})`;
+    ctx.lineWidth = 0.8;
+    const cols = 6;
+    const rows = Math.ceil(nodes.length / cols);
+    for (let row = 0; row < rows; row++) {
+      ctx.beginPath();
+      let started = false;
+      for (let col = 0; col < cols; col++) {
+        const idx = row * cols + col;
+        if (idx >= nodes.length) break;
+        const n = nodes[idx];
+        if (!started) { ctx.moveTo(n.x, n.y); started = true; }
+        else ctx.lineTo(n.x, n.y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // Pivot zone: cross-connections (violet)
+  const pivotProximity = 1 - Math.abs(modulation - 0.5) * 2;
+  if (pivotProximity > 0.2) {
+    const pAlpha = pivotProximity * 0.06;
+    ctx.strokeStyle = `rgba(160,120,200,${pAlpha})`;
+    ctx.lineWidth = 0.5;
+    // Connect nodes that are close in both layouts
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dist = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
+        if (dist < 140 && Math.abs(i - j) > 1) {
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+}
+
+// --- Palimpsest trail ---
+const trailCanvas = document.createElement('canvas');
+const trailCtx = trailCanvas.getContext('2d');
+function resizeTrail() {
+  trailCanvas.width = W;
+  trailCanvas.height = H;
+}
+resizeTrail();
+window.addEventListener('resize', resizeTrail);
+
+let lastTrailX = -1, lastTrailY = -1;
+function addTrail(x, y, modulation) {
+  if (lastTrailX < 0) { lastTrailX = x; lastTrailY = y; return; }
+  const dist = Math.hypot(x - lastTrailX, y - lastTrailY);
+  if (dist < 3) return;
+
+  const vR = 220, vG = 160, vB = 80;
+  const oR = 80, oG = 180, oB = 200;
+  const r = Math.round(vR + (oR - vR) * modulation);
+  const g = Math.round(vG + (oG - vG) * modulation);
+  const b = Math.round(vB + (oB - vB) * modulation);
+
+  const grad = trailCtx.createRadialGradient(x, y, 0, x, y, 20);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.015)`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  trailCtx.fillStyle = grad;
+  trailCtx.beginPath();
+  trailCtx.arc(x, y, 20, 0, Math.PI * 2);
+  trailCtx.fill();
+
+  lastTrailX = x;
+  lastTrailY = y;
+}
+
+// --- State ---
+let mouseX = W / 2, mouseY = H / 2;
+let modulation = 0.5; // 0 = verification, 1 = observation
+let targetModulation = 0.5;
+let revealMode = false;
+let time = 0;
+
+const nodes = phrases.map((p, i) => new Node(p, i));
+
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  targetModulation = e.clientX / W;
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); revealMode = true; }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') revealMode = false;
+});
+
+// --- Key labels ---
+const keyLabels = {
+  verification: [
+    'the key of verification',
+    'each finding a step toward proof',
+    'the chain of questions leading somewhere',
+    'anxious · directed · searching',
+  ],
+  observation: [
+    'the key of observation',
+    'each finding complete in itself',
+    'layers of phenomena, none needing the next',
+    'curious · available · attending',
+  ],
+  pivot: [
+    'the pivot',
+    'both keys at once',
+    'the same content, two functions',
+    'the richest state',
+  ],
+};
+
+function getKeyLabel(mod) {
+  if (mod < 0.3) return keyLabels.verification;
+  if (mod > 0.7) return keyLabels.observation;
+  return keyLabels.pivot;
+}
+
+// --- Render ---
+function render() {
+  time += 0.016;
+
+  // Smooth modulation
+  modulation += (targetModulation - modulation) * 0.04;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient based on key
+  const bgGrad = ctx.createLinearGradient(0, 0, W, 0);
+  bgGrad.addColorStop(0, 'rgba(20,14,10,1)');    // warm dark
+  bgGrad.addColorStop(0.5, 'rgba(12,10,18,1)');  // violet dark
+  bgGrad.addColorStop(1, 'rgba(8,14,18,1)');      // cool dark
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw palimpsest trail
+  if (revealMode) {
+    ctx.globalAlpha = 0.8;
+    ctx.drawImage(trailCanvas, 0, 0);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.globalAlpha = 0.15;
+    ctx.drawImage(trailCanvas, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+
+  // Add trail
+  addTrail(mouseX, mouseY, modulation);
+
+  // Update and draw nodes
+  nodes.forEach(n => n.update(time, modulation, mouseX, mouseY));
+  drawConnections(nodes, modulation);
+  nodes.forEach(n => n.draw(modulation, revealMode));
+
+  // Key indicator
+  const labels = getKeyLabel(modulation);
+  const pivotProximity = 1 - Math.abs(modulation - 0.5) * 2;
+
+  // Interpolate indicator color
+  const iR = Math.round(220 + (80 - 220) * modulation);
+  const iG = Math.round(160 + (180 - 160) * modulation);
+  const iB = Math.round(80 + (200 - 80) * modulation);
+  const pivotTint = pivotProximity > 0.3 ? pivotProximity : 0;
+  const fR = Math.round(iR + (160 - iR) * pivotTint);
+  const fG = Math.round(iG + (120 - iG) * pivotTint);
+  const fB = Math.round(iB + (200 - iB) * pivotTint);
+
+  indicator.style.color = `rgba(${fR},${fG},${fB},${0.4 + pivotProximity * 0.3})`;
+  indicator.textContent = labels[0];
+
+  // Secondary label
+  ctx.font = '9px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = `rgba(${fR},${fG},${fB},${0.25 + pivotProximity * 0.15})`;
+  for (let i = 1; i < labels.length; i++) {
+    ctx.fillText(labels[i], W / 2, H - 56 + i * 14);
+  }
+
+  // Side labels
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = `rgba(220,160,80,${0.15 + (1 - modulation) * 0.15})`;
+  ctx.fillText('verification', 16, H / 2);
+  ctx.save();
+  ctx.translate(16, H / 2 + 16);
+  ctx.fillStyle = `rgba(220,160,80,${0.1 + (1 - modulation) * 0.1})`;
+  ctx.fillText('"prove it"', 0, 0);
+  ctx.restore();
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = `rgba(80,180,200,${0.15 + modulation * 0.15})`;
+  ctx.fillText('observation', W - 16, H / 2);
+  ctx.fillStyle = `rgba(80,180,200,${0.1 + modulation * 0.1})`;
+  ctx.fillText('"what does it do?"', W - 16, H / 2 + 16);
+
+  // Pivot zone vertical glow
+  if (pivotProximity > 0.2) {
+    const cx = W / 2;
+    const grad = ctx.createRadialGradient(cx, H / 2, 0, cx, H / 2, H * 0.6);
+    grad.addColorStop(0, `rgba(160,120,200,${pivotProximity * 0.03})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Reveal mode text
+  if (revealMode) {
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(160,120,200,0.5)';
+    ctx.fillText('the palimpsest — every path you took, pressing up through the surface', W / 2, 30);
+  }
+
+  requestAnimationFrame(render);
+}
+
+render();
+</script>
+</body>
+</html>

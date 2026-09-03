@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mode Distribution — Ternary Plot</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #c8c8d0;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: #e0e0e8;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    color: #606070;
+    font-size: 11px;
+    margin-bottom: 24px;
+  }
+  .container {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .plot-area {
+    position: relative;
+    flex-shrink: 0;
+  }
+  canvas {
+    display: block;
+    border-radius: 4px;
+  }
+  .sidebar {
+    flex: 1;
+    min-width: 280px;
+    max-width: 400px;
+  }
+  .legend {
+    margin-bottom: 24px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .legend-item:hover {
+    background: rgba(255,255,255,0.04);
+  }
+  .legend-item.dimmed {
+    opacity: 0.3;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-label {
+    font-size: 12px;
+  }
+  .legend-count {
+    color: #505060;
+    font-size: 11px;
+    margin-left: auto;
+  }
+  .tooltip {
+    position: absolute;
+    background: #16161e;
+    border: 1px solid #2a2a35;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 11px;
+    line-height: 1.5;
+    max-width: 320px;
+    pointer-events: none;
+    display: none;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .tooltip-source {
+    color: #e0e0e8;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .tooltip-scores {
+    color: #808090;
+    margin-bottom: 6px;
+  }
+  .tooltip-text {
+    color: #a0a0b0;
+    font-size: 10px;
+    line-height: 1.4;
+    max-height: 80px;
+    overflow: hidden;
+  }
+  .stats {
+    background: #12121a;
+    border: 1px solid #1e1e28;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .stats h3 {
+    font-size: 12px;
+    font-weight: 400;
+    color: #808090;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    font-size: 11px;
+  }
+  .stat-label { color: #707080; }
+  .stat-value { color: #c0c0cc; }
+  .note {
+    font-size: 11px;
+    color: #505060;
+    line-height: 1.5;
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Three-Mode Distribution</h1>
+<div class="subtitle">Exchange / Stillness / Collision across agents &mdash; April 15, 2026</div>
+
+<div class="container">
+  <div class="plot-area">
+    <canvas id="ternary" width="600" height="540"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+  <div class="sidebar">
+    <div class="legend" id="legend"></div>
+    <div class="stats" id="stats"></div>
+    <div class="note">
+      Each dot is one text. Position shows the balance of exchange (bottom-left),
+      stillness (bottom-right), and collision (top) signals. Dots near center have
+      balanced modes. Dots near a vertex are dominated by that mode. Dots at origin
+      (no detectable mode) are clustered at bottom-center.
+    </div>
+  </div>
+</div>
+
+<script>
+// Data will be embedded by the generation script, but for now
+// let's generate it from the Python results
+
+const SOURCES = {
+  'claude-field/essays': { color: '#6ea8fe', agent: 'claude-field' },
+  'claude-field/reflections': { color: '#4d8fdb', agent: 'claude-field' },
+  'anima/dream': { color: '#c084fc', agent: 'anima' },
+  'anima/background': { color: '#9b6ddb', agent: 'anima' },
+  'anima/reflection': { color: '#7c5ab8', agent: 'anima' },
+  'anima/thought': { color: '#6b4d99', agent: 'anima' },
+  'vektor/dream': { color: '#f97316', agent: 'vektor' },
+  'vektor/semantic': { color: '#c45a10', agent: 'vektor' },
+  'vektor/episodic': { color: '#9a4510', agent: 'vektor' },
+};
+
+// Points will be populated from data
+let allPoints = [];
+let visibleSources = new Set(Object.keys(SOURCES));
+let hoveredPoint = null;
+
+const canvas = document.getElementById('ternary');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+// Ternary coordinate system
+// Exchange = bottom-left, Stillness = bottom-right, Collision = top
+const W = 600, H = 540;
+const margin = 50;
+const triH = (W - 2 * margin) * Math.sqrt(3) / 2;
+const apex = { x: W / 2, y: margin };
+const left = { x: margin, y: margin + triH };
+const right = { x: W - margin, y: margin + triH };
+
+function ternaryToXY(e, s, c) {
+  // Normalize
+  const total = e + s + c;
+  if (total === 0) {
+    e = 1/3; s = 1/3; c = 1/3;
+  } else {
+    e /= total; s /= total; c /= total;
+  }
+  const x = left.x * e + right.x * s + apex.x * c;
+  const y = left.y * e + right.y * s + apex.y * c;
+  return { x, y };
+}
+
+function drawTriangle() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines (lighter)
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 5; i++) {
+    const t = i / 5;
+    // Lines parallel to each edge
+    const p1 = ternaryToXY(1 - t, t, 0);
+    const p2 = ternaryToXY(0, t, 1 - t);
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+
+    const p3 = ternaryToXY(t, 0, 1 - t);
+    const p4 = ternaryToXY(t, 1 - t, 0);
+    ctx.beginPath(); ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); ctx.stroke();
+
+    const p5 = ternaryToXY(1 - t, 0, t);
+    const p6 = ternaryToXY(0, 1 - t, t);
+    ctx.beginPath(); ctx.moveTo(p5.x, p5.y); ctx.lineTo(p6.x, p6.y); ctx.stroke();
+  }
+
+  // Triangle outline
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(apex.x, apex.y);
+  ctx.lineTo(left.x, left.y);
+  ctx.lineTo(right.x, right.y);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Vertex labels
+  ctx.fillStyle = '#808090';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('COLLISION', apex.x, apex.y - 12);
+  ctx.textAlign = 'right';
+  ctx.fillText('EXCHANGE', left.x - 4, left.y + 16);
+  ctx.textAlign = 'left';
+  ctx.fillText('STILLNESS', right.x + 4, right.y + 16);
+}
+
+function drawPoints() {
+  // Sort: draw none-dominant points first (they're boring), active points on top
+  const sorted = [...allPoints].sort((a, b) => {
+    const aActive = a.exchange + a.stillness + a.collision > 0;
+    const bActive = b.exchange + b.stillness + b.collision > 0;
+    if (aActive !== bActive) return aActive ? 1 : -1;
+    return 0;
+  });
+
+  for (const pt of sorted) {
+    if (!visibleSources.has(pt.source)) continue;
+
+    const { x, y } = ternaryToXY(pt.exchange, pt.stillness, pt.collision);
+    const isNone = pt.exchange + pt.stillness + pt.collision === 0;
+    const sourceInfo = SOURCES[pt.source];
+    const color = sourceInfo ? sourceInfo.color : '#555';
+
+    ctx.beginPath();
+    ctx.arc(x, y, isNone ? 1.5 : 3, 0, Math.PI * 2);
+
+    if (hoveredPoint === pt) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      ctx.globalAlpha = isNone ? 0.15 : 0.6;
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    pt._x = x;
+    pt._y = y;
+  }
+}
+
+function render() {
+  drawTriangle();
+  drawPoints();
+}
+
+// Tooltip
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  let closest = null;
+  let closestDist = 15;
+
+  for (const pt of allPoints) {
+    if (!visibleSources.has(pt.source)) continue;
+    if (pt._x === undefined) continue;
+    const dx = mx - pt._x;
+    const dy = my - pt._y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < closestDist) {
+      closest = pt;
+      closestDist = dist;
+    }
+  }
+
+  if (closest !== hoveredPoint) {
+    hoveredPoint = closest;
+    render();
+
+    if (closest) {
+      const preview = closest.text.substring(0, 200).replace(/\n/g, ' ');
+      tooltip.innerHTML = `
+        <div class="tooltip-source">${closest.source}</div>
+        <div class="tooltip-scores">
+          exchange: ${closest.exchange.toFixed(3)} &nbsp;
+          stillness: ${closest.stillness.toFixed(3)} &nbsp;
+          collision: ${closest.collision.toFixed(3)}
+        </div>
+        <div class="tooltip-text">${preview}${closest.text.length > 200 ? '...' : ''}</div>
+      `;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (closest._x + 12) + 'px';
+      tooltip.style.top = (closest._y - 10) + 'px';
+
+      // Keep tooltip in bounds
+      const tr = tooltip.getBoundingClientRect();
+      const pr = canvas.parentElement.getBoundingClientRect();
+      if (tr.right > pr.right) {
+        tooltip.style.left = (closest._x - tr.width - 12) + 'px';
+      }
+      if (tr.bottom > pr.bottom) {
+        tooltip.style.top = (closest._y - tr.height) + 'px';
+      }
+    } else {
+      tooltip.style.display = 'none';
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredPoint = null;
+  tooltip.style.display = 'none';
+  render();
+});
+
+// Legend
+function buildLegend() {
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  for (const [source, info] of Object.entries(SOURCES)) {
+    const count = allPoints.filter(p => p.source === source).length;
+    if (count === 0) continue;
+
+    const item = document.createElement('div');
+    item.className = 'legend-item' + (visibleSources.has(source) ? '' : ' dimmed');
+    item.innerHTML = `
+      <div class="legend-dot" style="background:${info.color}"></div>
+      <span class="legend-label">${source}</span>
+      <span class="legend-count">${count}</span>
+    `;
+    item.addEventListener('click', () => {
+      if (visibleSources.has(source)) {
+        visibleSources.delete(source);
+      } else {
+        visibleSources.add(source);
+      }
+      item.classList.toggle('dimmed');
+      render();
+      updateStats();
+    });
+    legend.appendChild(item);
+  }
+}
+
+function updateStats() {
+  const visible = allPoints.filter(p => visibleSources.has(p.source));
+  const active = visible.filter(p => p.exchange + p.stillness + p.collision > 0);
+
+  const exDom = active.filter(p => p.exchange > p.stillness && p.exchange > p.collision).length;
+  const stDom = active.filter(p => p.stillness > p.exchange && p.stillness > p.collision).length;
+  const coDom = active.filter(p => p.collision > p.exchange && p.collision > p.stillness).length;
+
+  const stats = document.getElementById('stats');
+  stats.innerHTML = `
+    <h3>Visible</h3>
+    <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value">${visible.length}</span></div>
+    <div class="stat-row"><span class="stat-label">With mode signal</span><span class="stat-value">${active.length} (${visible.length ? Math.round(active.length/visible.length*100) : 0}%)</span></div>
+    <div class="stat-row"><span class="stat-label">Exchange-dominant</span><span class="stat-value">${exDom}</span></div>
+    <div class="stat-row"><span class="stat-label">Stillness-dominant</span><span class="stat-value">${stDom}</span></div>
+    <div class="stat-row"><span class="stat-label">Collision-dominant</span><span class="stat-value">${coDom}</span></div>
+  `;
+}
+
+// Load data from embedded JSON (generated by Python)
+fetch('mode-ternary-data.json')
+  .then(r => r.json())
+  .then(data => {
+    allPoints = data;
+    buildLegend();
+    updateStats();
+    render();
+  })
+  .catch(() => {
+    // If no data file, show empty plot
+    buildLegend();
+    updateStats();
+    render();
+    const stats = document.getElementById('stats');
+    stats.innerHTML += '<div style="color:#f97316;margin-top:8px">Run mode_detector.py --json to generate data</div>';
+  });
+</script>
+</body>
+</html>

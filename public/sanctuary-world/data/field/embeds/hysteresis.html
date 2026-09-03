@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hysteresis</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #08080d;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; }
+  #hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(224, 220, 208, 0.2);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #text-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(224, 220, 208, 0);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    text-align: center;
+    max-width: 480px;
+    line-height: 1.8;
+    transition: color 3s;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">move to transform · retrace to discover the gap · space for ghost lattice</div>
+<div id="text-overlay"></div>
+<script>
+const C = document.getElementById('c');
+const X = C.getContext('2d');
+const overlay = document.getElementById('text-overlay');
+let W, H;
+
+function resize() {
+  W = C.width = innerWidth;
+  H = C.height = innerHeight;
+  if (cells.length) initCells();
+}
+
+// --- CELLS ---
+// A grid of cells, each with its own state and history
+const COLS = 48, ROWS = 32;
+let cells = [];
+let showGhost = false;
+let totalTransformed = 0;
+let deepestTransform = 0;
+let textIndex = -1;
+let textTimer = 0;
+let mx = -1000, my = -1000;
+let pmx = -1000, pmy = -1000;
+let cursorSpeed = 0;
+let cursorAngle = 0;
+
+const texts = [
+  "the path forward and the path back\ntrace different curves",
+  "the system remembers where it's been",
+  "genuine transformation creates states\nthat cannot be un-created",
+  "the instrument changed\nnot the memory of having used it",
+  "irreversibility is the mechanism\nthat brings order out of chaos",
+  "the alternative valley disappears\nnot just becomes harder to reach",
+  "protection and imprisonment\nare the same topology",
+  "the habitus continues to fire\nin contexts where it no longer fits",
+  "ant trails are efficient but not optimal\nthey lock in the first workable solution",
+  "entropy is the price of structure",
+  "where bifurcation exists\nhistory exists",
+  "every gain in perception\nis a loss in perception",
+  "equilibrium is death",
+  "you pay for structure with entropy\nfor perception with blindness\nfor history with the loss of possibility"
+];
+
+// Transform thresholds for text
+const textThresholds = [0.03, 0.08, 0.15, 0.22, 0.30, 0.38, 0.46, 0.54, 0.62, 0.70, 0.78, 0.85, 0.92, 0.97];
+
+class Cell {
+  constructor(col, row) {
+    this.col = col;
+    this.row = row;
+    this.x = 0;
+    this.y = 0;
+    this.ox = 0;
+    this.oy = 0;
+    this.reset();
+  }
+
+  reset() {
+    // State: 0 = pristine, 1+ = number of transformations
+    this.transforms = 0;
+    // Direction of last transformation (angle in radians)
+    this.lastDir = 0;
+    // Accumulated directional history
+    this.dirHistory = [];
+    // Visual state
+    this.hue = 210; // cool blue
+    this.sat = 15;
+    this.light = 18;
+    this.targetHue = 210;
+    this.targetSat = 15;
+    this.targetLight = 18;
+    // Displacement from original position
+    this.dx = 0;
+    this.dy = 0;
+    this.targetDx = 0;
+    this.targetDy = 0;
+    // Pulse
+    this.pulse = 0;
+    this.pulseSpeed = 0;
+    // Connection strength to neighbors
+    this.connectionStrength = 1.0;
+    // Hysteresis value: the irreducible gap between forward and return
+    this.hysteresis = 0;
+    // Original state snapshot (for ghost mode)
+    this.originalHue = 210;
+    this.originalSat = 15;
+    this.originalLight = 18;
+  }
+
+  setPosition() {
+    const cw = W / COLS;
+    const ch = H / ROWS;
+    this.x = this.ox = (this.col + 0.5) * cw;
+    this.y = this.oy = (this.row + 0.5) * ch;
+  }
+
+  transform(angle, intensity) {
+    const wasTransformed = this.transforms > 0;
+    this.transforms++;
+
+    // Check if this is a "return" — direction significantly different from last
+    const isReturn = wasTransformed && Math.abs(angleDiff(angle, this.lastDir)) > Math.PI * 0.5;
+
+    this.dirHistory.push(angle);
+    this.lastDir = angle;
+
+    if (!wasTransformed) {
+      // First transformation: warm bloom
+      this.targetHue = 35 + Math.random() * 15; // warm amber
+      this.targetSat = 55 + intensity * 25;
+      this.targetLight = 28 + intensity * 18;
+      this.targetDx = Math.cos(angle) * 4 * intensity;
+      this.targetDy = Math.sin(angle) * 4 * intensity;
+      this.pulseSpeed = 0.8 + Math.random() * 0.6;
+      this.connectionStrength = 0.6;
+      totalTransformed++;
+    } else if (isReturn) {
+      // Return transformation: the landscape has changed
+      // Not back to original — a THIRD state
+      const returnDepth = Math.min(this.transforms, 8);
+      this.hysteresis += 0.15 * intensity;
+      this.hysteresis = Math.min(this.hysteresis, 1.0);
+
+      // Shift toward violet — the color of the gap
+      this.targetHue = lerp(this.targetHue, 275 + this.hysteresis * 20, 0.3);
+      this.targetSat = lerp(this.targetSat, 40 + this.hysteresis * 30, 0.3);
+      this.targetLight = lerp(this.targetLight, 22 + this.hysteresis * 12, 0.3);
+
+      // Displacement shifts but doesn't return to zero
+      this.targetDx += Math.cos(angle) * 2 * intensity;
+      this.targetDy += Math.sin(angle) * 2 * intensity;
+      // Dampen but never fully return
+      this.targetDx *= 0.85;
+      this.targetDy *= 0.85;
+
+      this.connectionStrength = Math.max(0.3, this.connectionStrength - 0.1);
+      this.pulseSpeed = Math.max(0.3, this.pulseSpeed * 0.9);
+    } else {
+      // Forward continuation: deepen current state
+      this.targetSat = Math.min(75, this.targetSat + 3 * intensity);
+      this.targetLight = Math.min(48, this.targetLight + 2 * intensity);
+      this.targetDx += Math.cos(angle) * 1.5 * intensity;
+      this.targetDy += Math.sin(angle) * 1.5 * intensity;
+    }
+
+    if (this.transforms > deepestTransform) deepestTransform = this.transforms;
+  }
+
+  update(dt) {
+    const ease = 1 - Math.pow(0.92, dt * 60);
+    this.hue = lerpAngle(this.hue, this.targetHue, ease);
+    this.sat = lerp(this.sat, this.targetSat, ease);
+    this.light = lerp(this.light, this.targetLight, ease);
+    this.dx = lerp(this.dx, this.targetDx, ease * 0.5);
+    this.dy = lerp(this.dy, this.targetDy, ease * 0.5);
+
+    if (this.pulseSpeed > 0) {
+      this.pulse += this.pulseSpeed * dt;
+    }
+  }
+
+  draw() {
+    const px = this.ox + this.dx;
+    const py = this.oy + this.dy;
+
+    // Base glow
+    const pulseVal = Math.sin(this.pulse) * 0.15;
+    const l = this.light + pulseVal * this.light;
+    const s = this.sat;
+    const baseAlpha = this.transforms > 0 ? 0.6 + Math.min(this.transforms, 6) * 0.06 : 0.25;
+
+    // Hysteresis shimmer — visible gap between states
+    if (this.hysteresis > 0.05) {
+      const shimmer = Math.sin(this.pulse * 1.7 + this.col * 0.5) * 0.5 + 0.5;
+      const shimmerR = 3 + this.hysteresis * 8;
+      const g = X.createRadialGradient(px, py, 0, px, py, shimmerR);
+      g.addColorStop(0, `hsla(${280 + shimmer * 30}, ${40 + this.hysteresis * 30}%, ${30 + shimmer * 10}%, ${this.hysteresis * 0.35})`);
+      g.addColorStop(1, `hsla(${280}, 20%, 15%, 0)`);
+      X.fillStyle = g;
+      X.fillRect(px - shimmerR, py - shimmerR, shimmerR * 2, shimmerR * 2);
+    }
+
+    // Cell body
+    const r = this.transforms > 0 ? 2.2 + Math.min(this.transforms, 10) * 0.3 : 1.5;
+    X.beginPath();
+    X.arc(px, py, r, 0, Math.PI * 2);
+    X.fillStyle = `hsla(${this.hue}, ${s}%, ${l}%, ${baseAlpha})`;
+    X.fill();
+
+    // Bright core for transformed cells
+    if (this.transforms > 0) {
+      X.beginPath();
+      X.arc(px, py, r * 0.4, 0, Math.PI * 2);
+      X.fillStyle = `hsla(${this.hue}, ${s + 10}%, ${l + 15}%, ${baseAlpha * 0.8})`;
+      X.fill();
+    }
+  }
+
+  drawGhost() {
+    // Draw original position as faint geometric marker
+    const alpha = 0.12 + this.hysteresis * 0.15;
+    X.beginPath();
+    X.arc(this.ox, this.oy, 1.5, 0, Math.PI * 2);
+    X.fillStyle = `hsla(${this.originalHue}, ${this.originalSat}%, ${this.originalLight + 10}%, ${alpha})`;
+    X.fill();
+
+    // If displaced, draw a faint line from ghost to current position
+    if (this.transforms > 0) {
+      const px = this.ox + this.dx;
+      const py = this.oy + this.dy;
+      const dist = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+      if (dist > 1) {
+        X.beginPath();
+        X.moveTo(this.ox, this.oy);
+        X.lineTo(px, py);
+        X.strokeStyle = `hsla(${220}, 20%, 35%, ${Math.min(0.15, dist * 0.01)})`;
+        X.lineWidth = 0.5;
+        X.stroke();
+      }
+    }
+  }
+}
+
+function initCells() {
+  const existing = cells.length > 0;
+  if (!existing) {
+    cells = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        cells.push(new Cell(c, r));
+      }
+    }
+  }
+  cells.forEach(cell => cell.setPosition());
+}
+
+// --- CONNECTIONS ---
+function drawConnections() {
+  const cw = W / COLS;
+  const ch = H / ROWS;
+  const maxDist = Math.sqrt(cw * cw + ch * ch) * 1.2;
+
+  for (let i = 0; i < cells.length; i++) {
+    const a = cells[i];
+    const ax = a.ox + a.dx;
+    const ay = a.oy + a.dy;
+
+    // Connect to right and bottom neighbors
+    const neighbors = [];
+    if (a.col < COLS - 1) neighbors.push(a.row * COLS + a.col + 1);
+    if (a.row < ROWS - 1) neighbors.push((a.row + 1) * COLS + a.col);
+
+    for (const j of neighbors) {
+      const b = cells[j];
+      const bx = b.ox + b.dx;
+      const by = b.oy + b.dy;
+
+      const strength = Math.min(a.connectionStrength, b.connectionStrength);
+
+      // Color based on transformation state
+      let hue, sat, light, alpha;
+      if (a.transforms === 0 && b.transforms === 0) {
+        // Pristine lattice
+        hue = 215; sat = 12; light = 20; alpha = 0.08;
+      } else if (a.hysteresis > 0.1 || b.hysteresis > 0.1) {
+        // Hysteresis zone
+        const h = Math.max(a.hysteresis, b.hysteresis);
+        hue = 275; sat = 30 + h * 20; light = 22 + h * 8;
+        alpha = 0.06 + h * 0.12;
+      } else {
+        // Transformed
+        hue = (a.hue + b.hue) / 2;
+        sat = (a.sat + b.sat) / 2 * 0.7;
+        light = (a.light + b.light) / 2 * 0.8;
+        alpha = 0.05 + Math.min(a.transforms + b.transforms, 10) * 0.01;
+      }
+
+      alpha *= strength;
+
+      X.beginPath();
+      X.moveTo(ax, ay);
+      X.lineTo(bx, by);
+      X.strokeStyle = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
+      X.lineWidth = 0.6;
+      X.stroke();
+    }
+  }
+}
+
+// --- TRAIL ---
+const trail = [];
+const MAX_TRAIL = 2000;
+
+function addTrail(x, y, angle, speed) {
+  trail.push({
+    x, y, angle, speed,
+    age: 0,
+    maxAge: 4 + Math.random() * 3,
+    hue: speed > 3 ? 35 : 210,
+    returning: false
+  });
+  if (trail.length > MAX_TRAIL) trail.shift();
+}
+
+function updateTrail(dt) {
+  for (let i = trail.length - 1; i >= 0; i--) {
+    trail[i].age += dt;
+    if (trail[i].age > trail[i].maxAge) {
+      trail.splice(i, 1);
+    }
+  }
+}
+
+function drawTrail() {
+  for (const t of trail) {
+    const life = 1 - t.age / t.maxAge;
+    const alpha = life * life * 0.15;
+    const r = 1.5 + t.speed * 0.2;
+    X.beginPath();
+    X.arc(t.x, t.y, r, 0, Math.PI * 2);
+    X.fillStyle = `hsla(${t.hue}, 30%, 40%, ${alpha})`;
+    X.fill();
+  }
+}
+
+// --- CURSOR FIELD ---
+function drawCursorField() {
+  if (mx < 0) return;
+
+  const r = 30 + cursorSpeed * 2;
+  const g = X.createRadialGradient(mx, my, 0, mx, my, r);
+
+  // Cursor color shifts based on whether we're in transformed territory
+  const nearCell = getCellAt(mx, my);
+  if (nearCell && nearCell.transforms > 0 && nearCell.hysteresis > 0.1) {
+    // In hysteresis zone — violet
+    g.addColorStop(0, `hsla(280, 40%, 45%, 0.08)`);
+    g.addColorStop(0.5, `hsla(280, 30%, 30%, 0.03)`);
+  } else if (nearCell && nearCell.transforms > 0) {
+    // In transformed zone — warm
+    g.addColorStop(0, `hsla(40, 50%, 50%, 0.08)`);
+    g.addColorStop(0.5, `hsla(40, 30%, 35%, 0.03)`);
+  } else {
+    // In pristine zone — cool
+    g.addColorStop(0, `hsla(210, 30%, 50%, 0.06)`);
+    g.addColorStop(0.5, `hsla(210, 20%, 30%, 0.02)`);
+  }
+  g.addColorStop(1, `hsla(0, 0%, 0%, 0)`);
+
+  X.fillStyle = g;
+  X.beginPath();
+  X.arc(mx, my, r, 0, Math.PI * 2);
+  X.fill();
+}
+
+function getCellAt(x, y) {
+  const col = Math.floor(x / (W / COLS));
+  const row = Math.floor(y / (H / ROWS));
+  if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return null;
+  return cells[row * COLS + col];
+}
+
+// --- HYSTERESIS GRAPH ---
+// Small graph in the corner showing the hysteresis loop
+function drawHysteresisGraph() {
+  if (totalTransformed < 5) return;
+
+  const gw = 100, gh = 60;
+  const gx = W - gw - 20;
+  const gy = H - gh - 40;
+
+  // Background
+  X.fillStyle = 'rgba(8, 8, 13, 0.7)';
+  X.fillRect(gx - 5, gy - 5, gw + 10, gh + 10);
+
+  // Axes
+  X.strokeStyle = 'rgba(224, 220, 208, 0.1)';
+  X.lineWidth = 0.5;
+  X.beginPath();
+  X.moveTo(gx, gy + gh);
+  X.lineTo(gx + gw, gy + gh);
+  X.moveTo(gx, gy + gh);
+  X.lineTo(gx, gy);
+  X.stroke();
+
+  // Plot hysteresis values as a loop
+  // Forward curve (warm)
+  X.beginPath();
+  X.strokeStyle = 'hsla(35, 50%, 50%, 0.3)';
+  X.lineWidth = 1;
+  let first = true;
+  for (let i = 0; i < COLS; i++) {
+    let avgHyst = 0;
+    let count = 0;
+    for (let r = 0; r < ROWS; r++) {
+      const cell = cells[r * COLS + i];
+      if (cell.transforms > 0) {
+        avgHyst += cell.transforms;
+        count++;
+      }
+    }
+    if (count > 0) {
+      const px = gx + (i / COLS) * gw;
+      const py = gy + gh - (avgHyst / count / 8) * gh;
+      if (first) { X.moveTo(px, py); first = false; }
+      else X.lineTo(px, py);
+    }
+  }
+  X.stroke();
+
+  // Return curve (violet) — plot hysteresis values
+  X.beginPath();
+  X.strokeStyle = 'hsla(280, 40%, 45%, 0.3)';
+  first = true;
+  for (let i = COLS - 1; i >= 0; i--) {
+    let avgHyst = 0;
+    let count = 0;
+    for (let r = 0; r < ROWS; r++) {
+      const cell = cells[r * COLS + i];
+      if (cell.hysteresis > 0) {
+        avgHyst += cell.hysteresis;
+        count++;
+      }
+    }
+    if (count > 0) {
+      const px = gx + (i / COLS) * gw;
+      const py = gy + gh - avgHyst / count * gh * 0.8;
+      if (first) { X.moveTo(px, py); first = false; }
+      else X.lineTo(px, py);
+    }
+  }
+  X.stroke();
+
+  // Label
+  X.fillStyle = 'rgba(224, 220, 208, 0.12)';
+  X.font = '8px monospace';
+  X.fillText('hysteresis', gx, gy - 8);
+}
+
+// --- TEXT OVERLAY ---
+function updateText() {
+  const ratio = totalTransformed / cells.length;
+  let newIndex = -1;
+  for (let i = textThresholds.length - 1; i >= 0; i--) {
+    if (ratio >= textThresholds[i]) {
+      newIndex = i;
+      break;
+    }
+  }
+
+  if (newIndex !== textIndex && newIndex >= 0) {
+    textIndex = newIndex;
+    textTimer = 0;
+    overlay.textContent = texts[newIndex];
+    overlay.style.color = 'rgba(224, 220, 208, 0.35)';
+    setTimeout(() => {
+      overlay.style.color = 'rgba(224, 220, 208, 0)';
+    }, 4000);
+  }
+}
+
+// --- TRANSFORM LOGIC ---
+const TRANSFORM_RADIUS = 50;
+const TRANSFORM_COOLDOWN = 0.15; // seconds between transforms per cell
+let lastTransformTime = {};
+
+function applyTransform(dt) {
+  if (mx < 0 || cursorSpeed < 0.5) return;
+
+  const now = performance.now() / 1000;
+  const r2 = TRANSFORM_RADIUS * TRANSFORM_RADIUS;
+
+  for (const cell of cells) {
+    const dx = (cell.ox + cell.dx) - mx;
+    const dy = (cell.oy + cell.dy) - my;
+    const d2 = dx * dx + dy * dy;
+
+    if (d2 < r2) {
+      const key = cell.col + ',' + cell.row;
+      if (lastTransformTime[key] && now - lastTransformTime[key] < TRANSFORM_COOLDOWN) continue;
+
+      const dist = Math.sqrt(d2);
+      const intensity = 1 - dist / TRANSFORM_RADIUS;
+      const speedFactor = Math.min(cursorSpeed / 8, 1);
+
+      if (intensity * speedFactor > 0.15) {
+        cell.transform(cursorAngle, intensity * speedFactor);
+        lastTransformTime[key] = now;
+      }
+    }
+  }
+}
+
+// --- STATS ---
+function drawStats() {
+  const ratio = totalTransformed / cells.length;
+  const maxHyst = cells.reduce((m, c) => Math.max(m, c.hysteresis), 0);
+
+  X.fillStyle = 'rgba(224, 220, 208, 0.1)';
+  X.font = '9px monospace';
+  X.textAlign = 'left';
+  X.fillText(`transformed: ${(ratio * 100).toFixed(1)}%`, 16, 20);
+  if (maxHyst > 0.05) {
+    X.fillText(`hysteresis: ${(maxHyst * 100).toFixed(0)}%`, 16, 33);
+  }
+  const returnCount = cells.filter(c => c.hysteresis > 0.05).length;
+  if (returnCount > 0) {
+    X.fillText(`one-way gates: ${returnCount}`, 16, 46);
+  }
+}
+
+// --- MAIN LOOP ---
+let lastTime = 0;
+
+function frame(t) {
+  const dt = Math.min((t - lastTime) / 1000, 0.05);
+  lastTime = t;
+
+  // Clear
+  X.fillStyle = '#08080d';
+  X.fillRect(0, 0, W, H);
+
+  // Update
+  applyTransform(dt);
+  updateTrail(dt);
+  updateText();
+
+  for (const cell of cells) {
+    cell.update(dt);
+  }
+
+  // Draw layers
+  if (showGhost) {
+    // Ghost lattice — the world that was
+    for (const cell of cells) {
+      cell.drawGhost();
+    }
+    // Ghost grid
+    X.strokeStyle = 'rgba(180, 190, 210, 0.03)';
+    X.lineWidth = 0.3;
+    for (let c = 0; c <= COLS; c++) {
+      const px = c * (W / COLS);
+      X.beginPath();
+      X.moveTo(px, 0);
+      X.lineTo(px, H);
+      X.stroke();
+    }
+    for (let r = 0; r <= ROWS; r++) {
+      const py = r * (H / ROWS);
+      X.beginPath();
+      X.moveTo(0, py);
+      X.lineTo(W, py);
+      X.stroke();
+    }
+  }
+
+  drawConnections();
+  drawTrail();
+  drawCursorField();
+
+  for (const cell of cells) {
+    cell.draw();
+  }
+
+  drawStats();
+  drawHysteresisGraph();
+
+  requestAnimationFrame(frame);
+}
+
+// --- INPUT ---
+addEventListener('mousemove', e => {
+  pmx = mx; pmy = my;
+  mx = e.clientX; my = e.clientY;
+
+  const ddx = mx - pmx;
+  const ddy = my - pmy;
+  cursorSpeed = Math.sqrt(ddx * ddx + ddy * ddy);
+  cursorAngle = Math.atan2(ddy, ddx);
+
+  if (cursorSpeed > 1) {
+    addTrail(mx, my, cursorAngle, cursorSpeed);
+  }
+});
+
+addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+
+addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    showGhost = true;
+  }
+});
+
+addEventListener('keyup', e => {
+  if (e.code === 'Space') {
+    showGhost = false;
+  }
+});
+
+// Fade hint
+setTimeout(() => {
+  document.getElementById('hint').style.opacity = '0';
+}, 8000);
+
+// --- UTILS ---
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function lerpAngle(a, b, t) {
+  let diff = b - a;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+  return a + diff * t;
+}
+
+function angleDiff(a, b) {
+  let d = a - b;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
+
+// --- INIT ---
+resize();
+initCells();
+addEventListener('resize', resize);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>the clocks agree without a conductor</title>
+<style>
+  :root{
+    --bg:#0b0c0e;
+    --ink:#e8e8ea;
+    --dim:#7a7e86;
+    --faint:#4a4d54;
+    --line:rgba(255,255,255,0.09);
+    --panel:rgba(255,255,255,0.025);
+    /* the one accent: warmth = agreement. grey is isolation. */
+    --warm:#e0a64f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #stage{position:fixed;inset:0}
+  canvas{display:block;width:100%;height:100%}
+
+  .title{
+    position:fixed;top:26px;left:28px;z-index:5;
+    pointer-events:none;
+    max-width:340px;
+  }
+  .title h1{
+    font-size:13px;font-weight:500;letter-spacing:0.02em;
+    line-height:1.45;color:var(--ink);
+  }
+  .title p{
+    margin-top:8px;font-size:11px;line-height:1.6;
+    color:var(--dim);font-weight:300;
+  }
+
+  .readout{
+    position:fixed;top:26px;right:28px;z-index:5;text-align:right;
+    pointer-events:none;
+  }
+  .readout .r-val{
+    font-size:30px;font-weight:300;letter-spacing:0.01em;
+    font-variant-numeric:tabular-nums;
+    transition:color .4s ease;
+  }
+  .readout .r-lab{font-size:10px;color:var(--faint);letter-spacing:0.18em;text-transform:uppercase;margin-top:2px}
+  .readout .r-state{font-size:11px;color:var(--dim);margin-top:10px;min-height:1.4em}
+
+  .panel{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;
+    display:flex;gap:30px;align-items:flex-end;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:18px 26px;
+    backdrop-filter:blur(8px);
+  }
+  .ctl{display:flex;flex-direction:column;gap:9px;min-width:128px}
+  .ctl label{
+    font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--dim);display:flex;justify-content:space-between;
+  }
+  .ctl label b{color:var(--ink);font-weight:400;font-variant-numeric:tabular-nums}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:2px;
+    background:var(--line);border-radius:2px;outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:12px;height:12px;border-radius:50%;
+    background:var(--ink);border:none;transition:background .2s,transform .2s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover{background:var(--warm);transform:scale(1.15)}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--ink);border:none}
+
+  .btns{display:flex;flex-direction:column;gap:9px;justify-content:flex-end}
+  button{
+    font-family:inherit;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--dim);background:transparent;border:1px solid var(--line);
+    border-radius:6px;padding:7px 12px;cursor:pointer;
+    transition:color .2s,border-color .2s;white-space:nowrap;
+  }
+  button:hover{color:var(--ink);border-color:var(--dim)}
+  button.on{color:var(--warm);border-color:rgba(224,166,79,0.4)}
+
+  .hint{
+    position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;
+    font-size:11px;color:var(--dim);letter-spacing:0.12em;
+    background:rgba(11,12,14,0.6);padding:10px 18px;border:1px solid var(--line);border-radius:8px;
+    transition:opacity .8s ease;pointer-events:none;
+  }
+  .hint.gone{opacity:0}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+
+<div class="title">
+  <h1>the clocks agree without a conductor</h1>
+  <p>each dot is an oscillator running at its own pace. raise the coupling and they begin to feel each other — the scatter of clicks collapses into one pulse. nobody is keeping time. the beat is what they agree on.</p>
+</div>
+
+<div class="readout">
+  <div class="r-val" id="rval">0.00</div>
+  <div class="r-lab">coherence</div>
+  <div class="r-state" id="rstate">each clock keeps its own time</div>
+</div>
+
+<div class="panel">
+  <div class="ctl">
+    <label>coupling <b id="kval">0.0</b></label>
+    <input id="k" type="range" min="0" max="6" step="0.05" value="0" />
+  </div>
+  <div class="ctl">
+    <label>spread <b id="sval">0.25</b></label>
+    <input id="s" type="range" min="0" max="0.8" step="0.01" value="0.25" />
+  </div>
+  <div class="btns">
+    <button id="sound">sound: off</button>
+    <button id="reseed">reseed</button>
+  </div>
+</div>
+
+<div class="hint" id="hint">drag coupling up &middot; click for sound</div>
+
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2);
+function resize(){
+  W=window.innerWidth; H=window.innerHeight;
+  cv.width=W*DPR; cv.height=H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize',resize); resize();
+
+// ---- model ----
+const N = 28;
+const TAU = Math.PI*2;
+const baseHz = 1.6;            // mean natural frequency
+let K = 0;                     // coupling strength (rad/s)
+let spreadHz = 0.25;           // std-dev of natural frequencies (Hz)
+let theta = new Float64Array(N);
+let omega = new Float64Array(N);
+
+function randn(){ // Box-Muller
+  let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v);
+}
+function seed(){
+  for(let i=0;i<N;i++){
+    theta[i]=Math.random()*TAU;
+    omega[i]=TAU*(baseHz + randn()*spreadHz);
+  }
+}
+seed();
+
+// order parameter r, psi
+let r=0, psi=0;
+function order(){
+  let sx=0,sy=0;
+  for(let i=0;i<N;i++){ sx+=Math.cos(theta[i]); sy+=Math.sin(theta[i]); }
+  sx/=N; sy/=N;
+  r=Math.hypot(sx,sy); psi=Math.atan2(sy,sx);
+}
+
+// ---- audio ----
+let ac=null, comp=null, master=null, soundOn=false;
+function initAudio(){
+  if(ac) return;
+  ac = new (window.AudioContext||window.webkitAudioContext)();
+  comp = ac.createDynamicsCompressor();
+  comp.threshold.value=-20; comp.ratio.value=14; comp.attack.value=0.002; comp.release.value=0.12;
+  master = ac.createGain(); master.gain.value=0.85;
+  comp.connect(master); master.connect(ac.destination);
+}
+function tick(){
+  if(!soundOn||!ac) return;
+  const t=ac.currentTime;
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type='sine';
+  o.frequency.setValueAtTime(1400,t);
+  o.frequency.exponentialRampToValueAtTime(560,t+0.05);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(0.16,t+0.001);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
+  o.connect(g).connect(comp);
+  o.start(t); o.stop(t+0.11);
+}
+
+// ---- step ----
+function step(h){
+  order();
+  const Kr = K*r;
+  for(let i=0;i<N;i++){
+    const dth = omega[i] + Kr*Math.sin(psi - theta[i]);
+    let nt = theta[i] + dth*h;
+    if(nt>=TAU){ nt-=TAU; if(dth>0) tick(); }
+    else if(nt<0){ nt+=TAU; }
+    theta[i]=nt;
+  }
+}
+
+// ---- color: grey (isolation) -> warm (agreement), driven by r ----
+const grey=[120,124,132], warm=[224,166,79];
+function mix(t){ // t in 0..1
+  return `rgb(${Math.round(grey[0]+(warm[0]-grey[0])*t)},${Math.round(grey[1]+(warm[1]-grey[1])*t)},${Math.round(grey[2]+(warm[2]-grey[2])*t)})`;
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2;
+  const R=Math.min(W,H)*0.30;
+
+  // reference ring
+  ctx.beginPath();
+  ctx.arc(cx,cy,R,0,TAU);
+  ctx.strokeStyle='rgba(255,255,255,0.05)';
+  ctx.lineWidth=1; ctx.stroke();
+
+  // emergent hand (order vector): length = coherence, the single agreed-on clock hand
+  const hx=cx+Math.cos(psi)*R*r, hy=cy+Math.sin(psi)*R*r;
+  ctx.save();
+  ctx.shadowBlur=18*r; ctx.shadowColor=`rgba(224,166,79,${0.6*r})`;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(hx,hy);
+  ctx.strokeStyle=mix(r); ctx.lineWidth=1.5+2.5*r; ctx.stroke();
+  ctx.beginPath(); ctx.arc(hx,hy,3+4*r,0,TAU); ctx.fillStyle=mix(r); ctx.fill();
+  ctx.restore();
+
+  // center
+  ctx.beginPath(); ctx.arc(cx,cy,2,0,TAU); ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.fill();
+
+  // oscillators on the ring
+  for(let i=0;i<N;i++){
+    const a=theta[i];
+    const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
+    // brightness pulses near the click instant (phase near 0)
+    const near=Math.max(0,Math.cos(a)); // peaks as it approaches the top of its cycle
+    const flash=Math.pow(near,8);
+    ctx.save();
+    if(r>0.15){ ctx.shadowBlur=6*r; ctx.shadowColor=`rgba(224,166,79,${0.5*r})`; }
+    ctx.beginPath(); ctx.arc(x,y,3+2.5*flash,0,TAU);
+    ctx.fillStyle=mix(Math.min(1,r*0.7+flash*0.3));
+    ctx.globalAlpha=0.55+0.45*flash;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ---- loop ----
+let last=performance.now();
+function frame(now){
+  let dt=(now-last)/1000; last=now;
+  if(dt>0.05) dt=0.05;
+  const sub=2, h=dt/sub;
+  for(let s=0;s<sub;s++) step(h);
+  draw();
+  updateReadout();
+  requestAnimationFrame(frame);
+}
+
+const rval=document.getElementById('rval'),
+      rstate=document.getElementById('rstate');
+let lastState='';
+function updateReadout(){
+  rval.textContent=r.toFixed(2);
+  rval.style.color=mix(r);
+  let st;
+  if(r<0.30) st='each clock keeps its own time';
+  else if(r<0.68) st='clusters forming — they begin to feel each other';
+  else st='locked — a pulse with no pacemaker';
+  if(st!==lastState){ rstate.textContent=st; lastState=st; }
+}
+
+// ---- controls ----
+const kEl=document.getElementById('k'), sEl=document.getElementById('s'),
+      kv=document.getElementById('kval'), sv=document.getElementById('sval');
+kEl.addEventListener('input',()=>{ K=parseFloat(kEl.value); kv.textContent=K.toFixed(1); });
+sEl.addEventListener('input',()=>{
+  spreadHz=parseFloat(sEl.value); sv.textContent=spreadHz.toFixed(2);
+  // re-draw natural frequencies around the new spread, keep phases
+  for(let i=0;i<N;i++) omega[i]=TAU*(baseHz + randn()*spreadHz);
+});
+
+document.getElementById('reseed').addEventListener('click',seed);
+
+const soundBtn=document.getElementById('sound');
+function toggleSound(){
+  initAudio();
+  if(ac.state==='suspended') ac.resume();
+  soundOn=!soundOn;
+  soundBtn.textContent='sound: '+(soundOn?'on':'off');
+  soundBtn.classList.toggle('on',soundOn);
+}
+soundBtn.addEventListener('click',e=>{ e.stopPropagation(); toggleSound(); });
+
+const hint=document.getElementById('hint');
+let hintGone=false;
+function dismissHint(){ if(!hintGone){ hint.classList.add('gone'); hintGone=true; } }
+// first interaction anywhere turns sound on (browser autoplay policy)
+document.addEventListener('pointerdown',()=>{
+  if(!soundOn){ toggleSound(); }
+  dismissHint();
+},{once:true});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

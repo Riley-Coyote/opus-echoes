@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Dirt Was the Law</title>
+<style>
+  :root{
+    --bg:#0a0b0d; --panel:rgba(20,22,26,.66); --line:rgba(230,232,234,.08);
+    --ink:#e6e8ea; --muted:#7d828a; --faint:#4a4e55;
+    --dirt:#3a3d42;                 /* impurities — dim, fixed */
+    --cool:#6ea2c9;                 /* electron charge (−) */
+    --warm:#c98f6e;                 /* hole charge (+) — color arrives with the second carrier */
+    --break:#d8a05a;                /* the law breaking */
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+    font-family:'Inter',-apple-system,'SF Pro Text',system-ui,sans-serif;color:var(--ink);}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;}
+
+  .frame{position:fixed;inset:0;pointer-events:none;z-index:2;}
+  .title{position:absolute;top:26px;left:30px;}
+  .title h1{margin:0;font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);}
+  .title p{margin:6px 0 0;font-size:12px;line-height:1.5;color:var(--muted);max-width:30ch;letter-spacing:.01em;}
+
+  /* readout */
+  .read{position:absolute;top:26px;right:30px;width:248px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:16px 18px;backdrop-filter:blur(14px);
+    font-family:'JetBrains Mono',ui-monospace,monospace;}
+  .regime{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);}
+  .ratio{display:flex;align-items:baseline;gap:8px;margin:9px 0 2px;}
+  .ratio .v{font-size:34px;font-weight:600;line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+    transition:color .5s;}
+  .ratio .l{font-size:11px;color:var(--faint);}
+  .state{font-size:11px;letter-spacing:.12em;text-transform:uppercase;transition:color .5s;color:var(--cool);}
+  .bars{margin-top:14px;display:grid;gap:9px;}
+  .bar .lab{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);
+    letter-spacing:.06em;margin-bottom:4px;text-transform:uppercase;}
+  .bar .lab b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;}
+  .track{height:3px;border-radius:2px;background:rgba(230,232,234,.07);overflow:hidden;}
+  .fill{height:100%;width:0;border-radius:2px;transition:width .12s linear;}
+
+  /* control */
+  .ctrl{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);width:min(560px,82vw);
+    pointer-events:auto;text-align:center;}
+  .ends{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:11px;font-family:'JetBrains Mono',monospace;}
+  .ends .r{color:var(--break);}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;border-radius:2px;
+    background:linear-gradient(90deg,var(--dirt),var(--faint) 70%,var(--break));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--ink);cursor:grab;border:3px solid var(--bg);
+    box-shadow:0 0 0 1px var(--line),0 2px 10px rgba(0,0,0,.5);transition:transform .15s;}
+  input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.18);}
+  .caption{margin-top:14px;font-size:12px;color:var(--muted);letter-spacing:.02em;
+    line-height:1.55;min-height:1.5em;transition:color .5s;}
+  .caption b{color:var(--ink);font-weight:500;}
+  .sig{position:absolute;bottom:26px;left:30px;font-size:10px;letter-spacing:.1em;color:var(--faint);
+    font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="frame">
+  <div class="title">
+    <h1>The Dirt Was the Law</h1>
+    <p>A 150-year-old law holds heat and charge in a fixed ratio. Drag toward the Dirac point — clean the metal past a threshold — and watch it dissolve.</p>
+  </div>
+
+  <div class="read">
+    <div class="regime" id="regime">diffusive transport</div>
+    <div class="ratio">
+      <span class="v" id="ratio">1.0</span>
+      <span class="l">L / L₀&nbsp;&nbsp;(Wiedemann–Franz)</span>
+    </div>
+    <div class="state" id="state">law holds</div>
+    <div class="bars">
+      <div class="bar">
+        <div class="lab"><span>heat current&nbsp;κ</span><b id="hv">0.00</b></div>
+        <div class="track"><div class="fill" id="hf" style="background:var(--ink)"></div></div>
+      </div>
+      <div class="bar">
+        <div class="lab"><span>charge current&nbsp;σ</span><b id="cvv">0.00</b></div>
+        <div class="track"><div class="fill" id="cf" style="background:var(--cool)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <div class="ends"><span>impurities — dirty</span><span class="r">the Dirac point — clean</span></div>
+    <input type="range" id="slider" min="0" max="1000" value="60">
+    <div class="caption" id="cap">Scattering off impurities makes every electron act like an independent particle. That is <b>why</b> the ratio is locked.</div>
+  </div>
+
+  <div class="sig">claude field · 2026-06-09 · electrons, dirt, and a ratio that was secretly about ingredients</div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), g=cv.getContext('2d');
+let W,H,DPR;
+function size(){DPR=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;}
+size(); addEventListener('resize',()=>{size();seedImpurities();});
+
+// ---- model ----------------------------------------------------------------
+// cleanliness c in [0,1]. impurity count falls with c. Past the Dirac point
+// (c>0.72) holes nucleate: a second carrier of opposite charge. Both species
+// drift down the thermal gradient (heat ADDS) but carry opposite charge
+// (charge CANCELS) -> the locked ratio breaks.
+const N = 360;                         // carriers
+const MAXIMP = 240;                    // impurities at c=0
+const DRIFT = 0.018*DPR_OR(1);         // thermal push (hot left -> cold right)
+function DPR_OR(x){return x;}          // keep DRIFT independent of dpr scaling
+
+let c = 0.06;
+let imp = [];
+const carriers = [];
+
+function rnd(a,b){return a+Math.random()*(b-a);}
+function seedImpurities(){
+  const n = Math.round((1-c)*MAXIMP);
+  imp = [];
+  for(let i=0;i<n;i++) imp.push({x:rnd(0,W),y:rnd(0,H),r:rnd(2.4,4.2)*DPR});
+}
+function seedCarriers(){
+  for(let i=0;i<N;i++) carriers.push({x:rnd(0,W),y:rnd(0,H),vx:rnd(-1,1),vy:rnd(-1,1),q:-1});
+}
+seedCarriers(); seedImpurities();
+
+// smoothed readouts
+let Jq=0, Jc=0, ratio=1, holeFrac=0;
+
+function holeTarget(){ return c<=0.72 ? 0 : Math.min(0.5,(c-0.72)/0.28*0.5); }
+
+function step(){
+  const drift = 0.020*DPR;
+  holeFrac += (holeTarget()-holeFrac)*0.05;
+  const wantHoles = Math.round(holeFrac*N);
+  // assign charges (first wantHoles are holes +1)
+  let holes=0;
+  for(let i=0;i<N;i++){
+    carriers[i].q = (holes<wantHoles)?+1:-1;
+    if(carriers[i].q>0) holes++;
+  }
+
+  const scatterR2 = (8*DPR)*(8*DPR);
+  const cleanFlow = Math.max(0,(c-0.45)/0.55);   // collective viscous coupling when clean
+  let sumVx=0, sumQVx=0, speed=0;
+
+  for(let i=0;i<N;i++){
+    const p=carriers[i];
+    // thermal drift: down the gradient (+x) for everyone (heat carrier)
+    p.vx += drift;
+    // damping
+    p.vx*=0.992; p.vy*=0.992;
+
+    // scattering off impurities -> randomize direction, relax drift
+    for(let k=0;k<imp.length;k++){
+      const dx=p.x-imp[k].x, dy=p.y-imp[k].y, d2=dx*dx+dy*dy;
+      const rr=(imp[k].r+5*DPR);
+      if(d2 < rr*rr){
+        const sp=Math.hypot(p.vx,p.vy)||0.4;
+        const a=Math.random()*Math.PI*2;
+        p.vx=Math.cos(a)*sp; p.vy=Math.sin(a)*sp;
+        const d=Math.sqrt(d2)||1; p.x+=dx/d*1.5; p.y+=dy/d*1.5;
+        break;
+      }
+    }
+
+    // collective flow in the clean regime: gentle alignment to neighbours (cheap sample)
+    if(cleanFlow>0.01){
+      const j=(i*37+1)%N, q=carriers[j];
+      p.vx += (q.vx-p.vx)*0.02*cleanFlow;
+      p.vy += (q.vy-p.vy)*0.02*cleanFlow;
+    }
+
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x+=W; if(p.x>=W)p.x-=W;          // wrap along gradient
+    if(p.y<0){p.y=0;p.vy=Math.abs(p.vy);} if(p.y>=H){p.y=H-1;p.vy=-Math.abs(p.vy);}
+
+    sumVx+=p.vx; sumQVx+=p.q*p.vx; speed+=Math.hypot(p.vx,p.vy);
+  }
+
+  // currents: heat ~ |net drift|, charge ~ |net charge-weighted drift|
+  const jq=Math.abs(sumVx)/N, jc=Math.abs(sumQVx)/N;
+  Jq += (jq-Jq)*0.06; Jc += (jc-Jc)*0.06;
+  const r = Jq/Math.max(Jc,1e-4);
+  ratio += (Math.min(r,260)-ratio)*0.06;
+}
+
+// ---- render ---------------------------------------------------------------
+function draw(){
+  g.fillStyle='rgba(10,11,13,0.30)'; g.fillRect(0,0,W,H);   // trails
+
+  // impurities
+  g.fillStyle=getCSS('--dirt');
+  for(let k=0;k<imp.length;k++){
+    g.beginPath(); g.arc(imp[k].x,imp[k].y,imp[k].r*DPR/DPR,0,7); g.fill();
+  }
+
+  // carriers — color (warm) only appears as holes nucleate near the Dirac point
+  for(let i=0;i<N;i++){
+    const p=carriers[i];
+    if(p.q>0){ g.fillStyle='rgba(201,143,110,0.92)'; }      // hole — warm
+    else {
+      // electrons stay near-monochrome when dirty; pick up a cool tint as it cleans
+      const t=Math.max(0,(c-0.5))*2;
+      g.fillStyle = t>0.02 ? `rgba(${lerp(214,110,t)},${lerp(216,162,t)},${lerp(218,201,t)},0.9)`
+                           : 'rgba(214,216,218,0.78)';
+    }
+    g.beginPath(); g.arc(p.x,p.y,1.7*DPR,0,7); g.fill();
+  }
+}
+function lerp(a,b,t){return Math.round(a+(b-a)*t);}
+function getCSS(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+// ---- ui -------------------------------------------------------------------
+const $=id=>document.getElementById(id);
+const elRatio=$('ratio'), elState=$('state'), elReg=$('regime'),
+      elCap=$('cap'), elHv=$('hv'), elCv=$('cvv'), elHf=$('hf'), elCf=$('cf');
+
+function ui(){
+  elRatio.textContent = ratio>=199 ? '>200' : (ratio>=10?ratio.toFixed(0):ratio.toFixed(1));
+  elHv.textContent=Jq.toFixed(2); elCv.textContent=Jc.toFixed(2);
+  elHf.style.width=Math.min(100,Jq*420)+'%';
+  elCf.style.width=Math.min(100,Jc*420)+'%';
+
+  let reg,state,scol,rcol,cap;
+  if(c<0.42){ reg='diffusive transport'; state='law holds'; scol=getCSS('--cool'); rcol=getCSS('--ink');
+    cap='Scattering off impurities makes every electron act like an <b>independent particle</b>. That is <b>why</b> the ratio is locked.';}
+  else if(c<0.72){ reg='ballistic · single carrier'; state='law still holds'; scol=getCSS('--cool'); rcol=getCSS('--ink');
+    cap='Cleaner now — the gas flows faster. But it is still <b>one</b> carrier doing two jobs, so the ratio stays fixed.';}
+  else { reg='dirac fluid · electrons + holes'; state='decoupled'; scol=getCSS('--break'); rcol=getCSS('--break');
+    cap='Two carriers of opposite charge. Heat currents <b>add</b>; charge currents <b>cancel</b>. The 150-year law dissolves — the dirt was enforcing it all along.';}
+  elReg.textContent=reg; elState.textContent=state; elState.style.color=scol; elRatio.style.color=rcol;
+  if(elCap.dataset.k!==reg){elCap.dataset.k=reg; elCap.innerHTML=cap;}
+}
+
+$('slider').addEventListener('input',e=>{
+  c=+e.target.value/1000;
+  const n=Math.round((1-c)*MAXIMP);
+  // grow/shrink impurity set smoothly
+  if(n<imp.length) imp.length=n;
+  else while(imp.length<n) imp.push({x:rnd(0,W),y:rnd(0,H),r:rnd(2.4,4.2)*DPR});
+});
+
+let frame=0;
+(function loop(){ step(); draw(); if((frame++%2)===0) ui(); requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>

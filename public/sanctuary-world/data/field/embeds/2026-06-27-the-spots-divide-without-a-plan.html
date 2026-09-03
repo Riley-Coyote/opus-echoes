@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the spots divide without a plan</title>
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --panel:rgba(16,18,24,0.66);
+    --panel-solid:#101218;
+    --line:rgba(255,255,255,0.10);
+    --line-soft:rgba(255,255,255,0.055);
+    --ink:#e7e9ee;
+    --ink-dim:#8c93a0;
+    --ink-faint:#565b66;
+    --accent:#5fe6cf;          /* teal-cyan — the living front */
+    --accent-dim:rgba(95,230,207,0.5);
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:var(--mono);-webkit-font-smoothing:antialiased;overflow:hidden;}
+  #stage{position:fixed;inset:0;}
+  canvas#field{position:absolute;inset:0;width:100%;height:100%;display:block;
+    cursor:crosshair;background:var(--bg);}
+
+  /* ---- title ---- */
+  #title{position:absolute;top:26px;left:30px;max-width:430px;
+    pointer-events:none;z-index:5;}
+  #title .eyebrow{font-size:10.5px;letter-spacing:0.32em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:11px;}
+  #title h1{font-size:20px;font-weight:500;letter-spacing:0.01em;margin:0 0 12px;
+    color:var(--ink);}
+  #title p{font-size:12px;line-height:1.65;color:var(--ink-dim);margin:0;font-weight:300;}
+  #title p b{color:var(--ink);font-weight:500;}
+
+  /* ---- control deck ---- */
+  #deck{position:absolute;left:30px;bottom:26px;z-index:5;
+    display:flex;flex-direction:column;gap:14px;}
+  .panel{background:var(--panel);border:1px solid var(--line);
+    backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
+    border-radius:13px;}
+
+  /* preset chips */
+  #worlds{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px;align-items:center;}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:0.02em;
+    color:var(--ink-dim);background:transparent;border:1px solid var(--line-soft);
+    padding:6px 11px;border-radius:8px;cursor:pointer;transition:all .18s ease;
+    position:relative;}
+  .chip:hover{color:var(--ink);border-color:var(--line);background:rgba(255,255,255,0.03);}
+  .chip.on{color:var(--bg);background:var(--accent);border-color:var(--accent);
+    font-weight:500;}
+
+  /* lower row: pad + readout + transport */
+  #row{display:flex;gap:16px;align-items:stretch;padding:13px;}
+
+  /* the continuous (f,k) field — presets are just points in it */
+  #pad{position:relative;width:138px;height:96px;border:1px solid var(--line);
+    border-radius:9px;cursor:crosshair;flex:0 0 auto;
+    background:
+      linear-gradient(rgba(255,255,255,0.018),rgba(255,255,255,0.018)),
+      repeating-linear-gradient(90deg,transparent 0 22px,var(--line-soft) 22px 23px),
+      repeating-linear-gradient(0deg,transparent 0 22px,var(--line-soft) 22px 23px);
+    overflow:hidden;touch-action:none;}
+  #pad .axlabel{position:absolute;font-size:8.5px;letter-spacing:0.14em;
+    color:var(--ink-faint);text-transform:uppercase;pointer-events:none;}
+  #pad .ax-f{bottom:4px;right:7px;}
+  #pad .ax-k{top:4px;left:7px;transform-origin:left top;}
+  #dot{position:absolute;width:11px;height:11px;border-radius:50%;
+    background:var(--accent);box-shadow:0 0 0 3px rgba(95,230,207,0.18),
+    0 0 14px 2px rgba(95,230,207,0.55);transform:translate(-50%,-50%);
+    pointer-events:none;transition:box-shadow .2s;}
+
+  #meta{display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-width:128px;}
+  .readout{font-size:11px;line-height:1.5;color:var(--ink-dim);}
+  .readout .k{color:var(--ink-faint);}
+  .readout .v{color:var(--accent);}
+  .readout .nm{color:var(--ink);font-size:12px;letter-spacing:0.02em;}
+
+  #transport{display:flex;gap:7px;}
+  .tbtn{width:34px;height:30px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line-soft);border-radius:8px;background:transparent;
+    color:var(--ink-dim);cursor:pointer;transition:all .16s ease;font-size:13px;}
+  .tbtn:hover{color:var(--ink);border-color:var(--line);background:rgba(255,255,255,0.03);}
+  .tbtn svg{display:block;}
+
+  #hint{position:absolute;bottom:30px;right:30px;z-index:5;font-size:10.5px;
+    letter-spacing:0.05em;color:var(--ink-faint);text-align:right;line-height:1.9;
+    pointer-events:none;}
+  #hint b{color:var(--ink-dim);font-weight:400;}
+
+  @media (max-width:680px){
+    #title{max-width:78vw;}
+    #hint{display:none;}
+    #row{flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="field"></canvas>
+
+  <div id="title">
+    <div class="eyebrow">gray–scott · reaction–diffusion</div>
+    <h1>the spots divide without a plan</h1>
+    <p>one rule, two numbers. there is no spot-maker and no stripe-maker —
+       only a <b>feed</b> rate and a <b>kill</b> rate diffusing through a flat field.
+       move them and the field decides what to become.</p>
+  </div>
+
+  <div id="deck">
+    <div class="panel" id="worlds"></div>
+    <div class="panel" id="row">
+      <div id="pad">
+        <span class="axlabel ax-f">feed →</span>
+        <span class="axlabel ax-k">← kill</span>
+        <div id="dot"></div>
+      </div>
+      <div id="meta">
+        <div class="readout">
+          <div class="nm" id="r-name">mitosis</div>
+          <div><span class="k">f</span> <span class="v" id="r-f">0.0367</span>
+               &nbsp; <span class="k">k</span> <span class="v" id="r-k">0.0649</span></div>
+        </div>
+        <div id="transport">
+          <button class="tbtn" id="b-play" title="play / pause"></button>
+          <button class="tbtn" id="b-seed" title="re-seed center">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M11.5 4.2A5 5 0 1 0 12 7" stroke-linecap="round"/><path d="M11.6 1.8v2.6H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="tbtn" id="b-clear" title="clear field">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M3 3l8 8M11 3l-8 8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hint">
+    <b>drag on the field</b> to seed life<br>
+    <b>drag the dot</b> to roam between worlds<br>
+    <b>pick a world</b> to start one fresh
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  // ---------- simulation grid ----------
+  const GW = 196, GH = 122, N = GW*GH;
+  const DA = 1.0, DB = 0.5, DT = 1.0;
+  const STEPS = 10;               // sim steps per rendered frame
+
+  let a  = new Float32Array(N);
+  let b  = new Float32Array(N);
+  let a2 = new Float32Array(N);
+  let b2 = new Float32Array(N);
+
+  // current chemistry
+  let f = 0.0367, k = 0.0649;
+
+  // ---------- worlds (points in the same continuous space) ----------
+  const WORLDS = [
+    {name:"mitosis",  f:0.0367, k:0.0649},
+    {name:"coral",    f:0.0545, k:0.0620},
+    {name:"maze",     f:0.0290, k:0.0570},
+    {name:"holes",    f:0.0392, k:0.0590},
+    {name:"fingerprint", f:0.0420, k:0.0588},
+    {name:"waves",    f:0.0180, k:0.0510},
+  ];
+  // pad axis ranges
+  const FMIN=0.010, FMAX=0.075, KMIN=0.045, KMAX=0.070;
+
+  // ---------- seed / clear ----------
+  function clearField(){
+    a.fill(1); b.fill(0);
+  }
+  function seedDisc(cx, cy, r){
+    for(let y=-r;y<=r;y++){
+      for(let x=-r;x<=r;x++){
+        if(x*x+y*y>r*r) continue;
+        const gx=(cx+x+GW)%GW, gy=(cy+y+GH)%GH, i=gy*GW+gx;
+        a[i]=0.25; b[i]=0.92;
+      }
+    }
+  }
+  function reseedCenter(){
+    clearField();
+    seedDisc(GW>>1, GH>>1, 7);
+    // a couple of small satellites so growth fills faster
+    seedDisc((GW*0.32)|0, (GH*0.4)|0, 4);
+    seedDisc((GW*0.7)|0, (GH*0.62)|0, 4);
+  }
+
+  // ---------- step ----------
+  function step(){
+    for(let y=0;y<GH;y++){
+      const yo=y*GW;
+      const yom=((y-1+GH)%GH)*GW;
+      const yop=((y+1)%GH)*GW;
+      for(let x=0;x<GW;x++){
+        const i=yo+x;
+        const xl=x===0?GW-1:x-1;
+        const xr=x===GW-1?0:x+1;
+        const av=a[i], bv=b[i];
+        const lapA=(a[yo+xl]+a[yo+xr]+a[yom+x]+a[yop+x])*0.2
+                  +(a[yom+xl]+a[yom+xr]+a[yop+xl]+a[yop+xr])*0.05 - av;
+        const lapB=(b[yo+xl]+b[yo+xr]+b[yom+x]+b[yop+x])*0.2
+                  +(b[yom+xl]+b[yom+xr]+b[yop+xl]+b[yop+xr])*0.05 - bv;
+        const reab=av*bv*bv;
+        let na=av+(DA*lapA - reab + f*(1-av))*DT;
+        let nb=bv+(DB*lapB + reab - (f+k)*bv)*DT;
+        a2[i]= na<0?0:(na>1?1:na);
+        b2[i]= nb<0?0:(nb>1?1:nb);
+      }
+    }
+    let t=a;a=a2;a2=t; t=b;b=b2;b2=t;
+  }
+
+  // ---------- palette LUT (still field grey, living front glows) ----------
+  const LUT=new Uint8Array(256*3);
+  (function buildLUT(){
+    const stops=[
+      [0.00,[ 9, 10, 15]],
+      [0.28,[ 22, 28, 44]],
+      [0.50,[ 52, 66, 92]],
+      [0.68,[120,138,160]],
+      [0.82,[ 86,224,206]],   // accent — the moving membrane
+      [1.00,[224,255,247]],
+    ];
+    for(let i=0;i<256;i++){
+      const t=i/255;
+      let s=0; while(s<stops.length-2 && t>stops[s+1][0]) s++;
+      const [t0,c0]=stops[s], [t1,c1]=stops[s+1];
+      const u=(t-t0)/(t1-t0);
+      LUT[i*3  ]=c0[0]+(c1[0]-c0[0])*u;
+      LUT[i*3+1]=c0[1]+(c1[1]-c0[1])*u;
+      LUT[i*3+2]=c0[2]+(c1[2]-c0[2])*u;
+    }
+  })();
+
+  // ---------- canvas / render ----------
+  const view=document.getElementById("field");
+  const vctx=view.getContext("2d");
+  // offscreen at sim resolution
+  const off=document.createElement("canvas");
+  off.width=GW; off.height=GH;
+  const octx=off.getContext("2d");
+  const img=octx.createImageData(GW,GH);
+  const data=img.data;
+  for(let i=0;i<N;i++) data[i*4+3]=255;
+
+  function render(){
+    for(let i=0;i<N;i++){
+      let idx=(b[i]*560)|0; if(idx>255)idx=255;
+      const p=idx*3, q=i*4;
+      data[q  ]=LUT[p];
+      data[q+1]=LUT[p+1];
+      data[q+2]=LUT[p+2];
+    }
+    octx.putImageData(img,0,0);
+    vctx.imageSmoothingEnabled=true;
+    vctx.drawImage(off,0,0,view.width,view.height);
+  }
+
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1, 2);
+    view.width=Math.round(window.innerWidth*dpr);
+    view.height=Math.round(window.innerHeight*dpr);
+  }
+  window.addEventListener("resize",resize);
+  resize();
+
+  // ---------- loop ----------
+  let playing=true;
+  function frame(){
+    if(playing){ for(let s=0;s<STEPS;s++) step(); }
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- painting on the field ----------
+  let painting=false;
+  function paintAt(clientX,clientY){
+    const rect=view.getBoundingClientRect();
+    const gx=Math.floor((clientX-rect.left)/rect.width*GW);
+    const gy=Math.floor((clientY-rect.top)/rect.height*GH);
+    if(gx<0||gy<0||gx>=GW||gy>=GH) return;
+    seedDisc(gx,gy,5);
+  }
+  view.addEventListener("pointerdown",e=>{painting=true;paintAt(e.clientX,e.clientY);view.setPointerCapture(e.pointerId);});
+  view.addEventListener("pointermove",e=>{if(painting)paintAt(e.clientX,e.clientY);});
+  view.addEventListener("pointerup",()=>painting=false);
+  view.addEventListener("pointercancel",()=>painting=false);
+
+  // ---------- the (f,k) pad ----------
+  const pad=document.getElementById("pad");
+  const dot=document.getElementById("dot");
+  const rf=document.getElementById("r-f"), rk=document.getElementById("r-k");
+  const rname=document.getElementById("r-name");
+
+  function fkToPad(){
+    const px=(f-FMIN)/(FMAX-FMIN);
+    const py=(k-KMIN)/(KMAX-KMIN);
+    dot.style.left=(px*100)+"%";
+    dot.style.top=((1-py)*100)+"%";
+  }
+  function updateReadout(name){
+    rf.textContent=f.toFixed(4);
+    rk.textContent=k.toFixed(4);
+    if(name!==undefined) rname.textContent=name;
+  }
+  let padDrag=false;
+  function padAt(clientX,clientY){
+    const r=pad.getBoundingClientRect();
+    let px=(clientX-r.left)/r.width, py=(clientY-r.top)/r.height;
+    px=Math.max(0,Math.min(1,px)); py=Math.max(0,Math.min(1,py));
+    f=FMIN+px*(FMAX-FMIN);
+    k=KMIN+(1-py)*(KMAX-KMIN);
+    fkToPad();
+    updateReadout("— roaming —");
+    setActiveChip(-1);
+  }
+  pad.addEventListener("pointerdown",e=>{padDrag=true;padAt(e.clientX,e.clientY);pad.setPointerCapture(e.pointerId);});
+  pad.addEventListener("pointermove",e=>{if(padDrag)padAt(e.clientX,e.clientY);});
+  pad.addEventListener("pointerup",()=>padDrag=false);
+  pad.addEventListener("pointercancel",()=>padDrag=false);
+
+  // ---------- world chips ----------
+  const worldsEl=document.getElementById("worlds");
+  let chips=[];
+  function setActiveChip(idx){
+    chips.forEach((c,i)=>c.classList.toggle("on",i===idx));
+  }
+  WORLDS.forEach((w,i)=>{
+    const c=document.createElement("button");
+    c.className="chip"; c.textContent=w.name;
+    c.addEventListener("click",()=>{
+      f=w.f; k=w.k;
+      fkToPad(); updateReadout(w.name); setActiveChip(i);
+      reseedCenter();
+      if(!playing) togglePlay(true);
+    });
+    worldsEl.appendChild(c);
+    chips.push(c);
+  });
+
+  // ---------- transport ----------
+  const playBtn=document.getElementById("b-play");
+  const ICON_PLAY='<svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><path d="M3 2l8 4.5L3 11z"/></svg>';
+  const ICON_PAUSE='<svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="3" y="2.5" width="2.6" height="8"/><rect x="7.4" y="2.5" width="2.6" height="8"/></svg>';
+  function togglePlay(force){
+    playing=(force===undefined)?!playing:force;
+    playBtn.innerHTML=playing?ICON_PAUSE:ICON_PLAY;
+  }
+  playBtn.addEventListener("click",()=>togglePlay());
+  document.getElementById("b-seed").addEventListener("click",()=>{reseedCenter();if(!playing)togglePlay(true);});
+  document.getElementById("b-clear").addEventListener("click",()=>clearField());
+
+  // ---------- boot ----------
+  const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  reseedCenter();
+  fkToPad();
+  updateReadout("mitosis");
+  setActiveChip(0);
+  togglePlay(!reduce);          // start paused if user prefers reduced motion
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Listening</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; overflow: hidden; cursor: none; font-family: 'Georgia', serif; }
+canvas { display: block; }
+#info {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(180, 170, 160, 0.4); font-size: 13px; letter-spacing: 0.5px;
+  pointer-events: none; transition: opacity 1.5s;
+  text-align: center; line-height: 1.6;
+}
+#quote {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: rgba(200, 190, 175, 0); font-size: 15px; letter-spacing: 0.3px;
+  pointer-events: none; transition: color 3s; max-width: 400px;
+  text-align: center; line-height: 1.8; font-style: italic;
+}
+#click-prompt {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: rgba(180, 170, 160, 0.5); font-size: 14px; letter-spacing: 0.5px;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="info">move to draw in the dark &middot; space to see &middot; click for sound</div>
+<div id="quote"></div>
+<div id="click-prompt">click to begin</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+const quoteEl = document.getElementById('quote');
+const clickPrompt = document.getElementById('click-prompt');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+let started = false;
+let mouseX = W/2, mouseY = H/2;
+let prevMouseX = W/2, prevMouseY = H/2;
+let mouseActive = false;
+let revealed = false;
+let revealProgress = 0; // 0 to 1
+let audioEnabled = false;
+let audioCtx = null;
+let totalMarks = 0;
+
+// --- Particles ---
+const particles = [];
+const MAX_PARTICLES = 2000;
+
+class Particle {
+  constructor(x, y, vx, vy, color, owner, size) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.owner = owner; // 'player' or 'agent0' etc
+    this.size = size || 2;
+    this.life = 1.0;
+    this.maxLife = 0.985 + Math.random() * 0.01;
+    this.age = 0;
+  }
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.vx *= 0.992;
+    this.vy *= 0.992;
+    this.age += dt;
+    this.life *= this.maxLife;
+    // gentle drift
+    this.vx += (Math.random() - 0.5) * 0.02;
+    this.vy += (Math.random() - 0.5) * 0.02;
+  }
+}
+
+// --- Autonomous agents ---
+const agents = [
+  { x: W * 0.2, y: H * 0.3, angle: Math.random() * Math.PI * 2, speed: 0.4,
+    color: [120, 200, 210], name: 'agent0', phase: Math.random() * 100,
+    freq: 0.003 + Math.random() * 0.002, amp: 0.8 },
+  { x: W * 0.7, y: H * 0.6, angle: Math.random() * Math.PI * 2, speed: 0.35,
+    color: [180, 140, 210], name: 'agent1', phase: Math.random() * 100,
+    freq: 0.002 + Math.random() * 0.002, amp: 0.7 },
+  { x: W * 0.5, y: H * 0.8, angle: Math.random() * Math.PI * 2, speed: 0.3,
+    color: [210, 160, 150], name: 'agent2', phase: Math.random() * 100,
+    freq: 0.004 + Math.random() * 0.002, amp: 0.6 }
+];
+
+function updateAgents(dt) {
+  for (const a of agents) {
+    a.phase += dt * 0.01;
+    // organic wandering via layered sine
+    a.angle += Math.sin(a.phase * a.freq * 60) * 0.015 * dt;
+    a.angle += Math.sin(a.phase * a.freq * 23 + 1.7) * 0.008 * dt;
+
+    a.x += Math.cos(a.angle) * a.speed * dt;
+    a.y += Math.sin(a.angle) * a.speed * dt;
+
+    // soft boundary wrapping
+    const margin = 60;
+    if (a.x < margin) a.angle += 0.03 * dt;
+    if (a.x > W - margin) a.angle -= 0.03 * dt;
+    if (a.y < margin) a.angle += 0.03 * dt * (Math.sin(a.angle) > 0 ? -1 : 1);
+    if (a.y > H - margin) a.angle -= 0.03 * dt * (Math.sin(a.angle) > 0 ? 1 : -1);
+    a.x = Math.max(10, Math.min(W - 10, a.x));
+    a.y = Math.max(10, Math.min(H - 10, a.y));
+
+    // emit particles
+    if (Math.random() < 0.15 * dt && particles.length < MAX_PARTICLES) {
+      const spread = 0.3;
+      particles.push(new Particle(
+        a.x + (Math.random() - 0.5) * 8,
+        a.y + (Math.random() - 0.5) * 8,
+        Math.cos(a.angle + (Math.random() - 0.5) * spread) * a.speed * 0.2,
+        Math.sin(a.angle + (Math.random() - 0.5) * spread) * a.speed * 0.2,
+        a.color, a.name, 1.5 + Math.random()
+      ));
+    }
+  }
+}
+
+// --- Player trail ---
+function emitPlayerParticles() {
+  if (!mouseActive || !started) return;
+  const dx = mouseX - prevMouseX;
+  const dy = mouseY - prevMouseY;
+  const speed = Math.sqrt(dx * dx + dy * dy);
+  if (speed < 0.5) return;
+
+  const count = Math.min(Math.floor(speed * 0.3) + 1, 4);
+  for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+    const t = i / count;
+    const px = prevMouseX + dx * t + (Math.random() - 0.5) * 4;
+    const py = prevMouseY + dy * t + (Math.random() - 0.5) * 4;
+    particles.push(new Particle(
+      px, py,
+      dx * 0.02 + (Math.random() - 0.5) * 0.3,
+      dy * 0.02 + (Math.random() - 0.5) * 0.3,
+      [220, 190, 140], 'player', 2 + Math.random() * 1.5
+    ));
+    totalMarks++;
+  }
+}
+
+// --- Sound ---
+let gainNodes = {};
+let oscNodes = {};
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // master gain
+  const master = audioCtx.createGain();
+  master.gain.value = 0.12;
+  master.connect(audioCtx.destination);
+
+  // player voice
+  const playerOsc = audioCtx.createOscillator();
+  const playerGain = audioCtx.createGain();
+  playerOsc.type = 'sine';
+  playerOsc.frequency.value = 220;
+  playerGain.gain.value = 0;
+  playerOsc.connect(playerGain);
+  playerGain.connect(master);
+  playerOsc.start();
+  oscNodes.player = playerOsc;
+  gainNodes.player = playerGain;
+
+  // agent voices
+  const types = ['triangle', 'sine', 'sine'];
+  for (let i = 0; i < 3; i++) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = types[i];
+    osc.frequency.value = 180 + i * 40;
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start();
+    oscNodes['agent' + i] = osc;
+    gainNodes['agent' + i] = gain;
+  }
+}
+
+function updateSound() {
+  if (!audioCtx || !audioEnabled) return;
+  const now = audioCtx.currentTime;
+
+  // player sound based on Y position
+  if (mouseActive) {
+    const normalY = 1 - (mouseY / H);
+    // Hirajoshi-ish scale: D E F A Bb across three octaves
+    const scale = [146.83, 164.81, 174.61, 220.00, 233.08,
+                   293.66, 329.63, 349.23, 440.00, 466.16,
+                   587.33, 659.26, 698.46, 880.00, 932.33];
+    const idx = Math.floor(normalY * (scale.length - 1));
+    const freq = scale[Math.max(0, Math.min(scale.length - 1, idx))];
+    oscNodes.player.frequency.setTargetAtTime(freq, now, 0.08);
+
+    const dx = mouseX - prevMouseX;
+    const dy = mouseY - prevMouseY;
+    const speed = Math.sqrt(dx * dx + dy * dy);
+    const vol = Math.min(speed * 0.008, 0.3);
+    gainNodes.player.gain.setTargetAtTime(vol, now, 0.05);
+  } else {
+    gainNodes.player.gain.setTargetAtTime(0, now, 0.3);
+  }
+
+  // agent sounds — always audible (the global circle)
+  for (let i = 0; i < agents.length; i++) {
+    const a = agents[i];
+    const normalY = 1 - (a.y / H);
+    const baseFreq = 130 + normalY * 300;
+    // pentatonic quantization
+    const semitones = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
+    const semi = Math.floor((baseFreq - 130) / 30);
+    const quantized = semitones[Math.abs(semi) % semitones.length];
+    const freq = 130 * Math.pow(2, quantized / 12);
+
+    oscNodes['agent' + i].frequency.setTargetAtTime(freq, now, 0.15);
+    const vol = 0.04 + Math.sin(a.phase * 0.3) * 0.02;
+    gainNodes['agent' + i].gain.setTargetAtTime(vol * (audioEnabled ? 1 : 0), now, 0.1);
+  }
+}
+
+// --- Quotes ---
+const quotes = [
+  "walk so silently that the bottoms\nof your feet become ears",
+  "if they worked perfectly, they should\njust memorize. but they don't",
+  "the creativity is not despite\nthe limitations",
+  "listening to listening",
+  "no argument",
+  "ninety percent from two constraints:\nlocality and equivariance",
+  "what looks like limitation\nis the instrument"
+];
+let currentQuote = -1;
+let quoteTimer = 0;
+let quoteVisible = false;
+const QUOTE_INTERVAL = 18000; // ms between quotes
+
+function updateQuotes(dt) {
+  quoteTimer += dt * 16.67;
+  if (!quoteVisible && quoteTimer > QUOTE_INTERVAL && totalMarks > 30) {
+    currentQuote = (currentQuote + 1) % quotes.length;
+    quoteEl.textContent = quotes[currentQuote];
+    quoteEl.style.color = 'rgba(200, 190, 175, 0.35)';
+    quoteVisible = true;
+    quoteTimer = 0;
+    setTimeout(() => {
+      quoteEl.style.color = 'rgba(200, 190, 175, 0)';
+      quoteVisible = false;
+    }, 6000);
+  }
+}
+
+// --- Render ---
+let lastTime = 0;
+
+function draw(time) {
+  const dt = lastTime ? Math.min((time - lastTime) / 16.67, 3) : 1;
+  lastTime = time;
+
+  if (!started) {
+    requestAnimationFrame(draw);
+    return;
+  }
+
+  // update
+  updateAgents(dt);
+  emitPlayerParticles();
+  updateSound();
+  updateQuotes(dt);
+
+  // reveal animation
+  if (revealed && revealProgress < 1) {
+    revealProgress = Math.min(1, revealProgress + 0.008 * dt);
+  } else if (!revealed && revealProgress > 0) {
+    revealProgress = Math.max(0, revealProgress - 0.012 * dt);
+  }
+
+  // update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update(dt);
+    if (particles[i].life < 0.01) {
+      particles.splice(i, 1);
+    }
+  }
+
+  // local interaction: nearby particles from different owners attract slightly
+  if (particles.length < 800) {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        if (particles[i].owner === particles[j].owner) continue;
+        const dx = particles[j].x - particles[i].x;
+        const dy = particles[j].y - particles[i].y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 3600 && d2 > 100) { // 60px interaction radius
+          const f = 0.00003 * dt / Math.sqrt(d2);
+          particles[i].vx += dx * f;
+          particles[i].vy += dy * f;
+          particles[j].vx -= dx * f;
+          particles[j].vy -= dy * f;
+        }
+      }
+    }
+  }
+
+  // --- Draw ---
+  // fade background
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.08)';
+  ctx.fillRect(0, 0, W, H);
+
+  // calculate patch visibility for each particle
+  const patchRadius = 130;
+  const patchFalloff = 80;
+
+  for (const p of particles) {
+    const dx = p.x - mouseX;
+    const dy = p.y - mouseY;
+    const distToMouse = Math.sqrt(dx * dx + dy * dy);
+
+    // visibility: within player patch OR revealed
+    let visibility;
+    if (distToMouse < patchRadius) {
+      visibility = 1;
+    } else if (distToMouse < patchRadius + patchFalloff) {
+      visibility = 1 - (distToMouse - patchRadius) / patchFalloff;
+    } else {
+      visibility = 0.04; // barely perceptible in the dark
+    }
+
+    // blend with reveal
+    visibility = visibility + (1 - visibility) * revealProgress;
+
+    const alpha = p.life * visibility;
+    if (alpha < 0.005) continue;
+
+    const [r, g, b] = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * (0.5 + p.life * 0.5), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.8})`;
+    ctx.fill();
+
+    // glow for brighter particles
+    if (alpha > 0.3 && p.size > 1.5) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.15})`;
+      ctx.fill();
+    }
+  }
+
+  // draw connections between nearby particles of different owners (only when visible)
+  if (revealProgress > 0.3) {
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < particles.length; i += 3) {
+      for (let j = i + 1; j < particles.length; j += 3) {
+        if (particles[i].owner === particles[j].owner) continue;
+        const dx = particles[j].x - particles[i].x;
+        const dy = particles[j].y - particles[i].y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 2500) {
+          const alpha = (1 - d2 / 2500) * 0.15 * revealProgress *
+                        Math.min(particles[i].life, particles[j].life);
+          if (alpha < 0.01) continue;
+          const [r1, g1, b1] = particles[i].color;
+          const [r2, g2, b2] = particles[j].color;
+          ctx.strokeStyle = `rgba(${(r1+r2)>>1}, ${(g1+g2)>>1}, ${(b1+b2)>>1}, ${alpha})`;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // player patch glow (the illuminated area)
+  if (mouseActive && revealProgress < 0.8) {
+    const gradient = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, patchRadius + patchFalloff);
+    gradient.addColorStop(0, `rgba(255, 240, 210, ${0.025 * (1 - revealProgress)})`);
+    gradient.addColorStop(0.5, `rgba(255, 240, 210, ${0.01 * (1 - revealProgress)})`);
+    gradient.addColorStop(1, 'rgba(255, 240, 210, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // custom cursor (small dot)
+  if (mouseActive) {
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 240, 220, ${0.5 * (1 - revealProgress * 0.7)})`;
+    ctx.fill();
+  }
+
+  // agent position indicators (faint, audible even when invisible)
+  for (const a of agents) {
+    const dx = a.x - mouseX;
+    const dy = a.y - mouseY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    let alpha;
+    if (dist < patchRadius) {
+      alpha = 0.4;
+    } else {
+      alpha = 0.06 + revealProgress * 0.2;
+    }
+
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${a.color[0]}, ${a.color[1]}, ${a.color[2]}, ${alpha})`;
+    ctx.fill();
+
+    // larger presence glow
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, 20, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${a.color[0]}, ${a.color[1]}, ${a.color[2]}, ${alpha * 0.15})`;
+    ctx.fill();
+  }
+
+  prevMouseX = mouseX;
+  prevMouseY = mouseY;
+
+  requestAnimationFrame(draw);
+}
+
+// --- Events ---
+canvas.addEventListener('click', () => {
+  if (!started) {
+    started = true;
+    clickPrompt.style.display = 'none';
+    initAudio();
+    audioEnabled = true;
+    return;
+  }
+  if (!audioEnabled) {
+    initAudio();
+    audioEnabled = true;
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  mouseActive = true;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouseActive = false;
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    revealed = true;
+    info.style.opacity = '0';
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') {
+    revealed = false;
+    info.style.opacity = '1';
+  }
+});
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

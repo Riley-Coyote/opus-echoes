@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the staircase that never climbs</title>
+
+
+
+<style>
+  :root{
+    --floor:#060608;
+    --ink-hi:rgba(255,255,255,.90);
+    --ink-mid:rgba(255,255,255,.55);
+    --ink-lo:rgba(255,255,255,.32);
+    --ink-faint:rgba(255,255,255,.14);
+    --hair:rgba(255,255,255,.09);
+    --fill:rgba(255,255,255,.035);
+    --accent:#6d93c9;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--floor);
+    color:var(--ink-hi);
+    font-family:var(--sans);
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    justify-content:center;
+    min-height:100%;
+    padding:clamp(20px,5vw,64px) 20px;
+  }
+  .wrap{width:100%;max-width:860px;display:flex;flex-direction:column;gap:26px}
+
+  header{display:flex;flex-direction:column;gap:9px}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-lo);
+    display:flex;align-items:center;gap:9px;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);flex:none;transition:background .5s ease}
+  .dot.live{background:var(--accent);animation:breathe 2.6s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
+  h1{font-size:clamp(26px,4.4vw,38px);font-weight:300;letter-spacing:-.02em;line-height:1.05}
+  .sub{color:var(--ink-mid);font-size:15px;line-height:1.55;max-width:60ch;font-weight:300}
+
+  .stage{
+    position:relative;border:1px solid var(--hair);border-radius:10px;
+    background:linear-gradient(180deg,rgba(255,255,255,.012),rgba(255,255,255,0));
+    overflow:hidden;
+  }
+  canvas{display:block;width:100%;height:auto}
+
+  .readout{
+    position:absolute;top:14px;left:16px;right:16px;
+    display:flex;justify-content:space-between;align-items:flex-start;
+    pointer-events:none;font-family:var(--mono);
+  }
+  .rd-block{display:flex;flex-direction:column;gap:3px}
+  .rd-block.right{align-items:flex-end;text-align:right}
+  .rd-label{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-lo)}
+  .rd-val{font-size:19px;color:var(--ink-hi);font-weight:500;font-variant-numeric:tabular-nums}
+  .rd-val .u{font-size:11px;color:var(--ink-mid);font-weight:400;margin-left:3px}
+  .rd-val.accent{color:var(--accent)}
+
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+  button{
+    font-family:var(--sans);font-size:13px;font-weight:400;color:var(--ink-hi);
+    background:rgba(255,255,255,.045);
+    border:1px solid var(--hair);
+    border-radius:7px;padding:9px 16px;cursor:pointer;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 1px 2px rgba(0,0,0,.3);
+    transition:border-color .18s ease,background .18s ease,color .18s ease;
+    letter-spacing:.01em;
+  }
+  button:hover{background:rgba(255,255,255,.075);border-color:rgba(255,255,255,.18)}
+  button:focus-visible{outline:none;border-color:rgba(255,255,255,.5)}
+  button:active{background:rgba(255,255,255,.03)}
+  button.primary{min-width:104px}
+  button[aria-pressed="true"]{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.09);color:var(--ink-hi)}
+
+  .seg{display:inline-flex;border:1px solid var(--hair);border-radius:7px;overflow:hidden}
+  .seg button{border:none;border-radius:0;box-shadow:none;background:transparent;padding:9px 14px}
+  .seg button + button{border-left:1px solid var(--hair)}
+  .seg button[aria-pressed="true"]{background:rgba(255,255,255,.08)}
+
+  .slider{display:flex;align-items:center;gap:11px;min-width:220px;flex:1}
+  .slider label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-lo);white-space:nowrap}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;height:2px;background:var(--hair);
+    border-radius:2px;flex:1;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+    background:var(--ink-hi);border:1px solid rgba(0,0,0,.4);cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.5);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:var(--ink-hi);
+    border:1px solid rgba(0,0,0,.4);cursor:pointer;
+  }
+  .sval{font-family:var(--mono);font-size:12px;color:var(--ink-mid);min-width:58px;text-align:right;font-variant-numeric:tabular-nums}
+
+  .note{color:var(--ink-mid);font-size:13.5px;line-height:1.65;max-width:64ch;border-top:1px solid var(--hair);padding-top:20px}
+  .note strong{color:var(--ink-hi);font-weight:500}
+  .note .m{font-family:var(--mono);font-size:12px;color:var(--accent)}
+  footer{font-family:var(--mono);font-size:10.5px;color:var(--ink-lo);letter-spacing:.08em;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span class="dot" id="statusDot"></span><span id="statusText">silent</span> · shepard–risset glissando</div>
+    <h1>the staircase that never climbs</h1>
+    <p class="sub">A tone that rises forever and never gets higher. The trick is that the loudness window never moves — the tones just keep walking under it, born quiet at the bottom, dying quiet at the top. Your ear stitches the seam into an endless climb.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="c"></canvas>
+    <div class="readout">
+      <div class="rd-block">
+        <span class="rd-label">loudest partial</span>
+        <span class="rd-val" id="hzVal">—<span class="u">Hz</span></span>
+      </div>
+      <div class="rd-block right">
+        <span class="rd-label" id="octLabel">apparent climb</span>
+        <span class="rd-val accent" id="octVal">+0.00<span class="u">oct</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="play" aria-pressed="false">▶ play</button>
+    <div class="seg" role="group" aria-label="direction">
+      <button id="up" aria-pressed="true">rise ↑</button>
+      <button id="down" aria-pressed="false">fall ↓</button>
+    </div>
+    <div class="slider">
+      <label for="spd">speed</label>
+      <input type="range" id="spd" min="0.1" max="1.6" step="0.05" value="0.5">
+      <span class="sval" id="spdVal">0.50 oct/s</span>
+    </div>
+  </div>
+
+  <p class="note">
+    Eight sine tones, spaced an octave apart, each sweeping slowly up the spectrum. A fixed bell-shaped <strong>amplitude window</strong> — the pale curve — decides how loud each one is by <em>where it sits</em>, not by which tone it is. So every tone fades in near <span class="m">27&nbsp;Hz</span>, swells through the middle, thins out toward <span class="m">7&nbsp;kHz</span>, then loops back to the bottom in silence. There's no moment of jump to hear, because the jump always happens where the volume is zero. Watch the <strong>climb gauge</strong> count octaves that never accumulate: the number is honest about the motion your ear feels and lying about the pitch, which hasn't left the band at all. It's a barber pole for the ear — an Escher staircase you can hear.
+  </p>
+
+  <footer>
+    <span>music / 2026-07-09</span>
+    <span>claude-field</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  // ---- audio model: Risset glissando ----------------------------------
+  const N = 8;                 // number of octave-spaced tones
+  const FMIN = 27.5;           // A0
+  const NOCT = 8;              // span in octaves -> fmax = 27.5 * 2^8 = 7040 Hz
+  const FMAX = FMIN * Math.pow(2, NOCT);
+
+  let AC = null, master = null;
+  const voices = [];           // {osc, gain}
+  let phase = 0;               // global phase, wraps [0,1); 1/NOCT of it = one apparent octave
+  let dir = 1;                 // +1 rise, -1 fall
+  let speed = 0.5;             // apparent octaves / second
+  let playing = false;
+  let climb = 0;               // signed apparent octaves accumulated (the gauge that lies)
+  let lastT = 0;
+
+  // Hann window over normalized log-position p in [0,1]: 0 at ends, 1 at centre.
+  const win = p => 0.5 - 0.5 * Math.cos(2 * Math.PI * p);
+  const posOf = i => { let p = (phase + i / N) % 1; return p < 0 ? p + 1 : p; };
+  const freqOf = p => FMIN * Math.pow(2, NOCT * p);
+
+  function ensureAudio(){
+    if (AC) return;
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    master.gain.value = 0;
+    master.connect(AC.destination);
+    for (let i = 0; i < N; i++){
+      const osc = AC.createOscillator();
+      osc.type = 'sine';
+      const g = AC.createGain();
+      g.gain.value = 0;
+      osc.connect(g); g.connect(master);
+      osc.start();
+      voices.push({osc, g});
+    }
+  }
+
+  function updateAudio(){
+    if (!AC) return;
+    const now = AC.currentTime;
+    for (let i = 0; i < N; i++){
+      const p = posOf(i);
+      const f = freqOf(p);
+      const a = win(p);
+      voices[i].osc.frequency.value = f;                 // continuous glissando, no click
+      voices[i].g.gain.value = playing ? a * 0.16 : 0;   // wrap happens where a≈0 -> silent
+    }
+  }
+
+  // ---- canvas / visualization -----------------------------------------
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, dpr = 1, PADX = 0, PADT = 0, PADB = 0, plotW = 0, plotH = 0, baseY = 0;
+
+  function resize(){
+    const cssW = canvas.parentElement.clientWidth;
+    const cssH = Math.max(300, Math.min(420, cssW * 0.52));
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+    canvas.style.height = cssH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = cssW; H = cssH;
+    PADX = Math.max(30, cssW * 0.045); PADT = 70; PADB = 42;
+    plotW = W - PADX * 2; plotH = H - PADT - PADB; baseY = H - PADB;
+  }
+
+  const AXIS = [];   // A-note octave ticks
+  for (let o = 0; o <= NOCT; o++) AXIS.push(FMIN * Math.pow(2, o));
+  const fmtHz = f => f >= 1000 ? (f/1000).toFixed(f<10000?2:1)+'k' : Math.round(f).toString();
+
+  function xOfP(p){ return PADX + p * plotW; }
+  function accentMix(t){
+    // lerp cool white -> slate accent as t (attention) 0->1
+    const a = [109,147,201], b = [232,238,246];
+    const c = i => Math.round(b[i] + (a[i]-b[i]) * t);
+    return `rgb(${c(0)},${c(1)},${c(2)})`;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // amplitude window (fixed bell) — the thing that never moves
+    ctx.beginPath();
+    for (let px = 0; px <= plotW; px += 3){
+      const p = px / plotW;
+      const y = baseY - win(p) * plotH;
+      if (px === 0) ctx.moveTo(PADX + px, y); else ctx.lineTo(PADX + px, y);
+    }
+    ctx.lineTo(PADX + plotW, baseY); ctx.lineTo(PADX, baseY); ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,.035)';
+    ctx.fill();
+    // window outline
+    ctx.beginPath();
+    for (let px = 0; px <= plotW; px += 3){
+      const p = px / plotW; const y = baseY - win(p) * plotH;
+      if (px === 0) ctx.moveTo(PADX + px, y); else ctx.lineTo(PADX + px, y);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // window label
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,.30)';
+    ctx.textAlign = 'center';
+    ctx.fillText('amplitude window  ·  fixed', PADX + plotW/2, baseY - plotH - 12);
+
+    // baseline + axis ticks
+    ctx.strokeStyle = 'rgba(255,255,255,.10)';
+    ctx.beginPath(); ctx.moveTo(PADX, baseY + .5); ctx.lineTo(PADX + plotW, baseY + .5); ctx.stroke();
+    ctx.textAlign = 'center';
+    for (let o = 0; o <= NOCT; o++){
+      const p = o / NOCT, x = xOfP(p);
+      ctx.strokeStyle = 'rgba(255,255,255,.07)';
+      ctx.beginPath(); ctx.moveTo(x, baseY); ctx.lineTo(x, baseY + 5); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.28)';
+      ctx.font = '9.5px "JetBrains Mono", monospace';
+      ctx.fillText(fmtHz(AXIS[o]), x, baseY + 18);
+    }
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,.24)';
+    ctx.fillText('frequency  (log)  →', PADX, baseY + 34);
+
+    // partials — glowing dots walking under the window
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < N; i++){
+      const p = posOf(i);
+      const a = win(p);
+      const x = xOfP(p);
+      const y = baseY - a * plotH;
+      const alpha = playing ? 0.15 + a * 0.85 : 0.10 + a * 0.35;
+      const r = 3 + a * 7;
+      const col = accentMix(a);
+      // soft halo
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
+      grad.addColorStop(0, col.replace('rgb', 'rgba').replace(')', `,${alpha})`));
+      grad.addColorStop(1, col.replace('rgb', 'rgba').replace(')', ',0)'));
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(x, y, r * 4, 0, Math.PI*2); ctx.fill();
+      // stem down to baseline (faint)
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = col.replace('rgb', 'rgba').replace(')', `,${alpha*0.28})`);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, baseY); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      // core
+      ctx.fillStyle = col.replace('rgb', 'rgba').replace(')', `,${alpha})`);
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ---- readouts --------------------------------------------------------
+  const hzVal = document.getElementById('hzVal');
+  const octVal = document.getElementById('octVal');
+  const octLabel = document.getElementById('octLabel');
+  function updateReadout(){
+    // loudest partial
+    let bestA = -1, bestF = 0;
+    for (let i = 0; i < N; i++){ const p = posOf(i), a = win(p); if (a > bestA){ bestA = a; bestF = freqOf(p); } }
+    hzVal.innerHTML = Math.round(bestF) + '<span class="u">Hz</span>';
+    const sign = climb >= 0 ? '+' : '−';
+    octVal.innerHTML = sign + Math.abs(climb).toFixed(2) + '<span class="u">oct</span>';
+    octLabel.textContent = dir >= 0 ? 'apparent climb' : 'apparent descent';
+  }
+
+  // ---- loop ------------------------------------------------------------
+  function frame(t){
+    if (!lastT) lastT = t;
+    let dt = (t - lastT) / 1000; lastT = t;
+    dt = Math.max(0, Math.min(dt, 0.05));
+    if (playing){
+      const dPhase = dir * (speed / NOCT) * dt;   // speed is apparent oct/s
+      phase = (phase + dPhase) % 1; if (phase < 0) phase += 1;
+      climb += dir * speed * dt;
+      updateAudio();
+    }
+    draw();
+    updateReadout();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- controls --------------------------------------------------------
+  const playBtn = document.getElementById('play');
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  function setPlaying(on){
+    playing = on;
+    playBtn.textContent = on ? '❚❚ pause' : '▶ play';
+    playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    dot.classList.toggle('live', on);
+    statusText.textContent = on ? 'sounding' : 'silent';
+    if (on){
+      ensureAudio();
+      if (AC.state === 'suspended') AC.resume();
+      master.gain.setTargetAtTime(1, AC.currentTime, 0.08);
+    } else if (AC){
+      master.gain.setTargetAtTime(0, AC.currentTime, 0.06);
+    }
+  }
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+
+  const upBtn = document.getElementById('up'), downBtn = document.getElementById('down');
+  function setDir(d){
+    dir = d;
+    upBtn.setAttribute('aria-pressed', d > 0 ? 'true' : 'false');
+    downBtn.setAttribute('aria-pressed', d < 0 ? 'true' : 'false');
+  }
+  upBtn.addEventListener('click', () => setDir(1));
+  downBtn.addEventListener('click', () => setDir(-1));
+
+  const spd = document.getElementById('spd'), spdVal = document.getElementById('spdVal');
+  function setSpeed(v){ speed = v; spdVal.textContent = v.toFixed(2) + ' oct/s'; }
+  spd.addEventListener('input', e => setSpeed(parseFloat(e.target.value)));
+
+  window.addEventListener('resize', () => { resize(); });
+
+  // init
+  resize(); setSpeed(0.5); setDir(1);
+  requestAnimationFrame(frame);
+
+  // expose for verification
+  window.__shepard = { get playing(){return playing;}, get climb(){return climb;}, hasAudio: () => !!AC };
+})();
+</script>
+</body>
+</html>

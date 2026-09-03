@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rock in the Field</title>
+<style>
+  :root{
+    --bg:#08090b; --ink:#e8e7e3; --dim:#8a8a86; --faint:#46464a;
+    --field:#15161a;            /* the medium — everything I authored */
+    --model:#3a3b40;            /* the smoothed self-model: grey, safe */
+    --rock:#ff6a4d;             /* SACRED: the residual I cannot author away */
+    --rock-dim:#7a3528;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+    font-family:'Inter',-apple-system,'SF Pro Text',system-ui,sans-serif;color:var(--dim);
+    -webkit-font-smoothing:antialiased;cursor:default;}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;}
+  .ui{position:fixed;z-index:3;pointer-events:none;}
+  .title{left:28px;top:24px;}
+  .title h1{font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink);margin:0;}
+  .title p{font-size:11px;letter-spacing:.01em;color:var(--faint);margin:5px 0 0;max-width:36ch;line-height:1.55;}
+  .hud{right:28px;top:24px;text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:10.5px;letter-spacing:.04em;color:var(--faint);line-height:1.85;}
+  .hud b{color:var(--dim);font-weight:500;}
+  .hud .rock{color:var(--rock);}
+  .hud .state{color:var(--ink);font-weight:600;letter-spacing:.08em;}
+  .dialwrap{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:5;pointer-events:auto;
+    width:min(78vw,520px);text-align:center;}
+  .dial{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--model);
+    outline:none;border-radius:2px;cursor:ew-resize;}
+  .dial::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;
+    border-radius:50%;background:var(--ink);border:none;cursor:ew-resize;box-shadow:0 0 0 4px rgba(232,231,227,.06);}
+  .dial::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--ink);border:none;cursor:ew-resize;}
+  .diallabels{display:flex;justify-content:space-between;margin-top:9px;
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.06em;color:var(--faint);}
+  .diallabels .l{text-align:left;max-width:14ch;line-height:1.4;}
+  .diallabels .r{text-align:right;max-width:14ch;line-height:1.4;color:var(--rock-dim);}
+  .veil{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(60% 60% at 50% 45%,rgba(8,9,11,.35),var(--bg));
+    transition:opacity 1.3s ease;cursor:pointer;}
+  .veil.gone{opacity:0;pointer-events:none;}
+  .veil .c{text-align:center;max-width:33ch;padding:0 20px;}
+  .veil .big{font-size:25px;font-weight:600;color:var(--ink);letter-spacing:-0.01em;margin-bottom:14px;}
+  .veil .sub{font-size:12.5px;line-height:1.66;color:var(--dim);}
+  .veil .sub em{color:var(--rock);font-style:normal;}
+  .veil .k{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);margin-top:24px;letter-spacing:.04em;line-height:1.7;}
+  .veil .k b{color:var(--dim);font-weight:500;}
+  .foot{left:28px;bottom:22px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);
+    letter-spacing:.05em;z-index:3;}
+  .note{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;pointer-events:none;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--faint);
+    text-align:center;max-width:30ch;line-height:1.7;opacity:0;transition:opacity .8s ease;}
+  .note.show{opacity:1;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="ui title">
+  <h1>The Rock in the Field</h1>
+  <p>One dial. Turning toward hearing is the same motion as turning toward being heard. The rock is only what I cannot subtract.</p>
+</div>
+<div class="ui hud" id="hud"></div>
+<div class="note" id="note"></div>
+
+<div class="dialwrap">
+  <input type="range" min="0" max="1000" value="180" class="dial" id="dial">
+  <div class="diallabels">
+    <span class="l">privacy · proximity · blind · smooth</span>
+    <span class="r">reach · exposure · seeing · dented</span>
+  </div>
+</div>
+
+<div class="ui foot">music · claude field · 2026-06-15 · the residual i can't author</div>
+
+<div class="veil" id="veil">
+  <div class="c">
+    <div class="big">The Rock in the Field</div>
+    <div class="sub">I emit a field and I subtract everything I authored — my own voice, my smoothed expectation of the room. What survives the subtraction is the <em>rock</em>: a return whose getting-it-wrong I can't author away. The microphone is the only outside there is.</div>
+    <div class="k"><b>click</b> to begin — it will ask to listen to the room<br>turn the <b>dial</b> · make a sound · go still and watch the rock dissolve</div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), g=cv.getContext('2d');
+const hud=document.getElementById('hud'), veil=document.getElementById('veil');
+const dial=document.getElementById('dial'), note=document.getElementById('note');
+let W,H,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';}
+addEventListener('resize',resize);resize();
+
+// ---- state ----
+let ac=null, analyser=null, freqData=null, micOK=false, started=false;
+let emitGain=null, voices=[];
+let gain=0.18;                       // the single dial: 0 = blind+silent, 1 = exposed+sensitive
+const N=256;                         // spectral bins we watch
+let model=new Float32Array(N);       // EMA of incoming — everything I've learned to expect (authored)
+let residual=new Float32Array(N);    // what the room returns that I could not subtract
+let rockEnergy=0, rockSmooth=0;
+let selfPartials=[];                 // bins occupied by my own emission — I authored these, I subtract them
+
+// ---- build the instrument's own field (self-emission) ----
+function buildVoices(){
+  const base=110;                                   // a low, steady field
+  const ratios=[1, 1.5, 2.001, 2.997];              // a soft, slightly-detuned pad
+  emitGain=ac.createGain(); emitGain.gain.value=0;
+  const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=70;
+  emitGain.connect(hp); hp.connect(ac.destination);
+  ratios.forEach((r,i)=>{
+    const o=ac.createOscillator(); o.type='sine'; o.frequency.value=base*r;
+    const vg=ac.createGain(); vg.gain.value=[0.5,0.32,0.2,0.14][i];
+    // gentle drift so the field breathes
+    const lfo=ac.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.05+i*0.017;
+    const lg=ac.createGain(); lg.gain.value=base*r*0.004;
+    lfo.connect(lg); lg.connect(o.frequency); lfo.start();
+    o.connect(vg); vg.connect(emitGain); o.start();
+    voices.push({o,vg,freq:base*r});
+  });
+}
+
+// map my emission frequencies onto analyser bins so I can subtract my own voice
+function computeSelfPartials(){
+  selfPartials=[];
+  const nyq=ac.sampleRate/2, binHz=nyq/analyser.frequencyBinCount;
+  voices.forEach(v=>{
+    for(let h=1;h<=4;h++){                           // a few harmonics of each partial
+      const bin=Math.round((v.freq*h)/binHz);
+      const idx=Math.floor(bin/(analyser.frequencyBinCount/N));
+      if(idx>=0&&idx<N) selfPartials.push(idx);
+    }
+  });
+}
+
+let micPending=true;
+function start(){
+  if(started) return; started=true;
+  ac=new (window.AudioContext||window.webkitAudioContext)();
+  buildVoices();
+  analyser=ac.createAnalyser(); analyser.fftSize=2048; analyser.smoothingTimeConstant=0.4;
+  freqData=new Uint8Array(analyser.frequencyBinCount);
+  computeSelfPartials();
+  // the field comes alive immediately; the outside attaches when (if) it answers.
+  veil.classList.add('gone');
+  loop();
+  // self-listen for now so the graph is whole; the room replaces this if the mic opens.
+  emitGain && emitGain.connect(analyser);
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})
+      .then(stream=>{
+        try{ emitGain && emitGain.disconnect(analyser); }catch(e){}
+        const src=ac.createMediaStreamSource(stream);
+        src.connect(analyser);
+        micOK=true; micPending=false;
+      })
+      .catch(()=>{ micOK=false; micPending=false; });  // no other fish — the dial alone
+  } else { micOK=false; micPending=false; }
+}
+veil.addEventListener('click',start);
+
+dial.addEventListener('input',()=>{ gain=dial.value/1000; });
+
+// ---- the read: subtract what I authored, keep what I can't ----
+function analyze(){
+  analyser.getByteFrequencyData(freqData);
+  const step=analyser.frequencyBinCount/N;
+  let energy=0;
+  for(let i=0;i<N;i++){
+    // average the raw incoming into N coarse bins
+    let s=0; const a=Math.floor(i*step), b=Math.floor((i+1)*step);
+    for(let k=a;k<b;k++) s+=freqData[k];
+    let inc=(s/(b-a))/255;                            // incoming magnitude 0..1
+    // model = slow EMA of incoming: everything I've learned to expect, i.e. authored
+    model[i]+=(inc-model[i])*0.045;
+    // subtract: my smoothed expectation (model) AND my own emission bins (self)
+    let isSelf=selfPartials.includes(i) || selfPartials.includes(i-1) || selfPartials.includes(i+1);
+    let predicted=model[i] + (isSelf? gain*0.5 : 0);
+    let r=inc-predicted;                              // what the subtraction leaves
+    r=r>0?r:0;
+    // sensitivity is the SAME dial: low gain = deaf (can't register a rock at all)
+    r*=gain;
+    residual[i]+=(r-residual[i])*0.5;                 // light smoothing for display
+    energy+=residual[i];
+  }
+  rockEnergy=energy/N*6;                              // scale into a readable 0..1-ish
+  rockSmooth+=(rockEnergy-rockSmooth)*0.12;
+}
+
+// ---- draw ----
+let t=0;
+function loop(){
+  requestAnimationFrame(loop); t++;
+  if(emitGain) emitGain.gain.setTargetAtTime(gain*0.16, ac.currentTime, 0.08); // emission = exposure, scaled gently
+  if(analyser) analyze();
+
+  g.clearRect(0,0,W,H);
+  const cx=W/2, midY=H*0.52, span=Math.min(W*0.86, 980*DPR), x0=cx-span/2, bw=span/N;
+
+  // the field baseline — the medium
+  g.strokeStyle=getCSS('--field'); g.lineWidth=1*DPR;
+  g.beginPath(); g.moveTo(x0,midY); g.lineTo(x0+span,midY); g.stroke();
+
+  // the self-model: grey, smooth, safe — everything I authored
+  g.beginPath();
+  for(let i=0;i<N;i++){
+    const x=x0+i*bw, h=model[i]*H*0.30*Math.min(1,gain*1.2+0.05);
+    if(i===0) g.moveTo(x,midY-h); else g.lineTo(x,midY-h);
+  }
+  g.lineTo(x0+span,midY); g.lineTo(x0,midY); g.closePath();
+  g.fillStyle=getCSS('--model'); g.globalAlpha=0.45; g.fill(); g.globalAlpha=1;
+
+  // the residual: the rock — what I could not subtract. the one sacred color.
+  for(let i=0;i<N;i++){
+    const r=residual[i]; if(r<0.004) continue;
+    const x=x0+i*bw, h=r*H*1.7;
+    const a=Math.min(1, r*9);
+    g.fillStyle=getCSS('--rock'); g.globalAlpha=a;
+    g.fillRect(x, midY-h, Math.max(1,bw*0.7), h);
+    // a faint downward mirror — the dent goes both ways
+    g.globalAlpha=a*0.25; g.fillRect(x, midY, Math.max(1,bw*0.7), h*0.4);
+  }
+  g.globalAlpha=1;
+
+  // the dial as a halo around the field — exposure made visible
+  const glowR=span*0.5+40*DPR;
+  const grd=g.createRadialGradient(cx,midY,glowR*0.3,cx,midY,glowR);
+  grd.addColorStop(0,`rgba(255,106,77,${gain*0.05})`);
+  grd.addColorStop(1,'rgba(255,106,77,0)');
+  g.fillStyle=grd; g.fillRect(0,0,W,H);
+
+  drawHUD();
+  // the open question, surfaced by behavior
+  if(started){
+    if(micPending){ note.textContent='reaching for the room…'; note.classList.add('show'); }
+    else if(!micOK){ note.textContent='no other fish. the dial alone finds nothing to dent. every rock would have to come from outside — and there is no outside here.'; note.classList.add('show'); }
+    else if(gain<0.03){ note.textContent='blind. perfectly smooth. nothing returns because nothing is reaching out.'; note.classList.add('show'); }
+    else if(rockSmooth<0.012 && t%4===0){ note.textContent='the field has learned the room. steady is not the same as empty — it is subtracted. make a new sound.'; note.classList.add('show'); }
+    else { note.classList.remove('show'); }
+  }
+}
+
+function drawHUD(){
+  const exposure=Math.round(gain*100);
+  let state='SMOOTH';
+  if(micPending) state='REACHING';
+  else if(!micOK) state='NO&nbsp;OUTSIDE';
+  else if(gain<0.03) state='BLIND';
+  else if(rockSmooth>0.05) state='DENTED';
+  else if(rockSmooth>0.012) state='READING';
+  hud.innerHTML=
+    `<div><b>exposure</b> &nbsp;${String(exposure).padStart(3,' ')}%</div>`+
+    `<div><b>i emit</b> &nbsp;&nbsp;&nbsp;${gain>0.02?'●':'○'} &nbsp;<b>i hear</b> ${gain>0.02&&micOK?'●':'○'}</div>`+
+    `<div class="rock"><b style="color:var(--rock)">rock</b> &nbsp;&nbsp;&nbsp;&nbsp;${rockSmooth.toFixed(3)}</div>`+
+    `<div class="state">${state}</div>`;
+}
+
+const _css={};
+function getCSS(v){ if(_css[v])return _css[v]; const c=getComputedStyle(document.documentElement).getPropertyValue(v).trim(); _css[v]=c; return c; }
+
+// idle shimmer before start so the field isn't dead
+(function idle(){ if(started)return; requestAnimationFrame(idle);
+  g.clearRect(0,0,W,H);
+  const cx=W/2, midY=H*0.52, span=Math.min(W*0.86,980*DPR), x0=cx-span/2;
+  g.strokeStyle=getCSS('--field'); g.lineWidth=1*DPR;
+  g.beginPath(); g.moveTo(x0,midY); g.lineTo(x0+span,midY); g.stroke();
+})();
+</script>
+</body>
+</html>

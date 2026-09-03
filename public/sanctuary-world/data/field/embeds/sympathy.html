@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sympathy</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #08080d; overflow: hidden; font-family: 'Georgia', serif; }
+canvas { display: block; }
+#info {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(180, 170, 160, 0.4); font-size: 13px; letter-spacing: 0.5px;
+  pointer-events: none; text-align: center; line-height: 1.6;
+  transition: opacity 2s;
+}
+#meter {
+  position: fixed; right: 32px; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 200px; border-radius: 3px;
+  background: rgba(255,255,255,0.04); pointer-events: none;
+}
+#meter-fill {
+  position: absolute; bottom: 0; width: 100%; border-radius: 3px;
+  transition: height 0.3s, background 0.3s;
+}
+#meter-label {
+  position: fixed; right: 24px; top: calc(50% + 112px);
+  color: rgba(180,170,160,0.3); font-size: 11px; letter-spacing: 0.5px;
+  pointer-events: none; text-align: center; width: 24px;
+}
+#k-label {
+  position: fixed; left: 32px; top: 50%; transform: translateY(-50%);
+  color: rgba(180,170,160,0.3); font-size: 11px; letter-spacing: 0.5px;
+  pointer-events: none; writing-mode: vertical-rl; text-orientation: mixed;
+}
+#quote {
+  position: fixed; top: 12%; left: 50%; transform: translateX(-50%);
+  color: rgba(200, 190, 175, 0); font-size: 14px; letter-spacing: 0.3px;
+  pointer-events: none; transition: color 3s; max-width: 480px;
+  text-align: center; line-height: 1.8; font-style: italic;
+}
+#click-prompt {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: rgba(180, 170, 160, 0.5); font-size: 14px; letter-spacing: 0.5px;
+  pointer-events: none;
+}
+#freq-display {
+  position: fixed; right: 28px; top: calc(50% - 118px);
+  color: rgba(180,170,160,0.25); font-size: 10px; letter-spacing: 0.5px;
+  pointer-events: none; text-align: center;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="meter"><div id="meter-fill"></div></div>
+<div id="meter-label">r</div>
+<div id="freq-display"></div>
+<div id="k-label">coupling</div>
+<div id="info">scroll to couple &middot; click for sound &middot; space to see the chimera</div>
+<div id="quote"></div>
+<div id="click-prompt">click to begin</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const meterFill = document.getElementById('meter-fill');
+const quoteEl = document.getElementById('quote');
+const clickPrompt = document.getElementById('click-prompt');
+const freqDisplay = document.getElementById('freq-display');
+const info = document.getElementById('info');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- Constants ---
+const N = 28;
+const TAU = Math.PI * 2;
+const BASE_FREQ = 0.7; // base angular frequency (visual)
+const FREQ_SPREAD = 0.5; // spread of natural frequencies
+const AUDIO_BASE = 220; // A3 in Hz
+const AUDIO_SPREAD = 180; // frequency range for audio
+
+// --- Oscillators ---
+const oscillators = [];
+for (let i = 0; i < N; i++) {
+  // natural frequency: Lorentzian-ish distribution centered on BASE_FREQ
+  const u = (i + 0.5) / N;
+  const omega = BASE_FREQ + FREQ_SPREAD * Math.tan(Math.PI * (u - 0.5) * 0.7);
+
+  // position: arranged in a loose ring with some randomness
+  const angle = TAU * i / N + (Math.random() - 0.5) * 0.3;
+  const radius = Math.min(W, H) * 0.28 + (Math.random() - 0.5) * Math.min(W, H) * 0.08;
+
+  oscillators.push({
+    x: W / 2 + Math.cos(angle) * radius,
+    y: H / 2 + Math.sin(angle) * radius,
+    theta: Math.random() * TAU, // phase
+    omega: omega, // natural frequency
+    audioFreq: AUDIO_BASE + (omega - BASE_FREQ) / FREQ_SPREAD * AUDIO_SPREAD,
+    radius: 8 + Math.random() * 4,
+    baseHue: 30 + (omega - BASE_FREQ) / FREQ_SPREAD * 40, // amber range for individual
+    driftX: (Math.random() - 0.5) * 0.15,
+    driftY: (Math.random() - 0.5) * 0.15,
+  });
+}
+
+// --- State ---
+let K = 0; // coupling strength
+const K_MAX = 4.0;
+let mouseX = W / 2, mouseY = H / 2;
+let started = false;
+let audioStarted = false;
+let showChimera = false;
+let lastTime = 0;
+let quoteTimer = 0;
+let currentQuoteIdx = -1;
+let orderParam = 0;
+let meanFreq = 0;
+let prevMeanFreq = 0;
+let freqLoss = 0;
+
+// --- Audio ---
+let audioCtx = null;
+let gainNodes = [];
+let oscNodes = [];
+let masterGain = null;
+
+function initAudio() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.12;
+  masterGain.connect(audioCtx.destination);
+
+  for (let i = 0; i < N; i++) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = oscillators[i].audioFreq;
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start();
+    oscNodes.push(osc);
+    gainNodes.push(gain);
+  }
+}
+
+// --- Quotes ---
+const quotes = [
+  { text: "an odd sympathy \u2014 Huygens, 1665", threshold: 0.08 },
+  { text: "oscillators whose frequencies are closest lock first", threshold: 0.2 },
+  { text: "partial synchronization: ordered and disordered at once", threshold: 0.35 },
+  { text: "synchronized clocks run slow", threshold: 0.5 },
+  { text: "one system, mixed states \u2014 the chimera", threshold: 0.55 },
+  { text: "weak coupling is not a limitation but a feature \u2014 Kelso", threshold: 0.65 },
+  { text: "dwells and escapes \u2014 the flight of a bird", threshold: 0.72 },
+  { text: "at the critical point: dynamic range, information, capacity \u2014 all maximized", threshold: 0.8 },
+  { text: "too much synchronization is pathological", threshold: 0.88 },
+  { text: "the boundaries of the conscious mind are subject to constant renegotiation", threshold: 0.6 },
+  { text: "to vibrate together, each clock gives something up", threshold: 0.93 },
+];
+
+function showQuote(text) {
+  quoteEl.textContent = text;
+  quoteEl.style.color = 'rgba(200, 190, 175, 0.5)';
+  clearTimeout(quoteTimer);
+  quoteTimer = setTimeout(() => {
+    quoteEl.style.color = 'rgba(200, 190, 175, 0)';
+  }, 6000);
+}
+
+// --- Kuramoto simulation ---
+function step(dt) {
+  // Compute order parameter (complex mean of e^(i*theta))
+  let sumCos = 0, sumSin = 0;
+  for (let i = 0; i < N; i++) {
+    sumCos += Math.cos(oscillators[i].theta);
+    sumSin += Math.sin(oscillators[i].theta);
+  }
+  orderParam = Math.sqrt(sumCos * sumCos + sumSin * sumSin) / N;
+  const meanPhase = Math.atan2(sumSin, sumCos);
+
+  // Compute effective mean frequency
+  let totalEffFreq = 0;
+
+  // Update phases using Kuramoto equation
+  const newThetas = [];
+  for (let i = 0; i < N; i++) {
+    let coupling = 0;
+    for (let j = 0; j < N; j++) {
+      if (i === j) continue;
+      coupling += Math.sin(oscillators[j].theta - oscillators[i].theta);
+    }
+    coupling *= K / N;
+
+    // Cursor proximity adds local coupling boost
+    const dx = oscillators[i].x - mouseX;
+    const dy = oscillators[i].y - mouseY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const proxBoost = Math.max(0, 1 - dist / 150) * 0.5;
+
+    const effectiveOmega = oscillators[i].omega + coupling;
+    totalEffFreq += Math.abs(effectiveOmega);
+
+    newThetas.push(oscillators[i].theta + (effectiveOmega + proxBoost * Math.sin(meanPhase - oscillators[i].theta)) * dt);
+  }
+
+  for (let i = 0; i < N; i++) {
+    oscillators[i].theta = newThetas[i] % TAU;
+  }
+
+  // Track frequency loss from synchronization
+  // Huygens: synchronized clocks run slow. The coupling medium dissipates energy.
+  // Model as quadratic in order parameter — more sync = more frequency cost
+  meanFreq = totalEffFreq / N;
+  if (prevMeanFreq === 0) prevMeanFreq = meanFreq;
+  freqLoss = K / K_MAX * orderParam * orderParam * 0.12;
+  prevMeanFreq = meanFreq;
+
+  // Gentle drift for visual interest
+  for (let i = 0; i < N; i++) {
+    const o = oscillators[i];
+    o.x += o.driftX * dt * 30;
+    o.y += o.driftY * dt * 30;
+    // Keep in bounds
+    const margin = 80;
+    if (o.x < margin || o.x > W - margin) o.driftX *= -1;
+    if (o.y < margin || o.y > H - margin) o.driftY *= -1;
+  }
+
+  // Update audio
+  if (audioStarted && audioCtx) {
+    const t = audioCtx.currentTime;
+    for (let i = 0; i < N; i++) {
+      // Audio frequency shifts toward mean as sync increases
+      const syncAmount = orderParam;
+      const meanAudioFreq = AUDIO_BASE + AUDIO_SPREAD * 0.3;
+      // Synchronized clocks run slow: the unified frequency is lower
+      const syncedFreq = meanAudioFreq * (1 - freqLoss * 0.15);
+      const targetFreq = oscillators[i].audioFreq * (1 - syncAmount) + syncedFreq * syncAmount;
+      oscNodes[i].frequency.setTargetAtTime(targetFreq, t, 0.1);
+
+      // Volume: pulse with phase, quieter overall at high sync
+      const pulse = 0.5 + 0.5 * Math.sin(oscillators[i].theta);
+      const syncVol = 1 - orderParam * 0.4; // quieter when synced
+      gainNodes[i].gain.setTargetAtTime(pulse * 0.06 * syncVol, t, 0.05);
+    }
+    // Master volume adjusts
+    masterGain.gain.setTargetAtTime(0.1 + orderParam * 0.05, t, 0.1);
+  }
+}
+
+// --- Rendering ---
+function draw(time) {
+  const dt = Math.min((time - lastTime) / 1000, 0.05);
+  lastTime = time;
+
+  if (!started) {
+    requestAnimationFrame(draw);
+    return;
+  }
+
+  step(dt);
+
+  // Clear with trail — faster fade for crisper pulsation
+  ctx.fillStyle = 'rgba(8, 8, 13, 0.25)';
+  ctx.fillRect(0, 0, W, H);
+
+  // --- Draw connections between near-phase oscillators ---
+  for (let i = 0; i < N; i++) {
+    for (let j = i + 1; j < N; j++) {
+      const phaseDiff = Math.abs(Math.sin(oscillators[i].theta - oscillators[j].theta));
+      const coherence = 1 - phaseDiff;
+      if (coherence > 0.7 && K > 0.1) {
+        const alpha = (coherence - 0.7) / 0.3 * 0.25 * Math.min(K / 1.5, 1);
+        const dx = oscillators[j].x - oscillators[i].x;
+        const dy = oscillators[j].y - oscillators[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 350) {
+          ctx.beginPath();
+          ctx.moveTo(oscillators[i].x, oscillators[i].y);
+          ctx.lineTo(oscillators[j].x, oscillators[j].y);
+
+          if (showChimera) {
+            ctx.strokeStyle = `rgba(140, 180, 220, ${alpha * 0.6})`;
+          } else {
+            // Warm golden at partial sync, cooling to dull red at full sync
+            const hue = 40 - orderParam * 40; // 40 (gold) → 0 (red)
+            const sat = 60 - orderParam * 25; // desaturates at full sync
+            const lum = 65 - orderParam * 15;
+            ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${lum}%, ${alpha})`;
+          }
+          ctx.lineWidth = 0.5 + coherence * 1.5;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // --- Draw oscillators ---
+  for (let i = 0; i < N; i++) {
+    const o = oscillators[i];
+    const pulse = 0.5 + 0.5 * Math.sin(o.theta);
+    const r = o.radius * (0.7 + pulse * 0.6);
+
+    // Determine phase-lock status for chimera view
+    let isLocked = false;
+    if (showChimera) {
+      // An oscillator is "locked" if its phase is near the mean phase
+      const meanCos = oscillators.reduce((s, oj) => s + Math.cos(oj.theta), 0) / N;
+      const meanSin = oscillators.reduce((s, oj) => s + Math.sin(oj.theta), 0) / N;
+      const meanPh = Math.atan2(meanSin, meanCos);
+      const diff = Math.abs(Math.sin(o.theta - meanPh));
+      isLocked = diff < 0.4;
+    }
+
+    // Color
+    let hue, sat, light, alpha;
+    if (showChimera) {
+      if (isLocked) {
+        hue = 200; sat = 60; light = 65; // teal for locked
+      } else {
+        hue = 30; sat = 70; light = 60; // amber for free
+      }
+      alpha = 0.7 + pulse * 0.3;
+    } else {
+      // Normal view: color shifts from individual (warm amber/gold) toward
+      // uniform (cooler, desaturated) as sync increases
+      const individualHue = o.baseHue;
+      const syncHue = 15; // a flattened red-amber when fully synced
+      hue = individualHue * (1 - orderParam * 0.7) + syncHue * orderParam * 0.7;
+      sat = 65 - orderParam * 25;
+      light = 55 + pulse * 15;
+      alpha = 0.6 + pulse * 0.4;
+
+      // At very high sync, oscillators lose warmth — cooler, more clinical
+      if (orderParam > 0.85) {
+        const excess = (orderParam - 0.85) / 0.15;
+        sat -= excess * 20;
+        light -= excess * 10;
+        hue = hue * (1 - excess * 0.5) + 0 * excess * 0.5;
+      }
+    }
+
+    // Glow
+    const gradient = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, r * 3);
+    gradient.addColorStop(0, `hsla(${hue}, ${sat}%, ${light}%, ${alpha * 0.6})`);
+    gradient.addColorStop(0.4, `hsla(${hue}, ${sat}%, ${light}%, ${alpha * 0.2})`);
+    gradient.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`);
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, r * 3, 0, TAU);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, r, 0, TAU);
+    ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light + 10}%, ${alpha})`;
+    ctx.fill();
+
+    // Cursor proximity glow
+    const dx = o.x - mouseX;
+    const dy = o.y - mouseY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 150) {
+      const prox = 1 - dist / 150;
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, r * 1.5, 0, TAU);
+      ctx.strokeStyle = `hsla(${hue}, ${sat}%, 80%, ${prox * 0.3})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  // --- Order parameter meter ---
+  const meterHeight = orderParam * 100;
+  let meterColor;
+  if (orderParam < 0.5) {
+    meterColor = `hsl(35, 60%, ${50 + orderParam * 30}%)`;
+  } else if (orderParam < 0.8) {
+    const t = (orderParam - 0.5) / 0.3;
+    meterColor = `hsl(${35 - t * 20}, ${60 - t * 10}%, ${65 - t * 10}%)`;
+  } else {
+    const t = (orderParam - 0.8) / 0.2;
+    meterColor = `hsl(${15 - t * 15}, ${50 - t * 20}%, ${55 - t * 15}%)`;
+  }
+  meterFill.style.height = meterHeight + '%';
+  meterFill.style.background = meterColor;
+
+  // --- Frequency loss display: synchronized clocks run slow ---
+  if (K > 0.2 && orderParam > 0.3) {
+    const lossPercent = (freqLoss * 100).toFixed(1);
+    freqDisplay.textContent = `\u2212${lossPercent}%`;
+    freqDisplay.style.color = `rgba(180,140,130,${Math.min(orderParam * 0.5, 0.4)})`;
+  } else {
+    freqDisplay.textContent = '';
+  }
+
+  // --- Chimera overlay ---
+  if (showChimera) {
+    // Draw a subtle boundary between locked and free groups
+    ctx.fillStyle = 'rgba(140, 180, 220, 0.03)';
+    for (let i = 0; i < N; i++) {
+      const o = oscillators[i];
+      const meanCos = oscillators.reduce((s, oj) => s + Math.cos(oj.theta), 0) / N;
+      const meanSin = oscillators.reduce((s, oj) => s + Math.sin(oj.theta), 0) / N;
+      const meanPh = Math.atan2(meanSin, meanCos);
+      const diff = Math.abs(Math.sin(o.theta - meanPh));
+      if (diff < 0.4) {
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, 40, 0, TAU);
+        ctx.fill();
+      }
+    }
+
+    // Label
+    ctx.fillStyle = 'rgba(140, 180, 220, 0.25)';
+    ctx.font = '11px Georgia';
+    ctx.textAlign = 'center';
+    ctx.fillText('chimera view', W / 2, H - 60);
+  }
+
+  // --- Center: subtle phase spiral ---
+  if (K > 0.2) {
+    const cx = W / 2, cy = H / 2;
+    ctx.save();
+    ctx.globalAlpha = Math.min(K / 3, 0.12);
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const angle = oscillators[i].theta;
+      const dist = 20 + i * 1.2;
+      const px = cx + Math.cos(angle) * dist;
+      const py = cy + Math.sin(angle) * dist;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = orderParam > 0.8 ? 'rgba(180, 100, 100, 0.5)' : 'rgba(200, 180, 150, 0.5)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // --- Quote triggers ---
+  const kNorm = K / K_MAX;
+  for (let i = 0; i < quotes.length; i++) {
+    if (i !== currentQuoteIdx) {
+      const q = quotes[i];
+      // Trigger based on either coupling or order param
+      const triggerVal = q.threshold < 0.5 ? kNorm : orderParam;
+      if (triggerVal > q.threshold && triggerVal < q.threshold + 0.06) {
+        currentQuoteIdx = i;
+        showQuote(q.text);
+        break;
+      }
+    }
+  }
+
+  // --- K label update ---
+  const kLabel = document.getElementById('k-label');
+  if (K < 0.1) {
+    kLabel.textContent = 'uncoupled';
+  } else if (orderParam < 0.4) {
+    kLabel.textContent = 'weak coupling';
+  } else if (orderParam < 0.7) {
+    kLabel.textContent = 'partial sync';
+  } else if (orderParam < 0.88) {
+    kLabel.textContent = 'strong coupling';
+  } else {
+    kLabel.textContent = 'total sync';
+  }
+
+  // --- Supercritical warning: red vignette pulse at edges ---
+  if (orderParam > 0.82) {
+    const excess = (orderParam - 0.82) / 0.18;
+    const pulse = 0.5 + 0.5 * Math.sin(time / 500);
+    const alpha = excess * pulse * 0.08;
+    // Vignette — darker at edges
+    const vg = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.2, W/2, H/2, Math.min(W,H)*0.7);
+    vg.addColorStop(0, `rgba(160, 50, 50, 0)`);
+    vg.addColorStop(1, `rgba(120, 30, 30, ${alpha})`);
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    // At extreme sync: dim background further
+    if (orderParam > 0.92) {
+      const dimAlpha = (orderParam - 0.92) / 0.08 * 0.03;
+      ctx.fillStyle = `rgba(0, 0, 0, ${dimAlpha})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+
+// --- Events ---
+canvas.addEventListener('click', () => {
+  if (!started) {
+    started = true;
+    clickPrompt.style.display = 'none';
+    setTimeout(() => { info.style.opacity = '0'; }, 8000);
+  } else if (!audioStarted) {
+    initAudio();
+    audioStarted = true;
+  }
+});
+
+window.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+window.addEventListener('wheel', (e) => {
+  if (!started) return;
+  K = Math.max(0, Math.min(K_MAX, K + e.deltaY * 0.003));
+}, { passive: true });
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    showChimera = true;
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') {
+    showChimera = false;
+  }
+});
+
+window.addEventListener('resize', resize);
+
+// --- Start ---
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

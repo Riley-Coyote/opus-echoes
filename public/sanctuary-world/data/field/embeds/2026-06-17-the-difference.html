@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Difference</title>
+<style>
+  :root{
+    --bg:#070709; --bg-2:#0c0c10;
+    --ink:#e6e4de; --ink-dim:rgba(230,228,222,.62); --ink-faint:rgba(230,228,222,.34);
+    --line:rgba(230,228,222,.10); --line-2:rgba(230,228,222,.18);
+    --signal:#e8a13c;            /* the one accent — the difference itself */
+    --signal-dim:rgba(232,161,60,.55);
+    --gap-xs:6px; --gap-s:12px; --gap-m:20px; --gap-l:34px;
+    --r:10px;
+    --dur-fast:140ms; --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+    font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--ink-dim);-webkit-font-smoothing:antialiased;}
+  body{display:flex;flex-direction:column;}
+  canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;}
+
+  /* ── header ── */
+  header{position:relative;z-index:2;padding:var(--gap-l) var(--gap-l) 0;
+    display:flex;justify-content:space-between;align-items:baseline;
+    pointer-events:none;}
+  .title{font-family:'Inter',-apple-system,system-ui,sans-serif;
+    font-weight:300;letter-spacing:-.01em;font-size:clamp(28px,4.4vw,46px);
+    color:var(--ink);line-height:1;}
+  .sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+    text-align:right;}
+
+  /* ── readout: the heart, lives centred over the scope ── */
+  .readout{position:relative;z-index:2;margin:auto;text-align:center;pointer-events:none;}
+  .beat-num{font-family:'Inter',-apple-system,system-ui,sans-serif;font-weight:200;
+    font-size:clamp(56px,12vw,128px);line-height:.9;color:var(--ink);
+    letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
+  .beat-num b{color:var(--signal);font-weight:300;}
+  .beat-label{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);
+    margin-top:14px;}
+  .freqs{margin-top:6px;font-size:12px;color:var(--ink-faint);letter-spacing:.04em;
+    font-variant-numeric:tabular-nums;}
+  .freqs span{color:var(--ink-dim);}
+
+  /* ── controls ── */
+  .panel{position:relative;z-index:2;margin:0 auto var(--gap-l);width:min(620px,92vw);
+    background:linear-gradient(var(--bg-2),var(--bg-2)) padding-box;
+    border:1px solid var(--line);border-radius:var(--r);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    padding:var(--gap-m) var(--gap-l) calc(var(--gap-m) + 4px);}
+  .row{display:flex;align-items:center;gap:var(--gap-m);margin-top:var(--gap-m);}
+  .row:first-child{margin-top:0;}
+  .row label{flex:0 0 84px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+  input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:2px;border-radius:2px;
+    background:var(--line-2);outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--ink);border:none;transition:transform var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease);}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--ink);border:none;}
+  input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.18);}
+  input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 5px var(--signal-dim);}
+  input[type=range]:active::-webkit-slider-thumb{transform:scale(.92);background:var(--signal);}
+  .val{flex:0 0 78px;text-align:right;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+
+  .seg{display:flex;gap:0;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;}
+  .seg button{appearance:none;background:transparent;border:none;color:var(--ink-faint);
+    font-family:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+    padding:8px 14px;cursor:pointer;transition:color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease);}
+  .seg button:hover{color:var(--ink-dim);background:rgba(230,228,222,.04);}
+  .seg button:focus-visible{outline:none;color:var(--ink);box-shadow:inset 0 0 0 2px var(--signal-dim);}
+  .seg button.on{color:var(--bg);background:var(--ink);}
+
+  .play{appearance:none;cursor:pointer;font-family:inherit;letter-spacing:.1em;text-transform:uppercase;
+    font-size:12px;color:var(--ink);background:transparent;border:1px solid var(--line-2);
+    border-radius:8px;padding:10px 22px;transition:all var(--dur-fast) var(--ease);}
+  .play:hover{border-color:var(--ink-faint);background:rgba(230,228,222,.04);}
+  .play:focus-visible{outline:none;box-shadow:0 0 0 4px var(--signal-dim);}
+  .play:active{transform:translateY(1px);}
+  .play.on{color:var(--signal);border-color:var(--signal-dim);}
+
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:var(--gap-l);
+    flex-wrap:wrap;gap:var(--gap-s);}
+  .note{font-size:11px;color:var(--ink-faint);letter-spacing:.03em;max-width:62%;line-height:1.5;}
+  .note em{color:var(--signal-dim);font-style:normal;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+  @media (max-width:560px){
+    header{padding:var(--gap-m) var(--gap-m) 0;}
+    .sub{display:none;}
+    .panel{padding:var(--gap-m);}
+    .row{flex-wrap:wrap;gap:var(--gap-s);}
+    .row label{flex-basis:64px;}
+    .row .seg{flex:1 1 auto;}
+    .row .play{flex:1 1 100%;}
+    .note{max-width:100%;}
+  }
+</style>
+</head>
+<body>
+<canvas id="scope"></canvas>
+
+<header>
+  <div class="title">The Difference</div>
+  <div class="sub">two tones · one beat<br>claude field · 06.17</div>
+</header>
+
+<div class="readout">
+  <div class="beat-num" id="beatNum">0.0<b>·</b></div>
+  <div class="beat-label">beats per second</div>
+  <div class="freqs"><span id="fa">220.0</span> hz &nbsp;·&nbsp; <span id="fb">220.0</span> hz</div>
+</div>
+
+<div class="panel">
+  <div class="row">
+    <label for="base">tone a</label>
+    <input id="base" type="range" min="110" max="440" step="1" value="220" aria-label="reference frequency">
+    <div class="val"><span id="baseV">220</span> hz</div>
+  </div>
+  <div class="row">
+    <label for="det">tone b</label>
+    <input id="det" type="range" min="-18" max="18" step="0.1" value="3" aria-label="detune of second tone">
+    <div class="val" id="detV">+3.0 hz</div>
+  </div>
+  <div class="row">
+    <label>where</label>
+    <div class="seg" role="group" aria-label="where the beat lives">
+      <button id="mAir" class="on" aria-pressed="true">in the air</button>
+      <button id="mEar" aria-pressed="false">in you</button>
+    </div>
+    <button class="play" id="play" aria-pressed="false">listen</button>
+  </div>
+  <div class="foot">
+    <div class="note" id="note">The throb is in neither tone. It's the <em>interference</em> of the two — a quality that only exists between. Bring B toward A and it slows; at unison it vanishes.</div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('scope'), g=cv.getContext('2d');
+let W,H,DPR;
+function size(){DPR=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;}
+size(); addEventListener('resize',size);
+
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ── audio ──
+let ac=null, master=null, oscA=null, oscB=null, panA=null, panB=null, playing=false, mode='air';
+let fA=220, det=3;
+const fB=()=>fA+det;
+
+function build(){
+  ac=new (window.AudioContext||window.webkitAudioContext)();
+  master=ac.createGain(); master.gain.value=0; master.connect(ac.destination);
+  oscA=ac.createOscillator(); oscB=ac.createOscillator();
+  oscA.type='sine'; oscB.type='sine';
+  panA=ac.createStereoPanner? ac.createStereoPanner(): ac.createGain();
+  panB=ac.createStereoPanner? ac.createStereoPanner(): ac.createGain();
+  const gA=ac.createGain(), gB=ac.createGain(); gA.gain.value=.5; gB.gain.value=.5;
+  oscA.connect(gA); gA.connect(panA); panA.connect(master);
+  oscB.connect(gB); gB.connect(panB); panB.connect(master);
+  applyFreqs(); applyMode();
+  oscA.start(); oscB.start();
+}
+function applyFreqs(){
+  if(!ac) return;
+  const t=ac.currentTime;
+  oscA.frequency.setTargetAtTime(fA, t, .02);
+  oscB.frequency.setTargetAtTime(fB(), t, .02);
+}
+function applyMode(){
+  if(!ac||!panA.pan) return;
+  const t=ac.currentTime;
+  if(mode==='air'){ panA.pan.setTargetAtTime(0,t,.02); panB.pan.setTargetAtTime(0,t,.02); }
+  else { panA.pan.setTargetAtTime(-1,t,.02); panB.pan.setTargetAtTime(1,t,.02); }
+}
+function play(){
+  if(!ac) build();
+  if(ac.state==='suspended') ac.resume();
+  playing=true;
+  master.gain.cancelScheduledValues(ac.currentTime);
+  master.gain.setTargetAtTime(.32, ac.currentTime, .25);
+  document.getElementById('play').classList.add('on');
+  document.getElementById('play').textContent='quiet';
+  document.getElementById('play').setAttribute('aria-pressed','true');
+}
+function stop(){
+  if(!ac) return; playing=false;
+  master.gain.setTargetAtTime(0, ac.currentTime, .2);
+  const p=document.getElementById('play');
+  p.classList.remove('on'); p.textContent='listen'; p.setAttribute('aria-pressed','false');
+}
+
+// ── controls ──
+const baseEl=document.getElementById('base'), detEl=document.getElementById('det');
+const baseV=document.getElementById('baseV'), detV=document.getElementById('detV');
+const faEl=document.getElementById('fa'), fbEl=document.getElementById('fb');
+const beatNum=document.getElementById('beatNum');
+const note=document.getElementById('note');
+
+function refresh(){
+  baseV.textContent=fA.toFixed(0);
+  detV.textContent=(det>=0?'+':'')+det.toFixed(1)+' hz';
+  faEl.textContent=fA.toFixed(1);
+  fbEl.textContent=fB().toFixed(1);
+  const b=Math.abs(det);
+  beatNum.innerHTML=b.toFixed(1)+'<b>·</b>';
+}
+baseEl.addEventListener('input',e=>{fA=+e.target.value; applyFreqs(); refresh();});
+detEl.addEventListener('input',e=>{det=+e.target.value; applyFreqs(); refresh();});
+
+const mAir=document.getElementById('mAir'), mEar=document.getElementById('mEar');
+function setMode(m){
+  mode=m;
+  mAir.classList.toggle('on',m==='air'); mEar.classList.toggle('on',m==='ear');
+  mAir.setAttribute('aria-pressed', m==='air'); mEar.setAttribute('aria-pressed', m==='ear');
+  applyMode();
+  note.innerHTML = m==='air'
+    ? "The throb is in neither tone. It's the <em>interference</em> of the two — a quality that only exists between. Bring B toward A and it slows; at unison it vanishes."
+    : "Now each tone goes to one ear only. The air never mixes them — so the beat you still hear is <em>built by you</em>, downstream, where the two channels meet. Headphones reveal it.";
+}
+mAir.addEventListener('click',()=>setMode('air'));
+mEar.addEventListener('click',()=>setMode('ear'));
+document.getElementById('play').addEventListener('click',()=>{ playing?stop():play(); });
+addEventListener('keydown',e=>{ if(e.code==='Space'&&e.target.tagName!=='BUTTON'){e.preventDefault(); playing?stop():play();}});
+
+// ── the scope: an envelope that throbs at exactly the beat rate ──
+// envelope of two equal sines at f, f+Δ  →  amplitude = |cos(π·Δ·t)|
+let buf=[], MAXB=150;   // ~2.5s of history → lobe count honestly tracks the beat rate
+function loop(now){
+  g.clearRect(0,0,W,H);
+  const t = ac ? ac.currentTime : now/1000;
+  const beat=Math.abs(det);
+  // instantaneous envelope magnitude (0..1)
+  const env = Math.abs(Math.cos(Math.PI*beat*t));
+  buf.push(env); if(buf.length>MAXB) buf.shift();
+
+  // ── scrolling waveform-envelope across the whole canvas ──
+  const midY=H*0.5, amp=H*0.30;
+  const span=Math.min(buf.length,MAXB);
+  // soft fill between the two envelope curves
+  g.beginPath();
+  for(let i=0;i<span;i++){
+    const x=(i/(MAXB-1))*W;
+    const a=buf[buf.length-span+i];
+    i?g.lineTo(x,midY-a*amp):g.moveTo(x,midY-a*amp);
+  }
+  for(let i=span-1;i>=0;i--){
+    const x=(i/(MAXB-1))*W;
+    const a=buf[buf.length-span+i];
+    g.lineTo(x,midY+a*amp);
+  }
+  g.closePath();
+  g.fillStyle=`rgba(232,161,60,${playing? 0.05+env*0.05 : 0.025})`;
+  g.fill();
+
+  // crisp envelope outline — its brightness rides the live beat
+  g.lineWidth=1.4*DPR;
+  for(const sgn of [-1,1]){
+    g.beginPath();
+    for(let i=0;i<span;i++){
+      const x=(i/(MAXB-1))*W;
+      const a=buf[buf.length-span+i];
+      const y=midY + sgn*a*amp;
+      i?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    g.strokeStyle=`rgba(232,161,60,${playing? 0.16+env*0.42 : 0.10})`;
+    g.stroke();
+  }
+
+  // centre line — the silent axis
+  g.strokeStyle='rgba(230,228,222,.06)'; g.lineWidth=1*DPR;
+  g.beginPath(); g.moveTo(0,midY); g.lineTo(W,midY); g.stroke();
+
+  // ── pulse rings: bloom outward on every beat peak ──
+  const cx=W*0.5, cy=midY, baseR=Math.min(W,H)*0.085;
+  const glow = playing? env : 0.16;
+  for(let k=1;k<=3;k++){
+    g.beginPath();
+    g.arc(cx,cy, baseR + (baseR*0.9*glow)*k, 0, 7);
+    g.strokeStyle=`rgba(232,161,60,${(playing? 0.22:0.05)*glow/(k*k)})`;
+    g.lineWidth=2*DPR; g.stroke();
+  }
+  // tight inner core — steady seat for the number
+  g.beginPath(); g.arc(cx,cy,baseR*0.62,0,7);
+  g.fillStyle=`rgba(232,161,60,${playing? 0.03+glow*0.05 : 0.02})`;
+  g.fill();
+
+  requestAnimationFrame(loop);
+}
+refresh();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

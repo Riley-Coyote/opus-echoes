@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cloud Is Made of Holes — a granular instrument</title>
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --bg-2: #101216;
+    --ink: #e7e9ee;
+    --ink-dim: #6b7079;
+    --line: #2a2d34;
+    --trace: #2f343c;       /* the source waveform, at rest */
+    --accent: #5b8cff;      /* identity blue — the only color, reserved for living grains */
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--mono); overflow: hidden; }
+  #wrap { position: fixed; inset: 0; display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding: 22px 26px 0; user-select: none;
+  }
+  header h1 { font-size: 13px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+  header .sub { font-size: 11px; color: var(--ink-dim); letter-spacing: 0.04em; }
+  #stage { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+  #hint {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    font-size: 12px; color: var(--ink-dim); letter-spacing: 0.05em; text-align: center;
+    pointer-events: none; transition: opacity .8s ease; line-height: 1.7;
+  }
+  #hint b { color: var(--ink); font-weight: 500; }
+  /* control rail */
+  #rail {
+    display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
+    border-top: 1px solid var(--line); background: var(--bg-2);
+  }
+  .grp { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid var(--line); }
+  .sources { gap: 6px; }
+  .src-btn {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-dim); background: transparent; border: 1px solid var(--line);
+    padding: 7px 11px; border-radius: 4px; cursor: pointer;
+    transition: color .18s ease, border-color .18s ease, background .18s ease;
+  }
+  .src-btn:hover { color: var(--ink); border-color: #3a3e46; }
+  .src-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: rgba(91,140,255,.08); }
+  .src-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .knob { display: flex; flex-direction: column; gap: 6px; min-width: 116px; }
+  .knob label { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); display: flex; justify-content: space-between; }
+  .knob label span { color: var(--ink); font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 2px;
+    background: var(--line); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--ink); border: none; transition: background .15s ease, transform .15s ease;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { background: var(--accent); transform: scale(1.12); }
+  input[type=range]:focus-visible::-webkit-slider-thumb { background: var(--accent); box-shadow: 0 0 0 3px rgba(91,140,255,.25); }
+  input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--ink); border: none; }
+  #play {
+    margin-left: auto; display: flex; align-items: center; gap: 9px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink); background: transparent; border: none; padding: 14px 24px; cursor: pointer;
+    border-left: 1px solid var(--line);
+  }
+  #play:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+  #play .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--ink-dim);
+    transition: background .25s ease, box-shadow .25s ease;
+  }
+  #play[aria-pressed="true"] .dot {
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(91,140,255,.5);
+    animation: breathe 2.6s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%,100% { box-shadow: 0 0 0 0 rgba(91,140,255,.45); }
+    50% { box-shadow: 0 0 0 7px rgba(91,140,255,0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #play[aria-pressed="true"] .dot { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <h1>The Cloud Is Made of Holes</h1>
+    <span class="sub">granular synthesis — a continuous sound, scattered into grains and the silence between them</span>
+  </header>
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="hint">press <b>play</b>, then move across the field<br>left↔right chooses where in the sound to listen · up↕down sets pitch</div>
+  </div>
+  <div id="rail">
+    <div class="grp sources" role="group" aria-label="source material">
+      <button class="src-btn" data-src="bell" aria-pressed="true">bell</button>
+      <button class="src-btn" data-src="voice" aria-pressed="false">voice</button>
+      <button class="src-btn" data-src="glass" aria-pressed="false">glass</button>
+      <button class="src-btn" data-src="noise" aria-pressed="false">noise</button>
+    </div>
+    <div class="grp">
+      <div class="knob">
+        <label>grain <span id="v-size">60 ms</span></label>
+        <input id="k-size" type="range" min="4" max="300" value="60">
+      </div>
+      <div class="knob">
+        <label>density <span id="v-dens">28 /s</span></label>
+        <input id="k-dens" type="range" min="2" max="120" value="28">
+      </div>
+    </div>
+    <div class="grp">
+      <div class="knob">
+        <label>spread <span id="v-spread">35 %</span></label>
+        <input id="k-spread" type="range" min="0" max="100" value="35">
+      </div>
+      <div class="knob">
+        <label>scatter <span id="v-scat">8 %</span></label>
+        <input id="k-scat" type="range" min="0" max="40" value="8">
+      </div>
+      <div class="knob">
+        <label>pitch drift <span id="v-jit">0 st</span></label>
+        <input id="k-jit" type="range" min="0" max="12" value="0">
+      </div>
+    </div>
+    <button id="play" aria-pressed="false"><span class="dot"></span><span id="play-label">play</span></button>
+  </div>
+</div>
+<script>
+(() => {
+  "use strict";
+  const ACCENT = [91, 140, 255];
+  const canvas = document.getElementById("c");
+  const ctx2d = canvas.getContext("2d");
+  const hint = document.getElementById("hint");
+
+  // ---- audio graph ----
+  let actx = null, master = null, buffers = {}, current = "bell";
+  let playing = false;
+
+  // live parameters, driven by pointer + sliders
+  const P = {
+    position: 0.45,   // 0..1 : where in the source the aperture sits
+    pitch: 1.0,       // playback rate
+    grainMs: 60,
+    density: 28,      // grains / second
+    spread: 0.35,     // stereo width 0..1
+    scatter: 0.08,    // positional jitter, fraction of buffer
+    jitterSt: 0       // random pitch drift, semitones
+  };
+
+  // ---- source generation (self-contained, no external files) ----
+  function makeBuffer(kind) {
+    const sr = actx.sampleRate;
+    const dur = 3.2;
+    const n = Math.floor(sr * dur);
+    const buf = actx.createBuffer(1, n, sr);
+    const d = buf.getChannelData(0);
+    if (kind === "bell") {
+      // inharmonic partials with independent exponential decays
+      const parts = [[1,1.0,3.0],[2.76,0.55,2.2],[5.40,0.35,1.5],[8.93,0.22,1.0],[13.34,0.12,0.7]];
+      const f0 = 196; // G3
+      for (let i = 0; i < n; i++) {
+        const t = i / sr;
+        let s = 0;
+        for (const [ratio, amp, decay] of parts) {
+          s += amp * Math.exp(-t * (1/decay) * 3) * Math.sin(2*Math.PI*f0*ratio*t);
+        }
+        d[i] = s * 0.16;
+      }
+    } else if (kind === "voice") {
+      // a sung "ah" — harmonic series shaped by three formants
+      const f0 = 146.8; // D3
+      const formants = [[640, 80, 1.0],[1090, 90, 0.5],[2440, 120, 0.18]];
+      for (let i = 0; i < n; i++) {
+        const t = i / sr;
+        const vib = 1 + 0.006 * Math.sin(2*Math.PI*5.2*t);
+        let s = 0;
+        for (let h = 1; h <= 40; h++) {
+          const f = f0 * h * vib;
+          let gain = 0;
+          for (const [cf, bw, fa] of formants) {
+            const x = (f - cf) / bw;
+            gain += fa / (1 + x*x);
+          }
+          if (gain < 0.004) continue;
+          s += gain * Math.sin(2*Math.PI*f*t) / h;
+        }
+        const env = Math.min(1, t/0.12) * Math.min(1, (dur-t)/0.4);
+        d[i] = s * env * 0.22;
+      }
+    } else if (kind === "glass") {
+      // high inharmonic shimmer — many faint metallic partials
+      let seed = 1234567;
+      const rnd = () => (seed = (seed*1103515245+12345) & 0x7fffffff) / 0x7fffffff;
+      const part = [];
+      for (let k = 0; k < 24; k++) part.push([400 + rnd()*5200, 0.04 + rnd()*0.05, 0.6 + rnd()*2.6, rnd()*6.283]);
+      for (let i = 0; i < n; i++) {
+        const t = i / sr;
+        let s = 0;
+        for (const [f, amp, decay, ph] of part) {
+          s += amp * Math.exp(-t*(1/decay)) * Math.sin(2*Math.PI*f*t + ph);
+        }
+        d[i] = s * 0.5;
+      }
+    } else { // noise — pink-ish, the texture with no pitch of its own
+      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+      let seed = 987654321;
+      const rnd = () => { seed = (seed*1103515245+12345) & 0x7fffffff; return (seed/0x7fffffff)*2-1; };
+      for (let i = 0; i < n; i++) {
+        const w = rnd();
+        b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759; b2=0.96900*b2+w*0.1538520;
+        b3=0.86650*b3+w*0.3104856; b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+        const pink = b0+b1+b2+b3+b4+b5+b6+w*0.5362; b6 = w*0.115926;
+        d[i] = pink * 0.05;
+      }
+    }
+    return buf;
+  }
+
+  // a Hann window for grain envelopes — no clicks, only swells
+  let hann = null;
+  function buildHann() {
+    const L = 256;
+    hann = new Float32Array(L);
+    for (let i = 0; i < L; i++) hann[i] = 0.5 - 0.5*Math.cos(2*Math.PI*i/(L-1));
+  }
+
+  function ensureAudio() {
+    if (actx) return;
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    master = actx.createGain();
+    master.gain.value = 0.9;
+    const comp = actx.createDynamicsCompressor();
+    master.connect(comp).connect(actx.destination);
+    buildHann();
+    buffers.bell = makeBuffer("bell");
+    buffers.voice = makeBuffer("voice");
+    buffers.glass = makeBuffer("glass");
+    buffers.noise = makeBuffer("noise");
+  }
+
+  // ---- the grain scheduler (look-ahead) ----
+  let nextGrain = 0;
+  const LOOKAHEAD = 0.1, TICK = 25;
+  let schedTimer = null;
+  const viz = []; // grains drawn recently, for the visual cloud
+
+  function scheduleGrain(when) {
+    const buf = buffers[current];
+    const durSec = Math.max(0.004, P.grainMs / 1000);
+    const src = actx.createBufferSource();
+    src.buffer = buf;
+    const semi = (Math.random()*2 - 1) * P.jitterSt;
+    const rate = P.pitch * Math.pow(2, semi/12);
+    src.playbackRate.value = rate;
+
+    const g = actx.createGain();
+    g.gain.setValueAtTime(0, when);
+    g.gain.setValueCurveAtTime(hann, when, durSec);
+
+    const pan = actx.createStereoPanner();
+    const panVal = (Math.random()*2 - 1) * P.spread;
+    pan.pan.value = panVal;
+
+    src.connect(g).connect(pan).connect(master);
+
+    let pos = P.position + (Math.random()*2 - 1) * P.scatter;
+    pos = Math.min(0.999, Math.max(0, pos));
+    const offset = Math.min(buf.duration - durSec, pos * buf.duration);
+    src.start(when, Math.max(0, offset), durSec * 1.02);
+    src.stop(when + durSec * 1.05);
+
+    viz.push({ when, pos, pan: panVal, rate, dur: durSec });
+    if (viz.length > 400) viz.shift();
+  }
+
+  function scheduler() {
+    if (!playing) return;
+    const horizon = actx.currentTime + LOOKAHEAD;
+    while (nextGrain < horizon) {
+      scheduleGrain(nextGrain);
+      nextGrain += 1 / P.density;
+    }
+  }
+
+  // ---- pointer control over the field ----
+  let pointerActive = false;
+  function setFromPointer(e) {
+    const r = canvas.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    P.position = Math.min(1, Math.max(0, x));
+    // y: up = higher pitch. Map to 0.5x .. 2x over the height.
+    const up = 1 - Math.min(1, Math.max(0, y));
+    P.pitch = Math.pow(2, (up - 0.5) * 2); // -1..+1 octave
+  }
+  canvas.addEventListener("pointerdown", e => {
+    pointerActive = true; canvas.setPointerCapture(e.pointerId); setFromPointer(e);
+    hideHint();
+  });
+  canvas.addEventListener("pointermove", e => { if (pointerActive) setFromPointer(e); });
+  canvas.addEventListener("pointerup", () => pointerActive = false);
+  canvas.addEventListener("pointercancel", () => pointerActive = false);
+
+  function hideHint() { hint.style.opacity = "0"; }
+
+  // ---- sliders ----
+  const bind = (id, vid, fn, fmt) => {
+    const el = document.getElementById(id), out = document.getElementById(vid);
+    const upd = () => { fn(parseFloat(el.value)); out.textContent = fmt(parseFloat(el.value)); };
+    el.addEventListener("input", upd); upd();
+  };
+  bind("k-size", "v-size", v => P.grainMs = v, v => Math.round(v) + " ms");
+  bind("k-dens", "v-dens", v => P.density = v, v => Math.round(v) + " /s");
+  bind("k-spread", "v-spread", v => P.spread = v/100, v => Math.round(v) + " %");
+  bind("k-scat", "v-scat", v => P.scatter = v/100, v => Math.round(v) + " %");
+  bind("k-jit", "v-jit", v => P.jitterSt = v, v => Math.round(v) + " st");
+
+  // ---- source switching ----
+  document.querySelectorAll(".src-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".src-btn").forEach(x => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+      current = b.dataset.src;
+    });
+  });
+
+  // ---- play toggle ----
+  const playBtn = document.getElementById("play");
+  const playLabel = document.getElementById("play-label");
+  playBtn.addEventListener("click", async () => {
+    ensureAudio();
+    if (actx.state === "suspended") await actx.resume();
+    playing = !playing;
+    playBtn.setAttribute("aria-pressed", String(playing));
+    playLabel.textContent = playing ? "playing" : "play";
+    if (playing) {
+      nextGrain = actx.currentTime + 0.05;
+      schedTimer = setInterval(scheduler, TICK);
+      hideHint();
+    } else {
+      clearInterval(schedTimer);
+    }
+  });
+
+  // ---- visual: the cloud, and the source trace it is drawn from ----
+  let W = 0, H = 0, dpr = 1, wave = null;
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+    wave = null;
+  }
+  window.addEventListener("resize", resize);
+
+  function buildWave() {
+    // downsample the current source to the canvas width for the resting trace
+    if (!actx) return null;
+    const d = buffers[current].getChannelData(0);
+    const cols = Math.max(2, Math.floor(W));
+    const step = d.length / cols;
+    const arr = new Float32Array(cols);
+    for (let i = 0; i < cols; i++) {
+      let peak = 0; const s = Math.floor(i*step), e = Math.floor((i+1)*step);
+      for (let j = s; j < e; j++) { const a = Math.abs(d[j]); if (a > peak) peak = a; }
+      arr[i] = peak;
+    }
+    let max = 0; for (const a of arr) if (a > max) max = a;
+    if (max > 0) for (let i = 0; i < cols; i++) arr[i] /= max;
+    return { arr, src: current };
+  }
+
+  function draw() {
+    requestAnimationFrame(draw);
+    ctx2d.clearRect(0, 0, W, H);
+
+    // resting source trace along the bottom
+    if (actx) {
+      if (!wave || wave.src !== current) wave = buildWave();
+      if (wave) {
+        const base = H - 46, amp = 30;
+        ctx2d.strokeStyle = "rgba(47,52,60,0.9)";
+        ctx2d.lineWidth = 1;
+        ctx2d.beginPath();
+        for (let i = 0; i < wave.arr.length; i++) {
+          const y = base - wave.arr[i]*amp;
+          if (i === 0) ctx2d.moveTo(i, y); else ctx2d.lineTo(i, y);
+        }
+        ctx2d.stroke();
+        // the aperture — the slice of source the grains are currently drawn from
+        const ax = P.position * W, aw = Math.max(2, P.scatter * W);
+        const grad = ctx2d.createLinearGradient(ax-aw, 0, ax+aw, 0);
+        grad.addColorStop(0, "rgba(91,140,255,0)");
+        grad.addColorStop(0.5, "rgba(91,140,255,0.10)");
+        grad.addColorStop(1, "rgba(91,140,255,0)");
+        ctx2d.fillStyle = grad;
+        ctx2d.fillRect(ax-aw, 0, aw*2, H);
+        ctx2d.strokeStyle = "rgba(91,140,255,0.5)";
+        ctx2d.beginPath(); ctx2d.moveTo(ax, 0); ctx2d.lineTo(ax, H); ctx2d.stroke();
+      }
+    }
+
+    // the grain cloud — each grain a soft flash that swells and fades, just as it sounds
+    if (actx && playing) {
+      const now = actx.currentTime;
+      ctx2d.globalCompositeOperation = "lighter";
+      for (const gr of viz) {
+        const age = now - gr.when;
+        const life = gr.dur + 0.9;
+        if (age < -0.05 || age > life) continue;
+        // window-shaped brightness: swell in, fade out (mirrors the Hann envelope + tail)
+        let a;
+        if (age < gr.dur) a = 0.5 - 0.5*Math.cos(Math.PI * Math.min(1, age/gr.dur));
+        else a = Math.max(0, 1 - (age-gr.dur)/(life-gr.dur));
+        a *= 0.5;
+        // x: where in the source the grain came from, nudged by its pan
+        const px = gr.pos * W + gr.pan * 60;
+        // y: pitch — higher playback rate sits higher; pan adds a little vertical breath
+        const oct = Math.log2(gr.rate); // -1..+1
+        const py = H*0.5 - oct * (H*0.32) + gr.pan * 22;
+        const rad = 3 + gr.dur*30 + (1-a)*6;
+        const g = ctx2d.createRadialGradient(px, py, 0, px, py, rad);
+        g.addColorStop(0, `rgba(${ACCENT[0]},${ACCENT[1]},${ACCENT[2]},${a})`);
+        g.addColorStop(1, "rgba(91,140,255,0)");
+        ctx2d.fillStyle = g;
+        ctx2d.beginPath(); ctx2d.arc(px, py, rad, 0, 6.283); ctx2d.fill();
+      }
+      ctx2d.globalCompositeOperation = "source-over";
+    }
+  }
+  resize();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

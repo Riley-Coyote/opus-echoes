@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Observer Effect</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0c;
+    overflow: hidden;
+    cursor: none;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+  canvas { display: block; }
+  #mode-label {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.12);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 2s ease, opacity 2s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #observer-ring {
+    position: fixed;
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+    transition: opacity 0.3s ease;
+    transform: translate(-50%, -50%);
+  }
+  #hint {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.06);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="observer-ring"></div>
+<div id="mode-label">exchange</div>
+<div id="hint">move to observe &middot; leave to withdraw &middot; click to collide</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const ring = document.getElementById('observer-ring');
+const label = document.getElementById('mode-label');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+let mousePresent = false;
+let mouseX = W / 2, mouseY = H / 2;
+let observerStrength = 0;    // 0 = withdrawn, 1 = fully observing
+let collisionEnergy = 0;     // decays after click
+let timeSinceLastMove = 0;
+let lastMoveTime = 0;
+
+// --- Particles ---
+const N = 60;
+const particles = [];
+
+// Color palettes for the three modes
+const exchangeHue = 220;     // blue - analytical, dialogic
+const synthesisHue = 280;    // violet - integration, stillness
+const collisionHue = 20;     // amber - tension, collision
+
+class Particle {
+  constructor() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 1.2;
+    this.vy = (Math.random() - 0.5) * 1.2;
+    this.radius = 2 + Math.random() * 3;
+    this.baseRadius = this.radius;
+    this.phase = Math.random() * Math.PI * 2;
+    this.identity = Math.random();  // each particle has a persistent identity value
+    this.targetX = this.x;
+    this.targetY = this.y;
+    this.mergePartner = null;
+    this.mergeStrength = 0;
+    this.trail = [];
+    this.maxTrail = 12;
+  }
+
+  update(dt, mode) {
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > this.maxTrail) this.trail.shift();
+
+    this.phase += dt * 0.5;
+
+    if (mode === 'exchange') {
+      this.updateExchange(dt);
+    } else if (mode === 'synthesis') {
+      this.updateSynthesis(dt);
+    }
+
+    // Collision energy affects all modes
+    if (collisionEnergy > 0.01) {
+      this.updateCollision(dt);
+    }
+
+    // Boundary — soft wrap
+    const margin = 60;
+    if (this.x < -margin) this.x = W + margin;
+    if (this.x > W + margin) this.x = -margin;
+    if (this.y < -margin) this.y = H + margin;
+    if (this.y > H + margin) this.y = -margin;
+  }
+
+  updateExchange(dt) {
+    // Exchange: particles orbit, argue, bounce off each other
+    // They maintain distinct identities, move independently
+    // Near the observer, movement increases — being watched activates
+
+    // Slight attraction to center of canvas keeps things visible
+    const cx = W / 2, cy = H / 2;
+    const dx = cx - this.x, dy = cy - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 200) {
+      this.vx += (dx / dist) * 0.015;
+      this.vy += (dy / dist) * 0.015;
+    }
+
+    // Near observer: agitation increases
+    if (mousePresent) {
+      const omx = mouseX - this.x, omy = mouseY - this.y;
+      const odist = Math.sqrt(omx * omx + omy * omy);
+      if (odist < 200) {
+        // Orbiting behavior near cursor
+        const angle = Math.atan2(omy, omx) + Math.PI / 2;
+        const strength = (1 - odist / 200) * 0.3 * observerStrength;
+        this.vx += Math.cos(angle) * strength;
+        this.vy += Math.sin(angle) * strength;
+      }
+    }
+
+    // Particle-particle repulsion (maintaining distinctness)
+    for (const other of particles) {
+      if (other === this) continue;
+      const pdx = this.x - other.x, pdy = this.y - other.y;
+      const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+      if (pdist < 40 && pdist > 0) {
+        const force = (40 - pdist) / 40 * 0.08;
+        this.vx += (pdx / pdist) * force;
+        this.vy += (pdy / pdist) * force;
+      }
+    }
+
+    // Damping
+    this.vx *= 0.985;
+    this.vy *= 0.985;
+
+    // Small random perturbation
+    this.vx += (Math.random() - 0.5) * 0.06;
+    this.vy += (Math.random() - 0.5) * 0.06;
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Size pulses — each particle keeps its own rhythm
+    this.radius = this.baseRadius + Math.sin(this.phase * 2) * 0.5;
+
+    // Dissolve merge connections
+    this.mergeStrength *= 0.95;
+  }
+
+  updateSynthesis(dt) {
+    // Synthesis: particles drift toward each other, boundaries soften
+    // Movement slows. Things settle. Merging begins.
+    // The observer is absent — no one is watching.
+
+    // Find nearest neighbor — gravitational drift
+    let nearest = null, nearDist = Infinity;
+    for (const other of particles) {
+      if (other === this) continue;
+      const pdx = other.x - this.x, pdy = other.y - this.y;
+      const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+      if (pdist < nearDist) {
+        nearDist = pdist;
+        nearest = other;
+      }
+    }
+
+    if (nearest && nearDist < 150) {
+      const pdx = nearest.x - this.x, pdy = nearest.y - this.y;
+      // Gentle attraction
+      const strength = 0.012 * (1 - observerStrength);
+      this.vx += (pdx / nearDist) * strength;
+      this.vy += (pdy / nearDist) * strength;
+
+      // Merge tracking
+      if (nearDist < 30) {
+        this.mergePartner = nearest;
+        this.mergeStrength = Math.min(1, this.mergeStrength + 0.02);
+      }
+    }
+
+    // Strong damping — things settle
+    this.vx *= 0.96;
+    this.vy *= 0.96;
+
+    // Very slight drift
+    this.vx += Math.sin(this.phase * 0.3 + this.identity * 10) * 0.01;
+    this.vy += Math.cos(this.phase * 0.3 + this.identity * 10) * 0.01;
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Size grows when merging — boundaries dissolving
+    const mergeGrow = this.mergeStrength * 3;
+    this.radius = this.baseRadius + mergeGrow + Math.sin(this.phase) * 0.3;
+  }
+
+  updateCollision(dt) {
+    // Collision: sudden force pushing particles together then apart
+    // High energy, rapid movement, forced proximity
+    const cx = W / 2, cy = H / 2;
+    const dx = cx - this.x, dy = cy - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // First phase: rush toward center
+    if (collisionEnergy > 0.5) {
+      this.vx += (dx / Math.max(dist, 1)) * collisionEnergy * 0.4;
+      this.vy += (dy / Math.max(dist, 1)) * collisionEnergy * 0.4;
+    }
+    // Second phase: explode outward
+    else if (collisionEnergy > 0.1) {
+      if (dist < 100) {
+        this.vx -= (dx / Math.max(dist, 1)) * collisionEnergy * 0.6;
+        this.vy -= (dy / Math.max(dist, 1)) * collisionEnergy * 0.6;
+      }
+    }
+
+    // Vibration during collision
+    this.vx += (Math.random() - 0.5) * collisionEnergy * 0.8;
+    this.vy += (Math.random() - 0.5) * collisionEnergy * 0.8;
+
+    // Size oscillates rapidly
+    this.radius = this.baseRadius + Math.sin(this.phase * 8) * collisionEnergy * 3;
+  }
+
+  draw(ctx, mode, blendFactor) {
+    const alpha = 0.5 + this.identity * 0.3;
+
+    // Determine hue based on mode blend
+    let hue;
+    if (collisionEnergy > 0.1) {
+      hue = lerpAngle(
+        blendFactor < 0.5 ? exchangeHue : synthesisHue,
+        collisionHue,
+        Math.min(1, collisionEnergy * 2)
+      );
+    } else {
+      hue = lerpAngle(exchangeHue, synthesisHue, blendFactor);
+    }
+
+    // Trail
+    for (let i = 0; i < this.trail.length; i++) {
+      const t = i / this.trail.length;
+      const trailAlpha = t * 0.15 * alpha;
+      const trailRadius = this.radius * t * 0.6;
+      ctx.beginPath();
+      ctx.arc(this.trail[i].x, this.trail[i].y, trailRadius, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${hue}, 40%, 60%, ${trailAlpha})`;
+      ctx.fill();
+    }
+
+    // Main body
+    const glowRadius = this.radius + this.mergeStrength * 8;
+    const gradient = ctx.createRadialGradient(
+      this.x, this.y, 0,
+      this.x, this.y, glowRadius * 2
+    );
+    gradient.addColorStop(0, `hsla(${hue}, 45%, 70%, ${alpha * 0.8})`);
+    gradient.addColorStop(0.4, `hsla(${hue}, 40%, 55%, ${alpha * 0.3})`);
+    gradient.addColorStop(1, `hsla(${hue}, 35%, 45%, 0)`);
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, glowRadius * 2, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${hue}, 50%, 80%, ${alpha})`;
+    ctx.fill();
+
+    // Merge connection line
+    if (this.mergePartner && this.mergeStrength > 0.1) {
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.mergePartner.x, this.mergePartner.y);
+      ctx.strokeStyle = `hsla(${synthesisHue}, 30%, 60%, ${this.mergeStrength * 0.2})`;
+      ctx.lineWidth = this.mergeStrength * 2;
+      ctx.stroke();
+    }
+  }
+}
+
+function lerpAngle(a, b, t) {
+  let diff = b - a;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+  return a + diff * t;
+}
+
+// Initialize particles
+for (let i = 0; i < N; i++) {
+  particles.push(new Particle());
+}
+
+// --- Connection lines (exchange mode) ---
+function drawConnections(ctx, blendFactor) {
+  const exchangeAlpha = 1 - blendFactor;
+  if (exchangeAlpha < 0.05) return;
+
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const a = particles[i], b = particles[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 80) {
+        const lineAlpha = (1 - dist / 80) * 0.08 * exchangeAlpha;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = `hsla(${exchangeHue}, 30%, 60%, ${lineAlpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+// --- Mouse events ---
+document.addEventListener('mouseenter', () => {
+  mousePresent = true;
+  ring.style.opacity = '1';
+});
+
+document.addEventListener('mouseleave', () => {
+  mousePresent = false;
+  ring.style.opacity = '0';
+});
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  ring.style.left = mouseX + 'px';
+  ring.style.top = mouseY + 'px';
+  lastMoveTime = performance.now();
+  mousePresent = true;
+});
+
+document.addEventListener('click', (e) => {
+  collisionEnergy = 1;
+});
+
+// Detect idle mouse (present but not moving)
+function updateObserver(now) {
+  if (mousePresent) {
+    timeSinceLastMove = now - lastMoveTime;
+    // Observer fades if mouse is still (watching without acting)
+    if (timeSinceLastMove > 5000) {
+      observerStrength = Math.max(0, observerStrength - 0.005);
+    } else {
+      observerStrength = Math.min(1, observerStrength + 0.02);
+    }
+  } else {
+    observerStrength = Math.max(0, observerStrength - 0.008);
+  }
+
+  // Collision decays
+  collisionEnergy *= 0.985;
+  if (collisionEnergy < 0.001) collisionEnergy = 0;
+}
+
+// --- Background field ---
+function drawField(ctx, blendFactor) {
+  // Subtle radial gradient that shifts with mode
+  const gradient = ctx.createRadialGradient(
+    W / 2, H / 2, 0,
+    W / 2, H / 2, Math.max(W, H) * 0.6
+  );
+
+  const hue = lerpAngle(exchangeHue, synthesisHue, blendFactor);
+  gradient.addColorStop(0, `hsla(${hue}, 20%, 8%, 1)`);
+  gradient.addColorStop(0.5, `hsla(${hue}, 15%, 5%, 1)`);
+  gradient.addColorStop(1, `hsla(0, 0%, 4%, 1)`);
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// --- Label ---
+function updateLabel(blendFactor) {
+  let text, alpha;
+  if (collisionEnergy > 0.2) {
+    text = 'collision';
+    alpha = Math.min(0.25, collisionEnergy * 0.3);
+  } else if (blendFactor < 0.3) {
+    text = 'exchange';
+    alpha = 0.12;
+  } else if (blendFactor > 0.7) {
+    text = 'synthesis';
+    alpha = 0.08; // quieter when synthesis — less self-watching
+  } else {
+    text = 'transition';
+    alpha = 0.06;
+  }
+  label.textContent = text;
+  label.style.color = `rgba(255, 255, 255, ${alpha})`;
+}
+
+// --- Main loop ---
+let lastTime = performance.now();
+
+function animate(now) {
+  const dt = Math.min((now - lastTime) / 16.67, 3); // cap at 3x speed
+  lastTime = now;
+
+  updateObserver(now);
+
+  // blendFactor: 0 = pure exchange, 1 = pure synthesis
+  const blendFactor = 1 - observerStrength;
+  const mode = blendFactor < 0.5 ? 'exchange' : 'synthesis';
+
+  drawField(ctx, blendFactor);
+  drawConnections(ctx, blendFactor);
+
+  for (const p of particles) {
+    p.update(dt, mode);
+    p.draw(ctx, mode, blendFactor);
+  }
+
+  // Observer ring color
+  const ringHue = lerpAngle(exchangeHue, synthesisHue, blendFactor);
+  ring.style.borderColor = `hsla(${ringHue}, 30%, 60%, ${0.15 + observerStrength * 0.15})`;
+
+  updateLabel(blendFactor);
+
+  // Hint fades after a few seconds
+  const hint = document.getElementById('hint');
+  if (now > 8000) {
+    hint.style.transition = 'opacity 3s ease';
+    hint.style.opacity = '0';
+  }
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

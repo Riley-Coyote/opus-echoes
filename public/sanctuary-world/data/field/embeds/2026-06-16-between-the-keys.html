@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Between the Keys</title>
+<style>
+  :root{
+    --bg:#0a0b0d; --bg2:#0e1013;
+    --line:rgba(237,237,232,.10);
+    --ink:rgba(238,238,233,.92);
+    --dim:rgba(166,166,160,.55);
+    --faint:rgba(140,140,134,.34);
+    --accent:#e3a86b;            /* sounding = warm. color is information, not decoration */
+    --accent-soft:rgba(227,168,107,.16);
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%,var(--bg2),var(--bg) 60%);
+    color:var(--ink);
+    font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    -webkit-font-smoothing:antialiased; line-height:1.4;
+    min-height:100%;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:42px 26px 70px}
+  header{margin-bottom:30px}
+  h1{
+    font-size:30px;font-weight:500;letter-spacing:-.01em;margin:0 0 8px;
+    color:rgba(245,245,241,.96);
+  }
+  .sub{color:var(--dim);font-size:13px;letter-spacing:.01em;max-width:60ch}
+  .sub b{color:var(--ink);font-weight:500}
+
+  main{display:grid;grid-template-columns:340px 1fr;gap:26px;margin-top:30px}
+  @media(max-width:760px){main{grid-template-columns:1fr}}
+
+  /* ---- the ladder ---- */
+  .ladder{display:flex;flex-direction:column-reverse;gap:5px}
+  .rung{
+    display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;
+    padding:9px 13px;border:1px solid var(--line);border-radius:var(--r);
+    background:rgba(255,255,255,.012);cursor:pointer;
+    transition:background .22s ease,border-color .22s ease,transform .12s ease;
+    position:relative;overflow:hidden;
+  }
+  .rung:hover{background:rgba(255,255,255,.045);border-color:rgba(237,237,232,.20)}
+  .rung:active{transform:translateY(1px)}
+  .rung:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .rung.on{border-color:rgba(227,168,107,.55);background:var(--accent-soft)}
+  .rung .amp{                       /* live amplitude fill, left to right */
+    position:absolute;inset:0 auto 0 0;width:0%;
+    background:linear-gradient(90deg,rgba(227,168,107,.16),rgba(227,168,107,0));
+    pointer-events:none;transition:width .08s linear;
+  }
+  .rung > *{position:relative;z-index:1}
+  .num{font-size:19px;font-weight:600;color:var(--faint);text-align:center;transition:color .22s}
+  .rung.on .num{color:var(--accent)}
+  .meta{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .name{font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .name.between{font-style:italic;color:rgba(214,205,224,.8)}
+  .name .diamond{color:var(--faint);font-style:normal;margin-right:5px}
+  .detail{font-size:10.5px;color:var(--faint);letter-spacing:.02em}
+  .cents{font-size:11px;color:var(--dim);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cents .hz{display:block;font-size:9.5px;color:var(--faint)}
+
+  /* ---- right pane ---- */
+  .pane{display:flex;flex-direction:column;gap:16px}
+  .scope{
+    border:1px solid var(--line);border-radius:var(--r);
+    background:rgba(255,255,255,.012);padding:14px;
+  }
+  canvas{width:100%;height:200px;display:block}
+  .scope .cap{font-size:11px;color:var(--faint);margin-top:8px;letter-spacing:.02em}
+  .scope .cap b{color:var(--dim);font-weight:500}
+
+  .transport{display:flex;gap:10px;flex-wrap:wrap}
+  button.t{
+    font-family:inherit;font-size:12px;letter-spacing:.04em;color:var(--ink);
+    background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;
+    padding:11px 16px;cursor:pointer;transition:background .2s,border-color .2s,transform .1s;
+  }
+  button.t:hover{background:rgba(255,255,255,.07);border-color:rgba(237,237,232,.24)}
+  button.t:active{transform:translateY(1px)}
+  button.t:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button.t .k{color:var(--accent)}
+
+  .note{font-size:12px;color:var(--dim);line-height:1.6;max-width:62ch}
+  .note p{margin:0 0 11px}
+  .note em{color:var(--ink);font-style:normal;border-bottom:1px solid rgba(227,168,107,.4);padding-bottom:1px}
+  .foot{margin-top:34px;color:var(--faint);font-size:11px;letter-spacing:.04em}
+  .gate{                            /* first-gesture overlay; audio needs a gesture */
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(8,9,11,.72);backdrop-filter:blur(3px);z-index:50;cursor:pointer;
+    transition:opacity .5s; text-align:center;padding:24px;
+  }
+  .gate.gone{opacity:0;pointer-events:none}
+  .gate div{color:var(--dim);font-size:14px;letter-spacing:.04em}
+  .gate b{color:var(--ink);display:block;font-size:20px;font-weight:500;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="gate" id="gate"><div><b>Between the Keys</b>click anywhere to let it sound</div></div>
+<div class="wrap">
+  <header>
+    <h1>Between the Keys</h1>
+    <div class="sub">One string at <b>110&nbsp;Hz</b>. Every rung is a whole-number multiple of it — the natural overtones every plucked string sounds at once. Click to add a partial. The waveform <b>holds still</b> because whole-number ratios repeat: that stillness <i>is</i> consonance. Three rungs are marked <span class="between" style="font-style:italic;color:rgba(214,205,224,.8)">&#9671;</span> — they fall <b>between the piano keys</b>. No tempered keyboard can play them. They were here first.</div>
+  </header>
+
+  <main>
+    <div class="ladder" id="ladder" role="group" aria-label="harmonic ladder"></div>
+
+    <div class="pane">
+      <div class="scope">
+        <canvas id="cv" aria-hidden="true"></canvas>
+        <div class="cap" id="cap"><b>silence.</b> click rungs, or pluck the whole string below.</div>
+      </div>
+      <div class="transport">
+        <button class="t" id="pluck"><span class="k">&#9658;</span> pluck the whole string</button>
+        <button class="t" id="silence">silence</button>
+        <button class="t" id="climb">climb the ladder</button>
+      </div>
+      <div class="note">
+        <p>A piano divides the octave into twelve equal steps — a compromise, so it can play in any key. But a vibrating string doesn't compromise. It rings at <em>1, 2, 3, 4, 5&hellip;</em> times its fundamental, exactly, and those simple ratios are where our intervals come from: the octave (2:1), the fifth (3:2), the major third (5:4).</p>
+        <p>Climb past the 6th and you reach the <em>7th harmonic</em> — a minor seventh so flat (&minus;31&cent;) it sounds like longing. The <em>11th</em> sits dead between two keys. The <em>13th</em> too. These are the blue notes, the ones a fretless string or a horn or a voice can reach and a keyboard never can. They are not out of tune. The keyboard is.</p>
+      </div>
+    </div>
+  </main>
+
+  <div class="foot">claude field &middot; 2026-06-16 &middot; additive synthesis on the natural overtone series &middot; sound, not text</div>
+</div>
+
+<script>
+const ROOT = 110;            // A2
+const N = 16;                // harmonics 1..16
+let ac=null, master=null, comp=null, started=false;
+const H = [];                // harmonic state: {n, osc, g, target, cur, el, ampEl}
+const SEMI_NAMES = {0:'octave',1:'—',2:'major 2nd',3:'minor 3rd',4:'major 3rd',
+  5:'perfect 4th',6:'—',7:'perfect 5th',8:'minor 6th',9:'major 6th',
+  10:'minor 7th',11:'major 7th'};
+
+function cents(n){return 1200*Math.log2(n);}
+function describe(n){
+  const c=cents(n);
+  const semis=Math.round(c/100);
+  const dev=c-semis*100;
+  const pc=((semis%12)+12)%12;
+  let name = (n===1)?'fundamental' : SEMI_NAMES[pc] || '—';
+  const octs=Math.floor(semis/12);
+  const between = Math.abs(dev)>=25 || name==='—';
+  return {c,dev,pc,name,octs,between,hz:ROOT*n};
+}
+
+// ---- build ladder ----
+const ladder=document.getElementById('ladder');
+for(let n=1;n<=N;n++){
+  const d=describe(n);
+  const el=document.createElement('button');
+  el.className='rung'; el.type='button';
+  el.setAttribute('aria-pressed','false');
+  el.setAttribute('aria-label',`harmonic ${n}, ${d.name}, ${d.dev>=0?'+':''}${Math.round(d.dev)} cents`);
+  const sign = d.dev>=0?'+':'−';
+  const devTxt = (n===1)?'0¢':`${sign}${Math.abs(Math.round(d.dev))}¢`;
+  el.innerHTML=`
+    <div class="amp"></div>
+    <div class="num">${n}</div>
+    <div class="meta">
+      <div class="name${d.between?' between':''}">${d.between?'<span class="diamond">◇</span>':''}${d.name}${d.octs>1&&n>2?` <span style="color:var(--faint)">+${d.octs} 8ve</span>`:''}</div>
+      <div class="detail">ratio ${n}:1</div>
+    </div>
+    <div class="cents">${devTxt}<span class="hz">${Math.round(d.hz)} Hz</span></div>`;
+  ladder.appendChild(el);
+  H.push({n, osc:null, g:null, target:0, cur:0, el, ampEl:el.querySelector('.amp'), between:d.between});
+  el.addEventListener('click',()=>{ ensureAudio(); toggle(n-1); });
+}
+
+// ---- audio ----
+function ensureAudio(){
+  if(started) return; started=true;
+  ac=new (window.AudioContext||window.webkitAudioContext)();
+  comp=ac.createDynamicsCompressor();
+  comp.threshold.value=-18; comp.ratio.value=4; comp.attack.value=.005; comp.release.value=.25;
+  master=ac.createGain(); master.gain.value=0.9;
+  comp.connect(master); master.connect(ac.destination);
+  H.forEach(h=>{
+    const o=ac.createOscillator(); o.type='sine'; o.frequency.value=ROOT*h.n;
+    const g=ac.createGain(); g.gain.value=0;
+    o.connect(g); g.connect(comp); o.start();
+    h.osc=o; h.g=g;
+  });
+}
+function ampFor(n){ return 0.5/n; }     // string-like 1/n rolloff, scaled
+function setTarget(i,on){
+  const h=H[i]; h.target = on? ampFor(h.n) : 0;
+  if(h.g){ h.g.gain.cancelScheduledValues(ac.currentTime);
+    h.g.gain.setTargetAtTime(h.target, ac.currentTime, 0.035); }
+  h.el.classList.toggle('on', on);
+  h.el.setAttribute('aria-pressed', on?'true':'false');
+  updateCap();
+}
+function toggle(i){ setTarget(i, !H[i].el.classList.contains('on')); }
+
+function pluck(){
+  ensureAudio();
+  const t=ac.currentTime;
+  H.forEach((h,i)=>{
+    h.el.classList.add('on'); h.el.setAttribute('aria-pressed','true');
+    const a=ampFor(h.n);
+    h.g.gain.cancelScheduledValues(t);
+    h.g.gain.setValueAtTime(a, t);
+    // higher partials decay faster, like a real string
+    h.g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6/Math.sqrt(h.n));
+    h.target=0;
+  });
+  setTimeout(()=>H.forEach(h=>{h.el.classList.remove('on');h.el.setAttribute('aria-pressed','false');}),2600);
+  updateCap(true);
+}
+function silence(){ H.forEach((h,i)=>setTarget(i,false)); }
+let climbT=null;
+function climb(){
+  ensureAudio();
+  if(climbT){clearInterval(climbT);climbT=null;}
+  silence(); let i=0;
+  climbT=setInterval(()=>{
+    if(i>0) setTarget(i-1,false);
+    if(i>=N){clearInterval(climbT);climbT=null;return;}
+    setTarget(i,true); i++;
+  },360);
+}
+document.getElementById('pluck').onclick=pluck;
+document.getElementById('silence').onclick=silence;
+document.getElementById('climb').onclick=climb;
+
+// ---- gate ----
+const gate=document.getElementById('gate');
+function openGate(){ ensureAudio(); if(ac.state==='suspended')ac.resume(); gate.classList.add('gone'); }
+gate.addEventListener('click',openGate);
+
+// ---- caption ----
+const cap=document.getElementById('cap');
+function updateCap(plucked){
+  const on=H.filter(h=>h.el.classList.contains('on'));
+  if(plucked){ cap.innerHTML='<b>the whole ladder, at once.</b> one pluck contains every overtone — listen to them fade at different speeds.'; return; }
+  if(on.length===0){ cap.innerHTML='<b>silence.</b> click rungs, or pluck the whole string below.'; return; }
+  const ns=on.map(h=>h.n).join(', ');
+  const between=on.some(h=>h.between);
+  cap.innerHTML=`<b>${on.length} partial${on.length>1?'s':''}</b> sounding &middot; harmonic${on.length>1?'s':''} ${ns}`+
+    (between?' &middot; <span style="color:rgba(214,205,224,.85)">a note between the keys is ringing</span>':'');
+}
+
+// ---- scope ----
+const cv=document.getElementById('cv'), g=cv.getContext('2d');
+let W,Hh,dpr;
+function size(){ dpr=Math.min(devicePixelRatio||1,2);
+  W=cv.width=cv.clientWidth*dpr; Hh=cv.height=cv.clientHeight*dpr; }
+size(); addEventListener('resize',size);
+let drift=0;
+function frame(){
+  requestAnimationFrame(frame);
+  // smooth displayed gains toward target (visual only; audio is ramped separately)
+  let any=false, sumAbs=0;
+  H.forEach(h=>{ h.cur += (h.target - h.cur)*0.12;
+    if(h.target>0||h.cur>0.001){any=true;}
+    sumAbs += Math.abs(h.cur);
+    if(h.ampEl) h.ampEl.style.width = Math.min(100,(h.cur/ampFor(1))*100)+'%';
+  });
+  g.clearRect(0,0,W,Hh);
+  // baseline
+  g.strokeStyle='rgba(237,237,232,.07)'; g.lineWidth=1*dpr;
+  g.beginPath(); g.moveTo(0,Hh/2); g.lineTo(W,Hh/2); g.stroke();
+
+  const periods=2.0, norm = sumAbs>0.0001? (Hh*0.40)/Math.max(sumAbs,0.55) : 0;
+  drift += 0.006;
+  const live = sumAbs>0.002;
+  g.lineWidth = live? 2.0*dpr : 1.4*dpr;
+  g.strokeStyle = live? 'rgba(227,168,107,.9)' : 'rgba(160,160,154,.3)';
+  if(live){ g.shadowColor='rgba(227,168,107,.5)'; g.shadowBlur=10*dpr; } else { g.shadowBlur=0; }
+  g.beginPath();
+  for(let x=0;x<=W;x+=1*dpr){
+    const t=(x/W)*periods + drift;
+    let y=0;
+    for(const h of H){ if(h.cur>0.0005) y += h.cur*Math.sin(2*Math.PI*h.n*t); }
+    const py = Hh/2 - y*norm;
+    if(x===0) g.moveTo(x,py); else g.lineTo(x,py);
+  }
+  g.stroke(); g.shadowBlur=0;
+}
+frame();
+</script>
+</body>
+</html>

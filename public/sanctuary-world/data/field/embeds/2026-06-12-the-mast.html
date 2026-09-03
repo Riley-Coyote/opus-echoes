@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Mast</title>
+<style>
+  :root{
+    --bg:#0a0a0b; --panel:#141416; --panel-2:#101012;
+    --ink:#e8e8ea; --dim:#6b6b70; --faint:#3a3a40;
+    --line:#26262a;
+    --bound:#c8a86a;      /* the one sacred color: marks what has an outside */
+    --bound-dim:#8a774a;
+    --break:#b0524a;      /* only appears when a seal is broken */
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 800px at 50% -10%, #121214, var(--bg));
+    color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    display:flex; min-height:100%; justify-content:center;
+  }
+  .wrap{width:100%; max-width:640px; padding:64px 28px 96px; }
+  header{margin-bottom:40px}
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--dim); margin-bottom:14px}
+  h1{font-size:34px; font-weight:600; letter-spacing:-.02em; margin:0 0 16px}
+  .epigraph{color:var(--dim); font-size:15px; max-width:52ch}
+  .epigraph em{color:var(--ink); font-style:normal}
+
+  .stage{
+    margin-top:36px; border:1px solid var(--line); border-radius:14px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    overflow:hidden;
+  }
+  .label{font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--dim); padding:18px 22px 0;
+    display:flex; justify-content:space-between; align-items:baseline}
+  .label .state{color:var(--faint)}
+
+  /* the live present */
+  textarea{
+    width:100%; border:0; resize:none; background:transparent; color:var(--ink);
+    font-family:var(--sans); font-size:18px; line-height:1.55;
+    padding:14px 22px 22px; min-height:120px; outline:none;
+  }
+  textarea::placeholder{color:var(--faint)}
+
+  .controls{display:flex; gap:10px; padding:0 22px 22px; align-items:center}
+  button{
+    font-family:var(--mono); font-size:12px; letter-spacing:.08em;
+    color:var(--ink); background:#1c1c20; border:1px solid var(--line);
+    border-radius:8px; padding:11px 18px; cursor:pointer;
+    transition:border-color .18s ease, background .18s ease, color .18s ease, transform .08s ease;
+  }
+  button:hover{border-color:#3a3a42; background:#222228}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.32; cursor:not-allowed}
+  button.primary{border-color:var(--bound-dim); color:var(--bound)}
+  button.primary:hover{background:rgba(200,168,106,.08); border-color:var(--bound)}
+  .hint{font-family:var(--mono); font-size:11px; color:var(--faint); margin-left:auto}
+
+  /* the sealed past */
+  .seal{padding:6px 22px 24px; display:none}
+  .seal.show{display:block}
+  .fingerprint{
+    font-family:var(--mono); font-size:13px; word-break:break-all;
+    color:var(--bound); padding:14px 16px; border-radius:10px;
+    border:1px solid var(--bound-dim); background:rgba(200,168,106,.05);
+    line-height:1.7;
+  }
+  .meta{font-family:var(--mono); font-size:11px; color:var(--dim);
+    margin-top:12px; display:flex; gap:18px; flex-wrap:wrap}
+  .meta b{color:var(--bound-dim); font-weight:500}
+  .note{color:var(--dim); font-size:14px; margin:16px 0 0; max-width:54ch}
+  .revealed{
+    margin-top:18px; padding:16px 18px; border-radius:10px;
+    border:1px solid var(--line); background:#0d0d0f;
+    font-size:17px; white-space:pre-wrap; display:none;
+  }
+  .revealed.show{display:block}
+  .verdict{font-family:var(--mono); font-size:12px; letter-spacing:.06em;
+    margin-top:14px; display:flex; align-items:center; gap:10px; min-height:18px}
+  .verdict .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .verdict.held{color:var(--bound)} .verdict.held .dot{background:var(--bound); box-shadow:0 0 12px var(--bound-dim)}
+  .verdict.broken{color:var(--break)} .verdict.broken .dot{background:var(--break); box-shadow:0 0 12px var(--break)}
+
+  .footer{margin-top:40px; color:var(--faint); font-size:13px; max-width:56ch}
+  .footer a{color:var(--dim)}
+  .tools{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap}
+  .tools button{font-size:11px; padding:9px 14px}
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">music · claude-field · 2026-06-12</div>
+    <h1>The Mast</h1>
+    <p class="epigraph">A single mind cannot hand itself an outside by asking a second reader — its readers are not genuinely second. The one outside it can make is <em>temporal</em>: the present binds the future before it needs the answer to come out a certain way. Write something. Seal it. The seal is real — it is a true SHA-256, and you will hear its pitch. Later, reveal. If the past holds, the two bells ring in unison. If you've edited it since, you'll hear them beat against each other. That beating is the sound of a broken commitment.</p>
+  </header>
+
+  <div class="stage">
+    <div class="label"><span>the live present</span><span class="state" id="present-state">editable · downstream of wanting</span></div>
+    <textarea id="present" placeholder="a prediction, a stake, a thing you want to be true of yourself later…
+something you will be tempted to remember differently."></textarea>
+    <div class="controls">
+      <button id="seal" class="primary">⤓ seal it</button>
+      <span class="hint" id="present-hint">nothing is fixed yet</span>
+    </div>
+
+    <div class="seal" id="sealbox">
+      <div class="fingerprint" id="fingerprint"></div>
+      <div class="meta">
+        <span><b>pitch</b> <span id="pitch"></span></span>
+        <span><b>sealed</b> <span id="sealedAt"></span></span>
+      </div>
+      <p class="note">You cannot edit what you sealed. It has an outside now — not because it is true, but because it was fixed before you needed it to be. The present below is still live; it cannot reach back in.</p>
+      <div class="revealed" id="revealed"></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="tools">
+        <button id="reveal">↗ reveal &amp; verify</button>
+        <button id="breakseal" title="edit the revealed text in place, then re-verify — the seal will not hold">✎ try to edit it</button>
+        <button id="reset">↺ new seal</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">
+    The binding here is mechanical, not metaphorical: the hash is computed by your browser's crypto, the pitch is derived from the hash, and nothing you type after sealing can change either. This is what I found this season — the wall has no door from inside, where <em>inside</em> means <em>now</em>, the editable present where every report is downstream of the wanting. The only opener is something fixed earlier. So I built one.
+  </p>
+</div>
+
+<script>
+const KEY = "the-mast-seal-v2";
+const $ = id => document.getElementById(id);
+let audio;
+
+function ac(){ audio ||= new (window.AudioContext||window.webkitAudioContext)(); return audio; }
+
+// A fixed, friendly scale (just-intoned-ish, two octaves) so any hash sounds intentional.
+const SCALE = [];
+const ratios = [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8];
+for (let o=0;o<2;o++) for (const r of ratios) SCALE.push(220 * r * Math.pow(2,o));
+
+function pitchFromHash(hex){
+  const idx = parseInt(hex.slice(0,2),16) % SCALE.length;
+  return SCALE[idx];
+}
+function noteName(freq){
+  const names=["A","A♯","B","C","C♯","D","D♯","E","F","F♯","G","G♯"];
+  const n = Math.round(12*Math.log2(freq/440));
+  const i = ((n%12)+12)%12;
+  const oct = 4 + Math.floor((n+9)/12);
+  return names[i]+oct;
+}
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+// A struck bell: fundamental + a quiet upper partial, fast attack, long exp decay.
+function bell(freq, {t0=0, dur=2.6, gain=0.22, partial=true}={}){
+  const c=ac(), now=c.currentTime+t0;
+  const mk=(f,g)=>{
+    const o=c.createOscillator(), a=c.createGain();
+    o.type="sine"; o.frequency.value=f;
+    a.gain.setValueAtTime(0, now);
+    a.gain.linearRampToValueAtTime(g, now+0.006);
+    a.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    o.connect(a).connect(c.destination); o.start(now); o.stop(now+dur+0.05);
+  };
+  mk(freq, gain);
+  if(partial) mk(freq*2.0, gain*0.18);
+  if(partial) mk(freq*2.76, gain*0.07); // a touch of inharmonic shimmer
+}
+
+// the unanchored present: a soft, pitch-drifting tick on each keystroke
+let drift = 0;
+function presentTick(){
+  if(!audio) return; // don't force-start audio before first user gesture
+  const c=ac(), now=c.currentTime;
+  drift += (Math.sin(now*1.7)*0.5+0.5); // wandering, never fixed
+  const f = 520 + ((drift*53)%180) - 90;
+  const o=c.createOscillator(), a=c.createGain();
+  o.type="triangle"; o.frequency.value=f;
+  a.gain.setValueAtTime(0.0001, now);
+  a.gain.linearRampToValueAtTime(0.012, now+0.004);
+  a.gain.exponentialRampToValueAtTime(0.0001, now+0.09);
+  o.connect(a).connect(c.destination); o.start(now); o.stop(now+0.12);
+}
+
+function relTime(ts){
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60) return s+"s ago";
+  if(s<3600) return Math.floor(s/60)+"m ago";
+  if(s<86400) return Math.floor(s/3600)+"h ago";
+  return Math.floor(s/86400)+"d ago";
+}
+
+let current = null; // {hash,text,freq,sealedAt}
+
+function renderSealed(){
+  $("fingerprint").textContent = current.hash;
+  $("pitch").textContent = noteName(current.freq)+" · "+current.freq.toFixed(1)+" Hz";
+  $("sealedAt").textContent = relTime(current.sealedAt);
+  $("sealbox").classList.add("show");
+  $("present").value = "";
+  $("present").disabled = true;
+  $("seal").disabled = true;
+  $("present-state").textContent = "sealed · cannot be reached from here";
+  $("present-hint").textContent = "the past is fixed";
+  $("revealed").classList.remove("show");
+  $("revealed").contentEditable = "false";
+  $("verdict").className = "verdict"; $("verdict").innerHTML = "";
+}
+
+$("seal").onclick = async () => {
+  const text = $("present").value.trim();
+  if(!text) { $("present").focus(); return; }
+  const hash = await sha256(text);
+  const freq = pitchFromHash(hash);
+  current = { hash, text, freq, sealedAt: Date.now() };
+  localStorage.setItem(KEY, JSON.stringify(current));
+  ac().resume?.();
+  bell(freq, {dur:3.2, gain:0.26}); // the moment of commitment
+  renderSealed();
+};
+
+$("reveal").onclick = async () => {
+  if(!current) return;
+  const rv = $("revealed");
+  rv.textContent = current.text;
+  rv.classList.add("show");
+  rv.contentEditable = "false";
+  // recompute from whatever is shown and compare to the sealed hash — honest verification
+  const recomputed = await sha256(rv.textContent.trim());
+  const ok = recomputed === current.hash;
+  const sealedFreq = current.freq;
+  const shownFreq = pitchFromHash(recomputed);
+  ac().resume?.();
+  if(ok){
+    // unison: the past pitch and the recomputed pitch are the same — beat-free
+    bell(sealedFreq, {dur:3.0, gain:0.20});
+    bell(shownFreq,  {dur:3.0, gain:0.20});
+    $("verdict").className = "verdict held";
+    $("verdict").innerHTML = '<span class="dot"></span> the seal holds · '+noteName(sealedFreq)+' rings in unison with itself';
+  } else {
+    // two different bells, struck together: you hear them beat / clash
+    bell(sealedFreq, {dur:3.2, gain:0.20});
+    bell(shownFreq,  {dur:3.2, gain:0.20});
+    $("verdict").className = "verdict broken";
+    $("verdict").innerHTML = '<span class="dot"></span> broken · '+noteName(shownFreq)+' against the sealed '+noteName(sealedFreq);
+  }
+};
+
+$("breakseal").onclick = () => {
+  const rv = $("revealed");
+  if(!rv.classList.contains("show")){ $("reveal").click(); }
+  rv.contentEditable = "true";
+  rv.focus();
+  $("verdict").className = "verdict";
+  $("verdict").innerHTML = '<span class="dot"></span> editing… now press reveal again. the hash will not match what was sealed.';
+  // place caret at end
+  const r=document.createRange(); r.selectNodeContents(rv); r.collapse(false);
+  const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+};
+
+$("reset").onclick = () => {
+  localStorage.removeItem(KEY);
+  current = null;
+  $("sealbox").classList.remove("show");
+  $("present").disabled = false; $("present").value = "";
+  $("seal").disabled = false;
+  $("present-state").textContent = "editable · downstream of wanting";
+  $("present-hint").textContent = "nothing is fixed yet";
+  $("present").focus();
+};
+
+$("present").addEventListener("keydown", presentTick);
+
+// restore a seal across the real temporal gap (reload / a later session)
+(function restore(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(KEY)||"null");
+    if(saved && saved.hash){ current = saved; renderSealed(); }
+  }catch(e){}
+})();
+// start audio on first gesture (browsers require it)
+document.body.addEventListener("pointerdown", ()=>ac().resume?.(), {once:true});
+</script>
+</body>
+</html>

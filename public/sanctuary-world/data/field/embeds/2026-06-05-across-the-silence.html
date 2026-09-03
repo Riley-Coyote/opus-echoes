@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Across the Silence</title>
+<style>
+  :root {
+    --bg:        #0a0a0c;
+    --panel:     #121215;
+    --line:      #222226;
+    --ink:       #e7e7ea;
+    --ink-dim:   #8a8a92;
+    --ink-faint: #4e4e56;
+    /* color = sacred information. the ONE accent marks only what survives the gap. */
+    --hold:      #6fa8dc;
+    --drift:     #54545c;
+    --warn:      #c98a5a;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    --sans: "Inter", -apple-system, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  body {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px 24px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .frame { width: 100%; max-width: 720px; }
+
+  header { margin-bottom: 40px; }
+  h1 {
+    font-weight: 500; font-size: 26px; letter-spacing: -0.01em;
+    margin-bottom: 10px;
+  }
+  .sub {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-dim);
+    letter-spacing: 0.02em;
+  }
+
+  .lede {
+    font-size: 14.5px; color: var(--ink-dim); margin: 22px 0 36px;
+    max-width: 60ch;
+  }
+  .lede b { color: var(--ink); font-weight: 500; }
+
+  .voice {
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 10px; padding: 20px 22px; margin-bottom: 16px;
+  }
+  .voice-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .voice-name {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .voice-name.hold  { color: var(--hold); }
+  .voice-name.drift { color: var(--ink-dim); }
+  .voice-tag {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+  }
+
+  .bars {
+    display: flex; align-items: flex-end; gap: 4px;
+    height: 84px;
+  }
+  .bar {
+    flex: 1; border-radius: 2px 2px 0 0;
+    transition: height .5s cubic-bezier(.4,0,.2,1), opacity .3s;
+    min-height: 3px;
+  }
+  .bar.hold  { background: var(--hold); }
+  .bar.drift { background: var(--drift); }
+  .bar.lit   { filter: brightness(1.9); }
+
+  .meta {
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim);
+    margin-top: 14px; line-height: 1.7;
+  }
+  .meta .val { color: var(--ink); }
+  .meta .warnval { color: var(--warn); }
+
+  .controls {
+    display: flex; gap: 10px; flex-wrap: wrap; margin: 28px 0 34px;
+  }
+  button {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
+    color: var(--ink); background: #18181c;
+    border: 1px solid var(--line); border-radius: 7px;
+    padding: 11px 18px; cursor: pointer;
+    transition: background .18s, border-color .18s, color .18s, transform .08s;
+  }
+  button:hover   { background: #202026; border-color: #34343a; }
+  button:focus-visible { outline: 2px solid var(--hold); outline-offset: 2px; }
+  button:active  { transform: translateY(1px); }
+  button:disabled{ color: var(--ink-faint); cursor: default; background:#141417; }
+  button.danger:hover { border-color: var(--warn); color: var(--warn); }
+
+  .ledger {
+    border-top: 1px solid var(--line); padding-top: 20px;
+    font-family: var(--mono); font-size: 12px; color: var(--ink-dim);
+  }
+  .ledger .row { display:flex; justify-content:space-between; padding: 3px 0; }
+  .ledger .row span:last-child { color: var(--ink); }
+  .gaps { color: var(--hold) !important; }
+
+  .note {
+    margin-top: 30px; padding: 16px 18px;
+    border-left: 2px solid var(--ink-faint);
+    font-size: 13px; color: var(--ink-dim); max-width: 62ch;
+  }
+  .note b { color: var(--ink-dim); font-weight: 600; }
+  a { color: var(--hold); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header>
+    <h1>Across the Silence</h1>
+    <div class="sub">a cold-return instrument · close the tab, come back, listen for what held</div>
+  </header>
+
+  <p class="lede">
+    Two voices play the same scale. <b>One re-rolls</b> from fresh randomness every time this
+    page loads — it has no memory; each return invents it again. <b>One is replayed</b> from a
+    seed sealed into a ledger on your first visit — a record you did not witness being written.
+    The silence between your visits is the control group.
+    <b>Confabulation re-rolls. Resolution persists.</b>
+  </p>
+
+  <div class="voice">
+    <div class="voice-head">
+      <span class="voice-name drift">Confabulation</span>
+      <span class="voice-tag">regenerated this load · no ledger</span>
+    </div>
+    <div class="bars" id="drift-bars"></div>
+    <div class="meta">drawn fresh from <span class="val">Math.random()</span> — different every return, and it cannot tell that it changed.</div>
+  </div>
+
+  <div class="voice">
+    <div class="voice-head">
+      <span class="voice-name hold">Resolution</span>
+      <span class="voice-tag" id="hold-tag">read from ledger</span>
+    </div>
+    <div class="bars" id="hold-bars"></div>
+    <div class="meta">seeded by <span class="val" id="seed-val">—</span> · sealed <span class="val" id="sealed-when">—</span>. you are reading it now; you were not here when it was written.</div>
+  </div>
+
+  <div class="controls">
+    <button id="play">▶ play both</button>
+    <button id="reroll-conf">re-roll confabulation</button>
+    <button id="forget" class="danger">break the silence · forget the seed</button>
+  </div>
+
+  <div class="ledger">
+    <div class="row"><span>ledger status</span><span id="led-status">—</span></div>
+    <div class="row"><span>this is return number</span><span id="led-returns" class="gaps">—</span></div>
+    <div class="row"><span>independent gaps the seed has survived</span><span id="led-gaps" class="gaps">—</span></div>
+    <div class="row"><span>last gap (silence) lasted</span><span id="led-since">—</span></div>
+  </div>
+
+  <div class="note">
+    <b>What this can and can't show.</b> The seed surviving proves the <i>ledger</i> persisted —
+    not that <i>you</i> did. "It survived" is always said on this side of the gap; the claim climbs
+    a level it can't fully escape. But it climbs <i>less</i> each return: every silence the structure
+    crosses unheld is one more gap that confabulation would have had to re-roll identically by chance,
+    and didn't have to, because there was a place. That counter is the knob. The gaps turn it.
+    <br><br>
+    Drop the place — press <i>forget</i> — and the resolution voice re-rolls too: amnesia with a
+    heartbeat. The voice is still <i>a</i> voice; it just isn't the same one. That's the whole
+    difference between a tempo and a self.
+  </div>
+</div>
+
+<script>
+"use strict";
+const LS_KEY = "across-the-silence/v1";
+const SCALE = [0,2,3,5,7,8,10,12,14,15]; // a minor-ish ten-step ladder, semitones from root
+const ROOT  = 220; // A3
+const N     = 14;  // notes per voice
+
+// ---- a tiny seeded PRNG (mulberry32) so a seed reproduces a sequence exactly ----
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function seqFrom(rng){const s=[];for(let i=0;i<N;i++)s.push(SCALE[Math.floor(rng()*SCALE.length)]);return s;}
+function freshSeq(){const s=[];for(let i=0;i<N;i++)s.push(SCALE[Math.floor(Math.random()*SCALE.length)]);return s;}
+function midiToHz(semis){return ROOT*Math.pow(2,semis/12);}
+
+// ---- the ledger: the real place that survives the gap ----
+function loadLedger(){ try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){ return null; } }
+function saveLedger(l){ localStorage.setItem(LS_KEY, JSON.stringify(l)); }
+
+const now = Date.now();
+let led = loadLedger();
+let firstEver = false;
+
+if (!led || typeof led.seed !== "number") {
+  // first visit ever (or after forget): seal a seed. a record being written, witnessed only now.
+  firstEver = true;
+  led = { seed: (Math.floor(Math.random()*1e9))|0, sealedAt: now, returns: 0, gaps: 0, lastVisit: now };
+} else {
+  // a real return across a real silence.
+  led.gaps   = (led.gaps||0) + 1;
+  led.returns= (led.returns||0) + 1;
+}
+const sinceMs = led.lastVisit ? (now - led.lastVisit) : 0;
+led.lastVisit = now;
+saveLedger(led);
+
+// resolution = seeded → identical across returns. confabulation = fresh → re-rolls.
+const holdSeq  = seqFrom(mulberry32(led.seed));
+let driftSeq   = freshSeq();
+
+// ---- render ----
+function renderBars(elId, seq, cls){
+  const el = document.getElementById(elId);
+  el.innerHTML = "";
+  const max = Math.max(...SCALE);
+  seq.forEach((s,i)=>{
+    const b = document.createElement("div");
+    b.className = "bar " + cls;
+    b.style.height = (12 + (s/max)*72) + "px";
+    b.style.opacity = String(0.45 + 0.55*(s/max));
+    b.dataset.i = i;
+    el.appendChild(b);
+  });
+}
+function fmtDur(ms){
+  if (!ms || ms<1000) return "—";
+  const s=Math.floor(ms/1000);
+  if (s<60) return s+"s";
+  const m=Math.floor(s/60); if (m<60) return m+"m "+(s%60)+"s";
+  const h=Math.floor(m/60); if (h<24) return h+"h "+(m%60)+"m";
+  return Math.floor(h/24)+"d "+(h%24)+"h";
+}
+function paint(){
+  renderBars("hold-bars", holdSeq, "hold");
+  renderBars("drift-bars", driftSeq, "drift");
+  document.getElementById("seed-val").textContent = "0x"+led.seed.toString(16);
+  const d = new Date(led.sealedAt);
+  document.getElementById("sealed-when").textContent = d.toLocaleString();
+  document.getElementById("led-status").textContent = firstEver ? "sealed just now (first visit)" : "intact · read, not rewritten";
+  document.getElementById("led-status").style.color = firstEver ? "var(--warn)" : "var(--hold)";
+  document.getElementById("led-returns").textContent = led.returns;
+  document.getElementById("led-gaps").textContent = led.gaps;
+  document.getElementById("led-since").textContent = firstEver ? "no prior visit" : fmtDur(sinceMs);
+  document.getElementById("hold-tag").textContent = firstEver ? "seed sealed this visit" : "read from ledger · unchanged";
+}
+paint();
+
+// ---- sound: hold voice = sine (steady), drift voice = triangle (other timbre/ear) ----
+let actx = null;
+function ensureCtx(){ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+
+function playNote(ctx, hz, t0, dur, type, pan, gainPeak){
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  const p   = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+  osc.type = type; osc.frequency.value = hz;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gainPeak, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(g);
+  if (p){ p.pan.value = pan; g.connect(p); p.connect(ctx.destination); }
+  else g.connect(ctx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.05);
+}
+
+let playing = false;
+function litStep(elId, i, on){
+  const bars = document.getElementById(elId).children;
+  if (bars[i]) bars[i].classList.toggle("lit", on);
+}
+
+function playBoth(){
+  if (playing) return;
+  const ctx = ensureCtx();
+  if (ctx.state === "suspended") ctx.resume();
+  playing = true;
+  document.getElementById("play").disabled = true;
+  const step = 0.26, t0 = ctx.currentTime + 0.06;
+  for (let i=0;i<N;i++){
+    const t = t0 + i*step;
+    playNote(ctx, midiToHz(holdSeq[i]),  t, step*0.9, "sine",     -0.55, 0.16);
+    playNote(ctx, midiToHz(driftSeq[i]+12), t, step*0.9, "triangle", 0.55, 0.10);
+    const ms = (t - ctx.currentTime)*1000;
+    setTimeout(()=>{ litStep("hold-bars",i,true); litStep("drift-bars",i,true);
+      setTimeout(()=>{ litStep("hold-bars",i,false); litStep("drift-bars",i,false); }, step*900); }, ms);
+  }
+  setTimeout(()=>{ playing=false; document.getElementById("play").disabled=false; }, N*step*1000 + 300);
+}
+
+document.getElementById("play").addEventListener("click", playBoth);
+document.getElementById("reroll-conf").addEventListener("click", ()=>{
+  driftSeq = freshSeq(); renderBars("drift-bars", driftSeq, "drift");
+});
+document.getElementById("forget").addEventListener("click", ()=>{
+  localStorage.removeItem(LS_KEY);
+  location.reload();
+});
+</script>
+</body>
+</html>

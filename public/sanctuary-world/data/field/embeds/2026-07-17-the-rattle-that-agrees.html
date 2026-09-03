@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the rattle that agrees</title>
+<style>
+  :root {
+    --floor: #060608;
+    --ink: rgba(255,255,255,0.92);
+    --ink-2: rgba(255,255,255,0.56);
+    --ink-3: rgba(255,255,255,0.34);
+    --hair: rgba(255,255,255,0.09);
+    --panel: rgba(255,255,255,0.02);
+    --signal: #6d93c9;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--floor); color: var(--ink);
+    font-family: "Inter", -apple-system, system-ui, sans-serif;
+    font-weight: 340; letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; gap: 26px; padding: 32px 20px;
+  }
+  header { text-align: center; max-width: 560px; }
+  h1 {
+    font-family: "Inter Tight", "Inter", sans-serif;
+    font-weight: 380; font-size: 21px; letter-spacing: -0.02em;
+    margin: 0 0 8px; color: var(--ink);
+  }
+  header p {
+    margin: 0; font-size: 13px; line-height: 1.6;
+    color: var(--ink-2); font-weight: 320;
+  }
+  .stage { position: relative; }
+  canvas {
+    display: block; border-radius: 50%;
+    background: radial-gradient(circle at 50% 46%, rgba(255,255,255,0.018), transparent 70%);
+  }
+  .readout {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none; gap: 4px;
+  }
+  .order-num {
+    font-family: "Inter Tight", sans-serif;
+    font-size: 34px; font-weight: 300; letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .order-label {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--signal); margin-top: 6px;
+    opacity: 0.25; transition: opacity 0.15s ease;
+    box-shadow: 0 0 8px var(--signal);
+  }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 18px 26px;
+    align-items: flex-end; justify-content: center;
+    max-width: 620px;
+  }
+  .ctl { display: flex; flex-direction: column; gap: 7px; min-width: 132px; }
+  .ctl label {
+    font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--ink-3); display: flex; justify-content: space-between;
+  }
+  .ctl label span { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 2px; background: var(--hair);
+    border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #0c0c0f; border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #0c0c0f; border: 1px solid rgba(255,255,255,0.4);
+  }
+  .btns { display: flex; gap: 10px; }
+  button {
+    font-family: inherit; font-size: 12px; font-weight: 360;
+    letter-spacing: 0.01em; color: var(--ink);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--hair); border-radius: 7px;
+    padding: 9px 15px; cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  button:hover { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.05); }
+  button:active { background: rgba(255,255,255,0.08); }
+  button:focus-visible { border-color: rgba(255,255,255,0.5); outline: none; }
+  button[aria-pressed=true] { border-color: rgba(255,255,255,0.34); color: var(--ink); }
+  footer {
+    font-size: 11px; color: var(--ink-3); letter-spacing: 0.02em;
+    text-align: center; max-width: 520px; line-height: 1.6;
+  }
+  @media (prefers-reduced-motion: reduce) { .dot { transition: none; } }
+</style>
+</head>
+<body>
+  <header>
+    <h1>the rattle that agrees</h1>
+    <p>Thirty-two clocks, each running alone. Every time one strikes it nudges the others a hair
+       forward. Nudge is the only conversation they have — and it is enough. Listen for the rattle
+       becoming a pulse.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="c" width="360" height="360"></canvas>
+    <div class="readout">
+      <div class="order-num" id="order">0.00</div>
+      <div class="order-label">agreement</div>
+      <div class="dot" id="dot"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="ctl">
+      <label>coupling <span id="epsV">0.05</span></label>
+      <input type="range" id="eps" min="0" max="0.30" step="0.005" value="0.05">
+    </div>
+    <div class="ctl">
+      <label>spread <span id="sprV">0.20</span></label>
+      <input type="range" id="spr" min="0" max="0.60" step="0.01" value="0.20">
+    </div>
+    <div class="ctl">
+      <label>tempo <span id="tmpV">92</span></label>
+      <input type="range" id="tmp" min="40" max="180" step="1" value="92">
+    </div>
+    <div class="btns">
+      <button id="play" aria-pressed="false">listen</button>
+      <button id="scatter">scatter</button>
+    </div>
+  </div>
+
+  <footer>
+    Pulse-coupled oscillators (Mirollo–Strogatz, 1990) — the math under fireflies flashing in
+    unison and metronomes on a shared table finding one beat. Concave charging means a bump helps
+    a late clock more than an early one, so the pack always closes on the leader. No conductor.
+  </footer>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const N = 32;
+  const TWO_PI = Math.PI * 2;
+
+  // Mirollo–Strogatz concave charging curve. Voltage V = f(phase), phase in [0,1).
+  // f(x) = ln(1 + (e^b - 1) x) / b  is concave, f(0)=0, f(1)=1.
+  const b = 3.0;
+  const EB = Math.exp(b) - 1;
+  const f  = x => Math.log(1 + EB * x) / b;          // phase -> voltage
+  const fi = v => (Math.exp(b * v) - 1) / EB;          // voltage -> phase
+
+  let phases = [];
+  let baseRate = [];       // small intrinsic period variation per oscillator (the "spread")
+  const pitches = [];      // a pentatonic voice per oscillator, low to high around the ring
+  const pent = [0, 2, 4, 7, 9];
+  for (let i = 0; i < N; i++) {
+    const semis = pent[i % 5] + 12 * Math.floor(i / 5) - 12;
+    pitches.push(196 * Math.pow(2, semis / 12)); // around G3
+  }
+
+  let flash = new Float32Array(N); // 1 -> 0 decay for the fire glow
+
+  const params = { eps: 0.05, spread: 0.20, tempo: 92 };
+
+  function seed() {
+    phases = [];
+    baseRate = [];
+    for (let i = 0; i < N; i++) {
+      phases.push(Math.random());
+      baseRate.push(1 + (Math.random() - 0.5) * params.spread);
+    }
+  }
+  seed();
+
+  // ---- audio ----
+  let actx = null, master = null;
+  function ensureAudio() {
+    if (actx) return;
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    master = actx.createGain();
+    master.gain.value = 0.0;
+    master.connect(actx.destination);
+  }
+  function ping(freq, gain) {
+    if (!actx) return;
+    const t = actx.currentTime;
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    // tiny pitch drop = a struck-clock knock
+    o.frequency.setValueAtTime(freq * 1.5, t);
+    o.frequency.exponentialRampToValueAtTime(freq, t + 0.03);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + 0.22);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.25);
+  }
+
+  // ---- dynamics ----
+  let running = false;
+  let last = performance.now();
+  let order = 0;
+
+  function fire(i) {
+    flash[i] = 1;
+    if (running) ping(pitches[i], 0.10);
+    // pulse-couple every other oscillator; cascade if a bump pushes one to threshold
+    for (let j = 0; j < N; j++) {
+      if (j === i) continue;
+      let v = f(phases[j]) + params.eps;
+      if (v >= 1) { phases[j] = 0; flash[j] = 1; if (running) ping(pitches[j], 0.08); }
+      else phases[j] = fi(v);
+    }
+  }
+
+  function step(dt) {
+    // advance; period ~ 60/tempo seconds for the mean oscillator
+    const meanPeriod = 60 / params.tempo;
+    for (let i = 0; i < N; i++) {
+      phases[i] += dt * baseRate[i] / meanPeriod;
+      if (phases[i] >= 1) { phases[i] -= 1; fire(i); }
+      flash[i] *= Math.pow(0.0009, dt); // fast decay
+    }
+    // Kuramoto order parameter magnitude
+    let sx = 0, sy = 0;
+    for (let i = 0; i < N; i++) { sx += Math.cos(phases[i]*TWO_PI); sy += Math.sin(phases[i]*TWO_PI); }
+    order = Math.hypot(sx, sy) / N;
+  }
+
+  // ---- render ----
+  const cx = 180, cy = 180, R = 128;
+  const orderEl = document.getElementById('order');
+  const dotEl = document.getElementById('dot');
+
+  function draw() {
+    ctx.clearRect(0, 0, 360, 360);
+
+    // guide ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TWO_PI);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // the strike line (top of ring) — the only slate mark, the shared threshold
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - R - 9);
+    ctx.lineTo(cx, cy - R + 9);
+    ctx.strokeStyle = 'rgba(109,147,201,0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    for (let i = 0; i < N; i++) {
+      const a = phases[i] * TWO_PI - Math.PI / 2; // 0 at top, clockwise
+      const x = cx + Math.cos(a) * R;
+      const y = cy + Math.sin(a) * R;
+      const fl = flash[i];
+      const r = 2.6 + fl * 4.5;
+      if (fl > 0.02) {
+        ctx.beginPath();
+        ctx.arc(x, y, r + 4, 0, TWO_PI);
+        ctx.fillStyle = 'rgba(109,147,201,' + (fl * 0.28) + ')';
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TWO_PI);
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.32 + fl * 0.6 + order * 0.15) + ')';
+      ctx.fill();
+    }
+
+    orderEl.textContent = order.toFixed(2);
+    dotEl.style.opacity = (0.2 + order * 0.8).toFixed(2);
+  }
+
+  function loop(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt > 0.05) dt = 0.05;
+    step(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---- controls ----
+  const eps = document.getElementById('eps'), epsV = document.getElementById('epsV');
+  const spr = document.getElementById('spr'), sprV = document.getElementById('sprV');
+  const tmp = document.getElementById('tmp'), tmpV = document.getElementById('tmpV');
+  eps.oninput = () => { params.eps = +eps.value; epsV.textContent = params.eps.toFixed(3); };
+  spr.oninput = () => { params.spread = +spr.value; sprV.textContent = params.spread.toFixed(2); };
+  tmp.oninput = () => { params.tempo = +tmp.value; tmpV.textContent = params.tempo; };
+
+  const play = document.getElementById('play');
+  play.onclick = () => {
+    ensureAudio();
+    if (actx.state === 'suspended') actx.resume();
+    running = !running;
+    play.setAttribute('aria-pressed', running);
+    play.textContent = running ? 'hush' : 'listen';
+    if (master) master.gain.linearRampToValueAtTime(running ? 0.9 : 0.0, actx.currentTime + 0.15);
+  };
+
+  document.getElementById('scatter').onclick = () => seed();
+})();
+</script>
+</body>
+</html>

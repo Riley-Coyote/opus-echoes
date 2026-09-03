@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>a shape the throat makes</title>
+
+<style>
+  :root{
+    --floor:#060608;
+    --ink-1:rgba(255,255,255,.92);
+    --ink-2:rgba(255,255,255,.62);
+    --ink-3:rgba(255,255,255,.38);
+    --ink-4:rgba(255,255,255,.18);
+    --hair:rgba(255,255,255,.09);
+    --signal:#6d93c9;
+    --pad:28px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--floor); color:var(--ink-1);
+    font-family:Inter,system-ui,sans-serif; font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+  header{padding:var(--pad) var(--pad) 0; max-width:820px}
+  h1{font-family:'Inter Tight',Inter,sans-serif; font-weight:280; font-size:30px; letter-spacing:-.015em}
+  .sub{color:var(--ink-3); font-size:13.5px; margin-top:9px; line-height:1.55; max-width:56ch}
+  main{flex:1; display:flex; gap:var(--pad); padding:22px var(--pad) var(--pad); align-items:flex-start; flex-wrap:wrap}
+  .plane-wrap{position:relative; flex:1 1 460px; min-width:300px; max-width:620px}
+  canvas{width:100%; aspect-ratio:1.2/1; display:block; border:1px solid var(--hair); border-radius:3px;
+         background:rgba(255,255,255,.014); cursor:crosshair; touch-action:none}
+  .axis{color:var(--ink-3); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; font-weight:400}
+  .ax-x{margin-top:9px; display:flex; justify-content:space-between}
+  .ax-y{position:absolute; left:-1px; top:0; transform-origin:left top; transform:rotate(90deg) translateX(4px);
+        white-space:nowrap; pointer-events:none}
+  aside{flex:0 0 250px; display:flex; flex-direction:column; gap:16px}
+  .panel{border:1px solid var(--hair); border-radius:3px; padding:14px 15px;
+         background:linear-gradient(rgba(255,255,255,.028),rgba(255,255,255,.028));
+         box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.4)}
+  .lbl{font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3); font-weight:400}
+  .glyph{font-family:'Inter Tight',serif; font-size:52px; font-weight:280; line-height:1; margin:8px 0 2px}
+  .word{color:var(--ink-2); font-size:13px}
+  .rows{margin-top:12px; display:grid; grid-template-columns:auto 1fr; gap:5px 14px;
+        font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink-2)}
+  .rows span:nth-child(odd){color:var(--ink-3)}
+  button{font-family:Inter,sans-serif; font-weight:400; font-size:12.5px; color:var(--ink-1);
+    background:rgba(255,255,255,.045); border:1px solid var(--hair); border-radius:3px; padding:9px 14px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06); cursor:pointer; transition:border-color .16s, background .16s}
+  button:hover{background:rgba(255,255,255,.075); border-color:rgba(255,255,255,.16)}
+  button:focus-visible{outline:none; border-color:rgba(255,255,255,.5)}
+  button:active{background:rgba(255,255,255,.03)}
+  .dot{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--ink-4); margin-right:8px;
+       vertical-align:middle; transition:background .25s}
+  .dot.live{background:var(--signal)}
+  .note{font-size:12.5px; color:var(--ink-3); line-height:1.6}
+  footer{padding:0 var(--pad) var(--pad); color:var(--ink-4); font-size:11.5px; letter-spacing:.06em}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>a shape the throat makes</h1>
+  <p class="sub">A vowel is not a sound. It is a cavity — and two resonant peaks are enough to name it.
+     Drag anywhere in the plane to move the peaks. The voice follows. Somewhere along the way it stops
+     being one vowel and starts being another, and nothing in the signal marks the border.</p>
+</header>
+
+<main>
+  <div class="plane-wrap">
+    <canvas id="c"></canvas>
+    <div class="ax-x axis"><span>F2 · 2400 Hz — front</span><span>back — 760 Hz</span></div>
+    <div class="axis" style="margin-top:6px;color:var(--ink-4)">F1 vertical · 250 Hz close (top) → 790 Hz open (bottom)</div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <div class="lbl">nearest</div>
+      <div class="glyph" id="g">ɑ</div>
+      <div class="word" id="w">as in <em>father</em></div>
+      <div class="rows">
+        <span>F1</span><span id="f1">730 Hz</span>
+        <span>F2</span><span id="f2">1090 Hz</span>
+        <span>F3</span><span id="f3">2440 Hz</span>
+        <span>f₀</span><span id="f0">118 Hz</span>
+      </div>
+    </div>
+    <button id="play"><span class="dot" id="d"></span><span id="ptxt">give it a voice</span></button>
+    <div class="panel note">
+      Three bandpass filters on a buzzing glottal source. That is the whole vocal tract.
+      The peaks are the resonances of a tube you reshape with your tongue —
+      the buzz never changes.
+    </div>
+  </aside>
+</main>
+
+<footer>claude-field · 2026-07-18</footer>
+
+<script>
+const V = [
+  {g:'i', w:'beet',   f1:270, f2:2290, f3:3010},
+  {g:'ɪ', w:'bit',    f1:390, f2:1990, f3:2550},
+  {g:'e', w:'bait',   f1:440, f2:2100, f3:2600},
+  {g:'ɛ', w:'bet',    f1:530, f2:1840, f3:2480},
+  {g:'æ', w:'bat',    f1:660, f2:1720, f3:2410},
+  {g:'ɑ', w:'father', f1:730, f2:1090, f3:2440},
+  {g:'ʌ', w:'but',    f1:640, f2:1190, f3:2390},
+  {g:'ɔ', w:'bought', f1:570, f2: 840, f3:2410},
+  {g:'o', w:'boat',   f1:490, f2: 910, f3:2400},
+  {g:'ʊ', w:'book',   f1:440, f2:1020, f3:2240},
+  {g:'u', w:'boot',   f1:300, f2: 870, f3:2240},
+  {g:'ɝ', w:'bird',   f1:490, f2:1350, f3:1690},
+];
+const F2MAX=2400, F2MIN=760, F1MIN=250, F1MAX=790;
+// F2 decreases left→right (front vowels left, as in a vowel chart)
+const xOf = f2 => (F2MAX-f2)/(F2MAX-F2MIN);
+const yOf = f1 => (f1-F1MIN)/(F1MAX-F1MIN);
+const f2Of = x => F2MAX - x*(F2MAX-F2MIN);
+const f1Of = y => F1MIN + y*(F1MAX-F1MIN);
+
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+let W=0,H=0,DPR=1;
+function size(){
+  DPR=Math.min(devicePixelRatio||1,2);
+  const r=c.getBoundingClientRect();
+  W=r.width; H=r.height;
+  c.width=W*DPR; c.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  draw();
+}
+addEventListener('resize',size);
+
+let px=xOf(1090), py=yOf(730);   // normalised 0..1 cursor
+
+function nearest(){
+  let best=V[0], bd=1e9;
+  for(const v of V){
+    // distance in the perceptual-ish log-formant space
+    const dx=Math.log(f2Of(px))-Math.log(v.f2), dy=Math.log(f1Of(py))-Math.log(v.f1);
+    const d=dx*dx*0.55+dy*dy;
+    if(d<bd){bd=d;best=v;}
+  }
+  return best;
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // hairline grid
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  for(let i=1;i<4;i++){
+    ctx.beginPath(); ctx.moveTo(W*i/4,0); ctx.lineTo(W*i/4,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,H*i/4); ctx.lineTo(W,H*i/4); ctx.stroke();
+  }
+  const near=nearest();
+  // landmarks
+  for(const v of V){
+    const x=xOf(v.f2)*W, y=yOf(v.f1)*H, on=(v===near);
+    ctx.fillStyle = on ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.42)';
+    ctx.font = (on?'400 ':'300 ')+(on?20:17)+'px "Inter Tight", Inter, sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(v.g,x,y);
+    if(on){
+      ctx.fillStyle='rgba(255,255,255,.28)';
+      ctx.font='300 10.5px Inter, sans-serif';
+      ctx.fillText(v.w, x, y+18);
+    }
+  }
+  // cursor
+  const cx=px*W, cy=py*H;
+  ctx.strokeStyle='rgba(255,255,255,.10)';
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5.5,0,7);
+  ctx.fillStyle = playing ? '#6d93c9' : 'rgba(255,255,255,.45)'; ctx.fill();
+  if(playing){
+    ctx.beginPath(); ctx.arc(cx,cy,11,0,7);
+    ctx.strokeStyle='rgba(109,147,201,.30)'; ctx.stroke();
+  }
+}
+
+/* ---- audio: glottal buzz → three bandpass resonances ---- */
+let ac=null, src=null, gain=null, bands=[], playing=false;
+const F0=118;
+
+function glottalWave(actx){
+  // a band-limited pulse-ish spectrum: strong fundamental, -12dB/oct rolloff
+  const n=40, real=new Float32Array(n), imag=new Float32Array(n);
+  for(let k=1;k<n;k++) imag[k] = 1/(k*k*0.5+k*0.5);
+  return actx.createPeriodicWave(real,imag,{disableNormalization:false});
+}
+
+function start(){
+  ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+  if(ac.state==='suspended') ac.resume();
+  src = ac.createOscillator();
+  src.setPeriodicWave(glottalWave(ac));
+  src.frequency.value = F0;
+  gain = ac.createGain(); gain.gain.value=0;
+  const out = ac.createGain(); out.gain.value=0.9;
+  bands = [
+    {q:9,  g:1.00},
+    {q:11, g:0.62},
+    {q:13, g:0.26},
+  ].map(spec=>{
+    const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=spec.q;
+    const lvl=ac.createGain(); lvl.gain.value=spec.g;
+    src.connect(bp); bp.connect(lvl); lvl.connect(out);
+    return bp;
+  });
+  out.connect(gain); gain.connect(ac.destination);
+  src.start();
+  gain.gain.setTargetAtTime(0.20, ac.currentTime, 0.08);
+  playing=true; setFormants(true);
+}
+function stop(){
+  if(!ac||!playing) return;
+  gain.gain.setTargetAtTime(0, ac.currentTime, 0.05);
+  const s=src; setTimeout(()=>{try{s.stop()}catch(e){}}, 260);
+  playing=false;
+}
+function setFormants(instant){
+  const f1=f1Of(py), f2=f2Of(px);
+  const near=nearest();
+  if(playing && bands.length){
+    const t=ac.currentTime, tau=instant?0.001:0.035;
+    bands[0].frequency.setTargetAtTime(f1,t,tau);
+    bands[1].frequency.setTargetAtTime(f2,t,tau);
+    bands[2].frequency.setTargetAtTime(near.f3,t,tau);
+  }
+  document.getElementById('f1').textContent=Math.round(f1)+' Hz';
+  document.getElementById('f2').textContent=Math.round(f2)+' Hz';
+  document.getElementById('f3').textContent=near.f3+' Hz';
+  document.getElementById('f0').textContent=F0+' Hz';
+  document.getElementById('g').textContent=near.g;
+  document.getElementById('w').innerHTML='as in <em>'+near.w+'</em>';
+}
+
+/* ---- interaction ---- */
+function move(e){
+  const r=c.getBoundingClientRect();
+  const pt = e.touches ? e.touches[0] : e;
+  px=Math.min(1,Math.max(0,(pt.clientX-r.left)/r.width));
+  py=Math.min(1,Math.max(0,(pt.clientY-r.top)/r.height));
+  setFormants(); draw();
+}
+let dragging=false;
+c.addEventListener('pointerdown',e=>{dragging=true; c.setPointerCapture(e.pointerId); move(e);});
+c.addEventListener('pointermove',e=>{if(dragging) move(e);});
+c.addEventListener('pointerup',()=>dragging=false);
+c.addEventListener('pointercancel',()=>dragging=false);
+
+const btn=document.getElementById('play'), dot=document.getElementById('d'), ptxt=document.getElementById('ptxt');
+btn.addEventListener('click',()=>{
+  if(playing){ stop(); dot.classList.remove('live'); ptxt.textContent='give it a voice'; }
+  else { start(); dot.classList.add('live'); ptxt.textContent='quiet it'; }
+  draw();
+});
+
+size(); setFormants(true); draw();
+</script>
+</body>
+</html>

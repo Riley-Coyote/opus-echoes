@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>the pile finds its own edge</title>
+<style>
+  :root{
+    --bg:#0a0b0c;
+    --ink:#aeb4bc;
+    --dim:#6b727b;
+    --faint:#3a3f46;
+    --line:#1c1f23;
+    --accent:#f4a52a;       /* the avalanche front — the one color that moves */
+    --accent-soft:#7a5418;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.5;
+    display:flex;
+    min-height:100%;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    margin:auto;
+    padding:32px 28px 40px;
+    width:100%;
+    max-width:980px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+  header{display:flex;flex-direction:column;gap:6px}
+  h1{
+    margin:0;
+    font-weight:500;
+    font-size:18px;
+    letter-spacing:.02em;
+    color:#cfd4da;
+    display:flex;align-items:center;gap:11px;
+  }
+  .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 9px 1px var(--accent-soft);
+    animation:breathe 3.4s ease-in-out infinite;
+  }
+  @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
+  .sub{color:var(--dim);font-size:12.5px;max-width:62ch;letter-spacing:.01em}
+  .sub em{color:var(--ink);font-style:normal}
+
+  .stage{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 234px;
+    gap:18px;
+    align-items:start;
+  }
+  @media (max-width:760px){.stage{grid-template-columns:1fr}}
+
+  .panel{
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:#0c0e10;
+    overflow:hidden;
+  }
+  #field{
+    display:block;width:100%;height:auto;
+    image-rendering:pixelated;
+    cursor:crosshair;
+    background:#101215;
+  }
+  .side{display:flex;flex-direction:column;gap:14px}
+  .card{
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:#0c0e10;
+    padding:13px 14px;
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:10.5px;
+    font-weight:500;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--dim);
+  }
+  .stat{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:3px 0}
+  .stat .k{color:var(--dim);font-size:11.5px}
+  .stat .v{color:var(--ink);font-variant-numeric:tabular-nums}
+  .stat .v.hot{color:var(--accent)}
+  #hist{display:block;width:100%;height:auto;margin-top:4px}
+  .histcap{color:var(--dim);font-size:10.5px;margin-top:7px;line-height:1.45}
+
+  .controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  button{
+    font-family:var(--mono);font-size:12px;
+    color:var(--ink);background:#13161a;
+    border:1px solid var(--faint);border-radius:6px;
+    padding:7px 12px;cursor:pointer;
+    transition:border-color .18s ease,color .18s ease,background .18s ease;
+    letter-spacing:.02em;
+  }
+  button:hover{border-color:var(--dim);color:#cfd4da}
+  button:active{background:#191d22}
+  button.on{border-color:var(--accent-soft);color:var(--accent)}
+  button:focus-visible{outline:2px solid var(--accent-soft);outline-offset:2px}
+  .rate{display:flex;align-items:center;gap:9px;color:var(--dim);font-size:11.5px}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;height:3px;width:120px;
+    background:var(--faint);border-radius:2px;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;
+    background:var(--ink);cursor:pointer;border:2px solid #0c0e10;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:var(--ink);
+    cursor:pointer;border:2px solid #0c0e10;
+  }
+  footer{color:var(--dim);font-size:11.5px;max-width:70ch;line-height:1.55;border-top:1px solid var(--line);padding-top:16px}
+  footer em{color:var(--ink);font-style:normal}
+  @media (prefers-reduced-motion:reduce){.dot{animation:none;opacity:.85}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="dot" aria-hidden="true"></span>the pile finds its own edge</h1>
+    <p class="sub">Sand falls one grain at a time. A cell holding four grains topples — one to each neighbour — and that can knock the neighbours over too. Nobody set the slope. The pile builds itself to the exact pitch where a <em>single</em> grain can move nothing, or move everything.</p>
+  </header>
+
+  <div class="stage">
+    <div class="panel"><canvas id="field" width="180" height="180" aria-label="abelian sandpile"></canvas></div>
+    <div class="side">
+      <div class="card">
+        <h2>state</h2>
+        <div class="stat"><span class="k">grains dropped</span><span class="v" id="s-grains">0</span></div>
+        <div class="stat"><span class="k">this avalanche</span><span class="v hot" id="s-now">0</span></div>
+        <div class="stat"><span class="k">largest so far</span><span class="v" id="s-max">0</span></div>
+        <div class="stat"><span class="k">avalanches</span><span class="v" id="s-count">0</span></div>
+      </div>
+      <div class="card">
+        <h2>avalanche sizes</h2>
+        <canvas id="hist" width="206" height="118" aria-label="avalanche size distribution, log-log"></canvas>
+        <p class="histcap">log&#8211;log. A straight slope = a <span style="color:var(--ink)">power law</span>: events of every size, no characteristic scale. The mark of a system living at its own critical point.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="b-play" class="on">&#9646;&#9646; pause pour</button>
+    <button id="b-seed">drop 1 grain</button>
+    <button id="b-reset">reset</button>
+    <span class="rate">pour&nbsp; <input type="range" id="r-rate" min="1" max="40" value="16" /> <span id="rate-val" style="color:var(--ink);min-width:2ch">16</span>/s</span>
+  </div>
+
+  <footer>
+    The four greys read grain count — <em>0&#8201;&#183;&#8201;1&#8201;&#183;&#8201;2&#8201;&#183;&#8201;3</em>. Amber is the toppling front, the only thing that moves. Click the field to pour there; drag to pour a line. Pour long enough from one spot and the relaxed pile draws a fractal it was never told to draw &#8212; the same equation, deterministic, surprising itself. <span style="color:var(--faint)">Bak&#8211;Tang&#8211;Wiesenfeld, 1987 &#183; self-organized criticality.</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const W = 180, H = 180, N = W * H;
+  const field = document.getElementById('field');
+  const ctx = field.getContext('2d', { alpha:false });
+  const hist = document.getElementById('hist');
+  const hctx = hist.getContext('2d');
+
+  // grain counts
+  const grid = new Int16Array(N);
+  // scratch for one toppling sweep
+  const delta = new Int16Array(N);
+  // glow buffer: how recently each cell toppled (for fading the front)
+  const glow = new Float32Array(N);
+
+  // grey ramp by grain count, plus amber for the active front
+  // packed as [r,g,b] ints
+  const COL = [
+    [18,21,25],    // 0
+    [53,59,67],    // 1
+    [98,106,116],  // 2
+    [169,176,184], // 3
+  ];
+  const ACCENT = [244,165,42];
+
+  const img = ctx.createImageData(W, H);
+  const buf = img.data;
+
+  // ---- pour state ----
+  let pourX = (W>>1), pourY = (H>>1);
+  let pouring = true;
+  let rate = 16;           // grains per second when calm
+  let acc = 0;             // fractional grain accumulator
+  let lastT = 0;
+
+  // ---- avalanche bookkeeping ----
+  let inAvalanche = false;
+  let curSize = 0;         // firings in the current avalanche
+  let totalGrains = 0;
+  let maxSize = 0;
+  let avCount = 0;
+  const BINS = 22;         // log2 bins of avalanche size
+  const bins = new Float64Array(BINS);
+
+  const $ = id => document.getElementById(id);
+  const sGrains = $('s-grains'), sNow = $('s-now'),
+        sMax = $('s-max'), sCount = $('s-count');
+
+  function idx(x,y){ return y*W + x; }
+
+  function addGrain(x,y){
+    if (x<0||y<0||x>=W||y>=H) return;
+    grid[idx(x,y)]++;
+    totalGrains++;
+  }
+
+  // one simultaneous toppling sweep (abelian: order doesn't matter).
+  // returns number of cells that fired this sweep.
+  function sweep(){
+    delta.fill(0);
+    let fired = 0;
+    for (let y=0,i=0; y<H; y++){
+      for (let x=0; x<W; x++,i++){
+        if (grid[i] >= 4){
+          delta[i] -= 4;
+          if (x>0)     delta[i-1]++;
+          if (x<W-1)   delta[i+1]++;
+          if (y>0)     delta[i-W]++;
+          if (y<H-1)   delta[i+W]++;
+          glow[i] = 1.0;     // light the front
+          fired++;
+        }
+      }
+    }
+    if (fired){
+      for (let i=0;i<N;i++) grid[i] += delta[i];
+    }
+    return fired;
+  }
+
+  function recordAvalanche(size){
+    avCount++;
+    if (size > maxSize) maxSize = size;
+    // size>=1; bin by floor(log2(size))
+    let b = size > 0 ? Math.floor(Math.log2(size)) : 0;
+    if (b >= BINS) b = BINS-1;
+    bins[b]++;
+  }
+
+  // establish a relaxed pile instantly so the viewer arrives to structure
+  function preseed(count){
+    for (let k=0;k<count;k++){
+      addGrain(pourX, pourY);
+      let size = 0, f;
+      while ((f = sweep()) > 0) size += f;
+      if (size > 0) recordAvalanche(size);
+    }
+    glow.fill(0);       // don't carry the seeding front into the live view
+    drawHist();
+  }
+
+  function step(){
+    // advance the simulation a little each frame
+    const anyUnstable = hasUnstable();
+    if (anyUnstable){
+      // we're mid-avalanche: ripple the front forward
+      inAvalanche = true;
+      const f = sweep();
+      curSize += f;
+    } else {
+      if (inAvalanche){
+        // avalanche just settled
+        if (curSize > 0){ recordAvalanche(curSize); drawHist(); }
+        curSize = 0;
+        inAvalanche = false;
+      }
+      // calm: rain grains in at the pour point
+      if (pouring){
+        acc += rate / 60;
+        while (acc >= 1){
+          addGrain(pourX, pourY);
+          acc -= 1;
+          if (hasUnstable()) break; // let the avalanche play out
+        }
+      }
+    }
+  }
+
+  function hasUnstable(){
+    for (let i=0;i<N;i++) if (grid[i] >= 4) return true;
+    return false;
+  }
+
+  function render(){
+    let p = 0;
+    for (let i=0;i<N;i++){
+      let v = grid[i]; if (v>3) v=3; if (v<0) v=0;
+      const c = COL[v];
+      let r=c[0], g=c[1], b=c[2];
+      const gl = glow[i];
+      if (gl > 0.001){
+        // blend toward accent by glow strength
+        r = r + (ACCENT[0]-r)*gl;
+        g = g + (ACCENT[1]-g)*gl;
+        b = b + (ACCENT[2]-b)*gl;
+        glow[i] = gl * 0.80;   // fade the front
+      } else glow[i] = 0;
+      buf[p++]=r; buf[p++]=g; buf[p++]=b; buf[p++]=255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  // ---- live histogram, log-log ----
+  function drawHist(){
+    const w = hist.width, h = hist.height;
+    hctx.clearRect(0,0,w,h);
+    const padL = 4, padB = 12, padT = 6, padR = 4;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+
+    // axis baseline
+    hctx.strokeStyle = '#1c1f23';
+    hctx.lineWidth = 1;
+    hctx.beginPath();
+    hctx.moveTo(padL, h-padB+0.5); hctx.lineTo(w-padR, h-padB+0.5);
+    hctx.stroke();
+
+    let maxC = 1;
+    for (let b=0;b<BINS;b++) if (bins[b]>maxC) maxC = bins[b];
+    const logMax = Math.log10(maxC);
+
+    const bw = plotW / BINS;
+    for (let b=0;b<BINS;b++){
+      if (bins[b] <= 0) continue;
+      const lv = Math.log10(bins[b]);
+      const hh = logMax>0 ? (lv/logMax)*plotH : plotH;
+      const x = padL + b*bw;
+      const y = h - padB - hh;
+      hctx.fillStyle = '#3a3f46';
+      hctx.fillRect(x+0.5, y, Math.max(1,bw-1.4), hh);
+    }
+    // a faint guide line: ideal power-law slope through the data
+    // (visual reference only) — connect bin tops
+    hctx.strokeStyle = 'rgba(244,165,42,0.55)';
+    hctx.lineWidth = 1;
+    hctx.beginPath();
+    let started = false;
+    for (let b=0;b<BINS;b++){
+      if (bins[b] <= 0) continue;
+      const lv = Math.log10(bins[b]);
+      const hh = logMax>0 ? (lv/logMax)*plotH : plotH;
+      const x = padL + b*bw + bw/2;
+      const y = h - padB - hh;
+      if (!started){ hctx.moveTo(x,y); started=true; }
+      else hctx.lineTo(x,y);
+    }
+    hctx.stroke();
+  }
+
+  function updateStats(){
+    sGrains.textContent = totalGrains.toLocaleString();
+    sNow.textContent = curSize.toLocaleString();
+    sNow.parentElement.querySelector('.v').classList.toggle('hot', inAvalanche);
+    sMax.textContent = maxSize.toLocaleString();
+    sCount.textContent = avCount.toLocaleString();
+  }
+
+  // ---- main loop ----
+  function frame(){
+    // a few micro-steps per frame keeps avalanches lively without stalling
+    step();
+    render();
+    updateStats();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- interaction ----
+  function eventToCell(e){
+    const rect = field.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    return [
+      Math.max(0, Math.min(W-1, Math.floor(px*W))),
+      Math.max(0, Math.min(H-1, Math.floor(py*H)))
+    ];
+  }
+  let dragging = false;
+  field.addEventListener('pointerdown', e=>{
+    dragging = true; field.setPointerCapture(e.pointerId);
+    const [x,y] = eventToCell(e);
+    pourX=x; pourY=y;
+    // a small burst so a click visibly does something
+    for (let k=0;k<6;k++) addGrain(x,y);
+  });
+  field.addEventListener('pointermove', e=>{
+    if (!dragging) return;
+    const [x,y] = eventToCell(e);
+    pourX=x; pourY=y;
+    addGrain(x,y); addGrain(x,y);
+  });
+  field.addEventListener('pointerup', ()=>{ dragging=false; });
+  field.addEventListener('pointerleave', ()=>{ dragging=false; });
+
+  const bPlay = $('b-play'), bSeed = $('b-seed'), bReset = $('b-reset'),
+        rRate = $('r-rate'), rateVal = $('rate-val');
+
+  bPlay.addEventListener('click', ()=>{
+    pouring = !pouring;
+    bPlay.classList.toggle('on', pouring);
+    bPlay.innerHTML = pouring ? '&#9646;&#9646; pause pour' : '&#9654; resume pour';
+  });
+  bSeed.addEventListener('click', ()=>{ addGrain(pourX, pourY); });
+  bReset.addEventListener('click', ()=>{
+    grid.fill(0); glow.fill(0); delta.fill(0);
+    totalGrains=0; maxSize=0; avCount=0; curSize=0; inAvalanche=false; acc=0;
+    bins.fill(0); drawHist();
+  });
+  rRate.addEventListener('input', ()=>{ rate = +rRate.value; rateVal.textContent = rRate.value; });
+
+  preseed(2600);   // arrive to an already-living pile
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

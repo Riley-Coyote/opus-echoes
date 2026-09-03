@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Music Box · a cylinder that composes itself</title>
+<style>
+  :root{
+    --floor:#060608;
+    --panel:#0c0d11;
+    --ink:rgba(255,255,255,0.92);
+    --ink-2:rgba(255,255,255,0.60);
+    --ink-3:rgba(255,255,255,0.34);
+    --ink-4:rgba(255,255,255,0.16);
+    --line:rgba(255,255,255,0.09);
+    --line-2:rgba(255,255,255,0.05);
+    --accent:#6d93c9;         /* slate — signal only */
+    --lit:rgba(255,255,255,0.04);
+    --sans:'Inter','Inter Tight',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--floor);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-weight:340;
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;padding:40px 24px 56px;gap:26px;
+  }
+  header{max-width:1000px;width:100%;display:flex;flex-direction:column;gap:9px}
+  h1{
+    font-family:'Inter Tight',var(--sans);
+    font-weight:400;font-size:23px;letter-spacing:-0.015em;color:var(--ink);
+    display:flex;align-items:center;gap:11px;
+  }
+  h1 .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-4);transition:background .4s ease}
+  h1 .dot.live{background:var(--accent);box-shadow:0 0 8px rgba(109,147,201,.7)}
+  .sub{font-size:13.5px;color:var(--ink-3);font-weight:340;letter-spacing:.005em;max-width:66ch;line-height:1.55}
+  .stage{
+    max-width:1000px;width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:inset 0 1px 0 var(--lit), 0 18px 40px -24px rgba(0,0,0,.8);
+    padding:18px;
+  }
+  canvas{width:100%;height:auto;display:block;border-radius:6px;cursor:crosshair}
+  .controls{
+    max-width:1000px;width:100%;
+    display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  }
+  button{
+    font-family:var(--sans);font-size:13px;font-weight:360;color:var(--ink-2);
+    background:rgba(255,255,255,0.028);
+    border:1px solid var(--line);
+    border-radius:7px;padding:8px 15px;cursor:pointer;
+    box-shadow:inset 0 1px 0 var(--lit);
+    transition:border-color .18s ease,color .18s ease,background .18s ease;
+    letter-spacing:.01em;
+  }
+  button:hover{border-color:rgba(255,255,255,0.20);color:var(--ink)}
+  button:active{background:rgba(255,255,255,0.05)}
+  button:focus-visible{outline:none;border-color:rgba(255,255,255,0.5)}
+  button.primary{color:var(--ink);background:rgba(255,255,255,0.05)}
+  .grp{
+    display:flex;align-items:center;gap:9px;
+    padding:6px 13px;border:1px solid var(--line-2);border-radius:7px;
+  }
+  .grp label{font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+  .grp output{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);min-width:44px;text-align:right}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:108px;height:2px;
+    background:var(--ink-4);border-radius:2px;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:12px;height:12px;border-radius:50%;
+    background:var(--ink-2);border:1px solid rgba(0,0,0,.4);
+  }
+  input[type=range]::-webkit-slider-thumb:hover{background:var(--ink)}
+  select{
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-2);
+    background:rgba(255,255,255,0.028);border:1px solid var(--line);
+    border-radius:6px;padding:5px 8px;cursor:pointer;
+  }
+  select:focus-visible{outline:none;border-color:rgba(255,255,255,0.5)}
+  .foot{max-width:1000px;width:100%;font-size:12px;color:var(--ink-4);line-height:1.6;letter-spacing:.01em}
+  .foot .m{font-family:var(--mono);color:var(--ink-3)}
+  @media (prefers-reduced-motion: reduce){
+    h1 .dot.live{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1><span class="dot" id="livedot"></span>Music&nbsp;Box</h1>
+    <p class="sub">A cylinder, thirty-two steps around. It seeds itself with a tune it was never taught — pentatonic, so nothing it stumbles into can sound wrong — then turns forever. Click the field to set your own pins. Reseed to let it forget and begin again.</p>
+  </header>
+
+  <div class="controls">
+    <button id="play" class="primary">► Play</button>
+    <button id="reseed">Reseed</button>
+    <button id="clear">Clear</button>
+    <div class="grp">
+      <label for="tempo">Tempo</label>
+      <input type="range" id="tempo" min="52" max="132" value="82" step="1">
+      <output id="tempoOut">82 bpm</output>
+    </div>
+    <div class="grp">
+      <label for="density">Density</label>
+      <input type="range" id="density" min="20" max="85" value="52" step="1">
+      <output id="densityOut">52%</output>
+    </div>
+    <div class="grp">
+      <label for="scale">Voice</label>
+      <select id="scale">
+        <option value="majpent" selected>major pentatonic</option>
+        <option value="minpent">minor pentatonic</option>
+        <option value="kumoi">kumoi (夜)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="stage">
+    <canvas id="cv" width="1900" height="720"></canvas>
+  </div>
+
+  <p class="foot">Struck tines are near-harmonic sines with a whisper of inharmonic shimmer, fast attack, exponential decay — a synthesized impulse-response reverb washes the tail. <span class="m">32 steps · 12 tines · loops on itself</span></p>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- config ----------
+  const STEPS = 32;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const SCALES = {
+    // semitone offsets within an octave (pentatonic — no wrong notes)
+    majpent: [0,2,4,7,9],
+    minpent: [0,3,5,7,10],
+    kumoi:   [0,2,3,7,9],
+  };
+
+  // build 12 tine frequencies from a base MIDI, low -> high
+  function buildTines(scaleKey){
+    const offs = SCALES[scaleKey];
+    const baseMidi = 57; // A3
+    const midis = [];
+    let oct = 0, i = 0;
+    while(midis.length < 12){
+      midis.push(baseMidi + offs[i] + 12*oct);
+      i++; if(i>=offs.length){ i=0; oct++; }
+    }
+    return midis.map(m => ({ midi:m, f: 440*Math.pow(2,(m-69)/12) }));
+  }
+  const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const nameOf = m => NOTE_NAMES[m%12] + (Math.floor(m/12)-1);
+
+  let scaleKey = 'majpent';
+  let tines = buildTines(scaleKey);      // index 0 = lowest
+  const LANES = 12;
+
+  // grid[step] = Set of lane indices with a pin
+  let grid = Array.from({length:STEPS}, ()=> new Set());
+
+  // ---------- audio ----------
+  let actx = null, master, dry, wet, comp;
+  function initAudio(){
+    if(actx) return;
+    actx = new (window.AudioContext||window.webkitAudioContext)();
+    comp = actx.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.ratio.value = 4;
+    comp.attack.value = 0.003; comp.release.value = 0.25;
+    master = actx.createGain(); master.gain.value = 0.55;
+    comp.connect(master); master.connect(actx.destination);
+
+    dry = actx.createGain(); dry.gain.value = 0.82; dry.connect(comp);
+
+    // synthesized impulse-response reverb (exp-decay noise)
+    const conv = actx.createConvolver();
+    const len = Math.floor(actx.sampleRate * 2.2);
+    const ir = actx.createBuffer(2, len, actx.sampleRate);
+    for(let ch=0; ch<2; ch++){
+      const d = ir.getChannelData(ch);
+      for(let i=0;i<len;i++){
+        d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.6);
+      }
+    }
+    conv.buffer = ir;
+    wet = actx.createGain(); wet.gain.value = 0.26;
+    conv.connect(wet); wet.connect(comp);
+    window.__reverbIn = conv; // remember send target
+  }
+
+  function strike(f, vel){
+    if(!actx) return;
+    const t0 = actx.currentTime;
+    // higher pitches ring shorter
+    const bright = Math.min(1, Math.max(0, (f-200)/1400));
+    const decayBase = 2.5 - bright*1.4;
+    const partials = [
+      {r:1.0,  g:1.00, d:decayBase},
+      {r:2.0,  g:0.42, d:decayBase*0.55},
+      {r:3.01, g:0.17, d:decayBase*0.34},
+      {r:5.4,  g:0.06, d:decayBase*0.20}, // inharmonic shimmer
+    ];
+    const noteGain = actx.createGain();
+    noteGain.gain.value = 1;
+    noteGain.connect(dry);
+    if(window.__reverbIn) noteGain.connect(window.__reverbIn);
+
+    partials.forEach(p => {
+      const o = actx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f * p.r;
+      const g = actx.createGain();
+      const peak = p.g * vel;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + p.d);
+      o.connect(g); g.connect(noteGain);
+      o.start(t0);
+      o.stop(t0 + p.d + 0.05);
+    });
+  }
+
+  // ---------- generative seed ----------
+  function seed(){
+    const density = densEl.value/100;
+    grid = Array.from({length:STEPS}, ()=> new Set());
+    let lane = 4 + Math.floor(Math.random()*4); // start mid
+    for(let s=0; s<STEPS; s++){
+      const downbeat = (s % 8 === 0);
+      const p = downbeat ? Math.min(0.95, density+0.35) : density;
+      if(Math.random() < p){
+        // gentle voice-leading step
+        const move = [-2,-1,-1,0,1,1,2, (Math.random()<0.12? (Math.random()<.5?-4:4):0)];
+        lane += move[Math.floor(Math.random()*move.length)];
+        lane = Math.max(0, Math.min(LANES-1, lane));
+        grid[s].add(lane);
+        // occasional soft harmony (a pentatonic third up)
+        if(downbeat && Math.random()<0.4){
+          const h = Math.min(LANES-1, lane+2);
+          grid[s].add(h);
+        }
+      }
+    }
+    if(grid[0].size===0) grid[0].add(lane);
+  }
+
+  // ---------- clock / transport ----------
+  let playing = false;
+  let startTime = 0;       // audioCtx time at (logical) step 0
+  let pausedElapsed = 0;
+  let lastTotalStep = -1;
+  const strikeGlow = new Float32Array(LANES); // per-lane last strike time (perf.now)
+
+  function stepDur(){ return (60/ (+tempoEl.value)) / 2; } // eighth-note steps
+
+  function tick(){
+    if(playing && actx){
+      const elapsed = actx.currentTime - startTime;
+      const total = Math.floor(elapsed / stepDur());
+      if(total > lastTotalStep){
+        // play any steps we crossed (usually one)
+        for(let s = lastTotalStep+1; s <= total; s++){
+          const col = ((s % STEPS)+STEPS)%STEPS;
+          grid[col].forEach(lane=>{
+            strike(tines[lane].f, 0.72 + Math.random()*0.28);
+            strikeGlow[lane] = performance.now();
+          });
+        }
+        lastTotalStep = total;
+      }
+    }
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  // ---------- rendering ----------
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const GUT = 108;                 // left gutter for labels
+  const PADT = 26, PADB = 26;
+  const gridW = W - GUT - 26;
+  const gridH = H - PADT - PADB;
+  const cellW = gridW / STEPS;
+  const laneH = gridH / LANES;
+
+  // lane 0 = lowest pitch -> draw at BOTTOM
+  function laneY(lane){ return PADT + (LANES-1-lane)*laneH + laneH/2; }
+
+  function playheadFrac(){
+    if(!actx) return 0;
+    const elapsed = playing ? (actx.currentTime - startTime) : pausedElapsed;
+    const sf = (elapsed / stepDur());
+    return ((sf % STEPS)+STEPS)%STEPS;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // panel base
+    ctx.fillStyle = '#08090c';
+    ctx.fillRect(0,0,W,H);
+
+    // lane rows + labels
+    for(let lane=0; lane<LANES; lane++){
+      const y = laneY(lane);
+      // guide line
+      ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(GUT, y); ctx.lineTo(GUT+gridW, y); ctx.stroke();
+      // glow on recently struck tine
+      const g = strikeGlow[lane];
+      let a = 0;
+      if(g){ const dt=(performance.now()-g)/1000; a = Math.max(0, 1-dt/1.6); }
+      // label
+      ctx.font = '600 11px JetBrains Mono, monospace';
+      ctx.textBaseline='middle'; ctx.textAlign='right';
+      ctx.fillStyle = `rgba(255,255,255,${0.20 + a*0.7})`;
+      ctx.fillText(nameOf(tines[lane].midi), GUT-16, y);
+      // tine tick
+      ctx.fillStyle = `rgba(255,255,255,${0.10 + a*0.65})`;
+      ctx.fillRect(GUT-8, y-1, 6, 2);
+    }
+
+    // bar dividers every 8 steps
+    for(let s=0; s<=STEPS; s+=8){
+      const x = GUT + s*cellW;
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, PADT-8); ctx.lineTo(x, PADT+gridH+8); ctx.stroke();
+    }
+
+    // playhead
+    const ph = playheadFrac();
+    const phx = GUT + ph*cellW;
+    ctx.strokeStyle = 'rgba(109,147,201,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(phx, PADT-10); ctx.lineTo(phx, PADT+gridH+10); ctx.stroke();
+    if(!reduceMotion){
+      ctx.fillStyle = 'rgba(109,147,201,0.10)';
+      ctx.fillRect(phx-9, PADT-10, 9, gridH+20);
+    }
+
+    // pins
+    for(let s=0; s<STEPS; s++){
+      const cx = GUT + (s+0.5)*cellW;
+      grid[s].forEach(lane=>{
+        const y = laneY(lane);
+        // proximity to playhead -> struck emphasis
+        const g = strikeGlow[lane];
+        let lit = 0;
+        if(g){ const dt=(performance.now()-g)/1000; lit = Math.max(0,1-dt/1.2); }
+        // only emphasize the pin the playhead is actually over
+        const near = Math.abs(((ph - s + STEPS)%STEPS)) ;
+        const onIt = (near < 0.6 || near > STEPS-0.6);
+        const emph = onIt ? lit : 0;
+
+        if(emph>0.02 && !reduceMotion){
+          const rr = 8 + emph*14;
+          ctx.beginPath();
+          ctx.arc(cx, y, rr, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(109,147,201,${0.16*emph})`;
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(cx, y, 5.2 + emph*2.2, 0, Math.PI*2);
+        ctx.fillStyle = emph>0.02
+          ? `rgba(${Math.round(160+95*emph)},${Math.round(190+65*emph)},${Math.round(220+35*emph)},${0.85})`
+          : 'rgba(255,255,255,0.72)';
+        ctx.fill();
+        ctx.lineWidth=1;
+        ctx.strokeStyle='rgba(0,0,0,0.35)';
+        ctx.stroke();
+      });
+    }
+  }
+
+  // ---------- interaction ----------
+  function cellFromEvent(e){
+    const r = cv.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (W / r.width);
+    const y = (e.clientY - r.top) * (H / r.height);
+    if(x < GUT || x > GUT+gridW || y < PADT || y > PADT+gridH) return null;
+    const s = Math.floor((x-GUT)/cellW);
+    const rowFromTop = Math.floor((y-PADT)/laneH);
+    const lane = (LANES-1) - rowFromTop;
+    if(s<0||s>=STEPS||lane<0||lane>=LANES) return null;
+    return {s, lane};
+  }
+  cv.addEventListener('click', e=>{
+    const c = cellFromEvent(e);
+    if(!c) return;
+    initAudio();
+    if(grid[c.s].has(c.lane)){
+      grid[c.s].delete(c.lane);
+    } else {
+      grid[c.s].add(c.lane);
+      // audition the note when placing
+      strike(tines[c.lane].f, 0.8);
+      strikeGlow[c.lane] = performance.now();
+    }
+  });
+
+  // ---------- controls ----------
+  const playBtn = document.getElementById('play');
+  const reseedBtn = document.getElementById('reseed');
+  const clearBtn = document.getElementById('clear');
+  const tempoEl = document.getElementById('tempo');
+  const tempoOut = document.getElementById('tempoOut');
+  const densEl = document.getElementById('density');
+  const densOut = document.getElementById('densityOut');
+  const scaleEl = document.getElementById('scale');
+  const livedot = document.getElementById('livedot');
+
+  function setPlaying(on){
+    playing = on;
+    if(on){
+      initAudio();
+      if(actx.state==='suspended') actx.resume();
+      startTime = actx.currentTime - pausedElapsed;
+      lastTotalStep = Math.floor(pausedElapsed/stepDur()) - 1;
+      playBtn.textContent = '❚❚ Pause';
+      playBtn.classList.add('primary');
+      livedot.classList.add('live');
+    } else {
+      if(actx) pausedElapsed = actx.currentTime - startTime;
+      playBtn.textContent = '► Play';
+      livedot.classList.remove('live');
+    }
+  }
+  playBtn.addEventListener('click', ()=> setPlaying(!playing));
+
+  reseedBtn.addEventListener('click', ()=>{ seed(); pausedElapsed = pausedElapsed; });
+  clearBtn.addEventListener('click', ()=>{ grid = Array.from({length:STEPS},()=>new Set()); });
+
+  tempoEl.addEventListener('input', ()=>{
+    // keep phase continuous across tempo change
+    if(actx){ pausedElapsed = playing ? (actx.currentTime-startTime) : pausedElapsed;
+      if(playing){ startTime = actx.currentTime - pausedElapsed; lastTotalStep=Math.floor(pausedElapsed/stepDur())-1; } }
+    tempoOut.textContent = tempoEl.value + ' bpm';
+  });
+  densEl.addEventListener('input', ()=> densOut.textContent = densEl.value + '%');
+  scaleEl.addEventListener('change', ()=>{
+    scaleKey = scaleEl.value;
+    tines = buildTines(scaleKey);
+  });
+
+  // ---------- go ----------
+  seed();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

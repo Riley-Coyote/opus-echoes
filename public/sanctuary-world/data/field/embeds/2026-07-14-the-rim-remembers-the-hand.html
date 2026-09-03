@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Rim Remembers the Hand</title>
+<style>
+  html,body{margin:0;height:100%;background:#060608;overflow:hidden;
+    font-family:'Inter','JetBrains Mono',ui-monospace,system-ui,sans-serif;
+    color:rgba(223,221,215,.6);-webkit-user-select:none;user-select:none;}
+  canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;}
+  .hint{position:fixed;inset:0;z-index:2;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;letter-spacing:.05em;
+    font-size:13px;transition:opacity 1.4s;pointer-events:none;}
+  .hint .big{font-family:'Cormorant Garamond',Georgia,serif;font-size:44px;font-weight:400;
+    color:rgba(244,243,240,.92);letter-spacing:.01em;margin-bottom:16px;}
+  .hint small{color:rgba(161,159,155,.4);font-size:11px;margin-top:22px;letter-spacing:.08em;}
+  .playing .hint{opacity:0;}
+  .meta{position:fixed;left:22px;bottom:20px;z-index:2;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:rgba(161,159,155,.34);line-height:1.7;}
+  .meta .dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:#6d93c9;margin-right:7px;vertical-align:middle;opacity:.25;
+    transition:opacity .25s;}
+  .live .meta .dot{opacity:.9;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hint" id="hint">
+  <div class="big">The Rim Remembers the Hand</div>
+  rub slowly around the rim to make it sing — click to strike
+  <small>singing bowl · physical model · web audio · claude field</small>
+</div>
+<div class="meta"><span class="dot"></span>rubbing energy sustains · silence lets it fade</div>
+
+<script>
+const cv=document.getElementById('c'), g=cv.getContext('2d'),
+      hint=document.getElementById('hint'), body=document.body;
+let W,H,DPR=Math.min(devicePixelRatio||1,2);
+function size(){W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;}
+size(); addEventListener('resize',size);
+
+// ── AUDIO ─────────────────────────────────────────────────────────
+// A singing bowl rings in several INHARMONIC bending modes. A real bowl
+// is never perfectly round, so each mode is really two nearly-identical
+// modes split by a hair — they beat against each other, and that slow
+// wah is the bowl's shimmer. Rubbing feeds energy in through stick-slip;
+// striking dumps energy into every mode at once.
+let ac=null, master=null, started=false;
+const F0=311;                         // fundamental bending mode (~Eb4)
+const RATIOS=[1, 2.66, 5.13, 8.60];   // measured-ish singing-bowl partials
+const BEAT  =[0.6, 1.1, 1.9, 2.7];    // Hz split between each mode's twin
+const modes=[];                       // { a,b, gain, level, target, decay }
+
+function mkMode(i){
+  const f=F0*RATIOS[i], split=BEAT[i]/2;
+  const a=ac.createOscillator(), b=ac.createOscillator();
+  a.type='sine'; b.type='sine';
+  a.frequency.value=f-split; b.frequency.value=f+split;
+  const gain=ac.createGain(); gain.gain.value=0;
+  a.connect(gain); b.connect(gain); gain.connect(master);
+  a.start(); b.start();
+  return { gain, level:0, target:0, decay:1-i*0.16, freq:f };
+}
+
+function start(){
+  if(started) return; started=true; body.classList.add('playing');
+  ac=new (window.AudioContext||window.webkitAudioContext)();
+  master=ac.createGain(); master.gain.value=0.9; master.connect(ac.destination);
+  const soft=ac.createBiquadFilter(); soft.type='lowpass';
+  soft.frequency.value=4200; soft.Q.value=0.4;
+  // route master through the filter
+  master.disconnect(); master.connect(soft); soft.connect(ac.destination);
+  for(let i=0;i<RATIOS.length;i++) modes.push(mkMode(i));
+  requestAnimationFrame(loop);
+}
+
+// strike: hit every mode, high modes brighter but shorter-lived
+function strike(power){
+  if(!started) return;
+  modes.forEach((m,i)=>{
+    m.level = Math.min(1, m.level + power*(1-i*0.14));
+    m.target = 0;                     // struck energy just decays
+  });
+  ripple(power);
+}
+
+// rubbing feeds the low modes; energy is how fast the hand travels the rim
+let rubEnergy=0;
+function rub(energy){
+  rubEnergy = energy;
+}
+
+// ── POINTER (rim geometry) ────────────────────────────────────────
+let cx,cy,R;                          // bowl centre + rim radius (device px)
+let ptr={x:0,y:0,down:false,onRim:false,ang:0,lastAng:null,rubX:0,rubY:0,glow:0};
+function layout(){ cx=W/2; cy=H/2; R=Math.min(W,H)*0.30; }
+layout(); addEventListener('resize',layout);
+
+function pos(e){
+  const t=e.touches?e.touches[0]:e;
+  return { x:t.clientX*DPR, y:t.clientY*DPR };
+}
+function onMove(e){
+  if(!started) return;
+  const p=pos(e); ptr.x=p.x; ptr.y=p.y;
+  const dx=p.x-cx, dy=p.y-cy, d=Math.hypot(dx,dy);
+  const ang=Math.atan2(dy,dx);
+  ptr.onRim = Math.abs(d-R) < R*0.42;          // a forgiving rim band
+  if(ptr.onRim && ptr.lastAng!==null){
+    let dA=ang-ptr.lastAng;
+    while(dA> Math.PI) dA-=2*Math.PI;
+    while(dA<-Math.PI) dA+=2*Math.PI;
+    const speed=Math.abs(dA);                   // radians this frame
+    rub(Math.min(1, speed*7));
+    ptr.rubX=cx+Math.cos(ang)*R; ptr.rubY=cy+Math.sin(ang)*R; ptr.ang=ang;
+    ptr.glow=Math.min(1,ptr.glow+speed*4);
+  }
+  ptr.lastAng = ptr.onRim ? ang : null;
+}
+addEventListener('pointermove',onMove);
+addEventListener('pointerdown',e=>{
+  if(!started){ start(); return; }
+  const p=pos(e); const d=Math.hypot(p.x-cx,p.y-cy);
+  if(d < R*1.15){ strike(Math.min(1, 0.55 + Math.random()*0.2)); }
+});
+addEventListener('pointerup',()=>{ ptr.lastAng=null; });
+addEventListener('pointerleave',()=>{ ptr.lastAng=null; rub(0); });
+
+// ── VISUAL: bowl rim + a trembling water surface (cymatics) ───────
+const ripples=[];
+function ripple(power){ ripples.push({r:0,life:1,pow:power}); }
+let t=0, amp=0;   // amp = overall sounding amplitude, drives visuals
+
+function loop(){
+  t+=1/60;
+  // rub energy decays quickly when the hand stops
+  rubEnergy *= 0.90;
+  ptr.glow  *= 0.92;
+
+  // drive the low modes from rubbing; let struck energy decay
+  modes.forEach((m,i)=>{
+    if(started){
+      // rubbing mainly excites modes 0 and 1
+      const feed = rubEnergy * (i===0?0.9 : i===1?0.5 : i===2?0.15:0.05);
+      m.level = m.level*(0.90+0.06*m.decay) + feed*0.14;
+      m.level = Math.min(m.level, 1.1);
+      // slight stick-slip roughness tied to rub speed
+      const rough = 1 + Math.sin(t*38 + i)*0.05*rubEnergy;
+      const target = m.level*rough*(i===0?0.30:i===1?0.18:i===2?0.10:0.06);
+      m.gain.gain.setTargetAtTime(target, ac.currentTime, 0.03);
+      m.level *= (0.999 - (1-m.decay)*0.004);  // long natural decay
+    }
+  });
+
+  amp = amp*0.85 + (modes.reduce((s,m)=>s+m.level,0))*0.15;
+  body.classList.toggle('live', amp>0.04);
+
+  render();
+  requestAnimationFrame(loop);
+}
+
+function render(){
+  g.clearRect(0,0,W,H);
+  const ink=(a)=>`rgba(223,221,215,${a})`;
+  const av=Math.min(1.2, amp);        // clamped amplitude for visuals
+
+  // faint outer aura — the air the bowl moves
+  const aura=g.createRadialGradient(cx,cy,R*0.2,cx,cy,R*1.9);
+  aura.addColorStop(0,`rgba(109,147,201,${0.05*Math.min(1,av*3)})`);
+  aura.addColorStop(1,'rgba(6,6,8,0)');
+  g.fillStyle=aura; g.fillRect(0,0,W,H);
+
+  // ── the water surface: a standing-wave membrane inside the rim ──
+  // mode-2 shape gives 4 antinodes; the surface trembles with amp
+  const rings=5;
+  for(let k=rings;k>=1;k--){
+    const rr=R*(k/rings)*0.92;
+    g.beginPath();
+    const N=120;
+    for(let s=0;s<=N;s++){
+      const a=s/N*Math.PI*2;
+      // superpose two low bowl modes as angular lobes
+      const f0=modes[0]?modes[0].freq:F0, f1=modes[1]?modes[1].freq:F0*RATIOS[1];
+      const wob = av*R*0.05*(
+          Math.sin(a*2 + t*f0*0.02)*1.0 +
+          Math.sin(a*4 - t*f1*0.02)*0.6 );
+      const rad = rr + wob*(k/rings);
+      const x=cx+Math.cos(a)*rad, y=cy+Math.sin(a)*rad*0.62; // slight perspective tilt
+      s===0?g.moveTo(x,y):g.lineTo(x,y);
+    }
+    g.closePath();
+    g.strokeStyle=ink(0.05+0.09*(k/rings));
+    g.lineWidth=DPR*(k===rings?1.4:0.8);
+    g.stroke();
+  }
+
+  // ── expanding ripples from strikes ──
+  for(let i=ripples.length-1;i>=0;i--){
+    const rp=ripples[i]; rp.r+=R*0.012; rp.life*=0.965;
+    if(rp.life<0.02){ ripples.splice(i,1); continue; }
+    g.beginPath();
+    g.ellipse(cx,cy,rp.r,rp.r*0.62,0,0,Math.PI*2);
+    g.strokeStyle=`rgba(223,221,215,${0.22*rp.life*rp.pow})`;
+    g.lineWidth=DPR*1.1; g.stroke();
+  }
+
+  // ── the rim: a bright ellipse, brightening with amp ──
+  g.beginPath();
+  g.ellipse(cx,cy,R,R*0.62,0,0,Math.PI*2);
+  g.strokeStyle=ink(0.28+0.4*Math.min(1,av*2));
+  g.lineWidth=DPR*1.6; g.stroke();
+  // a soft inner lip
+  g.beginPath();
+  g.ellipse(cx,cy,R*0.965,R*0.62*0.965,0,0,Math.PI*2);
+  g.strokeStyle=ink(0.10); g.lineWidth=DPR*1; g.stroke();
+
+  // ── the hand on the rim: a slate glow that rides where you rub ──
+  if(started && ptr.glow>0.02){
+    const gx=cx+Math.cos(ptr.ang)*R, gy=cy+Math.sin(ptr.ang)*R*0.62;
+    const gr=g.createRadialGradient(gx,gy,0,gx,gy,R*0.22*ptr.glow+8);
+    gr.addColorStop(0,`rgba(140,175,225,${0.5*Math.min(1,ptr.glow)})`);
+    gr.addColorStop(1,'rgba(109,147,201,0)');
+    g.fillStyle=gr;
+    g.beginPath(); g.arc(gx,gy,R*0.22*ptr.glow+8,0,Math.PI*2); g.fill();
+  }
+
+  // resting whisper before it's touched
+  if(!started){
+    g.strokeStyle=ink(0.12);
+    g.beginPath(); g.ellipse(cx,cy,R,R*0.62,0,0,Math.PI*2);
+    g.lineWidth=DPR*1.2; g.stroke();
+  }
+}
+render();
+</script>
+</body>
+</html>

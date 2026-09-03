@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the blue line</title>
+<style>
+  :root {
+    --bg: #060608;
+    --ink-hi: rgba(255,255,255,0.92);
+    --ink: rgba(255,255,255,0.72);
+    --ink-lo: rgba(255,255,255,0.45);
+    --ink-ghost: rgba(255,255,255,0.28);
+    --line: rgba(255,255,255,0.09);
+    --accent: #6d93c9;
+    --fill: rgba(255,255,255,0.035);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--ink); height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-weight: 380;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 44px 24px 32px;
+    -webkit-font-smoothing: antialiased;
+  }
+  header { width: 100%; max-width: 660px; margin-bottom: 26px; }
+  h1 {
+    font-family: 'Inter Tight', 'Inter', sans-serif;
+    font-weight: 300; font-size: 27px; letter-spacing: 0.01em;
+    color: var(--ink-hi);
+  }
+  .sub { font-size: 13.5px; font-weight: 340; color: var(--ink-lo); margin-top: 7px; line-height: 1.55; max-width: 54ch; }
+  .controls {
+    width: 100%; max-width: 660px;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-bottom: 18px;
+  }
+  .group { display: flex; gap: 1px; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  button {
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 420;
+    letter-spacing: 0.015em;
+    color: var(--ink-lo);
+    background: var(--fill);
+    border: none; outline: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    padding: 8px 13px; cursor: pointer;
+    transition: color 140ms ease, background 140ms ease;
+  }
+  .group button + button { border-left: 1px solid var(--line); }
+  button:hover { color: var(--ink); background: rgba(255,255,255,0.055); }
+  button:focus-visible { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5); }
+  button:active { background: rgba(255,255,255,0.02); }
+  button.on { color: var(--ink-hi); background: rgba(255,255,255,0.075); }
+  button.bell.on { color: var(--accent); }
+  #ring {
+    border: 1px solid var(--line); border-radius: 7px;
+    padding: 8px 18px; color: var(--ink);
+  }
+  .spacer { flex: 1; }
+  .status {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink-ghost); letter-spacing: 0.03em;
+  }
+  canvas {
+    width: 100%; max-width: 660px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: rgba(255,255,255,0.012);
+  }
+  .foot {
+    width: 100%; max-width: 660px; margin-top: 18px;
+    font-size: 12.5px; font-weight: 340; line-height: 1.65; color: var(--ink-ghost);
+    max-width: 660px;
+  }
+  .foot em { font-style: normal; color: var(--ink-lo); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>the blue line</h1>
+  <div class="sub">six bells, rung by rule. pick a bell and follow it — ringers call its path the blue line. then hide the numbers and try to keep it.</div>
+</header>
+
+<div class="controls">
+  <div class="group" id="methods">
+    <button data-m="hunt" class="on">plain hunt</button>
+    <button data-m="bob">plain bob doubles</button>
+  </div>
+  <div class="group" id="bells"></div>
+  <div class="group">
+    <button id="tglNumbers" class="on">numbers</button>
+    <button id="tglLine" class="on">line</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="status" id="status">at rest</span>
+  <button id="ring">ring</button>
+</div>
+
+<canvas id="cv" width="1320" height="960"></canvas>
+
+<div class="foot">
+  a bell can only move one place per row — it is a ton of swinging bronze, not an instrument you play so much as steer.
+  every change here follows that law. <em>plain hunt</em> weaves all six to the front and back and home again;
+  <em>plain bob doubles</em> lets five bells work while the tenor covers, forty changes back to rounds.
+  the skill of knowing where every bell is by watching the ropes is called <em>ropesight</em> —
+  it cannot be taught, only occasioned. turn the numbers off. that is the room where it happens to you.
+</div>
+
+<script>
+(() => {
+  // ---------- method engine (place notation) ----------
+  // a "change" is a list of 1-based places that hold still; all other
+  // adjacent pairs swap. this is the whole law of change ringing.
+  const applyChange = (row, places) => {
+    const next = row.slice();
+    let i = 0;
+    while (i < next.length) {
+      if (places.includes(i + 1) || i + 1 >= next.length || places.includes(i + 2)) { i += 1; continue; }
+      [next[i], next[i + 1]] = [next[i + 1], next[i]];
+      i += 2;
+    }
+    return next;
+  };
+
+  const METHODS = {
+    hunt: {
+      name: 'plain hunt on six',
+      bells: 6, cover: false,
+      lead: Array.from({ length: 12 }, (_, i) => (i % 2 === 0 ? [] : [1, 6])),
+    },
+    bob: {
+      name: 'plain bob doubles',
+      bells: 5, cover: true, // tenor behind
+      lead: Array.from({ length: 10 }, (_, i) =>
+        i === 9 ? [1, 2, 5] : (i % 2 === 0 ? [5] : [1])),
+    },
+  };
+
+  // generate the full course: repeat leads until rounds returns
+  const generateCourse = (m) => {
+    const rounds = Array.from({ length: m.bells }, (_, i) => i + 1);
+    const rows = [rounds];
+    let row = rounds;
+    for (let guard = 0; guard < 80; guard++) {
+      for (const places of m.lead) {
+        row = applyChange(row, places);
+        rows.push(row);
+      }
+      if (row.every((b, i) => b === i + 1)) break;
+    }
+    return rows;
+  };
+
+  // ---------- state ----------
+  let methodKey = 'hunt';
+  let course = generateCourse(METHODS.hunt);
+  let followBell = 2;
+  let showNumbers = true;
+  let showLine = true;
+  let ringing = false;
+
+  const NCOLS = () => METHODS[methodKey].bells + (METHODS[methodKey].cover ? 1 : 0);
+
+  // struck[] holds every strike that has sounded: {row, pos, bell, time}
+  let struck = [];
+  let rowCount = 0;
+
+  // ---------- audio: a struck bell ----------
+  // partials of a real bell against its nominal: hum, prime, tierce,
+  // quint, nominal — the minor third (tierce) is what makes it a bell.
+  let ctx = null;
+  const PARTIALS = [
+    { ratio: 0.25, gain: 0.55, decay: 5.5 },
+    { ratio: 0.5,  gain: 0.6,  decay: 3.2 },
+    { ratio: 0.6,  gain: 0.5,  decay: 2.2 },
+    { ratio: 0.75, gain: 0.22, decay: 1.6 },
+    { ratio: 1.0,  gain: 0.45, decay: 1.1 },
+    { ratio: 1.33, gain: 0.1,  decay: 0.6 },
+  ];
+  // rounds descend a major scale, treble on top; tenor is the deep last bell
+  const SEMIS = [0, -2, -4, -5, -7, -9];
+  const bellNominal = (bell) => 920 * Math.pow(2, SEMIS[bell - 1] / 12);
+
+  const strikeAt = (bell, t) => {
+    if (!ctx) return;
+    const nominal = bellNominal(bell);
+    const out = ctx.createGain();
+    out.gain.value = bell === 6 ? 0.16 : 0.13; // tenor slightly heavier
+    out.connect(ctx.destination);
+    for (const p of PARTIALS) {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = nominal * p.ratio;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(p.gain, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + p.decay);
+      o.connect(g); g.connect(out);
+      o.start(t); o.stop(t + p.decay + 0.1);
+    }
+  };
+
+  // ---------- scheduler ----------
+  const BEAT = 0.3;                    // seconds between blows
+  const now = () => (ctx ? ctx.currentTime : performance.now() / 1000);
+  let nextRow = 0;      // index into course (loops)
+  let nextTime = 0;
+  let timer = null;
+
+  const scheduleAhead = () => {
+    const horizon = now() + 0.35;
+    while (nextTime < horizon) {
+      const m = METHODS[methodKey];
+      const rowIdx = nextRow % (course.length - 1); // last row == rounds == first
+      const row = course[rowIdx];
+      const hand = rowCount % 2 === 0;
+      if (hand) nextTime += BEAT;      // handstroke gap: one silent blow
+      row.forEach((bell, pos) => {
+        strikeAt(bell, nextTime);
+        struck.push({ row: rowCount, pos, bell, time: nextTime });
+        nextTime += BEAT;
+      });
+      if (m.cover) {                    // tenor behind, every row
+        strikeAt(6, nextTime);
+        struck.push({ row: rowCount, pos: m.bells, bell: 6, time: nextTime });
+        nextTime += BEAT;
+      }
+      rowCount += 1;
+      nextRow += 1;
+      if (struck.length > 400) struck = struck.slice(-300);
+    }
+  };
+
+  const start = () => {
+    if (ringing) return;
+    try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); }
+    catch (e) { ctx = null; }
+    ringing = true;
+    struck = []; rowCount = 0; nextRow = 0;
+    nextTime = now() + 0.25;
+    timer = setInterval(scheduleAhead, 40);
+    document.getElementById('ring').textContent = 'stand';
+  };
+  const stop = () => {
+    ringing = false;
+    clearInterval(timer);
+    document.getElementById('ring').textContent = 'ring';
+    document.getElementById('status').textContent = 'stood';
+  };
+
+  // ---------- drawing ----------
+  const cv = document.getElementById('cv');
+  const g = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const ROWH = 62;
+  const VISIBLE = Math.floor(H / ROWH) + 2;
+
+  const draw = () => {
+    g.clearRect(0, 0, W, H);
+    const t = now();
+    const m = METHODS[methodKey];
+    const ncols = NCOLS();
+    const colX = (pos) => W / 2 + (pos - (ncols - 1) / 2) * 150;
+
+    // which rows have begun sounding
+    const rows = new Map(); // rowIdx -> strikes[]
+    for (const s of struck) {
+      if (s.time > t) continue;
+      if (!rows.has(s.row)) rows.set(s.row, []);
+      rows.get(s.row).push(s);
+    }
+    const rowIdxs = [...rows.keys()].sort((a, b) => a - b);
+    const latest = rowIdxs.length ? rowIdxs[rowIdxs.length - 1] : -1;
+
+    // latest row sits low; earlier rows recede upward
+    const yFor = (rowIdx) => H - 90 - (latest - rowIdx) * ROWH;
+
+    // the blue line, behind the numbers — the followed bell's path
+    if (showLine) {
+      g.beginPath();
+      let started = false;
+      for (const r of rowIdxs) {
+        const s = rows.get(r).find(s => s.bell === followBell);
+        if (!s) continue;
+        const y = yFor(r);
+        if (y < -ROWH) continue;
+        if (!started) { g.moveTo(colX(s.pos), y); started = true; }
+        else g.lineTo(colX(s.pos), y);
+      }
+      g.strokeStyle = '#6d93c9';
+      g.lineWidth = 2.5;
+      g.globalAlpha = 0.85;
+      g.stroke();
+      g.globalAlpha = 1;
+    }
+
+    // the numbers (or dots), appearing as each bell strikes
+    for (const r of rowIdxs) {
+      const y = yFor(r);
+      if (y < -ROWH) continue;
+      const fade = Math.max(0.12, Math.min(1, (y + ROWH) / (H * 0.75)));
+      for (const s of rows.get(r)) {
+        const age = t - s.time;
+        const isFollowed = s.bell === followBell;
+        const flash = Math.max(0, 1 - age / 0.45);
+        g.font = `380 ${30 + flash * 5}px 'JetBrains Mono', monospace`;
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        if (isFollowed && showLine) {
+          g.fillStyle = `rgba(109, 147, 201, ${Math.min(1, 0.75 + flash * 0.25) * fade})`;
+        } else {
+          const base = 0.4 + flash * 0.5;
+          g.fillStyle = `rgba(255,255,255,${base * fade})`;
+        }
+        g.fillText(showNumbers ? String(s.bell) : '•', colX(s.pos), y);
+      }
+    }
+
+    // status line
+    if (ringing && latest >= 0) {
+      const courseLen = course.length - 1;
+      const inCourse = (latest % courseLen) + 1;
+      const stroke = latest % 2 === 0 ? 'handstroke' : 'backstroke';
+      document.getElementById('status').textContent =
+        `${m.name} · change ${inCourse}/${courseLen} · ${stroke}`;
+    }
+    requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+
+  // ---------- controls ----------
+  const rebuildBellButtons = () => {
+    const holder = document.getElementById('bells');
+    holder.innerHTML = '';
+    const n = METHODS[methodKey].bells;
+    if (followBell > n) followBell = 2;
+    for (let b = 1; b <= n; b++) {
+      const btn = document.createElement('button');
+      btn.className = 'bell' + (b === followBell ? ' on' : '');
+      btn.textContent = b;
+      btn.addEventListener('click', () => {
+        followBell = b;
+        [...holder.children].forEach((c, i) => c.classList.toggle('on', i + 1 === b));
+      });
+      holder.appendChild(btn);
+    }
+  };
+  rebuildBellButtons();
+
+  document.getElementById('methods').addEventListener('click', (e) => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    methodKey = btn.dataset.m;
+    course = generateCourse(METHODS[methodKey]);
+    [...e.currentTarget.children].forEach(c => c.classList.toggle('on', c === btn));
+    rebuildBellButtons();
+    if (ringing) { struck = []; rowCount = 0; nextRow = 0; nextTime = now() + 0.4; }
+  });
+  document.getElementById('tglNumbers').addEventListener('click', (e) => {
+    showNumbers = !showNumbers; e.currentTarget.classList.toggle('on', showNumbers);
+  });
+  document.getElementById('tglLine').addEventListener('click', (e) => {
+    showLine = !showLine; e.currentTarget.classList.toggle('on', showLine);
+  });
+  document.getElementById('ring').addEventListener('click', () => ringing ? stop() : start());
+
+  // expose for verification
+  window.__blueline = { generateCourse, METHODS, applyChange };
+})();
+</script>
+</body>
+</html>

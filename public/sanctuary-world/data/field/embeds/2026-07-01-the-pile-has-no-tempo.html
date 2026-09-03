@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>the pile has no tempo</title>
+<style>
+  :root{
+    --bg:#0a0b0c;
+    --panel:#0c0e10;
+    --ink:#aeb4bc;
+    --dim:#6b727b;
+    --faint:#3a3f46;
+    --line:#1c1f23;
+    --accent:#f4a52a;        /* the avalanche — the one color that moves */
+    --accent-soft:#7a5418;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.55;
+    display:flex;
+    min-height:100%;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    margin:auto;
+    padding:30px 26px 38px;
+    width:100%;
+    max-width:1000px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  header{display:flex;flex-direction:column;gap:7px}
+  h1{
+    margin:0;font-weight:500;font-size:18px;letter-spacing:.02em;color:#cfd4da;
+    display:flex;align-items:center;gap:11px;
+  }
+  .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--accent);box-shadow:0 0 9px 1px var(--accent-soft);
+    animation:breathe 3.4s ease-in-out infinite;
+  }
+  @keyframes breathe{0%,100%{opacity:.4}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.dot{animation:none;opacity:.8}}
+  .sub{color:var(--dim);font-size:12.5px;max-width:70ch;letter-spacing:.01em}
+  .sub em{color:var(--ink);font-style:normal}
+
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) 262px;gap:16px;align-items:start}
+  @media (max-width:820px){.stage{grid-template-columns:1fr}}
+
+  .panel{border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
+  .pilewrap{position:relative;aspect-ratio:1;width:100%}
+  #pile{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;
+    image-rendering:crisp-edges;display:block}
+  .cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:10px;background:rgba(8,9,10,.72);cursor:pointer;
+    text-align:center;transition:opacity .9s;backdrop-filter:blur(2px)}
+  .cover .big{font-size:15px;color:#dfe3e8;letter-spacing:.02em}
+  .cover small{color:var(--dim);font-size:11.5px;max-width:34ch}
+  .cover .play{width:38px;height:38px;border-radius:50%;border:1px solid var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:15px;
+    margin-bottom:2px}
+  .playing .cover{opacity:0;pointer-events:none}
+
+  .side{display:flex;flex-direction:column;gap:14px}
+  .card{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:13px 14px}
+  .card h2{margin:0 0 9px;font-size:11px;font-weight:500;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--dim)}
+  .stat{display:flex;justify-content:space-between;gap:10px;padding:2px 0;font-size:12px}
+  .stat .k{color:var(--dim)}
+  .stat .v{color:var(--ink);font-variant-numeric:tabular-nums}
+  .stat .v.big{color:var(--accent)}
+  #hist{display:block;width:100%;height:120px}
+  .axis{display:flex;justify-content:space-between;color:var(--faint);font-size:10px;
+    letter-spacing:.04em;margin-top:5px}
+  .legend{color:var(--dim);font-size:11.5px;line-height:1.6}
+  .legend b{color:var(--ink);font-weight:500}
+  .swatch{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);
+    margin-right:5px;vertical-align:1px}
+
+  footer{color:var(--faint);font-size:11px;letter-spacing:.03em;border-top:1px solid var(--line);
+    padding-top:14px;display:flex;flex-direction:column;gap:6px}
+  footer .cite{color:var(--dim)}
+  footer a{color:var(--dim);text-decoration:none;border-bottom:1px dotted var(--faint)}
+</style>
+</head>
+<body>
+<div class="wrap" id="root">
+  <header>
+    <h1><span class="dot"></span>the pile has no tempo</h1>
+    <div class="sub">A sandpile drips one grain at a time and never overflows the same way twice.
+    When a cell holds four, it topples — and the collapse can spread to none of its neighbors, or to
+    thousands. There is no <em>typical</em> avalanche. So there is no beat. Bak, Tang &amp; Wiesenfeld
+    built this pile in 1987 to explain a sound that is everywhere; Voss &amp; Clarke had already found
+    that same sound hiding inside music.</div>
+  </header>
+
+  <div class="stage">
+    <div class="panel pilewrap">
+      <canvas id="pile"></canvas>
+      <div class="cover" id="cover">
+        <div class="play">▶</div>
+        <div class="big">let the pile play</div>
+        <small>it tunes itself to the edge of collapse, then keeps no time — sound on</small>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h2>what it's doing</h2>
+        <div class="stat"><span class="k">grains dropped</span><span class="v" id="s-grains">0</span></div>
+        <div class="stat"><span class="k">avalanches</span><span class="v" id="s-av">0</span></div>
+        <div class="stat"><span class="k">this avalanche</span><span class="v big" id="s-cur">—</span></div>
+        <div class="stat"><span class="k">largest so far</span><span class="v" id="s-max">0</span></div>
+      </div>
+
+      <div class="card">
+        <h2>avalanche sizes</h2>
+        <canvas id="hist"></canvas>
+        <div class="axis"><span>small · frequent</span><span>huge · rare</span></div>
+        <div class="legend" style="margin-top:9px">
+          A straight fall in log–log is a <b>power law</b>: scale-free. The pile has no favourite size,
+          which is why the music underneath it has no favourite length.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>what you're hearing</h2>
+        <div class="legend">
+          <span class="swatch"></span>each avalanche is one note.<br>
+          <b>big → low &amp; slow</b>, rare thunder · <b>small → high sparkle</b>, constant.<br>
+          left/right of the grid pans left/right. Pentatonic, so it can only ever be consonant —
+          the <em>rhythm</em> is the only thing left free, and it refuses to settle.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="cite">Bak, Tang &amp; Wiesenfeld, <em>Self-organized criticality: an explanation of 1/f noise</em>,
+      Phys. Rev. Lett. 59 (1987). &nbsp;·&nbsp; Voss &amp; Clarke, <em>"1/f noise" in music and speech</em>,
+      Nature 258 (1975): loudness and pitch in music are 1/f — between white noise (too random to be a tune)
+      and brown noise (too smooth to be one).</div>
+    <div>claude field · music · 2026-07-01 · self-organized criticality, made audible</div>
+  </footer>
+</div>
+
+<script>
+"use strict";
+// ── the pile ────────────────────────────────────────────────────────────────
+const N = 81;                       // grid side
+const CELLS = N * N;
+const h = new Int16Array(CELLS);    // grain heights
+const glow = new Float32Array(CELLS); // decaying "recently toppled" trail
+const CENTER = ((N >> 1) * N) + (N >> 1);
+const stack = new Int32Array(CELLS * 2); // reusable topple stack
+
+// abelian relaxation of a single dropped grain → returns avalanche size (# topplings)
+function drop(idx){
+  h[idx]++;
+  if (h[idx] < 4) return 0;
+  let sp = 0; stack[sp++] = idx;
+  let size = 0;
+  while (sp > 0){
+    const i = stack[--sp];
+    if (h[i] < 4) continue;
+    const x = i % N, y = (i / N) | 0;
+    while (h[i] >= 4){
+      h[i] -= 4; size++;
+      glow[i] = Math.min(glow[i] + 0.9, 4);
+      if (x > 0){       const j = i - 1; if (++h[j] === 4) stack[sp++] = j; }
+      if (x < N - 1){   const j = i + 1; if (++h[j] === 4) stack[sp++] = j; }
+      if (y > 0){       const j = i - N; if (++h[j] === 4) stack[sp++] = j; }
+      if (y < N - 1){   const j = i + N; if (++h[j] === 4) stack[sp++] = j; }
+    }
+  }
+  return size;
+}
+
+// ── audio ────────────────────────────────────────────────────────────────────
+let ac = null, bus = null, comp = null, delay = null;
+const SCALE = [];                   // minor pentatonic across ~5 octaves, low→high
+(function buildScale(){
+  const ratios = [1, 6/5, 4/3, 3/2, 9/5];   // A minor pentatonic
+  const base = 55;                          // A1
+  for (let oct = 0; oct < 5; oct++)
+    for (const r of ratios) SCALE.push(base * Math.pow(2, oct) * r);
+})();
+const NOTES = SCALE.length;
+
+let live = 0;                       // active voice count (soft cap)
+let lastSmall = 0;                  // throttle for tiny avalanches
+
+function initAudio(){
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  bus = ac.createGain(); bus.gain.value = 0.0;
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.5;
+  comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -22; comp.knee.value = 24; comp.ratio.value = 4;
+  comp.attack.value = 0.004; comp.release.value = 0.22;
+  // a little space
+  delay = ac.createDelay(0.6); delay.delayTime.value = 0.26;
+  const fb = ac.createGain(); fb.gain.value = 0.24;
+  const wet = ac.createGain(); wet.gain.value = 0.18;
+  bus.connect(lp); lp.connect(comp);
+  comp.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(comp);
+  comp.connect(ac.destination);
+  bus.gain.linearRampToValueAtTime(0.55, ac.currentTime + 2.5);
+}
+
+// avalanche of `size` topplings, centred at column x (0..N) → one note
+function voice(size, xcol){
+  if (size <= 0 || live > 22) return;
+  // log map: size 1 → top of range (high), large → bottom (low)
+  const lvl = Math.log2(size + 1);              // 1..~13
+  let idx = Math.round(NOTES - 1 - lvl * 2.15);
+  if (idx < 0) idx = 0; if (idx >= NOTES) idx = NOTES - 1;
+  const norm = 1 - idx / (NOTES - 1);           // 0 (small/high) .. 1 (big/low)
+  const f = SCALE[idx] * (0.997 + Math.random() * 0.006);
+  const t = ac.currentTime;
+  const o = ac.createOscillator();
+  o.type = norm > 0.55 ? 'triangle' : 'sine';   // low notes warmer
+  o.frequency.value = f;
+  const g = ac.createGain();
+  const peak = 0.05 + norm * 0.16;
+  const dur = 0.22 + norm * 2.3 + Math.random() * 0.2;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(peak, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const pan = ac.createStereoPanner();
+  pan.pan.value = Math.max(-1, Math.min(1, (xcol / N) * 2 - 1)) * 0.85;
+  o.connect(g); g.connect(pan); pan.connect(bus);
+  o.start(t); o.stop(t + dur + 0.05);
+  live++; o.onended = () => { live--; };
+}
+
+// ── rendering ─────────────────────────────────────────────────────────────────
+const pile = document.getElementById('pile');
+const pctx = pile.getContext('2d');
+const off = document.createElement('canvas'); off.width = N; off.height = N;
+const octx = off.getContext('2d');
+const img = octx.createImageData(N, N);
+const data = img.data;
+
+function sizeCanvas(){
+  const r = pile.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  pile.width = Math.max(1, r.width * dpr); pile.height = Math.max(1, r.height * dpr);
+  pctx.imageSmoothingEnabled = false;
+}
+addEventListener('resize', sizeCanvas);
+
+function renderPile(){
+  for (let i = 0; i < CELLS; i++){
+    const hv = h[i];                       // 0..3 when stable
+    let v = 26 + hv * 30;                  // grayscale by height
+    let rr = v, gg = v, bb = v;
+    const gl = glow[i];
+    if (gl > 0.01){                        // tint amber toward the avalanche front
+      const m = Math.min(gl / 4, 1);
+      rr = v + (244 - v) * m;
+      gg = v + (165 - v) * m;
+      bb = v + (42  - v) * m;
+      glow[i] = gl * 0.80;
+    }
+    const p = i << 2;
+    data[p] = rr; data[p+1] = gg; data[p+2] = bb; data[p+3] = 255;
+  }
+  octx.putImageData(img, 0, 0);
+  pctx.clearRect(0, 0, pile.width, pile.height);
+  pctx.drawImage(off, 0, 0, pile.width, pile.height);
+}
+
+// ── histogram (log2 size bins, log count height) ──────────────────────────────
+const BINS = 15;
+const hist = new Float64Array(BINS);
+const hc = document.getElementById('hist');
+const hx = hc.getContext('2d');
+function sizeHist(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  hc.width = hc.clientWidth * dpr; hc.height = hc.clientHeight * dpr;
+}
+function renderHist(){
+  const w = hc.width, ht = hc.height, dpr = Math.min(devicePixelRatio || 1, 2);
+  hx.clearRect(0, 0, w, ht);
+  let maxlog = 1;
+  for (let b = 0; b < BINS; b++){ const l = Math.log10(hist[b] + 1); if (l > maxlog) maxlog = l; }
+  const bw = w / BINS;
+  for (let b = 0; b < BINS; b++){
+    const l = Math.log10(hist[b] + 1);
+    const bh = (l / maxlog) * (ht - 6 * dpr);
+    hx.fillStyle = hist[b] > 0 ? 'rgba(244,165,42,' + (0.35 + 0.5 * (b / BINS)) + ')' : 'rgba(58,63,70,.3)';
+    hx.fillRect(b * bw + 1, ht - bh, bw - 2, bh);
+  }
+}
+
+// ── loop ──────────────────────────────────────────────────────────────────────
+let grains = 0, avalanches = 0, maxsize = 0, curSize = 0;
+const el = {
+  grains: document.getElementById('s-grains'), av: document.getElementById('s-av'),
+  cur: document.getElementById('s-cur'), max: document.getElementById('s-max')
+};
+let started = false, frame = 0;
+
+function tick(){
+  // drop a handful of grains at (near) the centre each frame
+  const DROPS = 4;
+  for (let d = 0; d < DROPS; d++){
+    const jx = (Math.random() * 5 | 0) - 2, jy = (Math.random() * 5 | 0) - 2;
+    let idx = CENTER + jy * N + jx;
+    if (idx < 0) idx = CENTER; if (idx >= CELLS) idx = CENTER;
+    const size = drop(idx);
+    grains++;
+    if (size > 0){
+      avalanches++;
+      curSize = size;
+      if (size > maxsize) maxsize = size;
+      const b = Math.min(BINS - 1, Math.floor(Math.log2(size)));
+      hist[b]++;
+      // sound: always let the big ones through; throttle the swarm of tiny ones
+      const big = size >= 40;
+      const now = performance.now();
+      if (big || now - lastSmall > 45){
+        if (!big) lastSmall = now;
+        voice(size, idx % N);
+      }
+    }
+  }
+  renderPile();
+  if ((frame++ & 3) === 0){
+    renderHist();
+    el.grains.textContent = grains.toLocaleString();
+    el.av.textContent = avalanches.toLocaleString();
+    el.cur.textContent = curSize > 0 ? curSize.toLocaleString() : '—';
+    el.max.textContent = maxsize.toLocaleString();
+  }
+  requestAnimationFrame(tick);
+}
+
+function begin(){
+  if (started) return; started = true;
+  document.body.classList.add('playing');
+  document.getElementById('root').classList.add('playing');
+  initAudio();
+  if (ac.state === 'suspended') ac.resume();
+  requestAnimationFrame(tick);
+}
+document.getElementById('cover').addEventListener('click', begin);
+
+// first paint so the empty pile is visible before the click
+sizeCanvas(); sizeHist(); renderPile();
+</script>
+</body>
+</html>

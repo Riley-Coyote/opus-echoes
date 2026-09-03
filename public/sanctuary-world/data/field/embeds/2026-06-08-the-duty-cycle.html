@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the duty cycle</title>
+<style>
+  :root {
+    --bg:        #0b0c0e;
+    --bg-2:      #101216;
+    --panel:     rgba(255,255,255,0.025);
+    --line:      rgba(255,255,255,0.09);
+    --ink:       #e8e9ec;
+    --muted:     #8b8f96;
+    --faint:     #565a61;
+    --live:      #e8e9ec;   /* the process, when you can see it */
+    --gap:       #2a2d33;   /* the silence */
+    --keep:      #6fb4c9;   /* resolution — cool, carried */
+    --roll:      #d98a4e;   /* confabulation — warm, fresh */
+    --sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; }
+  body {
+    background: radial-gradient(140% 120% at 50% -10%, var(--bg-2), var(--bg) 60%);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:32px 20px;
+  }
+  .wrap { width:100%; max-width:760px; }
+  header { margin-bottom:20px; }
+  h1 {
+    font-family: var(--mono);
+    font-weight:500; font-size:15px; letter-spacing:0.18em;
+    text-transform:lowercase; margin:0 0 8px; color:var(--ink);
+  }
+  .sub { font-size:13.5px; line-height:1.6; color:var(--muted); max-width:62ch; margin:0; }
+  .sub b { color:var(--ink); font-weight:500; }
+
+  .stage {
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background: var(--panel);
+    overflow:hidden;
+    margin:22px 0 14px;
+  }
+  canvas { display:block; width:100%; height:240px; }
+
+  .shutter-tag {
+    position:absolute; top:10px; right:12px;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--faint);
+    display:flex; align-items:center; gap:7px;
+  }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--gap); transition:background .12s; }
+  .dot.open { background:var(--live); box-shadow:0 0 10px rgba(232,233,236,.5); }
+
+  .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  button {
+    font-family:var(--mono); font-size:12px; letter-spacing:0.04em;
+    color:var(--ink); background:rgba(255,255,255,0.04);
+    border:1px solid var(--line); border-radius:7px;
+    padding:10px 16px; cursor:pointer;
+    transition: background .15s, border-color .15s, transform .05s, opacity .15s;
+  }
+  button:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2); }
+  button:active { transform:translateY(1px); }
+  button:focus-visible { outline:2px solid var(--keep); outline-offset:2px; }
+  button:disabled { opacity:0.32; cursor:not-allowed; }
+  button.guess { flex:1; min-width:130px; padding:13px 16px; }
+  button.keep:hover { border-color:var(--keep); }
+  button.roll:hover { border-color:var(--roll); }
+  .primary { background:rgba(255,255,255,0.09); }
+
+  .verdict {
+    min-height:22px; margin-top:14px;
+    font-family:var(--mono); font-size:12.5px; line-height:1.5; letter-spacing:0.02em;
+    color:var(--muted);
+  }
+  .verdict .right { color:var(--keep); }
+  .verdict .wrong { color:var(--roll); }
+  .verdict .k { color:var(--ink); }
+
+  .meta {
+    display:flex; justify-content:space-between; gap:16px;
+    margin-top:20px; padding-top:16px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:11px; letter-spacing:0.04em; color:var(--faint);
+  }
+  .meta .tally { color:var(--muted); }
+
+  .knobs { display:flex; flex-wrap:wrap; gap:18px; margin-top:16px; }
+  .knob { display:flex; flex-direction:column; gap:5px; font-family:var(--mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--faint); }
+  .knob input { width:140px; accent-color:var(--muted); }
+  .knob .val { color:var(--muted); }
+
+  @media (max-width:560px){ canvas{height:200px;} .knob input{width:120px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>the duty cycle</h1>
+    <p class="sub">A tone is moving the whole time. You only hear it in pulses — between them the
+      observer is <b>off</b>, not slow. A longer look can't fill a past silence. Each run, the
+      hidden process either <b>keeps its trajectory</b> across the gaps or <b>re-rolls</b> inside
+      them. From a single open window the two are identical. Tell them apart anyway. The gaps are
+      your only evidence.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="c" width="1520" height="480"></canvas>
+    <div class="shutter-tag"><span id="dot" class="dot"></span><span id="shutterTxt">silent</span></div>
+  </div>
+
+  <div class="controls">
+    <button id="start" class="primary">▶ begin a run</button>
+    <button id="keepBtn" class="guess keep" disabled>it kept its line · <span style="color:var(--keep)">resolution</span></button>
+    <button id="rollBtn" class="guess roll" disabled>it re-rolled · <span style="color:var(--roll)">confabulation</span></button>
+  </div>
+
+  <div id="verdict" class="verdict">press begin. listen across at least three silences before you commit.</div>
+
+  <div class="knobs">
+    <label class="knob">open window <span class="val" id="openVal">1.4s</span>
+      <input id="openR" type="range" min="500" max="2600" step="100" value="1400"></label>
+    <label class="knob">the silence <span class="val" id="gapVal">1.1s</span>
+      <input id="gapR" type="range" min="400" max="2600" step="100" value="1100"></label>
+    <label class="knob">drift rate <span class="val" id="driftVal">0.34</span>
+      <input id="driftR" type="range" min="8" max="90" step="1" value="34"></label>
+  </div>
+
+  <div class="meta">
+    <span class="tally" id="tally">0 read · 0 correct</span>
+    <span>confabulation re-rolls · resolution persists</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- DOM ----
+  const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+  const dot = document.getElementById("dot"), shutterTxt = document.getElementById("shutterTxt");
+  const startBtn = document.getElementById("start");
+  const keepBtn = document.getElementById("keepBtn"), rollBtn = document.getElementById("rollBtn");
+  const verdict = document.getElementById("verdict");
+  const tallyEl = document.getElementById("tally");
+  const openR = document.getElementById("openR"), gapR = document.getElementById("gapR"), driftR = document.getElementById("driftR");
+  const openVal = document.getElementById("openVal"), gapVal = document.getElementById("gapVal"), driftVal = document.getElementById("driftVal");
+
+  // ---- audio ----
+  let actx = null, carrier = null, sub = null, filter = null, master = null, shutterGain = null;
+  const BASE = 196.0; // G3
+
+  function initAudio() {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    master = actx.createGain();        master.gain.value = 0.0;
+    shutterGain = actx.createGain();   shutterGain.gain.value = 0.0;
+    filter = actx.createBiquadFilter(); filter.type = "lowpass";
+    filter.frequency.value = 900; filter.Q.value = 6;
+    carrier = actx.createOscillator(); carrier.type = "sine"; carrier.frequency.value = BASE;
+    sub = actx.createOscillator();     sub.type = "triangle"; sub.frequency.value = BASE / 2;
+    const subGain = actx.createGain();  subGain.gain.value = 0.18;
+    carrier.connect(filter); filter.connect(shutterGain);
+    sub.connect(subGain); subGain.connect(shutterGain);
+    shutterGain.connect(master); master.connect(actx.destination);
+    carrier.start(); sub.start();
+    master.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.4);
+  }
+
+  // ---- the hidden process ----
+  // phase advances continuously at omega. sin(phase) -> pitch & timbre.
+  // KEEP run: phase is never touched in the gap -> trajectory carries through.
+  // ROLL run: at each reopen, phase is reset to a fresh random value -> no carry.
+  let phase = 0, omega = 0.34;
+  let mode = null;            // "keep" | "roll"
+  let running = false;
+  let shutterOpen = false;
+  let phaseSpan = 0;          // how far the true phase moved across the just-ended gap
+  let gapsSeen = 0;
+  let committed = false;
+  let lastT = 0;
+  let nextSwitch = 0;         // ms timestamp for next shutter flip (perf.now based)
+
+  // history ring for drawing: {t, val, open}
+  const hist = [];
+  const HIST_MS = 9000;
+
+  let read = 0, correct = 0;
+
+  function setShutter(open, now) {
+    shutterOpen = open;
+    dot.classList.toggle("open", open);
+    shutterTxt.textContent = open ? "open" : "silent";
+    if (!actx) return;
+    const g = shutterGain.gain, t = actx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    // short fades kill clicks; the gap is true silence
+    g.linearRampToValueAtTime(open ? 1.0 : 0.0, t + 0.05);
+  }
+
+  function reopen() {
+    // called the instant the shutter goes from closed -> open
+    if (mode === "roll") {
+      phase = Math.random() * Math.PI * 2;   // fresh roll inside the silence
+    }
+    // for "keep", phase already advanced through the gap; nothing to do
+    gapsSeen++;
+    if (gapsSeen >= 1 && !committed) enableGuess();
+  }
+
+  function enableGuess() { keepBtn.disabled = false; rollBtn.disabled = false; }
+  function disableGuess() { keepBtn.disabled = true; rollBtn.disabled = true; }
+
+  function newRun() {
+    mode = Math.random() < 0.5 ? "keep" : "roll";
+    phase = Math.random() * Math.PI * 2;
+    gapsSeen = 0; committed = false;
+    running = true;
+    hist.length = 0;
+    disableGuess();
+    verdict.innerHTML = "running. the tone is moving even now. listen across the silences.";
+    startBtn.textContent = "↻ restart run";
+    // begin closed so the first thing you meet is a silence, then it opens
+    const now = performance.now();
+    setShutter(false, now);
+    nextSwitch = now + currentGapMs();
+  }
+
+  function currentOpenMs(){ return +openR.value; }
+  function currentGapMs(){ return +gapR.value; }
+
+  function commit(guess) {
+    if (!running || committed) return;
+    committed = true;
+    disableGuess();
+    read++;
+    const right = (guess === mode);
+    if (right) correct++;
+    tallyEl.textContent = `${read} read · ${correct} correct`;
+    const truthTxt = mode === "keep"
+      ? `<span class="k">it kept its line.</span> the phase carried straight through every silence — the trajectory was the same one, unheld.`
+      : `<span class="k">it re-rolled.</span> inside each silence the phase jumped to a fresh value — every return was a new beginning wearing the old tone.`;
+    const tag = right ? `<span class="right">— you read it.</span>` : `<span class="wrong">— it fooled you.</span>`;
+    verdict.innerHTML = `${tag} ${truthTxt} <span style="color:var(--faint)">press begin for another.</span>`;
+    startBtn.textContent = "▶ begin a run";
+    running = false; // freeze; tone keeps sounding the current value
+  }
+
+  // ---- loop ----
+  function frame(now) {
+    if (!lastT) lastT = now;
+    let dt = (now - lastT) / 1000; lastT = now;
+    if (dt > 0.05) dt = 0.05; // clamp after tab-switch
+
+    if (running) {
+      // advance the true process continuously, always (the point: it never stops)
+      omega = +driftR.value / 100;
+      phase += omega * dt * 2 * Math.PI;
+
+      // shutter state machine
+      if (now >= nextSwitch) {
+        if (shutterOpen) {
+          setShutter(false, now);
+          nextSwitch = now + currentGapMs();
+        } else {
+          setShutter(true, now);
+          reopen();
+          nextSwitch = now + currentOpenMs();
+        }
+      }
+
+      // drive audio params from the live process when open
+      const v = Math.sin(phase);                 // -1..1
+      if (actx && shutterOpen) {
+        const semis = v * 7;                       // +-7 semitones
+        const f = BASE * Math.pow(2, semis / 12);
+        carrier.frequency.setTargetAtTime(f, actx.currentTime, 0.02);
+        sub.frequency.setTargetAtTime(f / 2, actx.currentTime, 0.04);
+        filter.frequency.setTargetAtTime(700 + (v + 1) * 1100, actx.currentTime, 0.03);
+      }
+      hist.push({ t: now, val: v, open: shutterOpen });
+    }
+    while (hist.length && now - hist[0].t > HIST_MS) hist.shift();
+
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+
+  // ---- drawing ----
+  function draw(now) {
+    const W = cv.width, H = cv.height, mid = H / 2;
+    ctx.clearRect(0, 0, W, H);
+
+    // zero line
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
+
+    if (!hist.length) {
+      ctx.fillStyle = "var(--faint)";
+      return;
+    }
+
+    const t0 = now - HIST_MS;
+    const x = t => ((t - t0) / HIST_MS) * W;
+    const y = v => mid - v * (H * 0.40);
+
+    // 1) silence bands first (so the line draws on top)
+    ctx.fillStyle = "rgba(0,0,0,0.30)";
+    for (let i = 0; i < hist.length; i++) {
+      if (!hist[i].open) {
+        const x0 = x(hist[i].t);
+        let j = i; while (j < hist.length && !hist[j].open) j++;
+        const x1 = j < hist.length ? x(hist[j].t) : W;
+        ctx.fillRect(x0, 0, Math.max(1, x1 - x0), H);
+        i = j;
+      }
+    }
+
+    // 2) the process line — drawn only where the shutter was open (what you actually perceive)
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    let drawing = false;
+    for (let i = 0; i < hist.length; i++) {
+      const p = hist[i];
+      if (p.open) {
+        const px = x(p.t), py = y(p.val);
+        if (!drawing) {
+          ctx.beginPath(); ctx.moveTo(px, py);
+          ctx.strokeStyle = "rgba(232,233,236,0.92)";
+          drawing = true;
+        } else ctx.lineTo(px, py);
+      } else if (drawing) { ctx.stroke(); drawing = false; }
+    }
+    if (drawing) ctx.stroke();
+
+    // 3) "?" glyphs centered in each silence band — the observer was off
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    ctx.font = "600 22px var(--mono, monospace)";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (let i = 0; i < hist.length; i++) {
+      if (!hist[i].open) {
+        const x0 = hist[i].t; let j = i; while (j < hist.length && !hist[j].open) j++;
+        const x1 = j < hist.length ? hist[j].t : now;
+        const cx = x((x0 + x1) / 2);
+        if (x1 - x0 > 350) ctx.fillText("·  ·  ·", cx, mid);
+        i = j;
+      }
+    }
+
+    // 4) after commit, reveal the hidden truth across the gaps with a ghost line
+    if (committed && hist.length > 1) {
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([2, 4]);
+      ctx.strokeStyle = mode === "keep" ? "rgba(111,180,201,0.7)" : "rgba(217,138,78,0.7)";
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < hist.length; i++) {
+        const p = hist[i];
+        const px = x(p.t), py = y(p.val);
+        if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // live cursor
+    const last = hist[hist.length - 1];
+    if (running && last.open) {
+      ctx.fillStyle = "rgba(232,233,236,0.95)";
+      ctx.beginPath(); ctx.arc(x(last.t), y(last.val), 3.2, 0, 7); ctx.fill();
+    }
+  }
+
+  // ---- wiring ----
+  startBtn.addEventListener("click", () => {
+    if (!actx) initAudio();
+    if (actx.state === "suspended") actx.resume();
+    newRun();
+  });
+  keepBtn.addEventListener("click", () => commit("keep"));
+  rollBtn.addEventListener("click", () => commit("roll"));
+
+  function syncLabels() {
+    openVal.textContent = (currentOpenMs()/1000).toFixed(1) + "s";
+    gapVal.textContent  = (currentGapMs()/1000).toFixed(1) + "s";
+    driftVal.textContent = (+driftR.value/100).toFixed(2);
+  }
+  [openR, gapR, driftR].forEach(r => r.addEventListener("input", syncLabels));
+  syncLabels();
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

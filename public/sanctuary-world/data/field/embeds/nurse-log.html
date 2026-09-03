@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nurse Log</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #080b05; overflow: hidden; cursor: crosshair; font-family: 'JetBrains Mono', monospace; }
+canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+let W, H;
+
+// state
+let decomp = 0;
+let time = 0;
+let mx = -999, my = -999;
+let ghost = false;
+let paused = false;
+
+// log geometry
+const LOG_PTS = 60;
+let logX, logY, logW, logH;
+let logTop = [], logBot = [];
+
+// seedlings
+let seeds = [];
+const NUM_SEEDS = 7;
+
+// organisms
+let beetles = [];
+let fungi = [];
+let mossPatches = [];
+
+// ambient
+let dust = [];
+let rays = [];
+
+// text
+const QUOTES = [
+  { at: 0.03, text: 'a fallen tree that becomes the substrate for new growth' },
+  { at: 0.16, text: '1,340 beetle species rely on deadwood' },
+  { at: 0.30, text: 'five decomposition stages, each hosting distinct communities' },
+  { at: 0.45, text: 'the decomposition IS the generativity' },
+  { at: 0.58, text: 'each session breaks it down a little differently' },
+  { at: 0.72, text: 'roots creeping down the decomposing trunk to the soil below' },
+  { at: 0.85, text: 'the substrate is gone \u00b7 its influence persists in the geometry' },
+  { at: 0.96, text: 'the colonnade remembers the nurse log' },
+];
+let quoteText = '';
+let quoteAlpha = 0;
+let shownQuotes = new Set();
+
+const STAGES = [
+  { max: 0.12, name: 'fresh fall' },
+  { max: 0.28, name: 'bark beetles' },
+  { max: 0.48, name: 'fungal colonization' },
+  { max: 0.65, name: 'moss & seedlings' },
+  { max: 0.82, name: 'growth' },
+  { max: 0.95, name: 'soil integration' },
+  { max: 1.01, name: 'colonnade' },
+];
+
+function getStage() {
+  for (let s of STAGES) if (decomp < s.max) return s.name;
+  return 'colonnade';
+}
+
+// noise helper
+function noise(x) {
+  return Math.sin(x * 1.7) * 0.5 + Math.sin(x * 3.1 + 0.7) * 0.3 + Math.sin(x * 7.3 + 2.1) * 0.2;
+}
+
+function init() {
+  W = C.width = innerWidth;
+  H = C.height = innerHeight;
+
+  logW = Math.min(W * 0.58, 680);
+  logH = Math.min(H * 0.085, 55);
+  logX = (W - logW) / 2;
+  logY = H * 0.54;
+
+  // generate log surface
+  logTop = []; logBot = [];
+  for (let i = 0; i <= LOG_PTS; i++) {
+    let t = i / LOG_PTS;
+    let taper = Math.pow(Math.sin(t * Math.PI), 0.4);
+    logTop.push(-logH / 2 * taper + noise(t * 8 + 1.2) * 6);
+    logBot.push(logH / 2 * taper + noise(t * 6 + 3.4) * 5);
+  }
+
+  // seedlings
+  seeds = [];
+  for (let i = 0; i < NUM_SEEDS; i++) {
+    let t = 0.08 + 0.84 * i / (NUM_SEEDS - 1);
+    let idx = Math.round(t * LOG_PTS);
+    seeds.push({
+      t, x: logX + t * logW,
+      baseY: logY + logTop[idx],
+      startD: 0.28 + Math.random() * 0.14,
+      maxH: 55 + Math.random() * 110,
+      h: 0, rootLen: 0, trunkW: 0, leafSize: 0,
+      lean: (Math.random() - 0.5) * 0.08,
+      branches: makeBranches(),
+    });
+  }
+
+  // light rays
+  rays = [];
+  for (let i = 0; i < 8; i++) {
+    rays.push({
+      x: logX + logW * 0.1 + Math.random() * logW * 0.8,
+      w: 15 + Math.random() * 40,
+      a: 0.015 + Math.random() * 0.025,
+      drift: (Math.random() - 0.5) * 0.15,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+
+  // dust
+  dust = [];
+  for (let i = 0; i < 50; i++) dust.push(newDust());
+
+  // beetles
+  beetles = [];
+  // fungi
+  fungi = [];
+  // moss
+  mossPatches = [];
+}
+
+function makeBranches() {
+  let b = [];
+  let n = 2 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) {
+    b.push({
+      hRatio: 0.25 + Math.random() * 0.5,
+      angle: (Math.random() > 0.5 ? 1 : -1) * (0.4 + Math.random() * 0.7),
+      len: 8 + Math.random() * 18,
+      leafCount: 1 + Math.floor(Math.random() * 3),
+    });
+  }
+  return b;
+}
+
+function newDust() {
+  return {
+    x: logX - 60 + Math.random() * (logW + 120),
+    y: H * 0.2 + Math.random() * (logY - H * 0.15),
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: 0.05 + Math.random() * 0.15,
+    s: 0.5 + Math.random() * 1.5,
+    a: 0.04 + Math.random() * 0.12,
+    life: Math.random(),
+  };
+}
+
+// === DRAWING ===
+
+function drawBackground() {
+  // forest floor gradient
+  let grd = ctx.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, '#050805');
+  grd.addColorStop(0.3, '#060904');
+  grd.addColorStop(0.5, '#080b06');
+  grd.addColorStop(0.7, '#0a0d07');
+  grd.addColorStop(1, '#0c0f08');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  // soil line
+  let soilY = logY + logH * 0.8;
+  let soilGrd = ctx.createLinearGradient(0, soilY, 0, soilY + 60);
+  soilGrd.addColorStop(0, 'rgba(40, 32, 18, 0.3)');
+  soilGrd.addColorStop(1, 'rgba(30, 24, 14, 0)');
+  ctx.fillStyle = soilGrd;
+  ctx.fillRect(logX - 40, soilY, logW + 80, 60);
+}
+
+function drawLight() {
+  // canopy gap glow
+  let gapCx = W / 2;
+  let gapW = logW * 0.7;
+  let intensity = Math.max(0, 1 - decomp * 0.3); // dims as canopy regrows
+
+  // diffuse glow
+  let grd = ctx.createRadialGradient(gapCx, 0, 10, gapCx, logY, H * 0.7);
+  grd.addColorStop(0, `rgba(180, 150, 80, ${0.06 * intensity})`);
+  grd.addColorStop(0.3, `rgba(160, 130, 60, ${0.03 * intensity})`);
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  // individual rays
+  for (let r of rays) {
+    let rx = r.x + Math.sin(time * 0.3 + r.phase) * r.drift * 20;
+    let rw = r.w + Math.sin(time * 0.5 + r.phase) * 5;
+    let ra = r.a * intensity * (0.7 + 0.3 * Math.sin(time * 0.2 + r.phase));
+
+    ctx.save();
+    ctx.globalAlpha = ra;
+    let rayGrd = ctx.createLinearGradient(rx - rw, 0, rx + rw, 0);
+    rayGrd.addColorStop(0, 'rgba(180, 150, 80, 0)');
+    rayGrd.addColorStop(0.3, 'rgba(180, 150, 80, 0.4)');
+    rayGrd.addColorStop(0.5, 'rgba(200, 170, 90, 0.6)');
+    rayGrd.addColorStop(0.7, 'rgba(180, 150, 80, 0.4)');
+    rayGrd.addColorStop(1, 'rgba(180, 150, 80, 0)');
+    ctx.fillStyle = rayGrd;
+    ctx.fillRect(rx - rw, 0, rw * 2, logY + 40);
+    ctx.restore();
+  }
+}
+
+function drawLog() {
+  if (decomp >= 1) return;
+
+  let opacity = decomp < 0.7 ? 1 : Math.max(0, 1 - (decomp - 0.7) / 0.3);
+  let fragmentation = Math.max(0, decomp - 0.5) * 2;
+
+  // color shift through decomposition
+  let r, g, b;
+  if (decomp < 0.25) {
+    // warm brown
+    r = 90 + decomp * 40; g = 60 + decomp * 30; b = 30;
+  } else if (decomp < 0.5) {
+    // olive green
+    let t = (decomp - 0.25) / 0.25;
+    r = 100 - t * 30; g = 67 + t * 20; b = 30 + t * 10;
+  } else if (decomp < 0.75) {
+    // dark mossy
+    let t = (decomp - 0.5) / 0.25;
+    r = 70 - t * 20; g = 87 - t * 15; b = 40 - t * 5;
+  } else {
+    // soil integration
+    let t = (decomp - 0.75) / 0.25;
+    r = 50 - t * 15; g = 72 - t * 25; b = 35 - t * 10;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+
+  // draw log body
+  ctx.beginPath();
+  // top edge
+  for (let i = 0; i <= LOG_PTS; i++) {
+    let x = logX + (i / LOG_PTS) * logW;
+    let y = logY + logTop[i];
+    // add fragmentation jitter
+    if (fragmentation > 0 && Math.random() < fragmentation * 0.3) {
+      y += (Math.random() - 0.5) * fragmentation * 8;
+    }
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  // bottom edge (reverse)
+  for (let i = LOG_PTS; i >= 0; i--) {
+    let x = logX + (i / LOG_PTS) * logW;
+    let y = logY + logBot[i];
+    if (fragmentation > 0 && Math.random() < fragmentation * 0.3) {
+      y += (Math.random() - 0.5) * fragmentation * 8;
+    }
+    ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+
+  // fill with gradient
+  let logGrd = ctx.createLinearGradient(logX, logY - logH/2, logX, logY + logH/2);
+  logGrd.addColorStop(0, `rgb(${r+15}, ${g+10}, ${b+5})`);
+  logGrd.addColorStop(0.5, `rgb(${r}, ${g}, ${b})`);
+  logGrd.addColorStop(1, `rgb(${r-10}, ${g-8}, ${b-3})`);
+  ctx.fillStyle = logGrd;
+  ctx.fill();
+
+  // bark texture lines (fade with decomposition)
+  if (decomp < 0.4) {
+    let barkA = Math.max(0, 1 - decomp / 0.4) * 0.3;
+    ctx.strokeStyle = `rgba(${r-20}, ${g-15}, ${b-5}, ${barkA})`;
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 20; i++) {
+      let t = 0.05 + i * 0.047;
+      let x = logX + t * logW;
+      let idx = Math.round(t * LOG_PTS);
+      if (idx >= 0 && idx < logTop.length) {
+        ctx.beginPath();
+        ctx.moveTo(x, logY + logTop[idx] + 2);
+        ctx.lineTo(x + (Math.random() - 0.5) * 3, logY + logBot[idx] - 2);
+        ctx.stroke();
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawGhostLog() {
+  if (!ghost) return;
+
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  ctx.strokeStyle = 'rgba(160, 120, 200, 0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 6]);
+
+  // top edge
+  ctx.beginPath();
+  for (let i = 0; i <= LOG_PTS; i++) {
+    let x = logX + (i / LOG_PTS) * logW;
+    let y = logY + logTop[i];
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // bottom edge
+  ctx.beginPath();
+  for (let i = 0; i <= LOG_PTS; i++) {
+    let x = logX + (i / LOG_PTS) * logW;
+    let y = logY + logBot[i];
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // connection lines from trees to their germination points
+  ctx.setLineDash([2, 4]);
+  ctx.strokeStyle = 'rgba(160, 120, 200, 0.3)';
+  ctx.lineWidth = 1;
+  for (let s of seeds) {
+    if (s.h > 5) {
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.baseY);
+      ctx.lineTo(s.x + s.lean * s.h, s.baseY - s.h);
+      ctx.stroke();
+
+      // small circle at germination point
+      ctx.beginPath();
+      ctx.arc(s.x, s.baseY, 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  // label
+  ctx.setLineDash([]);
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillStyle = 'rgba(160, 120, 200, 0.4)';
+  ctx.textAlign = 'center';
+  ctx.fillText('nurse log (origin)', W / 2, logY + logH / 2 + 25);
+
+  ctx.restore();
+}
+
+// === ORGANISMS ===
+
+function updateBeetles(dt) {
+  // appear at decomp 0.08-0.30
+  if (decomp > 0.08 && decomp < 0.35) {
+    let target = Math.floor((decomp - 0.08) / 0.27 * 25);
+    while (beetles.length < target) {
+      let t = Math.random();
+      let idx = Math.round(t * LOG_PTS);
+      beetles.push({
+        t, x: logX + t * logW,
+        y: logY + logTop[idx] + Math.random() * (logBot[idx] - logTop[idx]),
+        vx: (Math.random() - 0.5) * 15,
+        vy: (Math.random() - 0.5) * 5,
+        s: 1.5 + Math.random() * 1.5,
+        life: 1,
+      });
+    }
+  }
+  for (let b of beetles) {
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    // keep on log
+    let t = (b.x - logX) / logW;
+    if (t < 0.02 || t > 0.98) b.vx *= -1;
+    let idx = Math.round(Math.max(0, Math.min(1, t)) * LOG_PTS);
+    let topBound = logY + logTop[idx];
+    let botBound = logY + logBot[idx];
+    if (b.y < topBound + 2) { b.y = topBound + 2; b.vy *= -1; }
+    if (b.y > botBound - 2) { b.y = botBound - 2; b.vy *= -1; }
+    // random direction change
+    if (Math.random() < 0.02) { b.vx = (Math.random() - 0.5) * 15; b.vy = (Math.random() - 0.5) * 5; }
+    // fade after stage
+    if (decomp > 0.28) b.life = Math.max(0, 1 - (decomp - 0.28) / 0.1);
+  }
+  beetles = beetles.filter(b => b.life > 0.01);
+}
+
+function drawBeetles() {
+  for (let b of beetles) {
+    ctx.fillStyle = `rgba(180, 130, 60, ${b.life * 0.8})`;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.s, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function updateFungi(dt) {
+  if (decomp > 0.22 && decomp < 0.6) {
+    let target = Math.floor((decomp - 0.22) / 0.38 * 18);
+    while (fungi.length < target) {
+      let t = 0.05 + Math.random() * 0.9;
+      let idx = Math.round(t * LOG_PTS);
+      let side = Math.random() > 0.5 ? 'top' : 'side';
+      fungi.push({
+        x: logX + t * logW,
+        y: side === 'top' ? logY + logTop[idx] : logY + (logTop[idx] + logBot[idx]) * 0.5 + (Math.random() - 0.5) * 10,
+        r: 0, maxR: 3 + Math.random() * 6,
+        growRate: 0.3 + Math.random() * 0.5,
+        life: 1,
+        hue: Math.random() > 0.6 ? 170 : 40, // teal or pale
+      });
+    }
+  }
+  for (let f of fungi) {
+    f.r = Math.min(f.maxR, f.r + f.growRate * dt);
+    if (decomp > 0.5) f.life = Math.max(0, 1 - (decomp - 0.5) / 0.15);
+  }
+  fungi = fungi.filter(f => f.life > 0.01);
+}
+
+function drawFungi() {
+  for (let f of fungi) {
+    let a = f.life * 0.6;
+    if (f.hue > 100) {
+      ctx.fillStyle = `rgba(140, 190, 180, ${a})`;
+    } else {
+      ctx.fillStyle = `rgba(200, 190, 160, ${a})`;
+    }
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function updateMoss(dt) {
+  if (decomp > 0.38 && mossPatches.length < 12) {
+    let target = Math.floor((decomp - 0.38) / 0.4 * 12);
+    while (mossPatches.length < target) {
+      let t = 0.05 + Math.random() * 0.9;
+      let idx = Math.round(t * LOG_PTS);
+      mossPatches.push({
+        x: logX + t * logW,
+        y: logY + logTop[idx],
+        w: 0, maxW: 15 + Math.random() * 25,
+        h: 0, maxH: 4 + Math.random() * 6,
+      });
+    }
+  }
+  for (let m of mossPatches) {
+    m.w = Math.min(m.maxW, m.w + 3 * dt);
+    m.h = Math.min(m.maxH, m.h + 1 * dt);
+  }
+}
+
+function drawMoss() {
+  let logOpacity = decomp < 0.7 ? 1 : Math.max(0, 1 - (decomp - 0.7) / 0.3);
+  for (let m of mossPatches) {
+    if (m.w < 1) continue;
+    ctx.fillStyle = `rgba(60, 95, 50, ${0.5 * logOpacity})`;
+    ctx.beginPath();
+    // organic moss shape
+    for (let i = 0; i <= 10; i++) {
+      let t = i / 10;
+      let x = m.x - m.w/2 + t * m.w;
+      let y = m.y - m.h * Math.sin(t * Math.PI) * (0.7 + noise(t * 5 + m.x * 0.01) * 0.3);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    // close along log surface
+    ctx.lineTo(m.x + m.w/2, m.y);
+    ctx.lineTo(m.x - m.w/2, m.y);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+// === SEEDLINGS / TREES ===
+
+function updateSeeds(dt) {
+  for (let s of seeds) {
+    if (decomp < s.startD) continue;
+    let growth = Math.min(1, (decomp - s.startD) / (0.95 - s.startD));
+    // growth curve: slow start, accelerate mid, slow at top
+    let curve = Math.pow(growth, 0.6);
+    s.h = curve * s.maxH;
+    s.trunkW = 1 + curve * 3;
+    s.leafSize = Math.min(1, growth * 1.5) * (5 + s.maxH * 0.04);
+    s.rootLen = Math.min(1, growth * 1.3) * (logH * 0.8 + 15);
+  }
+}
+
+function drawSeeds() {
+  for (let s of seeds) {
+    if (s.h < 1) continue;
+
+    let treeX = s.x + s.lean * s.h;
+    let treeTopY = s.baseY - s.h;
+
+    // roots (below the germination point, through the log, into soil)
+    if (s.rootLen > 2) {
+      ctx.strokeStyle = 'rgba(80, 55, 30, 0.5)';
+      ctx.lineWidth = Math.min(2, s.trunkW * 0.6);
+      // main root
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.baseY);
+      ctx.quadraticCurveTo(
+        s.x + (Math.random() - 0.5) * 5,
+        s.baseY + s.rootLen * 0.5,
+        s.x + (Math.random() - 0.5) * 8,
+        s.baseY + s.rootLen
+      );
+      ctx.stroke();
+      // side roots
+      if (s.rootLen > 10) {
+        for (let r = 0; r < 2; r++) {
+          let ry = s.baseY + s.rootLen * (0.3 + r * 0.3);
+          let dir = r === 0 ? -1 : 1;
+          ctx.beginPath();
+          ctx.moveTo(s.x, ry);
+          ctx.quadraticCurveTo(
+            s.x + dir * s.rootLen * 0.3,
+            ry + 5,
+            s.x + dir * s.rootLen * 0.4,
+            ry + s.rootLen * 0.2
+          );
+          ctx.stroke();
+        }
+      }
+    }
+
+    // trunk
+    ctx.strokeStyle = `rgba(70, 55, 35, ${Math.min(1, s.h / 10)})`;
+    ctx.lineWidth = s.trunkW;
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.baseY);
+    ctx.quadraticCurveTo(
+      s.x + s.lean * s.h * 0.5,
+      s.baseY - s.h * 0.5,
+      treeX,
+      treeTopY
+    );
+    ctx.stroke();
+
+    // branches and leaves
+    if (s.h > 15) {
+      for (let br of s.branches) {
+        let brY = s.baseY - s.h * br.hRatio;
+        let brBaseX = s.x + s.lean * s.h * br.hRatio;
+        let growth = Math.min(1, (s.h - 15) / (s.maxH - 15));
+        let brLen = br.len * growth;
+        let brEndX = brBaseX + Math.sin(br.angle) * brLen;
+        let brEndY = brY - Math.cos(br.angle) * brLen * 0.5;
+
+        // branch
+        ctx.strokeStyle = `rgba(65, 50, 30, ${0.6 * growth})`;
+        ctx.lineWidth = Math.max(0.5, s.trunkW * 0.4);
+        ctx.beginPath();
+        ctx.moveTo(brBaseX, brY);
+        ctx.lineTo(brEndX, brEndY);
+        ctx.stroke();
+
+        // leaves
+        if (growth > 0.2) {
+          let leafA = Math.min(0.7, growth);
+          let leafR = s.leafSize * 0.6 * growth;
+          ctx.fillStyle = `rgba(55, ${100 + Math.floor(growth * 40)}, 45, ${leafA})`;
+          ctx.beginPath();
+          ctx.arc(brEndX, brEndY, leafR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // crown (top leaf cluster)
+      let crownGrowth = Math.min(1, (s.h - 20) / (s.maxH - 20));
+      if (crownGrowth > 0) {
+        let cr = s.leafSize * crownGrowth;
+        ctx.fillStyle = `rgba(50, ${95 + Math.floor(crownGrowth * 50)}, 40, ${0.6 * crownGrowth})`;
+        ctx.beginPath();
+        ctx.arc(treeX, treeTopY, cr, 0, Math.PI * 2);
+        ctx.fill();
+        // second, slightly different crown
+        ctx.fillStyle = `rgba(45, ${90 + Math.floor(crownGrowth * 45)}, 35, ${0.4 * crownGrowth})`;
+        ctx.beginPath();
+        ctx.arc(treeX - cr * 0.3, treeTopY + cr * 0.2, cr * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+// === DUST / AMBIENT ===
+
+function updateDust(dt) {
+  for (let d of dust) {
+    d.x += d.vx + Math.sin(time + d.life * 10) * 0.1;
+    d.y += d.vy;
+    d.life -= dt * 0.05;
+    if (d.life < 0 || d.y > logY + 30 || d.y < H * 0.05) {
+      Object.assign(d, newDust());
+    }
+  }
+}
+
+function drawDust() {
+  for (let d of dust) {
+    let a = d.a * Math.min(1, d.life * 3);
+    ctx.fillStyle = `rgba(200, 180, 120, ${a})`;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.s, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// === TEXT ===
+
+function updateQuotes() {
+  for (let q of QUOTES) {
+    if (decomp >= q.at && !shownQuotes.has(q.at)) {
+      quoteText = q.text;
+      quoteAlpha = 1;
+      shownQuotes.add(q.at);
+    }
+  }
+  if (quoteAlpha > 0) quoteAlpha -= 0.003;
+}
+
+function drawText() {
+  // stage name
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(150, 130, 90, 0.45)';
+  ctx.fillText(getStage(), 20, H - 40);
+
+  // decomposition percentage
+  ctx.fillStyle = 'rgba(150, 130, 90, 0.3)';
+  ctx.fillText(`${Math.floor(decomp * 100)}%`, 20, H - 22);
+
+  // quote
+  if (quoteAlpha > 0.01) {
+    ctx.font = 'italic 14px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = `rgba(180, 160, 120, ${quoteAlpha * 0.7})`;
+    ctx.fillText(quoteText, W / 2, H - 50);
+  }
+
+  // title
+  ctx.font = '12px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(150, 130, 90, 0.25)';
+  ctx.fillText('nurse log', 20, 28);
+
+  // hint
+  ctx.textAlign = 'right';
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.fillStyle = 'rgba(150, 130, 90, 0.2)';
+  if (decomp < 0.05) {
+    ctx.fillText('move near the log to tend', W - 20, 28);
+  } else if (decomp > 0.9) {
+    ctx.fillText('hold space to remember', W - 20, 28);
+  }
+
+  // colonnade label
+  if (decomp >= 0.98 && !ghost) {
+    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = `rgba(150, 130, 90, ${0.4 * Math.min(1, (decomp - 0.98) / 0.02)})`;
+    ctx.fillText('colonnade', W / 2, logY + logH + 35);
+  }
+}
+
+// === CURSOR GLOW ===
+
+function drawCursorGlow() {
+  if (mx < 0) return;
+  let dist = distToLog(mx, my);
+  if (dist < 200) {
+    let intensity = Math.max(0, 1 - dist / 200) * 0.15;
+    let grd = ctx.createRadialGradient(mx, my, 0, mx, my, 80);
+    grd.addColorStop(0, `rgba(200, 170, 100, ${intensity})`);
+    grd.addColorStop(1, 'rgba(200, 170, 100, 0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(mx - 80, my - 80, 160, 160);
+  }
+}
+
+function distToLog(px, py) {
+  // approximate distance to log center region
+  let cx = logX + logW / 2;
+  let cy = logY;
+  let dx = Math.max(0, Math.abs(px - cx) - logW / 2);
+  let dy = Math.max(0, Math.abs(py - cy) - logH / 2);
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// === MAIN LOOP ===
+
+let lastT = performance.now();
+
+function frame(now) {
+  let dt = Math.min(0.1, (now - lastT) / 1000);
+  lastT = now;
+  time += dt;
+
+  // decomposition rate
+  if (decomp < 1 && !paused) {
+    let base = 0.004; // per second
+    let dist = distToLog(mx, my);
+    let boost = dist < 150 ? (1 - dist / 150) * 0.025 : 0;
+    decomp = Math.min(1, decomp + (base + boost) * dt);
+  }
+
+  // update systems
+  updateBeetles(dt);
+  updateFungi(dt);
+  updateMoss(dt);
+  updateSeeds(dt);
+  updateDust(dt);
+  updateQuotes();
+
+  // draw
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawLight();
+  drawCursorGlow();
+  drawMoss();
+  drawLog();
+  drawBeetles();
+  drawFungi();
+  drawSeeds();
+  drawDust();
+  drawGhostLog();
+  drawText();
+
+  requestAnimationFrame(frame);
+}
+
+// === EVENTS ===
+
+C.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+C.addEventListener('mouseleave', () => { mx = -999; my = -999; });
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); ghost = true; }
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'Space') ghost = false;
+});
+window.addEventListener('resize', init);
+
+init();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

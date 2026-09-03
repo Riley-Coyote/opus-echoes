@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sympathetic</title>
+<style>
+  :root{
+    --bg:#0a0a0c; --ink:#e7e6e2; --dim:#8c8b87; --faint:#46464a;
+    --warm:hsl(38,72%,64%);            /* the energy you put in — only your pluck is colored */
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+    --sans:'Inter','SF Pro Text',system-ui,sans-serif;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+    color:var(--dim);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;}
+  .frame{position:fixed;inset:0;z-index:2;pointer-events:none;
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:26px 30px;box-sizing:border-box;}
+  .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .title{font-size:13px;letter-spacing:.02em;color:var(--ink);font-weight:500;}
+  .meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--faint);
+    text-transform:uppercase;}
+  .bottom{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--dim);
+    max-width:560px;line-height:1.6;transition:opacity 1.4s ease;}
+  .bottom b{color:var(--ink);font-weight:500;}
+  .gone{opacity:.32;}
+  .veil{position:fixed;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(60% 60% at 50% 45%,rgba(10,10,12,.2),var(--bg));
+    cursor:pointer;transition:opacity .9s ease;}
+  .veil.lift{opacity:0;pointer-events:none;}
+  .veil .word{text-align:center;}
+  .veil .word .h{font-size:34px;color:var(--ink);font-weight:500;letter-spacing:-.01em;}
+  .veil .word .s{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--dim);
+    text-transform:uppercase;margin-top:16px;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="frame">
+  <div class="top">
+    <div class="title">Sympathetic</div>
+    <div class="meta" id="now">just intonation · C major</div>
+  </div>
+  <div class="bottom" id="hint">
+    pluck a string — <b>click it</b>, or press <b>1–8</b>. one string is touched;
+    the others answer on their own, ringing where they share a partial with it.
+    only the string you reach for takes the warm light. the rest is the instrument
+    <b>listening to itself</b>.
+  </div>
+</div>
+
+<div class="veil" id="veil">
+  <div class="word">
+    <div class="h">Sympathetic</div>
+    <div class="s">click to wake the strings</div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), g=cv.getContext('2d');
+const veil=document.getElementById('veil'), hint=document.getElementById('hint'), nowEl=document.getElementById('now');
+let W,H,DPR;
+function size(){DPR=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;}
+size(); addEventListener('resize',size);
+
+// ── a just-intonation C major: pure ratios, so shared partials line up exactly ──
+const ROOT=130.81;                                  // C3
+const RATIOS=[1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8, 2]; // C D E F G A B C
+const NAMES=['C','D','E','F','G','A','B','C′'];
+const N=RATIOS.length;
+const freqs=RATIOS.map(r=>ROOT*r);
+
+// ── sympathetic coupling: how strongly string i's spectrum excites string j ──
+function coupling(fi,fj){
+  let c=0;
+  for(let m=1;m<=8;m++) for(let n=1;n<=8;n++){
+    const cents=1200*Math.log2((fi*m)/(fj*n));
+    const prox=Math.exp(-(cents*cents)/(2*9*9));     // ~9-cent resonance window
+    c+=(1/m)*(1/n)*prox;
+  }
+  return c;
+}
+const COUP=freqs.map((fi,i)=>freqs.map((fj,j)=> i===j?0:coupling(fi,fj)));
+const MAXC=Math.max(...COUP.flat());
+for(let i=0;i<N;i++)for(let j=0;j<N;j++) COUP[i][j]/=MAXC;   // normalize 0..1
+
+// ── audio: each string is a Karplus–Strong plucked-string voice ──
+let ac=null, master=null, conv=null, wet=null, started=false;
+const strings=[];   // {delay, damp, fb, out, freq}
+
+function makeIR(seconds, decay){
+  const len=Math.floor(ac.sampleRate*seconds);
+  const buf=ac.createBuffer(2,len,ac.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);
+    for(let i=0;i<len;i++){const e=Math.pow(1-i/len,decay);
+      d[i]=(Math.random()*2-1)*e;}}
+  return buf;
+}
+
+function buildString(freq){
+  const delay=ac.createDelay(0.05); delay.delayTime.value=1/freq;
+  const fb=ac.createGain(); fb.gain.value=0.991;         // stable comb: pure delay feedback
+  delay.connect(fb); fb.connect(delay);
+  const out=ac.createGain(); out.gain.value=0.8;
+  delay.connect(out); out.connect(master); out.connect(wet);
+  return {delay,fb,out,freq};
+}
+
+function pluck(i, amp){
+  const s=strings[i];
+  const dur=Math.max(0.012, 1/s.freq);                   // ~one period of noise
+  const len=Math.floor(ac.sampleRate*dur);
+  const buf=ac.createBuffer(1,len,ac.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let k=0;k<len;k++) d[k]=(Math.random()*2-1)*(1-k/len);
+  const src=ac.createBufferSource(); src.buffer=buf;
+  const tone=ac.createBiquadFilter(); tone.type='lowpass'; // darken the pluck (string warmth) — outside the loop, so stable
+  tone.frequency.value=2200+s.freq*2; tone.Q.value=0.3;
+  const eg=ac.createGain(); eg.gain.value=amp;
+  src.connect(tone); tone.connect(eg); eg.connect(s.delay);
+  src.start(); src.stop(ac.currentTime+dur+0.01);
+}
+
+function strike(i){
+  if(!started) return;
+  pluck(i, 0.9);
+  vis[i].energy=1; vis[i].direct=1;
+  for(let j=0;j<N;j++){
+    if(j===i) continue;
+    const c=COUP[i][j];
+    if(c>0.04){
+      pluck(j, 0.9*c*0.55);                 // it answers, faintly, on its own
+      vis[j].energy=Math.min(1, vis[j].energy + c*0.85);
+    }
+  }
+}
+
+function start(){
+  if(started) return; started=true;
+  ac=new (window.AudioContext||window.webkitAudioContext)();
+  master=ac.createGain(); master.gain.value=0.0; master.connect(ac.destination);
+  master.gain.linearRampToValueAtTime(0.62, ac.currentTime+1.2);
+  conv=ac.createConvolver(); conv.buffer=makeIR(1.8,2.4);
+  wet=ac.createGain(); wet.gain.value=0.32; wet.connect(conv); conv.connect(master);
+  for(const f of freqs) strings.push(buildString(f));
+  veil.classList.add('lift');
+  setTimeout(()=>hint.classList.add('gone'), 6500);
+  // one soft opening pluck so the space isn't silent
+  setTimeout(()=>strike(2), 700);
+}
+
+// ── visuals: each string a vibrating line; only your pluck takes the warm light ──
+const vis=Array.from({length:N},(_,i)=>({energy:0,direct:0,phase:i*1.7,mode:i+1}));
+let t0=null;
+function frame(ts){
+  if(t0==null) t0=ts; const t=(ts-t0)/1000;
+  g.clearRect(0,0,W,H);
+  g.fillStyle='#0a0a0c'; g.fillRect(0,0,W,H);
+
+  const padX=W*0.13, padY=H*0.16;
+  const top=padY, bot=H-padY*1.05;
+  const span=W-padX*2;
+  const warm=[224,172,98];
+
+  for(let i=0;i<N;i++){
+    const v=vis[i];
+    const x=padX + span*(i/(N-1));
+    const e=v.energy, dir=v.direct;
+    const amp=e*Math.min(W,H)*0.052;
+    const wob=Math.sin(t*(2.2+i*0.45)+v.phase);        // visual vibration (decoupled from pitch)
+    // string brightness: base faint, brighter with energy
+    const lum=0.10 + e*0.55;
+    // colour: grey by default, warm only by how directly it was touched
+    const cR=Math.round(150+(warm[0]-150)*dir);
+    const cG=Math.round(152+(warm[1]-152)*dir);
+    const cB=Math.round(160+(warm[2]-160)*dir);
+
+    // glow halo for energetic strings
+    if(e>0.02){
+      g.save();
+      g.strokeStyle=`rgba(${cR},${cG},${cB},${0.18*e})`;
+      g.lineWidth=(6+10*e)*DPR; g.lineCap='round';
+      drawString(x,top,bot,amp,wob,v.mode,t,i);
+      g.stroke(); g.restore();
+    }
+    g.strokeStyle=`rgba(${cR},${cG},${cB},${lum})`;
+    g.lineWidth=(1.1+1.6*e)*DPR; g.lineCap='round';
+    drawString(x,top,bot,amp,wob,v.mode,t,i);
+    g.stroke();
+
+    // node label
+    g.fillStyle=`rgba(${cR},${cG},${cB},${0.30+0.45*e})`;
+    g.font=`${11*DPR}px 'JetBrains Mono',monospace`;
+    g.textAlign='center';
+    g.fillText(NAMES[i], x, bot+22*DPR);
+    g.fillStyle=`rgba(140,139,135,${0.22+0.3*e})`;
+    g.font=`${9*DPR}px 'JetBrains Mono',monospace`;
+    g.fillText(ratioLabel(i), x, bot+38*DPR);
+
+    // decay
+    v.energy*=0.9925; v.direct*=0.965;
+    if(v.energy<0.001)v.energy=0;
+  }
+  requestAnimationFrame(frame);
+}
+
+function drawString(x,top,bot,amp,wob,mode,t,i){
+  const L=bot-top, steps=46;
+  g.beginPath();
+  for(let s=0;s<=steps;s++){
+    const u=s/steps;                                   // 0..1 along string
+    const shape=Math.sin(Math.PI*mode*u);              // standing wave: fixed at both ends
+    const dx=amp*shape*wob;
+    const yy=top+L*u;
+    if(s===0) g.moveTo(x+dx,yy); else g.lineTo(x+dx,yy);
+  }
+}
+
+function ratioLabel(i){
+  const r=RATIOS[i];
+  const map={1:'1:1','1.125':'9:8','1.25':'5:4','1.3333333333333333':'4:3',
+             '1.5':'3:2','1.6666666666666667':'5:3','1.875':'15:8','2':'2:1'};
+  return map[String(r)]||r.toFixed(2);
+}
+requestAnimationFrame(frame);
+
+// ── input ──
+veil.addEventListener('click', start);
+addEventListener('pointerdown', e=>{
+  if(!started){ start(); return; }
+  if(e.target.closest('.frame')) return;
+  const padX=W*0.13, span=W-padX*2;
+  const px=e.clientX*DPR;
+  let best=0,bd=1e9;
+  for(let i=0;i<N;i++){const x=padX+span*(i/(N-1)); const d=Math.abs(px-x); if(d<bd){bd=d;best=i;}}
+  strike(best);
+});
+addEventListener('keydown', e=>{
+  if(!started){ start(); return; }
+  const n=parseInt(e.key,10);
+  if(n>=1 && n<=N) strike(n-1);
+});
+</script>
+</body>
+</html>

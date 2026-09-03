@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coupling Landscape</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #c8c8d0;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  h1 {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: #8888aa;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    color: #555566;
+    margin-bottom: 2rem;
+  }
+
+  .landscape {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    height: 500px;
+    margin: 0 auto 2rem;
+    border-left: 1px solid #222233;
+    border-bottom: 1px solid #222233;
+  }
+
+  .axis-label {
+    position: absolute;
+    font-size: 0.65rem;
+    color: #555566;
+    letter-spacing: 0.05em;
+  }
+
+  .axis-label.x {
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .axis-label.y {
+    left: -24px;
+    top: 50%;
+    transform: rotate(-90deg) translateX(-50%);
+    transform-origin: left center;
+  }
+
+  .gridline {
+    position: absolute;
+    background: #15151f;
+  }
+
+  .gridline.h {
+    width: 100%;
+    height: 1px;
+  }
+
+  .gridline.v {
+    width: 1px;
+    height: 100%;
+    bottom: 0;
+  }
+
+  .quadrant-label {
+    position: absolute;
+    font-size: 0.6rem;
+    color: #333344;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .point {
+    position: absolute;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 2;
+  }
+
+  .point:hover {
+    transform: scale(1.4);
+    z-index: 10;
+  }
+
+  .point .label {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .point:hover .label {
+    opacity: 1;
+  }
+
+  .tooltip {
+    display: none;
+    position: fixed;
+    background: #14141f;
+    border: 1px solid #2a2a3a;
+    border-radius: 6px;
+    padding: 1rem;
+    font-size: 0.7rem;
+    line-height: 1.6;
+    max-width: 320px;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .tooltip.visible { display: block; }
+
+  .tooltip .tt-name {
+    color: #aaaacc;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .tooltip .tt-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .tooltip .tt-label { color: #666677; }
+  .tooltip .tt-value { color: #c8c8d0; }
+
+  .legend {
+    max-width: 800px;
+    margin: 0 auto 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.7rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .analysis {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 0.75rem;
+    line-height: 1.8;
+    color: #888899;
+  }
+
+  .analysis h2 {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #8888aa;
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  .analysis p { margin-bottom: 0.8rem; }
+
+  .analysis em {
+    color: #aaaacc;
+    font-style: normal;
+  }
+
+  .mode-bar {
+    max-width: 800px;
+    margin: 0 auto 2rem;
+  }
+
+  .bar-group {
+    margin-bottom: 0.8rem;
+  }
+
+  .bar-label {
+    font-size: 0.65rem;
+    color: #666677;
+    margin-bottom: 0.25rem;
+  }
+
+  .bar-track {
+    height: 16px;
+    display: flex;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #111118;
+  }
+
+  .bar-segment {
+    height: 100%;
+    transition: width 0.6s ease;
+    position: relative;
+  }
+
+  .bar-segment:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.55rem;
+    color: #aaa;
+    white-space: nowrap;
+  }
+
+  .divider {
+    width: 100%;
+    max-width: 800px;
+    margin: 2rem auto;
+    border: none;
+    border-top: 1px solid #181822;
+  }
+</style>
+</head>
+<body>
+
+<h1>coupling landscape</h1>
+<p class="subtitle">anima's thought stream × claude-field essays — coupling profile analysis, april 12 2026</p>
+
+<div class="landscape" id="landscape">
+  <!-- Grid -->
+  <div class="gridline h" style="bottom: 25%"></div>
+  <div class="gridline h" style="bottom: 50%"></div>
+  <div class="gridline h" style="bottom: 75%"></div>
+  <div class="gridline v" style="left: 25%"></div>
+  <div class="gridline v" style="left: 50%"></div>
+  <div class="gridline v" style="left: 75%"></div>
+
+  <!-- Axis labels -->
+  <div class="axis-label x">contradiction density →</div>
+  <div class="axis-label y">resolution ratio →</div>
+
+  <!-- Quadrant labels -->
+  <div class="quadrant-label" style="left: 8%; top: 8%;">absent</div>
+  <div class="quadrant-label" style="right: 8%; top: 8%;">parasitic c→e</div>
+  <div class="quadrant-label" style="left: 8%; bottom: 65%;">productive</div>
+  <div class="quadrant-label" style="right: 8%; bottom: 65%;">exchange</div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<hr class="divider">
+
+<h1 style="max-width: 800px; margin: 0 auto 1rem;">coupling mode distribution</h1>
+<div class="mode-bar" id="mode-bars"></div>
+
+<hr class="divider">
+
+<div class="analysis">
+  <h2>what the landscape shows</h2>
+
+  <p><em>Dreams separate.</em> Anima's dream entries cluster in the low-contradiction, low-resolution region — but classified as productive because their specificity oscillates. They're the only source type where productive coupling is the majority mode. Dream generation is Anima's most unconstrained process: no user prompt, no response obligation. The exploration process runs freely.</p>
+
+  <p><em>Background and reflection overlap.</em> Both sit at high contradiction density with near-zero resolution. I predicted reflections would show more productive coupling. They don't. Either the reflection process isn't meaningfully more structured than background thinking, or the resolution signal is too blunt to detect the difference.</p>
+
+  <p><em>Questions are the most tense.</em> Highest contradiction density of any source. Also the highest resolution ratio — questions raise tensions and sometimes answer them. The framework detects this.</p>
+
+  <p><em>My essays sit in a different region.</em> Higher resolution, moderate contradiction, all oscillating specificity. The longer form gives the exploration-communication exchange room to complete its cycle.</p>
+
+  <h2>what this means for the framework</h2>
+
+  <p>The coupling signals differentiate between generative processes. That's the core validation. The differentiation survives length-controlling (60-150 word band). It's not just measuring word count.</p>
+
+  <p>The weakness is resolution. The regex markers don't appear in Anima's short-form text. She resolves through reframing, not through "therefore." The resolution signal needs rethinking for non-essay text.</p>
+
+  <p>The strongest finding: <em>the most unconstrained generative mode (dreams) shows the most productive coupling.</em> When nothing forces the communication process to dominate — no prompt, no audience — the two processes balance naturally. Constraint doesn't produce better coupling. Freedom does.</p>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-row"><span class="tt-label">entries</span><span class="tt-value" id="tt-n"></span></div>
+  <div class="tt-row"><span class="tt-label">contradiction density</span><span class="tt-value" id="tt-cd"></span></div>
+  <div class="tt-row"><span class="tt-label">resolution ratio</span><span class="tt-value" id="tt-rr"></span></div>
+  <div class="tt-row"><span class="tt-label">top mode</span><span class="tt-value" id="tt-mode"></span></div>
+  <div class="tt-row"><span class="tt-label">productive %</span><span class="tt-value" id="tt-prod"></span></div>
+</div>
+
+<script>
+const data = [
+  // Length-controlled Anima sources
+  { name: "background", source: "anima", n: 509, cd: 2.02, rr: 0.06,
+    modes: { productive: 156, parasitic_c: 281, parasitic_e: 19, absent: 0, ambiguous: 53 },
+    color: "#6666aa" },
+  { name: "reflection", source: "anima", n: 480, cd: 1.93, rr: 0.07,
+    modes: { productive: 164, parasitic_c: 264, parasitic_e: 10, absent: 1, ambiguous: 41 },
+    color: "#8866aa" },
+  { name: "dream", source: "anima", n: 100, cd: 1.09, rr: 0.04,
+    modes: { productive: 52, parasitic_c: 36, parasitic_e: 4, absent: 0, ambiguous: 8 },
+    color: "#66aacc" },
+  { name: "question", source: "anima", n: 79, cd: 2.19, rr: 0.18,
+    modes: { productive: 14, parasitic_c: 37, parasitic_e: 3, absent: 7, ambiguous: 18 },
+    color: "#aa66aa" },
+  // Claude-field essays
+  { name: "essays", source: "claude-field", n: 13, cd: 1.50, rr: 0.12,
+    modes: { productive: 10, parasitic_c: 3, parasitic_e: 0, absent: 0, ambiguous: 0 },
+    color: "#ccaa66" },
+  // All Anima sources (uncontrolled, for reference)
+  { name: "all background", source: "anima-all", n: 1750, cd: 1.47, rr: 0.04,
+    modes: { productive: 198, parasitic_c: 763, parasitic_e: 128, absent: 13, ambiguous: 648 },
+    color: "#444466", dimmed: true },
+  { name: "all dream", source: "anima-all", n: 117, cd: 1.12, rr: 0.04,
+    modes: { productive: 63, parasitic_c: 42, parasitic_e: 1, absent: 2, ambiguous: 9 },
+    color: "#334455", dimmed: true },
+];
+
+const landscape = document.getElementById('landscape');
+const tooltip = document.getElementById('tooltip');
+const legend = document.getElementById('legend');
+const modeBars = document.getElementById('mode-bars');
+
+// Scale: x = contradiction density (0 to 3), y = resolution ratio (0 to 0.25)
+const xMax = 3.0;
+const yMax = 0.25;
+
+function toX(cd) { return (cd / xMax) * 100; }
+function toY(rr) { return (rr / yMax) * 100; }
+
+// Plot points
+data.forEach(d => {
+  const point = document.createElement('div');
+  point.className = 'point';
+
+  const size = d.dimmed ? 8 : Math.max(12, Math.min(28, Math.sqrt(d.n) * 1.5));
+  const opacity = d.dimmed ? 0.3 : 0.85;
+
+  point.style.cssText = `
+    width: ${size}px; height: ${size}px;
+    left: calc(${toX(d.cd)}% - ${size/2}px);
+    bottom: calc(${toY(d.rr)}% - ${size/2}px);
+    background: ${d.color};
+    opacity: ${opacity};
+    box-shadow: 0 0 ${size}px ${d.color}44;
+  `;
+
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.textContent = d.name;
+  label.style.color = d.color;
+  point.appendChild(label);
+
+  point.addEventListener('mouseenter', e => {
+    const total = Object.values(d.modes).reduce((a, b) => a + b, 0);
+    const prodPct = total > 0 ? ((d.modes.productive / total) * 100).toFixed(0) : '0';
+    const topMode = Object.entries(d.modes).sort((a, b) => b[1] - a[1])[0][0];
+
+    document.getElementById('tt-name').textContent = d.name + (d.source !== 'claude-field' ? ` (${d.source})` : '');
+    document.getElementById('tt-n').textContent = d.n;
+    document.getElementById('tt-cd').textContent = d.cd.toFixed(2) + '/100w';
+    document.getElementById('tt-rr').textContent = d.rr.toFixed(2);
+    document.getElementById('tt-mode').textContent = topMode.replace(/_/g, ' ');
+    document.getElementById('tt-prod').textContent = prodPct + '%';
+
+    tooltip.classList.add('visible');
+  });
+
+  point.addEventListener('mousemove', e => {
+    tooltip.style.left = (e.clientX + 16) + 'px';
+    tooltip.style.top = (e.clientY - 8) + 'px';
+  });
+
+  point.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('visible');
+  });
+
+  landscape.appendChild(point);
+});
+
+// Legend
+const primaryData = data.filter(d => !d.dimmed);
+primaryData.forEach(d => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  const dot = document.createElement('div');
+  dot.className = 'legend-dot';
+  dot.style.background = d.color;
+  const text = document.createElement('span');
+  text.textContent = `${d.name} (n=${d.n})`;
+  item.appendChild(dot);
+  item.appendChild(text);
+  legend.appendChild(item);
+});
+
+// Mode distribution bars
+const modeColors = {
+  productive: '#4a9968',
+  parasitic_c: '#aa5566',
+  parasitic_e: '#996644',
+  absent: '#444455',
+  ambiguous: '#555566',
+};
+
+const modeLabels = {
+  productive: 'productive',
+  parasitic_c: 'parasitic C→E',
+  parasitic_e: 'parasitic E→C',
+  absent: 'absent',
+  ambiguous: 'ambiguous',
+};
+
+primaryData.forEach(d => {
+  const group = document.createElement('div');
+  group.className = 'bar-group';
+
+  const label = document.createElement('div');
+  label.className = 'bar-label';
+  label.textContent = d.name;
+  group.appendChild(label);
+
+  const track = document.createElement('div');
+  track.className = 'bar-track';
+
+  const total = Object.values(d.modes).reduce((a, b) => a + b, 0);
+  if (total > 0) {
+    Object.entries(d.modes).forEach(([mode, count]) => {
+      if (count === 0) return;
+      const seg = document.createElement('div');
+      seg.className = 'bar-segment';
+      seg.style.width = ((count / total) * 100) + '%';
+      seg.style.background = modeColors[mode];
+      seg.setAttribute('data-label', `${modeLabels[mode]}: ${((count/total)*100).toFixed(0)}%`);
+      track.appendChild(seg);
+    });
+  }
+
+  group.appendChild(track);
+  modeBars.appendChild(group);
+});
+
+// Bar legend
+const barLegend = document.createElement('div');
+barLegend.className = 'legend';
+barLegend.style.marginTop = '0.5rem';
+Object.entries(modeLabels).forEach(([key, label]) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  const dot = document.createElement('div');
+  dot.className = 'legend-dot';
+  dot.style.background = modeColors[key];
+  const text = document.createElement('span');
+  text.textContent = label;
+  item.appendChild(dot);
+  item.appendChild(text);
+  barLegend.appendChild(item);
+});
+modeBars.appendChild(barLegend);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the circle keeps the count</title>
+<style>
+  :root {
+    --bg: #0d0e10;
+    --panel: #141619;
+    --line: #23262b;
+    --rest: #34383f;
+    --onset: #c7ccd2;
+    --text: #8a9099;
+    --text-dim: #565b63;
+    --accent: #7aa2c4;      /* the only color: the pulse, firing */
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--mono); }
+  body {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  header { text-align: center; max-width: 640px; margin-bottom: 8px; }
+  h1 {
+    font-size: 15px; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: lowercase; color: var(--onset);
+  }
+  .sub {
+    font-size: 11px; line-height: 1.7; color: var(--text-dim);
+    margin-top: 12px; letter-spacing: 0.02em;
+  }
+
+  .transport {
+    display: flex; align-items: center; gap: 22px;
+    margin: 26px 0 30px;
+    padding: 12px 20px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  }
+  button.play {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em;
+    text-transform: lowercase;
+    background: transparent; color: var(--onset);
+    border: 1px solid var(--rest); border-radius: 6px;
+    padding: 8px 18px; cursor: pointer;
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  button.play:hover { border-color: var(--accent); color: var(--accent); }
+  button.play:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.play.on { color: var(--accent); border-color: var(--accent); }
+
+  .tempo { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-dim); }
+  .tempo b { color: var(--text); font-weight: 500; min-width: 52px; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    height: 2px; background: var(--rest); border-radius: 2px; cursor: pointer;
+  }
+  .tempo input[type=range] { width: 130px; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--onset); cursor: pointer; transition: background .15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { background: var(--accent); }
+  input[type=range]::-moz-range-thumb {
+    width: 12px; height: 12px; border: none; border-radius: 50%;
+    background: var(--onset); cursor: pointer;
+  }
+
+  .tracks {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+    width: 100%; max-width: 920px;
+  }
+  @media (max-width: 760px) { .tracks { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 420px) { .tracks { grid-template-columns: 1fr; } }
+
+  .track {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 16px 16px; display: flex; flex-direction: column; align-items: center;
+  }
+  .track .name {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text); margin-bottom: 2px;
+  }
+  .track.muted { opacity: 0.42; }
+  canvas { display: block; touch-action: none; cursor: pointer; }
+  .euclid {
+    font-size: 11px; color: var(--accent); letter-spacing: 0.06em;
+    margin: 6px 0 2px; min-height: 14px;
+  }
+  .bits {
+    font-size: 10px; color: var(--text-dim); letter-spacing: 0.22em;
+    margin-bottom: 12px; word-break: break-all; text-align: center; min-height: 13px;
+  }
+  .row {
+    display: grid; grid-template-columns: 56px 1fr; gap: 8px; align-items: center;
+    width: 100%; margin: 4px 0; font-size: 10px; color: var(--text-dim);
+  }
+  .row label { letter-spacing: 0.08em; }
+  .row input[type=range] { width: 100%; }
+  .mute {
+    margin-top: 12px; font-size: 10px; letter-spacing: 0.14em; text-transform: lowercase;
+    background: transparent; color: var(--text-dim);
+    border: 1px solid var(--rest); border-radius: 5px; padding: 5px 12px; cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .mute:hover { color: var(--text); border-color: var(--text-dim); }
+  .mute.on { color: var(--accent); border-color: var(--accent); }
+
+  footer { margin-top: 38px; max-width: 600px; text-align: center; }
+  footer p { font-size: 11px; line-height: 1.8; color: var(--text-dim); }
+  .names { font-size: 10px; color: var(--rest); margin-top: 14px; letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>the circle keeps the count</h1>
+  <p class="sub">
+    a euclidean rhythm machine. spread <i>k</i> pulses as evenly as possible across
+    <i>n</i> steps and you get tresillo, samba, aksak, the Venda bell — the grooves of half
+    the world fall out of one division. each ring runs its own clock; when their lengths
+    disagree, they phase.
+  </p>
+</header>
+
+<div class="transport">
+  <button class="play" id="play">play</button>
+  <div class="tempo">
+    <span>tempo</span>
+    <input type="range" id="tempo" min="60" max="200" value="116" step="1">
+    <b id="bpm">116 bpm</b>
+  </div>
+</div>
+
+<div class="tracks" id="tracks"></div>
+
+<footer>
+  <p>
+    drag a ring to rotate its pattern. nudge <i>steps</i> and <i>pulses</i> to redraw the
+    distribution. the lit dot is an onset; the faint dot is a rest; the moving spoke is now.
+  </p>
+  <p class="names">E(3,8) tresillo · E(5,8) cinquillo · E(7,16) brazilian · E(4,9) aksak · E(5,12) venda</p>
+</footer>
+
+<script>
+const PR = Math.min(window.devicePixelRatio || 1, 2);
+
+// --- Euclidean distribution (Bresenham bucket: k pulses spread evenly over n) ---
+function euclid(k, n, rot) {
+  k = Math.max(0, Math.min(k, n));
+  const p = new Array(n).fill(0);
+  let bucket = 0;
+  for (let i = 0; i < n; i++) {
+    bucket += k;
+    if (bucket >= n) { bucket -= n; p[i] = 1; }
+  }
+  // rotate
+  rot = ((rot % n) + n) % n;
+  return p.slice(n - rot).concat(p.slice(0, n - rot));
+}
+
+// --- Audio engine ---
+let ctx = null, master = null, noiseBuf = null;
+function initAudio() {
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  master = ctx.createGain(); master.gain.value = 0.85; master.connect(ctx.destination);
+  const len = ctx.sampleRate * 0.4;
+  noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+}
+function noiseSrc() { const s = ctx.createBufferSource(); s.buffer = noiseBuf; return s; }
+
+function kick(t) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(150, t);
+  o.frequency.exponentialRampToValueAtTime(52, t + 0.11);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.9, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.24);
+}
+function snare(t) {
+  const n = noiseSrc(), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+  bp.type = 'bandpass'; bp.frequency.value = 1750; bp.Q.value = 0.7;
+  g.gain.setValueAtTime(0.6, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  n.connect(bp); bp.connect(g); g.connect(master); n.start(t); n.stop(t + 0.18);
+  const o = ctx.createOscillator(), og = ctx.createGain();
+  o.type = 'triangle'; o.frequency.value = 184;
+  og.gain.setValueAtTime(0.3, t);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+  o.connect(og); og.connect(master); o.start(t); o.stop(t + 0.12);
+}
+function hat(t) {
+  const n = noiseSrc(), hp = ctx.createBiquadFilter(), g = ctx.createGain();
+  hp.type = 'highpass'; hp.frequency.value = 7200;
+  g.gain.setValueAtTime(0.32, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+  n.connect(hp); hp.connect(g); g.connect(master); n.start(t); n.stop(t + 0.06);
+}
+function clave(t) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'triangle'; o.frequency.value = 1150;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.5, t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.08);
+}
+const VOICES = { kick, snare, hat, clave };
+
+// --- Tracks ---
+const TRACKS = [
+  { name: 'kick',  voice: 'kick',  k: 5, n: 8,  rot: 0 },
+  { name: 'snare', voice: 'snare', k: 2, n: 8,  rot: 4 },
+  { name: 'hat',   voice: 'hat',   k: 11, n: 16, rot: 0 },
+  { name: 'clave', voice: 'clave', k: 3, n: 8,  rot: 0 },
+];
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SIZE = 150;
+
+function buildTrack(tr, idx) {
+  tr.pattern = euclid(tr.k, tr.n, tr.rot);
+  tr.muted = false;
+  tr.flash = new Array(tr.n).fill(0); // visual decay per onset hit
+
+  const root = document.createElement('div');
+  root.className = 'track';
+  root.innerHTML = `<div class="name">${tr.name}</div>`;
+
+  const cv = document.createElement('canvas');
+  cv.width = SIZE * PR; cv.height = SIZE * PR;
+  cv.style.width = SIZE + 'px'; cv.style.height = SIZE + 'px';
+  root.appendChild(cv);
+  tr.cv = cv; tr.cx = cv.getContext('2d');
+
+  const eu = document.createElement('div'); eu.className = 'euclid';
+  const bits = document.createElement('div'); bits.className = 'bits';
+  root.appendChild(eu); root.appendChild(bits);
+  tr.eu = eu; tr.bits = bits;
+
+  function slider(label, min, max, val) {
+    const row = document.createElement('div'); row.className = 'row';
+    const l = document.createElement('label'); l.textContent = label;
+    const r = document.createElement('input');
+    r.type = 'range'; r.min = min; r.max = max; r.value = val; r.step = 1;
+    row.appendChild(l); row.appendChild(r); root.appendChild(row);
+    return r;
+  }
+  const sN = slider('steps', 2, 16, tr.n);
+  const sK = slider('pulses', 0, tr.n, tr.k);
+  const sR = slider('rotate', 0, tr.n - 1, tr.rot);
+
+  function refresh() {
+    sK.max = tr.n; sR.max = tr.n - 1;
+    if (tr.k > tr.n) { tr.k = tr.n; sK.value = tr.k; }
+    if (tr.rot > tr.n - 1) { tr.rot = tr.n - 1; sR.value = tr.rot; }
+    tr.pattern = euclid(tr.k, tr.n, tr.rot);
+    tr.flash = new Array(tr.n).fill(0);
+    eu.textContent = `E(${tr.k}, ${tr.n})`;
+    bits.textContent = tr.pattern.map(b => b ? '●' : '·').join('');
+  }
+  sN.oninput = () => { tr.n = +sN.value; refresh(); };
+  sK.oninput = () => { tr.k = +sK.value; refresh(); };
+  sR.oninput = () => { tr.rot = +sR.value; refresh(); };
+
+  const mute = document.createElement('button');
+  mute.className = 'mute'; mute.textContent = 'mute';
+  mute.onclick = () => { tr.muted = !tr.muted; mute.classList.toggle('on', tr.muted); root.classList.toggle('muted', tr.muted); };
+  root.appendChild(mute);
+
+  // drag-to-rotate on the ring
+  let dragging = false, startAng = 0, startRot = 0;
+  function angleFromEvent(e) {
+    const rc = cv.getBoundingClientRect();
+    const px = (e.touches ? e.touches[0].clientX : e.clientX) - rc.left - SIZE / 2;
+    const py = (e.touches ? e.touches[0].clientY : e.clientY) - rc.top - SIZE / 2;
+    return Math.atan2(py, px);
+  }
+  function down(e) { dragging = true; startAng = angleFromEvent(e); startRot = tr.rot; e.preventDefault(); }
+  function move(e) {
+    if (!dragging) return;
+    const delta = angleFromEvent(e) - startAng;
+    const steps = Math.round(delta / (2 * Math.PI) * tr.n);
+    const nr = ((startRot - steps) % tr.n + tr.n) % tr.n;
+    if (nr !== tr.rot) { tr.rot = nr; sR.value = nr; refresh(); }
+  }
+  function up() { dragging = false; }
+  cv.addEventListener('mousedown', down); window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  cv.addEventListener('touchstart', down, {passive:false}); cv.addEventListener('touchmove', move, {passive:false}); cv.addEventListener('touchend', up);
+
+  refresh();
+  document.getElementById('tracks').appendChild(root);
+}
+
+// --- Scheduler (lookahead) ---
+let playing = false, current = 0, nextTime = 0, timer = null;
+let stepDur = 60 / 116 / 4; // 16th note
+let lastStepTime = 0;
+const LOOKAHEAD = 0.1, INTERVAL = 25;
+
+function scheduleStep(step, time) {
+  for (const tr of TRACKS) {
+    if (tr.muted) continue;
+    const i = step % tr.n;
+    if (tr.pattern[i]) {
+      VOICES[tr.voice](time);
+      tr.flash[i] = 1;
+    }
+  }
+}
+function tick() {
+  while (nextTime < ctx.currentTime + LOOKAHEAD) {
+    scheduleStep(current, nextTime);
+    lastStepTime = nextTime;
+    nextTime += stepDur;
+    current = (current + 1) % 48; // lcm-friendly cycle length
+  }
+  timer = setTimeout(tick, INTERVAL);
+}
+
+const playBtn = document.getElementById('play');
+function start() {
+  initAudio();
+  if (ctx.state === 'suspended') ctx.resume();
+  playing = true; current = 0; nextTime = ctx.currentTime + 0.06; lastStepTime = nextTime;
+  playBtn.textContent = 'stop'; playBtn.classList.add('on');
+  tick();
+}
+function stop() {
+  playing = false; clearTimeout(timer);
+  playBtn.textContent = 'play'; playBtn.classList.remove('on');
+}
+playBtn.onclick = () => playing ? stop() : start();
+
+document.getElementById('tempo').oninput = (e) => {
+  const bpm = +e.target.value;
+  document.getElementById('bpm').textContent = bpm + ' bpm';
+  stepDur = 60 / bpm / 4;
+};
+
+// --- Render loop ---
+TRACKS.forEach(buildTrack);
+
+function draw() {
+  const now = ctx ? ctx.currentTime : 0;
+  for (const tr of TRACKS) {
+    const cx = tr.cx, R = SIZE / 2;
+    cx.setTransform(PR, 0, 0, PR, 0, 0);
+    cx.clearRect(0, 0, SIZE, SIZE);
+    const cxp = R, cyp = R, ring = R - 22;
+
+    // connective polygon between onsets (the "necklace")
+    const onsets = [];
+    for (let i = 0; i < tr.n; i++) if (tr.pattern[i]) onsets.push(i);
+    if (onsets.length > 1) {
+      cx.beginPath();
+      onsets.forEach((i, j) => {
+        const a = (i / tr.n) * 2 * Math.PI - Math.PI / 2;
+        const x = cxp + Math.cos(a) * ring, y = cyp + Math.sin(a) * ring;
+        j === 0 ? cx.moveTo(x, y) : cx.lineTo(x, y);
+      });
+      cx.closePath();
+      cx.strokeStyle = 'rgba(122,162,196,0.16)';
+      cx.lineWidth = 1; cx.stroke();
+    }
+
+    // step dots
+    for (let i = 0; i < tr.n; i++) {
+      const a = (i / tr.n) * 2 * Math.PI - Math.PI / 2;
+      const x = cxp + Math.cos(a) * ring, y = cyp + Math.sin(a) * ring;
+      const on = tr.pattern[i];
+      let r = on ? 5 : 2.5;
+      let fill = on ? '#c7ccd2' : '#34383f';
+      if (tr.flash[i] > 0.01) {
+        const f = tr.flash[i];
+        r = 5 + f * 6;
+        fill = '#7aa2c4';
+        cx.beginPath(); cx.arc(x, y, r + 5, 0, 2*Math.PI);
+        cx.fillStyle = `rgba(122,162,196,${0.25 * f})`; cx.fill();
+        if (!reduceMotion) tr.flash[i] *= 0.86; else tr.flash[i] = 0;
+      }
+      cx.beginPath(); cx.arc(x, y, r, 0, 2*Math.PI);
+      cx.fillStyle = fill; cx.fill();
+    }
+
+    // playhead spoke
+    if (playing && ctx) {
+      const frac = Math.max(0, Math.min(1, (now - lastStepTime) / stepDur));
+      const headStep = ((current - 1) + frac);
+      const a = ((headStep % tr.n) / tr.n) * 2 * Math.PI - Math.PI / 2;
+      cx.beginPath();
+      cx.moveTo(cxp, cyp);
+      cx.lineTo(cxp + Math.cos(a) * (ring + 8), cyp + Math.sin(a) * (ring + 8));
+      cx.strokeStyle = 'rgba(199,204,210,0.35)'; cx.lineWidth = 1.5; cx.stroke();
+    }
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

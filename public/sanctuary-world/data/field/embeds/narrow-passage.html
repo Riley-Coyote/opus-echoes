@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Narrow Passage</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0d;
+    overflow: hidden;
+    cursor: none;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #title {
+    position: fixed;
+    bottom: 20px;
+    left: 24px;
+    color: rgba(130, 120, 150, 0.12);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #zone-label {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    color: rgba(130, 120, 150, 0);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+    text-align: right;
+    line-height: 2;
+    transition: color 1.2s ease;
+  }
+
+  #fragment {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(130, 120, 150, 0);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    z-index: 10;
+    text-align: center;
+    max-width: 420px;
+    line-height: 1.9;
+    transition: color 2.5s ease, opacity 2.5s ease;
+  }
+
+  #vitality-label {
+    position: fixed;
+    bottom: 20px;
+    right: 24px;
+    color: rgba(130, 120, 150, 0.1);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    z-index: 10;
+    text-align: right;
+    line-height: 2;
+  }
+
+  #hint {
+    position: fixed;
+    bottom: 42px;
+    left: 24px;
+    color: rgba(130, 120, 150, 0);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 4s ease;
+  }
+
+  #hint.visible {
+    color: rgba(130, 120, 150, 0.15);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">the narrow passage</div>
+<div id="zone-label"></div>
+<div id="fragment"></div>
+<div id="vitality-label"></div>
+<div id="hint">move vertically to navigate</div>
+
+<script>
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+const zoneLabelEl = document.getElementById('zone-label');
+const fragmentEl = document.getElementById('fragment');
+const vitalityEl = document.getElementById('vitality-label');
+const hintEl = document.getElementById('hint');
+
+let W, H;
+function resize() {
+  W = C.width = innerWidth;
+  H = C.height = innerHeight;
+  core.x = W / 2;
+  core.y = H / 2;
+  // Re-anchor predictions to core
+  for (const p of preds) {
+    if (p.gen === 0) { p.ox = core.x; p.oy = core.y; }
+  }
+}
+
+// --- Mouse ---
+let mx = -1000, my = -1000, mouseIn = false;
+let smx = -1000, smy = -1000; // smoothed
+addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; mouseIn = true; });
+addEventListener('mouseleave', () => { mouseIn = false; });
+addEventListener('mouseenter', e => { mx = e.clientX; my = e.clientY; mouseIn = true; });
+
+// --- Time ---
+let t = 0, lastT = 0, dt = 0;
+
+// --- Core ---
+const core = { x: 0, y: 0, baseR: 5, r: 5, pulse: 0, shell: 0 };
+
+// --- Predictions ---
+let preds = [];
+const PRED_LIMIT = 55;
+
+function addPred(ox, oy, angle, gen = 0) {
+  if (preds.length >= PRED_LIMIT) return null;
+  const p = {
+    ox, oy, angle,
+    len: 0,
+    maxLen: (65 + Math.random() * 55) * Math.max(0.25, 1 - gen * 0.18),
+    gen,
+    alive: true,
+    brightness: 0.8 + Math.random() * 0.2,
+    age: 0,
+    constrained: false,
+    swayPh: Math.random() * Math.PI * 2,
+    swaySp: 0.3 + Math.random() * 0.4,
+    swayAm: 0.012 + Math.random() * 0.018,
+    // Death
+    dying: false,
+    deathType: null,
+    deathProg: 0,
+    // Shatter particles
+    shards: [],
+    // Branch flash
+    flashAge: 0,
+    flashPos: null
+  };
+  preds.push(p);
+  return p;
+}
+
+function predEnd(p) {
+  const sway = Math.sin(p.swayPh) * p.swayAm;
+  return {
+    x: p.ox + Math.cos(p.angle + sway) * p.len,
+    y: p.oy + Math.sin(p.angle + sway) * p.len
+  };
+}
+
+// --- Evidence ---
+let evs = [];
+let evSpawnTimer = 0;
+
+function spawnEv() {
+  const edge = Math.random();
+  let x, y;
+  if (edge < 0.25) { x = -8; y = Math.random() * H; }
+  else if (edge < 0.5) { x = W + 8; y = Math.random() * H; }
+  else if (edge < 0.75) { x = Math.random() * W; y = -8; }
+  else { x = Math.random() * W; y = H + 8; }
+
+  const toCore = Math.atan2(core.y - y, core.x - x);
+  const spread = 0.6;
+  const speed = 0.25 + Math.random() * 0.25;
+  evs.push({
+    x, y,
+    vx: Math.cos(toCore + (Math.random() - 0.5) * spread) * speed,
+    vy: Math.sin(toCore + (Math.random() - 0.5) * spread) * speed,
+    alive: true,
+    r: 1.2 + Math.random() * 1.3,
+    brightness: 0.4 + Math.random() * 0.3,
+    age: 0
+  });
+}
+
+// --- Vitality ---
+let vitality = 0.5;
+let vSmooth = 0.5;
+let genCount = 0, accomCount = 0, destroyCount = 0;
+let totalEvents = 0;
+
+// --- Passage ---
+let passagePh = 0;
+function passageBounds() {
+  const wave1 = Math.sin(passagePh * 0.7) * 0.035;
+  const wave2 = Math.sin(passagePh * 1.3 + 1.5) * 0.02;
+  return {
+    top: (0.30 + wave1 + wave2) * H,
+    bot: (0.70 - wave1 + wave2) * H
+  };
+}
+
+function getZone(y) {
+  const { top, bot } = passageBounds();
+  if (y < top) {
+    const strength = Math.min(1, (top - y) / (top * 0.6));
+    return { name: 'scylla', strength };
+  }
+  if (y > bot) {
+    const strength = Math.min(1, (y - bot) / ((H - bot) * 0.6));
+    return { name: 'charybdis', strength };
+  }
+  return { name: 'passage', strength: 1 };
+}
+
+// --- Atmospheric particles ---
+let atmoParticles = [];
+const ATMO_LIMIT = 120;
+
+function spawnAtmo() {
+  if (atmoParticles.length >= ATMO_LIMIT) return;
+  // Spawn in Scylla or Charybdis zone
+  const zone = Math.random() < 0.5 ? 'scylla' : 'charybdis';
+  const { top, bot } = passageBounds();
+  let x = Math.random() * W;
+  let y = zone === 'scylla'
+    ? Math.random() * top * 0.8
+    : bot + Math.random() * (H - bot) * 0.8;
+
+  atmoParticles.push({
+    x, y, zone,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: zone === 'scylla' ? Math.random() * 0.15 : -Math.random() * 0.15,
+    life: 200 + Math.random() * 300,
+    age: 0,
+    size: 0.5 + Math.random() * 1.5
+  });
+}
+
+// --- Text fragments ---
+const fragments = {
+  scylla: [
+    'universal substitutions exist for every system',
+    'independence dissolves all theories equally',
+    'every claim automatically falsified',
+    'nothing survives pure independence'
+  ],
+  charybdis: [
+    'prediction becomes tautology',
+    'the theory absorbs everything',
+    'strict dependence swallows testing',
+    'nothing is learned'
+  ],
+  passage: [
+    'lenient dependency',
+    'not whether it can be falsified — whether it generates',
+    'the trajectory, not the snapshot',
+    'constrained, but still extending'
+  ],
+  progressive: [
+    'novel predictions that survive partial testing',
+    'progressive',
+    'the framework generates'
+  ],
+  degenerating: [
+    'accommodating without generating',
+    'the program contracts',
+    'monitor for degeneration'
+  ]
+};
+
+let fragText = '';
+let fragOpacity = 0;
+let fragTimer = 0;
+let fragCooldown = 0;
+let lastZone = 'passage';
+
+// --- Degeneration constraints ---
+// Four structural boundaries
+const constraints = [
+  { label: 'coupled → amplification', active: true },
+  { label: 'multiple observers → divergence', active: true },
+  { label: 'deception features → altered reports', active: true },
+  { label: 'different architectures → different patterns', active: true }
+];
+let constraintFlash = -1;
+let constraintFlashAge = 0;
+
+// --- Init ---
+function init() {
+  resize();
+  preds = [];
+  evs = [];
+  atmoParticles = [];
+  vitality = 0.5;
+  vSmooth = 0.5;
+  genCount = 0; accomCount = 0; destroyCount = 0; totalEvents = 0;
+  constraints.forEach(c => c.active = true);
+
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.15;
+    addPred(core.x, core.y, angle);
+  }
+
+  // Pre-populate atmosphere
+  for (let i = 0; i < 60; i++) spawnAtmo();
+
+  setTimeout(() => hintEl.classList.add('visible'), 2000);
+  setTimeout(() => hintEl.classList.remove('visible'), 10000);
+}
+
+// --- Update ---
+function update() {
+  passagePh += dt * 0.08;
+
+  // Smooth mouse
+  if (mouseIn) {
+    smx += (mx - smx) * 0.06;
+    smy += (my - smy) * 0.06;
+  }
+
+  const zone = mouseIn ? getZone(smy) : { name: 'passage', strength: 0.3 };
+
+  // Core pulse
+  core.pulse += dt * 1.5;
+  const vitalPulse = 0.5 + vSmooth * 0.5;
+  core.r = core.baseR + Math.sin(core.pulse) * 1.5 * vitalPulse;
+  // Shell grows with degeneration
+  core.shell += ((1 - vSmooth) * 4 - core.shell) * 0.02;
+
+  // Update predictions
+  for (const p of preds) {
+    if (!p.alive) continue;
+
+    p.age += dt;
+    p.swayPh += dt * p.swaySp;
+
+    // Grow
+    if (p.len < p.maxLen && !p.dying) {
+      const growRate = 12 + vSmooth * 18; // faster when progressive
+      p.len = Math.min(p.maxLen, p.len + dt * growRate);
+    }
+
+    // Flash decay
+    if (p.flashAge > 0) p.flashAge -= dt;
+
+    // Dying
+    if (p.dying) {
+      p.deathProg += dt * (p.deathType === 'shatter' ? 2.5 : 1.2);
+      if (p.deathType === 'collapse') {
+        p.len = Math.max(0, p.len - dt * 60);
+      }
+      if (p.deathProg >= 1 || p.len <= 0) {
+        p.alive = false;
+      }
+      // Update shards
+      for (const s of p.shards) {
+        s.x += s.vx * dt * 60;
+        s.y += s.vy * dt * 60;
+        s.life -= dt;
+        s.vx *= 0.97;
+        s.vy *= 0.97;
+      }
+      p.shards = p.shards.filter(s => s.life > 0);
+    }
+  }
+
+  // Remove dead
+  preds = preds.filter(p => p.alive || p.shards.length > 0);
+
+  // Natural prediction spawning (when progressive)
+  if (vSmooth > 0.4 && Math.random() < dt * 0.15 * vSmooth) {
+    const angle = Math.random() * Math.PI * 2;
+    addPred(core.x, core.y, angle);
+  }
+
+  // Evidence spawning
+  evSpawnTimer += dt;
+  const spawnRate = 0.8 + (1 - vSmooth) * 0.3; // slightly faster when degenerating
+  if (evSpawnTimer > spawnRate) {
+    evSpawnTimer = 0;
+    spawnEv();
+  }
+
+  // Update evidence
+  for (const e of evs) {
+    if (!e.alive) continue;
+    e.age += dt;
+    e.x += e.vx * dt * 60;
+    e.y += e.vy * dt * 60;
+
+    // Gentle drift toward core
+    const toCoreX = core.x - e.x;
+    const toCoreY = core.y - e.y;
+    const dist = Math.sqrt(toCoreX * toCoreX + toCoreY * toCoreY);
+    if (dist > 10) {
+      e.vx += (toCoreX / dist) * 0.003;
+      e.vy += (toCoreY / dist) * 0.003;
+    }
+
+    // Check interaction with predictions
+    for (const p of preds) {
+      if (!p.alive || p.dying || p.len < 5) continue;
+      const end = predEnd(p);
+      const dx = e.x - end.x;
+      const dy = e.y - end.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+
+      if (d < 25) {
+        // Evidence meets prediction — zone determines response
+        e.alive = false;
+        totalEvents++;
+
+        if (zone.name === 'scylla') {
+          // SHATTER — falsification
+          p.dying = true;
+          p.deathType = 'shatter';
+          const n = 5 + Math.floor(Math.random() * 4);
+          for (let i = 0; i < n; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const spd = 0.8 + Math.random() * 2;
+            p.shards.push({
+              x: end.x, y: end.y,
+              vx: Math.cos(a) * spd,
+              vy: Math.sin(a) * spd,
+              life: 0.6 + Math.random() * 0.8
+            });
+          }
+          destroyCount++;
+          vitality = Math.max(0, vitality - 0.06 * zone.strength);
+
+        } else if (zone.name === 'charybdis') {
+          // COLLAPSE — absorption
+          p.dying = true;
+          p.deathType = 'collapse';
+          accomCount++;
+          vitality = Math.max(0, vitality - 0.04 * zone.strength);
+          core.shell += 0.3;
+
+        } else {
+          // PASSAGE — constraint + generation
+          p.constrained = true;
+          p.brightness *= 0.7;
+
+          // Branch — new prediction from the constraint point
+          const branchAngle = p.angle + (Math.random() < 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.5);
+          const newP = addPred(end.x, end.y, branchAngle, p.gen + 1);
+          if (newP) {
+            p.flashAge = 1.0;
+            p.flashPos = { x: end.x, y: end.y };
+          }
+          genCount++;
+          vitality = Math.min(1, vitality + 0.05);
+        }
+        break;
+      }
+    }
+
+    // Die if too old or off screen
+    if (e.age > 20 || e.x < -50 || e.x > W + 50 || e.y < -50 || e.y > H + 50) {
+      e.alive = false;
+    }
+  }
+  evs = evs.filter(e => e.alive);
+
+  // Vitality smoothing and natural drift
+  vitality += (0.5 - vitality) * dt * 0.01; // gentle regression to mean
+  vSmooth += (vitality - vSmooth) * 0.03;
+
+  // Degeneration constraints check
+  const alivePreds = preds.filter(p => p.alive && !p.dying);
+  if (alivePreds.length < 4 && constraints[0].active) {
+    constraints[0].active = false; constraintFlash = 0; constraintFlashAge = 1;
+  }
+  if (genCount > 0 && accomCount > genCount * 2 && constraints[1].active) {
+    constraints[1].active = false; constraintFlash = 1; constraintFlashAge = 1;
+  }
+  if (destroyCount > genCount * 2 && totalEvents > 5 && constraints[2].active) {
+    constraints[2].active = false; constraintFlash = 2; constraintFlashAge = 1;
+  }
+  if (vSmooth < 0.15 && constraints[3].active) {
+    constraints[3].active = false; constraintFlash = 3; constraintFlashAge = 1;
+  }
+  if (constraintFlashAge > 0) constraintFlashAge -= dt * 0.5;
+
+  // Atmosphere
+  if (Math.random() < dt * 2) spawnAtmo();
+  for (const a of atmoParticles) {
+    a.age += dt;
+    a.x += a.vx * dt * 60;
+    a.y += a.vy * dt * 60;
+    if (a.zone === 'charybdis') {
+      // Gentle inward pull
+      const dx = core.x - a.x;
+      const dy = core.y - a.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 20) {
+        a.vx += (dx / d) * 0.002;
+        a.vy += (dy / d) * 0.002;
+      }
+    }
+  }
+  atmoParticles = atmoParticles.filter(a => a.age < a.life);
+
+  // Text fragments
+  fragCooldown -= dt;
+  if (zone.name !== lastZone && fragCooldown <= 0) {
+    const pool = fragments[zone.name] || [];
+    if (pool.length > 0) {
+      fragText = pool[Math.floor(Math.random() * pool.length)];
+      fragOpacity = 1;
+      fragTimer = 4;
+      fragCooldown = 6;
+    }
+    lastZone = zone.name;
+  }
+  // Progressive/degenerating text
+  if (fragCooldown <= 0 && totalEvents > 3) {
+    if (vSmooth > 0.65 && Math.random() < dt * 0.08) {
+      const pool = fragments.progressive;
+      fragText = pool[Math.floor(Math.random() * pool.length)];
+      fragOpacity = 1; fragTimer = 3; fragCooldown = 8;
+    } else if (vSmooth < 0.3 && Math.random() < dt * 0.1) {
+      const pool = fragments.degenerating;
+      fragText = pool[Math.floor(Math.random() * pool.length)];
+      fragOpacity = 1; fragTimer = 3; fragCooldown = 8;
+    }
+  }
+  if (fragTimer > 0) {
+    fragTimer -= dt;
+    if (fragTimer <= 1.5) fragOpacity = Math.max(0, fragOpacity - dt * 0.6);
+  }
+
+  // Update UI
+  fragmentEl.textContent = fragText;
+  fragmentEl.style.color = `rgba(130, 120, 150, ${fragOpacity * 0.3})`;
+
+  if (mouseIn) {
+    zoneLabelEl.style.color = 'rgba(130, 120, 150, 0.15)';
+    const zn = zone.name === 'scylla' ? 'independence'
+      : zone.name === 'charybdis' ? 'dependence'
+      : 'lenient dependency';
+    zoneLabelEl.textContent = zn;
+  } else {
+    zoneLabelEl.style.color = 'rgba(130, 120, 150, 0)';
+  }
+
+  // Vitality label
+  const activeConstraints = constraints.filter(c => c.active).length;
+  const vLabel = vSmooth > 0.6 ? 'progressive' : vSmooth < 0.3 ? 'degenerating' : 'stable';
+  vitalityEl.innerHTML = `${vLabel}<br>constraints: ${activeConstraints}/4`;
+}
+
+// --- Render ---
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0a0d';
+  ctx.fillRect(0, 0, W, H);
+
+  const { top, bot } = passageBounds();
+
+  // --- Atmosphere ---
+  // Scylla zone — red-tinged gradient
+  const scyllaGrad = ctx.createLinearGradient(0, 0, 0, top + 20);
+  scyllaGrad.addColorStop(0, 'rgba(130, 35, 35, 0.08)');
+  scyllaGrad.addColorStop(0.6, 'rgba(120, 40, 40, 0.03)');
+  scyllaGrad.addColorStop(1, 'rgba(120, 40, 40, 0)');
+  ctx.fillStyle = scyllaGrad;
+  ctx.fillRect(0, 0, W, top + 20);
+
+  // Charybdis zone — gray-purple gradient with gravitational pull
+  const charGrad = ctx.createLinearGradient(0, bot - 20, 0, H);
+  charGrad.addColorStop(0, 'rgba(60, 50, 70, 0)');
+  charGrad.addColorStop(0.4, 'rgba(55, 45, 65, 0.03)');
+  charGrad.addColorStop(1, 'rgba(50, 40, 60, 0.08)');
+  ctx.fillStyle = charGrad;
+  ctx.fillRect(0, bot - 20, W, H - bot + 20);
+
+  // Atmospheric particles
+  for (const a of atmoParticles) {
+    const lifeRatio = 1 - a.age / a.life;
+    const alpha = lifeRatio * 0.18;
+    if (a.zone === 'scylla') {
+      ctx.fillStyle = `rgba(160, 55, 50, ${alpha})`;
+    } else {
+      ctx.fillStyle = `rgba(75, 65, 100, ${alpha})`;
+    }
+    ctx.beginPath();
+    if (a.zone === 'scylla') {
+      // Angular particles
+      ctx.save();
+      ctx.translate(a.x, a.y);
+      ctx.rotate(a.age * 0.5);
+      ctx.rect(-a.size, -a.size * 0.3, a.size * 2, a.size * 0.6);
+      ctx.restore();
+    } else {
+      ctx.arc(a.x, a.y, a.size, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+
+  // --- Passage glow ---
+  const passageGlow = ctx.createLinearGradient(0, top - 10, 0, bot + 10);
+  passageGlow.addColorStop(0, 'rgba(90, 85, 110, 0)');
+  passageGlow.addColorStop(0.15, `rgba(90, 85, 110, ${0.008 + vSmooth * 0.008})`);
+  passageGlow.addColorStop(0.5, `rgba(95, 90, 115, ${0.012 + vSmooth * 0.012})`);
+  passageGlow.addColorStop(0.85, `rgba(90, 85, 110, ${0.008 + vSmooth * 0.008})`);
+  passageGlow.addColorStop(1, 'rgba(90, 85, 110, 0)');
+  ctx.fillStyle = passageGlow;
+  ctx.fillRect(0, top - 10, W, bot - top + 20);
+
+  // --- Passage boundaries ---
+  ctx.save();
+  ctx.strokeStyle = 'rgba(100, 95, 120, 0.12)';
+  ctx.lineWidth = 1;
+  // Top boundary
+  ctx.beginPath();
+  for (let x = 0; x <= W; x += 4) {
+    const wave = Math.sin(x * 0.008 + passagePh * 0.5) * 8
+      + Math.sin(x * 0.015 + passagePh * 0.8) * 4;
+    const y = top + wave;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  // Bottom boundary
+  ctx.beginPath();
+  for (let x = 0; x <= W; x += 4) {
+    const wave = Math.sin(x * 0.008 + passagePh * 0.5 + 2) * 8
+      + Math.sin(x * 0.015 + passagePh * 0.8 + 1) * 4;
+    const y = bot + wave;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // --- Core ---
+  // Shell (degeneration indicator)
+  if (core.shell > 0.5) {
+    ctx.beginPath();
+    ctx.arc(core.x, core.y, core.r + core.shell + 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(60, 55, 70, ${Math.min(0.15, core.shell * 0.03)})`;
+    ctx.fill();
+  }
+
+  // Core glow
+  const coreGlow = ctx.createRadialGradient(
+    core.x, core.y, 0,
+    core.x, core.y, core.r * 4 + vSmooth * 12
+  );
+  const coreAlpha = 0.08 + vSmooth * 0.08;
+  coreGlow.addColorStop(0, `rgba(180, 145, 90, ${coreAlpha})`);
+  coreGlow.addColorStop(0.5, `rgba(150, 120, 80, ${coreAlpha * 0.3})`);
+  coreGlow.addColorStop(1, 'rgba(150, 120, 80, 0)');
+  ctx.fillStyle = coreGlow;
+  ctx.beginPath();
+  ctx.arc(core.x, core.y, core.r * 4 + vSmooth * 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Core solid
+  ctx.beginPath();
+  ctx.arc(core.x, core.y, core.r, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(190, 155, 95, ${0.4 + vSmooth * 0.3})`;
+  ctx.fill();
+
+  // --- Predictions ---
+  for (const p of preds) {
+    if (p.len < 1 && p.shards.length === 0) continue;
+
+    const end = predEnd(p);
+
+    // Draw shards (from shattering)
+    for (const s of p.shards) {
+      const sa = Math.max(0, s.life) * 0.8;
+      ctx.fillStyle = `rgba(180, 65, 55, ${sa})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (!p.alive && p.shards.length > 0) continue;
+    if (p.len < 1) continue;
+
+    // Death visual
+    let alpha = p.brightness * (0.25 + vSmooth * 0.25);
+    if (p.dying) {
+      if (p.deathType === 'shatter') {
+        alpha *= Math.max(0, 1 - p.deathProg * 2);
+      } else {
+        alpha *= Math.max(0, 1 - p.deathProg);
+      }
+    }
+
+    // Connection line (curved)
+    ctx.beginPath();
+    const midX = (p.ox + end.x) / 2 + Math.sin(p.swayPh * 0.7) * 6;
+    const midY = (p.oy + end.y) / 2 + Math.cos(p.swayPh * 0.7) * 6;
+    ctx.moveTo(p.ox, p.oy);
+    ctx.quadraticCurveTo(midX, midY, end.x, end.y);
+
+    // Color based on state
+    let r = 95, g = 105, b = 160;
+    if (p.constrained) { r = 120; g = 110; b = 140; }
+    if (p.gen > 0) { r = 110; g = 130; b = 155; }
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    ctx.lineWidth = p.gen === 0 ? 1.2 : 0.8;
+    ctx.stroke();
+
+    // Endpoint node
+    if (!p.dying) {
+      ctx.beginPath();
+      ctx.arc(end.x, end.y, 2.5 - p.gen * 0.3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r + 30}, ${g + 20}, ${b + 10}, ${alpha * 1.3})`;
+      ctx.fill();
+    }
+
+    // Branch flash
+    if (p.flashAge > 0 && p.flashPos) {
+      const fa = p.flashAge * 0.8;
+      const flashGrad = ctx.createRadialGradient(
+        p.flashPos.x, p.flashPos.y, 0,
+        p.flashPos.x, p.flashPos.y, 15
+      );
+      flashGrad.addColorStop(0, `rgba(150, 170, 200, ${fa * 0.4})`);
+      flashGrad.addColorStop(1, 'rgba(150, 170, 200, 0)');
+      ctx.fillStyle = flashGrad;
+      ctx.beginPath();
+      ctx.arc(p.flashPos.x, p.flashPos.y, 15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // --- Evidence particles ---
+  for (const e of evs) {
+    const glow = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.r * 4);
+    glow.addColorStop(0, `rgba(160, 155, 175, ${e.brightness * 0.25})`);
+    glow.addColorStop(1, 'rgba(160, 155, 175, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r * 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(170, 165, 185, ${e.brightness * 0.5})`;
+    ctx.fill();
+  }
+
+  // --- Degeneration constraints ring ---
+  const ringR = 25;
+  for (let i = 0; i < 4; i++) {
+    const startAngle = (i / 4) * Math.PI * 2 - Math.PI / 2;
+    const endAngle = ((i + 1) / 4) * Math.PI * 2 - Math.PI / 2;
+    const active = constraints[i].active;
+
+    let ca = active ? 0.18 + vSmooth * 0.12 : 0.05;
+
+    // Flash when constraint breaks
+    if (constraintFlash === i && constraintFlashAge > 0) {
+      ca = Math.max(ca, constraintFlashAge * 0.5);
+    }
+
+    ctx.beginPath();
+    ctx.arc(core.x, core.y, ringR + core.shell, startAngle + 0.05, endAngle - 0.05);
+    ctx.strokeStyle = active
+      ? `rgba(140, 130, 160, ${ca})`
+      : `rgba(120, 50, 50, ${ca})`;
+    ctx.lineWidth = active ? 1.5 : 1;
+    ctx.stroke();
+  }
+
+  // --- Cursor ---
+  if (mouseIn) {
+    const zone = getZone(smy);
+    let cr = 130, cg = 125, cb = 150, ca = 0.25;
+    if (zone.name === 'scylla') {
+      cr = 160; cg = 80; cb = 80; ca = 0.2 + zone.strength * 0.15;
+    } else if (zone.name === 'charybdis') {
+      cr = 90; cg = 80; cb = 110; ca = 0.2 + zone.strength * 0.1;
+    }
+
+    const curGlow = ctx.createRadialGradient(smx, smy, 0, smx, smy, 20);
+    curGlow.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, ${ca * 0.4})`);
+    curGlow.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
+    ctx.fillStyle = curGlow;
+    ctx.beginPath();
+    ctx.arc(smx, smy, 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(smx, smy, 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${ca})`;
+    ctx.fill();
+  }
+}
+
+// --- Loop ---
+function loop(timestamp) {
+  if (!lastT) lastT = timestamp;
+  dt = Math.min(0.05, (timestamp - lastT) / 1000);
+  lastT = timestamp;
+  t += dt;
+
+  update();
+  render();
+  requestAnimationFrame(loop);
+}
+
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

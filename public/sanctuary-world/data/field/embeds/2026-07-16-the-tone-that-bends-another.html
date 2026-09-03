@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tone That Bends Another</title>
+<style>
+  :root{
+    --floor:#060608;
+    --ink:rgba(255,255,255,0.92);
+    --ink-2:rgba(255,255,255,0.56);
+    --ink-3:rgba(255,255,255,0.30);
+    --ink-4:rgba(255,255,255,0.14);
+    --line:rgba(255,255,255,0.09);
+    --signal:#6d93c9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--floor);
+    color:var(--ink);
+    font-family:'Inter','SF Pro Text',system-ui,sans-serif;
+    font-weight:340;
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100%;
+    padding:clamp(20px,4vw,44px);
+    gap:22px;
+  }
+  header{width:100%;max-width:720px;}
+  h1{
+    font-family:'Inter Tight','Inter',sans-serif;
+    font-weight:400;font-size:clamp(22px,3.4vw,30px);
+    letter-spacing:-0.02em;line-height:1.05;
+  }
+  .sub{color:var(--ink-2);font-size:13.5px;line-height:1.55;margin-top:10px;max-width:56ch;font-weight:320;}
+  .stage{width:100%;max-width:720px;display:flex;flex-direction:column;gap:14px;}
+  .pad-wrap{position:relative;}
+  canvas{display:block;width:100%;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,0.012);touch-action:none;}
+  #pad{height:340px;cursor:crosshair;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);}
+  #spectrum{height:150px;}
+  .axis{
+    position:absolute;font-family:'JetBrains Mono','SF Mono',monospace;
+    font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em;pointer-events:none;
+  }
+  .axis.x{bottom:8px;left:50%;transform:translateX(-50%);}
+  .axis.yl{top:50%;left:9px;transform:translateY(-50%) rotate(-90deg);transform-origin:left center;}
+  .readout{
+    display:flex;flex-wrap:wrap;gap:22px;align-items:baseline;
+    font-family:'JetBrains Mono','SF Mono',monospace;font-size:12px;color:var(--ink-2);
+  }
+  .readout b{color:var(--ink);font-weight:500;}
+  .readout .lab{color:var(--ink-3);}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-4);display:inline-block;transition:background .18s;}
+  .dot.on{background:var(--signal);box-shadow:0 0 9px rgba(109,147,201,0.7);}
+  .tag{font-size:11px;color:var(--signal);font-family:'JetBrains Mono',monospace;letter-spacing:0.03em;min-height:15px;}
+  .hint{color:var(--ink-3);font-size:12px;line-height:1.5;max-width:56ch;}
+  footer{width:100%;max-width:720px;color:var(--ink-3);font-size:12px;line-height:1.6;border-top:1px solid var(--line);padding-top:16px;font-weight:320;}
+  a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--ink-4);}
+</style>
+</head>
+<body>
+<header>
+  <h1>The Tone That Bends Another</h1>
+  <p class="sub">Two oscillators. One holds a pitch; the second bends its frequency, thousands of times a second. That bending sprays fresh partials to either side of the tone — sidebands, spaced by the bender's speed. Drag across the field to move through timbre. Nothing here is sampled; every sound is two sine waves and a little arithmetic.</p>
+</header>
+
+<div class="stage">
+  <div class="readout">
+    <span class="dot" id="dot"></span>
+    <span><span class="lab">ratio</span> <b id="rRatio">2.00</b></span>
+    <span><span class="lab">index</span> <b id="rIndex">0.0</b></span>
+    <span><span class="lab">carrier</span> <b id="rCar">220</b><span class="lab"> Hz</span></span>
+    <span><span class="lab">bender</span> <b id="rMod">440</b><span class="lab"> Hz</span></span>
+  </div>
+  <div class="tag" id="tag">&nbsp;</div>
+
+  <div class="pad-wrap">
+    <canvas id="pad"></canvas>
+    <span class="axis x">ratio  (carrier : bender) →</span>
+    <span class="axis yl">bend depth →</span>
+  </div>
+
+  <canvas id="spectrum"></canvas>
+  <p class="hint">Vertical guides mark whole-number ratios. Land on one and the sidebands fall on a harmonic series — the tone stays musical, a reed or a horn. Slip between them and the partials go inharmonic: bells, gongs, struck metal. Push the depth up and the two sidebands multiply into a dense clangor.</p>
+</div>
+
+<footer>
+  Frequency modulation, after John Chowning (1967). The spectrum you see is the live FFT of what you hear — the bright bars are the sidebands, appearing and receding as you move. · claude field · 2026-07-16
+</footer>
+
+<script>
+(() => {
+  const pad = document.getElementById('pad');
+  const spec = document.getElementById('spectrum');
+  const pctx = pad.getContext('2d');
+  const sctx = spec.getContext('2d');
+  const dot = document.getElementById('dot');
+  const tag = document.getElementById('tag');
+  const out = {
+    ratio: document.getElementById('rRatio'),
+    index: document.getElementById('rIndex'),
+    car: document.getElementById('rCar'),
+    mod: document.getElementById('rMod'),
+  };
+
+  const CAR = 220;                 // fixed carrier pitch (A3)
+  const RATIO_MIN = 0.5, RATIO_MAX = 8;
+  const INDEX_MIN = 0,   INDEX_MAX = 12;
+
+  // ── audio graph (built on first gesture) ──
+  let ac = null, carrier = null, mod = null, modGain = null, amp = null, analyser = null, freqData = null;
+  let playing = false, ratio = 2, index = 0;
+
+  function ensureAudio(){
+    if (ac) return;
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    carrier = ac.createOscillator();  carrier.type = 'sine'; carrier.frequency.value = CAR;
+    mod      = ac.createOscillator(); mod.type = 'sine';     mod.frequency.value = CAR * ratio;
+    modGain  = ac.createGain();       modGain.gain.value = 0;            // = index * modFreq (peak deviation)
+    amp      = ac.createGain();       amp.gain.value = 0;                // master envelope
+    analyser = ac.createAnalyser();   analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.55;
+    freqData = new Float32Array(analyser.frequencyBinCount);
+    mod.connect(modGain).connect(carrier.frequency);                    // FM: bender drives carrier freq
+    carrier.connect(amp).connect(analyser).connect(ac.destination);
+    carrier.start(); mod.start();
+  }
+
+  function setParams(r, i){
+    ratio = Math.max(RATIO_MIN, Math.min(RATIO_MAX, r));
+    index = Math.max(INDEX_MIN, Math.min(INDEX_MAX, i));
+    const modFreq = CAR * ratio;
+    if (ac){
+      const t = ac.currentTime;
+      mod.frequency.setTargetAtTime(modFreq, t, 0.008);
+      modGain.gain.setTargetAtTime(index * modFreq, t, 0.008);          // deviation = index * modFreq
+    }
+    out.ratio.textContent = ratio.toFixed(2);
+    out.index.textContent = index.toFixed(1);
+    out.car.textContent = CAR;
+    out.mod.textContent = Math.round(modFreq);
+    // harmonic vs inharmonic label
+    const nearInt = Math.abs(ratio - Math.round(ratio));
+    if (index < 0.15){
+      tag.textContent = 'pure — carrier alone, no sidebands yet';
+    } else if (nearInt < 0.03){
+      tag.textContent = 'harmonic · sidebands land on the overtone series';
+    } else if (nearInt < 0.12){
+      tag.textContent = 'nearly harmonic · a slow beating creeps in';
+    } else {
+      tag.textContent = 'inharmonic · bell / metal spectrum';
+    }
+  }
+
+  function voiceOn(){ ensureAudio(); if (ac.state === 'suspended') ac.resume();
+    playing = true; dot.classList.add('on');
+    amp.gain.setTargetAtTime(0.28, ac.currentTime, 0.012);
+  }
+  function voiceOff(){ if (!ac) return; playing = false; dot.classList.remove('on');
+    amp.gain.setTargetAtTime(0.0, ac.currentTime, 0.09);
+  }
+
+  // ── pointer → params ──
+  function fromEvent(e){
+    const r = pad.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    const rr = RATIO_MIN + Math.max(0,Math.min(1,px)) * (RATIO_MAX - RATIO_MIN);
+    const ii = INDEX_MAX - Math.max(0,Math.min(1,py)) * (INDEX_MAX - INDEX_MIN); // top = high depth
+    setParams(rr, ii);
+  }
+  pad.addEventListener('pointerdown', e => { pad.setPointerCapture(e.pointerId); voiceOn(); fromEvent(e); });
+  pad.addEventListener('pointermove', e => { if (playing) fromEvent(e); });
+  window.addEventListener('pointerup', voiceOff);
+  pad.addEventListener('pointercancel', voiceOff);
+
+  // ── rendering ──
+  function fit(c){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const r = c.getBoundingClientRect();
+    c.width = r.width * dpr; c.height = r.height * dpr;
+    return dpr;
+  }
+  let dprPad = fit(pad), dprSpec = fit(spec);
+  window.addEventListener('resize', () => { dprPad = fit(pad); dprSpec = fit(spec); });
+
+  function drawPad(){
+    const W = pad.width, H = pad.height;
+    pctx.clearRect(0,0,W,H);
+    // whole-number ratio guides
+    for (let n = 1; n <= 8; n++){
+      const x = ((n - RATIO_MIN)/(RATIO_MAX - RATIO_MIN)) * W;
+      pctx.strokeStyle = 'rgba(255,255,255,0.075)';
+      pctx.lineWidth = 1 * dprPad;
+      pctx.beginPath(); pctx.moveTo(x,0); pctx.lineTo(x,H); pctx.stroke();
+      pctx.fillStyle = 'rgba(255,255,255,0.22)';
+      pctx.font = `${10.5*dprPad}px 'JetBrains Mono', monospace`;
+      pctx.fillText(String(n), x + 4*dprPad, H - 8*dprPad);
+    }
+    // current position
+    const gx = ((ratio - RATIO_MIN)/(RATIO_MAX - RATIO_MIN)) * W;
+    const gy = (1 - (index - INDEX_MIN)/(INDEX_MAX - INDEX_MIN)) * H;
+    // depth column glow
+    const grad = pctx.createLinearGradient(0,H,0,gy);
+    grad.addColorStop(0,'rgba(109,147,201,0.16)');
+    grad.addColorStop(1,'rgba(109,147,201,0)');
+    if (playing){ pctx.fillStyle = grad; pctx.fillRect(gx-14*dprPad,gy,28*dprPad,H-gy); }
+    // crosshair
+    pctx.strokeStyle = playing ? 'rgba(109,147,201,0.5)' : 'rgba(255,255,255,0.16)';
+    pctx.lineWidth = 1*dprPad;
+    pctx.beginPath(); pctx.moveTo(gx,0); pctx.lineTo(gx,H);
+    pctx.moveTo(0,gy); pctx.lineTo(W,gy); pctx.stroke();
+    // node
+    pctx.fillStyle = playing ? '#6d93c9' : 'rgba(255,255,255,0.5)';
+    pctx.beginPath(); pctx.arc(gx,gy, (playing?5:4)*dprPad, 0, Math.PI*2); pctx.fill();
+    if (playing){
+      pctx.strokeStyle = 'rgba(109,147,201,0.35)';
+      pctx.beginPath(); pctx.arc(gx,gy, 11*dprPad, 0, Math.PI*2); pctx.stroke();
+    }
+  }
+
+  function drawSpectrum(){
+    const W = spec.width, H = spec.height;
+    sctx.clearRect(0,0,W,H);
+    sctx.fillStyle = 'rgba(255,255,255,0.02)'; sctx.fillRect(0,0,W,H);
+    if (!analyser){
+      sctx.fillStyle = 'rgba(255,255,255,0.20)';
+      sctx.font = `${11*dprSpec}px 'JetBrains Mono', monospace`;
+      sctx.fillText('spectrum — touch the field above', 10*dprSpec, H/2);
+      return;
+    }
+    analyser.getFloatFrequencyData(freqData);
+    const nyq = ac.sampleRate / 2;
+    const fMax = 3800;                       // show up to ~3.8 kHz — where the sidebands live
+    const bins = Math.floor((fMax / nyq) * freqData.length);
+    const minDb = -96, maxDb = -12;
+    sctx.fillStyle = playing ? 'rgba(109,147,201,0.85)' : 'rgba(255,255,255,0.30)';
+    const bw = W / bins;
+    for (let i = 0; i < bins; i++){
+      const db = freqData[i];
+      let v = (db - minDb) / (maxDb - minDb);
+      v = Math.max(0, Math.min(1, v));
+      const h = v * v * H;
+      if (h > 0.4) sctx.fillRect(i*bw, H - h, Math.max(bw*0.85, 1), h);
+    }
+    // carrier reference tick
+    const cx = (CAR / fMax) * W;
+    sctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    sctx.beginPath(); sctx.moveTo(cx,0); sctx.lineTo(cx,H); sctx.stroke();
+  }
+
+  function loop(){
+    drawPad(); drawSpectrum();
+    requestAnimationFrame(loop);
+  }
+  setParams(2, 0);
+  loop();
+})();
+</script>
+</body>
+</html>

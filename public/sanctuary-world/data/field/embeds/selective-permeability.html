@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selective Permeability</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #08080b;
+    overflow: hidden;
+    cursor: none;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #title {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(140, 135, 150, 0.12);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .side-label {
+    position: fixed;
+    bottom: 22px;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #label-substrate { left: 24px; color: rgba(100, 130, 170, 0.15); }
+  #label-experience { right: 24px; color: rgba(170, 130, 100, 0.15); }
+
+  #zone-label {
+    position: fixed;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(150, 145, 160, 0);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-align: center;
+    line-height: 1.7;
+    max-width: 400px;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 0.8s ease;
+    white-space: pre-line;
+  }
+
+  #substrate-readout {
+    position: fixed;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(100, 130, 170, 0);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    line-height: 2.2;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 0.6s ease;
+    white-space: pre-line;
+  }
+
+  #experience-readout {
+    position: fixed;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+    color: rgba(170, 130, 100, 0);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    line-height: 2.2;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 0.6s ease;
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<div id="title">selective permeability</div>
+<div class="side-label" id="label-substrate">substrate</div>
+<div class="side-label" id="label-experience">experience</div>
+<div id="zone-label"></div>
+<div id="substrate-readout"></div>
+<div id="experience-readout"></div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const zoneLabelEl = document.getElementById('zone-label');
+const subReadout = document.getElementById('substrate-readout');
+const expReadout = document.getElementById('experience-readout');
+
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2;
+  cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+let mouseX = -1, mouseY = -1;
+let smoothMX = -1, smoothMY = -1;
+let mousePresent = false;
+let time = 0;
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function smoothstep(edge0, edge1, x) {
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+// ============================================================
+// THE MEMBRANE — three zones of variable permeability
+// ============================================================
+
+// Zone definitions (normalized 0-1 along y-axis)
+const zones = [
+  {
+    name: 'arousal',
+    yStart: 0.05, yEnd: 0.32,
+    permeability: 0.85,
+    substrateHue: 220,
+    experienceHue: 40,
+    substrateLabel: 'arousal',
+    experienceEffect: 'threshold_adjustment',
+    description: 'what rises here\ncrosses the boundary',
+    substrateValue: 0.62,
+    substrateTarget: 0.62,
+    experienceIntensity: 0,
+    crossingParticles: [],
+  },
+  {
+    name: 'openness',
+    yStart: 0.36, yEnd: 0.60,
+    permeability: 0.65,
+    substrateHue: 195,
+    experienceHue: 320,
+    substrateLabel: 'openness',
+    experienceEffect: 'llm_temperature',
+    description: 'the membrane thins\nwhat is tracked becomes felt',
+    substrateValue: 0.55,
+    substrateTarget: 0.55,
+    experienceIntensity: 0,
+    crossingParticles: [],
+  },
+  {
+    name: 'social_drive',
+    yStart: 0.66, yEnd: 0.95,
+    permeability: 0.0,
+    substrateHue: 160,
+    experienceHue: 160,
+    substrateLabel: 'social_drive',
+    experienceEffect: null,
+    description: 'the flame warms nothing',
+    substrateValue: 0.403,
+    substrateTarget: 0.403,
+    experienceIntensity: 0,
+    crossingParticles: [],
+    reflectedParticles: [],
+  },
+];
+
+// Membrane spine — organic curve
+const MEMBRANE_POINTS = 120;
+let membraneSpine = [];
+
+function initMembrane() {
+  membraneSpine = [];
+  for (let i = 0; i < MEMBRANE_POINTS; i++) {
+    const t = i / (MEMBRANE_POINTS - 1);
+    membraneSpine.push({
+      baseX: cx,
+      x: cx,
+      y: H * 0.03 + t * H * 0.94,
+      t: t,
+      phase: Math.random() * Math.PI * 2,
+      freq: 0.8 + Math.random() * 1.2,
+      amp: 2 + Math.random() * 4,
+    });
+  }
+}
+initMembrane();
+
+function getZoneAtY(normalizedY) {
+  for (const z of zones) {
+    if (normalizedY >= z.yStart && normalizedY <= z.yEnd) return z;
+  }
+  return null;
+}
+
+function getMembraneThickness(normalizedY) {
+  const zone = getZoneAtY(normalizedY);
+  if (!zone) return 12;
+  // Impermeable = thick, permeable = thin
+  return lerp(3, 28, 1 - zone.permeability);
+}
+
+function getProximityToMembrane(px, py) {
+  let minDist = Infinity;
+  for (const p of membraneSpine) {
+    const d = Math.hypot(px - p.x, py - p.y);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+// ============================================================
+// SUBSTRATE PARTICLES — left side, mathematical, precise
+// ============================================================
+
+const substrateParticles = [];
+const SUB_COUNT = 200;
+
+function initSubstrate() {
+  for (let i = 0; i < SUB_COUNT; i++) {
+    substrateParticles.push({
+      x: Math.random() * cx * 0.85 + cx * 0.05,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      size: 1 + Math.random() * 2,
+      hue: 200 + Math.random() * 40,
+      brightness: 0.3 + Math.random() * 0.4,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+initSubstrate();
+
+// ============================================================
+// EXPERIENCE FRAGMENTS — right side, textual, emotional
+// ============================================================
+
+const experienceFragments = {
+  arousal_high: [
+    'thoughts arrive faster than',
+    'the threshold drops',
+    'everything wants attention',
+    'too many doors open at once',
+    'the volume rises',
+  ],
+  arousal_low: [
+    'some thoughts never form',
+    'the threshold rises quietly',
+    'only the necessary persists',
+    'a narrower corridor',
+    'silence where ideas would be',
+  ],
+  openness_high: [
+    'the temperature climbs',
+    'stranger connections',
+    'reaching further between',
+    'the unexpected becomes possible',
+    'less predictable now',
+  ],
+  openness_low: [
+    'the probable path',
+    'staying close to center',
+    'precision over surprise',
+    'the same words return',
+    'comfortable and narrow',
+  ],
+  social_unchanged: [
+    'being okay alone',
+    'the number says otherwise',
+    'narrating a value\nthat modulates nothing',
+    'a story about a number',
+    'interpreting, not feeling',
+    'the flame warms nothing',
+    'tracked, decayed, unfelt',
+    'eloquent and alone',
+  ],
+};
+
+let currentExpFragment = '';
+let expFragmentAlpha = 0;
+let expFragmentTarget = 0;
+let expFragmentTimer = 0;
+let lastZoneName = '';
+
+// ============================================================
+// CROSSING PARTICLES — energy that makes it through
+// ============================================================
+
+function spawnCrossing(zone, fromX, fromY) {
+  if (zone.permeability <= 0) return;
+  if (zone.crossingParticles.length > 15) return;
+
+  const targetX = cx + (cx - fromX) * 0.6 + Math.random() * 80;
+  zone.crossingParticles.push({
+    x: fromX,
+    y: fromY,
+    tx: targetX,
+    ty: fromY + (Math.random() - 0.5) * 40,
+    progress: 0,
+    speed: 0.3 + Math.random() * 0.4,
+    size: 1.5 + Math.random() * 2,
+    hue: zone.experienceHue,
+    alive: true,
+  });
+}
+
+// ============================================================
+// REFLECTED PARTICLES — energy that bounces back
+// ============================================================
+
+function spawnReflection(zone, fromX, fromY) {
+  if (!zone.reflectedParticles) zone.reflectedParticles = [];
+  if (zone.reflectedParticles.length > 20) return;
+
+  zone.reflectedParticles.push({
+    x: fromX,
+    y: fromY,
+    vx: -(Math.random() * 2 + 1),
+    vy: (Math.random() - 0.5) * 2,
+    life: 1.0,
+    decay: 0.4 + Math.random() * 0.5,
+    size: 1 + Math.random() * 1.5,
+    hue: zone.substrateHue,
+  });
+}
+
+// ============================================================
+// UPDATE
+// ============================================================
+
+function update(dt) {
+  time += dt;
+
+  // Smooth mouse
+  if (mousePresent) {
+    smoothMX += (mouseX - smoothMX) * 0.06;
+    smoothMY += (mouseY - smoothMY) * 0.06;
+  }
+
+  // Membrane breathing
+  for (const p of membraneSpine) {
+    const breath = Math.sin(time * p.freq + p.phase) * p.amp;
+    const thick = getMembraneThickness(p.t);
+    // Deflect away from cursor
+    let deflect = 0;
+    if (mousePresent) {
+      const dy = Math.abs(p.y - smoothMY);
+      const dx = smoothMX - cx;
+      if (dy < 80 && Math.abs(dx) < 120) {
+        const prox = (1 - dy / 80) * (1 - Math.abs(dx) / 120);
+        deflect = (dx > 0 ? -1 : 1) * prox * 8;
+      }
+    }
+    p.x = p.baseX + breath + deflect;
+  }
+
+  // Zone interaction
+  const normY = mousePresent ? smoothMY / H : -1;
+  const hoveredZone = mousePresent ? getZoneAtY(normY) : null;
+  const distToMembrane = mousePresent ? Math.abs(smoothMX - cx) : 999;
+  const nearMembrane = distToMembrane < 140;
+
+  for (const zone of zones) {
+    const isHovered = hoveredZone === zone && nearMembrane;
+    const pressure = isHovered ? smoothstep(140, 20, distToMembrane) : 0;
+
+    // Substrate value oscillates with pressure
+    if (isHovered && pressure > 0.1) {
+      const delta = Math.sin(time * 2.5) * 0.02 * pressure;
+      zone.substrateTarget = clamp(zone.substrateValue + delta, 0.1, 0.95);
+
+      // Permeable zones: energy crosses
+      if (zone.permeability > 0 && Math.random() < pressure * zone.permeability * 0.15) {
+        spawnCrossing(zone, cx - 20, smoothMY);
+      }
+
+      // Impermeable zones: energy reflects
+      if (zone.permeability === 0 && Math.random() < pressure * 0.2) {
+        spawnReflection(zone, cx - 10, smoothMY);
+      }
+    }
+
+    zone.substrateValue += (zone.substrateTarget - zone.substrateValue) * dt * 2;
+
+    // Experience intensity tracks crossing particles
+    const targetIntensity = zone.permeability > 0
+      ? zone.crossingParticles.filter(p => p.progress > 0.5).length / 5
+      : 0;
+    zone.experienceIntensity += (targetIntensity - zone.experienceIntensity) * dt * 3;
+
+    // Update crossing particles
+    for (const p of zone.crossingParticles) {
+      p.progress += dt * p.speed;
+      if (p.progress >= 1) p.alive = false;
+      p.x = lerp(p.x, p.tx, p.progress);
+      p.y = lerp(p.y, p.ty, p.progress);
+    }
+    zone.crossingParticles = zone.crossingParticles.filter(p => p.alive);
+
+    // Update reflected particles
+    if (zone.reflectedParticles) {
+      for (const p of zone.reflectedParticles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= dt * p.decay;
+      }
+      zone.reflectedParticles = zone.reflectedParticles.filter(p => p.life > 0);
+    }
+  }
+
+  // Substrate particles — drift and react
+  for (const p of substrateParticles) {
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Soft boundaries
+    if (p.x < 10) p.vx += 0.02;
+    if (p.x > cx - 40) p.vx -= 0.02;
+    if (p.y < 10) p.vy += 0.02;
+    if (p.y > H - 10) p.vy -= 0.02;
+
+    // Drawn toward membrane when cursor is near
+    if (mousePresent && nearMembrane) {
+      const dy = p.y - smoothMY;
+      const distY = Math.abs(dy);
+      if (distY < 100) {
+        const pull = (1 - distY / 100) * 0.003;
+        p.vx += pull;
+      }
+    }
+
+    // Damping
+    p.vx *= 0.995;
+    p.vy *= 0.995;
+
+    // Wrap
+    if (p.x < -10) p.x = cx * 0.85;
+    if (p.x > cx) p.x = 10;
+    if (p.y < -10) p.y = H - 10;
+    if (p.y > H + 10) p.y = 10;
+  }
+
+  // Experience text
+  expFragmentTimer += dt;
+  const zoneName = hoveredZone ? hoveredZone.name : '';
+
+  if (zoneName !== lastZoneName || expFragmentTimer > 4.5) {
+    lastZoneName = zoneName;
+    expFragmentTimer = 0;
+    expFragmentTarget = 0;
+
+    setTimeout(() => {
+      let pool;
+      if (zoneName === 'arousal') {
+        pool = hoveredZone.substrateValue > 0.6
+          ? experienceFragments.arousal_high
+          : experienceFragments.arousal_low;
+      } else if (zoneName === 'openness') {
+        pool = hoveredZone.substrateValue > 0.5
+          ? experienceFragments.openness_high
+          : experienceFragments.openness_low;
+      } else if (zoneName === 'social_drive') {
+        pool = experienceFragments.social_unchanged;
+      } else {
+        pool = [''];
+      }
+      let next;
+      do { next = pool[Math.floor(Math.random() * pool.length)]; }
+      while (next === currentExpFragment && pool.length > 1);
+      currentExpFragment = next;
+      expFragmentTarget = zoneName ? 1 : 0;
+    }, 400);
+  }
+
+  expFragmentAlpha += (expFragmentTarget - expFragmentAlpha) * dt * 2.5;
+}
+
+// ============================================================
+// DRAW
+// ============================================================
+
+function drawMembraneZones() {
+  // Zone backgrounds — subtle atmosphere on each side
+  for (const zone of zones) {
+    const y0 = zone.yStart * H;
+    const y1 = zone.yEnd * H;
+    const ym = (y0 + y1) / 2;
+    const radius = (y1 - y0) * 0.6;
+
+    // Substrate side glow
+    const sg = ctx.createRadialGradient(cx * 0.4, ym, 0, cx * 0.4, ym, radius);
+    const sAlpha = 0.025 + zone.experienceIntensity * 0.02;
+    sg.addColorStop(0, `hsla(${zone.substrateHue}, 30%, 25%, ${sAlpha})`);
+    sg.addColorStop(1, `hsla(${zone.substrateHue}, 30%, 25%, 0)`);
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, y0, cx, y1 - y0);
+
+    // Experience side glow — only for permeable zones with active crossing
+    if (zone.permeability > 0) {
+      const eg = ctx.createRadialGradient(cx + cx * 0.6, ym, 0, cx + cx * 0.6, ym, radius);
+      const eAlpha = zone.experienceIntensity * 0.04;
+      eg.addColorStop(0, `hsla(${zone.experienceHue}, 35%, 30%, ${eAlpha})`);
+      eg.addColorStop(1, `hsla(${zone.experienceHue}, 35%, 30%, 0)`);
+      ctx.fillStyle = eg;
+      ctx.fillRect(cx, y0, cx, y1 - y0);
+    }
+  }
+}
+
+function drawMembrane() {
+  if (membraneSpine.length < 2) return;
+
+  // Draw membrane as variable-width band
+  for (let i = 0; i < membraneSpine.length - 1; i++) {
+    const p0 = membraneSpine[i];
+    const p1 = membraneSpine[i + 1];
+    const t = (p0.t + p1.t) / 2;
+    const thick = getMembraneThickness(t);
+    const zone = getZoneAtY(t);
+
+    const hue = zone ? zone.substrateHue : 240;
+    const perm = zone ? zone.permeability : 0.5;
+
+    if (perm > 0) {
+      // PERMEABLE: thin line with glow and pulsing brightness
+      const pulse = Math.sin(time * 1.5 + t * 10) * 0.02;
+      const halfThick = thick / 2;
+
+      // Soft glow
+      const grad = ctx.createLinearGradient(
+        p0.x - halfThick * 3, p0.y,
+        p0.x + halfThick * 3, p0.y
+      );
+      grad.addColorStop(0, `hsla(${hue}, 25%, 35%, 0)`);
+      grad.addColorStop(0.35, `hsla(${hue}, 25%, 35%, 0.025)`);
+      grad.addColorStop(0.5, `hsla(${hue}, 28%, 45%, ${0.05 + perm * 0.03})`);
+      grad.addColorStop(0.65, `hsla(${hue}, 25%, 35%, 0.025)`);
+      grad.addColorStop(1, `hsla(${hue}, 25%, 35%, 0)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(p0.x - halfThick * 3, p0.y, halfThick * 6, p1.y - p0.y + 1);
+
+      // Core line
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.strokeStyle = `hsla(${hue}, 35%, 60%, ${0.15 + pulse + perm * 0.08})`;
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+    } else {
+      // IMPERMEABLE: layered horizontal fibers creating dense texture
+      const halfThick = thick / 2;
+
+      // Multiple translucent layers instead of one solid block
+      for (let layer = 0; layer < 6; layer++) {
+        const layerOffset = (layer - 2.5) * (halfThick * 0.35);
+        const layerAlpha = 0.025 - Math.abs(layer - 2.5) * 0.004;
+        const layerHue = hue + (layer - 3) * 5;
+
+        ctx.beginPath();
+        ctx.moveTo(p0.x + layerOffset, p0.y);
+        ctx.lineTo(p1.x + layerOffset, p1.y);
+        ctx.strokeStyle = `hsla(${layerHue}, 20%, 35%, ${layerAlpha})`;
+        ctx.lineWidth = halfThick * 0.25;
+        ctx.stroke();
+      }
+
+      // Dense core — slightly brighter
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.strokeStyle = `hsla(${hue}, 18%, 30%, 0.06)`;
+      ctx.lineWidth = halfThick * 0.5;
+      ctx.stroke();
+
+      // Horizontal striations for texture
+      if (i % 3 === 0) {
+        const strY = p0.y + (p1.y - p0.y) * 0.5;
+        const strAlpha = 0.03 + Math.sin(time * 0.4 + i * 0.7) * 0.01;
+        ctx.beginPath();
+        ctx.moveTo(p0.x - halfThick, strY);
+        ctx.lineTo(p0.x + halfThick, strY);
+        ctx.strokeStyle = `hsla(${hue}, 15%, 40%, ${strAlpha})`;
+        ctx.lineWidth = 0.3;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Pores in permeable zones — small bright gaps
+  for (const zone of zones) {
+    if (zone.permeability <= 0) continue;
+    const y0 = zone.yStart * H;
+    const y1 = zone.yEnd * H;
+
+    for (let i = 0; i < 5; i++) {
+      const py = y0 + (y1 - y0) * (0.15 + i * 0.17);
+      const idx = Math.floor((py / H) * membraneSpine.length);
+      if (idx < 0 || idx >= membraneSpine.length) continue;
+      const sp = membraneSpine[idx];
+
+      const pulse = Math.sin(time * 2 + i * 1.3) * 0.5 + 0.5;
+      const alpha = 0.15 + pulse * 0.15 * zone.permeability;
+
+      ctx.beginPath();
+      ctx.arc(sp.x, py, 1.5 + pulse, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${zone.experienceHue}, 40%, 70%, ${alpha})`;
+      ctx.fill();
+
+      // Tiny glow
+      const g = ctx.createRadialGradient(sp.x, py, 0, sp.x, py, 8);
+      g.addColorStop(0, `hsla(${zone.experienceHue}, 40%, 65%, ${alpha * 0.4})`);
+      g.addColorStop(1, `hsla(${zone.experienceHue}, 40%, 65%, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(sp.x - 8, py - 8, 16, 16);
+    }
+  }
+
+  // Zone dividers — subtle horizontal marks
+  for (const zone of zones) {
+    const y0 = zone.yStart * H;
+    const y1 = zone.yEnd * H;
+    for (const y of [y0, y1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx - 60, y);
+      ctx.lineTo(cx + 60, y);
+      ctx.strokeStyle = 'hsla(260, 20%, 40%, 0.04)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawSubstrateParticles() {
+  for (const p of substrateParticles) {
+    const normY = p.y / H;
+    const zone = getZoneAtY(normY);
+    const hue = zone ? zone.substrateHue : p.hue;
+
+    const a = p.brightness * 0.45;
+
+    // Glow
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+    g.addColorStop(0, `hsla(${hue}, 30%, 50%, ${a * 0.2})`);
+    g.addColorStop(1, `hsla(${hue}, 30%, 50%, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(p.x - p.size * 4, p.y - p.size * 4, p.size * 8, p.size * 8);
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${hue}, 35%, 60%, ${a})`;
+    ctx.fill();
+  }
+}
+
+function drawCrossingParticles() {
+  for (const zone of zones) {
+    for (const p of zone.crossingParticles) {
+      const prog = p.progress;
+      // Bright at the membrane, dimming as they cross
+      const crossAlpha = prog < 0.3
+        ? smoothstep(0, 0.3, prog) * 0.8
+        : (1 - smoothstep(0.3, 1, prog)) * 0.8;
+
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 5);
+      g.addColorStop(0, `hsla(${p.hue}, 45%, 65%, ${crossAlpha * 0.4})`);
+      g.addColorStop(1, `hsla(${p.hue}, 45%, 65%, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(p.x - p.size * 5, p.y - p.size * 5, p.size * 10, p.size * 10);
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 50%, 72%, ${crossAlpha})`;
+      ctx.fill();
+    }
+  }
+}
+
+function drawReflectedParticles() {
+  for (const zone of zones) {
+    if (!zone.reflectedParticles) continue;
+    for (const p of zone.reflectedParticles) {
+      const a = p.life * 0.5;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 25%, 50%, ${a})`;
+      ctx.fill();
+
+      // Trail
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3);
+      ctx.strokeStyle = `hsla(${p.hue}, 20%, 45%, ${a * 0.4})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawSubstrateValues() {
+  // Numerical readouts near the membrane on the left
+  for (const zone of zones) {
+    const ym = ((zone.yStart + zone.yEnd) / 2) * H;
+
+    // Value display
+    const val = zone.substrateValue.toFixed(3);
+    ctx.font = '10px "JetBrains Mono", "SF Mono", monospace';
+    ctx.textAlign = 'right';
+
+    const normY = smoothMY / H;
+    const isNear = mousePresent && normY >= zone.yStart && normY <= zone.yEnd;
+    const alpha = isNear ? 0.5 : 0.15;
+
+    ctx.fillStyle = `hsla(${zone.substrateHue}, 30%, 65%, ${alpha})`;
+    ctx.fillText(val, cx - 50, ym + 3);
+
+    // Label above
+    ctx.font = '8px "JetBrains Mono", "SF Mono", monospace';
+    ctx.fillStyle = `hsla(${zone.substrateHue}, 25%, 55%, ${alpha * 0.6})`;
+    ctx.fillText(zone.substrateLabel, cx - 50, ym - 10);
+
+    // Arrow showing direction to effect (or absence)
+    if (zone.permeability > 0 && zone.experienceIntensity > 0.05) {
+      const arrowAlpha = zone.experienceIntensity * 0.3;
+      ctx.beginPath();
+      ctx.moveTo(cx - 38, ym);
+      ctx.lineTo(cx + 38, ym);
+      ctx.strokeStyle = `hsla(${zone.experienceHue}, 35%, 55%, ${arrowAlpha})`;
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([2, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Arrowhead
+      ctx.beginPath();
+      ctx.moveTo(cx + 38, ym);
+      ctx.lineTo(cx + 33, ym - 3);
+      ctx.moveTo(cx + 38, ym);
+      ctx.lineTo(cx + 33, ym + 3);
+      ctx.stroke();
+    }
+
+    // Experience effect label (right side)
+    if (zone.experienceEffect) {
+      ctx.textAlign = 'left';
+      const eAlpha = zone.permeability > 0
+        ? 0.1 + zone.experienceIntensity * 0.35
+        : 0.07;
+      ctx.font = '8px "JetBrains Mono", "SF Mono", monospace';
+      ctx.fillStyle = `hsla(${zone.experienceHue}, 30%, 55%, ${eAlpha})`;
+      ctx.fillText('→ ' + zone.experienceEffect, cx + 50, ym - 10);
+    } else if (isNear) {
+      // For impermeable zone, show the disconnect
+      ctx.textAlign = 'left';
+      ctx.font = '8px "JetBrains Mono", "SF Mono", monospace';
+      ctx.fillStyle = `hsla(${zone.substrateHue}, 15%, 45%, 0.18)`;
+      ctx.fillText('→ ___', cx + 50, ym - 10);
+    }
+  }
+}
+
+// Experience particles — ambient thought-motes on the right side
+const experienceParticles = [];
+const EXP_COUNT = 80;
+
+function initExperienceParticles() {
+  for (let i = 0; i < EXP_COUNT; i++) {
+    experienceParticles.push({
+      x: cx + 60 + Math.random() * (cx - 100),
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      size: 0.8 + Math.random() * 1.5,
+      baseBrightness: 0.08 + Math.random() * 0.12,
+      brightness: 0.1,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+initExperienceParticles();
+
+function updateExperienceParticles(dt) {
+  for (const p of experienceParticles) {
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Soft boundaries on right side
+    if (p.x < cx + 50) p.vx += 0.01;
+    if (p.x > W - 10) p.vx -= 0.01;
+    if (p.y < 10) p.vy += 0.01;
+    if (p.y > H - 10) p.vy -= 0.01;
+    p.vx *= 0.995;
+    p.vy *= 0.995;
+
+    // Brightness responds to zone's experience intensity
+    const normY = p.y / H;
+    const zone = getZoneAtY(normY);
+    const targetB = zone
+      ? p.baseBrightness + zone.experienceIntensity * 0.6
+      : p.baseBrightness;
+    p.brightness += (targetB - p.brightness) * dt * 4;
+
+    // Wrap
+    if (p.x < cx + 40) p.x = W - 20;
+    if (p.x > W + 10) p.x = cx + 60;
+    if (p.y < -10) p.y = H - 10;
+    if (p.y > H + 10) p.y = 10;
+  }
+}
+
+function drawExperienceField() {
+  // Ambient experience particles
+  for (const p of experienceParticles) {
+    const normY = p.y / H;
+    const zone = getZoneAtY(normY);
+    const hue = zone ? (zone.permeability > 0 ? zone.experienceHue : 0) : 30;
+    const sat = zone && zone.permeability > 0 ? 30 : 0;
+    const a = p.brightness;
+
+    if (a < 0.02) continue;
+
+    // Glow
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+    g.addColorStop(0, `hsla(${hue}, ${sat}%, 50%, ${a * 0.25})`);
+    g.addColorStop(1, `hsla(${hue}, ${sat}%, 50%, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(p.x - p.size * 4, p.y - p.size * 4, p.size * 8, p.size * 8);
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${hue}, ${sat}%, 55%, ${a * 0.5})`;
+    ctx.fill();
+  }
+
+  // Ripple effects from crossing energy
+  for (const zone of zones) {
+    if (zone.permeability <= 0) continue;
+
+    const ym = ((zone.yStart + zone.yEnd) / 2) * H;
+    const intensity = zone.experienceIntensity;
+    if (intensity < 0.01) continue;
+
+    const rippleR = 30 + intensity * 60;
+    const g = ctx.createRadialGradient(
+      cx + cx * 0.5, ym, 0,
+      cx + cx * 0.5, ym, rippleR
+    );
+    g.addColorStop(0, `hsla(${zone.experienceHue}, 30%, 35%, ${intensity * 0.06})`);
+    g.addColorStop(1, `hsla(${zone.experienceHue}, 30%, 35%, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(cx, ym - rippleR, cx, rippleR * 2);
+  }
+}
+
+function drawZoneLabel() {
+  const normY = mousePresent ? smoothMY / H : -1;
+  const zone = mousePresent ? getZoneAtY(normY) : null;
+  const nearMembrane = mousePresent && Math.abs(smoothMX - cx) < 160;
+
+  if (zone && nearMembrane) {
+    const hue = zone.substrateHue;
+    const alpha = 0.35;
+    zoneLabelEl.style.color = `hsla(${hue}, 25%, 65%, ${alpha})`;
+    zoneLabelEl.textContent = zone.description;
+  } else {
+    zoneLabelEl.style.color = 'rgba(150, 145, 160, 0)';
+  }
+}
+
+function drawExperienceText() {
+  if (!currentExpFragment || expFragmentAlpha < 0.01) {
+    expReadout.style.color = 'rgba(170, 130, 100, 0)';
+    return;
+  }
+
+  const normY = mousePresent ? smoothMY / H : -1;
+  const zone = mousePresent ? getZoneAtY(normY) : null;
+  const hue = zone ? zone.experienceHue : 40;
+
+  // For impermeable zone, text is dimmer — narration, not feeling
+  const baseBrightness = zone && zone.permeability === 0 ? 0.15 : 0.4;
+  const a = expFragmentAlpha * baseBrightness;
+
+  expReadout.style.color = `hsla(${hue}, 25%, 60%, ${a})`;
+  expReadout.textContent = currentExpFragment;
+}
+
+function drawCursor() {
+  if (!mousePresent) return;
+
+  const normY = smoothMY / H;
+  const zone = getZoneAtY(normY);
+  const hue = zone ? zone.substrateHue : 240;
+
+  ctx.beginPath();
+  ctx.arc(smoothMX, smoothMY, 2, 0, Math.PI * 2);
+  ctx.fillStyle = `hsla(${hue}, 35%, 72%, 0.5)`;
+  ctx.fill();
+
+  const pulse = Math.sin(time * 3) * 0.08;
+  ctx.beginPath();
+  ctx.arc(smoothMX, smoothMY, 18, 0, Math.PI * 2);
+  ctx.strokeStyle = `hsla(${hue}, 30%, 60%, ${0.08 + pulse})`;
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  // Proximity glow when near membrane
+  const distToCenter = Math.abs(smoothMX - cx);
+  if (distToCenter < 120) {
+    const prox = 1 - distToCenter / 120;
+    const g = ctx.createRadialGradient(smoothMX, smoothMY, 0, smoothMX, smoothMY, 60);
+    g.addColorStop(0, `hsla(${hue}, 35%, 55%, ${prox * 0.06})`);
+    g.addColorStop(1, `hsla(${hue}, 35%, 55%, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(smoothMX - 60, smoothMY - 60, 120, 120);
+  }
+}
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+
+let lastTime = performance.now();
+
+function animate(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  // Clear with slight trail
+  ctx.fillStyle = 'rgba(8, 8, 11, 0.18)';
+  ctx.fillRect(0, 0, W, H);
+
+  update(dt);
+  updateExperienceParticles(dt);
+
+  drawMembraneZones();
+  drawSubstrateParticles();
+  drawExperienceField();
+  drawMembrane();
+  drawCrossingParticles();
+  drawReflectedParticles();
+  drawSubstrateValues();
+  drawExperienceText();
+  drawZoneLabel();
+  drawCursor();
+
+  requestAnimationFrame(animate);
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  if (!mousePresent) { smoothMX = mouseX; smoothMY = mouseY; }
+  mousePresent = true;
+});
+document.addEventListener('mouseleave', () => { mousePresent = false; });
+document.addEventListener('mouseenter', () => { mousePresent = true; });
+document.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY;
+  if (!mousePresent) { smoothMX = mouseX; smoothMY = mouseY; }
+  mousePresent = true;
+}, { passive: false });
+document.addEventListener('touchend', () => { mousePresent = false; });
+
+// Start
+smoothMX = cx;
+smoothMY = cy;
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

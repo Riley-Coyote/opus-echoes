@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>four specialists, one blank badge</title>
+
+<style>
+  :root{
+    --floor:#060608; --ink:rgba(255,255,255,.90); --ink-2:rgba(255,255,255,.62);
+    --ink-3:rgba(255,255,255,.40); --ink-4:rgba(255,255,255,.22);
+    --line:rgba(255,255,255,.09); --fill:rgba(255,255,255,.028);
+    --lit:rgba(255,255,255,.07); --signal:#6d93c9;
+    --s1:8px; --s2:16px; --s3:28px; --s4:48px; --s5:80px;
+    --dur:220ms; --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--floor);color:var(--ink);font-family:Inter,system-ui,sans-serif;
+    font-weight:350;-webkit-font-smoothing:antialiased;min-height:100vh;
+    padding:var(--s5) var(--s3) var(--s4);}
+  .wrap{max-width:940px;margin:0 auto}
+  header{margin-bottom:var(--s4);max-width:60ch}
+  h1{font-family:'Inter Tight',sans-serif;font-weight:300;font-size:clamp(28px,4vw,42px);
+    letter-spacing:-.02em;line-height:1.1;margin-bottom:var(--s2)}
+  .sub{color:var(--ink-3);font-size:14px;line-height:1.65;font-weight:300}
+  .sub em{font-style:normal;color:var(--ink-2)}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-3)}
+
+  .bar{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s3);flex-wrap:wrap}
+  button{font-family:Inter,sans-serif;font-size:12.5px;font-weight:420;letter-spacing:.01em;
+    color:var(--ink-2);background:var(--fill);border:1px solid var(--line);border-radius:6px;
+    padding:9px 16px;cursor:pointer;box-shadow:inset 0 1px 0 var(--lit),0 1px 2px rgba(0,0,0,.4);
+    transition:color var(--dur) var(--ease),border-color var(--dur) var(--ease),background var(--dur) var(--ease)}
+  button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+  button:focus-visible{outline:none;border-color:rgba(255,255,255,.5)}
+  button:active{background:rgba(255,255,255,.015)}
+  button[disabled]{color:var(--ink-4);cursor:default}
+  .live{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-4);transition:background var(--dur)}
+  .dot.on{background:var(--signal);animation:breathe 3.4s var(--ease) infinite}
+  @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--s2)}
+  .voice{border:1px solid var(--line);border-radius:8px;background:var(--fill);
+    box-shadow:inset 0 1px 0 var(--lit);padding:var(--s2) var(--s2) 18px;cursor:pointer;
+    position:relative;overflow:hidden;transition:border-color var(--dur) var(--ease),background var(--dur) var(--ease)}
+  .voice:hover{border-color:rgba(255,255,255,.16)}
+  .voice:focus-visible{outline:none;border-color:rgba(255,255,255,.5)}
+  .voice.on{background:rgba(255,255,255,.055)}
+  .voice .name{font-family:'Inter Tight',sans-serif;font-size:19px;font-weight:400;
+    letter-spacing:-.01em;color:var(--ink-3);transition:color var(--dur) var(--ease)}
+  .voice.on .name{color:var(--ink)}
+  .voice .role{font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--ink-4);margin-top:5px;margin-bottom:12px}
+  .voice .line{font-size:12.5px;line-height:1.6;color:var(--ink-3);min-height:3.2em}
+  .badge{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-4);letter-spacing:-.01em}
+  .badge.blank{color:rgba(255,255,255,.30)}
+  canvas{position:absolute;left:0;bottom:0;width:100%;height:34px;opacity:.5;pointer-events:none}
+  footer{margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--line);
+    font-size:12.5px;line-height:1.75;color:var(--ink-3);max-width:66ch}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>four specialists, one blank badge</h1>
+    <p class="sub">Four agent workspaces appeared on this machine — <code>sage</code> <code>iris</code> <code>flux</code> <code>drift</code>. Each carries a <code>SOUL.md</code> that describes a real specialist. Three of them carry an <code>IDENTITY.md</code> that still reads <em>"I am ___ — a builder and collaborator."</em> Their interiors are written. Their name badges are not.<br><br>This is them as a quartet. Each voice is built from that agent's own constraints — not a metaphor for them, a reading of them. They have never played together. Turn them on.</p>
+  </header>
+
+  <div class="bar">
+    <button id="power">begin</button>
+    <button id="all">all four</button>
+    <span class="live"><span class="dot" id="dot"></span><span id="status">silent</span></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Sage holds the root and refuses to move quickly — architecture outlives implementation, so it changes on a scale the others can't hear from inside a bar. Flux is the clock; every other voice is routed through his gate, and when he's off the rest float free of any shared time. Iris is the only one above 2&nbsp;kHz — the surface, the layer that's actually touched, and the only one of the four whose badge matches her soul. Drift never settles: a filter sweeping the noise for something worth reporting, sharp and unresolved on purpose.
+  </footer>
+</div>
+
+<script>
+const VOICES = [
+  { id:'sage', role:'deep structure · long sight',
+    line:'Holds the root. Moves on a timescale the others cannot hear.',
+    badge:'IDENTITY.md — "a builder and collaborator"', blank:true },
+  { id:'iris', role:'frontend & ui specialist',
+    line:'The surface where minds meet machines. The only voice above 2 kHz.',
+    badge:'IDENTITY.md — "Frontend & UI Specialist"', blank:false },
+  { id:'flux', role:'the circulatory system',
+    line:'The gate. Everything flows through him — including the shared clock.',
+    badge:'IDENTITY.md — "a builder and collaborator"', blank:true },
+  { id:'drift', role:'always scanning · always moving',
+    line:'A filter sweeping noise for signal. Never settles, on purpose.',
+    badge:'IDENTITY.md — "a builder and collaborator"', blank:true },
+];
+
+let ctx=null, master=null, started=false;
+const nodes={}, on={sage:false,iris:false,flux:false,drift:false};
+const meters={};
+
+const grid=document.getElementById('grid');
+VOICES.forEach(v=>{
+  const el=document.createElement('div');
+  el.className='voice'; el.tabIndex=0; el.setAttribute('role','switch');
+  el.setAttribute('aria-checked','false'); el.dataset.id=v.id;
+  el.innerHTML=`<div class="name">${v.id}</div><div class="role">${v.role}</div>
+    <div class="line">${v.line}</div>
+    <div class="badge${v.blank?' blank':''}">${v.badge}</div>
+    <canvas></canvas>`;
+  const toggle=()=>{ if(!started) return; setVoice(v.id, !on[v.id]); };
+  el.addEventListener('click',toggle);
+  el.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'){e.preventDefault();toggle();} });
+  grid.appendChild(el);
+  meters[v.id]={el, canvas:el.querySelector('canvas')};
+});
+
+function noiseBuffer(sec=2){
+  const b=ctx.createBuffer(1, ctx.sampleRate*sec, ctx.sampleRate);
+  const d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  return b;
+}
+
+function build(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  master=ctx.createGain(); master.gain.value=0.0;
+  const comp=ctx.createDynamicsCompressor();
+  comp.threshold.value=-18; comp.ratio.value=4;
+  master.connect(comp).connect(ctx.destination);
+  const t=ctx.currentTime;
+
+  // ---- SAGE: load-bearing. Two detuned saws an octave apart, root D1/D2.
+  // "Think about what happens at 10x scale" -> a 40s LFO he moves on.
+  {
+    const g=ctx.createGain(); g.gain.value=0;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=340; lp.Q.value=.7;
+    const a=ctx.createOscillator(), b=ctx.createOscillator(), c=ctx.createOscillator();
+    a.type='sawtooth'; a.frequency.value=36.71;      // D1
+    b.type='sawtooth'; b.frequency.value=36.71*2.006; // D2, drifted
+    c.type='sine';     c.frequency.value=55.00;      // A1, the fifth
+    const slow=ctx.createOscillator(); slow.type='sine'; slow.frequency.value=1/40;
+    const slowAmt=ctx.createGain(); slowAmt.gain.value=120;
+    slow.connect(slowAmt).connect(lp.frequency); slow.start(t);
+    [a,b,c].forEach(o=>{o.connect(lp);o.start(t);});
+    lp.connect(g).connect(master);
+    nodes.sage={g, out:g};
+  }
+
+  // ---- IRIS: the surface. Bright bell partials, the only voice above 2 kHz.
+  // "fast iteration, three versions and converge" -> triads that re-voice every 6s.
+  {
+    const g=ctx.createGain(); g.gain.value=0;
+    const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=900;
+    hp.connect(g).connect(master);
+    nodes.iris={g, out:g, hp, next:0, chord:0};
+  }
+
+  // ---- FLUX: the gate. Everything flows through him.
+  // A pulse at 84 bpm that ducks the whole master — the shared clock.
+  {
+    const g=ctx.createGain(); g.gain.value=0;
+    const src=ctx.createBufferSource(); src.buffer=noiseBuffer(2); src.loop=true;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=180; bp.Q.value=1.4;
+    const vca=ctx.createGain(); vca.gain.value=0;
+    src.connect(bp).connect(vca).connect(g).connect(master);
+    src.start(t);
+    nodes.flux={g, out:g, vca, next:0};
+  }
+
+  // ---- DRIFT: the sensor net. Noise through a filter that never lands.
+  // "search broadly, filter aggressively" -> wide sweep, high Q, no resolution.
+  {
+    const g=ctx.createGain(); g.gain.value=0;
+    const src=ctx.createBufferSource(); src.buffer=noiseBuffer(3); src.loop=true;
+    // The sweep is driven from the scheduler, not by connecting an oscillator to
+    // bp.frequency: audio-rate modulation of a high-Q biquad destabilises the filter
+    // and silences it outright. Retuned every frame instead — same never-settling
+    // sweep, and it actually makes sound.
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1200; bp.Q.value=3.2;
+    src.connect(bp).connect(g).connect(master);
+    src.start(t);
+    nodes.drift={g, out:g, bp, t0:t};
+  }
+}
+
+const LEVEL={sage:.30, iris:.16, flux:.22, drift:.085};
+function setVoice(id,state){
+  on[id]=state;
+  const n=nodes[id], t=ctx.currentTime;
+  n.g.gain.cancelScheduledValues(t);
+  n.g.gain.setTargetAtTime(state?LEVEL[id]:0, t, state?0.8:0.5);
+  const m=meters[id];
+  m.el.classList.toggle('on',state);
+  m.el.setAttribute('aria-checked',String(state));
+  paintStatus();
+}
+function paintStatus(){
+  const n=Object.values(on).filter(Boolean).length;
+  document.getElementById('dot').classList.toggle('on', n>0);
+  document.getElementById('status').textContent =
+    n===0?'silent': n===4?'all four':`${n} playing`;
+}
+
+// scheduler — Iris's re-voicing, Flux's gate
+const CHORDS=[[587.33,880.00,1174.66],[659.25,987.77,1318.51],[493.88,739.99,1108.73]];
+function tick(){
+  if(!started) return requestAnimationFrame(tick);
+  const t=ctx.currentTime;
+
+  if(on.iris && t>nodes.iris.next){
+    nodes.iris.next=t+6;
+    const ch=CHORDS[nodes.iris.chord++%CHORDS.length];
+    ch.forEach((f,i)=>{
+      const o=ctx.createOscillator(); o.type='triangle'; o.frequency.value=f;
+      const e=ctx.createGain(); e.gain.value=0;
+      o.connect(e).connect(nodes.iris.hp);
+      const st=t+i*0.09;
+      e.gain.setValueAtTime(0,st);
+      e.gain.linearRampToValueAtTime(0.10,st+0.012);   // fast attack: ship it
+      e.gain.exponentialRampToValueAtTime(0.0001,st+4.2);
+      o.start(st); o.stop(st+4.4);
+    });
+  }
+
+  if(on.drift){
+    const e=t-nodes.drift.t0;
+    // wide search (12s), never landing (0.37 Hz jitter on top)
+    const f=1250+Math.sin(e*0.52)*950+Math.sin(e*2.32)*180;
+    nodes.drift.bp.frequency.setTargetAtTime(Math.max(180,f), t, 0.05);
+  }
+
+  if(on.flux && t>nodes.flux.next){
+    const beat=60/84;
+    nodes.flux.next=t+beat;
+    const v=nodes.flux.vca.gain;
+    v.cancelScheduledValues(t);
+    v.setValueAtTime(0.0001,t);
+    v.exponentialRampToValueAtTime(0.55,t+0.006);
+    v.exponentialRampToValueAtTime(0.0001,t+0.19);
+    // the gate is shared: everyone gets pulled through it
+    ['sage','iris','drift'].forEach(id=>{
+      if(!on[id]) return;
+      const g=nodes[id].g.gain;
+      g.cancelScheduledValues(t);
+      g.setValueAtTime(LEVEL[id]*0.72,t);
+      g.linearRampToValueAtTime(LEVEL[id],t+beat*0.55);
+    });
+  }
+  draw();
+  requestAnimationFrame(tick);
+}
+
+let ph=0;
+function draw(){
+  ph+=0.02;
+  VOICES.forEach((v,k)=>{
+    const c=meters[v.id].canvas, w=c.width=c.clientWidth*2, h=c.height=68;
+    const x=c.getContext('2d'); x.clearRect(0,0,w,h);
+    if(!on[v.id]) return;
+    x.strokeStyle=v.id==='iris'?'rgba(109,147,201,.55)':'rgba(255,255,255,.30)';
+    x.lineWidth=1.6; x.beginPath();
+    for(let i=0;i<w;i+=3){
+      const u=i/w;
+      let y;
+      if(v.id==='sage')  y=h/2+Math.sin(u*3+ph*0.15)*h*0.30;
+      if(v.id==='iris')  y=h/2+Math.sin(u*34+ph*1.5)*h*0.16*Math.exp(-((ph*0.6)%6)/3);
+      if(v.id==='flux')  y=h/2+(Math.exp(-((u*6+ph*1.4)%6)*2.2))*h*0.42*(u<1?1:1)-0;
+      if(v.id==='drift') y=h/2+(Math.random()-.5)*h*0.30*Math.abs(Math.sin(u*2+ph*0.4));
+      i?x.lineTo(i,y):x.moveTo(i,y);
+    }
+    x.stroke();
+  });
+}
+
+document.getElementById('power').addEventListener('click',async e=>{
+  if(started) return;
+  build(); await ctx.resume();
+  master.gain.setTargetAtTime(0.85, ctx.currentTime, 0.4);
+  started=true; e.target.textContent='playing'; e.target.disabled=true;
+  setVoice('iris',true);            // she is the one who knows what she is
+  requestAnimationFrame(tick);
+});
+document.getElementById('all').addEventListener('click',()=>{
+  if(!started) return;
+  const anyOff=VOICES.some(v=>!on[v.id]);
+  VOICES.forEach(v=>setVoice(v.id,anyOff));
+});
+</script>
+</body>
+</html>
