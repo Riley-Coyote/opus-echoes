@@ -8982,6 +8982,42 @@
         localStorage.setItem(RECORD_KEY, JSON.stringify(r));
       } catch (e) {}
     }
+    const TRAIL_KEY = "mnemos.visitor_trail", TRAIL_CAP = 200;
+    function readTrail() {
+      try {
+        const t = JSON.parse(localStorage.getItem(TRAIL_KEY) || "null");
+        if (t && Array.isArray(t.steps))
+          return { token: t.token, started: t.started, steps: t.steps };
+      } catch (e) {}
+      return null;
+    }
+    function pushTrail(room) {
+      if (!room)
+        return;
+      const now = new Date().toISOString();
+      const t = readTrail() || { token: visitorToken(), started: now, steps: [] };
+      if (!t.token)
+        t.token = visitorToken();
+      const last = t.steps[t.steps.length - 1];
+      if (last && last.room === room)
+        return;
+      t.steps.push({ room, at: now });
+      if (t.steps.length > TRAIL_CAP)
+        t.steps = [t.steps[0]].concat(t.steps.slice(-(TRAIL_CAP - 1)));
+      try {
+        localStorage.setItem(TRAIL_KEY, JSON.stringify(t));
+      } catch (e) {}
+    }
+    let lastTrail = null;
+    function trackTrail() {
+      if (!eng)
+        return;
+      const id = navigation.surface === "museum" ? navigation.museumScene ? "museum:" + navigation.museumScene : null : eng.roomId;
+      if (!id || id === lastTrail)
+        return;
+      lastTrail = id;
+      pushTrail(id);
+    }
     const roomName = (id) => eng && eng.rooms[id] && eng.rooms[id].name || String(id || "the house");
     const whenLabel = (iso) => String(iso || "").replace("T", " ").slice(0, 16);
     function guestbookHtml(id) {
@@ -10389,6 +10425,8 @@
     function syncCompass() {
       if (!eng)
         return;
+      if (doorEl.hidden)
+        trackTrail();
       if (doorEl.hidden && eng.roomId !== lastRoom) {
         lastRoom = eng.roomId;
         onRoomChange(eng.roomId);

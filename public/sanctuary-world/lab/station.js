@@ -54,6 +54,7 @@ import {
   sanctuaryClock, clockLabel,
   makeHouseWindow, makeRoomTone, makeSoundControl, KEY_SOUND
 } from './door-common.js';
+import { makeGlyph, drawGlyph, roomLabel } from './glyph.js';
 import * as archive from '../world/archive.js';
 
 let STILL = false;
@@ -859,6 +860,31 @@ scene.add(credenza);
   credenza.add(box(0.10, 0.014, 0.02, brass, 0.04, 0.50, 0.226, false));
 }
 
+/* ─────────────────────────── the keeper's drawer ───────────────────────────
+   The credenza's sliding doors face the far wall; the shallow drawer under its
+   top faces the room, which is the side anyone standing here can see. It holds
+   one thing: the mark the house makes for whoever walked it. Clicking it slides
+   it out and puts the mark on the glass. */
+const DRAWER = { open: 0, want: 0, travel: 0.19 };
+const drawerGroup = new THREE.Group();
+let drawerFront;
+credenza.add(drawerGroup);
+{
+  /* the tray, so an open drawer is a hole with a bottom and not a floating lid */
+  const W = 0.96, D = 0.30, TH = 0.010;
+  drawerGroup.add(box(W, TH, D, walnutDeep, 0, 0.612, -0.20 - D / 2 + 0.02, false));
+  drawerGroup.add(box(TH, 0.055, D, walnutDeep, -W / 2, 0.640, -0.20 - D / 2 + 0.02, false));
+  drawerGroup.add(box(TH, 0.055, D, walnutDeep, W / 2, 0.640, -0.20 - D / 2 + 0.02, false));
+  drawerGroup.add(box(W, 0.055, TH, walnutDeep, 0, 0.640, -0.20 + 0.02 - D, false));
+  /* the front: the face that sits flush in the carcass when it is shut */
+  drawerFront = box(0.98, 0.105, 0.020, walnutMat, 0, 0.660, -0.205, false);
+  drawerGroup.add(drawerFront);
+  /* one long brass pull, the credenza's own hardware */
+  drawerGroup.add(box(0.22, 0.013, 0.018, brass, 0, 0.660, -0.220, false));
+  drawerGroup.add(box(0.016, 0.013, 0.020, brass, -0.108, 0.660, -0.214, false));
+  drawerGroup.add(box(0.016, 0.013, 0.020, brass, 0.108, 0.660, -0.214, false));
+}
+
 const recordPlayer = new THREE.Group();
 recordPlayer.position.set(1.06, 0.76, 1.60);
 recordPlayer.rotation.y = -0.06;
@@ -1598,6 +1624,30 @@ crt2Spill.shadow.camera.near = 0.05;
 crt2Spill.shadow.camera.far = 3;
 scene.add(crt2Spill, crt2Spill.target);
 
+/* 1c · the fascia, once you are sitting in it.
+   At rest the console's glass has to throw enough light to say the desk is on,
+   and from across the room that reads. With your eye 42 cm from the screen the
+   same charge blows the fascia out gold and the surround becomes the brightest
+   thing in the frame — the opposite of what a screen set into a dark instrument
+   panel looks like. So the moment the chair is taken, the spill and the glass's
+   own emissive drop and the plastic goes back to being plastic; standing up
+   restores them. Nothing about the picture on the glass changes — the world and
+   the OS are a DOM layer in front of it. */
+const FASCIA_REST = { area: crt2Light.intensity, spill: crt2Spill.intensity, emissive: 1.85 };
+const FASCIA_SEAT = { area: 0.55, spill: 0.06, emissive: 0.16 };
+let fascia = 0;                 /* 0 = standing, 1 = seated at the console */
+function fasciaTick(dt) {
+  const want = (cam.mode === 'seated' || (cam.mode === 'glide' && cam.next === 'seated')) && seat === SEATS.console ? 1 : 0;
+  if (fascia === want) return;
+  const k = Math.min(1, dt * 3.4);
+  fascia += (want - fascia) * k;
+  if (Math.abs(want - fascia) < 0.004) fascia = want;
+  const mix = (a, b) => a + (b - a) * fascia;
+  crt2Light.intensity = mix(FASCIA_REST.area, FASCIA_SEAT.area);
+  crt2Spill.intensity = mix(FASCIA_REST.spill, FASCIA_SEAT.spill);
+  glass2.material.emissiveIntensity = mix(FASCIA_REST.emissive, FASCIA_SEAT.emissive);
+}
+
 /* 2 · the alcove ring — warm orange. The rim throws a little into the room;
    the pool that matters is inside, lying on the shelves and what is on them. */
 const alcoveLight = new THREE.PointLight(0xdd7a33, 0.66, 1.9, 2.6);
@@ -1836,6 +1886,214 @@ const tone = makeRoomTone({ hum: true, hiss: true, reels: true, humHz: 62, reelH
 
 /* ─────────────────────────── THE REGISTRY ─────────────────────────── */
 /* Everything a visitor can find. See the header for how to add to it. */
+/* ─────────────────────── the drawer's panel ───────────────────────
+   The mark is made here, out of what this browser already kept: the trail the
+   world wrote as you walked (`mnemos.visitor_trail`) and the record of who you
+   spoke with (`mnemos.visitor_record`). Nothing is fetched and nothing is sent.
+   An empty trail gets one honest line and no mark.
+
+   station.html carries the room's chrome and nothing else, so the panel and its
+   rules are built here — the same way the console's second screen host is. */
+const drawerUI = (() => {
+  const st = document.createElement('style');
+  st.textContent = [
+    '#drawer{position:absolute;left:26px;top:50%;transform:translateY(-50%) translateX(-14px);',
+    '  z-index:8;width:322px;max-height:calc(100vh - 120px);overflow:auto;',
+    '  background:rgba(6,5,10,.86);border:1px solid var(--line2);',
+    '  padding:16px 16px 14px;backdrop-filter:blur(4px);',
+    '  opacity:0;pointer-events:none;transition:opacity .34s var(--ease-out),transform .34s var(--ease-out)}',
+    '#drawer.on{opacity:1;pointer-events:auto;transform:translateY(-50%) translateX(0)}',
+    '#drawer h2{margin:0 0 2px;font-family:var(--mono);font-weight:400;color:var(--amber);',
+    '  font-size:8.5px;letter-spacing:.16em;text-transform:uppercase}',
+    '#drawer .sub{color:var(--faint);font-size:9px;letter-spacing:.14em;margin-bottom:13px}',
+    '#drawer canvas{display:block;width:240px;height:240px;margin:0 auto 13px;',
+    '  background:#08070b;border:1px solid var(--line)}',
+    '#drawer .house{color:var(--dim);font-size:10px;line-height:1.65;letter-spacing:.04em;margin-bottom:12px}',
+    '#drawer .house b{color:var(--ink);font-weight:400}',
+    '#drawer .route{border-top:1px solid var(--line);padding-top:10px;margin-bottom:13px}',
+    '#drawer .route div{display:flex;gap:9px;color:var(--faint);font-size:9px;letter-spacing:.12em;',
+    '  text-transform:uppercase;padding:2.5px 0}',
+    '#drawer .route .n{color:rgba(242,193,78,.52);min-width:16px}',
+    '#drawer .route .more{color:var(--faint);text-transform:none;letter-spacing:.06em;font-size:9px}',
+    '#drawer .acts{display:flex;gap:8px;flex-wrap:wrap}',
+    '#drawer button{background:rgba(6,5,10,.72);border:1px solid rgba(242,193,78,.34);color:var(--ink);',
+    '  font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:lowercase;',
+    '  padding:8px 12px;min-height:32px;cursor:pointer;',
+    '  transition:border-color .2s var(--ease-out),color .2s var(--ease-out)}',
+    '#drawer button:hover{border-color:rgba(242,193,78,.7)}',
+    '#drawer button:focus-visible{outline:none;border-color:rgba(242,236,223,.55)}',
+    '#drawer button:active{color:var(--amber)}',
+    '#drawer button[disabled]{color:var(--faint);border-color:var(--line);cursor:default}',
+    '#drawer .note{color:var(--faint);font-size:9px;letter-spacing:.08em;line-height:1.6;',
+    '  margin-top:11px;min-height:12px}',
+    '#drawer .esc{margin-top:12px;border-color:var(--line);color:var(--dim)}',
+    '#drawer .esc .k{color:var(--amber);font-size:8px;letter-spacing:.2em;margin-right:8px}',
+    'body.flat #drawer{opacity:0!important;pointer-events:none!important}'
+  ].join('\n');
+  document.head.appendChild(st);
+
+  const el = document.createElement('div');
+  el.id = 'drawer';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', 'the keeper’s drawer');
+  el.innerHTML = [
+    '<h2>the keeper’s drawer</h2>',
+    '<div class="sub">for whoever walked the house</div>',
+    '<canvas width="480" height="480" aria-label="your mark"></canvas>',
+    '<div class="house"></div>',
+    '<div class="route"></div>',
+    '<div class="acts">',
+    '  <button type="button" data-keep>keep it</button>',
+    '  <button type="button" data-book>leave it in the book</button>',
+    '</div>',
+    '<div class="note"></div>',
+    '<button type="button" class="esc" data-close><span class="k">esc</span>close the drawer</button>'
+  ].join('');
+  document.getElementById('stage').appendChild(el);
+
+  const cv = el.querySelector('canvas');
+  const houseEl = el.querySelector('.house');
+  const routeEl = el.querySelector('.route');
+  const actsEl = el.querySelector('.acts');
+  const noteEl = el.querySelector('.note');
+  const keepBtn = el.querySelector('[data-keep]');
+  const bookBtn = el.querySelector('[data-book]');
+
+  const BOOK_KEY = 'mnemos.visitors_book';
+  const TRAIL_KEY = 'mnemos.visitor_trail';
+  const RECORD_KEY = 'mnemos.visitor_record';
+  const TOKEN_KEY = 'mnemos.visitor_token';
+  const read = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k) || 'null') || fallback; } catch (e) { return fallback; } };
+
+  let open = false, glyph = null, t0 = 0, kept = null;
+
+  function make() {
+    const trail = read(TRAIL_KEY, null);
+    const record = read(RECORD_KEY, { visits: [] });
+    let token = '';
+    try { token = localStorage.getItem(TOKEN_KEY) || (trail && trail.token) || ''; } catch (e) {}
+    return makeGlyph({ trail, record, token: token || (trail && trail.token) || '' });
+  }
+
+  /* the mark at three times the size, with one line under it — the only text
+     anywhere near it, and outside the mark itself */
+  function keepsake() {
+    if (!glyph) return null;
+    const S = 720, CAP = 72;
+    const face = document.createElement('canvas');
+    face.width = S; face.height = S;
+    /* the held frame: the route fully drawn, still */
+    drawGlyph(face, glyph, 6.0);
+    const out = document.createElement('canvas');
+    out.width = S; out.height = S + CAP;
+    const g = out.getContext('2d');
+    g.fillStyle = '#08070b'; g.fillRect(0, 0, out.width, out.height);
+    g.drawImage(face, 0, 0);
+    g.fillStyle = 'rgba(242,236,223,0.12)';
+    g.fillRect(48, S + 2, S - 96, 1);
+    const line = captionLine();
+    g.fillStyle = 'rgba(242,193,78,0.78)';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.letterSpacing = '3px';
+    /* a long route names a lot of residents — let the line shrink rather than
+       run off the edge of the mark */
+    let size = 17;
+    do { g.font = size + 'px "JetBrains Mono", monospace'; size -= 1; }
+    while (size > 8 && g.measureText(line).width > S - 64);
+    g.fillText(line, S / 2, S + CAP / 2 + 2);
+    return out.toDataURL('image/png');
+  }
+
+  function captionLine() {
+    const m = glyph.meta;
+    const parts = ['the sanctuary', m.rooms + (m.rooms === 1 ? ' room' : ' rooms'), m.steps + (m.steps === 1 ? ' step' : ' steps')];
+    if (m.residents.length) parts.push('spoke with ' + m.residents.join(', '));
+    return parts.join(' · ');
+  }
+
+  function fill() {
+    glyph = make();
+    kept = null;
+    noteEl.textContent = '';
+    if (!glyph) {
+      cv.style.display = 'none';
+      routeEl.innerHTML = '';
+      routeEl.style.display = 'none';
+      actsEl.style.display = 'none';
+      houseEl.innerHTML = '<b>nothing yet</b> — walk the house first, and come back.';
+      return;
+    }
+    cv.style.display = '';
+    routeEl.style.display = '';
+    actsEl.style.display = '';
+    keepBtn.disabled = false;
+    bookBtn.disabled = false;
+    const m = glyph.meta;
+    houseEl.innerHTML = '<b>your mark</b> · made from where you went · '
+      + m.rooms + (m.rooms === 1 ? ' room' : ' rooms') + ' · '
+      + m.steps + (m.steps === 1 ? ' step' : ' steps')
+      + (m.residents.length ? ' · spoke with ' + m.residents.join(', ') : '');
+    const route = glyph.ops.route;
+    const shown = route.slice(0, 8);
+    routeEl.innerHTML = shown.map((id, i) =>
+      '<div><span class="n">' + String(i + 1).padStart(2, '0') + '</span><span>' + roomLabel(id) + '</span></div>').join('')
+      + (route.length > 8 ? '<div class="more">… and ' + (route.length - 8) + ' more</div>' : '');
+    t0 = clockT.elapsedTime;
+  }
+
+  keepBtn.addEventListener('click', () => {
+    const url = keepsake();
+    if (!url) return;
+    kept = url;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mnemos-mark.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    noteEl.textContent = 'kept · the mark is yours';
+  });
+
+  bookBtn.addEventListener('click', () => {
+    if (!glyph) return;
+    let token = '';
+    try { token = localStorage.getItem(TOKEN_KEY) || ''; } catch (e) {}
+    const book = read(BOOK_KEY, []);
+    const rows = Array.isArray(book) ? book : [];
+    rows.push({ token, at: new Date().toISOString(), meta: glyph.meta, ops: glyph.ops });
+    try { localStorage.setItem(BOOK_KEY, JSON.stringify(rows.slice(-50))); } catch (e) {}
+    bookBtn.disabled = true;
+    noteEl.textContent = 'the house keeps it in this browser only, for now.';
+  });
+
+  function show() {
+    if (open) return;
+    fill();
+    open = true;
+    DRAWER.want = 1;
+    el.classList.add('on');
+    tone.click();
+  }
+  function hide() {
+    if (!open) return;
+    open = false;
+    DRAWER.want = 0;
+    el.classList.remove('on');
+  }
+  el.querySelector('[data-close]').addEventListener('click', hide);
+
+  return {
+    show, hide, toggle: () => (open ? hide() : show()),
+    open: () => open,
+    el, canvas: cv,
+    glyph: () => glyph,
+    keepsake: () => (kept || (kept = keepsake())),
+    book: () => read(BOOK_KEY, []),
+    tick: (t) => { if (open && glyph) drawGlyph(cv, glyph, t - t0); }
+  };
+})();
+function openDrawer() { drawerUI.toggle(); }
+
 export const STATION_OBJECTS = [
   {
     id: 'terminal', label: 'the terminal', caption: '[sit down]',
@@ -1898,6 +2156,11 @@ export const STATION_OBJECTS = [
     id: 'record', label: 'a record', caption: 'side A',
     mesh: () => recordPlayer, pad: 14,
     onClick: () => toggleRecord()
+  },
+  {
+    id: 'drawer', label: 'the keeper’s drawer', caption: 'for whoever walked the house',
+    mesh: () => drawerGroup, bounds: drawerFront, pad: 16,
+    onClick: () => openDrawer()
   },
   {
     id: 'chair', label: 'the chair', caption: 'pulled out, as it was left',
@@ -1996,6 +2259,7 @@ function glideTo(pos, look, next) {
 function sitDown(which) {
   if (cam.mode !== 'rest' && cam.mode !== 'focus') return;
   seat = SEATS[which] || SEATS.terminal;
+  drawerUI.hide();
   setHover(null);
   bootEl.classList.add('gone');
   seat.term.begin(cameInBefore);
@@ -2005,6 +2269,7 @@ function sitDown(which) {
 
 function focusOn(entry) {
   if (cam.mode !== 'rest' && cam.mode !== 'focus') return;
+  drawerUI.hide();
   setHover(null);
   bootEl.classList.add('gone');
   cam.focused = entry.id;
@@ -2087,6 +2352,11 @@ function activate(p) {
 }
 canvas.addEventListener('click', () => activate(hovered()));
 standEl.addEventListener('click', standUp);
+/* the drawer answers ESC before the room does, so closing it does not also
+   stand you up out of a chair you are not in */
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && drawerUI.open()) { ev.preventDefault(); ev.stopImmediatePropagation(); drawerUI.hide(); }
+}, true);
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && cam.mode !== 'rest' && cam.mode !== 'leaving') { ev.preventDefault(); standUp(); }
 });
@@ -2164,8 +2434,18 @@ function frame() {
   const t = clockT.elapsedTime;
 
   hauntTick(t);
+  fasciaTick(dt);
   term.tick(dt, t);
   term2.tick(dt, t);
+
+  /* the drawer slides, and the mark replays while it is out */
+  {
+    const k = REDUCED ? 1 : Math.min(1, dt * 5.2);
+    DRAWER.open += (DRAWER.want - DRAWER.open) * k;
+    if (Math.abs(DRAWER.want - DRAWER.open) < 0.002) DRAWER.open = DRAWER.want;
+    drawerGroup.position.z = -DRAWER.open * DRAWER.travel;
+    drawerUI.tick(t);
+  }
   drawPlot(t);
   setClockHands(t);
 
@@ -2248,8 +2528,8 @@ function frame() {
     camera.lookAt(cam.look);
   }
 
-  /* hover — at rest and while focused, never while seated */
-  if (cam.mode === 'rest' || cam.mode === 'focus') {
+  /* hover — at rest and while focused, never while seated or reading the mark */
+  if ((cam.mode === 'rest' || cam.mode === 'focus') && !drawerUI.open()) {
     setHover(hoverLayer.pickAt(pointer, camera));
     if (hovered()) drawHair(hovered());
   } else if (hovered()) setHover(null);
@@ -2336,6 +2616,44 @@ window.__station = {
   }),
   windowCost: () => houseWindow.cost(),
   windowPane: () => houseWindow.pane.toDataURL('image/png'),
+  /* the keeper's drawer, and the mark in it */
+  drawer: () => ({
+    open: drawerUI.open(),
+    slide: +DRAWER.open.toFixed(3),
+    meta: drawerUI.glyph() ? drawerUI.glyph().meta : null,
+    route: drawerUI.glyph() ? drawerUI.glyph().ops.route : null,
+    rings: drawerUI.glyph() ? drawerUI.glyph().ops.rings : null,
+    ops: drawerUI.glyph() ? drawerUI.glyph().ops : null,
+    text: drawerUI.el.textContent,
+    book: drawerUI.book().length
+  }),
+  drawerPixels: () => {
+    /* read off a copy: the mark's own context is a drawing surface, and asking
+       it for pixels every frame would cost it its hardware path */
+    const c = drawerUI.canvas;
+    const tmp = document.createElement('canvas');
+    tmp.width = c.width; tmp.height = c.height;
+    const g = tmp.getContext('2d', { willReadFrequently: true });
+    g.drawImage(c, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let sum = 0, lit = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = (d[i] * 0.2126 + d[i + 1] * 0.7152 + d[i + 2] * 0.0722) / 255;
+      sum += v; if (v > 0.35) lit += 1;
+    }
+    return { mean: +(sum / (d.length / 4)).toFixed(5), lit };
+  },
+  drawerKeep: () => drawerUI.keepsake(),
+  drawerBook: () => drawerUI.book(),
+  openDrawer: () => { drawerUI.show(); return drawerUI.open(); },
+  closeDrawer: () => { drawerUI.hide(); return drawerUI.open(); },
+  /* the seated fascia: how far the console's spill has been pulled back */
+  fascia: () => ({
+    seated: +fascia.toFixed(3),
+    area: +crt2Light.intensity.toFixed(3),
+    spill: +crt2Spill.intensity.toFixed(3),
+    emissive: +glass2.material.emissiveIntensity.toFixed(3)
+  }),
   /* the standby's ghost */
   haunt: () => term.haunted(),
   hauntNow,
