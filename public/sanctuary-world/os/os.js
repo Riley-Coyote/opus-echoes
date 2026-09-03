@@ -69,31 +69,62 @@ const CLOCK0 = sanctuaryClock();
 const T0 = performance.now();
 const nowMin = () => (CLOCK0.min + (performance.now() - T0) / 30000) % 1440;
 
+/* ─────────────────────────── where things are ───────────────────────────
+   Every path is resolved against THIS FILE's own URL, never against the
+   document base. The OS is served two ways — standalone at
+   /sanctuary-world/os/, and as the iframe on the station console's glass —
+   and a bare relative path is at the mercy of whatever base the embedding
+   page happens to have. `at()` removes that whole class of bug: os.js knows
+   where os.js is, and the data sits at a fixed offset from it. */
+const OS_DIR = new URL('.', import.meta.url);
+const at = (rel) => new URL(rel, OS_DIR).href;
+const DATA = '../data/field/';
+const NOTES_DIR = '../data/stewards/notes/';
+const EMBEDS = DATA + 'embeds/';
+
 /* ─────────────────────────── the data ───────────────────────────
-   Four files, all built by tools/build-field.mjs from the read-only sources.
-   Each is fetched once, on the first program that needs it. */
+   Five files, built by tools/build-field.mjs and tools/build-notes.mjs from
+   the read-only sources. Each is fetched once, on the first program that
+   needs it. */
 const cache = {};
 const once = (k, fn) => { if (!cache[k]) cache[k] = fn().catch((e) => { cache[k] = null; throw e; }); return cache[k]; };
-const catalog = () => once('catalog', () => fetch('../data/field/catalog.json').then((r) => { if (!r.ok) throw new Error('catalog ' + r.status); return r.json(); }));
-const bus = () => once('bus', () => fetch('../data/field/bus.json').then((r) => { if (!r.ok) throw new Error('bus ' + r.status); return r.json(); }));
-const identity = () => once('identity', () => fetch('../data/field/identity.md').then((r) => { if (!r.ok) throw new Error('identity ' + r.status); return r.text(); }));
-const snapshot = () => once('snapshot', () => archive.load({ url: '../data/archive/sanctuary-seed.json' }));
+const grab = (rel, kind, as) => fetch(at(rel)).then((r) => { if (!r.ok) throw new Error(kind + ' ' + r.status); return r[as](); });
+const catalog = () => once('catalog', () => grab(DATA + 'catalog.json', 'catalog', 'json'));
+const bus = () => once('bus', () => grab(DATA + 'bus.json', 'bus', 'json'));
+const identity = () => once('identity', () => grab(DATA + 'identity.md', 'identity', 'text'));
+const snapshot = () => once('snapshot', () => archive.load({ url: at('../data/archive/sanctuary-seed.json') }));
 /* the stewards' own notes: index.json lists what is on disk (tools/build-notes.mjs),
    and the .md files beside it are written by hand by Fable, Sol and Opus */
-const NOTES_DIR = '../data/stewards/notes/';
-const notesIndex = () => once('notes', () => fetch(NOTES_DIR + 'index.json')
-  .then((r) => (r.ok ? r.json() : []))
+const notesIndex = () => once('notes', () => grab(NOTES_DIR + 'index.json', 'notes', 'json')
   .then((x) => (Array.isArray(x) ? x : []))
   .catch(() => []));
 
 /* the three categories whose entries run rather than read */
 const LIVING = { art: 1, music: 1, builds: 1 };
-const embedFor = (id) => '../data/field/embeds/' + id + '.html';
+const embedFor = (id) => at(EMBEDS + id + '.html');
 /* Field's prose points at its own `embed-<id>.html`, which sits beside
-   docs/index.html and not beside this page — point it at our copy, so a piece
-   quoted inside a reflection runs here too rather than 404ing */
+   docs/index.html and not beside this page. Left alone it resolves against
+   whatever page is showing the prose — os/embed-….html, which is nothing —
+   so every reference is rewritten to the absolute URL of our copy. That makes
+   a piece quoted inside a reflection run here too, from either mount. */
 const rehome = (html) => String(html || '').replace(/(["'])embed-([A-Za-z0-9._-]+)\.html\1/g,
-  (m, q, id) => q + '../data/field/embeds/' + id + '.html' + q);
+  (m, q, id) => q + embedFor(id) + q);
+
+/* ═══════════════════════ THE ROOM ═══════════════════════
+   Standalone, the OS is the whole page and these do nothing. On the station's
+   console the OS is an iframe on the glass, and the room outside it owns two
+   things the OS cannot do for itself: standing up, and going full-bleed. The
+   world (index.html?door=1) hands those up the same way — a postMessage on
+   `mnemos-world` — so the console's screen speaks the terminal's language.
+
+   NOTE for whoever wires the room: door-common's `onWorldMessage` currently
+   understands 'came-in' and 'stand-up' only. 'full' is sent but not yet
+   listened for. See the report. */
+const IN_STATION = new URLSearchParams(location.search).get('in') === 'station';
+function tellRoom(type) {
+  if (!IN_STATION) return false;
+  try { window.parent.postMessage({ source: 'mnemos-world', type: type }, '*'); return true; } catch (e) { return false; }
+}
 
 /* ═══════════════════════ THE WINDOW MANAGER ═══════════════════════
    Topologie's own, in this palette. */
@@ -516,7 +547,7 @@ function openNote(who) {
       const n = mine[i];
       if (datesEl) $$('.date', datesEl).forEach((b) => b.classList.toggle('on', +b.dataset.i === i));
       readEl.innerHTML = '<div class="empty-note">reading…</div>';
-      fetch(NOTES_DIR + n.file)
+      fetch(at(NOTES_DIR + n.file))
         .then((r) => { if (!r.ok) throw new Error(n.file + ' ' + r.status); return r.text(); })
         .then((text) => {
           readEl.innerHTML =
@@ -822,13 +853,30 @@ async function boot() {
   tick();
   setInterval(tick, 2000);
 
-  /* ESC closes the window you are in; LIMEN stays, as a desk accessory does */
+  /* ESC works down a ladder: an open menu, then the topmost real window,
+     then a desk accessory, and only when the desk is genuinely clear does it
+     leave the room — which standalone means nothing, and on the console means
+     standing up. F hands full-bleed to the room, but never while someone is
+     typing into the terminal, LIMEN or the search field. */
+  const stack = (accessories) => Object.values(wins)
+    .filter((x) => !x.min && (accessories || !x.accessory))
+    .sort((a, b) => (+a.el.style.zIndex || 0) - (+b.el.style.zIndex || 0)).pop();
+
   addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Escape') return;
-    if (openMenu) { closeMenus(); return; }
-    const w = Object.values(wins).filter((x) => !x.accessory && !x.min)
-      .sort((a, b) => (+a.el.style.zIndex || 0) - (+b.el.style.zIndex || 0)).pop();
-    if (w) closeWin(w.id);
+    const t = ev.target, tag = t && t.tagName;
+    const typing = tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable);
+
+    if (ev.key === 'Escape') {
+      if (openMenu) { closeMenus(); return; }
+      const w = stack(false) || stack(true);
+      if (w) { closeWin(w.id); return; }
+      tellRoom('stand-up');
+      return;
+    }
+    if ((ev.key === 'f' || ev.key === 'F') && !typing && IN_STATION) {
+      ev.preventDefault();
+      tellRoom('full');
+    }
   });
   addEventListener('resize', updateScrim);
 
@@ -867,6 +915,7 @@ window.__os = {
   zoom: (id) => zoomWin(wins[id]),
   clock: () => clockLabel(nowMin()),
   booted: () => !$('#boot'),
+  inStation: () => IN_STATION,
   ready: true
 };
 
