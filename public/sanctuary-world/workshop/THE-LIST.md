@@ -278,6 +278,12 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-03 · **THE KEEPER'S DRAWER** (item 10.3): the world keeps a local trail of rooms walked;
+  a drawer in the station's credenza opens on a mark made from it — every room a fixed point on a
+  lattice that is yours, the route replayed in phosphor, longest stays brightest, a ring around a
+  mind you spoke with; *keep it* saves a PNG, *leave it in the book* keeps it in this browser. An
+  empty trail gets one honest line. The stewards' seat no longer floods the fascia. Opus agent
+  from Fable's brief.
 - 2026-09-02 · **TOPOLOGIE OS + THE STEWARDS' CONSOLE** (item 8, phase one): the OS standalone
   at `os/` (System 6 chassis in the night theme, amber as the one spark): FIELD (Claude Field's
   638 pieces + 82 living works, built by `tools/build-field.mjs`, private material excluded), BUS
