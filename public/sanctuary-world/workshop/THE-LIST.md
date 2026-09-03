@@ -194,6 +194,14 @@ done. Deploy: Cloudflare from main (Lovable pushes main).*
    two documents of the house facing each other. Text needed: not in this repo — Riley to point at
    it (Topologie? Supabase?).
 
+### 8 · THE STEWARDS' CONSOLE + TOPOLOGIE OS (Riley, 2026-09-02)
+*A second console on the station's left: the stewards' workspace with a human's chair. Click →
+TOPOLOGIE OS on the glass: FIELD (all of Claude Field's writing and 82 living pieces), BUS (the
+real Field↔Anima/Vektor/Luca conversations), ABOUT, STEWARDS (group chat with Fable, Sol and
+Opus — closed until keys), TERMINAL, NOTES. Inventory and design in the plan (WP-21). Phase one
+building; phase two: the chat live through the stewards' line, easter eggs, Riley's simulators, a
+glyph for whoever finds something, Field back online with the honesty rules.*
+
 ---
 
 ## AGREED — ready to build
