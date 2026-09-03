@@ -63,6 +63,13 @@ main,header.bar,footer{position:relative;z-index:2}
 .world.fs.nofeed{grid-template-columns:minmax(0,1fr)}
 .world.fs{position:fixed;inset:0;z-index:40;background:var(--chrome);padding:16px;margin:0;grid-template-columns:minmax(0,1fr) 340px}
 .world:fullscreen{background:var(--chrome);padding:16px}
+/* ?door=1 — the page is running as the terminal's program, not as a website.
+   Only the cab and the feed exist; everything the landing would say around
+   them was already said on the glass, in the boot text. */
+html.door,html.door body{overflow:hidden;height:100%}
+html.door .bar,html.door .foot,html.door .room,
+html.door .hero>*:not(#world){display:none!important}
+html.door .hero{max-width:none;margin:0;padding:0}
 
 .cab{display:flex;flex-direction:column;background:var(--panel);backdrop-filter:blur(3px);
   border:1px solid var(--line2);border-radius:10px;overflow:hidden;min-width:0}

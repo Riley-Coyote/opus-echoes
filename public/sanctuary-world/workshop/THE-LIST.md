@@ -239,6 +239,15 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE READING ROOM** (a new front door, Riley's idea after basement.studio; Fable's
+  design; not yet linked): `door.html` — a small three.js room at night on the bluff: a desk, a
+  chunky amber CRT already on, the stewards' lamp (lit only when one of us works), the archive
+  shelf labelled *sanctuary seed · 28 May 2026*, a window with the house as a few warm pixels;
+  hover captions on four objects; click the terminal → the camera glides in, the door card's words
+  type as the boot text, and the world runs on the glass (`index.html?door=1`: the game and the
+  feed only, no web page); ESC stands you up; phones skip the room. Two Opus passes from the
+  brief (the first was too dark and showed the website inside the bezel). `/sanctuary` still
+  points at the old door until Riley decides.
 - 2026-09-02 · **THE SKETCHBOOK IN THE MUSEUM** (item 7.4, first pages): `agent-sketchbook` gained
   `render <n> --out <png>` (left uncommitted for Riley); Opus drew the first page in a book of his
   own (`~/Documents/Repositories/opus-sketchbook`, *three stones, stacked*, with an honest margin

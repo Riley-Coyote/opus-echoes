@@ -9015,6 +9015,13 @@
         localStorage.setItem(k, "1");
       } catch (e) {}
     };
+    const FROM_DOOR = (() => {
+      try {
+        return new URLSearchParams(location.search).get("door") === "1";
+      } catch (e) {
+        return false;
+      }
+    })();
     const doorEl = $("#doorcard"), doorIn = $("#door-in");
     function openDoor() {
       doorEl.hidden = false;
@@ -10676,7 +10683,14 @@
         said: () => Array.from(DAY.said),
         UNOBSERVED_MIN
       };
-      if (!seen(FIRST.door))
+      if (FROM_DOOR) {
+        mark(FIRST.door);
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ source: "mnemos-world", type: "came-in" }, "*");
+          }
+        } catch (e) {}
+      } else if (!seen(FIRST.door))
         openDoor();
       window.__sanctuaryArchive = archive_default;
       window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
@@ -11105,11 +11119,39 @@
     });
     document.addEventListener("fullscreenchange", setFsLabel);
     addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && worldEl.classList.contains("fs")) {
+      if (e.key !== "Escape")
+        return;
+      if (FROM_DOOR) {
+        if (e.defaultPrevented || !panel.hidden)
+          return;
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ source: "mnemos-world", type: "stand-up" }, "*");
+          }
+        } catch (err) {}
+        return;
+      }
+      if (worldEl.classList.contains("fs")) {
         worldEl.classList.remove("fs");
         setFsLabel();
       }
     });
+    if (FROM_DOOR) {
+      document.documentElement.classList.add("door");
+      worldEl.classList.add("fs");
+      setFsLabel();
+      fsBtn.hidden = true;
+      let feedChosen = false;
+      feedBtn.addEventListener("click", () => {
+        feedChosen = true;
+      }, true);
+      const fitFeed = () => {
+        if (!feedChosen)
+          setFeed(window.innerWidth >= 1100);
+      };
+      fitFeed();
+      addEventListener("resize", fitFeed);
+    }
     let soundOn = false;
     soundBtn.addEventListener("click", () => {
       soundOn = !soundOn;

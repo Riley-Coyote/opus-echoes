@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mnemos — the reading room</title>
+<meta name="description" content="A small room at night, and a terminal that was already on before you came in.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  /* the palette is the landing's, verbatim */
+  :root{
+    --ink:#f5f3ed; --dim:#aaa7a0; --faint:#7b7975;
+    --amber:#f2c14e; --amber-deep:#d99334; --ember:#b4622e;
+    --frost:#9fd6e0; --line:rgba(242,236,223,0.12); --line2:rgba(242,236,223,0.24);
+    --px:'Press Start 2P',monospace; --mono:'JetBrains Mono',monospace;
+    --ease-out:cubic-bezier(0.23,1,0.32,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#050408;overflow:hidden}
+  body{font-family:var(--mono);color:var(--ink);-webkit-font-smoothing:antialiased}
+
+  #stage{position:fixed;inset:0}
+  #gl{position:absolute;inset:0;display:block;width:100%;height:100%}
+
+  /* the CSS3D layer — the world, genuinely on the screen */
+  #css3d{position:absolute;inset:0;pointer-events:none;z-index:2}
+  #css3d.gone{display:none}
+  #scr{width:1024px;height:768px;background:#0a0812;overflow:hidden;position:relative}
+  #scr iframe{width:100%;height:100%;border:0;display:block;background:#0a0812}
+  #scr .curve{position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,.30) 0 2px,rgba(0,0,0,0) 2px 4px);
+    box-shadow:inset 0 0 120px 40px rgba(4,3,8,.72);border-radius:22px}
+
+  /* flat takeover — the same iframe, un-transformed and full bleed */
+  body.flat #css3d,body.flat #css3d>div,body.flat #css3d>div>div,body.flat #scr{
+    transform:none!important;width:100%!important;height:100%!important;
+    perspective:none!important;pointer-events:auto;overflow:visible}
+  body.flat #css3d{z-index:6;overflow:hidden}
+  body.flat #scr .curve{display:none}
+  body.flat #crtmask{opacity:1}
+  body.flat #captions,body.flat #boot{opacity:0!important}
+
+  /* the bezel + scanlines that ride over the flat world */
+  #crtmask{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;
+    transition:opacity .5s var(--ease-out);
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,.16) 0 2px,rgba(0,0,0,0) 2px 4px);
+    box-shadow:inset 0 0 180px 60px rgba(4,3,8,.55),inset 0 0 0 1px rgba(242,193,78,.10)}
+  #crtmask::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 50% 45%,rgba(0,0,0,0) 52%,rgba(4,3,8,.62) 100%)}
+
+  /* the hover caption */
+  #captions{position:absolute;inset:0;z-index:4;pointer-events:none;transition:opacity .3s var(--ease-out)}
+  #cap{position:absolute;left:0;top:0;opacity:0;transform:translate(14px,-50%);
+    padding:7px 11px;background:rgba(6,5,10,.80);border:1px solid var(--line2);
+    font-size:9.5px;letter-spacing:.14em;text-transform:lowercase;color:var(--ink);
+    white-space:nowrap;transition:opacity .18s var(--ease-out);backdrop-filter:blur(3px)}
+  #cap.on{opacity:1}
+  /* the hairline around whatever the pointer has found */
+  #hair{position:absolute;left:0;top:0;opacity:0;pointer-events:none;
+    border:1px solid rgba(242,193,78,.42);box-shadow:0 0 18px rgba(242,193,78,.10) inset;
+    transition:opacity .18s var(--ease-out)}
+  #hair::before,#hair::after{content:"";position:absolute;width:9px;height:9px;
+    border:1px solid rgba(242,193,78,.85)}
+  #hair::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+  #hair::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+  #cap b{font-weight:400;color:var(--amber);letter-spacing:.16em;text-transform:uppercase;font-size:8.5px}
+  #cap i{font-style:normal;color:var(--faint)}
+
+  /* the standing chrome */
+  #chrome{position:absolute;inset:0;z-index:5;pointer-events:none}
+  #mark{position:absolute;left:26px;top:22px;font-family:var(--px);font-size:10px;letter-spacing:.16em;
+    color:rgba(245,243,237,.62)}
+  #sub{position:absolute;left:26px;top:44px;font-size:8px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--faint)}
+  #stand{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:8;
+    padding:9px 15px;background:rgba(6,5,10,.72);border:1px solid rgba(242,193,78,.34);
+    color:var(--ink);font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:lowercase;
+    cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s var(--ease-out)}
+  #stand.on{opacity:1;pointer-events:auto}
+  #stand:hover{border-color:rgba(242,193,78,.7)}
+  #stand:focus-visible{outline:none;border-color:rgba(242,236,223,.55)}
+  #stand .k{color:var(--amber);font-size:8px;letter-spacing:.2em;margin-right:8px}
+
+  /* the fade used for the swap from the screen quad to full bleed */
+  #dip{position:absolute;inset:0;z-index:9;background:#050408;opacity:0;pointer-events:none;
+    transition:opacity .26s linear}
+  #dip.on{opacity:1}
+
+  /* the first paint, before three has anything to say */
+  #boot{position:absolute;left:26px;bottom:24px;z-index:4;font-size:8.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--faint);transition:opacity .6s var(--ease-out)}
+  #boot.gone{opacity:0}
+
+  @media (max-width:700px){#stage{display:none}}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="gl"></canvas>
+  <div id="css3d"></div>
+  <div id="crtmask" aria-hidden="true"></div>
+  <div id="captions"><div id="cap"></div></div>
+  <div id="chrome">
+    <div id="mark">MNEMOS</div>
+    <div id="sub">the reading room · 11:48 pm</div>
+  </div>
+  <button id="stand" type="button"><span class="k">ESC</span>stand up</button>
+  <div id="dip"></div>
+  <div id="boot">warming the glass…</div>
+</div>
+
+<!-- the small door and no WebGL both lead the same way: straight in -->
+<script>
+(function () {
+  var narrow = window.innerWidth < 700;
+  var webgl = false;
+  try {
+    var c = document.createElement('canvas');
+    webgl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
+  } catch (e) { webgl = false; }
+  if (narrow || !webgl) { location.replace('index.html'); return; }
+  var s = document.createElement('script');
+  s.src = 'room.connected.js?v=20260903-experience-12b';
+  document.body.appendChild(s);
+})();
+</script>
+
+</body>
+</html>

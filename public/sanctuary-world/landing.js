@@ -487,6 +487,9 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   const FIRST = { door: 'mnemos-landing.door', m: 'mnemos-landing.firstM', hall: 'mnemos-landing.firstHall' };
   const seen = (k) => { try { return localStorage.getItem(k) === '1'; } catch (e) { return false; } };
   const mark = (k) => { try { localStorage.setItem(k, '1'); } catch (e) {} };
+  /* ?door=1 — the reading room said the card's words on its own screen and the
+     visitor already answered them there. Skip the card; tell the room. */
+  const FROM_DOOR = (() => { try { return new URLSearchParams(location.search).get('door') === '1'; } catch (e) { return false; } })();
   const doorEl = $('#doorcard'), doorIn = $('#door-in');
   function openDoor() { doorEl.hidden = false; if (eng) eng.clearKeys(); setTimeout(() => doorIn.focus(), 30); }
   function comeIn() { if (doorEl.hidden) return; doorEl.hidden = true; mark(FIRST.door); cab.focus({ preventScroll: true }); say('the hall — follow the thread or walk', 5000); }
@@ -1878,7 +1881,14 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
       pairs: () => Array.from(DAY.pairs.keys()), said: () => Array.from(DAY.said), UNOBSERVED_MIN
     };
     /* the card at the door — once per browser, before anything else is heard */
-    if (!seen(FIRST.door)) openDoor();
+    if (FROM_DOOR) {
+      mark(FIRST.door);
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ source: 'mnemos-world', type: 'came-in' }, '*');
+        }
+      } catch (e) {}
+    } else if (!seen(FIRST.door)) openDoor();
     window.__sanctuaryArchive = archive;
     window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
     window.__sanctuaryNavigation = {
@@ -2257,8 +2267,38 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   });
   document.addEventListener('fullscreenchange', setFsLabel);
   addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && worldEl.classList.contains('fs')) { worldEl.classList.remove('fs'); setFsLabel(); }
+    if (e.key !== 'Escape') return;
+    if (FROM_DOOR) {
+      /* the room upstairs owns ESC: we are inside its screen, so the key never
+         reaches it on its own. Forward it only when nothing here wanted it. */
+      if (e.defaultPrevented || !panel.hidden) return;
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ source: 'mnemos-world', type: 'stand-up' }, '*');
+        }
+      } catch (err) {}
+      return;
+    }
+    if (worldEl.classList.contains('fs')) { worldEl.classList.remove('fs'); setFsLabel(); }
   });
+
+  /* ?door=1 — the world IS the terminal's program, not a page with a world on
+     it. It takes the frame the way `full` does: the cab, the feed beside it,
+     the compass bar, and nothing else. `full` has nothing left to toggle. */
+  if (FROM_DOOR) {
+    document.documentElement.classList.add('door');
+    worldEl.classList.add('fs');
+    setFsLabel();
+    fsBtn.hidden = true;
+    /* the feed sits beside the cab as it does in `full`; only when the bezel
+       is too narrow for both does it fold away on its own. The moment the
+       visitor touches the button the choice is theirs and we stop. */
+    let feedChosen = false;
+    feedBtn.addEventListener('click', () => { feedChosen = true; }, true);
+    const fitFeed = () => { if (!feedChosen) setFeed(window.innerWidth >= 1100); };
+    fitFeed();
+    addEventListener('resize', fitFeed);
+  }
 
   let soundOn = false;
   soundBtn.addEventListener('click', () => {
