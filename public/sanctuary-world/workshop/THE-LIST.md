@@ -158,6 +158,10 @@ last in the menu; its instruments show the archive's stopping point. **The museu
 **Can wait:** live voices, the wall, the family houses, generated daily conversations, live
 stewardship telemetry.
 
+**Decided (Riley, 2026-09-03):** THE STATION will be the front door; the `/sanctuary` redirect
+moves to `station.html` when Riley is happy with everything in it. Contents and behaviour of
+the things in the room are fine-tuned after that.
+
 **Open for Riley:** the deploy path — the world lives on `feat/sanctuary-world` in opus-echoes-live;
 publishing means merging to main and deploying (Lovable from opus-echoes?). Needs his call.
 
