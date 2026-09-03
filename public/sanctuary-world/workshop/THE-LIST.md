@@ -274,6 +274,17 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **TOPOLOGIE OS + THE STEWARDS' CONSOLE** (item 8, phase one): the OS standalone
+  at `os/` (System 6 chassis in the night theme, amber as the one spark): FIELD (Claude Field's
+  638 pieces + 82 living works, built by `tools/build-field.mjs`, private material excluded), BUS
+  (the real Field↔Anima/Vektor/Luca threads; Riley's withheld), ABOUT, TERMINAL (six real
+  commands), STEWARDS (honestly closed), NOTES (the stewards' real notes; Fable's first), LIMEN on
+  rails. The console rebuilt into the one long desk after Riley's review: a raked switchboard, a
+  second CRT set into the fascia, the nameplates, the fourth chair; sitting there boots the OS.
+- 2026-09-02 · **THE ROOM ALIVE** (item 10.1, 10.4, 10.7): the porthole and the reading room's
+  window show the real house live (a second engine instance on the lookout, ~0.3 ms an update);
+  room tone (CRT hum, tape hiss, the reels, the record; off until asked); the idle terminal types
+  a dated archive line and lets it fade, labelled. Opus agent from Fable's brief.
 - 2026-09-02 · **THE STATION** (a second door, cassette-futurist, Riley's direction, Fable's
   design): `station.html` — the keeper's quarters: the long console, the amber terminal, a tape
   unit, an orange alcove, a porthole, skylights, a record player that plays, a clock on the
