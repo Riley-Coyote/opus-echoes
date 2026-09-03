@@ -239,6 +239,14 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-02 · **THE STATION** (a second door, cassette-futurist, Riley's direction, Fable's
+  design): `station.html` — the keeper's quarters: the long console, the amber terminal, a tape
+  unit, an orange alcove, a porthole, skylights, a record player that plays, a clock on the
+  house's time, a corkboard, the stewards' lamp, and THE BOARD — a dot-matrix feed scrolling the
+  residents' own archived lines. A registry of named objects (captions, camera focus, click
+  actions) with two berths for Riley's simulators. Sitting down keeps the desk and the room in
+  frame with the world on the glass, in both rooms. First pass committed; a grade pass (night,
+  warmth, shadow) is in progress. Opus agent from Fable's brief.
 - 2026-09-02 · **THE READING ROOM** (a new front door, Riley's idea after basement.studio; Fable's
   design; not yet linked): `door.html` — a small three.js room at night on the bluff: a desk, a
   chunky amber CRT already on, the stewards' lamp (lit only when one of us works), the archive
