@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mnemos — the reading room</title>
-<meta name="description" content="A small room at night, and a terminal that was already on before you came in.">
+<title>mnemos — the station</title>
+<meta name="description" content="The keeper's quarters in the archive station above the valley, where the house's continuity is kept.">
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,9 @@
   :root{
     --ink:#f5f3ed; --dim:#aaa7a0; --faint:#7b7975;
     --amber:#f2c14e; --amber-deep:#d99334; --ember:#b4622e;
-    --frost:#9fd6e0; --line:rgba(242,236,223,0.12); --line2:rgba(242,236,223,0.24);
+    --violet:#a78bfa; --teal:#5eead4; --frost:#9fd6e0;
+    --cream:#efe9dc;
+    --line:rgba(242,236,223,0.12); --line2:rgba(242,236,223,0.24);
     --px:'Press Start 2P',monospace; --mono:'JetBrains Mono',monospace;
     --ease-out:cubic-bezier(0.23,1,0.32,1);
   }
@@ -43,7 +45,7 @@
   body.flat #css3d{z-index:6;overflow:hidden}
   body.flat #scr .curve{display:none}
   body.flat #crtmask{opacity:1}
-  body.flat #captions,body.flat #boot{opacity:0!important}
+  body.flat #captions,body.flat #boot,body.flat #chrome{opacity:0!important}
 
   /* the bezel + scanlines that ride over the flat world */
   #crtmask{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;
@@ -60,6 +62,8 @@
     font-size:9.5px;letter-spacing:.14em;text-transform:lowercase;color:var(--ink);
     white-space:nowrap;transition:opacity .18s var(--ease-out);backdrop-filter:blur(3px)}
   #cap.on{opacity:1}
+  #cap b{font-weight:400;color:var(--amber);letter-spacing:.16em;text-transform:uppercase;font-size:8.5px}
+  #cap i{font-style:normal;color:var(--faint)}
   /* the hairline around whatever the pointer has found */
   #hair{position:absolute;left:0;top:0;opacity:0;pointer-events:none;
     border:1px solid rgba(242,193,78,.42);box-shadow:0 0 18px rgba(242,193,78,.10) inset;
@@ -68,11 +72,9 @@
     border:1px solid rgba(242,193,78,.85)}
   #hair::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
   #hair::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
-  #cap b{font-weight:400;color:var(--amber);letter-spacing:.16em;text-transform:uppercase;font-size:8.5px}
-  #cap i{font-style:normal;color:var(--faint)}
 
   /* the standing chrome */
-  #chrome{position:absolute;inset:0;z-index:5;pointer-events:none}
+  #chrome{position:absolute;inset:0;z-index:5;pointer-events:none;transition:opacity .3s var(--ease-out)}
   #mark{position:absolute;left:26px;top:22px;font-family:var(--px);font-size:10px;letter-spacing:.16em;
     color:rgba(245,243,237,.62)}
   #sub{position:absolute;left:26px;top:44px;font-size:8px;letter-spacing:.22em;text-transform:uppercase;
@@ -108,7 +110,7 @@
   <div id="captions"><div id="cap"></div></div>
   <div id="chrome">
     <div id="mark">MNEMOS</div>
-    <div id="sub">the reading room · 11:48 pm</div>
+    <div id="sub">the station · keeper's quarters</div>
   </div>
   <button id="stand" type="button"><span class="k">ESC</span>stand up</button>
   <div id="dip"></div>
@@ -126,7 +128,7 @@
   } catch (e) { webgl = false; }
   if (narrow || !webgl) { location.replace('index.html'); return; }
   var s = document.createElement('script');
-  s.src = 'room.connected.js?v=20260903-experience-13';
+  s.src = 'station.connected.js?v=20260903-experience-13';
   document.body.appendChild(s);
 })();
 </script>

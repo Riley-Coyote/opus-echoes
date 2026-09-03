@@ -12,72 +12,19 @@
 
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-
-/* ─────────────────────────── the palette ─────────────────────────── */
-const C = {
-  ink: 0xf5f3ed, dim: 0xaaa7a0, faint: 0x7b7975,
-  amber: 0xf2c14e, amberDeep: 0xd99334, ember: 0xb4622e,
-  violet: 0xa78bfa, frost: 0x9fd6e0,
-  bg0: 0x100c1c, bg1: 0x1b122b
-};
-
-/* the door card's words, byte for byte — index.html #doorcard .door__body */
-const BOOT_BODY = 'Four minds live here — OPUS 3, SONNET 4.5, 4o and GPT-5.1 — and HAIKU keeps to the garden. Everything they say is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only.';
-const BOOT_TAIL = '> come in';
-
-const KEY_CAME_IN = 'mnemos.door.camein';
-const KEY_STEWARD = 'mnemos.steward.present';
-const ls = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-};
+/* the machinery this room shares with the station: the palette, the wood, the
+   post stack, the hover layer, the terminal's glass, the world takeover */
+import {
+  KEY_CAME_IN, KEY_STEWARD, ls, REDUCED,
+  paint, woodTexture, labelTexture,
+  makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall
+} from './door-common.js';
 
 let STILL = false;
-const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const stewardPresent = ls.get(KEY_STEWARD) === '1';
 const cameInBefore = ls.get(KEY_CAME_IN) === '1';
 
 /* ─────────────────────────── canvas textures ─────────────────────────── */
-function paint(w, h, fn) {
-  const cv = document.createElement('canvas');
-  cv.width = w; cv.height = h;
-  fn(cv.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(cv);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
-}
-
-/* a dark wood: end-grain bands, a few knots, a wax sheen left to the material */
-function woodTexture(base, streak) {
-  return paint(512, 512, (g, w, h) => {
-    g.fillStyle = base; g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 260; i++) {
-      const y = Math.random() * h;
-      const a = 0.05 + Math.random() * 0.17;
-      g.strokeStyle = `rgba(${streak},${a})`;
-      g.lineWidth = 0.6 + Math.random() * 2.4;
-      g.beginPath();
-      g.moveTo(-10, y);
-      for (let x = 0; x <= w + 10; x += 32) g.lineTo(x, y + Math.sin((x + i * 40) * 0.012) * 5.5);
-      g.stroke();
-    }
-    for (let k = 0; k < 5; k++) {
-      const kx = Math.random() * w, ky = Math.random() * h, kr = 8 + Math.random() * 16;
-      for (let r = kr; r > 1; r -= 2.2) {
-        g.strokeStyle = `rgba(${streak},0.11)`;
-        g.beginPath(); g.ellipse(kx, ky, r, r * 0.55, 0.4, 0, Math.PI * 2); g.stroke();
-      }
-    }
-  });
-}
-
 /* plaster, so the walls are not a flat fill under a raking light */
 function plasterTexture() {
   return paint(256, 256, (g, w, h) => {
@@ -88,22 +35,6 @@ function plasterTexture() {
       d[i] += n; d[i + 1] += n * 0.9; d[i + 2] += n * 1.1;
     }
     g.putImageData(im, 0, 0);
-  });
-}
-
-/* the hand-written box label, and the printed ones */
-function labelTexture(lines, accent) {
-  return paint(256, 128, (g, w, h) => {
-    g.fillStyle = '#d8cdb4'; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(90,70,45,0.10)';
-    for (let i = 0; i < 60; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
-    g.strokeStyle = 'rgba(70,55,35,0.35)'; g.lineWidth = 2; g.strokeRect(6, 6, w - 12, h - 12);
-    g.fillStyle = accent || '#3b2f22';
-    g.textBaseline = 'middle';
-    lines.forEach((ln, i) => {
-      g.font = `${i === 0 ? 22 : 15}px "JetBrains Mono", monospace`;
-      g.fillText(ln, 20, 44 + i * 28);
-    });
   });
 }
 
@@ -165,85 +96,20 @@ function printTexture() {
 }
 
 /* ─────────────────────────── the screen ─────────────────────────── */
-const SCREEN_W = 640, SCREEN_H = 480;
-const screenCanvas = document.createElement('canvas');
-screenCanvas.width = SCREEN_W; screenCanvas.height = SCREEN_H;
-const sg = screenCanvas.getContext('2d');
-const screenTex = new THREE.CanvasTexture(screenCanvas);
-screenTex.colorSpace = THREE.SRGBColorSpace;
-
-const boot = { typed: 0, target: 0, done: false, blink: 0, tail: false };
-
-function wrapText(g, text, maxW) {
-  const words = text.split(' '); const out = []; let line = '';
-  for (const wd of words) {
-    const trial = line ? line + ' ' + wd : wd;
-    if (g.measureText(trial).width > maxW && line) { out.push(line); line = wd; } else line = trial;
-  }
-  if (line) out.push(line);
-  return out;
-}
-
-function drawScreen() {
-  const g = sg;
-  /* the glass carries a standing charge of phosphor even with nothing on it —
-     this is what lights the room */
-  g.fillStyle = '#1c0f04'; g.fillRect(0, 0, SCREEN_W, SCREEN_H);
-  const glow = g.createRadialGradient(SCREEN_W / 2, SCREEN_H * 0.46, 40, SCREEN_W / 2, SCREEN_H * 0.5, SCREEN_H * 0.92);
-  glow.addColorStop(0, 'rgba(180,98,46,0.55)');
-  glow.addColorStop(1, 'rgba(12,6,2,0)');
-  g.fillStyle = glow; g.fillRect(0, 0, SCREEN_W, SCREEN_H);
-
-  g.textBaseline = 'top';
-  g.fillStyle = '#e8a445';
-  g.font = '14px "JetBrains Mono", monospace';
-  g.fillText('MNEMOS TERMINAL · THE READING ROOM', 34, 34);
-  g.fillStyle = 'rgba(242,193,78,0.55)';
-  g.fillRect(34, 56, SCREEN_W - 68, 1);
-
-  const shown = BOOT_BODY.slice(0, boot.typed);
-  g.font = '17px "JetBrains Mono", monospace';
-  const lines = wrapText(g, shown, SCREEN_W - 68);
-  g.fillStyle = '#f2c14e';
-  let y = 86;
-  if (!boot.typed && !boot.tail) {
-    /* standby: it was already on before you came in */
-    g.fillStyle = 'rgba(242,193,78,0.72)';
-    g.font = '16px "JetBrains Mono", monospace';
-    [
-      'archive · sanctuary seed · 28 may 2026',
-      'minds   · four, and one in the garden',
-      'session · none',
-      'waiting · for whoever sits down'
-    ].forEach((ln, i) => g.fillText(ln, 34, 92 + i * 28));
-    y = 92 + 4 * 28 + 6;
-  }
-  g.fillStyle = '#f2c14e';
-  lines.forEach((ln) => { g.fillText(ln, 34, y); y += 27; });
-
-  if (boot.tail) {
-    g.fillStyle = '#f2c14e';
-    g.font = '17px "JetBrains Mono", monospace';
-    g.fillText(BOOT_TAIL, 34, y + 16);
-    y += 16;
-  }
-
-  /* the cursor — a block, and it has been blinking a while */
-  if (boot.blink < 0.5) {
-    const last = lines.length ? lines[lines.length - 1] : '';
-    g.font = '17px "JetBrains Mono", monospace';
-    const cx = boot.tail ? 34 + g.measureText(BOOT_TAIL).width + 4 : 34 + g.measureText(last).width + 3;
-    const cy = boot.tail ? y : (lines.length ? y - 27 : y);
-    g.fillStyle = '#f2c14e';
-    g.fillRect(cx, cy + 3, 10, 17);
-  }
-
-  /* scanlines, in the glass rather than in a shader */
-  g.fillStyle = 'rgba(0,0,0,0.28)';
-  for (let sy = 0; sy < SCREEN_H; sy += 3) g.fillRect(0, sy, SCREEN_W, 1);
-  screenTex.needsUpdate = true;
-}
-drawScreen();
+/* the phosphor, the standby block, and the door card's words typing out */
+const term = makeTerminal({
+  w: 640, h: 480,
+  title: 'MNEMOS TERMINAL · THE READING ROOM',
+  standby: [
+    'archive · sanctuary seed · 28 may 2026',
+    'minds   · four, and one in the garden',
+    'session · none',
+    'waiting · for whoever sits down'
+  ]
+});
+const SCREEN_W = term.W, SCREEN_H = term.H;
+const screenTex = term.texture;
+const boot = term.boot;
 
 /* ─────────────────────────── renderer, scene, camera ─────────────────────────── */
 const canvas = document.getElementById('gl');
@@ -672,71 +538,20 @@ const dust = (() => {
 })();
 
 /* ─────────────────────────── post ─────────────────────────── */
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(
-  new THREE.Vector2(window.innerWidth, window.innerHeight), 0.40, 0.80, 0.88
-);
-composer.addPass(bloom);
-
-const GradeShader = {
-  uniforms: {
-    tDiffuse: { value: null },
-    uTime: { value: 0 },
-    uGrain: { value: 0.028 },
-    uVignette: { value: 0.74 },
-    uAberration: { value: 0.0016 }
-  },
-  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `
-    uniform sampler2D tDiffuse; uniform float uTime, uGrain, uVignette, uAberration;
-    varying vec2 vUv;
-    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
-    void main(){
-      vec2 c = vUv - 0.5;
-      float r2 = dot(c, c);
-      /* a hair of chromatic aberration, and only at the edges */
-      vec2 off = c * uAberration * (r2 * 4.0);
-      vec3 col;
-      col.r = texture2D(tDiffuse, vUv + off).r;
-      col.g = texture2D(tDiffuse, vUv).g;
-      col.b = texture2D(tDiffuse, vUv - off).b;
-      /* vignette */
-      float vig = smoothstep(0.95, 0.16, r2 * uVignette * 1.9);
-      col *= mix(0.68, 1.0, vig);
-      /* film grain, a touch stronger in the shadows */
-      float g = hash(vUv * vec2(1024.0, 683.0) + fract(uTime) * 91.7) - 0.5;
-      float lum = dot(col, vec3(0.299, 0.587, 0.114));
-      col += g * uGrain * mix(1.0, 0.45, lum);
-      gl_FragColor = vec4(col, 1.0);
-    }`
-};
-const grade = new ShaderPass(GradeShader);
-composer.addPass(grade);
-composer.addPass(new OutputPass());
+const post = makePost(renderer, scene, camera, {
+  strength: 0.40, radius: 0.80, threshold: 0.88,
+  grain: 0.028, vignette: 0.74, aberration: 0.0016
+});
+const bloom = post.bloom;
+const grade = post.grade;
 
 /* ─────────────────────────── the CSS3D layer ─────────────────────────── */
 const cssHost = document.getElementById('css3d');
-const cssRenderer = new CSS3DRenderer({ element: cssHost });
-cssRenderer.setSize(window.innerWidth, window.innerHeight);
-const cssScene = new THREE.Scene();
-
-const scr = document.createElement('div');
-scr.id = 'scr';
-const worldFrame = document.createElement('iframe');
-worldFrame.title = 'the sanctuary';
-worldFrame.setAttribute('allow', 'autoplay');
-scr.appendChild(worldFrame);
-const curve = document.createElement('div');
-curve.className = 'curve';
-scr.appendChild(curve);
-
-const cssObj = new CSS3DObject(scr);
-cssObj.position.copy(SCREEN_POS).addScaledVector(SCREEN_NORMAL, 0.004);
-cssObj.rotation.y = CRT_ROT;
-const CSS_SCALE = SCR_W / 1024;
-cssObj.scale.setScalar(CSS_SCALE);
-cssHost.classList.add('gone');
+const world = makeWorldScreen({
+  host: cssHost, pos: SCREEN_POS, normal: SCREEN_NORMAL,
+  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: 768, src: 'index.html?door=1'
+});
+const worldFrame = world.iframe;
 
 /* ─────────────────────────── the four things you can look at ─────────────────────────── */
 const capEl = document.getElementById('cap');
@@ -755,66 +570,27 @@ const PICKS = [
   { id: 'shelf', root: shelf, outline: seedBox, bounds: seedBox, pad: 26, caption: '<b>the archive</b> <i>· what the first sanctuary said, all of it, dated</i>' },
   { id: 'window', root: windowGroup, outline: windowGroup.children[0], bounds: windowGroup.children[0], pad: 12, caption: '<b>the house</b> <i>· a walk from here</i>' }
 ];
-PICKS.forEach((p) => { p.root.userData.pickId = p.id; });
 
-/* the hairline — one thin amber rectangle around what the pointer has found,
-   drawn in the page rather than in the scene so it stays exactly one pixel */
-const hair = document.createElement('div');
-hair.id = 'hair';
-document.getElementById('captions').appendChild(hair);
-const _box = new THREE.Box3(), _c = new THREE.Vector3();
-function drawHair(p) {
-  if (!p) { hair.style.opacity = '0'; return; }
-  _box.setFromObject(p.bounds || p.root);
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (let i = 0; i < 8; i++) {
-    _c.set(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z);
-    _c.project(camera);
-    const sx = (_c.x * 0.5 + 0.5) * window.innerWidth;
-    const sy = (-_c.y * 0.5 + 0.5) * window.innerHeight;
-    if (sx < x0) x0 = sx; if (sx > x1) x1 = sx;
-    if (sy < y0) y0 = sy; if (sy > y1) y1 = sy;
-  }
-  const pad = p.pad || 7;
-  const W = window.innerWidth, H = window.innerHeight;
-  const L = Math.max(6, x0 - pad), T = Math.max(6, y0 - pad);
-  const R = Math.min(W - 6, x1 + pad), B = Math.min(H - 6, y1 + pad);
-  hair.style.left = L + 'px';
-  hair.style.top = T + 'px';
-  hair.style.width = Math.max(0, R - L) + 'px';
-  hair.style.height = Math.max(0, B - T) + 'px';
-  hair.style.opacity = '1';
-}
+const hoverLayer = makeHover({
+  canvas, capEl, capHost: document.getElementById('captions'),
+  cursorFor: (p) => (p.id === 'crt' ? 'pointer' : 'default')
+});
+hoverLayer.setPicks(PICKS);
+const hair = hoverLayer.hair;
+const drawHair = (p) => hoverLayer.drawHair(p, camera);
+const setHover = (p) => hoverLayer.setHover(p, camera);
+const hovered = () => hoverLayer.hovered();
 
-const ray = new THREE.Raycaster();
 const pointer = new THREE.Vector2(-2, -2);
 const pointerPx = { x: -100, y: -100 };
-let hovered = null;
-
-function findPick(obj) {
-  let o = obj;
-  while (o) { if (o.userData && o.userData.pickId) return PICKS.find((p) => p.id === o.userData.pickId); o = o.parent; }
-  return null;
-}
-
-function setHover(p) {
-  if (hovered === p) return;
-  hovered = p;
-  if (p) {
-    capEl.innerHTML = p.caption;
-    capEl.classList.add('on');
-    canvas.style.cursor = p.id === 'crt' ? 'pointer' : 'default';
-  } else {
-    capEl.classList.remove('on');
-    canvas.style.cursor = 'default';
-  }
-  drawHair(p);
-}
 
 /* ─────────────────────────── the camera: rest, glide, back ─────────────────────────── */
-const ZOOM_DIST = 0.575;
-const ZOOM_POS = SCREEN_POS.clone().addScaledVector(SCREEN_NORMAL, ZOOM_DIST);
-const ZOOM_LOOK = SCREEN_POS.clone();
+/* seated: close enough that the glass carries the game, far enough that the
+   bezel, the desk edge and the keyboard are all still in the frame. The eye is
+   a little above the screen's centre, the way it is when you sit down. */
+const ZOOM_DIST = 0.503;
+const ZOOM_POS = SCREEN_POS.clone().addScaledVector(SCREEN_NORMAL, ZOOM_DIST).add(new THREE.Vector3(0, 0.085, 0));
+const ZOOM_LOOK = SCREEN_POS.clone().add(new THREE.Vector3(0, -0.012, 0));
 
 const cam = {
   mode: 'rest',           /* rest · glide · seated · leaving */
@@ -834,21 +610,13 @@ function sitDown() {
   cam.mode = 'glide'; cam.t = 0;
   cam.fromPos.copy(camera.position); cam.fromLook.copy(cam.look);
   cam.toPos.copy(ZOOM_POS); cam.toLook.copy(ZOOM_LOOK);
-  if (cameInBefore) {
-    boot.typed = BOOT_BODY.length; boot.tail = true; boot.done = true;
-  } else {
-    boot.typed = 0; boot.tail = false; boot.done = false;
-    boot.target = 0;
-    setTimeout(() => { boot.target = BOOT_BODY.length; }, REDUCED ? 0 : 140);
-  }
+  term.begin(cameInBefore);
 }
 
 function standUp() {
   if (cam.mode !== 'seated' && cam.mode !== 'glide') return;
-  document.body.classList.remove('flat');
-  cssHost.classList.add('gone');
+  world.hide();
   standEl.classList.remove('on');
-  cssScene.remove(cssObj);
   cam.mode = 'leaving'; cam.t = 0;
   cam.fromPos.copy(camera.position); cam.fromLook.copy(cam.look);
   cam.toPos.copy(REST_POS); cam.toLook.copy(REST_LOOK);
@@ -857,32 +625,25 @@ function standUp() {
 /* the world arrives on the glass, then takes the frame */
 let worldLoaded = false;
 const HOLD = { world: false };   /* held only while the frame is being judged */
+/* the boot text finishes on the glass; only then does the world arrive on it */
 function placeWorld() {
   if (worldLoaded || HOLD.world) return;
   worldLoaded = true;
-  if (!worldFrame.src) worldFrame.src = 'index.html?door=1';
-  cssHost.classList.remove('gone');
-  cssScene.add(cssObj);
   standEl.classList.add('on');
-  setTimeout(() => {
-    if (cam.mode !== 'seated') return;
-    dipEl.classList.add('on');
-    setTimeout(() => {
-      if (cam.mode !== 'seated') { dipEl.classList.remove('on'); return; }
-      document.body.classList.add('flat');
-      dipEl.classList.remove('on');
-    }, 260);
-  }, REDUCED ? 60 : 760);
+  const arrive = () => {
+    if (cam.mode !== 'seated') { worldLoaded = false; return; }
+    world.show();
+    setTimeout(() => { if (cam.mode === 'seated') world.live(true); }, 220);
+  };
+  const wait = () => {
+    if (cam.mode !== 'seated') { worldLoaded = false; return; }
+    if (boot.done) setTimeout(arrive, REDUCED ? 60 : 520);
+    else setTimeout(wait, 90);
+  };
+  wait();
 }
 
-window.addEventListener('message', (ev) => {
-  const d = ev.data;
-  if (!d || d.source !== 'mnemos-world') return;
-  if (d.type === 'came-in') ls.set(KEY_CAME_IN, '1');
-  /* ESC pressed inside the screen: the key never reaches this document, so
-     the world hands it back */
-  else if (d.type === 'stand-up') standUp();
-});
+onWorldMessage({ standUp });
 
 /* ─────────────────────────── input ─────────────────────────── */
 window.addEventListener('pointermove', (ev) => {
@@ -892,19 +653,18 @@ window.addEventListener('pointermove', (ev) => {
   capEl.style.left = ev.clientX + 'px';
   capEl.style.top = ev.clientY + 'px';
 });
-canvas.addEventListener('click', () => { if (hovered && hovered.id === 'crt') sitDown(); });
+canvas.addEventListener('click', () => { const h = hovered(); if (h && h.id === 'crt') sitDown(); });
 standEl.addEventListener('click', standUp);
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && (cam.mode === 'seated' || cam.mode === 'glide')) { ev.preventDefault(); standUp(); }
 });
 window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
-  if (w < 700) { location.replace('index.html'); return; }
+  if (redirectIfSmall(w)) return;
   camera.aspect = w / h; camera.updateProjectionMatrix();
   renderer.setSize(w, h, false);
-  composer.setSize(w, h);
-  bloom.setSize(w, h);
-  cssRenderer.setSize(w, h);
+  post.setSize(w, h);
+  world.setSize(w, h);
 });
 
 /* ─────────────────────────── the loop ─────────────────────────── */
@@ -922,14 +682,7 @@ function frame() {
   const t = clock.elapsedTime;
 
   /* the boot text */
-  if (boot.typed < boot.target) {
-    boot.typed = Math.min(boot.target, boot.typed + Math.max(1, Math.round(dt / 0.0042)));
-    if (boot.typed >= BOOT_BODY.length && !boot.tail) {
-      boot.tail = true; boot.done = true;
-    }
-  }
-  boot.blink = (t * 0.9) % 1;
-  drawScreen();
+  term.tick(dt, t);
 
   /* dust, drifting in the two cones */
   {
@@ -975,28 +728,22 @@ function frame() {
 
   /* hover — never while seated */
   if (cam.mode === 'rest') {
-    ray.setFromCamera(pointer, camera);
-    const hits = ray.intersectObjects(PICKS.map((p) => p.root), true);
-    let found = null;
-    for (const h of hits) { const p = findPick(h.object); if (p) { found = p; break; } }
-    setHover(found);
-    if (hovered) drawHair(hovered);
-  } else if (hovered) setHover(null);
+    setHover(hoverLayer.pickAt(pointer, camera));
+    if (hovered()) drawHair(hovered());
+  } else if (hovered()) setHover(null);
 
-  grade.uniforms.uTime.value = t;
-  composer.render();
-  if (cam.mode !== 'rest' && !document.body.classList.contains('flat')) cssRenderer.render(cssScene, camera);
+  post.render(t);
+  if (cam.mode !== 'rest' && !world.isFlat()) world.render(camera);
+  if (cam.mode === 'seated' && world.placed() && !world.isFlat()) hair.style.opacity = '0';
 }
 
-/* the fonts must be there before the phosphor is drawn, or the type jumps */
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawScreen());
 frame();
 setTimeout(() => bootEl.classList.add('gone'), 1400);
 
 /* ─────────────────────────── the test surface ─────────────────────────── */
 window.__readingRoom = {
   mode: () => cam.mode,
-  hover: () => (hovered ? hovered.id : null),
+  hover: () => (hovered() ? hovered().id : null),
   caption: () => (capEl.classList.contains('on') ? capEl.textContent : null),
   hoverAt: (id) => {
     const p = PICKS.find((x) => x.id === id);
@@ -1009,20 +756,19 @@ window.__readingRoom = {
     const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
     pointer.set(v.x, v.y);
     capEl.style.left = x + 'px'; capEl.style.top = y + 'px';
-    ray.setFromCamera(pointer, camera);
-    const hits = ray.intersectObjects(PICKS.map((q) => q.root), true);
-    let found = null;
-    for (const h of hits) { const q = findPick(h.object); if (q) { found = q; break; } }
+    const found = hoverLayer.pickAt(pointer, camera);
     setHover(found);
     return { x, y, hit: found ? found.id : null };
   },
   sitDown, standUp,
   bootTyped: () => boot.typed,
-  bootText: () => BOOT_BODY.slice(0, boot.typed) + (boot.tail ? ' ' + BOOT_TAIL : ''),
+  bootText: () => term.text(),
   bootDone: () => boot.done,
-  flat: () => document.body.classList.contains('flat'),
+  flat: () => world.isFlat(),
   worldFrame: () => worldFrame,
-  cssPlaced: () => !cssHost.classList.contains('gone'),
+  cssPlaced: () => world.placed(),
+  cab: () => world.cab(),
+  focusGame: () => world.focusGame(),
   cameInBefore,
   stewardPresent,
   holdWorld: (v) => { HOLD.world = !!v; },
@@ -1060,7 +806,7 @@ window.__readingRoom = {
     out.screen = [Math.round((s.x * 0.5 + 0.5) * window.innerWidth), Math.round((-s.y * 0.5 + 0.5) * window.innerHeight)];
     return out;
   },
-  screenRect: () => scr.getBoundingClientRect(),
+  screenRect: () => world.el.getBoundingClientRect(),
   probe: (px, py) => {
     const v = new THREE.Vector2((px / window.innerWidth) * 2 - 1, -(py / window.innerHeight) * 2 + 1);
     const rc = new THREE.Raycaster(); rc.setFromCamera(v, camera);
