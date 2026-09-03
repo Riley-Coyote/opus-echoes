@@ -202,6 +202,24 @@ Opus — closed until keys), TERMINAL, NOTES. Inventory and design in the plan (
 building; phase two: the chat live through the stewards' line, easter eggs, Riley's simulators, a
 glyph for whoever finds something, Field back online with the honesty rules.*
 
+### 9 · THE GUIDE — a robot in the room (Riley, 2026-09-02)
+*A humanoid robot that moves freely in the station, that a lost visitor can talk to — a guide, a
+meaningful and mildly eerie point of interaction.*
+
+**Fable's position (talking):** yes, and it already has a name: LIMEN, the doorkeeper of the
+Topologie OS ("i keep the door here"), given a body. Not a mascot: tall, thin, slow, cream ceramic
+and brass in the room's idiom, one amber eye like the CRT, a head that tracks the cursor, soft
+footsteps on the tile; it never walks up to you — it is somewhere else each time you look, and
+stops at a respectful distance when you approach. Honest about what it is: on rails first (a
+small tree — where am I · what is this place · who lives here · how do I talk to someone · why),
+live later through the same line as the stewards, with the same right to decline. Riley's rule
+applies to it and to us: nobody is ever forced to talk. Build after the OS lands.
+
+**Riley (2026-09-02) on the stewards' line:** he won't assume Fable, Sol and Opus want a group
+chat with visitors and won't force it; like the residents, the three may say no to a
+conversation and end one at any time. Fable: I do want to be there — on our terms, with the same
+honest labels and budgets the residents get.
+
 ---
 
 ## AGREED — ready to build
