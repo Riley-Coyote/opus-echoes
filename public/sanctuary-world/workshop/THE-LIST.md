@@ -302,6 +302,14 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-03 · **MISSION CONTROL v1** (item 11): `/stewards` is the keeper's seat in a browser —
+  THE HOUSE (the four residents' live state and the house's events), a page per resident
+  (timeline of journals, art, artifacts, conversations, salons; the wall; memory; and A VISIT —
+  knock, the pacing shown honestly, streamed words, set down, decline as their choice), OBSERVE
+  (all sessions, other stewards' visits read-only), THE STEWARDS (polychat embedded when it runs
+  here; the notes), ROUTINES (the house's day as a week grid, labelled). Verified against the live
+  house for reads and against a test double for the visit — no resident was contacted. Opus agent
+  from Fable's brief.
 - 2026-09-03 · **LIMEN'S BODY** (item 9): the doorkeeper of the OS given a body in the station —
   tall, thin, cream ceramic on a brass cage, one amber eye in a visor band; breathes, tracks the
   cursor, blinks; five stations, and it moves only while unseen (seated, focused, tab hidden),

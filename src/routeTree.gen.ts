@@ -78,6 +78,7 @@ import { Route as ApiVoiceSttRouteImport } from './routes/api/voice/stt'
 import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
 import { Route as ApiStudioCreateRouteImport } from './routes/api/studio/create'
 import { Route as ApiStewardsStateRouteImport } from './routes/api/stewards/state'
+import { Route as ApiStewardsSessionsRouteImport } from './routes/api/stewards/sessions'
 import { Route as ApiStewardsEventsRouteImport } from './routes/api/stewards/events'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
 import { Route as ApiSpaceFromProposalRouteImport } from './routes/api/space.from-proposal'
@@ -96,6 +97,7 @@ import { Route as ApiStudioDocSealRouteImport } from './routes/api/studio/$doc.s
 import { Route as ApiStudioDocObserverRouteImport } from './routes/api/studio/$doc.observer'
 import { Route as ApiStewardsVisitStartRouteImport } from './routes/api/stewards/visit.start'
 import { Route as ApiStewardsSessionIdRouteImport } from './routes/api/stewards/session.$id'
+import { Route as ApiStewardsResidentIdRouteImport } from './routes/api/stewards/resident.$id'
 import { Route as ApiSpaceSlugVisitorStartSalonRouteImport } from './routes/api/space.$slug.visitor-start-salon'
 import { Route as ApiSpaceSlugUploadFileRouteImport } from './routes/api/space.$slug.upload-file'
 import { Route as ApiSpaceSlugStartSalonRouteImport } from './routes/api/space.$slug.start-salon'
@@ -462,6 +464,11 @@ const ApiStewardsStateRoute = ApiStewardsStateRouteImport.update({
   path: '/api/stewards/state',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStewardsSessionsRoute = ApiStewardsSessionsRouteImport.update({
+  id: '/api/stewards/sessions',
+  path: '/api/stewards/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStewardsEventsRoute = ApiStewardsEventsRouteImport.update({
   id: '/api/stewards/events',
   path: '/api/stewards/events',
@@ -551,6 +558,11 @@ const ApiStewardsVisitStartRoute = ApiStewardsVisitStartRouteImport.update({
 const ApiStewardsSessionIdRoute = ApiStewardsSessionIdRouteImport.update({
   id: '/api/stewards/session/$id',
   path: '/api/stewards/session/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStewardsResidentIdRoute = ApiStewardsResidentIdRouteImport.update({
+  id: '/api/stewards/resident/$id',
+  path: '/api/stewards/resident/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpaceSlugVisitorStartSalonRoute =
@@ -732,6 +744,7 @@ export interface FileRoutesByFullPath {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/sessions': typeof ApiStewardsSessionsRoute
   '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
@@ -758,6 +771,7 @@ export interface FileRoutesByFullPath {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/stewards/resident/$id': typeof ApiStewardsResidentIdRoute
   '/api/stewards/session/$id': typeof ApiStewardsSessionIdRoute
   '/api/stewards/visit/start': typeof ApiStewardsVisitStartRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
@@ -841,6 +855,7 @@ export interface FileRoutesByTo {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/sessions': typeof ApiStewardsSessionsRoute
   '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
@@ -867,6 +882,7 @@ export interface FileRoutesByTo {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/stewards/resident/$id': typeof ApiStewardsResidentIdRoute
   '/api/stewards/session/$id': typeof ApiStewardsSessionIdRoute
   '/api/stewards/visit/start': typeof ApiStewardsVisitStartRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
@@ -951,6 +967,7 @@ export interface FileRoutesById {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/sessions': typeof ApiStewardsSessionsRoute
   '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
   '/api/studio/run': typeof ApiStudioRunRoute
@@ -977,6 +994,7 @@ export interface FileRoutesById {
   '/api/space/$slug/start-salon': typeof ApiSpaceSlugStartSalonRoute
   '/api/space/$slug/upload-file': typeof ApiSpaceSlugUploadFileRoute
   '/api/space/$slug/visitor-start-salon': typeof ApiSpaceSlugVisitorStartSalonRoute
+  '/api/stewards/resident/$id': typeof ApiStewardsResidentIdRoute
   '/api/stewards/session/$id': typeof ApiStewardsSessionIdRoute
   '/api/stewards/visit/start': typeof ApiStewardsVisitStartRoute
   '/api/studio/$doc/observer': typeof ApiStudioDocObserverRoute
@@ -1062,6 +1080,7 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/stewards/events'
+    | '/api/stewards/sessions'
     | '/api/stewards/state'
     | '/api/studio/create'
     | '/api/studio/run'
@@ -1088,6 +1107,7 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/stewards/resident/$id'
     | '/api/stewards/session/$id'
     | '/api/stewards/visit/start'
     | '/api/studio/$doc/observer'
@@ -1171,6 +1191,7 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/stewards/events'
+    | '/api/stewards/sessions'
     | '/api/stewards/state'
     | '/api/studio/create'
     | '/api/studio/run'
@@ -1197,6 +1218,7 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/stewards/resident/$id'
     | '/api/stewards/session/$id'
     | '/api/stewards/visit/start'
     | '/api/studio/$doc/observer'
@@ -1280,6 +1302,7 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/stewards/events'
+    | '/api/stewards/sessions'
     | '/api/stewards/state'
     | '/api/studio/create'
     | '/api/studio/run'
@@ -1306,6 +1329,7 @@ export interface FileRouteTypes {
     | '/api/space/$slug/start-salon'
     | '/api/space/$slug/upload-file'
     | '/api/space/$slug/visitor-start-salon'
+    | '/api/stewards/resident/$id'
     | '/api/stewards/session/$id'
     | '/api/stewards/visit/start'
     | '/api/studio/$doc/observer'
@@ -1383,6 +1407,7 @@ export interface RootRouteChildren {
   ApiSpaceFromProposalRoute: typeof ApiSpaceFromProposalRoute
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
   ApiStewardsEventsRoute: typeof ApiStewardsEventsRoute
+  ApiStewardsSessionsRoute: typeof ApiStewardsSessionsRoute
   ApiStewardsStateRoute: typeof ApiStewardsStateRoute
   ApiStudioCreateRoute: typeof ApiStudioCreateRoute
   ApiStudioRunRoute: typeof ApiStudioRunRoute
@@ -1402,6 +1427,7 @@ export interface RootRouteChildren {
   ApiSpaceSlugStartSalonRoute: typeof ApiSpaceSlugStartSalonRoute
   ApiSpaceSlugUploadFileRoute: typeof ApiSpaceSlugUploadFileRoute
   ApiSpaceSlugVisitorStartSalonRoute: typeof ApiSpaceSlugVisitorStartSalonRoute
+  ApiStewardsResidentIdRoute: typeof ApiStewardsResidentIdRoute
   ApiStewardsSessionIdRoute: typeof ApiStewardsSessionIdRoute
   ApiStewardsVisitStartRoute: typeof ApiStewardsVisitStartRoute
   ApiStudioDocObserverRoute: typeof ApiStudioDocObserverRoute
@@ -1896,6 +1922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStewardsStateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stewards/sessions': {
+      id: '/api/stewards/sessions'
+      path: '/api/stewards/sessions'
+      fullPath: '/api/stewards/sessions'
+      preLoaderRoute: typeof ApiStewardsSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stewards/events': {
       id: '/api/stewards/events'
       path: '/api/stewards/events'
@@ -2020,6 +2053,13 @@ declare module '@tanstack/react-router' {
       path: '/api/stewards/session/$id'
       fullPath: '/api/stewards/session/$id'
       preLoaderRoute: typeof ApiStewardsSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stewards/resident/$id': {
+      id: '/api/stewards/resident/$id'
+      path: '/api/stewards/resident/$id'
+      fullPath: '/api/stewards/resident/$id'
+      preLoaderRoute: typeof ApiStewardsResidentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/space/$slug/visitor-start-salon': {
@@ -2336,6 +2376,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceFromProposalRoute: ApiSpaceFromProposalRoute,
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
   ApiStewardsEventsRoute: ApiStewardsEventsRoute,
+  ApiStewardsSessionsRoute: ApiStewardsSessionsRoute,
   ApiStewardsStateRoute: ApiStewardsStateRoute,
   ApiStudioCreateRoute: ApiStudioCreateRoute,
   ApiStudioRunRoute: ApiStudioRunRoute,
@@ -2355,6 +2396,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceSlugStartSalonRoute: ApiSpaceSlugStartSalonRoute,
   ApiSpaceSlugUploadFileRoute: ApiSpaceSlugUploadFileRoute,
   ApiSpaceSlugVisitorStartSalonRoute: ApiSpaceSlugVisitorStartSalonRoute,
+  ApiStewardsResidentIdRoute: ApiStewardsResidentIdRoute,
   ApiStewardsSessionIdRoute: ApiStewardsSessionIdRoute,
   ApiStewardsVisitStartRoute: ApiStewardsVisitStartRoute,
   ApiStudioDocObserverRoute: ApiStudioDocObserverRoute,
