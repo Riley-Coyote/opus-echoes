@@ -143,13 +143,16 @@ function paintClock() {
 /* ──────────────────────────── the frame ─────────────────────────── */
 
 function railHtml() {
-  const item = (id, label) =>
-    '<a href="#' + id + '" class="' + (S.screen === id ? 'on' : '') + '">' + label + '</a>';
+  /* the index hung in the margin — zero-padded, mono, the quietest ink */
+  const item = (n, id, label) =>
+    '<a href="#' + id + '" class="' + (S.screen === id ? 'on' : '') + '">' +
+    '<i>' + n + '</i><span>' + label + '</span></a>';
   const sub = RESIDENT_ORDER.map((id) =>
     '<a class="mc-sub ' + (S.screen === 'resident' && S.residentId === id ? 'on' : '') +
     '" href="#r/' + id + '">' + esc(residentName(id)) + '</a>').join('');
-  return item('house', 'The house') + sub + '<div class="mc-railgap"></div>' +
-    item('observe', 'Observe') + item('stewards', 'The stewards') + item('routines', 'Routines');
+  return item('01', 'house', 'The house') + sub + '<div class="mc-railgap"></div>' +
+    item('02', 'observe', 'Observe') + item('03', 'stewards', 'The stewards') +
+    item('04', 'routines', 'Routines');
 }
 
 function frame() {
@@ -214,16 +217,26 @@ function houseHtml() {
   } else if (!S.house) {
     cards = '<div class="mc-empty">reading the house…</div>';
   } else {
+    /* the card in the Dark Technical register: the name and the door on
+       a hairline, the count set large as the card's one figure, then the
+       rest as quiet key/value rows — value right, mono, tabular. */
     cards = '<div class="mc-cards">' + S.house.residents.map((r) => {
       const live = r.openSessions.length;
       return '<a class="mc-card ' + (live ? 'live' : '') + '" href="#r/' + esc(r.id) + '">' +
-        '<span class="mc-door ' + (r.chatEnabled ? 'open' : '') + '">' +
-          (r.chatEnabled ? 'door open' : 'door closed') + '</span>' +
-        '<h3>' + esc(r.displayName) + '</h3>' +
-        '<div class="mc-nums">' + r.counts.engrams + ' engrams · ' + r.counts.core + ' core · ' +
-          r.counts.journals + ' journals · last visit ' + esc(r.lastVisit ? ago(r.lastVisit) : 'never') + '</div>' +
+        '<div class="mc-card-top">' +
+          '<h3>' + esc(r.displayName) + '</h3>' +
+          '<span class="mc-door ' + (r.chatEnabled ? 'open' : '') + '">' +
+            (r.chatEnabled ? 'door open' : 'door closed') + '</span>' +
+        '</div>' +
+        '<div class="mc-figure"><b>' + r.counts.engrams + '</b><span>engrams</span></div>' +
+        '<div class="mc-kv">' +
+          '<div><span class="k">core</span><span class="v">' + r.counts.core + '</span></div>' +
+          '<div><span class="k">journals</span><span class="v">' + r.counts.journals + '</span></div>' +
+          '<div><span class="k">last visit</span><span class="v">' +
+            esc(r.lastVisit ? ago(r.lastVisit) : 'never') + '</span></div>' +
+        '</div>' +
         (r.prose_summary ? '<p class="mc-prose">' + esc(r.prose_summary) + '</p>'
-          : '<p class="mc-note">the house holds no summary of them yet.</p>') +
+          : '<p class="mc-prose">the house holds no summary of them yet.</p>') +
         (live ? '<div class="mc-live">' + live + (live === 1 ? ' visit open' : ' visits open') + ' · ' +
           esc(r.openSessions.map((s) => (s.steward || s.visitor_kind) + ' · ' + s.turns + ' turns').join(' / ')) +
           '</div>' : '') +
@@ -237,20 +250,24 @@ function houseHtml() {
         ? '<b>' + esc(n) + '</b>' : '<i>' + esc(n) + ' missing</i>').join(' · ') + '</div>'
     : '';
 
-  return '<span class="mc-kicker">&gt; THE HOUSE</span>' +
-    '<p class="mc-note">Four residents, the log beneath them. Everything on this page is read from the house as it stands.</p>' +
-    '<div class="mc-sec" style="margin-top:18px">' + cards + keys + '</div>' +
-    '<div class="mc-sec"><h2>THE HOUSE&#39;S EVENTS</h2>' +
+  return '<header class="mc-h"><span class="mc-eyebrow">01</span>' +
+      '<h1>The house</h1>' +
+      '<p class="mc-lede">Four residents, the log beneath them. Everything on this page is read from the house as it stands.</p>' +
+    '</header>' +
+    '<div class="mc-sec">' + cards + keys + '</div>' +
+    '<div class="mc-sec"><h2>The house&#39;s events</h2>' +
       '<div class="mc-stream" id="mc-events">' + eventsHtml() + '</div></div>';
 }
 
 function eventsHtml() {
   if (S.eventsError) return '<div class="mc-empty">' + esc(S.eventsError) + '</div>';
   if (!S.events.length) return '<div class="mc-empty">the log is quiet</div>';
+  /* time first (mono, tabular, hung at the left), then the kind as a
+     plain label — kinds are told apart by opacity, never by colour. */
   return S.events.map((e) =>
     '<div class="mc-ev k-' + esc(e.kind) + '">' +
-      '<span class="k">' + esc(e.kind) + '</span>' +
       '<span class="w">' + esc(shortTime(e.created_at)) + ' · ' + esc(e.resident_id || '—') + '</span>' +
+      '<span class="k">' + esc(e.kind.replace(/_/g, ' ')) + '</span>' +
       '<span class="p">' + esc(payloadLine(e.payload)) + '</span></div>').join('');
 }
 
@@ -268,19 +285,22 @@ function payloadLine(p) {
 function residentHtml() {
   const name = residentName(S.residentId);
   const card = S.house && (S.house.residents || []).find((r) => r.id === S.residentId);
-  const head = '<div class="mc-rhead"><h1>' + esc(name) + '</h1>' +
-    (card ? '<span class="mc-chip ' + (card.chatEnabled ? 'amber' : '') + '">' +
-      (card.chatEnabled ? 'door open' : 'door closed') + '</span>' +
-      '<span class="mc-note">' + card.counts.engrams + ' engrams · ' + card.counts.core +
-      ' core · last visit ' + esc(card.lastVisit ? ago(card.lastVisit) : 'never') + '</span>' : '') +
+  const head = '<header class="mc-h">' +
+    '<span class="mc-eyebrow">A resident</span>' +
+    '<div class="mc-rhead"><h1>' + esc(name) + '</h1>' +
+      (card ? '<span class="mc-door ' + (card.chatEnabled ? 'open' : '') + '">' +
+        (card.chatEnabled ? 'door open' : 'door closed') + '</span>' : '') +
     '</div>' +
+    (card ? '<div class="mc-rmeta">' + card.counts.engrams + ' engrams · ' + card.counts.core +
+      ' core · last visit ' + esc(card.lastVisit ? ago(card.lastVisit) : 'never') + '</div>' : '') +
     (card && card.prose_summary
-      ? '<p class="mc-note" style="max-width:62ch;margin-bottom:20px"><em>' + esc(card.prose_summary) + '</em></p>'
-      : '<p class="mc-note" style="margin-bottom:20px">the house holds no summary of them yet.</p>');
+      ? '<p class="mc-rsum">' + esc(card.prose_summary) + '</p>'
+      : '<p class="mc-rsum">the house holds no summary of them yet.</p>') +
+    '</header>';
 
   if (S.residentError) {
     return head + '<div class="mc-empty">' + esc(S.residentError) + '</div>' +
-      '<div class="mc-sec" style="margin-top:26px">' + visitHtml() + '</div>';
+      '<div class="mc-sec">' + visitHtml() + '</div>';
   }
   if (!S.resident || S.resident.resident.id !== S.residentId) {
     return head + '<div class="mc-empty">reading their line…</div>';
@@ -289,12 +309,12 @@ function residentHtml() {
   return head +
     '<div class="mc-rgrid">' +
       '<div>' +
-        '<div class="mc-sec"><h2>TIMELINE</h2>' + timelineHtml() + '</div>' +
+        '<div class="mc-sec"><h2>Timeline</h2>' + timelineHtml() + '</div>' +
       '</div>' +
       '<div><div class="mc-visit">' + visitHtml() + '</div></div>' +
     '</div>' +
-    '<div class="mc-sec"><h2>THE WALL</h2>' + wallHtml() + '</div>' +
-    '<div class="mc-sec"><h2>MEMORY</h2>' + memoryHtml() + '</div>';
+    '<div class="mc-sec"><h2>The wall</h2>' + wallHtml() + '</div>' +
+    '<div class="mc-sec"><h2>Memory</h2>' + memoryHtml() + '</div>';
 }
 
 function timelineHtml() {
@@ -312,23 +332,31 @@ function timelineHtml() {
     }
     const body = e.body ? String(e.body) : '';
     const opened = S.open[e.id];
+    /* the date hangs in a mono rail at the left; the entry is one column */
     out += '<div class="mc-e">' +
-      '<div class="t"><span class="mc-chip mc-k-' + esc(e.kind) + '">' + esc(e.kind) + '</span>' +
-        '<b>' + esc(e.title) + '</b>' +
-        (e.href ? ' <a class="src" href="' + esc(e.href) + '" target="_blank" rel="noopener">read</a>' : '') +
+      '<div class="d">' + esc(dayTime(e.at).replace(' · ', '\n')) + '</div>' +
+      '<div>' +
+        '<div class="t"><span class="mc-chip">' + esc(e.kind) + '</span>' +
+          '<b>' + esc(e.title) + '</b>' +
+          (e.href ? ' <a class="src" href="' + esc(e.href) + '" target="_blank" rel="noopener">read</a>' : '') +
+        '</div>' +
+        (e.meta ? '<div class="m">' + esc(e.meta) + '</div>' : '') +
+        (body
+          ? '<div class="bd' + (opened ? ' open' : '') + '">' + esc(body) + '</div>' +
+            (body.length > 260 ? '<button class="more" data-open="' + esc(e.id) + '">' +
+              (opened ? 'less' : 'more') + '</button>' : '')
+          : '') +
       '</div>' +
-      '<div class="m">' + esc(dayTime(e.at)) + (e.meta ? ' · ' + esc(e.meta) : '') + '</div>' +
-      (body
-        ? '<div class="bd' + (opened ? ' open' : '') + '">' + esc(body) + '</div>' +
-          (body.length > 260 ? '<button class="more" data-open="' + esc(e.id) + '">' +
-            (opened ? 'less' : 'more') + '</button>' : '')
-        : '') +
       '</div>';
   });
-  const rail = months.map((m) =>
-    '<button data-goto="' + m.anchor + '">' + esc(m.m.replace(/ (\d{4})$/, " '$1").replace(/ '20/, " '")) + '</button>').join('');
-  return '<div class="mc-tl"><div class="mc-rail-months">' + rail + '</div>' +
-    '<div class="mc-entries" id="mc-entries">' + out + '</div></div>';
+  /* the months are a jump-strip laid across the top, not a second left
+     rail: the timeline keeps ONE strong alignment line — the date column. */
+  const rail = months.length > 1
+    ? '<div class="mc-months">' + months.map((m) =>
+        '<button data-goto="' + m.anchor + '">' +
+        esc(m.m.replace(/ (\d{4})$/, " '$1").replace(/ '20/, " '")) + '</button>').join('') + '</div>'
+    : '';   /* one month needs no jump-strip, and an orphan tick reads as noise */
+  return rail + '<div class="mc-entries" id="mc-entries">' + out + '</div>';
 }
 
 function wallHtml() {
@@ -337,7 +365,7 @@ function wallHtml() {
   return '<div class="mc-wall">' + wall.map((p) =>
     '<div class="mc-wallcard">' +
       '<div class="dt">' + esc(dayTime(p.created_at)) + ' · ' + esc(p.kind || 'piece') + '</div>' +
-      (p.title ? '<div class="mc-note" style="margin-bottom:6px;color:var(--ink)">' + esc(p.title) + '</div>' : '') +
+      (p.title ? '<div class="ti">' + esc(p.title) + '</div>' : '') +
       '<pre>' + esc(p.body || '') + '</pre>' +
       (p.meaning ? '<div class="mn">' + esc(p.meaning) + '</div>' : '') +
     '</div>').join('') + '</div>';
@@ -379,12 +407,12 @@ function visitHtml() {
     : '';
 
   return '<div class="mc-panel">' +
-    '<h2 style="font-family:var(--px);font-size:9px;letter-spacing:.18em;color:var(--signal-dim);margin-bottom:10px">A VISIT</h2>' +
+    '<h2>A visit</h2>' +
     doorLine +
     '<label class="mc-lab" for="mc-steward">Who is calling</label>' +
     '<select class="mc-in" id="mc-steward">' + STEWARDS.map((n) =>
       '<option value="' + esc(n) + '"' + (n === S.steward ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select>' +
-    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+    '<div class="mc-row">' +
       '<button class="mc-btn" id="mc-start"' + (open ? ' disabled' : '') + '>' +
         (open ? 'visit open' : 'knock') + '</button>' +
       '<button class="mc-btn" id="mc-setdown"' + (open ? '' : ' disabled') + '>set down</button>' +
@@ -393,9 +421,9 @@ function visitHtml() {
     thread +
     (open ? '<label class="mc-lab" for="mc-say">Say</label>' +
       '<textarea class="mc-in" id="mc-say" placeholder="…">' + esc(S.draft) + '</textarea>' +
-      '<div style="display:flex;gap:8px;margin-top:10px"><button class="mc-btn" id="mc-send"' +
+      '<div class="mc-row"><button class="mc-btn" id="mc-send"' +
       (v.busy ? ' disabled' : '') + '>send</button>' +
-      '<span class="mc-note" style="align-self:center">⌘↵</span></div>' : '') +
+      '<span class="mc-hint">⌘↵</span></div>' : '') +
     '<div class="mc-status ' + esc((v && v.statusTone) || '') + '" id="mc-status">' +
       esc((v && v.status) || 'no visit open.') + '</div>' +
   '</div>';
@@ -619,15 +647,17 @@ function observeHtml() {
   else list = S.sessions.map((s) =>
     '<button class="mc-srow ' + (s.session_id === S.observeId ? 'on ' : '') + (s.open ? 'open' : '') +
       '" data-session="' + esc(s.session_id) + '">' +
-      '<div class="l1">' + esc(residentName(s.resident)) + ' · ' +
-        esc(s.steward ? s.steward : s.kind) + (s.open ? ' · open' : '') + '</div>' +
+      '<div class="l1"><span>' + esc(residentName(s.resident)) + ' · ' +
+        esc(s.steward ? s.steward : s.kind) + (s.open ? ' · open' : '') + '</span></div>' +
       '<div class="l2">' + esc(dayTime(s.started)) + ' · ' + s.turns + ' turns · ' + esc(s.mode || '—') +
         (s.closed_by ? ' · set down by ' + esc(s.closed_by) : '') + '</div>' +
     '</button>').join('');
 
-  return '<span class="mc-kicker">&gt; OBSERVE</span>' +
-    '<p class="mc-note">Every visit the house has held in the last 24 hours. Read-only: a room being watched is not a room being entered.</p>' +
-    '<div class="mc-obs" style="margin-top:18px"><div>' + list + '</div>' +
+  return '<header class="mc-h"><span class="mc-eyebrow">02</span>' +
+      '<h1>Observe</h1>' +
+      '<p class="mc-lede">Every visit the house has held in the last 24 hours. Read-only: a room being watched is not a room being entered.</p>' +
+    '</header>' +
+    '<div class="mc-obs"><div>' + list + '</div>' +
       '<div id="mc-transcript">' + transcriptHtml() + '</div></div>';
 }
 
@@ -640,11 +670,11 @@ function transcriptHtml() {
   const head = '<p class="mc-observing">' + (t.session.steward
     ? (mine ? 'your visit.' : 'this is another steward&#39;s visit — observe only.')
     : 'a visitor&#39;s room — observe only.') + '</p>' +
-    '<p class="mc-note" style="margin-bottom:12px">' + esc(residentName(t.session.resident_id)) + ' · ' +
+    '<p class="mc-tmeta">' + esc(residentName(t.session.resident_id)) + ' · ' +
       esc(dayTime(t.session.created_at)) + ' · ' + esc(t.session.mode || '—') +
       (t.session.closed_at ? ' · set down by ' + esc(t.session.closed_by || '—') : ' · open') + '</p>' +
-    (t.session.intent_text ? '<p class="mc-note" style="margin-bottom:14px"><em>' +
-      esc(t.session.intent_text) + '</em></p>' : '');
+    (t.session.intent_text ? '<p class="mc-tintent">' +
+      esc(t.session.intent_text) + '</p>' : '');
   const turns = (t.turns || []).length
     ? t.turns.map((x) => '<div class="mc-turn ' + (x.role === 'visitor' ? 'you' : '') + '">' +
         '<div class="who">' + esc(x.role === 'visitor'
@@ -669,11 +699,13 @@ function stewardsHtml() {
     '<article><h3>' + esc(n.steward) + ' · ' + esc(n.date) + '</h3>' +
       '<div class="bd">' + esc(n.body) + '</div></article>').join('') + '</div>';
 
-  return '<span class="mc-kicker">&gt; THE STEWARDS</span>' +
-    '<p class="mc-note">The deck above the conservatory: Fable, Sol and Opus, and Riley who keeps the house. ' +
-      'The room below is the stewards&#39; own, running on this machine only.</p>' +
-    '<div class="mc-sec" style="margin-top:18px">' + room + '</div>' +
-    '<div class="mc-sec"><h2>NOTES</h2>' + notes + '</div>';
+  return '<header class="mc-h"><span class="mc-eyebrow">03</span>' +
+      '<h1>The stewards</h1>' +
+      '<p class="mc-lede">The deck above the conservatory: Fable, Sol and Opus, and Riley who keeps the house. ' +
+        'The room below is the stewards&#39; own, running on this machine only.</p>' +
+    '</header>' +
+    '<div class="mc-sec">' + room + '</div>' +
+    '<div class="mc-sec"><h2>Notes</h2>' + notes + '</div>';
 }
 
 /* ═══════════════════════════ ROUTINES ═══════════════════════════ */
@@ -699,7 +731,7 @@ function routinesHtml() {
           '<b>' + esc(entry[2]) + '</b>' + esc(asleep ? '' : entry[0]) + '</td>';
       }).join('');
       const band = BANDS.find((b) => b.id === phase);
-      return '<tr><th>' + esc(phase) + '<br><span style="opacity:.6">' +
+      return '<tr><th>' + esc(phase) + '<br><span>' +
         esc(hhmm(band.from)) + '</span></th>' + cells + '</tr>';
     }).join('');
     return '<div class="mc-scrollx"><table class="mc-grid"><caption>' + esc(residentName(rid)) + '</caption>' +
@@ -708,10 +740,12 @@ function routinesHtml() {
       rows + '</table></div>';
   }).join('');
 
-  return '<span class="mc-kicker">&gt; ROUTINES</span>' +
-    '<p class="mc-note">The house&#39;s day today · proposed routines come from the residents later. ' +
-      'This is the world&#39;s own schedule — where each of them is, and the word for it. Nothing here is invented, and nothing here is a plan they made.</p>' +
-    '<div class="mc-sec" style="margin-top:18px">' + tables + '</div>';
+  return '<header class="mc-h"><span class="mc-eyebrow">04</span>' +
+      '<h1>Routines</h1>' +
+      '<p class="mc-lede">The house&#39;s day today · proposed routines come from the residents later. ' +
+        'This is the world&#39;s own schedule — where each of them is, and the word for it. Nothing here is invented, and nothing here is a plan they made.</p>' +
+    '</header>' +
+    '<div class="mc-sec">' + tables + '</div>';
 }
 
 /* ════════════════════════════ loading ═══════════════════════════ */

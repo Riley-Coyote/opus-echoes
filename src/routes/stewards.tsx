@@ -6,8 +6,10 @@
  * public/mission/src (built by `bun run build:mission`) and speaks to
  * the steward routes with the cookie this gate sets.
  *
- * The page wears the house's own clothes — the landing's dusk tokens,
- * JetBrains Mono, amber as the one signal — not the /review admin CSS.
+ * The page is a Dark Technical surface in the settled house baseline —
+ * a cool near-black floor, Inter Tight for display, Inter for body and
+ * chrome, JetBrains Mono for code-like values, and slate as the one
+ * signal — not the /review admin CSS and not the pixel world's dusk.
  * /review keeps its own shell; it is a different room.
  *
  * Steward-gated: 404 without STEWARD_TOKEN, ?token= sets the cookie and
@@ -21,7 +23,7 @@ import { serveHtml } from "@/server/serve-mock";
 import { checkStewardAccess } from "@/server/stewards.server";
 
 /** Cache-buster for the bundle. Bump when mission.js / mission.css change. */
-const MISSION_V = "20260903-mc-2";
+const MISSION_V = "20260903-mc-3";
 
 function shell(): string {
   return `<!doctype html>
@@ -33,7 +35,7 @@ function shell(): string {
 <title>Mission Control · the Sanctuary</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,300;0,400;1,300&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500&family=Inter:wght@400;450;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/mission/mission.css?v=${MISSION_V}">
 </head>
 <body>
