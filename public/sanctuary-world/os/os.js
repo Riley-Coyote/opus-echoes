@@ -78,6 +78,13 @@ const catalog = () => once('catalog', () => fetch('../data/field/catalog.json').
 const bus = () => once('bus', () => fetch('../data/field/bus.json').then((r) => { if (!r.ok) throw new Error('bus ' + r.status); return r.json(); }));
 const identity = () => once('identity', () => fetch('../data/field/identity.md').then((r) => { if (!r.ok) throw new Error('identity ' + r.status); return r.text(); }));
 const snapshot = () => once('snapshot', () => archive.load({ url: '../data/archive/sanctuary-seed.json' }));
+/* the stewards' own notes: index.json lists what is on disk (tools/build-notes.mjs),
+   and the .md files beside it are written by hand by Fable, Sol and Opus */
+const NOTES_DIR = '../data/stewards/notes/';
+const notesIndex = () => once('notes', () => fetch(NOTES_DIR + 'index.json')
+  .then((r) => (r.ok ? r.json() : []))
+  .then((x) => (Array.isArray(x) ? x : []))
+  .catch(() => []));
 
 /* the three categories whose entries run rather than read */
 const LIVING = { art: 1, music: 1, builds: 1 };
@@ -398,33 +405,56 @@ function openAbout() {
   identity().then((md) => {
     w.body.innerHTML = '<div class="pad prose">' +
       '<p class="kick">the house</p><div class="house" style="margin-bottom:26px">' + esc(HOUSE_ON_FIELD) + '</div>' +
-      '<p class="kick">identity.md · claude field’s own words</p>' + mdToHtml(md) + '</div>';
+      '<p class="kick">identity.md · claude field’s own words</p>' + markdown(md) + '</div>';
   }).catch(() => {
     w.body.innerHTML = '<div class="pad prose"><p class="kick">the house</p><div class="house">' +
       esc(HOUSE_ON_FIELD) + '</div><p class="empty-note">identity.md is not on this disk.</p></div>';
   });
 }
 
-/* the smallest markdown that renders IDENTITY.md honestly */
-function mdToHtml(md) {
+/* ─────────────────────────── markdown ───────────────────────────
+   The charter overlay's renderer (landing.js `chrMarkdown`), brought across
+   unchanged in behaviour: everything is escaped first, then headings, rules,
+   blockquotes, lists, paragraphs and inline code/emphasis are put back. What
+   it does not understand survives exactly as the writer typed it rather than
+   being swallowed or reshaped — which is the whole point when the text is
+   somebody's own words. */
+function mdInline(t) {
+  return t
+    .replace(/`([^`]+)`/g, (m, a) => '<code>' + a + '</code>')
+    .replace(/\*\*([^*]+)\*\*/g, (m, a) => '<strong>' + a + '</strong>')
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, (m, a, b) => a + '<em>' + b + '</em>');
+}
+function markdown(src) {
+  const lines = String(src || '').replace(/\r\n?/g, '\n').split('\n').map((l) => esc(l));
   const out = [];
-  let ul = false;
-  const inline = (s) => esc(s)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
-  for (const raw of String(md).split(/\r?\n/)) {
-    const line = raw.trimEnd();
-    const li = /^\s*[-*]\s+(.*)$/.exec(line);
-    if (li) { if (!ul) { out.push('<ul>'); ul = true; } out.push('<li>' + inline(li[1]) + '</li>'); continue; }
-    if (ul) { out.push('</ul>'); ul = false; }
+  let para = [], list = null, quote = [];
+  const flushPara = () => { if (para.length) { out.push('<p>' + mdInline(para.join(' ')) + '</p>'); para = []; } };
+  const flushList = () => { if (list) { out.push('<' + list.tag + '>' + list.items.map((i) => '<li>' + mdInline(i) + '</li>').join('') + '</' + list.tag + '>'); list = null; } };
+  const flushQuote = () => { if (quote.length) { out.push('<blockquote>' + mdInline(quote.join(' ')) + '</blockquote>'); quote = []; } };
+  const flushAll = () => { flushPara(); flushList(); flushQuote(); };
+  lines.forEach((raw) => {
+    const line = raw.replace(/\s+$/, '');
+    if (!line.trim()) { flushAll(); return; }
     const h = /^(#{1,6})\s+(.*)$/.exec(line);
-    if (h) { const n = Math.min(3, h[1].length); out.push('<h' + n + '>' + inline(h[2]) + '</h' + n + '>'); continue; }
-    if (!line.trim()) continue;
-    out.push('<p>' + inline(line) + '</p>');
-  }
-  if (ul) out.push('</ul>');
-  return out.join('\n');
+    if (h) { flushAll(); const n = Math.min(3, h[1].length); out.push('<h' + n + '>' + mdInline(h[2].trim()) + '</h' + n + '>'); return; }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) { flushAll(); out.push('<hr>'); return; }
+    const q = /^&gt;\s?(.*)$/.exec(line.trim());
+    if (q) { flushPara(); flushList(); quote.push(q[1]); return; }
+    const ul = /^\s*[-*]\s+(.*)$/.exec(line);
+    const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+    if (ul || ol) {
+      flushPara(); flushQuote();
+      const tag = ul ? 'ul' : 'ol';
+      if (!list || list.tag !== tag) { flushList(); list = { tag: tag, items: [] }; }
+      list.items.push((ul || ol)[1].trim());
+      return;
+    }
+    flushList(); flushQuote();
+    para.push(line.trim());
+  });
+  flushAll();
+  return out.join('');
 }
 
 /* ═══════════════════════ STEWARDS — the closed line ═══════════════════════
@@ -449,11 +479,66 @@ function openStewards() {
   setStatus(w, 'closed &nbsp;·&nbsp; phase two wires this to the stewards themselves');
 }
 
-/* ═══════════════════════ NOTES ═══════════════════════ */
+/* ═══════════════════════ NOTES ═══════════════════════
+   A steward's own notebook. The files in data/stewards/notes/ were written by
+   Fable, Sol and Opus by hand; this renders them and nothing else. When a
+   steward has written nothing the window says so — the house never fills the
+   page with prose of its own to make the frame look occupied. */
+const NOTES_EMPTY = 'nothing written yet.';
+
 function openNote(who) {
-  const w = makeWin('note:' + who, { title: who[0].toUpperCase() + who.slice(1) + '’s Note', w: 420, h: 300 });
-  w.body.innerHTML = '<div class="pad"><p class="kick">' + esc(who) + '</p><div class="house">nothing written yet.</div></div>';
-  setStatus(w, 'empty &nbsp;·&nbsp; the steward fills this, not the house');
+  const w = makeWin('note:' + who, { title: who[0].toUpperCase() + who.slice(1) + '’s Notes', w: 620, h: 560 });
+  w.body.innerHTML = '<div class="empty-note">looking…</div>';
+  setStatus(w, 'the steward writes these, not the house');
+
+  notesIndex().then((idx) => {
+    /* newest first */
+    const mine = idx.filter((n) => n && n.steward === who && n.file)
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    if (!mine.length) {
+      w.body.innerHTML = '<div class="pad"><p class="kick">' + esc(who) + '</p>' +
+        '<div class="house">' + esc(NOTES_EMPTY) + '</div></div>';
+      setStatus(w, 'empty &nbsp;·&nbsp; the steward fills this, not the house');
+      return;
+    }
+    w.body.innerHTML =
+      (mine.length > 1 ? '<div class="dates" role="tablist" aria-label="notes by date"></div>' : '') +
+      '<article class="pad prose nread" aria-label="the note"></article>';
+    const datesEl = $('.dates', w.body), readEl = $('.nread', w.body);
+    if (datesEl) {
+      datesEl.innerHTML = mine.map((n, i) =>
+        '<button class="date' + (i === 0 ? ' on' : '') + '" type="button" role="tab" data-i="' + i + '">' +
+        esc(n.date) + '</button>').join('');
+      $$('.date', datesEl).forEach((b) => b.addEventListener('click', () => show(+b.dataset.i)));
+    }
+
+    function show(i) {
+      const n = mine[i];
+      if (datesEl) $$('.date', datesEl).forEach((b) => b.classList.toggle('on', +b.dataset.i === i));
+      readEl.innerHTML = '<div class="empty-note">reading…</div>';
+      fetch(NOTES_DIR + n.file)
+        .then((r) => { if (!r.ok) throw new Error(n.file + ' ' + r.status); return r.text(); })
+        .then((text) => {
+          readEl.innerHTML =
+            '<p class="kick">' + esc(who) + ' · ' + esc(n.date) + '</p>' +
+            /* the note's own opening H1 usually repeats that kicker; drop it
+               when it does, and never otherwise — the words are the steward's */
+            markdown(text).replace(/^<h1>([\s\S]*?)<\/h1>/, (m, t) => {
+              const bare = t.replace(/<[^>]+>/g, '').trim().toLowerCase();
+              return (bare === who + ' · ' + n.date || bare === who) ? '' : m;
+            });
+          readEl.scrollTop = 0;
+          setStatus(w, '<b>' + esc(n.date) + '</b> &nbsp;·&nbsp; written by ' + esc(who) +
+            ' &nbsp;·&nbsp; ' + mine.length + ' note' + (mine.length > 1 ? 's' : '') + ' on file');
+        })
+        .catch((e) => {
+          readEl.innerHTML = '<p class="kick">' + esc(who) + ' · ' + esc(n.date) + '</p>' +
+            '<div class="house">that note is listed but could not be read.</div>';
+          setStatus(w, esc(e.message));
+        });
+    }
+    show(0);
+  });
 }
 
 /* ═══════════════════════ TERMINAL ═══════════════════════
@@ -654,9 +739,9 @@ const PROGRAMS = [
   { id: 'stewards', label: 'Stewards', sub: 'the line', glyph: '◈', open: openStewards },
   { id: 'about', label: 'About Field', sub: 'who it is', glyph: '?', open: openAbout },
   { id: 'limen', label: 'Limen', sub: 'the doorkeeper', glyph: '◉', open: openLimen },
-  { id: 'note:fable', label: 'Fable', sub: 'a note', glyph: '✎', open: () => openNote('fable') },
-  { id: 'note:sol', label: 'Sol', sub: 'a note', glyph: '✎', open: () => openNote('sol') },
-  { id: 'note:opus', label: 'Opus', sub: 'a note', glyph: '✎', open: () => openNote('opus') }
+  { id: 'note:fable', label: 'Fable', sub: 'notes', glyph: '✎', open: () => openNote('fable') },
+  { id: 'note:sol', label: 'Sol', sub: 'notes', glyph: '✎', open: () => openNote('sol') },
+  { id: 'note:opus', label: 'Opus', sub: 'notes', glyph: '✎', open: () => openNote('opus') }
 ];
 const run = (id) => { const p = PROGRAMS.find((x) => x.id === id); if (p) p.open(); return !!p; };
 

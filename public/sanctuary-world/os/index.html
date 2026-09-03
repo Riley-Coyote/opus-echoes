@@ -264,6 +264,17 @@ input:disabled{color:var(--faint);cursor:not-allowed;border-color:rgba(233,231,2
 .plate .n{font-family:var(--pix);font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--spark)}
 .plate .r{margin-top:5px;font-size:10px;color:var(--faint)}
 
+/* ── NOTES — a steward's own notebook ───────────────────────────── */
+.dates{display:flex;flex-wrap:wrap;gap:6px;padding:11px 14px;border-bottom:1px solid var(--line)}
+.dates .date{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--dim);
+  border:1px solid var(--line);padding:4px 9px;
+  transition:color .16s var(--ease),border-color .16s var(--ease)}
+.dates .date:hover{color:var(--ink);border-color:var(--line2)}
+.dates .date:focus-visible{outline:none;border-color:rgba(242,193,78,.6);color:var(--ink)}
+.dates .date.on{color:var(--ink);border-color:rgba(242,193,78,.5);background:var(--control)}
+.prose blockquote{margin:0 0 15px;padding:2px 0 2px 12px;border-left:1px solid var(--line2);color:var(--dim)}
+.prose hr{border:0;border-top:1px solid var(--line);margin:22px 0}
+
 /* ── LIMEN — the doorkeeper, a floating desk accessory ──────────── */
 .limen{display:flex;flex-direction:column;height:100%}
 .limen .feed{flex:1;min-height:0;overflow:auto;padding:14px 15px;display:flex;flex-direction:column;gap:12px}
