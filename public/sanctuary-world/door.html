@@ -37,12 +37,15 @@
     box-shadow:inset 0 0 90px 26px rgba(4,3,8,.52);border-radius:22px}
 
   /* flat takeover — the same iframe, un-transformed and full bleed */
-  body.flat #css3d,body.flat #css3d>div,body.flat #css3d>div>div,body.flat #scr{
+  body.flat #css3d>div,body.flat #css3d>div>div,body.flat #scr{
+    position:absolute!important;inset:0!important;
     transform:none!important;width:100%!important;height:100%!important;
     perspective:none!important;pointer-events:auto;overflow:visible}
-  body.flat #css3d{z-index:6;overflow:hidden}
+  /* the viewport itself, not a percentage of whatever the CSS3D layer was sized to */
+  body.flat #css3d{position:fixed!important;inset:0!important;
+    width:100vw!important;height:100vh!important;transform:none!important;
+    perspective:none!important;z-index:6;overflow:hidden;pointer-events:auto}
   body.flat #scr .curve{display:none}
-  body.flat #crtmask{opacity:1}
   body.flat #captions,body.flat #boot{opacity:0!important}
 
   /* the bezel + scanlines that ride over the flat world */
@@ -77,14 +80,17 @@
     color:rgba(245,243,237,.62)}
   #sub{position:absolute;left:26px;top:44px;font-size:8px;letter-spacing:.22em;text-transform:uppercase;
     color:var(--faint)}
-  #stand{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:8;
+  #stand,#full{position:absolute;bottom:26px;z-index:8;
     padding:9px 15px;background:rgba(6,5,10,.72);border:1px solid rgba(242,193,78,.34);
     color:var(--ink);font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:lowercase;
     cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s var(--ease-out)}
-  #stand.on{opacity:1;pointer-events:auto}
-  #stand:hover{border-color:rgba(242,193,78,.7)}
-  #stand:focus-visible{outline:none;border-color:rgba(242,236,223,.55)}
-  #stand .k{color:var(--amber);font-size:8px;letter-spacing:.2em;margin-right:8px}
+  /* the pair sits centred: stand up on the left, full screen on its right */
+  #stand{left:50%;transform:translateX(calc(-100% - 5px))}
+  #full{left:50%;transform:translateX(5px)}
+  #stand.on,#full.on{opacity:1;pointer-events:auto}
+  #stand:hover,#full:hover{border-color:rgba(242,193,78,.7)}
+  #stand:focus-visible,#full:focus-visible{outline:none;border-color:rgba(242,236,223,.55)}
+  #stand .k,#full .k{color:var(--amber);font-size:8px;letter-spacing:.2em;margin-right:8px}
 
   /* the fade used for the swap from the screen quad to full bleed */
   #dip{position:absolute;inset:0;z-index:9;background:#050408;opacity:0;pointer-events:none;
@@ -111,6 +117,7 @@
     <div id="sub">the reading room · 11:48 pm</div>
   </div>
   <button id="stand" type="button"><span class="k">ESC</span>stand up</button>
+  <button id="full" type="button"><span class="k">F</span>full screen</button>
   <div id="dip"></div>
   <div id="boot">warming the glass…</div>
 </div>

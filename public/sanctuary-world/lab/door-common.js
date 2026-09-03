@@ -44,6 +44,7 @@ export const BOOT_TAIL = '> come in';
 export const KEY_CAME_IN = 'mnemos.door.camein';
 export const KEY_STEWARD = 'mnemos.steward.present';
 export const KEY_CLOCK = 'mnemos-landing.clock';
+export const KEY_FULL = 'mnemos.door.full';
 
 export const ls = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -412,17 +413,41 @@ export function makeWorldScreen(o) {
       return el ? Math.round(el.getBoundingClientRect().width) : 0;
     } catch (e) { return 0; }
   }
+  /* a key pressed inside the screen never reaches this document. Same origin,
+     so the room listens on the world's own document for the few keys it owns. */
+  let keyFn = null;
+  function bindInsideKeys() {
+    if (!keyFn) return;
+    try {
+      const d = iframe.contentDocument;
+      if (!d || d.__roomKeysBound) return;
+      d.__roomKeysBound = true;
+      d.addEventListener('keydown', (ev) => {
+        const tag = ev.target && ev.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        keyFn(ev);
+      }, true);
+    } catch (e) {}
+  }
+
   /* the keys have to land inside the screen, not on the room */
   function focusGame() {
     try {
       iframe.contentWindow.focus();
       const el = iframe.contentDocument.getElementById('cab');
       if (el) { el.setAttribute('tabindex', el.getAttribute('tabindex') || '0'); el.focus(); }
+      bindInsideKeys();
     } catch (e) {}
   }
 
   return {
     cssRenderer, cssScene, obj, iframe, el: scr, cab, focusGame,
+    /* a keydown handler that also runs for keys pressed inside the world */
+    onKeyInside(fn) {
+      keyFn = fn;
+      if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') bindInsideKeys();
+      else iframe.addEventListener('load', bindInsideKeys);
+    },
     show() {
       if (!iframe.src) iframe.src = o.src || 'index.html?door=1';
       host.classList.remove('gone');
@@ -448,6 +473,67 @@ export function makeWorldScreen(o) {
     placed() { return !host.classList.contains('gone'); },
     setSize(w, h) { cssRenderer.setSize(w, h); },
     render(camera) { cssRenderer.render(cssScene, camera); }
+  };
+}
+
+/* ─────────────────────────── the seat ─────────────────────────── */
+/* Straight on. The eye sits at the exact height of the screen's centre and
+   looks along the glass's own normal — no tilt, no roll — so the quad projects
+   as an axis-aligned rectangle and the world on it is not a trapezoid. It is a
+   low seat: you are sitting lower than a person would, and that is the price of
+   looking a CRT in the face. */
+export function seatPose(screenPos, screenNormal, dist) {
+  return {
+    pos: screenPos.clone().addScaledVector(screenNormal, dist),
+    look: screenPos.clone()
+  };
+}
+
+/* the four corners of the glass, in world space — the straight-on check */
+export function quadCorners(screenPos, rotY, w, h) {
+  const axis = new THREE.Vector3(0, 1, 0);
+  return [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(([sx, sy]) =>
+    new THREE.Vector3(sx * w / 2, sy * h / 2, 0).applyAxisAngle(axis, rotY).add(screenPos));
+}
+
+/* ─────────────────────────── full mode ───────────────────────────
+   Once seated, the visitor can take the world full-bleed: the room falls away
+   and the glass's own scanlines and bezel mask come off with it, so the game is
+   clean. The choice is remembered in this browser. */
+export function makeFullMode(o) {
+  const btn = o.btn, world = o.world;
+  let on = false;
+  function paint() {
+    if (!btn) return;
+    btn.innerHTML = '<span class="k">F</span>' + (on ? 'the room' : 'full screen');
+  }
+  function set(v) {
+    on = !!v;
+    if (on) world.flat(); else document.body.classList.remove('flat');
+    ls.set(KEY_FULL, on ? '1' : '0');
+    paint();
+  }
+  function toggle() { if (o.seated && !o.seated()) return; set(!on); }
+  if (btn) {
+    btn.addEventListener('click', (ev) => { ev.preventDefault(); toggle(); btn.blur(); });
+    paint();
+  }
+  const onKey = (ev) => {
+    if (ev.key !== 'f' && ev.key !== 'F') return;
+    if (o.seated && !o.seated()) return;
+    ev.preventDefault();
+    toggle();
+  };
+  document.addEventListener('keydown', onKey);
+  world.onKeyInside(onKey);
+  return {
+    set, toggle,
+    isOn: () => on,
+    /* what this browser chose last time */
+    remembered: () => ls.get(KEY_FULL) === '1',
+    /* standing up leaves full mode but keeps the preference */
+    reset() { on = false; paint(); },
+    show(v) { if (btn) btn.classList.toggle('on', !!v); }
   };
 }
 

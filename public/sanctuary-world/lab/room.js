@@ -15,7 +15,7 @@ import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLigh
 /* the machinery this room shares with the station: the palette, the wood, the
    post stack, the hover layer, the terminal's glass, the world takeover */
 import {
-  KEY_CAME_IN, KEY_STEWARD, ls, REDUCED,
+  KEY_CAME_IN, KEY_STEWARD, ls, REDUCED, seatPose, quadCorners, makeFullMode,
   paint, woodTexture, labelTexture,
   makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall
 } from './door-common.js';
@@ -556,6 +556,7 @@ const worldFrame = world.iframe;
 /* ─────────────────────────── the four things you can look at ─────────────────────────── */
 const capEl = document.getElementById('cap');
 const standEl = document.getElementById('stand');
+const fullEl = document.getElementById('full');
 const dipEl = document.getElementById('dip');
 const bootEl = document.getElementById('boot');
 
@@ -585,12 +586,12 @@ const pointer = new THREE.Vector2(-2, -2);
 const pointerPx = { x: -100, y: -100 };
 
 /* ─────────────────────────── the camera: rest, glide, back ─────────────────────────── */
-/* seated: close enough that the glass carries the game, far enough that the
-   bezel, the desk edge and the keyboard are all still in the frame. The eye is
-   a little above the screen's centre, the way it is when you sit down. */
-const ZOOM_DIST = 0.503;
-const ZOOM_POS = SCREEN_POS.clone().addScaledVector(SCREEN_NORMAL, ZOOM_DIST).add(new THREE.Vector3(0, 0.085, 0));
-const ZOOM_LOOK = SCREEN_POS.clone().add(new THREE.Vector3(0, -0.012, 0));
+/* seated: straight on, the eye level with the screen's centre, close enough
+   that the glass carries the game and far enough that the bezel, the desk edge
+   and the keyboard stay in the frame around it */
+const ZOOM_DIST = 0.430;
+const SEAT = seatPose(SCREEN_POS, SCREEN_NORMAL, ZOOM_DIST);
+const ZOOM_POS = SEAT.pos, ZOOM_LOOK = SEAT.look;
 
 const cam = {
   mode: 'rest',           /* rest · glide · seated · leaving */
@@ -616,32 +617,45 @@ function sitDown() {
 function standUp() {
   if (cam.mode !== 'seated' && cam.mode !== 'glide') return;
   world.hide();
+  full.reset();
   standEl.classList.remove('on');
+  fullEl.classList.remove('on');
   cam.mode = 'leaving'; cam.t = 0;
   cam.fromPos.copy(camera.position); cam.fromLook.copy(cam.look);
   cam.toPos.copy(REST_POS); cam.toLook.copy(REST_LOOK);
 }
 
 /* the world arrives on the glass, then takes the frame */
-let worldLoaded = false;
+let arming = false;
 const HOLD = { world: false };   /* held only while the frame is being judged */
-/* the boot text finishes on the glass; only then does the world arrive on it */
+/* The boot text finishes on the glass; only then does the world arrive on it.
+   This runs on every sit-down, not only the first — standing up takes the world
+   off the glass, and coming back has to put it there again. */
 function placeWorld() {
-  if (worldLoaded || HOLD.world) return;
-  worldLoaded = true;
+  if (arming || HOLD.world) return;
+  arming = true;
   standEl.classList.add('on');
   const arrive = () => {
-    if (cam.mode !== 'seated') { worldLoaded = false; return; }
+    arming = false;
+    if (cam.mode !== 'seated') return;
     world.show();
-    setTimeout(() => { if (cam.mode === 'seated') world.live(true); }, 220);
+    fullEl.classList.add('on');
+    setTimeout(() => {
+      if (cam.mode !== 'seated') return;
+      world.live(true);
+      /* what this browser chose the last time it sat down */
+      if (full.remembered()) full.set(true);
+    }, 220);
   };
   const wait = () => {
-    if (cam.mode !== 'seated') { worldLoaded = false; return; }
+    if (cam.mode !== 'seated') { arming = false; return; }
     if (boot.done) setTimeout(arrive, REDUCED ? 60 : 520);
     else setTimeout(wait, 90);
   };
   wait();
 }
+
+const full = makeFullMode({ btn: fullEl, world, seated: () => cam.mode === 'seated' });
 
 onWorldMessage({ standUp });
 
@@ -768,6 +782,14 @@ window.__readingRoom = {
   worldFrame: () => worldFrame,
   cssPlaced: () => world.placed(),
   cab: () => world.cab(),
+  full: () => full.isOn(),
+  toggleFull: () => { full.toggle(); return full.isOn(); },
+  /* the straight-on check: the glass's four corners, projected */
+  quad: () => quadCorners(SCREEN_POS, CRT_ROT, SCR_W, SCR_H).map((v) => {
+    const p = v.clone().project(camera);
+    return [(p.x * 0.5 + 0.5) * window.innerWidth, (-p.y * 0.5 + 0.5) * window.innerHeight];
+  }),
+  eyeVsScreen: () => +(camera.position.y - SCREEN_POS.y).toFixed(4),
   focusGame: () => world.focusGame(),
   cameInBefore,
   stewardPresent,
