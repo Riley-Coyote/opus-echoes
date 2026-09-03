@@ -17,7 +17,8 @@ import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLigh
 import {
   KEY_CAME_IN, KEY_STEWARD, ls, REDUCED, seatPose, quadCorners, makeFullMode,
   paint, woodTexture, labelTexture,
-  makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall
+  makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall,
+  makeHouseWindow, makeRoomTone, makeSoundControl
 } from './door-common.js';
 
 let STILL = false;
@@ -404,7 +405,42 @@ scene.add(windowGroup);
   windowGroup.add(box(1.30, 0.05, 0.06, fm, 0, 0.20, 0.02));
   /* the sill */
   windowGroup.add(box(1.50, 0.06, 0.24, woodShelf, 0, -0.90, 0.10));
+  windowGroup.userData.view = view;
 }
+
+/* ─────────────────────── the window is true ───────────────────────
+   It was a painting of a valley with a few warm pixels for the house. It is
+   the house now: the world's own LOOKOUT, drawn live by the world's own
+   engine, on the sanctuary's own clock, with the residents where the day has
+   put them. Input-less, silent, six frames a second, and only while the room
+   is what you are looking at. `windowTexture()` above stays as the fallback
+   for a browser the engine cannot start in — better a painted valley than a
+   hole in the wall. */
+const houseWindow = makeHouseWindow({
+  w: 960, h: 420, paneW: 340, paneH: 420,
+  crop: { x: 0, y: 0, w: 340, h: 420 },   /* the sanctuary, where the painting had it */
+  fps: 6, room: 'lookout', storageKey: 'mnemos:window', vignette: 0.58
+});
+/* the painted valley stays on the glass until the live one has a first frame to
+   put there, so nobody ever sees an empty hole in the wall */
+let windowLit = false;
+function litWindow() {
+  if (windowLit) return;
+  windowLit = true;
+  const view = windowGroup.userData.view;
+  view.material.map = houseWindow.texture;
+  view.material.emissiveMap = houseWindow.texture;
+  /* the live valley carries far more light than the painting did, and the CRT
+     has to stay the brightest thing in the room */
+  view.material.emissiveIntensity = 0.46;
+  view.material.needsUpdate = true;
+}
+
+/* ─────────────────────────── the room tone ───────────────────────────
+   The reading room gets the two quiet ones: the CRT's hum and the tape hiss.
+   Off until asked, remembered in `mnemos.door.sound`, and far under the
+   world's own sound when the visitor is inside it. */
+const tone = makeRoomTone({ hum: true, hiss: true, reels: false, humHz: 58 });
 /* the house's own light, a handful of emissive points on the sill's far side */
 {
   const pts = new THREE.Group();
@@ -559,6 +595,8 @@ const standEl = document.getElementById('stand');
 const fullEl = document.getElementById('full');
 const dipEl = document.getElementById('dip');
 const bootEl = document.getElementById('boot');
+const soundEl = document.getElementById('sound');
+const soundCtl = makeSoundControl({ btn: soundEl, tone });
 
 const PICKS = [
   { id: 'crt', root: crt, outline: caseBody, bounds: glass, pad: 16, caption: '<b>the terminal</b> <i>· [sit down]</i>' },
@@ -569,7 +607,7 @@ const PICKS = [
       : '<b>the stewards’ lamp</b> <i>· dark tonight</i>'
   },
   { id: 'shelf', root: shelf, outline: seedBox, bounds: seedBox, pad: 26, caption: '<b>the archive</b> <i>· what the first sanctuary said, all of it, dated</i>' },
-  { id: 'window', root: windowGroup, outline: windowGroup.children[0], bounds: windowGroup.children[0], pad: 12, caption: '<b>the house</b> <i>· a walk from here</i>' }
+  { id: 'window', root: windowGroup, outline: windowGroup.children[0], bounds: windowGroup.children[0], pad: 12, caption: '<b>the house</b> <i>· as it is right now</i>' }
 ];
 
 const hoverLayer = makeHover({
@@ -617,6 +655,7 @@ function sitDown() {
 function standUp() {
   if (cam.mode !== 'seated' && cam.mode !== 'glide') return;
   world.hide();
+  tone.duck(false);
   full.reset();
   standEl.classList.remove('on');
   fullEl.classList.remove('on');
@@ -639,6 +678,8 @@ function placeWorld() {
     arming = false;
     if (cam.mode !== 'seated') return;
     world.show();
+    /* the room falls back behind the world once you are inside it */
+    tone.duck(true);
     fullEl.classList.add('on');
     setTimeout(() => {
       if (cam.mode !== 'seated') return;
@@ -697,6 +738,10 @@ function frame() {
 
   /* the boot text */
   term.tick(dt, t);
+
+  /* the window onto the house — six times a second, and only while the room is
+     the thing being looked at */
+  if (houseWindow.tick(dt, cam.mode === 'rest' || cam.mode === 'glide')) litWindow();
 
   /* dust, drifting in the two cones */
   {
@@ -757,6 +802,14 @@ setTimeout(() => bootEl.classList.add('gone'), 1400);
 /* ─────────────────────────── the test surface ─────────────────────────── */
 window.__readingRoom = {
   mode: () => cam.mode,
+  window: () => ({
+    live: houseWindow.ok() && windowLit, frames: houseWindow.frames(), room: houseWindow.room(),
+    clock: houseWindow.clock(), residents: houseWindow.residents(),
+    luminance: houseWindow.luminance(), error: houseWindow.error()
+  }),
+  windowCost: () => houseWindow.cost(),
+  sound: () => tone.state(),
+  soundRemembered: () => soundCtl.remembered(),
   hover: () => (hovered() ? hovered().id : null),
   caption: () => (capEl.classList.contains('on') ? capEl.textContent : null),
   hoverAt: (id) => {

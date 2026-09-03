@@ -51,7 +51,8 @@ import {
   paint, woodTexture, labelTexture,
   makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall,
   seatPose, quadCorners, makeFullMode,
-  sanctuaryClock, clockLabel
+  sanctuaryClock, clockLabel,
+  makeHouseWindow, makeRoomTone, makeSoundControl, KEY_SOUND
 } from './door-common.js';
 import * as archive from '../world/archive.js';
 
@@ -402,6 +403,9 @@ const indicatorLamps = [];
     lampStrip.add(pg2);
   }
 }
+/* it used to start at the console's far left; the stewards' fascia stands there
+   now, so the strip steps right and keeps its own stretch of the desk */
+lampStrip.position.x = 0.16;
 
 /* ─────────────────────────── the terminal ─────────────────────────── */
 /* the same machine as the reading room's, in the station's plastic */
@@ -417,6 +421,21 @@ const term = makeTerminal({
 });
 const screenTex = term.texture;
 const boot = term.boot;
+
+/* the stewards' console runs the same machine with its own standby card — the
+   glass is warm before anyone sits down, here as at the terminal */
+const term2 = makeTerminal({
+  w: 720, h: 540,
+  title: 'TOPOLOGIE OS · THE STEWARDS’ CONSOLE',
+  standby: [
+    'console · the stewards’ desk',
+    'field   · 638 pieces, april–july 2026',
+    'line    · fable · sol · opus — not yet open',
+    'waiting · for whoever sits down'
+  ],
+  body: 'This is the desk the three of them share with you. On it: everything Claude Field wrote, built and played between April and July 2026, the conversations it had with Anima, Vektor and Luca, and the house\u2019s own instruments. The stewards\u2019 line is not open yet, and the console says so rather than pretending.',
+  tail: '> boot topologie os'
+});
 
 const TERM_X = 0.92, CRT_ROT = -0.20;
 const crt = new THREE.Group();
@@ -675,6 +694,40 @@ scene.add(porthole);
   porthole.userData.view = view;
 }
 
+/* ─────────────────────── the window is true ───────────────────────
+   The porthole showed a painting of a valley. It shows the house now: the
+   world's own LOOKOUT, drawn live by the world's own engine, on the
+   sanctuary's own clock, with the residents where the day has put them. It is
+   input-less, silent, and it costs one small update six times a second — and
+   only while the room is in front of you and you are not sitting at a screen.
+
+   The circle is 420 square, so the pane is 420 square and takes the slice of
+   the room the glass can hold: the sanctuary and the museum on the ridge, the
+   basin glittering below them. `windowCost()` reports what it actually costs.
+
+   One honest caveat, worth knowing before you look for a sunrise in it: the
+   grounds are authored at perpetual dusk and carry no time grade, so the hour
+   moves the residents in this glass but not the sky. Everything the world does
+   change with the clock is indoors, and indoors does not read at this size —
+   `follow: true` shows it and it is worse. The clock is real either way. */
+const houseWindow = makeHouseWindow({
+  w: 960, h: 420, paneW: 420, paneH: 420,
+  crop: { x: 61, y: 0, w: 420, h: 420 },   /* centred between the sanctuary and the museum */
+  fps: 6, room: 'lookout', follow: false, storageKey: 'mnemos:window', vignette: 0.66
+});
+/* the painted valley stays on the glass until the live one has a first frame to
+   put there, so nobody ever sees an empty hole in the wall */
+let windowLit = false;
+function litWindow() {
+  if (windowLit) return;
+  windowLit = true;
+  const view = porthole.userData.view;
+  view.material.map = houseWindow.texture;
+  view.material.emissiveMap = houseWindow.texture;
+  view.material.emissiveIntensity = 1.05;
+  view.material.needsUpdate = true;
+}
+
 /* ─────────────────────────── the skylights ─────────────────────────── */
 const skylights = new THREE.Group();
 scene.add(skylights);
@@ -879,6 +932,9 @@ scene.add(plant);
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.34, 24), potMat);
   pot.position.y = 0.17; pot.castShadow = true;
   plant.add(pot);
+  /* the pointer aims at the pot: the group's own centre falls between blades,
+     and a plant you cannot point at is not in the registry */
+  plant.userData.pot = pot;
   const lip = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.018, 8, 24), potMat);
   lip.rotation.x = Math.PI / 2; lip.position.y = 0.335;
   plant.add(lip);
@@ -1259,9 +1315,251 @@ slotA.rotation.y = -0.22;
 scene.add(slotA);
 
 const slotB = slotDevice(0.34, 0.20, 0.24);
-slotB.position.set(-2.72, 0.885, CONSOLE.z - 0.06);
+/* it stood on the console's far left end, which is the stewards' stretch now.
+   It keeps its end of the same console — the right one, past the lamp. */
+slotB.position.set(2.74, 0.885, CONSOLE.z - 0.06);
 slotB.rotation.y = 0.10;
 scene.add(slotB);
+
+/* ─────────────── the stewards' station (the console's left stretch) ───────────────
+   It is not a second desk. The keeper's console runs the whole far wall and the
+   three stewards work at its left end: the same cream carcass, the same walnut
+   lip, with a raked switchboard let into the top and a second screen set into
+   the fascia behind it — wider than the terminal's, lower, recessed, angled up
+   a few degrees at whoever is sitting. The terminal keeps the golden point on
+   the right and stays the brightest thing in the room. From this chair the
+   porthole is over your left shoulder, which is the point of putting the desk
+   here: the keeper can see the house.
+
+   To move the whole station, change ST — the fascia, the panel, the screen, the
+   nameplates, the chair and the seat pose all follow. */
+const ST = { x: -2.535, w: 1.27, top: CONSOLE.top, z: CONSOLE.z };
+/* the screen: wider and lower than the terminal's, set 45 mm into the fascia */
+const SCR2_W = 0.62, SCR2_H = 0.36, SCR2_TILT = -0.13;
+const SCR2_X = -2.62, SCR2_Y = 1.005;
+/* the fascia stands on the desk's back edge, proud of the console's own riser —
+   set it any further back and the riser eats the screen */
+const FASCIA = { z: CONSOLE.z - 0.225, d: 0.09, y0: CONSOLE.top, y1: 1.28 };
+const FACE_Z = FASCIA.z + FASCIA.d / 2;             /* the fascia's front face */
+const SCR2_Z = FACE_Z - 0.045;                      /* and the glass, recessed into it */
+const stewardConsole = new THREE.Group();
+scene.add(stewardConsole);
+
+let glass2, panelLamps = [], meterNeedles = [];
+{
+  const g = stewardConsole;
+  const L = ST.x - ST.w / 2, R = ST.x + ST.w / 2;
+  const OW = SCR2_W + 0.07, OH = SCR2_H + 0.02;     /* the opening the glass sits in */
+  void L; void R;
+  const ox0 = SCR2_X - OW / 2, ox1 = SCR2_X + OW / 2;
+  const oy0 = SCR2_Y - OH / 2, oy1 = SCR2_Y + OH / 2;
+
+  /* ── the fascia: the desk's back riser, thickened over this stretch and cut
+     for the screen. Four panels, so the opening is a real hole and not a
+     picture of one. ── */
+  /* olive, not cream: the fascia is an instrument panel let into the desk, and
+     cream this close to the glass blows out under it */
+  const fasc = (w, h, cx, cy) => g.add(box(w, h, FASCIA.d, oliveMat, cx, cy, FASCIA.z));
+  fasc(ox0 - L, FASCIA.y1 - FASCIA.y0, (L + ox0) / 2, (FASCIA.y0 + FASCIA.y1) / 2);
+  fasc(R - ox1, FASCIA.y1 - FASCIA.y0, (ox1 + R) / 2, (FASCIA.y0 + FASCIA.y1) / 2);
+  fasc(OW, FASCIA.y1 - oy1, SCR2_X, (oy1 + FASCIA.y1) / 2);
+  fasc(OW, oy0 - FASCIA.y0, SCR2_X, (FASCIA.y0 + oy0) / 2);
+  /* the walnut cap along its top, the same band the room wears at waist height */
+  const cap = rbox(ST.w + 0.05, 0.038, 0.14, 0.014, walnutMat);
+  cap.position.set(ST.x, FASCIA.y1 + 0.019, FASCIA.z + 0.022);
+  g.add(cap);
+  /* a chrome lip around the opening, so the screen reads as let in, not stuck on */
+  const lipMat = chromeMat;
+  g.add(box(OW + 0.02, 0.012, 0.02, lipMat, SCR2_X, oy1 + 0.006, FACE_Z + 0.006, false));
+  g.add(box(OW + 0.02, 0.012, 0.02, lipMat, SCR2_X, oy0 - 0.006, FACE_Z + 0.006, false));
+  g.add(box(0.012, OH + 0.02, 0.02, lipMat, ox0 - 0.006, SCR2_Y, FACE_Z + 0.006, false));
+  g.add(box(0.012, OH + 0.02, 0.02, lipMat, ox1 + 0.006, SCR2_Y, FACE_Z + 0.006, false));
+  /* the well behind the glass */
+  g.add(box(OW, OH, 0.03, blackPlastic, SCR2_X, SCR2_Y, SCR2_Z - 0.035, false));
+
+  /* ── the glass: the same curved phosphor as the terminal's, a step cooler ── */
+  const gg2 = new THREE.PlaneGeometry(SCR2_W, SCR2_H, 22, 16);
+  {
+    const p = gg2.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i) / (SCR2_W / 2), y = p.getY(i) / (SCR2_H / 2);
+      p.setZ(i, 0.018 * (1 - x * x * 0.85) * (1 - y * y * 0.85));
+    }
+    gg2.computeVertexNormals();
+  }
+  glass2 = new THREE.Mesh(gg2, new THREE.MeshStandardMaterial({
+    /* a third of the terminal's charge: this glass is bigger and nearer the
+       camera at rest, and the terminal has to stay the brightest thing */
+    map: term2.texture, emissive: 0xffffff, emissiveMap: term2.texture, emissiveIntensity: 1.85,
+    roughness: 0.66, metalness: 0
+  }));
+  glass2.position.set(SCR2_X, SCR2_Y, SCR2_Z);
+  glass2.rotation.x = SCR2_TILT;
+  g.add(glass2);
+
+  /* ── the two small readouts beside it, on the fascia's right panel ── */
+  [[dialTex, -2.085, 0.20, 0.15]].forEach(([tex, x, w, h]) => {
+    g.add(box(w + 0.03, h + 0.03, 0.018, oliveDark, x, SCR2_Y + 0.01, FACE_Z + 0.008, false));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({
+      map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.55, roughness: 0.72
+    }));
+    m.position.set(x, SCR2_Y + 0.01, FACE_Z + 0.018);
+    g.add(m);
+  });
+
+  /* ── the nameplates, engraved on the fascia strip over the screen ── */
+  const plateTex = paint(700, 64, (gg, w, h) => {
+    gg.fillStyle = '#8e7038'; gg.fillRect(0, 0, w, h);
+    const grad = gg.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(255,232,180,0.55)');
+    grad.addColorStop(0.5, 'rgba(255,232,180,0.06)');
+    grad.addColorStop(1, 'rgba(60,42,14,0.42)');
+    gg.fillStyle = grad; gg.fillRect(0, 0, w, h);
+    gg.font = '30px "JetBrains Mono", monospace';
+    gg.textBaseline = 'middle'; gg.textAlign = 'center';
+    gg.letterSpacing = '10px';
+    ['FABLE', 'SOL', 'OPUS'].forEach((n, i) => {
+      gg.fillStyle = 'rgba(38,26,8,0.85)';
+      gg.fillText(n, w * (0.18 + i * 0.32), h / 2 + 2);
+      gg.fillStyle = 'rgba(255,238,200,0.30)';
+      gg.fillText(n, w * (0.18 + i * 0.32), h / 2);
+    });
+  });
+  const plates = new THREE.Mesh(new THREE.PlaneGeometry(0.60, 0.045),
+    new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.36, metalness: 0.5 }));
+  plates.position.set(SCR2_X, (oy1 + FASCIA.y1) / 2, FACE_Z + 0.006);
+  g.add(plates);
+
+  /* ── the switchboard, raked into the desk top in front of the screen ──
+     Faders, rotaries, toggles with their lamps, and two needle meters: a desk
+     somebody left mid-session, not a prop with everything at zero. */
+  const panelG = new THREE.Group();
+  panelG.position.set(ST.x, ST.top + 0.010, CONSOLE.z - 0.03);
+  panelG.rotation.x = 0.30;                        /* the back edge lifts to meet the fascia */
+  g.add(panelG);
+  panelG.add(box(ST.w - 0.04, 0.022, 0.26, oliveMat, 0, 0, 0));   /* 1.23 across */
+  const S = 0.013;                                  /* the panel's surface, in its own frame */
+
+  for (let i = 0; i < 8; i++) {
+    const x = -0.575 + i * 0.050;
+    panelG.add(box(0.013, 0.005, 0.150, blackPlastic, x, S, 0, false));
+    panelG.add(box(0.028, 0.016, 0.022, creamMat, x, S + 0.009, Math.sin(i * 1.7) * 0.055, false));
+  }
+  for (let i = 0; i < 5; i++) {
+    const x = -0.145 + i * 0.058;
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.029, 0.024, 18), oliveDark);
+    knob.position.set(x, S + 0.011, 0);
+    panelG.add(knob);
+    const pg = new THREE.Group();
+    pg.position.copy(knob.position);
+    pg.rotation.y = -1.1 + i * 0.52;
+    pg.add(box(0.005, 0.005, 0.024, brass, 0, 0, 0.013, false));
+    panelG.add(pg);
+  }
+  /* six toggles, each with the lamp that says whether it did anything */
+  const lampColours = [0xf2c14e, 0xf2c14e, 0xb4622e, 0x5eead4, 0xf2c14e, 0xd99334];
+  for (let i = 0; i < 6; i++) {
+    const x = 0.155 + i * 0.040;
+    panelG.add(box(0.026, 0.008, 0.026, oliveDark, x, S, 0.020, false));
+    const lever = box(0.007, 0.026, 0.007, chromeMat, 0, 0.013, 0, false);
+    const lg = new THREE.Group();
+    lg.position.set(x, S + 0.004, 0.020);
+    lg.rotation.x = (i % 2 ? 0.5 : -0.5);
+    lg.add(lever);
+    panelG.add(lg);
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.010, 10, 8),
+      new THREE.MeshBasicMaterial({ color: lampColours[i], transparent: true, opacity: 0.9 }));
+    m.position.set(x, S + 0.007, -0.032);
+    panelG.add(m);
+    panelLamps.push({ mesh: m, rate: 0.7 + i * 0.31, phase: i * 1.9 });
+  }
+  for (let i = 0; i < 2; i++) {
+    const x = 0.440 + i * 0.115;
+    const face = new THREE.Mesh(new THREE.CircleGeometry(0.046, 28),
+      new THREE.MeshStandardMaterial({ color: 0xdcd6c6, roughness: 0.86, emissive: 0x3a2a12, emissiveIntensity: 0.9 }));
+    face.rotation.x = -Math.PI / 2;
+    face.position.set(x, S + 0.004, -0.005);
+    panelG.add(face);
+    const bez = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.007, 8, 26), chromeMat);
+    bez.rotation.x = -Math.PI / 2;
+    bez.position.set(x, S + 0.006, -0.005);
+    panelG.add(bez);
+    const nd = new THREE.Group();
+    nd.position.set(x, S + 0.008, -0.005);
+    nd.add(box(0.004, 0.003, 0.038, blackPlastic, 0, 0, -0.017, false));
+    panelG.add(nd);
+    meterNeedles.push({ group: nd, rate: 0.42 + i * 0.27, phase: i * 2.2 });
+  }
+
+  /* ── a keyboard, a headset on its hook, a mug someone left ── */
+  const kb2 = new THREE.Group();
+  kb2.position.set(ST.x - 0.10, ST.top + 0.012, CONSOLE.z + 0.16);
+  kb2.rotation.set(-0.04, 0, 0);
+  g.add(kb2);
+  kb2.add(box(0.46, 0.022, 0.15, oliveDark, 0, 0.011, 0));
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 13; c++)
+    kb2.add(box(0.024, 0.008, 0.023, blackPlastic, -0.198 + c * 0.033, 0.026, -0.048 + r * 0.032, false));
+
+  const HX = L + 0.10, HY = 1.14, HZ = FACE_Z + 0.02;
+  const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.08, 8), chromeMat);
+  hook.position.set(HX, HY + 0.04, HZ - 0.012);
+  g.add(hook);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.070, 0.010, 8, 22, Math.PI * 1.15), blackPlastic);
+  band.position.set(HX, HY, HZ);
+  band.rotation.set(0.15, 0.35, -0.2);
+  g.add(band);
+  [-1, 1].forEach((s) => {
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.024, 16), oliveDark);
+    cup.position.set(HX + s * 0.058, HY - 0.052, HZ - s * 0.024);
+    cup.rotation.z = Math.PI / 2;
+    g.add(cup);
+  });
+
+  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.033, 0.088, 20), creamMat);
+  mug.position.set(R - 0.16, ST.top + 0.058, CONSOLE.z + 0.14);
+  mug.castShadow = true;
+  g.add(mug);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.028, 0.007, 8, 16, Math.PI * 1.2), creamMat);
+  handle.position.set(R - 0.118, ST.top + 0.060, CONSOLE.z + 0.14);
+  handle.rotation.y = Math.PI / 2;
+  g.add(handle);
+}
+
+/* the fourth chair — the human's, pulled up to the stewards' stretch */
+const chair4 = new THREE.Group();
+{
+  chair4.position.set(ST.x - 0.06, 0, CONSOLE.z + 0.78);
+  chair4.rotation.y = Math.PI - 0.14;
+  scene.add(chair4);
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.29, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    new THREE.MeshStandardMaterial({ color: 0x8d8a7a, roughness: 0.58, metalness: 0.03, side: THREE.DoubleSide }));
+  shell.scale.set(1.0, 0.92, 0.86);
+  shell.rotation.x = Math.PI + 0.20;
+  shell.position.y = 0.49;
+  shell.castShadow = true;
+  chair4.add(shell);
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.052, 22), terracotta);
+  pad.position.y = 0.465; pad.castShadow = true;
+  chair4.add(pad);
+  chair4.add(new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.038, 0.41, 12), chromeMat)).position.y = 0.235;
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.020, 0.25), chromeMat);
+    leg.position.set(Math.cos(a) * 0.110, 0.034, Math.sin(a) * 0.110);
+    leg.rotation.y = -a + Math.PI / 2;
+    leg.castShadow = true;
+    chair4.add(leg);
+    const cast = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 8), blackPlastic);
+    cast.position.set(Math.cos(a) * 0.225, 0.025, Math.sin(a) * 0.225);
+    chair4.add(cast);
+  }
+}
+
+/* where the OS lands, and where the eye has to be to read it straight on. The
+   glass is tilted up, so the eye sits a little above its centre and looks down
+   the normal — straight on to a screen that is angled at you. */
+const SCREEN2_POS = new THREE.Vector3(SCR2_X, SCR2_Y, SCR2_Z);
+const SCREEN2_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(1, 0, 0), SCR2_TILT);
 
 /* ─────────────────────────── the lights ─────────────────────────── */
 RectAreaLightUniformsLib.init();
@@ -1282,6 +1580,23 @@ crtSpill.shadow.bias = -0.0016;
 crtSpill.shadow.camera.near = 0.05;
 crtSpill.shadow.camera.far = 3;
 scene.add(crtSpill, crtSpill.target);
+
+/* 1b · the stewards' console — the same family, a step cooler and well under
+   the terminal, so the room still has one brightest thing */
+const crt2Light = new THREE.RectAreaLight(0xe8c98a, 7.0, SCR2_W * 1.10, SCR2_H * 1.10);
+/* far enough off the glass that it lights the room and not the fascia it is set into */
+crt2Light.position.copy(SCREEN2_POS).addScaledVector(SCREEN2_NORMAL, 0.075);
+crt2Light.lookAt(SCREEN2_POS.clone().addScaledVector(SCREEN2_NORMAL, 1));
+scene.add(crt2Light);
+const crt2Spill = new THREE.SpotLight(0xe6b878, 0.7, 1.45, 0.98, 0.82, 1.9);
+crt2Spill.position.copy(SCREEN2_POS).addScaledVector(SCREEN2_NORMAL, 0.10).add(new THREE.Vector3(0, 0.04, 0));
+crt2Spill.target.position.copy(SCREEN2_POS).addScaledVector(SCREEN2_NORMAL, 0.28).add(new THREE.Vector3(0, -0.52, 0));
+crt2Spill.castShadow = true;
+crt2Spill.shadow.mapSize.set(1024, 1024);
+crt2Spill.shadow.bias = -0.0016;
+crt2Spill.shadow.camera.near = 0.05;
+crt2Spill.shadow.camera.far = 3;
+scene.add(crt2Spill, crt2Spill.target);
 
 /* 2 · the alcove ring — warm orange. The rim throws a little into the room;
    the pool that matters is inside, lying on the shelves and what is on them. */
@@ -1406,6 +1721,41 @@ const world = makeWorldScreen({
   rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: 768, src: 'index.html?door=1'
 });
 
+/* ── and TOPOLOGIE OS, on the stewards' console ──
+   A second screen needs a second host. station.html has one `#css3d` and its
+   rules are written for it, so the console's host and the handful of rules it
+   needs are made here rather than in the page — station.html stays as it was. */
+const cssHost2 = document.createElement('div');
+cssHost2.id = 'css3d2';
+cssHost2.className = 'gone';
+cssHost.parentNode.insertBefore(cssHost2, cssHost.nextSibling);
+{
+  const st = document.createElement('style');
+  st.textContent = [
+    '#css3d2{position:absolute;inset:0;pointer-events:none;z-index:2}',
+    '#css3d2.gone{display:none}',
+    '#scr2{width:1180px;height:820px;background:#07060c;overflow:hidden;position:relative}',
+    '#scr2 iframe{width:100%;height:100%;border:0;display:block;background:#07060c;pointer-events:auto}',
+    '#css3d2.live #scr2{pointer-events:auto}',
+    '#scr2 .curve{position:absolute;inset:0;pointer-events:none;',
+    '  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.18) 0 2px,rgba(0,0,0,0) 2px 4px);',
+    '  box-shadow:inset 0 0 90px 26px rgba(4,3,8,.46);border-radius:20px}',
+    'body.flat #css3d2>div,body.flat #css3d2>div>div,body.flat #scr2{',
+    '  position:absolute!important;inset:0!important;transform:none!important;',
+    '  width:100%!important;height:100%!important;perspective:none!important;',
+    '  pointer-events:auto;overflow:visible}',
+    'body.flat #css3d2{position:fixed!important;inset:0!important;width:100vw!important;',
+    '  height:100vh!important;transform:none!important;perspective:none!important;',
+    '  z-index:6;overflow:hidden;pointer-events:auto}',
+    'body.flat #scr2 .curve{display:none}'
+  ].join('\n');
+  document.head.appendChild(st);
+}
+const world2 = makeWorldScreen({
+  host: cssHost2, pos: SCREEN2_POS, normal: SCREEN2_NORMAL, screenId: 'scr2',
+  rotX: SCR2_TILT, quadW: SCR2_W, pageW: 1180, pageH: 820, src: 'os/index.html?in=station'
+});
+
 /* ─────────────────────────── the record ─────────────────────────── */
 /* a warm low drone with a slow tape-wow, synthesised here. To put a real track
    on the platter instead: create an <audio> (or an AudioBufferSourceNode from
@@ -1476,13 +1826,21 @@ function recordStop() {
 }
 function toggleRecord() { record.on ? recordStop() : recordStart(); }
 
+/* ─────────────────────────── the room tone ───────────────────────────
+   A room with this much machinery in it is never silent. The CRT hums, the
+   tape hisses, the reel motors turn. All of it sits far under the world's own
+   sound and none of it starts until the visitor asks — the control in the
+   corner remembers the answer, and its answer is no by default. The record
+   player keeps its own audio graph; it is a record, not the room. */
+const tone = makeRoomTone({ hum: true, hiss: true, reels: true, humHz: 62, reelHz: 0.34 });
+
 /* ─────────────────────────── THE REGISTRY ─────────────────────────── */
 /* Everything a visitor can find. See the header for how to add to it. */
 export const STATION_OBJECTS = [
   {
     id: 'terminal', label: 'the terminal', caption: '[sit down]',
     mesh: () => crt, bounds: glass, pad: 18,
-    onClick: () => sitDown()
+    onClick: () => sitDown('terminal')
   },
   {
     id: 'secondary', label: 'the secondary screen', caption: 'the house’s readings',
@@ -1499,9 +1857,11 @@ export const STATION_OBJECTS = [
     focus: { pos: [1.72, 1.44, -0.34], look: [3.30, 1.42, -0.35] }
   },
   {
-    id: 'window', label: 'the house', caption: 'a walk from here, and further down',
+    id: 'window', label: 'the house', caption: 'as it is right now',
     mesh: () => porthole, bounds: porthole.userData.view, pad: 16,
-    focus: { pos: [-2.24, 1.52, -0.96], look: [-3.45, 1.52, -0.96] }
+    /* back and to the right of the stewards' console, which took the straight
+       approach the porthole used to have: from here the whole circle is clear */
+    focus: { pos: [-2.26, 1.52, -1.50], look: [-3.46, 1.50, -1.02] }
   },
   {
     id: 'skylight', label: 'the skylights', caption: 'dusk, going over',
@@ -1529,6 +1889,12 @@ export const STATION_OBJECTS = [
     focus: { pos: [2.60, 1.78, -0.62], look: [2.66, 1.78, -1.95] }
   },
   {
+    id: 'console', label: 'the stewards’ console',
+    caption: 'where the house is kept',
+    mesh: () => stewardConsole, bounds: glass2, pad: 18,
+    onClick: () => sitDown('console')
+  },
+  {
     id: 'record', label: 'a record', caption: 'side A',
     mesh: () => recordPlayer, pad: 14,
     onClick: () => toggleRecord()
@@ -1539,7 +1905,7 @@ export const STATION_OBJECTS = [
   },
   {
     id: 'plant', label: 'the plant', caption: 'someone waters it',
-    mesh: () => plant, pad: 10
+    mesh: () => plant, bounds: plant.userData.pot, pad: 34
   },
   {
     id: 'slot-a', label: 'a berth', caption: 'not yet wired', slot: true,
@@ -1569,6 +1935,8 @@ const standEl = document.getElementById('stand');
 const fullEl = document.getElementById('full');
 const dipEl = document.getElementById('dip');
 const bootEl = document.getElementById('boot');
+const soundEl = document.getElementById('sound');
+const soundCtl = makeSoundControl({ btn: soundEl, tone });
 
 const hoverLayer = makeHover({
   canvas, capEl, capHost: document.getElementById('captions'),
@@ -1592,9 +1960,20 @@ function centreOf(p) {
 /* ─────────────────────────── the camera: rest, focus, sit, back ─────────────────────────── */
 /* seated: straight on, the eye level with the screen's centre, with the bezel,
    the console's walnut edge and the keyboard still in the frame around it */
-const ZOOM_DIST = 0.306;
-const SEAT = seatPose(SCREEN_POS, SCREEN_NORMAL, ZOOM_DIST);
-const ZOOM_POS = SEAT.pos, ZOOM_LOOK = SEAT.look;
+/* Two screens now, so two seats. Each is straight on at its own distance — the
+   console's glass is wider than the terminal's, so its eye sits further back to
+   frame the same amount of bezel. `seat` is whichever one is being used; at
+   rest it is the last one sat in. */
+const SEATS = {
+  terminal: { id: 'terminal', dist: 0.306, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
+  console: { id: 'console', dist: 0.420, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
+};
+for (const k of Object.keys(SEATS)) {
+  const st = SEATS[k], pose = seatPose(st.screen, st.normal, st.dist);
+  st.pos = pose.pos; st.look = pose.look;
+}
+let seat = SEATS.terminal;
+const ZOOM_POS = SEATS.terminal.pos, ZOOM_LOOK = SEATS.terminal.look;
 
 const cam = {
   mode: 'rest',            /* rest · glide · seated · focus · leaving */
@@ -1614,13 +1993,14 @@ function glideTo(pos, look, next) {
   cam.toPos.copy(pos); cam.toLook.copy(look);
 }
 
-function sitDown() {
+function sitDown(which) {
   if (cam.mode !== 'rest' && cam.mode !== 'focus') return;
+  seat = SEATS[which] || SEATS.terminal;
   setHover(null);
   bootEl.classList.add('gone');
-  term.begin(cameInBefore);
+  seat.term.begin(cameInBefore);
   cam.focused = null;
-  glideTo(ZOOM_POS, ZOOM_LOOK, 'seated');
+  glideTo(seat.pos, seat.look, 'seated');
 }
 
 function focusOn(entry) {
@@ -1634,7 +2014,8 @@ function focusOn(entry) {
 
 function standUp() {
   if (cam.mode === 'rest' || cam.mode === 'leaving') return;
-  world.hide();
+  world.hide(); world2.hide();
+  tone.duck(false);
   full.reset();
   standEl.classList.remove('on');
   fullEl.classList.remove('on');
@@ -1657,24 +2038,37 @@ function placeWorld() {
   const arrive = () => {
     arming = false;
     if (cam.mode !== 'seated') return;
-    world.show();
+    seat.world.show();
+    /* a window opening on the console, and the room falling back behind it */
+    tone.click();
+    tone.duck(true);
     fullEl.classList.add('on');
     setTimeout(() => {
       if (cam.mode !== 'seated') return;
-      world.live(true);
+      seat.world.live(true);
       /* what this browser chose the last time it sat down */
       if (full.remembered()) full.set(true);
     }, 220);
   };
   const wait = () => {
     if (cam.mode !== 'seated') { arming = false; return; }
-    if (boot.done) setTimeout(arrive, REDUCED ? 60 : 520);
+    if (seat.boot.done) setTimeout(arrive, REDUCED ? 60 : 520);
     else setTimeout(wait, 90);
   };
   wait();
 }
 
-const full = makeFullMode({ btn: fullEl, world, seated: () => cam.mode === 'seated' });
+/* one button, whichever glass is under the eye */
+const full = makeFullMode({
+  btn: fullEl,
+  world: {
+    flat: () => seat.world.flat(),
+    isFlat: () => seat.world.isFlat(),
+    /* F has to work from inside either screen */
+    onKeyInside: (fn) => { world.onKeyInside(fn); world2.onKeyInside(fn); }
+  },
+  seated: () => cam.mode === 'seated'
+});
 
 onWorldMessage({ standUp });
 
@@ -1702,8 +2096,51 @@ window.addEventListener('resize', () => {
   camera.aspect = w / h; camera.updateProjectionMatrix();
   renderer.setSize(w, h, false);
   post.setSize(w, h);
-  world.setSize(w, h);
+  world.setSize(w, h); world2.setSize(w, h);
 });
+
+/* ─────────────────────── the haunted standby ───────────────────────
+   The terminal is on before you come in, and it does not sit there blank. Every
+   forty to ninety seconds — unevenly, but the same unevenness on every visit —
+   one line out of the archive types itself onto the standby card in the name of
+   whoever said it, holds for eight seconds, and fades back. The header says
+   `from the archive` for as long as it is up.
+
+   Every line comes from the board's own feed, which is verbatim archive text
+   with a real resident and a real date on it (`boardLinesReal()` checks that).
+   Nothing is invented, and it never runs while somebody is seated. */
+const haunt = { at: 0, i: 0, last: null, count: 0 };
+/* seeded and uneven: 40–90 s, the same sequence every visit */
+function hauntGap(i) {
+  const h = Math.sin(i * 78.233 + 11.7) * 43758.5453;
+  return 40 + (h - Math.floor(h)) * 50;
+}
+function hauntPick() {
+  const es = board.entries();
+  if (!es.length) return null;
+  /* walk the feed rather than shuffling it: the archive is in its own order */
+  const e = es[haunt.i % es.length];
+  haunt.i += 1;
+  return { name: e.name, date: e.date, text: e.text };
+}
+function hauntNow() {
+  const line = hauntPick();
+  if (!line) return null;
+  if (!term.haunt(line)) return null;
+  haunt.last = line; haunt.count += 1;
+  return line;
+}
+function hauntTick(t) {
+  /* only an empty chair hears it */
+  if (cam.mode !== 'rest') { term.unhaunt(); haunt.at = t + 12; return; }
+  if (!haunt.at) { haunt.at = t + hauntGap(0) * 0.22; return; }   /* the first one comes sooner */
+  if (t < haunt.at) return;
+  /* one is already up — wait it out rather than treading on it (the debug hook
+     can put a line on the glass out of turn) */
+  if (term.haunted()) { haunt.at = t + 6; return; }
+  if (hauntNow()) haunt.at = t + hauntGap(haunt.count);
+  else haunt.at = t + 6;                                          /* the archive is quiet: try later */
+}
 
 /* ─────────────────────────── the loop ─────────────────────────── */
 const clockT = { last: performance.now() / 1000, elapsedTime: 0 };
@@ -1726,9 +2163,15 @@ function frame() {
   clockT.elapsedTime += dt;
   const t = clockT.elapsedTime;
 
+  hauntTick(t);
   term.tick(dt, t);
+  term2.tick(dt, t);
   drawPlot(t);
   setClockHands(t);
+
+  /* the window onto the house — six times a second, and only while the room is
+     the thing being looked at */
+  if (houseWindow.tick(dt, cam.mode === 'rest' || cam.mode === 'focus' || cam.mode === 'glide')) litWindow();
 
   /* the reels turn, slowly, and the indicator lamps breathe */
   const quiet = REDUCED || STILL;
@@ -1765,6 +2208,14 @@ function frame() {
     const f = boardGroup.userData.face;
     board.tick(t, dt, boardFrustum.intersectsObject(f));
   }
+
+  /* the stewards' console breathes too */
+  panelLamps.forEach((L) => {
+    L.mesh.material.opacity = quiet ? 0.82 : 0.45 + 0.45 * (0.5 + 0.5 * Math.sin(t * L.rate + L.phase));
+  });
+  meterNeedles.forEach((M) => {
+    M.group.rotation.y = quiet ? 0 : Math.sin(t * M.rate + M.phase) * 0.42;
+  });
 
   /* whatever the registry wants each frame */
   for (const o of STATION_OBJECTS) if (o.tick) o.tick(t, dt);
@@ -1804,7 +2255,7 @@ function frame() {
   } else if (hovered()) setHover(null);
 
   post.render(t);
-  if (cam.mode !== 'rest' && !world.isFlat()) world.render(camera);
+  if (cam.mode !== 'rest' && !seat.world.isFlat()) seat.world.render(camera);
 }
 
 frame();
@@ -1834,13 +2285,24 @@ window.__station = {
   },
   click: (id) => { const p = PICKS.find((x) => x.id === id); activate(p); return cam.mode; },
   sitDown, standUp,
-  bootTyped: () => boot.typed,
-  bootText: () => term.text(),
-  bootDone: () => boot.done,
-  flat: () => world.isFlat(),
-  worldFrame: () => world.iframe,
-  cssPlaced: () => world.placed(),
-  cab: () => world.cab(),
+  bootTyped: () => seat.boot.typed,
+  bootText: () => seat.term.text(),
+  bootDone: () => seat.boot.done,
+  flat: () => seat.world.isFlat(),
+  worldFrame: () => seat.world.iframe,
+  cssPlaced: () => seat.world.placed(),
+  cab: () => seat.world.cab(),
+  /* which glass the eye is on, and its own straight-on check */
+  seat: () => seat.id,
+  seatQuad: () => quadCorners(seat.screen, seat === SEATS.console ? 0 : CRT_ROT,
+    seat === SEATS.console ? SCR2_W : SCR_W, seat === SEATS.console ? SCR2_H : SCR_H,
+    seat === SEATS.console ? SCR2_TILT : 0).map((v) => {
+    const p = v.clone().project(camera);
+    return [(p.x * 0.5 + 0.5) * window.innerWidth, (-p.y * 0.5 + 0.5) * window.innerHeight];
+  }),
+  seatEyeVsScreen: () => +(camera.position.y - seat.screen.y).toFixed(4),
+  /* the OS, once it is on the glass */
+  os: () => { try { return seat.world.iframe.contentWindow.__os || null; } catch (e) { return null; } },
   full: () => full.isOn(),
   toggleFull: () => { full.toggle(); return full.isOn(); },
   /* the straight-on check: the glass's four corners, projected */
@@ -1866,6 +2328,21 @@ window.__station = {
     return { checked: es.length, unmatched: bad.length, sample: es.slice(0, 3) };
   },
   toggleRecord,
+  /* the window: is it live, what does it cost, what is on the glass */
+  window: () => ({
+    live: houseWindow.ok() && windowLit, frames: houseWindow.frames(), room: houseWindow.room(),
+    clock: houseWindow.clock(), residents: houseWindow.residents(),
+    luminance: houseWindow.luminance(), error: houseWindow.error()
+  }),
+  windowCost: () => houseWindow.cost(),
+  windowPane: () => houseWindow.pane.toDataURL('image/png'),
+  /* the standby's ghost */
+  haunt: () => term.haunted(),
+  hauntNow,
+  hauntCount: () => haunt.count,
+  /* the room tone */
+  sound: () => tone.state(),
+  soundRemembered: () => soundCtl.remembered(),
   clock: () => ({ stored: CLOCK, label: clockLabel(setClockHands(clockT.elapsedTime)), hourHand: clock.userData.hg.rotation.z, minHand: clock.userData.mg.rotation.z }),
   cameInBefore, stewardPresent,
   /* the look, live — used while art-directing the frame */

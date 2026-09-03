@@ -102,6 +102,17 @@
     text-transform:uppercase;color:var(--faint);transition:opacity .6s var(--ease-out)}
   #boot.gone{opacity:0}
 
+  /* the sound control — the landing's .tbtn idiom, one button in the corner */
+  #sound{position:absolute;right:26px;top:22px;z-index:8;
+    background:rgba(6,5,10,.72);border:1px solid var(--line2);border-radius:6px;
+    color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    padding:7px 11px;min-height:32px;cursor:pointer;pointer-events:auto;
+    transition:color .2s var(--ease-out),border-color .2s var(--ease-out)}
+  #sound:hover{color:var(--ink);border-color:rgba(242,236,223,.34)}
+  #sound:focus-visible{outline:none;border-color:rgba(242,236,223,.55);color:var(--ink)}
+  #sound[aria-pressed="true"]{color:var(--ink);border-color:rgba(242,193,78,.46)}
+  body.flat #sound{opacity:0;pointer-events:none}
+
   @media (max-width:700px){#stage{display:none}}
 </style>
 </head>
@@ -116,6 +127,7 @@
     <div id="mark">MNEMOS</div>
     <div id="sub">the reading room · 11:48 pm</div>
   </div>
+  <button id="sound" type="button" aria-pressed="false" title="room tone">sound</button>
   <button id="stand" type="button"><span class="k">ESC</span>stand up</button>
   <button id="full" type="button"><span class="k">F</span>full screen</button>
   <div id="dip"></div>
@@ -133,7 +145,7 @@
   } catch (e) { webgl = false; }
   if (narrow || !webgl) { location.replace('index.html'); return; }
   var s = document.createElement('script');
-  s.src = 'room.connected.js?v=20260903-experience-13';
+  s.src = 'room.connected.js?v=20260903-experience-14';
   document.body.appendChild(s);
 })();
 </script>
