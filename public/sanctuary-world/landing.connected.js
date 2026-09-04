@@ -12580,7 +12580,7 @@
         const rows = data && data.entries || [];
         host.innerHTML = rows.map((e) => '<div class="entry"><div class="entry__h"><span class="entry__d">' + esc2(e.date) + "</span>" + '<span class="entry__t">' + esc2(e.title) + "</span></div>" + "<p>" + esc2(e.body) + "</p></div>").join("");
         if (src)
-          src.textContent = "the last " + rows.length + " entries of the workshop’s own list — " + data.source + " — extracted at build time, in the stewards’ own words. " + "Where a resident is quoted inside an entry, the quotation is the steward’s record of that day, not the archive.";
+          src.textContent = "the last " + rows.length + " entries of the workshop’s own list — " + data.source + " — extracted at build time, in the stewards’ own words.";
         if (sky && sky.repaint)
           sky.repaint();
       }).catch((err) => {

@@ -2911,8 +2911,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
           + '<span class="entry__t">' + esc(e.title) + '</span></div>'
           + '<p>' + esc(e.body) + '</p></div>').join('');
         if (src) src.textContent = 'the last ' + rows.length + ' entries of the workshop’s own list — '
-          + data.source + ' — extracted at build time, in the stewards’ own words. '
-          + 'Where a resident is quoted inside an entry, the quotation is the steward’s record of that day, not the archive.';
+          + data.source + ' — extracted at build time, in the stewards’ own words.';
         if (sky && sky.repaint) sky.repaint();
       })
       .catch((err) => {
