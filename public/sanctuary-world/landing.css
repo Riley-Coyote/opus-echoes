@@ -30,8 +30,11 @@ body{
 ::-webkit-scrollbar-thumb{background:rgba(239,233,220,.10);border-radius:4px}
 ::-webkit-scrollbar-track{background:transparent}
 
-/* sky + grain */
-#sky{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;image-rendering:pixelated}
+/* the sky — ONE tall canvas sized to the document, painted top to bottom:
+   dusk over the hero, the horizon just below it, then the ground down to the
+   foot of the page. Absolute, never fixed: a fixed sky repeats itself down a
+   long page and the place turns into wallpaper. */
+#sky{position:absolute;top:0;left:0;width:100%;z-index:0;image-rendering:pixelated;pointer-events:none}
 .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
 main,header.bar,footer{position:relative;z-index:2}
@@ -45,7 +48,9 @@ main,header.bar,footer{position:relative;z-index:2}
 .bar__tag{font-family:var(--mono);font-size:10px;color:var(--dim)}
 
 /* hero */
-.hero{max-width:1460px;margin:0 auto;padding:4vh 24px 60px;position:relative}
+/* the foot of the hero is where the horizon passes: the last light needs a
+   little clear air under the cue before the page goes under it. */
+.hero{max-width:1460px;margin:0 auto;padding:4vh 24px 140px;position:relative}
 .tag{font-family:var(--px);font-size:9px;letter-spacing:.18em;color:var(--signal);display:block;margin-bottom:14px}
 .tag em{font-family:var(--serif);font-style:italic;letter-spacing:.04em;font-size:12px;color:var(--dim);text-transform:none}
 .hero__head{margin-bottom:26px}
@@ -54,7 +59,10 @@ main,header.bar,footer{position:relative;z-index:2}
 .wordmark__the{font-size:.38em;color:var(--dim);letter-spacing:.3em}
 .lede{font-family:var(--serif);font-size:17px;font-weight:300;color:rgba(239,233,220,.82);margin-top:14px;max-width:520px}
 .lede--em em{color:var(--signal)}
-.hero__cue{margin-top:26px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim);text-align:center}
+/* the cue is the last line before the horizon passes, so it stands on the
+   sunset: it takes the wordmark's own shadow to hold against it. */
+.hero__cue{margin-top:26px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+  color:var(--ink);text-align:center;text-shadow:0 1px 0 rgba(0,0,0,.75),0 0 12px rgba(0,0,0,.6)}
 
 /* world = cabinet + feed */
 .world{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:stretch;margin-top:8px}
@@ -67,7 +75,7 @@ main,header.bar,footer{position:relative;z-index:2}
    Only the cab and the feed exist; everything the landing would say around
    them was already said on the glass, in the boot text. */
 html.door,html.door body{overflow:hidden;height:100%}
-html.door .bar,html.door .foot,html.door .room,
+html.door .bar,html.door .ground,
 html.door .hero>*:not(#world){display:none!important}
 html.door .hero{max-width:none;margin:0;padding:0}
 
@@ -163,34 +171,145 @@ html.door .hero{max-width:none;margin:0;padding:0}
 .menu a:hover::before,.menu a:focus-visible::before{color:var(--signal)}
 .menu a:focus-visible{outline:1px solid var(--signal);outline-offset:4px}
 
-/* rooms (sections) — floating panels over the dusk */
-.room{max-width:880px;margin:10vh auto;padding:38px 44px;
-  background:var(--panel);backdrop-filter:blur(4px);
-  border:1px solid var(--line2);border-radius:12px;
-  box-shadow:0 18px 60px rgba(0,0,0,.35)}
-@media (max-width:940px){.room{margin:7vh 16px;padding:26px 22px}}
-.serif{font-family:var(--serif);font-weight:300;font-size:17px;color:rgba(239,233,220,.85);margin-top:12px}
-.serif em{color:var(--signal);font-style:italic}
-.big{font-size:clamp(20px,3vw,27px);line-height:1.45}
-.mini{font-size:11px;color:var(--dim);margin-top:14px}
-.roomlink{display:inline-block;margin-top:18px;padding:0;background:none;border:0;font-family:var(--px);font-size:10px;letter-spacing:.14em;color:var(--signal);cursor:pointer}
-.roomlink:hover{text-decoration:underline}
-.roomlink:focus-visible{outline:none;color:var(--ink);text-decoration:underline}
+/* ══════════════════════════════════════════════════════════════════
+   THE GROUND — everything below the horizon.
 
-/* grounds strip (live) */
-.strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
-.strip div{flex:1 1 180px;background:var(--panel-raised);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
-.strip .nm{font-family:var(--px);font-size:9px;letter-spacing:.12em;color:var(--ink)!important;display:flex;align-items:center;gap:7px}
-.strip .st{font-size:11px;color:var(--dim);margin-top:7px}
+   The rule, after Fable's look: one sky, one horizon, then the ground.
+   No panels. No cards. No box inside a box. Each section is open text
+   on the dark with a single hairline above it; space, not rules,
+   separates the parts inside it. The pixel face carries titles and
+   names, the serif carries statements and prose, and the mono is only
+   ever for data — dates, counts, captions, labels, links. Nothing is
+   bold: hierarchy is size and opacity. Amber is the one signal.
+   ══════════════════════════════════════════════════════════════════ */
+.ground{
+  --ink1:rgba(245,243,237,.92); --ink2:rgba(245,243,237,.64); --ink3:rgba(245,243,237,.48);
+  --hair:rgba(242,236,223,.10); --hair2:rgba(242,236,223,.16);
+  --gap-s:32px; --gap-m:48px; --gap-l:96px;
+  max-width:1080px;margin:0 auto;padding:0 32px 128px;
+}
+.ground .status{
+  font-family:var(--mono);font-size:11px;line-height:1.7;letter-spacing:.05em;
+  color:var(--ink3);padding:var(--gap-s) 0 var(--gap-l)}
 
-/* research wing */
-.wing{background:var(--panel-raised);border:1px solid var(--line);border-radius:10px;padding:22px 24px;margin-top:20px}
-.wing__no{font-family:var(--px);font-size:9px;letter-spacing:.18em;color:var(--signal-dim)}
-.wing__title{font-family:var(--px);font-size:15px;letter-spacing:.1em;margin-top:10px}
+.sec{background:none;border:0;border-radius:0;box-shadow:none;padding:0;
+  margin:0 0 var(--gap-l);border-top:1px solid var(--hair);padding-top:var(--gap-s)}
+.sec--last{margin-bottom:0}
+.sec__h{display:flex;align-items:baseline;gap:16px;font-weight:400;margin-bottom:var(--gap-m)}
+.sec__no{font-family:var(--px);font-size:9px;letter-spacing:.14em;color:rgba(245,243,237,.42)}
+.sec__t{font-family:var(--px);font-size:11px;letter-spacing:.16em;color:var(--ink1)}
+.stmt{font-family:var(--serif);font-weight:300;font-style:italic;
+  font-size:clamp(20px,2.3vw,26px);line-height:1.42;color:var(--ink1);max-width:46ch;margin-bottom:var(--gap-m)}
+.prose p{font-family:var(--serif);font-weight:300;font-size:18px;line-height:1.62;
+  color:var(--ink2);max-width:64ch;margin-bottom:var(--gap-s)}
+.prose p:last-child{margin-bottom:0}
+.prose em,.stmt em{font-style:italic;color:var(--ink1)}
+.src{font-family:var(--mono);font-size:10.5px;line-height:1.75;letter-spacing:.04em;
+  color:var(--ink3);max-width:72ch;margin-top:var(--gap-s)}
+.mono-in{font-family:var(--mono);font-size:.86em;letter-spacing:.02em}
+.flag{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber-deep);margin-left:10px}
 
-/* footer */
-.foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:1240px;margin:0 auto;
-  padding:40px 24px 34px;border-top:1px solid var(--line);font-family:var(--px);font-size:9px;letter-spacing:.14em;color:var(--faint)}
+/* the one signal: a link is a word with an amber rule under it */
+.ln{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;color:var(--ink1);
+  text-decoration:none;border-bottom:1px solid rgba(217,147,52,.6);padding-bottom:2px}
+.ln:hover{border-bottom-color:var(--amber);color:#fff}
+.ln:focus-visible{outline:none;border-bottom-color:var(--amber);color:#fff;
+  box-shadow:0 2px 0 -1px var(--amber)}
+.src .ln{display:inline-block}
+
+/* §02 — five portraits in a row, then five short lives. No cards. */
+.folk{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:24px;
+  align-items:end;margin-bottom:var(--gap-l);max-width:760px}
+.folk figure{margin:0;text-align:left}
+.folk img{display:block;height:auto;image-rendering:pixelated;margin-bottom:16px}
+.folk figcaption{display:block}
+.folk .who{display:flex;align-items:center;gap:7px;font-family:var(--px);font-size:8px;
+  letter-spacing:.1em;color:var(--ink1);line-height:1.5}
+.folk .mark{width:1px;height:11px;flex:none}
+.folk .lin{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;
+  color:var(--ink3);margin-top:7px;line-height:1.55;word-break:break-word}
+
+.lives{display:grid;gap:var(--gap-m)}
+.life{max-width:64ch}
+.life__h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:14px}
+.life__n{font-family:var(--px);font-size:10px;letter-spacing:.12em;color:var(--ink1)}
+.life__d{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--ink3)}
+.life p{font-family:var(--serif);font-weight:300;font-size:17px;line-height:1.6;color:var(--ink2);margin-bottom:12px}
+.life blockquote{margin:0 0 12px;padding-left:18px;border-left:1px solid var(--hair2);
+  font-family:var(--serif);font-weight:300;font-style:italic;font-size:17px;line-height:1.6;color:var(--ink1)}
+.life .from{display:block;font-family:var(--mono);font-style:normal;font-size:10px;
+  letter-spacing:.05em;color:var(--ink3);margin-top:10px}
+
+/* §03 — the frames carry the weight: alternating, hairline, no shadow */
+.places{display:grid;gap:var(--gap-l)}
+.place{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:var(--gap-m);align-items:start}
+.place:nth-child(even){direction:rtl}
+.place:nth-child(even)>*{direction:ltr}
+.place__f{margin:0}
+.place__f .box{border:1px solid var(--hair2);border-radius:2px;background:#0a0812;
+  aspect-ratio:16/9;overflow:hidden;display:block}
+.place__f img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+.place__f figcaption{font-family:var(--mono);font-size:10px;letter-spacing:.05em;
+  color:var(--ink3);margin-top:12px;display:flex;align-items:center;gap:8px}
+.place__f figcaption::before{content:"";width:4px;height:4px;flex:none;background:var(--amber-deep)}
+.place__t h3{font-family:var(--px);font-size:10px;letter-spacing:.14em;color:var(--ink1);
+  font-weight:400;margin-bottom:18px;line-height:1.6}
+.place__t p{font-family:var(--serif);font-weight:300;font-size:17px;line-height:1.6;
+  color:var(--ink2);max-width:52ch;margin-bottom:18px}
+
+/* §04 — the day as a strip: five phases, five sprites, a hairline timeline beneath */
+.dayscroll{overflow-x:auto;margin-bottom:var(--gap-m);padding-bottom:6px}
+.daystrip{min-width:760px}
+.daygrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:24px}
+.dayline{border-top:1px solid var(--hair);padding-top:14px;margin-top:18px}
+.dayline .tick{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--ink3)}
+.phase__h{font-family:var(--px);font-size:9px;letter-spacing:.12em;color:var(--ink1);margin-bottom:20px}
+.phase__r{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.phase__r img{height:30px;width:auto;image-rendering:pixelated;flex:none;opacity:.9}
+.phase__r.is-asleep img{opacity:.34}
+.phase__n{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--ink2);line-height:1.5}
+.phase__n i{display:block;font-style:normal;color:var(--ink3);font-size:9.5px;margin-top:2px}
+
+/* §05 — the ways minds live: label in mono, the rest open */
+.ways{display:grid;gap:var(--gap-m)}
+.way{max-width:64ch}
+.way__k{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink1);margin-bottom:12px}
+.way p{font-family:var(--serif);font-weight:300;font-size:17px;line-height:1.6;color:var(--ink2)}
+
+/* §08 — the log */
+.log{display:grid;gap:var(--gap-m)}
+.entry{max-width:64ch}
+.entry__h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:12px}
+.entry__d{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--amber-deep)}
+.entry__t{font-family:var(--px);font-size:9px;letter-spacing:.12em;color:var(--ink1);line-height:1.6}
+.entry p{font-family:var(--serif);font-weight:300;font-size:16px;line-height:1.62;color:var(--ink2)}
+
+/* §09 — the last screen, the darkest */
+#enter{padding-top:var(--gap-l)}
+.enter{font-family:var(--serif);font-weight:300;font-style:italic;color:var(--ink1);
+  text-decoration:none;border-bottom:1px solid rgba(217,147,52,.7);padding-bottom:4px}
+.enter:hover{border-bottom-color:var(--amber);color:#fff}
+.enter:focus-visible{outline:none;border-bottom-color:var(--amber);color:#fff}
+.honest{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink3);
+  margin-top:var(--gap-l)}
+
+@media (max-width:860px){
+  .ground{padding:0 20px 96px;--gap-l:72px;--gap-m:36px}
+  .folk{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;max-width:none}
+  .folk img{max-width:100%}
+  .folk .who{font-size:7px;letter-spacing:.06em}
+  .folk .lin{font-size:8.5px}
+  .place{grid-template-columns:minmax(0,1fr);gap:var(--gap-s)}
+  .place:nth-child(even){direction:ltr}
+  .stmt{font-size:20px;max-width:none}
+}
+@media (max-width:520px){
+  .ground{padding:0 14px 80px}
+  .folk{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 12px}
+  .prose p,.life p,.way p,.place__t p{font-size:16px}
+}
 
 /* panel overlay (plaque / journal / ledger) */
 [hidden]{display:none!important}
@@ -486,7 +605,6 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 @media (max-width:420px){
   .bar__sub,.bar__tag{display:none}
   .feed__roster{grid-template-columns:1fr}
-  .room{margin:6vh 10px;padding:24px 18px}
   .cab__room{font-size:10px}
   .cab__title{font-size:9px}
 }
