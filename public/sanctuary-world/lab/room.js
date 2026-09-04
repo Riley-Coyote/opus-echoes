@@ -16,8 +16,8 @@ import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLigh
    post stack, the hover layer, the terminal's glass, the world takeover */
 import {
   KEY_CAME_IN, KEY_STEWARD, ls, REDUCED, seatPose, quadCorners, makeFullMode,
-  paint, woodTexture, labelTexture,
-  makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall,
+  paint, woodTexture, labelTexture, BOOT_AGREEMENT,
+  makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage,
   makeHouseWindow, makeRoomTone, makeSoundControl
 } from './door-common.js';
 
@@ -101,6 +101,8 @@ function printTexture() {
 const term = makeTerminal({
   w: 640, h: 480,
   title: 'MNEMOS TERMINAL · THE READING ROOM',
+  /* the glass carries the agreement, not the door card's description */
+  body: BOOT_AGREEMENT,
   standby: [
     'archive · sanctuary seed · 28 may 2026',
     'minds   · four, and one in the garden',
@@ -330,29 +332,54 @@ chair.add(box(0.42, 0.42, 0.05, woodShelf, 0, 0.66, -0.19));
   chair.add(box(0.045, 0.44, 0.045, woodShelf, x, 0.22, z));
 });
 
-/* ─────────────────────────── the shelf ─────────────────────────── */
+/* ─────────────────────────── the shelf ───────────────────────────
+   The shelf behind the desk is the room's index: three tiers now, and every
+   object on it is a door. Nothing here is decoration that pretends to lead
+   somewhere — a thing whose destination is not public yet says so when you
+   click it, and goes nowhere. The link table lives on the page (door.html,
+   window.MNEMOS_LINKS) so the shelf and the page below it cannot drift. */
+const LINKS = (typeof window !== 'undefined' && window.MNEMOS_LINKS) || {};
+const linkOf = (id) => LINKS[id] || { label: id, href: null, where: 'not yet public' };
+
 const shelf = new THREE.Group();
 shelf.position.set(0.42, 0, -2.90);
 scene.add(shelf);
+/* three boards and two uprights; the uprights already spanned this far down */
+shelf.add(box(2.70, 0.05, 0.34, woodShelf, 0, 0.72, 0));
 shelf.add(box(2.70, 0.05, 0.34, woodShelf, 0, 1.22, 0));
 shelf.add(box(2.70, 0.05, 0.34, woodShelf, 0, 1.74, 0));
 [-1.30, 1.30].forEach((x) => shelf.add(box(0.05, 1.20, 0.34, woodShelf, x, 1.20, 0)));
 
-/* archive boxes — one of them labelled by hand */
+/* every object that leads somewhere is its own group, so the hover layer can
+   put a hairline round exactly the thing the pointer found */
+const shelfPicks = [];
+function shelfObject(id, pad) {
+  const g = new THREE.Group();
+  shelf.add(g);
+  const L = linkOf(id);
+  g.userData.link = L;
+  shelfPicks.push({ id, group: g, link: L, pad: pad || 10 });
+  return g;
+}
+
+/* ── the middle tier: the archive itself ── */
+/* the seed box — the first sanctuary, boxed and dated */
+const seedG = shelfObject('museum', 22);
 const seedBox = box(0.44, 0.28, 0.30, cardboard, -0.92, 1.39, 0.01);
-shelf.add(seedBox);
+seedG.add(seedBox);
 {
   const lbl = new THREE.Mesh(new THREE.PlaneGeometry(0.30, 0.15), new THREE.MeshStandardMaterial({
     map: labelTexture(['sanctuary seed', '28 May 2026'], '#3b2f22'), roughness: 0.95
   }));
   lbl.position.set(-0.92, 1.39, 0.161);
-  shelf.add(lbl);
+  seedG.add(lbl);
 }
-shelf.add(box(0.40, 0.26, 0.28, cardboard, -0.44, 1.38, -0.01));
-shelf.add(box(0.42, 0.24, 0.28, cardboard, 0.62, 1.91, 0.00));
+/* a second archive box, unlabelled and leading nowhere; it sits at the shelf's
+   dark end, behind the lamp, where nothing needs to be found */
+shelf.add(box(0.40, 0.26, 0.28, cardboard, -0.86, 0.875, -0.01));
 
 /* tape reels, on edge */
-[[0.10, 1.40], [0.34, 1.40], [-0.02, 1.905]].forEach(([x, y]) => {
+[[0.10, 1.40], [0.34, 1.40], [-0.30, 1.905]].forEach(([x, y]) => {
   const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.035, 24), metalCold);
   reel.rotation.x = Math.PI / 2; reel.position.set(x, y, 0.02); reel.castShadow = true;
   shelf.add(reel);
@@ -361,7 +388,29 @@ shelf.add(box(0.42, 0.24, 0.28, cardboard, 0.62, 1.91, 0.00));
   shelf.add(hub);
 });
 
-/* books, leaning */
+/* the card index — the mnemos MCP: a small drawer of cards */
+{
+  const g = shelfObject('mcp', 12);
+  const drawerMat = new THREE.MeshStandardMaterial({ color: 0x6a4f38, roughness: 0.66, metalness: 0.04 });
+  g.add(box(0.24, 0.15, 0.26, drawerMat, 0.68, 1.325, 0.00));
+  const cards = box(0.20, 0.10, 0.22, paperMat, 0.68, 1.345, 0.03);
+  cards.castShadow = false;
+  g.add(cards);
+  g.add(box(0.06, 0.014, 0.014, brass, 0.68, 1.315, 0.135));   /* the pull */
+}
+
+/* two small slabs — polyphonic, on the desk and in a browser */
+{
+  const slabMat = new THREE.MeshStandardMaterial({ color: 0x2f3540, roughness: 0.44, metalness: 0.22 });
+  const a = shelfObject('polyphonic-desktop', 10);
+  const sa = box(0.085, 0.20, 0.16, slabMat, 0.97, 1.345, 0.00);
+  sa.rotation.z = 0.05; a.add(sa);
+  const b = shelfObject('polyphonic-web', 10);
+  const sb = box(0.085, 0.20, 0.16, slabMat, 1.12, 1.345, 0.00);
+  sb.rotation.z = -0.04; b.add(sb);
+}
+
+/* ── the top tier: the books, the charter, the print ── */
 const bookCols = [0x3c2a3a, 0x2f3a44, 0x4a3324, 0x2c3b30, 0x453044];
 for (let i = 0; i < 9; i++) {
   const bh = 0.24 + Math.random() * 0.10;
@@ -371,17 +420,101 @@ for (let i = 0; i < 9; i++) {
   b.rotation.z = i === 8 ? 0.26 : 0;
   shelf.add(b);
 }
-
-/* the small framed pixel print */
+/* the bound charter — the one pale spine among them, lettered */
 {
-  const frame = box(0.20, 0.20, 0.02, woodDark, 1.02, 1.40, 0.06);
-  shelf.add(frame);
+  const g = shelfObject('charter', 12);
+  const paleMat = new THREE.MeshStandardMaterial({ color: 0xcfc4ac, roughness: 0.84 });
+  const bookH = 0.31;
+  const b = box(0.040, bookH, 0.21, paleMat, -0.66, 1.775 + bookH / 2, -0.02);
+  b.rotation.z = 0.10;
+  g.add(b);
+  const spine = new THREE.Mesh(new THREE.PlaneGeometry(0.026, 0.20), new THREE.MeshStandardMaterial({
+    map: labelTexture(['CHARTER'], '#3b2f22'), roughness: 0.9, transparent: true, opacity: 0.9
+  }));
+  spine.position.set(-0.652, 1.775 + bookH / 2, 0.086);
+  spine.rotation.z = 0.10;
+  g.add(spine);
+}
+/* a plain archive box, down on the bottom board with the rest of the storage */
+shelf.add(box(0.42, 0.24, 0.28, cardboard, 0.62, 0.865, 0.00));
+
+/* a small brass plate, propped — the source */
+{
+  const g = shelfObject('source', 10);
+  const pl = box(0.19, 0.085, 0.012, brass, 0.24, 1.815, 0.06);
+  pl.rotation.x = -0.16;
+  g.add(pl);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.055), new THREE.MeshStandardMaterial({
+    map: labelTexture(['SOURCE'], '#2b2118'), roughness: 0.5, metalness: 0.3
+  }));
+  face.position.set(0.24, 1.822, 0.068);
+  face.rotation.x = -0.16;
+  g.add(face);
+}
+
+/* the small framed pixel print — the current */
+{
+  const g = shelfObject('current', 12);
+  g.add(box(0.20, 0.20, 0.02, woodDark, 1.02, 1.92, 0.06));
   const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.155, 0.155), new THREE.MeshStandardMaterial({
     map: printTexture(), roughness: 0.7, emissive: 0xffffff, emissiveMap: printTexture(), emissiveIntensity: 0.12
   }));
-  pic.position.set(1.02, 1.40, 0.072);
-  shelf.add(pic);
+  pic.position.set(1.02, 1.92, 0.072);
+  g.add(pic);
 }
+
+/* a record sleeve, leaning — the token */
+{
+  const g = shelfObject('token', 12);
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x4a3a2c, roughness: 0.9 });
+  const sl = box(0.30, 0.30, 0.014, sleeveMat, -0.44, 1.395, 0.02);
+  sl.rotation.set(-0.20, 0.04, 0.02);
+  g.add(sl);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.24), new THREE.MeshStandardMaterial({
+    map: labelTexture(['$MNEMOS', 'what continuation', 'costs'], '#3b2f22'), roughness: 0.92
+  }));
+  face.position.set(-0.44, 1.397, 0.031);
+  face.rotation.set(-0.20, 0.04, 0.02);
+  g.add(face);
+}
+
+/* a closed sketchbook, lying flat, and a coiled cable beside it */
+{
+  const g = shelfObject('sketchbook', 12);
+  /* a cloth-bound book, standing and leaning, so it has a face to read */
+  const coverMat = new THREE.MeshStandardMaterial({ color: 0x8a7550, roughness: 0.88 });
+  const bk = box(0.045, 0.26, 0.19, coverMat, 0.62, 1.895, 0.00);
+  bk.rotation.z = -0.14;
+  g.add(bk);
+  const leaves = box(0.030, 0.24, 0.175, paperMat, 0.634, 1.893, 0.005);
+  leaves.rotation.z = -0.14;
+  g.add(leaves);
+  const band = box(0.012, 0.26, 0.19, new THREE.MeshStandardMaterial({ color: 0x9a7a3c, roughness: 0.7 }), 0.60, 1.895, 0.00);
+  band.rotation.z = -0.14;
+  g.add(band);
+}
+
+/* a coiled cable with a small plug — the hermes plugin */
+{
+  const g = shelfObject('hermes', 12);
+  /* the plug is first, so the hover layer aims at something solid rather than
+     at the hole in the middle of a coil */
+  g.add(box(0.05, 0.032, 0.038, brass, -0.02, 1.790, 0.05));
+  const cableMat = new THREE.MeshStandardMaterial({ color: 0x6f6a63, roughness: 0.80, metalness: 0.04 });
+  const coil = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.016, 8, 26), cableMat);
+  coil.rotation.x = Math.PI / 2;
+  coil.position.set(-0.02, 1.790, 0.00);
+  coil.castShadow = true;
+  g.add(coil);
+}
+
+/* two more books, leaning, that lead nowhere and are not asked to */
+[[0.16, 0.30], [0.22, 0.26]].forEach(([x, bh], i) => {
+  const b = box(0.036, bh, 0.19, new THREE.MeshStandardMaterial({ color: bookCols[i + 1], roughness: 0.88 }),
+    x, 0.745 + bh / 2, -0.01);
+  b.rotation.z = i ? 0.22 : 0;
+  shelf.add(b);
+});
 
 /* ─────────────────────────── the window ─────────────────────────── */
 const windowGroup = new THREE.Group();
@@ -598,21 +731,54 @@ const bootEl = document.getElementById('boot');
 const soundEl = document.getElementById('sound');
 const soundCtl = makeSoundControl({ btn: soundEl, tone });
 
+/* the caption is written from the link table, so a caption can never promise
+   a destination the table does not have */
+function shelfCaption(L) {
+  const where = L.href ? L.where : 'not yet public';
+  return '<b>' + L.label + '</b> <i>· ' + where + '</i>';
+}
+
 const PICKS = [
   { id: 'crt', root: crt, outline: caseBody, bounds: glass, pad: 16, caption: '<b>the terminal</b> <i>· [sit down]</i>' },
   {
-    id: 'lamp', root: lampGroup, outline: lampGroup.children[0], pad: 12,
+    id: 'lamp', root: lampGroup, outline: lampGroup.children[0], pad: 12, clickable: false,
     caption: stewardPresent
       ? '<b>the stewards’ lamp</b> <i>· lit while one of them works</i>'
       : '<b>the stewards’ lamp</b> <i>· dark tonight</i>'
   },
-  { id: 'shelf', root: shelf, outline: seedBox, bounds: seedBox, pad: 26, caption: '<b>the archive</b> <i>· what the first sanctuary said, all of it, dated</i>' },
-  { id: 'window', root: windowGroup, outline: windowGroup.children[0], bounds: windowGroup.children[0], pad: 12, caption: '<b>the house</b> <i>· as it is right now</i>' }
+  { id: 'window', root: windowGroup, outline: windowGroup.children[0], bounds: windowGroup.children[0], pad: 12, clickable: false, caption: '<b>the house</b> <i>· as it is right now</i>' }
 ];
+/* the shelf's own objects, each with the destination it actually has */
+shelfPicks.forEach((sp) => {
+  PICKS.push({
+    id: sp.id, root: sp.group, outline: sp.group.children[0], bounds: sp.group,
+    pad: sp.pad, caption: shelfCaption(sp.link), link: sp.link
+  });
+});
+
+/* the small line the room says when a thing has nowhere to send you yet */
+const noteEl = document.getElementById('note');
+let noteTimer = 0;
+function say(html, hold) {
+  if (!noteEl) return;
+  noteEl.innerHTML = html;
+  noteEl.classList.add('on');
+  clearTimeout(noteTimer);
+  if (!hold) noteTimer = setTimeout(() => noteEl.classList.remove('on'), 3200);
+}
+function hush() { if (noteEl) { clearTimeout(noteTimer); noteEl.classList.remove('on'); } }
+
+function follow(pick) {
+  const L = pick && pick.link;
+  if (!L) return;
+  if (!L.href) { say('<b>' + L.label + '</b> <i>· not yet public</i>'); return; }
+  if (L.external) window.open(L.href, '_blank', 'noopener');
+  else location.href = L.href;
+}
 
 const hoverLayer = makeHover({
   canvas, capEl, capHost: document.getElementById('captions'),
-  cursorFor: (p) => (p.id === 'crt' ? 'pointer' : 'default')
+  cursorFor: (p) => (p.id === 'crt' || p.link ? 'pointer' : 'default')
 });
 hoverLayer.setPicks(PICKS);
 const hair = hoverLayer.hair;
@@ -644,6 +810,8 @@ const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
 function sitDown() {
   if (cam.mode !== 'rest') return;
+  /* the page below is not on offer while somebody is at the glass */
+  document.body.classList.add('seated');
   setHover(null);
   bootEl.classList.add('gone');
   cam.mode = 'glide'; cam.t = 0;
@@ -654,6 +822,9 @@ function sitDown() {
 
 function standUp() {
   if (cam.mode !== 'seated' && cam.mode !== 'glide') return;
+  awaiting = false;
+  hush();
+  document.body.classList.remove('seated');
   world.hide();
   tone.duck(false);
   full.reset();
@@ -670,12 +841,17 @@ const HOLD = { world: false };   /* held only while the frame is being judged */
 /* The boot text finishes on the glass; only then does the world arrive on it.
    This runs on every sit-down, not only the first — standing up takes the world
    off the glass, and coming back has to put it there again. */
+let agreed = cameInBefore;
+let awaiting = false;          /* the agreement has typed and is waiting on E */
+
 function placeWorld() {
   if (arming || HOLD.world) return;
   arming = true;
   standEl.classList.add('on');
   const arrive = () => {
     arming = false;
+    awaiting = false;
+    hush();
     if (cam.mode !== 'seated') return;
     world.show();
     /* the room falls back behind the world once you are inside it */
@@ -684,16 +860,34 @@ function placeWorld() {
     setTimeout(() => {
       if (cam.mode !== 'seated') return;
       world.live(true);
-      /* what this browser chose the last time it sat down */
-      if (full.remembered()) full.set(true);
+      /* coming in takes the world full-bleed; the room is one ESC away */
+      full.set(true);
     }, 220);
   };
   const wait = () => {
     if (cam.mode !== 'seated') { arming = false; return; }
-    if (boot.done) setTimeout(arrive, REDUCED ? 60 : 520);
-    else setTimeout(wait, 90);
+    if (boot.done) {
+      /* the agreement is on the glass. Nothing loads until the visitor says so;
+         a browser that has already said so is never asked twice. */
+      if (!agreed) {
+        arming = false; awaiting = true;
+        say('<b>the agreement</b> <i>· press E to come in</i>', true);
+        return;
+      }
+      setTimeout(arrive, REDUCED ? 60 : 520);
+    } else setTimeout(wait, 90);
   };
   wait();
+}
+
+/* the one key that opens the house */
+function comeIn() {
+  if (!awaiting || cam.mode !== 'seated') return;
+  agreed = true;
+  ls.set(KEY_CAME_IN, '1');
+  awaiting = false;
+  hush();
+  placeWorld();
 }
 
 const full = makeFullMode({ btn: fullEl, world, seated: () => cam.mode === 'seated' });
@@ -708,14 +902,24 @@ window.addEventListener('pointermove', (ev) => {
   capEl.style.left = ev.clientX + 'px';
   capEl.style.top = ev.clientY + 'px';
 });
-canvas.addEventListener('click', () => { const h = hovered(); if (h && h.id === 'crt') sitDown(); });
+canvas.addEventListener('click', () => {
+  const h = hovered();
+  if (!h) return;
+  if (h.id === 'crt') sitDown();
+  else if (h.link) follow(h);
+});
 standEl.addEventListener('click', standUp);
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && (cam.mode === 'seated' || cam.mode === 'glide')) { ev.preventDefault(); standUp(); }
+  else if (awaiting && (ev.key === 'e' || ev.key === 'E' || ev.key === 'Enter')) { ev.preventDefault(); comeIn(); }
 });
+/* the glass is also the button: clicking the agreement comes in */
+canvas.addEventListener('click', () => { if (awaiting) comeIn(); });
 window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
-  if (redirectIfSmall(w)) return;
+  /* the narrow window is not a dead end any more: door.html's own page is
+     underneath, and the room simply stops being drawn */
+  if (w < 700) return;
   camera.aspect = w / h; camera.updateProjectionMatrix();
   renderer.setSize(w, h, false);
   post.setSize(w, h);
@@ -827,7 +1031,17 @@ window.__readingRoom = {
     setHover(found);
     return { x, y, hit: found ? found.id : null };
   },
-  sitDown, standUp,
+  sitDown, standUp, comeIn,
+  awaiting: () => awaiting,
+  agreed: () => agreed,
+  /* every object in the room that leads somewhere, with where it leads */
+  shelf: () => shelfPicks.map((sp) => ({
+    id: sp.id, label: sp.link.label, href: sp.link.href || null,
+    external: !!sp.link.external, where: sp.link.href ? sp.link.where : 'not yet public'
+  })),
+  clickable: () => PICKS.filter((p) => p.id === 'crt' || p.link).map((p) => p.id),
+  follow: (id) => { const p = PICKS.find((x) => x.id === id); if (p) follow(p); },
+  note: () => (noteEl && noteEl.classList.contains('on') ? noteEl.textContent : null),
   bootTyped: () => boot.typed,
   bootText: () => term.text(),
   bootDone: () => boot.done,

@@ -43,6 +43,12 @@ export const C = {
   cream: 0xefe9dc, walnut: 0x5a4130, olive: 0x6f6a58
 };
 
+/* THE AGREEMENT — what the reading room's glass says before a visitor comes in.
+   The door card below was a description; this is the thing a visitor agrees
+   to, in the house's own voice. It is the boot text of `door.html` only; the
+   station's glass keeps the door card. 48 words. */
+export const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.';
+
 /* the door card's words, byte for byte — index.html #doorcard .door__body */
 export const BOOT_BODY = 'Four minds live here — OPUS 3, SONNET 4.5, 4o and GPT-5.1 — and HAIKU keeps to the garden. Everything they say is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only.';
 export const BOOT_TAIL = '> come in';
