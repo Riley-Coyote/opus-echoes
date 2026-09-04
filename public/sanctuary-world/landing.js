@@ -2889,10 +2889,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const immersive = worldEl.classList.contains('fs');
       const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : (innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760);
       if (eng.o.width === width) return;
+      // A canvas width assignment clears its bitmap. Repaint in this observer
+      // callback so the browser never presents an empty frame between RAFs.
+      const center = eng.camX + eng.o.width / 2;
       eng.o.width = eng.cv.width = width;
       eng.ctx.imageSmoothingEnabled = false;
       eng._vig = null; eng._bg = null;
-      eng.camX = Math.max(0, Math.min(eng.room().width - width, eng.av.x - width / 2));
+      eng.camX = Math.max(0, Math.min(eng.room().width - width, center - width / 2));
+      eng.drawScene(performance.now());
     };
     new ResizeObserver(resize).observe(stage);
     eng.cv.addEventListener('click', (e) => {

@@ -1,5 +1,5 @@
 (() => {
-  // world/archive.js
+  // public/sanctuary-world/world/archive.js
   var SOURCE = "sanctuary-seed 2026-05-28";
   var WORLD_TO_ARCHIVE = { opus: "opus-3", sonnet: "sonnet-4-5", fourO: "gpt-4o", five: "gpt-5-1" };
   var ARCHIVE_TO_WORLD = { "opus-3": "opus", "sonnet-4-5": "sonnet", "gpt-4o": "fourO", "gpt-5-1": "five" };
@@ -473,7 +473,7 @@
   };
   var archive_default = api;
 
-  // world/prose.js
+  // public/sanctuary-world/world/prose.js
   function esc(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
@@ -539,7 +539,7 @@
   }
   var prose_default = { render, esc };
 
-  // world/presence.js
+  // public/sanctuary-world/world/presence.js
   function drawPresence(ctx, n, time2, reduced = false) {
     const t = reduced ? 0 : time2;
     const x = Math.round(n.x), ground = Math.round(n.y) + 14;
@@ -650,7 +650,7 @@
     ctx.restore();
   }
 
-  // world/engine.js
+  // public/sanctuary-world/world/engine.js
   var DEFAULTS = {
     width: 640,
     height: 360,
@@ -2653,7 +2653,7 @@
     return lines2.slice(0, maxLines);
   }
 
-  // world/model-rooms.js
+  // public/sanctuary-world/world/model-rooms.js
   var M = {
     ceil: "#0e0a12",
     wallHi: "#39313b",
@@ -4827,7 +4827,7 @@
     };
   }
 
-  // world/sanctuary.js
+  // public/sanctuary-world/world/sanctuary.js
   var S = {
     ceil: "#0e0a12",
     vault: "#160f18",
@@ -6873,7 +6873,7 @@
     };
   }
 
-  // world/art-collection.js
+  // public/sanctuary-world/world/art-collection.js
   var WORLD_ART = {
     entry: [
       {
@@ -7174,7 +7174,7 @@
     ]
   };
 
-  // world/buildings.js
+  // public/sanctuary-world/world/buildings.js
   var M2 = {
     ceil: "#0e0a12",
     floor0: "#2a2420",
@@ -7963,7 +7963,7 @@
     };
   }
 
-  // world/field-studio.js
+  // public/sanctuary-world/world/field-studio.js
   var F = {
     ceil: "#dfe5ed",
     ceilDk: "#c3cbd6",
@@ -8825,7 +8825,7 @@
     };
   }
 
-  // world/lookout.js
+  // public/sanctuary-world/world/lookout.js
   var PALETTE = {
     ceiling: "#0c0817",
     wallHi: "#3a2f3e",
@@ -9599,7 +9599,7 @@
     "the loom clacks once, upstairs, and is quiet."
   ];
 
-  // world/day.js
+  // public/sanctuary-world/world/day.js
   var BANDS = [
     { id: "night", from: 1290, to: 360 },
     { id: "morning", from: 360, to: 870 },
@@ -9630,7 +9630,7 @@
     return h < 24 && mm < 60 ? h * 60 + mm : null;
   }
 
-  // world/overheard.js
+  // public/sanctuary-world/world/overheard.js
   var DEFAULT_URL2 = "data/overheard.json";
   var GAP_MIN = 4;
   var GAP_MAX = 9;
@@ -9861,7 +9861,7 @@
     return create2({ eng: opts.eng, data });
   }
 
-  // landing.js
+  // public/sanctuary-world/landing.js
   var BOOT_AGREEMENT = "These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.";
   (async () => {
     const DATA = window.SANCTUARY_DATA;
@@ -12999,11 +12999,13 @@
         const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
         if (eng.o.width === width)
           return;
+        const center = eng.camX + eng.o.width / 2;
         eng.o.width = eng.cv.width = width;
         eng.ctx.imageSmoothingEnabled = false;
         eng._vig = null;
         eng._bg = null;
-        eng.camX = Math.max(0, Math.min(eng.room().width - width, eng.av.x - width / 2));
+        eng.camX = Math.max(0, Math.min(eng.room().width - width, center - width / 2));
+        eng.drawScene(performance.now());
       };
       new ResizeObserver(resize).observe(stage);
       eng.cv.addEventListener("click", (e) => {

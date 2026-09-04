@@ -965,3 +965,10 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .inspection__close{position:absolute;right:5px;top:5px;width:40px;height:40px;border:0;background:transparent;color:#ded5c5;font-size:24px;cursor:pointer}
 .world:not(.fs) .inspection,.cab.visiting .inspection{display:none}
 @media(max-width:700px){.inspection{left:12px;right:12px;bottom:12px;padding:16px 42px 16px 16px;max-height:50%}.inspection__text{font-size:18px}}
+
+/* Proximity changes must not resize the viewport while the visitor walks. */
+.world.fs .cab__hud{height:84px;min-height:84px;flex:0 0 84px;overflow:hidden}
+.world.fs .cab__hudrow{height:40px;min-height:40px}
+.world.fs .cab__hudtitle{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.world.fs .cab__cta{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis}
+.world.fs .cab__hudhint{height:18px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

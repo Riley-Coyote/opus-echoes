@@ -39,3 +39,10 @@ Pending implementation, browser interaction passes at desktop and phone widths, 
 - Reduced-motion emulation verified: engine reports reduced motion, pointer travel reaches its target without animated traversal, CSS transitions collapse to near-zero. Emulation and viewport overrides reset after testing.
 - Final browser console checks contain no warnings or errors. Final production client/server build and `git diff --check` pass.
 - The world is still the existing archive-backed simulation. This pass changes the visitor experience and presentation; it does not turn on live model conversations or the planned autonomous household.
+
+## Walking flicker fix
+
+- Root cause reproduced: proximity CTA visibility changed the HUD height, alternating the desktop stage between 410 and 428 pixels and resetting the canvas width as the visitor walked.
+- Fixed the HUD height and constrained its text. Genuine viewport resizes preserve the viewed center and repaint synchronously after resizing the canvas.
+- Repeated proximity crossings now keep stage and canvas dimensions constant. A 100-frame walking pass at phone width also kept both dimensions constant; the resize observer captured an opaque, painted canvas after a real resize.
+- Browser console has no warnings or errors. Rebuilt the world bundle; production client/server build and `git diff --check` pass.
