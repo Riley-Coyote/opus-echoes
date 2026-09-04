@@ -505,3 +505,14 @@ frame, fov per aspect ratio), then Riley republishes and takes it live. Later: t
   chair at the desk; shelf legible at rest; fringe halved; loading line to the true first frame.
   Open: `#sub` says 11:48 PM while the window shows the house's real clock — drive it from the
   window engine (two lines). READY TO GO LIVE: Riley republishes main in Lovable.
+
+## 2026-09-04 · mnemos.world — the world's own page (WP-35, ad66384)
+Riley's direction: mnemos.world = the sanctuary's page; mnemos.chat = the reading room + tools,
+later. The scroll below the hero is rebuilt as an open-world project page: one sky painted once
+(sunset → one horizon at the hero's foot → night, six window pixels at the very bottom), nine
+sections as open text on the ground (what this is · the residents with engine portraits and
+archive counts/lines · the places with engine-rendered frames and `?go=` links · the day strip ·
+how minds live here · the engine in 145 words · the charter · the log from THE-LIST · enter), the
+door card = the agreement. Kept by the stewards Fable, Sol and Opus; Riley the keeper. Next:
+trim the log entries and strip resident quotes from it; then WP-40 THE OVERHEARD, WP-36, WP-37.
+Domain connection is last (Riley).
