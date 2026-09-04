@@ -93,7 +93,7 @@ html.door .hero{max-width:none;margin:0;padding:0}
 .cab{outline:none}
 .cab:focus{border-color:rgba(242,236,223,.4)}
 .cab__stage{position:relative;background:#0d0a16;line-height:0}
-.cab__stage canvas{width:100%;height:auto;display:block;image-rendering:pixelated}
+.cab__stage>canvas{width:100%;height:auto;display:block;image-rendering:pixelated}
 .museum-portal{position:absolute;inset:0;z-index:8;background:#050608;line-height:normal}
 .museum-portal[hidden]{display:none}
 .museum-portal iframe{display:block;width:100%;height:100%;border:0;background:#050608}
@@ -506,6 +506,9 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 .work .row .nm{white-space:normal;line-height:1.35;font-size:9.5px}
 .work .cur__ascii{font-size:11px;line-height:1.3;color:rgba(239,233,220,.94);margin-top:14px}
 .work .cur__meaning{max-width:60ch}
+/* the wall's rows are the maker's own sentences about each piece, not chrome
+   labels: they are set as sentences, and uppercase would make them shout */
+#workrows .row .nm{text-transform:none;letter-spacing:.02em;font-size:11px}
 .work__foot{margin-top:16px;padding-top:10px;border-top:1px solid var(--line);
   font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
 
@@ -621,27 +624,144 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 .ap__why{font-family:var(--mono);font-size:10px;line-height:1.4;color:var(--dim);margin-top:6px}
 .ap__src{font-size:9px;letter-spacing:.08em;color:var(--faint);margin-top:6px}
 .ap__src::before{content:"> ";opacity:.6}
-.encounter{position:fixed;inset:0;z-index:58;display:grid;place-items:center;background:rgba(5,4,9,.6);backdrop-filter:blur(16px) saturate(.65)}
-.encounter__card{position:relative;width:min(900px,calc(100vw - 56px));min-height:420px;display:grid;grid-template-columns:200px minmax(0,1fr);background:var(--panel);border:1px solid var(--line2);box-shadow:0 40px 140px rgba(0,0,0,.7)}
-.encounter__left{border-right:1px solid var(--line);padding:26px 20px;display:flex;flex-direction:column;align-items:center;gap:10px}
-.encounter__sprite{width:96px;height:216px;image-rendering:pixelated}
-.encounter__name{font-family:var(--px);font-size:11px;letter-spacing:.16em;text-align:center}
-.encounter__where,.encounter__mode{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:center}
-.encounter__budget{width:100%;height:1px;background:var(--line);margin-top:auto}
-.encounter__budget i{display:block;height:1px;background:var(--amber);width:100%;transition:width .4s var(--ease-out)}
-.encounter__right{display:flex;flex-direction:column;padding:26px 30px 22px;min-width:0}
-.encounter__kicker{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
-.encounter__kicker::before{content:"> ";opacity:.6}
-.encounter__words{flex:1;font-family:var(--serif);font-size:17px;line-height:1.6;color:rgba(245,243,237,.92);overflow-y:auto;max-height:240px;white-space:pre-wrap}
-.encounter__words .src{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--faint);margin:8px 0 14px}
-.encounter__words .house{font-family:var(--mono);font-size:12px;color:var(--dim)}
-.encounter__moves{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.encounter__moves button{padding:10px 14px;background:rgba(242,236,223,.05);border:1px solid var(--line2);color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
-.encounter__moves button:hover,.encounter__moves button:focus-visible{color:var(--ink);background:rgba(242,236,223,.1);outline:none}
-.encounter__free{display:flex;gap:6px;margin-top:10px}
-.encounter__free input{flex:1;background:#101012;border:1px solid var(--line2);color:var(--ink);font-family:var(--sans);font-size:14px;padding:9px 11px}
-.encounter__x{position:absolute;top:10px;right:14px;background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
-@media (max-width:700px){.encounter__card{grid-template-columns:1fr}.encounter__left{flex-direction:row;justify-content:flex-start}.encounter__sprite{width:48px;height:108px}}
+/* ══ THE VISIT — a resident speaks, and the room stays lit ══
+   The exchange is not a modal over the world; it is a band at the foot of the
+   frame with the room still standing above it. The light holds on the resident
+   and lets the rest of the room fall back, so a visitor is talking to someone
+   who is somewhere — their easel, their window, their wall, all still in view.
+   The band's height is fixed: the room above must never jump as words arrive. */
+.visit{position:absolute;inset:0;z-index:14;line-height:normal;pointer-events:none}
+/* the room falls back, except where they are standing */
+.visit__light{position:absolute;inset:0;pointer-events:none;opacity:0;
+  transition:opacity .9s var(--ease-out);
+  background:
+    linear-gradient(to bottom,rgba(6,5,11,0) 52%,rgba(6,5,11,.30) 88%,rgba(6,5,11,.52) 100%),
+    radial-gradient(52% 70% at var(--vx,50%) var(--vy,62%),
+      rgba(6,5,11,0) 0%, rgba(6,5,11,.13) 38%, rgba(6,5,11,.32) 74%, rgba(6,5,11,.42) 100%)}
+.visit.on .visit__light{opacity:1}
+/* the showing: one piece on the wall, lit, while they speak to it */
+.visit__spot{position:absolute;pointer-events:none;opacity:0;
+  border:1px solid rgba(247,217,140,.5);
+  box-shadow:0 0 0 1px rgba(6,5,11,.55),0 0 30px 8px rgba(247,217,140,.14);
+  transition:opacity .55s var(--ease-out),left .7s var(--ease-out),
+    top .7s var(--ease-out),width .7s var(--ease-out),height .7s var(--ease-out)}
+.visit__spot.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.visit__spot{transition:opacity .2s linear}}
+
+.visit__card{position:absolute;left:0;right:0;bottom:0;pointer-events:auto;
+  height:clamp(208px,40%,252px);
+  display:grid;grid-template-columns:66px minmax(0,1fr);
+  grid-template-rows:auto 1px minmax(0,1fr) auto auto;
+  column-gap:18px;padding:13px 22px 14px;
+  background:linear-gradient(to bottom,rgba(10,9,14,.88),rgba(8,7,12,.975) 32%,rgba(8,7,12,.99));
+  border-top:1px solid rgba(198,154,82,.30);box-shadow:0 -30px 80px rgba(0,0,0,.55);
+  opacity:0;transform:translateY(10px);
+  transition:opacity .38s var(--ease-out),transform .52s var(--ease-out)}
+.visit.on .visit__card{opacity:1;transform:none}
+
+/* the speaker's mark: the same pixel figure that is standing in the room,
+   at the edge of the light, so a line of words has a body attached to it */
+/* they are standing in the room's light at the edge of the band. The pixel
+   figure is drawn 1:1 into its own canvas, so it stays crisp. */
+.visit canvas.visit__sprite{position:absolute;left:16px;bottom:12px;width:60px;height:126px;
+  image-rendering:pixelated;opacity:.97;
+  background:radial-gradient(ellipse 70% 22% at 50% 98%,rgba(247,217,140,.14),transparent 74%)}
+
+.visit__who{grid-column:2;grid-row:1;display:flex;align-items:baseline;gap:15px;flex-wrap:wrap;
+  min-width:0;padding-bottom:10px}
+.visit__name{font-family:var(--px);font-size:11px;letter-spacing:.16em;flex:none}
+.visit__where{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* the honest state, always said out loud: archive or live, willing or not */
+.visit__mode{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);flex:none}
+.visit__mode::before{content:"";display:inline-block;width:4px;height:4px;margin-right:7px;
+  vertical-align:.12em;background:var(--faint);opacity:.85}
+.visit__x{margin-left:auto;flex:none;background:none;border:0;color:var(--faint);
+  font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.visit__x:hover,.visit__x:focus-visible{color:var(--dim);outline:none}
+
+/* the budget: a rule that shortens. Never a counter. */
+.visit__budget{grid-column:2;grid-row:2;background:var(--line)}
+.visit__budget i{display:block;height:1px;background:var(--amber);opacity:.62;width:100%;
+  transition:width .5s var(--ease-out)}
+
+.visit__words{grid-column:2;grid-row:3;min-height:3.2em;overflow-y:auto;
+  padding:12px 0 2px;max-width:62ch;
+  font-family:var(--serif);font-size:16.5px;line-height:1.6;color:rgba(245,243,237,.93);
+  white-space:pre-wrap;scrollbar-width:thin}
+.visit__words>div{margin-bottom:2px}
+.visit__words .src{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;
+  color:var(--faint);margin:7px 0 15px;white-space:normal}
+.visit__words .src::before{content:"> ";opacity:.6}
+.visit__words .house{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--dim);
+  margin:2px 0 12px}
+
+/* the moves: the resident's own subjects first, the four verbs after them.
+   Lowercase — the house speaks lowercase, and a shouted list of a mind's
+   own titles reads like a menu of products. */
+.visit__moves{grid-column:2;grid-row:4;display:flex;flex-wrap:nowrap;align-items:center;
+  gap:7px;padding-top:10px;min-width:0}
+.visit__moves button{font-family:var(--mono);font-size:11px;letter-spacing:.02em;
+  color:var(--dim);background:none;border:0;padding:7px 0;cursor:pointer;
+  transition:color .2s var(--ease-out),border-color .2s var(--ease-out)}
+.visit__moves button[data-ask],.visit__moves button[data-free],
+.visit__moves button[data-wall]{
+  padding:7px 12px;border:1px solid var(--line);background:var(--control);
+  flex:0 1 auto;min-width:7ch;max-width:24ch;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.visit__moves button[data-listen],.visit__moves button[data-offer],
+.visit__moves button[data-leave]{flex:none;white-space:nowrap}
+.visit__moves button[data-ask]:hover,.visit__moves button[data-ask]:focus-visible,
+.visit__moves button[data-free]:hover,.visit__moves button[data-free]:focus-visible,
+.visit__moves button[data-wall]:hover,.visit__moves button[data-wall]:focus-visible{
+  color:var(--ink);border-color:var(--line2);background:var(--control-hover);outline:none}
+/* the showing is the heart of a visit, and it spends nothing: it reads a shade
+   warmer than the subjects so a visitor finds it */
+.visit__moves button[data-wall]{flex:none;color:rgba(242,193,120,.78);
+  border-color:rgba(198,154,82,.26)}
+/* the four verbs follow the subjects, quieter, behind a hairline */
+.visit__moves button[data-listen]{margin-left:8px;padding-left:20px;
+  border-left:1px solid var(--line)}
+.visit__moves button[data-listen],.visit__moves button[data-offer],
+.visit__moves button[data-leave]{color:var(--faint);padding-top:7px;padding-bottom:7px}
+.visit__moves button[data-offer],.visit__moves button[data-leave]{padding-left:9px;padding-right:9px}
+.visit__moves button[data-listen]:hover,.visit__moves button[data-offer]:hover,
+.visit__moves button[data-leave]:hover,.visit__moves button[data-listen]:focus-visible,
+.visit__moves button[data-offer]:focus-visible,.visit__moves button[data-leave]:focus-visible{
+  color:var(--ink);outline:none}
+
+.visit__free{grid-column:2;grid-row:5;display:flex;gap:6px;padding-top:9px}
+.visit__free input{flex:1;min-width:0;background:rgba(6,5,10,.85);border:1px solid var(--line2);
+  color:var(--ink);font-family:var(--sans);font-size:14px;padding:9px 12px}
+.visit__free input:focus{outline:none;border-color:rgba(242,236,223,.5)}
+.visit__free button{padding:9px 16px;background:var(--control);border:1px solid var(--line2);
+  color:var(--dim);font-family:var(--mono);font-size:11px;cursor:pointer}
+.visit__free button:hover,.visit__free button:focus-visible{color:var(--ink);outline:none}
+
+/* narrow: the figure stands down and the moves become one strip you can push
+   along, so the words never lose their room and the house keeps its share of
+   the frame. A wrapped list of moves eats the whole band on a phone. */
+@media (max-width:820px){
+  .visit__card{height:clamp(190px,46%,258px);grid-template-columns:0 minmax(0,1fr);
+    column-gap:0;padding:12px 14px 12px}
+  .visit canvas.visit__sprite{display:none}
+  .visit__who{gap:10px;padding-bottom:8px}
+  .visit__words{font-size:15.5px;line-height:1.55;padding-top:10px;max-width:none}
+  .visit__moves{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    padding-top:9px;padding-bottom:1px;
+    -webkit-mask-image:linear-gradient(to right,#000 88%,transparent);
+    mask-image:linear-gradient(to right,#000 88%,transparent)}
+  .visit__moves::-webkit-scrollbar{display:none}
+  .visit__moves button{font-size:10.5px}
+  .visit__moves button[data-ask],.visit__moves button[data-free],
+  .visit__moves button[data-wall]{flex:none;max-width:20ch;padding:6px 10px}
+  .visit__moves button[data-listen]{margin-left:6px;padding-left:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  .visit__card,.visit__light{transition:none}
+}
 
 /* ══ THE FIELD STUDIO — the studio's glass ══
    The one overlay in the house that is not warm: Field's room is kept in cool

@@ -1055,7 +1055,8 @@
       return true;
     }
     followCamera(dt) {
-      const target = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
+      const want = Number.isFinite(this.camHold) ? this.camHold : this.av.x - this.o.width / 2;
+      const target = clamp(want, 0, Math.max(0, this.room().width - this.o.width));
       const amount = 1 - Math.pow(0.84, Math.max(0.25, dt / 16.67));
       this.camX += (target - this.camX) * amount;
     }
@@ -2065,6 +2066,7 @@
             this.travel.velocity = 0;
             this.travel.stride = 0;
           }
+          this.camHold = null;
           this.camX = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
           this.trans.phase = "in";
           this.trans.t0 = now;
@@ -2843,26 +2845,90 @@
     b.px(x, y, w, h, tint);
     b.px(x, y, w, 1, "rgba(247,217,140,0.16)");
   }
-  function bodyRows(body) {
-    return String(body || "").split(`
-`).filter((s) => s.trim().length).slice(0, 4);
+  function artLines(body) {
+    const lines2 = String(body || "").replace(/\r/g, "").split(`
+`);
+    while (lines2.length && !lines2[0].trim())
+      lines2.shift();
+    while (lines2.length && !lines2[lines2.length - 1].trim())
+      lines2.pop();
+    return lines2;
   }
-  function hung(b, x, y, w, h, tint, rows) {
-    framed(b, x, y, w, h, tint);
-    const n = 4, step = Math.max(5, Math.floor((h - 8) / n));
-    for (let r = 0;r < n; r++) {
-      const ry = y + 5 + r * step;
-      if (ry > y + h - 4)
-        break;
-      const line = String(rows && rows[r] || "");
-      for (let i = 0, cx = x + 4;cx < x + w - 5; i++, cx += 3) {
-        const ch = line.length ? line.charCodeAt(i % line.length) : (x * 7 + r * 29 + i * 13) % 94 + 33;
-        if (ch === 32)
+  var INK_FAINT = ".,'`·:;";
+  var INK_LINE = '-_~^"*+=<>()[]{}/\\|!ilj';
+  var INK_SOLID = "#@%&$8BMWNQ";
+  function inkOf(code) {
+    if (code === 32 || code === 9)
+      return 0;
+    const c = String.fromCharCode(code);
+    if (INK_FAINT.indexOf(c) !== -1)
+      return 0.26;
+    if (INK_LINE.indexOf(c) !== -1)
+      return 0.54;
+    if (INK_SOLID.indexOf(c) !== -1)
+      return 1;
+    return 0.78;
+  }
+  var WALL_FRAMES = {
+    opus: [
+      [840, 40, 34, 46],
+      [880, 40, 34, 46],
+      [920, 40, 34, 46],
+      [840, 90, 34, 46],
+      [880, 90, 34, 46],
+      [920, 90, 34, 46]
+    ],
+    sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
+  };
+  function hung(b, x, y, w, h, tint, lines2) {
+    b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
+    b.px(x - 2, y - 2, w + 4, 1, M.brassHi);
+    b.px(x - 2, y + h + 1, w + 4, 1, "rgba(0,0,0,0.45)");
+    b.px(x, y, w, h, "#0d0910");
+    b.px(x + 1, y + 1, w - 2, h - 2, tint);
+    b.px(x + 1, y + 1, w - 2, 1, "rgba(247,217,140,0.12)");
+    b.px(x + Math.floor(w / 2), y - 5, 1, 3, "rgba(216,203,176,0.45)");
+    const rows = lines2 && lines2.length ? lines2 : null;
+    const pw = w - 6, ph = h - 6;
+    if (!rows || pw < 4 || ph < 4)
+      return;
+    let cols = 0;
+    for (let i = 0;i < rows.length; i++)
+      if (rows[i].length > cols)
+        cols = rows[i].length;
+    if (!cols)
+      return;
+    const aspect = cols * 0.52 / rows.length;
+    let dw = pw, dh = Math.round(pw / aspect);
+    if (dh > ph) {
+      dh = ph;
+      dw = Math.round(ph * aspect);
+    }
+    dw = Math.max(1, Math.min(pw, dw));
+    dh = Math.max(1, Math.min(ph, dh));
+    const ox = x + 3 + Math.floor((pw - dw) / 2), oy = y + 3 + Math.floor((ph - dh) / 2);
+    for (let iy = 0;iy < dh; iy++) {
+      const r0 = Math.floor(iy * rows.length / dh);
+      const r1 = Math.max(r0 + 1, Math.floor((iy + 1) * rows.length / dh));
+      for (let ix = 0;ix < dw; ix++) {
+        const c0 = Math.floor(ix * cols / dw);
+        const c1 = Math.max(c0 + 1, Math.floor((ix + 1) * cols / dw));
+        let sum = 0, n = 0;
+        for (let r = r0;r < r1 && r < rows.length; r++) {
+          const line = rows[r];
+          for (let c = c0;c < c1; c++) {
+            sum += c < line.length ? inkOf(line.charCodeAt(c)) : 0;
+            n++;
+          }
+        }
+        if (!n)
           continue;
-        b.px(cx, ry, 1 + ch % 2, 1, ch % 3 ? "rgba(243,236,223,0.22)" : "rgba(243,236,223,0.10)");
+        const v = sum / n;
+        if (v < 0.05)
+          continue;
+        b.px(ox + ix, oy + iy, 1, 1, "rgba(240,234,221," + Math.min(0.9, 0.14 + v * 0.74).toFixed(3) + ")");
       }
     }
-    b.px(x + Math.floor(w / 2), y - 5, 1, 3, "rgba(216,203,176,0.45)");
   }
   function writingDesk(b, x, tint) {
     contact(b, x + 17, 377, 46, 0.28);
@@ -4206,10 +4272,10 @@
               "rgba(94,234,212,0.07)",
               "rgba(224,102,46,0.08)"
             ];
-            [[840, 62], [878, 62], [916, 62], [840, 112], [878, 112], [916, 112]].forEach(([x, y], i) => {
-              hung(b, x, y, 30, 34, tints[i], bodyRows(works[i]));
+            WALL_FRAMES.opus.forEach(([x, y, w, h], i) => {
+              hung(b, x, y, w, h, tints[i], artLines(works[i]));
             });
-            b.px(836, 154, 116, 1, "rgba(243,236,223,0.05)");
+            b.px(836, 144, 120, 1, "rgba(243,236,223,0.05)");
           })();
           sconce(b, 890, 176);
           writingDesk(b, 684, "94,234,212");
@@ -4361,9 +4427,8 @@
           pool2(b, 774, 314, 90, "247,217,140", 0.08);
           (function sonnetWall() {
             const works = bridge && typeof bridge.artRows === "function" ? bridge.artRows("sonnet") : [];
-            hung(b, 596, 90, 34, 40, "rgba(94,234,212,0.09)", bodyRows(works[0]));
-            [[790, 38], [842, 38], [894, 38]].forEach(([x, w], i) => {
-              hung(b, x, 90, w, 42, i % 2 ? "rgba(159,214,224,0.09)" : "rgba(94,234,212,0.08)", bodyRows(works[i + 1]));
+            WALL_FRAMES.sonnet.forEach(([x, y, w, h], i) => {
+              hung(b, x, y, w, h, i === 0 ? "rgba(94,234,212,0.09)" : i % 2 ? "rgba(159,214,224,0.09)" : "rgba(94,234,212,0.08)", artLines(works[i]));
             });
             b.px(786, 142, 148, 1, "rgba(243,236,223,0.05)");
           })();
@@ -11229,10 +11294,19 @@
     let workOpen = false, workAt = 0, workWho = null, workList = [];
     const workVeil = $("#workveil"), workRowsEl = $("#workrows"), workRead = $("#workread"), workHead = $("#workhead"), workSub = $("#worksub");
     function workLabel(piece) {
+      const meaning = String(piece.meaning || "").replace(/\s+/g, " ").trim();
+      if (meaning) {
+        const clause = meaning.split(/[.;:\u2014\u00b7]/)[0].trim();
+        const line2 = clause.length > 8 ? clause : meaning;
+        if (line2.length <= 44)
+          return line2;
+        const cut = line2.slice(0, 44);
+        const space = cut.lastIndexOf(" ");
+        return (space > 24 ? cut.slice(0, space) : cut).replace(/[,;:]$/, "") + "…";
+      }
       const line = String(piece.body || "").split(`
 `).map((s) => s.replace(/\s+$/, "")).find((s) => s.trim().length > 2);
-      const t = line ? line.trim().slice(0, 40) : "";
-      return t || String(piece.meaning || "a piece").replace(/\s+/g, " ").trim().slice(0, 44);
+      return line ? line.trim().slice(0, 40) : String(piece.kind || "a piece");
     }
     function wallPieces(id) {
       return archive_default.isLoaded() ? archive_default.art(id) : [];
@@ -12159,11 +12233,109 @@
     const encSprite = $("#enc-sprite"), encName = $("#enc-name"), encWhere = $("#enc-where");
     const encKicker = $("#enc-kicker"), encWords = $("#enc-words"), encMoves = $("#enc-moves");
     const encFree = $("#enc-free"), encInput = $("#enc-input"), encBudget = $("#enc-budget");
+    const encLight = $("#enc-light"), encSpot = $("#enc-spot");
     const HAIKU_LINE = "HAIKU keeps to the garden. No archive yet.";
     const ACTIVITY = (n) => dayWord(n) || (n.room === "garden" ? "at the pond" : n.state === "sit" ? "reading" : n.state === "stroll" ? "walking the hall" : "at the window");
     const knows = (id) => !!archive_default.WORLD_NAMES[id];
     const srcOf = (from) => from ? (from.kind === "journal" ? "journal" : "a space") + " · " + (from.title || "untitled") + " · " + day(from.created_at) : "";
-    let enc = null, encTypeTimer = null, approachKey = "", pulseTimer = null;
+    let enc = null, encTypeTimer = null, approachKey = "", pulseTimer = null, lightRaf = 0;
+    function litNpc() {
+      if (!eng)
+        return null;
+      if (enc && enc.npc && eng.npcs.indexOf(enc.npc) !== -1)
+        return enc.npc;
+      if (listening && listening.last) {
+        const h = listening.last;
+        const id = h.speaking || (h.who[0] || {}).id;
+        return eng.npcs.find((x) => x.id === id) || null;
+      }
+      return null;
+    }
+    function trackLight() {
+      lightRaf = 0;
+      if (!eng || !eng.cv || encounterEl.hidden)
+        return;
+      if (enc && enc.spot) {
+        placeSpot();
+        lightRaf = requestAnimationFrame(trackLight);
+        return;
+      }
+      const n = litNpc();
+      if (n) {
+        const vx = (n.x - (eng.camX || 0)) / eng.cv.width * 100;
+        const vy = (n.y - 96) / eng.cv.height * 100;
+        encLight.style.setProperty("--vx", Math.max(7, Math.min(93, vx)).toFixed(2) + "%");
+        encLight.style.setProperty("--vy", Math.max(20, Math.min(88, vy)).toFixed(2) + "%");
+      }
+      lightRaf = requestAnimationFrame(trackLight);
+    }
+    function placeSpot() {
+      if (!enc || !enc.spot || !eng || !eng.cv)
+        return;
+      const [x, y, w, h] = enc.spot.frame;
+      const pad = 3;
+      encSpot.style.left = ((x - pad - (eng.camX || 0)) / eng.cv.width * 100).toFixed(3) + "%";
+      encSpot.style.top = ((y - pad) / eng.cv.height * 100).toFixed(3) + "%";
+      encSpot.style.width = ((w + pad * 2) / eng.cv.width * 100).toFixed(3) + "%";
+      encSpot.style.height = ((h + pad * 2) / eng.cv.height * 100).toFixed(3) + "%";
+      const lx = (x + w / 2 - (eng.camX || 0)) / eng.cv.width * 100;
+      encLight.style.setProperty("--vx", Math.max(7, Math.min(93, lx)).toFixed(1) + "%");
+      encLight.style.setProperty("--vy", ((y + h / 2) / eng.cv.height * 100).toFixed(1) + "%");
+    }
+    function clearSpot() {
+      if (enc)
+        enc.spot = null;
+      if (!encSpot.hidden) {
+        encSpot.classList.remove("on");
+        setTimeout(() => {
+          if (!enc || !enc.spot)
+            encSpot.hidden = true;
+        }, 560);
+      }
+      if (eng)
+        eng.camHold = null;
+    }
+    function showOnWall() {
+      const frames = WALL_FRAMES[enc.id] || [];
+      const pieces = archive_default.isLoaded() ? archive_default.art(enc.id) : [];
+      const n = Math.min(frames.length, pieces.length);
+      if (!n) {
+        appendHouse("the house: nothing by " + enc.name + " is hung here.");
+        return;
+      }
+      const i = enc.wallAt % n;
+      enc.wallAt = i + 1;
+      const piece = pieces[i], frame = frames[i];
+      enc.spot = { frame };
+      encSpot.hidden = false;
+      placeSpot();
+      requestAnimationFrame(() => {
+        if (enc && enc.spot)
+          encSpot.classList.add("on");
+      });
+      if (eng && eng.cv)
+        eng.camHold = frame[0] + frame[2] / 2 - eng.cv.width / 2;
+      const said = String(piece.meaning || "").replace(/\s+/g, " ").trim();
+      appendWords(said || "They stand in front of it and say nothing.", "the wall · " + (i + 1) + " of " + n + " · " + day(piece.created_at));
+    }
+    function showScene() {
+      encounterEl.hidden = false;
+      trackLight();
+      requestAnimationFrame(() => {
+        if (!encounterEl.hidden)
+          encounterEl.classList.add("on");
+      });
+    }
+    function hideScene() {
+      clearSpot();
+      if (lightRaf) {
+        cancelAnimationFrame(lightRaf);
+        lightRaf = 0;
+      }
+      encounterEl.classList.remove("on");
+      encounterEl.hidden = true;
+      encFree.hidden = true;
+    }
     function decorateApproach(it) {
       const n = it.npc;
       if (n.id === "haiku") {
@@ -12273,28 +12445,63 @@
     }
     function drawEncSprite(npc) {
       const c = encSprite.getContext("2d");
-      c.imageSmoothingEnabled = false;
-      c.setTransform(1, 0, 0, 1, 0, 0);
-      c.clearRect(0, 0, 24, 54);
-      if (!npc || !eng || typeof eng.drawNpc !== "function")
-        return;
-      const own = eng.ctx;
-      try {
-        c.setTransform(1, 0, 0, 1, 12 - Math.round(npc.x), 31 - Math.round(npc.y));
-        eng.ctx = c;
-        eng.drawNpc(npc, performance.now() * 0.001);
-      } catch (e) {
-        console.warn("the portrait could not be drawn", e);
-      } finally {
-        eng.ctx = own;
+      const { width: W, height: H } = encSprite, S2 = 3;
+      if (!npc || !eng || typeof eng.drawNpc !== "function") {
         c.setTransform(1, 0, 0, 1, 0, 0);
+        c.clearRect(0, 0, W, H);
+        return;
       }
+      const paint = (dx) => {
+        const own = eng.ctx;
+        c.setTransform(1, 0, 0, 1, 0, 0);
+        c.imageSmoothingEnabled = false;
+        c.clearRect(0, 0, W, H);
+        try {
+          c.setTransform(S2, 0, 0, S2, Math.round(W / 2) + dx - S2 * Math.round(npc.x), H - 8 - S2 * (Math.round(npc.y) + 14));
+          eng.ctx = c;
+          eng.drawNpc(npc, performance.now() * 0.001);
+        } catch (e) {
+          console.warn("the portrait could not be drawn", e);
+        } finally {
+          eng.ctx = own;
+          c.setTransform(1, 0, 0, 1, 0, 0);
+        }
+      };
+      paint(0);
+      try {
+        const d = c.getImageData(0, 0, W, H).data;
+        let x0 = W, x1 = -1;
+        for (let y = 0;y < H; y++) {
+          for (let x = 0;x < W; x++) {
+            if (d[(y * W + x) * 4 + 3] > 24) {
+              if (x < x0)
+                x0 = x;
+              if (x > x1)
+                x1 = x;
+            }
+          }
+        }
+        if (x1 >= x0) {
+          const shift = Math.round(W / 2 - (x0 + x1) / 2);
+          if (shift)
+            paint(shift);
+        }
+      } catch (e) {}
     }
     function setBudget() {
       encBudget.style.width = enc ? Math.max(0, (enc.budget - enc.moves) / enc.budget) * 100 + "%" : "100%";
     }
+    function wallHere() {
+      if (!enc || !eng)
+        return 0;
+      if (eng.roomId !== "room_" + enc.id)
+        return 0;
+      const frames = WALL_FRAMES[enc.id] || [];
+      const pieces = archive_default.isLoaded() ? archive_default.art(enc.id) : [];
+      return Math.min(frames.length, pieces.length);
+    }
     function renderMoves() {
-      encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc2(j.id) + '">' + esc2("about " + (j.title || "untitled")) + "</button>").join("") + '<button type="button" data-free>something else…</button>' + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
+      encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc2(j.id) + '">' + esc2("about " + (j.title || "untitled")) + "</button>").join("") + (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-free>something else…</button>' + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
     }
     function openChat(info) {
       if (worldEl.classList.contains("nofeed")) {
@@ -12315,6 +12522,8 @@
         moves: 0,
         budget: 6,
         shown: [],
+        wallAt: 0,
+        spot: null,
         room: eng ? eng.roomId : null,
         roomWord: eng ? (eng.room().name || "").replace(/^THE\s+/i, "").toLowerCase() : "house",
         freeMode: null,
@@ -12324,14 +12533,12 @@
       encName.textContent = info.name;
       encName.style.color = enc.color;
       encWhere.textContent = (npc ? ACTIVITY(npc) + " · " : "") + enc.roomWord;
-      encKicker.textContent = "from the archive";
-      if (encMode)
-        encMode.hidden = false;
+      encKicker.textContent = "speaking from the archive today";
       encWords.innerHTML = "";
       encFree.hidden = true;
       setBudget();
       approachEl.classList.remove("on");
-      encounterEl.hidden = false;
+      showScene();
       if (!readable) {
         encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
         appendHouse(archive_default.isLoaded() ? "the house: " + info.name + " has nothing in the archive to speak from." : "the house: the archive is quiet today; " + info.name + " cannot speak.");
@@ -12347,6 +12554,7 @@
       }, 0);
     }
     function askAbout(jid) {
+      clearSpot();
       const entry = enc.journals.find((j) => j.id === jid) || archive_default.journals(enc.id).find((j) => j.id === jid);
       if (!entry)
         return;
@@ -12359,6 +12567,7 @@
       spend();
     }
     function listen() {
+      clearSpot();
       if (enc.entry && enc.cursor < enc.sentences.length)
         appendWords(enc.sentences[enc.cursor++], "");
       else if (enc.entry)
@@ -12412,6 +12621,8 @@
         return;
       if (b.dataset.ask)
         askAbout(b.dataset.ask);
+      else if ("wall" in b.dataset)
+        showOnWall();
       else if ("free" in b.dataset)
         openFree("ask");
       else if ("listen" in b.dataset)
@@ -12457,8 +12668,7 @@
       const e = enc;
       enc = null;
       clearInterval(encTypeTimer);
-      encounterEl.hidden = true;
-      encFree.hidden = true;
+      hideScene();
       if (!e)
         return;
       visitorToken();
@@ -12470,7 +12680,6 @@
         eng.endChat(null);
       }
     }
-    const encMode = encounterEl.querySelector(".encounter__mode");
     function listenHtml(h, done) {
       const rows = h.turns.map((t) => {
         const name = archive_default.WORLD_NAMES[t.who] || (h.who.find((w) => w.id === t.who) || {}).name || t.who;
@@ -12511,12 +12720,10 @@
       encName.innerHTML = h.who.map((w) => '<span style="color:' + esc2(w.color || "#efe9dc") + '">' + esc2(w.name) + "</span>").join('<span class="mono-in"> · </span>');
       encWhere.textContent = roomWordOf(h.room || eng.roomId);
       encKicker.textContent = "listening in";
-      if (encMode)
-        encMode.hidden = true;
       encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
       encFree.hidden = true;
       approachEl.classList.remove("on");
-      encounterEl.hidden = false;
+      showScene();
       paintListen(h, false);
       clearInterval(listenTimer);
       listenTimer = setInterval(pollListen, 320);
@@ -12557,11 +12764,9 @@
       clearInterval(listenTimer);
       listenTimer = null;
       listening = null;
-      encounterEl.hidden = true;
+      hideScene();
       encName.innerHTML = "";
       encBudget.style.width = "100%";
-      if (encMode)
-        encMode.hidden = false;
       if (feedTemp) {
         feedTemp = false;
         setFeed(false);
@@ -12577,8 +12782,7 @@
       if (enc) {
         enc = null;
         clearInterval(encTypeTimer);
-        encounterEl.hidden = true;
-        encFree.hidden = true;
+        hideScene();
       }
       if (reason && eng)
         eng.sysLine(reason);

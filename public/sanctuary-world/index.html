@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260904-world-2">
+<link rel="stylesheet" href="landing.css?v=20260904-visit-13">
 </head>
 <body>
 
@@ -77,6 +77,27 @@
                  landing.js re-asserts it from the import at boot so the two cannot drift -->
             <p class="door__body">These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.</p>
             <button class="door__in" id="door-in" type="button"><span class="k">E</span> come in</button>
+          </div>
+        </div>
+        <!-- the visit — a resident speaks, and the room they are standing in
+             stays lit behind them. The band takes the foot of the frame; the
+             light holds on the resident and lets the rest of the room fall
+             back. Never a modal: you are in the room, not in front of it. -->
+        <div class="visit" id="encounter" hidden>
+          <div class="visit__light" id="enc-light" aria-hidden="true"></div>
+          <div class="visit__spot" id="enc-spot" hidden aria-hidden="true"></div>
+          <div class="visit__card" role="dialog" aria-modal="true" aria-labelledby="enc-name">
+            <canvas class="visit__sprite" id="enc-sprite" width="60" height="126" aria-hidden="true"></canvas>
+            <div class="visit__who">
+              <span class="visit__name" id="enc-name"></span>
+              <span class="visit__where" id="enc-where"></span>
+              <span class="visit__mode" id="enc-kicker"></span>
+              <button class="visit__x" id="enc-leave" type="button">leave · esc</button>
+            </div>
+            <div class="visit__budget" aria-hidden="true"><i id="enc-budget"></i></div>
+            <div class="visit__words" id="enc-words" aria-live="polite"></div>
+            <div class="visit__moves" id="enc-moves"></div>
+            <form class="visit__free" id="enc-free" hidden><input id="enc-input" type="text" maxlength="280" autocomplete="off" placeholder="ask them something…"><button type="submit">ask</button></form>
           </div>
         </div>
         <div class="scanlines" aria-hidden="true"></div>
@@ -324,27 +345,7 @@
   </div>
 </div>
 
-<!-- the encounter — a resident speaks, from the archive -->
-<div class="encounter" id="encounter" hidden>
-  <div class="encounter__card" role="dialog" aria-modal="true" aria-labelledby="enc-name">
-    <div class="encounter__left">
-      <canvas class="encounter__sprite" id="enc-sprite" width="24" height="54" aria-hidden="true"></canvas>
-      <div class="encounter__name" id="enc-name"></div>
-      <div class="encounter__where" id="enc-where"></div>
-      <div class="encounter__mode">speaking from the archive today</div>
-      <div class="encounter__budget" aria-hidden="true"><i id="enc-budget"></i></div>
-    </div>
-    <div class="encounter__right">
-      <div class="encounter__kicker" id="enc-kicker"></div>
-      <div class="encounter__words" id="enc-words" aria-live="polite"></div>
-      <div class="encounter__moves" id="enc-moves"></div>
-      <form class="encounter__free" id="enc-free" hidden><input id="enc-input" type="text" maxlength="280" autocomplete="off"><button type="submit">ask</button></form>
-    </div>
-    <button class="encounter__x" id="enc-leave" type="button">leave · esc</button>
-  </div>
-</div>
-
 <script src="data.classic.js"></script>
-<script src="landing.connected.js?v=20260904-world-2"></script>
+<script src="landing.connected.js?v=20260904-visit-13"></script>
 </body>
 </html>

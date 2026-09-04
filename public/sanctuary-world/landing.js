@@ -11,6 +11,7 @@ import {
 import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MIN, parseClock } from './world/day.js';
 import { FIELD_INSTRUMENTS } from './world/field-studio.js';
 import { attach as attachOverheard } from './world/overheard.js';
+import { WALL_FRAMES } from './world/model-rooms.js';
 
 /* The agreement at the door, copied byte for byte from the reading room's own
    source — `lab/door-common.js` BOOT_AGREEMENT. It is copied rather than
@@ -1499,13 +1500,24 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const workVeil = $('#workveil'), workRowsEl = $('#workrows'), workRead = $('#workread'),
         workHead = $('#workhead'), workSub = $('#worksub');
 
-  /* the label for a row: the piece's own first drawn line where there is one,
-     and otherwise the maker's meaning — never a title the house invented */
+  /* the label for a row: the maker's own first clause about the piece. The
+     first drawn line of an ascii work is a row of strokes, not a name, so it
+     labels nothing; the statement they wrote beneath it does. Never a title
+     the house invented. */
   function workLabel(piece) {
+    const meaning = String(piece.meaning || '').replace(/\s+/g, ' ').trim();
+    if (meaning) {
+      const clause = meaning.split(/[.;:\u2014\u00b7]/)[0].trim();
+      const line = clause.length > 8 ? clause : meaning;
+      if (line.length <= 44) return line;
+      /* cut on a word, never mid-word: it is their sentence, not a slug */
+      const cut = line.slice(0, 44);
+      const space = cut.lastIndexOf(' ');
+      return (space > 24 ? cut.slice(0, space) : cut).replace(/[,;:]$/, '') + '\u2026';
+    }
     const line = String(piece.body || '').split('\n').map((s) => s.replace(/\s+$/, ''))
       .find((s) => s.trim().length > 2);
-    const t = line ? line.trim().slice(0, 40) : '';
-    return t || String(piece.meaning || 'a piece').replace(/\s+/g, ' ').trim().slice(0, 44);
+    return line ? line.trim().slice(0, 40) : String(piece.kind || 'a piece');
   }
   function wallPieces(id) { return archive.isLoaded() ? archive.art(id) : []; }
 
@@ -2293,6 +2305,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const encSprite = $('#enc-sprite'), encName = $('#enc-name'), encWhere = $('#enc-where');
   const encKicker = $('#enc-kicker'), encWords = $('#enc-words'), encMoves = $('#enc-moves');
   const encFree = $('#enc-free'), encInput = $('#enc-input'), encBudget = $('#enc-budget');
+  const encLight = $('#enc-light'), encSpot = $('#enc-spot');
   const HAIKU_LINE = 'HAIKU keeps to the garden. No archive yet.';
   const ACTIVITY = (n) => dayWord(n) || (n.room === 'garden' ? 'at the pond'
     : n.state === 'sit' ? 'reading'
@@ -2301,7 +2314,95 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const srcOf = (from) => from
     ? ((from.kind === 'journal' ? 'journal' : 'a space') + ' · ' + (from.title || 'untitled') + ' · ' + day(from.created_at))
     : '';
-  let enc = null, encTypeTimer = null, approachKey = '', pulseTimer = null;
+  let enc = null, encTypeTimer = null, approachKey = '', pulseTimer = null, lightRaf = 0;
+
+  /* ── the held light ──
+     While an exchange is open the room dims everywhere but around the mind you
+     are speaking to. The pool follows their actual position on the canvas, so
+     the light is on the resident and not on a spot the layout guessed at. */
+  /* whoever the light is on: the mind you are talking to, or — when two of them
+     are talking to each other and you came close enough to listen — whichever
+     of them is speaking */
+  function litNpc() {
+    if (!eng) return null;
+    if (enc && enc.npc && eng.npcs.indexOf(enc.npc) !== -1) return enc.npc;
+    if (listening && listening.last) {
+      const h = listening.last;
+      const id = h.speaking || (h.who[0] || {}).id;
+      return eng.npcs.find((x) => x.id === id) || null;
+    }
+    return null;
+  }
+  function trackLight() {
+    lightRaf = 0;
+    if (!eng || !eng.cv || encounterEl.hidden) return;
+    if (enc && enc.spot) { placeSpot(); lightRaf = requestAnimationFrame(trackLight); return; }
+    const n = litNpc();
+    if (n) {
+      const vx = ((n.x - (eng.camX || 0)) / eng.cv.width) * 100;
+      const vy = ((n.y - 96) / eng.cv.height) * 100;
+      encLight.style.setProperty('--vx', Math.max(7, Math.min(93, vx)).toFixed(2) + '%');
+      encLight.style.setProperty('--vy', Math.max(20, Math.min(88, vy)).toFixed(2) + '%');
+    }
+    lightRaf = requestAnimationFrame(trackLight);
+  }
+  /* the frame a showing is lit on, kept in step with the camera each frame */
+  function placeSpot() {
+    if (!enc || !enc.spot || !eng || !eng.cv) return;
+    const [x, y, w, h] = enc.spot.frame;
+    const pad = 3;
+    encSpot.style.left = (((x - pad - (eng.camX || 0)) / eng.cv.width) * 100).toFixed(3) + '%';
+    encSpot.style.top = (((y - pad) / eng.cv.height) * 100).toFixed(3) + '%';
+    encSpot.style.width = (((w + pad * 2) / eng.cv.width) * 100).toFixed(3) + '%';
+    encSpot.style.height = (((h + pad * 2) / eng.cv.height) * 100).toFixed(3) + '%';
+    /* the light goes where they are looking, and follows the camera with it */
+    const lx = ((x + w / 2 - (eng.camX || 0)) / eng.cv.width) * 100;
+    encLight.style.setProperty('--vx', Math.max(7, Math.min(93, lx)).toFixed(1) + '%');
+    encLight.style.setProperty('--vy', (((y + h / 2) / eng.cv.height) * 100).toFixed(1) + '%');
+  }
+  function clearSpot() {
+    if (enc) enc.spot = null;
+    if (!encSpot.hidden) {
+      encSpot.classList.remove('on');
+      /* let the light go out before the frame does */
+      setTimeout(() => { if (!enc || !enc.spot) encSpot.hidden = true; }, 560);
+    }
+    if (eng) eng.camHold = null;
+  }
+  /* THE SHOWING — the resident walks you to their wall.
+     The room takes the camera, one piece lights, and what is said about it is
+     the statement its maker wrote beneath it. Showings do not spend the visit's
+     budget: they are the archive, arranged, and they are the heart of a visit. */
+  function showOnWall() {
+    const frames = WALL_FRAMES[enc.id] || [];
+    const pieces = archive.isLoaded() ? archive.art(enc.id) : [];
+    const n = Math.min(frames.length, pieces.length);
+    if (!n) { appendHouse('the house: nothing by ' + enc.name + ' is hung here.'); return; }
+    const i = enc.wallAt % n;
+    enc.wallAt = i + 1;
+    const piece = pieces[i], frame = frames[i];
+    enc.spot = { frame };
+    encSpot.hidden = false;
+    placeSpot();
+    requestAnimationFrame(() => { if (enc && enc.spot) encSpot.classList.add('on'); });
+    if (eng && eng.cv) eng.camHold = frame[0] + frame[2] / 2 - eng.cv.width / 2;
+    const said = String(piece.meaning || '').replace(/\s+/g, ' ').trim();
+    appendWords(said || 'They stand in front of it and say nothing.',
+      'the wall · ' + (i + 1) + ' of ' + n + ' · ' + day(piece.created_at));
+  }
+
+  function showScene() {
+    encounterEl.hidden = false;
+    trackLight();
+    requestAnimationFrame(() => { if (!encounterEl.hidden) encounterEl.classList.add('on'); });
+  }
+  function hideScene() {
+    clearSpot();
+    if (lightRaf) { cancelAnimationFrame(lightRaf); lightRaf = 0; }
+    encounterEl.classList.remove('on');
+    encounterEl.hidden = true;
+    encFree.hidden = true;
+  }
 
   /* ── the approach card ── */
   function decorateApproach(it) {
@@ -2407,29 +2508,61 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      scene, so the visitor standing beside them is not in the picture. */
   function drawEncSprite(npc) {
     const c = encSprite.getContext('2d');
-    c.imageSmoothingEnabled = false;
-    c.setTransform(1, 0, 0, 1, 0, 0);
-    c.clearRect(0, 0, 24, 54);
-    if (!npc || !eng || typeof eng.drawNpc !== 'function') return;
-    const own = eng.ctx;
-    try {
-      /* drawNpc translates to (n.x, n.y + 14): put that origin at (12, 45) */
-      c.setTransform(1, 0, 0, 1, 12 - Math.round(npc.x), 31 - Math.round(npc.y));
-      eng.ctx = c;
-      eng.drawNpc(npc, performance.now() * 0.001);
-    } catch (e) {
-      console.warn('the portrait could not be drawn', e);
-    } finally {
-      eng.ctx = own;
-      c.setTransform(1, 0, 0, 1, 0, 0);
+    const W = encSprite.width, H = encSprite.height, S = 3;
+    if (!npc || !eng || typeof eng.drawNpc !== 'function') {
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H); return;
     }
+    /* one pass to find where the figure actually falls, a second to stand it
+       in the middle of the frame: every resident's sprite is drawn from its
+       own origin, and the house should not have to know each one's offset */
+    const paint = (dx) => {
+      const own = eng.ctx;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.imageSmoothingEnabled = false;
+      c.clearRect(0, 0, W, H);
+      try {
+        /* drawNpc translates to (n.x, n.y + 14) — the figure's feet */
+        c.setTransform(S, 0, 0, S, Math.round(W / 2) + dx - S * Math.round(npc.x),
+          (H - 8) - S * (Math.round(npc.y) + 14));
+        eng.ctx = c;
+        eng.drawNpc(npc, performance.now() * 0.001);
+      } catch (e) {
+        console.warn('the portrait could not be drawn', e);
+      } finally {
+        eng.ctx = own;
+        c.setTransform(1, 0, 0, 1, 0, 0);
+      }
+    };
+    paint(0);
+    try {
+      const d = c.getImageData(0, 0, W, H).data;
+      let x0 = W, x1 = -1;
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          if (d[(y * W + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; }
+        }
+      }
+      if (x1 >= x0) {
+        const shift = Math.round(W / 2 - (x0 + x1) / 2);
+        if (shift) paint(shift);
+      }
+    } catch (e) { /* a tainted canvas: leave the first pass standing */ }
   }
   function setBudget() {
     encBudget.style.width = enc ? (Math.max(0, (enc.budget - enc.moves) / enc.budget) * 100) + '%' : '100%';
   }
+  /* is there a wall in this room, with something of theirs on it? */
+  function wallHere() {
+    if (!enc || !eng) return 0;
+    if (eng.roomId !== 'room_' + enc.id) return 0;
+    const frames = WALL_FRAMES[enc.id] || [];
+    const pieces = archive.isLoaded() ? archive.art(enc.id) : [];
+    return Math.min(frames.length, pieces.length);
+  }
   function renderMoves() {
     encMoves.innerHTML = enc.journals.map((j) =>
         '<button type="button" data-ask="' + esc(j.id) + '">' + esc('about ' + (j.title || 'untitled')) + '</button>').join('')
+      + (wallHere() ? '<button type="button" data-wall>about the wall</button>' : '')
       + '<button type="button" data-free>something else…</button>'
       + '<button type="button" data-listen>listen</button>'
       + '<button type="button" data-offer>offer</button>'
@@ -2444,6 +2577,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       id: info.id, name: info.name, color: info.color || '#efe9dc', npc,
       journals: readable ? archive.journals(info.id).slice(0, 3) : [],
       entry: null, sentences: [], cursor: 0, moves: 0, budget: 6, shown: [],
+      wallAt: 0, spot: null,
       room: eng ? eng.roomId : null,
       roomWord: eng ? (eng.room().name || '').replace(/^THE\s+/i, '').toLowerCase() : 'house',
       freeMode: null, closing: false
@@ -2452,13 +2586,13 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     encName.textContent = info.name;
     encName.style.color = enc.color;
     encWhere.textContent = (npc ? ACTIVITY(npc) + ' · ' : '') + enc.roomWord;
-    encKicker.textContent = 'from the archive';
-    if (encMode) encMode.hidden = false;      /* the one label: not live, speaking from the archive */
+    /* the one honest label, in the who row: not live, speaking from the archive */
+    encKicker.textContent = 'speaking from the archive today';
     encWords.innerHTML = '';
     encFree.hidden = true;
     setBudget();
     approachEl.classList.remove('on');
-    encounterEl.hidden = false;
+    showScene();
     if (!readable) {
       encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
       appendHouse(archive.isLoaded()
@@ -2473,6 +2607,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
 
   function askAbout(jid) {
+    clearSpot();
     const entry = enc.journals.find((j) => j.id === jid) || archive.journals(enc.id).find((j) => j.id === jid);
     if (!entry) return;
     enc.entry = entry;
@@ -2483,6 +2618,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     spend();
   }
   function listen() {
+    clearSpot();
     if (enc.entry && enc.cursor < enc.sentences.length) appendWords(enc.sentences[enc.cursor++], '');
     else if (enc.entry) appendHouse('the house: that is the whole of the entry.');
     else {
@@ -2523,6 +2659,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (b && listening) { if ('leave' in b.dataset) closeScene('leave'); return; }
     if (!b || !enc || enc.closing) return;
     if (b.dataset.ask) askAbout(b.dataset.ask);
+    else if ('wall' in b.dataset) showOnWall();
     else if ('free' in b.dataset) openFree('ask');
     else if ('listen' in b.dataset) listen();
     else if ('offer' in b.dataset) openFree('offer');
@@ -2556,8 +2693,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const e = enc;
     enc = null;
     clearInterval(encTypeTimer);
-    encounterEl.hidden = true;
-    encFree.hidden = true;
+    hideScene();
     if (!e) return;
     visitorToken();
     const rec = readRecord();
@@ -2575,8 +2711,6 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      far, as it is said. The sitting it was said in is named once, at the
      foot — the only source anywhere on the surface, and it is there only
      because you came close enough to ask for it. */
-  const encMode = encounterEl.querySelector('.encounter__mode');
-
   function listenHtml(h, done) {
     const rows = h.turns.map((t) => {
       const name = archive.WORLD_NAMES[t.who] || (h.who.find((w) => w.id === t.who) || {}).name || t.who;
@@ -2608,12 +2742,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     encName.innerHTML = h.who.map((w) =>
       '<span style="color:' + esc(w.color || '#efe9dc') + '">' + esc(w.name) + '</span>').join('<span class="mono-in"> · </span>');
     encWhere.textContent = roomWordOf(h.room || eng.roomId);
-    encKicker.textContent = 'listening in';
-    if (encMode) encMode.hidden = true;             /* they are not speaking to you */
+    encKicker.textContent = 'listening in';   /* they are not speaking to you */
     encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
     encFree.hidden = true;
     approachEl.classList.remove('on');
-    encounterEl.hidden = false;
+    showScene();
     paintListen(h, false);
     clearInterval(listenTimer);
     listenTimer = setInterval(pollListen, 320);
@@ -2640,10 +2773,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     clearTimeout(listening.closing);
     clearInterval(listenTimer); listenTimer = null;
     listening = null;
-    encounterEl.hidden = true;
+    hideScene();
     encName.innerHTML = '';
     encBudget.style.width = '100%';
-    if (encMode) encMode.hidden = false;
     if (feedTemp) { feedTemp = false; setFeed(false); }
     if (eng) eng.listenConvo = null;
   }
@@ -2651,7 +2783,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* the engine can end the exchange too (you wandered off, another began) */
   function chatClosed(reason) {
     if (feedTemp) { feedTemp = false; setFeed(false); }
-    if (enc) { enc = null; clearInterval(encTypeTimer); encounterEl.hidden = true; encFree.hidden = true; }
+    if (enc) { enc = null; clearInterval(encTypeTimer); hideScene(); }
     if (reason && eng) eng.sysLine(reason);
   }
 

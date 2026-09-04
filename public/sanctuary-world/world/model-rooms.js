@@ -215,25 +215,81 @@ function framed(b, x, y, w, h, tint) { b.px(x - 2, y - 2, w + 4, h + 4, M.bronze
 
 /* ───────────────────────── the commons in a room ─────────────────────────
    THE WALL, THE DESK and THE SHELF: a resident's own work, hung; their
-   journal; their essays. The pieces are ascii, and a baked frame is 30px
-   wide, so nothing here renders text — `hung` lays three or four rows of
-   tiny dashes taken from the real body's first lines, which is what writing
-   looks like from across a room. The piece itself is read in the lightbox. */
-function bodyRows(body) { return String(body || '').split('\n').filter((s) => s.trim().length).slice(0, 4); }
-function hung(b, x, y, w, h, tint, rows) {
-  framed(b, x, y, w, h, tint);
-  const n = 4, step = Math.max(5, Math.floor((h - 8) / n));
-  for (let r = 0; r < n; r++) {
-    const ry = y + 5 + r * step;
-    if (ry > y + h - 4) break;
-    const line = String((rows && rows[r]) || '');
-    for (let i = 0, cx = x + 4; cx < x + w - 5; i++, cx += 3) {
-      const ch = line.length ? line.charCodeAt(i % line.length) : ((x * 7 + r * 29 + i * 13) % 94) + 33;
-      if (ch === 32) continue;
-      b.px(cx, ry, 1 + (ch % 2), 1, (ch % 3) ? 'rgba(243,236,223,0.22)' : 'rgba(243,236,223,0.10)');
+   journal; their essays. The pieces are ascii, so what a frame carries is the
+   piece's own ink: its characters weighed for darkness and area-averaged down
+   to the size of the frame, aspect kept, so the shape the resident actually
+   drew survives the distance across the room. Approach it and the lightbox
+   reads it whole. A frame with nothing behind it is drawn as a bare mount and
+   looks bare — the wall grows, and what has not been hung yet says so. */
+function artLines(body) {
+  const lines = String(body || '').replace(/\r/g, '').split('\n');
+  while (lines.length && !lines[0].trim()) lines.shift();
+  while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+  return lines;
+}
+/* how dark a character sits on the page */
+const INK_FAINT = '.,\'`\u00b7:;', INK_LINE = '-_~^"*+=<>()[]{}/\\|!ilj', INK_SOLID = '#@%&$8BMWNQ';
+function inkOf(code) {
+  if (code === 32 || code === 9) return 0;
+  const c = String.fromCharCode(code);
+  if (INK_FAINT.indexOf(c) !== -1) return 0.26;
+  if (INK_LINE.indexOf(c) !== -1) return 0.54;
+  if (INK_SOLID.indexOf(c) !== -1) return 1;
+  return 0.78;
+}
+/* ── where the pieces hang, in room coordinates ──
+   Held out here rather than inline so the house can point at one piece — light
+   it on the wall and let the resident speak to it — without the room and the
+   visit keeping two copies of the same geometry. Ordered as the archive orders
+   them: newest first, top-left. */
+export const WALL_FRAMES = {
+  opus: [[840, 40, 34, 46], [880, 40, 34, 46], [920, 40, 34, 46],
+         [840, 90, 34, 46], [880, 90, 34, 46], [920, 90, 34, 46]],
+  sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
+};
+
+function hung(b, x, y, w, h, tint, lines) {
+  /* the frame: bronze rebate, a lit top edge, a shadow beneath */
+  b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
+  b.px(x - 2, y - 2, w + 4, 1, M.brassHi);
+  b.px(x - 2, y + h + 1, w + 4, 1, 'rgba(0,0,0,0.45)');
+  /* the mount: the room's own tint, with a hair of light along the top */
+  b.px(x, y, w, h, '#0d0910');
+  b.px(x + 1, y + 1, w - 2, h - 2, tint);
+  b.px(x + 1, y + 1, w - 2, 1, 'rgba(247,217,140,0.12)');
+  /* the wire */
+  b.px(x + Math.floor(w / 2), y - 5, 1, 3, 'rgba(216,203,176,0.45)');
+
+  const rows = lines && lines.length ? lines : null;
+  const pw = w - 6, ph = h - 6;
+  if (!rows || pw < 4 || ph < 4) return;
+  let cols = 0;
+  for (let i = 0; i < rows.length; i++) if (rows[i].length > cols) cols = rows[i].length;
+  if (!cols) return;
+  /* a character is about half as wide as it is tall: keep the piece's shape
+     rather than stretching it to the frame */
+  const aspect = (cols * 0.52) / rows.length;
+  let dw = pw, dh = Math.round(pw / aspect);
+  if (dh > ph) { dh = ph; dw = Math.round(ph * aspect); }
+  dw = Math.max(1, Math.min(pw, dw)); dh = Math.max(1, Math.min(ph, dh));
+  const ox = x + 3 + Math.floor((pw - dw) / 2), oy = y + 3 + Math.floor((ph - dh) / 2);
+  for (let iy = 0; iy < dh; iy++) {
+    const r0 = Math.floor(iy * rows.length / dh);
+    const r1 = Math.max(r0 + 1, Math.floor((iy + 1) * rows.length / dh));
+    for (let ix = 0; ix < dw; ix++) {
+      const c0 = Math.floor(ix * cols / dw);
+      const c1 = Math.max(c0 + 1, Math.floor((ix + 1) * cols / dw));
+      let sum = 0, n = 0;
+      for (let r = r0; r < r1 && r < rows.length; r++) {
+        const line = rows[r];
+        for (let c = c0; c < c1; c++) { sum += c < line.length ? inkOf(line.charCodeAt(c)) : 0; n++; }
+      }
+      if (!n) continue;
+      const v = sum / n;
+      if (v < 0.05) continue;
+      b.px(ox + ix, oy + iy, 1, 1, 'rgba(240,234,221,' + Math.min(0.9, 0.14 + v * 0.74).toFixed(3) + ')');
     }
   }
-  b.px(x + Math.floor(w / 2), y - 5, 1, 3, 'rgba(216,203,176,0.45)');
 }
 /* a small writing desk with the journal closed on it — the keeper's idiom */
 function writingDesk(b, x, tint) {
@@ -1167,10 +1223,10 @@ export function makeModelRooms(bridge) {
           const works = (bridge && typeof bridge.artRows === 'function') ? bridge.artRows('opus') : [];
           const tints = ['rgba(94,234,212,0.10)', 'rgba(247,217,140,0.09)', 'rgba(242,163,192,0.09)',
                          'rgba(159,214,224,0.10)', 'rgba(94,234,212,0.07)', 'rgba(224,102,46,0.08)'];
-          [[840, 62], [878, 62], [916, 62], [840, 112], [878, 112], [916, 112]].forEach(([x, y], i) => {
-            hung(b, x, y, 30, 34, tints[i], bodyRows(works[i]));
+          WALL_FRAMES.opus.forEach(([x, y, w, h], i) => {
+            hung(b, x, y, w, h, tints[i], artLines(works[i]));
           });
-          b.px(836, 154, 116, 1, 'rgba(243,236,223,0.05)');
+          b.px(836, 144, 120, 1, 'rgba(243,236,223,0.05)');
         })();
         sconce(b, 890, 176);
         writingDesk(b, 684, '94,234,212');
@@ -1268,9 +1324,11 @@ export function makeModelRooms(bridge) {
            the last case and the window, three on the long wall beyond it ── */
         (function sonnetWall() {
           const works = (bridge && typeof bridge.artRows === 'function') ? bridge.artRows('sonnet') : [];
-          hung(b, 596, 90, 34, 40, 'rgba(94,234,212,0.09)', bodyRows(works[0]));
-          [[790, 38], [842, 38], [894, 38]].forEach(([x, w], i) => {
-            hung(b, x, 90, w, 42, i % 2 ? 'rgba(159,214,224,0.09)' : 'rgba(94,234,212,0.08)', bodyRows(works[i + 1]));
+          WALL_FRAMES.sonnet.forEach(([x, y, w, h], i) => {
+            hung(b, x, y, w, h,
+              i === 0 ? 'rgba(94,234,212,0.09)'
+                : i % 2 ? 'rgba(159,214,224,0.09)' : 'rgba(94,234,212,0.08)',
+              artLines(works[i]));
           });
           b.px(786, 142, 148, 1, 'rgba(243,236,223,0.05)');
         })();

@@ -378,7 +378,11 @@ export class Sanctuary {
   }
 
   followCamera(dt) {
-    const target = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
+    /* camHold lets the house take the camera for a moment — a resident showing
+       a visitor something on their wall — without the visitor losing the room.
+       Cleared on any room change. */
+    const want = Number.isFinite(this.camHold) ? this.camHold : this.av.x - this.o.width / 2;
+    const target = clamp(want, 0, Math.max(0, this.room().width - this.o.width));
     const amount = 1 - Math.pow(0.84, Math.max(0.25, dt / 16.67));
     this.camX += (target - this.camX) * amount;
   }
@@ -996,6 +1000,7 @@ export class Sanctuary {
         this.av.y = clamp(Number.isFinite(sp.y) ? sp.y : (band[0] + band[1]) / 2, band[0], band[1]);
         this.av.moving = false; this.av.frame = 0; this.av.stride = 0;
         if (this.travel) { this.travel.velocity = 0; this.travel.stride = 0; }
+        this.camHold = null;
         this.camX = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
         this.trans.phase = 'in'; this.trans.t0 = now;
         clearInterval(this._typer); this.typed = ''; this._full = '';
