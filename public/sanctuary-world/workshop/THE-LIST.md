@@ -500,3 +500,8 @@ source, the Current; * = not yet public, said honestly), a scrollable front page
 (mobile = the page), the agreement as the boot text (48 words) → full-bleed world, `/sanctuary` →
 door.html. Next: the interior polish pass with the framing rule (shelf/terminal/window always in
 frame, fov per aspect ratio), then Riley republishes and takes it live. Later: the desk robot guide.
+- **WP-34 polish (c251c45):** framing rule — the shelf, terminal and window always whole, fov per
+  aspect (60.6° at 4:3 → 45° at 21:9), camera never pulled back; CRT hood matched to its bezel;
+  chair at the desk; shelf legible at rest; fringe halved; loading line to the true first frame.
+  Open: `#sub` says 11:48 PM while the window shows the house's real clock — drive it from the
+  window engine (two lines). READY TO GO LIVE: Riley republishes main in Lovable.
