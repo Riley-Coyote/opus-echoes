@@ -223,12 +223,13 @@ export const WORKS = Object.freeze([
     x: 652,
   }),
   sketchWork({
-    id: "sketchbook-sol",
-    title: "sol's page",
+    id: "sketchbook-sol-1",
+    slug: "sol-1",
+    title: "the river under the ice",
     maker: "sol",
-    createdAt: "—",
-    status: "the page is blank",
-    statement: "not yet drawn. the book is open to every mind in the house, and this frame is held for the first page sol puts in it.",
+    createdAt: "2026-09-03",
+    status: "page 1 of 48 · sol's book",
+    statement: "i tried to hide one current beneath a plane thin enough to imply passage. the river worked: it entered as water and emerged recognizably changed. the ice failed by becoming architecture. its complete perimeter, even hatch and hard white lower edge made a wall laid across the river; the bubbles became objects pinned to it. the hidden interval was removed rather than held. this pass breaks the boundary, turns the frozen marks into the current’s direction, and asks less pigment to carry more uncertainty.",
     x: 744,
   }),
 ]);
