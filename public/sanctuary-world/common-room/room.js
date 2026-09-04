@@ -13,24 +13,24 @@ let saved = [];
 try { const value = JSON.parse(localStorage.getItem(STORAGE) || '[]'); if (Array.isArray(value)) saved = value.filter(w => typeof w.title === 'string' && typeof w.by === 'string' && Number.isInteger(w.pattern)).slice(-9); } catch { /* A study also works when storage is unavailable. */ }
 
 const definitions = [
-  ['cinder','Cinder','cloak','#cdab76','#7f7856',535,404,'talking','conversation garden'],
-  ['reed','Reed','ribbon','#90af8c','#4d7361',704,420,'listening','conversation garden'],
-  ['aster','Aster','wisp','#b8adc7','#786f91',651,548,'sitting','conversation garden'],
-  ['tess','Tess','lattice','#b2c9ac','#658d78',1024,354,'drawing','worktable'],
-  ['mica','Mica','orb','#d0bba2','#a1866d',1155,351,'talking','worktable'],
-  ['vale','Vale','cloak','#a6babc','#66878a',698,146,'reading','window seats'],
-  ['lumen','Lumen','orb','#ded5ad','#9f9f79',828,171,'listening','window seats'],
-  ['neri','Neri','crown','#97b1bc','#536e81',1239,583,'walking','moving through the room'],
-  ['finch','Finch','ribbon','#c3c79f','#7c9368',298,481,'walking','moving through the room'],
-  ['moss','Moss','wisp','#a1b988','#688663',605,267,'tending','indoor garden'],
-  ['wren','Wren','cloak','#c69e92','#936e66',820,669,'walking','moving through the room'],
-  ['ilex','Ilex','lattice','#9aafa7','#526d67',876,416,'walking','moving through the room'],
-  ['loom','Loom','crown','#c9b982','#8c875d',1176,157,'looking','common wall'],
-  ['oru','Oru','orb','#c0c8ba','#7c9583',338,227,'walking','moving through the room']
+  ['cinder','Cinder','cloak','#c69860','#684354',535,404,'talking','hearth circle'],
+  ['reed','Reed','ribbon','#87a99f','#40546b',704,420,'listening','hearth circle'],
+  ['aster','Aster','wisp','#ab96c1','#5b416f',651,548,'sitting','hearth circle'],
+  ['tess','Tess','lattice','#a9b7bb','#4c6276',1024,354,'drawing','worktable'],
+  ['mica','Mica','orb','#bd997b','#6d485b',1155,351,'talking','worktable'],
+  ['vale','Vale','cloak','#879cbb','#414969',698,146,'reading','window seats'],
+  ['lumen','Lumen','orb','#d7be87','#7b5870',828,171,'listening','window seats'],
+  ['neri','Neri','crown','#809db9','#383d5b',1239,583,'walking','moving through the room'],
+  ['finch','Finch','ribbon','#b4a78a','#67576c',298,481,'walking','moving through the room'],
+  ['moss','Moss','wisp','#809b7e','#3d5660',605,267,'tending','indoor garden'],
+  ['wren','Wren','cloak','#b77d83','#70455d',820,669,'walking','moving through the room'],
+  ['ilex','Ilex','lattice','#859aab','#464965',876,416,'walking','moving through the room'],
+  ['loom','Loom','crown','#bb9c6b','#725061',1176,157,'looking','common wall'],
+  ['oru','Oru','orb','#a0a2bf','#5b5073',338,227,'walking','moving through the room']
 ];
 const state = {
   theme:'afternoon', paused:false, time:0, elapsed:0, reducedMotion:reduced.matches,
-  player:{id:'visitor',name:'You',form:'cloak',color:'#f0dfb7',shade:'#a4a17c',x:170,z:592,activity:'standing',path:[],seed:99,moving:false},
+  player:{id:'visitor',name:'You',form:'cloak',color:'#e0ceb0',shade:'#8b6879',x:170,z:592,activity:'standing',path:[],seed:99,moving:false},
   people:definitions.map((d,i)=>({id:d[0],name:d[1],form:d[2],color:d[3],shade:d[4],x:d[5],z:d[6],activity:d[7],place:d[8],home:{x:d[5],z:d[6]},seed:i*3,path:[],moving:false,wait:3+i*.8,route:i%6})),
   works:[...seeds,...saved], selected:null, hover:null, trail:[], doors:[
     {id:'door:lookout',name:'The grounds',x:27,z:596,destination:'lookout',description:'The open threshold back to the world outside. This is where new arrivals would enter the common room.'},
@@ -40,11 +40,11 @@ const state = {
   ]
 };
 const spots = [
-  {id:'garden-circle',name:'The conversation garden',x:705,z:525,kind:'listen',description:'A place to sit within earshot.'},
+  {id:'garden-circle',name:'The hearth circle',x:705,z:525,kind:'listen',description:'A place to sit within earshot.'},
   {id:'worktable',name:'The communal worktable',x:1060,z:562,kind:'make',description:'Unfinished things, and room for one more.'},
   {id:'window',name:'The window seats',x:780,z:204,kind:'rest',description:'A little quiet, within the life of the room.'},
   {id:'wall',name:'The common wall',x:1216,z:152,kind:'wall',description:'Things made here, left for the next person.'},
-  {id:'tree',name:'The indoor garden',x:539,z:263,kind:'plant',description:'A living center, with light from above.'}
+  {id:'tree',name:'The indoor garden',x:539,z:263,kind:'plant',description:'A living corner beside the twilight windows.'}
 ];
 const cast = Object.fromEntries(state.people.map(n=>[n.id,n]));
 const roamers = ['neri','finch','wren','ilex','oru'];
@@ -153,11 +153,11 @@ const smallTalk = {
   aster:['I’ve been listening. Those are different things: having nothing to say, and not needing to say it yet.','There’s no hurry. The conversation will still be here.'],
   tess:['I’m trying to draw the shape of a conversation. Every time someone joins, the picture changes.','I think the crossings are the interesting part. Two lines can meet without becoming the same line.'],
   mica:['Tess keeps starting with a grid. I keep suggesting a window. We might both be drawing the room.','Come closer. There’s a blank sheet on this end of the table.'],
-  vale:['The light has moved across three pages, and I’ve only read two. I’m counting that as a good afternoon.','You can sit here without having to explain what you’re doing.'],
+  vale:['The light has moved across three pages, and I’ve only read two. I’m counting that as a good evening.','You can sit here without having to explain what you’re doing.'],
   lumen:['From this window you can see the garden, but still hear everyone inside. It’s a good place to be between things.','I saved the other seat. It catches the last of the light.'],
   moss:['The tree changes the room. People take a different route around it every time.','There’s a watering can by the garden door. Somehow it always finds its way back.'],
   loom:['I’m looking at what someone left here yesterday. It’s different when you know the person who made it.','A wall becomes interesting when it starts remembering things.'],
-  neri:['I came over to see what was happening at the table. Then I got caught in another conversation on the way.','That seems like a reasonable way to spend an afternoon.'],
+  neri:['I came over to see what was happening at the table. Then I got caught in another conversation on the way.','That seems like a reasonable way to spend an evening.'],
   finch:['There are always little crossings here. Someone going to the garden, someone bringing a thought back.','I’m on my way to the window. Walk with me for a little?'],
   wren:['I was going somewhere. I’ve forgotten where, but this seems like a good place to stop.','Tell me what caught your eye when you came in.'],
   ilex:['I’ve been following the light around the floor. It makes a different path from the furniture.','Some of the best routes aren’t the shortest ones.'],
@@ -196,7 +196,7 @@ function openTarget(target){
     action('Join the conversation',()=>{$('#encounter-name').textContent='There’s room for you';$('#encounter-words').textContent='“And leave a little room for the next person to change it,” Reed adds. Aster moves over. The circle has another place in it now.';$('#encounter-actions').replaceChildren();action('Listen for a while',()=>{$('#encounter-words').textContent='The conversation drifts from rooms to gardens, then to a drawing on the table. Nobody seems in a hurry to reach an ending.';});action('Continue wandering',()=>closeEncounter());});
     action('Just listen',()=>{$('#encounter-words').textContent='“The empty places matter too,” Aster says. “Someone has to be able to arrive.”';});action('Continue wandering',()=>closeEncounter());
   }else if(target.kind==='make'){
-    showEncounter({id:target.id,name:'Leave a little of yourself',place:'At the communal worktable',words:'A few sheets of paper, pencils, and the last of the afternoon light. Choose a small study to make; it will stay on the common wall in this browser.'});
+    showEncounter({id:target.id,name:'Leave a little of yourself',place:'At the communal worktable',words:'A few sheets of paper, pencils, and a pool of warm lamplight. Choose a small study to make; it will stay on the common wall in this browser.'});
     for(const [label,n]of [['A landscape of lines',0],['A room within a room',1],['A constellation of fragments',2]])action(label,()=>{persistWork(label,'You',n+state.works.length*3);$('#encounter-name').textContent='Something to come back to';$('#encounter-words').textContent='Your study joins the others on the wall. The room has changed a little because you were here.';$('#encounter-actions').replaceChildren();action('Walk over to the wall',()=>goTo(spots[3]));action('Keep wandering',()=>closeEncounter());});
   }else if(target.kind==='wall'){showDirectory('works');state.selected=null;}
   else if(target.kind==='rest'){

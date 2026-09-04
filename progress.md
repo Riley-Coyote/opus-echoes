@@ -63,3 +63,15 @@ Implemented and verified:
 - Browser checks passed: all 14 participants and all four thresholds reached, follow-up and Escape, keyboard walking, pause/resume, all lighting modes, visitor artwork surviving reload, Tess's complete artwork routine, phone encounter/overview, no horizontal overflow, and reduced-motion rendering. Isolated browser reported no application errors.
 - Required game-client action bursts and visual screenshots reviewed. Production client/server build and JavaScript syntax checks pass.
 - Remaining product decision: Riley reviews this separate visual study before any replacement or live integration. Do not wire it into the existing room without that decision.
+
+## Common room visual correction — 2026-09-04
+
+Riley approved the open floor plan and freer movement but rejected the olive palette, flat light, and visual departure from the existing Sanctuary. Their second screenshot is the visual reference for this revision.
+
+- Rebuilt the prototype's materials around plum stone, dark walnut, burgundy upholstery, aged brass, and restrained foliage. Replaced the geometric centerpiece with a low ember hearth while preserving its collision footprint.
+- Added arched twilight windows, a moonlit landscape, localized amber sources, soft light falloff, a cached exposure map, furniture shadows, and subtle window rays. Native pixel rendering now uses a consistent two-unit raster, including hand-drawn bitmap room lettering.
+- Restyled the surrounding interface and speech bubbles to the Sanctuary's darker palette; bundled the existing brand's Press Start 2P and JetBrains Mono fonts with their OFL licenses. Updated visible location/time descriptions for the hearth and evening setting.
+- The separate prototype retains all 14 fictional participants, the original floor plan, four destination IDs, collision geometry, and simulated interactions. Existing world entrypoints and runtime are unchanged.
+- Verified in Chrome at desktop size and in phone-sized browser renders. All inhabitants/doorways reachable, encounters and follow-ups work, artwork persists, Tess completes the drawing routine, lighting modes and pause work, reduced motion works, and the isolated browser reports no application errors.
+- A 90-frame walking sample kept one canvas size; median drawing time was 4 ms and the 95th percentile was 11.4 ms in the current Chrome session. Reviewed the final game-client movement screenshot and state dump.
+- Production client/server build, JavaScript syntax checks, and git whitespace checks pass.
