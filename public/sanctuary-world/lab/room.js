@@ -131,9 +131,15 @@ scene.fog = new THREE.FogExp2(0x14102a, 0.052);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 40);
 
-/* the composition at rest: low and to the left, the desk in the lower right third */
-const REST_POS = new THREE.Vector3(-1.30, 1.26, 0.36);
-const REST_LOOK = new THREE.Vector3(0.12, 0.94, -1.48);
+/* the composition at rest: low and to the left, the desk in the lower right third.
+   BASE is the composition as it was art-directed; REST_POS / REST_LOOK are what
+   the frame actually uses after the aspect ratio has had its say (see
+   `applyFraming` at the foot of the file). The camera never pulls back — the
+   fov opens and the aim shifts a little instead, so the desk stays close. */
+const REST_POS_BASE = new THREE.Vector3(-1.30, 1.26, 0.36);
+const REST_LOOK_BASE = new THREE.Vector3(0.12, 0.94, -1.48);
+const REST_POS = REST_POS_BASE.clone();
+const REST_LOOK = REST_LOOK_BASE.clone();
 camera.position.copy(REST_POS);
 camera.lookAt(REST_LOOK);
 
@@ -210,7 +216,9 @@ scene.add(crt);
 
 /* the case: a chunky box, a tapering hood, vents, a foot */
 /* a chunky box that tapers back, the way the deep ones did */
-const caseGeo = new THREE.CylinderGeometry(0.355, 0.425, 0.46, 4, 1, false, Math.PI / 4);
+/* the front of the hood is the bezel's own size and the taper runs back, so
+   the case reads as one object with the screen instead of a slab behind it */
+const caseGeo = new THREE.CylinderGeometry(0.300, 0.368, 0.46, 4, 1, false, Math.PI / 4);
 const caseBody = new THREE.Mesh(caseGeo, plasticWarm);
 caseBody.scale.set(1.0, 1.0, 0.765);
 caseBody.rotation.x = -Math.PI / 2;   /* the taper runs back, not up */
@@ -323,8 +331,10 @@ note.add(box(0.15, 0.002, 0.10, paperMat, 0, 0.001, 0));
 
 /* the chair, pulled out */
 const chair = new THREE.Group();
-chair.position.set(-0.76, 0, -0.16);
-chair.rotation.y = 0.88;
+/* pulled out and to the left of the terminal: at the old place it stood in the
+   camera's lap and read as a pale slab across the bottom of the frame */
+chair.position.set(-0.30, 0, -1.02);
+chair.rotation.y = 0.22;
 scene.add(chair);
 chair.add(box(0.44, 0.05, 0.42, woodShelf, 0, 0.44, 0));
 chair.add(box(0.42, 0.42, 0.05, woodShelf, 0, 0.66, -0.19));
@@ -660,7 +670,7 @@ scene.add(windowLight, windowLight.target);
 /* the floor of the exposure — not a fourth light, a hemisphere so the darks
    are violet rather than black (the palette's --bg0/--bg1). Twice the night
    bounce it had: you must be able to name every object without hovering. */
-const sky = new THREE.HemisphereLight(0x6e6580, 0x4e4856, 2.60);
+const sky = new THREE.HemisphereLight(0x6e6580, 0x4e4856, 3.80);
 scene.add(sky);
 
 /* ─────────────────────────── dust ─────────────────────────── */
@@ -709,7 +719,7 @@ const dust = (() => {
 /* ─────────────────────────── post ─────────────────────────── */
 const post = makePost(renderer, scene, camera, {
   strength: 0.40, radius: 0.80, threshold: 0.88,
-  grain: 0.028, vignette: 0.74, aberration: 0.0016
+  grain: 0.028, vignette: 0.74, aberration: 0.0009
 });
 const bloom = post.bloom;
 const grade = post.grade;
@@ -894,6 +904,123 @@ const full = makeFullMode({ btn: fullEl, world, seated: () => cam.mode === 'seat
 
 onWorldMessage({ standUp });
 
+/* ─────────────────────── the framing rule ───────────────────────
+   Three things are the room, and all three have to be *whole* in the frame at
+   every shape of window from 4:3 to 21:9: the shelf (all three tiers, the top
+   row included), the terminal, and the window. The old fixed 50° fov clipped
+   the shelf's top board and the window's right edge at 1280×900 and worse at
+   4:3. The fix is not to walk the camera backwards — the desk has to stay
+   close — but to open the lens for the shape of the window, and to let the aim
+   drift by a few centimetres so the three of them sit centred in what the lens
+   sees. The result at 21:9 is the art-directed composition almost untouched;
+   at 4:3 it is the same room through a wider lens. */
+const ANCHOR_MARGIN = 1.075;     /* room for the breathe, the parallax and the chrome */
+const AIM_SHIFT_MAX = 0.30;      /* metres the aim may drift from Fable's composition */
+const FOV_MIN = 44, FOV_MAX = 88;
+const SEAT_MARGIN = 1.18;        /* the bezel's breathing room in the seated frame */
+let FOV_LOCK = 0;                /* set only by tune({fov}) while art-directing */
+let REST_FOV = 50, SEAT_FOV = 50;
+
+function anchorGroups() { return [shelf, crt, windowGroup]; }
+
+/* every anchor's eight bounding corners, in world space */
+function anchorPoints() {
+  const pts = [];
+  anchorGroups().forEach((g) => {
+    g.updateWorldMatrix(true, true);
+    const b = new THREE.Box3().setFromObject(g);
+    if (!isFinite(b.min.x)) return;
+    for (let i = 0; i < 8; i++) {
+      pts.push(new THREE.Vector3(
+        i & 1 ? b.max.x : b.min.x,
+        i & 2 ? b.max.y : b.min.y,
+        i & 4 ? b.max.z : b.min.z
+      ));
+    }
+  });
+  return pts;
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+/* the extents of a set of points, as tangents, in the basis of a pose */
+function extents(pos, look, pts) {
+  const fwd = look.clone().sub(pos).normalize();
+  const right = new THREE.Vector3().crossVectors(fwd, UP).normalize();
+  const up = new THREE.Vector3().crossVectors(right, fwd).normalize();
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  const d = new THREE.Vector3();
+  pts.forEach((p) => {
+    d.subVectors(p, pos);
+    const z = Math.max(0.05, d.dot(fwd));
+    const x = d.dot(right) / z, y = d.dot(up) / z;
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  });
+  return { minX, maxX, minY, maxY, right, up, fwd };
+}
+
+function applyFraming() {
+  const aspect = camera.aspect || (window.innerWidth / window.innerHeight);
+  const pts = anchorPoints();
+  if (!pts.length) return;
+  REST_POS.copy(REST_POS_BASE);
+  REST_LOOK.copy(REST_LOOK_BASE);
+  const dist = REST_LOOK_BASE.distanceTo(REST_POS_BASE);
+  /* two passes: centre the three anchors in the lens, then measure the lens */
+  let e = extents(REST_POS, REST_LOOK, pts);
+  for (let i = 0; i < 2; i++) {
+    const cx = (e.minX + e.maxX) / 2, cy = (e.minY + e.maxY) / 2;
+    const want = new THREE.Vector3()
+      .addScaledVector(e.right, cx * dist)
+      .addScaledVector(e.up, cy * dist);
+    const drift = REST_LOOK.clone().add(want).sub(REST_LOOK_BASE);
+    if (drift.length() > AIM_SHIFT_MAX) drift.setLength(AIM_SHIFT_MAX);
+    REST_LOOK.copy(REST_LOOK_BASE).add(drift);
+    e = extents(REST_POS, REST_LOOK, pts);
+  }
+  const halfX = Math.max(Math.abs(e.minX), Math.abs(e.maxX)) * ANCHOR_MARGIN;
+  const halfY = Math.max(Math.abs(e.minY), Math.abs(e.maxY)) * ANCHOR_MARGIN;
+  const tanV = Math.max(halfY, halfX / aspect);
+  REST_FOV = Math.min(FOV_MAX, Math.max(FOV_MIN, THREE.MathUtils.radToDeg(Math.atan(tanV) * 2)));
+  /* the seated frame is its own lens: the bezel has to fill the frame the same
+     way at every shape of window, whatever the room's own lens is doing */
+  const seatTan = Math.max((BZ.h / 2) / ZOOM_DIST, ((BZ.w / 2) / ZOOM_DIST) / aspect) * SEAT_MARGIN;
+  SEAT_FOV = Math.min(FOV_MAX, Math.max(FOV_MIN, THREE.MathUtils.radToDeg(Math.atan(seatTan) * 2)));
+  if (FOV_LOCK) { camera.fov = FOV_LOCK; }
+  else if (cam && (cam.mode === 'seated')) camera.fov = SEAT_FOV;
+  else camera.fov = REST_FOV;
+  camera.updateProjectionMatrix();
+  if (cam && cam.mode === 'rest') { camera.position.copy(REST_POS); cam.look.copy(REST_LOOK); camera.lookAt(cam.look); }
+}
+
+/* each anchor's box on the screen, and whether the frame holds it whole */
+function anchorReport() {
+  const names = ['shelf', 'terminal', 'window'];
+  const W = window.innerWidth, H = window.innerHeight;
+  const out = {};
+  anchorGroups().forEach((g, i) => {
+    g.updateWorldMatrix(true, true);
+    const b = new THREE.Box3().setFromObject(g);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let k = 0; k < 8; k++) {
+      const v = new THREE.Vector3(
+        k & 1 ? b.max.x : b.min.x, k & 2 ? b.max.y : b.min.y, k & 4 ? b.max.z : b.min.z
+      ).project(camera);
+      const sx = (v.x * 0.5 + 0.5) * W, sy = (-v.y * 0.5 + 0.5) * H;
+      x0 = Math.min(x0, sx); x1 = Math.max(x1, sx);
+      y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+    }
+    out[names[i]] = {
+      left: Math.round(x0), top: Math.round(y0), right: Math.round(x1), bottom: Math.round(y1),
+      inFrame: x0 >= 0 && y0 >= 0 && x1 <= W && y1 <= H
+    };
+  });
+  out.viewport = [W, H];
+  out.fov = +camera.fov.toFixed(2);
+  out.all = names.every((n) => out[n].inFrame);
+  return out;
+}
+
 /* ─────────────────────────── input ─────────────────────────── */
 window.addEventListener('pointermove', (ev) => {
   pointerPx.x = ev.clientX; pointerPx.y = ev.clientY;
@@ -921,6 +1048,7 @@ window.addEventListener('resize', () => {
      underneath, and the room simply stops being drawn */
   if (w < 700) return;
   camera.aspect = w / h; camera.updateProjectionMatrix();
+  applyFraming();
   renderer.setSize(w, h, false);
   post.setSize(w, h);
   world.setSize(w, h);
@@ -968,12 +1096,24 @@ function frame() {
     camera.position.copy(tmpPos);
     cam.look.copy(tmpLook);
     camera.lookAt(cam.look);
+    if (!FOV_LOCK) {
+      const a = cam.mode === 'glide' ? REST_FOV : SEAT_FOV;
+      const b = cam.mode === 'glide' ? SEAT_FOV : REST_FOV;
+      camera.fov = a + (b - a) * k;
+      camera.updateProjectionMatrix();
+    }
     /* a slight roll, settling to 0 */
     cam.roll = REDUCED ? 0 : Math.sin(k * Math.PI) * (cam.mode === 'glide' ? 0.030 : -0.020) * (1 - k * 0.4);
     camera.rotation.z += cam.roll;
     if (k >= 1) {
-      if (cam.mode === 'glide') { cam.mode = 'seated'; placeWorld(); }
-      else { cam.mode = 'rest'; }
+      if (cam.mode === 'glide') {
+        cam.mode = 'seated';
+        if (!FOV_LOCK) { camera.fov = SEAT_FOV; camera.updateProjectionMatrix(); }
+        placeWorld();
+      } else {
+        cam.mode = 'rest';
+        if (!FOV_LOCK) { camera.fov = REST_FOV; camera.updateProjectionMatrix(); }
+      }
     }
   } else if (cam.mode === 'rest') {
     /* the breathe, and ±2° of parallax */
@@ -1000,12 +1140,23 @@ function frame() {
   if (cam.mode === 'seated' && world.placed() && !world.isFlat()) hair.style.opacity = '0';
 }
 
+applyFraming();
 frame();
-setTimeout(() => bootEl.classList.add('gone'), 1400);
+/* the loading line holds until there is a first frame to hold it against */
+let firstFrameMs = 0;
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  firstFrameMs = Math.round(performance.now());
+  bootEl.classList.add('gone');
+}));
 
 /* ─────────────────────────── the test surface ─────────────────────────── */
 window.__readingRoom = {
   mode: () => cam.mode,
+  /* the framing rule, measured: the three anchors' boxes on the screen */
+  anchors: anchorReport,
+  reframe: applyFraming,
+  firstFrameMs: () => firstFrameMs,
+  fovs: () => ({ rest: +REST_FOV.toFixed(2), seat: +SEAT_FOV.toFixed(2), now: +camera.fov.toFixed(2) }),
   window: () => ({
     live: houseWindow.ok() && windowLit, frames: houseWindow.frames(), room: houseWindow.room(),
     clock: houseWindow.clock(), residents: houseWindow.residents(),
@@ -1063,9 +1214,11 @@ window.__readingRoom = {
   holdWorld: (v) => { HOLD.world = !!v; },
   /* the look, live — used while art-directing the frame; harmless afterwards */
   tune: (o) => {
-    if (o.pos) REST_POS.set(o.pos[0], o.pos[1], o.pos[2]);
-    if (o.look) REST_LOOK.set(o.look[0], o.look[1], o.look[2]);
-    if (o.fov) { camera.fov = o.fov; camera.updateProjectionMatrix(); }
+    if (o.pos) { REST_POS_BASE.set(o.pos[0], o.pos[1], o.pos[2]); REST_POS.copy(REST_POS_BASE); }
+    if (o.look) { REST_LOOK_BASE.set(o.look[0], o.look[1], o.look[2]); REST_LOOK.copy(REST_LOOK_BASE); }
+    if (o.fov) { FOV_LOCK = o.fov; camera.fov = o.fov; camera.updateProjectionMatrix(); }
+    if (o.fov === 0) { FOV_LOCK = 0; applyFraming(); }
+    if ((o.pos || o.look) && !FOV_LOCK) applyFraming();
     if (o.exposure) renderer.toneMappingExposure = o.exposure;
     if (o.crt !== undefined) crtLight.intensity = o.crt;
     if (o.win !== undefined) windowLight.intensity = o.win;
@@ -1081,6 +1234,7 @@ window.__readingRoom = {
     if (o.skyTop) sky.color.set(o.skyTop);
     if (o.skyGround) sky.groundColor.set(o.skyGround);
     if (o.lamp !== undefined) { lampLight.intensity = o.lamp; lampGroup.userData.bulb.visible = o.lamp > 0; }
+    if (o.chair) { chair.position.set(o.chair[0], 0, o.chair[1]); chair.rotation.y = o.chair[2]; }
     if (o.still !== undefined) STILL = !!o.still;
     return { pos: REST_POS.toArray(), look: REST_LOOK.toArray(), fov: camera.fov };
   },

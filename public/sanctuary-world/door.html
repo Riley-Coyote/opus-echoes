@@ -102,14 +102,18 @@
     text-transform:uppercase;color:var(--faint);transition:opacity .6s var(--ease-out)}
   #boot.gone{opacity:0}
 
-  /* the sound control — the landing's .tbtn idiom, one button in the corner */
-  #sound{position:absolute;right:26px;top:22px;z-index:8;
+  /* the two standing controls — one idiom, one right edge: `sound` at the top,
+     `skip the room` at the foot, the same box in both places */
+  #sound,#skip{position:absolute;right:26px;z-index:8;
+    display:inline-flex;align-items:center;justify-content:center;
+    box-sizing:border-box;min-height:32px;padding:7px 12px;
     background:rgba(6,5,10,.72);border:1px solid var(--line2);border-radius:6px;
-    color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.14em;
-    padding:7px 11px;min-height:32px;cursor:pointer;pointer-events:auto;
+    color:var(--dim);font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+    text-transform:lowercase;text-decoration:none;cursor:pointer;pointer-events:auto;
     transition:color .2s var(--ease-out),border-color .2s var(--ease-out)}
-  #sound:hover{color:var(--ink);border-color:rgba(242,236,223,.34)}
-  #sound:focus-visible{outline:none;border-color:rgba(242,236,223,.55);color:var(--ink)}
+  #sound{top:22px}
+  #sound:hover,#skip:hover{color:var(--ink);border-color:rgba(242,236,223,.34)}
+  #sound:focus-visible,#skip:focus-visible{outline:none;border-color:rgba(242,236,223,.55);color:var(--ink)}
   #sound[aria-pressed="true"]{color:var(--ink);border-color:rgba(242,193,78,.46)}
   body.flat #sound{opacity:0;pointer-events:none}
 
@@ -124,12 +128,7 @@
   #note i{font-style:normal;color:var(--faint)}
 
   /* the way down, and the way back up */
-  #skip{position:absolute;right:26px;bottom:26px;z-index:8;pointer-events:auto;
-    color:var(--dim);text-decoration:none;font-size:9px;letter-spacing:.18em;
-    text-transform:lowercase;padding:8px 12px;border:1px solid var(--line);
-    background:rgba(6,5,10,.55);transition:color .2s var(--ease-out),border-color .2s var(--ease-out)}
-  #skip:hover{color:var(--ink);border-color:var(--line2)}
-  #skip:focus-visible{outline:none;border-color:rgba(242,236,223,.55);color:var(--ink)}
+  #skip{bottom:26px}
   /* while a visitor is at the terminal the page below is not on offer */
   body.flat #skip,body.seated #skip{opacity:0;pointer-events:none}
   body.seated{overflow:hidden}
@@ -371,7 +370,7 @@ window.MNEMOS_LINKS = {
     document.body.classList.toggle('reading', want);
   }, { passive: true });
   var s = document.createElement('script');
-  s.src = 'room.connected.js?v=20260904-door-1';
+  s.src = 'room.connected.js?v=20260904-door-2';
   document.body.appendChild(s);
 })();
 </script>
