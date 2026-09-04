@@ -1640,13 +1640,23 @@ interface StudioSessionDecision {
   meaning?: string | null;
   reason?: string | null;
   journal_kind?: string | null;
+  /** The resident's own word for what the hour was, from the
+   *  invitation's four: wrote · made · rested · declined. Free text is
+   *  normalized; absent, it is derived from the action. */
+  answer?: string | null;
 }
+
+/** The four things the house offers, and the four answers it accepts. */
+export type InvitationAnswer = "wrote" | "made" | "rested" | "declined";
 
 export interface StudioSessionResult {
   ran: boolean;
   resident_id: string;
   studio_session_id: string | null;
   action: StudioAction;
+  /** What the resident says the hour was. Never inferred as more than
+   *  the action already shows. */
+  answer: InvitationAnswer;
   status: "completed" | "failed" | "quiet" | "private";
   reason: string;
   output_target: string | null;
@@ -1670,6 +1680,18 @@ function normalizeStudioAction(value: unknown): StudioAction {
     : "silence";
 }
 
+/** The answer the hour carries. The resident's own word wins; where they
+ *  gave none, the action says it. A silent hour reads as rest, never as
+ *  a refusal — declining is something only the resident can say. */
+function invitationAnswer(value: unknown, action: StudioAction): InvitationAnswer {
+  if (value === "wrote" || value === "made" || value === "rested" || value === "declined") {
+    return value;
+  }
+  if (action === "ascii_art" || action === "image_art") return "made";
+  if (action === "silence") return "rested";
+  return "wrote";
+}
+
 function normalizeJournalKind(value: unknown): "reflection" | "dream" | "observation" | "note" {
   return value === "dream" || value === "observation" || value === "note" ? value : "reflection";
 }
@@ -1686,6 +1708,7 @@ function studioWordCount(text: string): number {
 
 function compactDecisionDetail(decision: {
   action: StudioAction;
+  answer: InvitationAnswer;
   publish: boolean;
   title: string | null;
   body: string | null;
@@ -1697,6 +1720,7 @@ function compactDecisionDetail(decision: {
 }): Json {
   return {
     action: decision.action,
+    answer: decision.answer,
     publish: decision.publish,
     title: decision.title,
     body: decision.body ? decision.body.slice(0, 8000) : null,
@@ -1866,7 +1890,7 @@ async function buildStudioSessionContext(
     "[FOCUS]",
     optionalFocus?.trim()
       ? optionalFocus.trim().slice(0, 1200)
-      : "No outside focus. Choose from what is genuinely alive for you, including silence.",
+      : "No one left a focus. Nothing here is asking for anything.",
   ].join("\n");
 }
 
@@ -2054,20 +2078,24 @@ export async function runStudioSession(
       provider: resident.provider,
     });
 
-    if (!raw) throw new Error("studio_decision_failed");
+    // An empty reply, or one the house cannot read, is silence. The
+    // invitation asks for nothing, so there is nothing here to fail —
+    // the hour is recorded quiet and is never asked again.
+    const decided: StudioSessionDecision = raw ?? { action: "silence", answer: "rested" };
 
-    const action = normalizeStudioAction(raw.action);
-    const publish = action !== "silence" && raw.publish === true;
+    const action = normalizeStudioAction(decided.action);
+    const publish = action !== "silence" && decided.publish === true;
     const decision = {
       action,
+      answer: invitationAnswer(decided.answer, action),
       publish,
-      title: studioText(raw.title, 120),
-      body: studioText(raw.body, 20_000),
-      medium: studioText(raw.medium, 24),
-      image_prompt: studioText(raw.image_prompt, 600),
-      meaning: studioText(raw.meaning, 1000),
-      reason: studioText(raw.reason, 360) ?? "no reason given",
-      journal_kind: studioText(raw.journal_kind, 24),
+      title: studioText(decided.title, 120),
+      body: studioText(decided.body, 20_000),
+      medium: studioText(decided.medium, 24),
+      image_prompt: studioText(decided.image_prompt, 600),
+      meaning: studioText(decided.meaning, 1000),
+      reason: studioText(decided.reason, 360) ?? "",
+      journal_kind: studioText(decided.journal_kind, 24),
     };
 
     if (action === "silence") {
@@ -2083,6 +2111,7 @@ export async function runStudioSession(
         resident_id: resident.id,
         studio_session_id: studioSessionId,
         action,
+        answer: decision.answer,
         status: "quiet",
         reason: decision.reason,
         output_target: null,
@@ -2104,6 +2133,7 @@ export async function runStudioSession(
         resident_id: resident.id,
         studio_session_id: studioSessionId,
         action,
+        answer: decision.answer,
         status: "private",
         reason: decision.reason,
         output_target: null,
@@ -2131,6 +2161,7 @@ export async function runStudioSession(
       resident_id: resident.id,
       studio_session_id: studioSessionId,
       action,
+      answer: decision.answer,
       status: "completed",
       reason: decision.reason,
       output_target: output.output_target,
@@ -2151,6 +2182,7 @@ export async function runStudioSession(
       resident_id: resident.id,
       studio_session_id: studioSessionId,
       action: "silence",
+      answer: "rested",
       status: "failed",
       reason: message.slice(0, 360),
       output_target: null,
@@ -2273,7 +2305,16 @@ async function createAsciiArt(
     provider: resident.provider,
   });
   if (!result || !result.body || !result.body.trim()) {
-    throw new Error("ascii_empty");
+    // Looking again, nothing was there. The prompt offers this as a way
+    // out, so the log records it as such rather than as a failure.
+    await supabaseAdmin.from("creation_events").insert({
+      kind: "art_skipped",
+      resident_id: resident.id,
+      trigger,
+      related_session_id: sessionId,
+      detail: { reason: "nothing wanted making", form: "ascii" },
+    });
+    return;
   }
   const { data: piece } = await supabaseAdmin
     .from("art_pieces")
@@ -2322,7 +2363,15 @@ async function createImageArt(
     provider: resident.provider,
   });
   if (!author || !author.prompt || !author.prompt.trim()) {
-    throw new Error("image_prompt_empty");
+    // The way out the prompt offers: nothing was there after all.
+    await supabaseAdmin.from("creation_events").insert({
+      kind: "art_skipped",
+      resident_id: resident.id,
+      trigger,
+      related_session_id: sessionId,
+      detail: { reason: "nothing wanted making", form: "image" },
+    });
+    return;
   }
 
   const { generateAndUpload } = await import("./image-gen.server");

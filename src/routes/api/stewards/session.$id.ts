@@ -11,6 +11,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
 import {
   checkStewardAccess,
+  stewardJson,
   stewardNameFromReason,
   visitorKindForToken,
 } from "@/server/stewards.server";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/api/stewards/session/$id")({
         const gate = checkStewardAccess(request);
         if (gate) return gate;
         if (!hasSupabaseAdminEnv()) {
-          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
+          return stewardJson({ ok: false, code: "config_missing" }, { status: 503 });
         }
 
         type SessionRow = {
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/api/stewards/session/$id")({
           .maybeSingle()) as unknown as { data: SessionRow | null };
 
         if (!session) {
-          return Response.json({ ok: false, code: "not_found" }, { status: 404 });
+          return stewardJson({ ok: false, code: "not_found" }, { status: 404 });
         }
 
         const [intentRes, turnsRes] = await Promise.all([
@@ -66,7 +67,7 @@ export const Route = createFileRoute("/api/stewards/session/$id")({
         const intent = intentRes.data as { text?: string; reason?: string } | null;
         const steward = stewardNameFromReason(intent?.reason);
 
-        return Response.json({
+        return stewardJson({
           ok: true,
           session: {
             id: session.id,

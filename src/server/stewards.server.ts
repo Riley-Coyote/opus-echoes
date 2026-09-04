@@ -42,7 +42,13 @@ export type StewardEventKind =
   | "SET_DOWN"
   | "DECLINED"
   | "PACING_TIER"
-  | "STEWARD_VISIT";
+  | "STEWARD_VISIT"
+  /** A steward opened a resident's room and left: an unprompted session
+   *  run now rather than at the daily tick. */
+  | "INVITED"
+  /** What the resident did with that hour, in their own word — wrote,
+   *  made, rested, declined. Never what they wrote. */
+  | "INVITATION_ANSWERED";
 
 /** Payload shape shared by every steward event. Extra keys per kind. */
 export interface StewardEventPayload {
@@ -71,8 +77,31 @@ function notFoundHtml(): string {
 function notFound(): Response {
   return new Response(notFoundHtml(), {
     status: 404,
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
   });
+}
+
+/**
+ * `cache-control: no-store` on anything the stewards' line returns.
+ *
+ * The deck reads live conditions — who is in a room right now, what the
+ * log just recorded, a transcript mid-visit. A cached copy of any of
+ * that is a lie about the house, and none of it should sit in a CDN, a
+ * proxy, or a browser's disk cache in the first place. This includes the
+ * 404 the gate returns and the redirect that sets the key cookie.
+ */
+export function noStore<T extends Response>(response: T): T {
+  try {
+    response.headers.set("cache-control", "no-store");
+  } catch {
+    // A response with immutable headers (never produced here) keeps its own.
+  }
+  return response;
+}
+
+/** `Response.json`, no-store. Every steward route returns through this. */
+export function stewardJson(body: unknown, init?: ResponseInit): Response {
+  return noStore(Response.json(body, init));
 }
 
 /**
@@ -104,6 +133,7 @@ export function checkStewardAccess(request: Request): Response | null {
         "set-cookie": `${STEWARD_COOKIE}=${encodeURIComponent(secret)}; Path=/; Max-Age=${
           60 * 60 * 24 * 30
         }; HttpOnly; SameSite=Lax`,
+        "cache-control": "no-store",
       },
     });
   }

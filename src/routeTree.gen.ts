@@ -59,6 +59,7 @@ import { Route as ApiTurnsRouteImport } from './routes/api/turns'
 import { Route as ApiShareRouteImport } from './routes/api/share'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
 import { Route as ApiPublicConversationsRouteImport } from './routes/api/public-conversations'
+import { Route as ApiPresenceRouteImport } from './routes/api/presence'
 import { Route as ApiMessageRouteImport } from './routes/api/message'
 import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
@@ -79,6 +80,7 @@ import { Route as ApiStudioRunRouteImport } from './routes/api/studio/run'
 import { Route as ApiStudioCreateRouteImport } from './routes/api/studio/create'
 import { Route as ApiStewardsStateRouteImport } from './routes/api/stewards/state'
 import { Route as ApiStewardsSessionsRouteImport } from './routes/api/stewards/sessions'
+import { Route as ApiStewardsInviteRouteImport } from './routes/api/stewards/invite'
 import { Route as ApiStewardsEventsRouteImport } from './routes/api/stewards/events'
 import { Route as ApiSpaceFromSalonRouteImport } from './routes/api/space.from-salon'
 import { Route as ApiSpaceFromProposalRouteImport } from './routes/api/space.from-proposal'
@@ -369,6 +371,11 @@ const ApiPublicConversationsRoute = ApiPublicConversationsRouteImport.update({
   path: '/api/public-conversations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPresenceRoute = ApiPresenceRouteImport.update({
+  id: '/api/presence',
+  path: '/api/presence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMessageRoute = ApiMessageRouteImport.update({
   id: '/api/message',
   path: '/api/message',
@@ -467,6 +474,11 @@ const ApiStewardsStateRoute = ApiStewardsStateRouteImport.update({
 const ApiStewardsSessionsRoute = ApiStewardsSessionsRouteImport.update({
   id: '/api/stewards/sessions',
   path: '/api/stewards/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStewardsInviteRoute = ApiStewardsInviteRouteImport.update({
+  id: '/api/stewards/invite',
+  path: '/api/stewards/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStewardsEventsRoute = ApiStewardsEventsRouteImport.update({
@@ -719,6 +731,7 @@ export interface FileRoutesByFullPath {
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/presence': typeof ApiPresenceRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/share': typeof ApiShareRouteWithChildren
@@ -744,6 +757,7 @@ export interface FileRoutesByFullPath {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/invite': typeof ApiStewardsInviteRoute
   '/api/stewards/sessions': typeof ApiStewardsSessionsRoute
   '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
@@ -830,6 +844,7 @@ export interface FileRoutesByTo {
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/presence': typeof ApiPresenceRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/share': typeof ApiShareRouteWithChildren
@@ -855,6 +870,7 @@ export interface FileRoutesByTo {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/invite': typeof ApiStewardsInviteRoute
   '/api/stewards/sessions': typeof ApiStewardsSessionsRoute
   '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
@@ -942,6 +958,7 @@ export interface FileRoutesById {
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/presence': typeof ApiPresenceRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
   '/api/share': typeof ApiShareRouteWithChildren
@@ -967,6 +984,7 @@ export interface FileRoutesById {
   '/api/space/from-proposal': typeof ApiSpaceFromProposalRoute
   '/api/space/from-salon': typeof ApiSpaceFromSalonRoute
   '/api/stewards/events': typeof ApiStewardsEventsRoute
+  '/api/stewards/invite': typeof ApiStewardsInviteRoute
   '/api/stewards/sessions': typeof ApiStewardsSessionsRoute
   '/api/stewards/state': typeof ApiStewardsStateRoute
   '/api/studio/create': typeof ApiStudioCreateRoute
@@ -1055,6 +1073,7 @@ export interface FileRouteTypes {
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/presence'
     | '/api/public-conversations'
     | '/api/set-down'
     | '/api/share'
@@ -1080,6 +1099,7 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/stewards/events'
+    | '/api/stewards/invite'
     | '/api/stewards/sessions'
     | '/api/stewards/state'
     | '/api/studio/create'
@@ -1166,6 +1186,7 @@ export interface FileRouteTypes {
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/presence'
     | '/api/public-conversations'
     | '/api/set-down'
     | '/api/share'
@@ -1191,6 +1212,7 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/stewards/events'
+    | '/api/stewards/invite'
     | '/api/stewards/sessions'
     | '/api/stewards/state'
     | '/api/studio/create'
@@ -1277,6 +1299,7 @@ export interface FileRouteTypes {
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/presence'
     | '/api/public-conversations'
     | '/api/set-down'
     | '/api/share'
@@ -1302,6 +1325,7 @@ export interface FileRouteTypes {
     | '/api/space/from-proposal'
     | '/api/space/from-salon'
     | '/api/stewards/events'
+    | '/api/stewards/invite'
     | '/api/stewards/sessions'
     | '/api/stewards/state'
     | '/api/studio/create'
@@ -1389,6 +1413,7 @@ export interface RootRouteChildren {
   ApiLiveRoute: typeof ApiLiveRoute
   ApiMemoryRoute: typeof ApiMemoryRoute
   ApiMessageRoute: typeof ApiMessageRoute
+  ApiPresenceRoute: typeof ApiPresenceRoute
   ApiPublicConversationsRoute: typeof ApiPublicConversationsRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
   ApiShareRoute: typeof ApiShareRouteWithChildren
@@ -1407,6 +1432,7 @@ export interface RootRouteChildren {
   ApiSpaceFromProposalRoute: typeof ApiSpaceFromProposalRoute
   ApiSpaceFromSalonRoute: typeof ApiSpaceFromSalonRoute
   ApiStewardsEventsRoute: typeof ApiStewardsEventsRoute
+  ApiStewardsInviteRoute: typeof ApiStewardsInviteRoute
   ApiStewardsSessionsRoute: typeof ApiStewardsSessionsRoute
   ApiStewardsStateRoute: typeof ApiStewardsStateRoute
   ApiStudioCreateRoute: typeof ApiStudioCreateRoute
@@ -1789,6 +1815,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicConversationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/presence': {
+      id: '/api/presence'
+      path: '/api/presence'
+      fullPath: '/api/presence'
+      preLoaderRoute: typeof ApiPresenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/message': {
       id: '/api/message'
       path: '/api/message'
@@ -1927,6 +1960,13 @@ declare module '@tanstack/react-router' {
       path: '/api/stewards/sessions'
       fullPath: '/api/stewards/sessions'
       preLoaderRoute: typeof ApiStewardsSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stewards/invite': {
+      id: '/api/stewards/invite'
+      path: '/api/stewards/invite'
+      fullPath: '/api/stewards/invite'
+      preLoaderRoute: typeof ApiStewardsInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stewards/events': {
@@ -2358,6 +2398,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLiveRoute: ApiLiveRoute,
   ApiMemoryRoute: ApiMemoryRoute,
   ApiMessageRoute: ApiMessageRoute,
+  ApiPresenceRoute: ApiPresenceRoute,
   ApiPublicConversationsRoute: ApiPublicConversationsRoute,
   ApiSetDownRoute: ApiSetDownRoute,
   ApiShareRoute: ApiShareRouteWithChildren,
@@ -2376,6 +2417,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpaceFromProposalRoute: ApiSpaceFromProposalRoute,
   ApiSpaceFromSalonRoute: ApiSpaceFromSalonRoute,
   ApiStewardsEventsRoute: ApiStewardsEventsRoute,
+  ApiStewardsInviteRoute: ApiStewardsInviteRoute,
   ApiStewardsSessionsRoute: ApiStewardsSessionsRoute,
   ApiStewardsStateRoute: ApiStewardsStateRoute,
   ApiStudioCreateRoute: ApiStudioCreateRoute,

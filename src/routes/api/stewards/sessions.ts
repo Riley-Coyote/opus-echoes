@@ -16,6 +16,7 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { DEFAULT_RESIDENT_ID } from "@/server/opus/residents";
 import {
   checkStewardAccess,
+  stewardJson,
   stewardNameFromReason,
   visitorKindForToken,
 } from "@/server/stewards.server";
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/api/stewards/sessions")({
         const gate = checkStewardAccess(request);
         if (gate) return gate;
         if (!hasSupabaseAdminEnv()) {
-          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
+          return stewardJson({ ok: false, code: "config_missing" }, { status: 503 });
         }
 
         const url = new URL(request.url);
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/api/stewards/sessions")({
         const { data, error } = await query;
         if (error) {
           console.error("[stewards/sessions]", error);
-          return Response.json({ ok: false, code: "internal_error" }, { status: 500 });
+          return stewardJson({ ok: false, code: "internal_error" }, { status: 500 });
         }
 
         type Row = {
@@ -117,7 +118,7 @@ export const Route = createFileRoute("/api/stewards/sessions")({
           };
         });
 
-        return Response.json({ ok: true, hours, since, sessions });
+        return stewardJson({ ok: true, hours, since, sessions });
       },
     },
   },

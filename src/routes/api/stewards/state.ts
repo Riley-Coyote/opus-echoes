@@ -18,6 +18,7 @@ import { ALL_RESIDENTS } from "@/server/opus/residents";
 import { effectiveThresholds } from "@/server/opus/visit-pacing";
 import {
   checkStewardAccess,
+  stewardJson,
   stewardNameFromReason,
   visitorKindForToken,
 } from "@/server/stewards.server";
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/api/stewards/state")({
         };
 
         if (!hasSupabaseAdminEnv()) {
-          return Response.json(
+          return stewardJson(
             { ok: false, code: "config_missing", house, residents: [] },
             { status: 503 },
           );
@@ -161,7 +162,7 @@ export const Route = createFileRoute("/api/stewards/state")({
           }),
         );
 
-        return Response.json({ ok: true, house, residents });
+        return stewardJson({ ok: true, house, residents });
       },
     },
   },

@@ -26,7 +26,12 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { DEFAULT_RESIDENT_ID, getResident, isResidentId } from "@/server/opus/residents";
 import { ipHash } from "@/server/rate-limit.server";
 import { isIdle } from "@/server/idle";
-import { checkStewardAccess, emitStewardEvent, stewardVisitReason } from "@/server/stewards.server";
+import {
+  checkStewardAccess,
+  emitStewardEvent,
+  stewardJson,
+  stewardVisitReason,
+} from "@/server/stewards.server";
 
 const Body = z.object({
   resident: z.string(),
@@ -44,15 +49,15 @@ export const Route = createFileRoute("/api/stewards/visit/start")({
         try {
           body = Body.parse(await request.json());
         } catch {
-          return Response.json({ ok: false, code: "bad_request" }, { status: 400 });
+          return stewardJson({ ok: false, code: "bad_request" }, { status: 400 });
         }
         if (!hasSupabaseAdminEnv()) {
-          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
+          return stewardJson({ ok: false, code: "config_missing" }, { status: 503 });
         }
 
         const residentId = isResidentId(body.resident) ? body.resident : DEFAULT_RESIDENT_ID;
         if (!isResidentId(body.resident)) {
-          return Response.json(
+          return stewardJson(
             { ok: false, code: "unknown_resident", resident: body.resident },
             { status: 400 },
           );
@@ -97,7 +102,7 @@ export const Route = createFileRoute("/api/stewards/visit/start")({
           for (const s of candidates) {
             if (!mine.has(s.intent_id as string)) continue;
             if (isIdle(s.last_active_at, s.mode ?? "classic")) continue;
-            return Response.json({
+            return stewardJson({
               ok: true,
               session_id: s.id,
               resident: residentId,
@@ -122,7 +127,7 @@ export const Route = createFileRoute("/api/stewards/visit/start")({
           .single();
         if (intentErr || !intentRow) {
           console.error("[stewards/visit/start] intent insert", intentErr);
-          return Response.json({ ok: false, code: "internal_error" }, { status: 500 });
+          return stewardJson({ ok: false, code: "internal_error" }, { status: 500 });
         }
 
         const { data: session, error: sessErr } = await supabaseAdmin
@@ -138,7 +143,7 @@ export const Route = createFileRoute("/api/stewards/visit/start")({
           .single();
         if (sessErr || !session) {
           console.error("[stewards/visit/start] session insert", sessErr);
-          return Response.json({ ok: false, code: "internal_error" }, { status: 500 });
+          return stewardJson({ ok: false, code: "internal_error" }, { status: 500 });
         }
 
         await emitStewardEvent(supabaseAdmin, {
@@ -154,7 +159,7 @@ export const Route = createFileRoute("/api/stewards/visit/start")({
           },
         });
 
-        return Response.json({
+        return stewardJson({
           ok: true,
           session_id: session.id,
           resident: residentId,

@@ -20,6 +20,7 @@ import { hasSupabaseAdminEnv } from "@/server/env.server";
 import { getResident, isResidentId } from "@/server/opus/residents";
 import {
   checkStewardAccess,
+  stewardJson,
   stewardNameFromReason,
   visitorKindForToken,
 } from "@/server/stewards.server";
@@ -89,13 +90,13 @@ export const Route = createFileRoute("/api/stewards/resident/$id")({
         if (gate) return gate;
 
         if (!isResidentId(params.id)) {
-          return Response.json(
+          return stewardJson(
             { ok: false, code: "unknown_resident", resident: params.id },
             { status: 404 },
           );
         }
         if (!hasSupabaseAdminEnv()) {
-          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
+          return stewardJson({ ok: false, code: "config_missing" }, { status: 503 });
         }
 
         const residentId = params.id;
@@ -106,7 +107,7 @@ export const Route = createFileRoute("/api/stewards/resident/$id")({
         if (sinceParam) {
           const t = new Date(sinceParam);
           if (Number.isNaN(t.getTime())) {
-            return Response.json({ ok: false, code: "bad_since" }, { status: 400 });
+            return stewardJson({ ok: false, code: "bad_since" }, { status: 400 });
           }
           since = t.toISOString();
         }
@@ -480,7 +481,7 @@ export const Route = createFileRoute("/api/stewards/resident/$id")({
           updated_at?: string;
         } | null;
 
-        return Response.json({
+        return stewardJson({
           ok: true,
           resident: {
             id: residentId,

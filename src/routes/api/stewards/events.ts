@@ -14,7 +14,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasSupabaseAdminEnv } from "@/server/env.server";
-import { checkStewardAccess } from "@/server/stewards.server";
+import { checkStewardAccess, stewardJson } from "@/server/stewards.server";
 
 const MAX_LIMIT = 200;
 
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/stewards/events")({
         const gate = checkStewardAccess(request);
         if (gate) return gate;
         if (!hasSupabaseAdminEnv()) {
-          return Response.json({ ok: false, code: "config_missing" }, { status: 503 });
+          return stewardJson({ ok: false, code: "config_missing" }, { status: 503 });
         }
 
         const url = new URL(request.url);
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/stewards/events")({
         if (since) {
           const t = new Date(since);
           if (Number.isNaN(t.getTime())) {
-            return Response.json({ ok: false, code: "bad_since" }, { status: 400 });
+            return stewardJson({ ok: false, code: "bad_since" }, { status: 400 });
           }
           query = query.gt("created_at", t.toISOString());
         }
@@ -59,11 +59,11 @@ export const Route = createFileRoute("/api/stewards/events")({
         const { data, error } = await query;
         if (error) {
           console.error("[stewards/events]", error);
-          return Response.json({ ok: false, code: "internal_error" }, { status: 500 });
+          return stewardJson({ ok: false, code: "internal_error" }, { status: 500 });
         }
 
         const events = data ?? [];
-        return Response.json({
+        return stewardJson({
           ok: true,
           events,
           newest: events.length ? events[0].created_at : (since ?? null),
