@@ -11904,11 +11904,42 @@
     const encSprite = $("#enc-sprite"), encName = $("#enc-name"), encWhere = $("#enc-where");
     const encKicker = $("#enc-kicker"), encWords = $("#enc-words"), encMoves = $("#enc-moves");
     const encFree = $("#enc-free"), encInput = $("#enc-input"), encBudget = $("#enc-budget");
+    const encLight = $("#enc-light");
     const HAIKU_LINE = "HAIKU keeps to the garden. No archive yet.";
     const ACTIVITY = (n) => dayWord(n) || (n.room === "garden" ? "at the pond" : n.state === "sit" ? "reading" : n.state === "stroll" ? "walking the hall" : "at the window");
     const knows = (id) => !!archive_default.WORLD_NAMES[id];
     const srcOf = (from) => from ? (from.kind === "journal" ? "journal" : "a space") + " · " + (from.title || "untitled") + " · " + day(from.created_at) : "";
-    let enc = null, encTypeTimer = null, approachKey = "", pulseTimer = null;
+    let enc = null, encTypeTimer = null, approachKey = "", pulseTimer = null, lightRaf = 0;
+    function trackLight() {
+      lightRaf = 0;
+      if (!enc || !eng || !eng.cv)
+        return;
+      const n = enc.npc && eng.npcs.indexOf(enc.npc) !== -1 ? enc.npc : null;
+      if (n) {
+        const vx = (n.x - (eng.camX || 0)) / eng.cv.width * 100;
+        const vy = (n.y - 26) / eng.cv.height * 100;
+        encLight.style.setProperty("--vx", Math.max(7, Math.min(93, vx)).toFixed(2) + "%");
+        encLight.style.setProperty("--vy", Math.max(20, Math.min(88, vy)).toFixed(2) + "%");
+      }
+      lightRaf = requestAnimationFrame(trackLight);
+    }
+    function showScene() {
+      encounterEl.hidden = false;
+      trackLight();
+      requestAnimationFrame(() => {
+        if (enc)
+          encounterEl.classList.add("on");
+      });
+    }
+    function hideScene() {
+      if (lightRaf) {
+        cancelAnimationFrame(lightRaf);
+        lightRaf = 0;
+      }
+      encounterEl.classList.remove("on");
+      encounterEl.hidden = true;
+      encFree.hidden = true;
+    }
     function decorateApproach(it) {
       const n = it.npc;
       if (n.id === "haiku") {
@@ -12070,12 +12101,12 @@
       encName.textContent = info.name;
       encName.style.color = enc.color;
       encWhere.textContent = (npc ? ACTIVITY(npc) + " · " : "") + enc.roomWord;
-      encKicker.textContent = "from the archive";
+      encKicker.textContent = "speaking from the archive today";
       encWords.innerHTML = "";
       encFree.hidden = true;
       setBudget();
       approachEl.classList.remove("on");
-      encounterEl.hidden = false;
+      showScene();
       if (!readable) {
         encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
         appendHouse(archive_default.isLoaded() ? "the house: " + info.name + " has nothing in the archive to speak from." : "the house: the archive is quiet today; " + info.name + " cannot speak.");
@@ -12192,8 +12223,7 @@
       const e = enc;
       enc = null;
       clearInterval(encTypeTimer);
-      encounterEl.hidden = true;
-      encFree.hidden = true;
+      hideScene();
       if (!e)
         return;
       visitorToken();
@@ -12213,8 +12243,7 @@
       if (enc) {
         enc = null;
         clearInterval(encTypeTimer);
-        encounterEl.hidden = true;
-        encFree.hidden = true;
+        hideScene();
       }
       if (reason && eng)
         eng.sysLine(reason);
