@@ -2045,7 +2045,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   let lastRoom = null;
   let beginArrival = null;                    // set once the world pointer is up
   function onRoomChange(room) {
-    if (room === 'sanctuary' && beginArrival) beginArrival();
+    if (beginArrival) beginArrival();               // every room: the whole of it, for a breath
     if (room !== 'sanctuary' || seen(FIRST.hall)) return;
     mark(FIRST.hall);
     const here = eng.npcs.filter((n) => !n.temp && n.room === 'sanctuary');
@@ -3070,9 +3070,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     beginArrival = () => {
       if (REDUCED || !eng) return;
       const roomW = eng.room().width, base = eng.o.width, full = Math.min(roomW, 1600);
-      if (full <= base + 60) return;
+      if (full <= base + 60) return;                  // a room the view already holds needs no reveal
       if (arrival) cancelAnimationFrame(arrival.raf);
-      arrival = { t0: performance.now(), hold: 1600, ease: 1400, base, full, raf: 0 };
+      /* the breath is in proportion to what there is to see: a private room a
+         little wider than the view gets a short one, the hall a long one */
+      const k = Math.min(1, (full / base - 1) / 0.9);
+      arrival = { t0: performance.now(), hold: Math.round(900 + 700 * k), ease: Math.round(900 + 500 * k), base, full, raf: 0 };
       const setW = (W, now) => {
         W = Math.round(W);
         eng.camX = Math.max(0, Math.min(roomW - W, eng.av.x - W / 2));

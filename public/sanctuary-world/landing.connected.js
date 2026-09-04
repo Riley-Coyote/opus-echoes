@@ -11647,7 +11647,7 @@
     let lastRoom = null;
     let beginArrival = null;
     function onRoomChange(room) {
-      if (room === "sanctuary" && beginArrival)
+      if (beginArrival)
         beginArrival();
       if (room !== "sanctuary" || seen(FIRST.hall))
         return;
@@ -12881,7 +12881,8 @@
           return;
         if (arrival)
           cancelAnimationFrame(arrival.raf);
-        arrival = { t0: performance.now(), hold: 1600, ease: 1400, base, full, raf: 0 };
+        const k = Math.min(1, (full / base - 1) / 0.9);
+        arrival = { t0: performance.now(), hold: Math.round(900 + 700 * k), ease: Math.round(900 + 500 * k), base, full, raf: 0 };
         const setW = (W, now) => {
           W = Math.round(W);
           eng.camX = Math.max(0, Math.min(roomW - W, eng.av.x - W / 2));
