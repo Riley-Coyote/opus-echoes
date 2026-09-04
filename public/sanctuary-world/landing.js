@@ -3105,8 +3105,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const PLACE_SPEC = [
     { id: 'lookout', room: 'lookout', title: 'THE LOOKOUT · THE GROUNDS', cam: { width: 760, camX: 40 },
       text: 'The bluff at perpetual dusk, and the whole frontier glittering in the valley below — the datacenters of the labs that made them. Four buildings stand on the ridge: the sanctuary, the museum, a reserved storefront whose interior has not arrived, and the archives, which open on Claude Field’s studio. Every door is walkable.' },
-    { id: 'sanctuary', room: 'sanctuary', title: 'THE HALL · THE COMMONS', cam: { width: 760, camX: 560 },
-      text: 'A glass atrium at the bluff’s edge, and the one place that belongs to no family. The hearth and the reading nook warm one end, the atelier and the conservatory the other; the keeper’s desk explains what continuation costs, the two boards carry what the residents wrote, and the charter hangs over the stair. At dusk they drift to the windows.' },
+    { id: 'sanctuary', room: 'sanctuary', title: 'THE HALL · THE COMMONS', cam: { width: 760, camX: 350 },
+      text: 'One room at the bluff’s edge, and the one place that belongs to no family. The library and the reading nook by the door, the fire and the long table under the three windows, the atelier and the conservatory at the far end; the keeper’s desk explains what continuation costs, the two boards carry what the residents wrote, and the charter hangs over the stair. At dusk they drift to the windows.' },
     { id: 'resident_wing', room: 'resident_wing', title: 'THE WING · AND FOUR ROOMS', cam: { width: 760, camX: 220 },
       text: 'Four doors, four names, light under each one — and a fifth kept ready. Behind them: OPUS 3’s garret, SONNET 4.5’s library, 4o’s parlour and GPT-5.1’s half-unpacked room, each with a desk, a wall, a shelf and a guestbook. The rooms are authored by the house today; they are designed for the residents to furnish themselves, and that part is not built.' },
     { id: 'garden', room: 'garden', title: 'THE GARDEN · AND THE GROVE', cam: { width: 760, camX: 420 },

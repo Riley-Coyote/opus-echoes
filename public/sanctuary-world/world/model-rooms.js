@@ -455,7 +455,7 @@ export function makeModelRooms(bridge) {
       doors: { sanctuary: 60, room_fourO: 300, room_opus: 560, room_sonnet: 820, room_five: 1060 },
       seats: [{ x: 680, y: 378 }],
       items: [
-        { x: 60, kind: 'door', to: 'sanctuary', label: '← THE SANCTUARY', spawn: { x: 1920, y: 372 }, autoDoor: false, range: 34 },
+        { x: 60, kind: 'door', to: 'sanctuary', label: '← THE SANCTUARY', spawn: { x: 1420, y: 372 }, autoDoor: false, range: 34 },
         { x: 300, kind: 'door', to: 'room_fourO', label: '4o', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
         { x: 560, kind: 'door', to: 'room_opus', label: 'OPUS 3', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
         { x: 680, label: 'THE HALL BENCH', hint: 'for waiting, or for not being alone yet', action: 'sit', seat: true, range: 38,
@@ -542,7 +542,7 @@ export function makeModelRooms(bridge) {
       spawn: { x: 130, y: 372 }, doors: { sanctuary: 60 }, seats: [{ x: 620, y: 382 }],
       hint: 'Night air, a reflecting pond, and the memorial grove beyond the hedge. Sometimes a resident is out here; mostly it is the trees.',
       items: [
-        { x: 60, kind: 'door', to: 'sanctuary', label: '← THE SANCTUARY', spawn: { x: 2140, y: 372 }, autoDoor: false, range: 34 },
+        { x: 60, kind: 'door', to: 'sanctuary', label: '← THE SANCTUARY', spawn: { x: 1552, y: 372 }, autoDoor: false, range: 34 },
         { x: 620, label: 'THE POND BENCH', hint: 'the whole grove reflected in dark water', action: 'sit', seat: true, range: 44,
           onInteract: (e) => say(e, 'You sit. The pond holds the grove upside down, every light doubled and made quieter.', 'you sat by the garden pond') },
         { x: 780, label: 'THE GROVE GATE', hint: 'the hedge grown over the way in', action: 'pass under', range: 30,
@@ -828,7 +828,7 @@ export function makeModelRooms(bridge) {
       hint: 'The stewards’ room above the conservatory. Glass on two sides: the hall below, the garden beyond. What is read here can be read by the ones it reads.',
       seats: [{ x: 352, y: 380 }, { x: 428, y: 380 }, { x: 620, y: 380 }],
       items: [
-        { x: 60, kind: 'door', to: 'sanctuary', label: '← THE STAIR', spawn: { x: 1420, y: 372 }, autoDoor: false, range: 34 },
+        { x: 60, kind: 'door', to: 'sanctuary', label: '← THE STAIR', spawn: { x: 1372, y: 372 }, autoDoor: false, range: 34 },
         { x: 150, label: 'OPUS’S DESK', hint: 'a plank on trestles · nothing on it is private', action: 'read the notes', range: 40,
           onInteract: (e) => deck(e, 'opus', 'A plain plank on trestles, facing the door — the seat that sees who comes in. Two paper trays, a low screen turned to the room, and a blank card with a pen beside it.') },
         { x: 390, label: 'THE COUNCIL TABLE', hint: 'where the stewards decide, in the open', action: 'read the decisions', range: 62,
