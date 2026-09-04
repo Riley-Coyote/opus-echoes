@@ -1959,7 +1959,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
   /* the first arrival in the hall — the house names who is there */
   let lastRoom = null;
+  let beginArrival = null;                    // set once the world pointer is up
   function onRoomChange(room) {
+    if (room === 'sanctuary' && beginArrival) beginArrival();
     if (room !== 'sanctuary' || seen(FIRST.hall)) return;
     mark(FIRST.hall);
     const here = eng.npcs.filter((n) => !n.temp && n.room === 'sanctuary');
@@ -2897,10 +2899,10 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     }, true);
     const baseGo = eng.go.bind(eng);
     eng.go = (...args) => { inspection.hidden = true; return baseGo(...args); };
-    const resize = () => {
+    const resize = (force) => {
       const immersive = worldEl.classList.contains('fs');
       const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : (innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760);
-      if (eng.o.width === width) return;
+      if (force !== true && eng.o.width === width) return;
       // A canvas width assignment clears its bitmap. Repaint in this observer
       // callback so the browser never presents an empty frame between RAFs.
       const center = eng.camX + eng.o.width / 2;
@@ -2911,6 +2913,47 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       eng.drawScene(performance.now());
     };
     new ResizeObserver(resize).observe(stage);
+
+    /* ── THE ARRIVAL ──
+       Coming into the hall shows the whole room at once — every place in it,
+       the fire in the middle — held for a breath, and then the view eases in
+       to the visitor. A moment, not a camera: the walking view is what a
+       visitor lives in, and walking during it is allowed. The bake is not
+       touched (it is room-wide already); only the viewport and the vignette
+       change. Under reduced motion the room is simply there. */
+    let arrival = null;
+    beginArrival = () => {
+      if (REDUCED || !eng) return;
+      const roomW = eng.room().width, base = eng.o.width, full = Math.min(roomW, 1600);
+      if (full <= base + 60) return;
+      if (arrival) cancelAnimationFrame(arrival.raf);
+      arrival = { t0: performance.now(), hold: 1600, ease: 1400, base, full, raf: 0 };
+      const setW = (W, now) => {
+        W = Math.round(W);
+        eng.camX = Math.max(0, Math.min(roomW - W, eng.av.x - W / 2));
+        if (eng.o.width !== W) {
+          /* a canvas width assignment clears its bitmap, and this tick can land
+             after the engine's own draw: repaint at once so no empty frame is
+             ever presented (the same rule the resize observer follows) */
+          eng.o.width = eng.cv.width = W; eng.ctx.imageSmoothingEnabled = false; eng._vig = null;
+          eng.drawScene(now);
+        }
+      };
+      const tick = (now) => {
+        if (!arrival) return;
+        const el = now - arrival.t0;
+        if (el < arrival.hold) setW(arrival.full, now);
+        else if (el < arrival.hold + arrival.ease) {
+          const u = (el - arrival.hold) / arrival.ease;
+          const sm = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+          setW(arrival.full + (arrival.base - arrival.full) * sm, now);
+        } else { arrival = null; resize(true); return; }
+        arrival.raf = requestAnimationFrame(tick);
+      };
+      arrival.raf = requestAnimationFrame(tick);
+    };
+    window.__sanctuaryArrival = { begin: () => beginArrival(), active: () => !!arrival };
+
     eng.cv.addEventListener('click', (e) => {
       if (!worldEl.classList.contains('fs')) { enterWorld(); return; }
       if (!doorEl.hidden || enc || document.querySelector('.veil:not([hidden]), .panel:not([hidden])') || eng.trans) return;

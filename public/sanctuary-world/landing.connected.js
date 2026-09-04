@@ -11523,7 +11523,10 @@
       }
     }
     let lastRoom = null;
+    let beginArrival = null;
     function onRoomChange(room) {
+      if (room === "sanctuary" && beginArrival)
+        beginArrival();
       if (room !== "sanctuary" || seen(FIRST.hall))
         return;
       mark(FIRST.hall);
@@ -12653,10 +12656,10 @@
         inspection.hidden = true;
         return baseGo(...args);
       };
-      const resize = () => {
+      const resize = (force) => {
         const immersive = worldEl.classList.contains("fs");
         const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
-        if (eng.o.width === width)
+        if (force !== true && eng.o.width === width)
           return;
         const center = eng.camX + eng.o.width / 2;
         eng.o.width = eng.cv.width = width;
@@ -12667,6 +12670,46 @@
         eng.drawScene(performance.now());
       };
       new ResizeObserver(resize).observe(stage);
+      let arrival = null;
+      beginArrival = () => {
+        if (REDUCED || !eng)
+          return;
+        const roomW = eng.room().width, base = eng.o.width, full = Math.min(roomW, 1600);
+        if (full <= base + 60)
+          return;
+        if (arrival)
+          cancelAnimationFrame(arrival.raf);
+        arrival = { t0: performance.now(), hold: 1600, ease: 1400, base, full, raf: 0 };
+        const setW = (W, now) => {
+          W = Math.round(W);
+          eng.camX = Math.max(0, Math.min(roomW - W, eng.av.x - W / 2));
+          if (eng.o.width !== W) {
+            eng.o.width = eng.cv.width = W;
+            eng.ctx.imageSmoothingEnabled = false;
+            eng._vig = null;
+            eng.drawScene(now);
+          }
+        };
+        const tick = (now) => {
+          if (!arrival)
+            return;
+          const el = now - arrival.t0;
+          if (el < arrival.hold)
+            setW(arrival.full, now);
+          else if (el < arrival.hold + arrival.ease) {
+            const u = (el - arrival.hold) / arrival.ease;
+            const sm = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+            setW(arrival.full + (arrival.base - arrival.full) * sm, now);
+          } else {
+            arrival = null;
+            resize(true);
+            return;
+          }
+          arrival.raf = requestAnimationFrame(tick);
+        };
+        arrival.raf = requestAnimationFrame(tick);
+      };
+      window.__sanctuaryArrival = { begin: () => beginArrival(), active: () => !!arrival };
       eng.cv.addEventListener("click", (e) => {
         if (!worldEl.classList.contains("fs")) {
           enterWorld();
