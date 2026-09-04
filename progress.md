@@ -46,3 +46,20 @@ Pending implementation, browser interaction passes at desktop and phone widths, 
 - Fixed the HUD height and constrained its text. Genuine viewport resizes preserve the viewed center and repaint synchronously after resizing the canvas.
 - Repeated proximity crossings now keep stage and canvas dimensions constant. A 100-frame walking pass at phone width also kept both dimensions constant; the resize observer captured an opaque, painted canvas after a real resize.
 - Browser console has no warnings or errors. Rebuilt the world bundle; production client/server build and `git diff --check` pass.
+
+## Common room design study
+
+Riley authorized a separate playable common-room prototype, with original visible design and simulated participants. Preserve the current Sanctuary, retain the four doorway destinations (grounds, garden, resident wing, observation deck), and leave backend integration out of scope.
+
+Direction: an elevated cutaway atelier, a sunken conversation garden, worktable, window seats, and distinct fictional study participants. Pointer/keyboard exploration, ambient social activity, local artwork, and multiple lighting looks make the proposal reviewable in motion. New files live under `public/sanctuary-world/common-room/`.
+
+Implemented and verified:
+
+- Standalone native-module Canvas scene at `/sanctuary-world/common-room/index.html`; original world entrypoints, engine, and resident behavior are untouched.
+- Fourteen clearly fictional inhabitants, immediate roaming, three ambient conversation groups, tending/reading/drawing poses, and a make-carry-hang routine at the worktable.
+- Collision-aware pointer routes, keyboard movement, hover identification, person/places directories, four preserved destination IDs, zoom/pan/overview/fullscreen, and three lighting looks.
+- Scripted encounters and listening choices stay in the room. Narrow screens frame the participant above the encounter panel. Speech nodes persist for each utterance so their entrance animation does not restart every second.
+- A visitor can leave a procedural study on the wall. Study-specific local storage retains additions; no production data or model API is used.
+- Browser checks passed: all 14 participants and all four thresholds reached, follow-up and Escape, keyboard walking, pause/resume, all lighting modes, visitor artwork surviving reload, Tess's complete artwork routine, phone encounter/overview, no horizontal overflow, and reduced-motion rendering. Isolated browser reported no application errors.
+- Required game-client action bursts and visual screenshots reviewed. Production client/server build and JavaScript syntax checks pass.
+- Remaining product decision: Riley reviews this separate visual study before any replacement or live integration. Do not wire it into the existing room without that decision.

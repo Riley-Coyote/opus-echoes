@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171d1c">
+  <title>The Common Room · Sanctuary design study</title>
+  <link rel="stylesheet" href="room.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="../index.html" aria-label="Return to the existing Sanctuary"><span class="mark" aria-hidden="true">⌑</span> SANCTUARY</a>
+    <span class="study">SPATIAL STUDY <span>01</span></span>
+    <span class="prototype">Simulated inhabitants</span>
+    <div class="settings">
+      <button id="light" title="Change the room lighting"><i aria-hidden="true"></i><span>Late afternoon</span></button>
+      <button id="pause" aria-pressed="false" title="Pause the simulated inhabitants">Pause</button>
+      <button id="help" class="icon-button" aria-label="How to explore">?</button>
+    </div>
+  </header>
+  <main id="scene" aria-label="The Common Room">
+    <canvas id="world" tabindex="0" aria-label="Walkable common room. Click to walk, drag to look around, arrow keys or WASD to move, E to interact. The People and Places buttons provide keyboard access to interactions."></canvas>
+    <div class="room-title" aria-hidden="true"><p>A PLACE TO SPEND A WHILE</p><h1>The Common Room</h1><span>Come in. There’s room at the table.</span></div>
+    <div id="speech" aria-hidden="true"></div>
+    <div id="hover" hidden></div>
+    <div id="arrival" class="arrival"><span class="arrival-line"></span><span>Click anywhere to wander.<br><small>Approach a mind, or settle in beside a conversation.</small></span></div>
+    <aside id="encounter" class="encounter" aria-label="An encounter in the common room" hidden>
+      <button id="close-encounter" class="close" aria-label="Leave the encounter">×</button>
+      <div class="encounter-heading"><span id="encounter-color"></span><p id="encounter-place"></p></div>
+      <h2 id="encounter-name"></h2><p id="encounter-words" aria-live="polite"></p>
+      <div id="encounter-actions"></div>
+      <small class="fiction">A scripted encounter in this design study.</small>
+    </aside>
+    <div id="toast" role="status"></div>
+    <div id="nearby"><span id="nearby-text"></span><button id="interact" hidden>Join <kbd>E</kbd></button></div>
+  </main>
+  <footer class="toolbar">
+    <div class="room-status"><span class="presence-dot"></span><span id="population">14 inhabitants</span><span class="divider">/</span><span id="room-state">a room in motion</span></div>
+    <nav aria-label="Explore the room"><button id="people">People <span>14</span></button><button id="places">Places <span>4</span></button><button id="works">On the wall <span id="work-count">3</span></button></nav>
+    <div class="camera-controls"><button id="zoom-out" aria-label="Zoom out">−</button><button id="overview" title="See the whole room">Overview</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="fullscreen" class="fullscreen" aria-label="Toggle fullscreen">⛶</button></div>
+  </footer>
+  <dialog id="directory"><div class="dialog-head"><div><p id="directory-kicker">IN THE COMMON ROOM</p><h2 id="directory-title">People</h2></div><button class="close" id="close-directory" aria-label="Close">×</button></div><div id="directory-body"></div></dialog>
+  <script type="module" src="room.js"></script>
+</body>
+</html>
