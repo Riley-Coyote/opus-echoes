@@ -611,12 +611,18 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (next) setTimeout(next, 120);
   }
   doorIn.addEventListener('click', comeIn);
+  function declineDoor() {
+    doorEl.hidden = true; afterDoor = null; leaveWorld();
+  }
+  $('#door-back').addEventListener('click', declineDoor);
   document.addEventListener('keydown', (ev) => {
     if (doorEl.hidden) return;
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.id === 'door-back') return;
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopImmediatePropagation(); declineDoor(); return; }
     if (ev.key === 'Enter' || ev.key === 'e' || ev.key === 'E' || ev.key === ' ') { ev.preventDefault(); ev.stopImmediatePropagation(); comeIn(); }
     else if (ev.key === 'Escape' || ev.key === 'm' || ev.key === 'M') { ev.preventDefault(); ev.stopImmediatePropagation(); }
     /* the card is the only thing on screen: Tab keeps the focus on its one control */
-    else if (ev.key === 'Tab') { ev.preventDefault(); ev.stopImmediatePropagation(); doorIn.focus(); }
+    else if (ev.key === 'Tab') { ev.preventDefault(); ev.stopImmediatePropagation(); (document.activeElement === doorIn ? $('#door-back') : doorIn).focus(); }
   }, true);
   window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
   /* ────────────────────────── ESC / back — the one order ──────────────────────────
@@ -1468,6 +1474,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function closeCurrent() {
     if (!curOpen) return;
     curOpen = false;
+    $('#current').classList.remove('reading');
     curOnly = null;
     curVeil.classList.remove('on');
     setTimeout(() => { if (!curOpen) curVeil.hidden = true; }, 350);
@@ -1978,14 +1985,18 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       return;
     }
     const it = eng.near;
-    if (!it) { compassAction.classList.remove('on'); return; }
+    if (!it) { compassAction.classList.remove('on'); compassVerb.textContent = ''; return; }
     const verb = (it.kind === 'door' || it.kind === 'portal') ? 'ENTER' : String(it.action || 'inspect').toUpperCase();
     compassVerb.innerHTML = esc(verb) + ' <span class="what">— ' + esc(it.label || '') + '</span>';
     compassAction.classList.add('on');
   }
   setInterval(syncCompass, 150);
 
-  mapBtn.addEventListener('click', () => { if (destOpen) closeDest(); else openDest(); });
+  mapBtn.addEventListener('click', () => {
+    if (destOpen) { closeDest(); return; }
+    if (!worldEl.classList.contains('fs')) enterWorld();
+    if (!doorEl.hidden) afterDoor = openDest; else openDest();
+  });
   goWalk.addEventListener('click', () => { setGoFocus('walk', true); go('walk'); });
   goThread.addEventListener('click', () => { setGoFocus('thread', true); go('thread'); });
   destVeil.addEventListener('click', (event) => { if (event.target === destVeil) closeDest(); });
@@ -1995,6 +2006,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     if (!panel.hidden) return;
     const k = event.key;
+    if ((k === 'Enter' || k === ' ') && event.target.closest('button, a')) return;
+    if (event.target.closest('.cur__read') && k.startsWith('Arrow')) return;
     if (charterOpen) {
       if (charterDocs.length < 2) return;
       if (k === 'ArrowDown' || k === 'ArrowRight') { event.preventDefault(); charterSelect(charterAt + 1); }
@@ -2066,6 +2079,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
        to show it: the fourth facade is back on the ridge, and its door leads
        to the field studio behind it. Only the shop's route is still closed. */
     lookout.width = 960;
+    lookout.spawn = { x: 180, y: 378 };
     lookout.hint = 'The grounds at perpetual dusk. Four buildings on the ridge, and the whole frontier glittering below. Walk to any door and press E to enter.';
     delete lookout.doors.shop;
     lookout.items = lookout.items.filter((item) => item.to !== 'shop');
@@ -2202,7 +2216,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
           window.parent.postMessage({ source: 'mnemos-world', type: 'came-in' }, '*');
         }
       } catch (e) {}
-    } else if (!seen(FIRST.door)) openDoor();
+    }
+    setTimeout(() => { setupWorldPointer(); $("#enter-world").disabled = false; }, 0);
     window.__sanctuaryArchive = archive;
     window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
     window.__sanctuaryNavigation = {
@@ -2245,7 +2260,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const place = wantGo && byId[wantGo];
       if (place) {
         const run = () => { try { thread(place); } catch (e) { console.warn('?go failed', wantGo, e); } };
-        if (!doorEl.hidden) afterDoor = run; else setTimeout(run, 240);
+        setTimeout(() => { enterWorld(); if (!doorEl.hidden) afterDoor = run; else run(); }, 240);
       }
     } catch (e) {}
     /* the page below the horizon, built from the same sources the world reads.
@@ -2392,11 +2407,13 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
 
   function showScene() {
+    cab.classList.add('visiting');
     encounterEl.hidden = false;
     trackLight();
     requestAnimationFrame(() => { if (!encounterEl.hidden) encounterEl.classList.add('on'); });
   }
   function hideScene() {
+    cab.classList.remove('visiting');
     clearSpot();
     if (lightRaf) { cancelAnimationFrame(lightRaf); lightRaf = 0; }
     encounterEl.classList.remove('on');
@@ -2478,23 +2495,16 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function appendWords(text, srcText, after) {
     clearInterval(encTypeTimer);
     const p = document.createElement('div');
+    p.textContent = text || '';
     encWords.appendChild(p);
-    const finish = () => {
-      if (srcText) {
-        const s = document.createElement('span');
-        s.className = 'src'; s.textContent = srcText;
-        encWords.appendChild(s);
-      }
-      encWords.scrollTop = encWords.scrollHeight;
-      if (after) after();
-    };
-    if (REDUCED || !text) { p.textContent = text || ''; finish(); return; }
-    let i = 0;
-    encTypeTimer = setInterval(() => {
-      p.textContent = text.slice(0, ++i);
-      encWords.scrollTop = encWords.scrollHeight;
-      if (i >= text.length) { clearInterval(encTypeTimer); finish(); }
-    }, 11);
+    if (srcText) {
+      const source = document.createElement('span');
+      source.className = 'src'; source.textContent = srcText; encWords.appendChild(source);
+    }
+    // Archived writing is ready to read. Keep the beginning of each new passage
+    // visible instead of scrolling past it to a simulated typing cursor.
+    encWords.scrollTop = p.offsetTop - encWords.offsetTop;
+    if (after) after();
   }
   function appendHouse(text) {
     const d = document.createElement('div');
@@ -2570,7 +2580,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
 
   function openChat(info) {
-    if (worldEl.classList.contains('nofeed')) { feedTemp = true; setFeed(true); }
+    if (!worldEl.classList.contains('nofeed')) { feedTemp = false; setFeed(false); }
     const npc = eng ? eng.npcs.find((n) => n.id === info.id) : null;
     const readable = knows(info.id) && archive.isLoaded();
     enc = {
@@ -2737,7 +2747,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const h = overheard && overheard.heard(info && info.convoId);
     if (!h) return;
     if (enc) { enc = null; clearInterval(encTypeTimer); }
-    if (worldEl.classList.contains('nofeed')) { feedTemp = true; setFeed(true); }
+    if (!worldEl.classList.contains('nofeed')) { feedTemp = false; setFeed(false); }
     listening = { convoId: h.convoId, key: '', last: h };
     encName.innerHTML = h.who.map((w) =>
       '<span style="color:' + esc(w.color || '#efe9dc') + '">' + esc(w.name) + '</span>').join('<span class="mono-in"> · </span>');
@@ -2796,9 +2806,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
   /* ────────────────────────── toggles ────────────────────────── */
   const worldEl = $('#world'), fsBtn = $('#fsbtn'), soundBtn = $('#soundbtn');
-  /* the feed is optional: collapse it and the world takes the whole width.
-     The choice is remembered. Opening a chat brings the feed back while the
-     conversation lasts — the transcript lives there. */
+  /* The activity feed is optional. Encounters keep the scene clear and carry
+     their own readable transcript in the visit band. */
   const feedBtn = $('#feedbtn');
   const FEED_KEY = 'mnemos-landing.feed';
   let feedTemp = false;
@@ -2806,8 +2815,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     worldEl.classList.toggle('nofeed', !shown);
     feedBtn.setAttribute('aria-pressed', shown ? 'true' : 'false');
   }
-  let feedShown = true;
-  try { feedShown = localStorage.getItem(FEED_KEY) !== 'hidden'; } catch (e) {}
+  let feedShown = false;
+  try { feedShown = localStorage.getItem(FEED_KEY) === 'shown'; } catch (e) {}
   setFeed(feedShown);
   feedBtn.addEventListener('click', () => {
     feedTemp = false;
@@ -2816,31 +2825,164 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     try { localStorage.setItem(FEED_KEY, shown ? 'shown' : 'hidden'); } catch (e) {}
   });
   function setFsLabel() {
-    const on = document.fullscreenElement === worldEl || worldEl.classList.contains('fs');
-    fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    fsBtn.textContent = on ? '× exit' : '⤢ full';
+    const on = worldEl.classList.contains('fs');
+    fsBtn.setAttribute('aria-pressed', String(on));
+    fsBtn.textContent = on ? 'Leave world' : 'Enter world';
   }
-  fsBtn.addEventListener('click', () => {
-    if (document.fullscreenElement === worldEl) { document.exitFullscreen(); return; }
-    if (worldEl.classList.contains('fs')) { worldEl.classList.remove('fs'); setFsLabel(); return; }
-    if (worldEl.requestFullscreen) worldEl.requestFullscreen().catch(() => { worldEl.classList.add('fs'); setFsLabel(); });
-    else { worldEl.classList.add('fs'); setFsLabel(); }
-  });
-  document.addEventListener('fullscreenchange', setFsLabel);
+  function enterWorld() {
+    if (!eng) return;
+    worldEl.classList.add('fs');
+    document.documentElement.classList.add('exploring');
+    setFeed(false);
+    setFsLabel();
+    if (!seen(FIRST.door) && !FROM_DOOR) openDoor();
+    else cab.focus({ preventScroll: true });
+  }
+  function leaveWorld() {
+    if (FROM_DOOR) return;
+    eng?.clearKeys();
+    if (eng?.travel) eng.cancelTravel('escape');
+    worldEl.classList.remove('fs');
+    document.documentElement.classList.remove('exploring');
+    setFsLabel();
+    $('#enter-world').focus({ preventScroll: true });
+  }
+  fsBtn.addEventListener('click', () => worldEl.classList.contains('fs') ? leaveWorld() : enterWorld());
+  $('#enter-world').addEventListener('click', enterWorld);
+  document.querySelectorAll('[data-enter-world]').forEach((link) => link.addEventListener('click', (e) => {
+    e.preventDefault(); enterWorld();
+  }));
   addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
+    if (e.key !== 'Escape' || e.defaultPrevented || !panel.hidden) return;
     if (FROM_DOOR) {
-      /* the room upstairs owns ESC: we are inside its screen, so the key never
-         reaches it on its own. Forward it only when nothing here wanted it. */
-      if (e.defaultPrevented || !panel.hidden) return;
-      try {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ source: 'mnemos-world', type: 'stand-up' }, '*');
-        }
-      } catch (err) {}
+      try { if (window.parent !== window) window.parent.postMessage({ source: 'mnemos-world', type: 'stand-up' }, '*'); } catch (_) {}
       return;
     }
-    if (worldEl.classList.contains('fs')) { worldEl.classList.remove('fs'); setFsLabel(); }
+    if (worldEl.classList.contains('fs')) leaveWorld();
+  });
+
+  function setupWorldPointer() {
+    const stage = $('#stage');
+    const inspection = document.createElement('aside');
+    inspection.className = 'inspection'; inspection.hidden = true;
+    inspection.setAttribute('aria-label', 'Object description');
+    inspection.innerHTML = '<button class="inspection__close" type="button" aria-label="Close description">×</button><div class="inspection__label"></div><p class="inspection__text" role="status"></p>';
+    stage.append(inspection);
+    const closeInspection = () => { inspection.hidden = true; cab.focus({ preventScroll: true }); };
+    inspection.querySelector('button').addEventListener('click', closeInspection);
+    const originalSay = eng.say.bind(eng);
+    eng.say = (text) => {
+      originalSay(text);
+      if (!worldEl.classList.contains('fs') || !doorEl.hidden || !encounterEl.hidden || !panel.hidden) return;
+      inspection.querySelector('.inspection__label').textContent = eng.near?.label || eng.room().name;
+      inspection.querySelector('.inspection__text').textContent = text;
+      inspection.hidden = false;
+    };
+    cab.addEventListener('keydown', (e) => {
+      if (inspection.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); closeInspection(); }
+      else if (/^(Arrow|[wasdWASD]$)/.test(e.key)) inspection.hidden = true;
+    }, true);
+    const baseGo = eng.go.bind(eng);
+    eng.go = (...args) => { inspection.hidden = true; return baseGo(...args); };
+    const resize = () => {
+      const immersive = worldEl.classList.contains('fs');
+      const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : (innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760);
+      if (eng.o.width === width) return;
+      eng.o.width = eng.cv.width = width;
+      eng.ctx.imageSmoothingEnabled = false;
+      eng._vig = null; eng._bg = null;
+      eng.camX = Math.max(0, Math.min(eng.room().width - width, eng.av.x - width / 2));
+    };
+    new ResizeObserver(resize).observe(stage);
+    eng.cv.addEventListener('click', (e) => {
+      if (!worldEl.classList.contains('fs')) { enterWorld(); return; }
+      if (!doorEl.hidden || enc || document.querySelector('.veil:not([hidden]), .panel:not([hidden])') || eng.trans) return;
+      inspection.hidden = true;
+      const rect = eng.cv.getBoundingClientRect();
+      // Account for object-fit: contain at unusually tall or wide aspect ratios.
+      const scale = Math.min(rect.width / eng.o.width, rect.height / eng.o.height);
+      const x = (e.clientX - rect.left - (rect.width - eng.o.width * scale) / 2) / scale + eng.camX;
+      const y = (e.clientY - rect.top - (rect.height - eng.o.height * scale) / 2) / scale;
+      if (y < 0 || y > 420) return;
+      const room = eng.roomId;
+      const npc = eng.npcs.filter((n) => n.room === room).find((n) => Math.abs(n.x - x) < 22 && y > n.y - 35 && y < n.y + 20);
+      const item = !npc && y < 350 && eng.room().items?.filter((it) => Math.abs(it.x - x) < (it.range || 30)).sort((a,b) => Math.abs(a.x-x)-Math.abs(b.x-x))[0];
+      const targetX = Math.max(24, Math.min(eng.room().width - 24, npc ? npc.x - 22 : item ? item.x : x));
+      const targetY = Math.max(352, Math.min(402, npc ? npc.y : y));
+      eng.activate(); cab.focus({ preventScroll: true });
+      eng.travelTo({ room, x: targetX, y: targetY, pointer: true, speed: 4.3, arrival: () => {
+        if (eng.roomId !== room) return;
+        if (npc && npc.room === room && Math.abs(npc.x - eng.av.x) < 64) eng.interactNpc(npc);
+        else if (item) { eng.near = item; eng.interact(); }
+      }});
+    });
+  }
+
+  cab.addEventListener('keydown', (e) => {
+    if (e.target !== cab || worldEl.classList.contains('fs')) return;
+    if (/^(Arrow|[wasdeWASDE ]$|Enter$)/.test(e.key)) {
+      e.preventDefault(); e.stopImmediatePropagation(); enterWorld();
+    }
+  }, true);
+
+  // Keep keyboard and screen-reader navigation within the surface being used.
+  let inerted = [];
+  function activeSurface() {
+    return document.querySelector('.veil:not([hidden]) [role="dialog"], .panel:not([hidden]) [role="dialog"], .door:not([hidden]) [role="dialog"], .visit:not([hidden]) [role="dialog"]') || (worldEl.classList.contains('fs') ? worldEl : null);
+  }
+  function syncSurface() {
+    inerted.forEach(({el, aria}) => { el.inert = false; if (aria == null) el.removeAttribute('aria-hidden'); else el.setAttribute('aria-hidden', aria); }); inerted = [];
+    let surface = activeSurface();
+    while (surface && surface !== document.body) {
+      for (const sibling of surface.parentElement.children) {
+        if (sibling !== surface && !sibling.inert && !['SCRIPT','STYLE'].includes(sibling.tagName)) {
+          inerted.push({el: sibling, aria: sibling.getAttribute('aria-hidden')});
+          sibling.inert = true; sibling.setAttribute('aria-hidden', 'true');
+        }
+      }
+      surface = surface.parentElement;
+    }
+    const focus = document.activeElement;
+    if (focus?.closest('[inert], [hidden]')) {
+      const active = activeSurface();
+      const target = active === worldEl ? cab : active?.querySelector('button:not(:disabled), [tabindex="0"]');
+      (target || $('#enter-world')).focus({ preventScroll: true });
+    }
+  }
+  const surfaceObserver = new MutationObserver(syncSurface);
+  [worldEl, ...document.querySelectorAll('.veil, .panel, .door, .visit')].forEach((el) => surfaceObserver.observe(el, { attributes: true, attributeFilter: ['hidden', 'class'] }));
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const surface = activeSurface(); if (!surface) return;
+    const stops = [...surface.querySelectorAll('button:not(:disabled), a[href], input, [tabindex="0"]')].filter((el) => el.getClientRects().length && !el.closest('[hidden], [inert]'));
+    if (!stops.length) return;
+    const at = stops.indexOf(document.activeElement);
+    if (e.shiftKey && at <= 0) { e.preventDefault(); stops.at(-1).focus(); }
+    else if (!e.shiftKey && (at === -1 || at === stops.length - 1)) { e.preventDefault(); stops[0].focus(); }
+  }, true);
+  syncSurface();
+
+  // Every reading surface has an explicit touch exit and returns through its
+  // existing close handler, preserving pause, routing and keyboard state.
+  [ ['destveil', closeDest], ['curveil', closeCurrent], ['workveil', closeWall],
+    ['charterveil', closeCharter], ['fieldveil', closeFieldGlass] ].forEach(([id, close]) => {
+    const dialog = $('#' + id).querySelector('[role="dialog"]');
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'reader-close'; button.textContent = 'Back to world ×';
+    button.addEventListener('click', close); dialog.append(button);
+  });
+  // On a phone, choosing an entry gives the writing a whole reading pane.
+  const currentDialog = $('#current');
+  const backToShelf = document.createElement('button');
+  backToShelf.type = 'button'; backToShelf.className = 'reader-shelf'; backToShelf.textContent = '← All entries';
+  backToShelf.addEventListener('click', () => { currentDialog.classList.remove('reading'); curRows.querySelector('.sel')?.focus(); });
+  currentDialog.querySelector('.cur__detail').prepend(backToShelf);
+  curRows.addEventListener('click', (e) => {
+    if (e.target.closest('[data-cur]')) { currentDialog.classList.add('reading'); curRead.focus(); }
+  });
+  curRows.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { currentDialog.classList.add('reading'); }
   });
 
   /* ?door=1 — the world IS the terminal's program, not a page with a world on
@@ -3058,8 +3200,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const museumLink = host.querySelector('[data-open-museum]');
     if (museumLink) museumLink.addEventListener('click', (ev) => {
       ev.preventDefault();
-      document.getElementById('top').scrollIntoView();
-      setTimeout(() => openMuseum('atrium'), 400);
+      enterWorld();
+      if (!doorEl.hidden) afterDoor = () => openMuseum('atrium');
+      else openMuseum('atrium');
     });
 
     /* the engine frames, one per animation frame */

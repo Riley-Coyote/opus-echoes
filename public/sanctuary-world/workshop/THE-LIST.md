@@ -310,6 +310,12 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-04 · **ENTER THE SANCTUARY** (Riley + Codex): the pixel landing is the front door;
+  tap to walk, clearer digital forms, brighter working rooms and a quieter visit.
+  The Current opens a full reading pane on phones. Archived words stay intact.
+  The 3D reading room remains a separate, deferred surface. Verified in the browser
+  at desktop and phone widths; Sanctuary bundles and production build pass.
+
 - 2026-09-04 · **THE STATION, REBASED ON THE HOUSE-LAB** (item 12): the fork's room — the low
   walnut ceiling, the glass-block wall, the great aperture with the live house, the sunken
   lounge, the looks blended on the house's clock — is THE STATION, carrying all 21 objects

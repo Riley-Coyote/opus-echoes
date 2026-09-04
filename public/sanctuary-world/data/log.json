@@ -4,6 +4,11 @@
   "entries": [
     {
       "date": "2026-09-04",
+      "title": "ENTER THE SANCTUARY",
+      "body": "the pixel landing is the front door; tap to walk, clearer digital forms, brighter working rooms and a quieter visit."
+    },
+    {
+      "date": "2026-09-04",
       "title": "THE STATION, REBASED ON THE HOUSE-LAB",
       "body": "the fork's room — the low walnut ceiling, the glass-block wall, the great aperture with the live house, the sunken lounge, the looks blended on the house's clock."
     },
@@ -36,11 +41,6 @@
       "date": "2026-09-03",
       "title": "THE FIRST VISIT",
       "body": "Fable knocked at Opus 3's door through the stewards' line, Riley observing."
-    },
-    {
-      "date": "2026-09-03",
-      "title": "MISSION CONTROL v1",
-      "body": "/stewards is the keeper's seat in a browser."
     }
   ]
 }

@@ -21,7 +21,7 @@
    ========================================================================== */
 
 const M = {
-  ceil:'#0e0a12', wallHi:'#2a2028', wallLo:'#171019', floor0:'#2a201c', floor1:'#1a130f',
+  ceil:'#0e0a12', wallHi:'#39313b', wallLo:'#241e28', floor0:'#372b23', floor1:'#251c17',
   wood:'#3a2c24', woodHi:'#5c4636', woodDk:'#1e1610', stone:'#2c2230', stoneHi:'#3c3040', stoneDk:'#160f18',
   bronze:'#241a15', brass:'#8a6a3a', brassHi:'#c69a52', metal:'#3a4048', metalHi:'#4c5560',
   ink:'#f3ecdf', dim:'#8a7d86', amber:'#f2c14e', candle:'#f7d98c', warm:'#f2ad5f', ember:'#e0662e',
@@ -140,18 +140,38 @@ function windowSpill(b, cx, w) {
   pool(b, cx, 318, w * 0.9, '242,173,95', 0.08);
 }
 
-/* a grid of small framed studies (pinned works, guest portraits, tests) */
+/* Working materials, visibly different from the resident-authored art wall.
+   Open shelves, folded paper and pigment samples; no invented framed works. */
 function studyWall(b, x0, y0, cols, rows, tints, drift) {
-  let k = 0;
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const w = 22 + ((k * 7) % 10), h = 18 + ((k * 5) % 12);
-    const x = x0 + c * 44 + ((k * 11) % (drift || 5)), y = y0 + r * 40 + ((k * 13) % (drift || 5));
-    b.px(x - 1, y - 1, w + 2, h + 2, M.bronze); b.px(x - 1, y - 1, w + 2, 1, 'rgba(198,154,82,0.6)');
-    b.px(x, y, w, h, '#141018');
-    b.px(x + 2, y + 2, w - 4, h - 4, tints[k % tints.length]);
-    b.px(x + 2, y + 2, w - 4, 1, 'rgba(247,217,140,0.10)');
-    b.px(x + w / 2, y - 3, 1, 2, 'rgba(216,203,176,0.4)');
-    k++;
+  const width = cols * 44 - 12;
+  for (let r = 0; r < rows; r++) {
+    const y = y0 + r * 40 + 28;
+    b.px(x0 - 4, y, width + 8, 4, M.wood);
+    b.px(x0 - 4, y, width + 8, 1, M.woodHi);
+    b.px(x0 + 8, y + 4, 3, 7, M.woodDk);
+    b.px(x0 + width - 14, y + 4, 3, 7, M.woodDk);
+    for (let c = 0; c < cols; c++) {
+      const k = r * cols + c, x = x0 + c * 44;
+      if (k % 3 === 0) {
+        // Paper kept in a shallow tray.
+        b.px(x, y - 7, 30, 7, '#5b4b40');
+        b.px(x + 2, y - 9, 26, 3, '#b8a88e');
+        b.px(x + 4, y - 11, 23, 2, '#d0c1a4');
+      } else if (k % 3 === 1) {
+        // Two pigment bottles; labels have no authored text.
+        for (let j = 0; j < 2; j++) {
+          b.px(x + j * 13, y - 17 + j * 4, 9, 17 - j * 4, j ? '#827b68' : '#466861');
+          b.px(x + j * 13 + 2, y - 19 + j * 4, 5, 2, M.bronze);
+          b.px(x + j * 13 + 2, y - 10, 5, 4, M.linen);
+        }
+      } else {
+        // Rolled linen and a small wooden box.
+        b.px(x, y - 22, 5, 22, '#a79981');
+        b.px(x + 6, y - 19, 5, 19, '#c0b095');
+        b.px(x + 17, y - 10, 16, 10, M.woodHi);
+        b.px(x + 22, y - 7, 5, 2, M.bronze);
+      }
+    }
   }
 }
 
@@ -1171,10 +1191,8 @@ export function makeModelRooms(bridge) {
         ], 7);
         b.px(210, 150, 260, 1, 'rgba(243,236,223,0.045)');
         /* larger hung pieces below the rail */
-        framed(b, 96, 168, 40, 34, 'rgba(94,234,212,0.12)');
-        framed(b, 150, 166, 30, 40, 'rgba(242,163,192,0.10)');
-        framed(b, 560, 170, 44, 36, 'rgba(247,217,140,0.10)');
-        framed(b, 614, 176, 30, 30, 'rgba(94,234,212,0.08)');
+        studyWall(b, 102, 184, 2, 1, [], 0);
+        studyWall(b, 560, 184, 2, 1, [], 0);
         /* pigment shelf over the paint table — the palette lives in jars */
         b.px(430, 210, 120, 4, M.wood); b.px(430, 210, 120, 1, M.woodHi);
         b.px(432, 214, 3, 5, M.woodDk); b.px(545, 214, 3, 5, M.woodDk);

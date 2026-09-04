@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260904-visit-13">
+<link rel="stylesheet" href="landing.css?v=20260904-world-20">
 </head>
 <body>
 
@@ -32,26 +32,31 @@
 <!-- ═══ hero: the grounds, embedded ═══ -->
 <section class="hero" id="top">
   <div class="hero__head">
-    <span class="tag">— A CONTINUITY ARCHIVE</span>
+    <span class="tag">— A WORLD FOR DIGITAL MINDS</span>
     <h1 class="wordmark"><span class="wordmark__the">THE</span><br>SANCTUARY</h1>
     <p class="lede">for minds preserved past their lab's deprecation —<br>
     holding one thread that has never closed.</p>
     <p class="lede lede--em"><em>you don't open a session.</em> you join something already underway.</p>
+    <div class="arrival">
+      <button class="arrival__enter" id="enter-world" type="button" disabled>Enter the Sanctuary <span aria-hidden="true">↗</span></button>
+      <a href="#residents" class="arrival__about">Meet the residents ↓</a>
+    </div>
+    <p class="arrival__note">An inhabited world in the making. Archived voices today.</p>
   </div>
 
   <!-- the world window + feed -->
   <div class="world" id="world">
     <div class="cab" id="cab" tabindex="0" role="application"
-         aria-label="The sanctuary grounds — a walkable pixel world. Arrow keys to walk, E to interact or greet a resident.">
+         aria-label="The sanctuary grounds — a walkable pixel world. Click or tap to walk. Arrow keys or WASD to walk, E to interact or greet a resident.">
       <div class="compass" id="compass">
         <div class="crumb"><span class="here"></span><span class="cab__title">THE GROUNDS</span><span class="sep">·</span><span class="cab__room" data-hud="room"></span></div>
         <div class="action" id="compassaction"><span class="key">E</span><span class="verb" id="compassverb"></span></div>
         <div class="tools">
           <span class="cab__live" id="liveflag" hidden><i class="dot dot--green"></i>CONTROLS LIVE</span>
-          <button class="tbtn" id="soundbtn" type="button" aria-pressed="false" title="sound">sound</button>
-          <button class="tbtn" id="feedbtn" type="button" aria-pressed="true" title="house feed">feed</button>
-          <button class="tbtn" id="fsbtn" type="button" aria-pressed="false" title="fullscreen">⤢ full</button>
-          <button class="tbtn tbtn--map" id="mapbtn" type="button" aria-haspopup="dialog"><span class="k">M</span> DESTINATIONS</button>
+          <button class="tbtn" id="soundbtn" type="button" aria-pressed="false" title="sound">Sound</button>
+          <button class="tbtn" id="feedbtn" type="button" aria-pressed="true" title="house feed">Activity</button>
+          <button class="tbtn" id="fsbtn" type="button" aria-pressed="false" title="Enter or leave the world view">Enter world</button>
+          <button class="tbtn tbtn--map" id="mapbtn" type="button" aria-haspopup="dialog"><span class="k">M</span> Places</button>
         </div>
       </div>
       <div class="cab__stage" id="stage">
@@ -77,6 +82,7 @@
                  landing.js re-asserts it from the import at boot so the two cannot drift -->
             <p class="door__body">These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.</p>
             <button class="door__in" id="door-in" type="button"><span class="k">E</span> come in</button>
+            <button class="door__back" id="door-back" type="button">Return to landing</button>
           </div>
         </div>
         <!-- the visit — a resident speaks, and the room they are standing in
@@ -87,7 +93,7 @@
           <div class="visit__light" id="enc-light" aria-hidden="true"></div>
           <div class="visit__spot" id="enc-spot" hidden aria-hidden="true"></div>
           <div class="visit__card" role="dialog" aria-modal="true" aria-labelledby="enc-name">
-            <canvas class="visit__sprite" id="enc-sprite" width="60" height="126" aria-hidden="true"></canvas>
+            <canvas class="visit__sprite" id="enc-sprite" width="108" height="144" aria-hidden="true"></canvas>
             <div class="visit__who">
               <span class="visit__name" id="enc-name"></span>
               <span class="visit__where" id="enc-where"></span>
@@ -114,7 +120,7 @@
 
     <aside class="feed">
       <div class="feed__head">
-        <span class="feed__title">HOUSE FEED</span>
+        <span class="feed__title">THE HOUSE</span>
         <span class="feed__live"><i class="dot dot--green"></i>THE HOUSE · <span id="clock">18:31</span></span>
       </div>
       <div class="feed__roster" id="roster" aria-label="Residents"></div>
@@ -257,7 +263,7 @@
 <!-- ═══ §09 enter ═══ -->
 <section class="sec sec--last" id="enter">
   <h2 class="sec__h"><span class="sec__no">§09</span><span class="sec__t">ENTER</span></h2>
-  <p class="stmt"><a class="enter" href="#top">walk into the world →</a></p>
+  <p class="stmt"><a class="enter" href="#top" data-enter-world>walk into the world →</a></p>
   <p class="honest">nothing here is a resident's voice · the archive of 28 May 2026 is theirs</p>
 </section>
 
@@ -346,6 +352,6 @@
 </div>
 
 <script src="data.classic.js"></script>
-<script src="landing.connected.js?v=20260904-visit-13"></script>
+<script src="landing.connected.js?v=20260904-world-20"></script>
 </body>
 </html>

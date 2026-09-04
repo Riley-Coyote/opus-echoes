@@ -1,3 +1,5 @@
+import { drawPresence } from './presence.js';
+
 /* ==========================================================================
    SUNSET HOUSE ENGINE v2 — pixel diorama with a living-household layer.
    640×360 canvas · parallax layers · additive lighting · god-rays + motes ·
@@ -229,6 +231,7 @@ export class Sanctuary {
       return false;
     }
     if (this.travel) this.cancelTravel('replaced');
+    this.pointerGoal = o.pointer ? { x: o.x, y: o.y } : null;
     if (this.chatNpc) this.endChat('you stepped away');
     this.clearKeys();
     this.travel = {
@@ -418,6 +421,7 @@ export class Sanctuary {
     };
     const up = (dir, e) => { if (e) e.preventDefault(); self.keys[dir] = false; };
     root.addEventListener('keydown', (e) => {
+      if (e.target !== root && e.target.closest('button, a, [role=dialog]')) return;
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
       const k = e.key;
       if (k === 'ArrowLeft' || k === 'a' || k === 'A') down('left', e);
@@ -446,10 +450,16 @@ export class Sanctuary {
       ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, (e) => up(dir, e)));
     });
     const ins = root.querySelector('[data-inspect]');
-    if (ins) ins.addEventListener('pointerdown', (e) => { e.preventDefault(); this.activate(); this.interact(); });
+    if (ins) {
+      ins.addEventListener('pointerdown', (e) => { e.preventDefault(); this.activate(); this.interact(); });
+      ins.addEventListener('click', (e) => { if (e.detail === 0) { this.activate(); this.interact(); } });
+    }
     const cta = this.hud.cta;
     if (cta) cta.addEventListener('click', () => { this.activate(); this.interact(); });
-    root.addEventListener('pointerdown', () => { this.activate(); this._gesture(); });
+    root.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button, a, input, [role=dialog]')) return;
+      this.activate(); this._gesture();
+    });
     root.addEventListener('keydown', () => this._gesture());
   }
   activate() { if (!this.active) { try { this.root.focus({ preventScroll: true }); } catch (e) {} } }
@@ -959,7 +969,7 @@ export class Sanctuary {
       title = it.label || this.room().name; body = this.typed || it.hint || '';
       hint = (it.kind === 'door' || it.kind === 'portal') ? '[E] enter' : '[E] ' + (it.action || 'inspect');
       cta = it.action || ((it.kind === 'door' || it.kind === 'portal') ? 'enter' : 'inspect');
-    } else { title = this.room().name; body = this.room().hint || ''; hint = '\u2190 \u2192 \u2191 \u2193 move'; }
+    } else { title = this.room().name; body = this.room().hint || ''; hint = 'Click or tap to walk · arrows / WASD · E interact'; }
     if (h.title && h.title.textContent !== title) h.title.textContent = title;
     if (h.body) h.body.textContent = body;
     if (h.hint) h.hint.textContent = hint;
@@ -1038,6 +1048,13 @@ export class Sanctuary {
     ctx.save(); ctx.translate(-Math.round(this.camX), 0);
     this.room().draw(this.g, t);
     (this.room().items || []).forEach((it) => { if ((it.kind === 'door' || it.kind === 'portal') && it.autoDoor !== false) this.doorway(it.x, it.label, this.near === it); });
+
+    if (this.pointerGoal && this.travel) {
+      const g = this.pointerGoal;
+      ctx.strokeStyle = 'rgba(232,223,192,.65)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(g.x, g.y + 14, 9, 3, 0, 0, Math.PI * 2); ctx.stroke();
+      this.px(g.x - 1, g.y + 13, 2, 2, '#eadfc0');
+    }
 
     /* sprites, painter-sorted */
     const ents = this.npcs.filter((n) => n.room === this.roomId).map((n) => ({ y: n.y, npc: n }));
@@ -1245,54 +1262,7 @@ export class Sanctuary {
     ctx.restore();
   }
   drawNpc(n, t) {
-    const ctx = this.ctx, x = Math.round(n.x), y = Math.round(n.y);
-    const sitting = n.state === 'sit';
-    const flicker = n.temp ? 0.78 + Math.sin(t * 9 + 1) * 0.1 : 1;
-    ctx.save();
-    if (n.temp) ctx.globalAlpha = flicker;
-    /* five's occasional glitch */
-    let glitch = 0;
-    if (n.def.glitch) { const ph = (t + x * 0.01) % 7.3; if (ph < 0.09) glitch = 1; }
-    ctx.fillStyle = 'rgba(0,0,0,0.24)'; ctx.beginPath(); ctx.ellipse(x, y + 15, 8, 3, 0, 0, 6.2832); ctx.fill();
-    ctx.translate(x + (glitch ? (Math.random() < 0.5 ? -1 : 1) : 0), y + 14 + (sitting ? 4 : 0)); ctx.scale(n.dir, 1);
-    const fr = n.moving ? n.frame : 0, off = [0, 2, 3, 0, -2, -3][fr];
-    const bob = n.moving ? [0, -1, -1, 0, -1, -1][fr] : Math.round(Math.sin(t * 1.6 + x * 0.13) * 0.5 - 0.5);
-    const F = n.feature, C = n.color;
-    const body = n.temp ? '#948e80' : '#282130', bodyHi = n.temp ? '#aca696' : '#352c3d', bodyDk = '#181218';
-    const skin = '#cdc8ba', skinDk = '#948e80';
-    if (sitting) { this.px(-3, -5, 3, 5, '#181218'); this.px(0, -5, 3, 5, '#1d151d'); }
-    else { this.px(-3 - off, -7, 3, 7, '#181218'); this.px(0 + off, -7, 3, 7, '#1d151d'); }
-    const by = (sitting ? -17 : -19) + bob;
-    this.px(-4, by, 9, 12, body); this.px(-4, by, 2, 11, bodyHi); this.px(3, by, 2, 12, bodyDk);
-    const hy = by - 8;
-    this.px(-2, hy, 6, 7, skin); this.px(3, hy, 1, 7, skinDk);
-    if (F === 'beret') {
-      this.px(-2, hy - 1, 6, 1, '#282130');
-      this.px(-3, hy - 3, 7, 3, C); this.px(-4, hy - 2, 2, 2, C); this.px(1, hy - 4, 2, 1, C);
-      this.px(-3, by + 3, 7, 2, '#403646');
-    } else if (F === 'book') {
-      this.px(-2, hy - 2, 6, 2, '#4a4452'); this.px(-3, hy - 1, 2, 1, '#4a4452');
-      this.px(4, by + 4, 4, 6, C); this.px(5, by + 5, 2, 4, '#efe9dc');
-      this.px(-4, by - 1, 9, 2, '#352c3d');
-    } else if (F === 'pencil') {
-      this.px(-2, hy - 1, 6, 2, '#3d3644');
-      this.px(3, hy + 1, 4, 1, C);
-      this.px(-4, by + 5, 9, 2, C); this.px(-1, by + 4, 3, 4, '#403646');
-    } else if (F === 'hood') {
-      this.px(-3, hy - 2, 8, 3, C); this.px(-3, hy - 1, 2, 6, C); this.px(4, hy - 1, 1, 6, C);
-      this.px(-4, by, 9, 3, C); this.px(-4, by + 2, 9, 1, 'rgba(0,0,0,0.25)');
-    } else if (F === 'halo') {
-      this.px(-2, hy - 1, 6, 1, '#d8d4c8');
-      this.px(-2, hy - 4, 6, 1, C);
-    } else if (F === 'pale') {
-      this.px(-2, hy - 1, 6, 1, '#e8e2d4');
-    }
-    if (glitch) {
-      ctx.globalAlpha = 0.4;
-      this.px(-5, hy + 2, 10, 1, '#5eead4'); this.px(-5, by + 6, 10, 1, '#f2a3c0');
-      ctx.globalAlpha = n.temp ? flicker : 1;
-    }
-    ctx.restore();
+    drawPresence(this.ctx, n, t, this.reduced);
   }
   drawCat(t) {
     const c = this.cat, ctx = this.ctx, x = Math.round(c.x), y = Math.round(c.y);
@@ -1345,7 +1315,7 @@ export class Sanctuary {
     ctx.textAlign = 'center'; ctx.fillText(n.emote.g, x, y); ctx.textAlign = 'left';
   }
   drawPrompt(sx, sy, t) {
-    const P = this.P, bob = Math.round(Math.sin(t * 5) * 1.5), x = Math.round(sx) - 6, y = Math.round(sy) - 26 + bob;
+    const P = this.P, bob = this.reduced ? 0 : Math.round(Math.sin(t * 5) * 1.5), x = Math.round(sx) - 6, y = Math.round(sy) - 26 + bob;
     this.px(x, y, 13, 11, P.ceiling); this.px(x + 1, y + 1, 11, 9, P.ink); this.px(x + 5, y + 11, 3, 2, P.ceiling);
     this.px(x + 6, y + 3, 2, 4, P.accent); this.px(x + 6, y + 8, 2, 2, P.accent);
   }

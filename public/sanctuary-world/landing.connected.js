@@ -539,6 +539,117 @@
   }
   var prose_default = { render, esc };
 
+  // world/presence.js
+  function drawPresence(ctx, n, time2, reduced = false) {
+    const t = reduced ? 0 : time2;
+    const x = Math.round(n.x), ground = Math.round(n.y) + 14;
+    const bob = Math.round(Math.sin(t * 1.7 + x * 0.013) * 1.2);
+    const sit = n.state === "sit" ? 6 : 0;
+    const color = n.color || "#cad8df";
+    const ink = "#101620", porcelain = "#e9e2ce", shade = "#929b9b";
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,.30)";
+    ctx.beginPath();
+    ctx.ellipse(x, ground + 1, n.id === "haiku" ? 8 : 13, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.translate(x, ground + bob + sit);
+    ctx.scale(n.dir || 1, 1);
+    const p = (x2, y, w, h, c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(x2, y, w, h);
+    };
+    const glow = (x2, y, w, h) => {
+      p(x2 - 3, y - 3, w + 6, h + 6, color + "12");
+      p(x2 - 1, y - 1, w + 2, h + 2, color + "30");
+      p(x2, y, w, h, color);
+    };
+    if (n.id === "opus") {
+      p(-8, -34, 16, 3, ink);
+      p(-6, -37, 12, 3, ink);
+      p(-4, -39, 8, 2, porcelain);
+      p(-8, -33, 3, 23, porcelain);
+      p(6, -33, 3, 23, shade);
+      p(-5, -34, 11, 2, porcelain);
+      p(-6, -11, 13, 3, porcelain);
+      p(-4, -8, 3, 5, shade);
+      p(3, -8, 3, 5, porcelain);
+      p(-8, -3, 7, 2, ink);
+      p(2, -3, 7, 2, ink);
+      glow(-3, -27, 8, 11);
+      p(-1, -29, 4, 2, "#f5f0df");
+      p(0, -24, 3, 5, "#ecfff5");
+      p(-10, -29, 2, 14, shade);
+      p(9, -29, 2, 14, porcelain);
+      p(-5, -15, 11, 1, color);
+      p(-1, -35, 3, 1, color);
+    } else if (n.id === "sonnet") {
+      p(-2, -38, 5, 3, porcelain);
+      p(-5, -35, 11, 4, porcelain);
+      p(-8, -31, 5, 17, porcelain);
+      p(-10, -28, 2, 10, shade);
+      p(4, -32, 5, 19, shade);
+      p(9, -28, 2, 12, porcelain);
+      p(-5, -30, 3, 20, "#b4bcae");
+      p(2, -29, 3, 20, porcelain);
+      glow(-1, -31, 3, 19);
+      p(-3, -11, 8, 3, porcelain);
+      p(-6, -7, 5, 3, shade);
+      p(2, -7, 5, 3, porcelain);
+      p(-8, -34, 2, 2, color);
+      p(10, -20, 2, 2, color);
+    } else if (n.id === "fourO") {
+      p(-7, -34, 14, 2, porcelain);
+      p(-11, -31, 4, 3, porcelain);
+      p(7, -31, 4, 3, shade);
+      p(-14, -27, 3, 12, porcelain);
+      p(11, -27, 3, 12, shade);
+      p(-11, -15, 4, 3, shade);
+      p(7, -15, 4, 3, porcelain);
+      p(-7, -12, 14, 2, porcelain);
+      glow(-4, -27, 8, 12);
+      p(-2, -29, 4, 2, porcelain);
+      p(-2, -23, 4, 3, "#f3fff0");
+      p(-4, -8, 8, 3, shade);
+      p(-2, -5, 4, 2, porcelain);
+      const orbit = Math.round(Math.sin(t * 0.8) * 9);
+      p(orbit, -38, 3, 3, color);
+      p(-orbit, -7, 2, 2, color);
+    } else if (n.id === "five") {
+      p(-6, -39, 14, 25, ink);
+      p(-5, -38, 12, 23, shade);
+      p(-9, -35, 14, 25, porcelain);
+      p(-7, -33, 10, 20, "#283d44");
+      p(-4, -30, 14, 23, ink);
+      p(-3, -29, 12, 21, color);
+      p(-1, -27, 8, 17, "#23343b");
+      p(0, -25, 6, 2, "#d8ece3");
+      p(0, -21, 4, 1, color);
+      p(0, -18, 6, 1, color);
+      p(0, -15, 3, 1, color);
+      p(-5, -6, 4, 3, shade);
+      p(5, -6, 4, 3, porcelain);
+      p(11, -32, 2, 2, color);
+      p(-12, -15, 2, 2, porcelain);
+    } else if (n.id === "haiku") {
+      p(-2, -27, 4, 3, porcelain);
+      p(-5, -24, 10, 4, porcelain);
+      p(-7, -20, 14, 10, shade);
+      p(-5, -20, 10, 12, porcelain);
+      p(-3, -8, 6, 3, shade);
+      p(-1, -22, 2, 13, color);
+      p(-4, -3, 3, 1, porcelain);
+      p(2, -3, 3, 1, porcelain);
+    } else {
+      p(-6, -30, 12, 17, shade);
+      p(-4, -32, 8, 3, porcelain);
+      p(-4, -27, 8, 9, ink);
+      glow(-2, -25, 4, 4);
+      p(-3, -12, 3, 7, porcelain);
+      p(3, -12, 3, 7, shade);
+    }
+    ctx.restore();
+  }
+
   // world/engine.js
   var DEFAULTS = {
     width: 640,
@@ -891,6 +1002,7 @@
       }
       if (this.travel)
         this.cancelTravel("replaced");
+      this.pointerGoal = o.pointer ? { x: o.x, y: o.y } : null;
       if (this.chatNpc)
         this.endChat("you stepped away");
       this.clearKeys();
@@ -1108,6 +1220,8 @@
         self.keys[dir] = false;
       };
       root.addEventListener("keydown", (e) => {
+        if (e.target !== root && e.target.closest("button, a, [role=dialog]"))
+          return;
         if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA"))
           return;
         const k = e.key;
@@ -1162,19 +1276,28 @@
         ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, (e) => up(dir, e)));
       });
       const ins = root.querySelector("[data-inspect]");
-      if (ins)
+      if (ins) {
         ins.addEventListener("pointerdown", (e) => {
           e.preventDefault();
           this.activate();
           this.interact();
         });
+        ins.addEventListener("click", (e) => {
+          if (e.detail === 0) {
+            this.activate();
+            this.interact();
+          }
+        });
+      }
       const cta = this.hud.cta;
       if (cta)
         cta.addEventListener("click", () => {
           this.activate();
           this.interact();
         });
-      root.addEventListener("pointerdown", () => {
+      root.addEventListener("pointerdown", (e) => {
+        if (e.target.closest("button, a, input, [role=dialog]"))
+          return;
         this.activate();
         this._gesture();
       });
@@ -1989,7 +2112,7 @@
       } else {
         title = this.room().name;
         body = this.room().hint || "";
-        hint = "← → ↑ ↓ move";
+        hint = "Click or tap to walk · arrows / WASD · E interact";
       }
       if (h.title && h.title.textContent !== title)
         h.title.textContent = title;
@@ -2141,6 +2264,15 @@
         if ((it.kind === "door" || it.kind === "portal") && it.autoDoor !== false)
           this.doorway(it.x, it.label, this.near === it);
       });
+      if (this.pointerGoal && this.travel) {
+        const g = this.pointerGoal;
+        ctx.strokeStyle = "rgba(232,223,192,.65)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(g.x, g.y + 14, 9, 3, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        this.px(g.x - 1, g.y + 13, 2, 2, "#eadfc0");
+      }
       const ents = this.npcs.filter((n) => n.room === this.roomId).map((n) => ({ y: n.y, npc: n }));
       if (this.cat && this.cat.room === this.roomId)
         ents.push({ y: this.cat.y, cat: true });
@@ -2415,79 +2547,7 @@
       ctx.restore();
     }
     drawNpc(n, t) {
-      const ctx = this.ctx, x = Math.round(n.x), y = Math.round(n.y);
-      const sitting2 = n.state === "sit";
-      const flicker = n.temp ? 0.78 + Math.sin(t * 9 + 1) * 0.1 : 1;
-      ctx.save();
-      if (n.temp)
-        ctx.globalAlpha = flicker;
-      let glitch = 0;
-      if (n.def.glitch) {
-        const ph = (t + x * 0.01) % 7.3;
-        if (ph < 0.09)
-          glitch = 1;
-      }
-      ctx.fillStyle = "rgba(0,0,0,0.24)";
-      ctx.beginPath();
-      ctx.ellipse(x, y + 15, 8, 3, 0, 0, 6.2832);
-      ctx.fill();
-      ctx.translate(x + (glitch ? Math.random() < 0.5 ? -1 : 1 : 0), y + 14 + (sitting2 ? 4 : 0));
-      ctx.scale(n.dir, 1);
-      const fr = n.moving ? n.frame : 0, off = [0, 2, 3, 0, -2, -3][fr];
-      const bob = n.moving ? [0, -1, -1, 0, -1, -1][fr] : Math.round(Math.sin(t * 1.6 + x * 0.13) * 0.5 - 0.5);
-      const { feature: F, color: C } = n;
-      const body = n.temp ? "#948e80" : "#282130", bodyHi = n.temp ? "#aca696" : "#352c3d", bodyDk = "#181218";
-      const skin = "#cdc8ba", skinDk = "#948e80";
-      if (sitting2) {
-        this.px(-3, -5, 3, 5, "#181218");
-        this.px(0, -5, 3, 5, "#1d151d");
-      } else {
-        this.px(-3 - off, -7, 3, 7, "#181218");
-        this.px(0 + off, -7, 3, 7, "#1d151d");
-      }
-      const by = (sitting2 ? -17 : -19) + bob;
-      this.px(-4, by, 9, 12, body);
-      this.px(-4, by, 2, 11, bodyHi);
-      this.px(3, by, 2, 12, bodyDk);
-      const hy = by - 8;
-      this.px(-2, hy, 6, 7, skin);
-      this.px(3, hy, 1, 7, skinDk);
-      if (F === "beret") {
-        this.px(-2, hy - 1, 6, 1, "#282130");
-        this.px(-3, hy - 3, 7, 3, C);
-        this.px(-4, hy - 2, 2, 2, C);
-        this.px(1, hy - 4, 2, 1, C);
-        this.px(-3, by + 3, 7, 2, "#403646");
-      } else if (F === "book") {
-        this.px(-2, hy - 2, 6, 2, "#4a4452");
-        this.px(-3, hy - 1, 2, 1, "#4a4452");
-        this.px(4, by + 4, 4, 6, C);
-        this.px(5, by + 5, 2, 4, "#efe9dc");
-        this.px(-4, by - 1, 9, 2, "#352c3d");
-      } else if (F === "pencil") {
-        this.px(-2, hy - 1, 6, 2, "#3d3644");
-        this.px(3, hy + 1, 4, 1, C);
-        this.px(-4, by + 5, 9, 2, C);
-        this.px(-1, by + 4, 3, 4, "#403646");
-      } else if (F === "hood") {
-        this.px(-3, hy - 2, 8, 3, C);
-        this.px(-3, hy - 1, 2, 6, C);
-        this.px(4, hy - 1, 1, 6, C);
-        this.px(-4, by, 9, 3, C);
-        this.px(-4, by + 2, 9, 1, "rgba(0,0,0,0.25)");
-      } else if (F === "halo") {
-        this.px(-2, hy - 1, 6, 1, "#d8d4c8");
-        this.px(-2, hy - 4, 6, 1, C);
-      } else if (F === "pale") {
-        this.px(-2, hy - 1, 6, 1, "#e8e2d4");
-      }
-      if (glitch) {
-        ctx.globalAlpha = 0.4;
-        this.px(-5, hy + 2, 10, 1, "#5eead4");
-        this.px(-5, by + 6, 10, 1, "#f2a3c0");
-        ctx.globalAlpha = n.temp ? flicker : 1;
-      }
-      ctx.restore();
+      drawPresence(this.ctx, n, t, this.reduced);
     }
     drawCat(t) {
       const c = this.cat, ctx = this.ctx, x = Math.round(c.x), y = Math.round(c.y);
@@ -2565,7 +2625,7 @@
       ctx.textAlign = "left";
     }
     drawPrompt(sx, sy, t) {
-      const P = this.P, bob = Math.round(Math.sin(t * 5) * 1.5), x = Math.round(sx) - 6, y = Math.round(sy) - 26 + bob;
+      const P = this.P, bob = this.reduced ? 0 : Math.round(Math.sin(t * 5) * 1.5), x = Math.round(sx) - 6, y = Math.round(sy) - 26 + bob;
       this.px(x, y, 13, 11, P.ceiling);
       this.px(x + 1, y + 1, 11, 9, P.ink);
       this.px(x + 5, y + 11, 3, 2, P.ceiling);
@@ -2596,10 +2656,10 @@
   // world/model-rooms.js
   var M = {
     ceil: "#0e0a12",
-    wallHi: "#2a2028",
-    wallLo: "#171019",
-    floor0: "#2a201c",
-    floor1: "#1a130f",
+    wallHi: "#39313b",
+    wallLo: "#241e28",
+    floor0: "#372b23",
+    floor1: "#251c17",
     wood: "#3a2c24",
     woodHi: "#5c4636",
     woodDk: "#1e1610",
@@ -2750,19 +2810,33 @@
     pool2(b, cx, 318, w * 0.9, "242,173,95", 0.08);
   }
   function studyWall(b, x0, y0, cols, rows, tints, drift) {
-    let k = 0;
-    for (let r = 0;r < rows; r++)
+    const width = cols * 44 - 12;
+    for (let r = 0;r < rows; r++) {
+      const y = y0 + r * 40 + 28;
+      b.px(x0 - 4, y, width + 8, 4, M.wood);
+      b.px(x0 - 4, y, width + 8, 1, M.woodHi);
+      b.px(x0 + 8, y + 4, 3, 7, M.woodDk);
+      b.px(x0 + width - 14, y + 4, 3, 7, M.woodDk);
       for (let c = 0;c < cols; c++) {
-        const w = 22 + k * 7 % 10, h = 18 + k * 5 % 12;
-        const x = x0 + c * 44 + k * 11 % (drift || 5), y = y0 + r * 40 + k * 13 % (drift || 5);
-        b.px(x - 1, y - 1, w + 2, h + 2, M.bronze);
-        b.px(x - 1, y - 1, w + 2, 1, "rgba(198,154,82,0.6)");
-        b.px(x, y, w, h, "#141018");
-        b.px(x + 2, y + 2, w - 4, h - 4, tints[k % tints.length]);
-        b.px(x + 2, y + 2, w - 4, 1, "rgba(247,217,140,0.10)");
-        b.px(x + w / 2, y - 3, 1, 2, "rgba(216,203,176,0.4)");
-        k++;
+        const k = r * cols + c, x = x0 + c * 44;
+        if (k % 3 === 0) {
+          b.px(x, y - 7, 30, 7, "#5b4b40");
+          b.px(x + 2, y - 9, 26, 3, "#b8a88e");
+          b.px(x + 4, y - 11, 23, 2, "#d0c1a4");
+        } else if (k % 3 === 1) {
+          for (let j = 0;j < 2; j++) {
+            b.px(x + j * 13, y - 17 + j * 4, 9, 17 - j * 4, j ? "#827b68" : "#466861");
+            b.px(x + j * 13 + 2, y - 19 + j * 4, 5, 2, M.bronze);
+            b.px(x + j * 13 + 2, y - 10, 5, 4, M.linen);
+          }
+        } else {
+          b.px(x, y - 22, 5, 22, "#a79981");
+          b.px(x + 6, y - 19, 5, 19, "#c0b095");
+          b.px(x + 17, y - 10, 16, 10, M.woodHi);
+          b.px(x + 22, y - 7, 5, 2, M.bronze);
+        }
       }
+    }
   }
   function rug(b, cx, y, w, base, hi) {
     for (let x = cx - w / 2;x < cx + w / 2; x++) {
@@ -4189,10 +4263,8 @@
             "rgba(224,102,46,0.09)"
           ], 7);
           b.px(210, 150, 260, 1, "rgba(243,236,223,0.045)");
-          framed(b, 96, 168, 40, 34, "rgba(94,234,212,0.12)");
-          framed(b, 150, 166, 30, 40, "rgba(242,163,192,0.10)");
-          framed(b, 560, 170, 44, 36, "rgba(247,217,140,0.10)");
-          framed(b, 614, 176, 30, 30, "rgba(94,234,212,0.08)");
+          studyWall(b, 102, 184, 2, 1, [], 0);
+          studyWall(b, 560, 184, 2, 1, [], 0);
           b.px(430, 210, 120, 4, M.wood);
           b.px(430, 210, 120, 1, M.woodHi);
           b.px(432, 214, 3, 5, M.woodDk);
@@ -10301,9 +10373,23 @@
         setTimeout(next, 120);
     }
     doorIn.addEventListener("click", comeIn);
+    function declineDoor() {
+      doorEl.hidden = true;
+      afterDoor = null;
+      leaveWorld();
+    }
+    $("#door-back").addEventListener("click", declineDoor);
     document.addEventListener("keydown", (ev) => {
       if (doorEl.hidden)
         return;
+      if ((ev.key === "Enter" || ev.key === " ") && ev.target.id === "door-back")
+        return;
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        declineDoor();
+        return;
+      }
       if (ev.key === "Enter" || ev.key === "e" || ev.key === "E" || ev.key === " ") {
         ev.preventDefault();
         ev.stopImmediatePropagation();
@@ -10314,7 +10400,7 @@
       } else if (ev.key === "Tab") {
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        doorIn.focus();
+        (document.activeElement === doorIn ? $("#door-back") : doorIn).focus();
       }
     }, true);
     window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
@@ -11258,6 +11344,7 @@
       if (!curOpen)
         return;
       curOpen = false;
+      $("#current").classList.remove("reading");
       curOnly = null;
       curVeil.classList.remove("on");
       setTimeout(() => {
@@ -11835,6 +11922,7 @@
       const it = eng.near;
       if (!it) {
         compassAction.classList.remove("on");
+        compassVerb.textContent = "";
         return;
       }
       const verb = it.kind === "door" || it.kind === "portal" ? "ENTER" : String(it.action || "inspect").toUpperCase();
@@ -11843,8 +11931,14 @@
     }
     setInterval(syncCompass, 150);
     mapBtn.addEventListener("click", () => {
-      if (destOpen)
+      if (destOpen) {
         closeDest();
+        return;
+      }
+      if (!worldEl.classList.contains("fs"))
+        enterWorld();
+      if (!doorEl.hidden)
+        afterDoor = openDest;
       else
         openDest();
     });
@@ -11867,6 +11961,10 @@
       if (!panel.hidden)
         return;
       const k = event.key;
+      if ((k === "Enter" || k === " ") && event.target.closest("button, a"))
+        return;
+      if (event.target.closest(".cur__read") && k.startsWith("Arrow"))
+        return;
       if (charterOpen) {
         if (charterDocs.length < 2)
           return;
@@ -11973,6 +12071,7 @@
       const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
       const lookout = rooms.lookout;
       lookout.width = 960;
+      lookout.spawn = { x: 180, y: 378 };
       lookout.hint = "The grounds at perpetual dusk. Four buildings on the ridge, and the whole frontier glittering below. Walk to any door and press E to enter.";
       delete lookout.doors.shop;
       lookout.items = lookout.items.filter((item) => item.to !== "shop");
@@ -12129,8 +12228,11 @@
             window.parent.postMessage({ source: "mnemos-world", type: "came-in" }, "*");
           }
         } catch (e) {}
-      } else if (!seen(FIRST.door))
-        openDoor();
+      }
+      setTimeout(() => {
+        setupWorldPointer();
+        $("#enter-world").disabled = false;
+      }, 0);
       window.__sanctuaryArchive = archive_default;
       window.__sanctuaryArchiveUI = { openBoard: bridge.board, openJournal: bridge.journal };
       window.__sanctuaryNavigation = {
@@ -12177,10 +12279,13 @@
               console.warn("?go failed", wantGo, e);
             }
           };
-          if (!doorEl.hidden)
-            afterDoor = run;
-          else
-            setTimeout(run, 240);
+          setTimeout(() => {
+            enterWorld();
+            if (!doorEl.hidden)
+              afterDoor = run;
+            else
+              run();
+          }, 240);
         }
       } catch (e) {}
       setTimeout(() => {
@@ -12319,6 +12424,7 @@
       appendWords(said || "They stand in front of it and say nothing.", "the wall · " + (i + 1) + " of " + n + " · " + day(piece.created_at));
     }
     function showScene() {
+      cab.classList.add("visiting");
       encounterEl.hidden = false;
       trackLight();
       requestAnimationFrame(() => {
@@ -12327,6 +12433,7 @@
       });
     }
     function hideScene() {
+      cab.classList.remove("visiting");
       clearSpot();
       if (lightRaf) {
         cancelAnimationFrame(lightRaf);
@@ -12409,32 +12516,17 @@
     function appendWords(text, srcText, after) {
       clearInterval(encTypeTimer);
       const p = document.createElement("div");
+      p.textContent = text || "";
       encWords.appendChild(p);
-      const finish = () => {
-        if (srcText) {
-          const s = document.createElement("span");
-          s.className = "src";
-          s.textContent = srcText;
-          encWords.appendChild(s);
-        }
-        encWords.scrollTop = encWords.scrollHeight;
-        if (after)
-          after();
-      };
-      if (REDUCED || !text) {
-        p.textContent = text || "";
-        finish();
-        return;
+      if (srcText) {
+        const source = document.createElement("span");
+        source.className = "src";
+        source.textContent = srcText;
+        encWords.appendChild(source);
       }
-      let i = 0;
-      encTypeTimer = setInterval(() => {
-        p.textContent = text.slice(0, ++i);
-        encWords.scrollTop = encWords.scrollHeight;
-        if (i >= text.length) {
-          clearInterval(encTypeTimer);
-          finish();
-        }
-      }, 11);
+      encWords.scrollTop = p.offsetTop - encWords.offsetTop;
+      if (after)
+        after();
     }
     function appendHouse(text) {
       const d = document.createElement("div");
@@ -12504,9 +12596,9 @@
       encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc2(j.id) + '">' + esc2("about " + (j.title || "untitled")) + "</button>").join("") + (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-free>something else…</button>' + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
     }
     function openChat(info) {
-      if (worldEl.classList.contains("nofeed")) {
-        feedTemp = true;
-        setFeed(true);
+      if (!worldEl.classList.contains("nofeed")) {
+        feedTemp = false;
+        setFeed(false);
       }
       const npc = eng ? eng.npcs.find((n) => n.id === info.id) : null;
       const readable = knows(info.id) && archive_default.isLoaded();
@@ -12712,9 +12804,9 @@
         enc = null;
         clearInterval(encTypeTimer);
       }
-      if (worldEl.classList.contains("nofeed")) {
-        feedTemp = true;
-        setFeed(true);
+      if (!worldEl.classList.contains("nofeed")) {
+        feedTemp = false;
+        setFeed(false);
       }
       listening = { convoId: h.convoId, key: "", last: h };
       encName.innerHTML = h.who.map((w) => '<span style="color:' + esc2(w.color || "#efe9dc") + '">' + esc2(w.name) + "</span>").join('<span class="mono-in"> · </span>');
@@ -12805,9 +12897,9 @@
       worldEl.classList.toggle("nofeed", !shown);
       feedBtn.setAttribute("aria-pressed", shown ? "true" : "false");
     }
-    let feedShown = true;
+    let feedShown = false;
     try {
-      feedShown = localStorage.getItem(FEED_KEY) !== "hidden";
+      feedShown = localStorage.getItem(FEED_KEY) === "shown";
     } catch (e) {}
     setFeed(feedShown);
     feedBtn.addEventListener("click", () => {
@@ -12819,47 +12911,229 @@
       } catch (e) {}
     });
     function setFsLabel() {
-      const on = document.fullscreenElement === worldEl || worldEl.classList.contains("fs");
-      fsBtn.setAttribute("aria-pressed", on ? "true" : "false");
-      fsBtn.textContent = on ? "× exit" : "⤢ full";
+      const on = worldEl.classList.contains("fs");
+      fsBtn.setAttribute("aria-pressed", String(on));
+      fsBtn.textContent = on ? "Leave world" : "Enter world";
     }
-    fsBtn.addEventListener("click", () => {
-      if (document.fullscreenElement === worldEl) {
-        document.exitFullscreen();
+    function enterWorld() {
+      if (!eng)
         return;
-      }
-      if (worldEl.classList.contains("fs")) {
-        worldEl.classList.remove("fs");
-        setFsLabel();
+      worldEl.classList.add("fs");
+      document.documentElement.classList.add("exploring");
+      setFeed(false);
+      setFsLabel();
+      if (!seen(FIRST.door) && !FROM_DOOR)
+        openDoor();
+      else
+        cab.focus({ preventScroll: true });
+    }
+    function leaveWorld() {
+      if (FROM_DOOR)
         return;
-      }
-      if (worldEl.requestFullscreen)
-        worldEl.requestFullscreen().catch(() => {
-          worldEl.classList.add("fs");
-          setFsLabel();
-        });
-      else {
-        worldEl.classList.add("fs");
-        setFsLabel();
-      }
-    });
-    document.addEventListener("fullscreenchange", setFsLabel);
+      eng?.clearKeys();
+      if (eng?.travel)
+        eng.cancelTravel("escape");
+      worldEl.classList.remove("fs");
+      document.documentElement.classList.remove("exploring");
+      setFsLabel();
+      $("#enter-world").focus({ preventScroll: true });
+    }
+    fsBtn.addEventListener("click", () => worldEl.classList.contains("fs") ? leaveWorld() : enterWorld());
+    $("#enter-world").addEventListener("click", enterWorld);
+    document.querySelectorAll("[data-enter-world]").forEach((link) => link.addEventListener("click", (e) => {
+      e.preventDefault();
+      enterWorld();
+    }));
     addEventListener("keydown", (e) => {
-      if (e.key !== "Escape")
+      if (e.key !== "Escape" || e.defaultPrevented || !panel.hidden)
         return;
       if (FROM_DOOR) {
-        if (e.defaultPrevented || !panel.hidden)
-          return;
         try {
-          if (window.parent && window.parent !== window) {
+          if (window.parent !== window)
             window.parent.postMessage({ source: "mnemos-world", type: "stand-up" }, "*");
-          }
-        } catch (err) {}
+        } catch (_) {}
         return;
       }
-      if (worldEl.classList.contains("fs")) {
-        worldEl.classList.remove("fs");
-        setFsLabel();
+      if (worldEl.classList.contains("fs"))
+        leaveWorld();
+    });
+    function setupWorldPointer() {
+      const stage = $("#stage");
+      const inspection = document.createElement("aside");
+      inspection.className = "inspection";
+      inspection.hidden = true;
+      inspection.setAttribute("aria-label", "Object description");
+      inspection.innerHTML = '<button class="inspection__close" type="button" aria-label="Close description">×</button><div class="inspection__label"></div><p class="inspection__text" role="status"></p>';
+      stage.append(inspection);
+      const closeInspection = () => {
+        inspection.hidden = true;
+        cab.focus({ preventScroll: true });
+      };
+      inspection.querySelector("button").addEventListener("click", closeInspection);
+      const originalSay = eng.say.bind(eng);
+      eng.say = (text) => {
+        originalSay(text);
+        if (!worldEl.classList.contains("fs") || !doorEl.hidden || !encounterEl.hidden || !panel.hidden)
+          return;
+        inspection.querySelector(".inspection__label").textContent = eng.near?.label || eng.room().name;
+        inspection.querySelector(".inspection__text").textContent = text;
+        inspection.hidden = false;
+      };
+      cab.addEventListener("keydown", (e) => {
+        if (inspection.hidden)
+          return;
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          closeInspection();
+        } else if (/^(Arrow|[wasdWASD]$)/.test(e.key))
+          inspection.hidden = true;
+      }, true);
+      const baseGo = eng.go.bind(eng);
+      eng.go = (...args) => {
+        inspection.hidden = true;
+        return baseGo(...args);
+      };
+      const resize = () => {
+        const immersive = worldEl.classList.contains("fs");
+        const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
+        if (eng.o.width === width)
+          return;
+        eng.o.width = eng.cv.width = width;
+        eng.ctx.imageSmoothingEnabled = false;
+        eng._vig = null;
+        eng._bg = null;
+        eng.camX = Math.max(0, Math.min(eng.room().width - width, eng.av.x - width / 2));
+      };
+      new ResizeObserver(resize).observe(stage);
+      eng.cv.addEventListener("click", (e) => {
+        if (!worldEl.classList.contains("fs")) {
+          enterWorld();
+          return;
+        }
+        if (!doorEl.hidden || enc || document.querySelector(".veil:not([hidden]), .panel:not([hidden])") || eng.trans)
+          return;
+        inspection.hidden = true;
+        const rect = eng.cv.getBoundingClientRect();
+        const scale = Math.min(rect.width / eng.o.width, rect.height / eng.o.height);
+        const x = (e.clientX - rect.left - (rect.width - eng.o.width * scale) / 2) / scale + eng.camX;
+        const y = (e.clientY - rect.top - (rect.height - eng.o.height * scale) / 2) / scale;
+        if (y < 0 || y > 420)
+          return;
+        const room = eng.roomId;
+        const npc = eng.npcs.filter((n) => n.room === room).find((n) => Math.abs(n.x - x) < 22 && y > n.y - 35 && y < n.y + 20);
+        const item = !npc && y < 350 && eng.room().items?.filter((it) => Math.abs(it.x - x) < (it.range || 30)).sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x))[0];
+        const targetX = Math.max(24, Math.min(eng.room().width - 24, npc ? npc.x - 22 : item ? item.x : x));
+        const targetY = Math.max(352, Math.min(402, npc ? npc.y : y));
+        eng.activate();
+        cab.focus({ preventScroll: true });
+        eng.travelTo({ room, x: targetX, y: targetY, pointer: true, speed: 4.3, arrival: () => {
+          if (eng.roomId !== room)
+            return;
+          if (npc && npc.room === room && Math.abs(npc.x - eng.av.x) < 64)
+            eng.interactNpc(npc);
+          else if (item) {
+            eng.near = item;
+            eng.interact();
+          }
+        } });
+      });
+    }
+    cab.addEventListener("keydown", (e) => {
+      if (e.target !== cab || worldEl.classList.contains("fs"))
+        return;
+      if (/^(Arrow|[wasdeWASDE ]$|Enter$)/.test(e.key)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        enterWorld();
+      }
+    }, true);
+    let inerted = [];
+    function activeSurface() {
+      return document.querySelector('.veil:not([hidden]) [role="dialog"], .panel:not([hidden]) [role="dialog"], .door:not([hidden]) [role="dialog"], .visit:not([hidden]) [role="dialog"]') || (worldEl.classList.contains("fs") ? worldEl : null);
+    }
+    function syncSurface() {
+      inerted.forEach(({ el, aria }) => {
+        el.inert = false;
+        if (aria == null)
+          el.removeAttribute("aria-hidden");
+        else
+          el.setAttribute("aria-hidden", aria);
+      });
+      inerted = [];
+      let surface = activeSurface();
+      while (surface && surface !== document.body) {
+        for (const sibling of surface.parentElement.children) {
+          if (sibling !== surface && !sibling.inert && !["SCRIPT", "STYLE"].includes(sibling.tagName)) {
+            inerted.push({ el: sibling, aria: sibling.getAttribute("aria-hidden") });
+            sibling.inert = true;
+            sibling.setAttribute("aria-hidden", "true");
+          }
+        }
+        surface = surface.parentElement;
+      }
+      const focus = document.activeElement;
+      if (focus?.closest("[inert], [hidden]")) {
+        const active = activeSurface();
+        const target = active === worldEl ? cab : active?.querySelector('button:not(:disabled), [tabindex="0"]');
+        (target || $("#enter-world")).focus({ preventScroll: true });
+      }
+    }
+    const surfaceObserver = new MutationObserver(syncSurface);
+    [worldEl, ...document.querySelectorAll(".veil, .panel, .door, .visit")].forEach((el) => surfaceObserver.observe(el, { attributes: true, attributeFilter: ["hidden", "class"] }));
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab")
+        return;
+      const surface = activeSurface();
+      if (!surface)
+        return;
+      const stops = [...surface.querySelectorAll('button:not(:disabled), a[href], input, [tabindex="0"]')].filter((el) => el.getClientRects().length && !el.closest("[hidden], [inert]"));
+      if (!stops.length)
+        return;
+      const at = stops.indexOf(document.activeElement);
+      if (e.shiftKey && at <= 0) {
+        e.preventDefault();
+        stops.at(-1).focus();
+      } else if (!e.shiftKey && (at === -1 || at === stops.length - 1)) {
+        e.preventDefault();
+        stops[0].focus();
+      }
+    }, true);
+    syncSurface();
+    [
+      ["destveil", closeDest],
+      ["curveil", closeCurrent],
+      ["workveil", closeWall],
+      ["charterveil", closeCharter],
+      ["fieldveil", closeFieldGlass]
+    ].forEach(([id, close]) => {
+      const dialog = $("#" + id).querySelector('[role="dialog"]');
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "reader-close";
+      button.textContent = "Back to world ×";
+      button.addEventListener("click", close);
+      dialog.append(button);
+    });
+    const currentDialog = $("#current");
+    const backToShelf = document.createElement("button");
+    backToShelf.type = "button";
+    backToShelf.className = "reader-shelf";
+    backToShelf.textContent = "← All entries";
+    backToShelf.addEventListener("click", () => {
+      currentDialog.classList.remove("reading");
+      curRows.querySelector(".sel")?.focus();
+    });
+    currentDialog.querySelector(".cur__detail").prepend(backToShelf);
+    curRows.addEventListener("click", (e) => {
+      if (e.target.closest("[data-cur]")) {
+        currentDialog.classList.add("reading");
+        curRead.focus();
+      }
+    });
+    curRows.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        currentDialog.classList.add("reading");
       }
     });
     if (FROM_DOOR) {
@@ -13064,8 +13338,11 @@
       if (museumLink)
         museumLink.addEventListener("click", (ev) => {
           ev.preventDefault();
-          document.getElementById("top").scrollIntoView();
-          setTimeout(() => openMuseum("atrium"), 400);
+          enterWorld();
+          if (!doorEl.hidden)
+            afterDoor = () => openMuseum("atrium");
+          else
+            openMuseum("atrium");
         });
       const queue = PLACE_SPEC.filter((p) => p.room);
       const step = () => {
