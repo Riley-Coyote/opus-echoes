@@ -9493,6 +9493,237 @@
     return h < 24 && mm < 60 ? h * 60 + mm : null;
   }
 
+  // world/overheard.js
+  var DEFAULT_URL2 = "data/overheard.json";
+  var GAP_MIN = 4;
+  var GAP_MAX = 9;
+  var PAIR_COOLDOWN = 60;
+  var HERE_BIAS = 0.6;
+  var REACH = 800;
+  var NEAR = 20;
+  var PACE = 45;
+  var BUBBLE_MIN = 2500;
+  var BUBBLE_MAX = 7000;
+  var FREE = ["idle", "sit", "stroll", "sitgo"];
+  var clamp2 = (v, a, b) => v < a ? a : v > b ? b : v;
+  var roomWord2 = (name) => String(name || "").replace(/^THE\s+/i, "").toLowerCase();
+  function fnv1a2(str) {
+    let h = 2166136261;
+    for (let i = 0;i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    return h >>> 0;
+  }
+  var seed = (...parts) => fnv1a2(parts.join(":"));
+  var chance = (...parts) => seed(...parts) % 1000 / 1000;
+  async function load2(url) {
+    const res = await fetch(new URL(url || DEFAULT_URL2, document.baseURI).href);
+    if (!res.ok)
+      throw new Error("overheard: " + res.status + " " + res.statusText);
+    return res.json();
+  }
+  function create2({ eng, data }) {
+    const all = (data && Array.isArray(data.exchanges) ? data.exchanges : []).filter((ex) => ex && ex.turns && ex.turns.length >= 2);
+    const sittings2 = [];
+    for (const ex of all)
+      if (!sittings2.includes(ex.sitting))
+        sittings2.push(ex.sitting);
+    const S2 = {
+      day: null,
+      nextAbs: null,
+      duskDay: -1,
+      played: new Set,
+      pairAt: new Map,
+      log: []
+    };
+    const speak = eng.speak.bind(eng);
+    eng.speak = (n, text, convoId) => {
+      const given = speak(n, text, convoId);
+      const c = eng.convo;
+      if (!c || !c.overheard || !convoId || convoId !== c.id)
+        return given;
+      const ms = clamp2(Math.round(String(text).length * PACE), BUBBLE_MIN, BUBBLE_MAX);
+      if (n.bubble)
+        n.bubble.until = performance.now() + ms;
+      return ms;
+    };
+    const free = (n) => !!n && !n.temp && n.room !== ASLEEP && !n.convo && !n._held && !n._visit && eng.chatNpc !== n && FREE.includes(n.state) && !(eng.gathering && eng.gathering.members && eng.gathering.members.includes(n));
+    const pairKey = (ex) => ex.participants.slice().sort().join("|");
+    const cool = (ex, abs) => {
+      const at = S2.pairAt.get(pairKey(ex));
+      return at == null || abs - at >= PAIR_COOLDOWN;
+    };
+    const reachable = (ex, npcs) => {
+      const xs = ex.participants.map((p) => (npcs.find((n) => n.id === p) || {}).x);
+      if (xs.some((x) => !Number.isFinite(x)))
+        return false;
+      return Math.max(...xs) - Math.min(...xs) <= REACH;
+    };
+    function choose(list, day, min) {
+      let best = null, bestKey = Infinity;
+      for (const ex of list) {
+        const rank = (sittings2.indexOf(ex.sitting) + day) % Math.max(1, sittings2.length);
+        const key = rank * 1e6 + seed(ex.id, day, min) % 1e6;
+        if (key < bestKey) {
+          bestKey = key;
+          best = ex;
+        }
+      }
+      return best;
+    }
+    const nameOf = (n) => n && n.name || "";
+    function nameList(npcs) {
+      const names = npcs.map(nameOf).filter(Boolean);
+      if (names.length < 2)
+        return names.join("");
+      return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+    }
+    function begin(who, ex) {
+      who.forEach((n) => {
+        if (n._held)
+          eng.releaseNpc(n.id);
+      });
+      eng.beginConvo(who, ex.turns.map((t) => [t.who, t.text]), ex.id);
+      const c = eng.convo;
+      if (!c)
+        return false;
+      c.overheard = ex;
+      if (who.length > 2 && Number.isFinite(who[0].tx) && Number.isFinite(who[1].tx)) {
+        const room = eng.rooms[who[0].room] || { width: 640 };
+        const band = eng.o.walkBand || [352, 402];
+        const mid = (who[0].tx + who[1].tx) / 2, my = who[0].ty;
+        who.forEach((n, i) => {
+          n.tx = clamp2(mid + (i === 0 ? -NEAR : i === 1 ? 0 : NEAR), 60, room.width - 60);
+          n.ty = clamp2(my + (i === 1 ? 2 : 0), band[0] + 4, band[1] - 2);
+        });
+      }
+      return true;
+    }
+    function play(ex, npcs, room, ctx, abs) {
+      const who = ex.participants.map((p) => npcs.find((n) => n.id === p)).filter(Boolean);
+      if (who.length !== ex.participants.length)
+        return false;
+      const observed = room === eng.roomId;
+      if (observed && !begin(who, ex))
+        return false;
+      S2.played.add(ex.id);
+      S2.pairAt.set(pairKey(ex), abs);
+      S2.log.push({ id: ex.id, sitting: ex.sitting, day: ctx.day, min: ctx.min, room, observed });
+      if (S2.log.length > 200)
+        S2.log.shift();
+      if (!observed)
+        eng.sysLine(nameList(who) + " are talking in the " + roomWord2((eng.rooms[room] || {}).name || room));
+      return true;
+    }
+    function anywhere(ctx, abs) {
+      const byRoom = new Map;
+      for (const n of eng.npcs) {
+        if (!free(n))
+          continue;
+        if (!byRoom.has(n.room))
+          byRoom.set(n.room, []);
+        byRoom.get(n.room).push(n);
+      }
+      const rooms = Array.from(byRoom.keys()).filter((r) => byRoom.get(r).length >= 2);
+      if (!rooms.length)
+        return false;
+      rooms.sort((a, b) => seed(a, abs) - seed(b, abs));
+      const here = eng.roomId;
+      const order = rooms.includes(here) && chance("room", ctx.day, ctx.min) < HERE_BIAS ? [here].concat(rooms.filter((r) => r !== here)) : rooms;
+      for (const room of order) {
+        const npcs = byRoom.get(room), ids = npcs.map((n) => n.id);
+        const ex = choose(all.filter((e) => (S2.duskDay === ctx.day || e.kind !== "salon") && !S2.played.has(e.id) && e.participants.every((p) => ids.includes(p)) && cool(e, abs) && reachable(e, npcs)), ctx.day, ctx.min);
+        if (ex && play(ex, npcs, room, ctx, abs))
+          return true;
+      }
+      return false;
+    }
+    function gathering(ctx, abs) {
+      const byRoom = new Map;
+      for (const n of eng.npcs) {
+        if (n.temp || n.state !== "held" || n.convo || eng.chatNpc === n || n.room === ASLEEP)
+          continue;
+        if (!byRoom.has(n.room))
+          byRoom.set(n.room, []);
+        byRoom.get(n.room).push(n);
+      }
+      for (const room of byRoom.keys()) {
+        const npcs = byRoom.get(room);
+        if (npcs.length < 2)
+          continue;
+        const ids = npcs.map((n) => n.id);
+        const ex = choose(all.filter((e) => e.kind === "salon" && !S2.played.has(e.id) && e.participants.every((p) => ids.includes(p)) && cool(e, abs)), ctx.day, ctx.min);
+        if (ex && play(ex, npcs, room, ctx, abs)) {
+          S2.duskDay = ctx.day;
+          return true;
+        }
+      }
+      return false;
+    }
+    function tick(ctx) {
+      if (!all.length || !ctx)
+        return false;
+      const abs = (ctx.day || 1) * 1440 + ctx.min;
+      if (ctx.day !== S2.day) {
+        S2.day = ctx.day;
+        S2.played.clear();
+        S2.pairAt.clear();
+        S2.duskDay = -1;
+      }
+      const wait = () => {
+        S2.nextAbs = abs + GAP_MIN + seed("overheard", ctx.day, ctx.min) % (GAP_MAX - GAP_MIN + 1);
+      };
+      if (S2.nextAbs == null) {
+        wait();
+        return false;
+      }
+      if (abs < S2.nextAbs)
+        return false;
+      wait();
+      if (eng.convo || eng.gathering || eng.trans)
+        return false;
+      if (ctx.phase === "dusk" && S2.duskDay !== ctx.day && gathering(ctx, abs))
+        return true;
+      return anywhere(ctx, abs);
+    }
+    function heard(convoId) {
+      const c = eng.convo;
+      if (!c || !c.overheard)
+        return null;
+      if (convoId && c.id !== convoId)
+        return null;
+      return {
+        convoId: c.id,
+        exchange: c.overheard,
+        room: c.who && c.who[0] ? c.who[0].room : null,
+        who: (c.who || []).map((n) => ({ id: n.id, name: n.name, color: n.color })),
+        speaking: c.who && c.li > 0 ? (c.overheard.turns[c.li - 1] || {}).who : null,
+        turns: c.overheard.turns.slice(0, Math.max(0, c.li)),
+        done: c.li >= c.overheard.turns.length
+      };
+    }
+    return {
+      tick,
+      heard,
+      count: () => all.length,
+      sittings: () => sittings2.slice(),
+      playing: () => eng.convo && eng.convo.overheard || null,
+      state: () => ({
+        exchanges: all.length,
+        sittings: sittings2.length,
+        day: S2.day,
+        nextAbs: S2.nextAbs,
+        playedToday: Array.from(S2.played),
+        log: S2.log.slice()
+      })
+    };
+  }
+  async function attach(opts) {
+    const data = await load2(opts && opts.url);
+    return create2({ eng: opts.eng, data });
+  }
+
   // landing.js
   var BOOT_AGREEMENT = "These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.";
   (async () => {
@@ -9509,12 +9740,12 @@
       const RAMP = [P2.sky0, P2.sky1, P2.sky2, P2.sky3, P2.sky4, P2.sky5, P2.sky6, P2.sky7];
       const hex = (c) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
       let W = 0, H = 0, horizon = 0, img = null, d = null;
-      let seed = 49734321;
+      let seed2 = 49734321;
       const rnd2 = () => {
-        seed ^= seed << 13;
-        seed ^= seed >>> 17;
-        seed ^= seed << 5;
-        return (seed >>> 0) % 1e5 / 1e5;
+        seed2 ^= seed2 << 13;
+        seed2 ^= seed2 >>> 17;
+        seed2 ^= seed2 << 5;
+        return (seed2 >>> 0) % 1e5 / 1e5;
       };
       function set(x, y, rgb, a) {
         if (x < 0 || y < 0 || x >= W || y >= H)
@@ -9653,7 +9884,7 @@
         cv.style.width = w + "px";
         cv.style.height = docH + "px";
         horizon = Math.max(8, Math.min(H - 2, Math.round(heroFoot() / S2)));
-        seed = 49734321;
+        seed2 = 49734321;
         img = ctx.createImageData(W, H);
         d = img.data;
         dusk();
@@ -10131,6 +10362,7 @@
     ];
     const byId = Object.fromEntries(PLACES.map((p) => [p.id, p]));
     const DAY = { phase: null, placed: {}, pairs: new Map, said: new Set, lastMin: -1, warned: false };
+    let overheard = null, listening = null, listenTimer = null;
     const occupied = (n) => n.temp || n.convo || eng.chatNpc === n || n._visit || n._held || ["travel", "transit", "meet", "leave"].includes(n.state) || eng.gathering && eng.gathering.members.includes(n);
     const roomWordOf = (id) => (eng.rooms[id] && eng.rooms[id].name || id).replace(/^THE\s+/i, "").toLowerCase();
     function placeNpc(n, room, x) {
@@ -10233,6 +10465,8 @@
       for (const key of Array.from(DAY.pairs.keys()))
         if (!live.has(key))
           DAY.pairs.delete(key);
+      if (overheard)
+        overheard.tick({ min, day: eng.day || 1, phase });
     }
     function currentWorldDestination() {
       if (!eng)
@@ -11731,7 +11965,12 @@
             localStorage.setItem(CLOCK_KEY, JSON.stringify({ clockMin: eng.clockMin, day: d, at: Date.now() }));
           } catch (e) {}
         },
-        onListen: () => {},
+        onListen: (info) => {
+          if (info)
+            openListen(info);
+          else
+            endListen();
+        },
         onLive: (v) => {
           $("#liveflag").hidden = !v;
         },
@@ -11803,6 +12042,12 @@
         said: () => Array.from(DAY.said),
         UNOBSERVED_MIN
       };
+      try {
+        overheard = await attach({ eng });
+        window.__sanctuaryOverheard = overheard;
+      } catch (err) {
+        console.warn("the overheard could not be read", err);
+      }
       if (FROM_DOOR) {
         mark(FIRST.door);
         try {
@@ -11881,6 +12126,16 @@
         phase: DAY.phase,
         avatar: navigation.surface === "world" ? { x: Math.round(eng.av.x), y: Math.round(eng.av.y), moving: eng.av.moving } : null,
         travel: navigation.surface === "world" ? eng.getTravelState() : { target: navigation.museumTarget },
+        convo: eng.convo ? {
+          id: eng.convo.id,
+          room: eng.convo.who && eng.convo.who[0] ? eng.convo.who[0].room : null,
+          who: (eng.convo.who || []).map((n) => ({ id: n.id, name: n.name, x: Math.round(n.x), dir: n.dir })),
+          phase: eng.convo.phase,
+          turn: eng.convo.li,
+          turns: (eng.convo.lines || []).length,
+          listening: eng.listenConvo === eng.convo.id,
+          overheard: eng.convo.overheard ? { id: eng.convo.overheard.id, sitting: eng.convo.overheard.sittingTitle, day: eng.convo.overheard.day } : null
+        } : null,
         residents: eng.npcs.filter((npc) => !npc.temp).map((npc) => ({ id: npc.id, room: npc.room, x: Math.round(npc.x), activity: residentActivity(npc).label }))
       });
       window.advanceTime = async (ms) => {
@@ -11942,8 +12197,7 @@
       const key = n.id + "|" + line;
       if (key !== approachKey) {
         approachKey = key;
-        const src = isHaiku ? "the house" : it.line && it.line.from ? srcOf(it.line.from) + " · from the archive" : "from the archive";
-        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>" + (isHaiku ? '<div class="ap__why">no record of HAIKU’s words exists; the house will not invent them.</div>' : "") + '<div class="ap__src">' + esc2(src) + "</div>";
+        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>" + (isHaiku ? '<div class="ap__why">no record of HAIKU’s words exists; the house will not invent them.</div>' + '<div class="ap__src">the house</div>' : "");
         approachEl.hidden = false;
       }
       approachEl.classList.add("on");
@@ -12071,6 +12325,8 @@
       encName.style.color = enc.color;
       encWhere.textContent = (npc ? ACTIVITY(npc) + " · " : "") + enc.roomWord;
       encKicker.textContent = "from the archive";
+      if (encMode)
+        encMode.hidden = false;
       encWords.innerHTML = "";
       encFree.hidden = true;
       setBudget();
@@ -12147,6 +12403,11 @@
     });
     encMoves.addEventListener("click", (event) => {
       const b = event.target.closest("button");
+      if (b && listening) {
+        if ("leave" in b.dataset)
+          closeScene("leave");
+        return;
+      }
       if (!b || !enc || enc.closing)
         return;
       if (b.dataset.ask)
@@ -12170,6 +12431,10 @@
         setTimeout(() => closeScene("budget"), 500);
     }
     function closeScene() {
+      if (listening) {
+        closeListen();
+        return;
+      }
       if (!enc || enc.closing)
         return;
       enc.closing = true;
@@ -12204,6 +12469,105 @@
         eng.sysLine("you spoke with " + e.name + " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord);
         eng.endChat(null);
       }
+    }
+    const encMode = encounterEl.querySelector(".encounter__mode");
+    function listenHtml(h, done) {
+      const rows = h.turns.map((t) => {
+        const name = archive_default.WORLD_NAMES[t.who] || (h.who.find((w) => w.id === t.who) || {}).name || t.who;
+        return '<div class="house" style="color:' + esc2(CAST_COLOR[t.who] || "#efe9dc") + '">' + esc2(name) + "</div>" + "<div>" + esc2(t.text) + "</div>";
+      });
+      if (!rows.length)
+        rows.push('<div class="house">they have only just begun.</div>');
+      if (done)
+        rows.push('<div class="house">that is the whole of it.</div>');
+      const ex = h.exchange;
+      rows.push('<span class="src">' + esc2(String(ex.sittingTitle || "").replace(/\s+/g, " ")) + " · " + esc2(ex.day) + "</span>");
+      return rows.join("");
+    }
+    function paintListen(h, done) {
+      const key = h.turns.length + "|" + (h.speaking || "") + "|" + (done ? "end" : "");
+      if (key === listening.key)
+        return;
+      listening.key = key;
+      encWords.innerHTML = listenHtml(h, done);
+      encWords.scrollTop = encWords.scrollHeight;
+      drawEncSprite(eng.npcs.find((n) => n.id === (h.speaking || (h.who[0] || {}).id)));
+      const total = (h.exchange.turns || []).length || 1;
+      encBudget.style.width = Math.max(0, 1 - h.turns.length / total) * 100 + "%";
+    }
+    function openListen(info) {
+      const h = overheard && overheard.heard(info && info.convoId);
+      if (!h)
+        return;
+      if (enc) {
+        enc = null;
+        clearInterval(encTypeTimer);
+      }
+      if (worldEl.classList.contains("nofeed")) {
+        feedTemp = true;
+        setFeed(true);
+      }
+      listening = { convoId: h.convoId, key: "", last: h };
+      encName.innerHTML = h.who.map((w) => '<span style="color:' + esc2(w.color || "#efe9dc") + '">' + esc2(w.name) + "</span>").join('<span class="mono-in"> · </span>');
+      encWhere.textContent = roomWordOf(h.room || eng.roomId);
+      encKicker.textContent = "listening in";
+      if (encMode)
+        encMode.hidden = true;
+      encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+      encFree.hidden = true;
+      approachEl.classList.remove("on");
+      encounterEl.hidden = false;
+      paintListen(h, false);
+      clearInterval(listenTimer);
+      listenTimer = setInterval(pollListen, 320);
+      setTimeout(() => {
+        const b = encMoves.querySelector("button");
+        if (b)
+          b.focus();
+      }, 0);
+    }
+    function pollListen() {
+      if (!listening)
+        return;
+      const h = overheard && overheard.heard(listening.convoId);
+      if (h) {
+        listening.last = h;
+        paintListen(h, false);
+        return;
+      }
+      endListen();
+    }
+    function endListen() {
+      if (!listening)
+        return;
+      const walkedOff = eng && eng.convo && eng.convo.id === listening.convoId;
+      clearInterval(listenTimer);
+      listenTimer = null;
+      if (walkedOff || !listening.last) {
+        closeListen();
+        return;
+      }
+      paintListen(listening.last, true);
+      listening.closing = setTimeout(() => closeListen(), 5200);
+    }
+    function closeListen() {
+      if (!listening)
+        return;
+      clearTimeout(listening.closing);
+      clearInterval(listenTimer);
+      listenTimer = null;
+      listening = null;
+      encounterEl.hidden = true;
+      encName.innerHTML = "";
+      encBudget.style.width = "100%";
+      if (encMode)
+        encMode.hidden = false;
+      if (feedTemp) {
+        feedTemp = false;
+        setFeed(false);
+      }
+      if (eng)
+        eng.listenConvo = null;
     }
     function chatClosed(reason) {
       if (feedTemp) {
@@ -12323,7 +12687,7 @@
     const PHASE_ORDER = ["morning", "afternoon", "golden", "dusk", "night"];
     const PHASE_NAME = { morning: "MORNING", afternoon: "AFTERNOON", golden: "GOLDEN HOUR", dusk: "DUSK", night: "NIGHT" };
     const hhmm = (min) => String(Math.floor(min / 60)).padStart(2, "0") + ":" + String(min % 60).padStart(2, "0");
-    const roomWord2 = (id) => {
+    const roomWord3 = (id) => {
       if (id === ASLEEP)
         return "asleep";
       const r = eng.rooms[id];
@@ -12488,8 +12852,8 @@
       if (!host)
         return;
       host.innerHTML = PLACE_SPEC.map((p) => {
-        const cap = p.caption || roomWord2(p.room) + " · rendered from the world at " + FIXED_CLOCK;
-        const link = p.room ? '<a class="ln" href="?go=' + esc2(p.id) + '#top">walk in at ' + esc2(roomWord2(p.room)) + " →</a>" : '<a class="ln" href="#top" data-open-museum>enter the museum →</a>';
+        const cap = p.caption || roomWord3(p.room) + " · rendered from the world at " + FIXED_CLOCK;
+        const link = p.room ? '<a class="ln" href="?go=' + esc2(p.id) + '#top">walk in at ' + esc2(roomWord3(p.room)) + " →</a>" : '<a class="ln" href="#top" data-open-museum>enter the museum →</a>';
         return '<div class="place">' + '<figure class="place__f"><span class="box">' + '<img alt="' + esc2(p.title) + ', drawn from the world" data-frame="' + esc2(p.id) + '"' + (p.still ? ' src="' + esc2(p.still) + '"' : "") + "></span>" + "<figcaption>" + esc2(cap) + "</figcaption></figure>" + '<div class="place__t"><h3>' + esc2(p.title) + "</h3><p>" + esc2(p.text) + "</p>" + link + "</div>" + "</div>";
       }).join("");
       const museumLink = host.querySelector("[data-open-museum]");
@@ -12532,7 +12896,7 @@
           const name = archive_default.WORLD_NAMES[id] || cast.name || id;
           const pic = portraitFor(id);
           const asleep = s && s[0] === ASLEEP;
-          return '<div class="phase__r' + (asleep ? " is-asleep" : "") + '">' + (pic ? '<img src="' + pic.url + '" alt="" width="' + pic.w + '" height="' + pic.h + '">' : "") + '<span class="phase__n">' + esc2(name) + "<i>" + esc2(s ? asleep ? "asleep" : roomWord2(s[0]) + " · " + s[2] : "unplaced") + "</i></span></div>";
+          return '<div class="phase__r' + (asleep ? " is-asleep" : "") + '">' + (pic ? '<img src="' + pic.url + '" alt="" width="' + pic.w + '" height="' + pic.h + '">' : "") + '<span class="phase__n">' + esc2(name) + "<i>" + esc2(s ? asleep ? "asleep" : roomWord3(s[0]) + " · " + s[2] : "unplaced") + "</i></span></div>";
         }).join("") + "</div>";
       }).join("");
       const ticks = PHASE_ORDER.map((phase) => {

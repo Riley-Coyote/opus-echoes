@@ -10,6 +10,7 @@ import {
 } from './world/lookout.js';
 import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MIN, parseClock } from './world/day.js';
 import { FIELD_INSTRUMENTS } from './world/field-studio.js';
+import { attach as attachOverheard } from './world/overheard.js';
 
 /* The agreement at the door, copied byte for byte from the reading room's own
    source — `lab/door-common.js` BOOT_AGREEMENT. It is copied rather than
@@ -710,6 +711,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      end, a placement when nobody can. Two residents alone in a room long
      enough get one house line, and nothing more. */
   const DAY = { phase: null, placed: {}, pairs: new Map(), said: new Set(), lastMin: -1, warned: false };
+  /* THE OVERHEARD rides this same minute. It is set once the exchanges are
+     read off disk; until then the house is simply quiet. `listening` is
+     the panel that opens when you settle in beside one of them — declared
+     up here because the engine is handed its callback before the encounter
+     section below has run. */
+  let overheard = null, listening = null, listenTimer = null;
   const occupied = (n) => n.temp || n.convo || eng.chatNpc === n || n._visit || n._held || ['travel', 'transit', 'meet', 'leave'].includes(n.state) || (eng.gathering && eng.gathering.members.includes(n));
   const roomWordOf = (id) => ((eng.rooms[id] && eng.rooms[id].name) || id).replace(/^THE\s+/i, '').toLowerCase();
   function placeNpc(n, room, x) {
@@ -764,6 +771,10 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       }
     }
     for (const key of Array.from(DAY.pairs.keys())) if (!live.has(key)) DAY.pairs.delete(key);
+    /* and once a minute, the house's own conversations: two or three of them
+       standing together, saying to each other what they once said to each
+       other. The director decides where and whether anyone is there. */
+    if (overheard) overheard.tick({ min, day: eng.day || 1, phase });
   }
 
   function currentWorldDestination() {
@@ -2109,7 +2120,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         if (!eng) return;
         try { localStorage.setItem(CLOCK_KEY, JSON.stringify({ clockMin: eng.clockMin, day: d, at: Date.now() })); } catch (e) {}
       },
-      onListen: () => {},
+      onListen: (info) => { if (info) openListen(info); else endListen(); },
       onLive: (v) => { $('#liveflag').hidden = !v; },
       onChatOpen: openChat,
       onChatClose: chatClosed,
@@ -2161,6 +2172,16 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       word: (id) => { const n = eng.npcs.find((x) => x.id === id); return n ? dayWord(n) : null; },
       pairs: () => Array.from(DAY.pairs.keys()), said: () => Array.from(DAY.said), UNOBSERVED_MIN
     };
+    /* THE OVERHEARD — the exchanges cut from the snapshot and the field
+       house's bus. Read after the engine is standing, because the director
+       shadows its speak(). If the list is missing the house is simply
+       quieter; nothing else changes. */
+    try {
+      overheard = await attachOverheard({ eng });
+      window.__sanctuaryOverheard = overheard;
+    } catch (err) {
+      console.warn('the overheard could not be read', err);
+    }
     /* the card at the door — once per browser, before anything else is heard */
     if (FROM_DOOR) {
       mark(FIRST.door);
@@ -2230,6 +2251,18 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       phase: DAY.phase,
       avatar: navigation.surface === 'world' ? { x: Math.round(eng.av.x), y: Math.round(eng.av.y), moving: eng.av.moving } : null,
       travel: navigation.surface === 'world' ? eng.getTravelState() : { target: navigation.museumTarget },
+      convo: eng.convo ? {
+        id: eng.convo.id,
+        room: eng.convo.who && eng.convo.who[0] ? eng.convo.who[0].room : null,
+        who: (eng.convo.who || []).map((n) => ({ id: n.id, name: n.name, x: Math.round(n.x), dir: n.dir })),
+        phase: eng.convo.phase,
+        turn: eng.convo.li,
+        turns: (eng.convo.lines || []).length,
+        listening: eng.listenConvo === eng.convo.id,
+        overheard: eng.convo.overheard
+          ? { id: eng.convo.overheard.id, sitting: eng.convo.overheard.sittingTitle, day: eng.convo.overheard.day }
+          : null
+      } : null,
       residents: eng.npcs.filter((npc) => !npc.temp).map((npc) => ({ id: npc.id, room: npc.room, x: Math.round(npc.x), activity: residentActivity(npc).label }))
     });
     window.advanceTime = async (ms) => {
@@ -2292,13 +2325,17 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const key = n.id + '|' + line;
     if (key !== approachKey) {
       approachKey = key;
-      const src = isHaiku ? 'the house'
-        : (it.line && it.line.from ? srcOf(it.line.from) + ' · from the archive' : 'from the archive');
+      /* No citation on this card. The one disclosure is the agreement at
+         the door; a source line under a sentence makes the person standing
+         in front of you read as a footnote. Where the HOUSE is the one
+         speaking — HAIKU has no words of their own — it still says so. The
+         sitting behind a resident's line stays available on demand: the
+         listen-in panel, and THE CURRENT. */
       approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || '#efe9dc') + '">' + esc(n.name) + '</div>'
         + '<div class="ap__what">' + esc(isHaiku ? 'at the pond' : ACTIVITY(n)) + '</div>'
         + '<div class="ap__line">' + esc(line) + '</div>'
-        + (isHaiku ? '<div class="ap__why">no record of HAIKU\u2019s words exists; the house will not invent them.</div>' : '')
-        + '<div class="ap__src">' + esc(src) + '</div>';
+        + (isHaiku ? '<div class="ap__why">no record of HAIKU\u2019s words exists; the house will not invent them.</div>'
+          + '<div class="ap__src">the house</div>' : '');
       approachEl.hidden = false;
     }
     approachEl.classList.add('on');
@@ -2416,6 +2453,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     encName.style.color = enc.color;
     encWhere.textContent = (npc ? ACTIVITY(npc) + ' · ' : '') + enc.roomWord;
     encKicker.textContent = 'from the archive';
+    if (encMode) encMode.hidden = false;      /* the one label: not live, speaking from the archive */
     encWords.innerHTML = '';
     encFree.hidden = true;
     setBudget();
@@ -2482,6 +2520,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   });
   encMoves.addEventListener('click', (event) => {
     const b = event.target.closest('button');
+    if (b && listening) { if ('leave' in b.dataset) closeScene('leave'); return; }
     if (!b || !enc || enc.closing) return;
     if (b.dataset.ask) askAbout(b.dataset.ask);
     else if ('free' in b.dataset) openFree('ask');
@@ -2499,6 +2538,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (enc.moves >= enc.budget) setTimeout(() => closeScene('budget'), 500);
   }
   function closeScene() {
+    if (listening) { closeListen(); return; }
     if (!enc || enc.closing) return;
     enc.closing = true;
     encFree.hidden = true;
@@ -2529,6 +2569,85 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       eng.endChat(null);
     }
   }
+  /* ── listening in ────────────────────────────────────────────────
+     Two of them are already talking to each other. E does not interrupt:
+     it settles you nearby, and this panel shows what has been said so
+     far, as it is said. The sitting it was said in is named once, at the
+     foot — the only source anywhere on the surface, and it is there only
+     because you came close enough to ask for it. */
+  const encMode = encounterEl.querySelector('.encounter__mode');
+
+  function listenHtml(h, done) {
+    const rows = h.turns.map((t) => {
+      const name = archive.WORLD_NAMES[t.who] || (h.who.find((w) => w.id === t.who) || {}).name || t.who;
+      return '<div class="house" style="color:' + esc(CAST_COLOR[t.who] || '#efe9dc') + '">' + esc(name) + '</div>'
+        + '<div>' + esc(t.text) + '</div>';
+    });
+    if (!rows.length) rows.push('<div class="house">they have only just begun.</div>');
+    if (done) rows.push('<div class="house">that is the whole of it.</div>');
+    const ex = h.exchange;
+    rows.push('<span class="src">' + esc(String(ex.sittingTitle || '').replace(/\s+/g, ' ')) + ' · ' + esc(ex.day) + '</span>');
+    return rows.join('');
+  }
+  function paintListen(h, done) {
+    const key = h.turns.length + '|' + (h.speaking || '') + '|' + (done ? 'end' : '');
+    if (key === listening.key) return;
+    listening.key = key;
+    encWords.innerHTML = listenHtml(h, done);
+    encWords.scrollTop = encWords.scrollHeight;
+    drawEncSprite(eng.npcs.find((n) => n.id === (h.speaking || (h.who[0] || {}).id)));
+    const total = (h.exchange.turns || []).length || 1;
+    encBudget.style.width = Math.max(0, 1 - h.turns.length / total) * 100 + '%';
+  }
+  function openListen(info) {
+    const h = overheard && overheard.heard(info && info.convoId);
+    if (!h) return;
+    if (enc) { enc = null; clearInterval(encTypeTimer); }
+    if (worldEl.classList.contains('nofeed')) { feedTemp = true; setFeed(true); }
+    listening = { convoId: h.convoId, key: '', last: h };
+    encName.innerHTML = h.who.map((w) =>
+      '<span style="color:' + esc(w.color || '#efe9dc') + '">' + esc(w.name) + '</span>').join('<span class="mono-in"> · </span>');
+    encWhere.textContent = roomWordOf(h.room || eng.roomId);
+    encKicker.textContent = 'listening in';
+    if (encMode) encMode.hidden = true;             /* they are not speaking to you */
+    encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+    encFree.hidden = true;
+    approachEl.classList.remove('on');
+    encounterEl.hidden = false;
+    paintListen(h, false);
+    clearInterval(listenTimer);
+    listenTimer = setInterval(pollListen, 320);
+    setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
+  }
+  function pollListen() {
+    if (!listening) return;
+    const h = overheard && overheard.heard(listening.convoId);
+    if (h) { listening.last = h; paintListen(h, false); return; }
+    endListen();
+  }
+  /* the conversation ended, or you walked away from it. If they finished,
+     what they said stays up a moment longer; if you left, you left. */
+  function endListen() {
+    if (!listening) return;
+    const walkedOff = eng && eng.convo && eng.convo.id === listening.convoId;
+    clearInterval(listenTimer); listenTimer = null;
+    if (walkedOff || !listening.last) { closeListen(); return; }
+    paintListen(listening.last, true);
+    listening.closing = setTimeout(() => closeListen(), 5200);
+  }
+  function closeListen() {
+    if (!listening) return;
+    clearTimeout(listening.closing);
+    clearInterval(listenTimer); listenTimer = null;
+    listening = null;
+    encounterEl.hidden = true;
+    encName.innerHTML = '';
+    encBudget.style.width = '100%';
+    if (encMode) encMode.hidden = false;
+    if (feedTemp) { feedTemp = false; setFeed(false); }
+    if (eng) eng.listenConvo = null;
+  }
+
   /* the engine can end the exchange too (you wandered off, another began) */
   function chatClosed(reason) {
     if (feedTemp) { feedTemp = false; setFeed(false); }
