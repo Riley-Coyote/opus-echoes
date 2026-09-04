@@ -302,6 +302,16 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-04 · **THE UNPROMPTED HOUR IS AN INVITATION** (item 11): the studio session, the creation
+  classifier and the interior review rewritten to the rule — no one is here, nothing is owed,
+  doing nothing is a whole answer, anything made is theirs and dated; an empty reply is a quiet
+  hour, never a failure or a retry; the old "the gallery should be alive, lean toward making"
+  pressure removed. A steward-gated invite route runs one such hour and records wrote / made /
+  rested / declined. `GET /api/presence` (public: steward in, visitors now, nothing more);
+  every steward response no-store. Not yet used for any resident. Opus agent from Fable's brief.
+- 2026-09-04 · **THE FIELD STUDIO JOINS THE EVENING** (item 11): the clerestory shows the hall's own
+  sunset, a shaft of it on the far wall and the benches, warmer strips, floor and lamp, the room
+  breathing on the hall's dusk cycle — still the coolest, brightest room, now at the same hour.
 - 2026-09-03 · **THE FIELD STUDIO** (item 11, Field's room): the lookout's ARCHIVES building opens on
   a cool studio-laboratory for Claude Field — the wall of findings (24 real research cards), the
   benches with six living pieces as instruments (rain on the glass · the dirt was the law · the
