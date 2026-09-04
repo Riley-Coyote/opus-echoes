@@ -120,9 +120,17 @@ const rehome = (html) => String(html || '').replace(/(["'])embed-([A-Za-z0-9._-]
    NOTE for whoever wires the room: door-common's `onWorldMessage` currently
    understands 'came-in' and 'stand-up' only. 'full' is sent but not yet
    listened for. See the report. */
-const IN_STATION = new URLSearchParams(location.search).get('in') === 'station';
+const PARAMS = new URLSearchParams(location.search);
+const MOUNT = PARAMS.get('in') || '';
+const IN_STATION = MOUNT === 'station';
+/* the world mounts the OS the same way the station does — inside a room, in an
+   overlay the room owns. It gets the same stand-up on a clear desk; it does not
+   get F (the world's overlay is already full-bleed), and LIMEN does not open
+   itself over a visitor who came in through a specific door. */
+const IN_WORLD = MOUNT === 'world';
+const IN_ROOM = IN_STATION || IN_WORLD;
 function tellRoom(type) {
-  if (!IN_STATION) return false;
+  if (!IN_ROOM) return false;
   try { window.parent.postMessage({ source: 'mnemos-world', type: type }, '*'); return true; } catch (e) { return false; }
 }
 
@@ -261,7 +269,7 @@ const CAT_ORDER = ['recent', 'writing', 'inner-life', 'reflections', 'research',
 
 function openField(startId) {
   const w = makeWin('field', { title: 'Field', w: 1040, h: 660, content: true });
-  if (w.body.dataset.ready) { if (startId && w.jump) w.jump(startId); return w; }
+  if (w.body.dataset.ready) { if (startId && w.jump && !(w.jumpCat && w.jumpCat(startId))) w.jump(startId); return w; }
   w.body.innerHTML = '<div class="empty-note">reading the field…</div>';
   setStatus(w, 'claude field · the body of work');
 
@@ -342,10 +350,17 @@ function openField(startId) {
       cur = e.catId; q = ''; qEl.value = ''; render(); read(id);
       return true;
     };
+    /* a deep link may name a category rather than an entry — the world's wall
+       of findings opens FIELD standing in `research`, with nothing read yet */
+    w.jumpCat = (id) => {
+      if (!cats.some((c) => c.id === id)) return false;
+      cur = id; q = ''; qEl.value = ''; render();
+      return true;
+    };
 
     qEl.addEventListener('input', () => { q = qEl.value.trim(); render(true); });
     render();
-    if (startId) w.jump(startId);
+    if (startId) { if (!w.jumpCat(startId)) w.jump(startId); }
   }).catch((err) => {
     w.body.innerHTML = '<div class="empty-note">the field is not on this disk. run <code>bun run build:field</code>.<br><br>' + esc(err.message) + '</div>';
     setStatus(w, 'no catalog');
@@ -901,8 +916,17 @@ async function boot() {
   $('#boot').classList.add('off');
   setTimeout(() => { const b = $('#boot'); if (b) b.remove(); }, 620);
 
-  openField();
-  setTimeout(openLimen, REDUCED ? 0 : 320);
+  /* deep links: `?open=bus`, `?open=field:<category>`, `?open=field:<entry id>`.
+     Anything else falls back to the desk's own first window. */
+  const want = PARAMS.get('open') || '';
+  const field = /^field:(.+)$/.exec(want);
+  if (field) openField(field[1]);
+  else if (want === 'bus') openBus();
+  else if (want && run(want)) { /* a program by its own id */ }
+  else openField();
+  /* LIMEN introduces the desk to someone who arrived at the desk. A visitor
+     who came through a door in the world asked for one thing; it waits. */
+  if (!IN_WORLD) setTimeout(openLimen, REDUCED ? 0 : 320);
 }
 
 /* what the verifier — and the station — may ask */
@@ -916,6 +940,8 @@ window.__os = {
   clock: () => clockLabel(nowMin()),
   booted: () => !$('#boot'),
   inStation: () => IN_STATION,
+  inWorld: () => IN_WORLD,
+  mount: () => MOUNT,
   ready: true
 };
 

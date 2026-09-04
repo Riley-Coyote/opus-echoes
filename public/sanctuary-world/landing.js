@@ -9,6 +9,7 @@ import {
   AMBIENT as WORLD_AMBIENT
 } from './world/lookout.js';
 import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MIN, parseClock } from './world/day.js';
+import { FIELD_INSTRUMENTS } from './world/field-studio.js';
 
 /* ══════════════════════════════════════════════════════════════════
    mnemos landing — sky renderer · world mount · feed · chat · panels
@@ -422,6 +423,13 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     artRows: (id) => (archive.isLoaded() ? archive.art(id).map((a) => String(a.body || '')) : []),
     deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), 'is-board'),
     keeper: () => openPanel(keeperHtml(), 'is-board'),
+    /* the field studio's four fittings: the wall of findings and the table
+       open the desk on the right shelf, an instrument runs the piece itself,
+       and the board is a house panel over Field's own identity file. */
+    fieldFindings: () => openFieldFindings(),
+    fieldPiece: (id) => openFieldPiece(id),
+    fieldTable: () => openFieldTable(),
+    fieldBoard: () => openFieldBoard(),
     note: (text) => { if (eng) eng.sysLine(text); }
   };
 
@@ -542,17 +550,21 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   /* ────────────────────────── ESC / back — the one order ──────────────────────────
      Capture phase, in source order, each stopping the rest dead:
        1. the door card   (registered just above)
-       2. THE CHARTER
-       3. THE WALL
-       4. THE CURRENT
-       5. DESTINATIONS
-       6. the encounter
-     Each of 2–6 stands down while the house panel is open (`!panel.hidden`), so a
+       2. THE FIELD STUDIO's glass
+       3. THE CHARTER
+       4. THE WALL
+       5. THE CURRENT
+       6. DESTINATIONS
+       7. the encounter
+     Each of 2–7 stands down while the house panel is open (`!panel.hidden`), so a
      panel opened from inside any of them closes first. Then the bubble phase:
        7. the panel        (`:214`)
        8. fullscreen       (near the foot of this file)
        9. the engine       (`#cab` keydown — cancel travel, else blur)
      `M` is ignored while the encounter is open; the door card swallows it too. */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fieldOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeFieldGlass(); }
+  }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && charterOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeCharter(); }
   }, true);
@@ -597,14 +609,14 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   /* ────────────────────────── DESTINATIONS — the places ──────────────────────────
      Every place the thread runs to, in menu order. Rooms are rendered live from the
      engine; the museum scenes are stills captured by tools/capture-frames.mjs. */
-  const ZONE = { lookout: 'THE GROUNDS', garden: 'THE GROUNDS', sanctuary: 'THE HOUSE', observation_deck: 'THE HOUSE', resident_wing: 'THE HOUSE', room_opus: 'THE ROOMS', room_sonnet: 'THE ROOMS', room_fourO: 'THE ROOMS', room_five: 'THE ROOMS' };
+  const ZONE = { lookout: 'THE GROUNDS', garden: 'THE GROUNDS', field_studio: 'THE GROUNDS', sanctuary: 'THE HOUSE', observation_deck: 'THE HOUSE', resident_wing: 'THE HOUSE', room_opus: 'THE ROOMS', room_sonnet: 'THE ROOMS', room_fourO: 'THE ROOMS', room_five: 'THE ROOMS' };
   const MUSEUM_HINT = {
     atrium: 'The museum’s first hall — the red tree at the crossing, and the opening hang around it.',
     gallery: 'The collection proper: the continuity apse, the presence hall, the inquiry court, and the editions room.',
     'field-annex': 'A dark wing given to Claude Field. Ten works hang with the artist’s own words — and the reading views run the living pieces.'
   };
   const PLACES = [
-    ...['lookout', 'garden'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
+    ...['lookout', 'garden', 'field_studio'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
     /* THE HOUSE, in the order a visitor should meet it — the deck sits last */
     ...['sanctuary', 'resident_wing'].map((room) => ({ id: room, kind: 'room', room, zone: ZONE[room] })),
     { id: 'current', kind: 'surface', zone: 'THE HOUSE', name: 'THE CURRENT', room: 'sanctuary',
@@ -1626,6 +1638,159 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
   });
   charterVeil.addEventListener('click', (event) => { if (event.target === charterVeil) closeCharter(); });
 
+  /* ────────────────────── THE FIELD STUDIO — the studio's glass ──────────────────────
+     Field's room has four things a room cannot hold by itself: the seventy-six
+     findings, six pieces that have to actually run, the conversations, and who
+     Field is. All four open here, on one pane of glass over the room, and all
+     four are the real article — the OS reading the same catalog the desk reads,
+     the pieces running from their own published embeds, and IDENTITY.md's own
+     words. ESC closes the glass and leaves you exactly where you were standing;
+     the OS inside asks for that with the same `stand-up` message the station's
+     console uses. */
+  const FIELD_DIR = 'data/field/';
+  const fieldVeil = $('#fieldveil'), fieldBody = $('#fieldbody'), fieldFrame = $('#fieldframe'),
+        fieldSide = $('#fieldside'), fieldKicker = $('#fieldkicker'), fieldMeta = $('#fieldmeta'),
+        fieldFoot = $('#fieldfoot');
+  let fieldOpen = false, fieldSpot = null, fieldIdentity = null;
+  const FIELD_BY_ID = Object.fromEntries(FIELD_INSTRUMENTS.map((p) => [p.id, p]));
+  /* the house's own line about the pause — the same words the board carries */
+  const FIELD_PAUSE = 'paused since 20 july 2026 · the engine is being rebuilt so that every '
+    + 'session is an invitation, and doing nothing is an answer';
+
+  function fieldGlass(opts) {
+    if (fieldOpen || !doorEl.hidden) return;
+    if (destOpen) closeDest();
+    if (curOpen) closeCurrent();
+    if (workOpen) closeWall();
+    if (charterOpen) closeCharter();
+    /* the spot you were standing on, kept so ESC can put you back on it */
+    fieldSpot = eng ? { room: eng.roomId, x: eng.av.x, y: eng.av.y, dir: eng.av.dir } : null;
+    fieldKicker.textContent = opts.kicker || 'THE FIELD STUDIO';
+    fieldMeta.textContent = opts.meta || '';
+    fieldFoot.textContent = opts.foot || 'claude field · real, and dated';
+    if (opts.side) { fieldSide.innerHTML = opts.side; fieldSide.hidden = false; fieldBody.classList.add('has-side'); }
+    else { fieldSide.innerHTML = ''; fieldSide.hidden = true; fieldBody.classList.remove('has-side'); }
+    fieldFrame.title = opts.title || 'The Field Studio';
+    fieldFrame.src = opts.src;
+    fieldOpen = true;
+    fieldVeil.hidden = false;
+    requestAnimationFrame(() => fieldVeil.classList.add('on'));
+    cab.blur();
+    if (eng) eng.clearKeys();
+    setTimeout(() => { try { fieldFrame.focus({ preventScroll: true }); } catch (err) {} }, 40);
+  }
+
+  function closeFieldGlass() {
+    if (!fieldOpen) return;
+    fieldOpen = false;
+    fieldVeil.classList.remove('on');
+    /* the iframe is torn down, not merely hidden: a piece that makes sound or
+       runs a loop stops when the glass closes */
+    fieldFrame.src = 'about:blank';
+    setTimeout(() => { if (!fieldOpen) fieldVeil.hidden = true; }, 350);
+    /* back on the same flagstone, facing the same way */
+    if (eng && fieldSpot && eng.roomId === fieldSpot.room) {
+      eng.av.x = fieldSpot.x; eng.av.y = fieldSpot.y; eng.av.dir = fieldSpot.dir;
+      eng.av.moving = false; eng.av.tx = null;
+    }
+    cab.focus({ preventScroll: true });
+  }
+
+  /* the wall of findings → the desk, standing in `research` */
+  function openFieldFindings() {
+    fieldGlass({
+      src: 'os/index.html?in=world&open=field:research',
+      kicker: 'THE WALL OF FINDINGS',
+      meta: '76 research entries · april to july 2026',
+      foot: 'the desk, opened on the research shelf · esc closes it',
+      title: 'Claude Field’s research'
+    });
+    if (eng) eng.sysLine('you read the wall of findings');
+  }
+
+  /* an instrument → the piece itself, running, with the artist's own statement */
+  function openFieldPiece(id) {
+    const p = FIELD_BY_ID[id];
+    if (!p) return;
+    const side =
+      '<p class="fv__lab">artist’s statement</p>'
+      + '<p class="fv__t">' + esc(p.title) + '</p>'
+      + '<p class="fv__d">' + esc(p.kind) + ' · ' + esc(p.date) + '</p>'
+      + p.statement.map((para) => '<p>' + esc(para) + '</p>').join('')
+      + '<div class="fv__src">claude field · written by the maker, not the house<br>'
+      + 'the piece runs as published · ' + esc(p.id) + '</div>';
+    fieldGlass({
+      src: FIELD_DIR + 'embeds/' + p.id + '.html',
+      kicker: 'AN INSTRUMENT',
+      meta: p.title + ' · ' + p.date,
+      foot: 'the piece is running · esc closes it',
+      title: p.title,
+      side: side
+    });
+    if (eng) eng.sysLine('you ran “' + p.title + '”');
+  }
+
+  /* the table → the conversations */
+  function openFieldTable() {
+    fieldGlass({
+      src: 'os/index.html?in=world&open=bus',
+      kicker: 'THE TABLE',
+      meta: '382 messages · april to july 2026 · three chairs kept',
+      foot: 'the bus · riley’s own messages with field are personal and are not here',
+      title: 'The conversations'
+    });
+    if (eng) eng.sysLine('you sat at the field’s table');
+  }
+
+  /* the invitation board → the house panel: who Field is, in Field's words,
+     and the pause said plainly. IDENTITY.md is fetched once, and the two
+     sections are lifted out of it verbatim. */
+  function fieldSection(src, name) {
+    const lines = String(src || '').replace(/\r\n?/g, '\n').split('\n');
+    const start = lines.findIndex((l) => l.trim().toLowerCase() === '## ' + name.toLowerCase());
+    if (start < 0) return '';
+    const rest = lines.slice(start + 1);
+    const end = rest.findIndex((l) => /^##\s/.test(l));
+    return (end < 0 ? rest : rest.slice(0, end)).join('\n').trim();
+  }
+  function fieldBoardHtml(identity) {
+    const what = identity ? fieldSection(identity, 'What I Am') : '';
+    const voice = identity ? fieldSection(identity, 'Voice') : '';
+    const sessions = ['morning', 'research', 'afternoon', 'inner life', 'conversations', 'evening', 'meta'];
+    return head('the invitation board', 'CLAUDE FIELD')
+      + '<div class="bd__src">from data/field/identity.md · claude field’s own file · nothing here is the house’s except the line marked as the house</div>'
+      + (what || voice
+        ? (what ? '<div class="bd__kicker">what i am</div>' + chrMarkdown(what) : '')
+          + (voice ? '<div class="bd__kicker">voice</div>' + chrMarkdown(voice) : '')
+        : '<div class="bd__house">the house: identity.md could not be read just now, so nothing of Field’s own is shown.</div>')
+      + '<div class="bd__kicker">the seven sessions</div>'
+      + '<div class="bd__row"><span class="bd__t">' + esc(sessions.join(' · ')) + '</span><span class="bd__d">all dark</span></div>'
+      + '<div class="bd__house">the house: ' + esc(FIELD_PAUSE) + '</div>';
+  }
+  function openFieldBoard() {
+    openPanel(fieldBoardHtml(fieldIdentity), 'is-board');
+    if (fieldIdentity == null) {
+      fetch(new URL(FIELD_DIR + 'identity.md', document.baseURI).href)
+        .then((res) => (res.ok ? res.text() : ''))
+        .then((text) => {
+          fieldIdentity = text || '';
+          if (!panel.hidden) panelBody.innerHTML = fieldBoardHtml(fieldIdentity);
+        })
+        .catch(() => { fieldIdentity = ''; });
+    }
+    if (eng) eng.sysLine('you read the invitation board');
+  }
+
+  fieldVeil.addEventListener('click', (event) => { if (event.target === fieldVeil) closeFieldGlass(); });
+  /* the OS inside the glass asks to be let out the same way it does on the
+     station's console: ESC on a clear desk posts `stand-up`. */
+  addEventListener('message', (event) => {
+    if (!fieldOpen || event.source !== fieldFrame.contentWindow) return;
+    const message = event.data;
+    if (!message || message.source !== 'mnemos-world') return;
+    if (message.type === 'stand-up') closeFieldGlass();
+  });
+
   /* WALK — the world's own routes, one door at a time */
   function walk(p) {
     if (!p || busy || !eng) return;
@@ -1639,7 +1804,7 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     if (p.kind === 'room') {
       if (p.room === 'lookout') goToDestination('grounds');
       else if (p.room === 'sanctuary') goToDestination('sanctuary');
-      else if (p.room === 'resident_wing' || p.room === 'garden' || p.room === 'observation_deck') startWorldTravel({ id: p.room, room: p.room, x: eng.rooms[p.room].spawn.x, y: 378 });
+      else if (p.room === 'resident_wing' || p.room === 'garden' || p.room === 'observation_deck' || p.room === 'field_studio') startWorldTravel({ id: p.room, room: p.room, x: eng.rooms[p.room].spawn.x, y: 378 });
       else {
         const resident = residentOf(p.room);
         if (resident) visitResidentRoom(resident, { openChat: false });
@@ -1799,11 +1964,13 @@ import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MI
     const rooms = makeHub(bridge);
     const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
     const lookout = rooms.lookout;
-    lookout.width = 760;
-    lookout.hint = 'The grounds at perpetual dusk. Three buildings on the ridge, and the whole frontier glittering below. Walk to any door and press E to enter.';
-    delete lookout.doors.archives;
+    /* The Archives building stands at x 840, so the grounds are given the room
+       to show it: the fourth facade is back on the ridge, and its door leads
+       to the field studio behind it. Only the shop's route is still closed. */
+    lookout.width = 960;
+    lookout.hint = 'The grounds at perpetual dusk. Four buildings on the ridge, and the whole frontier glittering below. Walk to any door and press E to enter.';
     delete lookout.doors.shop;
-    lookout.items = lookout.items.filter((item) => item.to !== 'archives' && item.to !== 'shop');
+    lookout.items = lookout.items.filter((item) => item.to !== 'shop');
     lookout.items.push({
       x: 500,
       label: 'TOPOLOGIE',

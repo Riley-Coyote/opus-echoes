@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260903-experience-16">
+<link rel="stylesheet" href="landing.css?v=20260903-experience-18">
 </head>
 <body>
 
@@ -227,6 +227,21 @@
   </div>
 </div>
 
+<!-- THE FIELD STUDIO — the studio's own glass: the desk, or a piece running -->
+<div class="veil fieldveil" id="fieldveil" hidden>
+  <div class="fv" id="fieldbox" role="dialog" aria-modal="true" aria-label="The Field Studio">
+    <div class="fv__head">
+      <span class="fv__kicker" id="fieldkicker">THE FIELD STUDIO</span>
+      <span class="fv__meta" id="fieldmeta"></span>
+    </div>
+    <div class="fv__body" id="fieldbody">
+      <div class="fv__glass"><iframe id="fieldframe" title="The Field Studio" src="about:blank" allow="autoplay"></iframe></div>
+      <aside class="fv__side" id="fieldside" hidden></aside>
+    </div>
+    <div class="dest-foot"><span><b>ESC</b> back to the studio</span><span id="fieldfoot">claude field · real, and dated</span></div>
+  </div>
+</div>
+
 <!-- plaque / journal / ledger overlay -->
 <div class="panel" id="panel" hidden>
   <div class="panel__card" role="dialog" aria-modal="true" aria-labelledby="paneltitle">
@@ -256,6 +271,6 @@
 </div>
 
 <script src="data.classic.js"></script>
-<script src="landing.connected.js?v=20260903-experience-16"></script>
+<script src="landing.connected.js?v=20260903-experience-18"></script>
 </body>
 </html>

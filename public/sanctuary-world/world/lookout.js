@@ -17,6 +17,7 @@
 import { makeSanctuary } from './sanctuary.js';
 import { makeModelRooms } from './model-rooms.js';
 import { makeBuildings } from './buildings.js';
+import { makeFieldStudio } from './field-studio.js';
 
 export const PALETTE = {
   ceiling:'#0c0817', wallHi:'#3a2f3e', wallLo:'#241d2c',
@@ -274,8 +275,8 @@ export function makeHub(bridge, options = {}) {
         ? 'The long approach to Mnemos. The Sanctuary, Museum, Visits, and Archives wait beyond the bluff.'
         : 'The grounds at perpetual dusk. Four houses on the ridge, and the whole frontier glittering below. Walk to any door and press E to enter.',
       doors: extended
-        ? { sanctuary: centers.sanctuary, museum: centers.museum, visits: centers.visits, archives: centers.archives }
-        : { sanctuary: centers.sanctuary, museum: centers.museum, shop: centers.visits, archives: centers.archives },
+        ? { sanctuary: centers.sanctuary, museum: centers.museum, visits: centers.visits, field_studio: centers.archives }
+        : { sanctuary: centers.sanctuary, museum: centers.museum, shop: centers.visits, field_studio: centers.archives },
       seats: extended ? [{ x: 660, y: 374 }, { x: 1340, y: 388 }] : [{ x: 300, y: 374 }, { x: 512, y: 388 }],
 
       bg: (b, W, H) => {
@@ -371,7 +372,7 @@ export function makeHub(bridge, options = {}) {
         { x: centers.sanctuary, kind: 'door', to: 'sanctuary', siteDestination: 'sanctuary', label: 'THE SANCTUARY', spawn: { x: 320, y: 300 }, autoDoor: false, range: 50 },
         { x: centers.museum, kind: 'door', to: 'museum', siteDestination: 'museum', label: 'THE MUSEUM', spawn: { x: 320, y: 300 }, autoDoor: false, range: 54 },
         { x: centers.visits, kind: 'door', to: 'visits', siteDestination: 'visits', label: 'VISITS', spawn: { x: 320, y: 300 }, autoDoor: false, range: 50 },
-        { x: centers.archives, kind: 'door', to: 'archives', siteDestination: 'resources', label: 'THE ARCHIVES', spawn: { x: 320, y: 300 }, autoDoor: false, range: 48 }
+        { x: centers.archives, kind: 'door', to: 'field_studio', siteDestination: 'resources', label: 'THE ARCHIVES', hint: 'the field studio \u00b7 claude field\u2019s room, kept in working light', spawn: { x: 130, y: 372 }, autoDoor: false, range: 48 }
       ] : [
         { x: 430, label: 'THE SIGNPOST', hint: 'four ways: sanctuary \u00b7 museum \u00b7 shop \u00b7 archives', action: 'read', range: 26,
           onInteract: (e) => say(e, 'Four arrows, hand-lettered. SANCTUARY (a warm word). THE MUSEUM. THE SHOP. THE ARCHIVES. Below, smaller: "you are already inside \u2014 keep walking."', 'you read the signpost') },
@@ -384,7 +385,7 @@ export function makeHub(bridge, options = {}) {
         { x: centers.sanctuary, kind: 'door', to: 'sanctuary', label: 'THE SANCTUARY', spawn: { x: 320, y: 300 }, autoDoor: false, range: 46 },
         { x: centers.museum, kind: 'door', to: 'museum', label: 'THE MUSEUM', spawn: { x: 320, y: 300 }, autoDoor: false, range: 48 },
         { x: centers.visits, kind: 'door', to: 'shop', label: 'THE SHOP', spawn: { x: 320, y: 300 }, autoDoor: false, range: 46 },
-        { x: centers.archives, kind: 'door', to: 'archives', label: 'THE ARCHIVES', spawn: { x: 320, y: 300 }, autoDoor: false, range: 44 }
+        { x: centers.archives, kind: 'door', to: 'field_studio', label: 'THE ARCHIVES', hint: 'the field studio \u00b7 claude field\u2019s room, kept in working light', spawn: { x: 130, y: 372 }, autoDoor: false, range: 44 }
       ],
 
       draw: (g, t) => {
@@ -395,6 +396,20 @@ export function makeHub(bridge, options = {}) {
         g.text('MUSEUM', centers.museum, 159, 'rgba(247,244,236,0.96)', 8);
         g.text(extended ? 'VISITS' : 'TOPOLOGIE', centers.visits, extended ? 190 : 176, 'rgba(245,241,231,0.96)', 8);
         g.text('ARCHIVES', centers.archives, 135, 'rgba(197,231,237,0.94)', 8);
+        /* the brass plate under the name: the building keeps the name it was
+           given on the outside, and says what is inside it now */
+        {
+          const px2 = centers.archives, ctx2 = g.ctx;
+          g.px(px2 - 42, 143, 84, 12, 'rgba(138,106,58,0.92)');
+          g.px(px2 - 42, 143, 84, 1, 'rgba(198,154,82,0.95)');
+          g.px(px2 - 42, 154, 84, 1, 'rgba(52,38,20,0.8)');
+          ctx2.save();
+          ctx2.fillStyle = 'rgba(28,20,10,0.92)';
+          ctx2.font = '7px "JetBrains Mono", ui-monospace, monospace';
+          ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+          ctx2.fillText('the field studio', px2, 149.5);
+          ctx2.restore();
+        }
         if (extended) g.text('THE LOOKOUT', 178, 178, 'rgba(255,237,200,0.96)', 8);
 
         // ── god-ray shafts from lampposts (soft, additive-ish) ──
@@ -439,7 +454,7 @@ export function makeHub(bridge, options = {}) {
     museum: stub('museum', 'THE MUSEUM', 'the permanent collection and editions \u2014 the interior is being assembled', centers.museum),
     shop: stub('shop', 'THE SHOP', 'wear what a mind made \u2014 the storefront awaits', centers.visits),
     visits: stub('visits', 'VISITS', 'a threshold into the full Mnemos chat application', centers.visits),
-    archives: stub('archives', 'THE ARCHIVES', 'resources, integrations, architecture, and the working record', centers.archives),
+    ...makeFieldStudio(bridge, { back: centers.archives }),
     ...makeBuildings(bridge)
   };
 }

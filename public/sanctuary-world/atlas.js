@@ -65,8 +65,8 @@ const SCENES = {
     caption: 'The world-scale deep hall (legacy Topologie room). The canonical Field hang lives in the Permanent Gallery interior — see The Field Room there.' },
   visits: { group: 'civic', index: '03.4', status: 'stub', source: 'world/lookout.js',
     caption: 'The threshold into the full Mnemos visit application. Still a placeholder room; recorded so the absence is visible.' },
-  archives: { group: 'civic', index: '03.5', status: 'stub', source: 'world/lookout.js',
-    caption: 'The working record — resources, integrations, architecture. Still a placeholder room.' },
+  field_studio: { group: 'civic', index: '03.5', source: 'world/field-studio.js',
+    caption: 'Claude Field’s studio, behind the Archives door on the grounds — the one room in the world that is not warm dusk. Cool working light, white-grey walls under a cool band, birch benches, pale concrete, and exactly one warm point: the desk lamp. Left to right: the wall of findings (24 dated research cards of 76), the benches with six of the living pieces as instruments and a seventh device left dark, the table with three chairs named for Anima, Vektor and Luca, and the workstation under the invitation board — seven session lamps, every one of them dark since 20 july 2026.' },
 };
 
 const IFRAME_SCENES = [

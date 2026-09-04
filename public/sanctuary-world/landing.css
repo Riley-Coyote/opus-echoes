@@ -524,3 +524,41 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 .encounter__free input{flex:1;background:#101012;border:1px solid var(--line2);color:var(--ink);font-family:var(--sans);font-size:14px;padding:9px 11px}
 .encounter__x{position:absolute;top:10px;right:14px;background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
 @media (max-width:700px){.encounter__card{grid-template-columns:1fr}.encounter__left{flex-direction:row;justify-content:flex-start}.encounter__sprite{width:48px;height:108px}}
+
+/* ══ THE FIELD STUDIO — the studio's glass ══
+   The one overlay in the house that is not warm: Field's room is kept in cool
+   working light, and its glass keeps that register. Teal is the only colour,
+   and it appears once, on the rule under the head. */
+.fieldveil{background:rgba(8,11,16,.72);backdrop-filter:blur(18px) saturate(.6)}
+.fv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.985);
+  width:min(1240px,calc(100vw - 48px));height:min(820px,calc(100vh - 64px));
+  display:flex;flex-direction:column;background:#0d1117;border:1px solid rgba(170,190,220,.20);
+  box-shadow:0 40px 140px rgba(0,0,0,.75);transition:transform .35s var(--ease-out)}
+.veil.on .fv{transform:translate(-50%,-50%) scale(1)}
+.fv__head{display:flex;align-items:baseline;justify-content:space-between;gap:18px;
+  padding:15px 22px 13px;border-bottom:1px solid rgba(170,190,220,.16);flex:none}
+.fv__kicker{font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(94,234,212,.82)}
+.fv__meta{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(214,226,240,.52);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fv__body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr)}
+.fv__body.has-side{grid-template-columns:minmax(0,1fr) 320px}
+.fv__glass{position:relative;min-width:0;min-height:0;background:#080b10}
+.fv__glass iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#080b10}
+.fv__side{border-left:1px solid rgba(170,190,220,.16);overflow-y:auto;padding:20px 22px 24px;
+  scrollbar-width:thin;background:#0b0f15}
+.fv__side[hidden]{display:none}
+.fv__t{font-family:var(--mono);font-size:13px;line-height:1.4;color:rgba(238,244,250,.94);margin:0 0 6px}
+.fv__d{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(214,226,240,.5);margin:0 0 16px}
+.fv__lab{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(94,234,212,.7);margin:0 0 10px}
+.fv__side p{font-size:11.5px;line-height:1.8;color:rgba(214,226,240,.78);margin:0 0 12px}
+.fv__src{margin-top:18px;padding-top:14px;border-top:1px solid rgba(170,190,220,.14);
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;line-height:1.7;color:rgba(214,226,240,.44)}
+.fv .dest-foot{flex:none}
+@media (max-width:860px){
+  .fv{width:calc(100vw - 20px);height:calc(100vh - 28px)}
+  .fv__body.has-side{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  .fv__side{border-left:0;border-top:1px solid rgba(170,190,220,.16);max-height:38vh}
+}
