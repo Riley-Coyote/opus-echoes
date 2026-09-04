@@ -10227,7 +10227,10 @@
         DAY.placed = {};
         DAY.said.clear();
         DAY.pairs.clear();
-        GATHER_HOLD.forEach((id) => eng.releaseNpc(id));
+        eng.npcs.forEach((n) => {
+          if (n._held)
+            eng.releaseNpc(n.id);
+        });
         if (phase === "dusk")
           eng.sysLine(DUSK_LINE);
       }
@@ -10245,7 +10248,7 @@
             n.state = "stroll";
             n.tx = s[1];
             n.ty = 356 + Math.random() * 42;
-          } else if (phase === "dusk" && GATHER_HOLD.includes(n.id) && n.state === "idle")
+          } else if (phase === "dusk" && s[0] === "sanctuary" && n.state === "idle")
             eng.holdNpc(n.id);
           continue;
         }
@@ -12850,7 +12853,7 @@
       };
       const resize = (force) => {
         const immersive = worldEl.classList.contains("fs");
-        const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
+        const width = immersive ? Math.max(300, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
         if (force !== true && eng.o.width === width)
           return;
         const center = eng.camX + eng.o.width / 2;

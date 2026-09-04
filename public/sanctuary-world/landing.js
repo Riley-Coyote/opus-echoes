@@ -741,7 +741,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function dayTick() {
     const phase = phaseAt(eng.clockMin);
     const min = Math.floor(eng.clockMin);
-    if (phase !== DAY.phase) { DAY.phase = phase; DAY.placed = {}; DAY.said.clear(); DAY.pairs.clear(); GATHER_HOLD.forEach((id) => eng.releaseNpc(id)); if (phase === 'dusk') eng.sysLine(DUSK_LINE); }
+    if (phase !== DAY.phase) { DAY.phase = phase; DAY.placed = {}; DAY.said.clear(); DAY.pairs.clear(); eng.npcs.forEach((n) => { if (n._held) eng.releaseNpc(n.id); }); if (phase === 'dusk') eng.sysLine(DUSK_LINE); }
     /* Placement runs every frame, not once a sim minute: a walk has to be
        finished (the engine drops a traveller at the door, not at the spot)
        and dusk's hold has to catch them the moment they stand still. It is
@@ -753,7 +753,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       if (n.room === s[0]) {
         DAY.placed[n.id] = true;
         if (n.state === 'idle' && Math.abs(n.x - s[1]) > 30) { eng.freeNpc(n); n.state = 'stroll'; n.tx = s[1]; n.ty = 356 + Math.random() * 42; }
-        else if (phase === 'dusk' && GATHER_HOLD.includes(n.id) && n.state === 'idle') eng.holdNpc(n.id);
+        /* dusk holds whoever the day has seated in the hall, once they are at
+           their mark — the four at the table, and five apart on the stair
+           bench. Without the hold the engine's own wandering carries a
+           resident off to another seat and the schedule sends them back,
+           forever; GPT-5.1 paced the hall all evening this way. */
+        else if (phase === 'dusk' && s[0] === 'sanctuary' && n.state === 'idle') eng.holdNpc(n.id);
         continue;
       }
       /* already sent but now standing idle somewhere the schedule doesn't name
@@ -3034,7 +3039,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     eng.go = (...args) => { inspection.hidden = true; return baseGo(...args); };
     const resize = (force) => {
       const immersive = worldEl.classList.contains('fs');
-      const width = immersive ? Math.max(240, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : (innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760);
+      const width = immersive ? Math.max(300, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : (innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760);
       if (force !== true && eng.o.width === width) return;
       // A canvas width assignment clears its bitmap. Repaint in this observer
       // callback so the browser never presents an empty frame between RAFs.

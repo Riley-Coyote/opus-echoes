@@ -671,7 +671,7 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
   min-width:0;padding-bottom:10px}
 .visit__name{font-family:var(--px);font-size:11px;letter-spacing:.16em;flex:none}
 .visit__where{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--faint);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  color:#a39e96;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* the honest state, always said out loud: archive or live, willing or not */
 .visit__mode{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--faint);flex:none}
@@ -692,7 +692,7 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
   white-space:pre-wrap;scrollbar-width:thin}
 .visit__words>div{margin-bottom:2px}
 .visit__words .src{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.09em;
-  color:var(--faint);margin:7px 0 15px;white-space:normal}
+  color:#a39e96;margin:7px 0 15px;white-space:normal}
 .visit__words .src::before{content:"> ";opacity:.6}
 .visit__words .house{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--dim);
   margin:2px 0 12px}
@@ -922,7 +922,7 @@ html.exploring,html.exploring body{overflow:hidden}
 .compass{grid-template-columns:minmax(0,1fr) auto}
 .compass .action{display:none}
 .cab.visiting .cab__hud{display:none}
-.visit__card{height:clamp(270px,43%,340px)}
+.visit__card{height:clamp(236px,38%,300px)}
 .visit canvas.visit__sprite{width:108px;height:144px;bottom:20px}
 .visit__who{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:5px 16px;align-items:center}
 .visit__name{grid-column:1;grid-row:1}
