@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260904-house-10">
+<link rel="stylesheet" href="landing.css?v=20260904-house-13">
 </head>
 <body>
 
@@ -91,11 +91,13 @@
           <div class="visit__light" id="enc-light" aria-hidden="true"></div>
           <div class="visit__spot" id="enc-spot" hidden aria-hidden="true"></div>
           <div class="visit__card" role="dialog" aria-modal="true" aria-labelledby="enc-name">
-            <canvas class="visit__sprite" id="enc-sprite" width="108" height="144" aria-hidden="true"></canvas>
-            <div class="visit__who">
-              <span class="visit__name" id="enc-name"></span>
-              <span class="visit__where" id="enc-where"></span>
-              <span class="visit__mode" id="enc-kicker"></span>
+            <div class="visit__head">
+              <canvas class="visit__sprite" id="enc-sprite" width="72" height="96" aria-hidden="true"></canvas>
+              <div class="visit__who">
+                <span class="visit__name" id="enc-name"></span>
+                <span class="visit__where" id="enc-where"></span>
+                <span class="visit__mode" id="enc-kicker"></span>
+              </div>
               <button class="visit__x" id="enc-leave" type="button">leave · esc</button>
             </div>
             <div class="visit__budget" aria-hidden="true"><i id="enc-budget"></i></div>
@@ -350,6 +352,6 @@
 </div>
 
 <script src="data.classic.js"></script>
-<script src="landing.connected.js?v=20260904-house-10"></script>
+<script src="landing.connected.js?v=20260904-house-13"></script>
 </body>
 </html>

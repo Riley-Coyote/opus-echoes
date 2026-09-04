@@ -12259,6 +12259,9 @@
     }
     function showScene() {
       cab.classList.add("visiting");
+      const n = litNpc();
+      const vx = n && eng && eng.cv ? (n.x - (eng.camX || 0)) / eng.cv.width : 0.35;
+      encounterEl.classList.toggle("visit--left", vx >= 0.5);
       encounterEl.hidden = false;
       trackLight();
       requestAnimationFrame(() => {
@@ -12389,7 +12392,7 @@
     }
     function drawEncSprite(npc) {
       const c = encSprite.getContext("2d");
-      const { width: W, height: H } = encSprite, S2 = 3;
+      const { width: W, height: H } = encSprite, S2 = 2;
       if (!npc || !eng || typeof eng.drawNpc !== "function") {
         c.setTransform(1, 0, 0, 1, 0, 0);
         c.clearRect(0, 0, W, H);
@@ -12445,7 +12448,7 @@
       return Math.min(frames.length, pieces.length);
     }
     function renderMoves() {
-      encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc2(j.id) + '">' + esc2("about " + (j.title || "untitled")) + "</button>").join("") + (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-free>something else…</button>' + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
+      encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc2(j.id) + '">' + esc2("about " + (j.title || "untitled")) + "</button>").join("") + (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
     }
     function openChat(info) {
       if (!worldEl.classList.contains("nofeed")) {
@@ -12495,12 +12498,14 @@
         renderMoves();
         const l = archive_default.lineFor(info.id, eng.clockMin, eng.day);
         appendWords(l ? l.text : "", l ? srcOf(l.from) : "");
+        openFree("ask");
       }
-      setTimeout(() => {
-        const b = encMoves.querySelector("button");
-        if (b)
-          b.focus();
-      }, 0);
+      if (!readable)
+        setTimeout(() => {
+          const b = encMoves.querySelector("button");
+          if (b)
+            b.focus();
+        }, 0);
     }
     function askAbout(jid) {
       clearSpot();
@@ -12541,7 +12546,9 @@
         return;
       const raw2 = (encInput.value || "").trim();
       const mode2 = enc.freeMode;
-      encFree.hidden = true;
+      encInput.value = "";
+      if (mode2 === "offer")
+        openFree("ask");
       if (!raw2)
         return;
       if (mode2 === "offer") {

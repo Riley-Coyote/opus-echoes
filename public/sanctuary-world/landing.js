@@ -2547,6 +2547,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
   function showScene() {
     cab.classList.add('visiting');
+    /* the window stands to whichever side keeps the mind in view: they are
+       on the right, it opens on the left, and the other way round. Decided
+       once, when the window opens — it does not chase them. */
+    const n = litNpc();
+    const vx = n && eng && eng.cv ? (n.x - (eng.camX || 0)) / eng.cv.width : 0.35;
+    encounterEl.classList.toggle('visit--left', vx >= 0.5);
     encounterEl.hidden = false;
     trackLight();
     requestAnimationFrame(() => { if (!encounterEl.hidden) encounterEl.classList.add('on'); });
@@ -2669,7 +2675,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      scene, so the visitor standing beside them is not in the picture. */
   function drawEncSprite(npc) {
     const c = encSprite.getContext('2d');
-    const W = encSprite.width, H = encSprite.height, S = 3;
+    const W = encSprite.width, H = encSprite.height, S = 2;
     if (!npc || !eng || typeof eng.drawNpc !== 'function') {
       c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H); return;
     }
@@ -2724,7 +2730,6 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     encMoves.innerHTML = enc.journals.map((j) =>
         '<button type="button" data-ask="' + esc(j.id) + '">' + esc('about ' + (j.title || 'untitled')) + '</button>').join('')
       + (wallHere() ? '<button type="button" data-wall>about the wall</button>' : '')
-      + '<button type="button" data-free>something else…</button>'
       + '<button type="button" data-listen>listen</button>'
       + '<button type="button" data-offer>offer</button>'
       + '<button type="button" data-leave>leave</button>';
@@ -2764,8 +2769,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       renderMoves();
       const l = archive.lineFor(info.id, eng.clockMin, eng.day);
       appendWords(l ? l.text : '', l ? srcOf(l.from) : '');
+      openFree('ask');
     }
-    setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
+    if (!readable) setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
   }
 
   function askAbout(jid) {
@@ -2802,7 +2808,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!enc || enc.closing) return;
     const raw = (encInput.value || '').trim();
     const mode = enc.freeMode;
-    encFree.hidden = true;
+    encInput.value = '';
+    if (mode === 'offer') openFree('ask');
     if (!raw) return;
     if (mode === 'offer') {
       const name = raw.slice(0, 40);
