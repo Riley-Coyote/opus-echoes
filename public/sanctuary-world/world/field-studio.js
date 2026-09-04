@@ -25,9 +25,9 @@
 /* ═══════════ palette — cool, modern, one warm point ═══════════ */
 const F = {
   ceil: '#dfe5ed', ceilDk: '#c3cbd6',
-  wallHi: '#cfd6e0', wallLo: '#aab3c1',
-  band: '#8d9aac', bandHi: '#a9b6c6',
-  floor0: '#b3bac4', floor1: '#949cA8', seam: 'rgba(40,48,60,0.20)',
+  wallHi: '#d0d2d6', wallLo: '#abadb4',
+  band: '#8f929c', bandHi: '#a9adb8',
+  floor0: '#bab5ad', floor1: '#9b958c', seam: 'rgba(48,44,42,0.20)',
   base: '#9aa3b0', baseHi: '#c0c8d3',
   birch: '#d9cfba', birchHi: '#eee5d2', birchDk: '#a99b83',
   steel: '#7d8797', steelHi: '#9aa4b3', steelDk: '#4d5563',
@@ -38,7 +38,12 @@ const F = {
   pale: 'rgba(238,243,248,0.90)', paleDim: 'rgba(224,231,239,0.62)',
   teal: '94,234,212', tealHex: '#5eead4',
   amber: '#f2c14e', amberDeep: '#d99334', warm: '247,205,140',
-  cool: '170,190,220'
+  cool: '210,200,185',
+  /* the house's evening, borrowed. These are the hall's own sunset chord,
+     sampled off the nave windows: deep violet, plum, ember. The studio does
+     not repaint itself in them — it only lets them through the clerestory. */
+  duskTop: '#2a1e3c', duskMid: '#5d3049', duskLow: '#8f4444',
+  ember: '196,104,72', rose: '206,132,110'
 };
 
 const MONO = '"JetBrains Mono", ui-monospace, monospace';
@@ -70,23 +75,39 @@ function cone(b, cx, y0, w0, y1, w1, rgb, a) {
   ctx.restore();
 }
 /* the clerestory: the room's cool daylight has a source, and it is the same
-   frontier the rest of the world faces — seen from indoors, at night, through
-   mullioned glass. Nothing warm gets in. */
+   frontier the rest of the world faces — and it faces it at the same hour the
+   house does. The glass is cold; what is behind it is the hall's own sunset,
+   so the room's daylight arrives already going. */
 function clerestory(b, x0, x1, yTop, yBot) {
   const ctx = b.ctx, w = x1 - x0;
   ctx.save();
   ctx.beginPath(); ctx.rect(x0, yTop, w, yBot - yTop); ctx.clip();
-  for (let y = yTop; y < yBot; y++) b.px(x0, y, w, 1, lerpHex('#2e3949', '#4d5c73', (y - yTop) / (yBot - yTop)));
-  /* the valley, far off and far below: a low band of cold lights */
-  b.px(x0, yBot - 16, w, 16, '#232c3a');
-  b.px(x0, yBot - 17, w, 1, 'rgba(180,206,230,0.24)');
+  for (let y = yTop; y < yBot; y++) {
+    const f = (y - yTop) / (yBot - yTop);
+    b.px(x0, y, w, 1, f < 0.55 ? lerpHex(F.duskTop, F.duskMid, f / 0.55)
+                              : lerpHex(F.duskMid, F.duskLow, (f - 0.55) / 0.45));
+  }
+  /* the sun, already down behind the ridge: the ember that lights the horizon */
+  glow(b, x0 + w * 0.62, yBot - 12, w * 0.34, F.ember, 0.42);
+  /* the ridge the sun went behind, and the valley far off and far below */
+  {
+    const rx = x0 + w * 0.62, ry = yBot - 20;
+    glow(b, rx, ry, w * 0.30, '236,150,86', 0.55);
+    b.px(rx - 9, ry - 3, 18, 5, 'rgba(250,196,132,0.72)');
+  }
+  for (let x = x0; x < x1; x++) {
+    const rh = 13 + Math.round(6 * Math.sin((x - x0) * 0.013) + 3 * Math.sin((x - x0) * 0.041));
+    b.px(x, yBot - rh, 1, rh, '#2b2233');
+    b.px(x, yBot - rh, 1, 1, 'rgba(214,140,110,0.42)');
+  }
+  b.px(x0, yBot - 16, w, 16, 'rgba(30,24,40,0.55)');
   for (let i = 0; i < 300; i++) {
-    const lx = x0 + ((i * 53 + 11) % w), ly = yBot - 15 + ((i * 29) % 14);
-    b.px(lx, ly, (i % 17 === 0) ? 2 : 1, 1, i % 5 ? 'rgba(190,214,238,0.55)' : 'rgba(158,220,228,0.40)');
+    const lx = x0 + ((i * 53 + 11) % w), ly = yBot - 13 + ((i * 29) % 12);
+    b.px(lx, ly, (i % 17 === 0) ? 2 : 1, 1, i % 5 ? 'rgba(236,206,168,0.55)' : 'rgba(158,220,228,0.34)');
   }
   for (let i = 0; i < 52; i++) {
     const sx = x0 + ((i * 137 + 23) % w), sy = yTop + ((i * 31) % (yBot - yTop - 22));
-    b.px(sx, sy, 1, 1, 'rgba(232,242,252,' + (0.14 + (i % 5) * 0.08).toFixed(2) + ')');
+    b.px(sx, sy, 1, 1, 'rgba(244,236,246,' + (0.12 + (i % 5) * 0.07).toFixed(2) + ')');
   }
   ctx.restore();
   /* the glazing: a deep steel frame and mullions on a strict rhythm */
@@ -94,10 +115,10 @@ function clerestory(b, x0, x1, yTop, yBot) {
   b.px(x0 - 5, yBot, w + 10, 7, F.steel); b.px(x0 - 5, yBot, w + 10, 2, F.steelHi);
   b.px(x0 - 5, yTop, 5, yBot - yTop, F.steelDk); b.px(x1, yTop, 5, yBot - yTop, F.steelDk);
   for (let x = x0 + 64; x < x1; x += 64) { b.px(x, yTop, 3, yBot - yTop, '#7f8a9b'); b.px(x, yTop, 1, yBot - yTop, '#a7b2c1'); }
-  /* what the glass gives back to the room */
-  b.px(x0, yTop, w, 2, 'rgba(232,244,254,0.30)');
-  b.px(x0, yBot - 2, w, 2, 'rgba(232,244,254,0.10)');
-  glow(b, (x0 + x1) / 2, yBot + 10, (yBot - yTop) * 2.4, '160,190,224', 0.06);
+  /* what the glass gives back to the room: the evening, arriving */
+  b.px(x0, yTop, w, 2, 'rgba(240,226,232,0.28)');
+  b.px(x0, yBot - 2, w, 2, 'rgba(244,206,180,0.16)');
+  glow(b, (x0 + x1) / 2, yBot + 12, (yBot - yTop) * 2.6, F.rose, 0.10);
 }
 /* a shadow that reads on a pale floor: cool, not black */
 function contact(b, cx, y, w, a) {
@@ -213,11 +234,11 @@ export const FIELD_INSTRUMENTS = [
 
 /* a recessed ceiling strip — the room's working light, seen as a fitting */
 function strip(b, cx, w) {
-  b.px(cx - w / 2, 16, w, 12, '#eef3f8');
-  b.px(cx - w / 2, 16, w, 2, '#ffffff');
-  b.px(cx - w / 2, 28, w, 2, 'rgba(120,136,158,0.55)');
+  b.px(cx - w / 2, 16, w, 12, '#f5f1e9');
+  b.px(cx - w / 2, 16, w, 2, '#fffdf8');
+  b.px(cx - w / 2, 28, w, 2, 'rgba(132,132,140,0.55)');
   b.px(cx - w / 2 - 4, 14, 4, 16, F.steel); b.px(cx + w / 2, 14, 4, 16, F.steel);
-  sheen(b, cx, 30, w * 0.9, '236,244,252', 0.10);
+  sheen(b, cx, 30, w * 0.9, '246,238,224', 0.11);
 }
 
 /* an index card, pinned: the paper, its lift, the pin, the title, the date */
@@ -362,7 +383,12 @@ export function makeFieldStudio(bridge, options = {}) {
         + 'living pieces on the benches, the table with three chairs kept, and the desk under an '
         + 'invitation board whose lamps have been dark since 20 july 2026.',
       seats: [{ x: 772, y: 390 }, { x: 1064, y: 390 }],
-      grade: (clockMin, t) => 'rgba(10,14,22,' + (0.12 + 0.012 * Math.sin(t * 0.08)).toFixed(3) + ')',
+      /* The room's air. It used to be a cold navy at a flat 0.12 — a wash that
+         kept the studio at permanent noon while the house outside it was at
+         dusk. It is now the hall's own evening violet, one step deeper, with
+         the hall's slow 78-second breath. The studio is still the coolest,
+         brightest room in the world; it is no longer in a different day. */
+      grade: (clockMin, t) => 'rgba(38,26,48,' + (0.155 + 0.014 * Math.sin(t * 0.0805)).toFixed(3) + ')',
 
       items: [
         { x: 60, kind: 'door', to: 'lookout', label: '← THE GROUNDS', spawn: { x: backX, y: 372 }, autoDoor: false, range: 32 },
@@ -393,10 +419,13 @@ export function makeFieldStudio(bridge, options = {}) {
       ],
 
       lights: [
-        { x: 380, y: 40, r: 150, c: F.cool, a: 0.10 },
-        { x: 1000, y: 40, r: 150, c: F.cool, a: 0.10 },
-        { x: 1620, y: 40, r: 150, c: F.cool, a: 0.09 },
-        { x: 1692, y: 236, r: 84, c: F.warm, a: 0.24, flicker: 1 },
+        { x: 380, y: 40, r: 150, c: F.cool, a: 0.12 },
+        { x: 1000, y: 40, r: 150, c: F.cool, a: 0.12 },
+        { x: 1620, y: 40, r: 150, c: F.cool, a: 0.11 },
+        /* the evening through the clerestory, landing on the far wall and the
+           bench tops — the hall's hour, in the room's own terms */
+        { x: 990, y: 150, r: 300, c: F.rose, a: 0.08 },
+        { x: 1692, y: 240, r: 118, c: '247,196,128', a: 0.30, flicker: 1 },
         ...INSTRUMENTS.map((p) => ({ x: p.x, y: 262, r: 22, c: F.teal, a: 0.07 })),
         { x: 1440, y: 250, r: 70, c: '200,214,232', a: 0.05 }
       ],
@@ -422,8 +451,8 @@ export function makeFieldStudio(bridge, options = {}) {
         for (let y = 300; y < H; y++) b.px(0, y, W, 1, lerpHex(F.floor0, F.floor1, (y - 300) / (H - 300)));
         for (let x = 0; x < W; x += 240) b.px(x, 300, 1, H - 300, F.seam);
         b.px(0, 352, W, 1, 'rgba(40,48,60,0.12)');
-        b.px(0, 300, W, 2, 'rgba(242,248,254,0.34)');
-        for (let i = 0; i < 10; i++) b.px(0, 300 + i, W, 1, 'rgba(52,62,78,' + (0.11 - i * 0.011).toFixed(3) + ')');
+        b.px(0, 300, W, 2, 'rgba(250,244,234,0.34)');
+        for (let i = 0; i < 10; i++) b.px(0, 300 + i, W, 1, 'rgba(62,56,52,' + (0.11 - i * 0.011).toFixed(3) + ')');
         /* a cable trunk run along the base of the wall — the studio is wired */
         b.px(0, 286, W, 4, '#8b94a2'); b.px(0, 286, W, 1, '#adb6c3');
 
@@ -431,7 +460,7 @@ export function makeFieldStudio(bridge, options = {}) {
         clerestory(b, 686, 1296, 46, 116);
         [340, 1000, 1440, 1756].forEach((cx) => strip(b, cx, 280));
         /* what the strips lay on the floor */
-        [340, 1000, 1440, 1756].forEach((cx) => sheen(b, cx, 302, 280, '236,244,252', 0.09));
+        [340, 1000, 1440, 1756].forEach((cx) => sheen(b, cx, 302, 280, '246,238,224', 0.10));
 
         /* ── the door back to the grounds: a deep glazed steel reveal ── */
         b.px(18, 138, 88, 162, '#9aa3b0');
@@ -446,10 +475,10 @@ export function makeFieldStudio(bridge, options = {}) {
         contact(b, 62, 301, 96, 0.22);
 
         /* ══ ZONE 1 · THE WALL OF FINDINGS ══ x 150–630 ══ */
-        b.px(146, 38, 490, 256, 'rgba(246,250,254,0.34)');       // the lit board the cards hang on
-        b.px(146, 38, 490, 2, 'rgba(252,254,255,0.62)');
+        b.px(146, 38, 490, 256, 'rgba(252,248,240,0.34)');       // the lit board the cards hang on
+        b.px(146, 38, 490, 2, 'rgba(255,253,247,0.62)');
         b.px(146, 292, 490, 2, 'rgba(40,50,64,0.24)');
-        b.px(146, 38, 2, 256, 'rgba(252,254,255,0.48)');
+        b.px(146, 38, 2, 256, 'rgba(255,253,247,0.48)');
         b.px(634, 38, 2, 256, 'rgba(40,50,64,0.20)');
         b.px(146, 294, 494, 3, 'rgba(52,62,78,0.14)');
         {
@@ -648,15 +677,17 @@ export function makeFieldStudio(bridge, options = {}) {
         sheen(b, 1761, 256, 126, '150,180,214', 0.06);
 
         /* the one warm point in the room: the lamp at the left end of the desk */
-        cone(b, 1654, 214, 20, 258, 100, F.warm, 0.18);
-        glow(b, 1654, 212, 54, F.warm, 0.18);
+        cone(b, 1654, 214, 22, 262, 168, F.warm, 0.24);
+        glow(b, 1654, 212, 78, F.warm, 0.22);
+        glow(b, 1662, 258, 132, '247,196,128', 0.13);
+        glow(b, 1676, 230, 236, '236,178,118', 0.075);   // what it puts on the wall
         b.px(1628, 190, 3, 66, F.steelDk);                        // the stem
         b.px(1628, 188, 28, 3, F.steelDk);                        // the arm
         b.px(1644, 190, 22, 13, '#333a43');                       // the shade
         b.px(1644, 190, 22, 2, '#4c545f');
         b.px(1645, 202, 20, 3, 'rgba(247,205,140,0.94)');
         b.px(1620, 252, 20, 4, F.steelDk); b.px(1620, 252, 20, 1, F.steelHi);
-        sheen(b, 1656, 256, 78, F.warm, 0.20);
+        sheen(b, 1660, 256, 124, F.warm, 0.24);
 
         /* the sketchbook, closed, squared to the right corner of the desk */
         b.px(1836, 236, 44, 20, '#3f4855');
@@ -679,6 +710,87 @@ export function makeFieldStudio(bridge, options = {}) {
 
         /* the room's own name, small, by the door */
         label(b, 'THE FIELD STUDIO', 62, 332, 6, 'rgba(34,40,47,0.40)');
+
+        /* ══ THE EVENING, ARRIVING ══
+           The clerestory faces the same frontier the nave's windows do, at the
+           same hour. What comes through is a low sun, so it lands high on the
+           far wall, spreads down it, catches the bench tops, and thins to
+           nothing before it reaches the wall of findings on the left or the
+           workstation's own lamp on the right. The room stays cool; the light
+           in it does not. Orange-rose, 0.06–0.10, over everything. */
+        {
+          const ctx = b.ctx;
+          ctx.save();
+          /* the throw down the far wall, widening as it falls */
+          /* The shaft is built off-screen and then masked with a horizontal
+             falloff before it is laid down, so it has no cut edge anywhere —
+             a clipped polygon gives you a decal, not light. */
+          {
+            const off = document.createElement('canvas');
+            off.width = W; off.height = 210;
+            const o = off.getContext('2d');
+            const wall = o.createLinearGradient(0, 0, 0, 204);
+            wall.addColorStop(0, 'rgba(' + F.rose + ',0.20)');
+            wall.addColorStop(0.32, 'rgba(' + F.ember + ',0.145)');
+            wall.addColorStop(0.70, 'rgba(' + F.ember + ',0.060)');
+            wall.addColorStop(1, 'rgba(' + F.ember + ',0)');
+            o.fillStyle = wall;
+            o.beginPath();
+            o.moveTo(676, 0); o.lineTo(1306, 0);
+            o.lineTo(1540, 204); o.lineTo(392, 204); o.closePath(); o.fill();
+            /* the mullions, carried in the light: not bars drawn on the wall
+               but the places the light does not reach */
+            o.globalCompositeOperation = 'destination-out';
+            for (let mx = 750; mx < 1300; mx += 64) {
+              const g2 = o.createLinearGradient(0, 0, 0, 204);
+              g2.addColorStop(0, 'rgba(0,0,0,0.62)');
+              g2.addColorStop(0.55, 'rgba(0,0,0,0.30)');
+              g2.addColorStop(1, 'rgba(0,0,0,0)');
+              o.fillStyle = g2;
+              o.beginPath();
+              o.moveTo(mx, 0); o.lineTo(mx + 4.5, 0);
+              o.lineTo(mx - 104, 204); o.lineTo(mx - 112, 204); o.closePath(); o.fill();
+            }
+            /* the falloff that makes it a shaft and not a shape */
+            const mask = o.createLinearGradient(300, 0, 1640, 0);
+            mask.addColorStop(0.00, 'rgba(0,0,0,1)');
+            mask.addColorStop(0.13, 'rgba(0,0,0,0.35)');
+            mask.addColorStop(0.30, 'rgba(0,0,0,0)');
+            mask.addColorStop(0.74, 'rgba(0,0,0,0)');
+            mask.addColorStop(0.89, 'rgba(0,0,0,0.40)');
+            mask.addColorStop(1.00, 'rgba(0,0,0,1)');
+            o.fillStyle = mask; o.fillRect(0, 0, W, 204);
+            ctx.drawImage(off, 0, 116);
+          }
+          /* the two bars the light actually strikes: the datum and the benches */
+          const bar = (y, h, x0, x1, a) => {
+            const g = ctx.createLinearGradient(x0, 0, x1, 0);
+            g.addColorStop(0, 'rgba(' + F.ember + ',0)');
+            g.addColorStop(0.5, 'rgba(' + F.ember + ',' + a + ')');
+            g.addColorStop(1, 'rgba(' + F.ember + ',0)');
+            ctx.fillStyle = g; ctx.fillRect(x0, y, x1 - x0, h);
+          };
+          bar(186, 16, 560, 1460, 0.115);      // the datum band takes the light
+          bar(250, 9, 690, 1290, 0.135);       // the near bench top
+          bar(214, 6, 700, 1270, 0.09);        // the far bench top
+          bar(300, 8, 540, 1420, 0.085);       // where it lands on the floor
+          ctx.restore();
+          /* the bounce off the warm floor: a low band the whole length of the
+             room, strongest under the shaft and never absent anywhere */
+          {
+            const up = ctx.createLinearGradient(0, 310, 0, 240);
+            up.addColorStop(0, 'rgba(' + F.ember + ',0.095)');
+            up.addColorStop(1, 'rgba(' + F.ember + ',0)');
+            ctx.save(); ctx.fillStyle = up; ctx.fillRect(0, 240, W, 70); ctx.restore();
+          }
+          /* and a last, very soft warmth over the whole room, so nothing in it
+             is lit by a different day than the house is */
+          const room = ctx.createLinearGradient(0, 0, W, 0);
+          room.addColorStop(0, 'rgba(' + F.rose + ',0.058)');
+          room.addColorStop(0.52, 'rgba(' + F.ember + ',0.050)');
+          room.addColorStop(1, 'rgba(' + F.rose + ',0.062)');
+          ctx.save(); ctx.fillStyle = room; ctx.fillRect(0, 0, W, H); ctx.restore();
+        }
 
         /* a cool vignette so the pale room still has corners */
         for (let i = 0; i < 54; i++) {
