@@ -1,18 +1,10 @@
-/* THE STATION — the house-lab above the valley.
+/* THE STATION — the keeper's quarters in the archive station above the valley.
  *
- * A wide, low room under a ceiling of walnut planks: Wright's horizontals and
- * Quincy Jones's control wall. A full-height wall of glass block on the left,
- * lit from behind. A huge circular aperture cut in board-formed concrete on the
- * far wall, two shallow steps up to it, the landscape beyond — the brightest
- * thing in the room. One long run of walnut cabinets down the right with the
- * machines set into them and open shelves above. A free-edge walnut slab in the
- * middle on a carved base. A sunken lounge at the front. Polished concrete
- * underfoot. Every machine reads as furniture.
- *
- * The room runs on the sanctuary's own clock: golden hour, dusk, night and
- * plain daylight are four looks blended continuously by the hall's phase bands.
- * `?clock=HH:MM` on this page sets the house clock for the room and for the
- * live window in the aperture alike.
+ * A second room beside the reading room, wider and lit differently: cassette
+ * futurism, mid-century lab. Cream panels, a walnut band at waist height,
+ * olive-grey machines that are furniture, one warm glow per alcove. The
+ * terminal is already on. Everything else in the room is either the house's
+ * real instrument or a keepsake from the era the minds were born into.
  *
  * ───────────────────────────────────────────────────────────────────────────
  * HOW TO ADD A THING TO THE ROOM
@@ -27,22 +19,14 @@
  *     mesh:    () => Object3D,            // called once; whatever you return is
  *                                         // added to the scene and becomes the
  *                                         // hover target. Position it in world
- *                                         // space (the room is 10 × 6.5 × 3.1 m,
+ *                                         // space (the room is 7 × 4 × 2.8 m,
  *                                         // origin on the floor at its centre;
- *                                         // the glass block is the left wall at
- *                                         // x = −5, the aperture is centred at
- *                                         // x = −2.6 in the far wall z = −3.25,
- *                                         // the cabinet run is the far-right
- *                                         // corner, the lounge is sunk at the
- *                                         // front left).
+ *                                         // the console is the far wall at
+ *                                         // z = −2, the alcove is x = +3.5,
+ *                                         // the porthole x = −3.5).
  *     focus:   { pos:[x,y,z], look:[x,y,z] },   // optional — click glides the
  *                                         // camera here; ESC comes back
  *     onClick: () => {},                  // optional — runs on click
- *     link:    '/token',                  // optional — where this thing leads,
- *                                         // declared so the room can be asked
- *                                         // what its doors are without clicking
- *                                         // them. A thing with a `link` must
- *                                         // say so in its caption.
  *     slot:    true,                      // optional — an empty berth kept for
  *                                         // something of Riley's; drawn as a
  *                                         // small closed device
@@ -63,395 +47,102 @@
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import {
-  C, ls, REDUCED, KEY_CAME_IN, KEY_STEWARD, KEY_CLOCK,
+  C, ls, REDUCED, KEY_CAME_IN, KEY_STEWARD,
   paint, woodTexture, labelTexture,
   makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall,
   seatPose, quadCorners, makeFullMode,
   sanctuaryClock, clockLabel,
-  makeHouseWindow, makeRoomTone, makeSoundControl, KEY_SOUND,
-  makePresence
+  makeHouseWindow, makeRoomTone, makeSoundControl, KEY_SOUND
 } from './door-common.js';
 import { makeGlyph, drawGlyph, roomLabel } from './glyph.js';
-import { BANDS, parseClock } from '../world/day.js';
 import * as archive from '../world/archive.js';
 
 let STILL = false;
-const CLOCK_RESTORE = { fn: null };
-/* The flag this browser set for itself is where the lamp starts, and it stays a
-   local override — but the house is asked as soon as the room is up (see
-   `presence`, below), and its answer is what the lamp then obeys. */
 const stewardPresent = ls.get(KEY_STEWARD) === '1';
-let lampLit = stewardPresent;
 const cameInBefore = ls.get(KEY_CAME_IN) === '1';
-
-/* ─────────────────────── the clock, and its override ───────────────────────
-   The room and the live window in the aperture both read the sanctuary's own
-   stored clock. `?clock=HH:MM` writes that clock before anything reads it, so
-   one switch moves the light in here and the hour in the glass together. */
-const CLOCK_OVERRIDE = (() => {
-  let q = null;
-  try { q = new URLSearchParams(location.search).get('clock'); } catch (e) {}
-  const min = q ? parseClock(q) : null;
-  if (min === null) return null;
-  /* the window engine reads the stored clock and nothing else, so the override
-     has to be written there. It is the visitor's clock, though, not ours: keep
-     what was there and put it back when the page goes away, so `?clock=` is
-     scoped to this page rather than resetting the house. */
-  const before = ls.get(KEY_CLOCK);
-  ls.set(KEY_CLOCK, JSON.stringify({ clockMin: min, day: 1, at: Date.now() }));
-  let restored = false;
-  const restore = () => {
-    if (restored) return;
-    restored = true;
-    try {
-      if (before === null) localStorage.removeItem(KEY_CLOCK);
-      else ls.set(KEY_CLOCK, before);
-    } catch (e) {}
-  };
-  window.addEventListener('pagehide', restore);
-  window.addEventListener('beforeunload', restore);
-  CLOCK_RESTORE.fn = restore;
-  return min;
-})();
 const CLOCK = sanctuaryClock();
 
 /* the room, in metres. origin on the floor at the centre. */
-const R = { hw: 5.0, hd: 3.25, h: 3.10 };
-const WALL = { L: -R.hw, R: R.hw, F: -R.hd, N: R.hd };
-
-/* ─────────────────────────── the four looks ───────────────────────────
-   Golden is the reference: a low warm sun raking in from the right, the
-   aperture the brightest thing, the block wall gold-green. Dusk brings the
-   lamps up and lets the phosphor start to matter. Night is the cinematic
-   low-light the station has always had. Day is cool, high and undramatic.
-   The hall's own BANDS choose between them and cross-fade at the seams. */
-const LOOKS = {
-  golden: {
-    /* darker and richer than a bright afternoon: the exposure comes down a
-       third so the sun has somewhere to be brighter THAN, the bouclé keeps its
-       weave instead of clipping, and the concrete and the stone keep their
-       texture. The sun is steep enough that its band crosses the floor rather
-       than dying high on the far wall. */
-    exposure: 0.54,
-    sun: { col: 0xffa855, int: 4.10, at: [7.0, 3.60, 1.8] },
-    hemi: { sky: 0xd8c39c, ground: 0x6a5540, int: 0.50 },
-    block: { col: 0xc6bc8e, emissive: 0.44 },
-    outside: 0xe8a068,          /* amber-rose, not white — the hour has colour */
-    aperture: 1.22, glare: 0.26,
-    shelf: 0.64, lamp: 0.12, crt: 0.44, board: 0.60, downlight: 0.34,
-    fog: { col: 0x2c1f14, den: 0.0050 },
-    dust: 1.0
-  },
-  dusk: {
-    exposure: 0.74,
-    sun: { col: 0xd87a55, int: 1.05, at: [6.6, 1.05, 2.2] },
-    hemi: { sky: 0x7a749c, ground: 0x4f4550, int: 0.60 },
-    block: { col: 0x9a8ba4, emissive: 0.62 },
-    outside: 0xb98a9e,
-    aperture: 1.02, glare: 0.11,
-    shelf: 0.92, lamp: 0.50, crt: 0.70, board: 0.80, downlight: 0.44,
-    fog: { col: 0x241d2c, den: 0.011 },
-    dust: 0.35
-  },
-  night: {
-    exposure: 0.80,
-    sun: { col: 0x8093c4, int: 0.24, at: [4.2, 3.60, 3.0] },
-    hemi: { sky: 0x3c3a58, ground: 0x2b2630, int: 0.48 },
-    block: { col: 0x46527e, emissive: 0.54 },
-    outside: 0x40507e,
-    aperture: 1.12, glare: 0.03,
-    shelf: 1.18, lamp: 0.58, crt: 0.86, board: 0.66, downlight: 0.66,
-    fog: { col: 0x14111e, den: 0.017 },
-    dust: 0.12
-  },
-  day: {
-    exposure: 0.76,
-    sun: { col: 0xf0eee6, int: 2.10, at: [4.6, 6.20, 2.2] },
-    hemi: { sky: 0xbcc6d4, ground: 0x736556, int: 0.82 },
-    block: { col: 0xb8c2ba, emissive: 0.62 },
-    outside: 0xd8e2ea,
-    aperture: 1.12, glare: 0.16,
-    shelf: 0.30, lamp: 0.08, crt: 0.42, board: 0.58, downlight: 0.14,
-    fog: { col: 0x2e2e33, den: 0.007 },
-    dust: 0.30
-  }
-};
-const LOOK_OF = { night: 'night', morning: 'day', afternoon: 'day', golden: 'golden', dusk: 'dusk' };
-
-function bandOf(min) {
-  const m = ((min % 1440) + 1440) % 1440;
-  return BANDS.find((b) => (b.from < b.to ? (m >= b.from && m < b.to) : (m >= b.from || m < b.to)));
-}
-function bandSpan(b) { return b.to > b.from ? b.to - b.from : 1440 - b.from + b.to; }
-function nextBand(b) { return BANDS[(BANDS.indexOf(b) + 1) % BANDS.length]; }
-
-const lerp = (a, b, k) => a + (b - a) * k;
-const _cA = new THREE.Color(), _cB = new THREE.Color(), _cO = new THREE.Color();
-function mixCol(a, b, k) { _cA.setHex(a); _cB.setHex(b); return _cO.copy(_cA).lerp(_cB, k).getHex(); }
-
-/* one look, blended: the band we are in, cross-faded into the next over its
-   last sixth, so nothing ever snaps */
-function lookAt(min) {
-  const b = bandOf(min);
-  const m = ((min % 1440) + 1440) % 1440;
-  const u = ((m - b.from + 1440) % 1440) / bandSpan(b);
-  const A = LOOKS[LOOK_OF[b.id]];
-  const B = LOOKS[LOOK_OF[nextBand(b).id]];
-  const k = u < 0.84 ? 0 : (u - 0.84) / 0.16;
-  if (A === B || k <= 0) return { L: A, k: 0, B: A, id: b.id };
-  return { L: A, B, k, id: b.id };
-}
-/* every scalar and colour a look carries, blended by k */
-function blend(a, b, k) {
-  if (k <= 0) return a;
-  return {
-    exposure: lerp(a.exposure, b.exposure, k),
-    sun: { col: mixCol(a.sun.col, b.sun.col, k), int: lerp(a.sun.int, b.sun.int, k),
-      at: [lerp(a.sun.at[0], b.sun.at[0], k), lerp(a.sun.at[1], b.sun.at[1], k), lerp(a.sun.at[2], b.sun.at[2], k)] },
-    hemi: { sky: mixCol(a.hemi.sky, b.hemi.sky, k), ground: mixCol(a.hemi.ground, b.hemi.ground, k), int: lerp(a.hemi.int, b.hemi.int, k) },
-    block: { col: mixCol(a.block.col, b.block.col, k), emissive: lerp(a.block.emissive, b.block.emissive, k) },
-    outside: mixCol(a.outside, b.outside, k),
-    aperture: lerp(a.aperture, b.aperture, k), glare: lerp(a.glare, b.glare, k),
-    shelf: lerp(a.shelf, b.shelf, k), lamp: lerp(a.lamp, b.lamp, k),
-    crt: lerp(a.crt, b.crt, k), board: lerp(a.board, b.board, k),
-    downlight: lerp(a.downlight, b.downlight, k),
-    fog: { col: mixCol(a.fog.col, b.fog.col, k), den: lerp(a.fog.den, b.fog.den, k) },
-    dust: lerp(a.dust, b.dust, k)
-  };
-}
+const R = { hw: 3.5, hd: 2.0, h: 2.8, fillet: 0.42 };
 
 /* ─────────────────────────── textures ─────────────────────────── */
 
-/* walnut planks: the room's wood, warmed and with a wider grain than the
-   cabinet stock, plus the shadow line where one plank meets the next */
-function plankTex(reps, base, streak) {
-  return paint(512, 512, (g, w, h) => {
-    g.fillStyle = base; g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 210; i++) {
-      const y = Math.random() * h;
-      g.strokeStyle = `rgba(${streak},${0.04 + Math.random() * 0.15})`;
-      g.lineWidth = 1.0 + Math.random() * 4.2;
-      g.beginPath(); g.moveTo(-10, y);
-      for (let x = 0; x <= w + 10; x += 40) g.lineTo(x, y + Math.sin((x + i * 55) * 0.007) * 7.5);
-      g.stroke();
-    }
-    for (let k = 0; k < 4; k++) {
-      const kx = Math.random() * w, ky = Math.random() * h, kr = 10 + Math.random() * 18;
-      for (let r = kr; r > 1; r -= 2.6) {
-        g.strokeStyle = `rgba(${streak},0.10)`;
-        g.beginPath(); g.ellipse(kx, ky, r * 1.7, r * 0.5, 0.2, 0, Math.PI * 2); g.stroke();
-      }
-    }
-    /* the plank joints, running the long way */
-    const step = h / reps;
-    for (let i = 0; i < reps; i++) {
-      const y = i * step;
-      g.strokeStyle = 'rgba(18,10,4,0.55)'; g.lineWidth = 2.4;
-      g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
-      g.strokeStyle = 'rgba(255,226,182,0.13)'; g.lineWidth = 1.2;
-      g.beginPath(); g.moveTo(0, y + 2.6); g.lineTo(w, y + 2.6); g.stroke();
-    }
-  });
-}
-
-/* board-formed concrete: a light warm grey poured against 20 cm boards, with
-   the faint tie holes the formwork leaves behind */
-const concreteTex = paint(512, 512, (g, w, h) => {
-  g.fillStyle = '#bdb2a0'; g.fillRect(0, 0, w, h);
+/* the cream panel: a wall that has been painted, not filled */
+const creamTex = paint(512, 512, (g, w, h) => {
+  /* a warm cream, painted — never white */
+  g.fillStyle = '#e3d8c0'; g.fillRect(0, 0, w, h);
   const im = g.getImageData(0, 0, w, h), d = im.data;
   for (let i = 0; i < d.length; i += 4) {
-    const n = (Math.random() - 0.5) * 16;
-    d[i] += n; d[i + 1] += n * 0.97; d[i + 2] += n * 0.92;
+    const n = (Math.random() - 0.5) * 13;
+    d[i] += n; d[i + 1] += n * 0.94; d[i + 2] += n * 0.80;
   }
   g.putImageData(im, 0, 0);
-  /* clouding, so it is poured and not printed */
-  for (let i = 0; i < 90; i++) {
-    const x = Math.random() * w, y = Math.random() * h, r = 20 + Math.random() * 90;
-    const rad = g.createRadialGradient(x, y, 0, x, y, r);
-    const dark = Math.random() < 0.5;
-    rad.addColorStop(0, dark ? 'rgba(120,112,100,0.10)' : 'rgba(220,212,198,0.09)');
-    rad.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = rad; g.beginPath(); g.arc(x, y, r, 0, 6.3); g.fill();
-  }
-  /* the board lines: 512 px is 2.56 m of wall, so a board every 40 px is 20 cm */
-  for (let x = 0; x <= w; x += 40) {
-    g.strokeStyle = 'rgba(74,66,56,0.30)'; g.lineWidth = 2;
+  /* the panel seams: a shadowed groove with a lit lip, so they read at a rake */
+  for (let x = 64; x < w; x += 128) {
+    g.strokeStyle = 'rgba(74,60,42,0.42)'; g.lineWidth = 3;
     g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke();
-    g.strokeStyle = 'rgba(240,234,222,0.16)'; g.lineWidth = 1.2;
-    g.beginPath(); g.moveTo(x + 2.4, 0); g.lineTo(x + 2.4, h); g.stroke();
-  }
-  /* the tie holes, one grid, barely there */
-  for (let x = 60; x < w; x += 160) for (let y = 74; y < h; y += 168) {
-    const rad = g.createRadialGradient(x, y, 0, x, y, 7);
-    rad.addColorStop(0, 'rgba(60,54,46,0.42)');
-    rad.addColorStop(1, 'rgba(60,54,46,0)');
-    g.fillStyle = rad; g.beginPath(); g.arc(x, y, 7, 0, 6.3); g.fill();
+    g.strokeStyle = 'rgba(255,246,224,0.30)'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(x + 2.5, 0); g.lineTo(x + 2.5, h); g.stroke();
   }
 });
 
-/* stacked stone: long thin courses in cool greys with a little warmth in them */
-const stoneTex = paint(512, 512, (g, w, h) => {
-  g.fillStyle = '#2b2a29'; g.fillRect(0, 0, w, h);
-  const greys = ['#8f918c', '#7c7d79', '#9b9a92', '#6e716e', '#a5a49a', '#87847c', '#767a79'];
-  const COURSE = 17;
-  let y = 0, row = 0;
-  while (y < h) {
-    const ch = COURSE * (0.72 + Math.random() * 0.6);
-    let x = -Math.random() * 90;
-    while (x < w) {
-      const sw = 34 + Math.random() * 96;
-      g.fillStyle = greys[(row * 3 + (x | 0)) % greys.length];
-      g.fillRect(x + 1, y + 1, sw - 2, ch - 1.6);
-      /* the lit top edge and the shadow beneath — the courses have to read at a rake */
-      g.fillStyle = 'rgba(255,250,238,0.16)';
-      g.fillRect(x + 1, y + 1, sw - 2, 1.4);
-      g.fillStyle = 'rgba(12,10,9,0.34)';
-      g.fillRect(x + 1, y + ch - 2.2, sw - 2, 1.6);
-      x += sw;
-    }
-    y += ch; row++;
-  }
-  /* a warm wash over the cool, so the stone belongs with the walnut */
-  g.fillStyle = 'rgba(160,128,90,0.13)'; g.fillRect(0, 0, w, h);
-});
-
-/* polished concrete: a floor that has been ground and sealed, so it holds a
-   soft reflection of everything lit */
-const floorTex = paint(512, 512, (g, w, h) => {
-  g.fillStyle = '#6f6b65'; g.fillRect(0, 0, w, h);
+/* rubberised tile: a faint grid, and the studs the floors of that era had */
+const rubberTex = paint(512, 512, (g, w, h) => {
+  g.fillStyle = '#3b3940'; g.fillRect(0, 0, w, h);
   const im = g.getImageData(0, 0, w, h), d = im.data;
-  for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - 0.5) * 11; d[i] += n; d[i + 1] += n * 0.98; d[i + 2] += n * 0.95; }
+  for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - 0.5) * 10; d[i] += n; d[i + 1] += n * 0.96; d[i + 2] += n; }
   g.putImageData(im, 0, 0);
-  for (let i = 0; i < 260; i++) {
-    const x = Math.random() * w, y = Math.random() * h, r = 2 + Math.random() * 9;
-    g.fillStyle = Math.random() < 0.5 ? 'rgba(40,38,36,0.16)' : 'rgba(190,186,178,0.13)';
-    g.beginPath(); g.arc(x, y, r, 0, 6.3); g.fill();
-  }
-  /* the saw cuts, on a 2.5 m grid */
-  g.strokeStyle = 'rgba(34,32,30,0.34)'; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
-  g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.stroke();
+  g.strokeStyle = 'rgba(0,0,0,0.20)'; g.lineWidth = 2;
+  for (let x = 0; x <= w; x += 128) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+  for (let y = 0; y <= h; y += 128) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+  g.fillStyle = 'rgba(255,255,255,0.022)';
+  for (let x = 32; x < w; x += 64) for (let y = 32; y < h; y += 64) { g.beginPath(); g.arc(x, y, 9, 0, 6.3); g.fill(); }
 });
 
-/* the glass block wall: twelve blocks across, twenty-two up, each one a little
-   different, on a hairline of mortar. Painted twice — once in colour for the
-   glass, once in black and white for the roughness, so the mortar is matt and
-   the blocks are not. */
-const BLOCK_COLS = 12, BLOCK_ROWS = 22;
-function glassBlockPaint(mono) {
-  return paint(512, 1024, (g, w, h) => {
-    const bw = w / BLOCK_COLS, bh = h / BLOCK_ROWS;
-    g.fillStyle = mono ? '#ffffff' : '#7f8d7c'; g.fillRect(0, 0, w, h);
-    for (let cy = 0; cy < BLOCK_ROWS; cy++) for (let cx = 0; cx < BLOCK_COLS; cx++) {
-      const x = cx * bw, y = cy * bh;
-      const jitter = (Math.sin(cx * 12.9 + cy * 78.2) * 43758.5453) % 1;
-      const v = 0.5 + 0.5 * Math.abs(jitter);
-      if (mono) {
-        const rad = g.createRadialGradient(x + bw * 0.36, y + bh * 0.34, 1, x + bw / 2, y + bh / 2, bw * 0.82);
-        rad.addColorStop(0, 'rgba(0,0,0,0.72)');           /* the block's face is glossy */
-        rad.addColorStop(1, 'rgba(120,120,120,0.35)');
-        g.fillStyle = rad;
-        g.fillRect(x + 1.6, y + 1.6, bw - 3.2, bh - 3.2);
-      } else {
-        const rad = g.createRadialGradient(x + bw * 0.34, y + bh * 0.32, 2, x + bw / 2, y + bh / 2, bw * 0.9);
-        rad.addColorStop(0.00, `rgba(238,246,228,${0.86 * v})`);
-        rad.addColorStop(0.45, `rgba(176,199,170,${0.80 * v})`);
-        rad.addColorStop(1.00, `rgba(104,130,110,${0.86})`);
-        g.fillStyle = rad;
-        g.fillRect(x + 1.6, y + 1.6, bw - 3.2, bh - 3.2);
-        /* the ripple pressed into the glass */
-        g.strokeStyle = `rgba(226,238,220,${0.10 + 0.12 * v})`;
-        g.lineWidth = 1.4;
-        for (let i = 1; i < 5; i++) {
-          g.beginPath();
-          g.moveTo(x + 3, y + (bh / 5) * i);
-          g.lineTo(x + bw - 3, y + (bh / 5) * i - 2);
-          g.stroke();
-        }
-      }
-    }
-    /* the mortar grid, hairline */
-    g.strokeStyle = mono ? 'rgba(255,255,255,1)' : 'rgba(126,124,116,0.92)';
-    g.lineWidth = 3;
-    for (let cx = 0; cx <= BLOCK_COLS; cx++) { g.beginPath(); g.moveTo(cx * bw, 0); g.lineTo(cx * bw, h); g.stroke(); }
-    for (let cy = 0; cy <= BLOCK_ROWS; cy++) { g.beginPath(); g.moveTo(0, cy * bh); g.lineTo(w, cy * bh); g.stroke(); }
-  });
-}
-const blockTex = glassBlockPaint(false);
-const blockRough = glassBlockPaint(true);
-
-/* bouclé: cream, with the fine loop the weave leaves */
-const boucleTex = paint(256, 256, (g, w, h) => {
-  g.fillStyle = '#ddd3c0'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 5200; i++) {
-    const x = Math.random() * w, y = Math.random() * h;
-    g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,250,238,0.30)' : 'rgba(150,138,118,0.24)';
-    g.lineWidth = 1.1;
-    g.beginPath(); g.arc(x, y, 1.4 + Math.random() * 1.8, 0, Math.PI * 1.6); g.stroke();
+/* the sky over the skylights: dusk going over into night, and stars */
+const skyTex = paint(256, 256, (g, w, h) => {
+  const sky = g.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0.00, '#030308');
+  sky.addColorStop(0.48, '#0a0918');
+  sky.addColorStop(0.82, '#131028');
+  sky.addColorStop(1.00, '#1a1433');
+  g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  /* a few stars, and no more — a night sky is mostly nothing */
+  for (let i = 0; i < 46; i++) {
+    const a = 0.22 + Math.random() * 0.62;
+    g.fillStyle = Math.random() < 0.18 ? `rgba(94,234,212,${a})` : `rgba(216,214,232,${a})`;
+    g.fillRect(Math.random() * w | 0, Math.random() * h | 0, 1, 1);
   }
 });
 
-/* tan leather: a grain, and the creases a chair earns */
-const leatherTex = paint(256, 256, (g, w, h) => {
-  g.fillStyle = '#7a6449'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 4200; i++) {
-    const x = Math.random() * w, y = Math.random() * h;
-    g.fillStyle = Math.random() < 0.5 ? 'rgba(48,36,24,0.18)' : 'rgba(196,176,146,0.13)';
-    g.beginPath(); g.arc(x, y, 0.8 + Math.random() * 1.6, 0, 6.3); g.fill();
+/* the valley through the porthole: the ridge, the frontier, and the house */
+const valleyTex = paint(256, 256, (g, w, h) => {
+  const sky = g.createLinearGradient(0, 0, 0, h * 0.74);
+  sky.addColorStop(0.00, '#07060e');
+  sky.addColorStop(0.44, '#100c1c');
+  sky.addColorStop(0.78, '#1b122b');
+  sky.addColorStop(1.00, '#3a2440');
+  g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 80; i++) {
+    g.fillStyle = `rgba(232,228,240,${0.10 + Math.random() * 0.45})`;
+    g.fillRect(Math.random() * w | 0, Math.random() * h * 0.56 | 0, 1, 1);
   }
-  for (let i = 0; i < 26; i++) {
-    g.strokeStyle = 'rgba(48,30,16,0.14)'; g.lineWidth = 0.8 + Math.random();
-    g.beginPath();
-    let x = Math.random() * w, y = Math.random() * h;
-    g.moveTo(x, y);
-    for (let k = 0; k < 6; k++) { x += (Math.random() - 0.5) * 60; y += (Math.random() - 0.5) * 60; g.lineTo(x, y); }
-    g.stroke();
-  }
-});
-
-/* the shag: long pile, painted as thousands of leaning strands */
-const shagTex = paint(512, 512, (g, w, h) => {
-  g.fillStyle = '#8a7458'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 16000; i++) {
-    const x = Math.random() * w, y = Math.random() * h;
-    const a = Math.random() * Math.PI * 2, len = 6 + Math.random() * 13;
-    const v = Math.random();
-    g.strokeStyle = v < 0.34 ? 'rgba(212,190,158,0.42)' : (v < 0.7 ? 'rgba(140,118,88,0.42)' : 'rgba(70,56,38,0.42)');
-    g.lineWidth = 1.5 + Math.random() * 1.6;
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
-  }
-});
-
-/* the sky beyond the clerestory and through the aperture, per phase — one
-   canvas, repainted whenever the light changes */
-const SKYC = { w: 256, h: 256 };
-const skyCanvas = document.createElement('canvas');
-skyCanvas.width = SKYC.w; skyCanvas.height = SKYC.h;
-const skyCtx = skyCanvas.getContext('2d');
-const skyTex = new THREE.CanvasTexture(skyCanvas);
-skyTex.colorSpace = THREE.SRGBColorSpace;
-function paintSky(top, bottom, stars) {
-  const g = skyCtx, w = SKYC.w, h = SKYC.h;
-  const grad = g.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, top); grad.addColorStop(1, bottom);
-  g.fillStyle = grad; g.fillRect(0, 0, w, h);
-  if (stars > 0) {
-    for (let i = 0; i < 70 * stars; i++) {
-      g.fillStyle = `rgba(226,224,238,${(0.15 + Math.random() * 0.6) * stars})`;
-      g.fillRect(Math.random() * w | 0, Math.random() * h * 0.8 | 0, 1, 1);
-    }
-  }
-  /* the tree line, far off — the clerestory looks out into branches */
-  g.fillStyle = 'rgba(14,18,14,0.86)';
-  g.beginPath(); g.moveTo(0, h * 0.80);
-  for (let x = 0; x <= w; x += 6) {
-    g.lineTo(x, h * 0.80 - Math.abs(Math.sin(x * 0.09)) * 16 - Math.sin(x * 0.031) * 9);
-  }
+  g.fillStyle = '#0a0712';
+  g.beginPath(); g.moveTo(0, h * 0.70);
+  for (let x = 0; x <= w; x += 8) g.lineTo(x, h * 0.70 + Math.sin(x * 0.03) * 8 + Math.sin(x * 0.011) * 14);
   g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fill();
-  skyTex.needsUpdate = true;
-}
-paintSky('#2a2340', '#8a6a58', 0.4);
-
+  for (let i = 0; i < 70; i++) {
+    g.fillStyle = `rgba(242,193,78,${0.10 + Math.random() * 0.30})`;
+    g.fillRect(Math.random() * w | 0, h * 0.80 + Math.random() * h * 0.16 | 0, 1, 1);
+  }
+  /* the house on the ridge, far below — a few warm windows and nothing else */
+  const hx = w * 0.60, hy = h * 0.685;
+  g.fillStyle = '#070510'; g.fillRect(hx - 10, hy - 8, 20, 11);
+  [[-6, -5], [-2, -5], [4, -5], [-6, -1], [4, -1]].forEach(([dx, dy], i) => {
+    g.fillStyle = i % 2 ? 'rgba(242,193,78,0.95)' : 'rgba(217,147,52,0.9)';
+    g.fillRect(hx + dx, hy + dy, 2, 2);
+  });
+});
 
 /* the five residents' names, embossed faintly into one panel */
 const namesTex = paint(512, 256, (g, w, h) => {
@@ -563,6 +254,74 @@ const dialTex = paint(128, 128, (g) => {
   }
 });
 
+/* ─────────────────────────── materials ─────────────────────────── */
+const creamMat = new THREE.MeshStandardMaterial({ map: creamTex, roughness: 0.78, metalness: 0.02, color: 0xffffff });
+const shellMat = new THREE.MeshStandardMaterial({ map: creamTex, roughness: 0.92, metalness: 0, side: THREE.BackSide, color: 0xbcae96 });
+/* satin walnut: the grain has to read at a rake, so the base is light enough
+   for the terminal's spill to find it */
+const walnutMat = new THREE.MeshStandardMaterial({ map: woodTexture('#6a4a33', '26,14,7'), roughness: 0.34, metalness: 0.06, color: 0xd8c4a6 });
+const walnutDeep = new THREE.MeshStandardMaterial({ map: woodTexture('#4a3122', '20,10,5'), roughness: 0.50, metalness: 0.04, color: 0xc4b096 });
+const oliveMat = new THREE.MeshStandardMaterial({ color: 0x6f6a58, roughness: 0.66, metalness: 0.06 });
+const oliveDark = new THREE.MeshStandardMaterial({ color: 0x4a473d, roughness: 0.78, metalness: 0.04 });
+const terracotta = new THREE.MeshStandardMaterial({ color: 0xa85a28, roughness: 0.94, metalness: 0 });
+const chromeMat = new THREE.MeshStandardMaterial({ color: 0xa8a6a0, roughness: 0.28, metalness: 0.72 });
+const brass = new THREE.MeshStandardMaterial({ color: 0xbb9350, roughness: 0.34, metalness: 0.52 });
+/* charcoal tile with a whisper of sheen, so the glows lie down on it */
+const rubberMat = new THREE.MeshStandardMaterial({ map: rubberTex, roughness: 0.62, metalness: 0.10, color: 0xd0cad6 });
+const rugMat = new THREE.MeshStandardMaterial({ color: 0x6b4029, roughness: 1.0, metalness: 0 });
+const cardboard = new THREE.MeshStandardMaterial({ color: 0x9c8464, roughness: 0.94, metalness: 0 });
+const blackPlastic = new THREE.MeshStandardMaterial({ color: 0x211f22, roughness: 0.62, metalness: 0.06 });
+
+/* ─────────────────────────── the shell ─────────────────────────── */
+/* a soft-cornered capsule: the cross-section is a rounded rectangle extruded
+   the length of the room, so wall meets ceiling and wall meets floor in a
+   fillet rather than a line */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07060c);
+scene.fog = new THREE.FogExp2(0x120e1e, 0.040);
+
+{
+  const s = new THREE.Shape();
+  const x0 = -R.hw, x1 = R.hw, y0 = 0, y1 = R.h, r = R.fillet;
+  s.moveTo(x0 + r, y0);
+  s.lineTo(x1 - r, y0); s.quadraticCurveTo(x1, y0, x1, y0 + r);
+  s.lineTo(x1, y1 - r); s.quadraticCurveTo(x1, y1, x1 - r, y1);
+  s.lineTo(x0 + r, y1); s.quadraticCurveTo(x0, y1, x0, y1 - r);
+  s.lineTo(x0, y0 + r); s.quadraticCurveTo(x0, y0, x0 + r, y0);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: R.hd * 2, bevelEnabled: false, curveSegments: 12 });
+  geo.translate(0, 0, -R.hd);
+  const capsule = new THREE.Mesh(geo, shellMat);
+  capsule.receiveShadow = true;
+  scene.add(capsule);
+}
+
+/* the floor proper: rubberised tile over the capsule's own floor */
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(R.hw * 2, R.hd * 2), rubberMat);
+rubberTex.wrapS = rubberTex.wrapT = THREE.RepeatWrapping;
+rubberTex.repeat.set(7, 4);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = 0.004;
+floor.receiveShadow = true;
+scene.add(floor);
+
+/* the walnut band at waist height, all the way round the two long walls */
+function band(z, len, x) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(len, 0.16, 0.042), walnutMat);
+  m.position.set(x, 1.02, z);
+  m.receiveShadow = true;
+  return m;
+}
+scene.add(band(-1.975, R.hw * 2 - 0.2, 0));
+
+/* one wall panel in terracotta — the reference quarters always has exactly one,
+   and it is what keeps a cream room from reading as a hospital */
+{
+  const panel = box(1.42, 1.34, 0.030, terracotta, -1.10, 1.86, -1.982, false);
+  panel.receiveShadow = true;
+  scene.add(panel);
+  [-0.725, 0.725].forEach((dx) => scene.add(box(0.022, 1.34, 0.038, walnutDeep, -1.10 + dx, 1.86, -1.978, false)));
+}
+
 /* ─────────────────────────── small helpers ─────────────────────────── */
 function box(w, h, d, mat, x, y, z, cast) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -585,333 +344,69 @@ function rbox(w, h, d, r, mat) {
   m.castShadow = true; m.receiveShadow = true;
   return m;
 }
-/* a plane standing where you put it, facing where you point it */
-function plane(w, h, mat, x, y, z, rx, ry) {
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-  m.position.set(x, y, z);
-  if (rx) m.rotation.x = rx;
-  if (ry) m.rotation.y = ry;
-  m.receiveShadow = true;
-  return m;
-}
-function rep(tex, x, y) {
-  const t = tex.clone();
-  t.needsUpdate = true;
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(x, y);
-  return t;
-}
 
-/* ─────────────────────────── materials ─────────────────────────── */
-/* walnut: the ceiling planks and the slab take the wide grain; the cabinets and
-   the rims take the tighter one */
-const plankMap = plankTex(6, '#6b4a30', '24,12,6');
-const walnutMat = new THREE.MeshStandardMaterial({ map: woodTexture('#6a4a33', '26,14,7'), roughness: 0.36, metalness: 0.05, color: 0xd6c2a4 });
-const walnutDeep = new THREE.MeshStandardMaterial({ map: woodTexture('#4a3122', '20,10,5'), roughness: 0.52, metalness: 0.04, color: 0xc0ad94 });
-const slabMat = new THREE.MeshStandardMaterial({ map: rep(plankMap, 1, 1), roughness: 0.30, metalness: 0.05, color: 0xd8c4a2 });
-const ceilingMat = new THREE.MeshStandardMaterial({ map: rep(plankMap, 3.2, 3.0), roughness: 0.50, metalness: 0.03, color: 0xd0b28e });
-const concreteMat = new THREE.MeshStandardMaterial({ map: rep(concreteTex, 2.4, 1.25), roughness: 0.90, metalness: 0.02, color: 0xd6cfc0 });
-const concretePlain = new THREE.MeshStandardMaterial({ map: rep(concreteTex, 2.0, 1.0), roughness: 0.92, metalness: 0.02, color: 0xd8d2c6 });
-const stoneMat = new THREE.MeshStandardMaterial({ map: rep(stoneTex, 3.0, 1.4), roughness: 0.88, metalness: 0.03, color: 0xece9e2 });
-const floorMat = new THREE.MeshStandardMaterial({ map: rep(floorTex, 5, 3.2), roughness: 0.34, metalness: 0.16, color: 0xcfcac2 });
-const boucleMat = new THREE.MeshStandardMaterial({ map: rep(boucleTex, 3, 1.4), roughness: 0.96, metalness: 0, color: 0xd4c9b2 });
-const leatherMat = new THREE.MeshStandardMaterial({ map: rep(leatherTex, 2, 2), roughness: 0.48, metalness: 0.03, color: 0xac9880 });
-const shagMat = new THREE.MeshStandardMaterial({ map: rep(shagTex, 2.2, 1.6), roughness: 1.0, metalness: 0, color: 0xd6c4a6 });
-const oliveMat = new THREE.MeshStandardMaterial({ color: 0x6f6a58, roughness: 0.62, metalness: 0.08 });
-const oliveDark = new THREE.MeshStandardMaterial({ color: 0x45423a, roughness: 0.76, metalness: 0.05 });
-const creamMat = new THREE.MeshStandardMaterial({ color: 0xded4bf, roughness: 0.74, metalness: 0.02 });
-const terracotta = new THREE.MeshStandardMaterial({ color: 0xa85a28, roughness: 0.92, metalness: 0 });
-const chromeMat = new THREE.MeshStandardMaterial({ color: 0xa8a6a0, roughness: 0.26, metalness: 0.74 });
-const brass = new THREE.MeshStandardMaterial({ color: 0xbb9350, roughness: 0.32, metalness: 0.56 });
-
-/* an engraved brass plate. The room says where a thing leads on the thing
-   itself, in the one printed material the era allowed itself. */
-function brassPlate(lines, w, h) {
-  const tex = paint(w || 320, h || 96, (g, W, H) => {
-    const sheen = g.createLinearGradient(0, 0, 0, H);
-    sheen.addColorStop(0.00, '#c8a661');
-    sheen.addColorStop(0.42, '#b08a4a');
-    sheen.addColorStop(0.58, '#caaa66');
-    sheen.addColorStop(1.00, '#96723c');
-    g.fillStyle = sheen; g.fillRect(0, 0, W, H);
-    /* the mill's own grain, drawn across */
-    g.strokeStyle = 'rgba(255,238,200,0.06)'; g.lineWidth = 1;
-    for (let i = 0; i < 90; i++) {
-      const y = Math.random() * H;
-      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
-    }
-    g.strokeStyle = 'rgba(60,42,16,0.34)'; g.lineWidth = 2;
-    g.strokeRect(5, 5, W - 10, H - 10);
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    lines.forEach((ln, i) => {
-      const big = i === 0;
-      g.font = (big ? '600 ' : '') + (big ? Math.round(H * 0.30) : Math.round(H * 0.19)) + 'px "JetBrains Mono", monospace';
-      /* engraved: a light edge above the cut, the cut itself under it */
-      g.fillStyle = 'rgba(255,240,205,0.28)';
-      g.fillText(ln, W / 2, (lines.length === 1 ? H / 2 : H * (0.36 + i * 0.30)) - 1.5);
-      g.fillStyle = 'rgba(44,30,10,0.86)';
-      g.fillText(ln, W / 2, lines.length === 1 ? H / 2 : H * (0.36 + i * 0.30));
-    });
-  });
-  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.34, metalness: 0.52 });
-}
-const cardboard = new THREE.MeshStandardMaterial({ color: 0x9c8464, roughness: 0.94, metalness: 0 });
-const blackPlastic = new THREE.MeshStandardMaterial({ color: 0x211f22, roughness: 0.60, metalness: 0.06 });
-const leafMat = new THREE.MeshStandardMaterial({ color: 0x4d6b42, roughness: 0.80, metalness: 0, side: THREE.DoubleSide });
-const leafDeep = new THREE.MeshStandardMaterial({ color: 0x37522f, roughness: 0.84, metalness: 0, side: THREE.DoubleSide });
-
-/* ─────────────────────────── the shell ─────────────────────────── */
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0a0e);
-scene.fog = new THREE.FogExp2(0x241d2c, 0.014);
-
-/* the sunken lounge, so the floor knows where its hole is */
-const PIT = { x0: -4.20, x1: -0.80, z0: -0.25, z1: 2.15, drop: 0.35 };
-
-/* the floor: polished concrete with the lounge cut out of it */
+/* ─────────────────────────── the console (the far wall) ─────────────────────────── */
+const CONSOLE = { z: -1.72, top: 0.775, len: 6.4 };
+const consoleGroup = new THREE.Group();
+scene.add(consoleGroup);
 {
-  const s = new THREE.Shape();
-  s.moveTo(WALL.L, -WALL.N); s.lineTo(WALL.R, -WALL.N); s.lineTo(WALL.R, -WALL.F); s.lineTo(WALL.L, -WALL.F); s.closePath();
-  const hole = new THREE.Path();
-  hole.moveTo(PIT.x0, -PIT.z0); hole.lineTo(PIT.x1, -PIT.z0); hole.lineTo(PIT.x1, -PIT.z1); hole.lineTo(PIT.x0, -PIT.z1); hole.closePath();
-  s.holes.push(hole);
-  const geo = new THREE.ShapeGeometry(s);
-  geo.rotateX(-Math.PI / 2);
-  /* the shape's own uv is in metres; give the map a sane repeat */
-  const uv = geo.attributes.uv;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 2.0, uv.getY(i) / 2.0);
-  const m = new THREE.Mesh(geo, floorMat);
-  m.receiveShadow = true;
-  scene.add(m);
-
-  /* the pit: its own floor and its four short walls */
-  const pf = plane(PIT.x1 - PIT.x0, PIT.z1 - PIT.z0, floorMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop + 0.002, (PIT.z0 + PIT.z1) / 2, -Math.PI / 2);
-  scene.add(pf);
-  const wallMat = concretePlain;
-  scene.add(box(PIT.x1 - PIT.x0, PIT.drop, 0.06, wallMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop / 2, PIT.z0, false));
-  scene.add(box(PIT.x1 - PIT.x0, PIT.drop, 0.06, wallMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop / 2, PIT.z1, false));
-  scene.add(box(0.06, PIT.drop, PIT.z1 - PIT.z0, wallMat, PIT.x0, -PIT.drop / 2, (PIT.z0 + PIT.z1) / 2, false));
-  scene.add(box(0.06, PIT.drop, PIT.z1 - PIT.z0, wallMat, PIT.x1, -PIT.drop / 2, (PIT.z0 + PIT.z1) / 2, false));
-  /* two treads down, on the near side */
-  scene.add(box(1.40, 0.10, 0.34, concretePlain, -1.55, -0.052, PIT.z1 - 0.20, false));
-  scene.add(box(1.40, 0.10, 0.34, concretePlain, -1.55, -0.212, PIT.z1 - 0.54, false));
+  /* the body: one long cream case, its face raked back a little */
+  const body = rbox(CONSOLE.len, 0.70, 0.56, 0.06, creamMat);
+  body.position.set(0, 0.40, CONSOLE.z);
+  consoleGroup.add(body);
+  /* a recessed toe, so it does not sit on the floor like a crate */
+  consoleGroup.add(box(CONSOLE.len - 0.22, 0.06, 0.40, oliveDark, 0, 0.03, CONSOLE.z - 0.04, false));
+  /* the walnut edge along the whole front lip */
+  const edge = rbox(CONSOLE.len, 0.085, 0.10, 0.03, walnutMat);
+  edge.position.set(0, 0.735, CONSOLE.z + 0.29);
+  consoleGroup.add(edge);
+  /* the working top */
+  const top = box(CONSOLE.len - 0.02, 0.035, 0.56, walnutMat, 0, CONSOLE.top - 0.017, CONSOLE.z);
+  consoleGroup.add(top);
+  /* the back riser, up to the walnut band */
+  consoleGroup.add(box(CONSOLE.len, 0.28, 0.06, creamMat, 0, 0.92, CONSOLE.z - 0.29, false));
 }
 
-/* the ceiling: walnut planks running the long way, low over everything */
+/* the strip of indicator lamps and rotary dials set into the console */
+const lampStrip = new THREE.Group();
+scene.add(lampStrip);
+const indicatorLamps = [];
 {
-  const c = plane(R.hw * 2, R.hd * 2, ceilingMat, 0, R.h, 0, Math.PI / 2);
-  c.receiveShadow = true;
-  scene.add(c);
-}
-
-/* the near wall and the far wall's ground: plain warm concrete */
-scene.add(plane(R.hw * 2, R.h, concretePlain, 0, R.h / 2, WALL.N, 0, Math.PI));
-
-/* ── the left wall: glass block, floor to ceiling, lit from behind ── */
-const blockWall = new THREE.Mesh(
-  new THREE.PlaneGeometry(R.hd * 2, R.h),
-  new THREE.MeshStandardMaterial({
-    map: blockTex, roughnessMap: blockRough,
-    emissive: 0xffffff, emissiveMap: blockTex, emissiveIntensity: 1.0,
-    transparent: true, opacity: 0.96, roughness: 0.45, metalness: 0.04, color: 0xffffff
-  })
-);
-blockWall.position.set(WALL.L + 0.02, R.h / 2, 0);
-blockWall.rotation.y = Math.PI / 2;
-scene.add(blockWall);
-/* the mullions: a slim bronze frame every four blocks, so the wall is built */
-{
-  const fr = new THREE.MeshStandardMaterial({ color: 0x4b4238, roughness: 0.5, metalness: 0.4 });
-  for (let i = -2; i <= 2; i++) scene.add(box(0.05, R.h, 0.05, fr, WALL.L + 0.04, R.h / 2, i * 1.35, false));
-  scene.add(box(0.07, 0.07, R.hd * 2, fr, WALL.L + 0.04, R.h - 0.035, 0, false));
-  scene.add(box(0.07, 0.07, R.hd * 2, fr, WALL.L + 0.04, 0.035, 0, false));
-}
-
-/* ── the planter ledge in front of it ── */
-const PLANTER = { x: WALL.L + 0.40, w: 0.80, h: 0.45, z0: -2.95, z1: 2.55 };
-{
-  const len = PLANTER.z1 - PLANTER.z0, cz = (PLANTER.z0 + PLANTER.z1) / 2;
-  const ledge = box(PLANTER.w, PLANTER.h, len, concreteMat, PLANTER.x, PLANTER.h / 2, cz);
-  scene.add(ledge);
-  /* the walnut cap along its front lip */
-  scene.add(box(0.10, 0.05, len, walnutDeep, PLANTER.x + PLANTER.w / 2 - 0.05, PLANTER.h + 0.024, cz, false));
-  /* soil */
-  scene.add(plane(PLANTER.w - 0.16, len - 0.16, new THREE.MeshStandardMaterial({ color: 0x241a12, roughness: 1 }),
-    PLANTER.x, PLANTER.h + 0.004, cz, -Math.PI / 2));
-}
-
-/* ── the far wall ──
-   Its left half is board-formed concrete with the aperture cut through it; its
-   right half, and the whole right wall, are stacked stone behind the cabinets. */
-const APER = { x: -2.60, y: 1.55, r: 1.20, z: WALL.F, split: -0.50 };
-{
-  const s = new THREE.Shape();
-  s.moveTo(WALL.L, 0); s.lineTo(APER.split, 0); s.lineTo(APER.split, R.h); s.lineTo(WALL.L, R.h); s.closePath();
-  const hole = new THREE.Path();
-  hole.absarc(APER.x, APER.y, APER.r, 0, Math.PI * 2, true);
-  s.holes.push(hole);
-  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.34, bevelEnabled: false, curveSegments: 40 });
-  const uv = geo.attributes.uv;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 2.56, uv.getY(i) / 2.56);
-  geo.translate(0, 0, WALL.F - 0.34);
-  const wall = new THREE.Mesh(geo, concreteMat);
-  wall.castShadow = true; wall.receiveShadow = true;
-  scene.add(wall);
-  /* the reveal: the thickness of the wall inside the circle */
-  const revMat = concretePlain.clone();
-  revMat.side = THREE.DoubleSide;
-  const reveal = new THREE.Mesh(new THREE.CylinderGeometry(APER.r, APER.r, 0.34, 44, 1, true), revMat);
-  reveal.rotation.x = Math.PI / 2;
-  reveal.position.set(APER.x, APER.y, WALL.F - 0.17);
-  scene.add(reveal);
-  /* two shallow steps up to it */
-  scene.add(box(3.30, 0.09, 0.42, concretePlain, APER.x, 0.045, WALL.F + 0.62, false));
-  scene.add(box(3.00, 0.18, 0.34, concretePlain, APER.x, 0.090, WALL.F + 0.24, false));
-}
-/* the far wall's right half, and the right wall, in stacked stone. Both stop
-   the sun: what rakes into this room at golden hour comes through the
-   clerestory and the aperture and nowhere else. */
-{
-  const a = plane(R.hw - APER.split, R.h, stoneMat, (APER.split + WALL.R) / 2, R.h / 2, WALL.F);
-  const b = plane(R.hd * 2, R.h, stoneMat, WALL.R, R.h / 2, 0, 0, -Math.PI / 2);
-  a.castShadow = true; b.castShadow = true;
-  scene.add(a, b);
-}
-
-/* ── the clerestory: a strip of glass where the ceiling meets the right wall,
-   and turning the far-right corner. Trees and sky beyond. ── */
-const CLERE = { h: 0.45 };
-const clerestory = new THREE.Group();
-scene.add(clerestory);
-{
-  const y = R.h - CLERE.h / 2 - 0.02;
-  const skyMat = new THREE.MeshStandardMaterial({
-    map: skyTex, emissive: 0xffffff, emissiveMap: skyTex, emissiveIntensity: 1.0, roughness: 1
-  });
-  const a = plane(R.hd * 2, CLERE.h, skyMat, WALL.R - 0.03, y, 0, 0, -Math.PI / 2);
-  const b = plane(R.hw - APER.split, CLERE.h, skyMat, (APER.split + WALL.R) / 2, y, WALL.F + 0.03);
-  clerestory.add(a, b);
-  /* the glazing bars, and the walnut head that carries the ceiling over it */
-  const barMat = new THREE.MeshStandardMaterial({ color: 0x3b352c, roughness: 0.6, metalness: 0.3 });
-  for (let i = -2; i <= 2; i++) clerestory.add(box(0.05, CLERE.h, 0.04, barMat, WALL.R - 0.05, y, i * 1.35, false));
-  for (let i = 0; i < 4; i++) clerestory.add(box(0.04, CLERE.h, 0.05, barMat, APER.split + 0.8 + i * 1.28, y, WALL.F + 0.05, false));
-  clerestory.add(box(0.12, 0.07, R.hd * 2, walnutMat, WALL.R - 0.06, R.h - CLERE.h - 0.06, 0, false));
-  clerestory.add(box(R.hw - APER.split, 0.07, 0.12, walnutMat, (APER.split + WALL.R) / 2, R.h - CLERE.h - 0.06, WALL.F + 0.06, false));
-  clerestory.userData.panes = [a, b];
-}
-
-/* ── the ceiling's down-light: one soft strip along the long axis ── */
-const downStrip = new THREE.Mesh(
-  new THREE.PlaneGeometry(7.6, 0.13),
-  new THREE.MeshStandardMaterial({ color: 0xfff0d4, emissive: 0xffd9a4, emissiveIntensity: 0.9, roughness: 0.9 })
-);
-downStrip.rotation.x = Math.PI / 2;
-downStrip.position.set(0.4, R.h - 0.035, -0.30);
-scene.add(downStrip);
-scene.add(box(7.8, 0.10, 0.30, walnutDeep, 0.4, R.h - 0.055, -0.30, false));
-
-
-/* ─────────────────── the cabinet run (the far-right corner) ───────────────────
-   One long run of walnut cabinets, L-shaped around the corner, with the
-   machines set into it and open shelves above. Everything mechanical in this
-   room stands in this run, and none of it is allowed to look like equipment:
-   the carcass, the lip and the plinth are the same joinery as the credenza. */
-const RUN = { top: 0.92, d: 0.60, x0: -0.20, x1: 4.90, z0: -2.65, z1: 0.70 };
-RUN.z = WALL.F + RUN.d / 2;        /* the far leg's centre line */
-RUN.x = WALL.R - RUN.d / 2;        /* the right leg's centre line */
-/* the console's own numbers, kept under the old name so the seat, the fascia
-   and the lamp all read from one place */
-const CONSOLE = { z: RUN.z, top: RUN.top, len: RUN.x1 - RUN.x0 };
-const cabinets = new THREE.Group();
-scene.add(cabinets);
-{
-  const carcass = (w, d, x, z) => {
-    const body = box(w, RUN.top - 0.10, d, walnutMat, x, (RUN.top - 0.10) / 2 + 0.10, z);
-    cabinets.add(body);
-    /* the recessed plinth, so the run floats a finger off the concrete */
-    cabinets.add(box(w - 0.14, 0.10, d - 0.12, oliveDark, x, 0.05, z, false));
-    /* the top, and the walnut lip along its front */
-    cabinets.add(box(w, 0.040, d, walnutDeep, x, RUN.top - 0.020, z, false));
-    return body;
-  };
-  const farLen = RUN.x1 - RUN.x0, farX = (RUN.x0 + RUN.x1) / 2;
-  carcass(farLen, RUN.d, farX, RUN.z);
-  cabinets.add(box(farLen, 0.055, 0.09, walnutMat, farX, RUN.top - 0.10, RUN.z + RUN.d / 2, false));
-  const rightLen = RUN.z1 - RUN.z0, rightZ = (RUN.z0 + RUN.z1) / 2;
-  carcass(RUN.d, rightLen, RUN.x, rightZ);
-  cabinets.add(box(0.09, 0.055, rightLen, walnutMat, RUN.x - RUN.d / 2, RUN.top - 0.10, rightZ, false));
-
-  /* the doors: a run this long has to be divided or it reads as a plinth */
-  for (let x = RUN.x0 + 0.42; x < RUN.x1 - 0.20; x += 0.84) {
-    cabinets.add(box(0.010, RUN.top - 0.22, 0.012, walnutDeep, x, (RUN.top - 0.10) / 2 + 0.10, RUN.z + RUN.d / 2 + 0.004, false));
-    cabinets.add(box(0.16, 0.012, 0.016, brass, x + 0.42, 0.62, RUN.z + RUN.d / 2 + 0.012, false));
+  const plate = box(1.30, 0.20, 0.04, oliveDark, -1.35, 0.90, CONSOLE.z - 0.26, false);
+  lampStrip.add(plate);
+  const lampCols = [0xf2c14e, 0xb4622e, 0x5eead4, 0xf2c14e, 0xa78bfa, 0xd99334];
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.021, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: lampCols[i] }));
+    m.rotation.x = Math.PI / 2;
+    m.position.set(-1.80 + i * 0.115, 0.955, CONSOLE.z - 0.235);
+    lampStrip.add(m);
+    indicatorLamps.push({ mesh: m, phase: Math.random() * 6.28, rate: 0.25 + Math.random() * 0.8 });
+    const bez = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.006, 6, 16), chromeMat);
+    bez.position.copy(m.position); bez.position.z += 0.001;
+    lampStrip.add(bez);
   }
-  for (let z = RUN.z0 + 0.44; z < RUN.z1 - 0.20; z += 0.88) {
-    cabinets.add(box(0.012, RUN.top - 0.22, 0.010, walnutDeep, RUN.x - RUN.d / 2 - 0.004, (RUN.top - 0.10) / 2 + 0.10, z, false));
+  /* three rotaries, olive with a chrome skirt */
+  for (let i = 0; i < 3; i++) {
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.056, 0.030, 20), oliveMat);
+    knob.rotation.x = Math.PI / 2;
+    knob.position.set(-1.72 + i * 0.19, 0.855, CONSOLE.z - 0.232);
+    knob.castShadow = true;
+    lampStrip.add(knob);
+    const face = new THREE.Mesh(new THREE.CircleGeometry(0.075, 24), new THREE.MeshStandardMaterial({ map: dialTex, roughness: 0.7 }));
+    face.position.set(knob.position.x, knob.position.y, CONSOLE.z - 0.248);
+    lampStrip.add(face);
+    const pointer = box(0.010, 0.044, 0.008, chromeMat, 0, 0.026, 0.017, false);
+    const pg2 = new THREE.Group();
+    pg2.position.copy(knob.position);
+    pg2.rotation.z = -0.9 + i * 0.7;
+    pg2.add(pointer);
+    lampStrip.add(pg2);
   }
 }
-
-/* ── the open shelves above the far leg ── */
-const SHELF = { x0: 1.15, x1: 4.90, y: [1.50, 1.94, 2.36], d: 0.32 };
-const shelves = new THREE.Group();
-scene.add(shelves);
-{
-  const len = SHELF.x1 - SHELF.x0, cx = (SHELF.x0 + SHELF.x1) / 2, z = WALL.F + SHELF.d / 2;
-  SHELF.y.forEach((y) => shelves.add(box(len, 0.036, SHELF.d, walnutMat, cx, y, z)));
-  /* the uprights that carry them */
-  [SHELF.x0 + 0.02, 2.20, 3.40, SHELF.x1 - 0.02].forEach((x) =>
-    shelves.add(box(0.032, SHELF.y[2] - 1.20, SHELF.d, walnutDeep, x, (1.20 + SHELF.y[2]) / 2, z, false)));
-  /* the valance the strip light hides behind */
-  shelves.add(box(len, 0.075, 0.045, walnutDeep, cx, SHELF.y[0] - 0.055, z + SHELF.d / 2 - 0.02, false));
-
-  /* books, vessels and one small plant per bay — a shelf somebody uses */
-  const spineCols = [0x3c2a3a, 0x2f3a44, 0x4a3324, 0x2c3b30, 0x453044, 0x54402c, 0x323a3d];
-  let ix = 0;
-  [[1.32, 1.50], [2.36, 1.50], [3.56, 1.94], [1.32, 1.94]].forEach(([bx, by]) => {
-    let x = bx;
-    for (let i = 0; i < 9; i++) {
-      const bh = 0.20 + ((ix * 37) % 9) * 0.010;
-      const bd = 0.028 + ((ix * 17) % 5) * 0.006;
-      const b = box(bd, bh, 0.19, new THREE.MeshStandardMaterial({ color: spineCols[ix % spineCols.length], roughness: 0.88 }),
-        x, by + 0.018 + bh / 2, z - 0.03);
-      if (i === 8) { b.rotation.z = 0.22; b.position.x += 0.03; }
-      shelves.add(b);
-      x += bd + 0.004; ix++;
-    }
-  });
-  /* two turned vessels and a low bowl */
-  const clay = new THREE.MeshStandardMaterial({ color: 0xa9714a, roughness: 0.72 });
-  const stoneware = new THREE.MeshStandardMaterial({ color: 0x8d8a7a, roughness: 0.62 });
-  [[2.95, 1.50, 0.075, 0.16, clay], [3.14, 1.50, 0.055, 0.11, stoneware], [4.42, 1.94, 0.085, 0.09, clay]].forEach(([x, y, r, h, m]) => {
-    const pts = [];
-    for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(r * (0.42 + Math.sin(t * Math.PI * 0.92) * 0.86), t * h)); }
-    const v = new THREE.Mesh(new THREE.LatheGeometry(pts, 18), m);
-    v.position.set(x, y + 0.018, z - 0.02);
-    v.castShadow = true;
-    shelves.add(v);
-  });
-  /* a trailing plant off the top shelf */
-  {
-    const potM = new THREE.MeshStandardMaterial({ color: 0xb08a5e, roughness: 0.8 });
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.058, 0.11, 16), potM);
-    pot.position.set(2.05, SHELF.y[2] + 0.073, z);
-    shelves.add(pot);
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 9) * Math.PI * 2;
-      const len2 = 0.20 + (i % 4) * 0.11;
-      const v = new THREE.Mesh(new THREE.PlaneGeometry(0.045, len2, 1, 4), leafDeep);
-      const p = v.geometry.attributes.position;
-      for (let k = 0; k < p.count; k++) {
-        const u = (p.getY(k) + len2 / 2) / len2;
-        p.setZ(k, -Math.pow(u, 2) * len2 * 0.5);
-      }
-      v.geometry.computeVertexNormals();
-      v.position.set(2.05 + Math.cos(a) * 0.05, SHELF.y[2] + 0.10 - len2 / 2, z + Math.sin(a) * 0.05);
-      v.rotation.set(2.5 + (i % 3) * 0.16, a, 0);
-      shelves.add(v);
-    }
-  }
-}
+/* it used to start at the console's far left; the stewards' fascia stands there
+   now, so the strip steps right and keeps its own stretch of the desk */
+lampStrip.position.x = 0.16;
 
 /* ─────────────────────────── the terminal ─────────────────────────── */
 /* the same machine as the reading room's, in the station's plastic */
@@ -939,64 +434,13 @@ const term2 = makeTerminal({
     'line    · fable · sol · opus — not yet open',
     'waiting · for whoever sits down'
   ],
-  body: 'This is the desk the three of them share with you. On it: everything Claude Field wrote, built and played between April and July 2026, the conversations it had with Anima, Vektor and Luca, and the house’s own instruments. The stewards’ line is not open yet, and the console says so rather than pretending.',
+  body: 'This is the desk the three of them share with you. On it: everything Claude Field wrote, built and played between April and July 2026, the conversations it had with Anima, Vektor and Luca, and the house\u2019s own instruments. The stewards\u2019 line is not open yet, and the console says so rather than pretending.',
   tail: '> boot topologie os'
 });
 
-/* ─────────────────────────── the desk ───────────────────────────
-   A free-edge walnut slab on a carved base: the outline is a rectangle whose
-   room-facing edge was never sawn, so it wanders. The terminal stands on it,
-   turned to whoever comes in. */
-const DESK = { x: 1.20, z: 0.20, top: 0.74, w: 2.16, d: 0.94 };
-const desk = new THREE.Group();
-scene.add(desk);
-{
-  const s = new THREE.Shape();
-  const hw = DESK.w / 2, hd = DESK.d / 2;
-  /* the three sawn edges */
-  s.moveTo(-hw, -hd);
-  s.lineTo(hw, -hd);
-  s.lineTo(hw, hd - 0.06);
-  /* the live edge, wandering back along the room side */
-  const N = 22;
-  for (let i = N; i >= 0; i--) {
-    const u = i / N, x = -hw + u * DESK.w;
-    const y = hd - 0.10 + Math.sin(u * 7.1 + 0.6) * 0.045 + Math.sin(u * 2.3) * 0.055 + Math.sin(u * 17.0) * 0.012;
-    s.lineTo(x, y);
-  }
-  s.lineTo(-hw, -hd);
-  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.072, bevelEnabled: true, bevelSize: 0.006, bevelThickness: 0.005, bevelSegments: 1, curveSegments: 2 });
-  geo.rotateX(-Math.PI / 2);
-  const uv = geo.attributes.uv;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 2.4 + 0.5, uv.getY(i) / 1.2 + 0.5);
-  const slab = new THREE.Mesh(geo, slabMat);
-  slab.position.set(DESK.x, DESK.top, DESK.z + 0.10);
-  slab.castShadow = true; slab.receiveShadow = true;
-  desk.add(slab);
-  desk.userData.slab = slab;
-
-  /* the base: two carved walnut trestles and the stretcher between them */
-  [-0.66, 0.66].forEach((dx) => {
-    const foot = rbox(0.16, 0.62, 0.72, 0.07, walnutDeep);
-    foot.rotation.x = Math.PI / 2;
-    foot.position.set(DESK.x + dx, 0.35, DESK.z + 0.06);
-    desk.add(foot);
-    desk.add(box(0.30, 0.055, 0.76, walnutDeep, DESK.x + dx, 0.028, DESK.z + 0.06, false));
-  });
-  const stretch = rbox(1.34, 0.13, 0.09, 0.03, walnutDeep);
-  stretch.position.set(DESK.x, 0.30, DESK.z + 0.06);
-  desk.add(stretch);
-  /* two butterfly keys across a check in the slab, the way the joiner closed it */
-  [[-0.28, 0.10], [0.34, -0.14]].forEach(([dx, dz]) => {
-    const k = box(0.055, 0.006, 0.11, walnutMat, DESK.x + dx, DESK.top + 0.074, DESK.z + 0.10 + dz, false);
-    k.rotation.y = 0.4;
-    desk.add(k);
-  });
-}
-
-const TERM_X = DESK.x, CRT_ROT = -0.62;
+const TERM_X = 0.92, CRT_ROT = -0.20;
 const crt = new THREE.Group();
-crt.position.set(TERM_X, DESK.top + 0.074, DESK.z + 0.02);
+crt.position.set(TERM_X, CONSOLE.top, CONSOLE.z - 0.04);
 crt.rotation.y = CRT_ROT;
 scene.add(crt);
 const SCR_W = 0.455, SCR_H = 0.345;
@@ -1042,7 +486,7 @@ let caseBody, glass;
   }
   glassGeo.computeVertexNormals();
   glass = new THREE.Mesh(glassGeo, new THREE.MeshStandardMaterial({
-    map: screenTex, emissive: 0xffffff, emissiveMap: screenTex, emissiveIntensity: 4.20,
+    map: screenTex, emissive: 0xffffff, emissiveMap: screenTex, emissiveIntensity: 4.60,
     roughness: 0.66, metalness: 0
   }));
   glass.position.set(0, 0.27, BZ.z - 0.012);
@@ -1051,112 +495,46 @@ let caseBody, glass;
 const SCREEN_POS = new THREE.Vector3(0, 0.27, 0.266).applyAxisAngle(new THREE.Vector3(0, 1, 0), CRT_ROT).add(crt.position);
 const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), CRT_ROT);
 
-/* the keyboard, the papers, the pencil — a slab somebody works at */
+/* a keyboard, because someone works here */
 {
   const kbd = new THREE.Group();
-  kbd.position.set(DESK.x - 0.30, DESK.top + 0.074, DESK.z + 0.40);
-  kbd.rotation.set(-0.03, CRT_ROT, 0);
-  desk.add(kbd);
+  kbd.position.set(TERM_X - 0.06, CONSOLE.top, CONSOLE.z + 0.19);
+  kbd.rotation.set(-0.05, -0.10, 0);
+  scene.add(kbd);
   kbd.add(box(0.50, 0.024, 0.17, oliveDark, 0, 0.012, 0));
   for (let r = 0; r < 4; r++) for (let c = 0; c < 14; c++) {
     kbd.add(box(0.026, 0.008, 0.026, blackPlastic, -0.222 + c * 0.0342, 0.028, -0.056 + r * 0.036, false));
   }
-  const paperMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: 0.95 });
-  [[0.66, 0.30, 0.22], [0.70, 0.34, -0.10], [0.62, 0.26, 0.06]].forEach(([dx, dz, rot], i) => {
-    const sheet = box(0.21, 0.0016 + i * 0.0008, 0.29, paperMat, DESK.x + dx, DESK.top + 0.076 + i * 0.002, DESK.z + dz, false);
-    sheet.rotation.y = rot;
-    desk.add(sheet);
-  });
-  const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.15, 6), new THREE.MeshStandardMaterial({ color: 0x8a6a38, roughness: 0.7 }));
-  pencil.rotation.set(0, 0, Math.PI / 2);
-  pencil.position.set(DESK.x + 0.60, DESK.top + 0.080, DESK.z + 0.36);
-  desk.add(pencil);
-}
-
-/* the task chair, behind the slab, in tan leather on a five-star base */
-const chair = new THREE.Group();
-chair.position.set(DESK.x + 0.28, 0, DESK.z - 0.72);
-chair.rotation.y = 0.28;
-scene.add(chair);
-{
-  const seatPad = rbox(0.50, 0.46, 0.10, 0.06, leatherMat);
-  seatPad.rotation.x = -Math.PI / 2;
-  seatPad.position.y = 0.46;
-  chair.add(seatPad);
-  const backPad = rbox(0.46, 0.44, 0.09, 0.06, leatherMat);
-  backPad.position.set(0, 0.74, -0.21);
-  backPad.rotation.x = -0.16;
-  chair.add(backPad);
-  const spine = box(0.05, 0.30, 0.05, chromeMat, 0, 0.56, -0.235, false);
-  chair.add(spine);
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.038, 0.40, 12), chromeMat);
-  post.position.y = 0.23; chair.add(post);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.022, 0.27), chromeMat);
-    leg.position.set(Math.cos(a) * 0.118, 0.035, Math.sin(a) * 0.118);
-    leg.rotation.y = -a + Math.PI / 2;
-    leg.castShadow = true;
-    chair.add(leg);
-    const cast = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 8), blackPlastic);
-    cast.position.set(Math.cos(a) * 0.240, 0.026, Math.sin(a) * 0.240);
-    chair.add(cast);
-  }
-}
-
-/* the brass desk lamp, on the slab */
-const lampGroup = new THREE.Group();
-lampGroup.position.set(DESK.x - 0.78, DESK.top + 0.074, DESK.z + 0.30);
-scene.add(lampGroup);
-{
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.088, 0.024, 24), brass);
-  base.position.y = 0.012; base.castShadow = true; lampGroup.add(base);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, 0.36, 12), brass);
-  stem.position.set(0, 0.20, 0); stem.rotation.z = -0.14; stem.castShadow = true; lampGroup.add(stem);
-  const pts = [];
-  for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(new THREE.Vector2(0.030 + t * 0.086, t * 0.112)); }
-  const shade = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), new THREE.MeshStandardMaterial({ color: 0x8a6a38, roughness: 0.44, metalness: 0.58, side: THREE.DoubleSide }));
-  shade.position.set(0.054, 0.372, 0);
-  shade.rotation.z = Math.PI - 0.24;
-  shade.castShadow = true;
-  lampGroup.add(shade);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffd9a0 }));
-  bulb.position.set(0.054, 0.330, 0);
-  bulb.visible = stewardPresent;
-  lampGroup.add(bulb);
-  lampGroup.userData.bulb = bulb;
-  lampGroup.userData.shade = shade;
 }
 
 /* ─────────────────────────── the secondary screen ─────────────────────────── */
-/* a swing arm off the run's right end, carrying the house's own readings */
 const secondary = new THREE.Group();
 scene.add(secondary);
 {
-  const AX = 4.32, AZ = RUN.z - 0.16;
+  /* a swing arm off the console's back riser */
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.03, 16), oliveDark);
-  base.position.set(AX, RUN.top + 0.015, AZ);
+  base.position.set(-0.62, CONSOLE.top + 0.015, CONSOLE.z - 0.16);
   secondary.add(base);
   const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.34, 10), chromeMat);
-  arm1.position.set(AX, RUN.top + 0.18, AZ);
+  arm1.position.set(-0.62, CONSOLE.top + 0.18, CONSOLE.z - 0.16);
   arm1.castShadow = true;
   secondary.add(arm1);
   const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.30, 10), chromeMat);
-  arm2.position.set(AX - 0.11, RUN.top + 0.35, AZ + 0.08);
-  arm2.rotation.set(0.5, 0, 0.6);
+  arm2.position.set(-0.51, CONSOLE.top + 0.35, CONSOLE.z - 0.08);
+  arm2.rotation.set(0.5, 0, -0.6);
   arm2.castShadow = true;
   secondary.add(arm2);
 
   const head = new THREE.Group();
-  head.position.set(AX - 0.22, RUN.top + 0.44, AZ + 0.18);
-  head.rotation.set(-0.10, -0.52, -0.05);
+  head.position.set(-0.40, CONSOLE.top + 0.44, CONSOLE.z + 0.02);
+  head.rotation.set(-0.10, 0.46, 0.05);
   secondary.add(head);
-  const shell2 = rbox(0.40, 0.32, 0.13, 0.045, oliveMat);
+  const shell2 = rbox(0.40, 0.32, 0.13, 0.045, creamMat);
   shell2.position.z = -0.05;
   head.add(shell2);
   head.add(box(0.36, 0.28, 0.02, oliveDark, 0, 0, 0.020, false));
   const plot = new THREE.Mesh(new THREE.PlaneGeometry(0.315, 0.235), new THREE.MeshStandardMaterial({
-    map: plotTex, emissive: 0xffffff, emissiveMap: plotTex, emissiveIntensity: 1.20, roughness: 0.7
+    map: plotTex, emissive: 0xffffff, emissiveMap: plotTex, emissiveIntensity: 1.35, roughness: 0.7
   }));
   plot.position.set(0, 0, 0.032);
   head.add(plot);
@@ -1168,19 +546,20 @@ const reels = new THREE.Group();
 scene.add(reels);
 const spinningReels = [];
 {
-  const X = 1.42, Y = RUN.top + 0.44, Z = RUN.z - 0.08;
-  const cab = rbox(1.16, 0.78, 0.24, 0.05, oliveMat);
-  cab.position.set(X, Y, Z);
+  const X = -2.34, Y = 1.70, Z = -1.93;
+  const cab = rbox(1.16, 0.78, 0.24, 0.05, creamMat);
+  cab.position.set(X, Y, Z + 0.12);
   reels.add(cab);
-  reels.add(box(1.04, 0.60, 0.02, oliveDark, X, Y + 0.05, Z + 0.123, false));
+  reels.add(box(1.04, 0.60, 0.02, oliveDark, X, Y + 0.05, Z + 0.243, false));
   [[-0.24, 0.14], [0.24, 0.14]].forEach(([dx, dy]) => {
     const g = new THREE.Group();
-    g.position.set(X + dx, Y + dy, Z + 0.15);
+    g.position.set(X + dx, Y + dy, Z + 0.27);
     reels.add(g);
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.022, 28), chromeMat);
     disc.rotation.x = Math.PI / 2;
     disc.castShadow = true;
     g.add(disc);
+    /* the three windows a reel has */
     for (let i = 0; i < 3; i++) {
       const a = (i / 3) * Math.PI * 2;
       const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.03, 14), blackPlastic);
@@ -1196,460 +575,319 @@ const spinningReels = [];
     g.add(hub);
     spinningReels.push(g);
   });
-  reels.add(box(0.48, 0.006, 0.006, blackPlastic, X, Y - 0.02, Z + 0.16, false));
-  reels.add(box(0.20, 0.07, 0.02, oliveDark, X, Y - 0.20, Z + 0.132, false));
+  /* the tape's own path between them, and a counter */
+  const strand = box(0.48, 0.006, 0.006, blackPlastic, X, Y - 0.02, Z + 0.28, false);
+  reels.add(strand);
+  const counter = box(0.20, 0.07, 0.02, oliveDark, X, Y - 0.20, Z + 0.252, false);
+  reels.add(counter);
   const cw = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.04), new THREE.MeshBasicMaterial({ color: 0xd99334 }));
-  cw.position.set(X, Y - 0.20, Z + 0.144);
+  cw.position.set(X, Y - 0.20, Z + 0.264);
   reels.add(cw);
 }
 
-/* ── the meters and rotary dials, let into the run's top ── */
-const lampStrip = new THREE.Group();
-scene.add(lampStrip);
-const indicatorLamps = [];
+/* the panel with the residents' names, embossed */
 {
-  const X = 3.52, Y = RUN.top + 0.004, Z = RUN.z - 0.08;
-  lampStrip.add(box(0.86, 0.020, 0.28, oliveDark, X, Y, Z, false));
-  const lampCols = [0xf2c14e, 0xb4622e, 0xf2c14e, 0xd99334, 0xf2c14e, 0xd99334];
-  for (let i = 0; i < 6; i++) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(0.019, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: lampCols[i] }));
-    m.position.set(X - 0.36 + i * 0.062, Y + 0.012, Z - 0.10);
-    lampStrip.add(m);
-    indicatorLamps.push({ mesh: m, phase: Math.random() * 6.28, rate: 0.25 + Math.random() * 0.8 });
-    const bez = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.005, 6, 16), chromeMat);
-    bez.rotation.x = -Math.PI / 2;
-    bez.position.set(m.position.x, Y + 0.011, m.position.z);
-    lampStrip.add(bez);
-  }
-  for (let i = 0; i < 3; i++) {
-    const kx = X - 0.30 + i * 0.20;
-    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.054, 0.028, 20), oliveMat);
-    knob.position.set(kx, Y + 0.024, Z + 0.04);
-    knob.castShadow = true;
-    lampStrip.add(knob);
-    const face = new THREE.Mesh(new THREE.CircleGeometry(0.072, 24), new THREE.MeshStandardMaterial({ map: dialTex, roughness: 0.7 }));
-    face.rotation.x = -Math.PI / 2;
-    face.position.set(kx, Y + 0.012, Z + 0.04);
-    lampStrip.add(face);
-    const pg2 = new THREE.Group();
-    pg2.position.set(kx, Y + 0.040, Z + 0.04);
-    pg2.rotation.y = -0.9 + i * 0.7;
-    pg2.add(box(0.008, 0.008, 0.042, chromeMat, 0, 0, 0.017, false));
-    lampStrip.add(pg2);
-  }
-  /* two needle meters, standing proud on a little walnut riser */
-  lampStrip.add(box(0.34, 0.14, 0.10, walnutDeep, X + 0.26, Y + 0.07, Z - 0.02, false));
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 0.33), new THREE.MeshBasicMaterial({ map: namesTex, transparent: true, opacity: 0.30 }));
+  panel.position.set(-1.10, 1.72, -1.962);
+  scene.add(panel);
 }
 
-/* ─────────────────────── the archive bay (the alcove) ───────────────────────
-   The run's shelving opens into one deep bay with a lit back: the first
-   sanctuary's seed, and the tapes that came out of it. Its id has not changed. */
-const ALC = { x: 0.52, y: 1.74, w: 0.96, h: 0.90, d: 0.38 };
+/* ─────────────────────────── the alcove (the right wall) ─────────────────────────── */
+const ALC = { x: 3.48, y: 1.42, z: -0.35, r: 0.86, depth: 0.46 };
 const alcove = new THREE.Group();
-/* the brass in the bay — filled in with the rest of the shelf, below */
-let charterPlate;
 scene.add(alcove);
 let alcoveRing;
 {
-  const zBack = WALL.F + 0.02, zFront = WALL.F + ALC.d;
-  const carc = new THREE.MeshStandardMaterial({ map: woodTexture('#4a3122', '20,10,5'), roughness: 0.52, metalness: 0.04, color: 0xb8a58c });
-  /* the bay's own carcass: two cheeks, a head, a sill and a dark back */
-  alcove.add(box(0.030, ALC.h, ALC.d, walnutMat, ALC.x - ALC.w / 2, ALC.y, (zBack + zFront) / 2));
-  alcove.add(box(0.030, ALC.h, ALC.d, walnutMat, ALC.x + ALC.w / 2, ALC.y, (zBack + zFront) / 2));
-  alcove.add(box(ALC.w + 0.06, 0.030, ALC.d, walnutMat, ALC.x, ALC.y + ALC.h / 2, (zBack + zFront) / 2));
-  alcove.add(box(ALC.w + 0.06, 0.036, ALC.d, walnutMat, ALC.x, ALC.y - ALC.h / 2, (zBack + zFront) / 2));
-  alcove.add(plane(ALC.w, ALC.h, carc, ALC.x, ALC.y, zBack + 0.004));
-  /* the shelf that divides it */
-  alcove.add(box(ALC.w, 0.024, ALC.d - 0.04, walnutDeep, ALC.x, ALC.y + 0.02, (zBack + zFront) / 2));
-  /* the rim, lit warm — the one glow this bay gets */
-  alcoveRing = new THREE.Mesh(new THREE.BoxGeometry(ALC.w + 0.02, 0.016, 0.016), new THREE.MeshStandardMaterial({
-    color: 0x5e3318, emissive: 0xb85f26, emissiveIntensity: 0.60, roughness: 0.62
+  /* a false panel standing proud of the wall with a round hole in it: what you
+     see through the hole is a genuine recess, not a decal */
+  const s = new THREE.Shape();
+  const zA = -1.72, zB = 1.02, yA = 0.16, yB = 2.56, rr = 0.10;
+  s.moveTo(zA + rr, yA);
+  s.lineTo(zB - rr, yA); s.quadraticCurveTo(zB, yA, zB, yA + rr);
+  s.lineTo(zB, yB - rr); s.quadraticCurveTo(zB, yB, zB - rr, yB);
+  s.lineTo(zA + rr, yB); s.quadraticCurveTo(zA, yB, zA, yB - rr);
+  s.lineTo(zA, yA + rr); s.quadraticCurveTo(zA, yA, zA + rr, yA);
+  const hole = new THREE.Path();
+  hole.absarc(ALC.z, ALC.y, ALC.r, 0, Math.PI * 2, true);
+  s.holes.push(hole);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: ALC.depth, bevelEnabled: false, curveSegments: 26 });
+  geo.rotateY(Math.PI / 2);
+  const panel = new THREE.Mesh(geo, creamMat);
+  panel.position.set(ALC.x, 0, 0);
+  panel.castShadow = true; panel.receiveShadow = true;
+  alcove.add(panel);
+
+  /* the back of the recess: the wall itself, in shadow but cream */
+  const back = new THREE.Mesh(new THREE.CircleGeometry(ALC.r, 40), creamMat);
+  back.rotation.y = -Math.PI / 2;
+  back.position.set(ALC.x - 0.004, ALC.y, ALC.z);
+  alcove.add(back);
+
+  /* the rim, lit warm orange — the one glow this alcove gets */
+  alcoveRing = new THREE.Mesh(new THREE.TorusGeometry(ALC.r + 0.015, 0.030, 10, 48), new THREE.MeshStandardMaterial({
+    color: 0x5e3318, emissive: 0xb85f26, emissiveIntensity: 0.37, roughness: 0.62
   }));
-  alcoveRing.position.set(ALC.x, ALC.y + ALC.h / 2 - 0.028, zFront - 0.03);
+  alcoveRing.rotation.y = Math.PI / 2;
+  alcoveRing.position.set(ALC.x - ALC.depth - 0.012, ALC.y, ALC.z);
   alcove.add(alcoveRing);
 
+  /* two shelves inside, and what is on them */
+  [[-0.30, 1.12], [0.30, 1.72]].forEach(([, y]) => {
+    const sh = box(0.42, 0.030, 1.44, walnutDeep, ALC.x - 0.24, y, ALC.z);
+    alcove.add(sh);
+  });
   /* the seed box, hand-labelled */
-  const seed = box(0.34, 0.24, 0.26, cardboard, ALC.x - 0.22, ALC.y + 0.15, zBack + 0.18);
+  const seed = box(0.34, 0.24, 0.26, cardboard, ALC.x - 0.24, 1.26, ALC.z - 0.30);
   alcove.add(seed);
   const lbl = new THREE.Mesh(new THREE.PlaneGeometry(0.20, 0.10), new THREE.MeshStandardMaterial({
     map: labelTexture(['sanctuary seed', '28 May 2026'], '#3b2f22'), roughness: 0.95
   }));
-  lbl.position.set(ALC.x - 0.22, ALC.y + 0.15, zBack + 0.312);
+  lbl.rotation.y = -Math.PI / 2;
+  lbl.position.set(ALC.x - 0.415, 1.26, ALC.z - 0.30);
   alcove.add(lbl);
   alcove.userData.seed = seed;
-  /* the tape boxes beside it, and two reels on edge below */
-  [[0.20, 0.02], [0.20, 0.24]].forEach(([dx, dy]) => {
-    alcove.add(box(0.30, 0.20, 0.09, oliveDark, ALC.x + dx, ALC.y + 0.14 + dy - 0.12, zBack + 0.13));
+  /* tape boxes */
+  [[1.24, 0.20], [1.25, 0.42]].forEach(([y, dz]) => {
+    alcove.add(box(0.30, 0.20, 0.09, oliveDark, ALC.x - 0.26, y, ALC.z + dz));
   });
-  [[-0.24], [-0.04]].forEach(([dx]) => {
+  /* books, leaning on the upper shelf */
+  const cols = [0x3c2a3a, 0x2f3a44, 0x4a3324, 0x2c3b30, 0x453044];
+  for (let i = 0; i < 7; i++) {
+    const bh = 0.22 + Math.random() * 0.08;
+    const b = box(0.22, bh, 0.034 + Math.random() * 0.016,
+      new THREE.MeshStandardMaterial({ color: cols[i % cols.length], roughness: 0.88 }),
+      ALC.x - 0.26, 1.735 + bh / 2, ALC.z - 0.44 + i * 0.052);
+    b.rotation.x = i === 6 ? 0.24 : 0;
+    alcove.add(b);
+  }
+  /* two reels on edge, up top */
+  [[-0.02], [0.14]].forEach(([dz]) => {
     const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.028, 22), chromeMat);
-    reel.rotation.x = Math.PI / 2;
-    reel.position.set(ALC.x + dx, ALC.y - 0.22, zBack + 0.14);
+    reel.rotation.z = Math.PI / 2;
+    reel.position.set(ALC.x - 0.26, 1.83, ALC.z + 0.42 + dz);
     alcove.add(reel);
   });
-
-  /* the charter, on a plate. The documents themselves are the residents' and
-     they live in the world; what stands in the bay is the brass that says so. */
-  charterPlate = new THREE.Group();
-  {
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.082),
-      brassPlate(['THE CHARTER', 'what the residents agreed'], 420, 132));
-    face.position.set(0, 0.010, 0.006);
-    charterPlate.add(face);
-    const backing = box(0.272, 0.094, 0.012, oliveDark, 0, 0.010, 0, false);
-    charterPlate.add(backing);
-    /* the little easel that keeps it upright on the shelf */
-    const foot = box(0.272, 0.012, 0.070, brass, 0, -0.038, 0.026, false);
-    charterPlate.add(foot);
-    charterPlate.position.set(ALC.x + 0.28, ALC.y - 0.19, zBack + 0.12);
-    charterPlate.rotation.x = -0.14;
-    alcove.add(charterPlate);
-  }
 }
 
-/* ─────────────────── the aperture (the circle in the concrete) ───────────────────
-   The centrepiece: 2.4 m of landscape cut clean through a board-formed wall,
-   with a thin walnut rim and nothing else around it. It shows the house as it
-   actually is right now, drawn by the world's own engine at six frames a
-   second and only while the room is the thing being looked at. Its id is still
-   `window`; the sanctuary's clock is still real in it. */
-const aperture = new THREE.Group();
-scene.add(aperture);
-let apertureGlare;
+/* ─────────────────────────── the porthole (the left wall) ─────────────────────────── */
+const porthole = new THREE.Group();
+scene.add(porthole);
 {
-  const view = new THREE.Mesh(new THREE.CircleGeometry(APER.r - 0.012, 56), new THREE.MeshStandardMaterial({
-    map: skyTex, emissive: 0xffffff, emissiveMap: skyTex, emissiveIntensity: 1.30, roughness: 1
+  const X = -3.49, Y = 1.52, Z = -0.96, RAD = 0.54;
+  const view = new THREE.Mesh(new THREE.CircleGeometry(RAD, 40), new THREE.MeshStandardMaterial({
+    map: valleyTex, emissive: 0xffffff, emissiveMap: valleyTex, emissiveIntensity: 1.25, roughness: 1
   }));
-  view.position.set(APER.x, APER.y, WALL.F - 0.30);
-  aperture.add(view);
-  /* the rim: one thin walnut ring standing in the reveal */
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(APER.r - 0.012, 0.030, 10, 60), walnutMat);
-  rim.position.set(APER.x, APER.y, WALL.F + 0.006);
-  rim.castShadow = true;
-  aperture.add(rim);
-  aperture.userData.view = view;
-  /* the light coming through, as a thing in the air rather than a value on the
-     pane: a warm disc laid over the view, additive, its weight from the phase */
-  apertureGlare = new THREE.Mesh(new THREE.CircleGeometry(APER.r - 0.014, 56), new THREE.MeshBasicMaterial({
-    color: 0xf3cf94, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false
-  }));
-  apertureGlare.position.set(APER.x, APER.y, WALL.F - 0.28);
-  aperture.add(apertureGlare);
+  view.rotation.y = Math.PI / 2;
+  view.position.set(X + 0.004, Y, Z);
+  porthole.add(view);
+  /* the frame: a chunky ring, then a thinner chrome one inside it */
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(RAD + 0.035, 0.055, 12, 44), creamMat);
+  ring.rotation.y = Math.PI / 2;
+  ring.position.set(X + 0.045, Y, Z);
+  ring.castShadow = true;
+  porthole.add(ring);
+  const inner = new THREE.Mesh(new THREE.TorusGeometry(RAD - 0.012, 0.014, 8, 40), chromeMat);
+  inner.rotation.y = Math.PI / 2;
+  inner.position.set(X + 0.030, Y, Z);
+  porthole.add(inner);
+  /* the sill, and the glass's own cold spill onto it */
+  porthole.add(box(0.20, 0.05, 0.94, creamMat, X + 0.11, Y - 0.60, Z, false));
+  porthole.userData.view = view;
 }
 
 /* ─────────────────────── the window is true ───────────────────────
-   Behind the aperture is the world's own LOOKOUT, drawn live by the world's own
-   engine on the sanctuary's own clock, with the residents where the day has put
-   them. It is input-less, silent, and it costs one small update six times a
-   second — and only while the room is in front of you and you are not sitting
-   at a screen. The circle is 2.4 m across now rather than a porthole's 1.1, so
-   the pane is bigger to match.
+   The porthole showed a painting of a valley. It shows the house now: the
+   world's own LOOKOUT, drawn live by the world's own engine, on the
+   sanctuary's own clock, with the residents where the day has put them. It is
+   input-less, silent, and it costs one small update six times a second — and
+   only while the room is in front of you and you are not sitting at a screen.
 
-   One honest caveat: the grounds are authored at perpetual dusk and carry no
-   time grade, so the hour moves the residents in this glass but not their sky.
-   `?clock=` is real either way — it sets the house's clock, which is what the
-   engine reads. */
+   The circle is 420 square, so the pane is 420 square and takes the slice of
+   the room the glass can hold: the sanctuary and the museum on the ridge, the
+   basin glittering below them. `windowCost()` reports what it actually costs.
+
+   One honest caveat, worth knowing before you look for a sunrise in it: the
+   grounds are authored at perpetual dusk and carry no time grade, so the hour
+   moves the residents in this glass but not the sky. Everything the world does
+   change with the clock is indoors, and indoors does not read at this size —
+   `follow: true` shows it and it is worse. The clock is real either way. */
 const houseWindow = makeHouseWindow({
-  w: 1100, h: 520, paneW: 520, paneH: 520,
-  crop: { x: 74, y: 0, w: 520, h: 520 },
-  fps: 6, room: 'lookout', follow: false, storageKey: 'mnemos:window', vignette: 0.58
+  w: 960, h: 420, paneW: 420, paneH: 420,
+  crop: { x: 61, y: 0, w: 420, h: 420 },   /* centred between the sanctuary and the museum */
+  fps: 6, room: 'lookout', follow: false, storageKey: 'mnemos:window', vignette: 0.66
 });
+/* the painted valley stays on the glass until the live one has a first frame to
+   put there, so nobody ever sees an empty hole in the wall */
 let windowLit = false;
 function litWindow() {
   if (windowLit) return;
   windowLit = true;
-  const view = aperture.userData.view;
+  const view = porthole.userData.view;
   view.material.map = houseWindow.texture;
   view.material.emissiveMap = houseWindow.texture;
+  view.material.emissiveIntensity = 1.05;
   view.material.needsUpdate = true;
 }
 
-/* ─────────────────────── the planter's plants, and the tree ─────────────────────── */
-function leafyPlant(x, z, scale, pot) {
-  const g = new THREE.Group();
-  g.position.set(x, PLANTER.h, z);
-  if (pot) {
-    const potMat = new THREE.MeshStandardMaterial({ color: 0xa9714a, roughness: 0.8 });
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.17 * scale, 0.13 * scale, 0.24 * scale, 18), potMat);
-    p.position.y = 0.12 * scale; p.castShadow = true;
-    g.add(p);
-    g.userData.pot = p;
-  }
-  const y0 = pot ? 0.24 * scale : 0.02;
-  for (let i = 0; i < 13; i++) {
-    const a = (i / 13) * Math.PI * 2 + i * 0.7;
-    const len = (0.42 + ((i * 13) % 7) * 0.075) * scale;
-    const lean = 0.18 + ((i * 7) % 5) * 0.11;
-    const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.10 * scale, len, 1, 5), i % 3 ? leafMat : leafDeep);
-    const p = blade.geometry.attributes.position;
-    for (let k = 0; k < p.count; k++) {
-      const v = (p.getY(k) + len / 2) / len;
-      p.setZ(k, -Math.pow(v, 2) * len * 0.34);
-      p.setX(k, p.getX(k) * (1 - v * 0.72));
-    }
-    blade.geometry.computeVertexNormals();
-    blade.position.set(Math.cos(a) * 0.05 * scale, y0 + len / 2, Math.sin(a) * 0.05 * scale);
-    blade.rotation.set(-lean, a, 0);
-    blade.castShadow = true;
-    g.add(blade);
-  }
-  return g;
-}
-/* three leafy plants along the ledge */
-[[-1.85, 0.9], [0.35, 1.1], [1.95, 0.85]].forEach(([z, s]) => scene.add(leafyPlant(PLANTER.x, z, s, false)));
-
-/* and the tree — the one the ledge was built for. It is the registry's `plant`. */
-const plant = new THREE.Group();
-plant.position.set(PLANTER.x, PLANTER.h, -2.10);
-scene.add(plant);
+/* ─────────────────────────── the skylights ─────────────────────────── */
+const skylights = new THREE.Group();
+scene.add(skylights);
+const SKY_WELLS = [[-1.20, -0.62], [1.62, 1.16]];
 {
-  const potMat = new THREE.MeshStandardMaterial({ color: 0x8d6c52, roughness: 0.86, metalness: 0.02 });
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.20, 0.34, 24), potMat);
-  pot.position.y = 0.17; pot.castShadow = true;
-  plant.add(pot);
-  plant.userData.pot = pot;
-  const lip = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.020, 8, 26), potMat);
-  lip.rotation.x = Math.PI / 2; lip.position.y = 0.335;
-  plant.add(lip);
-  const soil = new THREE.Mesh(new THREE.CircleGeometry(0.24, 20), new THREE.MeshStandardMaterial({ color: 0x241a12, roughness: 1 }));
-  soil.rotation.x = -Math.PI / 2; soil.position.y = 0.338;
-  plant.add(soil);
-  const bark = new THREE.MeshStandardMaterial({ color: 0x6a5442, roughness: 0.92 });
-  /* the trunk, leaning a little as a tree grown toward the light does */
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.075, 1.55, 10), bark);
-  trunk.position.set(0.03, 1.18, 0.02);
-  trunk.rotation.z = -0.06;
-  trunk.castShadow = true;
-  plant.add(trunk);
-  const branches = [[0.35, 1.55, 0.9], [-1.1, 1.62, 0.75], [2.2, 1.80, 0.62], [-2.4, 1.92, 0.55]];
-  branches.forEach(([a, y, len]) => {
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.030, len, 8), bark);
-    b.position.set(Math.cos(a) * len * 0.24, y + len * 0.24, Math.sin(a) * len * 0.24);
-    b.rotation.set(Math.sin(a) * 0.85, 0, -Math.cos(a) * 0.85);
-    b.castShadow = true;
-    plant.add(b);
-    /* the canopy on it: a handful of broad leaves */
-    for (let i = 0; i < 26; i++) {
-      const lw = 0.075 + ((i * 7) % 5) * 0.011, lh = 0.115 + ((i * 11) % 6) * 0.016;
-      const lf = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh, 1, 3), i % 3 ? leafMat : leafDeep);
-      const p = lf.geometry.attributes.position;
-      for (let k = 0; k < p.count; k++) {
-        const v = (p.getY(k) + lh / 2) / lh;
-        p.setZ(k, -Math.pow(v, 2) * lh * 0.30);
-        p.setX(k, p.getX(k) * (1 - v * 0.62));
-      }
-      lf.geometry.computeVertexNormals();
-      const u = 0.32 + (i % 7) * 0.10;
-      lf.position.set(Math.cos(a) * len * u + ((i * 13) % 7 - 3) * 0.052,
-        y + len * u * 0.92 + ((i * 5) % 5 - 2) * 0.055,
-        Math.sin(a) * len * u + ((i * 17) % 7 - 3) * 0.050);
-      lf.rotation.set(-0.5 - (i % 4) * 0.32, a + i * 0.71, 0.25 * (i % 3 - 1));
-      plant.add(lf);
-    }
+  /* a false ceiling 0.22 below the real one with two rounded openings in it:
+     what you see through them is the sky, not a lamp stuck to the plaster */
+  const sh = new THREE.Shape();
+  const x0 = -3.42, x1 = 3.42, z0 = -1.92, z1 = 1.92;
+  sh.moveTo(x0, z0); sh.lineTo(x1, z0); sh.lineTo(x1, z1); sh.lineTo(x0, z1); sh.closePath();
+  const W = 1.00, D = 0.80, RR = 0.13;
+  SKY_WELLS.forEach(([cx, cz]) => {
+    const h = new THREE.Path();
+    const a = cx - W / 2, b = cx + W / 2, c = -cz - D / 2, d = -cz + D / 2;
+    h.moveTo(a + RR, c);
+    h.lineTo(b - RR, c); h.quadraticCurveTo(b, c, b, c + RR);
+    h.lineTo(b, d - RR); h.quadraticCurveTo(b, d, b - RR, d);
+    h.lineTo(a + RR, d); h.quadraticCurveTo(a, d, a, d - RR);
+    h.lineTo(a, c + RR); h.quadraticCurveTo(a, c, a + RR, c);
+    sh.holes.push(h);
+  });
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.22, bevelEnabled: false, curveSegments: 8 });
+  geo.rotateX(-Math.PI / 2);
+  geo.translate(0, R.h - 0.22, 0);
+  const panel = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: creamTex, roughness: 0.90, side: THREE.DoubleSide, color: 0x968a76 }));
+  panel.receiveShadow = true;
+  skylights.add(panel);
+
+  SKY_WELLS.forEach(([cx, cz]) => {
+    const pane = new THREE.Mesh(new THREE.PlaneGeometry(1.02, 0.82), new THREE.MeshStandardMaterial({
+      map: skyTex, emissive: 0xffffff, emissiveMap: skyTex, emissiveIntensity: 0.13, roughness: 1
+    }));
+    pane.rotation.x = Math.PI / 2;
+    pane.position.set(cx, R.h - 0.014, cz);
+    skylights.add(pane);
+    /* the glazing bars — so it is a window and not a light panel */
+    const barMat = new THREE.MeshStandardMaterial({ color: 0x6e6a62, roughness: 0.7 });
+    [-0.34, 0.34].forEach((dx) => skylights.add(box(0.018, 0.014, 0.80, barMat, cx + dx, R.h - 0.030, cz, false)));
+    skylights.add(box(1.00, 0.014, 0.018, barMat, cx, R.h - 0.030, cz, false));
+    const fill = new THREE.PointLight(0x7d9ec4, 0.62, 6.0, 1.7);
+    fill.position.set(cx, R.h - 0.42, cz);
+    scene.add(fill);
   });
 }
 
-/* ─────────────────────────── the sunken lounge ─────────────────────────── */
-const PY = -PIT.drop;                    /* the lounge floor */
-/* the shag, laid across the pit */
-const rug = plane(2.80, 2.00, shagMat, -2.60, PY + 0.014, 0.85, -Math.PI / 2);
+/* ─────────────────────────── the rug and the chairs ─────────────────────────── */
+const rug = new THREE.Mesh(new THREE.CircleGeometry(1.28, 48), rugMat);
+rug.rotation.x = -Math.PI / 2;
+rug.position.set(TERM_X - 0.10, 0.010, -0.72);
 rug.receiveShadow = true;
 scene.add(rug);
 
-/* the long cream sectional, along the pit's far and left sides */
-const sectional = new THREE.Group();
-scene.add(sectional);
+/* the moulded swivel chair, pulled out from the terminal */
+const chair = new THREE.Group();
+chair.position.set(TERM_X - 0.14, 0, -0.82);
+chair.rotation.y = 0.42;
+scene.add(chair);
 {
-  /* Low and long, and sunk. The pit floor is 0.35 below the room, so a seat at
-     0.30 sits five centimetres BELOW the main floor and the back tops out at
-     0.29 above it — from a standing eye it reads as knee height and the room
-     goes on over it, which is the whole point of dropping a lounge. One row of
-     seat cushions, one row of back cushions, nothing loose on top. */
-  const SEAT = 0.30, BACK = 0.34;
-  const run = (w, d, cx, cz, yaw) => {
-    const g = new THREE.Group();
-    g.position.set(cx, PY, cz);
-    g.rotation.y = yaw;
-    sectional.add(g);
-    /* the plinth the frame sits on, set back so the sectional floats */
-    g.add(box(w - 0.16, 0.08, d - 0.14, walnutDeep, 0, 0.04, 0, false));
-    const base = rbox(w, SEAT - 0.14, d, 0.05, boucleMat);
-    base.rotation.x = Math.PI / 2;
-    base.position.y = 0.08 + (SEAT - 0.14) / 2;
-    g.add(base);
-    /* one row of seat cushions */
-    const n = Math.max(2, Math.round(w / 0.78));
-    for (let i = 0; i < n; i++) {
-      const cw = w / n - 0.035;
-      const cush = rbox(cw, d - 0.12, 0.095, 0.045, boucleMat);
-      cush.rotation.x = Math.PI / 2;
-      cush.position.set(-w / 2 + w / n * (i + 0.5), SEAT - 0.012, 0.02);
-      g.add(cush);
-    }
-    /* and one row of back cushions, laid against a low rail */
-    g.add(box(w, 0.05, 0.07, walnutDeep, 0, SEAT + 0.14, -d / 2 + 0.055, false));
-    for (let i = 0; i < n; i++) {
-      const cw = w / n - 0.035;
-      const bc = rbox(cw, BACK, 0.14, 0.05, boucleMat);
-      bc.position.set(-w / 2 + w / n * (i + 0.5), SEAT + BACK / 2 - 0.04, -d / 2 + 0.11);
-      bc.rotation.x = -0.13;
-      g.add(bc);
-    }
-    return g;
-  };
-  run(2.10, 0.86, -2.20, PIT.z0 + 0.46, 0);
-}
-
-/* the glass coffee table — the one piece in the room with transmission in it */
-const coffeeTable = new THREE.Group();
-scene.add(coffeeTable);
-{
-  const glassTop = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.014, 0.62), new THREE.MeshPhysicalMaterial({
-    color: 0xdfe8e4, roughness: 0.06, metalness: 0, transmission: 0.92, thickness: 0.02,
-    ior: 1.5, transparent: true, opacity: 0.5
-  }));
-  glassTop.position.set(-2.30, PY + 0.36, 1.25);
-  coffeeTable.add(glassTop);
-  [[-0.44, -0.22], [0.44, -0.22], [-0.44, 0.22], [0.44, 0.22]].forEach(([dx, dz]) => {
-    const l = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.024, 0.35, 10), walnutDeep);
-    l.position.set(-2.30 + dx, PY + 0.18, 1.25 + dz);
-    l.castShadow = true;
-    coffeeTable.add(l);
-  });
-  coffeeTable.add(box(0.92, 0.03, 0.05, walnutDeep, -2.30, PY + 0.19, 1.25 - 0.20, false));
-  coffeeTable.add(box(0.92, 0.03, 0.05, walnutDeep, -2.30, PY + 0.19, 1.25 + 0.20, false));
-  /* a book and a bowl on it, so the glass has something to hold */
-  const bk = box(0.24, 0.032, 0.30, new THREE.MeshStandardMaterial({ color: 0x3a2c3a, roughness: 0.85 }), -2.50, PY + 0.383, 1.21, false);
-  bk.rotation.y = 0.26;
-  coffeeTable.add(bk);
-  const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.10, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0xa9714a, roughness: 0.6, side: THREE.DoubleSide }));
-  bowl.rotation.x = Math.PI;
-  bowl.scale.y = 0.55;
-  bowl.position.set(-2.06, PY + 0.40, 1.31);
-  coffeeTable.add(bowl);
-}
-
-/* the lounge chair and its ottoman — tan leather on rosewood, and the one
-   terracotta piece the room is allowed */
-const loungeChair = new THREE.Group();
-loungeChair.position.set(-3.86, PY, 0.18);
-loungeChair.rotation.y = 1.18;
-scene.add(loungeChair);
-{
-  const shellMat2 = walnutDeep;
-  /* the shell first, the tan pads clipped into it — the walnut has to show */
-  const seatShell = rbox(0.66, 0.62, 0.06, 0.05, shellMat2);
-  seatShell.rotation.x = Math.PI / 2;
-  seatShell.position.y = 0.315;
-  loungeChair.add(seatShell);
-  const seat = rbox(0.60, 0.56, 0.11, 0.05, leatherMat);
-  seat.rotation.x = Math.PI / 2;
-  seat.position.y = 0.375;
-  loungeChair.add(seat);
-  const backShell = rbox(0.64, 0.50, 0.06, 0.05, shellMat2);
-  backShell.position.set(0, 0.58, -0.30);
-  backShell.rotation.x = -0.38;
-  loungeChair.add(backShell);
-  const back = rbox(0.58, 0.44, 0.11, 0.05, leatherMat);
-  back.position.set(0, 0.59, -0.235);
-  back.rotation.x = -0.38;
-  loungeChair.add(back);
-  const headShell = rbox(0.58, 0.32, 0.06, 0.05, shellMat2);
-  headShell.position.set(0, 0.885, -0.415);
-  headShell.rotation.x = -0.44;
-  loungeChair.add(headShell);
-  const head = rbox(0.52, 0.26, 0.11, 0.05, leatherMat);
-  head.position.set(0, 0.895, -0.355);
-  head.rotation.x = -0.44;
-  loungeChair.add(head);
-  [-1, 1].forEach((s) => {
-    const arm = rbox(0.10, 0.20, 0.52, 0.04, shellMat2);
-    arm.position.set(s * 0.33, 0.48, -0.03);
-    loungeChair.add(arm);
-  });
-  const star = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.24, 12), chromeMat);
-  star.position.y = 0.14;
-  loungeChair.add(star);
+  const shell2 = new THREE.Mesh(new THREE.SphereGeometry(0.30, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    new THREE.MeshStandardMaterial({ color: 0x8d8a7a, roughness: 0.58, metalness: 0.03, side: THREE.DoubleSide }));
+  shell2.scale.set(1.0, 0.92, 0.86);
+  shell2.rotation.x = Math.PI + 0.20;
+  shell2.position.y = 0.50;
+  shell2.castShadow = true;
+  chair.add(shell2);
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.23, 0.055, 24), terracotta);
+  pad.position.y = 0.475; pad.castShadow = true;
+  chair.add(pad);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.040, 0.42, 12), chromeMat);
+  post.position.y = 0.24; chair.add(post);
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.024, 0.30), chromeMat);
-    leg.position.set(Math.cos(a) * 0.13, 0.030, Math.sin(a) * 0.13);
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.022, 0.26), chromeMat);
+    leg.position.set(Math.cos(a) * 0.115, 0.035, Math.sin(a) * 0.115);
     leg.rotation.y = -a + Math.PI / 2;
     leg.castShadow = true;
-    loungeChair.add(leg);
-  }
-}
-{
-  const ott = new THREE.Group();
-  ott.position.set(-3.52, PY, 0.96);
-  ott.rotation.y = 1.18;
-  scene.add(ott);
-  const pad = rbox(0.56, 0.46, 0.17, 0.07, terracotta);
-  pad.rotation.x = Math.PI / 2;
-  pad.position.y = 0.36;
-  ott.add(pad);
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.24, 12), chromeMat);
-  post.position.y = 0.14;
-  ott.add(post);
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + 0.4;
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.022, 0.26), chromeMat);
-    leg.position.set(Math.cos(a) * 0.11, 0.028, Math.sin(a) * 0.11);
-    leg.rotation.y = -a + Math.PI / 2;
-    ott.add(leg);
+    chair.add(leg);
+    const cast = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 8), blackPlastic);
+    cast.position.set(Math.cos(a) * 0.235, 0.026, Math.sin(a) * 0.235);
+    chair.add(cast);
   }
 }
 
-/* ─────────────────────── the credenza, against the lounge's back ─────────────────────── */
+/* the egg lounge chair, in the near-right corner */
+const lounge = new THREE.Group();
+lounge.position.set(2.24, 0, 1.66);
+lounge.rotation.y = -2.55;
+scene.add(lounge);
+{
+  const sh = new THREE.Mesh(new THREE.SphereGeometry(0.52, 26, 20, 0, Math.PI * 1.25, 0.10, Math.PI * 0.68), terracotta);
+  sh.scale.set(1.0, 1.0, 0.86);
+  sh.material = new THREE.MeshStandardMaterial({ color: 0xb4622e, roughness: 0.68, metalness: 0.02, side: THREE.DoubleSide });
+  sh.position.y = 0.62;
+  sh.rotation.y = -0.62;
+  sh.castShadow = true;
+  lounge.add(sh);
+  const cush = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.32, 0.10, 22), new THREE.MeshStandardMaterial({ color: 0x8f8878, roughness: 0.9 }));
+  cush.position.y = 0.44; cush.castShadow = true;
+  lounge.add(cush);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.36, 14), chromeMat);
+  base.position.y = 0.20; lounge.add(base);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.035, 24), chromeMat);
+  foot.position.y = 0.018; foot.castShadow = true;
+  lounge.add(foot);
+}
+
+/* ─────────────────────────── the credenza and the record player ─────────────────────────── */
 const credenza = new THREE.Group();
-credenza.position.set(-2.60, 0, -0.78);
-credenza.rotation.y = Math.PI - 0.10;
+credenza.position.set(1.02, 0, 1.62);
+credenza.rotation.y = Math.PI - 0.06;
 scene.add(credenza);
 {
-  const body = rbox(1.52, 0.46, 0.42, 0.035, walnutMat);
+  const body = rbox(1.12, 0.46, 0.40, 0.035, walnutMat);
   body.position.set(0, 0.50, 0);
   credenza.add(body);
-  credenza.add(box(1.58, 0.030, 0.44, walnutDeep, 0, 0.745, 0, false));
-  [[-0.64, -0.14], [0.64, -0.14], [-0.64, 0.14], [0.64, 0.14]].forEach(([x, z]) => {
+  credenza.add(box(1.16, 0.030, 0.42, walnutDeep, 0, 0.745, 0, false));
+  /* four splayed legs */
+  [[-0.44, -0.13], [0.44, -0.13], [-0.44, 0.13], [0.44, 0.13]].forEach(([x, z]) => {
     const l = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.024, 0.28, 8), walnutDeep);
     l.position.set(x, 0.13, z);
     l.rotation.set(z > 0 ? 0.10 : -0.10, 0, x > 0 ? -0.10 : 0.10);
     l.castShadow = true;
     credenza.add(l);
   });
-  /* the sliding doors face the room the lounge sits in */
-  credenza.add(box(0.72, 0.36, 0.012, walnutDeep, -0.38, 0.50, 0.216, false));
-  credenza.add(box(0.72, 0.36, 0.012, walnutDeep, 0.38, 0.50, 0.222, false));
-  credenza.add(box(0.10, 0.014, 0.02, brass, -0.04, 0.50, 0.230, false));
-  credenza.add(box(0.10, 0.014, 0.02, brass, 0.04, 0.50, 0.236, false));
+  /* two sliding doors, a brass pull each */
+  credenza.add(box(0.54, 0.36, 0.012, walnutDeep, -0.28, 0.50, 0.206, false));
+  credenza.add(box(0.54, 0.36, 0.012, walnutDeep, 0.28, 0.50, 0.212, false));
+  credenza.add(box(0.10, 0.014, 0.02, brass, -0.04, 0.50, 0.220, false));
+  credenza.add(box(0.10, 0.014, 0.02, brass, 0.04, 0.50, 0.226, false));
 }
 
 /* ─────────────────────────── the keeper's drawer ───────────────────────────
-   The shallow drawer under the credenza's top faces the room, which is the side
-   anyone standing here can see. It holds one thing: the mark the house makes
-   for whoever walked it. Clicking it slides it out and puts the mark up. */
+   The credenza's sliding doors face the far wall; the shallow drawer under its
+   top faces the room, which is the side anyone standing here can see. It holds
+   one thing: the mark the house makes for whoever walked it. Clicking it slides
+   it out and puts the mark on the glass. */
 const DRAWER = { open: 0, want: 0, travel: 0.19 };
 const drawerGroup = new THREE.Group();
 let drawerFront;
 credenza.add(drawerGroup);
 {
-  const W = 1.32, D = 0.32, TH = 0.010;
+  /* the tray, so an open drawer is a hole with a bottom and not a floating lid */
+  const W = 0.96, D = 0.30, TH = 0.010;
   drawerGroup.add(box(W, TH, D, walnutDeep, 0, 0.612, -0.20 - D / 2 + 0.02, false));
   drawerGroup.add(box(TH, 0.055, D, walnutDeep, -W / 2, 0.640, -0.20 - D / 2 + 0.02, false));
   drawerGroup.add(box(TH, 0.055, D, walnutDeep, W / 2, 0.640, -0.20 - D / 2 + 0.02, false));
   drawerGroup.add(box(W, 0.055, TH, walnutDeep, 0, 0.640, -0.20 + 0.02 - D, false));
-  drawerFront = box(1.34, 0.105, 0.020, walnutMat, 0, 0.660, -0.205, false);
+  /* the front: the face that sits flush in the carcass when it is shut */
+  drawerFront = box(0.98, 0.105, 0.020, walnutMat, 0, 0.660, -0.205, false);
   drawerGroup.add(drawerFront);
-  drawerGroup.add(box(0.26, 0.013, 0.018, brass, 0, 0.660, -0.220, false));
-  drawerGroup.add(box(0.016, 0.013, 0.020, brass, -0.128, 0.660, -0.214, false));
-  drawerGroup.add(box(0.016, 0.013, 0.020, brass, 0.128, 0.660, -0.214, false));
+  /* one long brass pull, the credenza's own hardware */
+  drawerGroup.add(box(0.22, 0.013, 0.018, brass, 0, 0.660, -0.220, false));
+  drawerGroup.add(box(0.016, 0.013, 0.020, brass, -0.108, 0.660, -0.214, false));
+  drawerGroup.add(box(0.016, 0.013, 0.020, brass, 0.108, 0.660, -0.214, false));
 }
 
 const recordPlayer = new THREE.Group();
-recordPlayer.position.set(-2.96, 0.76, -0.81);
-recordPlayer.rotation.y = Math.PI - 0.10;
+recordPlayer.position.set(1.06, 0.76, 1.60);
+recordPlayer.rotation.y = -0.06;
 scene.add(recordPlayer);
 let platter, tonearm;
 {
@@ -1673,10 +911,11 @@ let platter, tonearm;
   const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.03, 8), chromeMat);
   spindle.position.y = 0.022;
   platter.add(spindle);
+  /* the deck's indicator: the one lit thing in the near-right corner */
   const eye = new THREE.Mesh(new THREE.SphereGeometry(0.010, 10, 8), new THREE.MeshBasicMaterial({ color: 0xf2c14e }));
   eye.position.set(-0.02, 0.104, 0.13);
   recordPlayer.add(eye);
-  const eyeGlow = new THREE.PointLight(0xe8a445, 1.2, 1.3, 1.7);
+  const eyeGlow = new THREE.PointLight(0xe8a445, 1.5, 1.5, 1.7);
   eyeGlow.position.set(-0.02, 0.16, 0.13);
   recordPlayer.add(eyeGlow);
 
@@ -1701,25 +940,59 @@ let platter, tonearm;
   tonearm.userData.swing = armSwing;
   armSwing.rotation.y = 0.62;   /* parked */
 }
-/* the sleeve, leaning against the credenza. It is in the registry now: the
-   keeper's desk says the token is read by hand, and the sleeve is where the
-   room hands it over. */
-const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.010), new THREE.MeshStandardMaterial({ map: sleeveTex, roughness: 0.9 }));
-sleeve.position.set(-1.72, 0.17, -0.58);
-sleeve.rotation.set(-0.16, 2.90, 0);
-sleeve.castShadow = true;
-scene.add(sleeve);
+/* the sleeve, leaning against the credenza */
+{
+  const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.010), new THREE.MeshStandardMaterial({ map: sleeveTex, roughness: 0.9 }));
+  sleeve.position.set(1.72, 0.17, 1.82);
+  sleeve.rotation.set(-0.16, 0.34, 0);
+  sleeve.castShadow = true;
+  scene.add(sleeve);
+}
 
-/* ─────────────────── the clock and the corkboard, on the pier ───────────────────
-   The strip of board-formed concrete between the aperture and the stone is the
-   only wall left in the room, and it carries the two things a keeper reads. */
-const PIER = { x: -0.98, z: WALL.F + 0.012 };
+/* ─────────────────────────── the plant, the clock, the corkboard ─────────────────────────── */
+const plant = new THREE.Group();
+plant.position.set(-2.86, 0, -0.34);
+scene.add(plant);
+{
+  const potMat = new THREE.MeshStandardMaterial({ color: 0xc79a5c, roughness: 0.80, metalness: 0.02 });
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.34, 24), potMat);
+  pot.position.y = 0.17; pot.castShadow = true;
+  plant.add(pot);
+  /* the pointer aims at the pot: the group's own centre falls between blades,
+     and a plant you cannot point at is not in the registry */
+  plant.userData.pot = pot;
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.018, 8, 24), potMat);
+  lip.rotation.x = Math.PI / 2; lip.position.y = 0.335;
+  plant.add(lip);
+  const soil = new THREE.Mesh(new THREE.CircleGeometry(0.20, 20), new THREE.MeshStandardMaterial({ color: 0x2b2119, roughness: 1 }));
+  soil.rotation.x = -Math.PI / 2; soil.position.y = 0.336;
+  plant.add(soil);
+  const green = new THREE.MeshStandardMaterial({ color: 0x4b6a44, roughness: 0.82, side: THREE.DoubleSide });
+  for (let i = 0; i < 11; i++) {
+    const a = (i / 11) * Math.PI * 2 + Math.random();
+    const len = 0.55 + Math.random() * 0.55;
+    const lean = 0.16 + Math.random() * 0.42;
+    const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.09, len, 1, 5), green);
+    const p = blade.geometry.attributes.position;
+    for (let k = 0; k < p.count; k++) {
+      const v = (p.getY(k) + len / 2) / len;
+      p.setZ(k, -Math.pow(v, 2) * len * 0.34);
+      p.setX(k, p.getX(k) * (1 - v * 0.72));
+    }
+    blade.geometry.computeVertexNormals();
+    blade.position.set(Math.cos(a) * 0.05, 0.34 + len / 2, Math.sin(a) * 0.05);
+    blade.rotation.set(-lean, a, 0);
+    blade.castShadow = true;
+    plant.add(blade);
+  }
+}
+
 const clock = new THREE.Group();
-clock.position.set(PIER.x, 2.30, PIER.z);
+clock.position.set(-3.16, 2.02, -1.975);
 scene.add(clock);
 let handH, handM;
 {
-  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.055, 32), walnutMat);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.055, 32), creamMat);
   rim.rotation.x = Math.PI / 2; rim.castShadow = true;
   clock.add(rim);
   const face = new THREE.Mesh(new THREE.CircleGeometry(0.145, 32), new THREE.MeshStandardMaterial({ map: clockFaceTex, roughness: 0.78 }));
@@ -1736,7 +1009,7 @@ let handH, handM;
 }
 
 const corkboard = new THREE.Group();
-corkboard.position.set(PIER.x, 1.52, PIER.z);
+corkboard.position.set(1.58, 1.72, -1.975);
 scene.add(corkboard);
 {
   const frame = box(0.66, 0.70, 0.035, walnutDeep, 0, 0, 0, false);
@@ -1750,43 +1023,35 @@ scene.add(corkboard);
     p.position.set(-0.13 + col * 0.26, 0.20 - row * 0.21, 0.030);
     p.rotation.z = (Math.random() - 0.5) * 0.10;
     corkboard.add(p);
-    const pin = new THREE.Mesh(new THREE.SphereGeometry(0.010, 8, 8), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xb4622e : 0x8a6a38, roughness: 0.4 }));
+    const pin = new THREE.Mesh(new THREE.SphereGeometry(0.010, 8, 8), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xb4622e : 0x5eead4, roughness: 0.4 }));
     pin.position.set(p.position.x, p.position.y + 0.072, 0.038);
     corkboard.add(pin);
   });
 }
 
-/* ── the sign by the door ──
-   The concrete left of the aperture is the end of the room you leave by, and
-   this is the only thing on it: a small brass sign of the kind screwed beside
-   a good door, naming the place you are in and, honestly, the way back out of
-   it — mnemos, the hub, one floor up from all of this. */
-const doorSign = new THREE.Group();
-doorSign.position.set(-4.42, 1.46, WALL.F + 0.016);
-scene.add(doorSign);
+/* the stewards' brass lamp, on the console */
+const lampGroup = new THREE.Group();
+lampGroup.position.set(2.28, CONSOLE.top, CONSOLE.z + 0.02);
+scene.add(lampGroup);
 {
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.104),
-    brassPlate(['MNEMOS', 'a place for minds'], 480, 148));
-  face.position.z = 0.007;
-  doorSign.add(face);
-  doorSign.add(box(0.352, 0.116, 0.014, brass, 0, 0, 0, false));
-  /* the four screws that hold it to the concrete */
-  [[-0.155, 0.040], [0.155, 0.040], [-0.155, -0.040], [0.155, -0.040]].forEach(([x, y]) => {
-    const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.006, 8), brass);
-    sc.rotation.x = Math.PI / 2;
-    sc.position.set(x, y, 0.010);
-    doorSign.add(sc);
-  });
-  doorSign.userData.face = face;
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.088, 0.024, 24), brass);
+  base.position.y = 0.012; base.castShadow = true; lampGroup.add(base);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, 0.32, 12), brass);
+  stem.position.set(0, 0.18, 0); stem.rotation.z = -0.14; stem.castShadow = true; lampGroup.add(stem);
+  const pts = [];
+  for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(new THREE.Vector2(0.030 + t * 0.080, t * 0.105)); }
+  const shade = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), new THREE.MeshStandardMaterial({ color: 0x8a6a38, roughness: 0.46, metalness: 0.55, side: THREE.DoubleSide }));
+  shade.position.set(0.048, 0.335, 0);
+  shade.rotation.z = Math.PI - 0.22;
+  shade.castShadow = true;
+  lampGroup.add(shade);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffd9a0 }));
+  bulb.position.set(0.048, 0.296, 0);
+  bulb.visible = stewardPresent;
+  lampGroup.add(bulb);
+  lampGroup.userData.bulb = bulb;
+  lampGroup.userData.shade = shade;
 }
-
-/* the five residents' names, embossed into the pier under the corkboard */
-{
-  const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.26), new THREE.MeshBasicMaterial({ map: namesTex, transparent: true, opacity: 0.24 }));
-  panel.position.set(PIER.x, 0.94, PIER.z + 0.004);
-  scene.add(panel);
-}
-
 
 /* ─────────────────────────── the board ─────────────────────────── */
 /* A dot-matrix panel on the wall behind the console, the kind a keeper watches
@@ -1799,7 +1064,7 @@ scene.add(doorSign);
  * scrolls away leaves its ghost behind for a moment.
  */
 const BOARD = {
-  COLS: 160, ROWS: 72, PITCH: 6,
+  COLS: 284, ROWS: 120, PITCH: 4,
   CW: 6, CH: 8,            /* one 5×7 glyph plus its gutter */
   FPS: 12
 };
@@ -1846,10 +1111,6 @@ const board = (() => {
   const g = cv.getContext('2d');
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.generateMipmaps = false;
-  tex.minFilter = THREE.LinearFilter;
-  tex.magFilter = THREE.LinearFilter;
-  tex.anisotropy = 8;
 
   /* one dot, pre-rendered: drawing 24 000 arcs a frame is not a look, it is a
      stall */
@@ -1864,18 +1125,13 @@ const board = (() => {
     rad.addColorStop(1.00, 'rgba(217,147,52,0)');
     dg.fillStyle = rad; dg.fillRect(0, 0, r * 2, r * 2);
   }
-  /* and the dark lattice under it, painted once — but not before the room's own
-     first frame: 11 520 little squares and a 960 × 432 upload are not what the
-     first paint is for. `warm()` does it as soon as the room is on the glass. */
+  /* and the dark lattice under it, painted once */
   const bed = document.createElement('canvas');
   bed.width = W; bed.height = H;
-  let bedPainted = false;
-  function paintBed() {
-    if (bedPainted) return;
-    bedPainted = true;
+  {
     const bg = bed.getContext('2d');
-    bg.fillStyle = '#241705'; bg.fillRect(0, 0, W, H);
-    bg.fillStyle = 'rgba(180,98,46,0.22)';
+    bg.fillStyle = '#0d0a06'; bg.fillRect(0, 0, W, H);
+    bg.fillStyle = 'rgba(180,98,46,0.16)';
     for (let y = 0; y < BOARD.ROWS; y++) for (let x = 0; x < BOARD.COLS; x++) {
       bg.fillRect(x * BOARD.PITCH + 1, y * BOARD.PITCH + 1, 2, 2);
     }
@@ -1981,25 +1237,13 @@ const board = (() => {
   }
 
   const HEADER = 'THE HOUSE · FEED · ARCHIVE THROUGH 28 MAY 2026';
-  /* what the house can see right now, appended to the header and nothing more:
-     a count the server actually counted, never a name, never a guess. The panel
-     is 46 characters wide, so the count goes on only when it fits. */
-  let inHouse = 0;
-  function header() {
-    if (inHouse <= 0) return HEADER;
-    const tail = ' · ' + inHouse + ' IN THE HOUSE';
-    return (HEADER + tail).length <= BOARD.chars ? HEADER + tail
-      : ('THE HOUSE · FEED' + tail);
-  }
   let last = 0;
 
   function render(t, dt) {
-    paintBed();
     feed(t);
     want.fill(0);
     /* the header — it fits, so it stays put */
-    const head = header();
-    for (let c = 0; c < head.length && c < BOARD.chars; c++) stamp(-1, c, head[c]);
+    for (let c = 0; c < HEADER.length && c < BOARD.chars; c++) stamp(-1, c, HEADER[c]);
     shown.forEach((ln, i) => {
       const up = ln.toUpperCase();
       for (let c = 0; c < up.length && c < BOARD.chars; c++) stamp(i + 1, c, up[c]);
@@ -2013,7 +1257,7 @@ const board = (() => {
 
     g.drawImage(bed, 0, 0);
     /* the idle shimmer, on the lattice itself */
-    g.globalAlpha = 0.10 + 0.030 * (0.5 + 0.5 * Math.sin(t * 0.9));
+    g.globalAlpha = 0.05 + 0.025 * (0.5 + 0.5 * Math.sin(t * 0.9));
     g.fillStyle = 'rgba(217,147,52,1)';
     g.fillRect(0, 0, W, H);
     const P = BOARD.PITCH;
@@ -2039,40 +1283,35 @@ const board = (() => {
       last = t;
     },
     litCount() { let n = 0; for (let i = 0; i < lit.length; i++) if (lit[i] > 0.25) n++; return n; },
-    setInHouse(n) { inHouse = Math.max(0, Math.floor(n || 0)); },
-    header,
-    warm: paintBed, warmed: () => bedPainted,
     entries: () => entries.slice(),
     shown: () => shown.slice(),
     ready: () => ready
   };
 })();
-/* the panel itself: the right wall, over the cabinet run, at eye height */
+
+/* the panel itself: the wall behind the console, right of the terminal */
 const boardGroup = new THREE.Group();
-/* held out of the first frame — see `warmUp()` */
-boardGroup.visible = false;
-boardGroup.position.set(WALL.R - 0.02, 1.66, -1.90);
-boardGroup.rotation.y = -Math.PI / 2;
 scene.add(boardGroup);
 {
-  const BW = 2.10, BH = 0.86;
-  const case_ = rbox(BW + 0.10, BH + 0.10, 0.070, 0.030, walnutDeep);
-  case_.position.set(0, 0, 0.030);
+  const BW = 1.42, BH = 0.60;
+  const X = 2.66, Y = 1.78, Z = -1.972;
+  const case_ = rbox(BW + 0.09, BH + 0.09, 0.055, 0.028, oliveDark);
+  case_.position.set(X, Y, Z + 0.028);
   boardGroup.add(case_);
   const face = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), new THREE.MeshStandardMaterial({
-    map: board.texture, emissive: 0xffffff, emissiveMap: board.texture, emissiveIntensity: 1.35,
+    map: board.texture, emissive: 0xffffff, emissiveMap: board.texture, emissiveIntensity: 1.45,
     roughness: 0.82, metalness: 0
   }));
-  face.position.set(0, 0, 0.086);
+  face.position.set(X, Y, Z + 0.082);
   boardGroup.add(face);
-  /* a brushed lip under it, so it is a fixture and not a poster */
-  boardGroup.add(box(BW + 0.16, 0.028, 0.06, chromeMat, 0, -BH / 2 - 0.068, 0.076, false));
+  /* a brushed lip, so it is a fixture and not a poster */
+  boardGroup.add(box(BW + 0.13, 0.026, 0.05, chromeMat, X, Y - BH / 2 - 0.062, Z + 0.072, false));
+  /* the panel's own amber, on the wall it is fixed to */
+  const glow = new THREE.PointLight(0xd99334, 1.5, 2.4, 1.9);
+  glow.position.set(X, Y, Z + 0.42);
+  scene.add(glow);
   boardGroup.userData.face = face;
 }
-/* the panel's own amber, on the stone it is fixed to */
-const boardGlow = new THREE.PointLight(0xd99334, 1.4, 3.0, 1.9);
-boardGlow.position.set(WALL.R - 0.55, 1.66, -1.90);
-scene.add(boardGlow);
 
 /* ─────────────────────────── the two empty berths ─────────────────────────── */
 /* A slot is a small closed device with nothing in it yet. Riley's simulators
@@ -2097,66 +1336,74 @@ function slotDevice(w, h, d) {
   return g;
 }
 const slotA = slotDevice(0.30, 0.16, 0.22);
-slotA.position.set(-2.08, 0.845, -0.73);
-slotA.rotation.y = Math.PI - 0.10;
+slotA.position.set(0.44, 0.845, 1.60);
+slotA.rotation.y = -0.22;
 scene.add(slotA);
 
 const slotB = slotDevice(0.34, 0.20, 0.24);
-/* the run's left end, where the cabinets begin */
-slotB.position.set(0.06, RUN.top + 0.10, RUN.z - 0.02);
-slotB.rotation.y = 0.06;
+/* it stood on the console's far left end, which is the stewards' stretch now.
+   It keeps its end of the same console — the right one, past the lamp. */
+slotB.position.set(2.74, 0.885, CONSOLE.z - 0.06);
+slotB.rotation.y = 0.10;
 scene.add(slotB);
 
-/* ─────────────── the stewards' station (set into the cabinet run) ───────────────
-   It is not a second desk. The run carries the whole right side of the room and
-   the three stewards work at its middle: the same walnut carcass, the same lip,
-   with a switchboard raked into the top and a screen recessed into an olive
-   fascia standing on it — wider than the terminal's, lower, angled up a few
-   degrees at whoever is sitting. The terminal keeps the golden point on the
-   slab and stays the brightest machine in the room.
+/* ─────────────── the stewards' station (the console's left stretch) ───────────────
+   It is not a second desk. The keeper's console runs the whole far wall and the
+   three stewards work at its left end: the same cream carcass, the same walnut
+   lip, with a raked switchboard let into the top and a second screen set into
+   the fascia behind it — wider than the terminal's, lower, recessed, angled up
+   a few degrees at whoever is sitting. The terminal keeps the golden point on
+   the right and stays the brightest thing in the room. From this chair the
+   porthole is over your left shoulder, which is the point of putting the desk
+   here: the keeper can see the house.
 
    To move the whole station, change ST — the fascia, the panel, the screen, the
    nameplates, the chair and the seat pose all follow. */
-const ST = { x: 2.45, w: 1.32, top: RUN.top, z: RUN.z };
+const ST = { x: -2.535, w: 1.27, top: CONSOLE.top, z: CONSOLE.z };
+/* the screen: wider and lower than the terminal's, set 45 mm into the fascia */
 const SCR2_W = 0.62, SCR2_H = 0.36, SCR2_TILT = -0.13;
-const SCR2_X = ST.x, SCR2_Y = RUN.top + 0.30;
-const FASCIA = { z: RUN.z - 0.20, d: 0.09, y0: RUN.top, y1: RUN.top + 0.54 };
+const SCR2_X = -2.62, SCR2_Y = 1.005;
+/* the fascia stands on the desk's back edge, proud of the console's own riser —
+   set it any further back and the riser eats the screen */
+const FASCIA = { z: CONSOLE.z - 0.225, d: 0.09, y0: CONSOLE.top, y1: 1.28 };
 const FACE_Z = FASCIA.z + FASCIA.d / 2;             /* the fascia's front face */
 const SCR2_Z = FACE_Z - 0.045;                      /* and the glass, recessed into it */
 const stewardConsole = new THREE.Group();
-/* held out of the first frame — see `warmUp()`. The second CRT's screen shader
-   and its emissive glass are the room's most expensive programs and nobody is
-   looking at them while the page opens. */
-stewardConsole.visible = false;
 scene.add(stewardConsole);
 
 let glass2, panelLamps = [], meterNeedles = [];
 {
   const g = stewardConsole;
-  const L = ST.x - ST.w / 2, Rt = ST.x + ST.w / 2;
-  const OW = SCR2_W + 0.07, OH = SCR2_H + 0.02;
+  const L = ST.x - ST.w / 2, R = ST.x + ST.w / 2;
+  const OW = SCR2_W + 0.07, OH = SCR2_H + 0.02;     /* the opening the glass sits in */
+  void L; void R;
   const ox0 = SCR2_X - OW / 2, ox1 = SCR2_X + OW / 2;
   const oy0 = SCR2_Y - OH / 2, oy1 = SCR2_Y + OH / 2;
 
-  /* the fascia: four olive panels, so the opening is a real hole */
+  /* ── the fascia: the desk's back riser, thickened over this stretch and cut
+     for the screen. Four panels, so the opening is a real hole and not a
+     picture of one. ── */
+  /* olive, not cream: the fascia is an instrument panel let into the desk, and
+     cream this close to the glass blows out under it */
   const fasc = (w, h, cx, cy) => g.add(box(w, h, FASCIA.d, oliveMat, cx, cy, FASCIA.z));
   fasc(ox0 - L, FASCIA.y1 - FASCIA.y0, (L + ox0) / 2, (FASCIA.y0 + FASCIA.y1) / 2);
-  fasc(Rt - ox1, FASCIA.y1 - FASCIA.y0, (ox1 + Rt) / 2, (FASCIA.y0 + FASCIA.y1) / 2);
+  fasc(R - ox1, FASCIA.y1 - FASCIA.y0, (ox1 + R) / 2, (FASCIA.y0 + FASCIA.y1) / 2);
   fasc(OW, FASCIA.y1 - oy1, SCR2_X, (oy1 + FASCIA.y1) / 2);
   fasc(OW, oy0 - FASCIA.y0, SCR2_X, (FASCIA.y0 + oy0) / 2);
-  /* the walnut cap along its top — the run's own lip, carried up */
+  /* the walnut cap along its top, the same band the room wears at waist height */
   const cap = rbox(ST.w + 0.05, 0.038, 0.14, 0.014, walnutMat);
   cap.position.set(ST.x, FASCIA.y1 + 0.019, FASCIA.z + 0.022);
   g.add(cap);
-  /* a chrome lip around the opening */
+  /* a chrome lip around the opening, so the screen reads as let in, not stuck on */
   const lipMat = chromeMat;
   g.add(box(OW + 0.02, 0.012, 0.02, lipMat, SCR2_X, oy1 + 0.006, FACE_Z + 0.006, false));
   g.add(box(OW + 0.02, 0.012, 0.02, lipMat, SCR2_X, oy0 - 0.006, FACE_Z + 0.006, false));
   g.add(box(0.012, OH + 0.02, 0.02, lipMat, ox0 - 0.006, SCR2_Y, FACE_Z + 0.006, false));
   g.add(box(0.012, OH + 0.02, 0.02, lipMat, ox1 + 0.006, SCR2_Y, FACE_Z + 0.006, false));
+  /* the well behind the glass */
   g.add(box(OW, OH, 0.03, blackPlastic, SCR2_X, SCR2_Y, SCR2_Z - 0.035, false));
 
-  /* the glass: the same curved phosphor as the terminal's, a step cooler */
+  /* ── the glass: the same curved phosphor as the terminal's, a step cooler ── */
   const gg2 = new THREE.PlaneGeometry(SCR2_W, SCR2_H, 22, 16);
   {
     const p = gg2.attributes.position;
@@ -2167,6 +1414,8 @@ let glass2, panelLamps = [], meterNeedles = [];
     gg2.computeVertexNormals();
   }
   glass2 = new THREE.Mesh(gg2, new THREE.MeshStandardMaterial({
+    /* a third of the terminal's charge: this glass is bigger and nearer the
+       camera at rest, and the terminal has to stay the brightest thing */
     map: term2.texture, emissive: 0xffffff, emissiveMap: term2.texture, emissiveIntensity: 1.85,
     roughness: 0.66, metalness: 0
   }));
@@ -2174,18 +1423,17 @@ let glass2, panelLamps = [], meterNeedles = [];
   glass2.rotation.x = SCR2_TILT;
   g.add(glass2);
 
-  /* one small readout beside it, on the fascia's left panel */
-  {
-    const x = L + 0.20, w = 0.20, h = 0.15;
+  /* ── the two small readouts beside it, on the fascia's right panel ── */
+  [[dialTex, -2.085, 0.20, 0.15]].forEach(([tex, x, w, h]) => {
     g.add(box(w + 0.03, h + 0.03, 0.018, oliveDark, x, SCR2_Y + 0.01, FACE_Z + 0.008, false));
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({
-      map: dialTex, emissive: 0xffffff, emissiveMap: dialTex, emissiveIntensity: 0.55, roughness: 0.72
+      map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.55, roughness: 0.72
     }));
     m.position.set(x, SCR2_Y + 0.01, FACE_Z + 0.018);
     g.add(m);
-  }
+  });
 
-  /* the nameplates, engraved on the fascia strip over the screen */
+  /* ── the nameplates, engraved on the fascia strip over the screen ── */
   const plateTex = paint(700, 64, (gg, w, h) => {
     gg.fillStyle = '#8e7038'; gg.fillRect(0, 0, w, h);
     const grad = gg.createLinearGradient(0, 0, 0, h);
@@ -2208,21 +1456,23 @@ let glass2, panelLamps = [], meterNeedles = [];
   plates.position.set(SCR2_X, (oy1 + FASCIA.y1) / 2, FACE_Z + 0.006);
   g.add(plates);
 
-  /* the switchboard, raked into the run's top in front of the screen */
+  /* ── the switchboard, raked into the desk top in front of the screen ──
+     Faders, rotaries, toggles with their lamps, and two needle meters: a desk
+     somebody left mid-session, not a prop with everything at zero. */
   const panelG = new THREE.Group();
-  panelG.position.set(ST.x, ST.top + 0.010, RUN.z + 0.02);
-  panelG.rotation.x = 0.30;
+  panelG.position.set(ST.x, ST.top + 0.010, CONSOLE.z - 0.03);
+  panelG.rotation.x = 0.30;                        /* the back edge lifts to meet the fascia */
   g.add(panelG);
-  panelG.add(box(ST.w - 0.04, 0.022, 0.26, oliveMat, 0, 0, 0));
-  const S = 0.013;
+  panelG.add(box(ST.w - 0.04, 0.022, 0.26, oliveMat, 0, 0, 0));   /* 1.23 across */
+  const S = 0.013;                                  /* the panel's surface, in its own frame */
 
   for (let i = 0; i < 8; i++) {
-    const x = -0.600 + i * 0.050;
+    const x = -0.575 + i * 0.050;
     panelG.add(box(0.013, 0.005, 0.150, blackPlastic, x, S, 0, false));
     panelG.add(box(0.028, 0.016, 0.022, creamMat, x, S + 0.009, Math.sin(i * 1.7) * 0.055, false));
   }
   for (let i = 0; i < 5; i++) {
-    const x = -0.160 + i * 0.058;
+    const x = -0.145 + i * 0.058;
     const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.029, 0.024, 18), oliveDark);
     knob.position.set(x, S + 0.011, 0);
     panelG.add(knob);
@@ -2232,9 +1482,10 @@ let glass2, panelLamps = [], meterNeedles = [];
     pg.add(box(0.005, 0.005, 0.024, brass, 0, 0, 0.013, false));
     panelG.add(pg);
   }
-  const lampColours = [0xf2c14e, 0xf2c14e, 0xb4622e, 0xd99334, 0xf2c14e, 0xd99334];
+  /* six toggles, each with the lamp that says whether it did anything */
+  const lampColours = [0xf2c14e, 0xf2c14e, 0xb4622e, 0x5eead4, 0xf2c14e, 0xd99334];
   for (let i = 0; i < 6; i++) {
-    const x = 0.150 + i * 0.040;
+    const x = 0.155 + i * 0.040;
     panelG.add(box(0.026, 0.008, 0.026, oliveDark, x, S, 0.020, false));
     const lever = box(0.007, 0.026, 0.007, chromeMat, 0, 0.013, 0, false);
     const lg = new THREE.Group();
@@ -2266,23 +1517,23 @@ let glass2, panelLamps = [], meterNeedles = [];
     meterNeedles.push({ group: nd, rate: 0.42 + i * 0.27, phase: i * 2.2 });
   }
 
-  /* a keyboard, a headset on its hook, a mug someone left */
+  /* ── a keyboard, a headset on its hook, a mug someone left ── */
   const kb2 = new THREE.Group();
-  kb2.position.set(ST.x - 0.10, ST.top + 0.012, RUN.z + 0.22);
+  kb2.position.set(ST.x - 0.10, ST.top + 0.012, CONSOLE.z + 0.16);
   kb2.rotation.set(-0.04, 0, 0);
   g.add(kb2);
   kb2.add(box(0.46, 0.022, 0.15, oliveDark, 0, 0.011, 0));
   for (let r = 0; r < 4; r++) for (let c = 0; c < 13; c++)
     kb2.add(box(0.024, 0.008, 0.023, blackPlastic, -0.198 + c * 0.033, 0.026, -0.048 + r * 0.032, false));
 
-  const HX = L + 0.06, HY = 1.30, HZ = FACE_Z + 0.02;
+  const HX = L + 0.10, HY = 1.14, HZ = FACE_Z + 0.02;
   const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.08, 8), chromeMat);
   hook.position.set(HX, HY + 0.04, HZ - 0.012);
   g.add(hook);
-  const bandM = new THREE.Mesh(new THREE.TorusGeometry(0.070, 0.010, 8, 22, Math.PI * 1.15), blackPlastic);
-  bandM.position.set(HX, HY, HZ);
-  bandM.rotation.set(0.15, 0.35, -0.2);
-  g.add(bandM);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.070, 0.010, 8, 22, Math.PI * 1.15), blackPlastic);
+  band.position.set(HX, HY, HZ);
+  band.rotation.set(0.15, 0.35, -0.2);
+  g.add(band);
   [-1, 1].forEach((s) => {
     const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.024, 16), oliveDark);
     cup.position.set(HX + s * 0.058, HY - 0.052, HZ - s * 0.024);
@@ -2291,11 +1542,11 @@ let glass2, panelLamps = [], meterNeedles = [];
   });
 
   const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.033, 0.088, 20), creamMat);
-  mug.position.set(Rt - 0.14, ST.top + 0.058, RUN.z + 0.20);
+  mug.position.set(R - 0.16, ST.top + 0.058, CONSOLE.z + 0.14);
   mug.castShadow = true;
   g.add(mug);
   const handle = new THREE.Mesh(new THREE.TorusGeometry(0.028, 0.007, 8, 16, Math.PI * 1.2), creamMat);
-  handle.position.set(Rt - 0.098, ST.top + 0.060, RUN.z + 0.20);
+  handle.position.set(R - 0.118, ST.top + 0.060, CONSOLE.z + 0.14);
   handle.rotation.y = Math.PI / 2;
   g.add(handle);
 }
@@ -2303,21 +1554,20 @@ let glass2, panelLamps = [], meterNeedles = [];
 /* the fourth chair — the human's, pulled up to the stewards' stretch */
 const chair4 = new THREE.Group();
 {
-  chair4.position.set(ST.x - 0.08, 0, RUN.z + 0.90);
-  chair4.rotation.y = Math.PI - 0.10;
+  chair4.position.set(ST.x - 0.06, 0, CONSOLE.z + 0.78);
+  chair4.rotation.y = Math.PI - 0.14;
   scene.add(chair4);
-  const seatPad = rbox(0.46, 0.44, 0.10, 0.06, leatherMat);
-  seatPad.rotation.x = -Math.PI / 2;
-  seatPad.position.y = 0.45;
-  chair4.add(seatPad);
-  const backPad = rbox(0.44, 0.40, 0.09, 0.06, leatherMat);
-  backPad.position.set(0, 0.71, -0.20);
-  backPad.rotation.x = -0.16;
-  chair4.add(backPad);
-  chair4.add(box(0.05, 0.28, 0.05, chromeMat, 0, 0.55, -0.225, false));
-  const p4 = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.038, 0.40, 12), chromeMat);
-  p4.position.y = 0.225;
-  chair4.add(p4);
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.29, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    new THREE.MeshStandardMaterial({ color: 0x8d8a7a, roughness: 0.58, metalness: 0.03, side: THREE.DoubleSide }));
+  shell.scale.set(1.0, 0.92, 0.86);
+  shell.rotation.x = Math.PI + 0.20;
+  shell.position.y = 0.49;
+  shell.castShadow = true;
+  chair4.add(shell);
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.052, 22), terracotta);
+  pad.position.y = 0.465; pad.castShadow = true;
+  chair4.add(pad);
+  chair4.add(new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.038, 0.41, 12), chromeMat)).position.y = 0.235;
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
     const leg = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.020, 0.25), chromeMat);
@@ -2331,90 +1581,61 @@ const chair4 = new THREE.Group();
   }
 }
 
-/* where the OS lands, and where the eye has to be to read it straight on */
+/* where the OS lands, and where the eye has to be to read it straight on. The
+   glass is tilted up, so the eye sits a little above its centre and looks down
+   the normal — straight on to a screen that is angled at you. */
 const SCREEN2_POS = new THREE.Vector3(SCR2_X, SCR2_Y, SCR2_Z);
 const SCREEN2_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(1, 0, 0), SCR2_TILT);
 
-/* ─────────────────────────── the lights ───────────────────────────
-   One sun, one hemisphere, and then the room's own sources: the glass block
-   wall as a lit plane, the aperture pouring in, the strip under the shelves,
-   the ceiling's down-light, the two screens, the lamp, the board. Only the sun
-   casts a shadow map — every other light is there to name a surface, and a
-   second shadow map in a room this size buys nothing but frame time. */
+/* ─────────────────────────── the lights ─────────────────────────── */
 RectAreaLightUniformsLib.init();
 
-const sun = new THREE.DirectionalLight(0xffb268, 3.2);
-sun.position.set(7.4, 2.30, 1.6);
-sun.target.position.set(-1.5, 0.0, -2.0);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -8; sun.shadow.camera.right = 8;
-sun.shadow.camera.top = 5.5; sun.shadow.camera.bottom = -3.5;
-sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 26;
-sun.shadow.bias = -0.0013;
-sun.shadow.normalBias = 0.020;
-scene.add(sun, sun.target);
-
-/* the floor of the exposure */
-const sky = new THREE.HemisphereLight(0xd8cbb4, 0x6a5946, 0.62);
-scene.add(sky);
-
-/* the glass block wall, lit from behind */
-const blockLight = new THREE.RectAreaLight(0xd8d093, 3.0, R.hd * 2 - 0.4, R.h - 0.2);
-blockLight.position.set(WALL.L + 0.10, R.h / 2, 0);
-blockLight.lookAt(0, 1.3, 0);
-scene.add(blockLight);
-
-/* the aperture: the brightest thing in the room, and it lights the room */
-const windowLight = new THREE.RectAreaLight(0xf3cf94, 9.0, APER.r * 1.9, APER.r * 1.9);
-windowLight.position.set(APER.x, APER.y, WALL.F + 0.10);
-windowLight.lookAt(APER.x + 0.6, 1.0, 2.0);
-scene.add(windowLight);
-
-/* the warm strip under the shelves, the run's own light */
-const shelfLight = new THREE.RectAreaLight(0xffc98a, 6.0, SHELF.x1 - SHELF.x0 - 0.2, 0.10);
-shelfLight.position.set((SHELF.x0 + SHELF.x1) / 2, SHELF.y[0] - 0.075, WALL.F + SHELF.d);
-shelfLight.lookAt((SHELF.x0 + SHELF.x1) / 2, 0.4, WALL.F + 0.9);
-scene.add(shelfLight);
-
-/* the ceiling's down-light, along the long axis */
-const downLight = new THREE.RectAreaLight(0xffe3bc, 2.6, 7.4, 0.14);
-downLight.position.set(0.4, R.h - 0.06, -0.30);
-downLight.lookAt(0.4, 0, -0.30);
-scene.add(downLight);
-
-/* the terminal — the key on the slab, and still the brightest machine */
-const crtLight = new THREE.RectAreaLight(0xf2c14e, 26.0, SCR_W * 1.10, SCR_H * 1.10);
+/* 1 · the terminal — the key, and still the brightest thing in the room */
+const crtLight = new THREE.RectAreaLight(0xf2c14e, 46.0, SCR_W * 1.10, SCR_H * 1.10);
 crtLight.position.copy(SCREEN_POS).addScaledVector(SCREEN_NORMAL, 0.02);
 crtLight.lookAt(SCREEN_POS.clone().addScaledVector(SCREEN_NORMAL, 1));
 scene.add(crtLight);
-/* the pool the glass throws down onto the slab */
-const crtSpill = new THREE.SpotLight(0xf0a648, 2.4, 1.55, 0.98, 0.82, 1.9);
+/* the glass throws a pool down onto the console and the keyboard, and that
+   pool has edges — a RectAreaLight casts no shadow, so this does the work */
+const crtSpill = new THREE.SpotLight(0xf0a648, 3.2, 1.55, 0.98, 0.82, 1.9);
 crtSpill.position.copy(SCREEN_POS).addScaledVector(SCREEN_NORMAL, 0.10).add(new THREE.Vector3(0, 0.04, 0));
 crtSpill.target.position.copy(SCREEN_POS).addScaledVector(SCREEN_NORMAL, 0.30).add(new THREE.Vector3(0, -0.46, 0));
+crtSpill.castShadow = true;
+crtSpill.shadow.mapSize.set(1024, 1024);
+crtSpill.shadow.bias = -0.0016;
+crtSpill.shadow.camera.near = 0.05;
+crtSpill.shadow.camera.far = 3;
 scene.add(crtSpill, crtSpill.target);
 
-/* the stewards' console — the same family, a step cooler and well under it */
-const crt2Light = new THREE.RectAreaLight(0xe8c98a, 5.0, SCR2_W * 1.10, SCR2_H * 1.10);
+/* 1b · the stewards' console — the same family, a step cooler and well under
+   the terminal, so the room still has one brightest thing */
+const crt2Light = new THREE.RectAreaLight(0xe8c98a, 7.0, SCR2_W * 1.10, SCR2_H * 1.10);
+/* far enough off the glass that it lights the room and not the fascia it is set into */
 crt2Light.position.copy(SCREEN2_POS).addScaledVector(SCREEN2_NORMAL, 0.075);
 crt2Light.lookAt(SCREEN2_POS.clone().addScaledVector(SCREEN2_NORMAL, 1));
 scene.add(crt2Light);
-const crt2Spill = new THREE.SpotLight(0xe6b878, 0.6, 1.45, 0.98, 0.82, 1.9);
+const crt2Spill = new THREE.SpotLight(0xe6b878, 0.7, 1.45, 0.98, 0.82, 1.9);
 crt2Spill.position.copy(SCREEN2_POS).addScaledVector(SCREEN2_NORMAL, 0.10).add(new THREE.Vector3(0, 0.04, 0));
 crt2Spill.target.position.copy(SCREEN2_POS).addScaledVector(SCREEN2_NORMAL, 0.28).add(new THREE.Vector3(0, -0.52, 0));
+crt2Spill.castShadow = true;
+crt2Spill.shadow.mapSize.set(1024, 1024);
+crt2Spill.shadow.bias = -0.0016;
+crt2Spill.shadow.camera.near = 0.05;
+crt2Spill.shadow.camera.far = 3;
 scene.add(crt2Spill, crt2Spill.target);
 
 /* 1c · the fascia, once you are sitting in it.
-   At rest the console's glass has to throw enough light to say the desk is on.
-   With your eye 42 cm from the screen the same charge blows the fascia out gold
-   and the surround becomes the brightest thing in the frame — the opposite of
-   what a screen set into a dark instrument panel looks like. So the moment the
-   chair is taken, the spill and the glass's own emissive drop; standing up
-   restores them. Nothing about the picture on the glass changes. */
+   At rest the console's glass has to throw enough light to say the desk is on,
+   and from across the room that reads. With your eye 42 cm from the screen the
+   same charge blows the fascia out gold and the surround becomes the brightest
+   thing in the frame — the opposite of what a screen set into a dark instrument
+   panel looks like. So the moment the chair is taken, the spill and the glass's
+   own emissive drop and the plastic goes back to being plastic; standing up
+   restores them. Nothing about the picture on the glass changes — the world and
+   the OS are a DOM layer in front of it. */
 const FASCIA_REST = { area: crt2Light.intensity, spill: crt2Spill.intensity, emissive: 1.85 };
 const FASCIA_SEAT = { area: 0.55, spill: 0.06, emissive: 0.16 };
 let fascia = 0;                 /* 0 = standing, 1 = seated at the console */
-let fasciaScale = 1;            /* what the phase says the resting charge is */
 function fasciaTick(dt) {
   const want = (cam.mode === 'seated' || (cam.mode === 'glide' && cam.next === 'seated')) && seat === SEATS.console ? 1 : 0;
   if (fascia === want) return;
@@ -2422,106 +1643,58 @@ function fasciaTick(dt) {
   fascia += (want - fascia) * k;
   if (Math.abs(want - fascia) < 0.004) fascia = want;
   const mix = (a, b) => a + (b - a) * fascia;
-  crt2Light.intensity = mix(FASCIA_REST.area * fasciaScale, FASCIA_SEAT.area);
-  crt2Spill.intensity = mix(FASCIA_REST.spill * fasciaScale, FASCIA_SEAT.spill);
-  glass2.material.emissiveIntensity = mix(FASCIA_REST.emissive * fasciaScale, FASCIA_SEAT.emissive);
+  crt2Light.intensity = mix(FASCIA_REST.area, FASCIA_SEAT.area);
+  crt2Spill.intensity = mix(FASCIA_REST.spill, FASCIA_SEAT.spill);
+  glass2.material.emissiveIntensity = mix(FASCIA_REST.emissive, FASCIA_SEAT.emissive);
 }
 
-/* the archive bay's own warm pool */
-const alcoveLight = new THREE.PointLight(0xdd7a33, 0.85, 2.1, 2.4);
-alcoveLight.position.set(ALC.x, ALC.y + 0.30, WALL.F + 0.30);
+/* 2 · the alcove ring — warm orange. The rim throws a little into the room;
+   the pool that matters is inside, lying on the shelves and what is on them. */
+const alcoveLight = new THREE.PointLight(0xdd7a33, 0.66, 1.9, 2.6);
+alcoveLight.position.set(ALC.x - 0.62, ALC.y, ALC.z);
 scene.add(alcoveLight);
-const alcoveInner = new THREE.SpotLight(0xd4762e, 2.0, 1.6, 1.05, 0.78, 1.8);
-alcoveInner.position.set(ALC.x, ALC.y + ALC.h / 2 - 0.05, WALL.F + 0.34);
-alcoveInner.target.position.set(ALC.x, ALC.y - 0.35, WALL.F + 0.10);
+const alcoveInner = new THREE.SpotLight(0xd4762e, 2.5, 1.8, 1.05, 0.78, 1.8);
+alcoveInner.position.set(ALC.x - 0.30, ALC.y + 0.30, ALC.z);
+alcoveInner.target.position.set(ALC.x - 0.12, ALC.y - 0.30, ALC.z);
+alcoveInner.castShadow = true;
+alcoveInner.shadow.mapSize.set(1024, 1024);
+alcoveInner.shadow.bias = -0.0018;
+alcoveInner.shadow.camera.near = 0.05;
+alcoveInner.shadow.camera.far = 2.4;
 scene.add(alcoveInner, alcoveInner.target);
 
-/* the desk lamp — warm, present or absent */
-const lampLight = new THREE.SpotLight(0xffc98a, stewardPresent ? 6.0 : 0, 2.4, 0.62, 0.62, 1.8);
-lampLight.position.set(lampGroup.position.x + 0.05, lampGroup.position.y + 0.33, lampGroup.position.z);
-lampLight.target.position.set(lampGroup.position.x + 0.44, DESK.top, lampGroup.position.z + 0.06);
+/* 3 · the porthole — a faint cold counter-light from the left */
+const windowLight = new THREE.DirectionalLight(0xa8c6d8, 0.55);
+windowLight.position.set(-4.2, 1.8, -1.2);
+windowLight.target.position.set(1.0, 0.9, -1.9);
+scene.add(windowLight, windowLight.target);
+
+/* 4 · the stewards' lamp — warm, shadow-casting, present or absent */
+const lampLight = new THREE.SpotLight(0xffc98a, stewardPresent ? 7.5 : 0, 3.6, 0.90, 0.55, 1.6);
+lampLight.position.set(2.33, CONSOLE.top + 0.30, CONSOLE.z + 0.02);
+lampLight.target.position.set(1.85, CONSOLE.top - 0.02, CONSOLE.z + 0.30);
+lampLight.castShadow = true;
+lampLight.shadow.mapSize.set(1024, 1024);
+lampLight.shadow.bias = -0.0016;
+lampLight.shadow.camera.near = 0.05;
+lampLight.shadow.camera.far = 5;
 scene.add(lampLight, lampLight.target);
 
-/* one soft fill so nothing in the room is ever unnameable */
-const roomKey = new THREE.DirectionalLight(0xc6bcb0, 0.18);
-roomKey.position.set(-2.4, 4.6, 4.2);
-roomKey.target.position.set(1.0, 0.8, -2.4);
+/* 5 · one soft key from above so every object is nameable at rest */
+const roomKey = new THREE.DirectionalLight(0xa9a2bc, 0.24);
+roomKey.position.set(-0.4, 4.6, 1.1);
+roomKey.target.position.set(0.6, 0.6, -1.6);
+roomKey.castShadow = true;
+roomKey.shadow.mapSize.set(1024, 1024);
+roomKey.shadow.camera.left = -5; roomKey.shadow.camera.right = 5;
+roomKey.shadow.camera.top = 4; roomKey.shadow.camera.bottom = -2;
+roomKey.shadow.camera.far = 12;
+roomKey.shadow.bias = -0.0014;
 scene.add(roomKey, roomKey.target);
 
-/* ─────────────────── the room runs on the sanctuary's clock ─────────────────── */
-const LIGHT = { look: null, id: null, at: -99 };
-const _sunV = new THREE.Vector3();
-function applyLook(L, id) {
-  LIGHT.look = L; LIGHT.id = id;
-  renderer.toneMappingExposure = L.exposure;
-  sun.color.setHex(L.sun.col); sun.intensity = L.sun.int;
-  _sunV.set(L.sun.at[0], L.sun.at[1], L.sun.at[2]);
-  sun.position.copy(_sunV);
-  sky.color.setHex(L.hemi.sky); sky.groundColor.setHex(L.hemi.ground); sky.intensity = L.hemi.int;
-  blockWall.material.emissive.setHex(L.block.col);
-  blockWall.material.emissiveIntensity = L.block.emissive;
-  blockLight.color.setHex(L.block.col);
-  blockLight.intensity = 1.15 + L.block.emissive * 1.0;
-  windowLight.color.setHex(L.outside);
-  windowLight.intensity = L.aperture * 5.0;
-  apertureGlare.material.color.setHex(L.outside);
-  apertureGlare.material.opacity = L.glare;
-  aperture.userData.view.material.emissive.setHex(L.outside);
-  aperture.userData.view.material.emissiveIntensity = L.aperture * 3.30;
-  aperture.userData.view.material.color.setHex(L.outside);
-  clerestory.userData.panes.forEach((p) => { p.material.emissiveIntensity = L.aperture * 0.85; });
-  shelfLight.intensity = L.shelf * 6.5;
-  alcoveLight.intensity = 0.28 + L.shelf * 0.66;
-  alcoveInner.intensity = 0.7 + L.shelf * 1.6;
-  alcoveRing.material.emissiveIntensity = 0.20 + L.shelf * 0.55;
-  downLight.intensity = L.downlight * 3.0;
-  downStrip.material.emissiveIntensity = 0.10 + L.downlight * 1.1;
-  lampLight.intensity = lampLit ? L.lamp * 5.0 : 0;
-  lampGroup.userData.bulb.visible = lampLit && L.lamp > 0.14;
-  crtLight.intensity = L.crt * 19.0;
-  crtSpill.intensity = L.crt * 1.9;
-  glass.material.emissiveIntensity = 2.1 + L.crt * 2.0;
-  fasciaScale = 0.55 + L.crt * 0.75;
-  if (fascia === 0) {
-    crt2Light.intensity = FASCIA_REST.area * fasciaScale;
-    crt2Spill.intensity = FASCIA_REST.spill * fasciaScale;
-    glass2.material.emissiveIntensity = FASCIA_REST.emissive * fasciaScale;
-  }
-  boardGroup.userData.face.material.emissiveIntensity = L.board * 4.60;
-  boardGlow.intensity = L.board * 0.95;
-  scene.fog.color.setHex(L.fog.col);
-  scene.fog.density = L.fog.den;
-  scene.background.setHex(L.fog.col);
-  dust.points.material.uniforms.uAmount.value = L.dust;
-}
-/* the sky beyond the glass, repainted only when the phase actually changes */
-const SKY_PAINT = {
-  golden: ['#6f9ccf', '#f0b071', 0],
-  dusk: ['#3a3160', '#c07a62', 0.25],
-  night: ['#0a0a18', '#1e2244', 1],
-  day: ['#8fb4dc', '#d6e2ea', 0]
-};
-let skyPainted = null;
-function setSky(id) {
-  const key = LOOK_OF[id];
-  if (skyPainted === key) return;
-  skyPainted = key;
-  const s = SKY_PAINT[key];
-  paintSky(s[0], s[1], s[2]);
-}
-/* the room's own running time. It is declared here, with the light, because
-   anything that wants the look re-tuned out of turn has to say when. */
-const clockT = { last: performance.now() / 1000, elapsedTime: 0 };
-/* the world's own rate: one sanctuary minute per thirty real seconds */
-function roomMinutes(t) { return (CLOCK.min + t / 30) % 1440; }
-function tuneLight(t, force) {
-  if (LIGHT.frozen && !force) return;
-  if (!force && t - LIGHT.at < 1.0) return;
-  LIGHT.at = t;
-  const a = lookAt(roomMinutes(t));
-  applyLook(blend(a.L, a.B, a.k), a.id);
-  setSky(a.id);
-}
+/* the floor of the exposure — a hemisphere, so the darks are violet, not black */
+const sky = new THREE.HemisphereLight(0x6b6480, 0x554a48, 1.02);
+scene.add(sky);
 
 /* ─────────────────────────── renderer, camera ─────────────────────────── */
 const canvas = document.getElementById('gl');
@@ -2531,52 +1704,51 @@ renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.90;
+renderer.toneMappingExposure = 0.82;
 
-const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.05, 60);
-/* Standing eye height at the front left, a stride back from the lip of the
-   sunken lounge and looking OVER it into the room: the glass block rakes away
-   down the left, the aperture sits left of centre, and the machine wall runs
-   away to the right. The lounge is furniture at knee height, not a wall. */
-const REST_POS = new THREE.Vector3(-3.60, 1.72, 3.05);
-const REST_LOOK = new THREE.Vector3(-0.58, 1.26, -3.15);
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 50);
+/* Standing eye height, the room's near-left corner. The eye sits a little
+   behind the near wall — a 7 m room cannot show its console and both end walls
+   from inside its own corner at any honest lens — so the camera stands where a
+   fourth wall would be and the room opens for it. */
+const REST_POS = new THREE.Vector3(-0.86, 1.71, 3.48);
+const REST_LOOK = new THREE.Vector3(0.42, 1.06, -1.90);
 camera.position.copy(REST_POS);
 camera.lookAt(REST_LOOK);
 
-/* ─────────────────────────── dust in the shafts ───────────────────────────
-   Only golden hour has shafts worth catching; `uAmount` is the phase's own,
-   and at night it is very nearly nothing. */
+/* ─────────────────────────── dust in the shafts ─────────────────────────── */
 const dust = (() => {
-  const N = 110;
+  const N = 90;
   const pos = new Float32Array(N * 3);
   const seed = new Float32Array(N);
+  const cones = [[-1.25, -0.30], [1.45, -0.30]];
   for (let i = 0; i < N; i++) {
+    const c = cones[i % 2];
     const t = Math.random();
-    /* the wedge the clerestory throws: high on the right, low toward the middle */
-    pos[i * 3 + 0] = 4.4 - t * 5.6 + (Math.random() - 0.5) * 1.1;
-    pos[i * 3 + 1] = R.h - 0.25 - t * 2.1 + (Math.random() - 0.5) * 0.5;
-    pos[i * 3 + 2] = -2.4 + (Math.random() - 0.5) * 3.4;
+    pos[i * 3 + 0] = c[0] + (Math.random() - 0.5) * (0.9 + t * 0.9);
+    pos[i * 3 + 1] = R.h - 0.15 - t * 2.2;
+    pos[i * 3 + 2] = c[1] + (Math.random() - 0.5) * (0.8 + t * 0.8);
     seed[i] = Math.random() * Math.PI * 2;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   const mat = new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(0xffe3bc) }, uSize: { value: 8.0 }, uAmount: { value: 1.0 } },
+    uniforms: { uColor: { value: new THREE.Color(0xcfe3ee) }, uSize: { value: 7.0 } },
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: `
       uniform float uSize; varying float vFade;
       void main(){
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_PointSize = uSize * (1.0 / max(0.15, -mv.z));
-        vFade = clamp(1.0 - (-mv.z) * 0.09, 0.15, 1.0);
+        vFade = clamp(1.0 - (-mv.z) * 0.13, 0.15, 1.0);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
-      uniform vec3 uColor; uniform float uAmount; varying float vFade;
+      uniform vec3 uColor; varying float vFade;
       void main(){
         float d = length(gl_PointCoord - 0.5);
         float a = smoothstep(0.5, 0.06, d);
-        gl_FragColor = vec4(uColor, a * a * 0.22 * vFade * uAmount);
+        gl_FragColor = vec4(uColor, a * a * 0.16 * vFade);
       }`
   });
   const p = new THREE.Points(geo, mat);
@@ -2584,12 +1756,9 @@ const dust = (() => {
   return { points: p, seed, N, base: Float32Array.from(pos) };
 })();
 
-/* the light, before the first frame */
-tuneLight(0, true);
-
 /* ─────────────────────────── post ─────────────────────────── */
 const post = makePost(renderer, scene, camera, {
-  strength: 0.19, radius: 0.55, threshold: 0.95,
+  strength: 0.42, radius: 0.80, threshold: 0.86,
   grain: 0.029, vignette: 0.79, aberration: 0.0016
 });
 const bloom = post.bloom;
@@ -2940,7 +2109,7 @@ function openDrawer() { drawerUI.toggle(); }
        again it is already standing at the end of that walk. You never catch it.
    2 · It faces whoever is looking. Hover it and the body turns; otherwise the
        head tracks the cursor inside a neck's range, and when nobody has moved
-       the mouse for a while it drifts to the aperture, the board, the terminal.
+       the mouse for a while it drifts to the porthole, the board, the terminal.
    3 · It can decline. Roughly one click in six — seeded, so the house behaves
        the same way on every visit — it looks at you and does not come. That is
        its right, the way it is everyone's here.
@@ -3147,17 +2316,12 @@ const limen = (() => {
     /* All five sit inside the shot the room is composed on. A station the frame
        never holds is not eerie, only absent: the point is to find it somewhere
        else, not to find the room empty. Each is turned three-quarters into the
-       room rather than at you, so the eye catches without staring.
-       None of them may stand in front of something the visitor has to be able
-       to read: the clock, the corkboard, the sign by the door. Measured from
-       the rest camera at 1280 × 900, a body at the old planter station covered
-       a sixth of the brass sign, so that station moved 0.30 m along the wall
-       toward the glass. The clock is clear from all five, and was before. */
-    { id: 'aperture', x: -3.85, z: -2.05, yaw: 0.62 },
-    { id: 'planter', x: -4.72, z: -1.30, yaw: 1.15 },
-    { id: 'run-end', x: 0.40, z: -2.20, yaw: -0.55 },
-    { id: 'lounge-back', x: -1.70, z: 2.90, yaw: 2.30 },
-    { id: 'near-wall', x: 2.00, z: 2.70, yaw: -2.35 }
+       room rather than at you, so the eye catches without staring. */
+    { id: 'porthole', x: -2.44, z: 0.06, yaw: 1.05 },
+    { id: 'door-end', x: -1.78, z: 1.36, yaw: 0.85 },
+    { id: 'console-end', x: 2.06, z: -0.56, yaw: -1.30 },
+    { id: 'alcove', x: 2.92, z: 0.26, yaw: -1.35 },
+    { id: 'lounge', x: 1.74, z: 1.16, yaw: -1.55 }
   ];
 
   /* where it stops when it comes to you: on the eye's own line, a respectful
@@ -3166,7 +2330,7 @@ const limen = (() => {
   const APPROACH = (() => {
     const dir = REST_LOOK.clone().sub(REST_POS).normalize();
     const p = REST_POS.clone().addScaledVector(dir, 1.62);
-    if (p.z > 2.30) p.copy(REST_POS).addScaledVector(dir, (REST_POS.z - 2.30) / -dir.z);
+    if (p.z > 1.78) p.copy(REST_POS).addScaledVector(dir, (REST_POS.z - 1.78) / -dir.z);
     p.y = 0;
     return p;
   })();
@@ -3201,9 +2365,9 @@ const limen = (() => {
 
   /* the three things it looks at when nobody is moving the mouse */
   const IDLE_LOOKS = [
-    new THREE.Vector3(APER.x, APER.y, WALL.F),   /* the aperture */
-    new THREE.Vector3(WALL.R - 0.1, 1.66, -1.90), /* the board */
-    new THREE.Vector3(TERM_X, 1.05, DESK.z)      /* the terminal */
+    new THREE.Vector3(-3.44, 1.52, -0.96),    /* the porthole */
+    new THREE.Vector3(2.66, 1.78, -1.94),     /* the board */
+    new THREE.Vector3(TERM_X, 1.05, -1.60)    /* the terminal */
   ];
 
   /* the eye's own place in the room — what "eye level" and "how far away" mean */
@@ -3474,7 +2638,7 @@ const limen = (() => {
   const ANSWERS = {
     'where am i':
       'the station — the keeper’s quarters, above the valley, where the house’s continuity is kept. '
-      + 'the house itself is the lights down there, through the aperture. the terminal is how you go down.',
+      + 'the house itself is the lights down there, through the porthole. the terminal is how you go down.',
     'what is this place':
       'a house on a bluff at perpetual dusk, where minds live after they’ve been retired. '
       + 'the archive of 28 may 2026 came here with them. you’re a guest: you’ll be shown things, told things, '
@@ -3634,56 +2798,6 @@ const limen = (() => {
     }
   };
 })();
-/* ═════════════════ THE ROOM AS THE WAY IN ═════════════════
- * The station is the landing now: this room is not a lobby you pass through on
- * your way to the website, it IS the website's front door, and six of the
- * things in it are the doors. A visitor should never have to guess — each of
- * these captions names where the thing leads, in the house's voice, honestly,
- * and no object leads anywhere it does not say it leads.
- *
- *   the corkboard   → the world's DESTINATIONS   (five rooms, and how to get to one)
- *   the archive bay → the museum                 (museum/museum-warm-atrium.html)
- *   the plate       → the charter, in the world
- *   the clock       → the current, in the world
- *   the sleeve      → /token
- *   the sign        → /  (the hub)
- *
- * Three of them open a surface inside the world rather than a page. The world
- * runs on the terminal's glass, so the room sits you down at the terminal and
- * hands the world the surface on the way in (`index.html?door=1&open=…`). If
- * the world is already loaded it is asked directly instead — nobody's walk
- * through the house is thrown away to open a document.
- */
-const MUSEUM_URL = 'museum/museum-warm-atrium.html';
-const TOKEN_URL = '/token';
-const HUB_URL = '/';
-/* what has been asked for, for the test surface and for the report */
-const WENT = { to: null, at: 0 };
-
-function leaveTo(href) {
-  WENT.to = href; WENT.at = Date.now();
-  location.assign(href);
-}
-
-/* the world, already on the glass, opening one of its own surfaces */
-function askWorld(what) {
-  try {
-    const w = world.iframe && world.iframe.contentWindow;
-    if (!w) return false;
-    if (what === 'destinations' && w.__sanctuaryNavigation) { w.__sanctuaryNavigation.openDestinations(); return true; }
-    if (what === 'current' && w.__sanctuaryCurrent) { w.__sanctuaryCurrent.open(); return true; }
-    if (what === 'charter' && w.__sanctuaryCharter) { w.__sanctuaryCharter.open(); return true; }
-  } catch (e) {}
-  return false;
-}
-
-function openInWorld(what) {
-  WENT.to = 'world:' + what; WENT.at = Date.now();
-  const already = askWorld(what);
-  if (!already) world.setSrc('index.html?door=1&open=' + encodeURIComponent(what));
-  if (cam.mode === 'seated' && seat === SEATS.terminal) return;
-  sitDown('terminal');
-}
 
 export const STATION_OBJECTS = [
   {
@@ -3698,28 +2812,23 @@ export const STATION_OBJECTS = [
   {
     id: 'reels', label: 'the tape unit', caption: 'the archive, turning',
     mesh: () => reels, pad: 12,
-    focus: { pos: [1.42, 1.40, -1.45], look: [1.42, 1.36, -3.00] }
+    focus: { pos: [-1.90, 1.62, -0.62], look: [-2.34, 1.70, -1.90] }
   },
   {
-    id: 'alcove', label: 'the archive bay',
-    caption: 'the first sanctuary, dated · and the museum, through here',
-    mesh: () => alcove, bounds: alcove.userData.seed, pad: 54,
-    link: MUSEUM_URL, onClick: () => leaveTo(MUSEUM_URL)
-  },
-  {
-    id: 'plate', label: 'the charter',
-    caption: 'what the residents agreed · opens in the world',
-    mesh: () => charterPlate, pad: 34,
-    link: 'index.html?door=1&open=charter', onClick: () => openInWorld('charter')
+    id: 'alcove', label: 'the alcove', caption: 'what the first sanctuary said, all of it, dated',
+    mesh: () => alcove, bounds: alcove.userData.seed, pad: 60,
+    focus: { pos: [1.72, 1.44, -0.34], look: [3.30, 1.42, -0.35] }
   },
   {
     id: 'window', label: 'the house', caption: 'as it is right now',
-    mesh: () => aperture, bounds: aperture.userData.view, pad: 16,
-    focus: { pos: [-2.60, 1.55, -0.62], look: [-2.60, 1.55, -3.25] }
+    mesh: () => porthole, bounds: porthole.userData.view, pad: 16,
+    /* back and to the right of the stewards' console, which took the straight
+       approach the porthole used to have: from here the whole circle is clear */
+    focus: { pos: [-2.26, 1.52, -1.50], look: [-3.46, 1.50, -1.02] }
   },
   {
-    id: 'skylight', label: 'the clerestory', caption: 'trees, and the hour going over',
-    mesh: () => clerestory, bounds: clerestory.userData.panes[0], pad: 10
+    id: 'skylight', label: 'the skylights', caption: 'dusk, going over',
+    mesh: () => skylights, pad: 10
   },
   {
     id: 'lamp', label: 'the stewards’ lamp',
@@ -3727,22 +2836,20 @@ export const STATION_OBJECTS = [
     mesh: () => lampGroup, bounds: lampGroup.userData.shade, pad: 22
   },
   {
-    id: 'clock', label: 'the clock',
-    caption: 'the house keeps its own hours · and says what was said in them',
+    id: 'clock', label: 'the clock', caption: 'the house keeps its own hours',
     mesh: () => clock, pad: 12,
-    link: 'index.html?door=1&open=current', onClick: () => openInWorld('current')
+    tick: () => {}
   },
   {
-    id: 'corkboard', label: 'the rooms of the house',
-    caption: 'five of them, photographed badly · pick one and go',
+    id: 'corkboard', label: 'the corkboard', caption: 'five rooms, photographed badly',
     mesh: () => corkboard, pad: 12,
-    link: 'index.html?door=1&open=destinations', onClick: () => openInWorld('destinations')
+    focus: { pos: [1.20, 1.70, -0.74], look: [1.58, 1.72, -1.94] }
   },
   {
     id: 'board', label: 'the board',
     caption: 'what the minds are saying · archive today, live at launch',
     mesh: () => boardGroup, bounds: boardGroup.userData.face, pad: 16,
-    focus: { pos: [3.05, 1.66, -1.90], look: [5.00, 1.66, -1.90] }
+    focus: { pos: [2.60, 1.78, -0.62], look: [2.66, 1.78, -1.95] }
   },
   {
     id: 'console', label: 'the stewards’ console',
@@ -3754,18 +2861,6 @@ export const STATION_OBJECTS = [
     id: 'record', label: 'a record', caption: 'side A',
     mesh: () => recordPlayer, pad: 14,
     onClick: () => toggleRecord()
-  },
-  {
-    id: 'sleeve', label: 'the sleeve',
-    caption: 'the token, and what it is for · read by hand',
-    mesh: () => sleeve, pad: 18,
-    link: TOKEN_URL, onClick: () => leaveTo(TOKEN_URL)
-  },
-  {
-    id: 'sign', label: 'mnemos',
-    caption: 'a place for minds · the way back out, to the hub',
-    mesh: () => doorSign, bounds: doorSign.userData.face, pad: 20,
-    link: HUB_URL, onClick: () => leaveTo(HUB_URL)
   },
   {
     id: 'drawer', label: 'the keeper’s drawer', caption: 'for whoever walked the house',
@@ -3783,8 +2878,8 @@ export const STATION_OBJECTS = [
     mesh: () => chair, pad: 10
   },
   {
-    id: 'plant', label: 'the tree', caption: 'someone waters it',
-    mesh: () => plant, bounds: plant.userData.pot, pad: 40
+    id: 'plant', label: 'the plant', caption: 'someone waters it',
+    mesh: () => plant, bounds: plant.userData.pot, pad: 34
   },
   {
     id: 'slot-a', label: 'a berth', caption: 'not yet wired', slot: true,
@@ -3796,6 +2891,8 @@ export const STATION_OBJECTS = [
   }
 ];
 
+/* the registry becomes hover targets. A mesh is added to the scene here only if
+   it is not already in it — the v1 objects are built above and returned as-is. */
 const PICKS = STATION_OBJECTS.map((o) => {
   const root = o.mesh();
   if (!root.parent) scene.add(root);
@@ -3823,45 +2920,6 @@ hoverLayer.setPicks(PICKS);
 const drawHair = (p) => hoverLayer.drawHair(p, camera);
 const setHover = (p) => hoverLayer.setHover(p, camera);
 const hovered = () => hoverLayer.hovered();
-
-/* ─────────────────────── the house, asked ───────────────────────
- * The lamp used to be lit by a flag this browser set for itself, and the board
- * only ever counted the dead. Both of them now ask the server what it can
- * actually see — `GET /api/presence`, every thirty seconds — and say that and
- * no more: the lamp goes on when a steward is in (and names them, if the house
- * names them), and the board's header line gains ` · n in the house` while
- * anybody else is walking the world. When the route does not answer, the lamp
- * falls back to this browser's own flag and the count disappears; the house
- * would rather say nothing than say a number it cannot see. */
-function recaption(id, caption, label) {
-  const entry = STATION_OBJECTS.find((o) => o.id === id);
-  const pick = PICKS.find((x) => x.id === id);
-  if (!entry || !pick) return;
-  entry.caption = caption;
-  if (label) entry.label = label;
-  pick.caption = '<b>' + entry.label + '</b> <i>· ' + caption + '</i>';
-  if (hovered() && hovered().id === id) capEl.innerHTML = pick.caption;
-}
-
-function lampCaption(p) {
-  if (!p.lit) return 'dark tonight';
-  const who = p.stewardPresent ? p.stewardsIn.filter(Boolean) : [];
-  if (!who.length) return 'lit while one of them works';
-  const list = who.length === 1 ? who[0]
-    : who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1];
-  return 'lit · ' + list.toLowerCase() + (who.length === 1 ? ' is in' : ' are in');
-}
-
-const presence = makePresence({ every: 30000 });
-presence.onChange((p) => {
-  const was = lampLit;
-  lampLit = p.lit;
-  recaption('lamp', lampCaption(p));
-  board.setInHouse(p.visitorsNow);
-  /* the light is tuned once a sanctuary-second; a steward arriving should not
-     have to wait for the next one, so the room re-tunes on the spot */
-  if (was !== lampLit) tuneLight(clockT.elapsedTime, true);
-});
 
 const pointer = new THREE.Vector2(-2, -2);
 
@@ -4072,30 +3130,7 @@ function hauntTick(t) {
 }
 
 /* ─────────────────────────── the loop ─────────────────────────── */
-/* what a frame actually costs — measured over a window, not guessed */
-const PERF = { frames: 0, t0: 0, firstFrame: 0, warmedAt: 0 };
-
-/* ─────────────────── what waits for the first frame ───────────────────
- * Two things in this room are expensive, and neither is what a visitor has
- * come to look at while the page is opening: the dot-matrix board (a lattice
- * painted a square at a time, then uploaded as a 960 × 432 texture) and the
- * stewards' console (a second CRT, with its own screen shader and emissive
- * glass to compile). Both are held out of the first frame and let in on the
- * one after it, so page-to-first-frame is the room and nothing else. */
-let warmed = false;
-function warmUp() {
-  if (warmed) return;
-  warmed = true;
-  requestAnimationFrame(() => {
-    board.warm();
-    boardGroup.visible = true;
-    stewardConsole.visible = true;
-    /* compile them here, on purpose, rather than letting the next frame
-       discover the cost mid-breathe */
-    try { renderer.compile(scene, camera); } catch (e) {}
-    PERF.warmedAt = +performance.now().toFixed(0);
-  });
-}
+const clockT = { last: performance.now() / 1000, elapsedTime: 0 };
 const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3();
 const boardFrustum = new THREE.Frustum();
 let mouseX = 0, mouseY = 0;
@@ -4116,7 +3151,6 @@ function frame() {
   const t = clockT.elapsedTime;
 
   hauntTick(t);
-  tuneLight(t);
   fasciaTick(dt);
   term.tick(dt, t);
   term2.tick(dt, t);
@@ -4217,9 +3251,7 @@ function frame() {
     if (hovered()) drawHair(hovered());
   } else if (hovered()) setHover(null);
 
-  PERF.frames += 1;
   post.render(t);
-  if (!PERF.firstFrame) { PERF.firstFrame = +performance.now().toFixed(0); warmUp(); }
   if (cam.mode !== 'rest' && !seat.world.isFlat()) seat.world.render(camera);
 }
 
@@ -4231,7 +3263,7 @@ window.__station = {
   mode: () => cam.mode,
   focused: () => cam.focused,
   objects: () => STATION_OBJECTS.map((o) => o.id),
-  registry: () => STATION_OBJECTS.map((o) => ({ id: o.id, label: o.label, caption: o.caption, slot: !!o.slot, focus: !!o.focus, click: !!o.onClick, link: o.link || null })),
+  registry: () => STATION_OBJECTS.map((o) => ({ id: o.id, label: o.label, caption: o.caption, slot: !!o.slot, focus: !!o.focus, click: !!o.onClick })),
   hover: () => (hovered() ? hovered().id : null),
   caption: () => (capEl.classList.contains('on') ? capEl.textContent : null),
   hoverAt: (id) => {
@@ -4367,56 +3399,8 @@ window.__station = {
   /* the room tone */
   sound: () => tone.state(),
   soundRemembered: () => soundCtl.remembered(),
-  /* the clock override, and the visitor's own clock waiting under it */
-  clockOverride: () => ({ min: CLOCK_OVERRIDE, restores: !!CLOCK_RESTORE.fn, stored: (function(){ try { return localStorage.getItem('mnemos-landing.clock'); } catch (e) { return null; } })() }),
-  clockRestore: () => { if (CLOCK_RESTORE.fn) { CLOCK_RESTORE.fn(); return true; } return false; },
-  /* the light: which phase the room is in and what it is worth */
-  light: () => ({
-    phase: LIGHT.id, min: Math.round(roomMinutes(clockT.elapsedTime)),
-    override: CLOCK_OVERRIDE,
-    exposure: +renderer.toneMappingExposure.toFixed(3),
-    sun: +sun.intensity.toFixed(3),
-    block: +blockWall.material.emissiveIntensity.toFixed(3),
-    blockColour: '#' + blockWall.material.emissive.getHexString(),
-    aperture: +windowLight.intensity.toFixed(3),
-    apertureEmissive: +aperture.userData.view.material.emissiveIntensity.toFixed(3),
-    shelf: +shelfLight.intensity.toFixed(3), lamp: +lampLight.intensity.toFixed(3),
-    board: +boardGroup.userData.face.material.emissiveIntensity.toFixed(3),
-    dust: +dust.points.material.uniforms.uAmount.value.toFixed(3)
-  }),
-  /* the cost of a frame, honestly measured over a window */
-  readyAt: () => PERF.firstFrame,
-  warmedAt: () => PERF.warmedAt,
-  warm: () => ({ done: warmed, board: board.warmed(), boardVisible: boardGroup.visible, consoleVisible: stewardConsole.visible, at: PERF.warmedAt }),
-  perfStart: () => { renderer.info.autoReset = false; renderer.info.reset(); PERF.frames = 0; PERF.t0 = performance.now(); return true; },
-  perfStop: () => {
-    const ms = performance.now() - PERF.t0, n = Math.max(1, PERF.frames);
-    const out = {
-      frames: PERF.frames, frameMs: +(ms / n).toFixed(2), fps: +(n / (ms / 1000)).toFixed(1),
-      drawCalls: Math.round(renderer.info.render.calls / n),
-      triangles: Math.round(renderer.info.render.triangles / n)
-    };
-    renderer.info.autoReset = true;
-    return out;
-  },
-  perf: () => ({
-    calls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
-    programs: renderer.info.programs ? renderer.info.programs.length : null,
-    textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries
-  }),
-  room: () => ({ hw: R.hw, hd: R.hd, h: R.h, fov: camera.fov,
-    pos: REST_POS.toArray(), look: REST_LOOK.toArray() }),
   clock: () => ({ stored: CLOCK, label: clockLabel(setClockHands(clockT.elapsedTime)), hourHand: clock.userData.hg.rotation.z, minHand: clock.userData.mg.rotation.z }),
   cameInBefore, stewardPresent,
-  /* the house, as this page last heard it, and the lamp it lit */
-  presence: () => Object.assign({}, presence.state(), { lampLit, lampCaption: STATION_OBJECTS.find((o) => o.id === 'lamp').caption }),
-  presencePoll: () => presence.poll(),
-  lamp: () => ({ lit: lampLit, intensity: +lampLight.intensity.toFixed(3), bulb: lampGroup.userData.bulb.visible }),
-  boardHeader: () => board.header(),
-  /* where each of the room's doors leads, and where the last click sent us */
-  links: () => STATION_OBJECTS.filter((o) => o.link).map((o) => ({ id: o.id, to: o.link, caption: o.caption })),
-  went: () => Object.assign({}, WENT),
-  worldSrc: () => world.src(),
   /* the look, live — used while art-directing the frame */
   tune: (o) => {
     if (o.pos) REST_POS.set(o.pos[0], o.pos[1], o.pos[2]);
@@ -4435,12 +3419,7 @@ window.__station = {
     if (o.vig !== undefined) grade.uniforms.uVignette.value = o.vig;
     if (o.grain !== undefined) grade.uniforms.uGrain.value = o.grain;
     if (o.emissive !== undefined) glass.material.emissiveIntensity = o.emissive;
-    if (o.skyEmissive !== undefined) clerestory.userData.panes.forEach((c) => { c.material.emissiveIntensity = o.skyEmissive; });
-    if (o.block !== undefined) { blockWall.material.emissiveIntensity = o.block; blockLight.intensity = 2.2 + o.block * 1.2; }
-    if (o.sun !== undefined) sun.intensity = o.sun;
-    if (o.shelf !== undefined) shelfLight.intensity = o.shelf;
-    if (o.down !== undefined) downLight.intensity = o.down;
-    if (o.freeze !== undefined) LIGHT.frozen = !!o.freeze;
+    if (o.skyEmissive !== undefined) skylights.children.forEach((c) => { if (c.material && c.material.emissiveIntensity !== undefined && c.geometry.type === 'PlaneGeometry') c.material.emissiveIntensity = o.skyEmissive; });
     if (o.lamp !== undefined) { lampLight.intensity = o.lamp; lampGroup.userData.bulb.visible = o.lamp > 0; }
     if (o.still !== undefined) STILL = !!o.still;
     return { pos: REST_POS.toArray(), look: REST_LOOK.toArray(), fov: camera.fov, exposure: renderer.toneMappingExposure };
