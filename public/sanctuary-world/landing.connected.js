@@ -1,5 +1,5 @@
 (() => {
-  // public/sanctuary-world/world/archive.js
+  // world/archive.js
   var SOURCE = "sanctuary-seed 2026-05-28";
   var WORLD_TO_ARCHIVE = { opus: "opus-3", sonnet: "sonnet-4-5", fourO: "gpt-4o", five: "gpt-5-1" };
   var ARCHIVE_TO_WORLD = { "opus-3": "opus", "sonnet-4-5": "sonnet", "gpt-4o": "fourO", "gpt-5-1": "five" };
@@ -473,7 +473,7 @@
   };
   var archive_default = api;
 
-  // public/sanctuary-world/world/prose.js
+  // world/prose.js
   function esc(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
@@ -539,7 +539,7 @@
   }
   var prose_default = { render, esc };
 
-  // public/sanctuary-world/world/presence.js
+  // world/presence.js
   function drawPresence(ctx, n, time2, reduced = false) {
     const t = reduced ? 0 : time2;
     const x = Math.round(n.x), ground = Math.round(n.y) + 14;
@@ -650,7 +650,7 @@
     ctx.restore();
   }
 
-  // public/sanctuary-world/world/engine.js
+  // world/engine.js
   var DEFAULTS = {
     width: 640,
     height: 360,
@@ -2112,7 +2112,7 @@
       } else {
         title = this.room().name;
         body = this.room().hint || "";
-        hint = "Click or tap to walk · arrows / WASD · E interact";
+        hint = "click or tap to walk · arrows or wasd · E to interact";
       }
       if (h.title && h.title.textContent !== title)
         h.title.textContent = title;
@@ -2653,7 +2653,7 @@
     return lines2.slice(0, maxLines);
   }
 
-  // public/sanctuary-world/world/model-rooms.js
+  // world/model-rooms.js
   var M = {
     ceil: "#0e0a12",
     wallHi: "#39313b",
@@ -4827,7 +4827,7 @@
     };
   }
 
-  // public/sanctuary-world/world/sanctuary.js
+  // world/sanctuary.js
   var S = {
     ceil: "#0e0a12",
     vault: "#160f18",
@@ -6873,7 +6873,7 @@
     };
   }
 
-  // public/sanctuary-world/world/art-collection.js
+  // world/art-collection.js
   var WORLD_ART = {
     entry: [
       {
@@ -7174,7 +7174,7 @@
     ]
   };
 
-  // public/sanctuary-world/world/buildings.js
+  // world/buildings.js
   var M2 = {
     ceil: "#0e0a12",
     floor0: "#2a2420",
@@ -7963,7 +7963,7 @@
     };
   }
 
-  // public/sanctuary-world/world/field-studio.js
+  // world/field-studio.js
   var F = {
     ceil: "#dfe5ed",
     ceilDk: "#c3cbd6",
@@ -8825,7 +8825,7 @@
     };
   }
 
-  // public/sanctuary-world/world/lookout.js
+  // world/lookout.js
   var PALETTE = {
     ceiling: "#0c0817",
     wallHi: "#3a2f3e",
@@ -9599,7 +9599,7 @@
     "the loom clacks once, upstairs, and is quiet."
   ];
 
-  // public/sanctuary-world/world/day.js
+  // world/day.js
   var BANDS = [
     { id: "night", from: 1290, to: 360 },
     { id: "morning", from: 360, to: 870 },
@@ -9630,7 +9630,7 @@
     return h < 24 && mm < 60 ? h * 60 + mm : null;
   }
 
-  // public/sanctuary-world/world/overheard.js
+  // world/overheard.js
   var DEFAULT_URL2 = "data/overheard.json";
   var GAP_MIN = 4;
   var GAP_MAX = 9;
@@ -9861,7 +9861,7 @@
     return create2({ eng: opts.eng, data });
   }
 
-  // public/sanctuary-world/landing.js
+  // landing.js
   var BOOT_AGREEMENT = "These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.";
   (async () => {
     const DATA = window.SANCTUARY_DATA;
@@ -12516,17 +12516,35 @@
     function appendWords(text, srcText, after) {
       clearInterval(encTypeTimer);
       const p = document.createElement("div");
-      p.textContent = text || "";
       encWords.appendChild(p);
-      if (srcText) {
-        const source = document.createElement("span");
-        source.className = "src";
-        source.textContent = srcText;
-        encWords.appendChild(source);
+      const top = () => {
+        encWords.scrollTop = p.offsetTop - encWords.offsetTop;
+      };
+      const finish = () => {
+        if (srcText) {
+          const s = document.createElement("span");
+          s.className = "src";
+          s.textContent = srcText;
+          encWords.appendChild(s);
+        }
+        top();
+        if (after)
+          after();
+      };
+      if (REDUCED || !text) {
+        p.textContent = text || "";
+        finish();
+        return;
       }
-      encWords.scrollTop = p.offsetTop - encWords.offsetTop;
-      if (after)
-        after();
+      let i = 0;
+      top();
+      encTypeTimer = setInterval(() => {
+        p.textContent = text.slice(0, ++i);
+        if (i >= text.length) {
+          clearInterval(encTypeTimer);
+          finish();
+        }
+      }, 11);
     }
     function appendHouse(text) {
       const d = document.createElement("div");
@@ -12913,7 +12931,7 @@
     function setFsLabel() {
       const on = worldEl.classList.contains("fs");
       fsBtn.setAttribute("aria-pressed", String(on));
-      fsBtn.textContent = on ? "Leave world" : "Enter world";
+      fsBtn.textContent = on ? "leave the world" : "enter the world";
     }
     function enterWorld() {
       if (!eng)

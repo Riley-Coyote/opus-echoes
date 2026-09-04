@@ -810,20 +810,25 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 .lede{font-size:22px;line-height:1.5;max-width:650px;margin-top:20px}
 .lede--em{font-size:18px;margin-top:8px;color:#c3b9b5}
 .arrival{display:flex;align-items:center;gap:28px;margin-top:28px;flex-wrap:wrap}
-.arrival__enter{display:flex;align-items:center;gap:40px;min-height:52px;padding:13px 20px;border:1px solid #ece1c9;background:#e5dcc8;color:#231f23;font:500 13px var(--mono);cursor:pointer;border-radius:2px;transition:background .2s}
-.arrival__enter:hover{background:#fff3d9}
+/* the door on the page: a flat object in the house's own language — a
+   subtle fill, one hairline, a lit top edge. Never a bright slab. */
+.arrival__enter{display:inline-flex;align-items:center;gap:28px;min-height:48px;padding:12px 18px;
+  border:1px solid var(--line2);background:var(--control);color:var(--ink);
+  box-shadow:inset 0 1px 0 rgba(242,236,223,.10);
+  font:500 12px var(--mono);letter-spacing:.06em;cursor:pointer;
+  transition:background .2s var(--ease-out),border-color .2s var(--ease-out)}
+.arrival__enter:hover{background:var(--control-hover);border-color:rgba(242,236,223,.42)}
+.arrival__enter:focus-visible{outline:none;border-color:rgba(242,236,223,.55)}
 .arrival__enter:disabled{opacity:.5;cursor:wait}
-.arrival__enter span{font-size:20px}
-.arrival__about{color:#ddd4c5;text-decoration:none;font-size:11px;padding:12px 0;border-bottom:1px solid #8a7c7466}
-.arrival__note{font:10px/1.6 var(--mono);color:#bfb3ae;margin-top:12px}
-.cab,.feed{border-radius:3px;border-color:#b4a69440;backdrop-filter:none}
+.arrival__enter span{font-size:16px;color:var(--dim)}
+.cab,.feed{border-radius:0;border-color:#b4a69440;backdrop-filter:none}
 .world{gap:12px}
 .cab__stage>canvas{cursor:crosshair;touch-action:manipulation}
 .cab__hud{min-height:0;padding:12px 16px}
 .cab__hudbody{min-height:0;font-size:16px;margin-top:6px;max-width:90ch}
 .cab__hudhint{display:block;font-size:10px;margin-top:6px}
 .cab__live{display:none!important}
-.tbtn{border-radius:3px;min-height:40px;background:transparent;border-color:transparent;text-transform:none}
+.tbtn{border-radius:0;min-height:40px;background:transparent;border-color:transparent}
 .tbtn:hover,.tbtn:focus-visible{background:#ffffff0a;border-color:#b4a69455}
 #mapbtn{border-color:#b4a69455;color:#e5dcc8}
 .scanlines{opacity:.065}
@@ -854,14 +859,13 @@ html.exploring,html.exploring body{overflow:hidden}
 .visit__x{min-height:40px;padding:8px 12px;font-size:10px}
 .visit__moves button{min-height:40px}
 .veil,.fieldveil{background:#0b0d1273;backdrop-filter:blur(3px)}
-.dest,.fv{padding-top:48px;border-radius:4px;border-color:#b4a69455;background:#17171c}
-.reader-close{position:absolute;right:12px;top:6px;min-height:36px;max-width:90%;padding:8px 12px;color:#e9e1d3;background:#ffffff08;border:1px solid #b4a69444;border-radius:3px;font:11px var(--mono);cursor:pointer}
+.dest,.fv{padding-top:48px;border-radius:0;border-color:#b4a69455;background:#17171c}
+.reader-close{position:absolute;right:12px;top:6px;min-height:36px;max-width:90%;padding:8px 12px;color:#e9e1d3;background:#ffffff08;border:1px solid #b4a69444;border-radius:0;font:11px var(--mono);cursor:pointer}
 .reader-close:hover{background:#ffffff14}
 .reader-shelf{display:none}
 .cur__read{font-size:14px;line-height:1.75;overscroll-behavior:contain}
 .cur__head{font-size:9px;line-height:1.65;color:#bdb7af}
 .dest-foot{font-size:9px}
-button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid #e7d9b7;outline-offset:3px}
 @media(max-width:1100px){
  .world.fs:not(.nofeed){grid-template-columns:minmax(0,1fr)}
  .world.fs:not(.nofeed) .feed{position:absolute;right:16px;top:115px;bottom:90px;width:min(360px,calc(100% - 32px));height:auto;z-index:20;box-shadow:0 20px 60px #0009;background:#15161bf5}
@@ -872,8 +876,7 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
  .hero__head{margin-bottom:26px}
  .wordmark{font-size:clamp(21px,6vw,40px);line-height:1.3}
  .lede{font-size:21px}.lede br{display:none}.lede--em{font-size:17px}
- .arrival{gap:12px;margin-top:23px}.arrival__enter{justify-content:space-between;width:100%}.arrival__about{padding:8px 0}
- .arrival__note{font-size:9px}
+ .arrival{gap:12px;margin-top:23px}.arrival__enter{justify-content:space-between;width:100%}
  .world:not(.fs) .cab__hud{display:none}
  .world:not(.fs) .compass .action,.world:not(.fs) .compass .tools{display:none}
  .world:not(.fs) .dpad,.world:not(.fs) .ebtn{display:none}

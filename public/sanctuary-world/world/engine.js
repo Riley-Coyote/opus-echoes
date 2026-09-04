@@ -969,7 +969,7 @@ export class Sanctuary {
       title = it.label || this.room().name; body = this.typed || it.hint || '';
       hint = (it.kind === 'door' || it.kind === 'portal') ? '[E] enter' : '[E] ' + (it.action || 'inspect');
       cta = it.action || ((it.kind === 'door' || it.kind === 'portal') ? 'enter' : 'inspect');
-    } else { title = this.room().name; body = this.room().hint || ''; hint = 'Click or tap to walk · arrows / WASD · E interact'; }
+    } else { title = this.room().name; body = this.room().hint || ''; hint = 'click or tap to walk \u00b7 arrows or wasd \u00b7 E to interact'; }
     if (h.title && h.title.textContent !== title) h.title.textContent = title;
     if (h.body) h.body.textContent = body;
     if (h.hint) h.hint.textContent = hint;

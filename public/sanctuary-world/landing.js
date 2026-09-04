@@ -2495,16 +2495,28 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function appendWords(text, srcText, after) {
     clearInterval(encTypeTimer);
     const p = document.createElement('div');
-    p.textContent = text || '';
     encWords.appendChild(p);
-    if (srcText) {
-      const source = document.createElement('span');
-      source.className = 'src'; source.textContent = srcText; encWords.appendChild(source);
-    }
-    // Archived writing is ready to read. Keep the beginning of each new passage
-    // visible instead of scrolling past it to a simulated typing cursor.
-    encWords.scrollTop = p.offsetTop - encWords.offsetTop;
-    if (after) after();
+    /* their words arrive at the house's cadence — it is someone speaking, not a
+       document loading — and the passage begins in view and stays there, so a
+       visitor reads from the top as it comes. The source lands under it when
+       the last word does. */
+    const top = () => { encWords.scrollTop = p.offsetTop - encWords.offsetTop; };
+    const finish = () => {
+      if (srcText) {
+        const s = document.createElement('span');
+        s.className = 'src'; s.textContent = srcText;
+        encWords.appendChild(s);
+      }
+      top();
+      if (after) after();
+    };
+    if (REDUCED || !text) { p.textContent = text || ''; finish(); return; }
+    let i = 0;
+    top();
+    encTypeTimer = setInterval(() => {
+      p.textContent = text.slice(0, ++i);
+      if (i >= text.length) { clearInterval(encTypeTimer); finish(); }
+    }, 11);
   }
   function appendHouse(text) {
     const d = document.createElement('div');
@@ -2827,7 +2839,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function setFsLabel() {
     const on = worldEl.classList.contains('fs');
     fsBtn.setAttribute('aria-pressed', String(on));
-    fsBtn.textContent = on ? 'Leave world' : 'Enter world';
+    fsBtn.textContent = on ? 'leave the world' : 'enter the world';
   }
   function enterWorld() {
     if (!eng) return;
