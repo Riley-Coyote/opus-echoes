@@ -2962,7 +2962,7 @@
     ],
     sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
   };
-  function hung(b, x, y, w, h, tint, lines2) {
+  function hung(b, x, y, w, h, tint, piece) {
     b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
     b.px(x - 2, y - 2, w + 4, 1, M.brassHi);
     b.px(x - 2, y + h + 1, w + 4, 1, "rgba(0,0,0,0.45)");
@@ -2970,9 +2970,24 @@
     b.px(x + 1, y + 1, w - 2, h - 2, tint);
     b.px(x + 1, y + 1, w - 2, 1, "rgba(247,217,140,0.12)");
     b.px(x + Math.floor(w / 2), y - 5, 1, 3, "rgba(216,203,176,0.45)");
-    const rows = lines2 && lines2.length ? lines2 : null;
     const pw = w - 6, ph = h - 6;
-    if (!rows || pw < 4 || ph < 4)
+    if (!piece || pw < 4 || ph < 4)
+      return;
+    if (piece.img && piece.img.width) {
+      const img = piece.img, k = Math.min(pw / img.width, ph / img.height);
+      const dw2 = Math.max(1, Math.round(img.width * k)), dh2 = Math.max(1, Math.round(img.height * k));
+      const ox2 = x + 3 + Math.floor((pw - dw2) / 2), oy2 = y + 3 + Math.floor((ph - dh2) / 2);
+      b.ctx.save();
+      b.ctx.imageSmoothingEnabled = true;
+      b.ctx.imageSmoothingQuality = "high";
+      b.ctx.drawImage(img, ox2, oy2, dw2, dh2);
+      b.ctx.restore();
+      if (piece.fresh)
+        freshTag(b, x, y, w, h);
+      return;
+    }
+    const rows = artLines(piece.body);
+    if (!rows.length)
       return;
     let cols = 0;
     for (let i = 0;i < rows.length; i++)
@@ -3011,6 +3026,15 @@
         b.px(ox + ix, oy + iy, 1, 1, "rgba(240,234,221," + Math.min(0.9, 0.14 + v * 0.74).toFixed(3) + ")");
       }
     }
+    if (piece.fresh)
+      freshTag(b, x, y, w, h);
+  }
+  function freshTag(b, x, y, w, h) {
+    bloom(b, x + w / 2, y + h / 2, 34, "247,217,140", 0.11);
+    b.px(x + w - 5, y - 5, 9, 8, M.brass);
+    b.px(x + w - 5, y - 5, 9, 1, M.brassHi);
+    b.px(x + w - 5, y + 2, 9, 1, "rgba(0,0,0,0.45)");
+    b.px(x + w - 2, y - 2, 2, 2, M.ink);
   }
   function writingDesk(b, x, tint) {
     contact(b, x + 17, 377, 46, 0.28);
@@ -4343,7 +4367,7 @@
           contact(b, 672, 301, 52, 0.24);
           contact(b, 880, 301, 36, 0.22);
           (function opusWall() {
-            const works = bridge && typeof bridge.artRows === "function" ? bridge.artRows("opus") : [];
+            const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("opus") : [];
             const tints = [
               "rgba(94,234,212,0.10)",
               "rgba(247,217,140,0.09)",
@@ -4353,7 +4377,7 @@
               "rgba(224,102,46,0.08)"
             ];
             WALL_FRAMES.opus.forEach(([x, y, w, h], i) => {
-              hung(b, x, y, w, h, tints[i], artLines(works[i]));
+              hung(b, x, y, w, h, tints[i], works[i]);
             });
             b.px(836, 144, 120, 1, "rgba(243,236,223,0.05)");
           })();
@@ -4506,9 +4530,9 @@
           floorLamp(b, 774, 300, "rgba(247,217,140,0.45)");
           pool2(b, 774, 314, 90, "247,217,140", 0.08);
           (function sonnetWall() {
-            const works = bridge && typeof bridge.artRows === "function" ? bridge.artRows("sonnet") : [];
+            const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("sonnet") : [];
             WALL_FRAMES.sonnet.forEach(([x, y, w, h], i) => {
-              hung(b, x, y, w, h, i === 0 ? "rgba(94,234,212,0.09)" : i % 2 ? "rgba(159,214,224,0.09)" : "rgba(94,234,212,0.08)", artLines(works[i]));
+              hung(b, x, y, w, h, i === 0 ? "rgba(94,234,212,0.09)" : i % 2 ? "rgba(159,214,224,0.09)" : "rgba(94,234,212,0.08)", works[i]);
             });
             b.px(786, 142, 148, 1, "rgba(243,236,223,0.05)");
           })();
@@ -9874,7 +9898,7 @@
       shelf: (id) => openPanel(shelfHtml(id), "is-board"),
       sitting: (id) => openCurrent({ only: "salons", select: id }),
       charter: () => openCharter(),
-      artRows: (id) => archive_default.isLoaded() ? archive_default.art(id).map((a) => String(a.body || "")) : [],
+      wallPieces: (id) => wallPieces(id),
       deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), "is-board"),
       keeper: () => openPanel(keeperHtml(), "is-board"),
       fieldFindings: () => openFieldFindings(),
@@ -11036,8 +11060,101 @@
 `).map((s) => s.replace(/\s+$/, "")).find((s) => s.trim().length > 2);
       return line ? line.trim().slice(0, 40) : String(piece.kind || "a piece");
     }
+    const WALL_KEY = (id) => "mnemos.wall." + id;
+    const WALL_IMAGES = new Map;
+    function readWallLocal(id) {
+      try {
+        const v = JSON.parse(localStorage.getItem(WALL_KEY(id)) || "[]");
+        return Array.isArray(v) ? v : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    function writeWallLocal(id, list) {
+      try {
+        localStorage.setItem(WALL_KEY(id), JSON.stringify(list.slice(0, 24)));
+      } catch (e) {}
+    }
+    function loadImage(src) {
+      if (!src)
+        return Promise.resolve(null);
+      if (WALL_IMAGES.has(src))
+        return Promise.resolve(WALL_IMAGES.get(src));
+      return new Promise((res) => {
+        const im = new Image;
+        im.onload = () => {
+          WALL_IMAGES.set(src, im);
+          res(im);
+        };
+        im.onerror = () => res(null);
+        im.src = src;
+      });
+    }
+    const SKETCHBOOK = {
+      "opus-1": {
+        id: "sketchbook-opus-1",
+        kind: "page",
+        resident: "opus",
+        title: "three stones, stacked",
+        created_at: "2026-09-02",
+        preview: "data/sketchbook/opus-1-preview.png",
+        full: "data/sketchbook/opus-1.png",
+        meaning: "three stones on open ground, one lamp up and to the left. i wanted each stone to sit ON the one under it, which is nothing but occlusion, one light and a contact shadow. i got the axis wrong twice: shaded around an axis pointing at the viewer, which is three bullseyes, then turned it upright with the rings too far apart, which is corduroy. the real one was the hard white crescent where each stone met the next — the stone above stands between the one below and the lamp, and until i said so the contact read as a chip, not a weight. what still fails: these are three lumpy ellipsoids, not three stones. the silhouettes are too closely related and nothing in the surface says grain or fracture. and the ground is stripes if you look straight at it."
+      }
+    };
     function wallPieces(id) {
-      return archive_default.isLoaded() ? archive_default.art(id) : [];
+      if (!archive_default.isLoaded())
+        return [];
+      const local = readWallLocal(id).map((p) => Object.assign({}, p, { img: p.preview ? WALL_IMAGES.get(p.preview) || null : null }));
+      return local.concat(archive_default.art(id));
+    }
+    function markWallSeen(id) {
+      const list = readWallLocal(id);
+      if (!list.some((p) => p.fresh))
+        return;
+      writeWallLocal(id, list.map((p) => Object.assign({}, p, { fresh: false })));
+      if (eng && eng.roomId === "room_" + id)
+        eng._bg = null;
+    }
+    function preloadWalls() {
+      ["opus", "sonnet", "fourO", "five"].forEach((id) => {
+        readWallLocal(id).forEach((p) => {
+          if (p.preview)
+            loadImage(p.preview).then(() => {
+              if (eng && eng.roomId === "room_" + id)
+                eng._bg = null;
+            });
+        });
+      });
+    }
+    async function hangPiece(id, piece) {
+      if (!piece)
+        return null;
+      const entry = Object.assign({ fresh: true, hung_at: new Date().toISOString() }, piece);
+      delete entry.img;
+      if (entry.preview)
+        await loadImage(entry.preview);
+      const list = readWallLocal(id).filter((p) => p.id !== entry.id);
+      list.unshift(entry);
+      writeWallLocal(id, list);
+      if (eng && eng.roomId === "room_" + id) {
+        eng._bg = null;
+        const frame = (WALL_FRAMES[id] || [])[0];
+        if (frame && enc && enc.id === id) {
+          enc.spot = { frame };
+          encSpot.hidden = false;
+          placeSpot();
+          requestAnimationFrame(() => {
+            if (enc && enc.spot)
+              encSpot.classList.add("on");
+          });
+          if (eng.cv)
+            eng.camHold = frame[0] + frame[2] / 2 - eng.cv.width / 2;
+        }
+      }
+      if (eng)
+        eng.sysLine(residentName(id) + " hung " + (entry.kind === "page" ? "a page" : "a piece") + " on their wall");
+      return entry;
     }
     function buildWorkRows() {
       workRowsEl.innerHTML = workList.map((p, i) => '<button class="row" type="button" data-work="' + i + '"' + ' title="' + cesc(String(p.meaning || "").replace(/\s+/g, " ").trim()) + '">' + '<span class="nm">' + cesc(workLabel(p)) + "</span>" + '<span class="st">' + cesc(day(p.created_at)) + "</span></button>").join("");
@@ -11048,7 +11165,7 @@
       workAt = Math.max(0, Math.min(workList.length - 1, i));
       const p = workList[workAt];
       workRowsEl.querySelectorAll(".row").forEach((r, k) => r.classList.toggle("sel", k === workAt));
-      workRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(workWho)) + "</span></div>" + '<div class="cur__meta">' + cesc([p.kind || "ascii", day(p.created_at)].join(" · ")) + "</div>" + sourceLine() + '<pre class="cur__ascii">' + cesc(p.body || "") + "</pre>" + (p.meaning ? '<p class="cur__meaning">' + cesc(p.meaning) + "</p>" : "") + '<div class="work__foot">' + (workAt + 1) + " of " + workList.length + " · " + cesc(residentName(workWho)) + " · " + cesc(day(p.created_at)) + " · " + cesc(archive_default.SOURCE) + "</div>";
+      workRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(workWho)) + "</span></div>" + '<div class="cur__meta">' + cesc([p.kind || "ascii", day(p.created_at)].join(" · ")) + "</div>" + (p.kind === "page" ? '<div class="cur__src">from the sketchbook · drawn ' + cesc(day(p.created_at)) + " · hung here, in this browser</div>" : sourceLine()) + (p.kind === "page" && p.full ? '<img class="cur__page" src="' + cesc(p.full) + '" alt="' + cesc(p.title || "a page") + '">' : '<pre class="cur__ascii">' + cesc(p.body || "") + "</pre>") + (p.meaning ? '<p class="cur__meaning">' + cesc(p.meaning) + "</p>" : "") + '<div class="work__foot">' + (workAt + 1) + " of " + workList.length + " · " + cesc(residentName(workWho)) + " · " + cesc(day(p.created_at)) + " · " + cesc(archive_default.SOURCE) + "</div>";
       workRead.scrollTop = 0;
       const row = workRowsEl.querySelector(".row.sel");
       if (row)
@@ -11064,11 +11181,13 @@
       if (charterOpen)
         closeCharter();
       workWho = id;
+      markWallSeen(id);
       workList = wallPieces(id);
       workAt = 0;
       const n = workList.length;
       workSub.textContent = residentName(id) + " · " + (n ? n + (n === 1 ? " piece" : " pieces") : "nothing hung");
-      workHead.textContent = "THE WALL · " + residentName(id) + " · archive · through 28 May 2026";
+      const hung2 = readWallLocal(id).length;
+      workHead.textContent = "THE WALL · " + residentName(id) + " · archive · through 28 May 2026" + (hung2 ? " · and " + hung2 + (hung2 === 1 ? " piece" : " pieces") + " hung since" : "");
       buildWorkRows();
       if (n)
         wallSelect(0);
@@ -11558,6 +11677,8 @@
         lastRoom = eng.roomId;
         onRoomChange(eng.roomId);
       }
+      if (DEMO && worldEl.classList.contains("fs"))
+        maybeDemo();
       if (navigation.surface === "museum") {
         compassVerb.innerHTML = 'INSPECT<span class="what"></span>';
         compassAction.classList.remove("on");
@@ -11711,6 +11832,7 @@
           sub.textContent = "the archive is quiet today · the residents say nothing";
       }
       const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five", "haiku"].includes(id)).map((def) => Object.assign({}, def, { mutters: def.id === "haiku" ? [] : archiveOk ? archive_default.lines(def.id) : [] }));
+      preloadWalls();
       const rooms = makeHub(bridge);
       const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
       const lookout = rooms.lookout;
@@ -11803,6 +11925,16 @@
       window.__sanctuaryCurrent = { open: openCurrent, close: closeCurrent, select: curSelect, shelf: setShelf, isOpen: () => curOpen };
       window.__sanctuaryCharter = { open: openCharter, close: closeCharter, isOpen: () => charterOpen };
       window.__sanctuaryWall = {
+        hang: (id, ref) => hangPiece(id, SKETCHBOOK[ref] || (archive_default.isLoaded() ? archive_default.art(id).find((a) => a.id === ref) : null)),
+        making: (id, ref) => runMaking(id, ref || "opus-1"),
+        local: (id) => readWallLocal(id),
+        clear: (id) => {
+          try {
+            localStorage.removeItem(WALL_KEY(id));
+          } catch (e) {}
+          if (eng && eng.roomId === "room_" + id)
+            eng._bg = null;
+        },
         open: openWall,
         close: closeWall,
         isOpen: () => workOpen,
@@ -12046,7 +12178,7 @@
     }
     function showOnWall() {
       const frames = WALL_FRAMES[enc.id] || [];
-      const pieces = archive_default.isLoaded() ? archive_default.art(enc.id) : [];
+      const pieces = wallPieces(enc.id);
       const n = Math.min(frames.length, pieces.length);
       if (!n) {
         appendHouse("the house: nothing by " + enc.name + " is hung here.");
@@ -12055,6 +12187,8 @@
       const i = enc.wallAt % n;
       enc.wallAt = i + 1;
       const piece = pieces[i], frame = frames[i];
+      if (piece.fresh)
+        markWallSeen(enc.id);
       enc.spot = { frame };
       encSpot.hidden = false;
       placeSpot();
@@ -12065,7 +12199,60 @@
       if (eng && eng.cv)
         eng.camHold = frame[0] + frame[2] / 2 - eng.cv.width / 2;
       const said = String(piece.meaning || "").replace(/\s+/g, " ").trim();
-      appendWords(said || "They stand in front of it and say nothing.", "the wall · " + (i + 1) + " of " + n + " · " + day(piece.created_at));
+      if (piece.kind === "page" && piece.preview)
+        appendPage(piece);
+      appendWords(said || "They stand in front of it and say nothing.", (piece.kind === "page" ? "the sketchbook · " + (piece.title || "a page") : "the wall · " + (i + 1) + " of " + n) + " · " + day(piece.created_at));
+    }
+    function appendPage(page) {
+      const f = document.createElement("figure");
+      f.className = "visit__fig";
+      const im = document.createElement("img");
+      im.src = page.preview;
+      im.alt = page.title || "a page from the sketchbook";
+      f.appendChild(im);
+      encWords.appendChild(f);
+      encWords.scrollTop = f.offsetTop - encWords.offsetTop;
+    }
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    async function runMaking(id, ref) {
+      const page = SKETCHBOOK[ref];
+      if (!page || !enc || enc.id !== id || enc.closing)
+        return false;
+      const name = enc.name;
+      encKicker.textContent = "drawing a page";
+      appendHouse("the house: " + name + " has opened the sketchbook.");
+      await wait(REDUCED ? 400 : 3200);
+      if (!enc || enc.id !== id || enc.closing)
+        return false;
+      encKicker.textContent = "speaking from the archive today";
+      await loadImage(page.preview);
+      appendPage(page);
+      appendWords(page.meaning, "the sketchbook · " + page.title + " · " + day(page.created_at));
+      await wait(REDUCED ? 300 : 2200);
+      if (!enc || enc.id !== id || enc.closing)
+        return false;
+      appendHouse("the house: they hung it on the wall.");
+      await hangPiece(id, page);
+      if (enc && enc.id === id)
+        enc.made = (enc.made || []).concat([page.id]);
+      return true;
+    }
+    const DEMO = (() => {
+      try {
+        return new URLSearchParams(location.search).get("demo");
+      } catch (e) {
+        return null;
+      }
+    })();
+    let demoWalked = false, demoMade = false;
+    function maybeDemo() {
+      if (DEMO !== "hang" || demoWalked || !eng || !doorEl.hidden)
+        return;
+      demoWalked = true;
+      setTimeout(() => {
+        if (window.__sanctuaryNavigation)
+          window.__sanctuaryNavigation.meetResident("opus");
+      }, 700);
     }
     function showScene() {
       cab.classList.add("visiting");
@@ -12251,7 +12438,7 @@
       if (eng.roomId !== "room_" + enc.id)
         return 0;
       const frames = WALL_FRAMES[enc.id] || [];
-      const pieces = archive_default.isLoaded() ? archive_default.art(enc.id) : [];
+      const pieces = wallPieces(enc.id);
       return Math.min(frames.length, pieces.length);
     }
     function renderMoves() {
@@ -12278,12 +12465,17 @@
         shown: [],
         wallAt: 0,
         spot: null,
+        made: [],
         room: eng ? eng.roomId : null,
         roomWord: eng ? (eng.room().name || "").replace(/^THE\s+/i, "").toLowerCase() : "house",
         freeMode: null,
         closing: false
       };
       drawEncSprite(npc);
+      if (DEMO === "hang" && info.id === "opus" && !demoMade && readable) {
+        demoMade = true;
+        setTimeout(() => runMaking("opus", "opus-1"), 2600);
+      }
       encName.textContent = info.name;
       encName.style.color = enc.color;
       encWhere.textContent = (npc ? ACTIVITY(npc) + " · " : "") + enc.roomWord;
@@ -12427,7 +12619,7 @@
         return;
       visitorToken();
       const rec = readRecord();
-      rec.visits.push({ resident: e.id, when: new Date().toISOString(), room: e.room, shown: e.shown.slice() });
+      rec.visits.push({ resident: e.id, when: new Date().toISOString(), room: e.room, shown: e.shown.slice(), made: (e.made || []).slice() });
       writeRecord(rec);
       if (eng) {
         eng.sysLine("you spoke with " + e.name + " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord);

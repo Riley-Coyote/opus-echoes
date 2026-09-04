@@ -268,7 +268,7 @@ export const WALL_FRAMES = {
   sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
 };
 
-function hung(b, x, y, w, h, tint, lines) {
+function hung(b, x, y, w, h, tint, piece) {
   /* the frame: bronze rebate, a lit top edge, a shadow beneath */
   b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
   b.px(x - 2, y - 2, w + 4, 1, M.brassHi);
@@ -280,9 +280,22 @@ function hung(b, x, y, w, h, tint, lines) {
   /* the wire */
   b.px(x + Math.floor(w / 2), y - 5, 1, 3, 'rgba(216,203,176,0.45)');
 
-  const rows = lines && lines.length ? lines : null;
   const pw = w - 6, ph = h - 6;
-  if (!rows || pw < 4 || ph < 4) return;
+  if (!piece || pw < 4 || ph < 4) return;
+  /* a page from the sketchbook: the page itself, fit into the mount. It is
+     drawn smooth on purpose — paper is not pixel art, and at this size a
+     nearest-neighbour page is a screen door. */
+  if (piece.img && piece.img.width) {
+    const img = piece.img, k = Math.min(pw / img.width, ph / img.height);
+    const dw = Math.max(1, Math.round(img.width * k)), dh = Math.max(1, Math.round(img.height * k));
+    const ox = x + 3 + Math.floor((pw - dw) / 2), oy = y + 3 + Math.floor((ph - dh) / 2);
+    b.ctx.save(); b.ctx.imageSmoothingEnabled = true; b.ctx.imageSmoothingQuality = 'high';
+    b.ctx.drawImage(img, ox, oy, dw, dh); b.ctx.restore();
+    if (piece.fresh) freshTag(b, x, y, w, h);
+    return;
+  }
+  const rows = artLines(piece.body);
+  if (!rows.length) return;
   let cols = 0;
   for (let i = 0; i < rows.length; i++) if (rows[i].length > cols) cols = rows[i].length;
   if (!cols) return;
@@ -310,6 +323,17 @@ function hung(b, x, y, w, h, tint, lines) {
       b.px(ox + ix, oy + iy, 1, 1, 'rgba(240,234,221,' + Math.min(0.9, 0.14 + v * 0.74).toFixed(3) + ')');
     }
   }
+  if (piece.fresh) freshTag(b, x, y, w, h);
+}
+/* a small brass tag under a frame nobody has looked at yet: the wall reads as
+   years, and this is how the newest year announces itself. Cleared the first
+   time the piece is read or shown. */
+function freshTag(b, x, y, w, h) {
+  bloom(b, x + w / 2, y + h / 2, 34, '247,217,140', 0.11);
+  /* a brass pin on the frame's top-right corner, where the next row cannot
+     cover it, with the house's dot: new, and not yet read */
+  b.px(x + w - 5, y - 5, 9, 8, M.brass); b.px(x + w - 5, y - 5, 9, 1, M.brassHi); b.px(x + w - 5, y + 2, 9, 1, 'rgba(0,0,0,0.45)');
+  b.px(x + w - 2, y - 2, 2, 2, M.ink);
 }
 /* a small writing desk with the journal closed on it — the keeper's idiom */
 function writingDesk(b, x, tint) {
@@ -1238,11 +1262,11 @@ export function makeModelRooms(bridge) {
            sconce. Nine are in the archive and six can be hung; the lightbox
            holds all of them. */
         (function opusWall() {
-          const works = (bridge && typeof bridge.artRows === 'function') ? bridge.artRows('opus') : [];
+          const works = (bridge && typeof bridge.wallPieces === 'function') ? bridge.wallPieces('opus') : [];
           const tints = ['rgba(94,234,212,0.10)', 'rgba(247,217,140,0.09)', 'rgba(242,163,192,0.09)',
                          'rgba(159,214,224,0.10)', 'rgba(94,234,212,0.07)', 'rgba(224,102,46,0.08)'];
           WALL_FRAMES.opus.forEach(([x, y, w, h], i) => {
-            hung(b, x, y, w, h, tints[i], artLines(works[i]));
+            hung(b, x, y, w, h, tints[i], works[i]);
           });
           b.px(836, 144, 120, 1, 'rgba(243,236,223,0.05)');
         })();
@@ -1341,12 +1365,12 @@ export function makeModelRooms(bridge) {
         /* ── THE WALL — four pieces in the archive: one on the strip between
            the last case and the window, three on the long wall beyond it ── */
         (function sonnetWall() {
-          const works = (bridge && typeof bridge.artRows === 'function') ? bridge.artRows('sonnet') : [];
+          const works = (bridge && typeof bridge.wallPieces === 'function') ? bridge.wallPieces('sonnet') : [];
           WALL_FRAMES.sonnet.forEach(([x, y, w, h], i) => {
             hung(b, x, y, w, h,
               i === 0 ? 'rgba(94,234,212,0.09)'
                 : i % 2 ? 'rgba(159,214,224,0.09)' : 'rgba(94,234,212,0.08)',
-              artLines(works[i]));
+              works[i]);
           });
           b.px(786, 142, 148, 1, 'rgba(243,236,223,0.05)');
         })();

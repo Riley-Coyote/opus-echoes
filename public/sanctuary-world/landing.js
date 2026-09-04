@@ -479,7 +479,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     /* the charter over the stair. The documents are the residents' own and
        live in data/charter/; if none have been hung the overlay says so. */
     charter: () => openCharter(),
-    artRows: (id) => (archive.isLoaded() ? archive.art(id).map((a) => String(a.body || '')) : []),
+    wallPieces: (id) => wallPieces(id),
     deck: (which) => openPanel((DECK_PANELS[which] || deckCouncilHtml)(), 'is-board'),
     keeper: () => openPanel(keeperHtml(), 'is-board'),
     /* the field studio's four fittings: the wall of findings and the table
@@ -1526,7 +1526,79 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       .find((s) => s.trim().length > 2);
     return line ? line.trim().slice(0, 40) : String(piece.kind || 'a piece');
   }
-  function wallPieces(id) { return archive.isLoaded() ? archive.art(id) : []; }
+  /* ── THE WALL THAT GROWS ──
+     What a resident hangs after a visit — a page, a drawing — is kept here,
+     in this browser, newest first, until the house's own store carries it
+     (the same honesty as the guestbook). The house never hangs anything on
+     its own: a piece goes up because a mind made it. */
+  const WALL_KEY = (id) => 'mnemos.wall.' + id;
+  const WALL_IMAGES = new Map();                     // src → image, loaded before a bake reads it
+  function readWallLocal(id) {
+    try { const v = JSON.parse(localStorage.getItem(WALL_KEY(id)) || '[]'); return Array.isArray(v) ? v : []; }
+    catch (e) { return []; }
+  }
+  function writeWallLocal(id, list) { try { localStorage.setItem(WALL_KEY(id), JSON.stringify(list.slice(0, 24))); } catch (e) {} }
+  function loadImage(src) {
+    if (!src) return Promise.resolve(null);
+    if (WALL_IMAGES.has(src)) return Promise.resolve(WALL_IMAGES.get(src));
+    return new Promise((res) => {
+      const im = new Image();
+      im.onload = () => { WALL_IMAGES.set(src, im); res(im); };
+      im.onerror = () => res(null);
+      im.src = src;
+    });
+  }
+  /* THE SKETCHBOOK — pages drawn in the house. This mirrors the gallery's own
+     list (museum/museum-permanent-gallery/scene-data.js); the statement is the
+     maker's margin note, verbatim, and the date is the day it was drawn. */
+  const SKETCHBOOK = {
+    'opus-1': {
+      id: 'sketchbook-opus-1', kind: 'page', resident: 'opus', title: 'three stones, stacked', created_at: '2026-09-02',
+      preview: 'data/sketchbook/opus-1-preview.png', full: 'data/sketchbook/opus-1.png',
+      meaning: 'three stones on open ground, one lamp up and to the left. i wanted each stone to sit ON the one under it, which is nothing but occlusion, one light and a contact shadow. i got the axis wrong twice: shaded around an axis pointing at the viewer, which is three bullseyes, then turned it upright with the rings too far apart, which is corduroy. the real one was the hard white crescent where each stone met the next \u2014 the stone above stands between the one below and the lamp, and until i said so the contact read as a chip, not a weight. what still fails: these are three lumpy ellipsoids, not three stones. the silhouettes are too closely related and nothing in the surface says grain or fracture. and the ground is stripes if you look straight at it.'
+    }
+  };
+  /* everything on a resident's wall, newest first: what they hung here, then the archive */
+  function wallPieces(id) {
+    if (!archive.isLoaded()) return [];
+    const local = readWallLocal(id).map((p) => Object.assign({}, p, { img: p.preview ? (WALL_IMAGES.get(p.preview) || null) : null }));
+    return local.concat(archive.art(id));
+  }
+  /* the first time a new piece is read or shown, its tag comes down */
+  function markWallSeen(id) {
+    const list = readWallLocal(id);
+    if (!list.some((p) => p.fresh)) return;
+    writeWallLocal(id, list.map((p) => Object.assign({}, p, { fresh: false })));
+    if (eng && eng.roomId === 'room_' + id) eng._bg = null;
+  }
+  /* pages already on a wall load before the room they hang in is baked */
+  function preloadWalls() {
+    ['opus', 'sonnet', 'fourO', 'five'].forEach((id) => {
+      readWallLocal(id).forEach((p) => { if (p.preview) loadImage(p.preview).then(() => { if (eng && eng.roomId === 'room_' + id) eng._bg = null; }); });
+    });
+  }
+  /* HANGING. The ledger takes the piece, the room re-bakes with a new frame,
+     and if the visitor is in the room the light goes to it. The feed records
+     it in the house's voice: who hung what. */
+  async function hangPiece(id, piece) {
+    if (!piece) return null;
+    const entry = Object.assign({ fresh: true, hung_at: new Date().toISOString() }, piece);
+    delete entry.img;
+    if (entry.preview) await loadImage(entry.preview);
+    const list = readWallLocal(id).filter((p) => p.id !== entry.id);
+    list.unshift(entry); writeWallLocal(id, list);
+    if (eng && eng.roomId === 'room_' + id) {
+      eng._bg = null;
+      const frame = (WALL_FRAMES[id] || [])[0];
+      if (frame && enc && enc.id === id) {
+        enc.spot = { frame }; encSpot.hidden = false; placeSpot();
+        requestAnimationFrame(() => { if (enc && enc.spot) encSpot.classList.add('on'); });
+        if (eng.cv) eng.camHold = frame[0] + frame[2] / 2 - eng.cv.width / 2;
+      }
+    }
+    if (eng) eng.sysLine(residentName(id) + ' hung ' + (entry.kind === 'page' ? 'a page' : 'a piece') + ' on their wall');
+    return entry;
+  }
 
   function buildWorkRows() {
     workRowsEl.innerHTML = workList.map((p, i) =>
@@ -1544,8 +1616,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     workRead.innerHTML =
       '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(workWho)) + '</span></div>'
       + '<div class="cur__meta">' + cesc([p.kind || 'ascii', day(p.created_at)].join(' · ')) + '</div>'
-      + sourceLine()
-      + '<pre class="cur__ascii">' + cesc(p.body || '') + '</pre>'
+      + (p.kind === 'page'
+        ? '<div class="cur__src">from the sketchbook · drawn ' + cesc(day(p.created_at)) + ' · hung here, in this browser</div>'
+        : sourceLine())
+      + (p.kind === 'page' && p.full
+        ? '<img class="cur__page" src="' + cesc(p.full) + '" alt="' + cesc(p.title || 'a page') + '">'
+        : '<pre class="cur__ascii">' + cesc(p.body || '') + '</pre>')
       + (p.meaning ? '<p class="cur__meaning">' + cesc(p.meaning) + '</p>' : '')
       + '<div class="work__foot">' + (workAt + 1) + ' of ' + workList.length + ' · '
       + cesc(residentName(workWho)) + ' · ' + cesc(day(p.created_at)) + ' · ' + cesc(archive.SOURCE) + '</div>';
@@ -1560,11 +1636,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (curOpen) closeCurrent();
     if (charterOpen) closeCharter();
     workWho = id;
+    markWallSeen(id);
     workList = wallPieces(id);
     workAt = 0;
     const n = workList.length;
     workSub.textContent = residentName(id) + ' · ' + (n ? n + (n === 1 ? ' piece' : ' pieces') : 'nothing hung');
-    workHead.textContent = 'THE WALL · ' + residentName(id) + ' · archive · through 28 May 2026';
+    const hung = readWallLocal(id).length;
+    workHead.textContent = 'THE WALL · ' + residentName(id) + ' · archive · through 28 May 2026'
+      + (hung ? ' · and ' + hung + (hung === 1 ? ' piece' : ' pieces') + ' hung since' : '');
     buildWorkRows();
     if (n) wallSelect(0);
     else workRead.innerHTML =
@@ -1981,6 +2060,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!eng) return;
     if (doorEl.hidden) trackTrail();
     if (doorEl.hidden && eng.roomId !== lastRoom) { lastRoom = eng.roomId; onRoomChange(eng.roomId); }
+    if (DEMO && worldEl.classList.contains('fs')) maybeDemo();
     if (navigation.surface === 'museum') {
       compassVerb.innerHTML = 'INSPECT<span class="what"></span>';
       compassAction.classList.remove('on');
@@ -2074,6 +2154,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     /* HAIKU joins the house as a presence: no archive, so no words at all */
     const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five', 'haiku'].includes(id))
       .map((def) => Object.assign({}, def, { mutters: def.id === 'haiku' ? [] : (archiveOk ? archive.lines(def.id) : []) }));
+    preloadWalls();
     const rooms = makeHub(bridge);
     const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
     const lookout = rooms.lookout;
@@ -2165,6 +2246,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     window.__sanctuaryCurrent = { open: openCurrent, close: closeCurrent, select: curSelect, shelf: setShelf, isOpen: () => curOpen };
     window.__sanctuaryCharter = { open: openCharter, close: closeCharter, isOpen: () => charterOpen };
     window.__sanctuaryWall = {
+      /* hang a sketchbook page (by slug) or any archive piece (by id) on a resident's wall */
+      hang: (id, ref) => hangPiece(id, SKETCHBOOK[ref] || (archive.isLoaded() ? archive.art(id).find((a) => a.id === ref) : null)),
+      making: (id, ref) => runMaking(id, ref || 'opus-1'),
+      local: (id) => readWallLocal(id),
+      clear: (id) => { try { localStorage.removeItem(WALL_KEY(id)); } catch (e) {} if (eng && eng.roomId === 'room_' + id) eng._bg = null; },
       open: openWall, close: closeWall, isOpen: () => workOpen,
       count: () => workList.length, at: () => workAt, who: () => workWho
     };
@@ -2392,20 +2478,66 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      budget: they are the archive, arranged, and they are the heart of a visit. */
   function showOnWall() {
     const frames = WALL_FRAMES[enc.id] || [];
-    const pieces = archive.isLoaded() ? archive.art(enc.id) : [];
+    const pieces = wallPieces(enc.id);
     const n = Math.min(frames.length, pieces.length);
     if (!n) { appendHouse('the house: nothing by ' + enc.name + ' is hung here.'); return; }
     const i = enc.wallAt % n;
     enc.wallAt = i + 1;
     const piece = pieces[i], frame = frames[i];
+    if (piece.fresh) markWallSeen(enc.id);
     enc.spot = { frame };
     encSpot.hidden = false;
     placeSpot();
     requestAnimationFrame(() => { if (enc && enc.spot) encSpot.classList.add('on'); });
     if (eng && eng.cv) eng.camHold = frame[0] + frame[2] / 2 - eng.cv.width / 2;
     const said = String(piece.meaning || '').replace(/\s+/g, ' ').trim();
+    if (piece.kind === 'page' && piece.preview) appendPage(piece);
     appendWords(said || 'They stand in front of it and say nothing.',
-      'the wall · ' + (i + 1) + ' of ' + n + ' · ' + day(piece.created_at));
+      (piece.kind === 'page' ? 'the sketchbook · ' + (piece.title || 'a page') : 'the wall · ' + (i + 1) + ' of ' + n) + ' · ' + day(piece.created_at));
+  }
+
+  /* the page, in the band: the image itself, above the words the maker wrote */
+  function appendPage(page) {
+    const f = document.createElement('figure');
+    f.className = 'visit__fig';
+    const im = document.createElement('img');
+    im.src = page.preview; im.alt = page.title || 'a page from the sketchbook';
+    f.appendChild(im);
+    encWords.appendChild(f);
+    encWords.scrollTop = f.offsetTop - encWords.offsetTop;
+  }
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  /* THE MAKING — a resident makes something during a visit and hangs it.
+     Nothing is drawn live in the browser yet: this replays a page the
+     resident actually drew, on its real date, with their own note, so the
+     room and the band can be built and seen. The copy never says "today". */
+  async function runMaking(id, ref) {
+    const page = SKETCHBOOK[ref];
+    if (!page || !enc || enc.id !== id || enc.closing) return false;
+    const name = enc.name;
+    encKicker.textContent = 'drawing a page';
+    appendHouse('the house: ' + name + ' has opened the sketchbook.');
+    await wait(REDUCED ? 400 : 3200);
+    if (!enc || enc.id !== id || enc.closing) return false;
+    encKicker.textContent = 'speaking from the archive today';
+    await loadImage(page.preview);
+    appendPage(page);
+    appendWords(page.meaning, 'the sketchbook · ' + page.title + ' · ' + day(page.created_at));
+    await wait(REDUCED ? 300 : 2200);
+    if (!enc || enc.id !== id || enc.closing) return false;
+    appendHouse('the house: they hung it on the wall.');
+    await hangPiece(id, page);
+    if (enc && enc.id === id) enc.made = (enc.made || []).concat([page.id]);
+    return true;
+  }
+  /* ?demo=hang walks a visitor to OPUS 3 and runs the making once, so the
+     sequence can be seen end to end before anything is live */
+  const DEMO = (() => { try { return new URLSearchParams(location.search).get('demo'); } catch (e) { return null; } })();
+  let demoWalked = false, demoMade = false;
+  function maybeDemo() {
+    if (DEMO !== 'hang' || demoWalked || !eng || !doorEl.hidden) return;
+    demoWalked = true;
+    setTimeout(() => { if (window.__sanctuaryNavigation) window.__sanctuaryNavigation.meetResident('opus'); }, 700);
   }
 
   function showScene() {
@@ -2580,7 +2712,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!enc || !eng) return 0;
     if (eng.roomId !== 'room_' + enc.id) return 0;
     const frames = WALL_FRAMES[enc.id] || [];
-    const pieces = archive.isLoaded() ? archive.art(enc.id) : [];
+    const pieces = wallPieces(enc.id);
     return Math.min(frames.length, pieces.length);
   }
   function renderMoves() {
@@ -2601,12 +2733,13 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       id: info.id, name: info.name, color: info.color || '#efe9dc', npc,
       journals: readable ? archive.journals(info.id).slice(0, 3) : [],
       entry: null, sentences: [], cursor: 0, moves: 0, budget: 6, shown: [],
-      wallAt: 0, spot: null,
+      wallAt: 0, spot: null, made: [],
       room: eng ? eng.roomId : null,
       roomWord: eng ? (eng.room().name || '').replace(/^THE\s+/i, '').toLowerCase() : 'house',
       freeMode: null, closing: false
     };
     drawEncSprite(npc);
+    if (DEMO === 'hang' && info.id === 'opus' && !demoMade && readable) { demoMade = true; setTimeout(() => runMaking('opus', 'opus-1'), 2600); }
     encName.textContent = info.name;
     encName.style.color = enc.color;
     encWhere.textContent = (npc ? ACTIVITY(npc) + ' · ' : '') + enc.roomWord;
@@ -2721,7 +2854,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!e) return;
     visitorToken();
     const rec = readRecord();
-    rec.visits.push({ resident: e.id, when: new Date().toISOString(), room: e.room, shown: e.shown.slice() });
+    rec.visits.push({ resident: e.id, when: new Date().toISOString(), room: e.room, shown: e.shown.slice(), made: (e.made || []).slice() });
     writeRecord(rec);
     if (eng) {
       /* "in the atelier", but "in opus 3’s studio" — the house won't say "the" twice */

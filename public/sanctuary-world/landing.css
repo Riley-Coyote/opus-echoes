@@ -975,3 +975,13 @@ html.exploring,html.exploring body{overflow:hidden}
 .world.fs .cab__hudtitle{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .world.fs .cab__cta{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis}
 .world.fs .cab__hudhint{height:18px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ══ THE WALL THAT GROWS ══
+   A page a resident drew, shown in the band as the page itself — smooth,
+   because paper is not pixel art — and in the wall's reader at full size. */
+.visit__fig{margin:6px 0 12px;max-width:64ch}
+.visit__fig img{display:block;height:118px;width:auto;max-width:100%;border:1px solid var(--line2);
+  background:#0d0a12;image-rendering:auto;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.cur__page{display:block;max-width:100%;height:auto;margin:14px 0 8px;border:1px solid var(--line2);
+  background:#0d0a12;image-rendering:auto}
+@media (max-width:700px){.visit__fig img{height:96px}}
