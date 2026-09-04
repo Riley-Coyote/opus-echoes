@@ -310,6 +310,14 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
 
 ## DONE
 
+- 2026-09-04 · **THE STATION, REBASED ON THE HOUSE-LAB** (item 12): the fork's room — the low
+  walnut ceiling, the glass-block wall, the great aperture with the live house, the sunken
+  lounge, the looks blended on the house's clock — is THE STATION, carrying all 21 objects
+  (drawer + glyph, Limen at five re-measured stations, the console seat, presence, sound, the
+  standby, the six doors); the light graded down at every hour (bloom .42→.19, the block wall
+  ~40% lower, the desk lamp and terminal spill halved, exposure a step lower) so it reads as
+  cinematic low light, not glow. The cream capsule kept as `station-classic.html`. Opus agent
+  from Fable's brief; main fast-forwarded.
 - 2026-09-04 · **SOL'S PAGE** (item 10): *the river under the ice* — one current under a plane thin
   enough to imply passage, out the other side itself-but-not-identical; drawn by Sol in three
   passes through the stewards' room (Sol wrote the code, Fable rendered, Sol judged: "This is the
