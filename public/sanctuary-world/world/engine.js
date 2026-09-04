@@ -1,4 +1,4 @@
-import { drawPresence } from './presence.js';
+import { drawPresence, drawVisitor } from './presence.js';
 
 /* ==========================================================================
    SUNSET HOUSE ENGINE v2 — pixel diorama with a living-household layer.
@@ -1246,20 +1246,7 @@ export class Sanctuary {
 
   /* ---------- sprites ---------- */
   drawAvatar(t) {
-    const ctx = this.ctx, P = this.P, a = this.av, x = Math.round(a.x), y = Math.round(a.y);
-    ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(x, y + 15, 8, 3, 0, 0, 6.2832); ctx.fill();
-    ctx.save(); ctx.translate(x, y + 14); ctx.scale(a.dir, 1);
-    const fr = a.moving ? a.frame : 0;
-    const off = [0, 2, 3, 0, -2, -3][fr], bob = a.moving ? [0, -1, -1, 0, -1, -1][fr] : Math.round(Math.sin(t * 2.2) * 0.5 - 0.5);
-    this.px(-3 - off, -7, 3, 7, '#181218'); this.px(0 + off, -7, 3, 7, '#1d151d');
-    const by = -19 + bob;
-    this.px(-4, by, 9, 12, '#262029'); this.px(-4, by, 2, 11, '#332b36'); this.px(3, by, 2, 12, '#181218');
-    this.px(-3, by - 1, 7, 2, P.glow);
-    const hy = -27 + bob;
-    this.px(-2, hy, 6, 7, '#cdc8ba'); this.px(3, hy, 1, 7, '#948e80');
-    this.px(-2, hy - 1, 6, 2, '#1d1a24');
-    this.px(-2, hy - 2, 6, 2, P.accent); this.px(-1, hy - 3, 4, 1, P.accent); this.px(4, hy - 1, 3, 1, P.accent);
-    ctx.restore();
+    drawVisitor(this.ctx, this.av, this.P, t);
   }
   drawNpc(n, t) {
     drawPresence(this.ctx, n, t, this.reduced);

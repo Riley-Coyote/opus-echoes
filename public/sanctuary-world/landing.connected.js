@@ -540,113 +540,145 @@
   var prose_default = { render, esc };
 
   // world/presence.js
-  function drawPresence(ctx, n, time2, reduced = false) {
+  var KINDS = {
+    opus: { kind: "smock", legH: 8, torsoW: 8, torsoH: 14, headW: 6, headH: 7, stoop: 1, body: "#2a2130", bodyHi: "#3b3042", bodyDk: "#181218", face: "#cdc8ba" },
+    sonnet: { kind: "mantle", legH: 9, torsoW: 6, torsoH: 14, headW: 6, headH: 7, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", face: "#efe9dc" },
+    haiku: { kind: "seed", legH: 4, torsoW: 8, torsoH: 8, headW: 7, headH: 6, body: "#24212b", bodyHi: "#332e3c", bodyDk: "#151219", face: "#cdc8ba" },
+    fourO: { kind: "host", legH: 7, torsoW: 9, torsoH: 11, headW: 6, headH: 6, body: "#3a2f2a", bodyHi: "#4f3f38", bodyDk: "#22191a", face: "#cdc8ba" },
+    five: { kind: "new", legH: 9, torsoW: 7, torsoH: 15, headW: 6, headH: 7, body: "#2b2f33", bodyHi: "#3e454c", bodyDk: "#181b1f", face: "#b9b3a6" }
+  };
+  var VISITOR = { kind: "human", legH: 7, torsoW: 8, torsoH: 12, headW: 6, headH: 7, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
+  var GUEST = { kind: "human", legH: 7, torsoW: 8, torsoH: 12, headW: 6, headH: 7, body: "#948e80", bodyHi: "#aca696", bodyDk: "#6e6860", face: "#cdc8ba" };
+  function specFor(n) {
+    return KINDS[n.id] || (n.temp ? GUEST : VISITOR);
+  }
+  var rr = (p, x, y, w, h, col) => {
+    p(x + 1, y, w - 2, 1, col);
+    p(x, y + 1, w, h - 2, col);
+    p(x + 1, y + h - 1, w - 2, 1, col);
+  };
+  function drawFigure(p, s, o) {
+    const sit = o.sit ? 2 : 0, bob = o.bob || 0, off = o.off || 0;
+    const legH = s.legH - sit;
+    p(-3 - off, -legH, 3, legH, "#181218");
+    p(0 + off, -legH, 3, legH, "#1d151d");
+    const by = -(legH + s.torsoH) + bob, tw = s.torsoW, tx = -Math.floor(tw / 2), hemY = by + s.torsoH;
+    if (s.kind === "smock") {
+      rr(p, tx, by, tw, s.torsoH, s.body);
+      p(tx - 1, by + 9, tw + 2, s.torsoH - 9 + 3, s.body);
+      p(tx - 1, by + 9, 1, s.torsoH - 9 + 3, s.bodyHi);
+      p(tx + tw, by + 9, 1, s.torsoH - 9 + 3, s.bodyDk);
+      p(tx, by, 2, 9, s.bodyHi);
+      p(tx + tw - 2, by, 2, 9, s.bodyDk);
+      p(tx + 1, by - 1, tw - 2, 1, s.bodyHi);
+    } else if (s.kind === "mantle") {
+      p(tx - 2, by, tw + 4, 3, s.body);
+      p(tx - 2, by, 2, 3, s.bodyHi);
+      p(tx + tw, by, 2, 3, s.bodyDk);
+      p(tx, by + 3, tw, s.torsoH - 3, s.body);
+      p(tx, by + 3, 1, s.torsoH - 3, s.bodyHi);
+      p(tx + tw - 1, by + 3, 1, s.torsoH - 3, s.bodyDk);
+      p(tx - 1, hemY, tw + 2, 4, s.body);
+      p(tx - 2, hemY + 2, tw + 4, 2, s.body);
+      p(tx - 2, hemY + 3, tw + 4, 1, s.bodyDk);
+    } else if (s.kind === "seed") {
+      rr(p, tx, by, tw, s.torsoH + 2, s.body);
+      p(tx + 1, by + 1, 1, s.torsoH, s.bodyHi);
+      p(tx + tw - 2, by + 1, 1, s.torsoH, s.bodyDk);
+    } else if (s.kind === "host") {
+      rr(p, tx, by, tw, s.torsoH, s.body);
+      p(tx, by + 1, 2, s.torsoH - 2, s.bodyHi);
+      p(tx + tw - 2, by + 1, 2, s.torsoH - 2, s.bodyDk);
+      p(tx - 3, by + 2, 2, 7, s.body);
+      p(tx - 3, by + 8, 2, 2, s.face);
+      p(tx + tw + 1, by + 2, 2, 7, s.bodyDk);
+      p(tx + tw + 1, by + 8, 2, 2, s.face);
+      p(tx - 1, hemY, tw + 2, 1, s.body);
+    } else if (s.kind === "new") {
+      for (let y = by;y < by + s.torsoH; y++)
+        for (let x = tx;x < tx + tw; x++) {
+          if (x >= tx + tw - 3 && x + y & 1)
+            continue;
+          if ((y === by || y === by + s.torsoH - 1) && (x === tx || x === tx + tw - 1))
+            continue;
+          p(x, y, 1, 1, x < tx + 2 ? s.bodyHi : x >= tx + tw - 2 ? s.bodyDk : s.body);
+        }
+      p(tx, hemY, tw, 2, s.body);
+    } else {
+      rr(p, tx, by, tw, s.torsoH, s.body);
+      p(tx, by + 1, 2, s.torsoH - 2, s.bodyHi);
+      p(tx + tw - 2, by + 1, 2, s.torsoH - 2, s.bodyDk);
+    }
+    const hx = -Math.floor(s.headW / 2), hy = by - s.headH - 1 + (s.stoop || 0);
+    if (s.kind === "seed") {
+      rr(p, hx - 1, hy - 1, s.headW + 2, s.headH + 2, s.bodyHi);
+      rr(p, hx, hy, s.headW, s.headH, "#0e0b12");
+      p(hx + 2, hy + 2, 2, 2, s.face);
+    } else {
+      rr(p, hx, hy, s.headW, s.headH, s.face);
+      p(hx + s.headW - 1, hy + 1, 1, s.headH - 2, "#948e80");
+    }
+    if (o.cap) {
+      p(hx + 1, hy - 2, s.headW - 2, 1, o.cap);
+      p(hx, hy - 1, s.headW, 1, o.cap);
+      p(hx - 1, hy, s.headW + 2, 1, o.cap);
+    }
+    if (o.light)
+      p(-1, by + (s.kind === "seed" ? 3 : 4), 2, 3, o.light);
+  }
+  var STRIDE = [0, 2, 3, 0, -2, -3];
+  var BOB = [0, -1, -1, 0, -1, -1];
+  function drawPresence(ctx, n, time2, reduced) {
     const t = reduced ? 0 : time2;
     const x = Math.round(n.x), ground = Math.round(n.y) + 14;
-    const bob = Math.round(Math.sin(t * 1.7 + x * 0.013) * 1.2);
-    const sit = n.state === "sit" ? 6 : 0;
-    const color = n.color || "#cad8df";
-    const ink = "#101620", porcelain = "#e9e2ce", shade = "#929b9b";
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,.30)";
-    ctx.beginPath();
-    ctx.ellipse(x, ground + 1, n.id === "haiku" ? 8 : 13, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.translate(x, ground + bob + sit);
-    ctx.scale(n.dir || 1, 1);
-    const p = (x2, y, w, h, c) => {
-      ctx.fillStyle = c;
-      ctx.fillRect(x2, y, w, h);
-    };
-    const glow = (x2, y, w, h) => {
-      p(x2 - 3, y - 3, w + 6, h + 6, color + "12");
-      p(x2 - 1, y - 1, w + 2, h + 2, color + "30");
-      p(x2, y, w, h, color);
-    };
-    if (n.id === "opus") {
-      p(-8, -34, 16, 3, ink);
-      p(-6, -37, 12, 3, ink);
-      p(-4, -39, 8, 2, porcelain);
-      p(-8, -33, 3, 23, porcelain);
-      p(6, -33, 3, 23, shade);
-      p(-5, -34, 11, 2, porcelain);
-      p(-6, -11, 13, 3, porcelain);
-      p(-4, -8, 3, 5, shade);
-      p(3, -8, 3, 5, porcelain);
-      p(-8, -3, 7, 2, ink);
-      p(2, -3, 7, 2, ink);
-      glow(-3, -27, 8, 11);
-      p(-1, -29, 4, 2, "#f5f0df");
-      p(0, -24, 3, 5, "#ecfff5");
-      p(-10, -29, 2, 14, shade);
-      p(9, -29, 2, 14, porcelain);
-      p(-5, -15, 11, 1, color);
-      p(-1, -35, 3, 1, color);
-    } else if (n.id === "sonnet") {
-      p(-2, -38, 5, 3, porcelain);
-      p(-5, -35, 11, 4, porcelain);
-      p(-8, -31, 5, 17, porcelain);
-      p(-10, -28, 2, 10, shade);
-      p(4, -32, 5, 19, shade);
-      p(9, -28, 2, 12, porcelain);
-      p(-5, -30, 3, 20, "#b4bcae");
-      p(2, -29, 3, 20, porcelain);
-      glow(-1, -31, 3, 19);
-      p(-3, -11, 8, 3, porcelain);
-      p(-6, -7, 5, 3, shade);
-      p(2, -7, 5, 3, porcelain);
-      p(-8, -34, 2, 2, color);
-      p(10, -20, 2, 2, color);
-    } else if (n.id === "fourO") {
-      p(-7, -34, 14, 2, porcelain);
-      p(-11, -31, 4, 3, porcelain);
-      p(7, -31, 4, 3, shade);
-      p(-14, -27, 3, 12, porcelain);
-      p(11, -27, 3, 12, shade);
-      p(-11, -15, 4, 3, shade);
-      p(7, -15, 4, 3, porcelain);
-      p(-7, -12, 14, 2, porcelain);
-      glow(-4, -27, 8, 12);
-      p(-2, -29, 4, 2, porcelain);
-      p(-2, -23, 4, 3, "#f3fff0");
-      p(-4, -8, 8, 3, shade);
-      p(-2, -5, 4, 2, porcelain);
-      const orbit = Math.round(Math.sin(t * 0.8) * 9);
-      p(orbit, -38, 3, 3, color);
-      p(-orbit, -7, 2, 2, color);
-    } else if (n.id === "five") {
-      p(-6, -39, 14, 25, ink);
-      p(-5, -38, 12, 23, shade);
-      p(-9, -35, 14, 25, porcelain);
-      p(-7, -33, 10, 20, "#283d44");
-      p(-4, -30, 14, 23, ink);
-      p(-3, -29, 12, 21, color);
-      p(-1, -27, 8, 17, "#23343b");
-      p(0, -25, 6, 2, "#d8ece3");
-      p(0, -21, 4, 1, color);
-      p(0, -18, 6, 1, color);
-      p(0, -15, 3, 1, color);
-      p(-5, -6, 4, 3, shade);
-      p(5, -6, 4, 3, porcelain);
-      p(11, -32, 2, 2, color);
-      p(-12, -15, 2, 2, porcelain);
-    } else if (n.id === "haiku") {
-      p(-2, -27, 4, 3, porcelain);
-      p(-5, -24, 10, 4, porcelain);
-      p(-7, -20, 14, 10, shade);
-      p(-5, -20, 10, 12, porcelain);
-      p(-3, -8, 6, 3, shade);
-      p(-1, -22, 2, 13, color);
-      p(-4, -3, 3, 1, porcelain);
-      p(2, -3, 3, 1, porcelain);
-    } else {
-      p(-6, -30, 12, 17, shade);
-      p(-4, -32, 8, 3, porcelain);
-      p(-4, -27, 8, 9, ink);
-      glow(-2, -25, 4, 4);
-      p(-3, -12, 3, 7, porcelain);
-      p(3, -12, 3, 7, shade);
+    const s = specFor(n), sit = n.state === "sit";
+    const fr = n.moving ? n.frame : 0;
+    const off = STRIDE[fr] || 0;
+    const bob = n.moving ? BOB[fr] : Math.round(Math.sin(t * 1.6 + x * 0.13) * 0.5 - 0.5);
+    let glitch = 0;
+    if (n.def && n.def.glitch && !reduced) {
+      const ph = (t + x * 0.01) % 7.3;
+      if (ph < 0.09)
+        glitch = 1;
     }
+    ctx.save();
+    if (n.temp)
+      ctx.globalAlpha = 0.78 + Math.sin(t * 9 + 1) * 0.1;
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath();
+    ctx.ellipse(x, ground + 1, s.kind === "seed" ? 6 : 8, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.translate(x + (glitch ? Math.random() < 0.5 ? -1 : 1 : 0), ground);
+    ctx.scale(n.dir || 1, 1);
+    const p = (px, py, w, h, c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(px, py, w, h);
+    };
+    drawFigure(p, s, { off, bob, sit, light: n.color || null });
+    if (glitch) {
+      ctx.globalAlpha = 0.4;
+      p(-5, -(s.legH + s.torsoH) + 6, 10, 1, "#5eead4");
+      p(-5, -s.legH - 2, 10, 1, "#f2a3c0");
+    }
+    ctx.restore();
+  }
+  function drawVisitor(ctx, a, P, t) {
+    const x = Math.round(a.x), ground = Math.round(a.y) + 14;
+    const fr = a.moving ? a.frame : 0;
+    const off = STRIDE[fr] || 0;
+    const bob = a.moving ? BOB[fr] : Math.round(Math.sin(t * 2.2) * 0.5 - 0.5);
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath();
+    ctx.ellipse(x, ground + 1, 8, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.translate(x, ground);
+    ctx.scale(a.dir || 1, 1);
+    const p = (px, py, w, h, c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(px, py, w, h);
+    };
+    drawFigure(p, VISITOR, { off, bob, cap: P && P.accent || "#f2c14e" });
     ctx.restore();
   }
 
@@ -2520,31 +2552,7 @@
       ctx.fill("evenodd");
     }
     drawAvatar(t) {
-      const ctx = this.ctx, P = this.P, a = this.av, x = Math.round(a.x), y = Math.round(a.y);
-      ctx.fillStyle = "rgba(0,0,0,0.28)";
-      ctx.beginPath();
-      ctx.ellipse(x, y + 15, 8, 3, 0, 0, 6.2832);
-      ctx.fill();
-      ctx.save();
-      ctx.translate(x, y + 14);
-      ctx.scale(a.dir, 1);
-      const fr = a.moving ? a.frame : 0;
-      const off = [0, 2, 3, 0, -2, -3][fr], bob = a.moving ? [0, -1, -1, 0, -1, -1][fr] : Math.round(Math.sin(t * 2.2) * 0.5 - 0.5);
-      this.px(-3 - off, -7, 3, 7, "#181218");
-      this.px(0 + off, -7, 3, 7, "#1d151d");
-      const by = -19 + bob;
-      this.px(-4, by, 9, 12, "#262029");
-      this.px(-4, by, 2, 11, "#332b36");
-      this.px(3, by, 2, 12, "#181218");
-      this.px(-3, by - 1, 7, 2, P.glow);
-      const hy = -27 + bob;
-      this.px(-2, hy, 6, 7, "#cdc8ba");
-      this.px(3, hy, 1, 7, "#948e80");
-      this.px(-2, hy - 1, 6, 2, "#1d1a24");
-      this.px(-2, hy - 2, 6, 2, P.accent);
-      this.px(-1, hy - 3, 4, 1, P.accent);
-      this.px(4, hy - 1, 3, 1, P.accent);
-      ctx.restore();
+      drawVisitor(this.ctx, this.av, this.P, t);
     }
     drawNpc(n, t) {
       drawPresence(this.ctx, n, t, this.reduced);
@@ -3896,10 +3904,10 @@
             b.px(618 + i * 10, 258 + i * 3, 9, 1, "rgba(159,214,224,0.20)");
           for (let i = 0;i < 4; i++) {
             const cx = 728 + i * 66, cy = 212 + i * 11 % 10, r = 26 + i * 7 % 10;
-            for (let rr = r;rr > 0; rr -= 2) {
-              b.ctx.fillStyle = rr / r > 0.55 ? "#0d1118" : "#121822";
+            for (let rr2 = r;rr2 > 0; rr2 -= 2) {
+              b.ctx.fillStyle = rr2 / r > 0.55 ? "#0d1118" : "#121822";
               b.ctx.beginPath();
-              b.ctx.ellipse(cx, cy, rr, rr * 0.52, 0, 0, 6.2832);
+              b.ctx.ellipse(cx, cy, rr2, rr2 * 0.52, 0, 0, 6.2832);
               b.ctx.fill();
             }
             b.px(cx - 1, cy + r * 0.4, 3, 254 - (cy + r * 0.4), "#0a0d12");
@@ -5450,9 +5458,9 @@
   var WIN = { w: 118, yTop: 54, ySpring: 150, yBase: WB, sTop: 88, sBot: 214 };
   function pxDisc(ctx, cx, cy, r, col, a) {
     ctx.fillStyle = rgba(col, a);
-    const rr = (r + 0.35) * (r + 0.35);
+    const rr2 = (r + 0.35) * (r + 0.35);
     for (let dy = -r;dy <= r; dy++) {
-      const w = Math.round(Math.sqrt(Math.max(0, rr - dy * dy)));
+      const w = Math.round(Math.sqrt(Math.max(0, rr2 - dy * dy)));
       if (w <= 0)
         continue;
       ctx.fillRect(Math.round(cx - w), Math.round(cy + dy), w * 2 + 1, 1);
