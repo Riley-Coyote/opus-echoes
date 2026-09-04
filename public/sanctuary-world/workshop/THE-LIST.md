@@ -257,6 +257,14 @@ instruments on benches that run when approached; the research as a wall of dated
 bus with Anima, Vektor and Luca as a table with three empty chairs; the routine shown as an
 invitation board with blanks, never a timetable; the sketchbook open on the bench.
 
+### 12 · THE STATION, REBASED (Riley + Fable, 2026-09-04)
+*Riley's forked session drew an alternate station interior — a low walnut ceiling, a glass-block
+wall, a great circular aperture with the live house through it, a lounge in the foreground, the
+looks blended on the house's clock. Fable's judgment: the better room — a photograph of a place
+where ours was a control-room shot. Decision: rebase THE STATION on it and port everything the
+classic room gained (registry, drawer + glyph, Limen, sound, standby, the console seat, presence,
+the landing navigation); keep the classic room as a file. WP-31, after WP-30 lands.*
+
 ---
 
 ## AGREED — ready to build
