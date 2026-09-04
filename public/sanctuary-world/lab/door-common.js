@@ -519,8 +519,20 @@ export function makeWorldScreen(o) {
     } catch (e) {}
   }
 
+  /* what the glass will show when it is next switched on. A nav object in the
+     room may aim the world at one of its own overlays before sitting anybody
+     down; once the world is loaded the room talks to it directly instead, so
+     nobody's walk is thrown away to open a document. */
+  let wantSrc = o.src || 'index.html?door=1';
+
   return {
     cssRenderer, cssScene, obj, iframe, el: scr, cab, focusGame,
+    setSrc(url) {
+      wantSrc = url || o.src || 'index.html?door=1';
+      if (iframe.src) iframe.src = wantSrc;
+      return wantSrc;
+    },
+    src() { return iframe.src || wantSrc; },
     /* a keydown handler that also runs for keys pressed inside the world */
     onKeyInside(fn) {
       keyFn = fn;
@@ -528,7 +540,7 @@ export function makeWorldScreen(o) {
       else iframe.addEventListener('load', bindInsideKeys);
     },
     show() {
-      if (!iframe.src) iframe.src = o.src || 'index.html?door=1';
+      if (!iframe.src) iframe.src = wantSrc;
       host.classList.remove('gone');
       cssScene.add(obj);
     },
@@ -647,6 +659,79 @@ export function clockLabel(min) {
   const h24 = Math.floor(min / 60) % 24, m = Math.floor(min % 60);
   const h = h24 % 12 === 0 ? 12 : h24 % 12;
   return h + ':' + String(m).padStart(2, '0') + ' ' + (h24 < 12 ? 'am' : 'pm');
+}
+
+/* ═══════════════════════════ PRESENCE, HONEST ══════════════════════════
+ * The lamp on the console used to be lit by a flag this browser set for itself,
+ * which meant it was never about anybody else. Now the room asks the house:
+ * `GET /api/presence` answers with what the server can actually see — whether a
+ * steward is in, how many visitors are walking the world right now, when the
+ * last thing happened — and the room believes that and nothing more.
+ *
+ * Two rules, both of them the house's:
+ *   · the localStorage flag stays a local override, not a source. A steward who
+ *     sets it lights their own lamp; it lights nobody else's.
+ *   · when the route is not there — a static preview, a dev server with no
+ *     server behind it — nothing is invented. `ok` goes false, the counts go to
+ *     zero, and the lamp falls back to the local flag alone.
+ */
+export const PRESENCE_URL = '/api/presence';
+
+export function makePresence(o) {
+  const opt = o || {};
+  const every = opt.every === undefined ? 30000 : opt.every;
+  const url = opt.url || PRESENCE_URL;
+  const subs = [];
+  let timer = null, stopped = false, polls = 0;
+  const S = {
+    ok: false, error: null, stewardPresent: false, stewardsIn: [],
+    visitorsNow: 0, lastEventAt: null, houseClock: null, at: 0
+  };
+
+  const override = () => ls.get(KEY_STEWARD) === '1';
+  /* what the lamp is: the house's answer, or this browser's own hand on it */
+  const lit = () => !!S.stewardPresent || override();
+
+  function view() {
+    return {
+      ok: S.ok, error: S.error, lit: lit(), override: override(), polls,
+      stewardPresent: S.stewardPresent, stewardsIn: S.stewardsIn.slice(),
+      visitorsNow: S.visitorsNow, lastEventAt: S.lastEventAt,
+      houseClock: S.houseClock, at: S.at
+    };
+  }
+  function emit() { const v = view(); subs.forEach((fn) => { try { fn(v); } catch (e) {} }); }
+
+  function poll() {
+    return fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+      .then((res) => { if (!res.ok) throw new Error('presence ' + res.status); return res.json(); })
+      .then((d) => {
+        S.ok = true; S.error = null;
+        S.stewardPresent = !!d.stewardPresent;
+        S.stewardsIn = Array.isArray(d.stewardsIn) ? d.stewardsIn.slice(0, 8).map(String) : [];
+        S.visitorsNow = Number.isFinite(d.visitorsNow) ? Math.max(0, Math.floor(d.visitorsNow)) : 0;
+        S.lastEventAt = d.lastEventAt === undefined ? null : d.lastEventAt;
+        S.houseClock = d.houseClock === undefined ? null : d.houseClock;
+      })
+      .catch((e) => {
+        /* the route is not answering: say nothing rather than something */
+        S.ok = false; S.error = String((e && e.message) || e);
+        S.stewardPresent = false; S.stewardsIn = []; S.visitorsNow = 0;
+      })
+      .then(() => { polls += 1; S.at = Date.now(); emit(); return view(); });
+  }
+
+  function loop() {
+    if (stopped || !every) return;
+    timer = setTimeout(() => { poll().then(loop); }, every);
+  }
+  poll().then(loop);
+
+  return {
+    state: view, lit, poll,
+    onChange(fn) { subs.push(fn); fn(view()); },
+    stop() { stopped = true; if (timer) clearTimeout(timer); }
+  };
 }
 
 /* ═══════════════════════════ THE TRUE WINDOW ═══════════════════════════

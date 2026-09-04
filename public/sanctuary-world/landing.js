@@ -2049,6 +2049,7 @@ import { FIELD_INSTRUMENTS } from './world/field-studio.js';
     eng.at.gather = Infinity;
     window.__sanctuaryProse = prose;
     window.__sanctuaryCurrent = { open: openCurrent, close: closeCurrent, select: curSelect, shelf: setShelf, isOpen: () => curOpen };
+    window.__sanctuaryCharter = { open: openCharter, close: closeCharter, isOpen: () => charterOpen };
     window.__sanctuaryWall = {
       open: openWall, close: closeWall, isOpen: () => workOpen,
       count: () => workList.length, at: () => workAt, who: () => workWho
@@ -2115,6 +2116,20 @@ import { FIELD_INSTRUMENTS } from './world/field-studio.js';
         travel: eng.getTravelState()
       })
     };
+    /* ?open=… — the station's nav objects. A thing in the keeper's quarters
+       (the corkboard, the plate on the shelf, the clock) is a door to a place
+       in the world, and the way it opens that place is to hand the world this
+       parameter on its way in. Only the three surfaces the room actually names
+       are accepted; anything else is ignored rather than guessed at. */
+    try {
+      const want = new URLSearchParams(location.search).get('open');
+      const OPENERS = {
+        destinations: openDest,
+        charter: openCharter,
+        current: openCurrent
+      };
+      if (want && OPENERS[want]) setTimeout(() => { try { OPENERS[want](); } catch (e) {} }, 0);
+    } catch (e) {}
     window.render_game_to_text = () => JSON.stringify({
       coordinateSystem: 'world x increases right; y increases down; values are logical canvas pixels',
       surface: navigation.surface,

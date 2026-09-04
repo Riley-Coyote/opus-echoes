@@ -11694,6 +11694,7 @@
       eng.at.gather = Infinity;
       window.__sanctuaryProse = prose_default;
       window.__sanctuaryCurrent = { open: openCurrent, close: closeCurrent, select: curSelect, shelf: setShelf, isOpen: () => curOpen };
+      window.__sanctuaryCharter = { open: openCharter, close: closeCharter, isOpen: () => charterOpen };
       window.__sanctuaryWall = {
         open: openWall,
         close: closeWall,
@@ -11781,6 +11782,20 @@
           travel: eng.getTravelState()
         })
       };
+      try {
+        const want = new URLSearchParams(location.search).get("open");
+        const OPENERS = {
+          destinations: openDest,
+          charter: openCharter,
+          current: openCurrent
+        };
+        if (want && OPENERS[want])
+          setTimeout(() => {
+            try {
+              OPENERS[want]();
+            } catch (e) {}
+          }, 0);
+      } catch (e) {}
       window.render_game_to_text = () => JSON.stringify({
         coordinateSystem: "world x increases right; y increases down; values are logical canvas pixels",
         surface: navigation.surface,
