@@ -492,3 +492,11 @@ with real guided walks and the thread teleport; a map button in the cab. Lab 02 
   south-west; sculptures can name their lightbox starting angle. Opus agent + Fable.
 - 2026-09-01 · **THE WORKSHOP** — every space on one zoomable canvas, drawn live (`04dcafd`)
 - 2026-09-01 · **NAV LAB 02 — DESTINATIONS** — the travel menu, select-then-GO (`a37069d`)
+
+## 2026-09-04 · the audible: THE READING ROOM is the front door (WP-33, 161ddc8 → main 31abc07)
+Riley paused both stations to keep scope small. `door.html` now carries a three-tier shelf with
+ten link objects (museum, charter, MCP, Hermes*, Polyphonic web/desktop*, sketchbook*, token,
+source, the Current; * = not yet public, said honestly), a scrollable front page under the canvas
+(mobile = the page), the agreement as the boot text (48 words) → full-bleed world, `/sanctuary` →
+door.html. Next: the interior polish pass with the framing rule (shelf/terminal/window always in
+frame, fov per aspect ratio), then Riley republishes and takes it live. Later: the desk robot guide.
