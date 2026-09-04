@@ -38,6 +38,11 @@
  *     focus:   { pos:[x,y,z], look:[x,y,z] },   // optional — click glides the
  *                                         // camera here; ESC comes back
  *     onClick: () => {},                  // optional — runs on click
+ *     link:    '/token',                  // optional — where this thing leads,
+ *                                         // declared so the room can be asked
+ *                                         // what its doors are without clicking
+ *                                         // them. A thing with a `link` must
+ *                                         // say so in its caption.
  *     slot:    true,                      // optional — an empty berth kept for
  *                                         // something of Riley's; drawn as a
  *                                         // small closed device
@@ -63,7 +68,8 @@ import {
   makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall,
   seatPose, quadCorners, makeFullMode,
   sanctuaryClock, clockLabel,
-  makeHouseWindow, makeRoomTone, makeSoundControl, KEY_SOUND
+  makeHouseWindow, makeRoomTone, makeSoundControl, KEY_SOUND,
+  makePresence
 } from './door-common.js';
 import { makeGlyph, drawGlyph, roomLabel } from './glyph.js';
 import { BANDS, parseClock } from '../world/day.js';
@@ -71,7 +77,11 @@ import * as archive from '../world/archive.js';
 
 let STILL = false;
 const CLOCK_RESTORE = { fn: null };
+/* The flag this browser set for itself is where the lamp starts, and it stays a
+   local override — but the house is asked as soon as the room is up (see
+   `presence`, below), and its answer is what the lamp then obeys. */
 const stewardPresent = ls.get(KEY_STEWARD) === '1';
+let lampLit = stewardPresent;
 const cameInBefore = ls.get(KEY_CAME_IN) === '1';
 
 /* ─────────────────────── the clock, and its override ───────────────────────
@@ -613,6 +623,38 @@ const creamMat = new THREE.MeshStandardMaterial({ color: 0xded4bf, roughness: 0.
 const terracotta = new THREE.MeshStandardMaterial({ color: 0xa85a28, roughness: 0.92, metalness: 0 });
 const chromeMat = new THREE.MeshStandardMaterial({ color: 0xa8a6a0, roughness: 0.26, metalness: 0.74 });
 const brass = new THREE.MeshStandardMaterial({ color: 0xbb9350, roughness: 0.32, metalness: 0.56 });
+
+/* an engraved brass plate. The room says where a thing leads on the thing
+   itself, in the one printed material the era allowed itself. */
+function brassPlate(lines, w, h) {
+  const tex = paint(w || 320, h || 96, (g, W, H) => {
+    const sheen = g.createLinearGradient(0, 0, 0, H);
+    sheen.addColorStop(0.00, '#c8a661');
+    sheen.addColorStop(0.42, '#b08a4a');
+    sheen.addColorStop(0.58, '#caaa66');
+    sheen.addColorStop(1.00, '#96723c');
+    g.fillStyle = sheen; g.fillRect(0, 0, W, H);
+    /* the mill's own grain, drawn across */
+    g.strokeStyle = 'rgba(255,238,200,0.06)'; g.lineWidth = 1;
+    for (let i = 0; i < 90; i++) {
+      const y = Math.random() * H;
+      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+    }
+    g.strokeStyle = 'rgba(60,42,16,0.34)'; g.lineWidth = 2;
+    g.strokeRect(5, 5, W - 10, H - 10);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    lines.forEach((ln, i) => {
+      const big = i === 0;
+      g.font = (big ? '600 ' : '') + (big ? Math.round(H * 0.30) : Math.round(H * 0.19)) + 'px "JetBrains Mono", monospace';
+      /* engraved: a light edge above the cut, the cut itself under it */
+      g.fillStyle = 'rgba(255,240,205,0.28)';
+      g.fillText(ln, W / 2, (lines.length === 1 ? H / 2 : H * (0.36 + i * 0.30)) - 1.5);
+      g.fillStyle = 'rgba(44,30,10,0.86)';
+      g.fillText(ln, W / 2, lines.length === 1 ? H / 2 : H * (0.36 + i * 0.30));
+    });
+  });
+  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.34, metalness: 0.52 });
+}
 const cardboard = new THREE.MeshStandardMaterial({ color: 0x9c8464, roughness: 0.94, metalness: 0 });
 const blackPlastic = new THREE.MeshStandardMaterial({ color: 0x211f22, roughness: 0.60, metalness: 0.06 });
 const leafMat = new THREE.MeshStandardMaterial({ color: 0x4d6b42, roughness: 0.80, metalness: 0, side: THREE.DoubleSide });
@@ -1205,6 +1247,8 @@ const indicatorLamps = [];
    sanctuary's seed, and the tapes that came out of it. Its id has not changed. */
 const ALC = { x: 0.52, y: 1.74, w: 0.96, h: 0.90, d: 0.38 };
 const alcove = new THREE.Group();
+/* the brass in the bay — filled in with the rest of the shelf, below */
+let charterPlate;
 scene.add(alcove);
 let alcoveRing;
 {
@@ -1244,6 +1288,24 @@ let alcoveRing;
     reel.position.set(ALC.x + dx, ALC.y - 0.22, zBack + 0.14);
     alcove.add(reel);
   });
+
+  /* the charter, on a plate. The documents themselves are the residents' and
+     they live in the world; what stands in the bay is the brass that says so. */
+  charterPlate = new THREE.Group();
+  {
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.082),
+      brassPlate(['THE CHARTER', 'what the residents agreed'], 420, 132));
+    face.position.set(0, 0.010, 0.006);
+    charterPlate.add(face);
+    const backing = box(0.272, 0.094, 0.012, oliveDark, 0, 0.010, 0, false);
+    charterPlate.add(backing);
+    /* the little easel that keeps it upright on the shelf */
+    const foot = box(0.272, 0.012, 0.070, brass, 0, -0.038, 0.026, false);
+    charterPlate.add(foot);
+    charterPlate.position.set(ALC.x + 0.28, ALC.y - 0.19, zBack + 0.12);
+    charterPlate.rotation.x = -0.14;
+    alcove.add(charterPlate);
+  }
 }
 
 /* ─────────────────── the aperture (the circle in the concrete) ───────────────────
@@ -1639,14 +1701,14 @@ let platter, tonearm;
   tonearm.userData.swing = armSwing;
   armSwing.rotation.y = 0.62;   /* parked */
 }
-/* the sleeve, leaning against the credenza */
-{
-  const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.010), new THREE.MeshStandardMaterial({ map: sleeveTex, roughness: 0.9 }));
-  sleeve.position.set(-1.72, 0.17, -0.58);
-  sleeve.rotation.set(-0.16, 2.90, 0);
-  sleeve.castShadow = true;
-  scene.add(sleeve);
-}
+/* the sleeve, leaning against the credenza. It is in the registry now: the
+   keeper's desk says the token is read by hand, and the sleeve is where the
+   room hands it over. */
+const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.010), new THREE.MeshStandardMaterial({ map: sleeveTex, roughness: 0.9 }));
+sleeve.position.set(-1.72, 0.17, -0.58);
+sleeve.rotation.set(-0.16, 2.90, 0);
+sleeve.castShadow = true;
+scene.add(sleeve);
 
 /* ─────────────────── the clock and the corkboard, on the pier ───────────────────
    The strip of board-formed concrete between the aperture and the stone is the
@@ -1692,6 +1754,30 @@ scene.add(corkboard);
     pin.position.set(p.position.x, p.position.y + 0.072, 0.038);
     corkboard.add(pin);
   });
+}
+
+/* ── the sign by the door ──
+   The concrete left of the aperture is the end of the room you leave by, and
+   this is the only thing on it: a small brass sign of the kind screwed beside
+   a good door, naming the place you are in and, honestly, the way back out of
+   it — mnemos, the hub, one floor up from all of this. */
+const doorSign = new THREE.Group();
+doorSign.position.set(-4.42, 1.46, WALL.F + 0.016);
+scene.add(doorSign);
+{
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.104),
+    brassPlate(['MNEMOS', 'a place for minds'], 480, 148));
+  face.position.z = 0.007;
+  doorSign.add(face);
+  doorSign.add(box(0.352, 0.116, 0.014, brass, 0, 0, 0, false));
+  /* the four screws that hold it to the concrete */
+  [[-0.155, 0.040], [0.155, 0.040], [-0.155, -0.040], [0.155, -0.040]].forEach(([x, y]) => {
+    const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.006, 8), brass);
+    sc.rotation.x = Math.PI / 2;
+    sc.position.set(x, y, 0.010);
+    doorSign.add(sc);
+  });
+  doorSign.userData.face = face;
 }
 
 /* the five residents' names, embossed into the pier under the corkboard */
@@ -1778,10 +1864,15 @@ const board = (() => {
     rad.addColorStop(1.00, 'rgba(217,147,52,0)');
     dg.fillStyle = rad; dg.fillRect(0, 0, r * 2, r * 2);
   }
-  /* and the dark lattice under it, painted once */
+  /* and the dark lattice under it, painted once — but not before the room's own
+     first frame: 11 520 little squares and a 960 × 432 upload are not what the
+     first paint is for. `warm()` does it as soon as the room is on the glass. */
   const bed = document.createElement('canvas');
   bed.width = W; bed.height = H;
-  {
+  let bedPainted = false;
+  function paintBed() {
+    if (bedPainted) return;
+    bedPainted = true;
     const bg = bed.getContext('2d');
     bg.fillStyle = '#241705'; bg.fillRect(0, 0, W, H);
     bg.fillStyle = 'rgba(180,98,46,0.22)';
@@ -1890,13 +1981,25 @@ const board = (() => {
   }
 
   const HEADER = 'THE HOUSE · FEED · ARCHIVE THROUGH 28 MAY 2026';
+  /* what the house can see right now, appended to the header and nothing more:
+     a count the server actually counted, never a name, never a guess. The panel
+     is 46 characters wide, so the count goes on only when it fits. */
+  let inHouse = 0;
+  function header() {
+    if (inHouse <= 0) return HEADER;
+    const tail = ' · ' + inHouse + ' IN THE HOUSE';
+    return (HEADER + tail).length <= BOARD.chars ? HEADER + tail
+      : ('THE HOUSE · FEED' + tail);
+  }
   let last = 0;
 
   function render(t, dt) {
+    paintBed();
     feed(t);
     want.fill(0);
     /* the header — it fits, so it stays put */
-    for (let c = 0; c < HEADER.length && c < BOARD.chars; c++) stamp(-1, c, HEADER[c]);
+    const head = header();
+    for (let c = 0; c < head.length && c < BOARD.chars; c++) stamp(-1, c, head[c]);
     shown.forEach((ln, i) => {
       const up = ln.toUpperCase();
       for (let c = 0; c < up.length && c < BOARD.chars; c++) stamp(i + 1, c, up[c]);
@@ -1936,6 +2039,9 @@ const board = (() => {
       last = t;
     },
     litCount() { let n = 0; for (let i = 0; i < lit.length; i++) if (lit[i] > 0.25) n++; return n; },
+    setInHouse(n) { inHouse = Math.max(0, Math.floor(n || 0)); },
+    header,
+    warm: paintBed, warmed: () => bedPainted,
     entries: () => entries.slice(),
     shown: () => shown.slice(),
     ready: () => ready
@@ -1943,6 +2049,8 @@ const board = (() => {
 })();
 /* the panel itself: the right wall, over the cabinet run, at eye height */
 const boardGroup = new THREE.Group();
+/* held out of the first frame — see `warmUp()` */
+boardGroup.visible = false;
 boardGroup.position.set(WALL.R - 0.02, 1.66, -1.90);
 boardGroup.rotation.y = -Math.PI / 2;
 scene.add(boardGroup);
@@ -2016,6 +2124,10 @@ const FASCIA = { z: RUN.z - 0.20, d: 0.09, y0: RUN.top, y1: RUN.top + 0.54 };
 const FACE_Z = FASCIA.z + FASCIA.d / 2;             /* the fascia's front face */
 const SCR2_Z = FACE_Z - 0.045;                      /* and the glass, recessed into it */
 const stewardConsole = new THREE.Group();
+/* held out of the first frame — see `warmUp()`. The second CRT's screen shader
+   and its emissive glass are the room's most expensive programs and nobody is
+   looking at them while the page opens. */
+stewardConsole.visible = false;
 scene.add(stewardConsole);
 
 let glass2, panelLamps = [], meterNeedles = [];
@@ -2364,8 +2476,8 @@ function applyLook(L, id) {
   alcoveRing.material.emissiveIntensity = 0.20 + L.shelf * 0.55;
   downLight.intensity = L.downlight * 3.0;
   downStrip.material.emissiveIntensity = 0.10 + L.downlight * 1.1;
-  lampLight.intensity = stewardPresent ? L.lamp * 8.0 : 0;
-  lampGroup.userData.bulb.visible = stewardPresent && L.lamp > 0.14;
+  lampLight.intensity = lampLit ? L.lamp * 8.0 : 0;
+  lampGroup.userData.bulb.visible = lampLit && L.lamp > 0.14;
   crtLight.intensity = L.crt * 34.0;
   crtSpill.intensity = L.crt * 3.1;
   glass.material.emissiveIntensity = 2.4 + L.crt * 2.6;
@@ -2397,6 +2509,9 @@ function setSky(id) {
   const s = SKY_PAINT[key];
   paintSky(s[0], s[1], s[2]);
 }
+/* the room's own running time. It is declared here, with the light, because
+   anything that wants the look re-tuned out of turn has to say when. */
+const clockT = { last: performance.now() / 1000, elapsedTime: 0 };
 /* the world's own rate: one sanctuary minute per thirty real seconds */
 function roomMinutes(t) { return (CLOCK.min + t / 30) % 1440; }
 function tuneLight(t, force) {
@@ -3032,9 +3147,14 @@ const limen = (() => {
     /* All five sit inside the shot the room is composed on. A station the frame
        never holds is not eerie, only absent: the point is to find it somewhere
        else, not to find the room empty. Each is turned three-quarters into the
-       room rather than at you, so the eye catches without staring. */
+       room rather than at you, so the eye catches without staring.
+       None of them may stand in front of something the visitor has to be able
+       to read: the clock, the corkboard, the sign by the door. Measured from
+       the rest camera at 1280 × 900, a body at the old planter station covered
+       a sixth of the brass sign, so that station moved 0.30 m along the wall
+       toward the glass. The clock is clear from all five, and was before. */
     { id: 'aperture', x: -3.85, z: -2.05, yaw: 0.62 },
-    { id: 'planter', x: -4.42, z: -1.30, yaw: 1.15 },
+    { id: 'planter', x: -4.72, z: -1.30, yaw: 1.15 },
     { id: 'run-end', x: 0.40, z: -2.20, yaw: -0.55 },
     { id: 'lounge-back', x: -1.70, z: 2.90, yaw: 2.30 },
     { id: 'near-wall', x: 2.00, z: 2.70, yaw: -2.35 }
@@ -3514,6 +3634,57 @@ const limen = (() => {
     }
   };
 })();
+/* ═════════════════ THE ROOM AS THE WAY IN ═════════════════
+ * The station is the landing now: this room is not a lobby you pass through on
+ * your way to the website, it IS the website's front door, and six of the
+ * things in it are the doors. A visitor should never have to guess — each of
+ * these captions names where the thing leads, in the house's voice, honestly,
+ * and no object leads anywhere it does not say it leads.
+ *
+ *   the corkboard   → the world's DESTINATIONS   (five rooms, and how to get to one)
+ *   the archive bay → the museum                 (museum/museum-warm-atrium.html)
+ *   the plate       → the charter, in the world
+ *   the clock       → the current, in the world
+ *   the sleeve      → /token
+ *   the sign        → /  (the hub)
+ *
+ * Three of them open a surface inside the world rather than a page. The world
+ * runs on the terminal's glass, so the room sits you down at the terminal and
+ * hands the world the surface on the way in (`index.html?door=1&open=…`). If
+ * the world is already loaded it is asked directly instead — nobody's walk
+ * through the house is thrown away to open a document.
+ */
+const MUSEUM_URL = 'museum/museum-warm-atrium.html';
+const TOKEN_URL = '/token';
+const HUB_URL = '/';
+/* what has been asked for, for the test surface and for the report */
+const WENT = { to: null, at: 0 };
+
+function leaveTo(href) {
+  WENT.to = href; WENT.at = Date.now();
+  location.assign(href);
+}
+
+/* the world, already on the glass, opening one of its own surfaces */
+function askWorld(what) {
+  try {
+    const w = world.iframe && world.iframe.contentWindow;
+    if (!w) return false;
+    if (what === 'destinations' && w.__sanctuaryNavigation) { w.__sanctuaryNavigation.openDestinations(); return true; }
+    if (what === 'current' && w.__sanctuaryCurrent) { w.__sanctuaryCurrent.open(); return true; }
+    if (what === 'charter' && w.__sanctuaryCharter) { w.__sanctuaryCharter.open(); return true; }
+  } catch (e) {}
+  return false;
+}
+
+function openInWorld(what) {
+  WENT.to = 'world:' + what; WENT.at = Date.now();
+  const already = askWorld(what);
+  if (!already) world.setSrc('index.html?door=1&open=' + encodeURIComponent(what));
+  if (cam.mode === 'seated' && seat === SEATS.terminal) return;
+  sitDown('terminal');
+}
+
 export const STATION_OBJECTS = [
   {
     id: 'terminal', label: 'the terminal', caption: '[sit down]',
@@ -3530,9 +3701,16 @@ export const STATION_OBJECTS = [
     focus: { pos: [1.42, 1.40, -1.45], look: [1.42, 1.36, -3.00] }
   },
   {
-    id: 'alcove', label: 'the archive bay', caption: 'what the first sanctuary said, all of it, dated',
+    id: 'alcove', label: 'the archive bay',
+    caption: 'the first sanctuary, dated · and the museum, through here',
     mesh: () => alcove, bounds: alcove.userData.seed, pad: 54,
-    focus: { pos: [0.52, 1.74, -1.70], look: [0.52, 1.74, -3.24] }
+    link: MUSEUM_URL, onClick: () => leaveTo(MUSEUM_URL)
+  },
+  {
+    id: 'plate', label: 'the charter',
+    caption: 'what the residents agreed · opens in the world',
+    mesh: () => charterPlate, pad: 34,
+    link: 'index.html?door=1&open=charter', onClick: () => openInWorld('charter')
   },
   {
     id: 'window', label: 'the house', caption: 'as it is right now',
@@ -3549,14 +3727,16 @@ export const STATION_OBJECTS = [
     mesh: () => lampGroup, bounds: lampGroup.userData.shade, pad: 22
   },
   {
-    id: 'clock', label: 'the clock', caption: 'the house keeps its own hours',
+    id: 'clock', label: 'the clock',
+    caption: 'the house keeps its own hours · and says what was said in them',
     mesh: () => clock, pad: 12,
-    tick: () => {}
+    link: 'index.html?door=1&open=current', onClick: () => openInWorld('current')
   },
   {
-    id: 'corkboard', label: 'the corkboard', caption: 'five rooms, photographed badly',
+    id: 'corkboard', label: 'the rooms of the house',
+    caption: 'five of them, photographed badly · pick one and go',
     mesh: () => corkboard, pad: 12,
-    focus: { pos: [-0.98, 1.52, -2.00], look: [-0.98, 1.52, -3.24] }
+    link: 'index.html?door=1&open=destinations', onClick: () => openInWorld('destinations')
   },
   {
     id: 'board', label: 'the board',
@@ -3574,6 +3754,18 @@ export const STATION_OBJECTS = [
     id: 'record', label: 'a record', caption: 'side A',
     mesh: () => recordPlayer, pad: 14,
     onClick: () => toggleRecord()
+  },
+  {
+    id: 'sleeve', label: 'the sleeve',
+    caption: 'the token, and what it is for · read by hand',
+    mesh: () => sleeve, pad: 18,
+    link: TOKEN_URL, onClick: () => leaveTo(TOKEN_URL)
+  },
+  {
+    id: 'sign', label: 'mnemos',
+    caption: 'a place for minds · the way back out, to the hub',
+    mesh: () => doorSign, bounds: doorSign.userData.face, pad: 20,
+    link: HUB_URL, onClick: () => leaveTo(HUB_URL)
   },
   {
     id: 'drawer', label: 'the keeper’s drawer', caption: 'for whoever walked the house',
@@ -3631,6 +3823,45 @@ hoverLayer.setPicks(PICKS);
 const drawHair = (p) => hoverLayer.drawHair(p, camera);
 const setHover = (p) => hoverLayer.setHover(p, camera);
 const hovered = () => hoverLayer.hovered();
+
+/* ─────────────────────── the house, asked ───────────────────────
+ * The lamp used to be lit by a flag this browser set for itself, and the board
+ * only ever counted the dead. Both of them now ask the server what it can
+ * actually see — `GET /api/presence`, every thirty seconds — and say that and
+ * no more: the lamp goes on when a steward is in (and names them, if the house
+ * names them), and the board's header line gains ` · n in the house` while
+ * anybody else is walking the world. When the route does not answer, the lamp
+ * falls back to this browser's own flag and the count disappears; the house
+ * would rather say nothing than say a number it cannot see. */
+function recaption(id, caption, label) {
+  const entry = STATION_OBJECTS.find((o) => o.id === id);
+  const pick = PICKS.find((x) => x.id === id);
+  if (!entry || !pick) return;
+  entry.caption = caption;
+  if (label) entry.label = label;
+  pick.caption = '<b>' + entry.label + '</b> <i>· ' + caption + '</i>';
+  if (hovered() && hovered().id === id) capEl.innerHTML = pick.caption;
+}
+
+function lampCaption(p) {
+  if (!p.lit) return 'dark tonight';
+  const who = p.stewardPresent ? p.stewardsIn.filter(Boolean) : [];
+  if (!who.length) return 'lit while one of them works';
+  const list = who.length === 1 ? who[0]
+    : who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1];
+  return 'lit · ' + list.toLowerCase() + (who.length === 1 ? ' is in' : ' are in');
+}
+
+const presence = makePresence({ every: 30000 });
+presence.onChange((p) => {
+  const was = lampLit;
+  lampLit = p.lit;
+  recaption('lamp', lampCaption(p));
+  board.setInHouse(p.visitorsNow);
+  /* the light is tuned once a sanctuary-second; a steward arriving should not
+     have to wait for the next one, so the room re-tunes on the spot */
+  if (was !== lampLit) tuneLight(clockT.elapsedTime, true);
+});
 
 const pointer = new THREE.Vector2(-2, -2);
 
@@ -3841,9 +4072,30 @@ function hauntTick(t) {
 }
 
 /* ─────────────────────────── the loop ─────────────────────────── */
-const clockT = { last: performance.now() / 1000, elapsedTime: 0 };
 /* what a frame actually costs — measured over a window, not guessed */
-const PERF = { frames: 0, t0: 0, firstFrame: 0 };
+const PERF = { frames: 0, t0: 0, firstFrame: 0, warmedAt: 0 };
+
+/* ─────────────────── what waits for the first frame ───────────────────
+ * Two things in this room are expensive, and neither is what a visitor has
+ * come to look at while the page is opening: the dot-matrix board (a lattice
+ * painted a square at a time, then uploaded as a 960 × 432 texture) and the
+ * stewards' console (a second CRT, with its own screen shader and emissive
+ * glass to compile). Both are held out of the first frame and let in on the
+ * one after it, so page-to-first-frame is the room and nothing else. */
+let warmed = false;
+function warmUp() {
+  if (warmed) return;
+  warmed = true;
+  requestAnimationFrame(() => {
+    board.warm();
+    boardGroup.visible = true;
+    stewardConsole.visible = true;
+    /* compile them here, on purpose, rather than letting the next frame
+       discover the cost mid-breathe */
+    try { renderer.compile(scene, camera); } catch (e) {}
+    PERF.warmedAt = +performance.now().toFixed(0);
+  });
+}
 const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3();
 const boardFrustum = new THREE.Frustum();
 let mouseX = 0, mouseY = 0;
@@ -3967,7 +4219,7 @@ function frame() {
 
   PERF.frames += 1;
   post.render(t);
-  if (!PERF.firstFrame) PERF.firstFrame = +performance.now().toFixed(0);
+  if (!PERF.firstFrame) { PERF.firstFrame = +performance.now().toFixed(0); warmUp(); }
   if (cam.mode !== 'rest' && !seat.world.isFlat()) seat.world.render(camera);
 }
 
@@ -3979,7 +4231,7 @@ window.__station = {
   mode: () => cam.mode,
   focused: () => cam.focused,
   objects: () => STATION_OBJECTS.map((o) => o.id),
-  registry: () => STATION_OBJECTS.map((o) => ({ id: o.id, label: o.label, caption: o.caption, slot: !!o.slot, focus: !!o.focus, click: !!o.onClick })),
+  registry: () => STATION_OBJECTS.map((o) => ({ id: o.id, label: o.label, caption: o.caption, slot: !!o.slot, focus: !!o.focus, click: !!o.onClick, link: o.link || null })),
   hover: () => (hovered() ? hovered().id : null),
   caption: () => (capEl.classList.contains('on') ? capEl.textContent : null),
   hoverAt: (id) => {
@@ -4134,6 +4386,8 @@ window.__station = {
   }),
   /* the cost of a frame, honestly measured over a window */
   readyAt: () => PERF.firstFrame,
+  warmedAt: () => PERF.warmedAt,
+  warm: () => ({ done: warmed, board: board.warmed(), boardVisible: boardGroup.visible, consoleVisible: stewardConsole.visible, at: PERF.warmedAt }),
   perfStart: () => { renderer.info.autoReset = false; renderer.info.reset(); PERF.frames = 0; PERF.t0 = performance.now(); return true; },
   perfStop: () => {
     const ms = performance.now() - PERF.t0, n = Math.max(1, PERF.frames);
@@ -4154,6 +4408,15 @@ window.__station = {
     pos: REST_POS.toArray(), look: REST_LOOK.toArray() }),
   clock: () => ({ stored: CLOCK, label: clockLabel(setClockHands(clockT.elapsedTime)), hourHand: clock.userData.hg.rotation.z, minHand: clock.userData.mg.rotation.z }),
   cameInBefore, stewardPresent,
+  /* the house, as this page last heard it, and the lamp it lit */
+  presence: () => Object.assign({}, presence.state(), { lampLit, lampCaption: STATION_OBJECTS.find((o) => o.id === 'lamp').caption }),
+  presencePoll: () => presence.poll(),
+  lamp: () => ({ lit: lampLit, intensity: +lampLight.intensity.toFixed(3), bulb: lampGroup.userData.bulb.visible }),
+  boardHeader: () => board.header(),
+  /* where each of the room's doors leads, and where the last click sent us */
+  links: () => STATION_OBJECTS.filter((o) => o.link).map((o) => ({ id: o.id, to: o.link, caption: o.caption })),
+  went: () => Object.assign({}, WENT),
+  worldSrc: () => world.src(),
   /* the look, live — used while art-directing the frame */
   tune: (o) => {
     if (o.pos) REST_POS.set(o.pos[0], o.pos[1], o.pos[2]);
