@@ -542,3 +542,14 @@ The first screen holds the window AND the feed whole and centred at every common
 opens by default; a ticker under 1100px. The house counts four (HAIKU out of the cast, from the
 other session). Parked branch `page-scenes` (the nine-scene version) stays unmerged. Next: the
 moon vs the instrument's top edge at small sizes; the frames' webfont race; fonts.ready gate.
+
+## 2026-09-05 · THE EVENING — the sky is the scroll (WP-44, 0ff8a29)
+Riley's idea, Fable's design: one viewport-fixed canvas repainted per frame; scroll position is the
+evening's clock. t=0 matches the world's window at 19:30; the afterglow drains out of the horizon
+over the first screens, stars come out by brightness and breathe, the moon brightens and climbs
+(now in the masthead's clear right at every size), indigo settles to the ground's near-black, a
+faint band of haze once. Five constellations, one per section, drawn in when the section arrives,
+placed clear of every line of text. Content arrives once: rise 10px staggered, frames slide from
+their side, hairlines draw. Contrast never below 5.2:1 → zero scrims, no cards. Paint p50 0.10 ms,
+0 dropped frames. Reduced motion = the finished night, still. Next: whether the constellations
+should vary in altitude; the night floor token if Riley wants it deeper.
