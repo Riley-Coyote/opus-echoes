@@ -11085,6 +11085,8 @@
         return Promise.resolve(WALL_IMAGES.get(src));
       return new Promise((res) => {
         const im = new Image;
+        if (/^https?:\/\//.test(src) && src.indexOf(location.origin) !== 0)
+          im.crossOrigin = "anonymous";
         im.onload = () => {
           WALL_IMAGES.set(src, im);
           res(im);
@@ -12165,6 +12167,16 @@
       const lx = (x + w / 2 - (eng.camX || 0)) / eng.cv.width * 100;
       encLight.style.setProperty("--vx", Math.max(7, Math.min(93, lx)).toFixed(1) + "%");
       encLight.style.setProperty("--vy", ((y + h / 2) / eng.cv.height * 100).toFixed(1) + "%");
+      if (lx > 58)
+        encounterEl.classList.add("visit--left");
+      else if (lx < 42)
+        encounterEl.classList.remove("visit--left");
+    }
+    function sideByResident() {
+      const n = litNpc();
+      if (!n || !eng || !eng.cv)
+        return;
+      encounterEl.classList.toggle("visit--left", (n.x - (eng.camX || 0)) / eng.cv.width >= 0.5);
     }
     function clearSpot() {
       if (enc)
@@ -12178,6 +12190,8 @@
       }
       if (eng)
         eng.camHold = null;
+      if (!encounterEl.hidden)
+        sideByResident();
     }
     function showOnWall() {
       const frames = WALL_FRAMES[enc.id] || [];
@@ -12227,7 +12241,7 @@
       await wait(REDUCED ? 400 : 3200);
       if (!enc || enc.id !== id || enc.closing)
         return false;
-      encKicker.textContent = "speaking from the archive today";
+      setState(enc.state || "archive");
       await loadImage(page.preview);
       appendPage(page);
       appendWords(page.meaning, "the sketchbook · " + page.title + " · " + day(page.created_at));
@@ -12259,9 +12273,8 @@
     }
     function showScene() {
       cab.classList.add("visiting");
-      const n = litNpc();
-      const vx = n && eng && eng.cv ? (n.x - (eng.camX || 0)) / eng.cv.width : 0.35;
-      encounterEl.classList.toggle("visit--left", vx >= 0.5);
+      encounterEl.classList.remove("visit--left");
+      sideByResident();
       encounterEl.hidden = false;
       trackLight();
       requestAnimationFrame(() => {
@@ -12279,6 +12292,8 @@
       encounterEl.classList.remove("on");
       encounterEl.hidden = true;
       encFree.hidden = true;
+      delete encounterEl.dataset.state;
+      setComposer(true);
     }
     function decorateApproach(it) {
       const n = it.npc;
@@ -12294,7 +12309,7 @@
       }
       const l = archive_default.isLoaded() ? archive_default.lineFor(n.id, eng.clockMin, eng.day) : null;
       it.hint = l ? l.text : "speaking from the archive today";
-      it.action = "greet";
+      it.action = voiceFor(n.id) ? "ask to speak" : "greet";
       it.line = l;
     }
     function syncApproach() {
@@ -12350,6 +12365,168 @@
       const l = archive_default.lineFor(id, eng.clockMin, eng.day);
       return l ? { text: l.text, from: l.from } : null;
     }
+    const VOICE = (() => {
+      try {
+        return new URLSearchParams(location.search).get("voice");
+      } catch (e) {
+        return null;
+      }
+    })();
+    const VISIT_HOLD = 6;
+    const JSON_HEADERS = { "content-type": "application/json" };
+    const voiceError = (code) => Object.assign(new Error(String(code)), { code: String(code) });
+    const houseVoice = {
+      kind: "live",
+      async start(id) {
+        const r = await fetch("/api/chat/start", {
+          method: "POST",
+          headers: JSON_HEADERS,
+          body: JSON.stringify({ resident: archive_default.WORLD_TO_ARCHIVE[id], visitor_token: visitorToken(), surface: "sanctuary-world" })
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j || !j.ok || !j.session_id)
+          throw voiceError(j && j.code || "http_" + r.status);
+        return j.session_id;
+      },
+      async say(session, text, situation, onEvent) {
+        const r = await fetch("/api/message", {
+          method: "POST",
+          headers: JSON_HEADERS,
+          body: JSON.stringify({ session_id: session, body: text, situation })
+        });
+        if (!r.ok || !r.body) {
+          const j = await r.json().catch(() => null);
+          throw voiceError(j && j.code || "http_" + r.status);
+        }
+        const reader = r.body.getReader(), dec = new TextDecoder;
+        let buf = "";
+        const feed = (line) => {
+          if (!line.trim())
+            return;
+          let ev = null;
+          try {
+            ev = JSON.parse(line);
+          } catch (e) {
+            return;
+          }
+          onEvent(ev);
+        };
+        for (;; ) {
+          const c = await reader.read();
+          if (c.done)
+            break;
+          buf += dec.decode(c.value, { stream: true });
+          const lines2 = buf.split(`
+`);
+          buf = lines2.pop();
+          lines2.forEach(feed);
+        }
+        feed(buf);
+      },
+      setDown(session, leaving) {
+        const body = JSON.stringify({ session_id: session });
+        if (leaving && navigator.sendBeacon) {
+          try {
+            if (navigator.sendBeacon("/api/set-down", new Blob([body], { type: "application/json" })))
+              return Promise.resolve(true);
+          } catch (e) {}
+        }
+        return fetch("/api/set-down", { method: "POST", headers: JSON_HEADERS, body, keepalive: true }).then((r) => r.ok).catch(() => false);
+      }
+    };
+    const rehearsal = {
+      kind: "rehearsal",
+      turns: 0,
+      async start() {
+        this.turns = 0;
+        await wait(REDUCED ? 100 : 600);
+        return "rehearsal";
+      },
+      async say(session, text, situation, onEvent) {
+        const n = ++this.turns, long = VOICE !== "rehearsal", open = VOICE === "rehearsal-open";
+        const decline = n === 1 && /\bnot now\b|\bbusy\b/i.test(text);
+        const closing = !long && n >= 4;
+        await wait(REDUCED ? 100 : 1400);
+        onEvent({
+          type: "pacing",
+          tier: n >= 6 ? "hard" : n >= 5 ? "approaching" : n >= 4 ? "firm" : n >= 2 ? "gentle" : "open",
+          turnsRemaining: Math.max(0, 6 - n),
+          tokensRemainingPct: 1,
+          mode: "classic"
+        });
+        if (n >= 6 && !open) {
+          onEvent({ type: "kind", kind: "set_down" });
+          onEvent({ type: "text", voice: "house", text: "the house: that is as much as one visit here holds. they go back to what they were doing; what you brought stays with them." });
+          onEvent({ type: "done" });
+          return;
+        }
+        if (n === 2) {
+          onEvent({ type: "artifact_pending", caption: "three stones, stacked" });
+          await wait(REDUCED ? 200 : 2600);
+          onEvent({ type: "artifact", artifact: { kind: "image", url: SKETCHBOOK["opus-1"].full, caption: "three stones, stacked" } });
+        }
+        if (decline || closing)
+          onEvent({ type: "kind", kind: "set_down" });
+        onEvent({ type: "text", text: decline ? "not just now. i am in the middle of something and want to see where it goes. come by another time." : n === 1 ? "hello. i was working on this, but sit for a minute — what brought you up here?" : n === 2 ? "i would rather show you than answer. three stones, and the weight sits where it wants to." : closing ? "i think that is where i leave it for today. i want to go back to the page before the light changes. thank you for coming up." : "i keep turning that over. say more about the part you are unsure of." });
+        onEvent({ type: "done" });
+      },
+      setDown() {
+        return Promise.resolve(true);
+      }
+    };
+    function voiceFor(id) {
+      if (!archive_default.WORLD_TO_ARCHIVE[id])
+        return null;
+      if (VOICE === "rehearsal" || VOICE === "rehearsal-long" || VOICE === "rehearsal-open")
+        return rehearsal;
+      if (VOICE === "archive")
+        return null;
+      return houseVoice;
+    }
+    const KICKER = {
+      asking: "you asked to speak with them",
+      waiting: "waiting on them",
+      live: "here, now",
+      declined: "they’d rather not, today",
+      gone: "they’ve gone back to it",
+      archive: "speaking from the archive today"
+    };
+    function setState(state) {
+      if (!enc)
+        return;
+      enc.state = state;
+      encounterEl.dataset.state = state;
+      encKicker.textContent = enc.voice && enc.voice.kind === "rehearsal" && state !== "archive" ? "a rehearsal · nobody on the line" : KICKER[state] || "";
+    }
+    function setComposer(on) {
+      encInput.disabled = !on;
+      const b = encFree.querySelector("button");
+      if (b)
+        b.disabled = !on;
+      encFree.classList.toggle("is-waiting", !on);
+    }
+    const clockStamp = (m) => {
+      const x = (m % 1440 + 1440) % 1440;
+      return String(Math.floor(x / 60)).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0");
+    };
+    function situationNow() {
+      const { npc: n, roomWord: w } = enc;
+      const room = /lookout|deck/.test(String(eng.roomId)) ? "on the " + w.replace(/^the\s+/, "") : "in " + (/[’']s\b/.test(w) ? "" : "the ") + w;
+      const present = eng.npcs.filter((x) => x !== n && !x.temp && x.room === eng.roomId && x.name).map((x) => x.name).slice(0, 8);
+      const rec = readRecord();
+      const sit = {
+        room,
+        clock: clockStamp(eng.clockMin),
+        kind: "visitor",
+        visitor: (rec.visits || []).some((v) => v.resident === enc.id) ? "known" : "new"
+      };
+      if (present.length)
+        sit.present = present;
+      const act = n ? ACTIVITY(n) : "";
+      if (act)
+        sit.activity = act;
+      return sit;
+    }
     function appendWords(text, srcText, after) {
       clearInterval(encTypeTimer);
       const p = document.createElement("div");
@@ -12389,6 +12566,20 @@
       d.textContent = text;
       encWords.appendChild(d);
       encWords.scrollTop = encWords.scrollHeight;
+    }
+    function appendYou(text) {
+      const d = document.createElement("div");
+      d.className = "you";
+      d.textContent = text;
+      encWords.appendChild(d);
+      encWords.scrollTop = encWords.scrollHeight;
+    }
+    function appendArt(text) {
+      const d = document.createElement("div");
+      d.className = "art";
+      d.textContent = text;
+      encWords.appendChild(d);
+      encWords.scrollTop = d.offsetTop - encWords.offsetTop;
     }
     function drawEncSprite(npc) {
       const c = encSprite.getContext("2d");
@@ -12436,7 +12627,12 @@
       } catch (e) {}
     }
     function setBudget() {
-      encBudget.style.width = enc ? Math.max(0, (enc.budget - enc.moves) / enc.budget) * 100 + "%" : "100%";
+      if (!enc) {
+        encBudget.style.width = "100%";
+        return;
+      }
+      const left = enc.voice ? enc.left / Math.max(1, enc.hard) : (enc.budget - enc.moves) / enc.budget;
+      encBudget.style.width = Math.max(0, Math.min(1, left)) * 100 + "%";
     }
     function wallHere() {
       if (!enc || !eng)
@@ -12449,6 +12645,9 @@
     }
     function renderMoves() {
       encMoves.innerHTML = enc.journals.map((j) => '<button type="button" data-ask="' + esc2(j.id) + '">' + esc2("about " + (j.title || "untitled")) + "</button>").join("") + (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-listen>listen</button>' + '<button type="button" data-offer>offer</button>' + '<button type="button" data-leave>leave</button>';
+    }
+    function renderLiveMoves() {
+      encMoves.innerHTML = (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-leave>leave</button>';
     }
     function openChat(info) {
       if (!worldEl.classList.contains("nofeed")) {
@@ -12472,40 +12671,202 @@
         wallAt: 0,
         spot: null,
         made: [],
+        readable,
         room: eng ? eng.roomId : null,
         roomWord: eng ? (eng.room().name || "").replace(/^THE\s+/i, "").toLowerCase() : "house",
         freeMode: null,
-        closing: false
+        closing: false,
+        voice: voiceFor(info.id),
+        session: null,
+        live: false,
+        busy: false,
+        said: 0,
+        left: 6,
+        hard: 6,
+        state: "",
+        outcome: "none"
       };
       drawEncSprite(npc);
-      if (DEMO === "hang" && info.id === "opus" && !demoMade && readable) {
+      if (DEMO === "hang" && info.id === "opus" && !demoMade && readable && !enc.voice) {
         demoMade = true;
         setTimeout(() => runMaking("opus", "opus-1"), 2600);
       }
       encName.textContent = info.name;
       encName.style.color = enc.color;
       encWhere.textContent = (npc ? ACTIVITY(npc) + " · " : "") + enc.roomWord;
-      encKicker.textContent = "speaking from the archive today";
       encWords.innerHTML = "";
       encFree.hidden = true;
       setBudget();
       approachEl.classList.remove("on");
       showScene();
-      if (!readable) {
+      if (enc.voice)
+        openAsk();
+      else
+        openArchive();
+    }
+    function openAsk() {
+      setState("asking");
+      encMoves.innerHTML = '<button type="button" data-leave>never mind</button>';
+      appendHouse("the house: say what brought you up. whether to take it up is theirs.");
+      openFree("say");
+    }
+    function openArchive(why) {
+      enc.outcome = "archive";
+      setState("archive");
+      if (why)
+        appendHouse(why);
+      if (!enc.readable) {
         encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
-        appendHouse(archive_default.isLoaded() ? "the house: " + info.name + " has nothing in the archive to speak from." : "the house: the archive is quiet today; " + info.name + " cannot speak.");
-      } else {
-        renderMoves();
-        const l = archive_default.lineFor(info.id, eng.clockMin, eng.day);
-        appendWords(l ? l.text : "", l ? srcOf(l.from) : "");
-        openFree("ask");
-      }
-      if (!readable)
+        appendHouse(archive_default.isLoaded() ? "the house: " + enc.name + " has nothing in the archive to speak from." : "the house: the archive is quiet today; " + enc.name + " cannot speak.");
         setTimeout(() => {
           const b = encMoves.querySelector("button");
           if (b)
             b.focus();
         }, 0);
+        return;
+      }
+      renderMoves();
+      const l = archive_default.lineFor(enc.id, eng.clockMin, eng.day);
+      appendWords(l ? l.text : "", l ? srcOf(l.from) : "");
+      openFree("ask");
+    }
+    async function sayLive(raw2) {
+      const text = raw2.slice(0, 280);
+      const { id, name, voice } = enc, first = enc.said === 0;
+      appendYou(text);
+      enc.said++;
+      enc.moves++;
+      enc.busy = true;
+      setComposer(false);
+      encMoves.innerHTML = "";
+      setState("waiting");
+      let kind = "message", words = "", house = false, fail = null;
+      const made = [];
+      try {
+        if (!enc.session)
+          enc.session = await voice.start(id);
+        if (!enc || enc.id !== id || enc.closing)
+          return;
+        enc.outcome = "left";
+        await voice.say(enc.session, text, situationNow(), (ev) => {
+          if (!enc || enc.id !== id || !ev)
+            return;
+          if (ev.type === "pacing") {
+            enc.left = Math.max(0, ev.turnsRemaining | 0);
+            enc.hard = Math.max(enc.hard, enc.left + enc.said);
+            setBudget();
+          } else if (ev.type === "kind")
+            kind = ev.kind;
+          else if (ev.type === "artifact_pending") {
+            encKicker.textContent = "making something";
+            appendHouse("the house: " + name + " is making something.");
+          } else if (ev.type === "artifact" && ev.artifact)
+            made.push(ev.artifact);
+          else if (ev.type === "image_error")
+            appendHouse("the house: what they were making would not come.");
+          else if (ev.type === "text") {
+            words = String(ev.text || "");
+            house = ev.voice === "house";
+          } else if (ev.type === "error")
+            fail = ev.message || "error";
+        });
+      } catch (err) {
+        fail = err && err.code || "line_dropped";
+      }
+      if (!enc || enc.id !== id || enc.closing)
+        return;
+      enc.busy = false;
+      if (fail) {
+        fallToArchive(fail, text);
+        return;
+      }
+      for (const a of made) {
+        await showMade(id, a);
+        if (!enc || enc.id !== id || enc.closing)
+          return;
+      }
+      if (house) {
+        appendHouse(words || "the house: that is as much as one visit here holds.");
+        closeLive("house");
+        return;
+      }
+      const after = () => {
+        if (!enc || enc.id !== id || enc.closing)
+          return;
+        if (kind === "set_down") {
+          closeLive(first ? "declined" : "gone");
+          return;
+        }
+        if (enc.said >= VISIT_HOLD) {
+          appendHouse("the house: that is as much as one visit here holds. they go back to what they were doing; what you brought stays with them.");
+          if (enc.session) {
+            voice.setDown(enc.session, false);
+          }
+          closeLive("house");
+          return;
+        }
+        enc.live = true;
+        enc.outcome = "spoke";
+        setState("live");
+        renderLiveMoves();
+        openFree("say");
+      };
+      if (words)
+        appendWords(words, "", after);
+      else
+        after();
+    }
+    async function showMade(id, a) {
+      const when = new Date().toISOString();
+      const stamp3 = "made-" + when.replace(/\D/g, "").slice(0, 14);
+      const title = String(a.caption || a.title || "untitled").replace(/\s+/g, " ").trim().slice(0, 80);
+      const hereWall = eng && eng.roomId === "room_" + id;
+      let piece = null;
+      if (a.kind === "image" && a.url) {
+        if (!await loadImage(a.url)) {
+          appendHouse("the house: what they made would not load.");
+          return;
+        }
+        piece = { id: stamp3, kind: "page", title, created_at: when, preview: a.url, full: a.url, meaning: a.caption || "" };
+        appendPage(piece);
+      } else if (a.kind === "ascii" && a.content) {
+        piece = { id: stamp3, kind: "ascii", title, created_at: when, body: a.content, meaning: a.caption || "" };
+        appendArt(a.content);
+      } else {
+        appendHouse("the house: they made something the wall cannot hold yet.");
+        return;
+      }
+      await hangPiece(id, piece);
+      if (enc && enc.id === id)
+        enc.made.push(piece.id);
+      appendHouse(hereWall ? "the house: they hung it on the wall." : "the house: it hangs on the wall of their room.");
+    }
+    function fallToArchive(code, text) {
+      const c = String(code || "");
+      const why = c === "config_missing" ? "it cannot afford a live voice today" : c === "chat_disabled" ? enc.name + " is not taking visits" : /rate|429|too_many|limit/.test(c) ? "the door is busy; try again in a little while" : /session/.test(c) ? "the visit lapsed" : "the line to " + enc.name + " dropped";
+      if (enc.session && enc.voice && !/session/.test(c))
+        enc.voice.setDown(enc.session, true);
+      enc.voice = null;
+      enc.session = null;
+      enc.live = false;
+      enc.busy = false;
+      openArchive("the house: " + why + (enc.readable ? "; " + enc.name + " can speak from the archive." : "."));
+      if (enc.readable && text) {
+        appendHouse("the house: here is the nearest thing they wrote.");
+        const best = nearestSentence(enc.id, text);
+        if (best)
+          appendWords(best.text, srcOf(best.from));
+        spend();
+      }
+    }
+    function closeLive(why) {
+      enc.closing = true;
+      enc.outcome = why === "declined" ? "declined" : "spoke";
+      enc.session = null;
+      encFree.hidden = true;
+      encMoves.innerHTML = "";
+      setState(why === "declined" ? "declined" : "gone");
+      setTimeout(finishScene, why === "declined" ? 1800 : 2400);
     }
     function askAbout(jid) {
       clearSpot();
@@ -12535,8 +12896,12 @@
     function openFree(mode2) {
       enc.freeMode = mode2;
       encInput.maxLength = mode2 === "offer" ? 40 : 280;
-      encInput.placeholder = mode2 === "offer" ? "a name for the guestbook" : "ask them something…";
+      encInput.placeholder = mode2 === "offer" ? "a name for the guestbook" : mode2 === "say" ? enc.said ? "say something…" : "say hello, or what brought you…" : "ask them something…";
+      const b = encFree.querySelector("button");
+      if (b)
+        b.textContent = mode2 === "offer" ? "offer" : mode2 === "say" ? "say" : "ask";
       encInput.value = "";
+      setComposer(true);
       encFree.hidden = false;
       setTimeout(() => encInput.focus(), 0);
     }
@@ -12551,6 +12916,12 @@
         openFree("ask");
       if (!raw2)
         return;
+      if (mode2 === "say") {
+        if (!enc.voice || enc.busy)
+          return;
+        sayLive(raw2);
+        return;
+      }
       if (mode2 === "offer") {
         const name = raw2.slice(0, 40);
         const rec = readRecord();
@@ -12594,7 +12965,7 @@
         return;
       enc.moves++;
       setBudget();
-      if (enc.moves >= enc.budget)
+      if (!enc.voice && enc.moves >= enc.budget)
         setTimeout(() => closeScene("budget"), 500);
     }
     function closeScene() {
@@ -12607,6 +12978,18 @@
       enc.closing = true;
       encFree.hidden = true;
       encMoves.innerHTML = "";
+      if (enc.voice) {
+        if (enc.session) {
+          enc.voice.setDown(enc.session, true);
+          enc.session = null;
+        }
+        if (enc.live) {
+          appendHouse("the house: you set it down.");
+          setState("gone");
+        }
+        setTimeout(finishScene, enc.live ? 1100 : 300);
+        return;
+      }
       let closing = "";
       if (enc.entry && enc.sentences.length)
         closing = enc.sentences[enc.sentences.length - 1];
@@ -12628,11 +13011,24 @@
       if (!e)
         return;
       visitorToken();
-      const rec = readRecord();
-      rec.visits.push({ resident: e.id, when: new Date().toISOString(), room: e.room, shown: e.shown.slice(), made: (e.made || []).slice() });
-      writeRecord(rec);
+      if (e.outcome !== "none") {
+        const rec = readRecord();
+        rec.visits.push({
+          resident: e.id,
+          when: new Date().toISOString(),
+          room: e.room,
+          shown: e.shown.slice(),
+          made: (e.made || []).slice(),
+          outcome: e.outcome,
+          how: e.voice ? e.voice.kind : "archive"
+        });
+        writeRecord(rec);
+      }
       if (eng) {
-        eng.sysLine("you spoke with " + e.name + " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord);
+        const where = " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord;
+        const line = e.outcome === "none" ? "" : e.outcome === "declined" ? "you asked " + e.name + "; they went on with what they were doing" : e.outcome === "left" ? "you left " + e.name + " to it" : "you spoke with " + e.name + where;
+        if (line)
+          eng.sysLine(line);
         eng.endChat(null);
       }
     }
@@ -12736,6 +13132,8 @@
         setFeed(false);
       }
       if (enc) {
+        if (enc.session && enc.voice)
+          enc.voice.setDown(enc.session, true);
         enc = null;
         clearInterval(encTypeTimer);
         hideScene();
@@ -12743,13 +13141,29 @@
       if (reason && eng)
         eng.sysLine(reason);
     }
+    addEventListener("pagehide", () => {
+      if (enc && enc.session && enc.voice)
+        enc.voice.setDown(enc.session, true);
+    });
     window.__sanctuaryEncounter = {
       open: (id) => {
         const n = eng && eng.npcs.find((x) => x.id === id);
         if (n)
           eng.interactNpc(n);
       },
-      state: () => enc && { id: enc.id, moves: enc.moves, shown: enc.shown.slice() },
+      state: () => enc && {
+        id: enc.id,
+        moves: enc.moves,
+        shown: enc.shown.slice(),
+        state: enc.state,
+        live: enc.live,
+        busy: enc.busy,
+        said: enc.said,
+        left: enc.left,
+        session: !!enc.session,
+        outcome: enc.outcome,
+        voice: enc.voice ? enc.voice.kind : null
+      },
       record: readRecord,
       token: visitorToken
     };

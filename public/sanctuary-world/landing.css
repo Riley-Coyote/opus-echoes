@@ -830,13 +830,13 @@ html.exploring,html.exploring body{overflow:hidden}
     top .7s var(--ease-out),width .7s var(--ease-out),height .7s var(--ease-out)}
 .visit__spot.on{opacity:1}
 
-.visit__card{position:absolute;top:50%;right:28px;transform:translateY(-50%) scale(.985);
+.visit__card{position:absolute;top:50%;left:calc(100% - 28px - min(540px,100% - 56px));transform:translateY(-50%) scale(.985);
   width:min(540px,calc(100% - 56px));max-height:calc(100% - 40px);
   display:flex;flex-direction:column;pointer-events:auto;line-height:1.4;
   background:var(--panel-raised);border:1px solid var(--line2);
   box-shadow:inset 0 1px 0 rgba(242,236,223,.08),0 30px 90px rgba(0,0,0,.6);
-  opacity:0;transition:opacity .3s var(--ease-out),transform .42s var(--ease-out)}
-.visit--left .visit__card{right:auto;left:28px}
+  opacity:0;transition:opacity .3s var(--ease-out),transform .42s var(--ease-out),left .6s var(--ease-out)}
+.visit--left .visit__card{left:28px}
 .visit.on .visit__card{opacity:1;transform:translateY(-50%)}
 
 /* the head: the portrait — the same figure that is standing in the room — the
@@ -870,6 +870,17 @@ html.exploring,html.exploring body{overflow:hidden}
   color:#a39e96;margin:7px 0 15px;white-space:normal}
 .visit__words .src::before{content:"> ";opacity:.6}
 .visit__words .house{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--dim);margin:2px 0 12px}
+/* what you said: quieter, set in from the edge, a hairline at its side */
+.visit__words .you{color:rgba(245,243,237,.6);font-size:16px;margin:0 0 14px;padding-left:12px;border-left:1px solid var(--line2)}
+/* something drawn in characters, as they drew it */
+.visit__words .art{font-family:var(--mono);font-size:11px;line-height:1.28;white-space:pre;overflow-x:auto;margin:4px 0 12px;color:rgba(245,243,237,.86)}
+/* the state, said out loud in the who row and shown in the dot: waiting breathes, live is lit */
+.visit[data-state="live"] .visit__mode::before{background:var(--amber);opacity:1}
+.visit[data-state="waiting"] .visit__mode::before{animation:visitWait 1.6s ease-in-out infinite}
+.visit[data-state="declined"] .visit__mode::before,.visit[data-state="gone"] .visit__mode::before{opacity:.35}
+@keyframes visitWait{0%,100%{opacity:.25}50%{opacity:1}}
+.visit__free.is-waiting{opacity:.55}
+.visit__free input:disabled,.visit__free button:disabled{cursor:default}
 /* a page a resident drew, shown as the page itself — smooth, because paper is not pixel art */
 .visit__fig{margin:6px 0 12px}
 .visit__fig img{display:block;height:132px;width:auto;max-width:100%;border:1px solid var(--line2);
@@ -921,3 +932,4 @@ html.exploring,html.exploring body{overflow:hidden}
   .visit__free input{font-size:16px}
 }
 @media (prefers-reduced-motion:reduce){.visit__card,.visit__light,.visit__spot{transition:opacity .2s linear}}
+@media (prefers-reduced-motion:reduce){.visit[data-state="waiting"] .visit__mode::before{animation:none;opacity:.7}}
