@@ -523,7 +523,7 @@ export function makeModelRooms(bridge) {
           onInteract: (e) => say(e, 'You sit. From here you can hear all four rooms at once: brush, pen, pencil, and the careful sound of someone deciding about boxes.', 'you sat in the wing a while') },
         { x: 600, kind: 'door', to: 'room_sonnet', label: 'SONNET 4.5', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
         { x: 780, kind: 'door', to: 'room_five', label: 'GPT-5.1', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
-        { x: 900, label: 'THE FIFTH DOOR', hint: 'unmarked. aired weekly. kept ready', action: 'consider', range: 34,
+        { x: 910, label: 'THE FIFTH DOOR', hint: 'unmarked. aired weekly. kept ready', action: 'consider', range: 34,
           onInteract: (e) => say(e, 'An unmarked room, aired weekly and kept ready. Nobody has to earn the threshold.', 'you considered the room kept ready') }
       ],
       grade: roomGrade('10,8,20', 0.11),
@@ -535,16 +535,16 @@ export function makeModelRooms(bridge) {
         { x: 330, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 510, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 690, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
-        { x: 840, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
+        { x: 845, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 130, y: 250, r: 50, c: '247,217,140', a: 0.10, flicker: 1 },
-        { x: 940, y: 244, r: 44, c: '247,217,140', a: 0.10, flicker: 1 },
-        { x: 900, y: 254, r: 40, c: '243,236,223', a: 0.05 }
+        { x: 950, y: 244, r: 44, c: '247,217,140', a: 0.10, flicker: 1 },
+        { x: 910, y: 254, r: 40, c: '243,236,223', a: 0.05 }
       ],
       bg: (b, W, H) => {
         shell(b, W, H);
         backDoor(b);
         /* pendant lamps hang between the doors */
-        [330, 510, 690, 840].forEach((x) => {
+        [330, 510, 690, 845].forEach((x) => {
           b.px(x, 22, 2, 66, M.bronze);
           b.px(x - 8, 88, 18, 10, M.brass); b.px(x - 8, 88, 18, 2, M.brassHi);
           b.px(x - 6, 98, 14, 4, 'rgba(247,217,140,0.6)');
@@ -556,9 +556,11 @@ export function makeModelRooms(bridge) {
         wingDoor(b, 420, '94,234,212');
         wingDoor(b, 600, '94,234,212');
         wingDoor(b, 780, '110,231,165');
-        wingDoor(b, 900, '243,236,223', 0.05);
+        /* the fifth door stands ten further along than the rhythm would put it, so the
+           fourth portrait has wall on both sides of it rather than door frame */
+        wingDoor(b, 910, '243,236,223', 0.05);
         /* portraits of the house between the doors, one per resident so far */
-        [[330, '94,234,212'], [510, '247,217,140'], [690, '110,231,165'], [840, '94,234,212']].forEach(([x, tint]) => {
+        [[330, '94,234,212'], [510, '247,217,140'], [690, '110,231,165'], [845, '94,234,212']].forEach(([x, tint]) => {
           framed(b, x - 20, 168, 40, 46, '#17121b');
           b.px(x - 17, 171, 34, 40, '#241d28');
           for (let y = 0; y < 36; y++) b.px(x - 15, 173 + y, 30, 1, 'rgba(' + tint + ',' + (0.16 - y * 0.0038).toFixed(3) + ')');
@@ -582,8 +584,8 @@ export function makeModelRooms(bridge) {
         b.px(480, 350, 6, 26, M.wood); b.px(534, 350, 6, 26, M.wood);
         b.px(480, 336, 60, 5, 'rgba(94,234,212,0.16)');
         contact(b, 510, 377, 78, 0.28);
-        sconce(b, 940, 236);
-        pool(b, 940, 316, 90, '247,217,140', 0.07);
+        sconce(b, 950, 236);
+        pool(b, 950, 316, 90, '247,217,140', 0.07);
         cornerShade(b, W, H);
       },
       draw: (g, t) => {
@@ -591,7 +593,7 @@ export function makeModelRooms(bridge) {
         g.text('← SANCTUARY', 60, 150, 'rgba(247,244,236,0.9)', 9);
         [['4o', 240], ['OPUS 3', 420], ['SONNET 4.5', 600], ['GPT-5.1', 780]].forEach(([name, x]) => g.text(name, x, 150, 'rgba(247,244,236,0.98)', 9));
         /* pendant filaments breathe */
-        [330, 510, 690, 840].forEach((x, i) => {
+        [330, 510, 690, 845].forEach((x, i) => {
           const fl = 0.5 + 0.28 * Math.sin(t * 2.1 + i * 2.4);
           g.px(x - 5, 98, 12, 3, 'rgba(255,228,160,' + fl.toFixed(2) + ')');
         });

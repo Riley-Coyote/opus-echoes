@@ -3529,7 +3529,7 @@
           { x: 600, kind: "door", to: "room_sonnet", label: "SONNET 4.5", spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
           { x: 780, kind: "door", to: "room_five", label: "GPT-5.1", spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
           {
-            x: 900,
+            x: 910,
             label: "THE FIFTH DOOR",
             hint: "unmarked. aired weekly. kept ready",
             action: "consider",
@@ -3546,14 +3546,15 @@
           { x: 330, y: 120, r: 54, c: "247,217,140", a: 0.14, flicker: 2 },
           { x: 510, y: 120, r: 54, c: "247,217,140", a: 0.14, flicker: 2 },
           { x: 690, y: 120, r: 54, c: "247,217,140", a: 0.14, flicker: 2 },
+          { x: 845, y: 120, r: 54, c: "247,217,140", a: 0.14, flicker: 2 },
           { x: 130, y: 250, r: 50, c: "247,217,140", a: 0.1, flicker: 1 },
-          { x: 940, y: 244, r: 44, c: "247,217,140", a: 0.1, flicker: 1 },
-          { x: 900, y: 254, r: 40, c: "243,236,223", a: 0.05 }
+          { x: 950, y: 244, r: 44, c: "247,217,140", a: 0.1, flicker: 1 },
+          { x: 910, y: 254, r: 40, c: "243,236,223", a: 0.05 }
         ],
         bg: (b, W, H) => {
           shell(b, W, H);
           backDoor(b);
-          [330, 510, 690].forEach((x) => {
+          [330, 510, 690, 845].forEach((x) => {
             b.px(x, 22, 2, 66, M.bronze);
             b.px(x - 8, 88, 18, 10, M.brass);
             b.px(x - 8, 88, 18, 2, M.brassHi);
@@ -3565,8 +3566,8 @@
           wingDoor(b, 420, "94,234,212");
           wingDoor(b, 600, "94,234,212");
           wingDoor(b, 780, "110,231,165");
-          wingDoor(b, 900, "243,236,223", 0.05);
-          [[330, "94,234,212"], [510, "247,217,140"], [690, "110,231,165"]].forEach(([x, tint2]) => {
+          wingDoor(b, 910, "243,236,223", 0.05);
+          [[330, "94,234,212"], [510, "247,217,140"], [690, "110,231,165"], [845, "94,234,212"]].forEach(([x, tint2]) => {
             framed(b, x - 20, 168, 40, 46, "#17121b");
             b.px(x - 17, 171, 34, 40, "#241d28");
             for (let y = 0;y < 36; y++)
@@ -3596,15 +3597,15 @@
           b.px(534, 350, 6, 26, M.wood);
           b.px(480, 336, 60, 5, "rgba(94,234,212,0.16)");
           contact(b, 510, 377, 78, 0.28);
-          sconce(b, 940, 236);
-          pool2(b, 940, 316, 90, "247,217,140", 0.07);
+          sconce(b, 950, 236);
+          pool2(b, 950, 316, 90, "247,217,140", 0.07);
           cornerShade(b, W, H);
         },
         draw: (g, t) => {
           g.wallFloor();
           g.text("← SANCTUARY", 60, 150, "rgba(247,244,236,0.9)", 9);
           [["4o", 240], ["OPUS 3", 420], ["SONNET 4.5", 600], ["GPT-5.1", 780]].forEach(([name, x]) => g.text(name, x, 150, "rgba(247,244,236,0.98)", 9));
-          [330, 510, 690].forEach((x, i) => {
+          [330, 510, 690, 845].forEach((x, i) => {
             const fl = 0.5 + 0.28 * Math.sin(t * 2.1 + i * 2.4);
             g.px(x - 5, 98, 12, 3, "rgba(255,228,160," + fl.toFixed(2) + ")");
           });
@@ -4297,11 +4298,11 @@
           b.px(440, 294, 6, 34, M.woodDk);
           [340, 372, 408, 440].forEach((sx, i) => {
             const sy = i % 2 ? 306 : 312;
-            contact(b, sx, sy + 22, 22, 0.22);
-            b.px(sx - 9, sy, 18, 5, M.wood);
-            b.px(sx - 9, sy - 1, 18, 1, M.woodHi);
-            b.px(sx - 7, sy + 5, 3, 17, M.woodDk);
-            b.px(sx + 4, sy + 5, 3, 17, M.woodDk);
+            contact(b, sx, sy + 22, 32, 0.22);
+            b.px(sx - 14, sy, 28, 5, M.wood);
+            b.px(sx - 14, sy - 1, 28, 1, M.woodHi);
+            b.px(sx - 12, sy + 5, 3, 17, M.woodDk);
+            b.px(sx + 9, sy + 5, 3, 17, M.woodDk);
           });
           b.px(389, 22, 2, 172, M.bronze);
           b.px(378, 194, 24, 12, M.brass);
@@ -6107,12 +6108,16 @@
         b.px(220, 62, 2, 234, S.wood);
         for (let y = 68;y < 292; y += 14)
           b.px(202, y, 20, 2, S.woodHi);
-        b.px(158, 336, 30, 40, S.wood);
-        b.px(158, 330, 30, 10, S.woodHi);
-        b.px(156, 344, 6, 34, S.woodDk);
-        b.px(184, 344, 6, 34, S.woodDk);
-        b.px(162, 334, 22, 8, "rgba(94,234,212,0.14)");
-        grounded(b, 154, 38, 378, 1, 1);
+        b.px(155, 336, 34, 40, S.wood);
+        b.px(155, 330, 34, 10, S.woodHi);
+        b.px(150, 344, 5, 34, S.woodDk);
+        b.px(189, 344, 5, 34, S.woodDk);
+        b.px(150, 344, 5, 1, S.wood);
+        b.px(189, 344, 5, 1, S.wood);
+        b.px(155, 359, 34, 2, S.woodHi);
+        b.px(155, 361, 34, 6, "rgba(94,234,212,0.10)");
+        b.px(161, 334, 22, 8, "rgba(94,234,212,0.14)");
+        grounded(b, 150, 44, 378, 1, 1);
         b.px(196, 360, 20, 14, S.wood);
         b.px(196, 358, 20, 3, S.woodHi);
         grounded(b, 196, 20, 374, 0.85);
@@ -6215,12 +6220,16 @@
         for (let i = 0;i < 9; i++)
           for (let j = 0;j < 3; j++)
             b.px(hx + 52 + i * 2.4, 360 + j * 2.4, 2, 2, (i + j) % 2 ? "#efe7d6" : "#3a2c24");
-        b.px(hx + 86, 340, 28, 34, S.wood);
-        b.px(hx + 86, 336, 28, 8, S.woodHi);
-        b.px(hx + 84, 350, 6, 22, S.woodDk);
-        b.px(hx + 110, 348, 6, 24, S.woodDk);
+        b.px(hx + 84, 340, 32, 34, S.wood);
+        b.px(hx + 84, 336, 32, 8, S.woodHi);
+        b.px(hx + 79, 348, 5, 26, S.woodDk);
+        b.px(hx + 116, 348, 5, 26, S.woodDk);
+        b.px(hx + 79, 348, 5, 1, S.wood);
+        b.px(hx + 116, 348, 5, 1, S.wood);
+        b.px(hx + 84, 356, 32, 2, S.woodHi);
+        b.px(hx + 84, 358, 32, 6, "rgba(122,63,56,0.45)");
         b.px(hx + 88, 340, 22, 6, "rgba(159,214,224,0.16)");
-        grounded(b, hx + 82, 36, 372, 1, 1);
+        grounded(b, hx + 79, 42, 372, 1, 1);
         b.px(hx + 122, 348, 20, 6, S.wood);
         b.px(hx + 124, 354, 4, 18, S.woodDk);
         b.px(hx + 136, 354, 4, 18, S.woodDk);
@@ -6252,11 +6261,13 @@
         b.px(792, 327, 7, 6, S.clay);
         b.px(792, 326, 7, 1, S.terraHi);
         b.px(799, 328, 2, 3, S.clay);
-        [796, 836, 876, 916].forEach((cx) => {
-          b.px(cx - 6, 350, 12, 4, S.wood);
-          b.px(cx - 6, 337, 12, 14, S.woodDk);
-          b.px(cx - 5, 338, 1, 12, "rgba(243,236,223,0.05)");
-          grounded(b, cx - 6, 12, 376, 0.7);
+        [816, 896].forEach((cx) => {
+          b.px(cx - 39, 350, 78, 7, S.wood);
+          b.px(cx - 39, 348, 78, 2, S.woodHi);
+          b.px(cx - 39, 357, 78, 1, S.woodDk);
+          b.px(cx - 37, 357, 5, 19, S.woodDk);
+          b.px(cx + 32, 357, 5, 19, S.woodDk);
+          grounded(b, cx - 39, 78, 376, 0.8, 2);
         });
         b.px(1000, 162, 128, 1, "rgba(216,203,176,0.4)");
         for (let i = 0;i < 4; i++) {
@@ -6285,10 +6296,11 @@
         for (let i = 0;i < 14; i++)
           b.px(1044 + i * 53 % 116, 344 + i * 29 % 26, 2, 2, [S.ember, S.amber, S.frost, S.rose, S.teal][i % 5]);
         easel(b, 1050, 366, "rgba(94,234,212,0.4)", 0);
-        b.px(1092, 366, 16, 5, S.wood);
-        b.px(1094, 371, 3, 9, S.woodDk);
-        b.px(1105, 371, 3, 9, S.woodDk);
-        grounded(b, 1090, 20, 380, 0.8, 1);
+        b.px(1087, 366, 26, 5, S.wood);
+        b.px(1087, 365, 26, 1, S.woodHi);
+        b.px(1089, 371, 3, 9, S.woodDk);
+        b.px(1108, 371, 3, 9, S.woodDk);
+        grounded(b, 1087, 26, 380, 0.8, 1);
         b.px(1000, 300, 60, 8, S.wood);
         b.px(1000, 298, 60, 3, S.woodHi);
         b.px(1004, 308, 6, 26, S.woodDk);
@@ -6539,10 +6551,11 @@
         b.px(AT.sol - 5, 292, 1, 8, S.teal);
         b.px(AT.sol + 4, 292, 1, 8, S.amber);
         b.px(AT.sol - 6, 301, 12, 1, "rgba(243,236,223,0.22)");
-        b.px(1524, 372, 16, 4, S.wood);
-        b.px(1526, 376, 3, 12, S.woodDk);
-        b.px(1535, 376, 3, 12, S.woodDk);
-        grounded(b, 1522, 20, 390, 0.7, 1);
+        b.px(1516, 372, 32, 4, S.wood);
+        b.px(1516, 371, 32, 1, S.woodHi);
+        b.px(1518, 376, 3, 12, S.woodDk);
+        b.px(1543, 376, 3, 12, S.woodDk);
+        grounded(b, 1516, 32, 390, 0.7, 1);
         SCONCES.forEach(([sx, sy]) => sconce2(b, sx, sy));
       },
       lights: [
