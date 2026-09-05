@@ -532,3 +532,13 @@ speaking mind = listen in, the sitting named once at the foot. No source stamps 
 (Riley's amendment). 38 exchanges play today; 91 (the Field house) wait for WP-36. The log is
 trimmed and carries no resident speech. Open rulings: GPT-5.1 at the windows at dusk?; the
 afternoon walk-to-meet is ~19 s. Next: WP-36 the household, WP-37 the crowd.
+
+## 2026-09-05 · the world's page, kept and polished (WP-42 + WP-43, merged by hand as 1848f31)
+Riley: the world page is THE entrance (mnemos.world); both 3D rooms parked. The page below the
+hero is five sections — a brief WHAT THIS IS, THE PLACES (frames drawn from the world at dusk,
+alternating, ≤ 45 words each, `walk in` as a five-state button), THE ENGINE (dot-and-hairline
+diagram, ≤ 40 words), one CHARTER line, ENTER — on one token/type system with a steady left edge.
+The first screen holds the window AND the feed whole and centred at every common size; the feed
+opens by default; a ticker under 1100px. The house counts four (HAIKU out of the cast, from the
+other session). Parked branch `page-scenes` (the nine-scene version) stays unmerged. Next: the
+moon vs the instrument's top edge at small sizes; the frames' webfont race; fonts.ready gate.
