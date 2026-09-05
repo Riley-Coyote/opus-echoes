@@ -16,86 +16,12 @@
   --frost:#9fd6e0;
   --ease-out:cubic-bezier(0.23,1,0.32,1);
   --ease-in-out:cubic-bezier(0.77,0,0.175,1);
-
-  /* ── WP-42 · THE GROUND — the system for the page below the hero ──
-     The field, the scale, the ink, the rhythm and the motion, all
-     named. Every rule in the ground block is written from these: no
-     raw colour, size or duration lives outside this declaration. */
-
-  /* the field — 12 columns, 1120 wide, 24 gutters, a steady left edge */
-  --g-cols:12; --g-max:1120px; --g-gutter:24px;
-  --g-pad-x:32px; --g-pad-x-s:20px;
-  --g-pad-t:48px; --g-pad-b:120px; --g-pad-t-s:32px; --g-pad-b-s:72px;
-
-  /* the rhythm — 8pt */
-  --g-half:4px; --g-1:8px; --g-2:16px; --g-3:24px; --g-4:32px;
-  --g-5:40px; --g-6:48px; --g-8:64px; --g-10:80px; --g-12:96px; --g-30:240px;
-  --g-hair:1px; --g-hair2:2px; --g-radius:2px; --g-press:1px;
-  --g-tap:44px; --g-tap-lg:52px;
-
-  /* the scale — the pixel face for titles, the serif for what is said,
-     the mono for every datum. Few sizes, decisive gaps. */
-  --g-px-title:24px; --g-px-title-s:15px;
-  --g-px-place:12px; --g-px-place-s:11px;
-  --g-serif-stmt:26px; --g-serif-stmt-s:20px;
-  --g-serif-body:16px; --g-serif-body-s:15px;
-  --g-mono-xl:14px; --g-mono-lg:12px; --g-mono:11px; --g-mono-s:10.5px; --g-mono-xs:9.5px;
-  --g-em-mono:.86em;
-
-  /* the counterforms */
-  --g-track-title:.06em; --g-track-label:.16em; --g-track-mono:.05em;
-  --g-track-place:.14em; --g-track-body:0;
-  --g-lh-title:1.45; --g-lh-place:1.6; --g-lh-stmt:1.28;
-  --g-lh-body:1.55; --g-lh-mono:1.7;
-  --g-measure:60ch; --g-measure-stmt:30ch; --g-measure-quote:34ch;
-
-  /* the ink — one cool cream in three tiers. The quietest is .52 rather
-     than .42: at .42 the caption tier measures 3.7:1 on this ground,
-     under WCAG AA, and these labels carry the page's provenance. */
-  --g-ink-full:#fffdf8;
-  --g-ink-92:rgba(245,243,237,.92);
-  --g-ink-64:rgba(245,243,237,.64);
-  --g-ink-52:rgba(245,243,237,.52);
-  --g-rule:rgba(242,236,223,.10);
-  --g-rule-lit:rgba(242,236,223,.18);
-  --g-rule-lit2:rgba(242,236,223,.30);
-  --g-focus:rgba(245,243,237,.50);
-  --g-signal:var(--amber-deep); --g-signal-lit:var(--amber);
-  --g-signal-hair:rgba(217,147,52,.6);
-  --g-well:#0a0812;
-  --g-floor:#07070f; --g-floor-at:70%;
-
-  /* the flat object — a subtle fill, one hairline, a lit top edge */
-  --g-fill:rgba(242,236,223,.045);
-  --g-fill-hover:rgba(242,236,223,.085);
-  --g-fill-press:rgba(242,236,223,.03);
-  --g-lit:rgba(255,253,248,.09);
-  --g-shade:rgba(4,3,8,.45);
-
-  /* the pieces */
-  --g-dot:4px; --g-markh:11px;
-  --g-win:8px; --g-win-x:16px; --g-win-y:12px;
-  --g-win-warm:rgba(247,217,140,.85); --g-win-deep:rgba(217,147,52,.7);
-  --g-frame-ratio:16/9; --g-frame-lift:1.1;
-  --g-node:6px; --g-node-mid:2.5px; --g-node-gap:56px;
-  --g-branch-x:132px; --g-branch-y:1px; --g-branch-mid:6px;
-  --g-lat-dot:1px; --g-lat-gap:9px; --g-lat-a:.55;
-  --g-mask-a:#000; --g-mask-b:transparent;
-  --g-cap-lift:4px;
-
-  /* the motion — a hover, and nothing else below the horizon */
-  --g-hover:150ms; --g-ease:cubic-bezier(0.23,1,0.32,1);
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-/* the deep is the page's own floor, under the sky; and the page never runs
-   sideways — `clip` stops the scroll without making html a scroll box */
-html{scroll-behavior:smooth;background:var(--g-floor);overflow-x:clip}
+html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{
-  /* the ground under the sky: one ramp down the document, never repeated, so
-     the foot of the page is the same deep the sky paints and no seam shows */
-  background:linear-gradient(180deg,var(--bg0) 0,var(--g-floor) var(--g-floor-at));
-  color:var(--ink);
+  background:var(--bg0); color:var(--ink);
   font-family:var(--mono); font-size:15px; line-height:1.65;
   overflow-x:hidden;
 }
@@ -217,13 +143,9 @@ html.door .hero{max-width:none;margin:0;padding:0}
 .feed__head{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:12px 16px;border-bottom:1px solid var(--line)}
 .feed__title{font-family:var(--px);font-size:10px;letter-spacing:.16em}
 .feed__live{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.07em;color:var(--green);display:inline-flex;align-items:center;gap:6px}
-/* one resident a row: the column is 340 wide and a name with where it is and
-   what it is doing does not survive being halved — since WP-43 the feed is
-   open when the page opens, so a clipped roster is the first thing seen. */
-.feed__roster{display:grid;grid-template-columns:minmax(0,1fr);gap:5px 12px;padding:11px 16px;border-bottom:1px solid var(--line)}
-.feed__roster span{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.02em;color:var(--dim);display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.feed__roster span .dot{margin-right:5px;vertical-align:.06em}
-.feed__roster b{color:var(--ink);font-weight:400;margin-right:3px}
+.feed__roster{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;padding:11px 16px;border-bottom:1px solid var(--line)}
+.feed__roster span{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.02em;color:var(--dim);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.feed__roster b{color:var(--ink);font-weight:400}
 .feed__list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:11px}
 .fi{animation:fin .25s var(--ease-out) both}
 @keyframes fin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
@@ -250,229 +172,143 @@ html.door .hero{max-width:none;margin:0;padding:0}
 .menu a:focus-visible{outline:1px solid var(--signal);outline-offset:4px}
 
 /* ══════════════════════════════════════════════════════════════════
-   THE GROUND — everything below the horizon (WP-42).
+   THE GROUND — everything below the horizon.
 
-   The rule, kept from WP-35: one sky, one horizon, then the ground.
+   The rule, after Fable's look: one sky, one horizon, then the ground.
    No panels. No cards. No box inside a box. Each section is open text
    on the dark with a single hairline above it; space, not rules,
-   separates the parts inside it.
-
-   What WP-42 adds is the field. Twelve columns, 1120 wide, 24-pixel
-   gutters, and a STEADY LEFT EDGE: every section and every row of
-   THE PLACES opens on column 1, nothing is centred, and the void
-   accumulates on the right where it is earned. Hierarchy is size and
-   opacity — the pixel face carries titles, the serif carries what is
-   said, and the mono is only ever a datum. Nothing is bold. Amber is
-   the one signal: the dot on a control, the rule under a link, the
-   marker beside a frame's caption. Focus is the element's own border
-   brightening in place, never a second ring.
-
-   Every value below is a token from :root.
+   separates the parts inside it. The pixel face carries titles and
+   names, the serif carries statements and prose, and the mono is only
+   ever for data — dates, counts, captions, labels, links. Nothing is
+   bold: hierarchy is size and opacity. Amber is the one signal.
    ══════════════════════════════════════════════════════════════════ */
-.ground{position:relative;z-index:2;
-  max-width:var(--g-max);margin:0 auto;
-  padding:0 var(--g-pad-x) var(--g-pad-b)}
+.ground{
+  --ink1:rgba(245,243,237,.92); --ink2:rgba(245,243,237,.64); --ink3:rgba(245,243,237,.48);
+  --hair:rgba(242,236,223,.10); --hair2:rgba(242,236,223,.16);
+  --gap-s:32px; --gap-m:48px; --gap-l:96px;
+  max-width:1080px;margin:0 auto;padding:0 32px 128px;
+}
+.ground .status{
+  font-family:var(--mono);font-size:11px;line-height:1.7;letter-spacing:.05em;
+  color:var(--ink3);padding:var(--gap-s) 0 var(--gap-l)}
 
-/* the field: twelve columns, shared by every section and by the places */
-.sec__in{display:grid;grid-template-columns:repeat(var(--g-cols),minmax(0,1fr));
-  column-gap:var(--g-gutter);row-gap:var(--g-5);align-content:start}
-
-.ground .status{font-family:var(--mono);font-size:var(--g-mono);line-height:var(--g-lh-mono);
-  letter-spacing:var(--g-track-mono);color:var(--g-ink-52);
-  padding-top:var(--g-6);padding-bottom:var(--g-12)}
-
-/* ── the section: a hairline, then the title close under it, then air ─ */
-.sec{background:none;border:0;border-radius:0;box-shadow:none;
-  border-top:var(--g-hair) solid var(--g-rule);
-  padding-top:var(--g-pad-t);padding-bottom:var(--g-pad-b)}
-.sec--last{padding-bottom:var(--g-12)}
-.sec__h{grid-column:1 / -1;display:block;font-weight:400}
-.sec__no{display:block;margin-bottom:var(--g-2);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-label);color:var(--g-ink-52)}
-.sec__t{font-family:var(--px);font-weight:400;font-size:var(--g-px-title);
-  line-height:var(--g-lh-title);letter-spacing:var(--g-track-title);color:var(--g-ink-92)}
-
-/* ── the two blocks a section is made of: the lead on the left, the
-      words on the right, and the void between them doing the work ── */
-.lead{grid-column:1 / span 6}
-.sec__in>.stmt{grid-column:1 / span 6}
-.sec__in>.stmt--wide{grid-column:1 / span 7}
-.words{grid-column:8 / -1;align-self:start}
-.quote{grid-column:1 / span 7;margin:0}
-.act{grid-column:1 / span 5}
-.honest{grid-column:1 / -1}
-
+.sec{background:none;border:0;border-radius:0;box-shadow:none;padding:0;
+  margin:0 0 var(--gap-l);border-top:1px solid var(--hair);padding-top:var(--gap-s)}
+.sec--last{margin-bottom:0}
+.sec__h{display:flex;align-items:baseline;gap:16px;font-weight:400;margin-bottom:var(--gap-m)}
+.sec__no{font-family:var(--px);font-size:9px;letter-spacing:.14em;color:rgba(245,243,237,.42)}
+.sec__t{font-family:var(--px);font-size:11px;letter-spacing:.16em;color:var(--ink1)}
 .stmt{font-family:var(--serif);font-weight:300;font-style:italic;
-  font-size:var(--g-serif-stmt);line-height:var(--g-lh-stmt);color:var(--g-ink-92);
-  max-width:var(--g-measure-stmt);text-wrap:pretty}
-.stmt--wide{max-width:none}
-.fact{margin-top:var(--g-4);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
-.body{font-family:var(--serif);font-weight:300;font-size:var(--g-serif-body);
-  line-height:var(--g-lh-body);color:var(--g-ink-64);max-width:var(--g-measure);text-wrap:pretty}
-.body em,.stmt em{font-style:italic;color:var(--g-ink-92)}
-.src{margin-top:var(--g-4);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
-.mono-in{font-family:var(--mono);font-size:var(--g-em-mono);letter-spacing:var(--g-track-mono)}
-.honest{margin-top:var(--g-12);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
+  font-size:clamp(20px,2.3vw,26px);line-height:1.42;color:var(--ink1);max-width:46ch;margin-bottom:var(--gap-m)}
+.prose p{font-family:var(--serif);font-weight:300;font-size:18px;line-height:1.62;
+  color:var(--ink2);max-width:64ch;margin-bottom:var(--gap-s)}
+.prose p:last-child{margin-bottom:0}
+.prose em,.stmt em{font-style:italic;color:var(--ink1)}
+.src{font-family:var(--mono);font-size:10.5px;line-height:1.75;letter-spacing:.04em;
+  color:var(--ink3);max-width:72ch;margin-top:var(--gap-s)}
+.mono-in{font-family:var(--mono);font-size:.86em;letter-spacing:.02em}
+.flag{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber-deep);margin-left:10px}
 
-/* the house’s own windows: six warm pixels, alone on the ground, once */
-.house{grid-column:1 / -1;justify-self:center;margin-top:var(--g-30);
-  display:grid;grid-template-columns:repeat(3,var(--g-win));
-  column-gap:var(--g-win-x);row-gap:var(--g-win-y)}
-.house i{display:block;width:var(--g-win);height:var(--g-win);background:var(--g-win-warm)}
-.house i:nth-child(n+4){background:var(--g-win-deep)}
+/* the one signal: a link is a word with an amber rule under it */
+.ln{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;color:var(--ink1);
+  text-decoration:none;border-bottom:1px solid rgba(217,147,52,.6);padding-bottom:2px}
+.ln:hover{border-bottom-color:var(--amber);color:#fff}
+.ln:focus-visible{outline:none;border-bottom-color:var(--amber);color:#fff;
+  box-shadow:0 2px 0 -1px var(--amber)}
+.src .ln{display:inline-block}
 
-/* ── the one inline signal: a word with an amber rule under it ───── */
-.ln{font-family:var(--mono);font-size:var(--g-mono);letter-spacing:var(--g-track-mono);
-  color:var(--g-ink-64);text-decoration:none;
-  border-bottom:var(--g-hair) solid var(--g-signal-hair);padding-bottom:var(--g-half);
-  transition:color var(--g-hover) var(--g-ease),border-color var(--g-hover) var(--g-ease)}
-.ln:hover{color:var(--g-ink-92);border-bottom-color:var(--g-signal-lit)}
-.ln:focus-visible{outline:none;color:var(--g-ink-92);border-bottom-color:var(--g-focus)}
-.ln:active{color:var(--g-ink-52)}
+/* §02 — five portraits in a row, then five short lives. No cards. */
+.folk{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:24px;
+  align-items:end;margin-bottom:var(--gap-l);max-width:760px}
+.folk figure{margin:0;text-align:left}
+.folk img{display:block;height:auto;image-rendering:pixelated;margin-bottom:16px}
+.folk figcaption{display:block}
+.folk .who{display:flex;align-items:center;gap:7px;font-family:var(--px);font-size:8px;
+  letter-spacing:.1em;color:var(--ink1);line-height:1.5}
+.folk .mark{width:1px;height:11px;flex:none}
+.folk .lin{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;
+  color:var(--ink3);margin-top:7px;line-height:1.55;word-break:break-word}
 
-/* ── the control: a flat object in the house's own language. A subtle
-      fill, one hairline, a lit top edge, a whisper of shade — and five
-      states, the last of them the focus ring the element already has. */
-.btn{display:inline-flex;align-items:center;gap:var(--g-1);
-  min-height:var(--g-tap);padding-left:var(--g-2);padding-right:var(--g-2);
-  font-family:var(--mono);font-size:var(--g-mono-lg);letter-spacing:var(--g-track-mono);
-  color:var(--g-ink-92);text-decoration:none;white-space:nowrap;cursor:pointer;
-  background:var(--g-fill);border:var(--g-hair) solid var(--g-rule-lit);
-  border-radius:var(--g-radius);
-  box-shadow:inset 0 var(--g-hair) 0 var(--g-lit),0 var(--g-hair) var(--g-hair2) var(--g-shade);
-  transition:background var(--g-hover) var(--g-ease),border-color var(--g-hover) var(--g-ease),
-    color var(--g-hover) var(--g-ease),transform var(--g-hover) var(--g-ease)}
-.btn__dot{width:var(--g-dot);height:var(--g-dot);flex:none;background:var(--g-signal);
-  transition:background var(--g-hover) var(--g-ease)}
-.btn:hover{background:var(--g-fill-hover);border-color:var(--g-rule-lit2);color:var(--g-ink-full)}
-.btn:hover .btn__dot{background:var(--g-signal-lit)}
-.btn:focus-visible{outline:none;border-color:var(--g-focus);color:var(--g-ink-full);
-  background:var(--g-fill-hover)}
-.btn:focus-visible .btn__dot{background:var(--g-signal-lit)}
-.btn:active{background:var(--g-fill-press);border-color:var(--g-rule-lit2);
-  transform:translateY(var(--g-press));box-shadow:inset 0 var(--g-hair) var(--g-hair2) var(--g-shade)}
-.btn[aria-disabled="true"]{color:var(--g-ink-52);border-color:var(--g-rule);background:none;
-  box-shadow:none;cursor:default;pointer-events:none}
-.btn[aria-disabled="true"] .btn__dot{background:var(--g-ink-52)}
-.btn--lg{min-height:var(--g-tap-lg);padding-left:var(--g-3);padding-right:var(--g-3);
-  font-size:var(--g-mono-xl)}
+.lives{display:grid;gap:var(--gap-m)}
+.life{max-width:64ch}
+.life__h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:14px}
+.life__n{font-family:var(--px);font-size:10px;letter-spacing:.12em;color:var(--ink1)}
+.life__d{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--ink3)}
+.life p{font-family:var(--serif);font-weight:300;font-size:17px;line-height:1.6;color:var(--ink2);margin-bottom:12px}
+.life blockquote{margin:0 0 12px;padding-left:18px;border-left:1px solid var(--hair2);
+  font-family:var(--serif);font-weight:300;font-style:italic;font-size:17px;line-height:1.6;color:var(--ink1)}
+.life .from{display:block;font-family:var(--mono);font-style:normal;font-size:10px;
+  letter-spacing:.05em;color:var(--ink3);margin-top:10px}
 
-/* ── §02 · THE PLACES — the frames carry the weight ───────────────
-      One place a row, the frame on seven columns and the words on
-      five, alternating sides so the eye keeps moving; column 1 is
-      occupied in every row, so the left edge never wanders. */
-.places{display:grid;row-gap:var(--g-12);margin-top:var(--g-10)}
-.place{display:grid;grid-template-columns:repeat(var(--g-cols),minmax(0,1fr));
-  column-gap:var(--g-gutter);row-gap:var(--g-4);align-items:start}
-.place__f{grid-column:1 / span 7;grid-row:1;margin:0}
-.place__t{grid-column:8 / -1;grid-row:1}
-.place:nth-child(even) .place__f{grid-column:6 / -1}
-.place:nth-child(even) .place__t{grid-column:1 / span 5}
+/* §03 — the frames carry the weight: alternating, hairline, no shadow */
+.places{display:grid;gap:var(--gap-l)}
+.place{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:var(--gap-m);align-items:start}
+.place:nth-child(even){direction:rtl}
+.place:nth-child(even)>*{direction:ltr}
+.place__f{margin:0}
+.place__f .box{border:1px solid var(--hair2);border-radius:2px;background:#0a0812;
+  aspect-ratio:16/9;overflow:hidden;display:block}
+.place__f img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+.place__f figcaption{font-family:var(--mono);font-size:10px;letter-spacing:.05em;
+  color:var(--ink3);margin-top:12px;display:flex;align-items:center;gap:8px}
+.place__f figcaption::before{content:"";width:4px;height:4px;flex:none;background:var(--amber-deep)}
+.place__t h3{font-family:var(--px);font-size:10px;letter-spacing:.14em;color:var(--ink1);
+  font-weight:400;margin-bottom:18px;line-height:1.6}
+.place__t p{font-family:var(--serif);font-weight:300;font-size:17px;line-height:1.6;
+  color:var(--ink2);max-width:52ch;margin-bottom:18px}
 
-.place__f .box{position:relative;display:block;overflow:hidden;
-  aspect-ratio:var(--g-frame-ratio);background:var(--g-well);
-  border:var(--g-hair) solid var(--g-rule-lit);border-radius:var(--g-radius);
-  transition:border-color var(--g-hover) var(--g-ease)}
-.place__f img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;
-  transition:filter var(--g-hover) var(--g-ease)}
-.place__f figcaption{display:flex;align-items:center;gap:var(--g-1);
-  margin-top:var(--g-2);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52);
-  transition:color var(--g-hover) var(--g-ease),transform var(--g-hover) var(--g-ease)}
-.place__f figcaption::before{content:"";width:var(--g-dot);height:var(--g-dot);flex:none;
-  background:var(--g-signal);transition:background var(--g-hover) var(--g-ease)}
-/* a row lights a step when it is pointed at or stepped into, and its
-   caption comes forward — the provenance is legible either way */
-.place:hover .box,.place:focus-within .box{border-color:var(--g-rule-lit2)}
-.place:hover img,.place:focus-within img{filter:brightness(var(--g-frame-lift))}
-.place:hover figcaption,.place:focus-within figcaption{color:var(--g-ink-92);
-  transform:translateY(calc(var(--g-cap-lift) * -1))}
-.place:hover figcaption::before,.place:focus-within figcaption::before{background:var(--g-signal-lit)}
+/* §04 — the day as a strip: five phases, five sprites, a hairline timeline beneath */
+.dayscroll{overflow-x:auto;margin-bottom:var(--gap-m);padding-bottom:6px}
+.daystrip{min-width:760px}
+.daygrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:24px}
+.dayline{border-top:1px solid var(--hair);padding-top:14px;margin-top:18px}
+.dayline .tick{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--ink3)}
+.phase__h{font-family:var(--px);font-size:9px;letter-spacing:.12em;color:var(--ink1);margin-bottom:20px}
+.phase__r{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.phase__r img{height:30px;width:auto;image-rendering:pixelated;flex:none;opacity:.9}
+.phase__r.is-asleep img{opacity:.34}
+.phase__n{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--ink2);line-height:1.5}
+.phase__n i{display:block;font-style:normal;color:var(--ink3);font-size:9.5px;margin-top:2px}
 
-.place__i{display:block;font-family:var(--mono);font-size:var(--g-mono);
-  letter-spacing:var(--g-track-label);color:var(--g-ink-52);margin-bottom:var(--g-2)}
-.place__t h3{font-family:var(--px);font-weight:400;font-size:var(--g-px-place);
-  line-height:var(--g-lh-place);letter-spacing:var(--g-track-place);color:var(--g-ink-92);
-  margin-bottom:var(--g-3)}
-.place__t p{font-family:var(--serif);font-weight:300;font-size:var(--g-serif-body);
-  line-height:var(--g-lh-body);color:var(--g-ink-64);max-width:var(--g-measure);
-  margin-bottom:var(--g-4);text-wrap:pretty}
+/* §05 — the ways minds live: label in mono, the rest open */
+.ways{display:grid;gap:var(--gap-m)}
+.way{max-width:64ch}
+.way__k{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink1);margin-bottom:12px}
+.way p{font-family:var(--serif);font-weight:300;font-size:17px;line-height:1.6;color:var(--ink2)}
 
-/* ── §03 · THE ENGINE, in hairlines and dots over a lattice ─────── */
-.dgm{grid-column:1 / span 6;position:relative}
-.dgm::before{content:"";position:absolute;
-  inset:calc(var(--g-4) * -1) calc(var(--g-6) * -1) calc(var(--g-4) * -1) 0;
-  background-image:radial-gradient(var(--g-rule) var(--g-lat-dot),transparent 0);
-  background-size:var(--g-lat-gap) var(--g-lat-gap);opacity:var(--g-lat-a);
-  -webkit-mask-image:linear-gradient(105deg,var(--g-mask-a),var(--g-mask-b) 80%);
-  mask-image:linear-gradient(105deg,var(--g-mask-a),var(--g-mask-b) 80%);
-  pointer-events:none}
-.dgm>*{position:relative}
-.dgm__spine{display:flex;flex-direction:column}
-.dgm__n{position:relative;display:flex;align-items:center;gap:var(--g-2);
-  padding-bottom:var(--g-node-gap)}
-.dgm__n:last-child{padding-bottom:0}
-.dgm__n>i{flex:none;width:var(--g-node);height:var(--g-node);background:var(--g-ink-64);
-  border-radius:var(--g-node)}
-.dgm__n::before{content:"";position:absolute;left:var(--g-node-mid);bottom:0;
-  width:var(--g-hair);height:var(--g-node-gap);background:var(--g-rule-lit)}
-.dgm__n:last-child::before{display:none}
-.dgm__n>span{font-family:var(--mono);font-size:var(--g-mono-lg);
-  letter-spacing:var(--g-track-label);color:var(--g-ink-92)}
-.dgm__b{position:absolute;left:var(--g-branch-x);top:var(--g-branch-y);display:flex;gap:var(--g-4)}
-.dgm__b span{position:relative;padding-left:var(--g-3);font-family:var(--mono);
-  font-size:var(--g-mono);letter-spacing:var(--g-track-label);color:var(--g-ink-52)}
-.dgm__b span::before{content:"";position:absolute;left:0;top:var(--g-branch-mid);
-  width:var(--g-2);height:var(--g-hair);background:var(--g-rule-lit)}
-.dgm__side{margin-top:var(--g-5);display:flex;gap:var(--g-6);flex-wrap:wrap}
-.dgm__s{padding-left:var(--g-2);border-left:var(--g-hair) solid var(--g-rule-lit)}
-.dgm__s span{display:block;font-family:var(--mono);font-size:var(--g-mono);
-  letter-spacing:var(--g-track-label);color:var(--g-ink-64)}
-.dgm__s small{display:block;margin-top:var(--g-half);font-family:var(--mono);
-  font-size:var(--g-mono-xs);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
+/* §08 — the log */
+.log{display:grid;gap:var(--gap-m)}
+.entry{max-width:64ch}
+.entry__h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:12px}
+.entry__d{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--amber-deep)}
+.entry__t{font-family:var(--px);font-size:9px;letter-spacing:.12em;color:var(--ink1);line-height:1.6}
+.entry p{font-family:var(--serif);font-weight:300;font-size:16px;line-height:1.62;color:var(--ink2)}
 
-/* ── §04 · THE CHARTER — one line of it, exactly as written ─────── */
-.quote blockquote{margin:0;font-family:var(--serif);font-weight:300;font-style:italic;
-  font-size:var(--g-serif-stmt);line-height:var(--g-lh-stmt);color:var(--g-ink-92);
-  max-width:var(--g-measure-quote);text-wrap:pretty}
-.quote figcaption{margin-top:var(--g-3);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
+/* §09 — the last screen, the darkest */
+#enter{padding-top:var(--gap-l)}
+.enter{font-family:var(--serif);font-weight:300;font-style:italic;color:var(--ink1);
+  text-decoration:none;border-bottom:1px solid rgba(217,147,52,.7);padding-bottom:4px}
+.enter:hover{border-bottom-color:var(--amber);color:#fff}
+.enter:focus-visible{outline:none;border-bottom-color:var(--amber);color:#fff}
+.honest{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink3);
+  margin-top:var(--gap-l)}
 
-/* ── the field narrows: the two blocks stack, the frames go first ── */
-@media (max-width:980px){
-  .lead,.words,.dgm,.quote,.act,.honest,.sec__in>.stmt,.sec__in>.stmt--wide{grid-column:1 / -1}
-  .place__f,.place__t,.place:nth-child(even) .place__f,.place:nth-child(even) .place__t{
-    grid-column:1 / -1;grid-row:auto}
-  .dgm::before{inset:calc(var(--g-4) * -1) calc(var(--g-4) * -1) calc(var(--g-4) * -1) 0}
-  .stmt{max-width:none}
+@media (max-width:860px){
+  .ground{padding:0 20px 96px;--gap-l:72px;--gap-m:36px}
+  .folk{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;max-width:none}
+  .folk img{max-width:100%}
+  .folk .who{font-size:7px;letter-spacing:.06em}
+  .folk .lin{font-size:8.5px}
+  .place{grid-template-columns:minmax(0,1fr);gap:var(--gap-s)}
+  .place:nth-child(even){direction:ltr}
+  .stmt{font-size:20px;max-width:none}
 }
-@media (max-width:560px){
-  .ground{padding-left:var(--g-pad-x-s);padding-right:var(--g-pad-x-s)}
-  .sec{padding-top:var(--g-pad-t-s);padding-bottom:var(--g-pad-b-s)}
-  .sec--last{padding-bottom:var(--g-10)}
-  .ground .status{padding-bottom:var(--g-10)}
-  .sec__t{font-size:var(--g-px-title-s)}
-  .stmt{font-size:var(--g-serif-stmt-s)}
-  .quote blockquote{font-size:var(--g-serif-stmt-s);max-width:none}
-  .body,.place__t p{font-size:var(--g-serif-body-s)}
-  .place__t h3{font-size:var(--g-px-place-s)}
-  .places{row-gap:var(--g-10);margin-top:var(--g-8)}
-  .honest{margin-top:var(--g-10)}
-  .house{margin-top:var(--g-12)}
-  .sec__h{margin-bottom:0}
-  .sec__no{margin-bottom:var(--g-1)}
-  .dgm__b{position:static;margin-top:var(--g-1);margin-left:var(--g-3)}
-  .btn{white-space:normal}
-}
-
-/* below the horizon nothing moves but the light on a frame you point at */
-@media (prefers-reduced-motion:reduce){
-  .btn,.btn__dot,.ln,.place__f .box,.place__f img,.place__f figcaption,
-  .place__f figcaption::before{transition:none}
-  .place:hover figcaption,.place:focus-within figcaption{transform:none}
+@media (max-width:520px){
+  .ground{padding:0 14px 80px}
+  .folk{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 12px}
+  .prose p,.life p,.way p,.place__t p{font-size:16px}
 }
 
 /* panel overlay (plaque / journal / ledger) */
@@ -719,7 +555,7 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
   .chr__docs{padding:8px 16px}.chr__read{padding:16px}.chr__body{max-width:none}}
 
 /* ══ THE THREAD cinematic ══ */
-.carry{position:fixed;inset:0;z-index:55;overflow:hidden;background:#050409;opacity:0;pointer-events:none;transition:opacity .45s var(--ease-out);
+.carry{position:fixed;inset:0;z-index:55;background:#050409;opacity:0;pointer-events:none;transition:opacity .45s var(--ease-out);
   display:grid;place-items:center}
 .carry.on{opacity:1}
 .carry .line{position:absolute;left:0;right:0;top:50%;height:1px;
@@ -744,7 +580,7 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
   .wordmark{font-size:clamp(30px,10.2vw,52px)}
   .lede{font-size:16px;line-height:1.45}
   .tbtn{min-width:44px;min-height:44px;padding-inline:8px}
-  .feed__roster{grid-template-columns:minmax(0,1fr)}
+  .feed__roster{grid-template-columns:1fr 1fr}
   .cab__hud{padding:14px;min-height:108px}
   .menu{padding:0 14px}
   .menu__row{flex-wrap:wrap;overflow:visible;gap:8px 16px}
@@ -771,6 +607,7 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 }
 @media (max-width:420px){
   .bar__sub,.bar__tag{display:none}
+  .feed__roster{grid-template-columns:1fr}
   .cab__room{font-size:10px}
   .cab__title{font-size:9px}
 }
@@ -1105,209 +942,3 @@ html.exploring,html.exploring body{overflow:hidden}
 }
 @media (prefers-reduced-motion:reduce){.visit__card,.visit__light,.visit__spot{transition:opacity .2s linear}}
 @media (prefers-reduced-motion:reduce){.visit[data-state="waiting"] .visit__mode::before{animation:none;opacity:.7}}
-
-/* ══════════════════════════════════════════════════════════════════
-   WP-43 · THE FIRST SCREEN
-
-   The page opens on the instrument, not on a masthead. The topbar and
-   the hero together are exactly one screen: a capped band that says
-   the name and the way in, the window and the feed filling everything
-   left, and a hairline foot that says where the page goes next. The
-   band is a lid, never a wall — it is measured, and the instrument is
-   given the remainder.
-
-   The window keeps its pixels honest. The engine's frame is 420 world
-   rows tall; landing.js sizes the stage box and then sets the mount's
-   own width from that box, so the backing store matches the frame it
-   is shown in. At the common desktop heights that lands on 1:1 — no
-   resampling at all — and where the screen is taller than the room is
-   wide, the scale goes up whole and stays crisp. A CSS transform would
-   have taken the compass and the HUD with it and blurred their type.
-   ══════════════════════════════════════════════════════════════════ */
-:root{
-  /* the screen */
-  --fs-first:100vh;
-  --fs-bar:44px;                 /* the topbar's real height, measured in JS */
-  --fs-pad-x:24px; --fs-pad-x-s:14px;
-  --fs-pad-y:10px; --fs-pad-y-s:8px;
-  --fs-gap:12px; --fs-gap-s:8px;
-
-  /* the band */
-  --fs-mark:34px; --fs-mark-m:28px; --fs-mark-s:22px;
-  --fs-the:.32em; --fs-the-gap:.62em; --fs-the-lift:.26em;
-  --fs-kick:9px;
-  --fs-say:15px; --fs-say-s:13.5px; --fs-say-lh:1.4; --fs-say-step:1.5px;
-  --fs-head-gap:36px; --fs-head-gap-s:16px;
-  --fs-enter:12px; --fs-enter-h:42px; --fs-enter-pad:11px 16px; --fs-enter-gap:18px;
-
-  /* the instrument */
-  --fs-world-max:1120px; --fs-world-wide:1360px;
-  --fs-feed:340px; --fs-world-gap:12px;
-  --fs-world-w:1120px;           /* both set in JS from the screen that is there */
-  --fs-stage-h:420px;
-  --fs-compass-pad:8px 14px; --fs-compass-min:40px; --fs-compass-gap:14px;
-  --fs-hud-pad:9px 14px 10px; --fs-hud-body:14.5px; --fs-hud-lh:1.4;
-  --fs-hud-lines:2; --fs-hud-gap:5px;
-
-  /* the narrow feed */
-  --fs-tick-h:38px; --fs-tick-pad:0 12px; --fs-tick-gap:9px; --fs-tick-panel:min(52vh,340px);
-  --fs-tick-edge:#b4a69440; --fs-tick-edge-lit:#b4a69466; --fs-tick-lift:-20px; --fs-tick-blur:60px;
-
-  /* the foot */
-  --fs-foot-pad:9px; --fs-foot-gap:8px 18px;
-  --fs-bar-pad-y-s:9px; --fs-bar-pad-x-s:24px;
-  --fs-foot-scrim:rgba(6,5,10,.92); --fs-foot-scrim-out:rgba(6,5,10,0); --fs-foot-scrim-at:74%;
-}
-@supports (height:100dvh){ :root{ --fs-first:100dvh } }
-
-/* the screen itself: the topbar is the band's first line, so the hero takes
-   what the topbar leaves and not a pixel more. */
-.hero{
-  max-width:none; margin:0;
-  height:calc(var(--fs-first) - var(--fs-bar));
-  padding:var(--fs-pad-y) var(--fs-pad-x);
-  display:flex; flex-direction:column; gap:var(--fs-gap);
-  overflow:hidden;
-}
-/* one measure for all three: the band, the instrument and the foot share a
-   left edge, so nothing on the first screen floats free of the grid. */
-.hero__head,.hero__foot,.hero>.world:not(.fs){
-  width:min(100%,var(--fs-world-w)); margin-inline:auto;
-}
-
-/* ── the band ── */
-.hero__head{
-  flex:none; display:flex; align-items:center; gap:var(--fs-head-gap);
-  margin-bottom:0; max-width:none; position:static;
-}
-.hero__mark{flex:0 0 auto; display:flex; flex-direction:column; gap:var(--g-half)}
-.hero__head .tag{margin-bottom:0; font-size:var(--fs-kick); line-height:1}
-/* THE SANCTUARY as one lockup: the article small, lifted and tracked off the
-   name, so the whole mark stands inside a single cap band. */
-.wordmark{font-size:var(--fs-mark); line-height:1; margin-top:0; letter-spacing:-.02em; white-space:nowrap}
-.wordmark br{display:none}
-.wordmark__the{font-size:var(--fs-the); margin-right:var(--fs-the-gap); vertical-align:var(--fs-the-lift)}
-.hero__say{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:var(--g-half)}
-.hero__say .lede{font-size:var(--fs-say); line-height:var(--fs-say-lh); margin-top:0; max-width:64ch}
-.hero__say .lede br{display:none}
-.hero__say .lede--em{font-size:calc(var(--fs-say) - var(--fs-say-step)); margin-top:0}
-.hero__head .arrival{flex:0 0 auto; margin-top:0; gap:0}
-.arrival__enter{gap:var(--fs-enter-gap); min-height:var(--fs-enter-h);
-  padding:var(--fs-enter-pad); font-size:var(--fs-enter)}
-
-/* ── the instrument ── */
-.hero>.world:not(.fs){
-  flex:1 1 auto; min-height:0; align-content:center; position:relative;
-  grid-template-columns:minmax(0,1fr) var(--fs-feed);
-  gap:var(--fs-world-gap); margin-top:0;
-}
-.hero>.world:not(.fs).nofeed{grid-template-columns:minmax(0,1fr)}
-.hero>.world:not(.fs) .cab{min-height:0}
-/* the stage is given its height; the canvas takes it whole, and the mount's
-   width is set from the same box so one canvas pixel is one CSS pixel. */
-.hero>.world:not(.fs) .cab__stage{height:var(--fs-stage-h)}
-.hero>.world:not(.fs) .cab__stage>canvas{width:100%;height:100%;object-fit:contain}
-.hero>.world:not(.fs) .feed{min-height:0; max-height:none}
-.feed__list{min-height:0}
-.hero>.world:not(.fs) .compass{min-height:var(--fs-compass-min);
-  padding:var(--fs-compass-pad); gap:var(--fs-compass-gap)}
-.hero>.world:not(.fs) .cab__hud{padding:var(--fs-hud-pad); min-height:0}
-/* the HUD holds a fixed two lines and one hint: what the visitor is standing
-   near changes as they walk, and the window must not resize under them. */
-.hero>.world:not(.fs) .cab__hudbody{font-size:var(--fs-hud-body); line-height:var(--fs-hud-lh);
-  margin-top:var(--fs-hud-gap); min-height:0;
-  height:calc(var(--fs-hud-body) * var(--fs-hud-lh) * var(--fs-hud-lines));
-  display:-webkit-box; -webkit-box-orient:vertical;
-  -webkit-line-clamp:var(--fs-hud-lines); overflow:hidden}
-.hero>.world:not(.fs) .cab__hudhint{margin-top:var(--fs-hud-gap); height:calc(var(--g-mono) * var(--g-lh-mono));
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
-
-/* ── the narrow feed: one line under the window ── */
-.tick{display:none; align-items:center; gap:var(--fs-tick-gap); order:2; grid-column:1/-1;
-  width:100%; min-height:var(--fs-tick-h); padding:var(--fs-tick-pad); text-align:left;
-  background:var(--panel); border:var(--g-hair) solid var(--fs-tick-edge); border-top:0; color:var(--dim);
-  font-family:var(--mono); font-size:var(--g-mono); letter-spacing:var(--g-track-mono);
-  cursor:pointer; transition:color var(--g-hover) var(--g-ease),
-    background var(--g-hover) var(--g-ease), border-color var(--g-hover) var(--g-ease)}
-.tick .dot{flex:none}
-.tick__who{flex:none; color:var(--ink); text-transform:uppercase; letter-spacing:var(--g-track-mono)}
-.tick__who:empty{display:none}
-.tick__txt{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.tick__more{flex:none; color:var(--faint)}
-.tick__more::after{content:"the log ▲"}
-.world.tickopen .tick__more::after{content:"close ▼"}
-.tick:hover{color:var(--ink); background:var(--panel-raised); border-color:var(--fs-tick-edge-lit)}
-.tick:focus-visible{outline:none; color:var(--ink); border-color:var(--g-focus)}
-.tick:active{background:var(--g-fill-press)}
-.tick[disabled]{opacity:.5; cursor:default}
-@media (prefers-reduced-motion:reduce){.tick{transition:none}}
-
-@media (max-width:1099.98px){
-  .hero>.world:not(.fs),.hero>.world:not(.fs).nofeed{grid-template-columns:minmax(0,1fr); gap:0}
-  .hero>.world:not(.fs) .cab{grid-row:1; grid-column:1}
-  .hero>.world:not(.fs) .tick{display:flex; grid-row:2; grid-column:1}
-  .hero>.world:not(.fs).nofeed .tick{display:none}
-  /* the log rises into the foot of the window rather than pushing it off the
-     screen: the same cell as the cab, held to the bottom edge, so it stands on
-     the ticker that opened it. */
-  .hero>.world:not(.fs) .feed{display:none}
-  .hero>.world:not(.fs).tickopen .feed{display:flex; grid-row:1; grid-column:1; align-self:end;
-    height:var(--fs-tick-panel); max-height:100%; z-index:20;
-    /* over the room rather than over the page: the panel's usual 9% of
-       transparency lets the world through and the log turns to mud */
-    background:var(--chrome);
-    box-shadow:0 var(--fs-tick-lift) var(--fs-tick-blur) var(--g-shade)}
-}
-
-/* ── the foot ──
-   The horizon passes here, so the foot stands on the last of the light. It
-   takes the scrim the visit band takes inside the world — the ground falling
-   away under the type rather than a panel drawn around it — and the links keep
-   their contrast against the fire. */
-.hero__foot{flex:none; display:flex; align-items:center; justify-content:space-between;
-  gap:var(--fs-gap); border-top:var(--g-hair) solid var(--g-rule-lit);
-  background:linear-gradient(to top,var(--fs-foot-scrim) 0%,var(--fs-foot-scrim) var(--fs-foot-scrim-at),var(--fs-foot-scrim-out) 100%)}
-.hero__foot .menu{margin-top:0; border-bottom:0; min-width:0}
-.hero__foot .menu__row{padding:var(--fs-foot-pad) 0; gap:var(--fs-foot-gap)}
-.hero__foot .hero__cue{flex:none; margin-top:0; text-align:right; white-space:nowrap}
-
-/* ── a phone ── */
-@media (max-width:700px){
-  .hero{padding:var(--fs-pad-y-s) var(--fs-pad-x-s); gap:var(--fs-gap-s)}
-  .hero__head{flex-wrap:wrap; gap:var(--fs-head-gap-s); row-gap:var(--fs-gap-s)}
-  .hero__mark{flex:1 1 100%}
-  .wordmark{font-size:var(--fs-mark-s)}
-  /* two lines on a phone and no more: the mark, then the way in. Neither
-     sentence fits inside the 96px the window can spare here — §01 is one
-     scroll below and says the same thing in the same voice, so the band keeps
-     the name and the door instead of a paragraph the window would pay for. */
-  .hero__say{display:none}
-  .arrival{flex:1 1 100%}
-  .arrival__enter{width:100%; justify-content:space-between}
-  .hero__foot{flex-wrap:wrap; gap:0}
-  .hero__foot .menu{flex:1 1 100%}
-  .hero__foot .menu__row{padding:var(--g-half) 0; gap:0 var(--g-2)}
-  .hero__foot .menu a{min-height:var(--g-4)}
-  .hero__foot .hero__cue{flex:1 1 100%; text-align:left; white-space:normal}
-}
-@media (max-width:980px) and (min-width:701px){
-  .wordmark{font-size:var(--fs-mark-m)}
-  .hero__head{gap:var(--fs-head-gap-s)}
-}
-
-/* ── a short screen ──
-   Under about 780 the band has to give the window its 420 rows back. Nothing
-   is dropped: the mark, the sentence and the way in all stay, set one step
-   smaller and packed one step tighter. */
-@media (max-height:780px){
-  :root{
-    --fs-mark:26px; --fs-say:13.5px; --fs-kick:8px;
-    --fs-pad-y:5px; --fs-gap:6px; --fs-head-gap:28px;
-    --fs-enter-h:36px; --fs-enter:11px; --fs-enter-pad:9px 14px; --fs-enter-gap:14px;
-    --fs-foot-pad:5px; --fs-compass-min:36px; --fs-compass-pad:6px 14px;
-    --fs-hud-pad:7px 14px 8px; --fs-hud-body:14px; --fs-hud-gap:3px;
-  }
-  .bar{padding:var(--fs-bar-pad-y-s) var(--fs-bar-pad-x-s)}
-}
-/* the terminal's own program keeps the whole bezel: no band, no foot, no fit */
-html.door .hero{height:100%; padding:0; gap:0}
