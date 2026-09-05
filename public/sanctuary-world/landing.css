@@ -881,7 +881,7 @@ html.exploring,html.exploring body{overflow:hidden}
 /* the state, said out loud in the who row and shown in the dot: waiting breathes, live is lit */
 .visit[data-state="live"] .visit__mode::before{background:var(--amber);opacity:1}
 .visit[data-state="waiting"] .visit__mode::before{animation:visitWait 1.6s ease-in-out infinite}
-.visit[data-state="held"] .visit__mode::before{opacity:.35}
+.visit[data-state="held"] .visit__mode::before,.visit[data-state="closed"] .visit__mode::before{opacity:.35}
 @keyframes visitWait{0%,100%{opacity:.25}50%{opacity:1}}
 .visit__free.is-waiting{opacity:.55}
 .visit__free input:disabled,.visit__free button:disabled{cursor:default}

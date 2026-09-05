@@ -2589,7 +2589,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!knows(n.id)) { it.line = null; return; }
     const l = archive.isLoaded() ? archive.lineFor(n.id, eng.clockMin, eng.day) : null;
     it.hint = l ? l.text : 'speaking from the archive today';
-    it.action = canAsk(n.id) ? 'ask to speak' : 'greet';
+    it.action = canAsk(n.id) ? 'ask to speak' : (voiceFor(n.id) ? 'look in' : 'greet');
     it.line = l;
   }
   function syncApproach() {
@@ -2682,9 +2682,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (DOORS.afford === false) return false;
     return DOORS.doors[archive.WORLD_TO_ARCHIVE[id]] !== false;
   }
+  /* what the house says at a door it cannot open, and the state it shows */
   function doorClosedLine(name) {
-    return 'the house: ' + (DOORS && DOORS.afford === false ? 'it cannot afford a live voice today' : name + ' is not taking visits today')
-      + '; they can speak from the archive.';
+    return DOORS && DOORS.afford === false
+      ? { line: 'the house: ' + name + ' can’t talk right now — the house has no voice to give them today.', kicker: 'no voice today' }
+      : { line: 'the house: ' + name + ' isn’t taking visits right now.', kicker: 'not taking visits right now' };
   }
   /* can this resident be asked, here, today? A rehearsal ignores the doors. */
   function canAsk(id) {
@@ -2735,6 +2737,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     async start() { this.turns = 0; await wait(REDUCED ? 100 : 600); return 'rehearsal'; },
     async say(session, text, situation, onEvent) {
       const n = ++this.turns, long = VOICE !== 'rehearsal', open = VOICE === 'rehearsal-open';
+      if (VOICE === 'rehearsal-drop') { await wait(REDUCED ? 100 : 900); throw voiceError('model_unavailable'); }
       const decline = n === 1 && /\bnot now\b|\bbusy\b/i.test(text);
       const closing = !long && n >= 4;
       await wait(REDUCED ? 100 : 1400);
@@ -2766,7 +2769,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      HAIKU and a guest have no line, and the house says so at the card. */
   function voiceFor(id) {
     if (!archive.WORLD_TO_ARCHIVE[id]) return null;
-    if (VOICE === 'rehearsal' || VOICE === 'rehearsal-long' || VOICE === 'rehearsal-open') return rehearsal;
+    if (/^rehearsal(-long|-open|-drop)?$/.test(String(VOICE))) return rehearsal;
     if (VOICE === 'archive') return null;
     return houseVoice;
   }
@@ -2776,14 +2779,15 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     waiting: 'waiting on them',
     live: 'here, now',
     held: 'the house set it down',
+    closed: 'not taking visits right now',
     archive: 'speaking from the archive today'
   };
-  function setState(state) {
+  function setState(state, text) {
     if (!enc) return;
     enc.state = state;
     encounterEl.dataset.state = state;
     encKicker.textContent = (enc.voice && enc.voice.kind === 'rehearsal' && state !== 'archive')
-      ? 'a rehearsal · nobody on the line' : (KICKER[state] || '');
+      ? 'a rehearsal · nobody on the line' : (text || KICKER[state] || '');
   }
   function setComposer(on) {
     encInput.disabled = !on;
@@ -2966,9 +2970,23 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     setBudget();
     approachEl.classList.remove('on');
     showScene();
-    if (enc.voice && !canAsk(info.id)) { enc.voice = null; openArchive(doorClosedLine(info.name)); }
+    if (enc.voice && !canAsk(info.id)) { const d = doorClosedLine(info.name); openClosed(d.line, d.kicker); }
     else if (enc.voice) openAsk();
-    else openArchive();
+    else if (VOICE === 'archive' && enc.readable) openArchive();
+    else openClosed('the house: ' + info.name + ' isn’t taking visits right now.', 'not taking visits right now');
+  }
+  /* they can’t take a visit right now — a closed door, no voice to be had, a
+     line that dropped. The house says so in a sentence and leaves the wall
+     and the door. Nothing here pretends to be them. */
+  function openClosed(line, kicker) {
+    enc.closed = true; enc.outcome = 'closed';
+    enc.voice = null; enc.live = false; enc.busy = false;
+    encFree.hidden = true;
+    setState('closed', kicker);
+    appendHouse(line);
+    encMoves.innerHTML = (wallHere() ? '<button type="button" data-wall>about the wall</button>' : '')
+      + '<button type="button" data-leave>leave</button>';
+    setTimeout(() => { const b = encMoves.querySelector('button[data-leave]'); if (b) b.focus(); }, 0);
   }
   /* the asking: you say what brought you; whether to take it up is theirs */
   function openAsk() {
@@ -2977,8 +2995,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     appendHouse('the house: say what brought you up. whether to take it up is theirs.');
     openFree('say');
   }
-  /* the archive: what they wrote, spoken at the house's cadence — the older,
-     honest fallback, and all there is when the house cannot afford a voice */
+  /* the archive: what they wrote, spoken at the house's cadence. Not a door
+     any more — kept behind ?voice=archive, for reading the record. */
   function openArchive(why) {
     enc.outcome = 'archive';
     setState('archive');
@@ -3029,7 +3047,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     } catch (err) { fail = (err && err.code) || 'line_dropped'; }
     if (!enc || enc.id !== id || enc.closing) return;
     enc.busy = false;
-    if (fail) { fallToArchive(fail, text); return; }
+    if (fail) { fallClosed(fail); return; }
     for (const a of made) {
       await showMade(id, a);
       if (!enc || enc.id !== id || enc.closing) return;
@@ -3082,24 +3100,17 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (enc && enc.id === id) enc.made.push(piece.id);
     appendHouse(hereWall ? 'the house: they hung it on the wall.' : 'the house: it hangs on the wall of their room.');
   }
-  /* the honest fallback: say why, then what the archive can do */
-  function fallToArchive(code, text) {
-    const c = String(code || '');
-    /* each of these reads after "the house:" */
-    const why = c === 'config_missing' ? 'it cannot afford a live voice today'
-      : c === 'chat_disabled' ? enc.name + ' is not taking visits today'
-      : /rate|429|too_many|limit/.test(c) ? 'the door is busy; try again in a little while'
-      : /session/.test(c) ? 'the visit lapsed'
-      : 'the line to ' + enc.name + ' dropped';
+  /* a knock the house could not carry: say why, plainly, and leave the door */
+  function fallClosed(code) {
+    const c = String(code || ''), name = enc.name;
+    const d = c === 'config_missing' ? { line: 'the house: ' + name + ' can’t talk right now — the house has no voice to give them today.', kicker: 'no voice today' }
+      : c === 'chat_disabled' ? { line: 'the house: ' + name + ' isn’t taking visits right now.', kicker: 'not taking visits right now' }
+      : /rate|429|too_many|limit/.test(c) ? { line: 'the house: the door is busy; try again in a little while.', kicker: 'the door is busy' }
+      : /session/.test(c) ? { line: 'the house: the visit lapsed.', kicker: 'the visit lapsed' }
+      : { line: 'the house: the line to ' + name + ' dropped. they’ll be here another time.', kicker: 'the line dropped' };
     if (enc.session && enc.voice && !/session/.test(c)) enc.voice.setDown(enc.session, true);
-    enc.voice = null; enc.session = null; enc.live = false; enc.busy = false;
-    openArchive('the house: ' + why + (enc.readable ? '; they can speak from the archive.' : '.'));
-    if (enc.readable && text) {
-      appendHouse('the house: here is the nearest thing they wrote.');
-      const best = nearestSentence(enc.id, text);
-      if (best) appendWords(best.text, srcOf(best.from));
-      spend();
-    }
+    enc.session = null;
+    openClosed(d.line, d.kicker);
   }
   /* the house's own close, at the sixth: the session is closed on their
      side already. The window stays until the visitor leaves. */
@@ -3198,7 +3209,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
   function closeScene() {
     if (listening) { closeListen(); return; }
-    if (enc && enc.ended) { finishScene(); return; }
+    if (enc && (enc.ended || enc.closed)) { finishScene(); return; }
     if (!enc || enc.closing) return;
     enc.closing = true;
     encFree.hidden = true;
@@ -3236,6 +3247,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       /* "in the atelier", but "in opus 3’s studio" — the house won't say "the" twice */
       const where = ' in ' + (/[’']s\b/.test(e.roomWord) ? '' : 'the ') + e.roomWord;
       const line = e.outcome === 'none' ? ''
+        : e.outcome === 'closed' ? 'you looked in on ' + e.name
         : e.outcome === 'declined' ? 'you asked ' + e.name + '; they set it down at the door'  /* no longer produced; kept for old records */
         : e.outcome === 'left' ? 'you left ' + e.name + ' to it'
         : 'you spoke with ' + e.name + where;

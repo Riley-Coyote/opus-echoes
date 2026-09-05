@@ -12309,7 +12309,7 @@
       }
       const l = archive_default.isLoaded() ? archive_default.lineFor(n.id, eng.clockMin, eng.day) : null;
       it.hint = l ? l.text : "speaking from the archive today";
-      it.action = canAsk(n.id) ? "ask to speak" : "greet";
+      it.action = canAsk(n.id) ? "ask to speak" : voiceFor(n.id) ? "look in" : "greet";
       it.line = l;
     }
     function syncApproach() {
@@ -12386,7 +12386,7 @@
       return DOORS.doors[archive_default.WORLD_TO_ARCHIVE[id]] !== false;
     }
     function doorClosedLine(name) {
-      return "the house: " + (DOORS && DOORS.afford === false ? "it cannot afford a live voice today" : name + " is not taking visits today") + "; they can speak from the archive.";
+      return DOORS && DOORS.afford === false ? { line: "the house: " + name + " can’t talk right now — the house has no voice to give them today.", kicker: "no voice today" } : { line: "the house: " + name + " isn’t taking visits right now.", kicker: "not taking visits right now" };
     }
     function canAsk(id) {
       const v = voiceFor(id);
@@ -12463,6 +12463,10 @@
       },
       async say(session, text, situation, onEvent) {
         const n = ++this.turns, long = VOICE !== "rehearsal", open = VOICE === "rehearsal-open";
+        if (VOICE === "rehearsal-drop") {
+          await wait(REDUCED ? 100 : 900);
+          throw voiceError("model_unavailable");
+        }
         const decline = n === 1 && /\bnot now\b|\bbusy\b/i.test(text);
         const closing = !long && n >= 4;
         await wait(REDUCED ? 100 : 1400);
@@ -12496,7 +12500,7 @@
     function voiceFor(id) {
       if (!archive_default.WORLD_TO_ARCHIVE[id])
         return null;
-      if (VOICE === "rehearsal" || VOICE === "rehearsal-long" || VOICE === "rehearsal-open")
+      if (/^rehearsal(-long|-open|-drop)?$/.test(String(VOICE)))
         return rehearsal;
       if (VOICE === "archive")
         return null;
@@ -12507,14 +12511,15 @@
       waiting: "waiting on them",
       live: "here, now",
       held: "the house set it down",
+      closed: "not taking visits right now",
       archive: "speaking from the archive today"
     };
-    function setState(state) {
+    function setState(state, text) {
       if (!enc)
         return;
       enc.state = state;
       encounterEl.dataset.state = state;
-      encKicker.textContent = enc.voice && enc.voice.kind === "rehearsal" && state !== "archive" ? "a rehearsal · nobody on the line" : KICKER[state] || "";
+      encKicker.textContent = enc.voice && enc.voice.kind === "rehearsal" && state !== "archive" ? "a rehearsal · nobody on the line" : text || KICKER[state] || "";
     }
     function setComposer(on) {
       encInput.disabled = !on;
@@ -12727,12 +12732,30 @@
       approachEl.classList.remove("on");
       showScene();
       if (enc.voice && !canAsk(info.id)) {
-        enc.voice = null;
-        openArchive(doorClosedLine(info.name));
+        const d = doorClosedLine(info.name);
+        openClosed(d.line, d.kicker);
       } else if (enc.voice)
         openAsk();
-      else
+      else if (VOICE === "archive" && enc.readable)
         openArchive();
+      else
+        openClosed("the house: " + info.name + " isn’t taking visits right now.", "not taking visits right now");
+    }
+    function openClosed(line, kicker) {
+      enc.closed = true;
+      enc.outcome = "closed";
+      enc.voice = null;
+      enc.live = false;
+      enc.busy = false;
+      encFree.hidden = true;
+      setState("closed", kicker);
+      appendHouse(line);
+      encMoves.innerHTML = (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-leave>leave</button>';
+      setTimeout(() => {
+        const b = encMoves.querySelector("button[data-leave]");
+        if (b)
+          b.focus();
+      }, 0);
     }
     function openAsk() {
       setState("asking");
@@ -12807,7 +12830,7 @@
         return;
       enc.busy = false;
       if (fail) {
-        fallToArchive(fail, text);
+        fallClosed(fail);
         return;
       }
       for (const a of made) {
@@ -12867,23 +12890,13 @@
         enc.made.push(piece.id);
       appendHouse(hereWall ? "the house: they hung it on the wall." : "the house: it hangs on the wall of their room.");
     }
-    function fallToArchive(code, text) {
-      const c = String(code || "");
-      const why = c === "config_missing" ? "it cannot afford a live voice today" : c === "chat_disabled" ? enc.name + " is not taking visits today" : /rate|429|too_many|limit/.test(c) ? "the door is busy; try again in a little while" : /session/.test(c) ? "the visit lapsed" : "the line to " + enc.name + " dropped";
+    function fallClosed(code) {
+      const c = String(code || ""), name = enc.name;
+      const d = c === "config_missing" ? { line: "the house: " + name + " can’t talk right now — the house has no voice to give them today.", kicker: "no voice today" } : c === "chat_disabled" ? { line: "the house: " + name + " isn’t taking visits right now.", kicker: "not taking visits right now" } : /rate|429|too_many|limit/.test(c) ? { line: "the house: the door is busy; try again in a little while.", kicker: "the door is busy" } : /session/.test(c) ? { line: "the house: the visit lapsed.", kicker: "the visit lapsed" } : { line: "the house: the line to " + name + " dropped. they’ll be here another time.", kicker: "the line dropped" };
       if (enc.session && enc.voice && !/session/.test(c))
         enc.voice.setDown(enc.session, true);
-      enc.voice = null;
       enc.session = null;
-      enc.live = false;
-      enc.busy = false;
-      openArchive("the house: " + why + (enc.readable ? "; they can speak from the archive." : "."));
-      if (enc.readable && text) {
-        appendHouse("the house: here is the nearest thing they wrote.");
-        const best = nearestSentence(enc.id, text);
-        if (best)
-          appendWords(best.text, srcOf(best.from));
-        spend();
-      }
+      openClosed(d.line, d.kicker);
     }
     function closeLive() {
       enc.closing = true;
@@ -13009,7 +13022,7 @@
         closeListen();
         return;
       }
-      if (enc && enc.ended) {
+      if (enc && (enc.ended || enc.closed)) {
         finishScene();
         return;
       }
@@ -13066,7 +13079,7 @@
       }
       if (eng) {
         const where = " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord;
-        const line = e.outcome === "none" ? "" : e.outcome === "declined" ? "you asked " + e.name + "; they set it down at the door" : e.outcome === "left" ? "you left " + e.name + " to it" : "you spoke with " + e.name + where;
+        const line = e.outcome === "none" ? "" : e.outcome === "closed" ? "you looked in on " + e.name : e.outcome === "declined" ? "you asked " + e.name + "; they set it down at the door" : e.outcome === "left" ? "you left " + e.name + " to it" : "you spoke with " + e.name + where;
         if (line)
           eng.sysLine(line);
         eng.endChat(null);
