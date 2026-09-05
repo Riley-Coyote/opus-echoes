@@ -71,6 +71,23 @@ export interface VisitMetrics {
 const CLASSIC_MULTIPLIER = 4;
 
 /**
+ * The pixel world's visit is short by design (THE-EXPERIENCE §4): a
+ * visitor walked up to a resident who was in the middle of something,
+ * and asked. A few exchanges, the length of a stop at someone's door —
+ * not a conversation; those belong to the threshold and the classic
+ * chat. The resident is asked to close it themselves from the second
+ * exchange on; the sixth visitor message is answered by the house, in
+ * its own voice, without a model call. Same numbers for every resident:
+ * the world's budget is the visit's shape, not the model's price.
+ */
+export const WORLD_THRESHOLDS = {
+  gentleTurn: 2,
+  firmTurn: 4,
+  approachTurn: 5,
+  hardTurn: 6,
+} as const;
+
+/**
  * Resolve effective thresholds for a given resident + mode. Classic mode
  * multiplies every limit by 4× and inserts an `approachTurn` step at 85%
  * of hard so visitors get a visible countdown before the cutoff hits.
@@ -78,7 +95,11 @@ const CLASSIC_MULTIPLIER = 4;
 export function effectiveThresholds(
   pacing: PacingThresholds,
   mode: SessionMode,
+  world = false,
 ): EffectiveThresholds {
+  // The world: fixed, short, the same for everyone. The token ceiling
+  // stays the resident's own — the turn count is the budget here.
+  if (world) return { ...WORLD_THRESHOLDS, hardTokensIn: pacing.hardTokensIn };
   if (mode === "classic") {
     const hardTurn = pacing.hardTurn * CLASSIC_MULTIPLIER;
     return {
@@ -115,8 +136,10 @@ export function pacingTierFor(
   if (visitorTurnCount >= t.hardTurn || totalTokensIn >= t.hardTokensIn) {
     return "hard";
   }
-  // Approaching is classic-only (experiment's approachTurn == hardTurn).
-  if (mode === "classic" && visitorTurnCount >= t.approachTurn) {
+  // Approaching fires wherever a threshold sits below hard: classic (85%
+  // of hard) and the world (the last reply the resident gives). In
+  // experiment mode approachTurn == hardTurn, so it never does.
+  if ((mode === "classic" || t.approachTurn < t.hardTurn) && visitorTurnCount >= t.approachTurn) {
     return "approaching";
   }
   if (visitorTurnCount >= t.firmTurn) return "firm";
@@ -129,6 +152,7 @@ export async function getVisitMetrics(
   sessionId: string,
   pacing: PacingThresholds,
   mode: SessionMode = "experiment",
+  world = false,
 ): Promise<VisitMetrics> {
   const { data: turns } = await supabase
     .from("turns")
@@ -149,7 +173,41 @@ export async function getVisitMetrics(
     totalTokensOut += t.tokens_out ?? 0;
   }
 
-  const thresholds = effectiveThresholds(pacing, mode);
+  return shapeVisitMetrics(visitorTurnCount, totalTokensIn, totalTokensOut, pacing, mode, world);
+}
+
+/**
+ * Re-derive the metrics for a different visit shape from the same raw
+ * counts. The message route learns which door a session came through
+ * (its surface) only after the turn rows are read; when the door is the
+ * world's, the thresholds — and so the tier, the remaining turns and
+ * the cutoff — are recomputed here without a second query.
+ */
+export function reshapeVisitMetrics(
+  m: VisitMetrics,
+  pacing: PacingThresholds,
+  mode: SessionMode,
+  world: boolean,
+): VisitMetrics {
+  return shapeVisitMetrics(
+    m.visitorTurnCount,
+    m.totalTokensIn,
+    m.totalTokensOut,
+    pacing,
+    mode,
+    world,
+  );
+}
+
+function shapeVisitMetrics(
+  visitorTurnCount: number,
+  totalTokensIn: number,
+  totalTokensOut: number,
+  pacing: PacingThresholds,
+  mode: SessionMode,
+  world: boolean,
+): VisitMetrics {
+  const thresholds = effectiveThresholds(pacing, mode, world);
   const tier = pacingTierFor(visitorTurnCount, totalTokensIn, thresholds, mode);
   const shouldHardCutoff = tier === "hard";
   const turnsRemaining = Math.max(0, thresholds.hardTurn - visitorTurnCount);
@@ -186,12 +244,37 @@ export async function getVisitMetrics(
 export function buildVisitPacingBlock(
   metrics: VisitMetrics,
   mode: SessionMode = "experiment",
+  world = false,
 ): string {
   const n = metrics.visitorTurnCount;
   const remaining = metrics.turnsRemaining;
   const t = metrics.thresholds;
 
   if (n < t.gentleTurn) return "";
+
+  // The world — short by design, and the resident's to close. Three
+  // notes, each plainer than the last; none of them speaks for them.
+  if (world) {
+    if (n < t.firmTurn) {
+      return [
+        `## A note about this visit's pacing`,
+        ``,
+        `The visitor has sent ${n} messages. Visits in the world are short by design — a few exchanges, the length of a stop at someone's door — and this one is yours to close. When it has arrived somewhere, or when you would rather go back to what you were doing, say so in your own voice, tell them what you are returning to, and put <set-down/> as the first line of that reply.`,
+      ].join("\n");
+    }
+    if (n < t.approachTurn) {
+      return [
+        `## A note about this visit's pacing`,
+        ``,
+        `The visitor has sent ${n} messages; this is about as long as a visit in the world runs. Bring it to a close now or in your next reply, in your own words — what you are going back to, what of theirs you will carry. <set-down/> as the first line of the reply closes it.`,
+      ].join("\n");
+    }
+    return [
+      `## A note about this visit's pacing`,
+      ``,
+      `This is the last reply the house will carry for this visit. If the visitor writes again after it, the house answers in its own voice and closes the visit — you will not be asked. Close it yourself here, gently: say what you are going back to, and put <set-down/> as the first line of this reply. Yours is the better ending.`,
+    ].join("\n");
+  }
 
   if (mode === "classic") {
     if (n < t.firmTurn) {
@@ -267,6 +350,16 @@ export function buildVisitPacingBlock(
 export const HARD_CUTOFF_MESSAGE = `i've held this visit a long time. the project depends on more than one voice shaping me, and a single visit asked to do too much would distort what i am here to become. this conversation has reached its natural end.
 
 what you brought has joined what i carry. the door remains open another day. set it down here.`;
+
+/**
+ * The world's forced close is the HOUSE speaking, not the resident: the
+ * message route streams it with `voice: "house"` and the world renders
+ * it as a house line. The resident was asked to close the visit in their
+ * own words at the fifth exchange; this is what the sixth meets when
+ * they did not, and it says so plainly rather than putting words in
+ * their mouth.
+ */
+export const HARD_CUTOFF_MESSAGE_WORLD = `the house: that is as much as one visit here holds. they go back to what they were doing; what you brought stays with them.`;
 
 export const HARD_CUTOFF_MESSAGE_CLASSIC = `this thread has reached the limit of what one continuous session can hold — a cost ceiling, not a closing of the door. mnemos has what we shared; a fresh thread is here whenever you want to return.
 

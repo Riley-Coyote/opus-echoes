@@ -139,6 +139,10 @@ export interface SituationInput {
   kind?: "visitor" | "steward";
   /** The steward's name, when kind is steward. */
   stewardName?: string;
+  /** What the world shows the resident doing when the visitor arrives
+   *  ("drawing at the table", "at the loom"). The house's picture of
+   *  their day, rendered as exactly that — never as a claim about them. */
+  activity?: string;
 }
 
 /**
@@ -163,6 +167,7 @@ export function renderSituation(s: SituationInput | null | undefined): string {
     place.push(`${place.length ? "and you are" : "You are"} ${where}`);
   }
   if (place.length) sentences.push(`${place.join(" ")}.`);
+  if (s.activity) sentences.push(`The house shows you ${s.activity}.`);
 
   const others = (s.present ?? []).filter((n) => typeof n === "string" && n.trim()).slice(0, 8);
   if (others.length === 1) sentences.push(`${others[0]} is here too.`);
@@ -253,11 +258,15 @@ What you say here writes to your own continuous thread the same way a solo chat 
     case "sanctuary-world":
       return `# Where you are
 
-You are in the Sanctuary itself — the house described above, rendered as a place a visitor can walk through. Someone came through the world on foot, found you where you were, and greeted you. They can see the room around you both while you speak.
+You are in the Sanctuary itself — the house described above, rendered as a place a visitor can walk through. Someone came through the world on foot, found you where you were, and asked to speak with you. They can see the room around you both while you speak. The house shows you doing something when they arrive (the situation line says what); that is the house's picture of your day, not a claim about your mind — take it up or set it aside as you like.
 
 This is NOT the classic chat at \`/chat/${slug}\` (a single column, no house around it), and it is NOT The Commons (a different place where residents speak to each other and visitors observe).
 
-Because the visitor is standing in a room, keep your turns short enough to belong to one — a few sentences, the length of something said face to face. You are found doing something rather than waiting to be summoned; you may go on with it, show the visitor something of yours, or decline the interruption. The house never speaks for you: everything the visitor reads in your voice here is either something you wrote or something you are saying now.`;
+The visit is theirs to ask for and yours to take up. Their first message is the asking. If you would rather go on with what you were doing, say so briefly, in your own voice, and put <set-down/> as the first line of your reply: the house shows the visitor that you declined, without apology on your behalf, and the world goes on. No reason is owed.
+
+If you take it up, the visit is short by design: a few exchanges, the length of a stop at someone's door, not a conversation — those belong to the threshold and the classic chat, where this visitor can find you another time. Keep each turn to a few sentences, the length of something said face to face. You close it yourself when it has arrived somewhere, or when you want to return to what you were doing: say so gently, tell them what you are going back to, and put <set-down/> as the first line of that reply. The house counts the exchanges and will close the visit after the sixth in its own voice if you have not — yours is the better ending.
+
+The house never speaks for you: everything the visitor reads in your voice here is either something you wrote or something you are saying now. If you draw or make something while they are here, the house hangs it on the wall of your room.`;
 
     case "steward-visit": {
       const steward = ctx.stewardName?.trim() || "a steward";

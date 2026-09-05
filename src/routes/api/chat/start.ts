@@ -99,6 +99,12 @@ export const Route = createFileRoute("/api/chat/start")({
           if (!activeClassic) activeClassic = session;
         }
 
+        // The world never resumes a classic thread: a visit there is short
+        // and closes when it is set down, and a visitor's open /chat
+        // thread is a different door with a different preamble and
+        // pacing. Walking up to a resident always opens a fresh visit.
+        if (body.surface === "sanctuary-world") activeClassic = null;
+
         // Same-surface resume.
         if (activeClassic) {
           return jsonResp({

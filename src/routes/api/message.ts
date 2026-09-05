@@ -25,6 +25,8 @@ import {
   type PacingTier,
   type SessionMode,
   type VisitMetrics,
+  HARD_CUTOFF_MESSAGE_WORLD,
+  reshapeVisitMetrics,
 } from "@/server/opus/visit-pacing";
 import {
   DEFAULT_RESIDENT_ID,
@@ -83,6 +85,8 @@ const Situation = z.object({
   present: z.array(z.string().trim().min(1).max(60)).max(8).optional(),
   visitor: z.enum(["new", "known"]).optional(),
   kind: z.enum(["visitor", "steward"]).optional(),
+  /** What the world shows the resident doing ("drawing at the table"). */
+  activity: z.string().trim().min(1).max(80).optional(),
 });
 
 const Body = z.object({
@@ -299,14 +303,21 @@ function buildUserPromptThreeLayer(opts: {
  * Same ndjson shape the front-end expects from opusStreamResponse so
  * the visitor sees the message render normally.
  */
-function prebuiltSetDownResponse(text: string, pacing?: PacingPrelude): Response {
+function prebuiltSetDownResponse(
+  text: string,
+  pacing?: PacingPrelude,
+  /** "house" when the text is the house's own line, not the resident's
+   *  (the world's forced close). Clients that don't know the field
+   *  render it as before. */
+  voice?: "house",
+): Response {
   const stream = new ReadableStream({
     start(controller) {
       const enc = new TextEncoder();
       const send = (obj: unknown) => controller.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
       if (pacing) send({ type: "pacing", ...pacing });
       send({ type: "kind", kind: "set_down" });
-      send({ type: "text", text });
+      send(voice ? { type: "text", text, voice } : { type: "text", text });
       send({ type: "done" });
       controller.close();
     },
@@ -755,7 +766,7 @@ export const Route = createFileRoute("/api/message")({
           memoryRetrieval,
           selfModelBlock,
           interior,
-          visitMetrics,
+          visitMetricsRaw,
           { data: turns },
           visitorContext,
           { data: intentRow },
@@ -786,6 +797,19 @@ export const Route = createFileRoute("/api/message")({
         // WP-14 threads the name through; WP-15 replaces the note below
         // with the full `steward-visit` surface preamble.
         const stewardName = stewardNameFromReason(intentRow?.reason);
+        // Which door this session came through. Known only now, once the
+        // intent row is read; the world's door reshapes the visit's
+        // pacing (short by design — see WORLD_THRESHOLDS) from the same
+        // turn counts, and chooses the preamble below.
+        const surface = surfaceForSession({
+          mode: sessMode,
+          intentReason: intentRow?.reason,
+          stewardName,
+        });
+        const worldVisit = surface === "sanctuary-world";
+        const visitMetrics = worldVisit
+          ? reshapeVisitMetrics(visitMetricsRaw, resident.pacing, sessMode, true)
+          : visitMetricsRaw;
         const visitorKind = visitorKindForToken(session.visitor_token, Boolean(stewardName));
         const eventPayloadBase = {
           session_id: session.id,
@@ -825,8 +849,11 @@ export const Route = createFileRoute("/api/message")({
         // emphasizes the thread's continuity through mnemos rather than
         // the door-closing tone of experiment mode.
         if (visitMetrics.shouldHardCutoff) {
-          const closingText =
-            sessMode === "classic" ? HARD_CUTOFF_MESSAGE_CLASSIC : HARD_CUTOFF_MESSAGE;
+          const closingText = worldVisit
+            ? HARD_CUTOFF_MESSAGE_WORLD
+            : sessMode === "classic"
+              ? HARD_CUTOFF_MESSAGE_CLASSIC
+              : HARD_CUTOFF_MESSAGE;
           await supabaseAdmin.from("turns").insert({
             session_id: session.id,
             role: "resident",
@@ -860,6 +887,7 @@ export const Route = createFileRoute("/api/message")({
           return prebuiltSetDownResponse(
             closingText,
             pacingPreludeFromMetrics(visitMetrics, sessMode),
+            worldVisit ? "house" : undefined,
           );
         }
 
@@ -868,7 +896,7 @@ export const Route = createFileRoute("/api/message")({
           .map((t) => `${t.role}: ${t.body}`)
           .join("\n");
 
-        const visitPacingBlock = buildVisitPacingBlock(visitMetrics, sessMode);
+        const visitPacingBlock = buildVisitPacingBlock(visitMetrics, sessMode, worldVisit);
 
         // Structured system prompt with per-block cache_control. Static
         // and semi-static blocks are cached (5-min ephemeral); variable
@@ -886,11 +914,6 @@ export const Route = createFileRoute("/api/message")({
         //
         // The situation line is the opposite: per-turn, so it goes in
         // the uncached variable block.
-        const surface = surfaceForSession({
-          mode: sessMode,
-          intentReason: intentRow?.reason,
-          stewardName,
-        });
         const situationLine = renderSituation(
           body.situation
             ? {
