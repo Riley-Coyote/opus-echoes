@@ -1093,11 +1093,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     gallery: './museum/museum-permanent-gallery.html?embed=1',
     'field-annex': './museum/museum-field-annex.html?embed=1'
   };
+  /* the four rooms are one screen wide now, so a visit arrives just inside the
+     door and the resident waits at the thing the day's word says they are at:
+     the desk, the reading desk, the set table, the terminal. */
   const privateRooms = {
-    fourO: { id: 'room_fourO', x: 210, y: 378, residentX: 262, residentY: 376 },
-    opus: { id: 'room_opus', x: 210, y: 378, residentX: 262, residentY: 376 },
-    sonnet: { id: 'room_sonnet', x: 210, y: 378, residentX: 262, residentY: 376 },
-    five: { id: 'room_five', x: 210, y: 378, residentX: 262, residentY: 376 }
+    fourO: { id: 'room_fourO', x: 140, y: 378, residentX: 380, residentY: 376 },
+    opus: { id: 'room_opus', x: 140, y: 378, residentX: 397, residentY: 376 },
+    sonnet: { id: 'room_sonnet', x: 140, y: 378, residentX: 439, residentY: 376 },
+    five: { id: 'room_five', x: 140, y: 378, residentX: 339, residentY: 376 }
   };
   const navigation = {
     surface: 'world', museumScene: null, museumReady: false, museumTimer: null,
