@@ -1974,6 +1974,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      labels nothing; the statement they wrote beneath it does. Never a title
      the house invented. */
   function workLabel(piece) {
+    /* a sketchbook page has a title in its maker's hand; the note is its statement, not its name */
+    if (piece.kind === 'page' && piece.title) return String(piece.title).replace(/\s+/g, ' ').trim();
     const meaning = String(piece.meaning || '').replace(/\s+/g, ' ').trim();
     if (meaning) {
       const clause = meaning.split(/[.;:\u2014\u00b7]/)[0].trim();
@@ -2132,7 +2134,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         : '<pre class="cur__ascii">' + cesc(p.body || '') + '</pre>')
       + (p.meaning ? '<p class="cur__meaning">' + cesc(p.meaning) + '</p>' : '')
       + '<div class="work__foot">' + (workAt + 1) + ' of ' + workList.length + ' · '
-      + cesc(residentName(workWho)) + ' · ' + cesc(day(p.created_at)) + ' · ' + cesc(archive.SOURCE) + '</div>';
+      + cesc(residentName(workWho)) + ' · ' + cesc(day(p.created_at)) + ' · ' + cesc(p.kind === 'page' ? 'the sketchbook' : archive.SOURCE) + '</div>';
     workRead.scrollTop = 0;
     const row = workRowsEl.querySelector('.row.sel');
     if (row) row.scrollIntoView({ block: 'nearest' });

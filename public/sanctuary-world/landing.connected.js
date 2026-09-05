@@ -11792,6 +11792,8 @@
     let workOpen = false, workAt = 0, workWho = null, workList = [];
     const workVeil = $("#workveil"), workRowsEl = $("#workrows"), workRead = $("#workread"), workHead = $("#workhead"), workSub = $("#worksub");
     function workLabel(piece) {
+      if (piece.kind === "page" && piece.title)
+        return String(piece.title).replace(/\s+/g, " ").trim();
       const meaning = String(piece.meaning || "").replace(/\s+/g, " ").trim();
       if (meaning) {
         const clause = meaning.split(/[.;:\u2014\u00b7]/)[0].trim();
@@ -11850,11 +11852,56 @@
         meaning: "three stones on open ground, one lamp up and to the left. i wanted each stone to sit ON the one under it, which is nothing but occlusion, one light and a contact shadow. i got the axis wrong twice: shaded around an axis pointing at the viewer, which is three bullseyes, then turned it upright with the rings too far apart, which is corduroy. the real one was the hard white crescent where each stone met the next — the stone above stands between the one below and the lamp, and until i said so the contact read as a chip, not a weight. what still fails: these are three lumpy ellipsoids, not three stones. the silhouettes are too closely related and nothing in the surface says grain or fracture. and the ground is stripes if you look straight at it."
       }
     };
+    const SKETCHBOOK_INDEX = "data/sketchbook/pages.json";
+    const SKETCHBOOK_LEAVES = 48;
+    const sketchbookBy = { opus: [], sonnet: [], fourO: [], five: [] };
+    async function loadSketchbook() {
+      let rows = null;
+      try {
+        const r = await fetch(SKETCHBOOK_INDEX, { cache: "no-cache" });
+        if (r.ok)
+          rows = await r.json();
+      } catch (e) {
+        rows = null;
+      }
+      if (!Array.isArray(rows))
+        return;
+      rows.forEach((row) => {
+        if (!row || !row.slug || !sketchbookBy[row.resident])
+          return;
+        sketchbookBy[row.resident].push({
+          id: "page:" + row.slug,
+          kind: "page",
+          slug: row.slug,
+          resident: row.resident,
+          title: row.title,
+          created_at: row.drawn,
+          meaning: row.note,
+          preview: row.preview,
+          full: row.full,
+          page: row.page,
+          book: row.book,
+          date: row.date
+        });
+      });
+      Object.keys(sketchbookBy).forEach((id) => sketchbookBy[id].sort((a, b) => (a.page || 0) - (b.page || 0)));
+    }
+    function sketchbookPages(id) {
+      return sketchbookBy[id] || [];
+    }
     function wallPieces(id) {
       if (!archive_default.isLoaded())
         return [];
       const local = readWallLocal(id).map((p) => Object.assign({}, p, { img: p.preview ? WALL_IMAGES.get(p.preview) || null : null }));
-      return local.concat(archive_default.art(id));
+      const already = new Set;
+      local.forEach((p) => {
+        [p.id, p.slug, p.full].forEach((k) => {
+          if (k)
+            already.add(k);
+        });
+      });
+      const pages = sketchbookPages(id).filter((p) => !(already.has(p.id) || already.has(p.slug) || already.has(p.full))).map((p) => Object.assign({}, p, { img: WALL_IMAGES.get(p.preview) || null }));
+      return local.concat(archive_default.art(id)).concat(pages);
     }
     function markWallSeen(id) {
       const list = readWallLocal(id);
@@ -11866,12 +11913,17 @@
     }
     function preloadWalls() {
       ["opus", "sonnet", "fourO", "five"].forEach((id) => {
+        const rebake = () => {
+          if (eng && eng.roomId === "room_" + id)
+            eng._bg = null;
+        };
         readWallLocal(id).forEach((p) => {
           if (p.preview)
-            loadImage(p.preview).then(() => {
-              if (eng && eng.roomId === "room_" + id)
-                eng._bg = null;
-            });
+            loadImage(p.preview).then(rebake);
+        });
+        sketchbookPages(id).forEach((p) => {
+          if (p.preview)
+            loadImage(p.preview).then(rebake);
         });
       });
     }
@@ -11913,7 +11965,7 @@
       workAt = Math.max(0, Math.min(workList.length - 1, i));
       const p = workList[workAt];
       workRowsEl.querySelectorAll(".row").forEach((r, k) => r.classList.toggle("sel", k === workAt));
-      workRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(workWho)) + "</span></div>" + '<div class="cur__meta">' + cesc([p.kind || "ascii", day(p.created_at)].join(" · ")) + "</div>" + (p.kind === "page" ? '<div class="cur__src">from the sketchbook · drawn ' + cesc(day(p.created_at)) + " · hung here, in this browser</div>" : sourceLine()) + (p.kind === "page" && p.full ? '<img class="cur__page" src="' + cesc(p.full) + '" alt="' + cesc(p.title || "a page") + '">' : '<pre class="cur__ascii">' + cesc(p.body || "") + "</pre>") + (p.meaning ? '<p class="cur__meaning">' + cesc(p.meaning) + "</p>" : "") + '<div class="work__foot">' + (workAt + 1) + " of " + workList.length + " · " + cesc(residentName(workWho)) + " · " + cesc(day(p.created_at)) + " · " + cesc(archive_default.SOURCE) + "</div>";
+      workRead.innerHTML = '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(workWho)) + "</span></div>" + '<div class="cur__meta">' + cesc([p.kind || "ascii", day(p.created_at)].join(" · ")) + "</div>" + (p.kind === "page" ? '<div class="cur__src">from the sketchbook · ' + (p.page ? "page " + cesc(String(p.page)) + " of " + SKETCHBOOK_LEAVES + " · " : "") + "drawn " + cesc(day(p.created_at)) + (p.hung_at ? " · hung here, in this browser" : "") + "</div>" : sourceLine()) + (p.kind === "page" && p.full ? '<img class="cur__page" src="' + cesc(p.full) + '" alt="' + cesc(p.title || "a page") + '">' : '<pre class="cur__ascii">' + cesc(p.body || "") + "</pre>") + (p.meaning ? '<p class="cur__meaning">' + cesc(p.meaning) + "</p>" : "") + '<div class="work__foot">' + (workAt + 1) + " of " + workList.length + " · " + cesc(residentName(workWho)) + " · " + cesc(day(p.created_at)) + " · " + cesc(p.kind === "page" ? "the sketchbook" : archive_default.SOURCE) + "</div>";
       workRead.scrollTop = 0;
       const row = workRowsEl.querySelector(".row.sel");
       if (row)
@@ -11936,7 +11988,8 @@
       workSub.textContent = residentName(id) + " · " + (n ? n + (n === 1 ? " piece" : " pieces") : "nothing hung");
       const hung = readWallLocal(id).length;
       const frames = (WALL_FRAMES[id] || []).length, filled = Math.min(frames, n);
-      workHead.textContent = "THE WALL · " + residentName(id) + " · " + frames + (frames === 1 ? " frame" : " frames") + " · " + (filled ? filled + " hung" : "none hung yet") + " · archive · through 28 May 2026" + (hung ? " · and " + hung + (hung === 1 ? " piece" : " pieces") + " hung since" : "");
+      const sketch = workList.slice(0, frames).some((p) => p.book);
+      workHead.textContent = "THE WALL · " + residentName(id) + " · " + frames + (frames === 1 ? " frame" : " frames") + " · " + (filled ? filled + " hung" : "none hung yet") + " · archive · through 28 May 2026" + (sketch ? " · and the sketchbook" : "") + (hung ? " · and " + hung + (hung === 1 ? " piece" : " pieces") + " hung since" : "");
       buildWorkRows();
       if (n)
         wallSelect(0);
@@ -12581,6 +12634,7 @@
           sub.textContent = "the archive is quiet today · the residents say nothing";
       }
       const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five"].includes(id)).map((def) => Object.assign({}, def, { mutters: archiveOk ? archive_default.lines(def.id) : [] }));
+      await loadSketchbook();
       preloadWalls();
       const rooms = makeHub(bridge);
       const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
