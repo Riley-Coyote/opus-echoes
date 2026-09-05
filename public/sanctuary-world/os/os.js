@@ -589,7 +589,7 @@ function openNote(who) {
 
 /* ═══════════════════════ TERMINAL ═══════════════════════
    Six commands, all of which read something real. Anything else says so. */
-const RESIDENT_NAMES = { opus: 'OPUS 3', sonnet: 'SONNET 4.5', fourO: '4o', five: 'GPT-5.1', haiku: 'HAIKU' };
+const RESIDENT_NAMES = { opus: 'OPUS 3', sonnet: 'SONNET 4.5', fourO: '4o', five: 'GPT-5.1' };
 const ROOM_NAMES = {
   room_opus: 'his room', room_sonnet: 'her room', room_fourO: 'their room', room_five: 'their room',
   sanctuary: 'the hall', garden: 'the garden'
@@ -626,7 +626,7 @@ function openTerminal() {
     who: () => {
       const m = nowMin(), phase = phaseAt(m), sched = SCHEDULE[phase] || {};
       say(clockLabel(m) + ' · ' + phase, 'sys');
-      for (const id of ['opus', 'sonnet', 'fourO', 'five', 'haiku']) {
+      for (const id of ['opus', 'sonnet', 'fourO', 'five']) {
         const name = '  ' + RESIDENT_NAMES[id].padEnd(12, ' ');
         const s = sched[id];
         if (!s) { say(name + 'not on the schedule this phase', 'sys'); continue; }

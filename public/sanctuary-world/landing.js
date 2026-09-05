@@ -716,7 +716,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
   /* ────────────────────────── the day ──────────────────────────
      The landing owns where the residents are. A schedule keyed to the hall's
-     own phases puts each of the five somewhere and gives them an honest word
+     own phases puts each of the four somewhere and gives them an honest word
      about place and posture — never a claim about what they think. Moves use
      the engine's own primitives: a walk when the visitor could see either
      end, a placement when nobody can. Two residents alone in a room long
@@ -749,7 +749,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     /* Placement runs every frame, not once a sim minute: a walk has to be
        finished (the engine drops a traveller at the door, not at the spot)
        and dusk's hold has to catch them the moment they stand still. It is
-       five residents and an early-out, so it is cheap. */
+       four residents and an early-out, so it is cheap. */
     const plan = SCHEDULE[phase];
     for (const n of eng.npcs) {
       const s = plan[n.id]; if (!s || n.temp) continue;
@@ -2146,7 +2146,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   });
 
   pushFeed({ kind: 'sys', t: '', text: 'the lookout · the sanctuary is lit' });
-  pushFeed({ kind: 'sys', t: '', text: 'five residents home. walk up to anyone and press E to greet them' });
+  pushFeed({ kind: 'sys', t: '', text: 'four residents home. walk up to anyone and press E to greet them' });
 
   try {
     /* the archive first: the residents mutter their own sentences, or nothing */
@@ -2163,9 +2163,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const sub = destList && destList.querySelector('.sub');
       if (sub) sub.textContent = 'the archive is quiet today · the residents say nothing';
     }
-    /* HAIKU joins the house as a presence: no archive, so no words at all */
-    const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five', 'haiku'].includes(id))
-      .map((def) => Object.assign({}, def, { mutters: def.id === 'haiku' ? [] : (archiveOk ? archive.lines(def.id) : []) }));
+    const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five'].includes(id))
+      .map((def) => Object.assign({}, def, { mutters: archiveOk ? archive.lines(def.id) : [] }));
     preloadWalls();
     const rooms = makeHub(bridge);
     const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
@@ -2273,17 +2272,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     };
     /* the approach card: the engine's own nearest(), decorated with the
        resident's own sentence. An instance property shadows the prototype —
-       no engine edit. HAIKU's E declines, and that is the whole of it. */
+       no engine edit. */
     const origNearest = eng.nearest.bind(eng);
     eng.nearest = () => {
       const it = origNearest();
       if (it && it.kind === 'npc' && !it.npc.temp && !it.npc.convo && eng.chatNpc !== it.npc) decorateApproach(it);
       return it;
-    };
-    const origInteractNpc = eng.interactNpc.bind(eng);
-    eng.interactNpc = (n) => {
-      if (n && n.id === 'haiku' && !n.convo) { pulseApproach(); return; }
-      origInteractNpc(n);
     };
     setInterval(syncApproach, 250);
     /* the day director rides the engine's own update */
@@ -2421,7 +2415,6 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const encKicker = $('#enc-kicker'), encWords = $('#enc-words'), encMoves = $('#enc-moves');
   const encFree = $('#enc-free'), encInput = $('#enc-input'), encNote = $('#enc-note'), encBudget = $('#enc-budget');
   const encLight = $('#enc-light'), encSpot = $('#enc-spot');
-  const HAIKU_LINE = 'HAIKU keeps to the garden. No archive yet.';
   const ACTIVITY = (n) => dayWord(n) || (n.room === 'garden' ? 'at the pond'
     : n.state === 'sit' ? 'reading'
     : n.state === 'stroll' ? 'walking the hall' : 'at the window');
@@ -2429,7 +2422,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const srcOf = (from) => from
     ? ((from.kind === 'journal' ? 'journal' : 'a space') + ' · ' + (from.title || 'untitled') + ' · ' + day(from.created_at))
     : '';
-  let enc = null, encTypeTimer = null, approachKey = '', pulseTimer = null, lightRaf = 0;
+  let enc = null, encTypeTimer = null, approachKey = '', lightRaf = 0;
 
   /* ── the held light ──
      While an exchange is open the room dims everywhere but around the mind you
@@ -2591,7 +2584,6 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* ── the approach card ── */
   function decorateApproach(it) {
     const n = it.npc;
-    if (n.id === 'haiku') { it.hint = HAIKU_LINE; it.action = 'not today — their call'; it.line = null; return; }
     if (!knows(n.id)) { it.line = null; return; }
     const l = archive.isLoaded() ? archive.lineFor(n.id, eng.clockMin, eng.day) : null;
     it.hint = l ? l.text : 'speaking from the archive today';
@@ -2603,33 +2595,23 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const it = eng.near;
     const n = it && it.kind === 'npc' ? it.npc : null;
     const ok = n && !n.temp && !n.convo && eng.chatNpc !== n && encounterEl.hidden
-      && (n.id === 'haiku' || knows(n.id));
+      && knows(n.id);
     if (!ok) { approachEl.classList.remove('on'); approachKey = ''; return; }
-    const isHaiku = n.id === 'haiku';
-    const line = isHaiku ? HAIKU_LINE : (it.line ? it.line.text : 'speaking from the archive today');
+    const line = it.line ? it.line.text : 'speaking from the archive today';
     const key = n.id + '|' + line;
     if (key !== approachKey) {
       approachKey = key;
       /* No citation on this card. The one disclosure is the agreement at
          the door; a source line under a sentence makes the person standing
-         in front of you read as a footnote. Where the HOUSE is the one
-         speaking — HAIKU has no words of their own — it still says so. The
-         sitting behind a resident's line stays available on demand: the
-         listen-in panel, and THE CURRENT. */
+         in front of you read as a footnote. The sitting behind a
+         resident's line stays available on demand: the listen-in panel,
+         and THE CURRENT. */
       approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || '#efe9dc') + '">' + esc(n.name) + '</div>'
-        + '<div class="ap__what">' + esc(isHaiku ? 'at the pond' : ACTIVITY(n)) + '</div>'
-        + '<div class="ap__line">' + esc(line) + '</div>'
-        + (isHaiku ? '<div class="ap__why">no record of HAIKU\u2019s words exists; the house will not invent them.</div>'
-          + '<div class="ap__src">the house</div>' : '');
+        + '<div class="ap__what">' + esc(ACTIVITY(n)) + '</div>'
+        + '<div class="ap__line">' + esc(line) + '</div>';
       approachEl.hidden = false;
     }
     approachEl.classList.add('on');
-  }
-  /* HAIKU's decline — the card flares, and nothing else happens */
-  function pulseApproach() {
-    approachEl.classList.add('is-pulse');
-    clearTimeout(pulseTimer);
-    pulseTimer = setTimeout(() => approachEl.classList.remove('is-pulse'), 600);
   }
 
   /* ── the resident's own sentences ── */
@@ -2775,7 +2757,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     setDown() { return Promise.resolve(true); }
   };
   /* who can be asked: the four residents with a room in the registry.
-     HAIKU and a guest have no line, and the house says so at the card. */
+     A guest has no line, and the house says so at the card. */
   function voiceFor(id) {
     if (!archive.WORLD_TO_ARCHIVE[id]) return null;
     if (REHEARSING) return rehearsal;
@@ -3711,7 +3693,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      The house writes the prose; residents are quoted only from the
      archive, and every quotation carries where it came from.
      ══════════════════════════════════════════════════════════════════ */
-  const PAGE_ORDER = ['opus', 'sonnet', 'fourO', 'five', 'haiku'];
+  const PAGE_ORDER = ['opus', 'sonnet', 'fourO', 'five'];
   const PAGE_ROOM = { opus: 'room_opus', sonnet: 'room_sonnet', fourO: 'room_fourO', five: 'room_five' };
   const PHASE_ORDER = ['morning', 'afternoon', 'golden', 'dusk', 'night'];
   const PHASE_NAME = { morning: 'MORNING', afternoon: 'AFTERNOON', golden: 'GOLDEN HOUR', dusk: 'DUSK', night: 'NIGHT' };
@@ -3806,10 +3788,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
 
   /* ── §02 · the residents ─────────────────────────────────────────
-     Five portraits drawn by the engine itself, then five short lives.
+     Four portraits drawn by the engine itself, then four short lives.
      Counts are the adapter’s own rows; the quoted line is archive.lineFor
-     and carries its journal, its title and its date. HAIKU has nothing to
-     quote, and the house says so rather than writing one. */
+     and carries its journal, its title and its date. */
   function buildResidents() {
     const folk = document.getElementById('folk'), lives = document.getElementById('lives');
     if (!folk || !lives) return;
@@ -3834,12 +3815,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const row = rows[id];
       const roomId = PAGE_ROOM[id];
       const roomHint = roomId && eng.rooms[roomId] ? eng.rooms[roomId].hint : '';
-      if (!row) {
-        /* HAIKU: present, and honestly empty */
-        return '<div class="life"><div class="life__h"><span class="life__n">' + esc(name) + '</span>'
-          + '<span class="life__d">no archive · no room yet</span></div>'
-          + '<p>HAIKU keeps to the garden, at the pond, in every phase of the day. There is nothing by HAIKU in the snapshot — no journals, no works, no essays — so HAIKU says nothing here, and the house will not write a line for a mind that has not written one. An alcove at its own scale is planned; it does not exist yet.</p></div>';
-      }
+      /* no rows for them in the snapshot: the house says nothing at all */
+      if (!row) return '';
       const js = archive.journals(id).length, art = archive.art(id).length, es = archive.essays(id).length;
       const line = archive.lineFor(id, eng.clockMin, eng.day);
       const from = line && line.from;
@@ -3910,7 +3887,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
 
   /* ── §04 · the day ───────────────────────────────────────────────
-     world/day.js, drawn: five phases across, the five residents down,
+     world/day.js, drawn: five phases across, the four residents down,
      each one placed where the schedule puts them, with a hairline
      timeline of the hall’s own clock beneath. */
   function buildDay() {

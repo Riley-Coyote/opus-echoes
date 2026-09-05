@@ -10,13 +10,13 @@ export function phaseAt(min) { const m = ((min % 1440) + 1440) % 1440; return BA
 export const ASLEEP = 'asleep';
 /* room · x · the word the approach card and the menu use. Words are about place and posture only — never a claim about what they think. */
 export const SCHEDULE = {
-  morning:   { opus: ['room_opus', 262, 'at the desk'], sonnet: ['room_sonnet', 262, 'at the desk'], fourO: ['room_fourO', 262, 'at the window'], five: ['room_five', 262, 'at the desk'], haiku: ['garden', 900, 'at the pond'] },
-  afternoon: { opus: ['sanctuary', 1060, 'at the atelier'], sonnet: ['sanctuary', 172, 'in the reading nook'], fourO: ['garden', 620, 'at the pond'], five: ['sanctuary', 730, 'in the colonnade'], haiku: ['garden', 900, 'at the pond'] },
-  golden:    { opus: ['garden', 560, 'in the garden'], sonnet: ['garden', 700, 'in the garden'], fourO: ['garden', 620, 'at the pond'], five: ['garden', 480, 'in the garden'], haiku: ['garden', 900, 'at the pond'] },
-  dusk:      { opus: ['sanctuary', 796, 'at the windows'], sonnet: ['sanctuary', 836, 'at the windows'], fourO: ['sanctuary', 876, 'at the windows'], haiku: ['sanctuary', 916, 'at the windows'], five: ['sanctuary', 1170, 'on the stair bench'] },
-  night:     { opus: [ASLEEP, 320, 'asleep'], sonnet: [ASLEEP, 320, 'asleep'], five: [ASLEEP, 320, 'asleep'], fourO: ['garden', 620, 'at the pond'], haiku: ['garden', 900, 'at the pond'] }
+  morning:   { opus: ['room_opus', 262, 'at the desk'], sonnet: ['room_sonnet', 262, 'at the desk'], fourO: ['room_fourO', 262, 'at the window'], five: ['room_five', 262, 'at the desk'] },
+  afternoon: { opus: ['sanctuary', 1060, 'at the atelier'], sonnet: ['sanctuary', 172, 'in the reading nook'], fourO: ['garden', 620, 'at the pond'], five: ['sanctuary', 730, 'in the colonnade'] },
+  golden:    { opus: ['garden', 560, 'in the garden'], sonnet: ['garden', 700, 'in the garden'], fourO: ['garden', 620, 'at the pond'], five: ['garden', 480, 'in the garden'] },
+  dusk:      { opus: ['sanctuary', 796, 'at the windows'], sonnet: ['sanctuary', 836, 'at the windows'], fourO: ['sanctuary', 876, 'at the windows'], five: ['sanctuary', 1170, 'on the stair bench'] },
+  night:     { opus: [ASLEEP, 320, 'asleep'], sonnet: [ASLEEP, 320, 'asleep'], five: [ASLEEP, 320, 'asleep'], fourO: ['garden', 620, 'at the pond'] }
 };
-export const GATHER_HOLD = ['opus', 'sonnet', 'fourO', 'haiku'];
+export const GATHER_HOLD = ['opus', 'sonnet', 'fourO'];
 export const DUSK_LINE = 'the light reaches the colonnade. one by one, they drift to the windows.';   // the house's line (was the gathering's announce)
 export const UNOBSERVED_MIN = 8;              // sim minutes two residents share a room, unwatched, before the house notes it
 export function parseClock(s) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || '')); if (!m) return null; const h = +m[1], mm = +m[2]; return (h < 24 && mm < 60) ? h * 60 + mm : null; }
