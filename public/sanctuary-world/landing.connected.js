@@ -9674,42 +9674,39 @@
     const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const $ = (s) => document.querySelector(s);
     const sky = (() => {
-      const cv = $("#sky"), ctx = cv.getContext("2d");
+      const cv = $("#sky"), ctx = cv.getContext("2d", { alpha: false });
       const B4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
       const S2 = 4;
-      const GROUND_TOP = "#100c1c";
-      const GROUND_DEEP = "#07070f";
-      const RAMP = [P2.sky0, P2.sky1, P2.sky2, P2.sky3, P2.sky4, P2.sky5, P2.sky6, P2.sky7];
+      const BUCKETS = 64;
+      const DUSK = [P2.sky0, P2.sky1, P2.sky2, P2.sky3, P2.sky4, P2.sky5, P2.sky6, P2.sky7];
+      const DUSK_OUT = [P2.sky0, P2.sky1, P2.sky2, P2.sky3, P2.sky4, "#7e3a4c", "#5e2f47", "#432442"];
+      const NIGHT = ["#04050b", "#05070f", "#070915", "#080c1b", "#0a0f22", "#0c1229", "#0f1633", "#151d3d"];
+      const DEEP_TOP = ["#100c1c", "#0a0916"];
+      const FLOOR = ["#100c1c", "#07070f"];
+      const TREE = "#0b0814";
+      const CREAM = [239, 233, 220];
+      const CONST_INK = "243,236,223";
+      const CONST_LINE = "205,216,234";
       const hex = (c) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
-      let W = 0, H = 0, horizon = 0, img = null, d = null;
-      let seed2 = 49734321;
-      const rnd2 = () => {
-        seed2 ^= seed2 << 13;
-        seed2 ^= seed2 >>> 17;
-        seed2 ^= seed2 << 5;
-        return (seed2 >>> 0) % 1e5 / 1e5;
+      const cssOf = (t2) => "rgb(" + (t2[0] | 0) + "," + (t2[1] | 0) + "," + (t2[2] | 0) + ")";
+      const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+      const smooth = (a, b, v) => {
+        const k = clamp01((v - a) / (b - a));
+        return k * k * (3 - 2 * k);
       };
-      function set(x, y, rgb, a) {
-        if (x < 0 || y < 0 || x >= W || y >= H)
-          return;
-        const p = (y * W + x) * 4;
-        if (a === undefined || a >= 1) {
-          d[p] = rgb[0];
-          d[p + 1] = rgb[1];
-          d[p + 2] = rgb[2];
-          d[p + 3] = 255;
-          return;
-        }
-        d[p] = d[p] + (rgb[0] - d[p]) * a;
-        d[p + 1] = d[p + 1] + (rgb[1] - d[p + 1]) * a;
-        d[p + 2] = d[p + 2] + (rgb[2] - d[p + 2]) * a;
-        d[p + 3] = 255;
+      const DUSK_RGB = DUSK.map(hex), OUT_RGB = DUSK_OUT.map(hex), NIGHT_RGB = NIGHT.map(hex);
+      const DEEP_RGB = DEEP_TOP.map(hex), FLOOR_RGB = FLOOR.map(hex), TREE_RGB = hex(TREE);
+      const STOPS = [0, 0.2015, 0.3657, 0.5224, 0.6567, 0.7687, 0.8582, 0.9403, 1];
+      const FIRE = STOPS[6];
+      let t = 0, A = 1, N = 0;
+      function clock() {
+        const range = Math.max(1, docH - vh);
+        t = clamp01((window.pageYOffset || document.documentElement.scrollTop || 0) / range);
+        A = Math.pow(1 - smooth(0, 0.42, t), 2.6);
+        N = smooth(0.06, 0.9, t);
       }
-      const rect = (x, y, w, h, rgb, a) => {
-        for (let j = 0;j < h; j++)
-          for (let i = 0;i < w; i++)
-            set(x + i, y + j, rgb, a);
-      };
+      let vw = 0, vh = 0, docH = 0, heroFootDoc = 0;
+      let skyRows = 0, deepRows = 0, fireBase = 0, treeH = 0;
       function heroFoot() {
         const hero = document.querySelector(".hero");
         if (!hero)
@@ -9718,122 +9715,529 @@
         return r.bottom + (window.pageYOffset || document.documentElement.scrollTop || 0);
       }
       function docHeight() {
-        cv.style.height = "0px";
         const { body: b, documentElement: e } = document;
         return Math.max(b.scrollHeight, e.scrollHeight, e.clientHeight, innerHeight);
       }
-      const STOPS = [0, 0.2015, 0.3657, 0.5224, 0.6567, 0.7687, 0.8582, 0.9403, 1];
-      const FIRE = STOPS[6];
-      function dusk() {
-        const ramp = RAMP.map(hex);
-        const fire = Math.max(6, Math.min(Math.round(horizon * 0.22), Math.round(84 / S2)));
-        const deep = Math.max(1, horizon - fire);
-        for (let y = 0;y < horizon; y++) {
-          const t = y < deep ? y / deep * FIRE : FIRE + (y - deep) / fire * (1 - FIRE);
+      const band = (rows) => ({ small: document.createElement("canvas"), up: document.createElement("canvas"), rows: 0, pat: null });
+      const skyBand = band(), deepBand = band();
+      const sc = { a: null, b: null, m: 0 };
+      let bucket = -1, floorCss = FLOOR[0];
+      function tile(bd, rows, at) {
+        const sm = bd.small;
+        if (sm.width !== 4 || sm.height !== rows) {
+          sm.width = 4;
+          sm.height = rows;
+        }
+        const sx = sm.getContext("2d");
+        const im = sx.createImageData(4, rows), d = im.data;
+        for (let y = 0;y < rows; y++) {
+          at(y);
+          const thr = sc.m * 16, row = (y & 3) * 4;
+          for (let x = 0;x < 4; x++) {
+            const c = thr > B4[row + x] ? sc.b : sc.a;
+            const p = (y * 4 + x) * 4;
+            d[p] = c[0];
+            d[p + 1] = c[1];
+            d[p + 2] = c[2];
+            d[p + 3] = 255;
+          }
+        }
+        sx.putImageData(im, 0, 0);
+        const uw = 4 * S2, uh = rows * S2, up = bd.up;
+        if (up.width !== uw || up.height !== uh) {
+          up.width = uw;
+          up.height = uh;
+        }
+        const ux = up.getContext("2d");
+        ux.imageSmoothingEnabled = false;
+        ux.drawImage(sm, 0, 0, 4, rows, 0, 0, uw, uh);
+        bd.rows = rows;
+        bd.pat = ctx.createPattern(up, "repeat");
+      }
+      const mix32 = (a, b, f, out) => {
+        out[0] = a[0] + (b[0] - a[0]) * f;
+        out[1] = a[1] + (b[1] - a[1]) * f;
+        out[2] = a[2] + (b[2] - a[2]) * f;
+        return out;
+      };
+      const RAMP_NOW = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+      const _m = [0, 0, 0], _deepTop = [0, 0, 0], _floor = [0, 0, 0], _lift = [0, 0, 0];
+      let fireRows = 1;
+      function buildBands() {
+        for (let i = 0;i < 8; i++)
+          mix32(mix32(OUT_RGB[i], DUSK_RGB[i], A, _m), NIGHT_RGB[i], N, RAMP_NOW[i]);
+        fireRows = Math.max(2, Math.round(fireBase * (0.18 + 0.82 * A)));
+        const deepSpan = Math.max(1, skyRows - fireRows);
+        tile(skyBand, skyRows, (y) => {
+          const tt = y < deepSpan ? y / deepSpan * FIRE : FIRE + (y - deepSpan) / fireRows * (1 - FIRE);
           let i = 0;
-          while (i < STOPS.length - 2 && t >= STOPS[i + 1])
+          while (i < STOPS.length - 2 && tt >= STOPS[i + 1])
             i++;
           const span = Math.max(0.000001, STOPS[i + 1] - STOPS[i]);
-          const mix = Math.min(1, Math.max(0, (t - STOPS[i]) / span));
-          const c0 = ramp[i], c1 = ramp[Math.min(ramp.length - 1, i + 1)];
-          for (let x = 0;x < W; x++)
-            set(x, y, mix * 16 > B4[(y & 3) * 4 + (x & 3)] ? c1 : c0);
-        }
+          sc.a = RAMP_NOW[i];
+          sc.b = RAMP_NOW[i + 1 > 7 ? 7 : i + 1];
+          sc.m = clamp01((tt - STOPS[i]) / span);
+        });
+        mix32(DEEP_RGB[0], DEEP_RGB[1], N, _deepTop);
+        mix32(FLOOR_RGB[0], FLOOR_RGB[1], smooth(0.25, 1, t), _floor);
+        floorCss = cssOf(_floor);
+        tile(deepBand, deepRows, (y) => {
+          const k = y / deepRows, e = k * k * (3 - 2 * k);
+          mix32(_deepTop, _floor, e, _m);
+          _lift[0] = _m[0] + 3;
+          _lift[1] = _m[1] + 3;
+          _lift[2] = _m[2] + 5;
+          sc.a = _m;
+          sc.b = _lift;
+          sc.m = 0.2;
+        });
       }
-      function ground() {
-        const a = hex(GROUND_TOP), b = hex(GROUND_DEEP), span = Math.max(1, H - horizon);
-        for (let y = horizon;y < H; y++) {
-          const t = Math.min(1, (y - horizon) / Math.min(span, 900));
-          const c = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-          const c1 = [c[0] + 3, c[1] + 3, c[2] + 5];
-          for (let x = 0;x < W; x++)
-            set(x, y, B4[(y & 3) * 4 + (x & 3)] > 12 ? c1 : c);
-        }
-      }
-      function stars2() {
-        const CREAM = [239, 233, 220];
-        const n = Math.round(W * horizon * 0.007);
+      let seed2 = 49734321;
+      const rnd2 = () => {
+        seed2 ^= seed2 << 13;
+        seed2 ^= seed2 >>> 17;
+        seed2 ^= seed2 << 5;
+        return (seed2 >>> 0) % 1e5 / 1e5;
+      };
+      const PERIODS = [3.1, 3.7, 4.3, 5.3, 5.9, 6.7];
+      let SX = null, SY = null, SA = null, SB = null, SP = null, SPH = null, SS = null, starN = 0;
+      function layoutStars() {
+        const n = Math.round(vw * vh / 3800);
+        SX = new Float32Array(n);
+        SY = new Float32Array(n);
+        SA = new Float32Array(n);
+        SB = new Float32Array(n);
+        SP = new Float32Array(n);
+        SPH = new Float32Array(n);
+        SS = new Float32Array(n);
+        seed2 = 49734321;
+        const rows = [];
         for (let i = 0;i < n; i++) {
-          const y = Math.pow(rnd2(), 1.6) * horizon * 0.92;
-          set(rnd2() * W | 0, y | 0, CREAM, 0.22 + rnd2() * 0.6);
+          rows.push({ x: Math.round(rnd2() * vw / S2) * S2, y: Math.round(Math.pow(rnd2(), 1.5) * vh / S2) * S2, a: 0.055 + Math.pow(rnd2(), 2.6) * 0.6, p: PERIODS[i * 5 % PERIODS.length], ph: rnd2() * 6.283 });
         }
-        const fade = Math.max(1, innerHeight * 1.6 / S2);
-        const m = Math.round(W * Math.min(H - horizon, fade) * 0.0022);
-        for (let i = 0;i < m; i++) {
-          const y = horizon + rnd2() * fade;
-          if (y >= H)
-            continue;
-          const k = 1 - (y - horizon) / fade;
-          if (rnd2() > k * k)
-            continue;
-          set(rnd2() * W | 0, y | 0, CREAM, (0.07 + rnd2() * 0.17) * k);
+        rows.sort((p, q) => q.a - p.a);
+        for (let i = 0;i < n; i++) {
+          const r = rows[i];
+          SX[i] = r.x;
+          SY[i] = r.y;
+          SA[i] = r.a;
+          SP[i] = r.p;
+          SPH[i] = r.ph;
+          SS[i] = r.a > 0.5 ? S2 * 2 : S2;
+          SB[i] = i < Math.max(6, Math.round(n * 0.12)) ? -0.04 : 0.18 + 0.32 * Math.pow(i / n, 0.85);
         }
+        starN = n;
       }
-      function treeline() {
-        const dark = hex("#0b0814");
+      const treeCv = document.createElement("canvas");
+      function bakeTree() {
+        treeH = 14 * S2;
+        treeCv.width = Math.max(1, vw);
+        treeCv.height = treeH;
+        const c = treeCv.getContext("2d");
+        c.clearRect(0, 0, vw, treeH);
+        c.fillStyle = cssOf(TREE_RGB);
+        const base = treeH;
         let x = 0;
-        while (x < W) {
+        while (x < vw / S2) {
           const w = 3 + x * 7 % 9, h = 2 + x * 13 % 7;
           if (x * 31 % 10 > 6) {
-            rect(x, horizon - h - 2, 1, h + 2, dark);
-            rect(x - 1, horizon - h, 3, Math.max(1, h - 2), dark);
-            rect(x - 2, horizon - Math.max(1, h - 3), 5, 2, dark);
+            c.fillRect(x * S2, base - (h + 2) * S2, S2, (h + 2) * S2);
+            c.fillRect((x - 1) * S2, base - h * S2, 3 * S2, Math.max(1, h - 2) * S2);
+            c.fillRect((x - 2) * S2, base - Math.max(1, h - 3) * S2, 5 * S2, 2 * S2);
           } else
-            rect(x, horizon - (h > 4 ? 2 : 1), w, h, dark);
+            c.fillRect(x * S2, base - (h > 4 ? 2 : 1) * S2, w * S2, h * S2);
           x += w + 2;
         }
-        const hx = Math.round(W * 0.28), hy = horizon;
-        rect(hx - 5, hy - 9, 11, 9, dark);
-        rect(hx - 6, hy - 10, 13, 2, dark);
-        rect(hx - 2, hy - 7, 4, 4, hex(P2.candle));
-        rect(hx - 1, hy - 6, 2, 2, hex(P2.amberDeep));
+        const hx = Math.round(vw / S2 * 0.28);
+        c.fillRect((hx - 5) * S2, base - 9 * S2, 11 * S2, 9 * S2);
+        c.fillRect((hx - 6) * S2, base - 10 * S2, 13 * S2, 2 * S2);
+        c.fillStyle = P2.candle;
+        c.fillRect((hx - 2) * S2, base - 7 * S2, 4 * S2, 4 * S2);
+        c.fillStyle = P2.amberDeep;
+        c.fillRect((hx - 1) * S2, base - 6 * S2, 2 * S2, 2 * S2);
       }
-      function moon() {
-        const compact = innerWidth < 520;
-        const span = Math.min(horizon, Math.max(80, Math.round(innerHeight / S2)));
-        const x = Math.round(W * (compact ? 0.86 : 0.72));
-        const y = Math.round(span * (compact ? 0.065 : 0.19));
-        const r = Math.max(7, Math.round(span * (compact ? 0.035 : 0.05)));
-        const face = [239, 233, 220], crater = [122, 109, 112];
-        for (let dy = -r - 2;dy <= r + 2; dy++)
-          for (let dx = -r - 2;dx <= r + 2; dx++) {
+      const moonCv = document.createElement("canvas");
+      let moonX = 0, moonY = 0, moonR = 0;
+      function placeMoon() {
+        const head2 = document.querySelector(".hero__head");
+        const bar = document.querySelector("header.bar");
+        const world = document.querySelector("#world");
+        const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const box = (el) => {
+          const b = el.getBoundingClientRect();
+          return { top: b.top + sy, bottom: b.bottom + sy, right: b.right, height: b.height };
+        };
+        const hb = head2 ? box(head2) : null;
+        const barB = bar ? box(bar).bottom : 44;
+        const worldT = world ? box(world).top : vh * 0.3;
+        const pad = vw < 520 ? 10 : 18;
+        const want = Math.max(9, Math.round(Math.min(vh, 1100) * 0.048));
+        let r = want, x = Math.round(vw * 0.84), y = Math.round(vh * 0.1);
+        const strip2 = hb ? vw - pad - hb.right : 0;
+        if (strip2 >= 30) {
+          r = Math.max(9, Math.min(want, Math.floor(strip2 / 2) - 3));
+          x = Math.round(hb.right + strip2 / 2);
+          y = Math.round(Math.max(hb.top + hb.height / 2, barB + r + 8));
+        } else if (hb && worldT - hb.bottom >= 26) {
+          const gap = worldT - hb.bottom;
+          r = Math.max(8, Math.min(want, Math.floor(gap / 2) - 2));
+          x = Math.round(vw - pad - r - 4);
+          y = Math.round(hb.bottom + gap / 2);
+        } else {
+          r = Math.max(8, Math.min(want, Math.round(barB / 2)));
+          x = Math.round(vw - pad - r);
+          y = Math.round(Math.max(r + 4, barB / 2));
+        }
+        moonR = r;
+        moonX = x;
+        moonY = y;
+        bakeMoon();
+      }
+      function moonClimb() {
+        return Math.round(Math.min(smooth(0.22, 0.45, t) * vh * 0.06, Math.max(0, moonY - moonR - 2)));
+      }
+      function bakeMoon() {
+        const r = moonR, pad = Math.round(r * 0.4) + S2 * 3, size = (r + pad) * 2;
+        moonCv.width = size;
+        moonCv.height = size;
+        const c = moonCv.getContext("2d"), cx = size / 2, cy = size / 2;
+        const face = cssOf(CREAM);
+        const rp = Math.max(2, Math.round(r / S2));
+        for (let dy = -rp - 2;dy <= rp + 2; dy++) {
+          for (let dx = -rp - 2;dx <= rp + 2; dx++) {
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist <= r)
-              set(x + dx, y + dy, face);
-            else if (dist <= r + 2 && B4[(y + dy & 3) * 4 + (x + dx & 3)] > 9)
-              set(x + dx, y + dy, face, 0.35);
+            if (dist <= rp)
+              c.fillStyle = face;
+            else if (dist <= rp + 2 && B4[(dy + 64 & 3) * 4 + (dx + 64 & 3)] > 9)
+              c.fillStyle = "rgba(239,233,220,0.35)";
+            else
+              continue;
+            c.fillRect(cx + dx * S2, cy + dy * S2, S2, S2);
           }
-        rect(x - 3, y - 2, 2, 2, crater, 0.5);
-        rect(x + 1, y + 2, 3, 2, crater, 0.5);
-        rect(x + 3, y - 4, 2, 2, crater, 0.5);
+        }
+        c.fillStyle = "rgba(122,109,112,0.5)";
+        const u = S2;
+        c.fillRect(cx - 3 * u, cy - 2 * u, 2 * u, 2 * u);
+        c.fillRect(cx + 1 * u, cy + 2 * u, 3 * u, 2 * u);
+        c.fillRect(cx + 3 * u, cy - 4 * u, 2 * u, 2 * u);
       }
+      const hazeCv = document.createElement("canvas");
+      function bakeHaze() {
+        hazeCv.width = Math.max(1, vw);
+        hazeCv.height = Math.max(1, vh);
+        const c = hazeCv.getContext("2d");
+        c.clearRect(0, 0, vw, vh);
+        c.save();
+        c.translate(vw * 0.5, vh * 0.42);
+        c.rotate(-0.42);
+        const g = c.createLinearGradient(0, -vh * 0.34, 0, vh * 0.34);
+        g.addColorStop(0, "rgba(168,180,214,0)");
+        g.addColorStop(0.35, "rgba(178,188,218,0.55)");
+        g.addColorStop(0.5, "rgba(196,204,228,1)");
+        g.addColorStop(0.68, "rgba(178,188,218,0.5)");
+        g.addColorStop(1, "rgba(168,180,214,0)");
+        c.fillStyle = g;
+        c.fillRect(-vw, -vh * 0.34, vw * 2, vh * 0.68);
+        c.restore();
+      }
+      const FIGURES = {
+        what: [[0.04, 0.42], [0.29, 0.1], [0.55, 0.36], [0.79, 0.06], [0.99, 0.46]],
+        places: [[0.02, 0.22], [0.27, 0.54], [0.56, 0.3], [0.73, 0.74], [0.99, 0.5]],
+        engine: [[0.09, 0.62], [0.21, 0.21], [0.51, 0.05], [0.75, 0.4], [0.61, 0.8], [0.98, 0.66]],
+        charter: [[0.05, 0.1], [0.34, 0.46], [0.67, 0.22], [0.97, 0.62]],
+        enter: [[0.11, 0.76], [0.31, 0.3], [0.59, 0.53], [0.86, 0.07]]
+      };
+      const CBOX_W = 210, CBOX_H = 116, CPAD = 20;
+      const consts = [];
+      const DASH = [0, 0];
+      const BLOCKS = ".sec__h,.stmt,.fact,.body,.src,.act,.honest,.quote,.dgm,.place__f,.place__t,.house,.status,.menu,.hero__cue";
+      function inkRects(el, out, sy) {
+        if (el.matches(".place__f,.dgm,.house,.quote")) {
+          const b = el.getBoundingClientRect();
+          if (b.width && b.height)
+            out.push([b.left, b.top + sy, b.right, b.bottom + sy]);
+          return;
+        }
+        const rg = document.createRange();
+        rg.selectNodeContents(el);
+        const list = rg.getClientRects();
+        for (let i = 0;i < list.length; i++) {
+          const b = list[i];
+          if (b.width > 1 && b.height > 1)
+            out.push([b.left, b.top + sy, b.right, b.bottom + sy]);
+        }
+      }
+      function layoutConstellations() {
+        const was = {};
+        for (let i = 0;i < consts.length; i++)
+          was[consts[i].id] = { on: consts[i].on, p: consts[i].p, t0: consts[i].t0 };
+        consts.length = 0;
+        const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const blocks = [];
+        document.querySelectorAll(".ground " + BLOCKS.split(",").join(", .ground ") + ", .hero__foot " + BLOCKS.split(",").join(", .hero__foot ")).forEach((el) => inkRects(el, blocks, sy));
+        const clearAt = (x, y, w, h) => !blocks.some((b) => x < b[2] + CPAD && x + w > b[0] - CPAD && y < b[3] + CPAD && y + h > b[1] - CPAD);
+        Object.keys(FIGURES).forEach((id) => {
+          const sec = document.getElementById(id);
+          if (!sec)
+            return;
+          const sb = sec.getBoundingClientRect();
+          const top = sb.top + sy, bottom = sb.bottom + sy;
+          let at = null, bw = CBOX_W, bh = CBOX_H;
+          const scales = [1, 0.78, 0.6];
+          for (let si = 0;si < scales.length && !at; si++) {
+            bw = Math.round(CBOX_W * scales[si]);
+            bh = Math.round(CBOX_H * scales[si]);
+            const xMax = Math.min(vw - bw - 20, Math.round(sb.right + 34));
+            const xMin = Math.max(16, Math.round(sb.left));
+            const ys = [top - bh - 26];
+            for (let y = top + 20;y < bottom - bh - 30; y += 84)
+              ys.push(Math.round(y));
+            for (let yi = 0;yi < ys.length && !at; yi++) {
+              for (let x = xMax;x >= xMin; x -= 44) {
+                if (clearAt(x, ys[yi], bw, bh)) {
+                  at = [x, ys[yi]];
+                  break;
+                }
+              }
+            }
+          }
+          if (!at)
+            return;
+          const pts = FIGURES[id];
+          let len = 0;
+          const seg = [0];
+          for (let i = 1;i < pts.length; i++) {
+            const dx = (pts[i][0] - pts[i - 1][0]) * bw, dy = (pts[i][1] - pts[i - 1][1]) * bh;
+            len += Math.sqrt(dx * dx + dy * dy);
+            seg.push(len);
+          }
+          const keep = was[id];
+          consts.push({
+            id,
+            x: at[0],
+            y: at[1],
+            w: bw,
+            h: bh,
+            pts,
+            len,
+            seg,
+            p: REDUCED ? 1 : keep ? keep.p : 0,
+            on: keep ? keep.on : false,
+            t0: keep ? keep.t0 : 0
+          });
+        });
+      }
+      function layout() {
+        const de = document.documentElement;
+        vw = Math.max(1, de.clientWidth || innerWidth);
+        vh = Math.max(1, de.clientHeight || innerHeight);
+        docH = docHeight();
+        heroFootDoc = heroFoot();
+        const dpr = 1;
+        if (cv.width !== vw * dpr || cv.height !== vh * dpr) {
+          cv.width = vw * dpr;
+          cv.height = vh * dpr;
+        }
+        cv.style.width = vw + "px";
+        cv.style.height = vh + "px";
+        ctx.imageSmoothingEnabled = false;
+        skyRows = Math.max(8, Math.round(Math.min(heroFootDoc, vh * 1.35) / S2));
+        deepRows = Math.max(8, Math.round(Math.min(900 * S2, vh * 3.6) / S2));
+        fireBase = Math.max(6, Math.min(Math.round(skyRows * 0.22), Math.round(84 / S2)));
+        layoutStars();
+        bakeTree();
+        placeMoon();
+        bakeHaze();
+        layoutConstellations();
+        bucket = -1;
+      }
+      let paintMs = 0;
+      const marks = [];
       function paint() {
-        const docH = docHeight(), w = innerWidth;
-        W = Math.max(1, Math.ceil(w / S2));
-        H = Math.max(1, Math.ceil(docH / S2));
-        cv.width = W;
-        cv.height = H;
-        cv.style.width = w + "px";
-        cv.style.height = docH + "px";
-        horizon = Math.max(8, Math.min(H - 2, Math.round(heroFoot() / S2)));
-        seed2 = 49734321;
-        img = ctx.createImageData(W, H);
-        d = img.data;
-        dusk();
-        ground();
-        stars2();
-        treeline();
-        moon();
-        ctx.putImageData(img, 0, 0);
-        img = null;
-        d = null;
+        const t0 = performance.now();
+        clock();
+        const b = Math.round(t * (BUCKETS - 1));
+        if (b !== bucket) {
+          bucket = b;
+          buildBands();
+        }
+        const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const hz = Math.round(heroFootDoc - sy);
+        ctx.fillStyle = floorCss;
+        ctx.fillRect(0, 0, vw, vh);
+        const deepH = deepBand.rows * S2;
+        if (hz < vh && hz + deepH > 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, Math.max(0, hz), vw, Math.min(vh, hz + deepH) - Math.max(0, hz));
+          ctx.clip();
+          ctx.translate(0, hz);
+          ctx.fillStyle = deepBand.pat;
+          ctx.fillRect(0, 0, vw, deepH);
+          ctx.restore();
+        }
+        const skyH = skyBand.rows * S2, skyTop = hz - skyH;
+        if (hz > 0 && skyTop < vh) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, Math.max(0, skyTop), vw, Math.min(vh, hz) - Math.max(0, skyTop));
+          ctx.clip();
+          ctx.translate(0, skyTop);
+          ctx.fillStyle = skyBand.pat;
+          ctx.fillRect(0, 0, vw, skyH);
+          ctx.restore();
+        }
+        const hazeA = smooth(0.52, 0.76, t) * 0.045;
+        if (hazeA > 0.002) {
+          ctx.globalAlpha = hazeA;
+          ctx.drawImage(hazeCv, 0, 0);
+          ctx.globalAlpha = 1;
+        }
+        const now = performance.now() / 1000;
+        const twinkle = !REDUCED && t > 0.3;
+        const wash = 0.42 + 0.58 * N;
+        const below = hz <= 0 ? 1 : 1 - smooth(0, vh * 0.55, hz);
+        let bi = 0;
+        for (bi = 0;bi < 10; bi++)
+          BUCK[bi].length = 0;
+        for (let i = 0;i < starN; i++) {
+          let a = SA[i] * wash * clamp01((t - SB[i]) / 0.04);
+          if (a <= 0.012)
+            continue;
+          const y = SY[i];
+          if (hz > 0 && y > hz) {
+            a *= below;
+            if (a <= 0.012)
+              continue;
+          }
+          if (A > 0.01 && hz > 0) {
+            const near = 1 - clamp01((hz - y) / (fireRows * S2 * 2.4));
+            if (near > 0)
+              a *= 1 - 0.85 * A * near;
+          }
+          if (twinkle)
+            a *= 1 + 0.25 * Math.sin(now * (6.283 / SP[i]) + SPH[i]);
+          if (a <= 0.012)
+            continue;
+          const q = Math.min(9, Math.floor(a * 10));
+          BUCK[q].push(SX[i], y, SS[i]);
+        }
+        for (bi = 0;bi < 10; bi++) {
+          const arr = BUCK[bi];
+          if (!arr.length)
+            continue;
+          ctx.globalAlpha = (bi + 0.5) / 10;
+          ctx.fillStyle = STAR_CSS;
+          ctx.beginPath();
+          for (let k = 0;k < arr.length; k += 3)
+            ctx.rect(arr[k], arr[k + 1], arr[k + 2], arr[k + 2]);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        if (hz > -treeH && hz < vh + treeH)
+          ctx.drawImage(treeCv, 0, hz - treeH);
+        const moonA = 0.42 + 0.58 * smooth(0.1, 0.45, t);
+        const climb = moonClimb();
+        ctx.globalAlpha = moonA;
+        ctx.drawImage(moonCv, moonX - moonCv.width / 2, moonY - climb - moonCv.height / 2);
+        ctx.globalAlpha = 1;
+        if (consts.length)
+          paintConstellations(sy, now);
+        paintMs = performance.now() - t0;
+        if (marks.length < 400)
+          marks.push(paintMs);
       }
-      let pending = null, lastW = 0, lastH = 0;
+      const BUCK = [[], [], [], [], [], [], [], [], [], []];
+      const STAR_CSS = "rgb(" + CREAM[0] + "," + CREAM[1] + "," + CREAM[2] + ")";
+      function paintConstellations(sy, now) {
+        for (let i = 0;i < consts.length; i++) {
+          const c = consts[i];
+          if (!c.on)
+            continue;
+          const y0 = c.y - sy;
+          if (y0 > vh + 40 || y0 + c.h < -40)
+            continue;
+          if (c.p < 1)
+            c.p = REDUCED ? 1 : clamp01((now * 1000 - c.t0) / 900);
+          const p = c.p < 1 ? c.p * c.p * (3 - 2 * c.p) : 1;
+          const shown = c.len * p;
+          ctx.save();
+          ctx.translate(c.x, y0);
+          ctx.strokeStyle = "rgba(" + CONST_LINE + ",0.15)";
+          ctx.lineWidth = 1;
+          if (p < 1) {
+            DASH[0] = shown;
+            DASH[1] = c.len;
+            ctx.setLineDash(DASH);
+          }
+          ctx.beginPath();
+          for (let k = 0;k < c.pts.length; k++) {
+            const x = c.pts[k][0] * c.w, y = c.pts[k][1] * c.h;
+            if (k)
+              ctx.lineTo(x, y);
+            else
+              ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+          if (p < 1) {
+            DASH[0] = 0;
+            DASH[1] = 0;
+            ctx.setLineDash(DASH);
+          }
+          for (let k = 0;k < c.pts.length; k++) {
+            if (c.seg[k] > shown + 0.5)
+              break;
+            ctx.fillStyle = "rgba(" + CONST_INK + ",0.80)";
+            ctx.fillRect(Math.round(c.pts[k][0] * c.w) - 1, Math.round(c.pts[k][1] * c.h) - 1, 2, 2);
+          }
+          ctx.restore();
+        }
+      }
+      let rafId = 0, timer = 0;
+      function frame() {
+        rafId = 0;
+        paint();
+        let drawing = false;
+        for (let i = 0;i < consts.length; i++)
+          if (consts[i].on && consts[i].p < 1) {
+            drawing = true;
+            break;
+          }
+        if (drawing)
+          schedule(0);
+        else if (!REDUCED && t > 0.3)
+          schedule(160);
+      }
+      function schedule(delay) {
+        if (rafId)
+          return;
+        if (delay) {
+          if (timer)
+            return;
+          timer = setTimeout(() => {
+            timer = 0;
+            if (!rafId)
+              rafId = requestAnimationFrame(frame);
+          }, delay);
+        } else {
+          if (timer) {
+            clearTimeout(timer);
+            timer = 0;
+          }
+          rafId = requestAnimationFrame(frame);
+        }
+      }
       function repaint() {
-        clearTimeout(pending);
-        pending = setTimeout(paint, 90);
+        layout();
+        schedule(0);
       }
-      addEventListener("resize", repaint);
+      addEventListener("scroll", () => schedule(0), { passive: true });
+      let rz = null;
+      addEventListener("resize", () => {
+        clearTimeout(rz);
+        rz = setTimeout(repaint, 90);
+      });
+      let lastH = 0, lastW = 0;
       if (typeof ResizeObserver === "function") {
         const ro = new ResizeObserver(() => {
           const h = Math.round(document.body.getBoundingClientRect().height), w = innerWidth;
@@ -9841,16 +10245,66 @@
             return;
           lastH = h;
           lastW = w;
-          repaint();
+          clearTimeout(rz);
+          rz = setTimeout(repaint, 90);
         });
         ro.observe(document.body);
       }
+      layout();
       paint();
       if (document.fonts && document.fonts.ready)
         document.fonts.ready.then(repaint).catch(() => {});
       addEventListener("load", repaint);
-      return { paint, repaint };
+      return {
+        paint,
+        repaint,
+        layout,
+        lightConstellation(id) {
+          const c = consts.find((k) => k.id === id);
+          if (!c || c.on)
+            return;
+          c.on = true;
+          c.t0 = performance.now();
+          c.p = REDUCED ? 1 : 0;
+          schedule(0);
+        },
+        read() {
+          return {
+            t,
+            afterglow: A,
+            night: N,
+            bucket,
+            horizon: Math.round(heroFootDoc - (window.pageYOffset || 0)),
+            moon: { x: moonX, y: moonY - moonClimb(), r: moonR, a: 0.42 + 0.58 * smooth(0.1, 0.45, t) },
+            stars: starN,
+            out: (() => {
+              let k = 0;
+              for (let i = 0;i < starN; i++)
+                if (t >= SB[i] + 0.04)
+                  k++;
+              return k;
+            })(),
+            born: (() => {
+              let k = 0;
+              for (let i = 0;i < starN; i++)
+                if (SB[i] <= 0)
+                  k++;
+              return k;
+            })(),
+            constellations: consts.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h, on: c.on, p: c.p })),
+            paint: { last: paintMs, samples: marks.slice() }
+          };
+        },
+        resetMarks() {
+          marks.length = 0;
+        },
+        sample(x, y) {
+          const d = ctx.getImageData(x, y, 1, 1).data;
+          return [d[0], d[1], d[2]];
+        }
+      };
     })();
+    window.__evening = sky;
     const feedList = $("#feedlist"), rosterEl = $("#roster"), stripEl = $("#groundsstrip");
     let setTick = () => {};
     let fitFirstScreen = () => {};
@@ -13938,6 +14392,64 @@
       buildCharter();
       if (sky && sky.repaint)
         sky.repaint();
+      theEvening();
+    }
+    let eveningWired = false;
+    function theEvening() {
+      if (eveningWired)
+        return;
+      const ground = document.querySelector(".ground");
+      if (!ground || !ground.querySelector(".place"))
+        return;
+      eveningWired = true;
+      document.documentElement.classList.add("ev");
+      const groups = [];
+      const status = ground.querySelector(".status");
+      if (status)
+        groups.push([status]);
+      ground.querySelectorAll(".sec").forEach((sec) => {
+        const own = [];
+        sec.querySelectorAll(":scope > .sec__in > *").forEach((el) => own.push(el));
+        if (own.length)
+          groups.push(own);
+        sec.querySelectorAll(":scope > .places > .place").forEach((row) => {
+          const kids = [];
+          row.querySelectorAll(":scope > .place__f, :scope > .place__t").forEach((el) => kids.push(el));
+          if (kids.length)
+            groups.push(kids);
+        });
+      });
+      const owner = new Map;
+      groups.forEach((kids) => {
+        kids.forEach((el, i) => {
+          el.classList.add(el.classList.contains("place__f") || el.classList.contains("place__t") ? "ev-slide" : "ev-rise");
+          el.style.setProperty("--ev-d", i * 50 + "ms");
+        });
+        owner.set(kids[0], kids);
+      });
+      if (REDUCED || typeof IntersectionObserver !== "function") {
+        groups.forEach((kids) => kids.forEach((el) => el.classList.add("ev-in")));
+        ground.querySelectorAll(".sec").forEach((sec) => sec.classList.add("ev-in"));
+        Object.keys({ what: 1, places: 1, engine: 1, charter: 1, enter: 1 }).forEach((id) => sky.lightConstellation(id));
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting)
+            return;
+          io.unobserve(e.target);
+          const kids = owner.get(e.target);
+          if (kids) {
+            kids.forEach((el) => el.classList.add("ev-in"));
+            return;
+          }
+          e.target.classList.add("ev-in");
+          if (e.target.id)
+            sky.lightConstellation(e.target.id);
+        });
+      }, { rootMargin: "0px 0px -12% 0px", threshold: 0.01 });
+      owner.forEach((kids, first) => io.observe(first));
+      ground.querySelectorAll(".sec").forEach((sec) => io.observe(sec));
     }
     function buildPlaces() {
       const host = document.getElementById("placelist");

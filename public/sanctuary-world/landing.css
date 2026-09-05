@@ -85,6 +85,15 @@
 
   /* the motion — a hover, and nothing else below the horizon */
   --g-hover:150ms; --g-ease:cubic-bezier(0.23,1,0.32,1);
+
+  /* ── WP-44 · THE EVENING — how the page arrives ──
+     One entrance per thing, once, and then stillness. The rise is short
+     enough to read as settling rather than as an effect; the stagger is
+     one frame's worth, so a block arrives as a block. */
+  --ev-rise:10px; --ev-slide:16px;
+  --ev-t-rise:360ms; --ev-t-slide:420ms; --ev-t-rule:500ms;
+  --ev-ease:cubic-bezier(0.23,1,0.32,1);
+  --ev-d:0ms;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 /* the deep is the page's own floor, under the sky; and the page never runs
@@ -104,11 +113,13 @@ body{
 ::-webkit-scrollbar-thumb{background:rgba(239,233,220,.10);border-radius:4px}
 ::-webkit-scrollbar-track{background:transparent}
 
-/* the sky — ONE tall canvas sized to the document, painted top to bottom:
-   dusk over the hero, the horizon just below it, then the ground down to the
-   foot of the page. Absolute, never fixed: a fixed sky repeats itself down a
-   long page and the place turns into wallpaper. */
-#sky{position:absolute;top:0;left:0;width:100%;z-index:0;image-rendering:pixelated;pointer-events:none}
+/* the sky — ONE canvas, fixed to the viewport, repainted as the page moves.
+   The scroll is the evening: the last light drains, the stars come out, the
+   moon climbs, and the sky settles into night. The horizon and its treeline
+   are drawn at their document position minus the scroll, so they scroll away
+   with the hero; the moon does not — it stays in the sky. landing.js owns
+   every pixel of it. */
+#sky{position:fixed;inset:0;z-index:0;image-rendering:pixelated;pointer-events:none}
 .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
 main,header.bar,footer{position:relative;z-index:2}
@@ -945,7 +956,7 @@ html.exploring,html.exploring body{overflow:hidden}
 .cur .row.sel{background:#e8d6b30b;border-left-color:#d6c5a4}
 .cur__face{width:36px;height:54px;object-fit:contain}
 @media(max-width:700px){.cur .row{padding:14px 20px}.cur .row .nm{font-size:13px}}
-#sky{max-width:100%}
+#sky{max-width:100vw}
 .crumb .cab__room{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 @media(max-width:700px){.crumb .cab__title{flex:none}}
 .dpad{display:none}
@@ -1311,3 +1322,54 @@ html.exploring,html.exploring body{overflow:hidden}
 }
 /* the terminal's own program keeps the whole bezel: no band, no foot, no fit */
 html.door .hero{height:100%; padding:0; gap:0}
+
+/* ══════════════════════════════════════════════════════════════════
+   WP-44 · THE EVENING — the page arrives under a scrolling sky.
+
+   The sky itself is canvas and lives in landing.js. What is here is
+   only how the words and the frames come in: a rise, a slide from the
+   side a frame stands on, and a hairline drawing across. Every one of
+   them happens once, on first sight, and then the page is still —
+   there is no parallax, nothing tracks the scroll, and the hero is
+   exempt because it is already here when you arrive.
+
+   The `ev` class is set by landing.js once the page is built, so a
+   page with no script standing behind it is simply all present.
+   ══════════════════════════════════════════════════════════════════ */
+.ev .ev-rise,.ev .ev-slide{
+  opacity:0;
+  transition:opacity var(--ev-t-rise) var(--ev-ease) var(--ev-d),
+             transform var(--ev-t-rise) var(--ev-ease) var(--ev-d);
+  will-change:opacity,transform;
+}
+.ev .ev-rise{transform:translate3d(0,var(--ev-rise),0)}
+.ev .ev-slide{transition-duration:var(--ev-t-slide)}
+/* a frame comes in from the side it stands on, and its words from theirs */
+.ev .place__f{transform:translate3d(calc(-1 * var(--ev-slide)),0,0)}
+.ev .place__t{transform:translate3d(var(--ev-slide),0,0)}
+.ev .place:nth-child(even) .place__f{transform:translate3d(var(--ev-slide),0,0)}
+.ev .place:nth-child(even) .place__t{transform:translate3d(calc(-1 * var(--ev-slide)),0,0)}
+.ev .ev-rise.ev-in,.ev .ev-slide.ev-in{opacity:1;transform:none;will-change:auto}
+
+/* the section's own hairline, drawn across rather than switched on */
+.ev .sec{position:relative;border-top-color:transparent}
+.ev .sec::before{
+  content:"";position:absolute;left:0;right:0;top:calc(-1 * var(--g-hair));
+  height:var(--g-hair);background:var(--g-rule);
+  transform:scaleX(0);transform-origin:left center;
+  transition:transform var(--ev-t-rule) var(--ev-ease);
+}
+.ev .sec.ev-in::before{transform:scaleX(1)}
+
+/* ── nothing moves ──
+   With reduced motion asked for, the evening is simply already night:
+   every block is present, every hairline is drawn, and the sky paints
+   once per scroll with no twinkle and no reveal. */
+@media (prefers-reduced-motion:reduce){
+  .ev .ev-rise,.ev .ev-slide,
+  .ev .place__f,.ev .place__t,
+  .ev .place:nth-child(even) .place__f,.ev .place:nth-child(even) .place__t{
+    opacity:1;transform:none;transition:none;will-change:auto;
+  }
+  .ev .sec::before{transform:scaleX(1);transition:none}
+}

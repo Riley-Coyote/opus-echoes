@@ -31,188 +31,603 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const $ = (s) => document.querySelector(s);
 
   /* ────────────────────────── the sky ──────────────────────────
-     ONE sky, ONE horizon, then the ground.
+     ONE sky, and the scroll is the evening.
 
-     The page is a vertical journey from the bluff at dusk down into the
-     night, so the sky is a single canvas sized to the whole document and
-     painted once, top to bottom: the dithered dusk ramp over the hero, the
-     horizon (treeline, and the one lit house) exactly at the hero's foot,
-     the moon once above it — and below, the ground: the palette's near-black
-     going bluer as it deepens, a star field that thins to nothing, and, far
-     down, six warm window pixels. Nothing repeats, nothing is fixed, nothing
-     moves: a fixed viewport-sized sky tiles itself down a long page and the
-     place turns into wallpaper. Renders at 1/4 res through one ImageData
-     pass — a per-pixel fillRect over a page-tall canvas is far too slow. */
+     The sky is a single canvas fixed to the viewport, repainted as the
+     visitor scrolls. `t = scrollY / (docH − vh)` is the evening's clock.
+     At t = 0 the sky is exactly where the world's window is at 19:30 —
+     the sun already under the ridge, the last amber lying along the
+     horizon band, violet above it, the moon up and dim, a few bright
+     stars out. Scrolling drains that afterglow downward and puts it out,
+     brings the rest of the stars out in order of brightness, lifts the
+     moon and brightens it, and settles the whole sky into night. Nothing
+     here is an effect: it is one evening, and the page is how long it
+     takes.
+
+     The horizon and its treeline are document-anchored — they sit at the
+     hero's foot and scroll away with it. The moon is viewport-anchored:
+     it stays in the sky. The six warm window pixels at the page's foot
+     are in the markup (WP-42), not here.
+
+     Nothing is painted pixel by pixel per frame. The ramp is one dithered
+     four-wide column, upscaled and tiled as a pattern, rebuilt only when
+     the evening crosses one of 64 buckets; the treeline, the moon, the
+     haze and the star field are baked once per resize. A frame is a
+     handful of fills. */
   const sky = (() => {
-    const cv = $('#sky'), ctx = cv.getContext('2d');
+    const cv = $('#sky'), ctx = cv.getContext('2d', { alpha: false });
     const B4 = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5]; // bayer 4x4
     const S = 4;                                  // one sky pixel = 4 css px
-    const GROUND_TOP = '#100c1c';                 // the palette's --bg0
-    const GROUND_DEEP = '#07070f';                // bluer, deeper, never black
-    const RAMP = [P.sky0, P.sky1, P.sky2, P.sky3, P.sky4, P.sky5, P.sky6, P.sky7];
+    const BUCKETS = 64;                           // the evening, quantised
+
+    /* the dusk is the page's own ramp, zenith → horizon; the night it
+       settles into is the world's own NIGHT keyframe (world/sanctuary.js),
+       resampled onto the same eight stops. DUSK_OUT is the same dusk with
+       the last light already gone — the earth's shadow standing where the
+       fire was — so the afterglow can be mixed back in on its own. */
+    const DUSK = [P.sky0, P.sky1, P.sky2, P.sky3, P.sky4, P.sky5, P.sky6, P.sky7];
+    const DUSK_OUT = [P.sky0, P.sky1, P.sky2, P.sky3, P.sky4, '#7e3a4c', '#5e2f47', '#432442'];
+    const NIGHT = ['#04050b','#05070f','#070915','#080c1b','#0a0f22','#0c1229','#0f1633','#151d3d'];
+    const DEEP_TOP = ['#100c1c', '#0a0916'];      // just under the horizon: dusk → night
+    const FLOOR = ['#100c1c', '#07070f'];         // the page's own floor; never black
+    const TREE = '#0b0814';
+    const CREAM = [239, 233, 220];
+    const CONST_INK = '243,236,223';
+    const CONST_LINE = '205,216,234';
+
     const hex = (c) => [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)];
-    let W = 0, H = 0, horizon = 0, img = null, d = null;
+    const cssOf = (t) => 'rgb(' + (t[0]|0) + ',' + (t[1]|0) + ',' + (t[2]|0) + ')';
+    const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+    const smooth = (a, b, v) => { const k = clamp01((v - a) / (b - a)); return k * k * (3 - 2 * k); };
+    const DUSK_RGB = DUSK.map(hex), OUT_RGB = DUSK_OUT.map(hex), NIGHT_RGB = NIGHT.map(hex);
+    const DEEP_RGB = DEEP_TOP.map(hex), FLOOR_RGB = FLOOR.map(hex), TREE_RGB = hex(TREE);
 
-    /* a deterministic star field: the same sky every paint, so a resize or a
-       section filling in does not reshuffle the night. */
-    let seed = 0x2f6e2b1;
-    const rnd = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return ((seed >>> 0) % 100000) / 100000; };
+    /* the world's own curve: the stops are lookout.js's skyRamp normalised,
+       so the page's dusk is the dusk in the cab — most of the height is deep
+       sky and the fire is one thin band at the horizon. */
+    const STOPS = [0, 0.2015, 0.3657, 0.5224, 0.6567, 0.7687, 0.8582, 0.9403, 1];
+    const FIRE = STOPS[6];
 
-    function set(x, y, rgb, a) {
-      if (x < 0 || y < 0 || x >= W || y >= H) return;
-      const p = ((y * W) + x) * 4;
-      if (a === undefined || a >= 1) { d[p] = rgb[0]; d[p+1] = rgb[1]; d[p+2] = rgb[2]; d[p+3] = 255; return; }
-      d[p] = d[p] + (rgb[0] - d[p]) * a;
-      d[p+1] = d[p+1] + (rgb[1] - d[p+1]) * a;
-      d[p+2] = d[p+2] + (rgb[2] - d[p+2]) * a;
-      d[p+3] = 255;
+    /* ─── the evening's clock ─── */
+    let t = 0, A = 1, N = 0;                 // afterglow, nightfall
+    function clock() {
+      const range = Math.max(1, docH - vh);
+      t = clamp01((window.pageYOffset || document.documentElement.scrollTop || 0) / range);
+      /* the last light: full at the top of the page, a sixth of it left by
+         t = 0.22, out by 0.42. It fades and the band it lies in gets thinner,
+         which is the afterglow draining downward rather than dimming in place.
+         The curve is front-loaded because the horizon is document-anchored:
+         it has left the top of the screen by about t = 0.14, and the drain has
+         to happen while there is still a horizon to see it on. */
+      A = Math.pow(1 - smooth(0, 0.42, t), 2.6);
+      N = smooth(0.06, 0.90, t);
     }
-    const rect = (x, y, w, h, rgb, a) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) set(x + i, y + j, rgb, a); };
 
-    /* the horizon sits at the hero's foot: above it the world's dusk, below it
-       the ground the page's sections stand on. */
+    /* ─── geometry, measured once per resize ─── */
+    let vw = 0, vh = 0, docH = 0, heroFootDoc = 0;
+    let skyRows = 0, deepRows = 0, fireBase = 0, treeH = 0;
     function heroFoot() {
       const hero = document.querySelector('.hero');
       if (!hero) return innerHeight * 0.8;
       const r = hero.getBoundingClientRect();
       return r.bottom + (window.pageYOffset || document.documentElement.scrollTop || 0);
     }
-    /* measured with the canvas collapsed — it is absolutely positioned, so its
-       own height counts toward scrollHeight and would otherwise run away. */
     function docHeight() {
-      cv.style.height = '0px';
       const b = document.body, e = document.documentElement;
       return Math.max(b.scrollHeight, e.scrollHeight, e.clientHeight, innerHeight);
     }
 
-    /* the world's own curve, not a linear one: the stops are lookout.js's
-       skyRamp normalised, so the page's dusk is the dusk in the cab — most of
-       the height is deep sky and the fire is one thin band at the horizon. */
-    const STOPS = [0, 0.2015, 0.3657, 0.5224, 0.6567, 0.7687, 0.8582, 0.9403, 1];
-    const FIRE = STOPS[6];                   // where the last two stops begin
-    function dusk() {
-      const ramp = RAMP.map(hex);
-      /* the fire at the horizon is pinned to a fixed depth rather than a share
-         of the hero: stretched proportionally over a page-tall hero it becomes
-         a slab of orange instead of the last light going down. */
-      const fire = Math.max(6, Math.min(Math.round(horizon * 0.22), Math.round(84 / S)));
-      const deep = Math.max(1, horizon - fire);
-      for (let y = 0; y < horizon; y++) {
-        const t = y < deep
-          ? (y / deep) * FIRE                                  // the sky above
-          : FIRE + ((y - deep) / fire) * (1 - FIRE);           // the last light
-        let i = 0; while (i < STOPS.length - 2 && t >= STOPS[i + 1]) i++;
-        const span = Math.max(1e-6, STOPS[i + 1] - STOPS[i]);
-        const mix = Math.min(1, Math.max(0, (t - STOPS[i]) / span));
-        const c0 = ramp[i], c1 = ramp[Math.min(ramp.length - 1, i + 1)];
-        for (let x = 0; x < W; x++) set(x, y, (mix * 16 > B4[(y & 3) * 4 + (x & 3)]) ? c1 : c0);
+    /* ─── the ramp: one dithered column, upscaled, tiled ─── */
+    const band = (rows) => ({ small: document.createElement('canvas'), up: document.createElement('canvas'), rows: 0, pat: null });
+    const skyBand = band(), deepBand = band();
+    const sc = { a: null, b: null, m: 0 };            // one scratch, never re-allocated
+    let bucket = -1, floorCss = FLOOR[0];
+
+    function tile(bd, rows, at) {
+      const sm = bd.small;
+      if (sm.width !== 4 || sm.height !== rows) { sm.width = 4; sm.height = rows; }
+      const sx = sm.getContext('2d');
+      const im = sx.createImageData(4, rows), d = im.data;
+      for (let y = 0; y < rows; y++) {
+        at(y);
+        const thr = sc.m * 16, row = (y & 3) * 4;
+        for (let x = 0; x < 4; x++) {
+          const c = thr > B4[row + x] ? sc.b : sc.a;
+          const p = ((y * 4) + x) * 4;
+          d[p] = c[0]; d[p+1] = c[1]; d[p+2] = c[2]; d[p+3] = 255;
+        }
       }
-    }
-    function ground() {
-      const a = hex(GROUND_TOP), b = hex(GROUND_DEEP), span = Math.max(1, H - horizon);
-      for (let y = horizon; y < H; y++) {
-        const t = Math.min(1, (y - horizon) / Math.min(span, 900));   // settles into the deep
-        const c = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-        const c1 = [c[0] + 3, c[1] + 3, c[2] + 5];
-        for (let x = 0; x < W; x++) set(x, y, (B4[(y & 3) * 4 + (x & 3)] > 12) ? c1 : c);
-      }
-    }
-    function stars() {
-      const CREAM = [239, 233, 220];
-      /* above the horizon: the dusk's own stars, densest at the top */
-      const n = Math.round(W * horizon * 0.007);
-      for (let i = 0; i < n; i++) {
-        const y = Math.pow(rnd(), 1.6) * horizon * 0.92;
-        set((rnd() * W) | 0, y | 0, CREAM, 0.22 + rnd() * 0.6);
-      }
-      /* below it: a sparse field thinning to nothing about a screen and a half down */
-      const fade = Math.max(1, (innerHeight * 1.6) / S);
-      const m = Math.round(W * Math.min(H - horizon, fade) * 0.0022);
-      for (let i = 0; i < m; i++) {
-        const y = horizon + rnd() * fade;
-        if (y >= H) continue;
-        const k = 1 - (y - horizon) / fade;                 // 1 at the horizon → 0
-        if (rnd() > k * k) continue;
-        set((rnd() * W) | 0, y | 0, CREAM, (0.07 + rnd() * 0.17) * k);
-      }
-    }
-    function treeline() {
-      const dark = hex('#0b0814');
-      let x = 0;
-      while (x < W) {
-        const w = 3 + ((x * 7) % 9), h = 2 + ((x * 13) % 7);
-        if ((x * 31) % 10 > 6) {                             // a tree
-          rect(x, horizon - h - 2, 1, h + 2, dark);
-          rect(x - 1, horizon - h, 3, Math.max(1, h - 2), dark);
-          rect(x - 2, horizon - Math.max(1, h - 3), 5, 2, dark);
-        } else rect(x, horizon - (h > 4 ? 2 : 1), w, h, dark);
-        x += w + 2;
-      }
-      /* the little house on the shore, one window lit */
-      const hx = Math.round(W * 0.28), hy = horizon;
-      rect(hx - 5, hy - 9, 11, 9, dark); rect(hx - 6, hy - 10, 13, 2, dark);
-      rect(hx - 2, hy - 7, 4, 4, hex(P.candle));
-      rect(hx - 1, hy - 6, 2, 2, hex(P.amberDeep));
-    }
-    function moon() {
-      const compact = innerWidth < 520;
-      /* placed against the first screen, not the whole hero: on a phone the
-         hero is several screens tall and a moon scaled to it lands on the
-         wordmark. This is the geometry the viewport-sized sky always had. */
-      const span = Math.min(horizon, Math.max(80, Math.round(innerHeight / S)));
-      const x = Math.round(W * (compact ? 0.86 : 0.72));
-      const y = Math.round(span * (compact ? 0.065 : 0.19));
-      const r = Math.max(7, Math.round(span * (compact ? 0.035 : 0.05)));
-      const face = [239, 233, 220], crater = [122, 109, 112];
-      for (let dy = -r - 2; dy <= r + 2; dy++) for (let dx = -r - 2; dx <= r + 2; dx++) {
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist <= r) set(x + dx, y + dy, face);
-        else if (dist <= r + 2 && B4[((y + dy) & 3) * 4 + ((x + dx) & 3)] > 9) set(x + dx, y + dy, face, 0.35);
-      }
-      rect(x - 3, y - 2, 2, 2, crater, 0.5); rect(x + 1, y + 2, 3, 2, crater, 0.5); rect(x + 3, y - 4, 2, 2, crater, 0.5);
-    }
-    function paint() {
-      const docH = docHeight(), w = innerWidth;
-      W = Math.max(1, Math.ceil(w / S)); H = Math.max(1, Math.ceil(docH / S));
-      cv.width = W; cv.height = H;
-      cv.style.width = w + 'px'; cv.style.height = docH + 'px';
-      horizon = Math.max(8, Math.min(H - 2, Math.round(heroFoot() / S)));
-      seed = 0x2f6e2b1;
-      img = ctx.createImageData(W, H); d = img.data;
-      /* the house's own windows are the page's, not the sky's: a browser
-         stops rasterising a canvas this tall well before its foot, so the
-         six pixels are drawn in the ground's own markup instead. */
-      dusk(); ground(); stars(); treeline(); moon();
-      ctx.putImageData(img, 0, 0);
-      img = null; d = null;
+      sx.putImageData(im, 0, 0);
+      const uw = 4 * S, uh = rows * S, up = bd.up;
+      if (up.width !== uw || up.height !== uh) { up.width = uw; up.height = uh; }
+      const ux = up.getContext('2d');
+      ux.imageSmoothingEnabled = false;
+      ux.drawImage(sm, 0, 0, 4, rows, 0, 0, uw, uh);
+      bd.rows = rows;
+      bd.pat = ctx.createPattern(up, 'repeat');
     }
 
-    let pending = null, lastW = 0, lastH = 0;
-    function repaint() {
-      clearTimeout(pending);
-      pending = setTimeout(paint, 90);
+    const mix3 = (a, b, f, out) => { out[0] = a[0] + (b[0] - a[0]) * f; out[1] = a[1] + (b[1] - a[1]) * f; out[2] = a[2] + (b[2] - a[2]) * f; return out; };
+    const RAMP_NOW = [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
+    const _m = [0,0,0], _deepTop = [0,0,0], _floor = [0,0,0], _lift = [0,0,0];
+    let fireRows = 1;
+
+    function buildBands() {
+      for (let i = 0; i < 8; i++) mix3(mix3(OUT_RGB[i], DUSK_RGB[i], A, _m), NIGHT_RGB[i], N, RAMP_NOW[i]);
+      fireRows = Math.max(2, Math.round(fireBase * (0.18 + 0.82 * A)));
+      const deepSpan = Math.max(1, skyRows - fireRows);
+      tile(skyBand, skyRows, (y) => {
+        const tt = y < deepSpan ? (y / deepSpan) * FIRE : FIRE + ((y - deepSpan) / fireRows) * (1 - FIRE);
+        let i = 0; while (i < STOPS.length - 2 && tt >= STOPS[i + 1]) i++;
+        const span = Math.max(1e-6, STOPS[i + 1] - STOPS[i]);
+        sc.a = RAMP_NOW[i]; sc.b = RAMP_NOW[i + 1 > 7 ? 7 : i + 1];
+        sc.m = clamp01((tt - STOPS[i]) / span);
+      });
+      mix3(DEEP_RGB[0], DEEP_RGB[1], N, _deepTop);
+      mix3(FLOOR_RGB[0], FLOOR_RGB[1], smooth(0.25, 1, t), _floor);
+      floorCss = cssOf(_floor);
+      tile(deepBand, deepRows, (y) => {
+        const k = y / deepRows, e = k * k * (3 - 2 * k);
+        mix3(_deepTop, _floor, e, _m);
+        _lift[0] = _m[0] + 3; _lift[1] = _m[1] + 3; _lift[2] = _m[2] + 5;
+        sc.a = _m; sc.b = _lift; sc.m = 0.2;
+      });
     }
-    addEventListener('resize', repaint);
-    /* the page grows as the sections fill in (frames, sprites, the log): watch
-       the document's own height and repaint when it actually changes. */
+
+    /* ─── the star field, laid out once per resize ─────────────────
+       Deterministic, so a resize or a section filling in never reshuffles
+       the night. Each star carries the t at which it is born: the brightest
+       are already out at 19:30, the rest come on in order of brightness
+       between t 0.18 and 0.58. Alpha eases in over 0.04 of the page. */
+    let seed = 0x2f6e2b1;
+    const rnd = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return ((seed >>> 0) % 100000) / 100000; };
+    const PERIODS = [3.1, 3.7, 4.3, 5.3, 5.9, 6.7];   // seconds, never in step
+    let SX = null, SY = null, SA = null, SB = null, SP = null, SPH = null, SS = null, starN = 0;
+
+    function layoutStars() {
+      const n = Math.round((vw * vh) / 3800);
+      SX = new Float32Array(n); SY = new Float32Array(n); SA = new Float32Array(n);
+      SB = new Float32Array(n); SP = new Float32Array(n); SPH = new Float32Array(n); SS = new Float32Array(n);
+      seed = 0x2f6e2b1;
+      const rows = [];
+      for (let i = 0; i < n; i++) {
+        /* densest at the zenith, thinning toward the foot of the screen */
+        /* most of a sky is faint: the alpha curve is steep on purpose, so a
+           handful of stars carry the eye and the rest are texture. */
+        rows.push({ x: Math.round(rnd() * vw / S) * S, y: Math.round((Math.pow(rnd(), 1.5) * vh) / S) * S, a: 0.055 + Math.pow(rnd(), 2.6) * 0.60, p: PERIODS[(i * 5) % PERIODS.length], ph: rnd() * 6.283 });
+      }
+      rows.sort((p, q) => q.a - p.a);
+      for (let i = 0; i < n; i++) {
+        const r = rows[i];
+        SX[i] = r.x; SY[i] = r.y; SA[i] = r.a; SP[i] = r.p; SPH[i] = r.ph;
+        SS[i] = r.a > 0.50 ? S * 2 : S;      /* the few first-magnitude ones */
+        /* the few already out at 19:30, then the rest by brightness */
+        SB[i] = i < Math.max(6, Math.round(n * 0.12)) ? -0.04 : 0.18 + 0.32 * Math.pow(i / n, 0.85);
+      }
+      starN = n;
+    }
+
+    /* ─── the treeline and the one lit house, baked once ─── */
+    const treeCv = document.createElement('canvas');
+    function bakeTree() {
+      treeH = 14 * S;
+      treeCv.width = Math.max(1, vw); treeCv.height = treeH;
+      const c = treeCv.getContext('2d');
+      c.clearRect(0, 0, vw, treeH);
+      c.fillStyle = cssOf(TREE_RGB);
+      const base = treeH;                              // the horizon sits at the foot
+      let x = 0;
+      while (x < vw / S) {
+        const w = 3 + ((x * 7) % 9), h = 2 + ((x * 13) % 7);
+        if ((x * 31) % 10 > 6) {
+          c.fillRect(x * S, base - (h + 2) * S, S, (h + 2) * S);
+          c.fillRect((x - 1) * S, base - h * S, 3 * S, Math.max(1, h - 2) * S);
+          c.fillRect((x - 2) * S, base - Math.max(1, h - 3) * S, 5 * S, 2 * S);
+        } else c.fillRect(x * S, base - (h > 4 ? 2 : 1) * S, w * S, h * S);
+        x += w + 2;
+      }
+      const hx = Math.round((vw / S) * 0.28);
+      c.fillRect((hx - 5) * S, base - 9 * S, 11 * S, 9 * S);
+      c.fillRect((hx - 6) * S, base - 10 * S, 13 * S, 2 * S);
+      c.fillStyle = P.candle; c.fillRect((hx - 2) * S, base - 7 * S, 4 * S, 4 * S);
+      c.fillStyle = P.amberDeep; c.fillRect((hx - 1) * S, base - 6 * S, 2 * S, 2 * S);
+    }
+
+    /* ─── the moon: baked once, and placed where the page is clear ─────
+       It lives in the clear right of the masthead — the strip outside the
+       page's own measure, which nothing in the hero occupies at any width
+       — so it can never sit behind the window or the feed. Where that
+       strip is too thin to hold it (a phone), it takes the band between
+       the masthead and the instrument instead. */
+    const moonCv = document.createElement('canvas');
+    let moonX = 0, moonY = 0, moonR = 0;
+    function placeMoon() {
+      const head = document.querySelector('.hero__head');
+      const bar = document.querySelector('header.bar');
+      const world = document.querySelector('#world');
+      const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+      const box = (el) => { const b = el.getBoundingClientRect(); return { top: b.top + sy, bottom: b.bottom + sy, right: b.right, height: b.height }; };
+      const hb = head ? box(head) : null;
+      const barB = bar ? box(bar).bottom : 44;
+      const worldT = world ? box(world).top : vh * 0.3;
+      const pad = vw < 520 ? 10 : 18;
+      const want = Math.max(9, Math.round(Math.min(vh, 1100) * 0.048));
+      let r = want, x = Math.round(vw * 0.84), y = Math.round(vh * 0.10);
+      const strip = hb ? (vw - pad) - hb.right : 0;
+      if (strip >= 30) {                               /* the masthead's clear right */
+        r = Math.max(9, Math.min(want, Math.floor(strip / 2) - 3));
+        x = Math.round(hb.right + strip / 2);
+        y = Math.round(Math.max(hb.top + hb.height / 2, barB + r + 8));
+      } else if (hb && worldT - hb.bottom >= 26) {     /* the band above the instrument */
+        const gap = worldT - hb.bottom;
+        r = Math.max(8, Math.min(want, Math.floor(gap / 2) - 2));
+        x = Math.round(vw - pad - r - 4);
+        y = Math.round(hb.bottom + gap / 2);
+      } else {                                          /* a phone: the first screen
+        is all instrument, so the moon takes the topbar's own empty right and
+        sits whole inside it rather than half over the edge */
+        r = Math.max(8, Math.min(want, Math.round(barB / 2)));
+        x = Math.round(vw - pad - r); y = Math.round(Math.max(r + 4, barB / 2));
+      }
+      moonR = r; moonX = x; moonY = y;
+      bakeMoon();
+    }
+    /* six per cent of the viewport, but never past the top of the sky: on a
+       phone the moon starts high already and would climb clean off the screen. */
+    function moonClimb() {
+      return Math.round(Math.min(smooth(0.22, 0.45, t) * vh * 0.06, Math.max(0, moonY - moonR - 2)));
+    }
+    function bakeMoon() {
+      const r = moonR, pad = Math.round(r * 0.4) + S * 3, size = (r + pad) * 2;
+      moonCv.width = size; moonCv.height = size;
+      const c = moonCv.getContext('2d'), cx = size / 2, cy = size / 2;
+      /* no glow: the disc is the light. A halo around it turns the moon into
+         an effect, and the sky it hangs in is drawn four pixels at a time. */
+      const face = cssOf(CREAM);
+      const rp = Math.max(2, Math.round(r / S));
+      for (let dy = -rp - 2; dy <= rp + 2; dy++) {
+        for (let dx = -rp - 2; dx <= rp + 2; dx++) {
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist <= rp) c.fillStyle = face;
+          else if (dist <= rp + 2 && B4[((dy + 64) & 3) * 4 + ((dx + 64) & 3)] > 9) c.fillStyle = 'rgba(239,233,220,0.35)';
+          else continue;
+          c.fillRect(cx + dx * S, cy + dy * S, S, S);
+        }
+      }
+      /* three seas, at the scale the sky's other pixels are drawn at */
+      c.fillStyle = 'rgba(122,109,112,0.5)';
+      const u = S;
+      c.fillRect(cx - 3 * u, cy - 2 * u, 2 * u, 2 * u);
+      c.fillRect(cx + 1 * u, cy + 2 * u, 3 * u, 2 * u);
+      c.fillRect(cx + 3 * u, cy - 4 * u, 2 * u, 2 * u);
+    }
+
+    /* ─── one faint band of milky haze, crossing once ─── */
+    const hazeCv = document.createElement('canvas');
+    function bakeHaze() {
+      hazeCv.width = Math.max(1, vw); hazeCv.height = Math.max(1, vh);
+      const c = hazeCv.getContext('2d');
+      c.clearRect(0, 0, vw, vh);
+      c.save();
+      c.translate(vw * 0.5, vh * 0.42);
+      c.rotate(-0.42);
+      const g = c.createLinearGradient(0, -vh * 0.34, 0, vh * 0.34);
+      g.addColorStop(0, 'rgba(168,180,214,0)');
+      g.addColorStop(0.35, 'rgba(178,188,218,0.55)');
+      g.addColorStop(0.5, 'rgba(196,204,228,1)');
+      g.addColorStop(0.68, 'rgba(178,188,218,0.5)');
+      g.addColorStop(1, 'rgba(168,180,214,0)');
+      c.fillStyle = g;
+      c.fillRect(-vw, -vh * 0.34, vw * 2, vh * 0.68);
+      c.restore();
+    }
+
+    /* ─── the constellations: one per section ──────────────────────
+       Drawn in the sky's own idiom — a thin thread and small star dots,
+       the same figure language the lookout's own sky uses. Each is placed
+       at layout time in a rectangle measured to be clear of every word in
+       its section, and draws itself in once, when the section arrives. */
+    const FIGURES = {
+      what:    [[0.04,0.42],[0.29,0.10],[0.55,0.36],[0.79,0.06],[0.99,0.46]],
+      places:  [[0.02,0.22],[0.27,0.54],[0.56,0.30],[0.73,0.74],[0.99,0.50]],
+      engine:  [[0.09,0.62],[0.21,0.21],[0.51,0.05],[0.75,0.40],[0.61,0.80],[0.98,0.66]],
+      charter: [[0.05,0.10],[0.34,0.46],[0.67,0.22],[0.97,0.62]],
+      enter:   [[0.11,0.76],[0.31,0.30],[0.59,0.53],[0.86,0.07]]
+    };
+    const CBOX_W = 210, CBOX_H = 116, CPAD = 20;
+    const consts = [];          // {id, x, y (doc), w, h, pts, len, seg[], p, drawn}
+    const DASH = [0, 0];
+
+    /* what a block actually inks, not the column it is set in: a section
+       title is a full-width box holding eight short words, and a figure that
+       refused every place a full-width box forbids would have nowhere to go.
+       Line boxes give the real extent; a frame or a diagram gives its own. */
+    const BLOCKS = '.sec__h,.stmt,.fact,.body,.src,.act,.honest,.quote,.dgm,.place__f,.place__t,.house,.status,.menu,.hero__cue';
+    function inkRects(el, out, sy) {
+      if (el.matches('.place__f,.dgm,.house,.quote')) {
+        const b = el.getBoundingClientRect();
+        if (b.width && b.height) out.push([b.left, b.top + sy, b.right, b.bottom + sy]);
+        return;
+      }
+      const rg = document.createRange();
+      rg.selectNodeContents(el);
+      const list = rg.getClientRects();
+      for (let i = 0; i < list.length; i++) {
+        const b = list[i];
+        if (b.width > 1 && b.height > 1) out.push([b.left, b.top + sy, b.right, b.bottom + sy]);
+      }
+    }
+
+    function layoutConstellations() {
+      /* the page grows under the figures as its frames fill in, so they are
+         measured again — but a figure that has already drawn itself in stays
+         drawn. Re-measuring is not a reason to make a visitor watch it twice. */
+      const was = {};
+      for (let i = 0; i < consts.length; i++) was[consts[i].id] = { on: consts[i].on, p: consts[i].p, t0: consts[i].t0 };
+      consts.length = 0;
+      const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+      /* every word on the page, once — a figure placed for one section still
+         has to keep out of the section above it. */
+      const blocks = [];
+      document.querySelectorAll('.ground ' + BLOCKS.split(',').join(', .ground ') + ', .hero__foot ' + BLOCKS.split(',').join(', .hero__foot '))
+        .forEach((el) => inkRects(el, blocks, sy));
+      const clearAt = (x, y, w, h) => !blocks.some((b) => x < b[2] + CPAD && x + w > b[0] - CPAD && y < b[3] + CPAD && y + h > b[1] - CPAD);
+      Object.keys(FIGURES).forEach((id) => {
+        const sec = document.getElementById(id);
+        if (!sec) return;
+        const sb = sec.getBoundingClientRect();
+        const top = sb.top + sy, bottom = sb.bottom + sy;
+        /* first the section's own right-hand void, then the band of silence
+           above its hairline; a figure never goes behind a word. */
+        /* the search: as high in the section as it can sit and as far into
+           the void on the right as there is room for, then the band of
+           silence above the section's own hairline. A figure that finds no
+           clear rectangle at full size tries a smaller one, and a figure
+           that finds none at all simply does not appear — the sky is not
+           worth a word standing behind it. */
+        let at = null, bw = CBOX_W, bh = CBOX_H;
+        const scales = [1, 0.78, 0.6];
+        for (let si = 0; si < scales.length && !at; si++) {
+          bw = Math.round(CBOX_W * scales[si]); bh = Math.round(CBOX_H * scales[si]);
+          const xMax = Math.min(vw - bw - 20, Math.round(sb.right + 34));
+          const xMin = Math.max(16, Math.round(sb.left));
+          const ys = [top - bh - 26];
+          for (let y = top + 20; y < bottom - bh - 30; y += 84) ys.push(Math.round(y));
+          for (let yi = 0; yi < ys.length && !at; yi++) {
+            for (let x = xMax; x >= xMin; x -= 44) {
+              if (clearAt(x, ys[yi], bw, bh)) { at = [x, ys[yi]]; break; }
+            }
+          }
+        }
+        if (!at) return;
+        const pts = FIGURES[id];
+        let len = 0; const seg = [0];
+        for (let i = 1; i < pts.length; i++) {
+          const dx = (pts[i][0] - pts[i-1][0]) * bw, dy = (pts[i][1] - pts[i-1][1]) * bh;
+          len += Math.sqrt(dx * dx + dy * dy); seg.push(len);
+        }
+        const keep = was[id];
+        consts.push({ id, x: at[0], y: at[1], w: bw, h: bh, pts, len, seg,
+          p: REDUCED ? 1 : (keep ? keep.p : 0), on: keep ? keep.on : false, t0: keep ? keep.t0 : 0 });
+      });
+    }
+
+    /* ─── layout ─── */
+    function layout() {
+      const de = document.documentElement;
+      /* the client box, not the window: innerWidth counts the scrollbar, and a
+         fixed canvas a scrollbar wider is a canvas hanging over the edge. */
+      vw = Math.max(1, de.clientWidth || innerWidth); vh = Math.max(1, de.clientHeight || innerHeight);
+      docH = docHeight(); heroFootDoc = heroFoot();
+      const dpr = 1;                         // the art is pixel art; one canvas px is one css px
+      if (cv.width !== vw * dpr || cv.height !== vh * dpr) { cv.width = vw * dpr; cv.height = vh * dpr; }
+      cv.style.width = vw + 'px'; cv.style.height = vh + 'px';
+      ctx.imageSmoothingEnabled = false;
+      /* the sky above the horizon is as tall as the hero; the deep below it
+         settles over about three and a half screens, as it always has. */
+      skyRows = Math.max(8, Math.round(Math.min(heroFootDoc, vh * 1.35) / S));
+      deepRows = Math.max(8, Math.round(Math.min(900 * S, vh * 3.6) / S));
+      fireBase = Math.max(6, Math.min(Math.round(skyRows * 0.22), Math.round(84 / S)));
+      layoutStars(); bakeTree(); placeMoon(); bakeHaze(); layoutConstellations();
+      bucket = -1;
+    }
+
+    /* ─── the frame ─── */
+    let paintMs = 0;
+    const marks = [];
+    function paint() {
+      const t0 = performance.now();
+      clock();
+      const b = Math.round(t * (BUCKETS - 1));
+      if (b !== bucket) { bucket = b; buildBands(); }
+      const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+      const hz = Math.round(heroFootDoc - sy);              // the horizon, on screen
+
+      /* 1 · the floor, everywhere */
+      ctx.fillStyle = floorCss;
+      ctx.fillRect(0, 0, vw, vh);
+
+      /* 2 · the deep, anchored under the horizon */
+      const deepH = deepBand.rows * S;
+      if (hz < vh && hz + deepH > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(0, Math.max(0, hz), vw, Math.min(vh, hz + deepH) - Math.max(0, hz)); ctx.clip();
+        ctx.translate(0, hz); ctx.fillStyle = deepBand.pat; ctx.fillRect(0, 0, vw, deepH);
+        ctx.restore();
+      }
+
+      /* 3 · the sky, its foot on the horizon */
+      const skyH = skyBand.rows * S, skyTop = hz - skyH;
+      if (hz > 0 && skyTop < vh) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(0, Math.max(0, skyTop), vw, Math.min(vh, hz) - Math.max(0, skyTop)); ctx.clip();
+        ctx.translate(0, skyTop); ctx.fillStyle = skyBand.pat; ctx.fillRect(0, 0, vw, skyH);
+        ctx.restore();
+      }
+
+      /* 4 · the haze, once the night is deep enough to hold it */
+      const hazeA = smooth(0.52, 0.76, t) * 0.045;
+      if (hazeA > 0.002) { ctx.globalAlpha = hazeA; ctx.drawImage(hazeCv, 0, 0); ctx.globalAlpha = 1; }
+
+      /* 5 · the stars — viewport-anchored: the sky does not scroll, the
+             evening does. Below the horizon they hold back until the
+             treeline has gone over, so none of them stands in the land. */
+      const now = performance.now() / 1000;
+      const twinkle = !REDUCED && t > 0.3;
+      /* the sky is still bright at 19:30 and drowns most of what is up there;
+         the stars do not so much come out as stop being washed away. */
+      const wash = 0.42 + 0.58 * N;
+      const below = hz <= 0 ? 1 : 1 - smooth(0, vh * 0.55, hz);
+      let bi = 0;
+      for (bi = 0; bi < 10; bi++) BUCK[bi].length = 0;
+      for (let i = 0; i < starN; i++) {
+        let a = SA[i] * wash * clamp01((t - SB[i]) / 0.04);
+        if (a <= 0.012) continue;
+        const y = SY[i];
+        if (hz > 0 && y > hz) { a *= below; if (a <= 0.012) continue; }
+        /* the last light washes out whatever is standing in it */
+        if (A > 0.01 && hz > 0) {
+          const near = 1 - clamp01((hz - y) / (fireRows * S * 2.4));
+          if (near > 0) a *= 1 - 0.85 * A * near;
+        }
+        if (twinkle) a *= 1 + 0.25 * Math.sin(now * (6.283 / SP[i]) + SPH[i]);
+        if (a <= 0.012) continue;
+        const q = Math.min(9, Math.floor(a * 10));
+        BUCK[q].push(SX[i], y, SS[i]);
+      }
+      for (bi = 0; bi < 10; bi++) {
+        const arr = BUCK[bi];
+        if (!arr.length) continue;
+        ctx.globalAlpha = (bi + 0.5) / 10;
+        ctx.fillStyle = STAR_CSS;
+        ctx.beginPath();
+        for (let k = 0; k < arr.length; k += 3) ctx.rect(arr[k], arr[k+1], arr[k+2], arr[k+2]);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      /* 6 · the treeline and the one lit house, at the hero's foot */
+      if (hz > -treeH && hz < vh + treeH) ctx.drawImage(treeCv, 0, hz - treeH);
+
+      /* 7 · the moon: up and dim at 19:30, full and a little higher by night */
+      const moonA = 0.42 + 0.58 * smooth(0.10, 0.45, t);
+      const climb = moonClimb();
+      ctx.globalAlpha = moonA;
+      ctx.drawImage(moonCv, moonX - moonCv.width / 2, moonY - climb - moonCv.height / 2);
+      ctx.globalAlpha = 1;
+
+      /* 8 · the constellations, each in its own section's clear sky */
+      if (consts.length) paintConstellations(sy, now);
+
+      paintMs = performance.now() - t0;
+      if (marks.length < 400) marks.push(paintMs);
+    }
+    const BUCK = [[],[],[],[],[],[],[],[],[],[]];
+    const STAR_CSS = 'rgb(' + CREAM[0] + ',' + CREAM[1] + ',' + CREAM[2] + ')';
+
+    function paintConstellations(sy, now) {
+      for (let i = 0; i < consts.length; i++) {
+        const c = consts[i];
+        if (!c.on) continue;
+        const y0 = c.y - sy;
+        if (y0 > vh + 40 || y0 + c.h < -40) continue;
+        if (c.p < 1) c.p = REDUCED ? 1 : clamp01((now * 1000 - c.t0) / 900);
+        const p = c.p < 1 ? c.p * c.p * (3 - 2 * c.p) : 1;
+        const shown = c.len * p;
+        ctx.save();
+        ctx.translate(c.x, y0);
+        ctx.strokeStyle = 'rgba(' + CONST_LINE + ',0.15)';
+        ctx.lineWidth = 1;
+        if (p < 1) { DASH[0] = shown; DASH[1] = c.len; ctx.setLineDash(DASH); }
+        ctx.beginPath();
+        for (let k = 0; k < c.pts.length; k++) {
+          const x = c.pts[k][0] * c.w, y = c.pts[k][1] * c.h;
+          if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+        if (p < 1) { DASH[0] = 0; DASH[1] = 0; ctx.setLineDash(DASH); }
+        for (let k = 0; k < c.pts.length; k++) {
+          if (c.seg[k] > shown + 0.5) break;
+          ctx.fillStyle = 'rgba(' + CONST_INK + ',0.80)';
+          ctx.fillRect(Math.round(c.pts[k][0] * c.w) - 1, Math.round(c.pts[k][1] * c.h) - 1, 2, 2);
+        }
+        ctx.restore();
+      }
+    }
+
+    /* ─── the loop: a frame on scroll, and a slow one for the twinkle ───
+       Idle by default. A scroll or a resize asks for one frame. The stars
+       keep a slow frame of their own — six a second, no more — only while
+       the night has them out and motion is allowed; a constellation drawing
+       itself in keeps a full one until it is finished. */
+    let rafId = 0, timer = 0;
+    function frame() {
+      rafId = 0;
+      paint();
+      let drawing = false;
+      for (let i = 0; i < consts.length; i++) if (consts[i].on && consts[i].p < 1) { drawing = true; break; }
+      if (drawing) schedule(0);
+      else if (!REDUCED && t > 0.3) schedule(160);
+    }
+    function schedule(delay) {
+      if (rafId) return;
+      if (delay) {
+        if (timer) return;
+        timer = setTimeout(() => { timer = 0; if (!rafId) rafId = requestAnimationFrame(frame); }, delay);
+      } else {
+        if (timer) { clearTimeout(timer); timer = 0; }
+        rafId = requestAnimationFrame(frame);
+      }
+    }
+    function repaint() { layout(); schedule(0); }
+
+    addEventListener('scroll', () => schedule(0), { passive: true });
+    let rz = null;
+    addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(repaint, 90); });
+
+    /* the page grows as the sections fill in (frames, sprites, the webfonts):
+       the horizon and the scroll range are measured from the document, so a
+       real change in its height has to re-measure. */
+    let lastH = 0, lastW = 0;
     if (typeof ResizeObserver === 'function') {
       const ro = new ResizeObserver(() => {
         const h = Math.round(document.body.getBoundingClientRect().height), w = innerWidth;
         if (h === lastH && w === lastW) return;
-        lastH = h; lastW = w; repaint();
+        lastH = h; lastW = w; clearTimeout(rz); rz = setTimeout(repaint, 90);
       });
       ro.observe(document.body);
     }
-    paint();
-    /* the page's last growth is the webfonts landing: the display face and the
-       serif are wider than their fallbacks, so the ground gets taller after
-       the last section has already been built. Repaint when they settle and
-       once more at load, or the sky stops short of the foot of the page and
-       the darkest screen sits on the bare background instead of on the deep. */
+    layout(); paint();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(repaint).catch(() => {});
     addEventListener('load', repaint);
-    return { paint, repaint };
+
+    return {
+      paint, repaint, layout,
+      /* the sky answers for itself: the verification reads the evening's
+         clock, the paint cost and where the moon is from here. */
+      lightConstellation(id) {
+        const c = consts.find((k) => k.id === id);
+        if (!c || c.on) return;
+        c.on = true; c.t0 = performance.now(); c.p = REDUCED ? 1 : 0;
+        schedule(0);
+      },
+      read() {
+        return {
+          t, afterglow: A, night: N, bucket, horizon: Math.round(heroFootDoc - (window.pageYOffset || 0)),
+          moon: { x: moonX, y: moonY - moonClimb(), r: moonR, a: 0.42 + 0.58 * smooth(0.10, 0.45, t) },
+          stars: starN, out: (() => { let k = 0; for (let i = 0; i < starN; i++) if (t >= SB[i] + 0.04) k++; return k; })(), born: (() => { let k = 0; for (let i = 0; i < starN; i++) if (SB[i] <= 0) k++; return k; })(),
+          constellations: consts.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h, on: c.on, p: c.p })),
+          paint: { last: paintMs, samples: marks.slice() }
+        };
+      },
+      resetMarks() { marks.length = 0; },
+      sample(x, y) { const d = ctx.getImageData(x, y, 1, 1).data; return [d[0], d[1], d[2]]; }
+    };
   })();
+
+  /* the sky answers for itself, the way the world does: the verification
+     reads the evening's clock, the paint cost and where the moon is. */
+  window.__evening = sky;
 
   /* ────────────────────────── feed ────────────────────────── */
   const feedList = $('#feedlist'), rosterEl = $('#roster'), stripEl = $('#groundsstrip');
@@ -3896,6 +4311,70 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     buildPlaces();
     buildCharter();
     if (sky && sky.repaint) sky.repaint();
+    theEvening();
+  }
+
+  /* ── the page arrives ────────────────────────────────────────────
+     Nothing below the horizon moves on its own; it only arrives. A
+     block of text comes up ten pixels and fades in over a third of a
+     second, its children a fiftieth of a second apart — the title,
+     then what is said, then the body, then the way out. A place's
+     frame comes in sixteen pixels from whichever side it stands on.
+     A section's hairline draws across. Each of them happens once, and
+     then the page is still. The hero is exempt: it is already here.
+     With `prefers-reduced-motion` set, everything is simply present. */
+  let eveningWired = false;
+  function theEvening() {
+    if (eveningWired) return;
+    const ground = document.querySelector('.ground');
+    if (!ground || !ground.querySelector('.place')) return;
+    eveningWired = true;
+    document.documentElement.classList.add('ev');
+
+    const groups = [];
+    const status = ground.querySelector('.status');
+    if (status) groups.push([status]);
+    ground.querySelectorAll('.sec').forEach((sec) => {
+      const own = [];
+      sec.querySelectorAll(':scope > .sec__in > *').forEach((el) => own.push(el));
+      if (own.length) groups.push(own);
+      sec.querySelectorAll(':scope > .places > .place').forEach((row) => {
+        const kids = [];
+        row.querySelectorAll(':scope > .place__f, :scope > .place__t').forEach((el) => kids.push(el));
+        if (kids.length) groups.push(kids);
+      });
+    });
+
+    const owner = new Map();
+    groups.forEach((kids) => {
+      kids.forEach((el, i) => {
+        el.classList.add(el.classList.contains('place__f') || el.classList.contains('place__t') ? 'ev-slide' : 'ev-rise');
+        el.style.setProperty('--ev-d', (i * 50) + 'ms');
+      });
+      owner.set(kids[0], kids);
+    });
+
+    if (REDUCED || typeof IntersectionObserver !== 'function') {
+      groups.forEach((kids) => kids.forEach((el) => el.classList.add('ev-in')));
+      ground.querySelectorAll('.sec').forEach((sec) => sec.classList.add('ev-in'));
+      Object.keys({ what: 1, places: 1, engine: 1, charter: 1, enter: 1 })
+        .forEach((id) => sky.lightConstellation(id));
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        const kids = owner.get(e.target);
+        if (kids) { kids.forEach((el) => el.classList.add('ev-in')); return; }
+        e.target.classList.add('ev-in');
+        if (e.target.id) sky.lightConstellation(e.target.id);
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.01 });
+
+    owner.forEach((kids, first) => io.observe(first));
+    ground.querySelectorAll('.sec').forEach((sec) => io.observe(sec));
   }
 
   /* ── §02 · the places ────────────────────────────────────────────
