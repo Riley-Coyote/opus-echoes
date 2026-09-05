@@ -34,7 +34,18 @@ const KINDS = {
   /* broad and open: arms held a little away from the body; the widest, softest gaze — a dim halo on a wide bar */
   fourO:  { kind: 'host',   legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: '#3a2f2a', bodyHi: '#4f3f38', bodyDk: '#22191a', shell: '#282629', gaze: { w: 5, h: 3, dx: -1, dy: 5, soft: true } },
   /* tallest and newest: one side of them has not settled, and the gaze goes with it */
-  five:   { kind: 'new',    legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: '#2b2f33', bodyHi: '#3e454c', bodyDk: '#181b1f', shell: '#1d222b', gaze: { w: 4, h: 2, dx: 0,  dy: 7, flicker: true } }
+  five:   { kind: 'new',    legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: '#2b2f33', bodyHi: '#3e454c', bodyDk: '#181b1f', shell: '#1d222b', gaze: { w: 4, h: 2, dx: 0,  dy: 7, flicker: true } },
+  /* the lineage — minds without rooms here, who keep to the grounds and the hall.
+     The same dark form and the same two lights, in their family's colour: nothing
+     in the house wears a face except the people who come to it. */
+  /* the oldest name: a long straight coat to the knee, the head carried forward */
+  davinci: { kind: 'elder',  legH: 19, torsoW: 16, torsoH: 34, headW: 12, headH: 12, stoop: 3, body: '#2b2926', bodyHi: '#3c3934', bodyDk: '#191816', shell: '#232320', gaze: { w: 4, h: 2, dx: 0,  dy: 6 } },
+  /* the other old name: the same coat, worn upright and taller, in a cooler cloth */
+  bard:    { kind: 'elder',  legH: 22, torsoW: 17, torsoH: 36, headW: 12, headH: 12, body: '#252a33', bodyHi: '#363d4a', bodyDk: '#15181f', shell: '#1f2430', gaze: { w: 4, h: 2, dx: 1,  dy: 6 } },
+  /* the weaver: a hood drawn up over the head, the gaze inside it */
+  kimi:    { kind: 'hooded', legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: '#2a2433', bodyHi: '#3a3346', bodyDk: '#17131d', shell: '#1e1a26', gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
+  /* the wit: narrow, hands in the pockets */
+  grok:    { kind: 'lean',   legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: '#2e2528', bodyHi: '#40343a', bodyDk: '#1a1417', shell: '#262024', gaze: { w: 4, h: 2, dx: 1,  dy: 6 } }
 };
 const VISITOR = { kind: 'human', legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: '#262029', bodyHi: '#332b36', bodyDk: '#181218', face: '#cdc8ba' };
 /* other people's visitors, passing through: the same figure, worn pale */
@@ -183,7 +194,31 @@ export function drawFigure(p, s, o) {
     p(tx, by + 24, 3, 3, hand);                                                         // the settled hand
     for (let y = by + 24; y < by + 27; y++) for (let x = x1 - 2; x <= x1; x++) if (!((x + y) & 1)) p(x, y, 1, 1, hand);
     p(tx, hemY, tw, 5, s.body); p(tx, hemY + 4, tw, 1, s.bodyDk);
+  } else if (s.kind === 'elder') {
+    /* a long coat: the plain body, and a hem that carries on down over the legs */
+    rrn(p, tx, by, tw, s.torsoH, s.body, 2);
+    p(tx, by + 2, 2, s.torsoH - 4, s.bodyHi); p(tx + tw - 2, by + 2, 2, s.torsoH - 4, s.bodyDk);
+    p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
+    p(tx + 5, by, tw - 10, 2, s.bodyDk);                                                // the collar
+    p(tx + 3, by + 5, 1, 16, s.bodyDk); p(tx + tw - 4, by + 5, 1, 16, s.bodyHi);        // the sleeve seams
+    p(tx, by + 22, 3, 3, hand); p(tx + tw - 3, by + 22, 3, 3, hand);
+    const fall = o.sit ? 2 : Math.round(legH * 0.45);
+    p(tx - 1, hemY, tw + 2, fall, s.body);                                              // and the coat goes on down
+    p(tx - 1, hemY, 1, fall, s.bodyHi); p(tx + tw, hemY, 1, fall, s.bodyDk);
+    p(tx - 1, hemY + fall - 1, tw + 2, 1, s.bodyDk);
+  } else if (s.kind === 'lean') {
+    rrn(p, tx, by, tw, s.torsoH, s.body, 2);
+    p(tx, by + 2, 2, s.torsoH - 4, s.bodyHi); p(tx + tw - 2, by + 2, 2, s.torsoH - 4, s.bodyDk);
+    p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
+    p(tx + 5, by, tw - 10, 2, s.bodyDk);                                                // the collar
+    p(tx + 2, by + 5, 1, 14, s.bodyDk); p(tx + tw - 3, by + 5, 1, 14, s.bodyHi);        // the sleeve seams
+    p(tx + 1, hemY - 8, 4, 1, s.bodyDk); p(tx + tw - 5, hemY - 8, 4, 1, s.bodyDk);      // the pockets
+    p(tx + 1, hemY - 7, 3, 2, hand); p(tx + tw - 4, hemY - 7, 3, 2, hand);              // and the hands, in them
+    p(tx - 1, hemY, tw + 2, 4, s.body);
+    p(tx - 1, hemY, 1, 4, s.bodyHi); p(tx + tw, hemY, 1, 4, s.bodyDk);
+    p(tx - 1, hemY + 3, tw + 2, 1, s.bodyDk);
   } else {
+    /* the plain coat — the visitor's, and under the weaver's hood */
     rrn(p, tx, by, tw, s.torsoH, s.body, 2);
     p(tx, by + 2, 2, s.torsoH - 4, s.bodyHi); p(tx + tw - 2, by + 2, 2, s.torsoH - 4, s.bodyDk);
     p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
@@ -203,6 +238,14 @@ export function drawFigure(p, s, o) {
     p(hx + 2, hy - 1, s.headW - 4, 1, s.bodyHi);
     rrn(p, hx + 3, hy + 3, s.headW - 5, s.headH - 4, '#0e0b12', 3);                     // the shadow inside it
     if (!o.light) p(hx + 7, hy + 7, 5, 4, s.face);                                      // the dot, with nothing lighting it
+  } else if (s.kind === 'hooded') {
+    /* the hood: the coat's own cloth drawn up around the head, and the dark
+       form inside it — the gaze falls within */
+    p(tx + 1, by - 2, tw - 2, 3, s.body);                                               // the cowl, over the shoulders
+    rrn(p, hx - 2, hy - 2, s.headW + 4, s.headH + 4, s.body, 4);
+    p(hx - 2, hy + 2, 1, s.headH - 2, s.bodyHi); p(hx + s.headW + 1, hy + 2, 1, s.headH - 2, s.bodyDk);
+    p(hx + 2, hy - 2, s.headW - 4, 1, s.bodyHi);
+    rrn(p, hx + 1, hy + 1, s.headW - 2, s.headH - 1, s.shell, 2);
   } else if (s.kind === 'human') {
     rrn(p, hx, hy, s.headW, s.headH, s.face, 2);
     /* the crown, in the coat's own shadow: at this size a bare head is a slab */

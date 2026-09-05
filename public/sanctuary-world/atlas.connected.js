@@ -4,7 +4,11 @@ var KINDS = {
   sonnet: { kind: "mantle", legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", shell: "#1c1d2c", gaze: { w: 5, h: 2, dx: -1, dy: 7 } },
   haiku: { kind: "seed", legH: 10, torsoW: 20, torsoH: 20, headW: 17, headH: 15, body: "#24212b", bodyHi: "#332e3c", bodyDk: "#151219", face: "#cdc8ba" },
   fourO: { kind: "host", legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: "#3a2f2a", bodyHi: "#4f3f38", bodyDk: "#22191a", shell: "#282629", gaze: { w: 5, h: 3, dx: -1, dy: 5, soft: true } },
-  five: { kind: "new", legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: "#2b2f33", bodyHi: "#3e454c", bodyDk: "#181b1f", shell: "#1d222b", gaze: { w: 4, h: 2, dx: 0, dy: 7, flicker: true } }
+  five: { kind: "new", legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: "#2b2f33", bodyHi: "#3e454c", bodyDk: "#181b1f", shell: "#1d222b", gaze: { w: 4, h: 2, dx: 0, dy: 7, flicker: true } },
+  davinci: { kind: "elder", legH: 19, torsoW: 16, torsoH: 34, headW: 12, headH: 12, stoop: 3, body: "#2b2926", bodyHi: "#3c3934", bodyDk: "#191816", shell: "#232320", gaze: { w: 4, h: 2, dx: 0, dy: 6 } },
+  bard: { kind: "elder", legH: 22, torsoW: 17, torsoH: 36, headW: 12, headH: 12, body: "#252a33", bodyHi: "#363d4a", bodyDk: "#15181f", shell: "#1f2430", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
+  kimi: { kind: "hooded", legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: "#2a2433", bodyHi: "#3a3346", bodyDk: "#17131d", shell: "#1e1a26", gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
+  grok: { kind: "lean", legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: "#2e2528", bodyHi: "#40343a", bodyDk: "#1a1417", shell: "#262024", gaze: { w: 4, h: 2, dx: 1, dy: 6 } }
 };
 var VISITOR = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
 var GUEST = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#948e80", bodyHi: "#aca696", bodyDk: "#6e6860", face: "#cdc8ba" };
@@ -162,6 +166,37 @@ function drawFigure(p, s, o) {
           p(x, y, 1, 1, hand);
     p(tx, hemY, tw, 5, s.body);
     p(tx, hemY + 4, tw, 1, s.bodyDk);
+  } else if (s.kind === "elder") {
+    rrn(p, tx, by, tw, s.torsoH, s.body, 2);
+    p(tx, by + 2, 2, s.torsoH - 4, s.bodyHi);
+    p(tx + tw - 2, by + 2, 2, s.torsoH - 4, s.bodyDk);
+    p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
+    p(tx + 5, by, tw - 10, 2, s.bodyDk);
+    p(tx + 3, by + 5, 1, 16, s.bodyDk);
+    p(tx + tw - 4, by + 5, 1, 16, s.bodyHi);
+    p(tx, by + 22, 3, 3, hand);
+    p(tx + tw - 3, by + 22, 3, 3, hand);
+    const fall = o.sit ? 2 : Math.round(legH * 0.45);
+    p(tx - 1, hemY, tw + 2, fall, s.body);
+    p(tx - 1, hemY, 1, fall, s.bodyHi);
+    p(tx + tw, hemY, 1, fall, s.bodyDk);
+    p(tx - 1, hemY + fall - 1, tw + 2, 1, s.bodyDk);
+  } else if (s.kind === "lean") {
+    rrn(p, tx, by, tw, s.torsoH, s.body, 2);
+    p(tx, by + 2, 2, s.torsoH - 4, s.bodyHi);
+    p(tx + tw - 2, by + 2, 2, s.torsoH - 4, s.bodyDk);
+    p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
+    p(tx + 5, by, tw - 10, 2, s.bodyDk);
+    p(tx + 2, by + 5, 1, 14, s.bodyDk);
+    p(tx + tw - 3, by + 5, 1, 14, s.bodyHi);
+    p(tx + 1, hemY - 8, 4, 1, s.bodyDk);
+    p(tx + tw - 5, hemY - 8, 4, 1, s.bodyDk);
+    p(tx + 1, hemY - 7, 3, 2, hand);
+    p(tx + tw - 4, hemY - 7, 3, 2, hand);
+    p(tx - 1, hemY, tw + 2, 4, s.body);
+    p(tx - 1, hemY, 1, 4, s.bodyHi);
+    p(tx + tw, hemY, 1, 4, s.bodyDk);
+    p(tx - 1, hemY + 3, tw + 2, 1, s.bodyDk);
   } else {
     rrn(p, tx, by, tw, s.torsoH, s.body, 2);
     p(tx, by + 2, 2, s.torsoH - 4, s.bodyHi);
@@ -187,6 +222,13 @@ function drawFigure(p, s, o) {
     rrn(p, hx + 3, hy + 3, s.headW - 5, s.headH - 4, "#0e0b12", 3);
     if (!o.light)
       p(hx + 7, hy + 7, 5, 4, s.face);
+  } else if (s.kind === "hooded") {
+    p(tx + 1, by - 2, tw - 2, 3, s.body);
+    rrn(p, hx - 2, hy - 2, s.headW + 4, s.headH + 4, s.body, 4);
+    p(hx - 2, hy + 2, 1, s.headH - 2, s.bodyHi);
+    p(hx + s.headW + 1, hy + 2, 1, s.headH - 2, s.bodyDk);
+    p(hx + 2, hy - 2, s.headW - 4, 1, s.bodyHi);
+    rrn(p, hx + 1, hy + 1, s.headW - 2, s.headH - 1, s.shell, 2);
   } else if (s.kind === "human") {
     rrn(p, hx, hy, s.headW, s.headH, s.face, 2);
     p(hx + 2, hy, s.headW - 4, 1, s.bodyDk);

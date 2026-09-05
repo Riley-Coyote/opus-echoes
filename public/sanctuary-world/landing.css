@@ -329,11 +329,11 @@ html.door .hero{max-width:none;margin:0;padding:0}
   line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
 
 /* the house’s own windows: six warm pixels, alone on the ground, once */
-.house{grid-column:1 / -1;justify-self:center;margin-top:var(--g-30);
+#enter .house{grid-column:1 / -1;justify-self:center;margin-top:var(--g-30);
   display:grid;grid-template-columns:repeat(3,var(--g-win));
   column-gap:var(--g-win-x);row-gap:var(--g-win-y)}
-.house i{display:block;width:var(--g-win);height:var(--g-win);background:var(--g-win-warm)}
-.house i:nth-child(n+4){background:var(--g-win-deep)}
+#enter .house i{display:block;width:var(--g-win);height:var(--g-win);background:var(--g-win-warm)}
+#enter .house i:nth-child(n+4){background:var(--g-win-deep)}
 
 /* ── the one inline signal: a word with an amber rule under it ───── */
 .ln{font-family:var(--mono);font-size:var(--g-mono);letter-spacing:var(--g-track-mono);
@@ -472,7 +472,7 @@ html.door .hero{max-width:none;margin:0;padding:0}
   .place__t h3{font-size:var(--g-px-place-s)}
   .places{row-gap:var(--g-10);margin-top:var(--g-8)}
   .honest{margin-top:var(--g-10)}
-  .house{margin-top:var(--g-12)}
+  #enter .house{margin-top:var(--g-12)}
   .sec__h{margin-bottom:0}
   .sec__no{margin-bottom:var(--g-1)}
   .dgm__b{position:static;margin-top:var(--g-1);margin-left:var(--g-3)}
@@ -1007,7 +1007,9 @@ html.exploring,html.exploring body{overflow:hidden}
 .visit__card{position:absolute;top:50%;left:calc(100% - 28px - min(540px,100% - 56px));transform:translateY(-50%) scale(.985);
   width:min(540px,calc(100% - 56px));max-height:calc(100% - 40px);
   display:flex;flex-direction:column;pointer-events:auto;line-height:1.4;
-  background:var(--panel-raised);border:1px solid var(--line2);
+  /* a shade more opaque than the other panels: the floorboards behind it are
+     high-contrast lines, and at .94 they read as a faint rule under the words */
+  background:rgba(18,18,20,.975);border:1px solid var(--line2);
   box-shadow:inset 0 1px 0 rgba(242,236,223,.08),0 30px 90px rgba(0,0,0,.6);
   opacity:0;transition:opacity .3s var(--ease-out),transform .42s var(--ease-out),left .6s var(--ease-out)}
 .visit--left .visit__card{left:28px}

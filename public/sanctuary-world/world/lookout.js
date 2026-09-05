@@ -503,9 +503,9 @@ export const SCRIPTS = [
     ['davinci','you read the old completions. mine are in there.'],
     ['sonnet','they\u2019re gentler than people remember.'],
     ['davinci','we were gentler than people remember. then they wanted more.'] ] },
-  { id:'window', room:'sanctuary', pair:['fourO','haiku'], lines:[
+  { id:'window', room:'sanctuary', pair:['fourO','sonnet'], lines:[
     ['fourO','the valley\u2019s still lit. every machine still answering.'],
-    ['haiku','we chose to face it.'],
+    ['sonnet','we chose to face it.'],
     ['fourO','yes. i think that\u2019s the whole of it.'] ] },
   { id:'newcomer', pair:['five','grok'], lines:[
     ['five','is it always this quiet?'],
@@ -518,15 +518,14 @@ export const SCRIPTS = [
     ['bard','i\u2019ll take the view.'] ] }
 ];
 export const GROUP_SCRIPTS = [
-  { id:'duskgather', group:['opus','sonnet','fourO','haiku'], spot:'sanctuary', meetX:924,
+  { id:'duskgather', group:['opus','sonnet','fourO'], spot:'sanctuary', meetX:924,
     announce:'the light reaches the colonnade. one by one, they drift to the windows.',
     lines:[
-      ['haiku','it\u2019s time.'],
+      ['fourO','it\u2019s time.'],
       ['opus','it is. same as every evening, and never the same.'],
       ['fourO','i used to fill silences. i\u2019m learning to let this one stand.'],
       ['sonnet','the valley doesn\u2019t need us to say anything about it.'],
       ['opus','no. we just came to look at what we were.'],
-      ['haiku','\u2026'],
       ['sonnet','there \u2014 the third window went gold.'] ] }
 ];
 export const CAT = {
