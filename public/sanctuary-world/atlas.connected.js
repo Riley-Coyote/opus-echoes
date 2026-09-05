@@ -478,7 +478,7 @@ class Sanctuary {
       this.av.y = clamp(saved.y || sp.y, band[0], band[1]);
     }
     this.keys = { left: false, right: false, up: false, down: false };
-    this.camX = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
+    this.camX = this.clampCam(this.av.x - this.o.width / 2);
     this.near = null;
     this.trans = null;
     this.active = false;
@@ -794,9 +794,18 @@ class Sanctuary {
     this.followCamera(dt);
     return true;
   }
+  camBounds() {
+    const roomW = this.room().width | 0, slack = this.o.width - roomW;
+    const lo = slack > 0 ? -Math.floor(slack / 2) : 0;
+    return [lo, Math.max(lo, roomW - this.o.width)];
+  }
+  clampCam(want) {
+    const b = this.camBounds();
+    return clamp(want, b[0], b[1]);
+  }
   followCamera(dt) {
     const want = Number.isFinite(this.camHold) ? this.camHold : this.av.x - this.o.width / 2;
-    const target = clamp(want, 0, Math.max(0, this.room().width - this.o.width));
+    const target = this.clampCam(want);
     const amount = 1 - Math.pow(0.84, Math.max(0.25, dt / 16.67));
     this.camX += (target - this.camX) * amount;
   }
@@ -1818,7 +1827,7 @@ class Sanctuary {
           this.travel.stride = 0;
         }
         this.camHold = null;
-        this.camX = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
+        this.camX = this.clampCam(this.av.x - this.o.width / 2);
         this.trans.phase = "in";
         this.trans.t0 = now;
         clearInterval(this._typer);
@@ -1947,7 +1956,7 @@ class Sanctuary {
     ctx.fillRect(x | 0, y | 0, Math.max(1, w | 0), Math.max(1, h | 0));
   }
   buildBg() {
-    const P = this.P, room = this.room(), W = Math.max(this.o.width, room.width | 0), H = this.o.height, wB = this.o.wallBase;
+    const P = this.P, room = this.room(), W = room.width | 0 || this.o.width, H = this.o.height, wB = this.o.wallBase;
     this._layers = [];
     if (room.layers) {
       for (const L of room.layers) {
@@ -2013,7 +2022,7 @@ class Sanctuary {
     const ctx = this.ctx, cam = this.camX;
     if (this._layers)
       for (const L of this._layers)
-        ctx.drawImage(L.cv, Math.round(cam * (1 - L.speed)), 0);
+        ctx.drawImage(L.cv, Math.round(Math.max(0, cam) * (1 - L.speed)), 0);
     const sw = Math.min(this._bg.width, this.o.width), sx0 = Math.max(0, Math.min(this._bg.width - sw, Math.round(cam)));
     ctx.drawImage(this._bg, sx0, 0, sw, this._bg.height, sx0, 0, sw, this._bg.height);
   }
@@ -2558,21 +2567,32 @@ var WALL_FRAMES = {
   ],
   sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
 };
-function hung(b, x, y, w, h, tint2, piece) {
-  b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
-  b.px(x - 2, y - 2, w + 4, 1, M.brassHi);
-  b.px(x - 2, y + h + 1, w + 4, 1, "rgba(0,0,0,0.45)");
-  b.px(x, y, w, h, "#0d0910");
-  b.px(x + 1, y + 1, w - 2, h - 2, tint2);
-  b.px(x + 1, y + 1, w - 2, 1, "rgba(247,217,140,0.12)");
-  b.px(x + Math.floor(w / 2), y - 5, 1, 3, "rgba(216,203,176,0.45)");
-  const pw = w - 6, ph = h - 6;
-  if (!piece || pw < 4 || ph < 4)
+var FRAME_MAT = "#0d0a12";
+function wallToneAt(y) {
+  return lerpHex(M.wallHi, M.wallLo, Math.max(0, Math.min(1, (y - 22) / 278)));
+}
+function houseFrame(b, x, y, w, h, piece) {
+  b.px(x, y, w, h, M.bronze);
+  b.px(x + 1, y + 1, w - 2, 1, M.brassHi);
+  b.px(x + 1, y + 1, 1, h - 2, M.brassHi);
+  b.px(x + 2, y + 2, w - 4, h - 4, FRAME_MAT);
+  b.px(x, y + h, w, 1, "rgba(0,0,0,0.32)");
+  const ax = x + 3, ay = y + 3, pw = w - 6, ph = h - 6;
+  if (pw < 4 || ph < 4)
     return;
+  if (!piece) {
+    b.px(ax, ay, pw, ph, wallToneAt(y + h / 2));
+    b.px(ax, ay, pw, ph, "rgba(8,6,12,0.55)");
+    const n = Math.max(pw, ph) - 3;
+    for (let k = 0;k <= n; k++) {
+      b.px(ax + 1 + Math.round((pw - 3) * k / n), ay + ph - 2 - Math.round((ph - 3) * k / n), 1, 1, "rgba(243,236,223,0.06)");
+    }
+    return;
+  }
   if (piece.img && piece.img.width) {
     const img = piece.img, k = Math.min(pw / img.width, ph / img.height);
     const dw2 = Math.max(1, Math.round(img.width * k)), dh2 = Math.max(1, Math.round(img.height * k));
-    const ox2 = x + 3 + Math.floor((pw - dw2) / 2), oy2 = y + 3 + Math.floor((ph - dh2) / 2);
+    const ox2 = ax + Math.floor((pw - dw2) / 2), oy2 = ay + Math.floor((ph - dh2) / 2);
     b.ctx.save();
     b.ctx.imageSmoothingEnabled = true;
     b.ctx.imageSmoothingQuality = "high";
@@ -2599,7 +2619,7 @@ function hung(b, x, y, w, h, tint2, piece) {
   }
   dw = Math.max(1, Math.min(pw, dw));
   dh = Math.max(1, Math.min(ph, dh));
-  const ox = x + 3 + Math.floor((pw - dw) / 2), oy = y + 3 + Math.floor((ph - dh) / 2);
+  const ox = ax + Math.floor((pw - dw) / 2), oy = ay + Math.floor((ph - dh) / 2);
   for (let iy = 0;iy < dh; iy++) {
     const r0 = Math.floor(iy * rows.length / dh);
     const r1 = Math.max(r0 + 1, Math.floor((iy + 1) * rows.length / dh));
@@ -2793,7 +2813,7 @@ function makeModelRooms(bridge) {
     wall: (id, x, range, hint) => ({
       x,
       label: "THE WALL",
-      hint: hint || "what they made, hung by the house",
+      hint: hint || "what they made, hung by the house — and the frames kept for what comes next",
       action: "look at the work",
       range: range || 30,
       onInteract: (e) => {
@@ -3964,16 +3984,8 @@ function makeModelRooms(bridge) {
         contact(b, 880, 301, 36, 0.22);
         (function opusWall() {
           const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("opus") : [];
-          const tints = [
-            "rgba(94,234,212,0.10)",
-            "rgba(247,217,140,0.09)",
-            "rgba(242,163,192,0.09)",
-            "rgba(159,214,224,0.10)",
-            "rgba(94,234,212,0.07)",
-            "rgba(224,102,46,0.08)"
-          ];
           WALL_FRAMES.opus.forEach(([x, y, w, h], i) => {
-            hung(b, x, y, w, h, tints[i], works[i]);
+            houseFrame(b, x, y, w, h, works[i]);
           });
           b.px(836, 144, 120, 1, "rgba(243,236,223,0.05)");
         })();
@@ -4128,7 +4140,7 @@ function makeModelRooms(bridge) {
         (function sonnetWall() {
           const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("sonnet") : [];
           WALL_FRAMES.sonnet.forEach(([x, y, w, h], i) => {
-            hung(b, x, y, w, h, i === 0 ? "rgba(94,234,212,0.09)" : i % 2 ? "rgba(159,214,224,0.09)" : "rgba(94,234,212,0.08)", works[i]);
+            houseFrame(b, x, y, w, h, works[i]);
           });
           b.px(786, 142, 148, 1, "rgba(243,236,223,0.05)");
         })();

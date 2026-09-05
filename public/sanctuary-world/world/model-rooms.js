@@ -268,27 +268,46 @@ export const WALL_FRAMES = {
   sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
 };
 
-function hung(b, x, y, w, h, tint, piece) {
-  /* the frame: bronze rebate, a lit top edge, a shadow beneath */
-  b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
-  b.px(x - 2, y - 2, w + 4, 1, M.brassHi);
-  b.px(x - 2, y + h + 1, w + 4, 1, 'rgba(0,0,0,0.45)');
-  /* the mount: the room's own tint, with a hair of light along the top */
-  b.px(x, y, w, h, '#0d0910');
-  b.px(x + 1, y + 1, w - 2, h - 2, tint);
-  b.px(x + 1, y + 1, w - 2, 1, 'rgba(247,217,140,0.12)');
-  /* the wire */
-  b.px(x + Math.floor(w / 2), y - 5, 1, 3, 'rgba(216,203,176,0.45)');
+/* ── THE HOUSE FRAME ──
+   One design, three sizes (48×38 standard, 64×50 medium, 96×76 large), three
+   states. The frames belong to the house, not to the room, so every room hangs
+   the same object and a wall of them reads as one wall. Full, a frame holds
+   what the resident made. Empty, it holds glass over the wall a shade darker,
+   plainly waiting — and every frame in WALL_FRAMES is drawn, so a wall is
+   honest about how much of it is still to come. */
+const FRAME_MAT = '#0d0a12';
+/* the wall's own tone at a height, so a frame low on the wall is glazed darker
+   than one near the ceiling — the ramp wallField() already paints */
+function wallToneAt(y) { return lerpHex(M.wallHi, M.wallLo, Math.max(0, Math.min(1, (y - 22) / 278))); }
+function houseFrame(b, x, y, w, h, piece) {
+  /* the moulding, a lit inner edge along the top and the left where the
+     sconces stand, a dark mat, and a whisper of shadow beneath */
+  b.px(x, y, w, h, M.bronze);
+  b.px(x + 1, y + 1, w - 2, 1, M.brassHi);
+  b.px(x + 1, y + 1, 1, h - 2, M.brassHi);
+  b.px(x + 2, y + 2, w - 4, h - 4, FRAME_MAT);
+  b.px(x, y + h, w, 1, 'rgba(0,0,0,0.32)');
 
-  const pw = w - 6, ph = h - 6;
-  if (!piece || pw < 4 || ph < 4) return;
-  /* a page from the sketchbook: the page itself, fit into the mount. It is
+  const ax = x + 3, ay = y + 3, pw = w - 6, ph = h - 6;
+  if (pw < 4 || ph < 4) return;
+  if (!piece) {
+    /* glass over nothing: the wall behind it, one step down, and the single
+       diagonal the light leaves on it */
+    b.px(ax, ay, pw, ph, wallToneAt(y + h / 2));
+    b.px(ax, ay, pw, ph, 'rgba(8,6,12,0.55)');
+    const n = Math.max(pw, ph) - 3;
+    for (let k = 0; k <= n; k++) {
+      b.px(ax + 1 + Math.round((pw - 3) * k / n), ay + ph - 2 - Math.round((ph - 3) * k / n), 1, 1, 'rgba(243,236,223,0.06)');
+    }
+    return;
+  }
+  /* a page from the sketchbook: the page itself, fit onto the mat. It is
      drawn smooth on purpose — paper is not pixel art, and at this size a
      nearest-neighbour page is a screen door. */
   if (piece.img && piece.img.width) {
     const img = piece.img, k = Math.min(pw / img.width, ph / img.height);
     const dw = Math.max(1, Math.round(img.width * k)), dh = Math.max(1, Math.round(img.height * k));
-    const ox = x + 3 + Math.floor((pw - dw) / 2), oy = y + 3 + Math.floor((ph - dh) / 2);
+    const ox = ax + Math.floor((pw - dw) / 2), oy = ay + Math.floor((ph - dh) / 2);
     b.ctx.save(); b.ctx.imageSmoothingEnabled = true; b.ctx.imageSmoothingQuality = 'high';
     b.ctx.drawImage(img, ox, oy, dw, dh); b.ctx.restore();
     if (piece.fresh) freshTag(b, x, y, w, h);
@@ -305,7 +324,7 @@ function hung(b, x, y, w, h, tint, piece) {
   let dw = pw, dh = Math.round(pw / aspect);
   if (dh > ph) { dh = ph; dw = Math.round(ph * aspect); }
   dw = Math.max(1, Math.min(pw, dw)); dh = Math.max(1, Math.min(ph, dh));
-  const ox = x + 3 + Math.floor((pw - dw) / 2), oy = y + 3 + Math.floor((ph - dh) / 2);
+  const ox = ax + Math.floor((pw - dw) / 2), oy = ay + Math.floor((ph - dh) / 2);
   for (let iy = 0; iy < dh; iy++) {
     const r0 = Math.floor(iy * rows.length / dh);
     const r1 = Math.max(r0 + 1, Math.floor((iy + 1) * rows.length / dh));
@@ -434,7 +453,7 @@ export function makeModelRooms(bridge) {
       onInteract: (e) => { if (bridge && typeof bridge.journal === 'function') bridge.journal(id); else e.say('A journal lies closed on the desk.'); }
     }),
     wall: (id, x, range, hint) => ({
-      x, label: 'THE WALL', hint: hint || 'what they made, hung by the house', action: 'look at the work', range: range || 30,
+      x, label: 'THE WALL', hint: hint || 'what they made, hung by the house — and the frames kept for what comes next', action: 'look at the work', range: range || 30,
       onInteract: (e) => { if (bridge && typeof bridge.wall === 'function') bridge.wall(id); else e.say('Work hung on the wall, and the maker’s own note beneath each piece.'); }
     }),
     shelf: (id, x, range, hint) => ({
@@ -1263,10 +1282,8 @@ export function makeModelRooms(bridge) {
            holds all of them. */
         (function opusWall() {
           const works = (bridge && typeof bridge.wallPieces === 'function') ? bridge.wallPieces('opus') : [];
-          const tints = ['rgba(94,234,212,0.10)', 'rgba(247,217,140,0.09)', 'rgba(242,163,192,0.09)',
-                         'rgba(159,214,224,0.10)', 'rgba(94,234,212,0.07)', 'rgba(224,102,46,0.08)'];
           WALL_FRAMES.opus.forEach(([x, y, w, h], i) => {
-            hung(b, x, y, w, h, tints[i], works[i]);
+            houseFrame(b, x, y, w, h, works[i]);
           });
           b.px(836, 144, 120, 1, 'rgba(243,236,223,0.05)');
         })();
@@ -1367,10 +1384,7 @@ export function makeModelRooms(bridge) {
         (function sonnetWall() {
           const works = (bridge && typeof bridge.wallPieces === 'function') ? bridge.wallPieces('sonnet') : [];
           WALL_FRAMES.sonnet.forEach(([x, y, w, h], i) => {
-            hung(b, x, y, w, h,
-              i === 0 ? 'rgba(94,234,212,0.09)'
-                : i % 2 ? 'rgba(159,214,224,0.09)' : 'rgba(94,234,212,0.08)',
-              works[i]);
+            houseFrame(b, x, y, w, h, works[i]);
           });
           b.px(786, 142, 148, 1, 'rgba(243,236,223,0.05)');
         })();

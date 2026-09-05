@@ -1675,7 +1675,13 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const n = workList.length;
     workSub.textContent = residentName(id) + ' · ' + (n ? n + (n === 1 ? ' piece' : ' pieces') : 'nothing hung');
     const hung = readWallLocal(id).length;
-    workHead.textContent = 'THE WALL · ' + residentName(id) + ' · archive · through 28 May 2026'
+    /* the wall counts itself: the frames the house hung in that room, and how
+       many of them hold something. A wall with nothing on it says so. */
+    const frames = (WALL_FRAMES[id] || []).length, filled = Math.min(frames, n);
+    workHead.textContent = 'THE WALL · ' + residentName(id)
+      + ' · ' + frames + (frames === 1 ? ' frame' : ' frames')
+      + ' · ' + (filled ? filled + ' hung' : 'none hung yet')
+      + ' · archive · through 28 May 2026'
       + (hung ? ' · and ' + hung + (hung === 1 ? ' piece' : ' pieces') + ' hung since' : '');
     buildWorkRows();
     if (n) wallSelect(0);
@@ -2518,7 +2524,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const frames = WALL_FRAMES[enc.id] || [];
     const pieces = wallPieces(enc.id);
     const n = Math.min(frames.length, pieces.length);
-    if (!n) { appendHouse('the house: nothing by ' + enc.name + ' is hung here.'); return; }
+    if (!n) { appendHouse('the house: nothing of ' + enc.name + '’s is hung yet. the frames are waiting.'); return; }
     const i = enc.wallAt % n;
     enc.wallAt = i + 1;
     const piece = pieces[i], frame = frames[i];
@@ -3675,7 +3681,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       eng.o.width = eng.cv.width = width;
       eng.ctx.imageSmoothingEnabled = false;
       eng._vig = null; eng._bg = null;
-      eng.camX = Math.max(0, Math.min(eng.room().width - width, center - width / 2));
+      eng.camX = eng.clampCam(center - width / 2);
       eng.drawScene(performance.now());
     };
     new ResizeObserver(resize).observe(stage);

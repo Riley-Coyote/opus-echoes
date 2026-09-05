@@ -136,7 +136,7 @@ export class Sanctuary {
     };
     if (saved && this.rooms[saved.room]) { this.av.x = clamp(saved.x || sp.x, 22, this.room().width - 22); this.av.y = clamp(saved.y || sp.y, band[0], band[1]); }
     this.keys = { left: false, right: false, up: false, down: false };
-    this.camX = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
+    this.camX = this.clampCam(this.av.x - this.o.width / 2);
     this.near = null; this.trans = null; this.active = false; this.typed = '';
     this.travel = null;
     this.lastTravelState = { status: 'idle', destinationId: null, stage: null, reason: null };
@@ -382,12 +382,27 @@ export class Sanctuary {
     return true;
   }
 
+  /* WHERE THE CAMERA MAY GO. A room wider than the view pans between 0 and the
+     room's right edge, as it always has. A room NARROWER than the view cannot
+     pan at all, and clinging to the left would leave the whole slack on the
+     right — so its camera sits at a negative x and the room is centred on the
+     canvas, with the house's dark either side. Negative camX is the whole of
+     the mechanism: every `x - camX` in the engine and in the page above it
+     — the bake, the sprites, the lights, the spot, click-to-walk — goes on
+     meaning the same thing. */
+  camBounds() {
+    const roomW = this.room().width | 0, slack = this.o.width - roomW;
+    const lo = slack > 0 ? -Math.floor(slack / 2) : 0;
+    return [lo, Math.max(lo, roomW - this.o.width)];
+  }
+  clampCam(want) { const b = this.camBounds(); return clamp(want, b[0], b[1]); }
+
   followCamera(dt) {
     /* camHold lets the house take the camera for a moment — a resident showing
        a visitor something on their wall — without the visitor losing the room.
        Cleared on any room change. */
     const want = Number.isFinite(this.camHold) ? this.camHold : this.av.x - this.o.width / 2;
-    const target = clamp(want, 0, Math.max(0, this.room().width - this.o.width));
+    const target = this.clampCam(want);
     const amount = 1 - Math.pow(0.84, Math.max(0.25, dt / 16.67));
     this.camX += (target - this.camX) * amount;
   }
@@ -1013,7 +1028,7 @@ export class Sanctuary {
         this.av.moving = false; this.av.frame = 0; this.av.stride = 0;
         if (this.travel) { this.travel.velocity = 0; this.travel.stride = 0; }
         this.camHold = null;
-        this.camX = clamp(this.av.x - this.o.width / 2, 0, Math.max(0, this.room().width - this.o.width));
+        this.camX = this.clampCam(this.av.x - this.o.width / 2);
         this.trans.phase = 'in'; this.trans.t0 = now;
         clearInterval(this._typer); this.typed = ''; this._full = '';
         this.setRoomLabel(); this.showPlacard(); this.near = null; this.renderHud();
@@ -1102,7 +1117,7 @@ export class Sanctuary {
 
   /* ---------- background baking: layers + near ---------- */
   buildBg() {
-    const P = this.P, room = this.room(), W = Math.max(this.o.width, room.width | 0), H = this.o.height, wB = this.o.wallBase;
+    const P = this.P, room = this.room(), W = room.width | 0 || this.o.width, H = this.o.height, wB = this.o.wallBase;
     /* parallax layers */
     this._layers = [];
     if (room.layers) {
@@ -1140,7 +1155,7 @@ export class Sanctuary {
   blitBg() {
     if (this.bgRoom !== this.roomId || !this._bg) this.buildBg();
     const ctx = this.ctx, cam = this.camX;
-    if (this._layers) for (const L of this._layers) ctx.drawImage(L.cv, Math.round(cam * (1 - L.speed)), 0);
+    if (this._layers) for (const L of this._layers) ctx.drawImage(L.cv, Math.round(Math.max(0, cam) * (1 - L.speed)), 0);
     /* Only the slice the camera can see. This used to composite the whole
        backdrop every frame regardless of camX — 2240x600 for a 1530 window,
        i.e. a third of the frame's largest single operation spent off-screen. */
