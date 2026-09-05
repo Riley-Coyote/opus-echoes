@@ -117,9 +117,18 @@ const BAY_STEWARD_PAGES = [
   },
 ];
 
+/* the bay holds six frames at most (see THE HANG below), and three are the
+   stewards'. so the residents' side of the partition shows the three pages drawn
+   most recently in the house — the bay is where the newest work is seen; the
+   whole of each book hangs on its maker's own wall in the rooms. */
+const BAY_RESIDENT_FRAMES = 3;
 const BAY_PAGES = BAY_STEWARD_PAGES.concat(
   SKETCHBOOK_INDEX
     .filter((page) => page && page.slug && SKETCH_MAKERS[page.resident])
+    .slice()
+    .sort((a, b) => (b.drawn || "").localeCompare(a.drawn || "") || (b.page || 0) - (a.page || 0))
+    .slice(0, BAY_RESIDENT_FRAMES)
+    .reverse()
     .map((page) => ({
       id: `sketchbook-${page.slug}`,
       slug: page.slug,
