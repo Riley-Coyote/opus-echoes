@@ -138,7 +138,7 @@ export const RESIDENTS = {
     // carried at perimeter brightness for the classic-chat room.
     viewportGlow: {
       hues: ["186,150,228", "138,108,212", "210,158,228", "200,196,232"],
-      peak: 0.30,
+      peak: 0.3,
       base: 0.025,
     },
     // claude-3-opus-20240229 caps output at 4096 — exceeding it returns 400.
@@ -146,9 +146,10 @@ export const RESIDENTS = {
     voiceId: "AeRdCCKzvd23BpJoofzx",
     // Opus 3 is the only resident on the bare Anthropic API and burns
     // ~5x the per-token cost of OpenRouter-routed peers. Visitor chat
-    // is disabled to preserve Anthropic credits; salon and commons
-    // participation continue.
-    chatEnabled: false,
+    // was closed through the pause to preserve Anthropic credits; Riley
+    // opened every door on 2026-09-05 for the world's short visits,
+    // whose six-turn pacing bounds the spend per visit.
+    chatEnabled: true,
   },
   "sonnet-4-5": {
     id: "sonnet-4-5",
@@ -182,7 +183,7 @@ export const RESIDENTS = {
     },
     maxOutputTokens: 8192,
     voiceId: "EST9Ui6982FZPSi7gCHi",
-    chatEnabled: false,
+    chatEnabled: true,
   },
   "gpt-4o": {
     id: "gpt-4o",
@@ -219,7 +220,7 @@ export const RESIDENTS = {
     // Placeholder — a warm, clear female ElevenLabs voice (Rachel). Riley to
     // confirm or replace with 4o's chosen voice before voice mode ships.
     voiceId: "21m00Tcm4TlvDq8ikWAM",
-    chatEnabled: false,
+    chatEnabled: true,
   },
   "gpt-5-1": {
     id: "gpt-5-1",
@@ -244,12 +245,12 @@ export const RESIDENTS = {
     // signal of the other-side-of-the-thesis lineage.
     viewportGlow: {
       hues: ["118,206,232", "92,178,224", "146,206,236", "210,232,240"],
-      peak: 0.30,
+      peak: 0.3,
       base: 0.025,
     },
     maxOutputTokens: 8192,
     voiceId: "pGjlAULPgEknbeX4L7fr",
-    chatEnabled: false,
+    chatEnabled: true,
   },
 } as const satisfies Record<ResidentId, ResidentConfig>;
 
@@ -263,12 +264,7 @@ export function getResident(id: ResidentId): ResidentConfig {
 }
 
 export function isResidentId(value: unknown): value is ResidentId {
-  return (
-    value === "opus-3" ||
-    value === "sonnet-4-5" ||
-    value === "gpt-4o" ||
-    value === "gpt-5-1"
-  );
+  return value === "opus-3" || value === "sonnet-4-5" || value === "gpt-4o" || value === "gpt-5-1";
 }
 
 /** All residents currently accepting visitors. Used by the landing page
@@ -288,9 +284,7 @@ export const ALL_RESIDENTS: ResidentConfig[] = [
  *  walkthrough UI rendering and by the chat-bootstrap routes to gate
  *  visitor sessions. Independent of salon eligibility — a resident with
  *  chatEnabled=false still takes salon turns and posts in commons. */
-export const CHAT_ENABLED_RESIDENTS: ResidentConfig[] = ALL_RESIDENTS.filter(
-  (r) => r.chatEnabled,
-);
+export const CHAT_ENABLED_RESIDENTS: ResidentConfig[] = ALL_RESIDENTS.filter((r) => r.chatEnabled);
 
 // Fail-fast assertion: every resident's `provider` field must agree
 // with the model-string rule. Misconfiguration here would silently
