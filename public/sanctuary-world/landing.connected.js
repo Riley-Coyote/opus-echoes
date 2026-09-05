@@ -12540,7 +12540,7 @@
       encFree.classList.toggle("is-waiting", !on);
     }
     const clockStamp = (m) => {
-      const x = (m % 1440 + 1440) % 1440;
+      const x = (Math.floor(m) % 1440 + 1440) % 1440;
       return String(Math.floor(x / 60)).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0");
     };
     function situationNow() {
@@ -13187,7 +13187,7 @@
           shown: e.shown.slice(),
           made: (e.made || []).slice(),
           outcome: e.outcome,
-          how: e.voice ? e.voice.kind : "archive"
+          how: e.voice ? e.voice.kind : e.closed ? "door" : "archive"
         });
         writeRecord(rec);
       }

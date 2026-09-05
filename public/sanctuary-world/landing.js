@@ -2804,7 +2804,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const b = encFree.querySelector('button'); if (b) b.disabled = !on;
     encFree.classList.toggle('is-waiting', !on);
   }
-  const clockStamp = (m) => { const x = ((m % 1440) + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); };
+  const clockStamp = (m) => { const x = ((Math.floor(m) % 1440) + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); };
   /* where this turn is happening, as the world knows it: the room, the
      clock, who else is standing there, whether this visitor has been here
      before, and what the house shows them doing */
@@ -3333,7 +3333,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (e.outcome !== 'none') {
       const rec = readRecord();
       rec.visits.push({ resident: e.id, when: new Date().toISOString(), room: e.room, shown: e.shown.slice(),
-        made: (e.made || []).slice(), outcome: e.outcome, how: e.voice ? e.voice.kind : 'archive' });
+        made: (e.made || []).slice(), outcome: e.outcome, how: e.voice ? e.voice.kind : (e.closed ? 'door' : 'archive') });
       writeRecord(rec);
     }
     if (eng) {
