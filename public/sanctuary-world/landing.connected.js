@@ -10447,7 +10447,7 @@
         return false;
       navigation.surface = "world";
       cab.focus({ preventScroll: true });
-      return eng.travelTo(Object.assign({ speed: 4.3 }, options));
+      return eng.travelTo(Object.assign({ speed: 6 }, options));
     }
     function openMuseum(scene = "atrium") {
       if (!museumRoutes[scene])
@@ -13616,7 +13616,7 @@
         const targetY = Math.max(352, Math.min(402, npc ? npc.y : y));
         eng.activate();
         cab.focus({ preventScroll: true });
-        eng.travelTo({ room, x: targetX, y: targetY, pointer: true, speed: 4.3, arrival: () => {
+        eng.travelTo({ room, x: targetX, y: targetY, pointer: true, speed: 6, arrival: () => {
           if (eng.roomId !== room)
             return;
           if (npc && npc.room === room && Math.abs(npc.x - eng.av.x) < 64)
