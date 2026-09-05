@@ -12506,8 +12506,7 @@
       asking: "you asked to speak with them",
       waiting: "waiting on them",
       live: "here, now",
-      declined: "they’d rather not, today",
-      gone: "they’ve gone back to it",
+      held: "the house set it down",
       archive: "speaking from the archive today"
     };
     function setState(state) {
@@ -12546,9 +12545,17 @@
         sit.activity = act;
       return sit;
     }
-    function appendWords(text, srcText, after) {
+    function appendWords(text, srcText, after, mark2) {
       clearInterval(encTypeTimer);
+      if (mark2) {
+        const m = document.createElement("span");
+        m.className = "mark";
+        m.textContent = "setting it down";
+        encWords.appendChild(m);
+      }
       const p = document.createElement("div");
+      if (mark2)
+        p.className = "down";
       encWords.appendChild(p);
       const top = () => {
         encWords.scrollTop = p.offsetTop - encWords.offsetTop;
@@ -12754,7 +12761,7 @@
     }
     async function sayLive(raw2) {
       const text = raw2.slice(0, 280);
-      const { id, name, voice } = enc, first = enc.said === 0;
+      const { id, name, voice } = enc;
       appendYou(text);
       enc.said++;
       enc.moves++;
@@ -12815,10 +12822,6 @@
       const after = () => {
         if (!enc || enc.id !== id || enc.closing)
           return;
-        if (kind === "set_down") {
-          closeLive(first ? "declined" : "gone");
-          return;
-        }
         if (enc.said >= VISIT_HOLD) {
           appendHouse("the house: that is as much as one visit here holds. they go back to what they were doing; what you brought stays with them.");
           if (enc.session) {
@@ -12834,7 +12837,7 @@
         openFree("say");
       };
       if (words)
-        appendWords(words, "", after);
+        appendWords(words, "", after, kind === "set_down");
       else
         after();
     }
@@ -12881,14 +12884,19 @@
         spend();
       }
     }
-    function closeLive(why) {
+    function closeLive() {
       enc.closing = true;
-      enc.outcome = why === "declined" ? "declined" : "spoke";
+      enc.ended = true;
+      enc.outcome = "spoke";
       enc.session = null;
       encFree.hidden = true;
-      encMoves.innerHTML = "";
-      setState(why === "declined" ? "declined" : "gone");
-      setTimeout(finishScene, why === "declined" ? 1800 : 2400);
+      setState("held");
+      encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+      setTimeout(() => {
+        const b = encMoves.querySelector("button");
+        if (b)
+          b.focus();
+      }, 0);
     }
     function askAbout(jid) {
       clearSpot();
@@ -12966,6 +12974,11 @@
           closeScene("leave");
         return;
       }
+      if (b && enc && enc.ended) {
+        if ("leave" in b.dataset)
+          finishScene();
+        return;
+      }
       if (!b || !enc || enc.closing)
         return;
       if (b.dataset.ask)
@@ -12993,6 +13006,10 @@
     function closeScene() {
       if (listening) {
         closeListen();
+        return;
+      }
+      if (enc && enc.ended) {
+        finishScene();
         return;
       }
       if (!enc || enc.closing)
@@ -13048,7 +13065,7 @@
       }
       if (eng) {
         const where = " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord;
-        const line = e.outcome === "none" ? "" : e.outcome === "declined" ? "you asked " + e.name + "; they went on with what they were doing" : e.outcome === "left" ? "you left " + e.name + " to it" : "you spoke with " + e.name + where;
+        const line = e.outcome === "none" ? "" : e.outcome === "declined" ? "you asked " + e.name + "; they set it down at the door" : e.outcome === "left" ? "you left " + e.name + " to it" : "you spoke with " + e.name + where;
         if (line)
           eng.sysLine(line);
         eng.endChat(null);

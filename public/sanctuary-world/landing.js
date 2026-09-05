@@ -2775,8 +2775,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     asking: 'you asked to speak with them',
     waiting: 'waiting on them',
     live: 'here, now',
-    declined: 'they’d rather not, today',
-    gone: 'they’ve gone back to it',
+    held: 'the house set it down',
     archive: 'speaking from the archive today'
   };
   function setState(state) {
@@ -2810,9 +2809,17 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
 
   /* ── the scene ── */
-  function appendWords(text, srcText, after) {
+  function appendWords(text, srcText, after, mark) {
     clearInterval(encTypeTimer);
+    /* a reply that sets a line down is shown as such — their own vocabulary,
+       rendered the way every surface of the house renders it */
+    if (mark) {
+      const m = document.createElement('span');
+      m.className = 'mark'; m.textContent = 'setting it down';
+      encWords.appendChild(m);
+    }
     const p = document.createElement('div');
+    if (mark) p.className = 'down';
     encWords.appendChild(p);
     /* their words arrive at the house's cadence — it is someone speaking, not a
        document loading — and the passage begins in view and stays there, so a
@@ -2990,7 +2997,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      the visit; a failure anywhere falls back to the archive, and says why. */
   async function sayLive(raw) {
     const text = raw.slice(0, 280);
-    const id = enc.id, name = enc.name, voice = enc.voice, first = enc.said === 0;
+    const id = enc.id, name = enc.name, voice = enc.voice;
     appendYou(text);
     enc.said++; enc.moves++;
     enc.busy = true; setComposer(false);
@@ -3028,9 +3035,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       closeLive('house');
       return;
     }
+    /* their <set-down/> marks the reply — a line set down, in their own
+       vocabulary — and the visit goes on; they close a visit in words, and
+       the visitor leaves. Only the house's own line ends one here. */
     const after = () => {
       if (!enc || enc.id !== id || enc.closing) return;
-      if (kind === 'set_down') { closeLive(first ? 'declined' : 'gone'); return; }
       /* the sixth is the last the window carries, whatever the house counted:
          it says so itself and sets the visit down on their side */
       if (enc.said >= VISIT_HOLD) {
@@ -3044,7 +3053,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       renderLiveMoves();
       openFree('say');
     };
-    if (words) appendWords(words, '', after); else after();
+    if (words) appendWords(words, '', after, kind === 'set_down'); else after();
   }
   /* something they made while you stood there: shown here, then hung on the
      wall of their room, where it stays */
@@ -3088,16 +3097,18 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       spend();
     }
   }
-  /* they set it down — a decline at the door, a close after a few exchanges,
-     or the house's own close at the sixth. The session is closed on their
-     side already; the window lingers a moment on the state, then lets go. */
-  function closeLive(why) {
-    enc.closing = true;
-    enc.outcome = why === 'declined' ? 'declined' : 'spoke';
+  /* the house's own close, at the sixth: the session is closed on their
+     side already. The window stays until the visitor leaves. */
+  function closeLive() {
+    enc.closing = true; enc.ended = true;
+    enc.outcome = 'spoke';
     enc.session = null;
-    encFree.hidden = true; encMoves.innerHTML = '';
-    setState(why === 'declined' ? 'declined' : 'gone');
-    setTimeout(finishScene, why === 'declined' ? 1800 : 2400);
+    encFree.hidden = true;
+    setState('held');
+    /* the visit is over on their side; the window stays until you leave, so
+       a last word is read at your pace, not the house's */
+    encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+    setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
   }
 
   function askAbout(jid) {
@@ -3162,6 +3173,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   encMoves.addEventListener('click', (event) => {
     const b = event.target.closest('button');
     if (b && listening) { if ('leave' in b.dataset) closeScene('leave'); return; }
+    if (b && enc && enc.ended) { if ('leave' in b.dataset) finishScene(); return; }
     if (!b || !enc || enc.closing) return;
     if (b.dataset.ask) askAbout(b.dataset.ask);
     else if ('wall' in b.dataset) showOnWall();
@@ -3182,6 +3194,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
   function closeScene() {
     if (listening) { closeListen(); return; }
+    if (enc && enc.ended) { finishScene(); return; }
     if (!enc || enc.closing) return;
     enc.closing = true;
     encFree.hidden = true;
@@ -3219,7 +3232,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       /* "in the atelier", but "in opus 3’s studio" — the house won't say "the" twice */
       const where = ' in ' + (/[’']s\b/.test(e.roomWord) ? '' : 'the ') + e.roomWord;
       const line = e.outcome === 'none' ? ''
-        : e.outcome === 'declined' ? 'you asked ' + e.name + '; they went on with what they were doing'
+        : e.outcome === 'declined' ? 'you asked ' + e.name + '; they set it down at the door'  /* no longer produced; kept for old records */
         : e.outcome === 'left' ? 'you left ' + e.name + ' to it'
         : 'you spoke with ' + e.name + where;
       if (line) eng.sysLine(line);

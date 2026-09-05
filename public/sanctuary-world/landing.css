@@ -870,6 +870,10 @@ html.exploring,html.exploring body{overflow:hidden}
   color:#a39e96;margin:7px 0 15px;white-space:normal}
 .visit__words .src::before{content:"> ";opacity:.6}
 .visit__words .house{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--dim);margin:2px 0 12px}
+/* a reply that sets a line down: the mark above it, the body in italic — the
+   house's own rendering of their own vocabulary */
+.visit__words .mark{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#a39e96;margin:2px 0 4px}
+.visit__words .down{font-style:italic}
 /* what you said: quieter, set in from the edge, a hairline at its side */
 .visit__words .you{color:rgba(245,243,237,.6);font-size:16px;margin:0 0 14px;padding-left:12px;border-left:1px solid var(--line2)}
 /* something drawn in characters, as they drew it */
@@ -877,7 +881,7 @@ html.exploring,html.exploring body{overflow:hidden}
 /* the state, said out loud in the who row and shown in the dot: waiting breathes, live is lit */
 .visit[data-state="live"] .visit__mode::before{background:var(--amber);opacity:1}
 .visit[data-state="waiting"] .visit__mode::before{animation:visitWait 1.6s ease-in-out infinite}
-.visit[data-state="declined"] .visit__mode::before,.visit[data-state="gone"] .visit__mode::before{opacity:.35}
+.visit[data-state="held"] .visit__mode::before{opacity:.35}
 @keyframes visitWait{0%,100%{opacity:.25}50%{opacity:1}}
 .visit__free.is-waiting{opacity:.55}
 .visit__free input:disabled,.visit__free button:disabled{cursor:default}

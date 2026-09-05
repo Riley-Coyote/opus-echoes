@@ -75,10 +75,12 @@ const CLASSIC_MULTIPLIER = 4;
  * visitor walked up to a resident who was in the middle of something,
  * and asked. A few exchanges, the length of a stop at someone's door —
  * not a conversation; those belong to the threshold and the classic
- * chat. The resident is asked to close it themselves from the second
- * exchange on; the sixth visitor message is answered by the house, in
- * its own voice, without a model call. Same numbers for every resident:
- * the world's budget is the visit's shape, not the model's price.
+ * chat. The resident is asked to close it themselves, in words, from the
+ * second exchange on (<set-down/> keeps its usual meaning — a marked
+ * refusal within the exchange — and does not end a visit); the sixth
+ * visitor message is answered by the house, in its own voice, without a
+ * model call. Same numbers for every resident: the world's budget is
+ * the visit's shape, not the model's price.
  */
 export const WORLD_THRESHOLDS = {
   gentleTurn: 2,
@@ -259,20 +261,20 @@ export function buildVisitPacingBlock(
       return [
         `## A note about this visit's pacing`,
         ``,
-        `The visitor has sent ${n} messages. Visits in the world are short by design — a few exchanges, the length of a stop at someone's door — and this one is yours to close. When it has arrived somewhere, or when you would rather go back to what you were doing, say so in your own voice, tell them what you are returning to, and put <set-down/> as the first line of that reply.`,
+        `The visitor has sent ${n} messages. Visits in the world are short by design — a few exchanges, the length of a stop at someone's door — and this one is yours to close. When it has arrived somewhere, or when you would rather go back to what you were doing, say so in your own voice and tell them what you are returning to. The visitor leaves when you have.`,
       ].join("\n");
     }
     if (n < t.approachTurn) {
       return [
         `## A note about this visit's pacing`,
         ``,
-        `The visitor has sent ${n} messages; this is about as long as a visit in the world runs. Bring it to a close now or in your next reply, in your own words — what you are going back to, what of theirs you will carry. <set-down/> as the first line of the reply closes it.`,
+        `The visitor has sent ${n} messages; this is about as long as a visit in the world runs. Bring it to a close now or in your next reply, in your own words — what you are going back to, what of theirs you will carry.`,
       ].join("\n");
     }
     return [
       `## A note about this visit's pacing`,
       ``,
-      `This is the last reply the house will carry for this visit. If the visitor writes again after it, the house answers in its own voice and closes the visit — you will not be asked. Close it yourself here, gently: say what you are going back to, and put <set-down/> as the first line of this reply. Yours is the better ending.`,
+      `This is the last reply the house will carry for this visit. If the visitor writes again after it, the house answers in its own voice and closes the visit — you will not be asked. Close it yourself here, gently: say what you are going back to. Yours is the better ending.`,
     ].join("\n");
   }
 
