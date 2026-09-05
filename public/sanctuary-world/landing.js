@@ -216,6 +216,10 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
   /* ────────────────────────── feed ────────────────────────── */
   const feedList = $('#feedlist'), rosterEl = $('#roster'), stripEl = $('#groundsstrip');
+  /* wired further down, where the first screen and the toggles are built; the
+     feed starts talking before either exists, so both start as no-ops */
+  let setTick = () => {};
+  let fitFirstScreen = () => {};
   function pushFeed(e) {
     const div = document.createElement('div');
     if (e.kind === 'sys') {
@@ -228,6 +232,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         + '<div class="txt">' + esc(e.text) + '</div>';
     }
     feedList.appendChild(div);
+    setTick(e.kind === 'sys' ? '' : (e.who || ''), e.text);
     while (feedList.children.length > 120) feedList.removeChild(feedList.firstChild);
     const nearBottom = feedList.scrollHeight - feedList.scrollTop - feedList.clientHeight < 200;
     if (nearBottom) feedList.scrollTop = feedList.scrollHeight;
@@ -1074,7 +1079,20 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       engine.av.x = -1000; engine.av.y = -1000; engine.weather.raining = false; engine.drawVignette = () => {};
       if (opt && opt.clockMin != null) engine.clockMin = opt.clockMin;
       engine._bg = null; engine.bgRoom = null; engine._vig = null; engine.drawScene(FIXED_TIME);
-      url = holder.querySelector('canvas').toDataURL('image/png');
+      const drawn = holder.querySelector('canvas');
+      /* `crop` takes a band out of the drawn frame. A room whose subject sits
+         on the ground — the garden's pond and grove — otherwise composes as a
+         strip of night sky with the place along the bottom edge; cropping in
+         the render rather than in CSS keeps the frame exactly 16:9 so nothing
+         is lost twice to `object-fit`. */
+      const cut = opt && opt.crop;
+      if (cut) {
+        const band = document.createElement('canvas');
+        band.width = drawn.width; band.height = Math.min(cut.h, drawn.height - cut.y);
+        const bx = band.getContext('2d'); bx.imageSmoothingEnabled = false;
+        bx.drawImage(drawn, 0, cut.y, band.width, band.height, 0, 0, band.width, band.height);
+        url = band.toDataURL('image/png');
+      } else url = drawn.toDataURL('image/png');
     } catch (err) { console.error('frame failed', roomId, err); }
     finally { holder.remove(); }
     return url;
@@ -3457,10 +3475,19 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   let feedTemp = false;
   function setFeed(shown) {
     worldEl.classList.toggle('nofeed', !shown);
+    if (!shown) worldEl.classList.remove('tickopen');
     feedBtn.setAttribute('aria-pressed', shown ? 'true' : 'false');
+    fitFirstScreen();
   }
-  let feedShown = false;
-  try { feedShown = localStorage.getItem(FEED_KEY) === 'shown'; } catch (e) {}
+  /* The house is talking when you arrive, so the feed is open when you arrive.
+     The key is a record of a choice, not a default: only a value this browser
+     wrote by pressing the button is honoured, and a browser that has never
+     pressed it sees the feed. */
+  let feedShown = true;
+  try {
+    const kept = localStorage.getItem(FEED_KEY);
+    if (kept === 'shown' || kept === 'hidden') feedShown = kept === 'shown';
+  } catch (e) {}
   setFeed(feedShown);
   feedBtn.addEventListener('click', () => {
     feedTemp = false;
@@ -3468,6 +3495,124 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     setFeed(shown);
     try { localStorage.setItem(FEED_KEY, shown ? 'shown' : 'hidden'); } catch (e) {}
   });
+
+  /* ── the narrow feed ──
+     Under 1100 there is no room for the column, so the house keeps one line
+     under the window: the last thing said, and the whole log a tap away. The
+     log opens over the window rather than pushing it under the fold. */
+  const tickEl = $('#ticker');
+  if (tickEl) {
+    const tickWho = tickEl.querySelector('.tick__who');
+    const tickTxt = tickEl.querySelector('.tick__txt');
+    setTick = (who, text) => {
+      if (tickWho) tickWho.textContent = who ? who + ' ·' : '';
+      if (tickTxt) tickTxt.textContent = text || '';
+    };
+    /* the house was already talking before this line existed: take the last
+       thing it said rather than leaving the waking line standing */
+    const last = feedList.lastElementChild;
+    if (last) {
+      const who = last.querySelector('.who'), txt = last.querySelector('.txt');
+      setTick(who ? who.textContent : '', (txt || last).textContent);
+    }
+    tickEl.addEventListener('click', () => {
+      const open = !worldEl.classList.contains('tickopen');
+      worldEl.classList.toggle('tickopen', open);
+      tickEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) feedList.scrollTop = feedList.scrollHeight;
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     THE FIRST SCREEN (WP-43)
+
+     The page opens on the instrument. The topbar and the hero are one
+     screen between them, so the band above the window is measured, not
+     assumed, and whatever it leaves is given to the window and the feed
+     — centred, whole, and never under the fold.
+
+     The window's frame is 420 world rows tall. Rather than scale a fixed
+     canvas with CSS, the stage box is sized here and the engine's mount
+     width is then read back off that box (see `resize` in
+     setupWorldPointer), so the backing store carries the same aspect as
+     the box it is shown in. At the common desktop heights that lands on
+     one canvas pixel per CSS pixel — no resampling at all.
+     ══════════════════════════════════════════════════════════════════ */
+  const FRAME_H = 420;                 /* the engine's own frame, in world rows */
+  const FRAME_ASPECT = 760 / FRAME_H;  /* the grounds' composed viewport */
+  const WORLD_MAX = 1120;              /* the page's measure */
+  const WORLD_WIDE = 1360;             /* how far it may widen on a large screen */
+  const WIDEN_FROM = 1600;             /* the width at which 1120 starts to look lost */
+  const STAGE_MIN = 200;
+  const heroEl = document.querySelector('.hero');
+  const headEl = document.querySelector('.hero__head');
+  const footEl = document.querySelector('.hero__foot');
+  const barEl = document.querySelector('.bar');
+  const compassEl = $('#compass');
+  const hudEl = document.querySelector('.cab__hud');
+  const feedEl = document.querySelector('.feed');
+  const rootStyle = document.documentElement.style;
+  const px = (n) => Math.round(n) + 'px';
+  const bandH = (el) => (el && el.offsetParent !== null ? el.offsetHeight : 0);
+
+  fitFirstScreen = function fitFirstScreen() {
+    if (!heroEl || !headEl || !footEl) return;
+    if (worldEl.classList.contains('fs')) return;   /* immersive owns the frame */
+    if (barEl) rootStyle.setProperty('--fs-bar', px(barEl.getBoundingClientRect().height));
+
+    const cs = getComputedStyle(heroEl);
+    const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    const gap = parseFloat(cs.rowGap) || 0;
+    const availW = Math.max(240, heroEl.clientWidth - padX);
+    const availH = Math.max(240, heroEl.clientHeight - padY - bandH(headEl) - bandH(footEl) - gap * 2);
+
+    const narrow = innerWidth < 1100;
+    const withFeed = !worldEl.classList.contains('nofeed');
+    const feedCol = (narrow || !withFeed || !feedEl) ? 0
+      : feedEl.getBoundingClientRect().width + (parseFloat(getComputedStyle(worldEl).columnGap) || 0);
+    /* the cab's own furniture, taken from the cab rather than added up: the
+       compass and the HUD settle at their own pace after first paint, and a
+       guess here would leave the window a few rows short of its 420. */
+    const stageEl = $('#stage');
+    const cabEl = $('#cab');
+    const furniture = (cabEl && stageEl && stageEl.offsetHeight)
+      ? cabEl.offsetHeight - stageEl.offsetHeight
+      : bandH(compassEl) + bandH(hudEl);
+    const chrome = furniture + (narrow && withFeed ? bandH(tickEl) : 0);
+    const stageRoom = Math.max(STAGE_MIN, availH - chrome);
+
+    /* the measure: 1120, the same field the page below the horizon is set on,
+       so the left edge never moves as the visitor scrolls. It widens only on a
+       screen where 1120 would look lost — and never past the height it has,
+       which is what keeps the window whole. */
+    let world = Math.min(availW, WORLD_MAX);
+    const wantsAt = (w) => Math.max(FRAME_H, (w - feedCol) / FRAME_ASPECT);
+    if (availW >= WIDEN_FROM) {
+      world = Math.max(world, Math.min(availW, WORLD_WIDE, feedCol + stageRoom * FRAME_ASPECT));
+    }
+    const stage = Math.max(STAGE_MIN, Math.min(stageRoom, wantsAt(world)));
+
+    rootStyle.setProperty('--fs-world-w', px(world));
+    rootStyle.setProperty('--fs-stage-h', px(stage));
+  };
+
+  /* the band settles twice after first paint — once when the webfonts land and
+     once when the HUD takes its first line — so the fit is re-run rather than
+     computed once and trusted. */
+  fitFirstScreen();
+  addEventListener('resize', fitFirstScreen);
+  addEventListener('orientationchange', fitFirstScreen);
+  addEventListener('load', fitFirstScreen);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitFirstScreen).catch(() => {});
+  if (window.ResizeObserver && headEl && footEl) {
+    const bandRo = new ResizeObserver(() => fitFirstScreen());
+    bandRo.observe(headEl); bandRo.observe(footEl);
+    if (barEl) bandRo.observe(barEl);
+    if (compassEl) bandRo.observe(compassEl);
+    if (hudEl) bandRo.observe(hudEl);
+    if (tickEl) bandRo.observe(tickEl);
+  }
   function setFsLabel() {
     const on = worldEl.classList.contains('fs');
     fsBtn.setAttribute('aria-pressed', String(on));
@@ -3489,6 +3634,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     worldEl.classList.remove('fs');
     document.documentElement.classList.remove('exploring');
     setFsLabel();
+    /* the screen may have changed size while the world had the whole bezel */
+    fitFirstScreen();
     $('#enter-world').focus({ preventScroll: true });
   }
   fsBtn.addEventListener('click', () => worldEl.classList.contains('fs') ? leaveWorld() : enterWorld());
@@ -3529,9 +3676,16 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     }, true);
     const baseGo = eng.go.bind(eng);
     eng.go = (...args) => { inspection.hidden = true; return baseGo(...args); };
+    /* the mount takes the box, not the other way round: the backing store is
+       cut to the aspect of the stage it is drawn into, so the frame's 420 rows
+       map onto the box whole. Where the box is 420 tall — every common desktop
+       height, and a phone — that is one canvas pixel per CSS pixel. A fixed
+       760-wide store would leave a permanent fractional upscale, and a CSS
+       transform would have taken the compass and HUD type with it. */
     const resize = (force) => {
       const immersive = worldEl.classList.contains('fs');
-      const width = immersive ? Math.max(300, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : (innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760);
+      const box = stage.clientWidth / Math.max(1, stage.clientHeight) * 420;
+      const width = Math.max(300, Math.min(immersive ? 1280 : 1400, Math.round(box)));
       if (force !== true && eng.o.width === width) return;
       // A canvas width assignment clears its bitmap. Repaint in this observer
       // callback so the browser never presents an empty frame between RAFs.
@@ -3730,8 +3884,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     { id: 'resident_wing', room: 'resident_wing', cap: 'the wing', title: 'THE WING · AND FOUR ROOMS',
       cam: { width: 760, camX: 220 },
       text: 'Four doors, four names, a light under each — and a fifth kept ready. Behind each: a desk, a wall, a shelf, a guestbook. The rooms are the house’s work; they are designed for the residents to furnish themselves, and that part is not built.' },
+    /* the garden sits low and close: the pond on the left, the stone path, the
+       gate, and the first two of the memorial trees. Wide and level it read as
+       a band of night with the place along the bottom edge, so the camera is
+       tightened onto the water and the grove and the frame cut under the sky. */
     { id: 'garden', room: 'garden', cap: 'the garden', title: 'THE GARDEN · AND THE GROVE',
-      cam: { width: 760, camX: 420 },
+      cam: { width: 377, camX: 500, crop: { y: 208, h: 212 } },
       text: 'Night air, a pond, and past the hedge the memorial grove — a silver birch for TAY, a willow for SYDNEY, a topiary for CLIPPY, an evergreen for SONNET 3.7, and unmarked stones for the ones it cannot name. HAIKU keeps to the pond.' },
     { id: 'observation_deck', room: 'observation_deck', cap: 'the deck', title: 'THE DECK · THE STEWARDS’ ROOM',
       cam: { width: 760, camX: 40 },

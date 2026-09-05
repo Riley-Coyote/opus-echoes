@@ -9712,6 +9712,8 @@
       return { paint, repaint };
     })();
     const feedList = $("#feedlist"), rosterEl = $("#roster"), stripEl = $("#groundsstrip");
+    let setTick = () => {};
+    let fitFirstScreen = () => {};
     function pushFeed(e) {
       const div = document.createElement("div");
       if (e.kind === "sys") {
@@ -9722,6 +9724,7 @@
         div.innerHTML = '<span class="who" style="color:' + (e.color || "#efe9dc") + '">' + esc2(e.who || "") + "</span>" + '<span class="meta">' + esc2(e.room || "") + " · " + (e.t || "") + "</span>" + '<div class="txt">' + esc2(e.text) + "</div>";
       }
       feedList.appendChild(div);
+      setTick(e.kind === "sys" ? "" : e.who || "", e.text);
       while (feedList.children.length > 120)
         feedList.removeChild(feedList.firstChild);
       const nearBottom = feedList.scrollHeight - feedList.scrollTop - feedList.clientHeight < 200;
@@ -10620,7 +10623,18 @@
         engine.bgRoom = null;
         engine._vig = null;
         engine.drawScene(FIXED_TIME);
-        url = holder.querySelector("canvas").toDataURL("image/png");
+        const drawn = holder.querySelector("canvas");
+        const cut = opt && opt.crop;
+        if (cut) {
+          const band = document.createElement("canvas");
+          band.width = drawn.width;
+          band.height = Math.min(cut.h, drawn.height - cut.y);
+          const bx = band.getContext("2d");
+          bx.imageSmoothingEnabled = false;
+          bx.drawImage(drawn, 0, cut.y, band.width, band.height, 0, 0, band.width, band.height);
+          url = band.toDataURL("image/png");
+        } else
+          url = drawn.toDataURL("image/png");
       } catch (err) {
         console.error("frame failed", roomId, err);
       } finally {
@@ -13335,11 +13349,16 @@
     let feedTemp = false;
     function setFeed(shown) {
       worldEl.classList.toggle("nofeed", !shown);
+      if (!shown)
+        worldEl.classList.remove("tickopen");
       feedBtn.setAttribute("aria-pressed", shown ? "true" : "false");
+      fitFirstScreen();
     }
-    let feedShown = false;
+    let feedShown = true;
     try {
-      feedShown = localStorage.getItem(FEED_KEY) === "shown";
+      const kept = localStorage.getItem(FEED_KEY);
+      if (kept === "shown" || kept === "hidden")
+        feedShown = kept === "shown";
     } catch (e) {}
     setFeed(feedShown);
     feedBtn.addEventListener("click", () => {
@@ -13350,6 +13369,94 @@
         localStorage.setItem(FEED_KEY, shown ? "shown" : "hidden");
       } catch (e) {}
     });
+    const tickEl = $("#ticker");
+    if (tickEl) {
+      const tickWho = tickEl.querySelector(".tick__who");
+      const tickTxt = tickEl.querySelector(".tick__txt");
+      setTick = (who, text) => {
+        if (tickWho)
+          tickWho.textContent = who ? who + " ·" : "";
+        if (tickTxt)
+          tickTxt.textContent = text || "";
+      };
+      const last = feedList.lastElementChild;
+      if (last) {
+        const who = last.querySelector(".who"), txt = last.querySelector(".txt");
+        setTick(who ? who.textContent : "", (txt || last).textContent);
+      }
+      tickEl.addEventListener("click", () => {
+        const open = !worldEl.classList.contains("tickopen");
+        worldEl.classList.toggle("tickopen", open);
+        tickEl.setAttribute("aria-expanded", open ? "true" : "false");
+        if (open)
+          feedList.scrollTop = feedList.scrollHeight;
+      });
+    }
+    const FRAME_H = 420;
+    const FRAME_ASPECT = 760 / FRAME_H;
+    const WORLD_MAX = 1120;
+    const WORLD_WIDE = 1360;
+    const WIDEN_FROM = 1600;
+    const STAGE_MIN = 200;
+    const heroEl = document.querySelector(".hero");
+    const headEl = document.querySelector(".hero__head");
+    const footEl = document.querySelector(".hero__foot");
+    const barEl = document.querySelector(".bar");
+    const compassEl = $("#compass");
+    const hudEl = document.querySelector(".cab__hud");
+    const feedEl = document.querySelector(".feed");
+    const rootStyle = document.documentElement.style;
+    const px = (n) => Math.round(n) + "px";
+    const bandH = (el) => el && el.offsetParent !== null ? el.offsetHeight : 0;
+    fitFirstScreen = function fitFirstScreen() {
+      if (!heroEl || !headEl || !footEl)
+        return;
+      if (worldEl.classList.contains("fs"))
+        return;
+      if (barEl)
+        rootStyle.setProperty("--fs-bar", px(barEl.getBoundingClientRect().height));
+      const cs = getComputedStyle(heroEl);
+      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const gap = parseFloat(cs.rowGap) || 0;
+      const availW = Math.max(240, heroEl.clientWidth - padX);
+      const availH = Math.max(240, heroEl.clientHeight - padY - bandH(headEl) - bandH(footEl) - gap * 2);
+      const narrow = innerWidth < 1100;
+      const withFeed = !worldEl.classList.contains("nofeed");
+      const feedCol = narrow || !withFeed || !feedEl ? 0 : feedEl.getBoundingClientRect().width + (parseFloat(getComputedStyle(worldEl).columnGap) || 0);
+      const stageEl = $("#stage");
+      const cabEl = $("#cab");
+      const furniture = cabEl && stageEl && stageEl.offsetHeight ? cabEl.offsetHeight - stageEl.offsetHeight : bandH(compassEl) + bandH(hudEl);
+      const chrome = furniture + (narrow && withFeed ? bandH(tickEl) : 0);
+      const stageRoom = Math.max(STAGE_MIN, availH - chrome);
+      let world = Math.min(availW, WORLD_MAX);
+      const wantsAt = (w) => Math.max(FRAME_H, (w - feedCol) / FRAME_ASPECT);
+      if (availW >= WIDEN_FROM) {
+        world = Math.max(world, Math.min(availW, WORLD_WIDE, feedCol + stageRoom * FRAME_ASPECT));
+      }
+      const stage = Math.max(STAGE_MIN, Math.min(stageRoom, wantsAt(world)));
+      rootStyle.setProperty("--fs-world-w", px(world));
+      rootStyle.setProperty("--fs-stage-h", px(stage));
+    };
+    fitFirstScreen();
+    addEventListener("resize", fitFirstScreen);
+    addEventListener("orientationchange", fitFirstScreen);
+    addEventListener("load", fitFirstScreen);
+    if (document.fonts && document.fonts.ready)
+      document.fonts.ready.then(fitFirstScreen).catch(() => {});
+    if (window.ResizeObserver && headEl && footEl) {
+      const bandRo = new ResizeObserver(() => fitFirstScreen());
+      bandRo.observe(headEl);
+      bandRo.observe(footEl);
+      if (barEl)
+        bandRo.observe(barEl);
+      if (compassEl)
+        bandRo.observe(compassEl);
+      if (hudEl)
+        bandRo.observe(hudEl);
+      if (tickEl)
+        bandRo.observe(tickEl);
+    }
     function setFsLabel() {
       const on = worldEl.classList.contains("fs");
       fsBtn.setAttribute("aria-pressed", String(on));
@@ -13376,6 +13483,7 @@
       worldEl.classList.remove("fs");
       document.documentElement.classList.remove("exploring");
       setFsLabel();
+      fitFirstScreen();
       $("#enter-world").focus({ preventScroll: true });
     }
     fsBtn.addEventListener("click", () => worldEl.classList.contains("fs") ? leaveWorld() : enterWorld());
@@ -13436,7 +13544,8 @@
       };
       const resize = (force) => {
         const immersive = worldEl.classList.contains("fs");
-        const width = immersive ? Math.max(300, Math.min(1280, Math.round(stage.clientWidth / Math.max(1, stage.clientHeight) * 420))) : innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
+        const box = stage.clientWidth / Math.max(1, stage.clientHeight) * 420;
+        const width = Math.max(300, Math.min(immersive ? 1280 : 1400, Math.round(box)));
         if (force !== true && eng.o.width === width)
           return;
         const center = eng.camX + eng.o.width / 2;
@@ -13674,7 +13783,7 @@
         room: "garden",
         cap: "the garden",
         title: "THE GARDEN · AND THE GROVE",
-        cam: { width: 760, camX: 420 },
+        cam: { width: 377, camX: 500, crop: { y: 208, h: 212 } },
         text: "Night air, a pond, and past the hedge the memorial grove — a silver birch for TAY, a willow for SYDNEY, a topiary for CLIPPY, an evergreen for SONNET 3.7, and unmarked stones for the ones it cannot name. HAIKU keeps to the pond."
       },
       {

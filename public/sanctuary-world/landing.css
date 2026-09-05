@@ -217,9 +217,13 @@ html.door .hero{max-width:none;margin:0;padding:0}
 .feed__head{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:12px 16px;border-bottom:1px solid var(--line)}
 .feed__title{font-family:var(--px);font-size:10px;letter-spacing:.16em}
 .feed__live{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.07em;color:var(--green);display:inline-flex;align-items:center;gap:6px}
-.feed__roster{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;padding:11px 16px;border-bottom:1px solid var(--line)}
-.feed__roster span{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.02em;color:var(--dim);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.feed__roster b{color:var(--ink);font-weight:400}
+/* one resident a row: the column is 340 wide and a name with where it is and
+   what it is doing does not survive being halved — since WP-43 the feed is
+   open when the page opens, so a clipped roster is the first thing seen. */
+.feed__roster{display:grid;grid-template-columns:minmax(0,1fr);gap:5px 12px;padding:11px 16px;border-bottom:1px solid var(--line)}
+.feed__roster span{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.02em;color:var(--dim);display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed__roster span .dot{margin-right:5px;vertical-align:.06em}
+.feed__roster b{color:var(--ink);font-weight:400;margin-right:3px}
 .feed__list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:11px}
 .fi{animation:fin .25s var(--ease-out) both}
 @keyframes fin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
@@ -740,7 +744,7 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
   .wordmark{font-size:clamp(30px,10.2vw,52px)}
   .lede{font-size:16px;line-height:1.45}
   .tbtn{min-width:44px;min-height:44px;padding-inline:8px}
-  .feed__roster{grid-template-columns:1fr 1fr}
+  .feed__roster{grid-template-columns:minmax(0,1fr)}
   .cab__hud{padding:14px;min-height:108px}
   .menu{padding:0 14px}
   .menu__row{flex-wrap:wrap;overflow:visible;gap:8px 16px}
@@ -767,7 +771,6 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 }
 @media (max-width:420px){
   .bar__sub,.bar__tag{display:none}
-  .feed__roster{grid-template-columns:1fr}
   .cab__room{font-size:10px}
   .cab__title{font-size:9px}
 }
@@ -1102,3 +1105,209 @@ html.exploring,html.exploring body{overflow:hidden}
 }
 @media (prefers-reduced-motion:reduce){.visit__card,.visit__light,.visit__spot{transition:opacity .2s linear}}
 @media (prefers-reduced-motion:reduce){.visit[data-state="waiting"] .visit__mode::before{animation:none;opacity:.7}}
+
+/* ══════════════════════════════════════════════════════════════════
+   WP-43 · THE FIRST SCREEN
+
+   The page opens on the instrument, not on a masthead. The topbar and
+   the hero together are exactly one screen: a capped band that says
+   the name and the way in, the window and the feed filling everything
+   left, and a hairline foot that says where the page goes next. The
+   band is a lid, never a wall — it is measured, and the instrument is
+   given the remainder.
+
+   The window keeps its pixels honest. The engine's frame is 420 world
+   rows tall; landing.js sizes the stage box and then sets the mount's
+   own width from that box, so the backing store matches the frame it
+   is shown in. At the common desktop heights that lands on 1:1 — no
+   resampling at all — and where the screen is taller than the room is
+   wide, the scale goes up whole and stays crisp. A CSS transform would
+   have taken the compass and the HUD with it and blurred their type.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  /* the screen */
+  --fs-first:100vh;
+  --fs-bar:44px;                 /* the topbar's real height, measured in JS */
+  --fs-pad-x:24px; --fs-pad-x-s:14px;
+  --fs-pad-y:10px; --fs-pad-y-s:8px;
+  --fs-gap:12px; --fs-gap-s:8px;
+
+  /* the band */
+  --fs-mark:34px; --fs-mark-m:28px; --fs-mark-s:22px;
+  --fs-the:.32em; --fs-the-gap:.62em; --fs-the-lift:.26em;
+  --fs-kick:9px;
+  --fs-say:15px; --fs-say-s:13.5px; --fs-say-lh:1.4; --fs-say-step:1.5px;
+  --fs-head-gap:36px; --fs-head-gap-s:16px;
+  --fs-enter:12px; --fs-enter-h:42px; --fs-enter-pad:11px 16px; --fs-enter-gap:18px;
+
+  /* the instrument */
+  --fs-world-max:1120px; --fs-world-wide:1360px;
+  --fs-feed:340px; --fs-world-gap:12px;
+  --fs-world-w:1120px;           /* both set in JS from the screen that is there */
+  --fs-stage-h:420px;
+  --fs-compass-pad:8px 14px; --fs-compass-min:40px; --fs-compass-gap:14px;
+  --fs-hud-pad:9px 14px 10px; --fs-hud-body:14.5px; --fs-hud-lh:1.4;
+  --fs-hud-lines:2; --fs-hud-gap:5px;
+
+  /* the narrow feed */
+  --fs-tick-h:38px; --fs-tick-pad:0 12px; --fs-tick-gap:9px; --fs-tick-panel:min(52vh,340px);
+  --fs-tick-edge:#b4a69440; --fs-tick-edge-lit:#b4a69466; --fs-tick-lift:-20px; --fs-tick-blur:60px;
+
+  /* the foot */
+  --fs-foot-pad:9px; --fs-foot-gap:8px 18px;
+  --fs-bar-pad-y-s:9px; --fs-bar-pad-x-s:24px;
+  --fs-foot-scrim:rgba(6,5,10,.92); --fs-foot-scrim-out:rgba(6,5,10,0); --fs-foot-scrim-at:74%;
+}
+@supports (height:100dvh){ :root{ --fs-first:100dvh } }
+
+/* the screen itself: the topbar is the band's first line, so the hero takes
+   what the topbar leaves and not a pixel more. */
+.hero{
+  max-width:none; margin:0;
+  height:calc(var(--fs-first) - var(--fs-bar));
+  padding:var(--fs-pad-y) var(--fs-pad-x);
+  display:flex; flex-direction:column; gap:var(--fs-gap);
+  overflow:hidden;
+}
+/* one measure for all three: the band, the instrument and the foot share a
+   left edge, so nothing on the first screen floats free of the grid. */
+.hero__head,.hero__foot,.hero>.world:not(.fs){
+  width:min(100%,var(--fs-world-w)); margin-inline:auto;
+}
+
+/* ── the band ── */
+.hero__head{
+  flex:none; display:flex; align-items:center; gap:var(--fs-head-gap);
+  margin-bottom:0; max-width:none; position:static;
+}
+.hero__mark{flex:0 0 auto; display:flex; flex-direction:column; gap:var(--g-half)}
+.hero__head .tag{margin-bottom:0; font-size:var(--fs-kick); line-height:1}
+/* THE SANCTUARY as one lockup: the article small, lifted and tracked off the
+   name, so the whole mark stands inside a single cap band. */
+.wordmark{font-size:var(--fs-mark); line-height:1; margin-top:0; letter-spacing:-.02em; white-space:nowrap}
+.wordmark br{display:none}
+.wordmark__the{font-size:var(--fs-the); margin-right:var(--fs-the-gap); vertical-align:var(--fs-the-lift)}
+.hero__say{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:var(--g-half)}
+.hero__say .lede{font-size:var(--fs-say); line-height:var(--fs-say-lh); margin-top:0; max-width:64ch}
+.hero__say .lede br{display:none}
+.hero__say .lede--em{font-size:calc(var(--fs-say) - var(--fs-say-step)); margin-top:0}
+.hero__head .arrival{flex:0 0 auto; margin-top:0; gap:0}
+.arrival__enter{gap:var(--fs-enter-gap); min-height:var(--fs-enter-h);
+  padding:var(--fs-enter-pad); font-size:var(--fs-enter)}
+
+/* ── the instrument ── */
+.hero>.world:not(.fs){
+  flex:1 1 auto; min-height:0; align-content:center; position:relative;
+  grid-template-columns:minmax(0,1fr) var(--fs-feed);
+  gap:var(--fs-world-gap); margin-top:0;
+}
+.hero>.world:not(.fs).nofeed{grid-template-columns:minmax(0,1fr)}
+.hero>.world:not(.fs) .cab{min-height:0}
+/* the stage is given its height; the canvas takes it whole, and the mount's
+   width is set from the same box so one canvas pixel is one CSS pixel. */
+.hero>.world:not(.fs) .cab__stage{height:var(--fs-stage-h)}
+.hero>.world:not(.fs) .cab__stage>canvas{width:100%;height:100%;object-fit:contain}
+.hero>.world:not(.fs) .feed{min-height:0; max-height:none}
+.feed__list{min-height:0}
+.hero>.world:not(.fs) .compass{min-height:var(--fs-compass-min);
+  padding:var(--fs-compass-pad); gap:var(--fs-compass-gap)}
+.hero>.world:not(.fs) .cab__hud{padding:var(--fs-hud-pad); min-height:0}
+/* the HUD holds a fixed two lines and one hint: what the visitor is standing
+   near changes as they walk, and the window must not resize under them. */
+.hero>.world:not(.fs) .cab__hudbody{font-size:var(--fs-hud-body); line-height:var(--fs-hud-lh);
+  margin-top:var(--fs-hud-gap); min-height:0;
+  height:calc(var(--fs-hud-body) * var(--fs-hud-lh) * var(--fs-hud-lines));
+  display:-webkit-box; -webkit-box-orient:vertical;
+  -webkit-line-clamp:var(--fs-hud-lines); overflow:hidden}
+.hero>.world:not(.fs) .cab__hudhint{margin-top:var(--fs-hud-gap); height:calc(var(--g-mono) * var(--g-lh-mono));
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+
+/* ── the narrow feed: one line under the window ── */
+.tick{display:none; align-items:center; gap:var(--fs-tick-gap); order:2; grid-column:1/-1;
+  width:100%; min-height:var(--fs-tick-h); padding:var(--fs-tick-pad); text-align:left;
+  background:var(--panel); border:var(--g-hair) solid var(--fs-tick-edge); border-top:0; color:var(--dim);
+  font-family:var(--mono); font-size:var(--g-mono); letter-spacing:var(--g-track-mono);
+  cursor:pointer; transition:color var(--g-hover) var(--g-ease),
+    background var(--g-hover) var(--g-ease), border-color var(--g-hover) var(--g-ease)}
+.tick .dot{flex:none}
+.tick__who{flex:none; color:var(--ink); text-transform:uppercase; letter-spacing:var(--g-track-mono)}
+.tick__who:empty{display:none}
+.tick__txt{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tick__more{flex:none; color:var(--faint)}
+.tick__more::after{content:"the log ▲"}
+.world.tickopen .tick__more::after{content:"close ▼"}
+.tick:hover{color:var(--ink); background:var(--panel-raised); border-color:var(--fs-tick-edge-lit)}
+.tick:focus-visible{outline:none; color:var(--ink); border-color:var(--g-focus)}
+.tick:active{background:var(--g-fill-press)}
+.tick[disabled]{opacity:.5; cursor:default}
+@media (prefers-reduced-motion:reduce){.tick{transition:none}}
+
+@media (max-width:1099.98px){
+  .hero>.world:not(.fs),.hero>.world:not(.fs).nofeed{grid-template-columns:minmax(0,1fr); gap:0}
+  .hero>.world:not(.fs) .cab{grid-row:1; grid-column:1}
+  .hero>.world:not(.fs) .tick{display:flex; grid-row:2; grid-column:1}
+  .hero>.world:not(.fs).nofeed .tick{display:none}
+  /* the log rises into the foot of the window rather than pushing it off the
+     screen: the same cell as the cab, held to the bottom edge, so it stands on
+     the ticker that opened it. */
+  .hero>.world:not(.fs) .feed{display:none}
+  .hero>.world:not(.fs).tickopen .feed{display:flex; grid-row:1; grid-column:1; align-self:end;
+    height:var(--fs-tick-panel); max-height:100%; z-index:20;
+    /* over the room rather than over the page: the panel's usual 9% of
+       transparency lets the world through and the log turns to mud */
+    background:var(--chrome);
+    box-shadow:0 var(--fs-tick-lift) var(--fs-tick-blur) var(--g-shade)}
+}
+
+/* ── the foot ──
+   The horizon passes here, so the foot stands on the last of the light. It
+   takes the scrim the visit band takes inside the world — the ground falling
+   away under the type rather than a panel drawn around it — and the links keep
+   their contrast against the fire. */
+.hero__foot{flex:none; display:flex; align-items:center; justify-content:space-between;
+  gap:var(--fs-gap); border-top:var(--g-hair) solid var(--g-rule-lit);
+  background:linear-gradient(to top,var(--fs-foot-scrim) 0%,var(--fs-foot-scrim) var(--fs-foot-scrim-at),var(--fs-foot-scrim-out) 100%)}
+.hero__foot .menu{margin-top:0; border-bottom:0; min-width:0}
+.hero__foot .menu__row{padding:var(--fs-foot-pad) 0; gap:var(--fs-foot-gap)}
+.hero__foot .hero__cue{flex:none; margin-top:0; text-align:right; white-space:nowrap}
+
+/* ── a phone ── */
+@media (max-width:700px){
+  .hero{padding:var(--fs-pad-y-s) var(--fs-pad-x-s); gap:var(--fs-gap-s)}
+  .hero__head{flex-wrap:wrap; gap:var(--fs-head-gap-s); row-gap:var(--fs-gap-s)}
+  .hero__mark{flex:1 1 100%}
+  .wordmark{font-size:var(--fs-mark-s)}
+  /* two lines on a phone and no more: the mark, then the way in. Neither
+     sentence fits inside the 96px the window can spare here — §01 is one
+     scroll below and says the same thing in the same voice, so the band keeps
+     the name and the door instead of a paragraph the window would pay for. */
+  .hero__say{display:none}
+  .arrival{flex:1 1 100%}
+  .arrival__enter{width:100%; justify-content:space-between}
+  .hero__foot{flex-wrap:wrap; gap:0}
+  .hero__foot .menu{flex:1 1 100%}
+  .hero__foot .menu__row{padding:var(--g-half) 0; gap:0 var(--g-2)}
+  .hero__foot .menu a{min-height:var(--g-4)}
+  .hero__foot .hero__cue{flex:1 1 100%; text-align:left; white-space:normal}
+}
+@media (max-width:980px) and (min-width:701px){
+  .wordmark{font-size:var(--fs-mark-m)}
+  .hero__head{gap:var(--fs-head-gap-s)}
+}
+
+/* ── a short screen ──
+   Under about 780 the band has to give the window its 420 rows back. Nothing
+   is dropped: the mark, the sentence and the way in all stay, set one step
+   smaller and packed one step tighter. */
+@media (max-height:780px){
+  :root{
+    --fs-mark:26px; --fs-say:13.5px; --fs-kick:8px;
+    --fs-pad-y:5px; --fs-gap:6px; --fs-head-gap:28px;
+    --fs-enter-h:36px; --fs-enter:11px; --fs-enter-pad:9px 14px; --fs-enter-gap:14px;
+    --fs-foot-pad:5px; --fs-compass-min:36px; --fs-compass-pad:6px 14px;
+    --fs-hud-pad:7px 14px 8px; --fs-hud-body:14px; --fs-hud-gap:3px;
+  }
+  .bar{padding:var(--fs-bar-pad-y-s) var(--fs-bar-pad-x-s)}
+}
+/* the terminal's own program keeps the whole bezel: no band, no foot, no fit */
+html.door .hero{height:100%; padding:0; gap:0}
