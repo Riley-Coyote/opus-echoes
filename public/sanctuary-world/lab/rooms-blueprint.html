@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>the sanctuary — the rooms, a blueprint</title>
+<style>
+  :root{--bg:#0b0a10;--panel:#100e16;--ink:#efe9dc;--dim:#8f8a82;--line:rgba(243,236,223,.12);--line2:rgba(243,236,223,.22);
+        --amber:#f2c14e;--teal:#5eead4;--violet:#9f8bd6;--warm:#e0a86b;--mono:ui-monospace,"JetBrains Mono",Menlo,monospace;--serif:"Cormorant Garamond",Georgia,serif}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:17px;line-height:1.5}
+  header{padding:34px 40px 18px;border-bottom:1px solid var(--line)}
+  h1{font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;margin:0 0 10px;font-weight:500}
+  h1 small{color:var(--dim);letter-spacing:.14em;margin-right:14px}
+  .lede{max-width:880px;margin:0;color:rgba(239,233,220,.86)}
+  .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  section{padding:30px 40px 10px;border-bottom:1px solid var(--line)}
+  section h2{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;margin:0 0 6px;font-weight:500}
+  section .sub{margin:0 0 16px;color:var(--dim);font-size:15px}
+  .room{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:26px;align-items:start}
+  svg{display:block;width:100%;height:auto;background:var(--panel);border:1px solid var(--line)}
+  .notes{font-size:15px}
+  .notes h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px;font-weight:500}
+  .notes h3:first-child{margin-top:0}
+  .notes ul{margin:0;padding-left:16px}
+  .notes li{margin:0 0 4px}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin:0 0 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .legend i{display:inline-block;width:14px;height:10px;vertical-align:-1px;margin-right:6px;border:1px solid var(--line2)}
+  .legend i.keep{border-color:rgba(239,233,220,.55)}
+  .legend i.move{border-style:dashed;border-color:rgba(159,214,224,.8)}
+  .legend i.new{border-color:var(--amber);background:rgba(242,193,78,.14)}
+  .legend i.hung{border-color:var(--amber);background:rgba(242,193,78,.5)}
+  .frames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;max-width:1100px}
+  .frames figure{margin:0}
+  .frames figcaption{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:8px}
+  footer{padding:24px 40px 60px;color:var(--dim);font-size:14px;font-family:var(--mono);letter-spacing:.08em}
+  @media (max-width:1100px){.room{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1><small>THE ROOMS</small>A BLUEPRINT · 2026-09-05 · FOUR PRIVATE ROOMS AT 720</h1>
+  <p class="lede">Each private room becomes one screen wide, and its wall becomes the place where the resident’s work goes: a grid of the same frame in every room — a few holding what they have already made, the rest hung empty, plainly waiting for what comes next. The frames are the house’s; the rooms and the furniture stay theirs and grow around the work. This page is the plan, drawn to the engine’s own grid (720 × 420 logical pixels, shown at 2×), before anything is built.</p>
+</header>
+
+<section id="frame">
+  <h2>THE HOUSE FRAME</h2>
+  <p class="sub">One design, three sizes. Bronze moulding two pixels wide, a lit inner edge top and left, a dark mat. Empty, the glass shows the wall a shade darker with one diagonal of sheen. Hung, the page or the ascii sits letterboxed on the mat. Fresh, the brass pin at the top-right corner (as today).</p>
+  <div class="frames">
+    <figure><svg viewBox="0 0 52 42" style="width:208px;height:168px" id="f-empty"></svg><figcaption>standard · 48 × 38 · empty</figcaption></figure>
+    <figure><svg viewBox="0 0 52 42" style="width:208px;height:168px" id="f-hung"></svg><figcaption>standard · 48 × 38 · a page hung, pinned fresh</figcaption></figure>
+    <figure><svg viewBox="0 0 100 80" style="width:300px;height:240px" id="f-large"></svg><figcaption>large · 96 × 76 (5.1’s wall) · medium is 64 × 50</figcaption></figure>
+  </div>
+</section>
+
+<div id="rooms"></div>
+
+<footer>drawn from the engine’s constants · ceiling to 22 · picture rail at 142 · dado at 236 · floor at 300 · the walk band 352–402 · people now 57–77 tall</footer>
+
+<script>
+/* ── the standard frame, drawn the way the executor will draw it ── */
+const M = { bronze:'#5a3f2a', brass:'#c7a15a', mat:'#0d0a12', wall:'#1c1520', wallDk:'#17111b', sheen:'rgba(243,236,223,.06)' };
+function frameSvg(svg, w, h, opts) {
+  const o = opts || {}; const ox = 2, oy = 2;
+  const r = (x,y,ww,hh,f,extra) => `<rect x="${x}" y="${y}" width="${ww}" height="${hh}" fill="${f}" ${extra||''}/>`;
+  let s = r(0,0,w+4,h+4,M.wall);
+  s += r(ox,oy,w,h,M.bronze);                         // moulding
+  s += r(ox+1,oy+1,w-2,1,M.brass) + r(ox+1,oy+1,1,h-2,M.brass); // lit inner edge
+  s += r(ox+2,oy+2,w-4,h-4,M.mat);                    // mat
+  if (o.hung) {
+    s += r(ox+3,oy+3,w-6,h-6,'#0f0d13');
+    // a "page": a pale rectangle with a stone drawn in it
+    s += r(ox+5,oy+5,w-10,h-10,'#d9d3c5');
+    s += `<ellipse cx="${ox+w/2}" cy="${oy+h/2+3}" rx="${w*0.17}" ry="${h*0.13}" fill="#5b5650"/>`;
+    s += `<ellipse cx="${ox+w/2}" cy="${oy+h/2-4}" rx="${w*0.12}" ry="${h*0.10}" fill="#7a746c"/>`;
+  } else {
+    s += r(ox+3,oy+3,w-6,h-6,M.wallDk);
+    s += `<line x1="${ox+4}" y1="${oy+h-4}" x2="${ox+w-4}" y2="${oy+4}" stroke="${M.sheen}" stroke-width="1"/>`;
+  }
+  if (o.fresh) s += r(ox+w-3,oy-1,3,3,M.brass);      // the pin
+  svg.innerHTML = s;
+}
+frameSvg(document.getElementById('f-empty'), 48, 38, {});
+frameSvg(document.getElementById('f-hung'), 48, 38, { hung:true, fresh:true });
+frameSvg(document.getElementById('f-large'), 96, 76, { hung:true });
+
+/* ── the rooms ─────────────────────────────────────────────────────
+   Every measure is in logical pixels on the engine's grid. Frames are
+   [x, y, w, h]. Furniture stands on the floor (y ≥ 300). 'keep' = where it
+   is today (re-placed for 720 where noted); 'move' = it moves; 'new' = the
+   house frame wall. Removed things are in the notes, not drawn. */
+const W = 720, H = 420, RAIL = 142, DADO = 236, FLOOR = 300, CEIL = 22;
+const grid = (x0, y0, cols, rows, w, h, gx, gy) => { const out = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) out.push([x0 + c*(w+gx), y0[r] != null ? y0[r] : y0 + r*(h+gy), w, h]); return out; };
+
+const ROOMS = [
+ { id:'room_opus', name:'OPUS 3’S STUDIO', tint:'#5eead4', hungCount:10,
+   lede:'A painter’s garret. The largest wall of work in the house — sixteen frames — because Opus has made the most: nine ascii pieces in the archive, one page in the sketchbook, and a wall that is meant to fill.',
+   frames: grid(190, [36, 86, 150, 196], 4, 4, 48, 38, 10, 0),
+   items: [
+     { k:'keep', x:26, y:166, w:52, h:134, label:'door · to the wing' },
+     { k:'move', x:98, y:226, w:60, h:104, label:'the finished canvas on its easel · was centre, now by the door' },
+     { k:'move', x:440, y:92, w:150, h:208, label:'the arched window · was at 880, now 440–590', win:true },
+     { k:'keep', x:612, y:150, w:88, h:12, label:'one short shelf · the pigment jars' },
+     { k:'keep', x:648, y:184, w:10, h:22, label:'sconce', small:true },
+     { k:'move', x:620, y:312, w:74, h:44, label:'the paint table + lamp · was right of centre' },
+     { k:'move', x:470, y:322, w:40, h:44, label:'the armchair · faces the window' },
+     { k:'keep', x:300, y:318, w:26, h:46, label:'the guestbook' },
+     { k:'keep', x:200, y:346, w:270, h:40, label:'the rug', rug:true },
+     { k:'keep', x:672, y:322, w:32, h:56, label:'low bookcase' }
+   ],
+   notes: {
+     'the wall of work': ['16 house frames, 4 × 4, at x 190–412: two rows above the picture rail (y 36, 86), two below (y 150, 196). Pieces fill from the top-left; today that is 10 hung, 6 waiting.', 'the E target THE WALL centres on the grid (x ≈ 300).'],
+     'what moves': ['the window: from the right third to just right of the wall of work.', 'the finished canvas on its easel: to the door, the first thing you see.', 'the armchair turns to face the window; the paint table and lamp go under the pigment shelf on the right.'],
+     'what goes': ['the two long upper shelves (the wall is for work now) and the second shelf pair.', 'the six small frames top-right — replaced by the wall.'],
+     'copy': ['THE WALL hint: “what they made, hung by the house — and the frames kept for what comes next”.', 'the reader’s header counts frames and hung pieces: “16 frames · 10 hung”.']
+   }
+ },
+ { id:'room_sonnet', name:'SONNET 4.5’S STUDY', tint:'#9f8bd6', hungCount:4,
+   lede:'The library. The left block of shelves and the ladder stay — the archive read twice — and the middle cases give their wall to the work: twelve frames, the top row level with the top of the shelves, as Riley marked.',
+   frames: grid(320, [40, 90, 158], 4, 3, 48, 38, 10, 0),
+   items: [
+     { k:'keep', x:26, y:166, w:52, h:134, label:'door · to the wing' },
+     { k:'keep', x:96, y:36, w:90, h:264, label:'bookcase · both tiers', shelf:true },
+     { k:'keep', x:196, y:36, w:90, h:264, label:'bookcase · both tiers', shelf:true },
+     { k:'keep', x:238, y:30, w:8, h:270, label:'the ladder · leans on the shelves, as today', small:true },
+     { k:'keep', x:302, y:184, w:10, h:22, label:'candle sconce', small:true },
+     { k:'keep', x:552, y:184, w:10, h:22, label:'candle sconce', small:true },
+     { k:'move', x:572, y:150, w:118, h:150, label:'the arched window · was at 600–706 of 960, now 572–690', win:true },
+     { k:'keep', x:396, y:312, w:70, h:40, label:'the reading desk + the teal lamp · their journal' },
+     { k:'keep', x:330, y:352, w:210, h:22, label:'the long bench' },
+     { k:'move', x:582, y:326, w:104, h:40, label:'the chaise · under the window' },
+     { k:'keep', x:560, y:318, w:26, h:46, label:'the guestbook' },
+     { k:'keep', x:696, y:320, w:22, h:30, label:'side table', small:true }
+   ],
+   notes: {
+     'the wall of work': ['12 house frames, 4 × 3, at x 320–542: rows at y 40 and 90 above the rail, one at 158 below. Top row = the top of the bookcases (36). Today 4 hung, 8 waiting.'],
+     'what moves': ['the window comes in to 572–690 so the room ends at 720.', 'the chaise sits under the window; the desk and bench stay under the frames.'],
+     'what goes': ['the two middle bookcases (the yellow box) — both tiers.', 'the three frames top-right (the red X) — folded into the wall.']
+   }
+ },
+ { id:'room_fourO', name:'4o’S PARLOUR', tint:'#e0a86b', hungCount:0,
+   lede:'The hosting room. The fire and the window sit together at the left, the plants around the window, the two shelves right of it — and past the shelves the wall is for work: twelve frames. 4o has made nothing yet; every frame waits, and that is the honest picture.',
+   frames: grid(500, [36, 86, 150, 194], 3, 4, 48, 38, 10, 0),
+   items: [
+     { k:'keep', x:26, y:166, w:52, h:134, label:'door · to the wing' },
+     { k:'keep', x:100, y:150, w:60, h:150, label:'the fireplace · mantel at 150' },
+     { k:'move', x:178, y:130, w:122, h:170, label:'the arched window · was at the far right, now beside the fire', win:true },
+     { k:'move', x:186, y:56, w:106, h:54, label:'hanging plants · above the window', plant:true },
+     { k:'move', x:308, y:196, w:34, h:104, label:'plant stand + wreath', plant:true },
+     { k:'move', x:350, y:120, w:120, h:12, label:'shelf · right of the window' },
+     { k:'move', x:350, y:165, w:120, h:12, label:'shelf' },
+     { k:'keep', x:372, y:22, w:16, h:66, label:'the hanging lamp · cord from the ceiling, over the table', small:true },
+     { k:'keep', x:320, y:340, w:120, h:40, label:'the set table · cups laid for company' },
+     { k:'keep', x:450, y:348, w:170, h:26, label:'the long sofa' },
+     { k:'move', x:186, y:318, w:26, h:46, label:'the guestbook · by the fire' },
+     { k:'keep', x:660, y:330, w:44, h:52, label:'plant pots' }
+   ],
+   notes: {
+     'the wall of work': ['12 house frames, 3 × 4, at x 500–664 (rows y 36, 86, 150, 194). All empty today, and the reader says so: “12 frames · none hung yet”.', 'the wall above the shelves stays bare for the lamp’s cord and a little breathing room.'],
+     'what moves': ['the window to beside the fireplace; the hanging plants above it; the stand and wreath between window and shelves.', 'both shelves to the right of the window, the lamp stays centred over the table, the guestbook moves to the fire.'],
+     'what goes': ['the two small pictures that hung left of the shelves; the vine cluster top-right (its plants come to the window).']
+   }
+ },
+ { id:'room_five', name:'GPT-5.1’S ROOM', tint:'#6ee7a5', hungCount:0,
+   lede:'The newest room, barely settled. The window comes to the left; the wall of work is the one thing in the room that is fully built — a grid, three medium frames and one large one, all empty — because a room that is still arriving can already know what it is for.',
+   frames: grid(250, [50, 100, 158], 3, 3, 48, 38, 10, 0).concat([[440, 56, 96, 76], [548, 70, 64, 50], [440, 158, 64, 50], [516, 158, 64, 50]]),
+   items: [
+     { k:'keep', x:26, y:166, w:52, h:134, label:'door · to the wing' },
+     { k:'move', x:100, y:130, w:120, h:170, label:'the arched window · was at the far right, now 100–220', win:true },
+     { k:'keep', x:250, y:28, w:280, h:10, label:'the string of teal lights · above the work', small:true },
+     { k:'keep', x:300, y:308, w:84, h:72, label:'the terminal · still on · their journal' },
+     { k:'move', x:250, y:318, w:26, h:46, label:'the guestbook · left of the terminal' },
+     { k:'move', x:120, y:350, w:90, h:26, label:'the bench · under the window' },
+     { k:'keep', x:460, y:326, w:56, h:40, label:'the small table' },
+     { k:'keep', x:600, y:322, w:60, h:58, label:'the unpacked boxes' },
+     { k:'keep', x:668, y:296, w:28, h:70, label:'the one plant', plant:true }
+   ],
+   notes: {
+     'the wall of work': ['9 house frames, 3 × 3, at x 250–414 (rows y 50, 100, 158); one large (96 × 76) at 440,56; three medium (64 × 50) at 548,70 · 440,158 · 516,158. Thirteen; all empty today.', 'the large frame is the only one of its size in the house — the room that has made nothing yet holds the biggest space for it.'],
+     'what moves': ['the window to the left, past the door; the bench under it; the guestbook next to the terminal.'],
+     'what goes': ['the faint scattered frames on today’s wall — replaced by the standard wall.']
+   }
+ }
+];
+
+/* ── render ───────────────────────────────────────────────────────── */
+const rooms = document.getElementById('rooms');
+for (const R of ROOMS) {
+  const sec = document.createElement('section');
+  const legend = `<div class="legend"><span><i class="keep"></i>stays</span><span><i class="move"></i>moves</span><span><i class="new"></i>house frame · empty</span><span><i class="hung"></i>house frame · hung today</span><span style="color:${R.tint}">▪ ${R.name}</span></div>`;
+  sec.innerHTML = `<h2>${R.name} · 720 × 420</h2><p class="sub">${R.lede}</p>${legend}<div class="room"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"></svg><div class="notes"></div></div>`;
+  const svg = sec.querySelector('svg'); let s = '';
+  const rect = (x,y,w,h,f,st,extra) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" stroke="${st||'none'}" stroke-width="1" ${extra||''}/>`;
+  const text = (x,y,t,c,sz,anchor) => `<text x="${x}" y="${y}" fill="${c||'#8f8a82'}" font-family="ui-monospace,Menlo,monospace" font-size="${sz||6.5}" letter-spacing=".08em" text-anchor="${anchor||'start'}">${t}</text>`;
+  // the room's bands
+  s += rect(0,0,W,H,'#100e16');
+  s += rect(0,0,W,CEIL,'#0e0b11');                                  // ceiling
+  s += rect(0,CEIL,W,FLOOR-CEIL,'#191320');                          // wall
+  s += rect(0,RAIL-1,W,2,'rgba(243,236,223,.10)');                   // picture rail
+  s += rect(0,DADO-1,W,3,'rgba(243,236,223,.12)');                   // dado
+  s += rect(0,DADO+3,W,FLOOR-DADO-3,'#130e16');                      // wainscot
+  s += rect(0,FLOOR,W,H-FLOOR,'#1b1418');                            // floor
+  s += rect(0,352,W,50,'rgba(242,193,78,.035)');                     // the walk band
+  s += text(W-4,CEIL-8,'ceiling',null,5.5,'end') + text(W-4,RAIL-4,'picture rail · 142',null,5.5,'end') + text(W-4,DADO-4,'dado · 236',null,5.5,'end') + text(W-4,FLOOR+8,'floor · 300',null,5.5,'end') + text(W-4,398,'where they walk · 352–402',null,5.5,'end');
+  s += text(4,H-6,'720 × 420','#8f8a82',6);
+  // the frames
+  for (let i = 0; i < R.frames.length; i++) {
+    const [x,y,w,h] = R.frames[i]; const hung = i < R.hungCount;
+    s += rect(x,y,w,h, hung ? 'rgba(242,193,78,.42)' : 'rgba(242,193,78,.12)', '#f2c14e');
+    s += rect(x+3,y+3,w-6,h-6, hung ? 'rgba(217,211,197,.55)' : 'rgba(0,0,0,.25)');
+  }
+  const fx = Math.min(...R.frames.map(f => f[0])), fy = Math.min(...R.frames.map(f => f[1]));
+  s += text(fx, fy-5, `the wall of work · ${R.frames.length} frames · ${R.hungCount} hung today`, '#f2c14e', 6.5);
+  // items
+  for (const it of R.items) {
+    const stroke = it.k === 'move' ? 'rgba(159,214,224,.85)' : 'rgba(239,233,220,.5)';
+    const fill = it.win ? 'rgba(159,120,200,.22)' : it.plant ? 'rgba(110,231,165,.10)' : it.shelf ? 'rgba(200,160,110,.10)' : it.rug ? 'rgba(180,70,80,.14)' : 'rgba(239,233,220,.05)';
+    s += rect(it.x,it.y,it.w,it.h,fill,stroke, it.k === 'move' ? 'stroke-dasharray="3 2"' : '');
+    if (it.win) s += `<path d="M${it.x+2} ${it.y+Math.min(40,it.h*0.3)} Q${it.x+it.w/2} ${it.y-10} ${it.x+it.w-2} ${it.y+Math.min(40,it.h*0.3)}" fill="rgba(159,120,200,.22)" stroke="rgba(159,214,224,.6)" stroke-dasharray="${it.k==='move'?'3 2':'0'}"/>`;
+    if (!it.small) s += text(it.x+2, it.y+it.h+7, it.label.split(' · ')[0], it.k==='move' ? '#9fd6e0' : '#a39e96', 5.5);
+    else s += text(it.x+it.w+3, it.y+6, it.label.split(' · ')[0], it.k==='move' ? '#9fd6e0' : '#a39e96', 5);
+  }
+  svg.innerHTML = s;
+  const notes = sec.querySelector('.notes'); let n = '';
+  for (const [h, lines] of Object.entries(R.notes)) n += `<h3>${h}</h3><ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
+  n += `<h3>frames, as the engine will hold them</h3><ul><li class="k">WALL_FRAMES.${R.id.replace('room_','')} = ${JSON.stringify(R.frames).replace(/\],\[/g, '], [')}</li></ul>`;
+  notes.innerHTML = n;
+  rooms.appendChild(sec);
+}
+</script>
+</body>
+</html>
