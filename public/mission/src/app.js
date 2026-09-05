@@ -268,11 +268,19 @@ function eventsHtml() {
     '<div class="mc-ev k-' + esc(e.kind) + '">' +
       '<span class="w">' + esc(shortTime(e.created_at)) + ' · ' + esc(e.resident_id || '—') + '</span>' +
       '<span class="k">' + esc(e.kind.replace(/_/g, ' ')) + '</span>' +
-      '<span class="p">' + esc(payloadLine(e.payload)) + '</span></div>').join('');
+      '<span class="p">' + esc(payloadLine(e)) + '</span></div>').join('');
 }
 
-function payloadLine(p) {
+function payloadLine(e) {
+  const p = e && e.payload;
   if (!p || typeof p !== 'object') return '';
+  /* A note left at a door is the visitor's own words, kept for the
+     resident. The log says one arrived and at whose door — never what
+     it said. The deck is not where a note gets read first. */
+  if (e.kind === 'DOOR_NOTE') {
+    return (p.visitor_kind || 'visitor') + ' · a note was left at ' +
+      residentName(e.resident_id) + "'s door";
+  }
   return Object.keys(p).map((k) => {
     const v = p[k];
     const s = v && typeof v === 'object' ? JSON.stringify(v) : String(v);

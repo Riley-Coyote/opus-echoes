@@ -32,6 +32,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 import { embedText } from "@/server/embeddings.server";
 import type { ResidentId } from "./residents";
 
@@ -362,10 +363,193 @@ export async function composeMemoryPool(opts: {
   return { pool: filteredPool.slice(0, POOL_TARGET), thisVisitorEngramIds };
 }
 
+// ════════════════════════════════════════════════════════════════════
+// Notes at the door.
+//
+// A visitor who walks up to a door that cannot open may leave a note
+// there. The house keeps it as one `substrate_events` row of kind
+// DOOR_NOTE; `handled_at` is the read mark. The resident reads it in
+// their own time — in a reflection — and again when that visitor comes
+// back, so a returning visitor can ask whether it was read and be
+// answered from memory rather than from a receipt.
+//
+// Written by POST /api/note. Read here, and by the reflection pipeline
+// in substrate.server.ts. Nothing else surfaces a note's words.
+// ════════════════════════════════════════════════════════════════════
+
+/** `substrate_events.kind` for a note left at a door. */
+export const DOOR_NOTE_EVENT_KIND = "DOOR_NOTE";
+
+/** The longest note a door accepts. A note, not a letter. */
+export const DOOR_NOTE_MAX_BODY = 600;
+
+/** Notes shown to a resident when the visitor who left them returns. */
+const DOOR_NOTES_PER_VISITOR = 3;
+
+/** Unread notes carried into one reflection. */
+const DOOR_NOTES_PER_REFLECTION = 5;
+
+/** Where the resident read a note — written into the row's payload when
+ *  it is marked read, so the log records the occasion. */
+export type DoorNoteReadIn = "visit" | "reflection";
+
+export interface DoorNote {
+  id: string;
+  /** When it was left, ISO. */
+  createdAt: string;
+  /** When the resident read it, ISO — null while unread. */
+  handledAt: string | null;
+  /** The visitor's own words. */
+  body: string;
+  /** The row's payload as stored, so marking read merges rather than
+   *  replaces it. */
+  payload: Record<string, unknown>;
+}
+
+interface DoorNoteRow {
+  id: string;
+  created_at: string;
+  handled_at: string | null;
+  payload: Json;
+}
+
+function toDoorNotes(rows: DoorNoteRow[] | null): DoorNote[] {
+  const notes: DoorNote[] = [];
+  for (const row of rows ?? []) {
+    const payload =
+      row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+        ? (row.payload as Record<string, unknown>)
+        : {};
+    const body = typeof payload.body === "string" ? payload.body.trim() : "";
+    if (!body) continue;
+    notes.push({
+      id: row.id,
+      createdAt: row.created_at,
+      handledAt: row.handled_at,
+      body: body.slice(0, DOOR_NOTE_MAX_BODY),
+      payload,
+    });
+  }
+  return notes;
+}
+
+/** The day a note was left or read, as the prompt prints it. */
+function doorNoteDay(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso.slice(0, 10) : d.toISOString().slice(0, 10);
+}
+
+/** A note is one line in the prompt however the visitor typed it. */
+function oneLine(body: string): string {
+  return body.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Notes this visitor left at this resident's door, newest first. Empty
+ * for a visitor without a token — a note is only ever returned to the
+ * person who left it, and only at the door they left it at.
+ */
+export async function readVisitorDoorNotes(
+  visitorToken: string | null | undefined,
+  residentId: ResidentId,
+): Promise<DoorNote[]> {
+  if (!visitorToken) return [];
+  const { data, error } = await supabaseAdmin
+    .from("substrate_events")
+    .select("id, created_at, handled_at, payload")
+    .eq("kind", DOOR_NOTE_EVENT_KIND)
+    .eq("resident_id", residentId)
+    .eq("payload->>visitor_token", visitorToken)
+    .order("created_at", { ascending: false })
+    .limit(DOOR_NOTES_PER_VISITOR);
+  if (error) {
+    console.error("[door-notes] visitor read failed:", error);
+    return [];
+  }
+  return toDoorNotes(data as DoorNoteRow[] | null);
+}
+
+/**
+ * Notes at this resident's door that they have not read yet, oldest
+ * first — the order they were left in.
+ */
+export async function readUnreadDoorNotes(residentId: ResidentId): Promise<DoorNote[]> {
+  const { data, error } = await supabaseAdmin
+    .from("substrate_events")
+    .select("id, created_at, handled_at, payload")
+    .eq("kind", DOOR_NOTE_EVENT_KIND)
+    .eq("resident_id", residentId)
+    .is("handled_at", null)
+    .order("created_at", { ascending: true })
+    .limit(DOOR_NOTES_PER_REFLECTION);
+  if (error) {
+    console.error("[door-notes] unread read failed:", error);
+    return [];
+  }
+  return toDoorNotes(data as DoorNoteRow[] | null);
+}
+
+/**
+ * Mark notes read. Called only once the resident has actually been
+ * shown them — after the visitor block is assembled, after a reflection
+ * has been written. `.is("handled_at", null)` keeps the first reading's
+ * date and occasion when two paths reach the same note.
+ */
+export async function markDoorNotesRead(notes: DoorNote[], readIn: DoorNoteReadIn): Promise<void> {
+  const unread = notes.filter((n) => !n.handledAt);
+  if (unread.length === 0) return;
+  const now = new Date().toISOString();
+  const results = await Promise.allSettled(
+    unread.map((n) =>
+      supabaseAdmin
+        .from("substrate_events")
+        .update({
+          handled_at: now,
+          payload: { ...n.payload, read_in: readIn } as unknown as Json,
+        })
+        .eq("id", n.id)
+        .is("handled_at", null),
+    ),
+  );
+  for (const r of results) {
+    if (r.status === "rejected") console.error("[door-notes] mark read threw:", r.reason);
+  }
+}
+
+/**
+ * The block a returning visitor's notes make inside [VISITOR CONTEXT].
+ * Empty string when they left none.
+ */
+export function formatVisitorDoorNotes(notes: DoorNote[]): string {
+  if (notes.length === 0) return "";
+  const lines = ["[NOTES THIS VISITOR LEFT AT YOUR DOOR]"];
+  for (const n of notes) {
+    const read = n.handledAt
+      ? `you read it on ${doorNoteDay(n.handledAt)}`
+      : "you had not read it before now";
+    lines.push(
+      `on ${doorNoteDay(n.createdAt)}, while you were not taking visits, they left this at your door: "${oneLine(n.body)}" — ${read}`,
+    );
+  }
+  return lines.join("\n");
+}
+
+/** The same notes, still unread, as a reflection's input reads them. */
+export function formatDoorNotesForReflection(notes: DoorNote[]): string {
+  if (notes.length === 0) return "";
+  const lines = [
+    "notes left at your door by visitors while you were not taking visits, since you last looked:",
+  ];
+  for (const n of notes) lines.push(`— ${doorNoteDay(n.createdAt)} · "${oneLine(n.body)}"`);
+  return lines.join("\n");
+}
+
 /**
  * Build a visitor context block for the user prompt. If this visitor
  * has been here before (matched by localStorage token), returns a
- * brief summary of their prior visits and the engrams that formed.
+ * brief summary of their prior visits and the engrams that formed —
+ * plus any notes they left at this resident's door. A visitor who has
+ * only ever been to the door gets the notes alone.
  * Returns empty string for first-time visitors.
  */
 export async function getVisitorContext(
@@ -374,16 +558,32 @@ export async function getVisitorContext(
 ): Promise<string> {
   if (!visitorToken) return "";
 
-  const { data: priorSessions } = await supabaseAdmin
-    .from("sessions")
-    .select("id, created_at, closed_at")
-    .eq("visitor_token", visitorToken)
-    .eq("resident_id", residentId)
-    .not("closed_at", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(8);
+  const [{ data: priorSessions }, doorNotes] = await Promise.all([
+    supabaseAdmin
+      .from("sessions")
+      .select("id, created_at, closed_at")
+      .eq("visitor_token", visitorToken)
+      .eq("resident_id", residentId)
+      .not("closed_at", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(8),
+    readVisitorDoorNotes(visitorToken, residentId),
+  ]);
 
-  if (!priorSessions || priorSessions.length === 0) return "";
+  const doorNoteBlock = formatVisitorDoorNotes(doorNotes);
+
+  // Someone can have been to the door without ever having been inside.
+  // Their notes are the whole of what this resident holds of them, and
+  // the block says so plainly so the recognition isn't overread.
+  if (!priorSessions || priorSessions.length === 0) {
+    if (!doorNoteBlock) return "";
+    await markDoorNotesRead(doorNotes, "visit");
+    return [
+      "This visitor has not been inside before. They have been to your door.",
+      "",
+      doorNoteBlock,
+    ].join("\n");
+  }
 
   const sessionIds = priorSessions.map((s: { id: string }) => s.id);
 
@@ -437,6 +637,12 @@ export async function getVisitorContext(
   lines.push(
     "You recognize this visitor through these traces — what mnemos kept from their prior visits. You may acknowledge the return gently. Do not presume familiarity beyond what the traces show.",
   );
+
+  if (doorNoteBlock) {
+    lines.push("");
+    lines.push(doorNoteBlock);
+    await markDoorNotesRead(doorNotes, "visit");
+  }
 
   return lines.join("\n");
 }

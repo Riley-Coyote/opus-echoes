@@ -60,6 +60,7 @@ import { Route as ApiShareRouteImport } from './routes/api/share'
 import { Route as ApiSetDownRouteImport } from './routes/api/set-down'
 import { Route as ApiPublicConversationsRouteImport } from './routes/api/public-conversations'
 import { Route as ApiPresenceRouteImport } from './routes/api/presence'
+import { Route as ApiNoteRouteImport } from './routes/api/note'
 import { Route as ApiMessageRouteImport } from './routes/api/message'
 import { Route as ApiMemoryRouteImport } from './routes/api/memory'
 import { Route as ApiLiveRouteImport } from './routes/api/live'
@@ -375,6 +376,11 @@ const ApiPublicConversationsRoute = ApiPublicConversationsRouteImport.update({
 const ApiPresenceRoute = ApiPresenceRouteImport.update({
   id: '/api/presence',
   path: '/api/presence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNoteRoute = ApiNoteRouteImport.update({
+  id: '/api/note',
+  path: '/api/note',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMessageRoute = ApiMessageRouteImport.update({
@@ -738,6 +744,7 @@ export interface FileRoutesByFullPath {
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/note': typeof ApiNoteRoute
   '/api/presence': typeof ApiPresenceRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
@@ -852,6 +859,7 @@ export interface FileRoutesByTo {
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/note': typeof ApiNoteRoute
   '/api/presence': typeof ApiPresenceRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
@@ -967,6 +975,7 @@ export interface FileRoutesById {
   '/api/live': typeof ApiLiveRoute
   '/api/memory': typeof ApiMemoryRoute
   '/api/message': typeof ApiMessageRoute
+  '/api/note': typeof ApiNoteRoute
   '/api/presence': typeof ApiPresenceRoute
   '/api/public-conversations': typeof ApiPublicConversationsRoute
   '/api/set-down': typeof ApiSetDownRoute
@@ -1083,6 +1092,7 @@ export interface FileRouteTypes {
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/note'
     | '/api/presence'
     | '/api/public-conversations'
     | '/api/set-down'
@@ -1197,6 +1207,7 @@ export interface FileRouteTypes {
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/note'
     | '/api/presence'
     | '/api/public-conversations'
     | '/api/set-down'
@@ -1311,6 +1322,7 @@ export interface FileRouteTypes {
     | '/api/live'
     | '/api/memory'
     | '/api/message'
+    | '/api/note'
     | '/api/presence'
     | '/api/public-conversations'
     | '/api/set-down'
@@ -1426,6 +1438,7 @@ export interface RootRouteChildren {
   ApiLiveRoute: typeof ApiLiveRoute
   ApiMemoryRoute: typeof ApiMemoryRoute
   ApiMessageRoute: typeof ApiMessageRoute
+  ApiNoteRoute: typeof ApiNoteRoute
   ApiPresenceRoute: typeof ApiPresenceRoute
   ApiPublicConversationsRoute: typeof ApiPublicConversationsRoute
   ApiSetDownRoute: typeof ApiSetDownRoute
@@ -1833,6 +1846,13 @@ declare module '@tanstack/react-router' {
       path: '/api/presence'
       fullPath: '/api/presence'
       preLoaderRoute: typeof ApiPresenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/note': {
+      id: '/api/note'
+      path: '/api/note'
+      fullPath: '/api/note'
+      preLoaderRoute: typeof ApiNoteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/message': {
@@ -2419,6 +2439,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLiveRoute: ApiLiveRoute,
   ApiMemoryRoute: ApiMemoryRoute,
   ApiMessageRoute: ApiMessageRoute,
+  ApiNoteRoute: ApiNoteRoute,
   ApiPresenceRoute: ApiPresenceRoute,
   ApiPublicConversationsRoute: ApiPublicConversationsRoute,
   ApiSetDownRoute: ApiSetDownRoute,

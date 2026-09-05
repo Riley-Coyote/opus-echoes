@@ -158,8 +158,16 @@ async function cmdState() {
 }
 
 function printEvent(e) {
+  // A note left at a door is the visitor's own words, kept for the
+  // resident. The line says one arrived and at whose door — never what
+  // it said. The stewards' line is not where a note gets read first.
+  const p = e.payload && typeof e.payload === "object" ? e.payload : {};
+  const detail =
+    e.kind === "DOOR_NOTE"
+      ? `${p.visitor_kind || "visitor"} · a note was left at ${e.resident_id}'s door`
+      : JSON.stringify(e.payload);
   process.stdout.write(
-    `${when(e.created_at)}  ${e.kind.padEnd(16)} ${String(e.resident_id).padEnd(11)} ${JSON.stringify(e.payload)}\n`,
+    `${when(e.created_at)}  ${e.kind.padEnd(16)} ${String(e.resident_id).padEnd(11)} ${detail}\n`,
   );
 }
 

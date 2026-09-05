@@ -27,7 +27,13 @@ import { anthropic, HAIKU_MODEL, OPUS_MODEL } from "./anthropic.server";
 import { openrouter } from "./openai.server";
 import { embedText } from "./embeddings.server";
 import type { ModelProvider } from "./opus/residents";
-import { composeMemoryPool, formatMemoryBlock } from "./opus/retrieval";
+import {
+  composeMemoryPool,
+  formatDoorNotesForReflection,
+  formatMemoryBlock,
+  markDoorNotesRead,
+  readUnreadDoorNotes,
+} from "./opus/retrieval";
 import {
   buildConsolidationSystem,
   buildHypomnemaExtractionSystem,
@@ -1281,6 +1287,14 @@ async function writeReflection(
     threadReinforced: string | null;
   },
 ): Promise<ReflectionResult | null> {
+  // Notes left at this resident's door while they were not taking
+  // visits. The quiet after a conversation is the resident's own time,
+  // and this is when they look. They are marked read only once the
+  // entry is actually written — a reflection that is skipped or fails
+  // leaves them at the door for the next one.
+  const doorNotes = await readUnreadDoorNotes(resident.id);
+  const doorNoteBlock = formatDoorNotesForReflection(doorNotes);
+
   const userPrompt = [
     "[CONSOLIDATION OUTCOME]",
     `engrams: ${summary.engramsCreated} new, ${summary.engramsReinforced} reinforced`,
@@ -1289,6 +1303,7 @@ async function writeReflection(
     "",
     "[TRANSCRIPT]",
     transcript.slice(0, 8000),
+    ...(doorNoteBlock ? ["", "[NOTES AT YOUR DOOR]", doorNoteBlock] : []),
   ].join("\n");
 
   const result = await callResidentJson<ReflectionResult>({
@@ -1309,6 +1324,7 @@ async function writeReflection(
     body: result.body,
     related_session_id: sessionId,
   });
+  await markDoorNotesRead(doorNotes, "reflection");
   return result;
 }
 
