@@ -1516,7 +1516,7 @@ export function makeModelRooms(bridge) {
         b.px(106, 142, 10, 8, M.terra); b.px(122, 140, 8, 10, M.linen); b.px(136, 142, 8, 8, M.leaf2);
         pool(b, 130, 312, 120, '255,180,110', 0.10);
         /* the plants, around the window and in the far corner */
-        leafy(b, 325, 300, 70, M.leaf3, M.leaf4); leafy(b, 164, 300, 44, M.leaf2, M.leaf3); leafy(b, 690, 300, 44, M.leaf2, M.leaf3);
+        leafy(b, 325, 300, 70, M.leaf3, M.leaf4); leafy(b, 172, 300, 44, M.leaf2, M.leaf3); leafy(b, 690, 300, 44, M.leaf2, M.leaf3);
         for (let x = 186; x < 292; x += 22) b.px(x, 56, 2, 40, M.leaf1);   /* hanging greenery above the window */
         for (let x = 184; x < 292; x += 8) b.px(x, 56 + ((x * 7) % 28), 5, 5, ((x / 8) % 2) ? M.leaf2 : M.leaf1);
         for (let p = 0; p < 3; p++) { const px = 638 + p * 24; b.px(px, 300, 22, 14, M.terra); b.px(px, 298, 22, 3, M.terraHi); b.px(px + 4, 290, 14, 10, M.leaf2); contact(b, px + 11, 315, 26, 0.2); }

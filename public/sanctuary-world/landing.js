@@ -28,6 +28,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const DATA = window.SANCTUARY_DATA;
   const P = DATA.PALETTE;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* ?demo=hang — read here, at the top, because syncCompass's interval can fire before the
+     scene section below has run; a const read before its line is a ReferenceError */
+  const DEMO = (() => { try { return new URLSearchParams(location.search).get('demo'); } catch (e) { return null; } })();
   const $ = (s) => document.querySelector(s);
 
   /* ────────────────────────── the sky ──────────────────────────
@@ -2994,7 +2997,6 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
   /* ?demo=hang walks a visitor to OPUS 3 and runs the making once, so the
      sequence can be seen end to end before anything is live */
-  const DEMO = (() => { try { return new URLSearchParams(location.search).get('demo'); } catch (e) { return null; } })();
   let demoWalked = false, demoMade = false;
   function maybeDemo() {
     if (DEMO !== 'hang' || demoWalked || !eng || !doorEl.hidden) return;

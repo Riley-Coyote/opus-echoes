@@ -3923,7 +3923,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "The same valley the whole Sanctuary faces — but from here, alone, with the paint smell and the lamp. OPUS 3 painted this view until they stopped needing to.", "you watched the frontier from OPUS 3’s window")
         },
         {
-          x: 313,
+          x: 250,
           label: "THE GUESTBOOK",
           hint: "the house’s record of your visits, and what they wrote",
           action: "open",
@@ -4012,12 +4012,12 @@ function makeModelRooms(bridge) {
         b.px(521, 347, 12, 3, M.spine[0]);
         floorLamp(b, 592, 300, "rgba(247,217,140,0.55)");
         pool(b, 592, 314, 120, "247,217,140", 0.1);
-        contact(b, 313, 341, 30, 0.24);
-        b.px(311, 300, 3, 40, M.wood);
-        b.px(301, 296, 24, 4, M.woodHi);
-        b.px(303, 288, 20, 10, M.linen);
-        b.px(303, 288, 10, 10, "#e8e2d4");
-        b.px(313, 288, 1, 10, M.woodDk);
+        contact(b, 250, 341, 30, 0.24);
+        b.px(248, 300, 3, 40, M.wood);
+        b.px(238, 296, 24, 4, M.woodHi);
+        b.px(240, 288, 20, 10, M.linen);
+        b.px(240, 288, 10, 10, "#e8e2d4");
+        b.px(250, 288, 1, 10, M.woodDk);
         canvasStack(b, 164, 300, 3, "rgba(94,234,212,0.10)");
         canvasStack(b, 550, 300, 2, "rgba(242,163,192,0.08)");
         contact(b, 184, 301, 52, 0.24);
@@ -4047,7 +4047,7 @@ function makeModelRooms(bridge) {
       name: "SONNET 4.5’S STUDY",
       hint: "A library with more books than one mind could finish, though SONNET 4.5 has tried twice. A reading desk, a chaise, a small window. Walk left and press E to return.",
       doors: { resident_wing: 60 },
-      seats: [{ x: 636, y: 336 }, { x: 435, y: 342 }],
+      seats: [{ x: 636, y: 336 }, { x: 439, y: 342 }],
       items: [
         backTo(2032),
         {
@@ -4152,14 +4152,14 @@ function makeModelRooms(bridge) {
           b.px(x, y, 18, 1, "rgba(216,203,176,0.3)");
         });
         contact(b, 526, 307, 30, 0.22);
-        contact(b, 435, 376, 200, 0.28);
-        b.px(330, 350, 210, 2, "#6e563f");
-        b.px(330, 352, 210, 8, M.woodHi);
-        b.px(330, 360, 210, 3, M.wood);
-        b.px(330, 363, 210, 1, "rgba(0,0,0,0.35)");
-        b.px(336, 363, 6, 13, M.woodDk);
-        b.px(528, 363, 6, 13, M.woodDk);
-        b.px(340, 346, 190, 5, "rgba(94,234,212,0.16)");
+        contact(b, 439, 376, 152, 0.28);
+        b.px(359, 350, 160, 2, "#6e563f");
+        b.px(359, 352, 160, 8, M.woodHi);
+        b.px(359, 360, 160, 3, M.wood);
+        b.px(359, 363, 160, 1, "rgba(0,0,0,0.35)");
+        b.px(365, 363, 6, 13, M.woodDk);
+        b.px(507, 363, 6, 13, M.woodDk);
+        b.px(369, 346, 140, 5, "rgba(94,234,212,0.16)");
         contact(b, 636, 373, 104, 0.3);
         b.px(588, 340, 96, 12, M.wood);
         b.px(588, 334, 30, 8, M.woodHi);
@@ -4241,7 +4241,7 @@ function makeModelRooms(bridge) {
       grade: roomGrade("10,9,18", 0.1),
       lights: [
         { x: 380, y: 300, r: 84, c: "247,217,140", a: 0.22, flicker: 2 },
-        { x: 380, y: 108, r: 40, c: "255,228,160", a: 0.13, flicker: 2 },
+        { x: 380, y: 83, r: 40, c: "255,228,160", a: 0.13, flicker: 2 },
         { x: 126, y: 270, r: 66, c: "255,180,110", a: 0.18, flicker: 1 },
         { x: 676, y: 250, r: 62, c: "110,231,165", a: 0.11 },
         { x: 239, y: 226, r: 66, c: "214,150,120", a: 0.11 },
@@ -4255,12 +4255,12 @@ function makeModelRooms(bridge) {
         shell(b, W, H);
         backDoor(b);
         duskWindow(b, 239, 122, 130, 190, 300);
-        b.px(379, 22, 2, 74, M.bronze);
-        b.px(368, 96, 24, 12, M.brass);
-        b.px(368, 96, 24, 2, M.brassHi);
-        b.px(366, 106, 28, 3, M.bronze);
-        b.px(372, 108, 16, 4, "rgba(255,228,160,0.65)");
-        bloom(b, 380, 112, 42, "247,217,140", 0.14);
+        b.px(379, 22, 2, 49, M.bronze);
+        b.px(368, 71, 24, 12, M.brass);
+        b.px(368, 71, 24, 2, M.brassHi);
+        b.px(366, 81, 28, 3, M.bronze);
+        b.px(372, 83, 16, 4, "rgba(255,228,160,0.65)");
+        bloom(b, 380, 87, 42, "247,217,140", 0.14);
         pool(b, 380, 340, 220, "247,217,140", 0.1);
         studyWall(b, 354, 92, 3, 2, [
           "rgba(110,231,165,0.12)",
@@ -4326,23 +4326,35 @@ function makeModelRooms(bridge) {
         b.px(190, 288, 20, 10, M.linen);
         b.px(190, 288, 10, 10, "#e8e2d4");
         b.px(200, 288, 1, 10, M.woodDk);
-        contact(b, 126, 301, 60, 0.3);
-        b.px(100, 236, 52, 64, M.stone);
-        b.px(100, 236, 52, 3, M.stoneHi);
-        b.px(112, 260, 28, 40, "#0b0708");
-        for (let y = 0;y < 14; y++)
-          b.px(114, 286 + y, 24, 1, "rgba(224,102,46," + (0.05 + y * 0.022).toFixed(3) + ")");
-        b.px(118, 292, 6, 6, "#e0662e");
-        b.px(126, 294, 8, 5, "#b4622e");
-        b.px(130, 290, 5, 4, "rgba(255,207,122,0.8)");
-        b.px(100, 230, 52, 8, M.wood);
-        b.px(100, 230, 52, 2, M.woodHi);
-        b.px(106, 222, 10, 8, M.terra);
-        b.px(122, 220, 8, 10, M.linen);
-        b.px(136, 222, 8, 8, M.leaf2);
-        pool(b, 126, 312, 120, "255,180,110", 0.1);
+        contact(b, 130, 301, 68, 0.3);
+        b.px(100, 156, 60, 144, M.stone);
+        b.px(100, 156, 2, 144, M.stoneHi);
+        b.px(158, 156, 2, 144, M.stoneDk);
+        for (let y = 160;y < 300; y += 10) {
+          b.px(102, y, 56, 1, "rgba(6,4,10,0.34)");
+          for (let x = 102 + ((y / 10 | 0) % 2 ? 0 : 13);x < 158; x += 26)
+            b.px(x, y, 1, 10, "rgba(6,4,10,0.26)");
+        }
+        b.px(104, 243, 52, 5, M.stoneHi);
+        b.px(104, 248, 52, 2, M.stoneDk);
+        b.px(110, 250, 40, 50, "#0b0708");
+        b.px(110, 250, 40, 2, "rgba(6,4,10,0.6)");
+        b.px(110, 250, 2, 50, "rgba(6,4,10,0.5)");
+        bloom(b, 130, 290, 26, "224,102,46", 0.13);
+        for (let y = 0;y < 16; y++)
+          b.px(114, 284 + y, 32, 1, "rgba(224,102,46," + (0.05 + y * 0.019).toFixed(3) + ")");
+        b.px(120, 290, 8, 8, "#e0662e");
+        b.px(130, 292, 10, 6, "#b4622e");
+        b.px(134, 288, 6, 5, "rgba(255,207,122,0.8)");
+        b.px(94, 150, 72, 6, M.wood);
+        b.px(94, 150, 72, 2, M.woodHi);
+        b.px(94, 156, 72, 2, M.woodDk);
+        b.px(106, 142, 10, 8, M.terra);
+        b.px(122, 140, 8, 10, M.linen);
+        b.px(136, 142, 8, 8, M.leaf2);
+        pool(b, 130, 312, 120, "255,180,110", 0.1);
         leafy(b, 325, 300, 70, M.leaf3, M.leaf4);
-        leafy(b, 164, 300, 44, M.leaf2, M.leaf3);
+        leafy(b, 172, 300, 44, M.leaf2, M.leaf3);
         leafy(b, 690, 300, 44, M.leaf2, M.leaf3);
         for (let x = 186;x < 292; x += 22)
           b.px(x, 56, 2, 40, M.leaf1);
@@ -4361,14 +4373,14 @@ function makeModelRooms(bridge) {
       draw: (g, t) => {
         g.wallFloor();
         g.text("GPT-4o", 239, 40, "rgba(190,246,217,0.94)", 9);
-        g.px(374, 108, 12, 3, "rgba(255,228,160," + (0.45 + 0.18 * Math.sin(t * 2.2)).toFixed(2) + ")");
+        g.px(374, 83, 12, 3, "rgba(255,228,160," + (0.45 + 0.18 * Math.sin(t * 2.2)).toFixed(2) + ")");
         for (let i = 0;i < 4; i++) {
           const sy = (t * 8 + i * 6) % 26;
           g.px(374 + Math.sin((t + i) * 1.1) * 2, 336 - sy, 1, 2, "rgba(216,208,196," + (0.16 - sy * 0.005).toFixed(3) + ")");
         }
         const fl = 0.6 + 0.4 * Math.sin(t * 9);
-        for (let i = 0;i < 4; i++)
-          g.px(116 + i * 6, 288 - (6 + Math.sin(t * 8 + i) * 5), 4, 8 + Math.sin(t * 8 + i) * 4, i % 2 ? "rgba(255,207,122," + (0.5 + fl * 0.3).toFixed(2) + ")" : "rgba(224,102,46," + (0.5 + fl * 0.3).toFixed(2) + ")");
+        for (let i = 0;i < 5; i++)
+          g.px(114 + i * 7, 286 - (6 + Math.sin(t * 8 + i) * 5), 5, 9 + Math.sin(t * 8 + i) * 4, i % 2 ? "rgba(255,207,122," + (0.5 + fl * 0.3).toFixed(2) + ")" : "rgba(224,102,46," + (0.5 + fl * 0.3).toFixed(2) + ")");
         for (let i = 0;i < 24; i++) {
           const a = i / 24 * 6.2832;
           g.px(380 + Math.cos(a) * 40, 60 + Math.sin(a) * 12 + Math.sin(t + i) * 1, 2, 2, "rgba(247,217,140," + (0.06 + 0.06 * Math.sin(t * 1.5 + i)).toFixed(2) + ")");
