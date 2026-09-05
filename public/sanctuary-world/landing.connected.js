@@ -12576,10 +12576,11 @@
         finish();
         return;
       }
-      let i = 0;
+      const t0 = performance.now();
       top();
       encTypeTimer = setInterval(() => {
-        p.textContent = text.slice(0, ++i);
+        const i = Math.min(text.length, Math.floor((performance.now() - t0) / 11) + 1);
+        p.textContent = text.slice(0, i);
         if (i >= text.length) {
           clearInterval(encTypeTimer);
           finish();

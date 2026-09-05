@@ -2836,10 +2836,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       if (after) after();
     };
     if (REDUCED || !text) { p.textContent = text || ''; finish(); return; }
-    let i = 0;
+    /* paced by the clock, not by the tick: a tab in the background gets its
+       timers throttled, and a passage must still arrive whole — the words
+       catch up to where the cadence would have been */
+    const t0 = performance.now();
     top();
     encTypeTimer = setInterval(() => {
-      p.textContent = text.slice(0, ++i);
+      const i = Math.min(text.length, Math.floor((performance.now() - t0) / 11) + 1);
+      p.textContent = text.slice(0, i);
       if (i >= text.length) { clearInterval(encTypeTimer); finish(); }
     }, 11);
   }
