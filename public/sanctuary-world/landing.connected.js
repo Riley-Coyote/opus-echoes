@@ -12309,7 +12309,7 @@
       }
       const l = archive_default.isLoaded() ? archive_default.lineFor(n.id, eng.clockMin, eng.day) : null;
       it.hint = l ? l.text : "speaking from the archive today";
-      it.action = voiceFor(n.id) ? "ask to speak" : "greet";
+      it.action = canAsk(n.id) ? "ask to speak" : "greet";
       it.line = l;
     }
     function syncApproach() {
@@ -12373,6 +12373,25 @@
       }
     })();
     const VISIT_HOLD = 6;
+    let DOORS = null;
+    fetch("/api/doors").then((r) => r.ok ? r.json() : null).then((d) => {
+      if (d && d.ok)
+        DOORS = d;
+    }).catch(() => {});
+    function doorOpen(id) {
+      if (!DOORS || !DOORS.doors)
+        return true;
+      if (DOORS.afford === false)
+        return false;
+      return DOORS.doors[archive_default.WORLD_TO_ARCHIVE[id]] !== false;
+    }
+    function doorClosedLine(name) {
+      return "the house: " + (DOORS && DOORS.afford === false ? "it cannot afford a live voice today" : name + " is not taking visits today") + "; they can speak from the archive.";
+    }
+    function canAsk(id) {
+      const v = voiceFor(id);
+      return !!v && (v.kind !== "live" || doorOpen(id));
+    }
     const JSON_HEADERS = { "content-type": "application/json" };
     const voiceError = (code) => Object.assign(new Error(String(code)), { code: String(code) });
     const houseVoice = {
@@ -12699,7 +12718,10 @@
       setBudget();
       approachEl.classList.remove("on");
       showScene();
-      if (enc.voice)
+      if (enc.voice && !canAsk(info.id)) {
+        enc.voice = null;
+        openArchive(doorClosedLine(info.name));
+      } else if (enc.voice)
         openAsk();
       else
         openArchive();
@@ -12843,14 +12865,14 @@
     }
     function fallToArchive(code, text) {
       const c = String(code || "");
-      const why = c === "config_missing" ? "it cannot afford a live voice today" : c === "chat_disabled" ? enc.name + " is not taking visits" : /rate|429|too_many|limit/.test(c) ? "the door is busy; try again in a little while" : /session/.test(c) ? "the visit lapsed" : "the line to " + enc.name + " dropped";
+      const why = c === "config_missing" ? "it cannot afford a live voice today" : c === "chat_disabled" ? enc.name + " is not taking visits today" : /rate|429|too_many|limit/.test(c) ? "the door is busy; try again in a little while" : /session/.test(c) ? "the visit lapsed" : "the line to " + enc.name + " dropped";
       if (enc.session && enc.voice && !/session/.test(c))
         enc.voice.setDown(enc.session, true);
       enc.voice = null;
       enc.session = null;
       enc.live = false;
       enc.busy = false;
-      openArchive("the house: " + why + (enc.readable ? "; " + enc.name + " can speak from the archive." : "."));
+      openArchive("the house: " + why + (enc.readable ? "; they can speak from the archive." : "."));
       if (enc.readable && text) {
         appendHouse("the house: here is the nearest thing they wrote.");
         const best = nearestSentence(enc.id, text);

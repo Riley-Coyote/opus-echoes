@@ -2589,7 +2589,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!knows(n.id)) { it.line = null; return; }
     const l = archive.isLoaded() ? archive.lineFor(n.id, eng.clockMin, eng.day) : null;
     it.hint = l ? l.text : 'speaking from the archive today';
-    it.action = voiceFor(n.id) ? 'ask to speak' : 'greet';
+    it.action = canAsk(n.id) ? 'ask to speak' : 'greet';
     it.line = l;
   }
   function syncApproach() {
@@ -2671,6 +2671,26 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const VOICE = (() => { try { return new URLSearchParams(location.search).get('voice'); } catch (e) { return null; } })();
   /* a visit is six of the visitor's messages, on both sides of the line */
   const VISIT_HOLD = 6;
+  /* the doors: which residents receive visitors, and whether the house can
+     afford a voice at all — read once, so the card can say "not taking
+     visits" before anyone knocks. Unknown (the read failed) means: knock
+     and find out; the knock's answer is honest either way. */
+  let DOORS = null;
+  fetch('/api/doors').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && d.ok) DOORS = d; }).catch(() => {});
+  function doorOpen(id) {
+    if (!DOORS || !DOORS.doors) return true;
+    if (DOORS.afford === false) return false;
+    return DOORS.doors[archive.WORLD_TO_ARCHIVE[id]] !== false;
+  }
+  function doorClosedLine(name) {
+    return 'the house: ' + (DOORS && DOORS.afford === false ? 'it cannot afford a live voice today' : name + ' is not taking visits today')
+      + '; they can speak from the archive.';
+  }
+  /* can this resident be asked, here, today? A rehearsal ignores the doors. */
+  function canAsk(id) {
+    const v = voiceFor(id);
+    return !!v && (v.kind !== 'live' || doorOpen(id));
+  }
   const JSON_HEADERS = { 'content-type': 'application/json' };
   const voiceError = (code) => Object.assign(new Error(String(code)), { code: String(code) });
   const houseVoice = {
@@ -2935,7 +2955,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     setBudget();
     approachEl.classList.remove('on');
     showScene();
-    if (enc.voice) openAsk(); else openArchive();
+    if (enc.voice && !canAsk(info.id)) { enc.voice = null; openArchive(doorClosedLine(info.name)); }
+    else if (enc.voice) openAsk();
+    else openArchive();
   }
   /* the asking: you say what brought you; whether to take it up is theirs */
   function openAsk() {
@@ -3052,13 +3074,13 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const c = String(code || '');
     /* each of these reads after "the house:" */
     const why = c === 'config_missing' ? 'it cannot afford a live voice today'
-      : c === 'chat_disabled' ? enc.name + ' is not taking visits'
+      : c === 'chat_disabled' ? enc.name + ' is not taking visits today'
       : /rate|429|too_many|limit/.test(c) ? 'the door is busy; try again in a little while'
       : /session/.test(c) ? 'the visit lapsed'
       : 'the line to ' + enc.name + ' dropped';
     if (enc.session && enc.voice && !/session/.test(c)) enc.voice.setDown(enc.session, true);
     enc.voice = null; enc.session = null; enc.live = false; enc.busy = false;
-    openArchive('the house: ' + why + (enc.readable ? '; ' + enc.name + ' can speak from the archive.' : '.'));
+    openArchive('the house: ' + why + (enc.readable ? '; they can speak from the archive.' : '.'));
     if (enc.readable && text) {
       appendHouse('the house: here is the nearest thing they wrote.');
       const best = nearestSentence(enc.id, text);
