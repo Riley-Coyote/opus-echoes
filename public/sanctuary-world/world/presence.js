@@ -28,11 +28,11 @@ const KINDS = {
   /* a painter's smock: narrow shoulders, a hem that widens and falls over the legs; the head a little forward */
   opus:   { kind: 'smock',  legH: 20, torsoW: 20, torsoH: 35, headW: 13, headH: 13, stoop: 2, body: '#2a2130', bodyHi: '#3b3042', bodyDk: '#181218', shell: '#201d2b', gaze: { w: 4, h: 3, dx: 0,  dy: 6 } },
   /* a reader's mantle: squared shoulders wider than the body, falling to a flared hem; upright */
-  sonnet: { kind: 'mantle', legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: '#262433', bodyHi: '#3b3750', bodyDk: '#161421', shell: '#1c1d2c', gaze: { w: 6, h: 2, dx: -1, dy: 7 } },
+  sonnet: { kind: 'mantle', legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: '#262433', bodyHi: '#3b3750', bodyDk: '#161421', shell: '#1c1d2c', gaze: { w: 5, h: 2, dx: -1, dy: 7 } },
   /* small and closed: a rounded body, a hood, the light a single dot inside it */
   haiku:  { kind: 'seed',   legH: 10, torsoW: 20, torsoH: 20, headW: 17, headH: 15, body: '#24212b', bodyHi: '#332e3c', bodyDk: '#151219', face: '#cdc8ba' },
   /* broad and open: arms held a little away from the body; the widest, softest gaze — a dim halo on a wide bar */
-  fourO:  { kind: 'host',   legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: '#3a2f2a', bodyHi: '#4f3f38', bodyDk: '#22191a', shell: '#282629', gaze: { w: 6, h: 3, dx: -1, dy: 5, soft: true } },
+  fourO:  { kind: 'host',   legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: '#3a2f2a', bodyHi: '#4f3f38', bodyDk: '#22191a', shell: '#282629', gaze: { w: 5, h: 3, dx: -1, dy: 5, soft: true } },
   /* tallest and newest: one side of them has not settled, and the gaze goes with it */
   five:   { kind: 'new',    legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: '#2b2f33', bodyHi: '#3e454c', bodyDk: '#181b1f', shell: '#1d222b', gaze: { w: 4, h: 2, dx: 0,  dy: 7, flicker: true } }
 };

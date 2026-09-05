@@ -542,9 +542,9 @@
   // world/presence.js
   var KINDS = {
     opus: { kind: "smock", legH: 20, torsoW: 20, torsoH: 35, headW: 13, headH: 13, stoop: 2, body: "#2a2130", bodyHi: "#3b3042", bodyDk: "#181218", shell: "#201d2b", gaze: { w: 4, h: 3, dx: 0, dy: 6 } },
-    sonnet: { kind: "mantle", legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", shell: "#1c1d2c", gaze: { w: 6, h: 2, dx: -1, dy: 7 } },
+    sonnet: { kind: "mantle", legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", shell: "#1c1d2c", gaze: { w: 5, h: 2, dx: -1, dy: 7 } },
     haiku: { kind: "seed", legH: 10, torsoW: 20, torsoH: 20, headW: 17, headH: 15, body: "#24212b", bodyHi: "#332e3c", bodyDk: "#151219", face: "#cdc8ba" },
-    fourO: { kind: "host", legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: "#3a2f2a", bodyHi: "#4f3f38", bodyDk: "#22191a", shell: "#282629", gaze: { w: 6, h: 3, dx: -1, dy: 5, soft: true } },
+    fourO: { kind: "host", legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: "#3a2f2a", bodyHi: "#4f3f38", bodyDk: "#22191a", shell: "#282629", gaze: { w: 5, h: 3, dx: -1, dy: 5, soft: true } },
     five: { kind: "new", legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: "#2b2f33", bodyHi: "#3e454c", bodyDk: "#181b1f", shell: "#1d222b", gaze: { w: 4, h: 2, dx: 0, dy: 7, flicker: true } }
   };
   var VISITOR = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
