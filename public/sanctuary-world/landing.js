@@ -2887,7 +2887,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      scene, so the visitor standing beside them is not in the picture. */
   function drawEncSprite(npc) {
     const c = encSprite.getContext('2d');
-    const W = encSprite.width, H = encSprite.height, S = 2;
+    const W = encSprite.width, H = encSprite.height, S = 1;
     if (!npc || !eng || typeof eng.drawNpc !== 'function') {
       c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H); return;
     }

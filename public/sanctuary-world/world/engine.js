@@ -1,4 +1,4 @@
-import { drawPresence, drawVisitor } from './presence.js';
+import { drawPresence, drawVisitor, specFor, figureHeight } from './presence.js';
 
 /* ==========================================================================
    SUNSET HOUSE ENGINE v2 — pixel diorama with a living-household layer.
@@ -10,7 +10,9 @@ import { drawPresence, drawVisitor } from './presence.js';
 
 const DEFAULTS = {
   width: 640, height: 360, walkBand: [272, 330], wallBase: 223,
-  speed: 2.15, npcSpeed: 0.6, frameCapMs: 23, transitionMs: 460,
+  /* a stride covers a stride's worth of floor: the people are drawn at full
+     height now, so they cross a room at a walk instead of a shuffle */
+  speed: 3.0, npcSpeed: 0.96, frameCapMs: 23, transitionMs: 460,
   pace: 1, bubbles: true, sound: false, storageKey: 'sunset-house2.pos'
 };
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -1083,7 +1085,7 @@ export class Sanctuary {
     /* bubbles + emotes above everything */
     if (this.o.bubbles !== false) for (const n of this.npcs) if (n.room === this.roomId && n.bubble) this.drawBubble(n);
     for (const n of this.npcs) if (n.room === this.roomId && n.emote && !n.bubble) this.drawEmote(n);
-    if (!this.trans && this.near) this.drawPrompt(this.av.x, this.av.y - 12, t);
+    if (!this.trans && this.near) this.drawPrompt(this.av.x, this.av.y + 14 - figureHeight(specFor(this.av), { cap: true }) - 2, t);
     ctx.restore();
 
     /* screen-space: rain, vignette, dusk breath, transition */
@@ -1282,7 +1284,8 @@ export class Sanctuary {
     const h = nameH + lines.length * lh + pad * 2;
     const roomW = this.rooms[n.room].width;
     let bx = clamp(Math.round(n.x - w / 2), 3, roomW - w - 3);
-    let by = Math.round(n.y - 27 - 14 - h);
+    /* just above the head, wherever that head happens to be */
+    let by = Math.round(n.y) + 14 - figureHeight(specFor(n)) - 12 - h;
     this.px(bx, by, w, h, 'rgba(10,9,12,0.97)');
     ctx.strokeStyle = 'rgba(245,243,237,0.58)'; ctx.lineWidth = 1;
     ctx.strokeRect(bx + 0.5, by + 0.5, w - 1, h - 1);
@@ -1297,7 +1300,7 @@ export class Sanctuary {
     ctx.textBaseline = 'alphabetic';
   }
   drawEmote(n) {
-    const ctx = this.ctx, x = Math.round(n.x), y = Math.round(n.y) - 34;
+    const ctx = this.ctx, x = Math.round(n.x), y = Math.round(n.y) + 14 - figureHeight(specFor(n)) - 5;
     ctx.fillStyle = 'rgba(247,244,236,0.94)'; ctx.font = CANVAS_TYPE.emote;
     ctx.textAlign = 'center'; ctx.fillText(n.emote.g, x, y); ctx.textAlign = 'left';
   }
