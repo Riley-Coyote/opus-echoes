@@ -1632,6 +1632,94 @@ async function runDailyIdleForResident(
 }
 
 // =============================================================
+// Daily door-notes tick.
+//
+// A note left at a door is read in a reflection, and a reflection runs
+// when a visit is set down. A resident who is not taking visits has no
+// visit to set down — the notes at their door are exactly the ones
+// nothing would ever reach. Once a day the house gives them the quiet
+// in which to read them: the same reflection, with the notes as its
+// only input and no conversation behind it, and the same read mark
+// afterwards.
+//
+// Bounded: only residents with unread notes, at most one entry each per
+// tick, and at most the five oldest notes — readUnreadDoorNotes' own
+// limit — in that entry. A resident who declines to write leaves them
+// at the door, as writeReflection does.
+// =============================================================
+
+type DoorNotesOutcome = { notes: number; wrote: boolean; reason: string };
+
+export async function dailyDoorNotesTick(): Promise<{
+  ran: boolean;
+  reason: string;
+  per_resident: Array<{ resident_id: string } & DoorNotesOutcome>;
+}> {
+  const perResident: Array<{ resident_id: string } & DoorNotesOutcome> = [];
+
+  // Each door is its own errand: a resident whose read or model call
+  // fails must not keep the next resident from their own notes.
+  for (const resident of ALL_RESIDENTS) {
+    const result = await readDoorNotesForResident(resident).catch((err) => {
+      console.error(`[substrate] dailyDoorNotesTick(${resident.id}) failed:`, err);
+      return { notes: 0, wrote: false, reason: "error" };
+    });
+    // A door with nothing at it is not an outcome worth reporting; a
+    // door whose notes could not be read is.
+    if (result.reason === "nothing_unread") continue;
+    perResident.push({ resident_id: resident.id, ...result });
+  }
+
+  const ran = perResident.some((r) => r.wrote);
+  const doors = perResident.map((r) => `${r.resident_id}:${r.reason}`).join(" ");
+  return { ran, reason: ran ? "ok" : doors || "nothing_unread", per_resident: perResident };
+}
+
+/**
+ * One resident, alone with what was left at their door. Reuses the
+ * reflection the substrate already writes — buildReflectionSystem, the
+ * resident's own model and provider, the same journal insert — with no
+ * session behind it, and marks the notes read exactly as
+ * writeReflection does: only once the entry has actually landed.
+ */
+async function readDoorNotesForResident(resident: ResidentConfig): Promise<DoorNotesOutcome> {
+  const doorNotes = await readUnreadDoorNotes(resident.id);
+  const doorNoteBlock = formatDoorNotesForReflection(doorNotes);
+  if (!doorNoteBlock) return { notes: 0, wrote: false, reason: "nothing_unread" };
+
+  const userPrompt = [
+    "[NOTES AT YOUR DOOR]",
+    doorNoteBlock,
+    "",
+    "No conversation preceded this. No one has been in the room — the notes are the whole of what there is to look at.",
+  ].join("\n");
+
+  const result = await callResidentJson<ReflectionResult>({
+    system: buildReflectionSystem(resident),
+    user: userPrompt,
+    maxTokens: 700,
+    temperature: 0.75,
+    model: resident.model,
+    provider: resident.provider,
+  });
+
+  if (!result || result.kind === "none" || !result.body) {
+    // Nothing they wanted to write down. The notes stay at the door.
+    return { notes: doorNotes.length, wrote: false, reason: result ? "no_entry" : "no_result" };
+  }
+
+  await supabaseAdmin.from("journal_entries").insert({
+    resident_id: resident.id,
+    kind: result.kind,
+    title: result.title?.slice(0, 60) ?? null,
+    body: result.body,
+    related_session_id: null,
+  });
+  await markDoorNotesRead(doorNotes, "reflection");
+  return { notes: doorNotes.length, wrote: true, reason: "ok" };
+}
+
+// =============================================================
 // Studio sessions — resident-pulled private-space work.
 // =============================================================
 

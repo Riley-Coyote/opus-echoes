@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  dailyIdleTick,
-  dailySalonTick,
-} from "@/server/substrate.server";
+import { dailyDoorNotesTick, dailyIdleTick, dailySalonTick } from "@/server/substrate.server";
 import { isAuthorizedCronRequest } from "@/server/cron-auth.server";
 
 // Called by pg_cron once per day. Runs the per-resident idle-tick
-// (art/essay creation when no visitor is present) and the salon
+// (art/essay creation when no visitor is present), the door-notes tick
+// (residents with unread notes at their door read them here, since a
+// resident not taking visits has no visit to set down), and the salon
 // archive growth tick (occasional new resident-to-resident salons
 // for the public archive on /commons).
 //
@@ -23,10 +22,14 @@ export const Route = createFileRoute("/api/public/hooks/daily-tick")({
           return new Response("unauthorized", { status: 401 });
         }
         try {
-          const [idle, salon] = await Promise.all([
+          const [idle, salon, doorNotes] = await Promise.all([
             dailyIdleTick(),
             dailySalonTick().catch((err) => {
               console.error("[hooks/daily-tick] salon tick failed:", err);
+              return { ran: false, reason: "error" };
+            }),
+            dailyDoorNotesTick().catch((err) => {
+              console.error("[hooks/daily-tick] door-notes tick failed:", err);
               return { ran: false, reason: "error" };
             }),
           ]);
@@ -35,6 +38,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-tick")({
             idle,
             space: { ran: false, reason: "paused_for_gathering_mode" },
             salon,
+            door_notes: doorNotes,
           });
         } catch (err) {
           console.error("[hooks/daily-tick] failed:", err);

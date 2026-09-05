@@ -522,7 +522,7 @@ export async function markDoorNotesRead(notes: DoorNote[], readIn: DoorNoteReadI
  */
 export function formatVisitorDoorNotes(notes: DoorNote[]): string {
   if (notes.length === 0) return "";
-  const lines = ["[NOTES THIS VISITOR LEFT AT YOUR DOOR]"];
+  const lines = ["Notes this visitor left at your door:"];
   for (const n of notes) {
     const read = n.handledAt
       ? `you read it on ${doorNoteDay(n.handledAt)}`
