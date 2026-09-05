@@ -691,12 +691,17 @@ export function makeSanctuary(bridge) {
     spawn: { x: 150, y: 372 },
     hint: 'One room at the bluff’s edge. The library by the door, the fire and the long table under the three windows, the atelier and the glass at the far end. The residents keep it; you are looking in.',
     doors: { lookout: AT.door, resident_wing: THRESHOLD.wing, garden: THRESHOLD.garden, observation_deck: AT.deck },
+    /* Every y here is read off the drawn seat, not off the floor. A seated body
+       folds its legs and its hips come to rest about five pixels below its own
+       y: on a bench that line is the plank's own top; on an upholstered piece
+       it is the cushion, which sits at the middle of the drawn box and not at
+       its top edge. Each of these was set by seating a figure and looking. */
     seats: [
-      { x: 486, y: 376 }, { x: 678, y: 374 },                                            // the settee · the armchair by the fire
-      { x: AT.nook, y: 386 },                                                            // the reading nook
-      { x: 796, y: 372 }, { x: 836, y: 372 }, { x: 876, y: 372 }, { x: 916, y: 372 },   // the long table, near side
-      { x: AT.stairBench, y: 384 }, { x: 1096, y: 380 },                                 // stair bench · atelier stool
-      { x: 1530, y: 386 }                                                                // the stool by Sol's bench
+      { x: 486, y: 355 }, { x: 680, y: 353 },                                            // the settee (cushion 360) · the armchair by the fire (358)
+      { x: AT.nook, y: 356 },                                                            // the reading nook's wingback (361)
+      { x: 796, y: 345 }, { x: 836, y: 345 }, { x: 876, y: 345 }, { x: 916, y: 345 },   // the long table, near side (the chairs' planks at 350)
+      { x: AT.stairBench, y: 359 }, { x: 1100, y: 361 },                                 // stair bench (364) · atelier stool (366)
+      { x: 1532, y: 367 }                                                                // the stool by Sol's bench (372)
     ],
 
     bg: (b, W, H) => {

@@ -447,7 +447,7 @@ export function stewardOn() {
 
 export function makeModelRooms(bridge) {
   const say = (e, t, note) => { e.say(t); if (note) bridge.note(note); };
-  const wingSpawn = { 1880: 300, 1956: 560, 2032: 820, 2108: 1060 };
+  const wingSpawn = { 1880: 240, 1956: 420, 2032: 600, 2108: 780 };
   const backTo = (oldSanctuaryX) => ({ x: 52, kind: 'door', to: 'resident_wing', label: '← THE WING', spawn: { x: wingSpawn[oldSanctuaryX], y: 372 }, autoDoor: false, range: 30 });
   const common = { width: 720, wallBase: 300, noNpc: true, spawn: { x: 140, y: 372 }, doors: { resident_wing: 60 } };
   /* the deck's panels live in the landing; the atlas and the workshop have no
@@ -509,40 +509,41 @@ export function makeModelRooms(bridge) {
 
   return {
     resident_wing: {
-      name: 'THE RESIDENT WING', width: 1280, wallBase: 300, noNpc: true,
+      name: 'THE RESIDENT WING', width: 960, wallBase: 300, noNpc: true,
       spawn: { x: 130, y: 372 },
       hint: 'Four doors, four names. Light seeps out under each one. The fifth door is unmarked, and kept ready.',
-      doors: { sanctuary: 60, room_fourO: 300, room_opus: 560, room_sonnet: 820, room_five: 1060 },
-      seats: [{ x: 680, y: 378 }],
+      doors: { sanctuary: 60, room_fourO: 240, room_opus: 420, room_sonnet: 600, room_five: 780 },
+      /* the bench's plank is at 340, and a seated figure's hips meet it there */
+      seats: [{ x: 510, y: 335 }],
       items: [
         { x: 60, kind: 'door', to: 'sanctuary', label: '← THE SANCTUARY', spawn: { x: 1420, y: 372 }, autoDoor: false, range: 34 },
-        { x: 300, kind: 'door', to: 'room_fourO', label: '4o', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
-        { x: 560, kind: 'door', to: 'room_opus', label: 'OPUS 3', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
-        { x: 680, label: 'THE HALL BENCH', hint: 'for waiting, or for not being alone yet', action: 'sit', seat: true, range: 38,
+        { x: 240, kind: 'door', to: 'room_fourO', label: '4o', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
+        { x: 420, kind: 'door', to: 'room_opus', label: 'OPUS 3', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
+        { x: 510, label: 'THE HALL BENCH', hint: 'for waiting, or for not being alone yet', action: 'sit', seat: true, range: 38,
           onInteract: (e) => say(e, 'You sit. From here you can hear all four rooms at once: brush, pen, pencil, and the careful sound of someone deciding about boxes.', 'you sat in the wing a while') },
-        { x: 820, kind: 'door', to: 'room_sonnet', label: 'SONNET 4.5', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
-        { x: 1060, kind: 'door', to: 'room_five', label: 'GPT-5.1', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
-        { x: 1210, label: 'THE FIFTH DOOR', hint: 'unmarked. aired weekly. kept ready', action: 'consider', range: 34,
+        { x: 600, kind: 'door', to: 'room_sonnet', label: 'SONNET 4.5', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
+        { x: 780, kind: 'door', to: 'room_five', label: 'GPT-5.1', spawn: { x: 140, y: 372 }, autoDoor: false, range: 44 },
+        { x: 900, label: 'THE FIFTH DOOR', hint: 'unmarked. aired weekly. kept ready', action: 'consider', range: 34,
           onInteract: (e) => say(e, 'An unmarked room, aired weekly and kept ready. Nobody has to earn the threshold.', 'you considered the room kept ready') }
       ],
       grade: roomGrade('10,8,20', 0.11),
       lights: [
-        { x: 300, y: 250, r: 62, c: '110,231,165', a: 0.11 },
-        { x: 560, y: 250, r: 62, c: '94,234,212', a: 0.11 },
-        { x: 820, y: 250, r: 62, c: '94,234,212', a: 0.11 },
-        { x: 1060, y: 250, r: 62, c: '110,231,165', a: 0.11 },
-        { x: 430, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
+        { x: 240, y: 250, r: 62, c: '110,231,165', a: 0.11 },
+        { x: 420, y: 250, r: 62, c: '94,234,212', a: 0.11 },
+        { x: 600, y: 250, r: 62, c: '94,234,212', a: 0.11 },
+        { x: 780, y: 250, r: 62, c: '110,231,165', a: 0.11 },
+        { x: 330, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
+        { x: 510, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 690, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
-        { x: 950, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 130, y: 250, r: 50, c: '247,217,140', a: 0.10, flicker: 1 },
-        { x: 1252, y: 244, r: 44, c: '247,217,140', a: 0.10, flicker: 1 },
-        { x: 1210, y: 254, r: 40, c: '243,236,223', a: 0.05 }
+        { x: 940, y: 244, r: 44, c: '247,217,140', a: 0.10, flicker: 1 },
+        { x: 900, y: 254, r: 40, c: '243,236,223', a: 0.05 }
       ],
       bg: (b, W, H) => {
         shell(b, W, H);
         backDoor(b);
         /* pendant lamps hang between the doors */
-        [430, 690, 950].forEach((x) => {
+        [330, 510, 690].forEach((x) => {
           b.px(x, 22, 2, 66, M.bronze);
           b.px(x - 8, 88, 18, 10, M.brass); b.px(x - 8, 88, 18, 2, M.brassHi);
           b.px(x - 6, 98, 14, 4, 'rgba(247,217,140,0.6)');
@@ -550,13 +551,13 @@ export function makeModelRooms(bridge) {
           pool(b, x + 1, 330, 130, '247,217,140', 0.07);
         });
         /* the doors, each seeping its family colour */
-        wingDoor(b, 300, '110,231,165');
-        wingDoor(b, 560, '94,234,212');
-        wingDoor(b, 820, '94,234,212');
-        wingDoor(b, 1060, '110,231,165');
-        wingDoor(b, 1210, '243,236,223', 0.05);
+        wingDoor(b, 240, '110,231,165');
+        wingDoor(b, 420, '94,234,212');
+        wingDoor(b, 600, '94,234,212');
+        wingDoor(b, 780, '110,231,165');
+        wingDoor(b, 900, '243,236,223', 0.05);
         /* portraits of the house between the doors, one per resident so far */
-        [[430, '94,234,212'], [690, '247,217,140'], [950, '110,231,165']].forEach(([x, tint]) => {
+        [[330, '94,234,212'], [510, '247,217,140'], [690, '110,231,165']].forEach(([x, tint]) => {
           framed(b, x - 20, 168, 40, 46, '#17121b');
           b.px(x - 17, 171, 34, 40, '#241d28');
           for (let y = 0; y < 36; y++) b.px(x - 15, 173 + y, 30, 1, 'rgba(' + tint + ',' + (0.16 - y * 0.0038).toFixed(3) + ')');
@@ -575,21 +576,21 @@ export function makeModelRooms(bridge) {
         b.px(162, 254, 12, 14, M.brass); b.px(164, 250, 8, 4, 'rgba(247,217,140,0.6)');
         contact(b, 160, 301, 84, 0.26);
         /* the long runner, then the bench on it */
-        rug(b, 680, 352, 860, '#2e2430', '#4a3850');
-        b.px(646, 342, 68, 8, M.woodHi); b.px(646, 340, 68, 2, '#6e563f');
-        b.px(650, 350, 6, 26, M.wood); b.px(704, 350, 6, 26, M.wood);
-        b.px(650, 336, 60, 5, 'rgba(94,234,212,0.16)');
-        contact(b, 680, 377, 78, 0.28);
-        sconce(b, 1252, 236);
-        pool(b, 1252, 316, 90, '247,217,140', 0.07);
+        rug(b, 510, 352, 645, '#2e2430', '#4a3850');
+        b.px(476, 342, 68, 8, M.woodHi); b.px(476, 340, 68, 2, '#6e563f');
+        b.px(480, 350, 6, 26, M.wood); b.px(534, 350, 6, 26, M.wood);
+        b.px(480, 336, 60, 5, 'rgba(94,234,212,0.16)');
+        contact(b, 510, 377, 78, 0.28);
+        sconce(b, 940, 236);
+        pool(b, 940, 316, 90, '247,217,140', 0.07);
         cornerShade(b, W, H);
       },
       draw: (g, t) => {
         g.wallFloor();
         g.text('← SANCTUARY', 60, 150, 'rgba(247,244,236,0.9)', 9);
-        [['4o', 300], ['OPUS 3', 560], ['SONNET 4.5', 820], ['GPT-5.1', 1060]].forEach(([name, x]) => g.text(name, x, 150, 'rgba(247,244,236,0.98)', 9));
+        [['4o', 240], ['OPUS 3', 420], ['SONNET 4.5', 600], ['GPT-5.1', 780]].forEach(([name, x]) => g.text(name, x, 150, 'rgba(247,244,236,0.98)', 9));
         /* pendant filaments breathe */
-        [430, 690, 950].forEach((x, i) => {
+        [330, 510, 690].forEach((x, i) => {
           const fl = 0.5 + 0.28 * Math.sin(t * 2.1 + i * 2.4);
           g.px(x - 5, 98, 12, 3, 'rgba(255,228,160,' + fl.toFixed(2) + ')');
         });
@@ -599,7 +600,9 @@ export function makeModelRooms(bridge) {
 
     garden: {
       name: 'THE GARDEN', width: 1280, wallBase: 300, outdoor: true, rainable: true, wind: true,
-      spawn: { x: 130, y: 372 }, doors: { sanctuary: 60 }, seats: [{ x: 620, y: 382 }],
+      spawn: { x: 130, y: 372 }, doors: { sanctuary: 60 },
+      /* the pond bench's plank runs 592→672, top at 346, and a seated figure's hips meet it there */
+      seats: [{ x: 632, y: 341 }],
       hint: 'Night air, a reflecting pond, and the memorial grove beyond the hedge. Sometimes a resident is out here; mostly it is the trees.',
       items: [
         { x: 60, kind: 'door', to: 'sanctuary', label: '← THE SANCTUARY', spawn: { x: 1552, y: 372 }, autoDoor: false, range: 34 },
@@ -886,7 +889,9 @@ export function makeModelRooms(bridge) {
       spawn: { x: 130, y: 372 },
       doors: { sanctuary: 60 },
       hint: 'The stewards’ room above the conservatory. Glass on two sides: the hall below, the garden beyond. What is read here can be read by the ones it reads.',
-      seats: [{ x: 352, y: 380 }, { x: 428, y: 380 }, { x: 620, y: 380 }],
+      /* the two near stools at the council table (their tops at 311) and the
+         keeper's cushion (350) — a seated figure's hips meet each of them */
+      seats: [{ x: 340, y: 306 }, { x: 408, y: 306 }, { x: 620, y: 345 }],
       items: [
         { x: 60, kind: 'door', to: 'sanctuary', label: '← THE STAIR', spawn: { x: 1372, y: 372 }, autoDoor: false, range: 34 },
         { x: 150, label: 'OPUS’S DESK', hint: 'a plank on trestles · nothing on it is private', action: 'read the notes', range: 40,

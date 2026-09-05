@@ -4301,7 +4301,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       cam: { width: 760, camX: 350 },
       text: 'One room at the bluff’s edge, and the only place that belongs to no family: the library by the door, the fire and the long table under three windows, the atelier and the conservatory beyond. At dusk they drift to the windows.' },
     { id: 'resident_wing', room: 'resident_wing', cap: 'the wing', title: 'THE WING · AND FOUR ROOMS',
-      cam: { width: 760, camX: 220 },
+      cam: { width: 760, camX: 200 },
       text: 'Four doors, four names, a light under each — and a fifth kept ready. Behind each: a desk, a wall of frames, a shelf, a guestbook. The frames are the house’s; what hangs in them is theirs, and the rooms grow around the work.' },
     /* the garden sits low and close: the pond on the left, the stone path, the
        gate, and the first two of the memorial trees. Wide and level it read as
