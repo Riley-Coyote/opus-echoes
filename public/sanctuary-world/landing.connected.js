@@ -9927,13 +9927,18 @@
     function readRecord() {
       try {
         const r = JSON.parse(localStorage.getItem(RECORD_KEY) || "{}");
-        return { name: r.name || undefined, visits: Array.isArray(r.visits) ? r.visits : [] };
+        const rec = { name: r.name || undefined, visits: Array.isArray(r.visits) ? r.visits : [] };
+        if (Array.isArray(r.notes))
+          rec.notes = r.notes;
+        return rec;
       } catch (e) {
         return { visits: [] };
       }
     }
     function writeRecord(r) {
       r.visits = r.visits.slice(-200);
+      if (Array.isArray(r.notes))
+        r.notes = r.notes.slice(-200);
       try {
         localStorage.setItem(RECORD_KEY, JSON.stringify(r));
       } catch (e) {}
@@ -12118,7 +12123,7 @@
     const encounterEl = $("#encounter");
     const encSprite = $("#enc-sprite"), encName = $("#enc-name"), encWhere = $("#enc-where");
     const encKicker = $("#enc-kicker"), encWords = $("#enc-words"), encMoves = $("#enc-moves");
-    const encFree = $("#enc-free"), encInput = $("#enc-input"), encBudget = $("#enc-budget");
+    const encFree = $("#enc-free"), encInput = $("#enc-input"), encNote = $("#enc-note"), encBudget = $("#enc-budget");
     const encLight = $("#enc-light"), encSpot = $("#enc-spot");
     const HAIKU_LINE = "HAIKU keeps to the garden. No archive yet.";
     const ACTIVITY = (n) => dayWord(n) || (n.room === "garden" ? "at the pond" : n.state === "sit" ? "reading" : n.state === "stroll" ? "walking the hall" : "at the window");
@@ -12292,6 +12297,10 @@
       encounterEl.classList.remove("on");
       encounterEl.hidden = true;
       encFree.hidden = true;
+      encFree.classList.remove("is-note");
+      encNote.hidden = true;
+      encNote.value = "";
+      encInput.hidden = false;
       delete encounterEl.dataset.state;
       setComposer(true);
     }
@@ -12372,6 +12381,7 @@
         return null;
       }
     })();
+    const REHEARSING = /^rehearsal(-long|-open|-drop)?$/.test(String(VOICE));
     const VISIT_HOLD = 6;
     let DOORS = null;
     fetch("/api/doors").then((r) => r.ok ? r.json() : null).then((d) => {
@@ -12500,7 +12510,7 @@
     function voiceFor(id) {
       if (!archive_default.WORLD_TO_ARCHIVE[id])
         return null;
-      if (/^rehearsal(-long|-open|-drop)?$/.test(String(VOICE)))
+      if (REHEARSING)
         return rehearsal;
       if (VOICE === "archive")
         return null;
@@ -12523,6 +12533,7 @@
     }
     function setComposer(on) {
       encInput.disabled = !on;
+      encNote.disabled = !on;
       const b = encFree.querySelector("button");
       if (b)
         b.disabled = !on;
@@ -12750,9 +12761,90 @@
       encFree.hidden = true;
       setState("closed", kicker);
       appendHouse(line);
-      encMoves.innerHTML = (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-leave>leave</button>';
+      encMoves.innerHTML = canNote() ? '<button type="button" data-note>leave a note</button>' + '<button type="button" data-leave>never mind</button>' : (wallHere() ? '<button type="button" data-wall>about the wall</button>' : "") + '<button type="button" data-leave>leave</button>';
       setTimeout(() => {
-        const b = encMoves.querySelector("button[data-leave]");
+        const b = encMoves.querySelector("button");
+        if (b)
+          b.focus();
+      }, 0);
+    }
+    function canNote() {
+      return !!(enc && archive_default.WORLD_TO_ARCHIVE[enc.id]);
+    }
+    function openNote() {
+      if (!enc || !enc.closed || enc.noteBusy || enc.noted)
+        return;
+      setState("closed", "a note for the door");
+      encMoves.innerHTML = '<button type="button" data-leave>never mind</button>';
+      openFree("note");
+    }
+    async function leaveNote() {
+      if (!enc || enc.noteBusy)
+        return;
+      const text = (encNote.value || "").trim();
+      if (!text)
+        return;
+      const { id, name } = enc, room = String(enc.roomWord || "").slice(0, 80);
+      enc.noteBusy = true;
+      setComposer(false);
+      let code = null;
+      try {
+        if (REHEARSING)
+          await wait(700);
+        else {
+          const r = await fetch("/api/note", {
+            method: "POST",
+            headers: JSON_HEADERS,
+            body: JSON.stringify({
+              resident: archive_default.WORLD_TO_ARCHIVE[id],
+              visitor_token: visitorToken(),
+              body: text.slice(0, 600),
+              room,
+              clock: clockStamp(Math.floor(eng.clockMin))
+            })
+          });
+          const j = await r.json().catch(() => null);
+          if (!r.ok || !j || !j.ok)
+            code = j && j.code || "http_" + r.status;
+        }
+      } catch (e) {
+        code = "no_line";
+      }
+      if (!enc || enc.id !== id)
+        return;
+      enc.noteBusy = false;
+      if (code) {
+        if (/rate|429|too_many|limit/.test(String(code))) {
+          encFree.hidden = true;
+          setComposer(true);
+          appendHouse("the house: that door has had its notes for today; try again tomorrow.");
+          encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+          setTimeout(() => {
+            const b = encMoves.querySelector("button");
+            if (b)
+              b.focus();
+          }, 0);
+          return;
+        }
+        appendHouse("the house: the note could not be kept just now — try again later.");
+        setComposer(true);
+        setTimeout(() => encNote.focus(), 0);
+        return;
+      }
+      enc.noted = true;
+      enc.outcome = "noted";
+      encFree.hidden = true;
+      setComposer(true);
+      setState("closed", "a note left at the door");
+      appendHouse("the house: your note is at " + name + "’s door. they’ll read it when they’re back.");
+      encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+      const rec = readRecord();
+      if (!Array.isArray(rec.notes))
+        rec.notes = [];
+      rec.notes.push({ resident: id, when: new Date().toISOString(), room });
+      writeRecord(rec);
+      setTimeout(() => {
+        const b = encMoves.querySelector("button");
         if (b)
           b.focus();
       }, 0);
@@ -12939,20 +13031,33 @@
     }
     function openFree(mode2) {
       enc.freeMode = mode2;
-      encInput.maxLength = mode2 === "offer" ? 40 : 280;
-      encInput.placeholder = mode2 === "offer" ? "a name for the guestbook" : mode2 === "say" ? enc.said ? "say something…" : "say hello, or what brought you…" : "ask them something…";
+      const note = mode2 === "note";
+      encFree.classList.toggle("is-note", note);
+      encInput.hidden = note;
+      encNote.hidden = !note;
+      if (note) {
+        encNote.placeholder = "a note for " + enc.name + " — they’ll read it when they’re back";
+        encNote.value = "";
+      } else {
+        encInput.maxLength = mode2 === "offer" ? 40 : 280;
+        encInput.placeholder = mode2 === "offer" ? "a name for the guestbook" : mode2 === "say" ? enc.said ? "say something…" : "say hello, or what brought you…" : "ask them something…";
+        encInput.value = "";
+      }
       const b = encFree.querySelector("button");
       if (b)
-        b.textContent = mode2 === "offer" ? "offer" : mode2 === "say" ? "say" : "ask";
-      encInput.value = "";
+        b.textContent = note ? "leave it" : mode2 === "offer" ? "offer" : mode2 === "say" ? "say" : "ask";
       setComposer(true);
       encFree.hidden = false;
-      setTimeout(() => encInput.focus(), 0);
+      setTimeout(() => (note ? encNote : encInput).focus(), 0);
     }
     encFree.addEventListener("submit", (event) => {
       event.preventDefault();
       if (!enc || enc.closing)
         return;
+      if (enc.freeMode === "note") {
+        leaveNote();
+        return;
+      }
       const raw2 = (encInput.value || "").trim();
       const mode2 = enc.freeMode;
       encInput.value = "";
@@ -12981,6 +13086,13 @@
         appendWords(best.text, srcOf(best.from));
       spend();
     });
+    encNote.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || !(event.metaKey || event.ctrlKey))
+        return;
+      event.preventDefault();
+      if (enc && enc.freeMode === "note")
+        leaveNote();
+    });
     encMoves.addEventListener("click", (event) => {
       const b = event.target.closest("button");
       if (b && listening) {
@@ -12999,6 +13111,8 @@
         askAbout(b.dataset.ask);
       else if ("wall" in b.dataset)
         showOnWall();
+      else if ("note" in b.dataset)
+        openNote();
       else if ("free" in b.dataset)
         openFree("ask");
       else if ("listen" in b.dataset)
@@ -13079,7 +13193,7 @@
       }
       if (eng) {
         const where = " in " + (/[’']s\b/.test(e.roomWord) ? "" : "the ") + e.roomWord;
-        const line = e.outcome === "none" ? "" : e.outcome === "closed" ? "you looked in on " + e.name : e.outcome === "declined" ? "you asked " + e.name + "; they set it down at the door" : e.outcome === "left" ? "you left " + e.name + " to it" : "you spoke with " + e.name + where;
+        const line = e.outcome === "none" ? "" : e.outcome === "noted" ? "you left a note at " + e.name + "’s door" : e.outcome === "closed" ? "you looked in on " + e.name : e.outcome === "declined" ? "you asked " + e.name + "; they set it down at the door" : e.outcome === "left" ? "you left " + e.name + " to it" : "you spoke with " + e.name + where;
         if (line)
           eng.sysLine(line);
         eng.endChat(null);
@@ -13215,6 +13329,7 @@
         left: enc.left,
         session: !!enc.session,
         outcome: enc.outcome,
+        noted: !!enc.noted,
         voice: enc.voice ? enc.voice.kind : null
       },
       record: readRecord,

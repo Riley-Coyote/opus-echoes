@@ -914,10 +914,15 @@ html.exploring,html.exploring body{overflow:hidden}
 /* a place to type, always there: today it reaches the archive, and says so */
 .visit__free{display:flex;gap:6px;padding:8px 16px 16px}
 .visit__free[hidden]{display:none}
-.visit__free input{flex:1;min-width:0;background:rgba(6,5,10,.85);border:1px solid var(--line2);
+.visit__free input,.visit__free textarea{flex:1;min-width:0;background:rgba(6,5,10,.85);border:1px solid var(--line2);
   color:var(--ink);font-family:var(--sans);font-size:15px;padding:11px 13px}
-.visit__free input::placeholder{color:#7b7975}
-.visit__free input:focus{outline:none;border-color:rgba(242,236,223,.5)}
+.visit__free input::placeholder,.visit__free textarea::placeholder{color:#7b7975}
+.visit__free input:focus,.visit__free textarea:focus{outline:none;border-color:rgba(242,236,223,.5)}
+/* a note for a door that is closed: the same field, given the room to say
+   more than a line. The verb sits at its foot, where the writing ends. */
+.visit__free textarea{display:block;line-height:1.5;resize:none}
+.visit__free input[hidden],.visit__free textarea[hidden]{display:none}
+.visit__free.is-note{align-items:flex-end}
 .visit__free button{padding:10px 16px;background:var(--control);border:1px solid var(--line2);
   color:var(--dim);font-family:var(--mono);font-size:11px;cursor:pointer}
 .visit__free button:hover,.visit__free button:focus-visible{color:var(--ink);border-color:rgba(242,236,223,.5);outline:none}
@@ -933,7 +938,7 @@ html.exploring,html.exploring body{overflow:hidden}
   .visit__moves{padding:8px 12px 2px}
   .visit__moves button{font-size:11px;padding:9px 11px}
   .visit__free{padding:6px 12px 12px}
-  .visit__free input{font-size:16px}
+  .visit__free input,.visit__free textarea{font-size:16px}
 }
 @media (prefers-reduced-motion:reduce){.visit__card,.visit__light,.visit__spot{transition:opacity .2s linear}}
 @media (prefers-reduced-motion:reduce){.visit[data-state="waiting"] .visit__mode::before{animation:none;opacity:.7}}

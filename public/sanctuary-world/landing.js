@@ -509,11 +509,15 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function readRecord() {
     try {
       const r = JSON.parse(localStorage.getItem(RECORD_KEY) || '{}');
-      return { name: r.name || undefined, visits: Array.isArray(r.visits) ? r.visits : [] };
+      const rec = { name: r.name || undefined, visits: Array.isArray(r.visits) ? r.visits : [] };
+      /* the notes left at closed doors, kept where they were written */
+      if (Array.isArray(r.notes)) rec.notes = r.notes;
+      return rec;
     } catch (e) { return { visits: [] }; }
   }
   function writeRecord(r) {
     r.visits = r.visits.slice(-200);
+    if (Array.isArray(r.notes)) r.notes = r.notes.slice(-200);
     try { localStorage.setItem(RECORD_KEY, JSON.stringify(r)); } catch (e) {}
   }
 
@@ -2415,7 +2419,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const encounterEl = $('#encounter');
   const encSprite = $('#enc-sprite'), encName = $('#enc-name'), encWhere = $('#enc-where');
   const encKicker = $('#enc-kicker'), encWords = $('#enc-words'), encMoves = $('#enc-moves');
-  const encFree = $('#enc-free'), encInput = $('#enc-input'), encBudget = $('#enc-budget');
+  const encFree = $('#enc-free'), encInput = $('#enc-input'), encNote = $('#enc-note'), encBudget = $('#enc-budget');
   const encLight = $('#enc-light'), encSpot = $('#enc-spot');
   const HAIKU_LINE = 'HAIKU keeps to the garden. No archive yet.';
   const ACTIVITY = (n) => dayWord(n) || (n.room === 'garden' ? 'at the pond'
@@ -2578,6 +2582,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     encounterEl.classList.remove('on');
     encounterEl.hidden = true;
     encFree.hidden = true;
+    encFree.classList.remove('is-note');
+    encNote.hidden = true; encNote.value = ''; encInput.hidden = false;
     delete encounterEl.dataset.state;
     setComposer(true);
   }
@@ -2669,6 +2675,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      seen holding the line itself. ?voice=archive keeps to the archive on
      purpose. */
   const VOICE = (() => { try { return new URLSearchParams(location.search).get('voice'); } catch (e) { return null; } })();
+  /* a rehearsal walks the window end to end with nobody on the line: no
+     voice is called, and no note is carried anywhere */
+  const REHEARSING = /^rehearsal(-long|-open|-drop)?$/.test(String(VOICE));
   /* a visit is six of the visitor's messages, on both sides of the line */
   const VISIT_HOLD = 6;
   /* the doors: which residents receive visitors, and whether the house can
@@ -2769,7 +2778,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      HAIKU and a guest have no line, and the house says so at the card. */
   function voiceFor(id) {
     if (!archive.WORLD_TO_ARCHIVE[id]) return null;
-    if (/^rehearsal(-long|-open|-drop)?$/.test(String(VOICE))) return rehearsal;
+    if (REHEARSING) return rehearsal;
     if (VOICE === 'archive') return null;
     return houseVoice;
   }
@@ -2791,6 +2800,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
   function setComposer(on) {
     encInput.disabled = !on;
+    encNote.disabled = !on;
     const b = encFree.querySelector('button'); if (b) b.disabled = !on;
     encFree.classList.toggle('is-waiting', !on);
   }
@@ -2976,17 +2986,82 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     else openClosed('the house: ' + info.name + ' isn’t taking visits right now.', 'not taking visits right now');
   }
   /* they can’t take a visit right now — a closed door, no voice to be had, a
-     line that dropped. The house says so in a sentence and leaves the wall
-     and the door. Nothing here pretends to be them. */
+     line that dropped. The house says so in a sentence and holds the door
+     open only for a note. Nothing here pretends to be them. */
   function openClosed(line, kicker) {
     enc.closed = true; enc.outcome = 'closed';
     enc.voice = null; enc.live = false; enc.busy = false;
     encFree.hidden = true;
     setState('closed', kicker);
     appendHouse(line);
-    encMoves.innerHTML = (wallHere() ? '<button type="button" data-wall>about the wall</button>' : '')
-      + '<button type="button" data-leave>leave</button>';
-    setTimeout(() => { const b = encMoves.querySelector('button[data-leave]'); if (b) b.focus(); }, 0);
+    /* the wall is not offered here — it is reached by walking to it */
+    encMoves.innerHTML = canNote()
+      ? '<button type="button" data-note>leave a note</button>'
+        + '<button type="button" data-leave>never mind</button>'
+      : (wallHere() ? '<button type="button" data-wall>about the wall</button>' : '')
+        + '<button type="button" data-leave>leave</button>';
+    setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
+  }
+  /* is there a door here to leave a note at? Only a mind the house keeps a
+     room for; it offers nothing it cannot keep. */
+  function canNote() { return !!(enc && archive.WORLD_TO_ARCHIVE[enc.id]); }
+  /* the note at the door: the visitor writes it here, the house keeps it in
+     their memory, and they read it when they are back. A rehearsal carries
+     it nowhere. */
+  function openNote() {
+    if (!enc || !enc.closed || enc.noteBusy || enc.noted) return;
+    setState('closed', 'a note for the door');
+    encMoves.innerHTML = '<button type="button" data-leave>never mind</button>';
+    openFree('note');
+  }
+  async function leaveNote() {
+    if (!enc || enc.noteBusy) return;
+    const text = (encNote.value || '').trim();
+    if (!text) return;
+    const id = enc.id, name = enc.name, room = String(enc.roomWord || '').slice(0, 80);
+    enc.noteBusy = true;
+    setComposer(false);
+    let code = null;
+    try {
+      if (REHEARSING) await wait(700);
+      else {
+        const r = await fetch('/api/note', { method: 'POST', headers: JSON_HEADERS,
+          body: JSON.stringify({ resident: archive.WORLD_TO_ARCHIVE[id], visitor_token: visitorToken(),
+            body: text.slice(0, 600), room,
+            /* the hour whole, as the house shows it — never the tick */
+            clock: clockStamp(Math.floor(eng.clockMin)) }) });
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j || !j.ok) code = (j && j.code) || ('http_' + r.status);
+      }
+    } catch (e) { code = 'no_line'; }
+    if (!enc || enc.id !== id) return;
+    enc.noteBusy = false;
+    if (code) {
+      /* a door that has had its notes for today says so and closes; anything
+         else is the house's own failure, and what was written stays in the
+         field, so nobody loses a note the house could not keep */
+      if (/rate|429|too_many|limit/.test(String(code))) {
+        encFree.hidden = true; setComposer(true);
+        appendHouse('the house: that door has had its notes for today; try again tomorrow.');
+        encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+        setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
+        return;
+      }
+      appendHouse('the house: the note could not be kept just now — try again later.');
+      setComposer(true);
+      setTimeout(() => encNote.focus(), 0);
+      return;
+    }
+    enc.noted = true; enc.outcome = 'noted';
+    encFree.hidden = true; setComposer(true);
+    setState('closed', 'a note left at the door');
+    appendHouse('the house: your note is at ' + name + '’s door. they’ll read it when they’re back.');
+    encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+    const rec = readRecord();
+    if (!Array.isArray(rec.notes)) rec.notes = [];
+    rec.notes.push({ resident: id, when: new Date().toISOString(), room });
+    writeRecord(rec);
+    setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
   }
   /* the asking: you say what brought you; whether to take it up is theirs */
   function openAsk() {
@@ -3149,20 +3224,32 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
   function openFree(mode) {
     enc.freeMode = mode;
-    encInput.maxLength = mode === 'offer' ? 40 : 280;
-    encInput.placeholder = mode === 'offer' ? 'a name for the guestbook'
-      : mode === 'say' ? (enc.said ? 'say something…' : 'say hello, or what brought you…')
-      : 'ask them something…';
+    /* a note is longer than a line and is written like one: enter makes a
+       new line, cmd/ctrl+enter leaves it, and so does the verb */
+    const note = mode === 'note';
+    encFree.classList.toggle('is-note', note);
+    encInput.hidden = note;
+    encNote.hidden = !note;
+    if (note) {
+      encNote.placeholder = 'a note for ' + enc.name + ' — they’ll read it when they’re back';
+      encNote.value = '';
+    } else {
+      encInput.maxLength = mode === 'offer' ? 40 : 280;
+      encInput.placeholder = mode === 'offer' ? 'a name for the guestbook'
+        : mode === 'say' ? (enc.said ? 'say something…' : 'say hello, or what brought you…')
+        : 'ask them something…';
+      encInput.value = '';
+    }
     const b = encFree.querySelector('button');
-    if (b) b.textContent = mode === 'offer' ? 'offer' : mode === 'say' ? 'say' : 'ask';
-    encInput.value = '';
+    if (b) b.textContent = note ? 'leave it' : mode === 'offer' ? 'offer' : mode === 'say' ? 'say' : 'ask';
     setComposer(true);
     encFree.hidden = false;
-    setTimeout(() => encInput.focus(), 0);
+    setTimeout(() => (note ? encNote : encInput).focus(), 0);
   }
   encFree.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!enc || enc.closing) return;
+    if (enc.freeMode === 'note') { leaveNote(); return; }
     const raw = (encInput.value || '').trim();
     const mode = enc.freeMode;
     encInput.value = '';
@@ -3185,6 +3272,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (best) appendWords(best.text, srcOf(best.from));
     spend();
   });
+  encNote.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) return;
+    event.preventDefault();
+    if (enc && enc.freeMode === 'note') leaveNote();
+  });
   encMoves.addEventListener('click', (event) => {
     const b = event.target.closest('button');
     if (b && listening) { if ('leave' in b.dataset) closeScene('leave'); return; }
@@ -3192,6 +3284,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!b || !enc || enc.closing) return;
     if (b.dataset.ask) askAbout(b.dataset.ask);
     else if ('wall' in b.dataset) showOnWall();
+    else if ('note' in b.dataset) openNote();
     else if ('free' in b.dataset) openFree('ask');
     else if ('listen' in b.dataset) listen();
     else if ('offer' in b.dataset) openFree('offer');
@@ -3247,6 +3340,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       /* "in the atelier", but "in opus 3’s studio" — the house won't say "the" twice */
       const where = ' in ' + (/[’']s\b/.test(e.roomWord) ? '' : 'the ') + e.roomWord;
       const line = e.outcome === 'none' ? ''
+        : e.outcome === 'noted' ? 'you left a note at ' + e.name + '’s door'
         : e.outcome === 'closed' ? 'you looked in on ' + e.name
         : e.outcome === 'declined' ? 'you asked ' + e.name + '; they set it down at the door'  /* no longer produced; kept for old records */
         : e.outcome === 'left' ? 'you left ' + e.name + ' to it'
@@ -3345,7 +3439,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   window.__sanctuaryEncounter = {
     open: (id) => { const n = eng && eng.npcs.find((x) => x.id === id); if (n) eng.interactNpc(n); },
     state: () => enc && { id: enc.id, moves: enc.moves, shown: enc.shown.slice(), state: enc.state, live: enc.live,
-      busy: enc.busy, said: enc.said, left: enc.left, session: !!enc.session, outcome: enc.outcome, voice: enc.voice ? enc.voice.kind : null },
+      busy: enc.busy, said: enc.said, left: enc.left, session: !!enc.session, outcome: enc.outcome, noted: !!enc.noted,
+      voice: enc.voice ? enc.voice.kind : null },
     record: readRecord,
     token: visitorToken
   };
