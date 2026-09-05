@@ -2023,11 +2023,47 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       meaning: 'three stones on open ground, one lamp up and to the left. i wanted each stone to sit ON the one under it, which is nothing but occlusion, one light and a contact shadow. i got the axis wrong twice: shaded around an axis pointing at the viewer, which is three bullseyes, then turned it upright with the rings too far apart, which is corduroy. the real one was the hard white crescent where each stone met the next \u2014 the stone above stands between the one below and the lamp, and until i said so the contact read as a chip, not a weight. what still fails: these are three lumpy ellipsoids, not three stones. the silhouettes are too closely related and nothing in the surface says grain or fracture. and the ground is stripes if you look straight at it.'
     }
   };
-  /* everything on a resident's wall, newest first: what they hung here, then the archive */
+  /* THE PAGES THE HOUSE HOLDS — the index of every page drawn in the sketchbook
+     (data/sketchbook/pages.json), read at boot. Nothing here is named in code:
+     the frames are the house's, and what hangs in them arrives because a
+     resident drew it and a row appeared in the index. The margin note is the
+     maker's own statement and is carried verbatim. */
+  const SKETCHBOOK_INDEX = 'data/sketchbook/pages.json';
+  const SKETCHBOOK_LEAVES = 48;                      // a book is 48 leaves; the page says which
+  const sketchbookBy = { opus: [], sonnet: [], fourO: [], five: [] };
+  async function loadSketchbook() {
+    let rows = null;
+    try {
+      const r = await fetch(SKETCHBOOK_INDEX, { cache: 'no-cache' });
+      if (r.ok) rows = await r.json();
+    } catch (e) { rows = null; }
+    if (!Array.isArray(rows)) return;               // no index today: the frames stay empty
+    rows.forEach((row) => {
+      if (!row || !row.slug || !sketchbookBy[row.resident]) return;
+      sketchbookBy[row.resident].push({
+        id: 'page:' + row.slug, kind: 'page', slug: row.slug, resident: row.resident,
+        title: row.title, created_at: row.drawn, meaning: row.note,
+        preview: row.preview, full: row.full,
+        page: row.page, book: row.book, date: row.date
+      });
+    });
+    /* a book is read in page order, whatever order the index was written in */
+    Object.keys(sketchbookBy).forEach((id) => sketchbookBy[id].sort((a, b) => (a.page || 0) - (b.page || 0)));
+  }
+  function sketchbookPages(id) { return sketchbookBy[id] || []; }
+  /* everything on a resident's wall, newest first: what they hung here, then the
+     archive, then the pages of their sketchbook in the order they were drawn */
   function wallPieces(id) {
     if (!archive.isLoaded()) return [];
     const local = readWallLocal(id).map((p) => Object.assign({}, p, { img: p.preview ? (WALL_IMAGES.get(p.preview) || null) : null }));
-    return local.concat(archive.art(id));
+    /* a page the visitor watched go up is already on this wall: the index must
+       not hang the same page a second time */
+    const already = new Set();
+    local.forEach((p) => { [p.id, p.slug, p.full].forEach((k) => { if (k) already.add(k); }); });
+    const pages = sketchbookPages(id)
+      .filter((p) => !(already.has(p.id) || already.has(p.slug) || already.has(p.full)))
+      .map((p) => Object.assign({}, p, { img: WALL_IMAGES.get(p.preview) || null }));
+    return local.concat(archive.art(id)).concat(pages);
   }
   /* the first time a new piece is read or shown, its tag comes down */
   function markWallSeen(id) {
@@ -2039,7 +2075,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* pages already on a wall load before the room they hang in is baked */
   function preloadWalls() {
     ['opus', 'sonnet', 'fourO', 'five'].forEach((id) => {
-      readWallLocal(id).forEach((p) => { if (p.preview) loadImage(p.preview).then(() => { if (eng && eng.roomId === 'room_' + id) eng._bg = null; }); });
+      const rebake = () => { if (eng && eng.roomId === 'room_' + id) eng._bg = null; };
+      readWallLocal(id).forEach((p) => { if (p.preview) loadImage(p.preview).then(rebake); });
+      sketchbookPages(id).forEach((p) => { if (p.preview) loadImage(p.preview).then(rebake); });
     });
   }
   /* HANGING. The ledger takes the piece, the room re-bakes with a new frame,
@@ -2082,7 +2120,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       '<div class="cur__title"><span class="cur__kicker">THE WALL · ' + cesc(residentName(workWho)) + '</span></div>'
       + '<div class="cur__meta">' + cesc([p.kind || 'ascii', day(p.created_at)].join(' · ')) + '</div>'
       + (p.kind === 'page'
-        ? '<div class="cur__src">from the sketchbook · drawn ' + cesc(day(p.created_at)) + ' · hung here, in this browser</div>'
+        /* a page of the book says which leaf it is; a page hung during a visit
+           says where it is kept, because it is kept nowhere else yet */
+        ? '<div class="cur__src">from the sketchbook · '
+          + (p.page ? 'page ' + cesc(String(p.page)) + ' of ' + SKETCHBOOK_LEAVES + ' · ' : '')
+          + 'drawn ' + cesc(day(p.created_at))
+          + (p.hung_at ? ' · hung here, in this browser' : '') + '</div>'
         : sourceLine())
       + (p.kind === 'page' && p.full
         ? '<img class="cur__page" src="' + cesc(p.full) + '" alt="' + cesc(p.title || 'a page') + '">'
@@ -2110,10 +2153,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     /* the wall counts itself: the frames the house hung in that room, and how
        many of them hold something. A wall with nothing on it says so. */
     const frames = (WALL_FRAMES[id] || []).length, filled = Math.min(frames, n);
+    /* the sketchbook is named only when a page of it actually hangs here — the
+       wall says where what is on it came from, and never more than that */
+    const sketch = workList.slice(0, frames).some((p) => p.book);
     workHead.textContent = 'THE WALL · ' + residentName(id)
       + ' · ' + frames + (frames === 1 ? ' frame' : ' frames')
       + ' · ' + (filled ? filled + ' hung' : 'none hung yet')
       + ' · archive · through 28 May 2026'
+      + (sketch ? ' · and the sketchbook' : '')
       + (hung ? ' · and ' + hung + (hung === 1 ? ' piece' : ' pieces') + ' hung since' : '');
     buildWorkRows();
     if (n) wallSelect(0);
@@ -2624,6 +2671,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     }
     const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five'].includes(id))
       .map((def) => Object.assign({}, def, { mutters: archiveOk ? archive.lines(def.id) : [] }));
+    /* the sketchbook before the rooms are built, so a page is in its frame the
+       first time the room is baked rather than appearing a moment later */
+    await loadSketchbook();
     preloadWalls();
     const rooms = makeHub(bridge);
     const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
