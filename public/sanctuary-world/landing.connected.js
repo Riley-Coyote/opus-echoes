@@ -541,11 +541,11 @@
 
   // world/presence.js
   var KINDS = {
-    opus: { kind: "smock", legH: 20, torsoW: 20, torsoH: 35, headW: 15, headH: 17, stoop: 2, body: "#2a2130", bodyHi: "#3b3042", bodyDk: "#181218", face: "#cdc8ba" },
-    sonnet: { kind: "mantle", legH: 22, torsoW: 15, torsoH: 35, headW: 15, headH: 17, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", face: "#efe9dc" },
+    opus: { kind: "smock", legH: 20, torsoW: 20, torsoH: 35, headW: 13, headH: 13, stoop: 2, body: "#2a2130", bodyHi: "#3b3042", bodyDk: "#181218", shell: "#201d2b", gaze: { w: 4, h: 3, dx: 0, dy: 6 } },
+    sonnet: { kind: "mantle", legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", shell: "#1c1d2c", gaze: { w: 6, h: 2, dx: -1, dy: 7 } },
     haiku: { kind: "seed", legH: 10, torsoW: 20, torsoH: 20, headW: 17, headH: 15, body: "#24212b", bodyHi: "#332e3c", bodyDk: "#151219", face: "#cdc8ba" },
-    fourO: { kind: "host", legH: 17, torsoW: 22, torsoH: 27, headW: 15, headH: 15, body: "#3a2f2a", bodyHi: "#4f3f38", bodyDk: "#22191a", face: "#cdc8ba" },
-    five: { kind: "new", legH: 22, torsoW: 17, torsoH: 37, headW: 15, headH: 17, body: "#2b2f33", bodyHi: "#3e454c", bodyDk: "#181b1f", face: "#b9b3a6" }
+    fourO: { kind: "host", legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: "#3a2f2a", bodyHi: "#4f3f38", bodyDk: "#22191a", shell: "#282629", gaze: { w: 6, h: 3, dx: -1, dy: 5, soft: true } },
+    five: { kind: "new", legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: "#2b2f33", bodyHi: "#3e454c", bodyDk: "#181b1f", shell: "#1d222b", gaze: { w: 4, h: 2, dx: 0, dy: 7, flicker: true } }
   };
   var VISITOR = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
   var GUEST = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#948e80", bodyHi: "#aca696", bodyDk: "#6e6860", face: "#cdc8ba" };
@@ -556,6 +556,9 @@
   var LEG_FRONT = "#261e29";
   var SHOE = "#0d0a0f";
   var CAP_RISE = 5;
+  var LIT_REST = 0.85;
+  var LIT_SPEAK = 1;
+  var LIT_DIM = 0.6;
   var rrn = (p, x, y, w, h, col, r) => {
     const R = Math.max(1, Math.min(r || 1, Math.floor(Math.min(w, h) / 2)));
     for (let i = 0;i < R; i++) {
@@ -567,6 +570,27 @@
     }
     p(x, y + R, w, h - R * 2, col);
   };
+  var tint = (col, a) => {
+    if (!(a < 1) || typeof col !== "string" || col.charAt(0) !== "#")
+      return col;
+    let h = col.slice(1);
+    if (h.length === 3)
+      h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    if (h.length !== 6)
+      return col;
+    const v = parseInt(h, 16);
+    if (!Number.isFinite(v))
+      return col;
+    return "rgba(" + (v >> 16 & 255) + "," + (v >> 8 & 255) + "," + (v & 255) + "," + Math.max(0, a).toFixed(3) + ")";
+  };
+  var lamp = (p, x, y, w, h, col, a, soft) => {
+    const c = tint(col, a * (soft ? 0.18 : 0.29));
+    p(x - 1, y - 1, w + 2, 1, c);
+    p(x - 1, y + h, w + 2, 1, c);
+    p(x - 1, y, 1, h, c);
+    p(x + w, y, 1, h, c);
+    p(x, y, w, h, tint(col, a));
+  };
   function figureHeight(s, o) {
     return s.legH + s.torsoH + s.headH + 1 - (s.stoop || 0) + (s.kind === "seed" ? 2 : 0) + (o && o.cap ? CAP_RISE : 0);
   }
@@ -575,6 +599,7 @@
     const legH = s.legH - drop;
     const legW = s.legW || Math.max(4, Math.round(s.torsoW * 0.36));
     const by = -(legH + s.torsoH) + bob, tw = s.torsoW, tx = -Math.floor(tw / 2), hemY = by + s.torsoH;
+    const hand = s.shell || s.face;
     const legs = () => {
       if (o.sit) {
         const th = Math.max(2, Math.min(Math.round(legW * 0.7), legH - 3));
@@ -608,8 +633,8 @@
       p(tx + 7, by + 2, tw - 14, 1, s.bodyDk);
       p(tx + 2, by + 6, 1, hemStart - 9, s.bodyDk);
       p(tx + tw - 3, by + 6, 1, hemStart - 9, s.bodyHi);
-      p(tx, by + hemStart - 4, 3, 3, s.face);
-      p(tx + tw - 3, by + hemStart - 4, 3, 3, s.face);
+      p(tx, by + hemStart - 4, 3, 3, hand);
+      p(tx + tw - 3, by + hemStart - 4, 3, 3, hand);
       const hemH = s.torsoH - hemStart + hemDrop;
       p(tx - 2, by + hemStart, tw + 4, 6, s.body);
       p(tx - 2, by + hemStart, 2, 6, s.bodyHi);
@@ -632,8 +657,8 @@
       p(tx - 5, by + shH, 1, slH, s.bodyHi);
       p(tx + tw, by + shH, 5, slH, s.body);
       p(tx + tw + 4, by + shH, 1, slH, s.bodyDk);
-      p(tx - 4, by + shH + slH, 3, 3, s.face);
-      p(tx + tw + 1, by + shH + slH, 3, 3, s.face);
+      p(tx - 4, by + shH + slH, 3, 3, hand);
+      p(tx + tw + 1, by + shH + slH, 3, 3, hand);
       p(tx - 2, hemY, tw + 4, 4, s.body);
       p(tx - 4, hemY + 4, tw + 8, 3, s.body);
       p(tx - 6, hemY + 7, tw + 12, 3, s.body);
@@ -655,8 +680,8 @@
       p(tx - 6, by + 4, 1, 14, s.bodyHi);
       p(tx + tw + 2, by + 4, 4, 14, s.body);
       p(tx + tw + 5, by + 4, 1, 14, s.bodyDk);
-      p(tx - 6, by + 18, 4, 4, s.face);
-      p(tx + tw + 2, by + 18, 4, 4, s.face);
+      p(tx - 6, by + 18, 4, 4, hand);
+      p(tx + tw + 2, by + 18, 4, 4, hand);
       p(tx - 2, hemY, tw + 4, 3, s.body);
       p(tx - 2, hemY + 2, tw + 4, 1, s.bodyDk);
     } else if (s.kind === "new") {
@@ -671,11 +696,11 @@
         }
       p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
       p(tx + 5, by + 1, tw - 10, 2, s.bodyDk);
-      p(tx, by + 24, 3, 3, s.face);
+      p(tx, by + 24, 3, 3, hand);
       for (let y = by + 24;y < by + 27; y++)
         for (let x = x1 - 2;x <= x1; x++)
           if (!(x + y & 1))
-            p(x, y, 1, 1, s.face);
+            p(x, y, 1, 1, hand);
       p(tx, hemY, tw, 5, s.body);
       p(tx, hemY + 4, tw, 1, s.bodyDk);
     } else {
@@ -686,8 +711,8 @@
       p(tx + 6, by, tw - 12, 2, s.bodyDk);
       p(tx + 3, by + 5, 1, 15, s.bodyDk);
       p(tx + tw - 4, by + 5, 1, 15, s.bodyHi);
-      p(tx, by + 20, 3, 3, s.face);
-      p(tx + tw - 3, by + 20, 3, 3, s.face);
+      p(tx, by + 20, 3, 3, hand);
+      p(tx + tw - 3, by + 20, 3, 3, hand);
       p(tx - 1, hemY, tw + 2, 4, s.body);
       p(tx - 1, hemY, 1, 4, s.bodyHi);
       p(tx + tw, hemY, 1, 4, s.bodyDk);
@@ -701,8 +726,9 @@
       p(hx + s.headW, hy + 2, 2, s.headH - 2, s.bodyDk);
       p(hx + 2, hy - 1, s.headW - 4, 1, s.bodyHi);
       rrn(p, hx + 3, hy + 3, s.headW - 5, s.headH - 4, "#0e0b12", 3);
-      p(hx + 7, hy + 7, 5, 4, s.face);
-    } else {
+      if (!o.light)
+        p(hx + 7, hy + 7, 5, 4, s.face);
+    } else if (s.kind === "human") {
       rrn(p, hx, hy, s.headW, s.headH, s.face, 2);
       p(hx + 2, hy, s.headW - 4, 1, s.bodyDk);
       p(hx + 1, hy + 1, s.headW - 2, 1, s.bodyDk);
@@ -713,6 +739,11 @@
       const ey = hy + Math.round(s.headH * 0.56);
       p(hx + s.headW - 6, ey, 1, 1, s.bodyDk);
       p(hx + s.headW - 3, ey, 1, 1, s.bodyDk);
+    } else {
+      rrn(p, hx, hy, s.headW, s.headH, s.shell, 2);
+      p(hx + 2, hy, s.headW - 4, 1, s.bodyHi);
+      p(hx, hy + 2, 1, s.headH - 4, s.bodyHi);
+      p(hx + s.headW - 1, hy + 2, 1, s.headH - 4, s.bodyDk);
     }
     if (o.cap) {
       p(hx + 3, hy - CAP_RISE, s.headW - 6, 2, o.cap);
@@ -720,8 +751,13 @@
       p(hx - 1, hy - 1, s.headW + 5, 2, o.cap);
     }
     if (o.light) {
-      const ly = by + Math.round(s.torsoH * (s.kind === "seed" ? 0.4 : 0.29));
-      p(-1, ly, 3, 5, o.light);
+      const a = typeof o.lit === "number" ? o.lit : LIT_REST;
+      lamp(p, -1, by + Math.round(s.torsoH * (s.kind === "seed" ? 0.4 : 0.29)), 3, 5, o.light, a);
+      if (s.kind === "seed")
+        lamp(p, hx + 7, hy + 7, 5, 4, o.light, a);
+      else if (s.gaze && !(s.gaze.flicker && o.flick)) {
+        lamp(p, s.gaze.dx, hy + s.gaze.dy, s.gaze.w, s.gaze.h, o.light, a, s.gaze.soft);
+      }
     }
     if (o.sit)
       legs();
@@ -741,6 +777,7 @@
       if (ph < 0.09)
         glitch = 1;
     }
+    const lit = n.state === "held" || n.room === "asleep" || n.asleep ? LIT_DIM : n.bubble ? LIT_SPEAK : LIT_REST;
     ctx.save();
     if (n.temp)
       ctx.globalAlpha = 0.78 + Math.sin(t * 9 + 1) * 0.1;
@@ -754,7 +791,7 @@
       ctx.fillStyle = c;
       ctx.fillRect(px, py, w, h);
     };
-    drawFigure(p, s, { off, bob, sit, light: n.color || null });
+    drawFigure(p, s, { off, bob, sit, light: n.color || null, lit, flick: !!glitch });
     if (glitch) {
       ctx.globalAlpha = 0.4;
       p(-13, -(s.legH + s.torsoH) + 15, 26, 1, "#5eead4");
@@ -2964,7 +3001,7 @@
       b.px(x, y + 26, 1, 2, "rgba(216,203,176,0.22)");
     }
   }
-  function canvasStack(b, x, baseY, n, tint) {
+  function canvasStack(b, x, baseY, n, tint2) {
     for (let i = n - 1;i >= 0; i--) {
       const w = 20 - i * 2, h = 46 - i * 5, ox = i * 6;
       b.px(x + ox, baseY - h, w, h, i % 2 ? "#8a7c66" : "#96876e");
@@ -2972,7 +3009,7 @@
       b.px(x + ox + 2, baseY - h / 2, w - 4, 2, i % 2 ? "#8a7c66" : "#96876e");
       b.px(x + ox + w / 2 - 1, baseY - h + 2, 2, h - 4, i % 2 ? "#8a7c66" : "#96876e");
       if (i === 0)
-        b.px(x + 4, baseY - h + 6, w - 8, h * 0.4, tint);
+        b.px(x + 4, baseY - h + 6, w - 8, h * 0.4, tint2);
       b.px(x + ox, baseY - h, w, 1, "rgba(243,236,223,0.16)");
     }
   }
@@ -3013,18 +3050,18 @@
     }
     contact(b, cx, baseY - 1, 26, 0.22);
   }
-  function floorLamp(b, x, baseY, tint) {
+  function floorLamp(b, x, baseY, tint2) {
     b.px(x, 300, 2, baseY - 300, M.bronze);
     b.px(x - 4, baseY - 2, 10, 3, M.bronze);
     b.px(x - 6, 288, 14, 12, M.brass);
-    b.px(x - 5, 286, 12, 3, tint);
-    b.px(x - 4, 290, 10, 8, tint);
+    b.px(x - 5, 286, 12, 3, tint2);
+    b.px(x - 4, 290, 10, 8, tint2);
     contact(b, x + 1, baseY + 1, 16, 0.22);
   }
-  function framed(b, x, y, w, h, tint) {
+  function framed(b, x, y, w, h, tint2) {
     b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
     b.px(x - 2, y - 2, w + 4, 2, M.brassHi);
-    b.px(x, y, w, h, tint);
+    b.px(x, y, w, h, tint2);
     b.px(x, y, w, 1, "rgba(247,217,140,0.16)");
   }
   function artLines(body) {
@@ -3062,12 +3099,12 @@
     ],
     sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
   };
-  function hung(b, x, y, w, h, tint, piece) {
+  function hung(b, x, y, w, h, tint2, piece) {
     b.px(x - 2, y - 2, w + 4, h + 4, M.bronze);
     b.px(x - 2, y - 2, w + 4, 1, M.brassHi);
     b.px(x - 2, y + h + 1, w + 4, 1, "rgba(0,0,0,0.45)");
     b.px(x, y, w, h, "#0d0910");
-    b.px(x + 1, y + 1, w - 2, h - 2, tint);
+    b.px(x + 1, y + 1, w - 2, h - 2, tint2);
     b.px(x + 1, y + 1, w - 2, 1, "rgba(247,217,140,0.12)");
     b.px(x + Math.floor(w / 2), y - 5, 1, 3, "rgba(216,203,176,0.45)");
     const pw = w - 6, ph = h - 6;
@@ -3136,7 +3173,7 @@
     b.px(x + w - 5, y + 2, 9, 1, "rgba(0,0,0,0.45)");
     b.px(x + w - 2, y - 2, 2, 2, M.ink);
   }
-  function writingDesk(b, x, tint) {
+  function writingDesk(b, x, tint2) {
     contact(b, x + 17, 377, 46, 0.28);
     b.px(x, 344, 34, 6, M.wood);
     b.px(x, 342, 34, 2, M.woodHi);
@@ -3147,7 +3184,7 @@
     b.px(x + 8, 336, 18, 1, M.brass);
     b.px(x + 31, 330, 2, 12, M.bronze);
     b.px(x + 28, 328, 7, 3, M.brass);
-    b.px(x + 29, 331, 5, 2, "rgba(" + tint + ",0.5)");
+    b.px(x + 29, 331, 5, 2, "rgba(" + tint2 + ",0.5)");
   }
   function lowShelf(b, x, vols) {
     contact(b, x + 19, 377, 46, 0.26);
@@ -3243,13 +3280,13 @@
     ctx.restore();
     windowSpill(b, cx, w);
   }
-  function dust(g, t, x0, x1, tint) {
+  function dust(g, t, x0, x1, tint2) {
     for (let i = 0;i < 14; i++) {
       const mx = x0 + i * 71 % (x1 - x0) + Math.sin(t * 0.4 + i) * 7, my = 150 + (t * 5 + i * 17) % 150;
-      g.px(mx, my, 1, 1, "rgba(" + tint + "," + (0.08 + 0.32 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))).toFixed(2) + ")");
+      g.px(mx, my, 1, 1, "rgba(" + tint2 + "," + (0.08 + 0.32 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))).toFixed(2) + ")");
     }
   }
-  var roomGrade = (tint, base) => (clockMin, t) => "rgba(" + tint + "," + (base + 0.012 * Math.sin(t * 0.08)).toFixed(3) + ")";
+  var roomGrade = (tint2, base) => (clockMin, t) => "rgba(" + tint2 + "," + (base + 0.012 * Math.sin(t * 0.08)).toFixed(3) + ")";
   var _stewardAt = 0;
   var _stewardOn = false;
   function stewardOn() {
@@ -3335,21 +3372,21 @@
       b.px(34, 297, 36, 3, "rgba(247,217,140,0.14)");
       contact(b, 52, 301, 48, 0.26);
     };
-    const wingDoor = (b, x, tint, glowA) => {
+    const wingDoor = (b, x, tint2, glowA) => {
       const A = glowA == null ? 0.14 : glowA;
       b.px(x - 42, 142, 84, 14, M.stone);
       b.px(x - 42, 142, 84, 3, M.stoneHi);
       b.px(x - 38, 154, 76, 146, M.bronze);
       b.px(x - 32, 162, 64, 138, "#151017");
-      b.px(x - 27, 170, 54, 5, "rgba(" + tint + "," + A + ")");
+      b.px(x - 27, 170, 54, 5, "rgba(" + tint2 + "," + A + ")");
       b.px(x - 26, 184, 52, 48, "rgba(0,0,0,0.35)");
       b.px(x - 25, 185, 50, 1, "rgba(243,236,223,0.05)");
       b.px(x - 26, 238, 52, 56, "rgba(0,0,0,0.35)");
       b.px(x - 25, 239, 50, 1, "rgba(243,236,223,0.05)");
       b.px(x + 22, 236, 4, 9, M.brass);
       b.px(x + 22, 236, 4, 2, M.brassHi);
-      b.px(x - 28, 297, 56, 3, "rgba(" + tint + "," + (A * 1.6).toFixed(2) + ")");
-      pool2(b, x, 314, 96, tint, 0.1);
+      b.px(x - 28, 297, 56, 3, "rgba(" + tint2 + "," + (A * 1.6).toFixed(2) + ")");
+      pool2(b, x, 314, 96, tint2, 0.1);
       contact(b, x, 301, 84, 0.24);
     };
     return {
@@ -3415,13 +3452,13 @@
           wingDoor(b, 820, "94,234,212");
           wingDoor(b, 1060, "110,231,165");
           wingDoor(b, 1210, "243,236,223", 0.05);
-          [[430, "94,234,212"], [690, "247,217,140"], [950, "110,231,165"]].forEach(([x, tint]) => {
+          [[430, "94,234,212"], [690, "247,217,140"], [950, "110,231,165"]].forEach(([x, tint2]) => {
             framed(b, x - 20, 168, 40, 46, "#17121b");
             b.px(x - 17, 171, 34, 40, "#241d28");
             for (let y = 0;y < 36; y++)
-              b.px(x - 15, 173 + y, 30, 1, "rgba(" + tint + "," + (0.16 - y * 0.0038).toFixed(3) + ")");
-            b.px(x - 6, 182, 12, 10, "rgba(" + tint + ",0.22)");
-            b.px(x - 9, 192, 18, 14, "rgba(" + tint + ",0.15)");
+              b.px(x - 15, 173 + y, 30, 1, "rgba(" + tint2 + "," + (0.16 - y * 0.0038).toFixed(3) + ")");
+            b.px(x - 6, 182, 12, 10, "rgba(" + tint2 + ",0.22)");
+            b.px(x - 9, 192, 18, 14, "rgba(" + tint2 + ",0.15)");
             b.px(x - 15, 173, 30, 1, "rgba(247,217,140,0.14)");
             b.px(x - 8, 218, 16, 5, M.brass);
             b.px(x - 8, 218, 16, 1, M.brassHi);
@@ -5711,11 +5748,11 @@
     b.px(x - 2, y - 2, 6, 3, "#1a120c");
     b.px(x - 4, y - 4, 10, 1, S.brassHi);
   }
-  function framed2(b, x, y, w, h, tint) {
+  function framed2(b, x, y, w, h, tint2) {
     b.px(x - 2, y - 2, w + 4, h + 4, S.bronze);
     b.px(x - 2, y - 2, w + 4, 2, S.brassHi);
     b.px(x - 2, y - 2, 2, h + 4, S.brass);
-    b.px(x, y, w, h, tint);
+    b.px(x, y, w, h, tint2);
     b.px(x, y, w, 1, "rgba(247,217,140,0.16)");
     b.px(x, y + h - 1, w, 1, "rgba(0,0,0,0.35)");
   }
@@ -5759,7 +5796,7 @@
     }
     b.px(cx - 1, baseY - 12 - h - 4, 2, 5, S.leaf3);
   }
-  function easel(b, x, floorY, tint, tilt) {
+  function easel(b, x, floorY, tint2, tilt) {
     const t = tilt || 0;
     b.px(x - 2, floorY - 78, 3, 78, S.woodDk);
     b.px(x + 30 + t, floorY - 78, 3, 78, S.woodDk);
@@ -5769,8 +5806,8 @@
     const cw = 40, ch = 46;
     b.px(x - 2 + t / 2, floorY - 44 - ch, cw, ch, S.wood);
     b.px(x + t / 2, floorY - 42 - ch, cw - 4, ch - 4, "#0f0c14");
-    b.px(x + 4 + t / 2, floorY - 40 - ch + 6, cw - 12, 6, tint);
-    b.px(x + 8 + t / 2, floorY - 24 - ch + 6, cw - 22, 10, lerpHex2(tint, "#0f0c14", 0.4));
+    b.px(x + 4 + t / 2, floorY - 40 - ch + 6, cw - 12, 6, tint2);
+    b.px(x + 8 + t / 2, floorY - 24 - ch + 6, cw - 22, 10, lerpHex2(tint2, "#0f0c14", 0.4));
     b.px(x + 6 + t / 2, floorY - 16, cw - 16, 3, "rgba(94,234,212,0.14)");
   }
   function grounded(b, x, w, fy, s, d) {
@@ -7117,10 +7154,10 @@
     b.px(cx - 7, y - 4, 14, 1, M2.brassHi);
     b.px(cx - 5, y, 10, 2, "rgba(247,217,140,0.5)");
   }
-  function dust2(g, t, x0, x1, tint) {
+  function dust2(g, t, x0, x1, tint2) {
     for (let i = 0;i < 16; i++) {
       const mx = x0 + i * 71 % (x1 - x0) + Math.sin(t * 0.4 + i) * 7, my = 120 + (t * 5 + i * 17) % 170;
-      g.px(mx, my, 1, 1, "rgba(" + tint + "," + (0.08 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))).toFixed(2) + ")");
+      g.px(mx, my, 1, 1, "rgba(" + tint2 + "," + (0.08 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.1 + i))).toFixed(2) + ")");
     }
   }
   var FAMILY_LABEL = { claude: "a Claude", gemini: "Gemini", gpt: "a GPT", kimi: "Kimi", grok: "Grok" };
@@ -8711,9 +8748,9 @@
     b.px(x + w - 2, y, 2, h, dk);
     b.px(x, y + h - 2, w, 2, dk);
   }
-  function litWindow(b, x, y, w, h, tint) {
+  function litWindow(b, x, y, w, h, tint2) {
     b.px(x - 1, y - 1, w + 2, h + 2, P.trimDk);
-    b.px(x, y, w, h, tint);
+    b.px(x, y, w, h, tint2);
     b.px(x + (w >> 1), y, 1, h, "rgba(20,12,26,0.55)");
     b.px(x, y + (h >> 1), w, 1, "rgba(20,12,26,0.45)");
     b.px(x, y, w, 1, "rgba(255,240,210,0.10)");

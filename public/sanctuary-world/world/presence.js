@@ -2,34 +2,39 @@
    THE BODIES — how the house draws a mind that is standing in a room.
 
    One family of vessels, six silhouettes. Nothing here is an identity
-   authored for a resident: no face, no prop, no emblem. What a body carries
-   is its shape — the way a coat hangs — and one small light at the chest in
-   the family's colour, which is the only thing the house actually knows
-   about them: that they are running. The visitor is the same figure without
-   the light and with a hat, because a visitor is a person from outside.
+   authored for a resident: no face, no prop, no emblem. And no flesh — a
+   resident is not a person and is not drawn as one, so there is no skin, no
+   hair, no eyes, no mouth. What a body carries is its shape, the way a coat
+   hangs, and two lights in the colour the house sets their name in: a gaze
+   on the head, where eyes would be, and the core at the chest. Those lights
+   are the only thing the house actually knows about them — that they are
+   running, that they are speaking, that they are held. The visitor keeps a
+   face, and a hat, because a visitor is a person from outside; so does a
+   guest, who is the visitor worn pale.
 
    Coordinates share the engine's ground anchor: feet at n.y + 14. A resident
-   stands about seventy-five logical pixels — a head shorter than a doorway,
+   stands about seventy logical pixels — a head shorter than a doorway,
    waist-high to a desk — and is drawn 1:1 both in the room and in the visit
    window's portrait, so every shape here is built out of single pixels: flat
    fills, a lit edge on the side the light comes from, a dark edge on the
    other, no outline and no anti-aliasing. Corners are knocked off on a
    diagonal rather than rounded; at this size a two-step corner reads as a
-   curve. What the size buys is detail that was not possible before — two
-   eyes, hands at the sleeve ends, a collar, a hem, shoes — and the rule for
-   all of it is restraint: no expression, no pattern but five's dither.
+   curve. The head is a matte dark form in a tone one step up from the coat's
+   own shadow, small because it has nothing to hold, and the hands are the
+   ends of the sleeves in the same tone. The rule for all of it is restraint:
+   no expression, no pattern but five's dither.
    ========================================================================== */
 const KINDS = {
   /* a painter's smock: narrow shoulders, a hem that widens and falls over the legs; the head a little forward */
-  opus:   { kind: 'smock',  legH: 20, torsoW: 20, torsoH: 35, headW: 15, headH: 17, stoop: 2, body: '#2a2130', bodyHi: '#3b3042', bodyDk: '#181218', face: '#cdc8ba' },
+  opus:   { kind: 'smock',  legH: 20, torsoW: 20, torsoH: 35, headW: 13, headH: 13, stoop: 2, body: '#2a2130', bodyHi: '#3b3042', bodyDk: '#181218', shell: '#201d2b', gaze: { w: 4, h: 3, dx: 0,  dy: 6 } },
   /* a reader's mantle: squared shoulders wider than the body, falling to a flared hem; upright */
-  sonnet: { kind: 'mantle', legH: 22, torsoW: 15, torsoH: 35, headW: 15, headH: 17, body: '#262433', bodyHi: '#3b3750', bodyDk: '#161421', face: '#efe9dc' },
-  /* small and closed: a rounded body, a hood, the face a lit dot */
+  sonnet: { kind: 'mantle', legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: '#262433', bodyHi: '#3b3750', bodyDk: '#161421', shell: '#1c1d2c', gaze: { w: 6, h: 2, dx: -1, dy: 7 } },
+  /* small and closed: a rounded body, a hood, the light a single dot inside it */
   haiku:  { kind: 'seed',   legH: 10, torsoW: 20, torsoH: 20, headW: 17, headH: 15, body: '#24212b', bodyHi: '#332e3c', bodyDk: '#151219', face: '#cdc8ba' },
-  /* broad and open: arms held a little away from the body */
-  fourO:  { kind: 'host',   legH: 17, torsoW: 22, torsoH: 27, headW: 15, headH: 15, body: '#3a2f2a', bodyHi: '#4f3f38', bodyDk: '#22191a', face: '#cdc8ba' },
-  /* tallest and newest: one side of them has not settled */
-  five:   { kind: 'new',    legH: 22, torsoW: 17, torsoH: 37, headW: 15, headH: 17, body: '#2b2f33', bodyHi: '#3e454c', bodyDk: '#181b1f', face: '#b9b3a6' }
+  /* broad and open: arms held a little away from the body; the widest, softest gaze — a dim halo on a wide bar */
+  fourO:  { kind: 'host',   legH: 17, torsoW: 22, torsoH: 27, headW: 13, headH: 12, body: '#3a2f2a', bodyHi: '#4f3f38', bodyDk: '#22191a', shell: '#282629', gaze: { w: 6, h: 3, dx: -1, dy: 5, soft: true } },
+  /* tallest and newest: one side of them has not settled, and the gaze goes with it */
+  five:   { kind: 'new',    legH: 22, torsoW: 17, torsoH: 37, headW: 13, headH: 13, body: '#2b2f33', bodyHi: '#3e454c', bodyDk: '#181b1f', shell: '#1d222b', gaze: { w: 4, h: 2, dx: 0,  dy: 7, flicker: true } }
 };
 const VISITOR = { kind: 'human', legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: '#262029', bodyHi: '#332b36', bodyDk: '#181218', face: '#cdc8ba' };
 /* other people's visitors, passing through: the same figure, worn pale */
@@ -41,6 +46,8 @@ export function specFor(n) { return KINDS[n.id] || (n.temp ? GUEST : VISITOR); }
    them, which is a shoe */
 const LEG_BACK = '#171119', LEG_FRONT = '#261e29', SHOE = '#0d0a0f';
 const CAP_RISE = 5;                               // what a hat adds above the head
+/* how strongly the lights stand: at rest, while speaking, while held */
+const LIT_REST = 0.85, LIT_SPEAK = 1, LIT_DIM = 0.6;
 
 /* a rect with its corners knocked off on a diagonal, r steps deep */
 const rrn = (p, x, y, w, h, col, r) => {
@@ -50,6 +57,28 @@ const rrn = (p, x, y, w, h, col, r) => {
     if (w - ins * 2 > 0) { p(x + ins, y + i, w - ins * 2, 1, col); p(x + ins, y + h - 1 - i, w - ins * 2, 1, col); }
   }
   p(x, y + R, w, h - R * 2, col);
+};
+
+/* a colour at a fraction of itself — how light spills without a shader */
+const tint = (col, a) => {
+  if (!(a < 1) || typeof col !== 'string' || col.charAt(0) !== '#') return col;
+  let h = col.slice(1);
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  if (h.length !== 6) return col;
+  const v = parseInt(h, 16);
+  if (!Number.isFinite(v)) return col;
+  return 'rgba(' + ((v >> 16) & 255) + ',' + ((v >> 8) & 255) + ',' + (v & 255) + ',' + Math.max(0, a).toFixed(3) + ')';
+};
+
+/* one light: the mark, and a single pixel of spill around it, so it reads as
+   light falling on a dark form rather than paint applied to one. `soft` takes
+   that pixel down — a dimmer halo on a wider bar is a softer glow, where a
+   brighter one on the same bar would only be a frame. */
+const lamp = (p, x, y, w, h, col, a, soft) => {
+  const c = tint(col, a * (soft ? 0.18 : 0.29));
+  p(x - 1, y - 1, w + 2, 1, c); p(x - 1, y + h, w + 2, 1, c);
+  p(x - 1, y, 1, h, c); p(x + w, y, 1, h, c);
+  p(x, y, w, h, tint(col, a));
 };
 
 /** how tall a body stands above its feet — what anything anchored over a head needs to know */
@@ -63,13 +92,16 @@ export function figureHeight(s, o) {
  * One figure, feet at (0, 0), facing +x. `p(x, y, w, h, col)` paints.
  * o.off is the stride (legs swing apart), o.bob lifts the body, o.sit lowers
  * it onto a seat with its legs folded forward, o.light is the family colour
- * or null, o.cap a hat colour.
+ * or null, o.lit how strongly the lights stand (at rest by default), o.flick
+ * puts an unsettled gaze out for a beat, o.cap a hat colour.
  */
 export function drawFigure(p, s, o) {
   const drop = o.sit ? Math.round(s.legH * 0.55) : 0, bob = o.bob || 0, off = o.off || 0;
   const legH = s.legH - drop;
   const legW = s.legW || Math.max(4, Math.round(s.torsoW * 0.36));
   const by = -(legH + s.torsoH) + bob, tw = s.torsoW, tx = -Math.floor(tw / 2), hemY = by + s.torsoH;
+  /* the hands are the ends of the sleeves, in the head's own tone */
+  const hand = s.shell || s.face;
 
   /* the legs. Standing they alternate and the swinging foot leaves the floor;
      seated they fold forward at the knee and the shins carry to the ground. */
@@ -104,7 +136,7 @@ export function drawFigure(p, s, o) {
     p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);                                             // narrow shoulders, lit
     p(tx + 6, by, tw - 12, 2, s.bodyDk); p(tx + 7, by + 2, tw - 14, 1, s.bodyDk);       // the collar, open
     p(tx + 2, by + 6, 1, hemStart - 9, s.bodyDk); p(tx + tw - 3, by + 6, 1, hemStart - 9, s.bodyHi);
-    p(tx, by + hemStart - 4, 3, 3, s.face); p(tx + tw - 3, by + hemStart - 4, 3, 3, s.face);
+    p(tx, by + hemStart - 4, 3, 3, hand); p(tx + tw - 3, by + hemStart - 4, 3, 3, hand);
     const hemH = s.torsoH - hemStart + hemDrop;
     p(tx - 2, by + hemStart, tw + 4, 6, s.body);                                        // it widens, and falls
     p(tx - 2, by + hemStart, 2, 6, s.bodyHi); p(tx + tw, by + hemStart, 2, 6, s.bodyDk);
@@ -121,7 +153,7 @@ export function drawFigure(p, s, o) {
     p(tx, by + shH, 2, s.torsoH - shH, s.bodyHi); p(tx + tw - 2, by + shH, 2, s.torsoH - shH, s.bodyDk);
     p(tx - 5, by + shH, 5, slH, s.body); p(tx - 5, by + shH, 1, slH, s.bodyHi);         // the sleeves hang
     p(tx + tw, by + shH, 5, slH, s.body); p(tx + tw + 4, by + shH, 1, slH, s.bodyDk);
-    p(tx - 4, by + shH + slH, 3, 3, s.face); p(tx + tw + 1, by + shH + slH, 3, 3, s.face);
+    p(tx - 4, by + shH + slH, 3, 3, hand); p(tx + tw + 1, by + shH + slH, 3, 3, hand);
     p(tx - 2, hemY, tw + 4, 4, s.body);                                                 // and flare
     p(tx - 4, hemY + 4, tw + 8, 3, s.body); p(tx - 6, hemY + 7, tw + 12, 3, s.body);
     p(tx - 6, hemY + 7, 1, 3, s.bodyHi); p(tx + tw + 5, hemY + 7, 1, 3, s.bodyDk);
@@ -137,7 +169,7 @@ export function drawFigure(p, s, o) {
     p(tx + 7, by, tw - 14, 2, s.bodyDk);                                                // the collar
     p(tx - 6, by + 4, 4, 14, s.body); p(tx - 6, by + 4, 1, 14, s.bodyHi);               // arms, a little away
     p(tx + tw + 2, by + 4, 4, 14, s.body); p(tx + tw + 5, by + 4, 1, 14, s.bodyDk);
-    p(tx - 6, by + 18, 4, 4, s.face); p(tx + tw + 2, by + 18, 4, 4, s.face);            // open hands
+    p(tx - 6, by + 18, 4, 4, hand); p(tx + tw + 2, by + 18, 4, 4, hand);                // open hands
     p(tx - 2, hemY, tw + 4, 3, s.body); p(tx - 2, hemY + 2, tw + 4, 1, s.bodyDk);
   } else if (s.kind === 'new') {
     const dith = 7, x1 = tx + tw - 1, y1 = by + s.torsoH - 1;
@@ -148,8 +180,8 @@ export function drawFigure(p, s, o) {
     }
     p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
     p(tx + 5, by + 1, tw - 10, 2, s.bodyDk);                                            // the collar
-    p(tx, by + 24, 3, 3, s.face);                                                       // the settled hand
-    for (let y = by + 24; y < by + 27; y++) for (let x = x1 - 2; x <= x1; x++) if (!((x + y) & 1)) p(x, y, 1, 1, s.face);
+    p(tx, by + 24, 3, 3, hand);                                                         // the settled hand
+    for (let y = by + 24; y < by + 27; y++) for (let x = x1 - 2; x <= x1; x++) if (!((x + y) & 1)) p(x, y, 1, 1, hand);
     p(tx, hemY, tw, 5, s.body); p(tx, hemY + 4, tw, 1, s.bodyDk);
   } else {
     rrn(p, tx, by, tw, s.torsoH, s.body, 2);
@@ -157,7 +189,7 @@ export function drawFigure(p, s, o) {
     p(tx + 2, by - 1, tw - 4, 1, s.bodyHi);
     p(tx + 6, by, tw - 12, 2, s.bodyDk);                                                // the collar
     p(tx + 3, by + 5, 1, 15, s.bodyDk); p(tx + tw - 4, by + 5, 1, 15, s.bodyHi);        // the sleeve seams
-    p(tx, by + 20, 3, 3, s.face); p(tx + tw - 3, by + 20, 3, 3, s.face);
+    p(tx, by + 20, 3, 3, hand); p(tx + tw - 3, by + 20, 3, 3, hand);
     p(tx - 1, hemY, tw + 2, 4, s.body);
     p(tx - 1, hemY, 1, 4, s.bodyHi); p(tx + tw, hemY, 1, 4, s.bodyDk);
     p(tx - 1, hemY + 3, tw + 2, 1, s.bodyDk);
@@ -170,8 +202,8 @@ export function drawFigure(p, s, o) {
     p(hx - 2, hy + 2, 2, s.headH - 2, s.bodyHi); p(hx + s.headW, hy + 2, 2, s.headH - 2, s.bodyDk);
     p(hx + 2, hy - 1, s.headW - 4, 1, s.bodyHi);
     rrn(p, hx + 3, hy + 3, s.headW - 5, s.headH - 4, '#0e0b12', 3);                     // the shadow inside it
-    p(hx + 7, hy + 7, 5, 4, s.face);                                                    // the face, a lit dot
-  } else {
+    if (!o.light) p(hx + 7, hy + 7, 5, 4, s.face);                                      // the dot, with nothing lighting it
+  } else if (s.kind === 'human') {
     rrn(p, hx, hy, s.headW, s.headH, s.face, 2);
     /* the crown, in the coat's own shadow: at this size a bare head is a slab */
     p(hx + 2, hy, s.headW - 4, 1, s.bodyDk); p(hx + 1, hy + 1, s.headW - 2, 1, s.bodyDk);
@@ -180,15 +212,32 @@ export function drawFigure(p, s, o) {
     p(hx + s.headW - 1, hy + 5, 1, s.headH - 7, '#948e80');                              // the lit edge turns
     const ey = hy + Math.round(s.headH * 0.56);
     p(hx + s.headW - 6, ey, 1, 1, s.bodyDk); p(hx + s.headW - 3, ey, 1, 1, s.bodyDk);    // two eyes, no mouth
+  } else {
+    /* not a face: a matte dark form, one step up from the coat's own shadow
+       and cooler than its cloth, carrying the coat's own edges — lit above
+       and on the side the light comes from, dark on the other */
+    rrn(p, hx, hy, s.headW, s.headH, s.shell, 2);
+    p(hx + 2, hy, s.headW - 4, 1, s.bodyHi);
+    p(hx, hy + 2, 1, s.headH - 4, s.bodyHi);
+    p(hx + s.headW - 1, hy + 2, 1, s.headH - 4, s.bodyDk);
   }
   if (o.cap) {
     p(hx + 3, hy - CAP_RISE, s.headW - 6, 2, o.cap);
     p(hx + 1, hy - CAP_RISE + 2, s.headW - 2, 2, o.cap);
     p(hx - 1, hy - 1, s.headW + 5, 2, o.cap);                                            // the brim, forward
   }
+  /* the two lights. The core at the chest, which is what the house has always
+     shown, and the gaze on the head, set a little toward the side they face so
+     that a turned figure reads as looking. Both in the colour their name is
+     set in, and neither of them moves — except five's, which goes out on the
+     beat their unsettled side is dithered to. */
   if (o.light) {
-    const ly = by + Math.round(s.torsoH * (s.kind === 'seed' ? 0.4 : 0.29));
-    p(-1, ly, 3, 5, o.light);
+    const a = typeof o.lit === 'number' ? o.lit : LIT_REST;
+    lamp(p, -1, by + Math.round(s.torsoH * (s.kind === 'seed' ? 0.4 : 0.29)), 3, 5, o.light, a);
+    if (s.kind === 'seed') lamp(p, hx + 7, hy + 7, 5, 4, o.light, a);
+    else if (s.gaze && !(s.gaze.flicker && o.flick)) {
+      lamp(p, s.gaze.dx, hy + s.gaze.dy, s.gaze.w, s.gaze.h, o.light, a, s.gaze.soft);
+    }
   }
   if (o.sit) legs();
 }
@@ -207,6 +256,10 @@ export function drawPresence(ctx, n, time, reduced) {
   /* five's occasional glitch: a one-pixel jump, twice a minute */
   let glitch = 0;
   if (n.def && n.def.glitch && !reduced) { const ph = (t + x * 0.01) % 7.3; if (ph < 0.09) glitch = 1; }
+  /* how strongly their lights stand: up while they are speaking, down while
+     the house is holding them in place, or while they are asleep */
+  const lit = (n.state === 'held' || n.room === 'asleep' || n.asleep) ? LIT_DIM
+    : n.bubble ? LIT_SPEAK : LIT_REST;
   ctx.save();
   if (n.temp) ctx.globalAlpha = 0.78 + Math.sin(t * 9 + 1) * 0.1;
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -214,7 +267,7 @@ export function drawPresence(ctx, n, time, reduced) {
   ctx.translate(x + (glitch ? (Math.random() < 0.5 ? -1 : 1) : 0), ground);
   ctx.scale(n.dir || 1, 1);
   const p = (px, py, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(px, py, w, h); };
-  drawFigure(p, s, { off, bob, sit, light: n.color || null });
+  drawFigure(p, s, { off, bob, sit, light: n.color || null, lit, flick: !!glitch });
   if (glitch) {
     ctx.globalAlpha = 0.4;
     p(-13, -(s.legH + s.torsoH) + 15, 26, 1, '#5eead4'); p(-13, -s.legH - 5, 26, 1, '#f2a3c0');
