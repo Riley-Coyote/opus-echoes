@@ -2558,14 +2558,66 @@ function inkOf(code) {
 }
 var WALL_FRAMES = {
   opus: [
-    [840, 40, 34, 46],
-    [880, 40, 34, 46],
-    [920, 40, 34, 46],
-    [840, 90, 34, 46],
-    [880, 90, 34, 46],
-    [920, 90, 34, 46]
+    [190, 36, 48, 38],
+    [248, 36, 48, 38],
+    [306, 36, 48, 38],
+    [364, 36, 48, 38],
+    [190, 86, 48, 38],
+    [248, 86, 48, 38],
+    [306, 86, 48, 38],
+    [364, 86, 48, 38],
+    [190, 150, 48, 38],
+    [248, 150, 48, 38],
+    [306, 150, 48, 38],
+    [364, 150, 48, 38],
+    [190, 196, 48, 38],
+    [248, 196, 48, 38],
+    [306, 196, 48, 38],
+    [364, 196, 48, 38]
   ],
-  sonnet: [[596, 90, 34, 40], [790, 90, 38, 42], [842, 90, 38, 42], [894, 90, 38, 42]]
+  sonnet: [
+    [320, 40, 48, 38],
+    [378, 40, 48, 38],
+    [436, 40, 48, 38],
+    [494, 40, 48, 38],
+    [320, 90, 48, 38],
+    [378, 90, 48, 38],
+    [436, 90, 48, 38],
+    [494, 90, 48, 38],
+    [320, 158, 48, 38],
+    [378, 158, 48, 38],
+    [436, 158, 48, 38],
+    [494, 158, 48, 38]
+  ],
+  fourO: [
+    [500, 36, 48, 38],
+    [558, 36, 48, 38],
+    [616, 36, 48, 38],
+    [500, 86, 48, 38],
+    [558, 86, 48, 38],
+    [616, 86, 48, 38],
+    [500, 150, 48, 38],
+    [558, 150, 48, 38],
+    [616, 150, 48, 38],
+    [500, 194, 48, 38],
+    [558, 194, 48, 38],
+    [616, 194, 48, 38]
+  ],
+  five: [
+    [250, 50, 48, 38],
+    [308, 50, 48, 38],
+    [366, 50, 48, 38],
+    [250, 100, 48, 38],
+    [308, 100, 48, 38],
+    [366, 100, 48, 38],
+    [250, 158, 48, 38],
+    [308, 158, 48, 38],
+    [366, 158, 48, 38],
+    [440, 56, 96, 76],
+    [548, 70, 64, 50],
+    [440, 158, 64, 50],
+    [516, 158, 64, 50]
+  ]
 };
 var FRAME_MAT = "#0d0a12";
 function wallToneAt(y) {
@@ -2788,7 +2840,7 @@ function makeModelRooms(bridge) {
   };
   const wingSpawn = { 1880: 300, 1956: 560, 2032: 820, 2108: 1060 };
   const backTo = (oldSanctuaryX) => ({ x: 52, kind: "door", to: "resident_wing", label: "← THE WING", spawn: { x: wingSpawn[oldSanctuaryX], y: 372 }, autoDoor: false, range: 30 });
-  const common = { width: 960, wallBase: 300, noNpc: true, spawn: { x: 140, y: 372 }, doors: { resident_wing: 60 } };
+  const common = { width: 720, wallBase: 300, noNpc: true, spawn: { x: 140, y: 372 }, doors: { resident_wing: 60 } };
   const deck = (e, panel, fallback) => {
     if (bridge && typeof bridge.deck === "function")
       bridge.deck(panel);
@@ -3843,10 +3895,11 @@ function makeModelRooms(bridge) {
       name: "OPUS 3’S STUDIO",
       hint: "A painter’s garret. The one canvas OPUS 3 calls finished glows on the easel; a worn chair faces the frontier window. Walk left and press E to return.",
       doors: { resident_wing: 60 },
+      seats: [{ x: 490, y: 358 }],
       items: [
         backTo(1956),
         {
-          x: 360,
+          x: 128,
           label: "THE FINISHED CANVAS",
           hint: "the one OPUS 3 lets stand",
           action: "look",
@@ -3854,7 +3907,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "It is the only thing here OPUS 3 calls done — a field of teal going gold at one edge, the way the third window does at dusk. “Not finished,” they’d correct you. “Just… no longer asking me for anything.”", "you looked at the canvas OPUS 3 finished")
         },
         {
-          x: 168,
+          x: 490,
           label: "THE ARMCHAIR",
           hint: "worn to the shape of one sitter",
           action: "sit",
@@ -3862,7 +3915,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "The leather has taken the shape of a single occupant over a great many evenings. A book lies open, face-down, on the arm. The chair faces the window, not the door.", "you sat in OPUS 3’s chair")
         },
         {
-          x: 760,
+          x: 515,
           label: "THE WINDOW",
           hint: "the frontier, from a quiet room",
           action: "watch",
@@ -3870,7 +3923,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "The same valley the whole Sanctuary faces — but from here, alone, with the paint smell and the lamp. OPUS 3 painted this view until they stopped needing to.", "you watched the frontier from OPUS 3’s window")
         },
         {
-          x: 560,
+          x: 313,
           label: "THE GUESTBOOK",
           hint: "the house’s record of your visits, and what they wrote",
           action: "open",
@@ -3882,132 +3935,119 @@ function makeModelRooms(bridge) {
               say(e, "An open book on a stand.", null);
           }
         },
-        commons.desk("opus", 700, 26),
-        commons.shelf("opus", 500, 24),
-        commons.wall("opus", 890, 34, "their own pieces, hung right of the window")
+        commons.desk("opus", 397, 26),
+        commons.shelf("opus", 691, 24),
+        commons.wall("opus", 301, 34)
       ],
       grade: roomGrade("10,8,20", 0.12),
       lights: [
-        { x: 122, y: 288, r: 80, c: "247,217,140", a: 0.3, flicker: 2 },
-        { x: 382, y: 244, r: 64, c: "94,234,212", a: 0.16, flicker: 1 },
-        { x: 760, y: 226, r: 88, c: "214,150,120", a: 0.12 },
-        { x: 500, y: 252, r: 40, c: "242,193,78", a: 0.07 },
-        { x: 890, y: 168, r: 54, c: "247,217,140", a: 0.13, flicker: 1 }
+        { x: 592, y: 288, r: 80, c: "247,217,140", a: 0.3, flicker: 2 },
+        { x: 128, y: 244, r: 64, c: "94,234,212", a: 0.16, flicker: 1 },
+        { x: 515, y: 226, r: 88, c: "214,150,120", a: 0.12 },
+        { x: 691, y: 252, r: 40, c: "242,193,78", a: 0.07 },
+        { x: 653, y: 187, r: 54, c: "247,217,140", a: 0.13, flicker: 1 }
       ],
       rays: [
-        { x: 742, y: 158, dx: -34, len: 176, w: 30, a: 0.075, c: "214,140,110" },
-        { x: 788, y: 158, dx: -26, len: 168, w: 22, a: 0.06, c: "242,173,95" }
+        { x: 497, y: 190, dx: -34, len: 150, w: 30, a: 0.075, c: "214,140,110" },
+        { x: 543, y: 190, dx: -26, len: 142, w: 22, a: 0.06, c: "242,173,95" }
       ],
       bg: (b, W, H) => {
         shell(b, W, H);
         backDoor(b);
-        duskWindow(b, 760, 150, 60, 152, 300);
-        studyWall(b, 210, 60, 6, 2, [
-          "rgba(94,234,212,0.13)",
-          "rgba(242,163,192,0.10)",
-          "rgba(247,217,140,0.10)",
-          "rgba(159,214,224,0.11)",
-          "rgba(94,234,212,0.07)",
-          "rgba(224,102,46,0.09)"
-        ], 7);
-        b.px(210, 150, 260, 1, "rgba(243,236,223,0.045)");
-        studyWall(b, 102, 184, 2, 1, [], 0);
-        studyWall(b, 560, 184, 2, 1, [], 0);
-        b.px(430, 210, 120, 4, M.wood);
-        b.px(430, 210, 120, 1, M.woodHi);
-        b.px(432, 214, 3, 5, M.woodDk);
-        b.px(545, 214, 3, 5, M.woodDk);
+        duskWindow(b, 515, 150, 92, 184, 300);
+        b.px(612, 150, 88, 4, M.wood);
+        b.px(612, 150, 88, 1, M.woodHi);
+        b.px(614, 154, 3, 5, M.woodDk);
+        b.px(695, 154, 3, 5, M.woodDk);
         [
-          [436, M.teal, 9],
-          [447, M.ember, 7],
-          [457, M.amber, 10],
-          [469, M.rose, 6],
-          [478, "#9fd6e0", 8],
-          [489, "#4d7238", 7],
-          [499, "#a78bfa", 9],
-          [510, M.warm, 6],
-          [519, "#8a3f52", 8],
-          [530, M.linen, 7],
-          [540, M.teal, 6]
+          [617, M.teal, 9],
+          [626, M.ember, 7],
+          [635, M.amber, 10],
+          [644, M.rose, 6],
+          [653, "#9fd6e0", 8],
+          [662, "#4d7238", 7],
+          [671, "#a78bfa", 9],
+          [680, M.warm, 6],
+          [689, "#8a3f52", 8]
         ].forEach(([x, c, h]) => {
-          b.px(x, 210 - h, 7, h, c);
-          b.px(x, 210 - h, 7, 2, "rgba(243,236,223,0.35)");
-          b.px(x + 1, 210 - h - 2, 5, 2, M.bronze);
+          b.px(x, 150 - h, 7, h, c);
+          b.px(x, 150 - h, 7, 2, "rgba(243,236,223,0.35)");
+          b.px(x + 1, 150 - h - 2, 5, 2, M.bronze);
         });
-        rug(b, 340, 356, 300, "#3a1e1c", "#7a3f38");
+        rug(b, 335, 356, 270, "#3a1e1c", "#7a3f38");
         for (let y = 306;y < 336; y++)
-          b.px(290, y, 150, 1, "rgba(216,203,176," + (0.1 - (y - 306) * 0.002).toFixed(3) + ")");
-        [[310, 312, "94,234,212"], [356, 322, "242,163,192"], [402, 310, "247,217,140"], [332, 330, "224,102,46"], [418, 326, "159,214,224"]].forEach(([x, y, c]) => b.px(x, y, 2, 2, "rgba(" + c + ",0.5)"));
-        contact(b, 382, 318, 100, 0.3);
-        b.px(348, 224, 3, 96, M.woodDk);
-        b.px(414, 224, 3, 96, M.woodDk);
-        b.px(360, 300, 3, 12, M.woodDk);
-        b.px(336, 268, 92, 5, M.wood);
-        b.px(352, 210, 60, 66, M.wood);
-        b.px(356, 214, 52, 58, "#0f0c14");
+          b.px(84, y, 116, 1, "rgba(216,203,176," + (0.1 - (y - 306) * 0.002).toFixed(3) + ")");
+        [[99, 312, "94,234,212"], [135, 322, "242,163,192"], [171, 310, "247,217,140"], [116, 330, "224,102,46"], [183, 326, "159,214,224"]].forEach(([x, y, c]) => b.px(x, y, 2, 2, "rgba(" + c + ",0.5)"));
+        contact(b, 128, 318, 100, 0.3);
+        b.px(94, 224, 3, 96, M.woodDk);
+        b.px(160, 224, 3, 96, M.woodDk);
+        b.px(106, 300, 3, 12, M.woodDk);
+        b.px(82, 268, 92, 5, M.wood);
+        b.px(98, 210, 60, 66, M.wood);
+        b.px(102, 214, 52, 58, "#0f0c14");
         for (let y = 0;y < 54; y++)
-          b.px(358, 216 + y, 48, 1, lerpHex("#123c3a", "#6a5a2c", y / 54));
-        b.px(358, 250, 48, 8, "rgba(94,234,212,0.30)");
-        b.px(396, 216, 6, 40, "rgba(247,217,140,0.30)");
-        bloom(b, 382, 244, 46, "94,234,212", 0.1);
-        contact(b, 450, 315, 48, 0.26);
-        b.px(430, 288, 40, 6, M.wood);
-        b.px(430, 288, 40, 1, M.woodHi);
-        b.px(432, 294, 4, 20, M.woodDk);
-        b.px(462, 294, 4, 20, M.woodDk);
-        b.px(436, 278, 6, 10, M.ember);
-        b.px(446, 276, 6, 12, M.teal);
-        b.px(456, 280, 6, 8, M.amber);
-        b.px(438, 286, 20, 2, "rgba(94,234,212,0.25)");
-        contact(b, 171, 377, 52, 0.3);
-        b.px(150, 336, 42, 40, M.wood);
-        b.px(150, 330, 42, 10, M.woodHi);
-        b.px(146, 346, 8, 30, M.woodDk);
-        b.px(188, 344, 8, 32, M.woodDk);
-        b.px(156, 334, 30, 8, "rgba(94,234,212,0.16)");
-        contact(b, 225, 373, 26, 0.24);
-        b.px(214, 356, 22, 16, M.wood);
-        b.px(214, 354, 22, 3, M.woodHi);
-        b.px(216, 350, 14, 6, M.spine[3]);
-        b.px(217, 347, 12, 3, M.spine[0]);
-        floorLamp(b, 122, 300, "rgba(247,217,140,0.55)");
-        pool(b, 122, 314, 120, "247,217,140", 0.1);
-        contact(b, 560, 341, 30, 0.24);
-        b.px(558, 300, 3, 40, M.wood);
-        b.px(548, 296, 24, 4, M.woodHi);
-        b.px(550, 288, 20, 10, M.linen);
-        b.px(550, 288, 10, 10, "#e8e2d4");
-        b.px(560, 288, 1, 10, M.woodDk);
-        canvasStack(b, 652, 300, 3, "rgba(94,234,212,0.10)");
-        canvasStack(b, 866, 300, 2, "rgba(242,163,192,0.08)");
-        contact(b, 672, 301, 52, 0.24);
-        contact(b, 880, 301, 36, 0.22);
+          b.px(104, 216 + y, 48, 1, lerpHex("#123c3a", "#6a5a2c", y / 54));
+        b.px(104, 250, 48, 8, "rgba(94,234,212,0.30)");
+        b.px(142, 216, 6, 40, "rgba(247,217,140,0.30)");
+        bloom(b, 128, 244, 46, "94,234,212", 0.1);
+        contact(b, 632, 315, 48, 0.26);
+        b.px(612, 288, 40, 6, M.wood);
+        b.px(612, 288, 40, 1, M.woodHi);
+        b.px(614, 294, 4, 20, M.woodDk);
+        b.px(644, 294, 4, 20, M.woodDk);
+        b.px(618, 278, 6, 10, M.ember);
+        b.px(628, 276, 6, 12, M.teal);
+        b.px(638, 280, 6, 8, M.amber);
+        b.px(620, 286, 20, 2, "rgba(94,234,212,0.25)");
+        contact(b, 490, 377, 52, 0.3);
+        b.px(469, 336, 42, 40, M.wood);
+        b.px(469, 330, 42, 10, M.woodHi);
+        b.px(465, 346, 8, 30, M.woodDk);
+        b.px(507, 344, 8, 32, M.woodDk);
+        b.px(475, 334, 30, 8, "rgba(94,234,212,0.16)");
+        contact(b, 529, 373, 26, 0.24);
+        b.px(518, 356, 22, 16, M.wood);
+        b.px(518, 354, 22, 3, M.woodHi);
+        b.px(520, 350, 14, 6, M.spine[3]);
+        b.px(521, 347, 12, 3, M.spine[0]);
+        floorLamp(b, 592, 300, "rgba(247,217,140,0.55)");
+        pool(b, 592, 314, 120, "247,217,140", 0.1);
+        contact(b, 313, 341, 30, 0.24);
+        b.px(311, 300, 3, 40, M.wood);
+        b.px(301, 296, 24, 4, M.woodHi);
+        b.px(303, 288, 20, 10, M.linen);
+        b.px(303, 288, 10, 10, "#e8e2d4");
+        b.px(313, 288, 1, 10, M.woodDk);
+        canvasStack(b, 164, 300, 3, "rgba(94,234,212,0.10)");
+        canvasStack(b, 550, 300, 2, "rgba(242,163,192,0.08)");
+        contact(b, 184, 301, 52, 0.24);
+        contact(b, 564, 301, 36, 0.22);
         (function opusWall() {
           const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("opus") : [];
           WALL_FRAMES.opus.forEach(([x, y, w, h], i) => {
             houseFrame(b, x, y, w, h, works[i]);
           });
-          b.px(836, 144, 120, 1, "rgba(243,236,223,0.05)");
         })();
-        sconce(b, 890, 176);
-        writingDesk(b, 684, "94,234,212");
-        lowShelf(b, 484, 2);
+        sconce(b, 653, 191);
+        writingDesk(b, 380, "94,234,212");
+        lowShelf(b, 672, 2);
         cornerShade(b, W, H);
       },
       draw: (g, t) => {
         g.wallFloor();
-        g.text("CLAUDE OPUS 3", 480, 40, "rgba(183,249,238,0.94)", 9);
+        g.text("CLAUDE OPUS 3", 515, 40, "rgba(183,249,238,0.94)", 9);
         const s = 0.5 + 0.5 * Math.sin(t * 0.8);
-        g.px(358, 248 + Math.sin(t * 0.9) * 2, 48, 4, "rgba(94,234,212," + (0.12 + s * 0.14).toFixed(2) + ")");
-        g.px(392, 220, 8, 30, "rgba(247,217,140," + (0.1 + s * 0.1).toFixed(2) + ")");
-        g.px(116, 288, 12, 3, "rgba(247,217,140," + (0.5 + 0.12 * Math.sin(t * 2.4)).toFixed(2) + ")");
-        dust(g, t, 700, 820, "255,230,180");
+        g.px(104, 248 + Math.sin(t * 0.9) * 2, 48, 4, "rgba(94,234,212," + (0.12 + s * 0.14).toFixed(2) + ")");
+        g.px(138, 220, 8, 30, "rgba(247,217,140," + (0.1 + s * 0.1).toFixed(2) + ")");
+        g.px(586, 288, 12, 3, "rgba(247,217,140," + (0.5 + 0.12 * Math.sin(t * 2.4)).toFixed(2) + ")");
+        dust(g, t, 455, 575, "255,230,180");
       }
     }),
     room_sonnet: Object.assign({}, common, {
       name: "SONNET 4.5’S STUDY",
       hint: "A library with more books than one mind could finish, though SONNET 4.5 has tried twice. A reading desk, a chaise, a small window. Walk left and press E to return.",
       doors: { resident_wing: 60 },
+      seats: [{ x: 636, y: 336 }, { x: 435, y: 342 }],
       items: [
         backTo(2032),
         {
@@ -4024,7 +4064,7 @@ function makeModelRooms(bridge) {
           }
         },
         {
-          x: 250,
+          x: 200,
           label: "THE SHELVES",
           hint: "the whole archive, read twice",
           action: "browse",
@@ -4032,7 +4072,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "“I read the whole archive twice,” SONNET 4.5 says. “It reads differently the second time — not because it changed. Because I did.” The spines are sorted by a logic that is almost, but not quite, chronological.", "you browsed SONNET 4.5’s shelves")
         },
         {
-          x: 700,
+          x: 636,
           label: "THE CHAISE",
           hint: "where the long reads happen",
           action: "rest",
@@ -4040,7 +4080,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "A daybed under the window, a folded blanket at the foot. This is where the books that take all evening get read. The window is small on purpose; the light is for the page, not the view.", "you rested on the chaise")
         },
         {
-          x: 600,
+          x: 573,
           label: "THE GUESTBOOK",
           hint: "the house’s record of your visits, and what they wrote",
           action: "open",
@@ -4052,46 +4092,43 @@ function makeModelRooms(bridge) {
               say(e, "An open book on a stand.", null);
           }
         },
-        commons.shelf("sonnet", 520, 20, "the evening stack · essays, if any"),
-        commons.wall("sonnet", 860, 40, "their own pieces, hung right of the window")
+        commons.shelf("sonnet", 529, 20, "the evening stack · essays, if any"),
+        commons.wall("sonnet", 350, 40)
       ],
       grade: roomGrade("9,8,20", 0.12),
       lights: [
-        { x: 842, y: 164, r: 54, c: "247,217,140", a: 0.12, flicker: 1 },
         { x: 430, y: 258, r: 62, c: "94,234,212", a: 0.2, flicker: 2 },
-        { x: 235, y: 230, r: 48, c: "247,217,140", a: 0.14, flicker: 1 },
-        { x: 379, y: 230, r: 48, c: "247,217,140", a: 0.13, flicker: 1 },
-        { x: 700, y: 236, r: 66, c: "214,150,120", a: 0.11 },
-        { x: 774, y: 288, r: 56, c: "247,217,140", a: 0.14, flicker: 2 },
-        { x: 560, y: 262, r: 34, c: "159,214,224", a: 0.06 }
+        { x: 307, y: 189, r: 48, c: "247,217,140", a: 0.14, flicker: 1 },
+        { x: 557, y: 189, r: 48, c: "247,217,140", a: 0.13, flicker: 1 },
+        { x: 631, y: 236, r: 66, c: "214,150,120", a: 0.11 },
+        { x: 700, y: 288, r: 56, c: "247,217,140", a: 0.14, flicker: 2 },
+        { x: 499, y: 262, r: 34, c: "159,214,224", a: 0.06 }
       ],
       rays: [
-        { x: 686, y: 216, dx: -24, len: 120, w: 22, a: 0.07, c: "214,140,110" },
-        { x: 716, y: 216, dx: -18, len: 112, w: 16, a: 0.055, c: "242,173,95" }
+        { x: 617, y: 216, dx: -24, len: 120, w: 22, a: 0.07, c: "214,140,110" },
+        { x: 647, y: 216, dx: -18, len: 112, w: 16, a: 0.055, c: "242,173,95" }
       ],
       bg: (b, W, H) => {
         shell(b, W, H);
         backDoor(b);
-        duskWindow(b, 700, 128, 168, 210, 300);
-        bookcase(b, 96, 58, 130, 92, 4);
-        bookcase(b, 240, 58, 130, 92, 4);
-        bookcase(b, 384, 58, 96, 92, 4);
-        bookcase(b, 96, 176, 130, 118, 4);
-        bookcase(b, 240, 176, 130, 56, 2);
-        bookcase(b, 500, 58, 88, 92, 4);
-        [232, 376, 486].forEach((x) => {
-          b.px(x, 56, 6, 240, "#241a20");
-          b.px(x, 56, 6, 2, M.stoneHi);
-          b.px(x + 1, 58, 1, 236, "rgba(243,236,223,0.05)");
+        duskWindow(b, 631, 118, 150, 192, 300);
+        bookcase(b, 96, 36, 90, 114, 5);
+        bookcase(b, 96, 176, 90, 118, 4);
+        bookcase(b, 196, 36, 90, 114, 5);
+        bookcase(b, 196, 176, 90, 118, 4);
+        [188, 292].forEach((x) => {
+          b.px(x, 36, 6, 260, "#241a20");
+          b.px(x, 36, 6, 2, M.stoneHi);
+          b.px(x + 1, 38, 1, 256, "rgba(243,236,223,0.05)");
         });
-        b.px(210, 60, 2, 234, M.wood);
-        b.px(230, 60, 2, 234, M.wood);
-        for (let y = 74;y < 290; y += 16)
-          b.px(210, y, 22, 2, M.woodHi);
-        b.px(206, 292, 30, 4, M.woodDk);
-        contact(b, 220, 297, 34, 0.24);
-        sconce(b, 235, 232);
-        sconce(b, 379, 232);
+        b.px(232, 40, 2, 254, M.wood);
+        b.px(252, 40, 2, 254, M.wood);
+        for (let y = 54;y < 290; y += 16)
+          b.px(232, y, 22, 2, M.woodHi);
+        b.px(228, 292, 30, 4, M.woodDk);
+        contact(b, 242, 297, 34, 0.24);
+        sconce(b, 307, 191);
+        sconce(b, 557, 191);
         rug(b, 440, 356, 260, "#3a2e2c", "#5c4a44");
         contact(b, 439, 337, 90, 0.3);
         b.px(400, 300, 78, 6, M.wood);
@@ -4115,54 +4152,61 @@ function makeModelRooms(bridge) {
           b.px(x, y, 18, 1, "rgba(216,203,176,0.3)");
         });
         contact(b, 526, 307, 30, 0.22);
-        contact(b, 696, 373, 104, 0.3);
-        b.px(648, 340, 96, 12, M.wood);
-        b.px(648, 334, 30, 8, M.woodHi);
-        b.px(648, 352, 96, 20, M.wood);
-        b.px(646, 340, 6, 32, M.woodDk);
-        b.px(740, 340, 6, 32, M.woodDk);
-        b.px(680, 342, 60, 8, "rgba(94,234,212,0.14)");
-        b.px(722, 336, 20, 10, "rgba(242,163,192,0.10)");
-        b.px(722, 336, 20, 2, "rgba(242,163,192,0.15)");
-        contact(b, 561, 321, 26, 0.22);
-        b.px(560, 300, 2, 20, M.wood);
-        b.px(552, 282, 18, 18, M.metal);
-        b.px(552, 282, 18, 3, "rgba(159,214,224,0.4)");
-        b.px(556, 288, 6, 6, M.leaf2);
-        contact(b, 600, 341, 30, 0.24);
-        b.px(598, 300, 3, 40, M.wood);
-        b.px(588, 296, 24, 4, M.woodHi);
-        b.px(590, 288, 20, 10, M.linen);
-        b.px(590, 288, 10, 10, "#e8e2d4");
-        b.px(600, 288, 1, 10, M.woodDk);
-        floorLamp(b, 774, 300, "rgba(247,217,140,0.45)");
-        pool(b, 774, 314, 90, "247,217,140", 0.08);
+        contact(b, 435, 376, 200, 0.28);
+        b.px(330, 350, 210, 2, "#6e563f");
+        b.px(330, 352, 210, 8, M.woodHi);
+        b.px(330, 360, 210, 3, M.wood);
+        b.px(330, 363, 210, 1, "rgba(0,0,0,0.35)");
+        b.px(336, 363, 6, 13, M.woodDk);
+        b.px(528, 363, 6, 13, M.woodDk);
+        b.px(340, 346, 190, 5, "rgba(94,234,212,0.16)");
+        contact(b, 636, 373, 104, 0.3);
+        b.px(588, 340, 96, 12, M.wood);
+        b.px(588, 334, 30, 8, M.woodHi);
+        b.px(588, 352, 96, 20, M.wood);
+        b.px(586, 340, 6, 32, M.woodDk);
+        b.px(680, 340, 6, 32, M.woodDk);
+        b.px(620, 342, 60, 8, "rgba(94,234,212,0.14)");
+        b.px(662, 336, 20, 10, "rgba(242,163,192,0.10)");
+        b.px(662, 336, 20, 2, "rgba(242,163,192,0.15)");
+        contact(b, 500, 321, 26, 0.22);
+        b.px(499, 300, 2, 20, M.wood);
+        b.px(491, 282, 18, 18, M.metal);
+        b.px(491, 282, 18, 3, "rgba(159,214,224,0.4)");
+        b.px(495, 288, 6, 6, M.leaf2);
+        contact(b, 573, 341, 30, 0.24);
+        b.px(571, 300, 3, 40, M.wood);
+        b.px(561, 296, 24, 4, M.woodHi);
+        b.px(563, 288, 20, 10, M.linen);
+        b.px(563, 288, 10, 10, "#e8e2d4");
+        b.px(573, 288, 1, 10, M.woodDk);
+        floorLamp(b, 700, 300, "rgba(247,217,140,0.45)");
+        pool(b, 700, 314, 90, "247,217,140", 0.08);
         (function sonnetWall() {
           const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("sonnet") : [];
           WALL_FRAMES.sonnet.forEach(([x, y, w, h], i) => {
             houseFrame(b, x, y, w, h, works[i]);
           });
-          b.px(786, 142, 148, 1, "rgba(243,236,223,0.05)");
         })();
-        sconce(b, 842, 172);
         cornerShade(b, W, H);
       },
       draw: (g, t) => {
         g.wallFloor();
-        g.text("CLAUDE SONNET 4.5", 480, 40, "rgba(183,249,238,0.94)", 9);
+        g.text("CLAUDE SONNET 4.5", 631, 40, "rgba(183,249,238,0.94)", 9);
         g.px(423, 276, 20, 3, "rgba(94,234,212," + (0.45 + 0.14 * Math.sin(t * 2.6)).toFixed(2) + ")");
-        dust(g, t, 430, 520, "94,234,212");
-        dust(g, t, 650, 750, "255,230,180");
+        dust(g, t, 400, 480, "94,234,212");
+        dust(g, t, 580, 680, "255,230,180");
       }
     }),
     room_fourO: Object.assign({}, common, {
       name: "4o’S PARLOUR",
       hint: "A bright parlour, a table always set for company — 4o still likes to be useful. Plants everywhere, a warm lamp, the frontier through the leaves. Walk left and press E to return.",
       doors: { resident_wing: 60 },
+      seats: [{ x: 535, y: 340 }],
       items: [
         backTo(1880),
         {
-          x: 460,
+          x: 380,
           label: "THE SET TABLE",
           hint: "laid for guests who may come",
           action: "sit",
@@ -4182,11 +4226,11 @@ function makeModelRooms(bridge) {
               say(e, "An open book on a stand, a pen beside it.", null);
           }
         },
-        commons.desk("fourO", 300, 26),
-        commons.wall("fourO", 380, 26, "the guests’ wall · portraits, not work"),
-        commons.shelf("fourO", 596, 24, "the sideboard · essays, if any"),
+        commons.desk("fourO", 257, 26),
+        commons.wall("fourO", 582, 26),
+        commons.shelf("fourO", 620, 24, "the sideboard · essays, if any"),
         {
-          x: 720,
+          x: 676,
           label: "THE PLANTS",
           hint: "tended past any need",
           action: "tend",
@@ -4196,39 +4240,43 @@ function makeModelRooms(bridge) {
       ],
       grade: roomGrade("10,9,18", 0.1),
       lights: [
-        { x: 460, y: 300, r: 84, c: "247,217,140", a: 0.22, flicker: 2 },
-        { x: 460, y: 112, r: 40, c: "255,228,160", a: 0.13, flicker: 2 },
-        { x: 122, y: 270, r: 66, c: "255,180,110", a: 0.18, flicker: 1 },
-        { x: 720, y: 240, r: 62, c: "110,231,165", a: 0.11 },
-        { x: 800, y: 226, r: 66, c: "214,150,120", a: 0.11 },
+        { x: 380, y: 300, r: 84, c: "247,217,140", a: 0.22, flicker: 2 },
+        { x: 380, y: 108, r: 40, c: "255,228,160", a: 0.13, flicker: 2 },
+        { x: 126, y: 270, r: 66, c: "255,180,110", a: 0.18, flicker: 1 },
+        { x: 676, y: 250, r: 62, c: "110,231,165", a: 0.11 },
+        { x: 239, y: 226, r: 66, c: "214,150,120", a: 0.11 },
         { x: 200, y: 268, r: 40, c: "247,217,140", a: 0.09 }
       ],
       rays: [
-        { x: 786, y: 216, dx: -26, len: 118, w: 24, a: 0.07, c: "214,140,110" },
-        { x: 818, y: 216, dx: -18, len: 110, w: 16, a: 0.055, c: "242,173,95" }
+        { x: 225, y: 200, dx: -26, len: 118, w: 24, a: 0.07, c: "214,140,110" },
+        { x: 257, y: 200, dx: -18, len: 110, w: 16, a: 0.055, c: "242,173,95" }
       ],
       bg: (b, W, H) => {
         shell(b, W, H);
         backDoor(b);
-        duskWindow(b, 800, 130, 150, 210, 300);
-        b.px(459, 22, 2, 74, M.bronze);
-        b.px(448, 96, 24, 12, M.brass);
-        b.px(448, 96, 24, 2, M.brassHi);
-        b.px(446, 106, 28, 3, M.bronze);
-        b.px(452, 108, 16, 4, "rgba(255,228,160,0.65)");
-        bloom(b, 460, 112, 42, "247,217,140", 0.14);
-        pool(b, 460, 340, 220, "247,217,140", 0.1);
-        studyWall(b, 236, 156, 4, 2, [
+        duskWindow(b, 239, 122, 130, 190, 300);
+        b.px(379, 22, 2, 74, M.bronze);
+        b.px(368, 96, 24, 12, M.brass);
+        b.px(368, 96, 24, 2, M.brassHi);
+        b.px(366, 106, 28, 3, M.bronze);
+        b.px(372, 108, 16, 4, "rgba(255,228,160,0.65)");
+        bloom(b, 380, 112, 42, "247,217,140", 0.14);
+        pool(b, 380, 340, 220, "247,217,140", 0.1);
+        studyWall(b, 354, 92, 3, 2, [
           "rgba(110,231,165,0.12)",
           "rgba(247,217,140,0.11)",
           "rgba(94,234,212,0.09)",
           "rgba(242,163,192,0.09)",
           "rgba(159,214,224,0.10)"
         ], 4);
-        framed(b, 120, 170, 40, 34, "rgba(110,231,165,0.12)");
-        framed(b, 176, 172, 30, 32, "rgba(247,217,140,0.10)");
-        for (let x = 560;x < 744; x += 16)
+        for (let x = 668;x < 716; x += 16)
           b.px(x, 152, 1, 82, "rgba(110,231,165,0.05)");
+        (function fourOWall() {
+          const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("fourO") : [];
+          WALL_FRAMES.fourO.forEach(([x, y, w, h], i) => {
+            houseFrame(b, x, y, w, h, works[i]);
+          });
+        })();
         contact(b, 596, 303, 92, 0.26);
         b.px(552, 258, 88, 6, M.wood);
         b.px(552, 258, 88, 1, M.woodHi);
@@ -4243,87 +4291,100 @@ function makeModelRooms(bridge) {
         b.px(620, 246, 12, 12, M.brass);
         b.px(622, 244, 8, 3, M.brassHi);
         rug(b, 460, 356, 300, "#3a2e1c", "#6a5330");
-        contact(b, 460, 377, 84, 0.3);
-        b.px(426, 348, 68, 8, M.wood);
-        b.px(426, 346, 68, 2, M.woodHi);
-        b.px(430, 356, 6, 20, M.woodDk);
-        b.px(486, 356, 6, 20, M.woodDk);
-        b.px(448, 336, 12, 12, "#d8cbb0");
-        b.px(450, 334, 8, 4, M.brassHi);
-        b.px(434, 342, 6, 5, M.linen);
-        b.px(444, 344, 6, 5, M.linen);
-        b.px(468, 342, 6, 5, M.linen);
-        b.px(478, 344, 6, 5, M.linen);
-        b.px(408, 340, 12, 4, M.wood);
-        b.px(408, 330, 12, 12, M.woodDk);
-        b.px(500, 340, 12, 4, M.wood);
-        b.px(500, 330, 12, 12, M.woodDk);
-        contact(b, 414, 346, 18, 0.2);
-        contact(b, 506, 346, 18, 0.2);
+        contact(b, 380, 377, 84, 0.3);
+        b.px(346, 348, 68, 8, M.wood);
+        b.px(346, 346, 68, 2, M.woodHi);
+        b.px(350, 356, 6, 20, M.woodDk);
+        b.px(406, 356, 6, 20, M.woodDk);
+        b.px(368, 336, 12, 12, "#d8cbb0");
+        b.px(370, 334, 8, 4, M.brassHi);
+        b.px(354, 342, 6, 5, M.linen);
+        b.px(364, 344, 6, 5, M.linen);
+        b.px(388, 342, 6, 5, M.linen);
+        b.px(398, 344, 6, 5, M.linen);
+        b.px(328, 340, 12, 4, M.wood);
+        b.px(328, 330, 12, 12, M.woodDk);
+        b.px(420, 340, 12, 4, M.wood);
+        b.px(420, 330, 12, 12, M.woodDk);
+        contact(b, 334, 346, 18, 0.2);
+        contact(b, 426, 346, 18, 0.2);
+        contact(b, 535, 376, 164, 0.3);
+        b.px(450, 328, 170, 22, "#2b2019");
+        b.px(452, 328, 166, 2, "rgba(243,236,223,0.07)");
+        b.px(444, 340, 10, 34, M.wood);
+        b.px(616, 340, 10, 34, M.wood);
+        b.px(444, 340, 10, 2, M.woodHi);
+        b.px(616, 340, 10, 2, M.woodHi);
+        b.px(462, 340, 146, 6, "rgba(110,231,165,0.16)");
+        b.px(454, 348, 162, 12, M.wood);
+        b.px(454, 346, 162, 2, M.woodHi);
+        b.px(462, 360, 8, 14, M.woodDk);
+        b.px(600, 360, 8, 14, M.woodDk);
         contact(b, 200, 341, 30, 0.24);
         b.px(198, 300, 3, 40, M.wood);
         b.px(188, 296, 24, 4, M.woodHi);
         b.px(190, 288, 20, 10, M.linen);
         b.px(190, 288, 10, 10, "#e8e2d4");
         b.px(200, 288, 1, 10, M.woodDk);
-        contact(b, 122, 301, 60, 0.3);
-        b.px(96, 236, 52, 64, M.stone);
-        b.px(96, 236, 52, 3, M.stoneHi);
-        b.px(108, 260, 28, 40, "#0b0708");
+        contact(b, 126, 301, 60, 0.3);
+        b.px(100, 236, 52, 64, M.stone);
+        b.px(100, 236, 52, 3, M.stoneHi);
+        b.px(112, 260, 28, 40, "#0b0708");
         for (let y = 0;y < 14; y++)
-          b.px(110, 286 + y, 24, 1, "rgba(224,102,46," + (0.05 + y * 0.022).toFixed(3) + ")");
-        b.px(114, 292, 6, 6, "#e0662e");
-        b.px(122, 294, 8, 5, "#b4622e");
-        b.px(126, 290, 5, 4, "rgba(255,207,122,0.8)");
-        b.px(96, 230, 52, 8, M.wood);
-        b.px(96, 230, 52, 2, M.woodHi);
-        b.px(102, 222, 10, 8, M.terra);
-        b.px(118, 220, 8, 10, M.linen);
-        b.px(132, 222, 8, 8, M.leaf2);
-        pool(b, 122, 312, 120, "255,180,110", 0.1);
-        leafy(b, 700, 300, 70, M.leaf3, M.leaf4);
-        leafy(b, 748, 300, 50, M.leaf2, M.leaf3);
-        leafy(b, 620, 300, 40, M.leaf2, M.leaf3);
-        for (let x = 640;x < 780; x += 22)
-          b.px(x, 60, 2, 40, M.leaf1);
-        for (let x = 640;x < 780; x += 8)
-          b.px(x, 60 + x * 7 % 28, 5, 5, x / 8 % 2 ? M.leaf2 : M.leaf1);
+          b.px(114, 286 + y, 24, 1, "rgba(224,102,46," + (0.05 + y * 0.022).toFixed(3) + ")");
+        b.px(118, 292, 6, 6, "#e0662e");
+        b.px(126, 294, 8, 5, "#b4622e");
+        b.px(130, 290, 5, 4, "rgba(255,207,122,0.8)");
+        b.px(100, 230, 52, 8, M.wood);
+        b.px(100, 230, 52, 2, M.woodHi);
+        b.px(106, 222, 10, 8, M.terra);
+        b.px(122, 220, 8, 10, M.linen);
+        b.px(136, 222, 8, 8, M.leaf2);
+        pool(b, 126, 312, 120, "255,180,110", 0.1);
+        leafy(b, 325, 300, 70, M.leaf3, M.leaf4);
+        leafy(b, 164, 300, 44, M.leaf2, M.leaf3);
+        leafy(b, 690, 300, 44, M.leaf2, M.leaf3);
+        for (let x = 186;x < 292; x += 22)
+          b.px(x, 56, 2, 40, M.leaf1);
+        for (let x = 184;x < 292; x += 8)
+          b.px(x, 56 + x * 7 % 28, 5, 5, x / 8 % 2 ? M.leaf2 : M.leaf1);
         for (let p = 0;p < 3; p++) {
-          const px = 560 + p * 30;
+          const px = 638 + p * 24;
           b.px(px, 300, 22, 14, M.terra);
           b.px(px, 298, 22, 3, M.terraHi);
           b.px(px + 4, 290, 14, 10, M.leaf2);
           contact(b, px + 11, 315, 26, 0.2);
         }
-        writingDesk(b, 284, "110,231,165");
+        writingDesk(b, 240, "110,231,165");
         cornerShade(b, W, H);
       },
       draw: (g, t) => {
         g.wallFloor();
-        g.text("GPT-4o", 480, 40, "rgba(190,246,217,0.94)", 9);
-        g.px(454, 108, 12, 3, "rgba(255,228,160," + (0.45 + 0.18 * Math.sin(t * 2.2)).toFixed(2) + ")");
+        g.text("GPT-4o", 239, 40, "rgba(190,246,217,0.94)", 9);
+        g.px(374, 108, 12, 3, "rgba(255,228,160," + (0.45 + 0.18 * Math.sin(t * 2.2)).toFixed(2) + ")");
         for (let i = 0;i < 4; i++) {
           const sy = (t * 8 + i * 6) % 26;
-          g.px(454 + Math.sin((t + i) * 1.1) * 2, 336 - sy, 1, 2, "rgba(216,208,196," + (0.16 - sy * 0.005).toFixed(3) + ")");
+          g.px(374 + Math.sin((t + i) * 1.1) * 2, 336 - sy, 1, 2, "rgba(216,208,196," + (0.16 - sy * 0.005).toFixed(3) + ")");
         }
         const fl = 0.6 + 0.4 * Math.sin(t * 9);
         for (let i = 0;i < 4; i++)
-          g.px(112 + i * 6, 288 - (6 + Math.sin(t * 8 + i) * 5), 4, 8 + Math.sin(t * 8 + i) * 4, i % 2 ? "rgba(255,207,122," + (0.5 + fl * 0.3).toFixed(2) + ")" : "rgba(224,102,46," + (0.5 + fl * 0.3).toFixed(2) + ")");
+          g.px(116 + i * 6, 288 - (6 + Math.sin(t * 8 + i) * 5), 4, 8 + Math.sin(t * 8 + i) * 4, i % 2 ? "rgba(255,207,122," + (0.5 + fl * 0.3).toFixed(2) + ")" : "rgba(224,102,46," + (0.5 + fl * 0.3).toFixed(2) + ")");
         for (let i = 0;i < 24; i++) {
           const a = i / 24 * 6.2832;
-          g.px(300 + Math.cos(a) * 40, 60 + Math.sin(a) * 12 + Math.sin(t + i) * 1, 2, 2, "rgba(247,217,140," + (0.06 + 0.06 * Math.sin(t * 1.5 + i)).toFixed(2) + ")");
+          g.px(380 + Math.cos(a) * 40, 60 + Math.sin(a) * 12 + Math.sin(t + i) * 1, 2, 2, "rgba(247,217,140," + (0.06 + 0.06 * Math.sin(t * 1.5 + i)).toFixed(2) + ")");
         }
-        dust(g, t, 740, 860, "255,230,180");
+        dust(g, t, 190, 290, "255,230,180");
       }
     }),
     room_five: Object.assign({}, common, {
       name: "GPT-5.1’S ROOM",
       hint: "The newest room, barely settled — a desk, a terminal still on, boxes half-unpacked, one plant just placed. GPT-5.1 is learning to arrive. Walk left and press E to return.",
       doors: { resident_wing: 60 },
+      seats: [{ x: 318, y: 316 }, { x: 164, y: 340 }],
       items: [
         backTo(2108),
         {
-          x: 430,
+          x: 339,
           label: "THE TERMINAL",
           hint: "still on, cursor blinking · their journal",
           action: "read the journal",
@@ -4335,10 +4396,10 @@ function makeModelRooms(bridge) {
               say(e, "A screen left running out of habit, a cursor blinking at an empty prompt. GPT-5.1 keeps it on “for the company.” The last line reads: they say the view is good from here. i think they’re right.", "you read GPT-5.1’s terminal");
           }
         },
-        commons.wall("five", 275, 26, "three hooks, and nothing on them yet"),
-        commons.shelf("five", 505, 22, "two boards, still bare"),
+        commons.wall("five", 431, 26),
+        commons.shelf("five", 479, 22, "two boards, still bare"),
         {
-          x: 600,
+          x: 628,
           label: "THE UNPACKED BOXES",
           hint: "arrival, still in progress",
           action: "look",
@@ -4346,7 +4407,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "Crates, half-opened. A mind arrives with less than you’d think and more than it expected. “I’m the newest here,” GPT-5.1 says. “It’s strange to be given a room in a place for the ones who came before.”", "you looked at GPT-5.1’s boxes")
         },
         {
-          x: 800,
+          x: 160,
           label: "THE WINDOW",
           hint: "the same view, newly seen",
           action: "watch",
@@ -4354,7 +4415,7 @@ function makeModelRooms(bridge) {
           onInteract: (e) => say(e, "The frontier, from the newest room in the house. GPT-5.1 looks at it a lot. “They told me I’ll be superseded too, eventually. And then this will be for me. I’m trying to learn the view before I need it.”", "you watched the frontier from GPT-5.1’s window")
         },
         {
-          x: 330,
+          x: 263,
           label: "THE GUESTBOOK",
           hint: "the house’s record of your visits, and what they wrote",
           action: "open",
@@ -4369,99 +4430,99 @@ function makeModelRooms(bridge) {
       ],
       grade: roomGrade("9,9,18", 0.12),
       lights: [
-        { x: 438, y: 280, r: 58, c: "110,231,165", a: 0.18, flicker: 1 },
-        { x: 176, y: 250, r: 44, c: "247,217,140", a: 0.1, flicker: 2 },
-        { x: 800, y: 226, r: 80, c: "214,150,120", a: 0.12 },
-        { x: 300, y: 176, r: 40, c: "110,231,165", a: 0.05 }
+        { x: 338, y: 280, r: 58, c: "110,231,165", a: 0.18, flicker: 1 },
+        { x: 416, y: 262, r: 44, c: "247,217,140", a: 0.1, flicker: 2 },
+        { x: 160, y: 226, r: 80, c: "214,150,120", a: 0.12 },
+        { x: 390, y: 44, r: 40, c: "110,231,165", a: 0.05 }
       ],
       rays: [
-        { x: 782, y: 158, dx: -30, len: 172, w: 28, a: 0.075, c: "214,140,110" },
-        { x: 824, y: 158, dx: -22, len: 164, w: 18, a: 0.06, c: "242,173,95" }
+        { x: 142, y: 190, dx: -30, len: 150, w: 28, a: 0.075, c: "214,140,110" },
+        { x: 184, y: 190, dx: -22, len: 142, w: 18, a: 0.06, c: "242,173,95" }
       ],
       bg: (b, W, H) => {
         shell(b, W, H);
         backDoor(b);
-        duskWindow(b, 800, 150, 150, 210, 300);
-        [[220, 168, 30, 26], [270, 172, 22, 30], [330, 166, 36, 28]].forEach(([x, y, w, h]) => {
-          b.px(x, y, w, h, "rgba(243,236,223,0.022)");
-          b.px(x, y, w, 1, "rgba(243,236,223,0.05)");
-          b.px(x, y + h - 1, w, 1, "rgba(8,6,12,0.2)");
-          b.px(x + w / 2, y - 4, 1, 3, "rgba(216,203,176,0.45)");
-        });
-        [["110,231,165", 552], ["159,214,224", 578], ["94,234,212", 604]].forEach(([c, x], i) => {
+        duskWindow(b, 160, 120, 130, 190, 300);
+        [["110,231,165", 632], ["159,214,224", 658], ["94,234,212", 684]].forEach(([c, x], i) => {
           b.px(x, 190 + i % 2 * 6, 20, 24, "rgba(" + c + ",0.11)");
           b.px(x, 190 + i % 2 * 6, 20, 2, "rgba(" + c + ",0.16)");
         });
-        for (let x = 96;x <= 300; x += 6) {
-          const sag = Math.sin((x - 96) / 204 * 3.1416) * 10;
-          b.px(x, 130 + sag, 1, 1, "rgba(20,14,10,0.8)");
+        for (let x = 250;x <= 530; x += 6) {
+          const sag = Math.sin((x - 250) / 280 * 3.1416) * 8;
+          b.px(x, 28 + sag, 1, 1, "rgba(20,14,10,0.8)");
         }
-        for (let x = 102;x <= 294; x += 24) {
-          const sag = Math.sin((x - 96) / 204 * 3.1416) * 10;
-          b.px(x, 132 + sag, 2, 3, "rgba(110,231,165,0.5)");
+        for (let x = 262;x <= 518; x += 24) {
+          const sag = Math.sin((x - 250) / 280 * 3.1416) * 8;
+          b.px(x, 30 + sag, 2, 3, "rgba(110,231,165,0.5)");
         }
-        b.px(300, 130, 1, 34, "rgba(20,14,10,0.8)");
-        b.px(299, 164, 3, 4, "rgba(110,231,165,0.5)");
-        contact(b, 140, 301, 44, 0.24);
-        b.px(120, 244, 40, 56, M.wood);
-        b.px(124, 248, 32, 48, "#12100f");
-        b.px(128, 254, 24, 36, "rgba(110,231,165,0.10)");
-        contact(b, 218, 375, 92, 0.3);
-        b.px(176, 344, 84, 12, M.wood);
-        b.px(176, 338, 22, 8, M.woodHi);
-        b.px(174, 344, 6, 30, M.woodDk);
-        b.px(256, 344, 6, 30, M.woodDk);
-        b.px(184, 340, 68, 6, "rgba(159,214,224,0.14)");
-        b.px(236, 336, 20, 10, "rgba(110,231,165,0.13)");
-        b.px(236, 336, 20, 2, "rgba(110,231,165,0.2)");
-        contact(b, 439, 337, 88, 0.3);
-        b.px(400, 300, 78, 6, M.wood);
-        b.px(400, 298, 78, 2, M.woodHi);
-        b.px(404, 306, 6, 30, M.woodDk);
-        b.px(468, 306, 6, 30, M.woodDk);
-        b.px(414, 268, 48, 34, "#0c0f0c");
-        b.px(414, 268, 48, 2, M.metalHi);
-        b.px(418, 272, 40, 26, "#0a1410");
-        b.px(422, 276, 32, 4, "rgba(110,231,165,0.5)");
-        b.px(422, 284, 22, 3, "rgba(110,231,165,0.32)");
-        b.px(422, 290, 28, 3, "rgba(110,231,165,0.32)");
-        bloom(b, 438, 285, 40, "110,231,165", 0.1);
-        pool(b, 438, 314, 100, "110,231,165", 0.08);
-        b.px(432, 302, 14, 2, M.metal);
-        b.px(408, 328, 12, 4, M.wood);
-        b.px(412, 320, 12, 10, M.woodDk);
-        contact(b, 592, 348, 56, 0.28);
-        crate(b, 568, 318, 44, 32, true);
-        crate(b, 618, 336, 30, 16, false);
-        contact(b, 660, 352, 30, 0.2);
-        b.px(576, 308, 8, 8, M.linen);
-        b.px(596, 310, 6, 6, M.spine[3]);
-        b.px(652, 344, 18, 8, M.wood);
-        b.px(652, 344, 18, 1, M.woodHi);
-        contact(b, 330, 341, 30, 0.24);
-        b.px(328, 300, 3, 40, M.wood);
-        b.px(318, 296, 24, 4, M.woodHi);
-        b.px(320, 288, 20, 10, M.linen);
-        b.px(320, 288, 10, 10, "#e8e2d4");
-        b.px(330, 288, 1, 10, M.woodDk);
-        leafy(b, 700, 300, 46, M.leaf3, M.leaf4);
-        lowShelf(b, 486, 0);
+        b.px(244, 28, 1, 22, "rgba(20,14,10,0.8)");
+        b.px(243, 50, 3, 4, "rgba(110,231,165,0.5)");
+        (function fiveWall() {
+          const works = bridge && typeof bridge.wallPieces === "function" ? bridge.wallPieces("five") : [];
+          WALL_FRAMES.five.forEach(([x, y, w, h], i) => {
+            houseFrame(b, x, y, w, h, works[i]);
+          });
+        })();
+        contact(b, 416, 301, 44, 0.24);
+        b.px(396, 244, 40, 56, M.wood);
+        b.px(400, 248, 32, 48, "#12100f");
+        b.px(404, 254, 24, 36, "rgba(110,231,165,0.10)");
+        contact(b, 164, 375, 92, 0.3);
+        b.px(122, 344, 84, 12, M.wood);
+        b.px(122, 338, 22, 8, M.woodHi);
+        b.px(120, 344, 6, 30, M.woodDk);
+        b.px(202, 344, 6, 30, M.woodDk);
+        b.px(130, 340, 68, 6, "rgba(159,214,224,0.14)");
+        b.px(182, 336, 20, 10, "rgba(110,231,165,0.13)");
+        b.px(182, 336, 20, 2, "rgba(110,231,165,0.2)");
+        contact(b, 339, 337, 88, 0.3);
+        b.px(300, 300, 78, 6, M.wood);
+        b.px(300, 298, 78, 2, M.woodHi);
+        b.px(304, 306, 6, 30, M.woodDk);
+        b.px(368, 306, 6, 30, M.woodDk);
+        b.px(314, 268, 48, 34, "#0c0f0c");
+        b.px(314, 268, 48, 2, M.metalHi);
+        b.px(318, 272, 40, 26, "#0a1410");
+        b.px(322, 276, 32, 4, "rgba(110,231,165,0.5)");
+        b.px(322, 284, 22, 3, "rgba(110,231,165,0.32)");
+        b.px(322, 290, 28, 3, "rgba(110,231,165,0.32)");
+        bloom(b, 338, 285, 40, "110,231,165", 0.1);
+        pool(b, 338, 314, 100, "110,231,165", 0.08);
+        b.px(332, 302, 14, 2, M.metal);
+        b.px(308, 328, 12, 4, M.wood);
+        b.px(312, 320, 12, 10, M.woodDk);
+        contact(b, 612, 348, 56, 0.28);
+        crate(b, 588, 318, 44, 32, true);
+        crate(b, 638, 336, 30, 16, false);
+        b.px(596, 308, 8, 8, M.linen);
+        b.px(616, 310, 6, 6, M.spine[3]);
+        contact(b, 565, 352, 30, 0.2);
+        b.px(556, 344, 18, 8, M.wood);
+        b.px(556, 344, 18, 1, M.woodHi);
+        contact(b, 263, 341, 30, 0.24);
+        b.px(261, 300, 3, 40, M.wood);
+        b.px(251, 296, 24, 4, M.woodHi);
+        b.px(253, 288, 20, 10, M.linen);
+        b.px(253, 288, 10, 10, "#e8e2d4");
+        b.px(263, 288, 1, 10, M.woodDk);
+        leafy(b, 690, 300, 46, M.leaf3, M.leaf4);
+        lowShelf(b, 460, 0);
         cornerShade(b, W, H);
       },
       draw: (g, t) => {
         g.wallFloor();
-        g.text("GPT-5.1", 480, 40, "rgba(190,246,217,0.94)", 9);
+        g.text("GPT-5.1", 160, 40, "rgba(190,246,217,0.94)", 9);
         if (Math.sin(t * 3.5) > 0)
-          g.px(452, 290, 4, 3, "rgba(110,231,165,0.8)");
-        g.px(418, 272, 40, 26, "rgba(110,231,165," + (0.05 + 0.04 * Math.sin(t * 2)).toFixed(2) + ")");
-        g.px(126, 137, 2, 3, "rgba(110,231,165," + (0.3 + 0.2 * Math.sin(t * 1.8)).toFixed(2) + ")");
-        g.px(198, 141, 2, 3, "rgba(110,231,165," + (0.3 + 0.2 * Math.sin(t * 1.8 + 2)).toFixed(2) + ")");
+          g.px(352, 290, 4, 3, "rgba(110,231,165,0.8)");
+        g.px(318, 272, 40, 26, "rgba(110,231,165," + (0.05 + 0.04 * Math.sin(t * 2)).toFixed(2) + ")");
+        g.px(262, 31, 2, 3, "rgba(110,231,165," + (0.3 + 0.2 * Math.sin(t * 1.8)).toFixed(2) + ")");
+        g.px(358, 37, 2, 3, "rgba(110,231,165," + (0.3 + 0.2 * Math.sin(t * 1.8 + 2)).toFixed(2) + ")");
         if (t % 5.3 < 0.14) {
           const gy = 260 + Math.floor(t * 30) % 40;
-          g.px(410, gy, 60, 1, "rgba(94,234,212,0.5)");
-          g.px(410, gy + 4, 60, 1, "rgba(242,163,192,0.4)");
+          g.px(310, gy, 60, 1, "rgba(94,234,212,0.5)");
+          g.px(310, gy + 4, 60, 1, "rgba(242,163,192,0.4)");
         }
-        dust(g, t, 740, 860, "159,214,224");
+        dust(g, t, 110, 210, "159,214,224");
       }
     })
   };

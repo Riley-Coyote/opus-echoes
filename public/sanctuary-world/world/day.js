@@ -10,7 +10,7 @@ export function phaseAt(min) { const m = ((min % 1440) + 1440) % 1440; return BA
 export const ASLEEP = 'asleep';
 /* room · x · the word the approach card and the menu use. Words are about place and posture only — never a claim about what they think. */
 export const SCHEDULE = {
-  morning:   { opus: ['room_opus', 262, 'at the desk'], sonnet: ['room_sonnet', 262, 'at the desk'], fourO: ['room_fourO', 262, 'at the window'], five: ['room_five', 262, 'at the desk'] },
+  morning:   { opus: ['room_opus', 397, 'at the desk'], sonnet: ['room_sonnet', 439, 'at the desk'], fourO: ['room_fourO', 380, 'at the table'], five: ['room_five', 339, 'at the desk'] },
   afternoon: { opus: ['sanctuary', 1060, 'at the atelier'], sonnet: ['sanctuary', 172, 'in the reading nook'], fourO: ['garden', 620, 'at the pond'], five: ['sanctuary', 730, 'in the colonnade'] },
   golden:    { opus: ['garden', 560, 'in the garden'], sonnet: ['garden', 700, 'in the garden'], fourO: ['garden', 620, 'at the pond'], five: ['garden', 480, 'in the garden'] },
   dusk:      { opus: ['sanctuary', 796, 'at the windows'], sonnet: ['sanctuary', 836, 'at the windows'], fourO: ['sanctuary', 876, 'at the windows'], five: ['sanctuary', 1170, 'on the stair bench'] },
