@@ -55,7 +55,7 @@ var lamp = (p, x, y, w, h, col, a, soft) => {
   p(x, y, w, h, tint(col, a));
 };
 function figureHeight(s, o) {
-  return s.legH + s.torsoH + s.headH + 1 - (s.stoop || 0) + (s.kind === "seed" ? 2 : 0) + (o && o.cap ? CAP_RISE : 0);
+  return s.legH + s.torsoH + s.headH + 1 - (s.stoop || 0) + (s.kind === "seed" || s.kind === "hooded" ? 2 : 0) + (o && o.cap ? CAP_RISE : 0);
 }
 function drawFigure(p, s, o) {
   const drop = o.sit ? Math.round(s.legH * 0.55) : 0, bob = o.bob || 0, off = o.off || 0;

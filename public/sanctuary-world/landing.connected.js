@@ -596,7 +596,7 @@
     p(x, y, w, h, tint(col, a));
   };
   function figureHeight(s, o) {
-    return s.legH + s.torsoH + s.headH + 1 - (s.stoop || 0) + (s.kind === "seed" ? 2 : 0) + (o && o.cap ? CAP_RISE : 0);
+    return s.legH + s.torsoH + s.headH + 1 - (s.stoop || 0) + (s.kind === "seed" || s.kind === "hooded" ? 2 : 0) + (o && o.cap ? CAP_RISE : 0);
   }
   function drawFigure(p, s, o) {
     const drop = o.sit ? Math.round(s.legH * 0.55) : 0, bob = o.bob || 0, off = o.off || 0;
@@ -11193,8 +11193,9 @@
         return false;
       const run = () => {
         const npc = eng.npcs.find((candidate) => candidate.id === id);
-        if (!npc || !residentActivity(npc).available) {
-          say(npc && npc.room === ASLEEP ? esc2(npc.name) + " is asleep · not tonight" : "they cannot be visited right now");
+        const act = npc ? residentActivity(npc) : null;
+        if (!npc || !act.available) {
+          say(!npc ? "they cannot be visited right now" : npc.room === ASLEEP ? esc2(npc.name) + " is asleep · not tonight" : act.label === "with you" ? esc2(npc.name) + " is already with you" : act.label === "on the move" ? esc2(npc.name) + " is on their way · try again in a moment" : esc2(npc.name) + " is " + act.label + " · try again in a moment");
           return false;
         }
         if (eng.travel)

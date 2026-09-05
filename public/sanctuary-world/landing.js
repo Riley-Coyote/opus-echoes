@@ -1384,7 +1384,18 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!target || !eng) return false;
     const run = () => {
       const npc = eng.npcs.find((candidate) => candidate.id === id);
-      if (!npc || !residentActivity(npc).available) { say(npc && npc.room === ASLEEP ? esc(npc.name) + ' is asleep · not tonight' : 'they cannot be visited right now'); return false; }
+      const act = npc ? residentActivity(npc) : null;
+      if (!npc || !act.available) {
+        /* say what the house knows rather than a flat refusal: right after the
+           world opens they are still walking in from the hall, and "on their
+           way" is the truth of it */
+        say(!npc ? 'they cannot be visited right now'
+          : npc.room === ASLEEP ? esc(npc.name) + ' is asleep · not tonight'
+          : act.label === 'with you' ? esc(npc.name) + ' is already with you'
+          : act.label === 'on the move' ? esc(npc.name) + ' is on their way · try again in a moment'
+          : esc(npc.name) + ' is ' + act.label + ' · try again in a moment');
+        return false;
+      }
       if (eng.travel) eng.cancelTravel('replaced');
       const staged = eng.stageNpcVisit(id, {
         room: target.id, x: target.residentX, y: target.residentY, dir: -1

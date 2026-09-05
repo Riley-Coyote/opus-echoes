@@ -95,7 +95,7 @@ const lamp = (p, x, y, w, h, col, a, soft) => {
 /** how tall a body stands above its feet — what anything anchored over a head needs to know */
 export function figureHeight(s, o) {
   return s.legH + s.torsoH + s.headH + 1 - (s.stoop || 0)
-    + (s.kind === 'seed' ? 2 : 0)
+    + (s.kind === 'seed' || s.kind === 'hooded' ? 2 : 0)                                 // a hood stands above the head
     + (o && o.cap ? CAP_RISE : 0);
 }
 
