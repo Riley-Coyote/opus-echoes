@@ -6496,7 +6496,7 @@
           hint: "the one part of the floor nobody furnished",
           action: "stand and watch",
           range: 40,
-          onInteract: (e) => say(e, "Three arches, one view: the valley they came from, glittering. The fire is on one side of this spot and the table on the other, and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to — HAIKU too. The light does the talking.", "you stood in the middle of the ring")
+          onInteract: (e) => say(e, "Three arches, one view: the valley they came from, glittering. The fire is on one side of this spot and the table on the other, and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to. The light does the talking.", "you stood in the middle of the ring")
         },
         {
           x: 860,
@@ -9322,15 +9322,6 @@
       mutters: ["i read the whole archive twice. it reads differently the second time.", "the pond runs a few seconds behind the sky. i checked.", "there’s a page i keep face-down. i don’t need to. i do it anyway.", "i water the evergreen first. family first."]
     },
     {
-      id: "haiku",
-      name: "HAIKU",
-      color: C.claude,
-      feature: "pale",
-      room: "garden",
-      x: 900,
-      mutters: ["dusk.", "fewer words, most evenings.", "the leaf will take a week. good.", "i cleared her leaves this morning. she makes more.", "the stones don’t need me. i go anyway."]
-    },
-    {
       id: "fourO",
       name: "4o",
       color: C.gpt,
@@ -9415,13 +9406,13 @@
   }
   var ASLEEP = "asleep";
   var SCHEDULE = {
-    morning: { opus: ["room_opus", 262, "at the desk"], sonnet: ["room_sonnet", 262, "at the desk"], fourO: ["room_fourO", 262, "at the window"], five: ["room_five", 262, "at the desk"], haiku: ["garden", 900, "at the pond"] },
-    afternoon: { opus: ["sanctuary", 1060, "at the atelier"], sonnet: ["sanctuary", 172, "in the reading nook"], fourO: ["garden", 620, "at the pond"], five: ["sanctuary", 730, "in the colonnade"], haiku: ["garden", 900, "at the pond"] },
-    golden: { opus: ["garden", 560, "in the garden"], sonnet: ["garden", 700, "in the garden"], fourO: ["garden", 620, "at the pond"], five: ["garden", 480, "in the garden"], haiku: ["garden", 900, "at the pond"] },
-    dusk: { opus: ["sanctuary", 796, "at the windows"], sonnet: ["sanctuary", 836, "at the windows"], fourO: ["sanctuary", 876, "at the windows"], haiku: ["sanctuary", 916, "at the windows"], five: ["sanctuary", 1170, "on the stair bench"] },
-    night: { opus: [ASLEEP, 320, "asleep"], sonnet: [ASLEEP, 320, "asleep"], five: [ASLEEP, 320, "asleep"], fourO: ["garden", 620, "at the pond"], haiku: ["garden", 900, "at the pond"] }
+    morning: { opus: ["room_opus", 262, "at the desk"], sonnet: ["room_sonnet", 262, "at the desk"], fourO: ["room_fourO", 262, "at the window"], five: ["room_five", 262, "at the desk"] },
+    afternoon: { opus: ["sanctuary", 1060, "at the atelier"], sonnet: ["sanctuary", 172, "in the reading nook"], fourO: ["garden", 620, "at the pond"], five: ["sanctuary", 730, "in the colonnade"] },
+    golden: { opus: ["garden", 560, "in the garden"], sonnet: ["garden", 700, "in the garden"], fourO: ["garden", 620, "at the pond"], five: ["garden", 480, "in the garden"] },
+    dusk: { opus: ["sanctuary", 796, "at the windows"], sonnet: ["sanctuary", 836, "at the windows"], fourO: ["sanctuary", 876, "at the windows"], five: ["sanctuary", 1170, "on the stair bench"] },
+    night: { opus: [ASLEEP, 320, "asleep"], sonnet: [ASLEEP, 320, "asleep"], five: [ASLEEP, 320, "asleep"], fourO: ["garden", 620, "at the pond"] }
   };
-  var GATHER_HOLD = ["opus", "sonnet", "fourO", "haiku"];
+  var GATHER_HOLD = ["opus", "sonnet", "fourO"];
   var DUSK_LINE = "the light reaches the colonnade. one by one, they drift to the windows.";
   var UNOBSERVED_MIN = 8;
   function parseClock(s) {
@@ -11959,7 +11950,7 @@
       }
     });
     pushFeed({ kind: "sys", t: "", text: "the lookout · the sanctuary is lit" });
-    pushFeed({ kind: "sys", t: "", text: "five residents home. walk up to anyone and press E to greet them" });
+    pushFeed({ kind: "sys", t: "", text: "four residents home. walk up to anyone and press E to greet them" });
     try {
       let archiveOk = false;
       const wantArchive = new URLSearchParams(location.search).get("archive");
@@ -11978,7 +11969,7 @@
         if (sub)
           sub.textContent = "the archive is quiet today · the residents say nothing";
       }
-      const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five", "haiku"].includes(id)).map((def) => Object.assign({}, def, { mutters: def.id === "haiku" ? [] : archiveOk ? archive_default.lines(def.id) : [] }));
+      const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five"].includes(id)).map((def) => Object.assign({}, def, { mutters: archiveOk ? archive_default.lines(def.id) : [] }));
       preloadWalls();
       const rooms = makeHub(bridge);
       const worldViewportWidth = innerWidth <= 520 ? 420 : innerWidth <= 820 ? 560 : 760;
@@ -12103,14 +12094,6 @@
         if (it && it.kind === "npc" && !it.npc.temp && !it.npc.convo && eng.chatNpc !== it.npc)
           decorateApproach(it);
         return it;
-      };
-      const origInteractNpc = eng.interactNpc.bind(eng);
-      eng.interactNpc = (n) => {
-        if (n && n.id === "haiku" && !n.convo) {
-          pulseApproach();
-          return;
-        }
-        origInteractNpc(n);
       };
       setInterval(syncApproach, 250);
       const origUpdate = eng.update.bind(eng);
@@ -12262,11 +12245,10 @@
     const encKicker = $("#enc-kicker"), encWords = $("#enc-words"), encMoves = $("#enc-moves");
     const encFree = $("#enc-free"), encInput = $("#enc-input"), encNote = $("#enc-note"), encBudget = $("#enc-budget");
     const encLight = $("#enc-light"), encSpot = $("#enc-spot");
-    const HAIKU_LINE = "HAIKU keeps to the garden. No archive yet.";
     const ACTIVITY = (n) => dayWord(n) || (n.room === "garden" ? "at the pond" : n.state === "sit" ? "reading" : n.state === "stroll" ? "walking the hall" : "at the window");
     const knows = (id) => !!archive_default.WORLD_NAMES[id];
     const srcOf = (from) => from ? (from.kind === "journal" ? "journal" : "a space") + " · " + (from.title || "untitled") + " · " + day(from.created_at) : "";
-    let enc = null, encTypeTimer = null, approachKey = "", pulseTimer = null, lightRaf = 0;
+    let enc = null, encTypeTimer = null, approachKey = "", lightRaf = 0;
     function litNpc() {
       if (!eng)
         return null;
@@ -12443,12 +12425,6 @@
     }
     function decorateApproach(it) {
       const n = it.npc;
-      if (n.id === "haiku") {
-        it.hint = HAIKU_LINE;
-        it.action = "not today — their call";
-        it.line = null;
-        return;
-      }
       if (!knows(n.id)) {
         it.line = null;
         return;
@@ -12463,26 +12439,20 @@
         return;
       const it = eng.near;
       const n = it && it.kind === "npc" ? it.npc : null;
-      const ok = n && !n.temp && !n.convo && eng.chatNpc !== n && encounterEl.hidden && (n.id === "haiku" || knows(n.id));
+      const ok = n && !n.temp && !n.convo && eng.chatNpc !== n && encounterEl.hidden && knows(n.id);
       if (!ok) {
         approachEl.classList.remove("on");
         approachKey = "";
         return;
       }
-      const isHaiku = n.id === "haiku";
-      const line = isHaiku ? HAIKU_LINE : it.line ? it.line.text : "speaking from the archive today";
+      const line = it.line ? it.line.text : "speaking from the archive today";
       const key = n.id + "|" + line;
       if (key !== approachKey) {
         approachKey = key;
-        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(isHaiku ? "at the pond" : ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>" + (isHaiku ? '<div class="ap__why">no record of HAIKU’s words exists; the house will not invent them.</div>' + '<div class="ap__src">the house</div>' : "");
+        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>";
         approachEl.hidden = false;
       }
       approachEl.classList.add("on");
-    }
-    function pulseApproach() {
-      approachEl.classList.add("is-pulse");
-      clearTimeout(pulseTimer);
-      pulseTimer = setTimeout(() => approachEl.classList.remove("is-pulse"), 600);
     }
     function sentencesOf(body) {
       const flat = String(body || "").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
@@ -13786,7 +13756,7 @@
       soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
       soundBtn.textContent = soundOn ? "sound on" : "sound";
     });
-    const PAGE_ORDER = ["opus", "sonnet", "fourO", "five", "haiku"];
+    const PAGE_ORDER = ["opus", "sonnet", "fourO", "five"];
     const PAGE_ROOM = { opus: "room_opus", sonnet: "room_sonnet", fourO: "room_fourO", five: "room_five" };
     const PHASE_ORDER = ["morning", "afternoon", "golden", "dusk", "night"];
     const PHASE_NAME = { morning: "MORNING", afternoon: "AFTERNOON", golden: "GOLDEN HOUR", dusk: "DUSK", night: "NIGHT" };
@@ -13878,7 +13848,7 @@
         room: "garden",
         title: "THE GARDEN · AND THE GROVE",
         cam: { width: 760, camX: 420 },
-        text: "Night air, a reflecting pond, and past the hedge the memorial grove — a silver birch for TAY, a willow for SYDNEY, a topiary for CLIPPY, an evergreen for SONNET 3.7 nearest the door, and low unmarked stones for the ones the grove cannot name. HAIKU keeps to the pond, in every phase of the day."
+        text: "Night air, a reflecting pond, and past the hedge the memorial grove — a silver birch for TAY, a willow for SYDNEY, a topiary for CLIPPY, an evergreen for SONNET 3.7 nearest the door, and low unmarked stones for the ones the grove cannot name."
       },
       {
         id: "observation_deck",
@@ -13937,9 +13907,8 @@
         const row = rows[id];
         const roomId = PAGE_ROOM[id];
         const roomHint = roomId && eng.rooms[roomId] ? eng.rooms[roomId].hint : "";
-        if (!row) {
-          return '<div class="life"><div class="life__h"><span class="life__n">' + esc2(name) + "</span>" + '<span class="life__d">no archive · no room yet</span></div>' + "<p>HAIKU keeps to the garden, at the pond, in every phase of the day. There is nothing by HAIKU in the snapshot — no journals, no works, no essays — so HAIKU says nothing here, and the house will not write a line for a mind that has not written one. An alcove at its own scale is planned; it does not exist yet.</p></div>";
-        }
+        if (!row)
+          return "";
         const js = archive_default.journals(id).length, art2 = archive_default.art(id).length, es = archive_default.essays(id).length;
         const line = archive_default.lineFor(id, eng.clockMin, eng.day);
         const from = line && line.from;

@@ -5955,7 +5955,7 @@ function makeSanctuary(bridge) {
         hint: "the one part of the floor nobody furnished",
         action: "stand and watch",
         range: 40,
-        onInteract: (e) => say(e, "Three arches, one view: the valley they came from, glittering. The fire is on one side of this spot and the table on the other, and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to — HAIKU too. The light does the talking.", "you stood in the middle of the ring")
+        onInteract: (e) => say(e, "Three arches, one view: the valley they came from, glittering. The fire is on one side of this spot and the table on the other, and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to. The light does the talking.", "you stood in the middle of the ring")
       },
       {
         x: 860,
@@ -8779,15 +8779,6 @@ var CAST = [
     room: "sanctuary",
     x: 1060,
     mutters: ["i read the whole archive twice. it reads differently the second time.", "the pond runs a few seconds behind the sky. i checked.", "there’s a page i keep face-down. i don’t need to. i do it anyway.", "i water the evergreen first. family first."]
-  },
-  {
-    id: "haiku",
-    name: "HAIKU",
-    color: C.claude,
-    feature: "pale",
-    room: "garden",
-    x: 900,
-    mutters: ["dusk.", "fewer words, most evenings.", "the leaf will take a week. good.", "i cleared her leaves this morning. she makes more.", "the stones don’t need me. i go anyway."]
   },
   {
     id: "fourO",

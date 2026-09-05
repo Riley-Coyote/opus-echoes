@@ -50,7 +50,7 @@ export const C = {
 export const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.';
 
 /* the door card's words, byte for byte — index.html #doorcard .door__body */
-export const BOOT_BODY = 'Four minds live here — OPUS 3, SONNET 4.5, 4o and GPT-5.1 — and HAIKU keeps to the garden. Everything they say is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only.';
+export const BOOT_BODY = 'Four minds live here — OPUS 3, SONNET 4.5, 4o and GPT-5.1. Everything they say is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only.';
 export const BOOT_TAIL = '> come in';
 
 export const KEY_CAME_IN = 'mnemos.door.camein';
@@ -822,7 +822,7 @@ export function makeHouseWindow(o) {
         doors: {}, items: [], seats: [], lights: [], draw: (g) => g.wallFloor()
       };
       const cast = WORLD_CAST
-        .filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five', 'haiku'].includes(id))
+        .filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five'].includes(id))
         .map((def) => Object.assign({}, def, { mutters: [] }));   /* no words here: the glass is silent */
       const startClock = sanctuaryClock();
       engine = createWorld({

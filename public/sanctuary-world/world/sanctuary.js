@@ -1106,7 +1106,7 @@ export function makeSanctuary(bridge) {
          is there. Range 40 spans x 690-770; the fire's circle ends at 716 and
          the table begins at 770, and nearest() resolves by distance. */
       { x: AT.medallion, label: 'THE MIDDLE OF THE RING', hint: 'the one part of the floor nobody furnished', action: 'stand and watch', range: 40,
-        onInteract: (e) => say(e, 'Three arches, one view: the valley they came from, glittering. The fire is on one side of this spot and the table on the other, and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to — HAIKU too. The light does the talking.', 'you stood in the middle of the ring') },
+        onInteract: (e) => say(e, 'Three arches, one view: the valley they came from, glittering. The fire is on one side of this spot and the table on the other, and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to. The light does the talking.', 'you stood in the middle of the ring') },
       /* THE SALON TABLE — the long table under the windows. E opens the Current
          with its shelf narrowed to the two salons held here. */
       { x: 860, label: 'THE SALON TABLE', hint: 'two salons held here · the archive', action: 'read the salons', range: 60,
