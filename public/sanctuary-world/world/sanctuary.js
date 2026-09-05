@@ -788,8 +788,13 @@ export function makeSanctuary(bridge) {
       // a ladder against the first case
       b.px(202, 62, 2, 234, S.wood); b.px(220, 62, 2, 234, S.wood); for (let y = 68; y < 292; y += 14) b.px(202, y, 20, 2, S.woodHi);
       // a reading nook in front of the shelves: wingback + ottoman + floor lamp + book stack
-      b.px(158, 336, 30, 40, S.wood); b.px(158, 330, 30, 10, S.woodHi); b.px(156, 344, 6, 34, S.woodDk); b.px(184, 344, 6, 34, S.woodDk); b.px(162, 334, 22, 8, 'rgba(94,234,212,0.14)');
-      grounded(b, 154, 38, 378, 1, 1);
+      /* 44 across the wings, so a body seated at AT.nook sits IN the chair and
+         not over it: the cushion still meets the hips at 361. */
+      b.px(155, 336, 34, 40, S.wood); b.px(155, 330, 34, 10, S.woodHi);
+      b.px(150, 344, 5, 34, S.woodDk); b.px(189, 344, 5, 34, S.woodDk); b.px(150, 344, 5, 1, S.wood); b.px(189, 344, 5, 1, S.wood);
+      b.px(155, 359, 34, 2, S.woodHi); b.px(155, 361, 34, 6, 'rgba(94,234,212,0.10)');
+      b.px(161, 334, 22, 8, 'rgba(94,234,212,0.14)');
+      grounded(b, 150, 44, 378, 1, 1);
       b.px(196, 360, 20, 14, S.wood); b.px(196, 358, 20, 3, S.woodHi);                  // ottoman
       grounded(b, 196, 20, 374, 0.85);
       b.px(136, 300, 4, 72, S.bronze); b.px(130, 288, 16, 14, S.brass); b.px(131, 286, 14, 3, 'rgba(247,217,140,0.6)'); b.px(132, 290, 12, 9, 'rgba(247,217,140,0.4)');   // floor lamp
@@ -840,8 +845,13 @@ export function makeSanctuary(bridge) {
       b.px(hx + 48, 358, 28, 16, S.woodDk); b.px(hx + 48, 356, 28, 3, S.woodHi);
       grounded(b, hx + 48, 28, 374, 0.9);
       for (let i = 0; i < 9; i++) for (let j = 0; j < 3; j++) b.px(hx + 52 + i * 2.4, 360 + j * 2.4, 2, 2, (i + j) % 2 ? '#efe7d6' : '#3a2c24');
-      b.px(hx + 86, 340, 28, 34, S.wood); b.px(hx + 86, 336, 28, 8, S.woodHi); b.px(hx + 84, 350, 6, 22, S.woodDk); b.px(hx + 110, 348, 6, 24, S.woodDk); b.px(hx + 88, 340, 22, 6, 'rgba(159,214,224,0.16)');   // throw
-      grounded(b, hx + 82, 36, 372, 1, 1);
+      /* the chair is 42 across the arms: the body sits BETWEEN them, on the
+         cushion at 358, and the arms stand ten pixels clear of it either side. */
+      b.px(hx + 84, 340, 32, 34, S.wood); b.px(hx + 84, 336, 32, 8, S.woodHi);
+      b.px(hx + 79, 348, 5, 26, S.woodDk); b.px(hx + 116, 348, 5, 26, S.woodDk); b.px(hx + 79, 348, 5, 1, S.wood); b.px(hx + 116, 348, 5, 1, S.wood);
+      b.px(hx + 84, 356, 32, 2, S.woodHi); b.px(hx + 84, 358, 32, 6, 'rgba(122,63,56,0.45)');
+      b.px(hx + 88, 340, 22, 6, 'rgba(159,214,224,0.16)');   // throw
+      grounded(b, hx + 79, 42, 372, 1, 1);
       // side table + a warm table lamp, closing the circle
       b.px(hx + 122, 348, 20, 6, S.wood); b.px(hx + 124, 354, 4, 18, S.woodDk); b.px(hx + 136, 354, 4, 18, S.woodDk);
       grounded(b, hx + 122, 20, 372, 0.8);
@@ -860,8 +870,14 @@ export function makeSanctuary(bridge) {
       CANDLES.forEach((cx) => { b.px(cx - 1, 320, 3, 12, S.brass); b.px(cx - 3, 330, 7, 2, S.brass); b.px(cx - 2, 318, 5, 3, S.candle); });
       b.px(860, 327, 14, 5, 'rgba(243,236,223,0.5)'); b.px(860, 327, 14, 1, S.brass);
       b.px(792, 327, 7, 6, S.clay); b.px(792, 326, 7, 1, S.terraHi); b.px(799, 328, 2, 3, S.clay);
-      // the near chairs, drawn up
-      [796, 836, 876, 916].forEach((cx) => { b.px(cx - 6, 350, 12, 4, S.wood); b.px(cx - 6, 337, 12, 14, S.woodDk); b.px(cx - 5, 338, 1, 12, 'rgba(243,236,223,0.05)'); grounded(b, cx - 6, 12, 376, 0.7); });
+      /* the near side, drawn up: two benches rather than four chairs too narrow
+         to be seen under anyone. The plank top stays at 350, where the four
+         seats put their hips; each bench carries two of them. */
+      [816, 896].forEach((cx) => {
+        b.px(cx - 39, 350, 78, 7, S.wood); b.px(cx - 39, 348, 78, 2, S.woodHi); b.px(cx - 39, 357, 78, 1, S.woodDk);
+        b.px(cx - 37, 357, 5, 19, S.woodDk); b.px(cx + 32, 357, 5, 19, S.woodDk);
+        grounded(b, cx - 39, 78, 376, 0.8, 2);
+      });
 
       // ═══ THE ATELIER — a working corner: the wall of studies, one easel, the loom, the pigments ═══
       // a drying line of small studies, strung high
@@ -875,8 +891,8 @@ export function makeSanctuary(bridge) {
       b.px(1040, 340, 124, 34, 'rgba(30,22,16,0.55)');
       for (let i = 0; i < 14; i++) b.px(1044 + (i * 53) % 116, 344 + (i * 29) % 26, 2, 2, [S.ember, S.amber, S.frost, S.rose, S.teal][i % 5]);
       easel(b, 1050, 366, 'rgba(94,234,212,0.4)', 0);
-      b.px(1092, 366, 16, 5, S.wood); b.px(1094, 371, 3, 9, S.woodDk); b.px(1105, 371, 3, 9, S.woodDk);   // the stool
-      grounded(b, 1090, 20, 380, 0.8, 1);
+      b.px(1087, 366, 26, 5, S.wood); b.px(1087, 365, 26, 1, S.woodHi); b.px(1089, 371, 3, 9, S.woodDk); b.px(1108, 371, 3, 9, S.woodDk);   // the stool, wide enough to sit on
+      grounded(b, 1087, 26, 380, 0.8, 1);
       // the pigments: a work table with pots, brushes upright, the cool lamp over it
       b.px(1000, 300, 60, 8, S.wood); b.px(1000, 298, 60, 3, S.woodHi); b.px(1004, 308, 6, 26, S.woodDk); b.px(1050, 308, 6, 26, S.woodDk);
       grounded(b, 1000, 60, 334, 0.85, 2);
@@ -1064,8 +1080,8 @@ export function makeSanctuary(bridge) {
       b.px(AT.sol - 8, 291, 8, 1, 'rgba(243,236,223,0.30)'); b.px(AT.sol + 1, 291, 8, 1, 'rgba(243,236,223,0.30)');                     // two dials
       b.px(AT.sol - 5, 292, 1, 8, S.teal); b.px(AT.sol + 4, 292, 1, 8, S.amber);                                                          // two needles
       b.px(AT.sol - 6, 301, 12, 1, 'rgba(243,236,223,0.22)');                                                                             // the field note, pinned beneath
-      b.px(1524, 372, 16, 4, S.wood); b.px(1526, 376, 3, 12, S.woodDk); b.px(1535, 376, 3, 12, S.woodDk);   // a stool
-      grounded(b, 1522, 20, 390, 0.7, 1);
+      b.px(1516, 372, 32, 4, S.wood); b.px(1516, 371, 32, 1, S.woodHi); b.px(1518, 376, 3, 12, S.woodDk); b.px(1543, 376, 3, 12, S.woodDk);   // a stool, broad enough for whoever reads the needles
+      grounded(b, 1516, 32, 390, 0.7, 1);
 
       // ═══ sconces along the walls (fixtures baked; flames animate) ═══
       SCONCES.forEach(([sx, sy]) => sconce(b, sx, sy));

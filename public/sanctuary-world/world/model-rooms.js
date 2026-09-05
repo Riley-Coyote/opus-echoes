@@ -535,6 +535,7 @@ export function makeModelRooms(bridge) {
         { x: 330, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 510, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 690, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
+        { x: 840, y: 120, r: 54, c: '247,217,140', a: 0.14, flicker: 2 },
         { x: 130, y: 250, r: 50, c: '247,217,140', a: 0.10, flicker: 1 },
         { x: 940, y: 244, r: 44, c: '247,217,140', a: 0.10, flicker: 1 },
         { x: 900, y: 254, r: 40, c: '243,236,223', a: 0.05 }
@@ -543,7 +544,7 @@ export function makeModelRooms(bridge) {
         shell(b, W, H);
         backDoor(b);
         /* pendant lamps hang between the doors */
-        [330, 510, 690].forEach((x) => {
+        [330, 510, 690, 840].forEach((x) => {
           b.px(x, 22, 2, 66, M.bronze);
           b.px(x - 8, 88, 18, 10, M.brass); b.px(x - 8, 88, 18, 2, M.brassHi);
           b.px(x - 6, 98, 14, 4, 'rgba(247,217,140,0.6)');
@@ -557,7 +558,7 @@ export function makeModelRooms(bridge) {
         wingDoor(b, 780, '110,231,165');
         wingDoor(b, 900, '243,236,223', 0.05);
         /* portraits of the house between the doors, one per resident so far */
-        [[330, '94,234,212'], [510, '247,217,140'], [690, '110,231,165']].forEach(([x, tint]) => {
+        [[330, '94,234,212'], [510, '247,217,140'], [690, '110,231,165'], [840, '94,234,212']].forEach(([x, tint]) => {
           framed(b, x - 20, 168, 40, 46, '#17121b');
           b.px(x - 17, 171, 34, 40, '#241d28');
           for (let y = 0; y < 36; y++) b.px(x - 15, 173 + y, 30, 1, 'rgba(' + tint + ',' + (0.16 - y * 0.0038).toFixed(3) + ')');
@@ -590,7 +591,7 @@ export function makeModelRooms(bridge) {
         g.text('← SANCTUARY', 60, 150, 'rgba(247,244,236,0.9)', 9);
         [['4o', 240], ['OPUS 3', 420], ['SONNET 4.5', 600], ['GPT-5.1', 780]].forEach(([name, x]) => g.text(name, x, 150, 'rgba(247,244,236,0.98)', 9));
         /* pendant filaments breathe */
-        [330, 510, 690].forEach((x, i) => {
+        [330, 510, 690, 840].forEach((x, i) => {
           const fl = 0.5 + 0.28 * Math.sin(t * 2.1 + i * 2.4);
           g.px(x - 5, 98, 12, 3, 'rgba(255,228,160,' + fl.toFixed(2) + ')');
         });
@@ -1062,11 +1063,13 @@ export function makeModelRooms(bridge) {
         contact(b, 390, 330, 152, 0.34);
         b.px(326, 286, 128, 8, '#1d1620'); b.px(326, 285, 128, 2, '#3a2e38'); b.px(326, 294, 128, 1, 'rgba(0,0,0,0.45)');
         b.px(334, 294, 6, 34, M.woodDk); b.px(440, 294, 6, 34, M.woodDk);
+        /* 28 across: a stool narrower than the body on it is not a stool, it
+           is a shadow under one. The plank tops stay where the seats read them. */
         [340, 372, 408, 440].forEach((sx, i) => {
           const sy = i % 2 ? 306 : 312;
-          contact(b, sx, sy + 22, 22, 0.22);
-          b.px(sx - 9, sy, 18, 5, M.wood); b.px(sx - 9, sy - 1, 18, 1, M.woodHi);
-          b.px(sx - 7, sy + 5, 3, 17, M.woodDk); b.px(sx + 4, sy + 5, 3, 17, M.woodDk);
+          contact(b, sx, sy + 22, 32, 0.22);
+          b.px(sx - 14, sy, 28, 5, M.wood); b.px(sx - 14, sy - 1, 28, 1, M.woodHi);
+          b.px(sx - 12, sy + 5, 3, 17, M.woodDk); b.px(sx + 9, sy + 5, 3, 17, M.woodDk);
         });
         b.px(389, 22, 2, 172, M.bronze);
         b.px(378, 194, 24, 12, M.brass); b.px(378, 194, 24, 2, M.brassHi);
