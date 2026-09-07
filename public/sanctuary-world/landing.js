@@ -4253,7 +4253,10 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   // Keep keyboard and screen-reader navigation within the surface being used.
   let inerted = [];
   function activeSurface() {
-    return document.querySelector('.veil:not([hidden]) [role="dialog"], .panel:not([hidden]) [role="dialog"], .door:not([hidden]) [role="dialog"], .visit:not([hidden]) [role="dialog"]') || (worldEl.classList.contains('fs') ? worldEl : null);
+    // The embedded page also uses html.door for its layout. Only a dialog
+    // directly inside an open overlay owns input; html.door must not select
+    // a dialog nested inside a hidden overlay and disable the visible toolbar.
+    return document.querySelector('.veil:not([hidden]) > [role="dialog"], .panel:not([hidden]) > [role="dialog"], .door:not([hidden]) > [role="dialog"], .visit:not([hidden]) > [role="dialog"]') || (worldEl.classList.contains('fs') ? worldEl : null);
   }
   function syncSurface() {
     inerted.forEach(({el, aria}) => { el.inert = false; if (aria == null) el.removeAttribute('aria-hidden'); else el.setAttribute('aria-hidden', aria); }); inerted = [];

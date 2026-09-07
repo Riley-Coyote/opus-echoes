@@ -14404,7 +14404,7 @@
     }, true);
     let inerted = [];
     function activeSurface() {
-      return document.querySelector('.veil:not([hidden]) [role="dialog"], .panel:not([hidden]) [role="dialog"], .door:not([hidden]) [role="dialog"], .visit:not([hidden]) [role="dialog"]') || (worldEl.classList.contains("fs") ? worldEl : null);
+      return document.querySelector('.veil:not([hidden]) > [role="dialog"], .panel:not([hidden]) > [role="dialog"], .door:not([hidden]) > [role="dialog"], .visit:not([hidden]) > [role="dialog"]') || (worldEl.classList.contains("fs") ? worldEl : null);
     }
     function syncSurface() {
       inerted.forEach(({ el, aria }) => {

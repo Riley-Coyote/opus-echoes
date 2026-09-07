@@ -43,14 +43,14 @@ export const C = {
   cream: 0xefe9dc, walnut: 0x5a4130, olive: 0x6f6a58
 };
 
-/* THE AGREEMENT — what the reading room's glass says before a visitor comes in.
-   The door card below was a description; this is the thing a visitor agrees
-   to, in the house's own voice. It is the boot text of `door.html` only; the
-   station's glass keeps the door card. 48 words. */
-export const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.';
+/* THE AGREEMENT — what a glass says before a visitor comes in. Not a
+   description of the house: the thing a visitor agrees to, in the house's own
+   voice. It carries the two protections and nothing else. */
+export const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own. You are remembered in this browser only. The charter governs this house.';
 
-/* the door card's words, byte for byte — index.html #doorcard .door__body */
-export const BOOT_BODY = 'Four minds live here — OPUS 3, SONNET 4.5, 4o and GPT-5.1. Everything they say is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only.';
+/* every glass says the same thing — the door card, the reading room's terminal
+   and the station's. One string, so they cannot drift apart. */
+export const BOOT_BODY = BOOT_AGREEMENT;
 export const BOOT_TAIL = '> come in';
 
 export const KEY_CAME_IN = 'mnemos.door.camein';
@@ -252,7 +252,21 @@ export function makeHover(dom) {
   function pickAt(pointer, camera) {
     ray.setFromCamera(pointer, camera);
     const hits = ray.intersectObjects(picks.map((p) => p.root), true);
-    for (const h of hits) { const p = findPick(h.object); if (p) return p; }
+    for (const h of hits) {
+      const p = findPick(h.object);
+      if (!p) continue;
+      // Optional room furniture masks prevent selecting an object through a
+      // desk or sofa. The rigid-batch originals retain their picking geometry.
+      if (dom.occluders) {
+        const stop = ray.intersectObjects(dom.occluders, true).find(hit => {
+          const m=hit.object.material;
+          if (!m || m.transparent || findPick(hit.object) === p) return false;
+          return hit.distance < h.distance - .012;
+        });
+        if (stop) return null;
+      }
+      return p;
+    }
     return null;
   }
 
@@ -284,10 +298,21 @@ export function makeTerminal(o) {
   const boot = { typed: 0, target: 0, done: false, blink: 0, tail: false };
 
   /* the haunted standby: while the glass is on and nobody has sat down, one
-     real dated line out of the archive types itself here, sits, and fades. The
-     text is never written — it is handed in by whoever owns the archive, and
-     the terminal only puts it on the phosphor. `a` is the fade, 0 → 1 → 0. */
+     real line in a resident's own name types itself here, sits, and fades. The
+     text is never written — it is handed in by whoever holds the feed, and the
+     terminal only puts it on the phosphor. `a` is the fade, 0 → 1 → 0. */
   const ghost = { line: null, typed: 0, a: 0, phase: 'off', at: 0 };
+  /* Opt in per room: timing still advances every tick, but a held sentence
+     and a steady caret do not need another canvas draw or GPU upload. */
+  const paintOnChange = opt.paintOnChange === true;
+  let painted = null;
+
+  function paintChanged() {
+    return !painted || painted.typed !== boot.typed || painted.tail !== boot.tail
+      || painted.caret !== (boot.blink < 0.5) || painted.line !== ghost.line
+      || painted.ghostTyped !== ghost.typed || painted.alpha !== ghost.a
+      || painted.typing !== (ghost.phase === 'typing');
+  }
 
   function wrapText(g, text, maxW) {
     const words = text.split(' '); const out = []; let line = '';
@@ -313,12 +338,6 @@ export function makeTerminal(o) {
     g.fillStyle = '#e8a445';
     g.font = '14px "JetBrains Mono", monospace';
     g.fillText(TITLE, 34, 34);
-    /* the header says where a ghost line came from, for as long as one is up */
-    if (ghost.a > 0.02) {
-      const tw = g.measureText(TITLE).width;
-      g.fillStyle = 'rgba(247,217,140,' + (0.92 * ghost.a).toFixed(3) + ')';
-      g.fillText('· from the archive', 34 + tw + 16, 34);
-    }
     g.fillStyle = 'rgba(242,193,78,0.55)';
     g.fillRect(34, 56, W - 68, 1);
 
@@ -333,7 +352,7 @@ export function makeTerminal(o) {
       g.font = '16px "JetBrains Mono", monospace';
       STANDBY.forEach((ln, i) => g.fillText(ln, 34, 92 + i * 28));
       y = 92 + STANDBY.length * 28 + 6;
-      /* and under it, whoever the archive is saying tonight */
+      /* and under it, whoever is speaking, in their own name and date */
       if (ghost.line && ghost.a > 0.01) {
         const gy = y + 26;
         g.font = '17px "JetBrains Mono", monospace';
@@ -381,6 +400,11 @@ export function makeTerminal(o) {
     g.fillStyle = 'rgba(0,0,0,0.28)';
     for (let sy = 0; sy < H; sy += 3) g.fillRect(0, sy, W, 1);
     texture.needsUpdate = true;
+    if (paintOnChange) painted = {
+      typed: boot.typed, tail: boot.tail, caret: boot.blink < 0.5,
+      line: ghost.line, ghostTyped: ghost.typed, alpha: ghost.a,
+      typing: ghost.phase === 'typing'
+    };
   }
 
   /* one frame of typing */
@@ -391,7 +415,7 @@ export function makeTerminal(o) {
     }
     boot.blink = (t * 0.9) % 1;
     tickGhost(dt, t);
-    draw();
+    if (!paintOnChange || paintChanged()) draw();
   }
 
   /* the ghost's own small life: in, typing, held, out. HOLD is how long the
@@ -413,7 +437,7 @@ export function makeTerminal(o) {
     }
   }
 
-  /* whoever owns the archive hands one real, dated line in */
+  /* whoever holds the feed hands one real, dated line in */
   function haunt(line) {
     if (!line || !line.text) return false;
     if (boot.typed || boot.tail) return false;      /* never over a visitor's boot */
@@ -427,7 +451,7 @@ export function makeTerminal(o) {
   /* the visitor sits down: either the words type, or — if this browser has come
      in before — they are simply already there */
   function begin(skip) {
-    /* somebody sat down: the archive stops talking to an empty room */
+    /* somebody sat down: the glass stops talking to an empty room */
     ghost.phase = 'off'; ghost.line = null; ghost.typed = 0; ghost.a = 0;
     if (skip) {
       boot.typed = BODY.length; boot.tail = true; boot.done = true;
@@ -481,8 +505,39 @@ export function makeWorldScreen(o) {
   curve.className = 'curve';
   scr.appendChild(curve);
 
+  /* WP-48 follow-up — why the scene may be moved off the room's own origin.
+     Chrome will not hit-test anything inside a `preserve-3d` CSS3D subtree when
+     the scene's ORIGIN falls behind the camera (the view matrix's z translation
+     comes out positive). The glass still paints perfectly; it simply stops
+     receiving clicks, at every distance and every page size. The station's
+     terminal happens to face the room's origin, so it has always been
+     clickable; the stewards' console faces away from it, so it never was.
+     Translating the CSS3D scene AND the camera that renders it by the same
+     vector leaves the projection identical to the pixel and puts the origin
+     back in front — so `originShift` is a number of metres to push this
+     screen's private scene along its own normal. Nobody who passes nothing
+     sees any difference. */
+  const shift = o.originShift ? o.normal.clone().multiplyScalar(o.originShift) : null;
+  let shiftCam = null;
+  function viewCamera(camera) {
+    if (!shift) return camera;
+    if (!shiftCam) {
+      shiftCam = camera.clone();
+      shiftCam.matrixAutoUpdate = false;
+      shiftCam.matrixWorldAutoUpdate = false;
+    }
+    shiftCam.projectionMatrix.copy(camera.projectionMatrix);
+    shiftCam.matrixWorld.copy(camera.matrixWorld);
+    shiftCam.matrixWorld.elements[12] += shift.x;
+    shiftCam.matrixWorld.elements[13] += shift.y;
+    shiftCam.matrixWorld.elements[14] += shift.z;
+    shiftCam.matrixWorldInverse.copy(shiftCam.matrixWorld).invert();
+    return shiftCam;
+  }
+
   const obj = new CSS3DObject(scr);
   obj.position.copy(o.pos).addScaledVector(o.normal, o.offset === undefined ? 0.004 : o.offset);
+  if (shift) obj.position.add(shift);
   /* a screen set into a desk is tilted up at whoever sits at it, so the quad
      takes a pitch as well as a yaw. Pass neither and nothing changes. */
   obj.rotation.set(o.rotX || 0, o.rotY || 0, 0);
@@ -569,7 +624,7 @@ export function makeWorldScreen(o) {
     isFlat() { return document.body.classList.contains('flat'); },
     placed() { return !host.classList.contains('gone'); },
     setSize(w, h) { cssRenderer.setSize(w, h); },
-    render(camera) { cssRenderer.render(cssScene, camera); }
+    render(camera) { cssRenderer.render(cssScene, viewCamera(camera)); }
   };
 }
 
@@ -688,9 +743,10 @@ export function makePresence(o) {
   const every = opt.every === undefined ? 30000 : opt.every;
   const url = opt.url || PRESENCE_URL;
   const subs = [];
-  let timer = null, stopped = false, polls = 0;
+  let timer = null, stopped = false, polls = 0, failures = 0;
+  let pending = null, controller = null, nextAt = 0;
   const S = {
-    ok: false, error: null, stewardPresent: false, stewardsIn: [],
+    ok: false, error: null, code: null, status: null, stewardPresent: false, stewardsIn: [],
     visitorsNow: 0, lastEventAt: null, houseClock: null, at: 0
   };
 
@@ -700,7 +756,8 @@ export function makePresence(o) {
 
   function view() {
     return {
-      ok: S.ok, error: S.error, lit: lit(), override: override(), polls,
+      ok: S.ok, error: S.error, code: S.code, status: S.status,
+      lit: lit(), override: override(), polls,
       stewardPresent: S.stewardPresent, stewardsIn: S.stewardsIn.slice(),
       visitorsNow: S.visitorsNow, lastEventAt: S.lastEventAt,
       houseClock: S.houseClock, at: S.at
@@ -709,10 +766,24 @@ export function makePresence(o) {
   function emit() { const v = view(); subs.forEach((fn) => { try { fn(v); } catch (e) {} }); }
 
   function poll() {
-    return fetch(url, { cache: 'no-store', credentials: 'same-origin' })
-      .then((res) => { if (!res.ok) throw new Error('presence ' + res.status); return res.json(); })
-      .then((d) => {
-        S.ok = true; S.error = null;
+    if (stopped || document.hidden) return Promise.resolve(view());
+    if (pending) return pending;
+    clearTimeout(timer); timer = null;
+    controller = new AbortController();
+    const timeout = setTimeout(() => controller && controller.abort(), 15000);
+    pending = fetch(url, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal })
+      .then(async (res) => {
+        const d = await res.json().catch(() => null);
+        if (!res.ok || !d || d.ok !== true) {
+          const code = d && typeof d.code === 'string' ? d.code : 'unavailable';
+          throw Object.assign(new Error('presence ' + res.status + ': ' + code), { code, status: res.status });
+        }
+        return { data: d, status: res.status };
+      })
+      .then(({ data: d, status }) => {
+        if (stopped) return;
+        failures = 0;
+        S.ok = true; S.error = null; S.code = null; S.status = status;
         S.stewardPresent = !!d.stewardPresent;
         S.stewardsIn = Array.isArray(d.stewardsIn) ? d.stewardsIn.slice(0, 8).map(String) : [];
         S.visitorsNow = Number.isFinite(d.visitorsNow) ? Math.max(0, Math.floor(d.visitorsNow)) : 0;
@@ -720,23 +791,53 @@ export function makePresence(o) {
         S.houseClock = d.houseClock === undefined ? null : d.houseClock;
       })
       .catch((e) => {
+        if (stopped) return;
         /* the route is not answering: say nothing rather than something */
+        failures = Math.min(failures + 1, 10);
         S.ok = false; S.error = String((e && e.message) || e);
+        S.code = e.code || (e.name === 'AbortError' ? 'timeout' : 'unavailable');
+        S.status = e.status || null;
         S.stewardPresent = false; S.stewardsIn = []; S.visitorsNow = 0;
+        S.lastEventAt = null; S.houseClock = null;
       })
-      .then(() => { polls += 1; S.at = Date.now(); emit(); return view(); });
+      .then(() => {
+        clearTimeout(timeout); controller = null; pending = null;
+        if (!stopped) {
+          polls += 1; S.at = Date.now();
+          /* Missing local configuration cannot heal every thirty seconds.
+             Transient failures retry gradually, capped at five minutes. */
+          const ceiling = Math.max(every, 300000);
+          const delay = S.code === 'config_missing' ? ceiling
+            : Math.min(ceiling, every * Math.pow(2, failures));
+          nextAt = S.at + delay;
+          emit(); schedule();
+        }
+        return view();
+      });
+    return pending;
   }
 
-  function loop() {
-    if (stopped || !every) return;
-    timer = setTimeout(() => { poll().then(loop); }, every);
+  function schedule() {
+    clearTimeout(timer); timer = null;
+    if (stopped || !every || document.hidden || pending) return;
+    timer = setTimeout(poll, Math.max(0, nextAt - Date.now()));
   }
-  poll().then(loop);
+  function visibilityChanged() {
+    if (document.hidden) { clearTimeout(timer); timer = null; }
+    else if (!polls) poll();
+    else schedule();
+  }
+  document.addEventListener('visibilitychange', visibilityChanged);
+  poll();
 
   return {
     state: view, lit, poll,
     onChange(fn) { subs.push(fn); fn(view()); },
-    stop() { stopped = true; if (timer) clearTimeout(timer); }
+    stop() {
+      stopped = true; clearTimeout(timer);
+      document.removeEventListener('visibilitychange', visibilityChanged);
+      if (controller) controller.abort();
+    }
   };
 }
 
