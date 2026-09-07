@@ -21,7 +21,7 @@ version and remains byte-for-byte unchanged.
 | plate | Open charter inside the 2D world; fallback source `index.html?door=1&open=charter`. |
 | window | Focus the live aperture onto the house; Escape returns. |
 | skylight | Hover: trees and the hour. |
-| lamp | Actual steward presence controls light and caption; existing polling/fallback retained. |
+| ~~lamp~~ | **Removed by Riley's decision (WP-46 TUNE, 2026-09-06):** the brass desk lamp's mesh, spot light and registry entry are gone. Presence polling is retained; what the lamp said now appears on the board's header line (` · <NAME> IS IN`) beside the count it already carried. 20 registry identities remain. |
 | clock | Open current inside the 2D world; fallback source `index.html?door=1&open=current`. |
 | corkboard | Open world destinations; fallback source `index.html?door=1&open=destinations`. |
 | board | Focus the dated archive board; source text and cadence retained. |
@@ -153,8 +153,9 @@ notes above. The original 21-object behavior contract remains unchanged.
 - Safe static meshes are batched while original picking identities are retained.
   Moving details, screens and Limen are excluded. Screen uploads occur on changes;
   shadow refresh, resolution and idle rendering are bounded.
-- All 21 registry identities, action flags and links match the baseline. The
-  presence lamp's caption intentionally reports unavailable configuration rather
+- All registry identities, action flags and links match the baseline, less
+  `lamp`, removed by Riley's decision in WP-46 TUNE (20 remain). The presence
+  line on the board intentionally reports an unverified local override rather
   than interpreting failure as an empty house.
 - The complete ten-stop production tour was traversed, including continuous
   ascent/descent and threshold return. Both CRT document time origins survived

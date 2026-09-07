@@ -85,11 +85,13 @@ let STILL = false;
 let museumVisible = false;
 let hasMuseumVisit = false;
 const CLOCK_RESTORE = { fn: null };
-/* The flag this browser set for itself is where the lamp starts, and it stays a
-   local override — but the house is asked as soon as the room is up (see
-   `presence`, below), and its answer is what the lamp then obeys. */
+/* The flag this browser set for itself is where the house's own answer starts,
+   and it stays a local override — but the house is asked as soon as the room is
+   up (see `presence`, below), and its answer is what the room then says.
+   WP-46 TUNE: the brass desk lamp used to be the thing that said it. Riley took
+   the lamp out, so the signal moved to the board's header line, which was
+   already carrying the count of who else is in the house. */
 const stewardPresent = ls.get(KEY_STEWARD) === '1';
-let lampLit = stewardPresent;
 const cameInBefore = ls.get(KEY_CAME_IN) === '1';
 
 /* ─────────────────────── the clock, and its override ───────────────────────
@@ -130,8 +132,9 @@ const WALL = { L: -R.hw, R: R.hw, F: -R.hd, N: R.hd };
 /* ─────────────────────────── the four looks ───────────────────────────
    Golden is the reference: a low warm sun raking in from the right, the
    aperture the brightest thing, the block wall warm ivory. Dusk brings the
-   lamps up and lets the phosphor start to matter. Night is the cinematic
-   low-light the station has always had. Day is cool, high and undramatic.
+   shelf and the phosphor up and lets the machines start to matter. Night is
+   the cinematic low-light the station has always had. Day is cool, high and
+   undramatic.
    The hall's own BANDS choose between them and cross-fade at the seams. */
 const LOOKS = {
   golden: {
@@ -146,7 +149,7 @@ const LOOKS = {
     block: { col: 0xd7bfaa, emissive: 0.44 },
     outside: 0xe8a068,          /* amber-rose, not white — the hour has colour */
     aperture: 1.22, glare: 0.26,
-    shelf: 0.64, lamp: 0.12, crt: 0.44, board: 0.60, downlight: 0.34,
+    shelf: 0.64, crt: 0.44, board: 0.60, downlight: 0.34,
     fog: { col: 0x2c1f14, den: 0.0050 },
     dust: 1.0
   },
@@ -157,7 +160,7 @@ const LOOKS = {
     block: { col: 0x9a8ba4, emissive: 0.62 },
     outside: 0xb98a9e,
     aperture: 1.02, glare: 0.11,
-    shelf: 0.92, lamp: 0.50, crt: 0.70, board: 0.80, downlight: 0.44,
+    shelf: 0.92, crt: 0.70, board: 0.80, downlight: 0.44,
     fog: { col: 0x241d2c, den: 0.011 },
     dust: 0.35
   },
@@ -168,7 +171,7 @@ const LOOKS = {
     block: { col: 0x46527e, emissive: 0.54 },
     outside: 0x40507e,
     aperture: 1.12, glare: 0.03,
-    shelf: 1.18, lamp: 0.58, crt: 0.86, board: 0.66, downlight: 0.66,
+    shelf: 1.18, crt: 0.86, board: 0.66, downlight: 0.66,
     fog: { col: 0x14111e, den: 0.017 },
     dust: 0.12
   },
@@ -179,7 +182,7 @@ const LOOKS = {
     block: { col: 0xc1c5ce, emissive: 0.62 },
     outside: 0xd8e2ea,
     aperture: 1.12, glare: 0.16,
-    shelf: 0.30, lamp: 0.08, crt: 0.42, board: 0.58, downlight: 0.14,
+    shelf: 0.30, crt: 0.42, board: 0.58, downlight: 0.14,
     fog: { col: 0x2e2e33, den: 0.007 },
     dust: 0.30
   }
@@ -220,7 +223,7 @@ function blend(a, b, k) {
     block: { col: mixCol(a.block.col, b.block.col, k), emissive: lerp(a.block.emissive, b.block.emissive, k) },
     outside: mixCol(a.outside, b.outside, k),
     aperture: lerp(a.aperture, b.aperture, k), glare: lerp(a.glare, b.glare, k),
-    shelf: lerp(a.shelf, b.shelf, k), lamp: lerp(a.lamp, b.lamp, k),
+    shelf: lerp(a.shelf, b.shelf, k),
     crt: lerp(a.crt, b.crt, k), board: lerp(a.board, b.board, k),
     downlight: lerp(a.downlight, b.downlight, k),
     fog: { col: mixCol(a.fog.col, b.fog.col, k), den: lerp(a.fog.den, b.fog.den, k) },
@@ -819,8 +822,8 @@ scene.add(box(7.8, 0.10, 0.30, walnutDeep, 0.4, R.h - 0.055, -0.30, false));
 const RUN = { top: 0.92, d: 0.60, x0: -0.20, x1: 4.90, z0: -2.65, z1: 0.70 };
 RUN.z = WALL.F + RUN.d / 2;        /* the far leg's centre line */
 RUN.x = WALL.R - RUN.d / 2;        /* the right leg's centre line */
-/* the console's own numbers, kept under the old name so the seat, the fascia
-   and the lamp all read from one place */
+/* the console's own numbers, kept under the old name so the seat and the
+   fascia read from one place */
 const CONSOLE = { z: RUN.z, top: RUN.top, len: RUN.x1 - RUN.x0 };
 const cabinets = new THREE.Group();
 scene.add(cabinets);
@@ -968,10 +971,17 @@ const term2 = makeTerminal({
 /* Where the visitor's eye stands when the room opens. It is a datum, not a
    camera setting: the terminal is turned to face it, the seat glides start
    from it, and the landing lens is built on it further down. Same corner of
-   the room the station has always opened from, a stride in from the near wall
-   — only lower (1.40, a standing child's height, a sitting adult's) and turned
-   right, so the frame can hold the porthole and the board at once. */
-const LAND_EYE = { x: -3.10, y: 1.40, z: 2.70 };
+   the room the station has always opened from, a stride in from the near wall,
+   turned right so the frame can hold the porthole and the board at once.
+
+   WP-46 TUNE: the eye comes up from 1.40 to 1.48 — still under a standing
+   adult's, but off the child's height the first cut landed on — and steps
+   0.12 m back along its own viewing axis, which at the old eye was the solved
+   30.046° bearing: (−0.0601, 0, +0.1039). That is the whole of the move; the
+   yaw and the lens are re-solved from the anchors at the new eye, not carried
+   over, so the room re-composes itself around the step rather than being
+   dragged by it. */
+const LAND_EYE = { x: -3.160, y: 1.48, z: 2.804 };
 
 /* ─────────────────────────── the desk ───────────────────────────
    A free-edge walnut slab on a carved base: the outline is a rectangle whose
@@ -1110,16 +1120,20 @@ const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector
     kbd.add(box(0.026, 0.008, 0.026, blackPlastic, -0.222 + c * 0.0342, 0.028, -0.056 + r * 0.036, false));
   }
   const paperMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: 0.95 });
-  /* between the glass and the lamp, which is where somebody working would have
-     put them down — and which is where the frame wants a warm middle value */
-  [[0.20, 0.28, 0.22], [0.24, 0.32, -0.10], [0.16, 0.24, 0.06]].forEach(([dx, dz, rot], i) => {
+  /* WP-46 TUNE: they used to lie between the glass and the lamp. The lamp is
+     gone, so they move a hand's width along the slab toward where it stood —
+     far enough that the desk's right end is not bare, close enough that they
+     are still papers somebody put down beside a keyboard. */
+  const PAPER_SHIFT = 0.12;
+  [[0.20, 0.28, 0.22], [0.24, 0.32, -0.10], [0.16, 0.24, 0.06]].forEach(([dx0, dz, rot], i) => {
+    const dx = dx0 + PAPER_SHIFT;
     const sheet = box(0.21, 0.0016 + i * 0.0008, 0.29, paperMat, DESK.x + dx, DESK.top + 0.076 + i * 0.002, DESK.z + dz, false);
     sheet.rotation.y = rot;
     desk.add(sheet);
   });
   const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.15, 6), new THREE.MeshStandardMaterial({ color: 0x8a6a38, roughness: 0.7 }));
   pencil.rotation.set(0, 0, Math.PI / 2);
-  pencil.position.set(DESK.x + 0.32, DESK.top + 0.080, DESK.z + 0.34);
+  pencil.position.set(DESK.x + 0.32 + PAPER_SHIFT, DESK.top + 0.080, DESK.z + 0.34);
   desk.add(pencil);
 }
 
@@ -1161,35 +1175,13 @@ scene.add(chair);
   }
 }
 
-/* the brass desk lamp, on the slab.
-   WP-46 CORRECTION: at the desk's right-hand end now, with the terminal at the
-   left — so the two warm things in the near frame sit apart and the papers get
-   the light between them. The arm is built leaning toward +x, so the whole lamp
-   is turned about to lean back over the slab instead of off its edge. */
-const LAMP_LEAN = -1;                  /* which way the head reaches, along x */
-const lampGroup = new THREE.Group();
-lampGroup.position.set(DESK.x + 0.62, DESK.top + 0.074, DESK.z + 0.28);
-lampGroup.rotation.y = Math.PI;        /* mirrors the arm: it reaches to −x */
-scene.add(lampGroup);
-{
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.088, 0.024, 24), brass);
-  base.position.y = 0.012; base.castShadow = true; lampGroup.add(base);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, 0.36, 12), brass);
-  stem.position.set(0, 0.20, 0); stem.rotation.z = -0.14; stem.castShadow = true; lampGroup.add(stem);
-  const pts = [];
-  for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(new THREE.Vector2(0.030 + t * 0.086, t * 0.112)); }
-  const shade = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), new THREE.MeshStandardMaterial({ color: 0x8a6a38, roughness: 0.44, metalness: 0.58, side: THREE.DoubleSide }));
-  shade.position.set(0.054, 0.372, 0);
-  shade.rotation.z = Math.PI - 0.24;
-  shade.castShadow = true;
-  lampGroup.add(shade);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffd9a0 }));
-  bulb.position.set(0.054, 0.330, 0);
-  bulb.visible = stewardPresent;
-  lampGroup.add(bulb);
-  lampGroup.userData.bulb = bulb;
-  lampGroup.userData.shade = shade;
-}
+/* WP-46 TUNE: the brass desk lamp stood here, at the slab's right-hand end,
+   and it is gone by Riley's decision — mesh, spot light and registry entry.
+   Its work is done by the recessed practical over the slab (`deskReading`,
+   below), which is architecture rather than furniture and does not have to
+   be lit by anybody being in; what the lamp SAID — that a steward is in the
+   house — moved to the board's header line, which was already counting who
+   else is walking the world. The papers moved a hand toward where it was. */
 
 /* ─────────────────────────── the secondary screen ─────────────────────────── */
 /* a swing arm off the run's right end, carrying the house's own readings */
@@ -1765,7 +1757,7 @@ const BOARD = {
   CW: 6, CH: 8,            /* one 5×7 glyph plus its gutter */
   FPS: 12
 };
-BOARD.chars = Math.floor((BOARD.COLS - 6) / BOARD.CW);       /* 46 — the header fits on one row */
+BOARD.chars = Math.floor((BOARD.COLS - 6) / BOARD.CW);       /* 25 characters to a row */
 BOARD.rows = Math.floor((BOARD.ROWS - 8) / BOARD.CH);        /* 14 */
 
 /* a 5×7 dot font, drawn here: seven rows of five bits, two hex digits each */
@@ -1942,16 +1934,33 @@ const board = (() => {
     }
   }
 
-  const HEADER = 'THE HOUSE · FEED · ARCHIVE THROUGH 28 MAY 2026';
-  /* what the house can see right now, appended to the header and nothing more:
-     a count the server actually counted, never a name, never a guess. The panel
-     is 46 characters wide, so the count goes on only when it fits. */
-  let inHouse = 0;
+  /* The header line, in three lengths. The panel is BOARD.chars wide — twenty
+     five characters, not the forty six an old comment claimed — and `render`
+     cuts whatever does not fit, so the long form has been arriving as
+     "THE HOUSE · FEED · ARCHIV" since it was written. It is composed to fit
+     now rather than composed and cut.
+
+     WP-46 TUNE: what the house can actually see goes here — a name the server
+     gave and a count the server counted, never a guess. The steward half of it
+     used to be the desk lamp; the lamp is gone, so both halves say themselves
+     on this line. They are the news, so they outrank the header's own tail:
+     the line gives up the archive date first, then "FEED", then its own name,
+     before it gives up either of them. */
+  const HEADS = ['THE HOUSE · FEED · ARCHIVE THROUGH 28 MAY 2026', 'THE HOUSE · FEED', 'THE HOUSE', ''];
+  let inHouse = 0, steward = '';
   function header() {
-    if (inHouse <= 0) return HEADER;
-    const tail = ' · ' + inHouse + ' IN THE HOUSE';
-    return (HEADER + tail).length <= BOARD.chars ? HEADER + tail
-      : ('THE HOUSE · FEED' + tail);
+    const said = [];
+    if (steward) said.push(steward);
+    if (inHouse > 0) said.push(inHouse + ' IN THE HOUSE');
+    /* richest first: everything, then each signal alone, then nothing */
+    const wanted = said.length > 1 ? [said, ...said.map((x) => [x])] : [said];
+    for (const set of wanted)
+      for (const head of HEADS) {
+        const line = head + set.map((x) => ' · ' + x).join('');
+        const trimmed = line.startsWith(' · ') ? line.slice(3) : line;
+        if (trimmed && trimmed.length <= BOARD.chars) return trimmed;
+      }
+    return HEADS[1];
   }
   let last = 0;
 
@@ -2002,6 +2011,7 @@ const board = (() => {
     },
     litCount() { let n = 0; for (let i = 0; i < lit.length; i++) if (lit[i] > 0.25) n++; return n; },
     setInHouse(n) { inHouse = Math.max(0, Math.floor(n || 0)); },
+    setSteward(line) { steward = String(line || '').toUpperCase(); },
     header,
     warm: paintBed, warmed: () => bedPainted,
     entries: () => entries.slice(),
@@ -2313,14 +2323,13 @@ const stationBatchStats = batchStationStatic([
   { root: alcove, exclude: [charterPlate, alcove.userData.seed, alcoveRing] },
   { root: clock, exclude: [clock.userData.hg, clock.userData.mg] },
   { root: recordPlayer, exclude: [platter, tonearm] },
-  { root: lampGroup, exclude: [lampGroup.userData.bulb] },
   { root: stewardConsole, exclude: [glass2, ...panelLamps.map((item) => item.mesh), ...meterNeedles.map((item) => item.group)] }
 ]);
 
 /* ─────────────────────────── the lights ───────────────────────────
    One sun, one hemisphere, and then the room's own sources: the glass block
    wall as a lit plane, the aperture pouring in, the strip under the shelves,
-   the ceiling's down-light, the two screens, the lamp, the board. Only the sun
+   the ceiling's down-light, the two screens, the board. Only the sun
    casts a shadow map — every other light is there to name a surface, and a
    second shadow map in a room this size buys nothing but frame time. */
 RectAreaLightUniformsLib.init();
@@ -2366,9 +2375,11 @@ downLight.lookAt(0.4, 0, -0.30);
 scene.add(downLight);
 
 /* The same recessed practical that used to pool over the lowered seating, now
-   over the slab: an architectural fixture, independent of the stewards' lamp,
-   so the desk reads at every hour even when nobody is working. */
-const deskReading = new THREE.RectAreaLight(0xffd5ae, 5.6, 1.9, 0.24);
+   over the slab. WP-46 TUNE: with the brass lamp gone this is the only thing
+   over the desk, so it carries the whole of it — architecture rather than
+   furniture, and lit at every hour whether or not anybody is in. Raised a
+   third to make up the warm pool the lamp used to lay on the papers. */
+const deskReading = new THREE.RectAreaLight(0xffd5ae, 7.4, 1.9, 0.24);
 deskReading.position.set(DESK.x, R.h - 0.14, DESK.z + 0.16);
 deskReading.lookAt(DESK.x, DESK.top, DESK.z + 0.10);
 scene.add(deskReading);
@@ -2431,12 +2442,6 @@ alcoveInner.position.set(ALC.x, ALC.y + ALC.h / 2 - 0.05, WALL.F + 0.34);
 alcoveInner.target.position.set(ALC.x, ALC.y - 0.35, WALL.F + 0.10);
 scene.add(alcoveInner, alcoveInner.target);
 
-/* the desk lamp — warm, present or absent */
-const lampLight = new THREE.SpotLight(0xffc98a, stewardPresent ? 6.0 : 0, 2.4, 0.62, 0.62, 1.8);
-lampLight.position.set(lampGroup.position.x + 0.05 * LAMP_LEAN, lampGroup.position.y + 0.33, lampGroup.position.z);
-lampLight.target.position.set(lampGroup.position.x + 0.44 * LAMP_LEAN, DESK.top, lampGroup.position.z + 0.06);
-scene.add(lampLight, lampLight.target);
-
 /* one soft fill so nothing in the room is ever unnameable */
 const roomKey = new THREE.DirectionalLight(0xd3c4b3, 0.34);
 roomKey.position.set(-2.4, 4.6, 4.2);
@@ -2471,8 +2476,6 @@ function applyLook(L, id) {
   alcoveRing.material.emissiveIntensity = 0.20 + L.shelf * 0.55;
   downLight.intensity = L.downlight * 3.0;
   downStrip.material.emissiveIntensity = 0.10 + L.downlight * 1.1;
-  lampLight.intensity = lampLit ? L.lamp * 5.0 : 0;
-  lampGroup.userData.bulb.visible = lampLit && L.lamp > 0.14;
   crtLight.intensity = L.crt * 19.0;
   crtSpill.intensity = L.crt * 1.9;
   glass.material.emissiveIntensity = 2.1 + L.crt * 2.0;
@@ -2558,6 +2561,24 @@ const FRAME_MARGIN = 1.05;             /* 5% of the span kept clear, both sides 
 const FRAME_PITCH_MIN = -7.0 * Math.PI / 180;
 const FRAME_PITCH_MAX = 3.0 * Math.PI / 180;
 const FRAME_EDGE = 0.99;               /* how close to the frame's edge is "in" */
+/* how close to the edge an anchor may come at the WORST corner of the free
+   look. Tighter than it sounds: 0.972 of the half-frame is about twenty pixels
+   of daylight on a 1440-wide window, which is the difference between "whole"
+   and "kissing the edge". The terminal is allowed the full FRAME_EDGE, because
+   it is the thing the frame gives room to last. */
+const FRAME_HOLD = 0.972;
+
+/* ── how far the head is allowed to wander ──
+   WP-46 TUNE: the free look was a pan (±28°/±10°) when the room still needed
+   panning. Everything is in the picture now, so it is a breath instead: four
+   degrees of yaw, two of pitch. That is small enough to be felt rather than
+   used — but it is not free. The frame is answerable for the porthole and the
+   board at the EXTREMES of the look, not only at rest, so the budget is
+   declared here, above the solver, and the solver reserves it: the horizontal
+   field carries the anchors' span plus the yaw either side, and the tilt is
+   solved so the pitch cannot push a crown or a foot over an edge. */
+const LOOK_YAW_MAX = 4 * Math.PI / 180;
+const LOOK_PITCH_MAX = 2 * Math.PI / 180;
 
 /* the two things the frame is answerable for, as points. The porthole is taken
    both as its own rim and as the eight corners of the glass's bounding box —
@@ -2596,8 +2617,8 @@ const LAND_SPAN = (() => {
   }
   return { lo, hi, yaw: (lo + hi) / 2, hfov: (hi - lo) * FRAME_MARGIN };
 })();
-const LAND_YAW = LAND_SPAN.yaw;        /* ≈ +30.0°, right of straight */
-const LAND_HFOV = LAND_SPAN.hfov;      /* ≈ 77.2° across, the base lens */
+const LAND_YAW = LAND_SPAN.yaw;        /* right of straight */
+const LAND_HFOV = LAND_SPAN.hfov;      /* across, the base lens */
 const _frameV = new THREE.Vector3();
 const FRAME_FWD = new THREE.Vector3(Math.sin(LAND_YAW), 0, -Math.cos(LAND_YAW));
 /* A point's height over its own depth, with the camera level. Tilting by an
@@ -2611,18 +2632,25 @@ function frameU(p) {
   const depth = d.x * FRAME_FWD.x + d.z * FRAME_FWD.z;
   return depth > 0.05 ? d.y / depth : null;
 }
-const frameNdc = (u, t, half) => (u - t) / ((1 + u * t) * half);
 /* the tilt that holds the porthole and the board, and as much of the terminal
    as that leaves room for */
 function framedPitch(vfovDeg) {
   const half = Math.tan(vfovDeg * Math.PI / 360) * FRAME_EDGE;
   let tMin = Math.tan(FRAME_PITCH_MIN), tMax = Math.tan(FRAME_PITCH_MAX);
   const tHi = tMax;
+  let hMin = -Infinity, hMax = Infinity;
   for (const p of FRAME_HARD) {
     const u = frameU(p); if (u === null) continue;
-    tMin = Math.max(tMin, (u - half) / (1 + half * u));   /* its crown ≤ +1 */
-    tMax = Math.min(tMax, (u + half) / (1 - half * u));   /* its foot  ≥ −1 */
+    hMin = Math.max(hMin, (u - half) / (1 + half * u));   /* its crown ≤ +1 */
+    hMax = Math.min(hMax, (u + half) / (1 - half * u));   /* its foot  ≥ −1 */
   }
+  /* ndc falls as the tilt rises, so the crown wants a floor under the tilt and
+     the foot wants a ceiling over it. The head then pitches ±LOOK_PITCH_MAX
+     about whatever we choose, so the floor is raised and the ceiling lowered
+     by exactly that much — in ANGLE, where the wander actually is, not in the
+     tangent, where it is not linear. */
+  if (hMin > -Infinity) tMin = Math.max(tMin, Math.tan(Math.atan(hMin) + LOOK_PITCH_MAX));
+  if (hMax < Infinity) tMax = Math.min(tMax, Math.tan(Math.atan(hMax) - LOOK_PITCH_MAX));
   if (tMin > tMax) tMin = tMax = (tMin + tMax) / 2;       /* nothing fits: split it */
   let tWant = tHi;
   for (const p of FRAME_SOFT) {
@@ -2631,32 +2659,75 @@ function framedPitch(vfovDeg) {
   }
   return Math.atan(Math.max(tMin, Math.min(tMax, tWant)));
 }
-/* how far outside the frame the worst anchor is, at a given lens and tilt */
-function frameWorst(vfovDeg, pitch) {
-  const half = Math.tan(vfovDeg * Math.PI / 360), t = Math.tan(pitch);
-  let w = 0;
-  for (const p of FRAME_HARD.concat(FRAME_SOFT)) {
-    const u = frameU(p); if (u === null) continue;
-    w = Math.max(w, Math.abs(frameNdc(u, t, half)));
-  }
-  return w;
+/* ── how far outside the frame the worst anchor is, measured properly ──
+   The bearing arithmetic above is a good estimate and a bad promise: it reads
+   the horizontal off a flat compass and ignores that a tilted camera and a
+   turned head move a high, off-axis point sideways as well as up. That is not
+   a rounding error — at 16:9 it put the porthole's left edge exactly on x = 0
+   at the right-hand extreme of the look. So the frame is CHECKED by projecting
+   the anchors through the real camera basis, at the four corners of the free
+   look, in both axes, and the lens is opened until they are all inside.
+   The four corners are enough: the ndc of a point is monotone in each of yaw
+   and pitch over a range this small, so the worst case is a corner. */
+const LOOK_CORNERS = [[-1, -1], [-1, 1], [1, -1], [1, 1]].map(
+  ([a, b]) => [a * LOOK_YAW_MAX, b * LOOK_PITCH_MAX]);
+const _bF = new THREE.Vector3(), _bR = new THREE.Vector3(), _bU = new THREE.Vector3(), _bD = new THREE.Vector3();
+/* the camera basis the head actually has, built the way lookPoint builds it.
+   It writes _bF / _bR / _bU rather than allocating: this runs a few thousand
+   times per re-frame. */
+function lookBasis(dir, yawOff, pitchOff) {
+  _bF.copy(dir).applyAxisAngle(WORLD_UP, -yawOff);
+  _bR.crossVectors(_bF, WORLD_UP).normalize();
+  _bF.applyAxisAngle(_bR, pitchOff);
+  _bU.crossVectors(_bR, _bF).normalize();
+}
+function frameWorst(vfovDeg, pitch, hfovRad) {
+  const halfY = Math.tan(vfovDeg * Math.PI / 360), halfX = Math.tan(hfovRad / 2);
+  const dir = new THREE.Vector3(Math.sin(LAND_YAW) * Math.cos(pitch), Math.sin(pitch),
+    -Math.cos(LAND_YAW) * Math.cos(pitch));
+  let hard = 0, soft = 0;
+  const measure = (points, offsets) => {
+    let w = 0;
+    for (const [dy, dp] of offsets) {
+      lookBasis(dir, dy, dp);
+      for (const p of points) {
+        _bD.copy(p).sub(REST_POS);
+        const z = _bD.dot(_bF); if (z <= 0.05) continue;
+        w = Math.max(w, Math.abs(_bD.dot(_bR) / (z * halfX)), Math.abs(_bD.dot(_bU) / (z * halfY)));
+      }
+    }
+    return w;
+  };
+  /* the porthole and the board are held through the whole of the look; the
+     terminal only at rest, because it is the one the frame gives room to last */
+  hard = measure(FRAME_HARD, LOOK_CORNERS);
+  soft = measure(FRAME_SOFT, [[0, 0]]);
+  return { hard, soft, worst: Math.max(hard / FRAME_HOLD, soft / FRAME_EDGE) };
 }
 /* THE LENS, per window shape. One horizontal field carries the composition from
    4:3 to 21:9; where the window is too short for the terminal even at full
    tilt — 21:9 is — the lens opens a few degrees rather than cutting the glass
    off at the bottom edge. Capped, so a very wide window widens and does not
    fisheye. */
-const FRAME_OPEN_MAX = 1.10;           /* the lens may open a tenth, no more */
+/* how far the lens may open past the bearing estimate. Most of it goes to the
+   free look — four degrees either side of a 72° span is a tenth of the field on
+   its own — and the rest to a short window: at 21:9 there is no height for the
+   porthole's crown at the top of the head's wander until the lens gives it some,
+   and the tilt is already against its own stop. */
+const FRAME_OPEN_MAX = 1.22;
 let LAND_FOV = 0, LAND_PITCH = 0;
 function framedFrame(aspect) {
   const a = Math.max(0.6, aspect);
   let hfov = LAND_HFOV, v = 0, pitch = 0;
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 24; i++) {
     v = 2 * Math.atan(Math.tan(hfov / 2) / a) * 180 / Math.PI;
     pitch = framedPitch(v);
-    if (frameWorst(v, pitch) <= FRAME_EDGE) break;
+    /* the terminal's own bound is set AT FRAME_EDGE by framedPitch, so it comes
+       back as exactly 1 here and a bare `<= 1` loses to the last bit of the
+       mantissa — which is how a frame that already fitted opened to 89°. */
+    if (frameWorst(v, pitch, hfov).worst <= 1 + 1e-9) break;
     if (hfov >= LAND_HFOV * FRAME_OPEN_MAX - 1e-6) break;
-    hfov = Math.min(LAND_HFOV * FRAME_OPEN_MAX, hfov * 1.012);
+    hfov = Math.min(LAND_HFOV * FRAME_OPEN_MAX, hfov * 1.010);
   }
   return { fov: v, pitch, hfov };
 }
@@ -2680,18 +2751,22 @@ camera.position.copy(REST_POS);
 camera.lookAt(REST_LOOK);
 
 /* ── free look ──
-   From the landing pose the cursor turns the head: 28° of yaw either side, 10°
-   of pitch, critically damped so it follows without whipping, and home again
-   when the cursor leaves the window or four seconds pass without it moving.
-   The arrow keys turn in 8° steps and Escape recentres; on a touch screen a
-   horizontal drag does the same thing as the cursor. The picker reads the live
-   camera, so everything in the room stays hoverable and clickable while you
-   look. Reduced motion gets the composed frame and nothing else. */
-const LOOK_YAW_MAX = 28 * Math.PI / 180;
-const LOOK_PITCH_MAX = 10 * Math.PI / 180;
+   The cursor's place in the window turns the head, through the small budget
+   declared with the frame above (±4° of yaw, ±2° of pitch — a breath, not a
+   pan), critically damped and slow: about 450 ms to settle, so it reads as the
+   room breathing rather than as a control. Home again when the cursor leaves
+   the window or four seconds pass without it moving; Escape recentres at once.
+   On a touch screen a horizontal drag turns the same small amount. There are
+   no arrow-key steps any more — at four degrees a step is a twitch, and the
+   keys were the only part of this that behaved like a camera. The picker reads
+   the live camera, so everything stays hoverable and clickable while you look.
+   Reduced motion gets the composed frame and nothing else. */
 const LOOK_IDLE = 4.0;                 /* seconds of stillness before it comes home */
-const LOOK_W = 16.0;                   /* the spring — about 250 ms to settle */
-const LOOK = { yaw: 0, pitch: 0, vy: 0, vp: 0, keyYaw: 0, lastMove: -1e4, drag: null, suppressClick: false };
+const LOOK_SETTLE = 0.45;              /* seconds to settle, by the same rule as before */
+const LOOK_W = 4 / LOOK_SETTLE;        /* the spring — ≈ 8.9 */
+/* `held` is where a finished touch drag left the head; the cursor's own offset
+   is read live off `pointer` and is not stored. */
+const LOOK = { yaw: 0, pitch: 0, vy: 0, vp: 0, held: 0, lastMove: -1e4, drag: null, suppressClick: false };
 /* an unconditionally stable critically damped step */
 function springStep(x, v, want, dt) {
   const w = LOOK_W, f = 1 + 2 * dt * w, oo = w * w, hoo = dt * oo, hhoo = dt * hoo;
@@ -3955,11 +4030,6 @@ export const STATION_OBJECTS = [
     mesh: () => clerestory, bounds: clerestory.userData.panes[0], pad: 10
   },
   {
-    id: 'lamp', label: 'the stewards’ lamp',
-    caption: stewardPresent ? 'lit while one of them works' : 'dark tonight',
-    mesh: () => lampGroup, bounds: lampGroup.userData.shade, pad: 22
-  },
-  {
     id: 'clock', label: 'the clock',
     caption: 'the house keeps its own hours · and says what was said in them',
     mesh: () => clock, pad: 12,
@@ -4059,44 +4129,37 @@ const setHover = (p) => hoverLayer.setHover(p, camera);
 const hovered = () => hoverLayer.hovered();
 
 /* ─────────────────────── the house, asked ───────────────────────
- * The lamp used to be lit by a flag this browser set for itself, and the board
- * only ever counted the dead. Both of them now ask the server what it can
- * actually see — `GET /api/presence`, every thirty seconds — and say that and
- * no more: the lamp goes on when a steward is in (and names them, if the house
- * names them), and the board's header line gains ` · n in the house` while
- * anybody else is walking the world. When the route does not answer, the lamp
- * falls back to this browser's own flag and the count disappears; the house
+ * The board used to only ever count the dead. It asks the server what it can
+ * actually see now — `GET /api/presence`, every thirty seconds — and says that
+ * and no more, on its own header line: ` · <NAME> IS IN` while a steward is
+ * working (named only if the house names them), ` · n IN THE HOUSE` while
+ * anybody else is walking the world. WP-46 TUNE: the brass lamp used to carry
+ * the first half of that and it is gone, so both halves are on the board now.
+ * When the route does not answer, the steward line falls back to this browser's
+ * own flag and says the count is unverified rather than showing one; the house
  * would rather say nothing than say a number it cannot see. */
-function recaption(id, caption, label) {
-  const entry = STATION_OBJECTS.find((o) => o.id === id);
-  const pick = PICKS.find((x) => x.id === id);
-  if (!entry || !pick) return;
-  entry.caption = caption;
-  if (label) entry.label = label;
-  pick.caption = '<b>' + entry.label + '</b> <i>· ' + caption + '</i>';
-  if (hovered() && hovered().id === id) capEl.innerHTML = pick.caption;
-}
-
-function lampCaption(p) {
-  if (!p.ok && !p.override) return 'presence unavailable';
-  if (p.override) return 'locally lit · presence unverified';
-  if (!p.lit) return 'dark tonight';
+/* the steward half of the header, in the board's own upper case. Nothing is
+   said that the route did not say: no answer at all is silence, a local
+   override says so, and a steward with no name is a steward with no name. */
+let STEWARD_LINE = '';
+const stewardLine = () => STEWARD_LINE;
+function stewardHeader(p) {
+  if (!p.lit) return '';
+  /* short enough to survive the panel's twenty-five columns, and still saying
+     the two things it has to: somebody is in, and the house did not say so */
+  if (p.override && !p.stewardPresent) return 'STEWARD IN · UNVERIFIED';
   const who = p.stewardPresent ? p.stewardsIn.filter(Boolean) : [];
-  if (!who.length) return 'lit while one of them works';
+  if (!who.length) return 'A STEWARD IS IN';
   const list = who.length === 1 ? who[0]
-    : who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1];
-  return 'lit · ' + list.toLowerCase() + (who.length === 1 ? ' is in' : ' are in');
+    : who.slice(0, -1).join(', ') + ' AND ' + who[who.length - 1];
+  return list.toUpperCase() + (who.length === 1 ? ' IS IN' : ' ARE IN');
 }
 
 const presence = makePresence({ every: 30000 });
 presence.onChange((p) => {
-  const was = lampLit;
-  lampLit = p.lit;
-  recaption('lamp', lampCaption(p));
+  STEWARD_LINE = stewardHeader(p);
+  board.setSteward(STEWARD_LINE);
   board.setInHouse(p.visitorsNow);
-  /* the light is tuned once a sanctuary-second; a steward arriving should not
-     have to wait for the next one, so the room re-tunes on the spot */
-  if (was !== lampLit) tuneLight(clockT.elapsedTime, true);
 });
 
 const pointer = new THREE.Vector2(-2, -2);
@@ -4202,7 +4265,7 @@ function standUp() {
 
 /* the head, back to the composed frame — leaving a seat or a focus, and Escape */
 function recentreLook() {
-  LOOK.yaw = LOOK.pitch = LOOK.vy = LOOK.vp = LOOK.keyYaw = 0;
+  LOOK.yaw = LOOK.pitch = LOOK.vy = LOOK.vp = LOOK.held = 0;
   LOOK.drag = null; LOOK.lastMove = -1e4;
 }
 
@@ -4395,19 +4458,14 @@ document.addEventListener('keydown', (ev) => {
 }, true);
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && cam.mode !== 'rest' && cam.mode !== 'leaving') { ev.preventDefault(); standUp(); return; }
-  /* free look from the keyboard: eight degrees a press, Escape back to centre */
+  /* WP-46 TUNE: the arrow keys used to step the head 8° a press. At a four
+     degree budget a step is a twitch, so they are gone and the arrows are the
+     browser's again. Escape still puts the head straight back on the pose. */
   if (cam.mode !== 'rest' || REDUCED || ev.metaKey || ev.ctrlKey || ev.altKey) return;
   const inField = ev.target && ev.target !== document.body && ev.target !== document.documentElement
     && (ev.target.closest ? ev.target.closest('input,textarea,button,select,[contenteditable]') : null);
   if (inField) return;
-  const STEP = 8 * Math.PI / 180;
-  if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
-    ev.preventDefault();
-    LOOK.keyYaw = Math.max(-LOOK_YAW_MAX, Math.min(LOOK_YAW_MAX,
-      LOOK.keyYaw + (ev.key === 'ArrowRight' ? STEP : -STEP)));
-    LOOK.lastMove = clockT.elapsedTime;
-    pointer.set(0, 0);
-  } else if (ev.key === 'Escape') { ev.preventDefault(); recentreLook(); pointer.set(-2, -2); }
+  if (ev.key === 'Escape') { ev.preventDefault(); recentreLook(); pointer.set(-2, -2); }
 });
 
 /* ── touch: a horizontal drag turns the head the same way the cursor does ── */
@@ -4433,7 +4491,7 @@ for (const event of ['pointerup', 'pointercancel', 'lostpointercapture'])
     if (!d || (ev.pointerId !== undefined && ev.pointerId !== d.id)) return;
     /* a real drag holds where it was let go and comes home on the idle timer;
        a tap is a tap and must still reach the object under it */
-    if (d.moved > 6) { LOOK.keyYaw = d.yaw; pointer.set(0, 0); LOOK.suppressClick = true; }
+    if (d.moved > 6) { LOOK.held = d.yaw; pointer.set(0, 0); LOOK.suppressClick = true; }
     LOOK.drag = null;
   });
 window.addEventListener('resize', () => {
@@ -4654,7 +4712,7 @@ function frame() {
     const home = REDUCED || (!drag && (Math.abs(pointer.x) > 1 || Math.abs(pointer.y) > 1 ||
       t - LOOK.lastMove > LOOK_IDLE));
     const wantYaw = home ? 0 : Math.max(-LOOK_YAW_MAX, Math.min(LOOK_YAW_MAX,
-      (drag ? drag.yaw : pointer.x * LOOK_YAW_MAX) + LOOK.keyYaw));
+      (drag ? drag.yaw : pointer.x * LOOK_YAW_MAX) + LOOK.held));
     const wantPitch = home || drag ? (home ? 0 : LOOK.pitch) : pointer.y * LOOK_PITCH_MAX;
     if (REDUCED) { LOOK.yaw = LOOK.pitch = LOOK.vy = LOOK.vp = 0; }
     else {
@@ -4873,7 +4931,7 @@ window.__station = {
     blockColour: '#' + blockWall.material.emissive.getHexString(),
     aperture: +windowLight.intensity.toFixed(3),
     apertureEmissive: +aperture.userData.view.material.emissiveIntensity.toFixed(3),
-    shelf: +shelfLight.intensity.toFixed(3), lamp: +lampLight.intensity.toFixed(3),
+    shelf: +shelfLight.intensity.toFixed(3), deskReading: +deskReading.intensity.toFixed(3),
     board: +boardGroup.userData.face.material.emissiveIntensity.toFixed(3),
     dust: +dust.points.material.uniforms.uAmount.value.toFixed(3)
   }),
@@ -4933,10 +4991,9 @@ window.__station = {
   },
   clock: () => ({ stored: CLOCK, label: clockLabel(setClockHands(clockT.elapsedTime)), hourHand: clock.userData.hg.rotation.z, minHand: clock.userData.mg.rotation.z }),
   cameInBefore, stewardPresent,
-  /* the house, as this page last heard it, and the lamp it lit */
-  presence: () => Object.assign({}, presence.state(), { lampLit, lampCaption: STATION_OBJECTS.find((o) => o.id === 'lamp').caption }),
+  /* the house, as this page last heard it, and the line the board then said */
+  presence: () => Object.assign({}, presence.state(), { stewardLine: stewardLine(), boardHeader: board.header() }),
   presencePoll: () => presence.poll(),
-  lamp: () => ({ lit: lampLit, intensity: +lampLight.intensity.toFixed(3), bulb: lampGroup.userData.bulb.visible }),
   boardHeader: () => board.header(),
   /* where each of the room's doors leads, and where the last click sent us */
   links: () => STATION_OBJECTS.filter((o) => o.link).map((o) => ({ id: o.id, to: o.link, caption: o.caption })),
@@ -4968,7 +5025,6 @@ window.__station = {
     if (o.shelf !== undefined) shelfLight.intensity = o.shelf;
     if (o.down !== undefined) downLight.intensity = o.down;
     if (o.freeze !== undefined) LIGHT.frozen = !!o.freeze;
-    if (o.lamp !== undefined) { lampLight.intensity = o.lamp; lampGroup.userData.bulb.visible = o.lamp > 0; }
     if (o.still !== undefined) STILL = !!o.still;
     return { pos: REST_POS.toArray(), look: REST_LOOK.toArray(), fov: camera.fov, exposure: renderer.toneMappingExposure };
   },
@@ -5004,13 +5060,23 @@ window.__station = {
     roll: +(new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').z * 180 / Math.PI).toFixed(3),
     tilt: +(new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').x * 180 / Math.PI).toFixed(3)
   }),
+  /* the frame solver, asked directly: what lens it lands on at a window shape,
+     and how close the anchors come to the edge at the worst corner of the look */
+  frameSolve: (aspect) => {
+    const f = framedFrame(aspect === undefined ? camera.aspect : aspect);
+    const w = frameWorst(f.fov, f.pitch, f.hfov);
+    return { fov: +f.fov.toFixed(3), pitch: +(f.pitch * 180 / Math.PI).toFixed(3),
+      hfov: +(f.hfov * 180 / Math.PI).toFixed(3), base: +(LAND_HFOV * 180 / Math.PI).toFixed(3),
+      open: +(f.hfov / LAND_HFOV).toFixed(4),
+      hard: +w.hard.toFixed(4), soft: +w.soft.toFixed(4), hold: FRAME_HOLD, edge: FRAME_EDGE };
+  },
   /* free look, live: where the head is, and a way to drive it from a test */
   freeLook: () => ({
     yaw: +(LOOK.yaw * 180 / Math.PI).toFixed(2), pitch: +(LOOK.pitch * 180 / Math.PI).toFixed(2),
     yawMax: +(LOOK_YAW_MAX * 180 / Math.PI).toFixed(1), pitchMax: +(LOOK_PITCH_MAX * 180 / Math.PI).toFixed(1),
-    idle: LOOK_IDLE, home: LOOK.keyYaw === 0 && Math.abs(LOOK.yaw) < 1e-3 && Math.abs(LOOK.pitch) < 1e-3
+    idle: LOOK_IDLE, home: LOOK.held === 0 && Math.abs(LOOK.yaw) < 1e-3 && Math.abs(LOOK.pitch) < 1e-3
   }),
-  setLook: (x, y, hold) => { pointer.set(x, y); LOOK.keyYaw = 0; LOOK.lastMove = hold ? Infinity : clockT.elapsedTime; return true; },
+  setLook: (x, y, hold) => { pointer.set(x, y); LOOK.held = 0; LOOK.lastMove = hold ? Infinity : clockT.elapsedTime; return true; },
   recentre: () => { recentreLook(); pointer.set(-2, -2); return true; },
   arrival: () => ({ t: +ARRIVE.t.toFixed(3), dur: ARRIVE.dur, back: ARRIVE.back, up: ARRIVE.up,
     done: ARRIVE.t >= ARRIVE.dur }),
@@ -5037,6 +5103,21 @@ window.__station = {
         whole: !behind && x0 >= 0 && y0 >= 0 && x1 <= W && y1 <= H,
         inFrame: +(behind ? 0 : (inx * iny) / area).toFixed(3) };
     };
+    /* the pier: the strip of board-formed concrete between the porthole and the
+       stone, taken as the two things bolted to it — the clock at the top and
+       the corkboard under it — which is the whole of what a visitor reads on
+       it. WP-46 TUNE reports it so the frame can be judged on whether it sits
+       clearly inside rather than at the edge. */
+    const pierBox = () => {
+      const b = new THREE.Box3().setFromObject(clock);
+      b.union(new THREE.Box3().setFromObject(corkboard));
+      const holder = new THREE.Object3D();
+      holder.position.copy(b.getCenter(new THREE.Vector3()));
+      const size = b.getSize(new THREE.Vector3());
+      const cube = new THREE.Mesh(new THREE.BoxGeometry(Math.max(size.x, 1e-4), Math.max(size.y, 1e-4), Math.max(size.z, 1e-4)));
+      holder.add(cube); holder.updateMatrixWorld(true);
+      return boxOf(holder);
+    };
     /* the aperture, sampled across its own disc rather than its box */
     let hit = 0, all = 0;
     for (let i = 0; i <= 24; i++) for (let j = 0; j <= 24; j++) {
@@ -5048,7 +5129,8 @@ window.__station = {
     }
     const out = { crt: boxOf(glass), crtCase: boxOf(crt), aperture: boxOf(aperture.userData.view),
       board: boxOf(boardGroup.userData.face), limen: boxOf(limen.group),
-      lamp: boxOf(lampGroup), clock: boxOf(clock), corkboard: boxOf(corkboard), desk: boxOf(desk) };
+      clock: boxOf(clock), corkboard: boxOf(corkboard), desk: boxOf(desk),
+      credenza: boxOf(credenza), pier: pierBox() };
     out.aperture.discVisible = +(hit / all).toFixed(3);
     /* is the CRT standing inside the aperture's disc, on screen? */
     const c = out.crt, a = out.aperture;

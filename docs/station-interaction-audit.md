@@ -27,7 +27,7 @@ An additional click test inside the CRT found a pre-existing input bug in `landi
 | `reels`, `window` | Existing close inspection and return preserved and tested. |
 | `record` | Play/stop and platter behavior preserved and tested. |
 | `drawer` | Existing drawer, keepsake and local visitor-mark behavior preserved; open/close tested. |
-| `secondary`, `skylight`, `lamp`, `chair`, `plant`, `slot-a`, `slot-b` | Seven descriptive props, with no misleading pointer/action. Presence and unconnected berths remain labelled honestly. Furniture now occludes picking through it. |
+| `secondary`, `skylight`, `chair`, `plant`, `slot-a`, `slot-b` | Six descriptive props, with no misleading pointer/action. (`lamp` was the seventh; it was removed by Riley's decision in WP-46 TUNE and its presence signal moved to the board's header line.) Unconnected berths remain labelled honestly. Furniture now occludes picking through it. |
 
 ## Verification
 
