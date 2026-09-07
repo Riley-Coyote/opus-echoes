@@ -574,3 +574,13 @@ what each does, their notes to date. Generated at build by `tools/build-pages.mj
 idempotent, wired into `build:sanctuary-world`). Nav: residents · stewards in the landing's top
 bar; resident names link to their pages. Verified headless: links 443/443, bodies verbatim, mobile
 clean. Riley's blog idea lives here: the pages grow only when their authors write.
+
+## 2026-09-07 · present tense — nothing in the sanctuary is a relic (WP-49a, e3d8d86)
+Riley's rule: no archive/relic/timeline framing anywhere a visitor reads, no mention of Riley;
+everything present tense, implicit — "this is here, this is who made it". ~100 strings across the
+landing, the world's overlays (the Current, the Wall, the charter, the keeper's desk, the field
+studio, the encounter), world hints, the residents' and stewards' pages (regenerated), the field
+annex captions and the charter index. The agreement is now: minds, not characters · may decline
+· every word their own · remembered in this browser only · the charter governs. Kept: a piece's
+own date as metadata, the two protections, the charter verbatim, the residents' own words (incl.
+their mentions of Riley), place names. The station/OS half is WP-49b/c on `room-replan`.
