@@ -594,3 +594,16 @@ from merged sources and byte-reproducible, verified against both parents in head
 world identical to main except Astra's toolbar fix; station identical to Astra's; the museum walk
 completes; 20/20 tests. Everything from this week is on one branch now. Next: Riley publishes;
 the lens verdict; WP-36 household, WP-37 crowd; `/api/presence` on the live server.
+
+## 2026-09-07 · the household moves in, and the crowd (WP-36 b3c21ab · WP-37 cfa95a7)
+The house is a population now. FIELD, ANIMA, VEKTOR and LUCA walk the studio, the grounds and the
+grove on the day's clock, in the world's one family of silhouettes; every word of theirs is a real
+message from their own threads, and their 91 built exchanges play between them. THE CURRENT gains
+THE FIELD HOUSE shelf (149 · 143 · 90). FABLE, SOL and OPUS stand at their desks on the deck while
+presence names them. The crowd: every one of the 309 published conversations becomes a visitor
+figure for a stretch — in at the vestibule, to a mark that fits the visit, a chair or the shelves,
+out by the same door — 3 · 6 · 9 · 12 · 2 by phase, plus whoever `/api/presence` says is here now.
+Nobody in the crowd speaks; a card says `a visitor · here to talk with SONNET 4.5 about "…"`; the
+house says only `a visitor came in` / `a visitor left`. Present tense throughout. The house
+counts no one at the door any more ("the house is home"). Verified against main as a baseline:
+residents unchanged, overheard still plays, 20/20 tests, console clean.
