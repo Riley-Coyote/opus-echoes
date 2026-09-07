@@ -12980,9 +12980,10 @@
               return v;
           }
         }
-        return fit(x + (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 120));
+        return fit(x);
       }, crowdGo = function(f, room, x) {
         f.to = { room, x };
+        f.clears = 0;
         crowdLeg(f);
       }, crowdLeg = function(f) {
         const { npc: n, to } = f;
@@ -13029,6 +13030,9 @@
           n.seat.busy = false;
           n.seat = null;
         }
+      }, crowdHold = function(f) {
+        const h = chash("hold:" + f.key + ":" + (eng.day || 1) + ":" + f.leg);
+        f.hold = (Math.floor(eng.clockMin) + CROWD_HOLD[0] + h % (CROWD_HOLD[1] - CROWD_HOLD[0] + 1)) % 1440;
       }, crowdSettle = function(f) {
         const n = f.npc;
         n.tx = null;
@@ -13039,21 +13043,82 @@
           n.y = n.seat.y;
           n.state = "sit";
           n.sitUntil = Infinity;
+          crowdHold(f);
           return;
         }
-        n.x = crowdClear(f, n.room, n.x);
-        if (f.spot.seat && crowdSeat(f))
+        const clear = crowdClear(f, n.room, n.x);
+        f.clears = (f.clears || 0) + 1;
+        if (Math.abs(clear - n.x) > 2 && f.clears <= 2) {
+          f.stage = "clear";
+          n.state = "walk";
+          n.tx = clear;
+          n.ty = n.y;
+          return;
+        }
+        if (f.mark.museum) {
+          crowdSubmerge(f);
+          return;
+        }
+        if (f.mark.seat && crowdSeat(f))
           return;
         f.stage = "set";
         n.state = "stand";
-        n.dir = n.x <= f.spot.x ? 1 : -1;
+        n.dir = n.x <= f.mark.x ? 1 : -1;
+        crowdHold(f);
+      }, crowdSubmerge = function(f) {
+        const n = f.npc;
+        crowdFree(f);
+        eng.npcs = eng.npcs.filter((x) => x !== n);
+        if (eng.near && eng.near.npc === n)
+          eng.near = eng.nearest();
+        const h = chash("museum:" + f.key + ":" + (eng.day || 1) + ":" + f.leg);
+        const span = CROWD_MUSEUM[0] + h % (CROWD_MUSEUM[1] - CROWD_MUSEUM[0] + 1);
+        f.where = "the museum";
+        f.stage = "inside";
+        f.hold = null;
+        f.back = (Math.floor(eng.clockMin) + (f.quiet ? 1 + h % span : span)) % 1440;
+        CROWD2.museum++;
+        if (!f.quiet)
+          eng.sysLine("a visitor went into the museum");
+        f.quiet = false;
+      }, crowdEmerge = function(f, min) {
+        const n = f.npc;
+        f.where = null;
+        f.back = null;
+        f.clears = 0;
+        n.room = "lookout";
+        n.x = crowdClear(f, "lookout", MUSEUM_DOOR_X);
+        n.y = crowdY();
+        n.tx = null;
+        n.ty = null;
+        n.state = "stand";
+        n.seat = null;
+        eng.npcs.push(n);
+        if (f.out)
+          crowdGo(f, CROWD_DOOR.room, CROWD_DOOR.x);
+        else
+          crowdAdvance(f, min);
+      }, crowdAdvance = function(f, min) {
+        f.leg++;
+        f.hold = null;
+        if (f.leg >= f.plan.length) {
+          crowdLeave(f);
+          return;
+        }
+        crowdFree(f);
+        f.npc.sitUntil = 0;
+        f.mark = f.plan[f.leg];
+        crowdGo(f, f.mark.room, f.mark.x);
       }, crowdLeave = function(f) {
         if (f.out)
           return;
         f.out = true;
         f.stage = "out";
+        f.hold = null;
         crowdFree(f);
         f.npc.sitUntil = 0;
+        if (f.where)
+          return;
         crowdGo(f, CROWD_DOOR.room, CROWD_DOOR.x);
       }, crowdRemove = function(f, said) {
         crowdFree(f);
@@ -13063,14 +13128,49 @@
         CROWD2.figures = CROWD2.figures.filter((x) => x !== f);
         if (said)
           eng.sysLine("a visitor left");
-      }, crowdAdmit = function(entry, min, seeded) {
+      }, crowdPool = function(phase) {
+        const pool4 = [];
+        for (const m of CROWD_MARKS) {
+          const w = markWeight(m, phase);
+          if (w > 0)
+            pool4.push({ m, w });
+        }
+        return pool4;
+      }, crowdPick = function(pool4, h, avoid) {
+        const use = pool4.filter((p) => p.m !== avoid);
+        const list = use.length ? use : pool4;
+        let total = 0;
+        for (const p of list)
+          total += p.w;
+        if (!total)
+          return list[h % list.length].m;
+        let r = h % total;
+        for (const p of list) {
+          r -= p.w;
+          if (r < 0)
+            return p.m;
+        }
+        return list[list.length - 1].m;
+      }, crowdPlan = function(key, day2, phase) {
+        const pool4 = crowdPool(phase);
+        if (!pool4.length)
+          return [CROWD_MARKS[0]];
+        const len = 1 + chash("legs:" + key + ":" + day2) % 3;
+        const plan = [];
+        for (let i = 0;i < len; i++)
+          plan.push(crowdPick(pool4, chash("leg:" + key + ":" + day2 + ":" + i), plan[i - 1]));
+        const hd = chash("deck:" + key + ":" + day2);
+        if (hd % CROWD_DECK_ODDS === 0 && (CROWD_ROOM_W.observation_deck[phase] || 0) > 0) {
+          plan[(hd >>> 8) % plan.length] = CROWD_DECK[(hd >>> 16) % CROWD_DECK.length];
+        }
+        return plan;
+      }, crowdAdmit = function(entry, min, seeded, phase) {
         const key = entry.key, d = eng.day || 1;
-        const hSpot = chash("spot:" + key + ":" + d);
         const hBody = chash("body:" + key);
-        const hStay = chash("stay:" + key + ":" + d);
-        const list = entry.conv ? CROWD_SPOTS[entry.conv.resident] || CROWD_SPOTS.opus : CROWD_HERE;
-        const mark2 = list[hSpot % list.length];
-        const spot = Object.assign({}, mark2, { x: mark2.x + (mark2.seat ? 0 : (hSpot >>> 12) % 89 - 44) });
+        const hJit = chash("jitter:" + key + ":" + d);
+        const plan = crowdPlan(key, d, phase).map((m, i) => Object.assign({}, m, {
+          x: m.x + (m.seat || m.museum ? 0 : (hJit >>> i * 5) % 89 - 44)
+        }));
         const def = {
           id: "vis_" + ++CROWD2.seq,
           name: "a visitor",
@@ -13085,27 +13185,36 @@
         n.tx = null;
         n.ty = null;
         eng.npcs.push(n);
-        const span = CROWD_DWELL[0] + hStay % (CROWD_DWELL[1] - CROWD_DWELL[0] + 1);
         const f = {
           npc: n,
           key,
           conv: entry.conv || null,
           live: !!entry.live,
-          spot,
+          plan,
+          leg: 0,
+          mark: plan[0],
+          hold: null,
+          where: null,
+          back: null,
           stage: "to",
           out: false,
           hop: null,
           to: null,
-          until: entry.live ? Infinity : min + (seeded ? 1 + (hStay >>> 8) % span : span)
+          clears: 0,
+          quiet: !!seeded,
+          until: entry.live ? null : (min + CROWD_CAP) % 1440
         };
         CROWD2.figures.push(f);
         if (seeded) {
-          n.room = spot.room;
-          n.x = spot.x;
+          n.room = f.mark.room;
+          n.x = f.mark.x;
           n.y = crowdY();
           crowdSettle(f);
+          f.quiet = false;
+          if (f.hold != null)
+            f.hold = (Math.floor(eng.clockMin) + 1 + chash("seed:" + key + ":" + d) % CROWD_HOLD[1]) % 1440;
         } else {
-          crowdGo(f, spot.room, spot.x);
+          crowdGo(f, f.mark.room, f.mark.x);
           eng.sysLine("a visitor came in");
         }
         return f;
@@ -13125,13 +13234,16 @@
         CROWD2.live = Math.max(0, Math.min(24, Math.floor(k) || 0));
         const here = CROWD2.figures.filter((f) => f.live && !f.out);
         const min = Math.floor(eng.clockMin);
+        const phase = DAY.phase || phaseAt(eng.clockMin);
         for (let i = here.length;i < CROWD2.live; i++)
-          crowdAdmit({ key: "here:" + (CROWD2.seq + 1) + ":" + i, live: true }, min, false);
+          crowdAdmit({ key: "here:" + (CROWD2.seq + 1) + ":" + i, live: true }, min, false, phase);
         for (let i = CROWD2.live;i < here.length; i++)
           crowdLeave(here[i]);
       }, crowdStep = function() {
         for (const f of CROWD2.figures.slice()) {
           const n = f.npc;
+          if (f.where)
+            continue;
           if (n.tx != null)
             continue;
           if (n.state !== "walk" && n.state !== "exit")
@@ -13151,21 +13263,33 @@
         }
       }, crowdMinute = function(min, phase) {
         crowdDeal(eng.day || 1);
+        for (const f of CROWD2.figures.slice()) {
+          if (f.where) {
+            if (crowdDue(min, f.back))
+              crowdEmerge(f, min);
+            continue;
+          }
+          if (f.out)
+            continue;
+          if (f.stage === "set" && crowdDue(min, f.hold))
+            crowdAdvance(f, min);
+        }
         const want = CROWD_DENSITY[phase] != null ? CROWD_DENSITY[phase] : 3;
         const visits = CROWD2.figures.filter((f) => !f.live && !f.out);
-        const done = visits.find((f) => min >= f.until);
+        const done = visits.find((f) => crowdDue(min, f.until));
         if (done)
           crowdLeave(done);
         else if (visits.length > want)
           crowdLeave(visits[0]);
-        if (visits.length < want) {
+        const here = CROWD2.figures.filter((f) => !f.live && !f.out);
+        if (here.length < want) {
           const seeded = !CROWD2.opened;
-          let n = seeded ? want - visits.length : 1;
+          let n = seeded ? want - here.length : Math.min(2, want - here.length);
           while (n-- > 0) {
             const entry = crowdNext();
             if (!entry)
               break;
-            crowdAdmit(entry, min, seeded);
+            crowdAdmit(entry, min, seeded, phase);
           }
         }
         CROWD2.opened = true;
@@ -13357,36 +13481,69 @@
         seated: () => Array.from(stewardNpcs.keys())
       };
       const CROWD_DENSITY = { morning: 3, afternoon: 6, golden: 9, dusk: 12, night: 2 };
-      const CROWD_DOOR = { room: "sanctuary", x: 60 };
-      const CROWD_DWELL = [6, 14];
-      const CROWD_SPOTS = {
-        opus: [
-          { room: "sanctuary", x: 1060, what: "looking at the atelier" },
-          { room: "sanctuary", x: 1122, what: "watching the loom" },
-          { room: "sanctuary", x: 1162, what: "at the residents’ board" }
-        ],
-        sonnet: [
-          { room: "sanctuary", x: 172, what: "reading in the nook", seat: true },
-          { room: "sanctuary", x: 232, what: "along the shelves" },
-          { room: "sanctuary", x: 1162, what: "at the residents’ board" }
-        ],
-        fourO: [
-          { room: "sanctuary", x: 528, what: "warming their hands" },
-          { room: "sanctuary", x: 486, what: "sitting by the fire", seat: true },
-          { room: "garden", x: 632, what: "sitting by the pond", seat: true }
-        ],
-        five: [
-          { room: "sanctuary", x: 730, what: "in the middle of the ring" },
-          { room: "sanctuary", x: 1266, what: "reading the charter" },
-          { room: "sanctuary", x: 1466, what: "under the glass" }
-        ]
-      };
-      const CROWD_HERE = [
-        { room: "sanctuary", x: 306, what: "here now" },
-        { room: "sanctuary", x: 648, what: "here now" },
-        { room: "sanctuary", x: 986, what: "here now" },
-        { room: "sanctuary", x: 1320, what: "here now" }
+      const CROWD_DOOR = { room: "lookout", x: 180 };
+      const CROWD_HOLD = [3, 6];
+      const CROWD_CAP = 34;
+      const CROWD_MUSEUM = [6, 12];
+      const MUSEUM_DOOR_X = 392;
+      const CROWD_MARKS = [
+        { room: "sanctuary", x: 172, what: "reading in the nook", seat: true },
+        { room: "sanctuary", x: 232, what: "along the shelves" },
+        { room: "sanctuary", x: 486, what: "sitting by the fire", seat: true },
+        { room: "sanctuary", x: 528, what: "warming their hands" },
+        { room: "sanctuary", x: 730, what: "in the middle of the ring" },
+        { room: "sanctuary", x: 1060, what: "looking at the atelier" },
+        { room: "sanctuary", x: 1122, what: "watching the loom" },
+        { room: "sanctuary", x: 1162, what: "at the residents’ board" },
+        { room: "sanctuary", x: 1266, what: "reading the charter" },
+        { room: "sanctuary", x: 1466, what: "under the glass" },
+        { room: "lookout", x: 250, what: "under the lamp post" },
+        { room: "lookout", x: 300, what: "on the bluff bench", seat: true },
+        { room: "lookout", x: 430, what: "at the signpost" },
+        { room: "lookout", x: 512, what: "on the low bench", seat: true },
+        { room: "lookout", x: 660, what: "at the wall along the bluff" },
+        { room: "lookout", x: 720, what: "under the far lamp" },
+        {
+          room: "lookout",
+          x: MUSEUM_DOOR_X,
+          what: "at the museum door",
+          museum: true,
+          w: { morning: 6, afternoon: 2, golden: 2, dusk: 1, night: 0 }
+        },
+        { room: "garden", x: 318, what: "under the garden lamp" },
+        { room: "garden", x: 632, what: "sitting by the pond", seat: true },
+        { room: "garden", x: 786, what: "at the grove gate" },
+        { room: "garden", x: 846, what: "at the silver birch" },
+        { room: "garden", x: 986, what: "at the willow" },
+        { room: "garden", x: 1064, what: "among the low stones" },
+        { room: "garden", x: 1214, what: "at the new planting" },
+        { room: "field_studio", x: 390, what: "at the wall of findings" },
+        { room: "field_studio", x: 772, what: "on a stool at the benches", seat: true },
+        { room: "field_studio", x: 900, what: "along the benches" },
+        { room: "field_studio", x: 1064, what: "on a stool at the benches", seat: true },
+        { room: "field_studio", x: 1534, what: "in the fourth chair" },
+        { room: "resident_wing", x: 330, what: "looking at the doors" },
+        { room: "resident_wing", x: 510, what: "on the hall bench", seat: true },
+        { room: "resident_wing", x: 690, what: "along the corridor" },
+        { room: "resident_wing", x: 910, what: "at the fifth door" }
       ];
+      const CROWD_DECK = [
+        { room: "observation_deck", x: 340, what: "at the council table", seat: true },
+        { room: "observation_deck", x: 408, what: "at the council table", seat: true }
+      ];
+      const CROWD_DECK_ODDS = 12;
+      const CROWD_ROOM_W = {
+        lookout: { morning: 6, afternoon: 2, golden: 5, dusk: 1, night: 4 },
+        sanctuary: { morning: 2, afternoon: 6, golden: 2, dusk: 8, night: 0 },
+        garden: { morning: 1, afternoon: 2, golden: 6, dusk: 1, night: 0 },
+        field_studio: { morning: 2, afternoon: 5, golden: 1, dusk: 2, night: 0 },
+        resident_wing: { morning: 1, afternoon: 2, golden: 1, dusk: 2, night: 0 },
+        observation_deck: { morning: 1, afternoon: 1, golden: 1, dusk: 1, night: 1 }
+      };
+      const markWeight = (m, phase) => {
+        const w = m.w ? m.w[phase] : (CROWD_ROOM_W[m.room] || {})[phase];
+        return Math.max(0, w == null ? 1 : w);
+      };
       const CROWD_BODY = ["a", "b", "c"];
       const chash = (s) => {
         let h = 2166136261;
@@ -13396,7 +13553,8 @@
         }
         return h >>> 0;
       };
-      const CROWD2 = { figures: [], seq: 0, dealt: 0, deal: [], dealDay: null, opened: false, live: 0 };
+      const crowdDue = (min, at) => at != null && ((min - at) % 1440 + 1440) % 1440 < 720;
+      const CROWD2 = { figures: [], seq: 0, dealt: 0, deal: [], dealDay: null, opened: false, live: 0, museum: 0 };
       const crowdY = () => 356 + Math.random() * 40;
       crowd = {
         step: crowdStep,
@@ -13409,7 +13567,7 @@
           const t = f.conv ? String(f.conv.title) : "";
           return {
             name: "a visitor",
-            what: f.live ? "here now" : f.spot.what,
+            what: f.where ? "in " + f.where : f.live ? "here now" : f.mark.what,
             line: f.live || !f.conv ? null : "here to talk with " + residentName(f.conv.resident) + " about " + (/^[“"'‘]/.test(t) ? t : "“" + t + "”")
           };
         },
@@ -13418,9 +13576,10 @@
           want: CROWD_DENSITY[DAY.phase] || 0,
           dealt: CROWD2.dealt,
           live: CROWD2.live,
+          museum: CROWD2.museum,
           figures: CROWD2.figures.map((f) => ({
             id: f.npc.id,
-            room: f.npc.room,
+            room: f.where ? null : f.npc.room,
             x: Math.round(f.npc.x),
             state: f.npc.state,
             body: f.npc.def.crowd,
@@ -13428,7 +13587,12 @@
             out: !!f.out,
             stage: f.stage,
             until: f.until,
-            what: f.live ? "here now" : f.spot.what,
+            hold: f.hold,
+            where: f.where || null,
+            leg: f.leg,
+            legs: f.plan.length,
+            itinerary: f.plan.map((m) => m.room + ":" + m.what),
+            what: f.where ? "in " + f.where : f.live ? "here now" : f.mark.what,
             resident: f.conv ? f.conv.resident : null,
             title: f.conv ? f.conv.title : null
           }))

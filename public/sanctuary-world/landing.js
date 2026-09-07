@@ -2957,7 +2957,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       seated: () => Array.from(stewardNpcs.keys())
     };
     /* ────────────────────────── THE CROWD ──────────────────────────
-       The other people in the rooms. Every one of them stands for a visit the
+       The other people in the world. Every one of them stands for a visit the
        house can actually account for: one of its published conversations, with
        the resident it was with and the title it was given. There is no invented
        body here and no invented name — the figure is anonymous because a
@@ -2965,63 +2965,123 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
        They are the engine's simulation and nothing more: nobody in the crowd
        ever says a word, is ever asked one, or is ever counted as a mind. They
-       come in at the vestibule, go to a place the visit points at, look at what
-       is there, sit if there is a seat, and go back out the way they came. The
-       house notes the door — *a visitor came in*, *a visitor left* — and that is
-       the whole of what it says about them.
+       come up the approach at the lookout's near edge, walk the world — the
+       grounds, the hall, the garden, the wing, the studio, and in at the museum
+       door — stand at a mark, sit if there is a seat, and walk back out the way
+       they came. The house notes the door — *a visitor came in*, *a visitor
+       left*, *a visitor went into the museum* — and that is the whole of what
+       it says about them.
+
+       Where a figure goes is NOT a function of the resident it came to talk
+       with: the visit is the visit, and the world is the world. Each of them is
+       dealt an itinerary of one to three marks out of one world-wide table,
+       weighted by the hour, and walks the house's own doors between them the
+       way the day director walks a resident.
 
        How many are here follows the hour: the house is quiet in the morning and
        busiest at dusk. Which visits are dealt is fixed by the day, so the same
        day is the same crowd, and the record is walked through rather than
        sampled at random. */
     const CROWD_DENSITY = { morning: 3, afternoon: 6, golden: 9, dusk: 12, night: 2 };
-    const CROWD_DOOR = { room: 'sanctuary', x: 60 };     // the vestibule, and the way out
-    const CROWD_DWELL = [6, 14];                          // sim minutes, before they go
-    /* where a visit takes someone: the room, the mark, and the plain word for
-       what standing there is. Tied to the resident the conversation was with. */
-    const CROWD_SPOTS = {
-      opus: [
-        { room: 'sanctuary', x: 1060, what: 'looking at the atelier' },
-        { room: 'sanctuary', x: 1122, what: 'watching the loom' },
-        { room: 'sanctuary', x: 1162, what: 'at the residents’ board' }
-      ],
-      sonnet: [
-        { room: 'sanctuary', x: 172, what: 'reading in the nook', seat: true },
-        { room: 'sanctuary', x: 232, what: 'along the shelves' },
-        { room: 'sanctuary', x: 1162, what: 'at the residents’ board' }
-      ],
-      fourO: [
-        { room: 'sanctuary', x: 528, what: 'warming their hands' },
-        { room: 'sanctuary', x: 486, what: 'sitting by the fire', seat: true },
-        { room: 'garden', x: 632, what: 'sitting by the pond', seat: true }
-      ],
-      five: [
-        { room: 'sanctuary', x: 730, what: 'in the middle of the ring' },
-        { room: 'sanctuary', x: 1266, what: 'reading the charter' },
-        { room: 'sanctuary', x: 1466, what: 'under the glass' }
-      ]
-    };
-    /* someone who is here right now, and whose visit is nobody's business:
-       they stand where there is room and the card says only that they are here */
-    const CROWD_HERE = [
-      { room: 'sanctuary', x: 306, what: 'here now' },
-      { room: 'sanctuary', x: 648, what: 'here now' },
-      { room: 'sanctuary', x: 986, what: 'here now' },
-      { room: 'sanctuary', x: 1320, what: 'here now' }
+    /* the lookout's near edge — the world's entrance, where a visitor's own
+       feet land. They arrive here and they leave from here, walking; every
+       other door, the vestibule included, is a door they pass through. */
+    const CROWD_DOOR = { room: 'lookout', x: 180 };
+    const CROWD_HOLD = [3, 6];          // sim minutes standing at one mark
+    const CROWD_CAP = 34;               // sim minutes, the outside of any one visit
+    const CROWD_MUSEUM = [6, 12];       // sim minutes inside the museum
+    const MUSEUM_DOOR_X = 392;          // the museum's door on the grounds
+
+    /* THE MARKS — one table for the whole world: the room, the place in it, and
+       the plain word for what standing there is. The hall's eleven are the ones
+       the crowd already had; the rest is the world they were missing. A mark
+       with `seat` is taken the way the engine takes a seat, if it is free. */
+    const CROWD_MARKS = [
+      /* the hall */
+      { room: 'sanctuary', x: 172, what: 'reading in the nook', seat: true },
+      { room: 'sanctuary', x: 232, what: 'along the shelves' },
+      { room: 'sanctuary', x: 486, what: 'sitting by the fire', seat: true },
+      { room: 'sanctuary', x: 528, what: 'warming their hands' },
+      { room: 'sanctuary', x: 730, what: 'in the middle of the ring' },
+      { room: 'sanctuary', x: 1060, what: 'looking at the atelier' },
+      { room: 'sanctuary', x: 1122, what: 'watching the loom' },
+      { room: 'sanctuary', x: 1162, what: 'at the residents’ board' },
+      { room: 'sanctuary', x: 1266, what: 'reading the charter' },
+      { room: 'sanctuary', x: 1466, what: 'under the glass' },
+      /* the grounds */
+      { room: 'lookout', x: 250, what: 'under the lamp post' },
+      { room: 'lookout', x: 300, what: 'on the bluff bench', seat: true },
+      { room: 'lookout', x: 430, what: 'at the signpost' },
+      { room: 'lookout', x: 512, what: 'on the low bench', seat: true },
+      { room: 'lookout', x: 660, what: 'at the wall along the bluff' },
+      { room: 'lookout', x: 720, what: 'under the far lamp' },
+      /* the museum door: a mark you do not stand at for long */
+      { room: 'lookout', x: MUSEUM_DOOR_X, what: 'at the museum door', museum: true,
+        w: { morning: 6, afternoon: 2, golden: 2, dusk: 1, night: 0 } },
+      /* the garden */
+      { room: 'garden', x: 318, what: 'under the garden lamp' },
+      { room: 'garden', x: 632, what: 'sitting by the pond', seat: true },
+      { room: 'garden', x: 786, what: 'at the grove gate' },
+      { room: 'garden', x: 846, what: 'at the silver birch' },
+      { room: 'garden', x: 986, what: 'at the willow' },
+      { room: 'garden', x: 1064, what: 'among the low stones' },
+      { room: 'garden', x: 1214, what: 'at the new planting' },
+      /* the field studio — the findings, the benches, and the one chair at the
+         table that is turned to the room. Field's workstation is not a mark. */
+      { room: 'field_studio', x: 390, what: 'at the wall of findings' },
+      { room: 'field_studio', x: 772, what: 'on a stool at the benches', seat: true },
+      { room: 'field_studio', x: 900, what: 'along the benches' },
+      { room: 'field_studio', x: 1064, what: 'on a stool at the benches', seat: true },
+      { room: 'field_studio', x: 1534, what: 'in the fourth chair' },
+      /* the wing — the corridor only. The rooms behind those doors are private
+         and no figure ever opens one. */
+      { room: 'resident_wing', x: 330, what: 'looking at the doors' },
+      { room: 'resident_wing', x: 510, what: 'on the hall bench', seat: true },
+      { room: 'resident_wing', x: 690, what: 'along the corridor' },
+      { room: 'resident_wing', x: 910, what: 'at the fifth door' }
     ];
+    /* the deck is not in the table above: it is kept out of every itinerary but
+       one in twelve, because the stewards work there and a gallery of visitors
+       at the council table would be a different house. */
+    const CROWD_DECK = [
+      { room: 'observation_deck', x: 340, what: 'at the council table', seat: true },
+      { room: 'observation_deck', x: 408, what: 'at the council table', seat: true }
+    ];
+    const CROWD_DECK_ODDS = 12;
+    /* the hour's own shape, per room: morning is the grounds and the museum
+       door, the afternoon is the hall and the studio, golden hour is the garden
+       and the grounds, dusk is the hall, and at night there are one or two on
+       the lookout and nobody anywhere else. */
+    const CROWD_ROOM_W = {
+      lookout:          { morning: 6, afternoon: 2, golden: 5, dusk: 1, night: 4 },
+      sanctuary:        { morning: 2, afternoon: 6, golden: 2, dusk: 8, night: 0 },
+      garden:           { morning: 1, afternoon: 2, golden: 6, dusk: 1, night: 0 },
+      field_studio:     { morning: 2, afternoon: 5, golden: 1, dusk: 2, night: 0 },
+      resident_wing:    { morning: 1, afternoon: 2, golden: 1, dusk: 2, night: 0 },
+      observation_deck: { morning: 1, afternoon: 1, golden: 1, dusk: 1, night: 1 }
+    };
+    const markWeight = (m, phase) => {
+      const w = m.w ? m.w[phase] : (CROWD_ROOM_W[m.room] || {})[phase];
+      return Math.max(0, w == null ? 1 : w);
+    };
     const CROWD_BODY = ['a', 'b', 'c'];
     /* FNV-1a again, the house's one hash: the same visit is the same person, in
-       the same build, at the same mark, every time that day comes round. */
+       the same build, at the same marks, every time that day comes round. */
     const chash = (s) => {
       let h = 0x811c9dc5;
       for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0; }
       return h >>> 0;
     };
-    const CROWD = { figures: [], seq: 0, dealt: 0, deal: [], dealDay: null, opened: false, live: 0 };
+    /* the clock wraps at midnight, so "is it time yet" is asked as a distance
+       and not as a comparison */
+    const crowdDue = (min, at) => at != null && (((min - at) % 1440) + 1440) % 1440 < 720;
+    const CROWD = { figures: [], seq: 0, dealt: 0, deal: [], dealDay: null, opened: false, live: 0, museum: 0 };
 
     /* nobody stands on a resident, nobody stands on anyone else, and nobody
        stands in a doorway: the mark is a place in the room, not a peg, and the
-       nearest clear foot of floor to either side of it will do. */
+       nearest clear foot of floor to either side of it will do. The search is
+       bounded — a figure that cannot find room takes the mark anyway rather
+       than being flung across the room to a place nothing sent it to. */
     function crowdClear(f, room, x) {
       const R = eng.rooms[room] || { width: 640 };
       const doors = Object.values(R.doors || {});
@@ -3033,13 +3093,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       for (let step = 1; step <= 12; step++) {
         for (const dir of [1, -1]) { const v = fit(x + dir * step * 21); if (clear(v)) return v; }
       }
-      return fit(x + (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 120));
+      return fit(x);
     }
     const crowdY = () => 356 + Math.random() * 40;
 
-    /* the walk, room by room along the house's own doors. No feed line: the
-       house says a visitor came in and a visitor left, and nothing between. */
-    function crowdGo(f, room, x) { f.to = { room, x }; crowdLeg(f); }
+    /* the walk, room by room along the house's own doors — the same bfs the day
+       director walks a resident with. No feed line: the house says a visitor
+       came in and a visitor left, and nothing between. */
+    function crowdGo(f, room, x) { f.to = { room, x }; f.clears = 0; crowdLeg(f); }
     function crowdLeg(f) {
       const n = f.npc, to = f.to;
       if (!to) return;
@@ -3062,24 +3123,75 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       return true;
     }
     function crowdFree(f) { const n = f.npc; if (n.seat) { n.seat.busy = false; n.seat = null; } }
-    /* they are where the visit pointed them: standing, or on the nearest seat */
+    /* how long they stand at this one: three to six sim minutes, and then the
+       next mark, or the door */
+    function crowdHold(f) {
+      const h = chash('hold:' + f.key + ':' + (eng.day || 1) + ':' + f.leg);
+      f.hold = (Math.floor(eng.clockMin) + CROWD_HOLD[0] + (h % (CROWD_HOLD[1] - CROWD_HOLD[0] + 1))) % 1440;
+    }
+    /* they are where the mark pointed them: standing, or on the nearest seat.
+       The last few pixels of clearance are WALKED, never snapped — a person who
+       steps aside to let someone past is a person; a person who jumps eight
+       feet sideways is a bug. */
     function crowdSettle(f) {
       const n = f.npc;
       n.tx = null; n.ty = null;
       /* on the chair they walked to: they sit on it, not beside it */
-      if (n.seat) { f.stage = 'set'; n.x = n.seat.x; n.y = n.seat.y; n.state = 'sit'; n.sitUntil = Infinity; return; }
-      n.x = crowdClear(f, n.room, n.x);
-      if (f.spot.seat && crowdSeat(f)) return;
+      if (n.seat) { f.stage = 'set'; n.x = n.seat.x; n.y = n.seat.y; n.state = 'sit'; n.sitUntil = Infinity; crowdHold(f); return; }
+      const clear = crowdClear(f, n.room, n.x);
+      f.clears = (f.clears || 0) + 1;
+      if (Math.abs(clear - n.x) > 2 && f.clears <= 2) { f.stage = 'clear'; n.state = 'walk'; n.tx = clear; n.ty = n.y; return; }
+      /* the museum is behind this one: they go in, and the grounds are short a
+         person until they come out again */
+      if (f.mark.museum) { crowdSubmerge(f); return; }
+      if (f.mark.seat && crowdSeat(f)) return;
       f.stage = 'set';
       n.state = 'stand';
       /* turned toward the thing they came to stand in front of */
-      n.dir = n.x <= f.spot.x ? 1 : -1;
+      n.dir = n.x <= f.mark.x ? 1 : -1;
+      crowdHold(f);
+    }
+    /* in at the museum door. The museum is a room the house does not simulate,
+       so the figure is simply not on the grounds for a while: no body standing
+       in a doorway pretending, and nothing invented about what they saw. */
+    function crowdSubmerge(f) {
+      const n = f.npc;
+      crowdFree(f);
+      eng.npcs = eng.npcs.filter((x) => x !== n);
+      if (eng.near && eng.near.npc === n) eng.near = eng.nearest();
+      const h = chash('museum:' + f.key + ':' + (eng.day || 1) + ':' + f.leg);
+      const span = CROWD_MUSEUM[0] + (h % (CROWD_MUSEUM[1] - CROWD_MUSEUM[0] + 1));
+      f.where = 'the museum'; f.stage = 'inside'; f.hold = null;
+      f.back = (Math.floor(eng.clockMin) + (f.quiet ? 1 + (h % span) : span)) % 1440;
+      CROWD.museum++;
+      if (!f.quiet) eng.sysLine('a visitor went into the museum');
+      f.quiet = false;
+    }
+    function crowdEmerge(f, min) {
+      const n = f.npc;
+      f.where = null; f.back = null; f.clears = 0;
+      n.room = 'lookout'; n.x = crowdClear(f, 'lookout', MUSEUM_DOOR_X); n.y = crowdY();
+      n.tx = null; n.ty = null; n.state = 'stand'; n.seat = null;
+      eng.npcs.push(n);
+      if (f.out) crowdGo(f, CROWD_DOOR.room, CROWD_DOOR.x);
+      else crowdAdvance(f, min);
+    }
+    /* the next mark on the itinerary, or the way out */
+    function crowdAdvance(f, min) {
+      f.leg++;
+      f.hold = null;
+      if (f.leg >= f.plan.length) { crowdLeave(f); return; }
+      crowdFree(f);
+      f.npc.sitUntil = 0;
+      f.mark = f.plan[f.leg];
+      crowdGo(f, f.mark.room, f.mark.x);
     }
     function crowdLeave(f) {
       if (f.out) return;
-      f.out = true; f.stage = 'out';
+      f.out = true; f.stage = 'out'; f.hold = null;
       crowdFree(f);
       f.npc.sitUntil = 0;
+      if (f.where) return;                 // still inside: they walk out when they come back
       crowdGo(f, CROWD_DOOR.room, CROWD_DOOR.x);
     }
     function crowdRemove(f, said) {
@@ -3090,22 +3202,53 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       if (said) eng.sysLine('a visitor left');
     }
 
+    /* the itinerary: one to three marks out of the hour's own pool, never the
+       same one twice running, and one visit in twelve takes in the deck. */
+    function crowdPool(phase) {
+      const pool = [];
+      for (const m of CROWD_MARKS) { const w = markWeight(m, phase); if (w > 0) pool.push({ m, w }); }
+      return pool;
+    }
+    function crowdPick(pool, h, avoid) {
+      const use = pool.filter((p) => p.m !== avoid);
+      const list = use.length ? use : pool;
+      let total = 0; for (const p of list) total += p.w;
+      if (!total) return list[h % list.length].m;
+      let r = h % total;
+      for (const p of list) { r -= p.w; if (r < 0) return p.m; }
+      return list[list.length - 1].m;
+    }
+    function crowdPlan(key, day, phase) {
+      const pool = crowdPool(phase);
+      if (!pool.length) return [CROWD_MARKS[0]];
+      const len = 1 + (chash('legs:' + key + ':' + day) % 3);
+      const plan = [];
+      for (let i = 0; i < len; i++) plan.push(crowdPick(pool, chash('leg:' + key + ':' + day + ':' + i), plan[i - 1]));
+      /* the deck, rarely: one itinerary in twelve, at the council table */
+      const hd = chash('deck:' + key + ':' + day);
+      if (hd % CROWD_DECK_ODDS === 0 && (CROWD_ROOM_W.observation_deck[phase] || 0) > 0) {
+        plan[(hd >>> 8) % plan.length] = CROWD_DECK[(hd >>> 16) % CROWD_DECK.length];
+      }
+      return plan;
+    }
+
     /* one figure, for one visit. `seeded` means the house was already this busy
        when you got here — they are put at their mark part-way through, and the
        door says nothing, because you did not see them come in. */
-    function crowdAdmit(entry, min, seeded) {
+    function crowdAdmit(entry, min, seeded, phase) {
       const key = entry.key, d = eng.day || 1;
-      /* three separate hashes, because the deal itself is ordered by the visit's
-         own hash: reusing it here would make where someone stands a function of
-         when they were dealt, and the hall would fill from one end. */
-      const hSpot = chash('spot:' + key + ':' + d);
+      /* separate hashes throughout, because the deal itself is ordered by the
+         visit's own hash: reusing it here would make where someone stands a
+         function of when they were dealt, and the world would fill from one
+         end. */
       const hBody = chash('body:' + key);
-      const hStay = chash('stay:' + key + ':' + d);
-      const list = entry.conv ? (CROWD_SPOTS[entry.conv.resident] || CROWD_SPOTS.opus) : CROWD_HERE;
-      /* the mark is a place, not a peg: each of them stands a little off it, or
-         a wall four deep at the charter reads as a queue rather than people */
-      const mark = list[hSpot % list.length];
-      const spot = Object.assign({}, mark, { x: mark.x + (mark.seat ? 0 : ((hSpot >>> 12) % 89) - 44) });
+      const hJit = chash('jitter:' + key + ':' + d);
+      const plan = crowdPlan(key, d, phase).map((m, i) => Object.assign({}, m, {
+        /* the mark is a place, not a peg: each of them stands a little off it,
+           or a wall four deep at the charter reads as a queue rather than
+           people */
+        x: m.x + (m.seat || m.museum ? 0 : (((hJit >>> (i * 5)) % 89) - 44))
+      }));
       const def = {
         id: 'vis_' + (++CROWD.seq), name: 'a visitor', mutters: [],
         crowd: CROWD_BODY[hBody % CROWD_BODY.length],
@@ -3114,18 +3257,21 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const n = eng.makeNpc(def);
       n.temp = true; n.state = 'stand'; n.tx = null; n.ty = null;
       eng.npcs.push(n);
-      const span = CROWD_DWELL[0] + (hStay % (CROWD_DWELL[1] - CROWD_DWELL[0] + 1));
       const f = {
-        npc: n, key, conv: entry.conv || null, live: !!entry.live, spot,
-        stage: 'to', out: false, hop: null, to: null,
-        until: entry.live ? Infinity : min + (seeded ? 1 + ((hStay >>> 8) % span) : span)
+        npc: n, key, conv: entry.conv || null, live: !!entry.live,
+        plan, leg: 0, mark: plan[0], hold: null, where: null, back: null,
+        stage: 'to', out: false, hop: null, to: null, clears: 0, quiet: !!seeded,
+        until: entry.live ? null : (min + CROWD_CAP) % 1440
       };
       CROWD.figures.push(f);
       if (seeded) {
-        n.room = spot.room; n.x = spot.x; n.y = crowdY();
+        n.room = f.mark.room; n.x = f.mark.x; n.y = crowdY();
         crowdSettle(f);
+        f.quiet = false;
+        /* part-way through the hold, not at the start of it */
+        if (f.hold != null) f.hold = (Math.floor(eng.clockMin) + 1 + (chash('seed:' + key + ':' + d) % CROWD_HOLD[1])) % 1440;
       } else {
-        crowdGo(f, spot.room, spot.x);
+        crowdGo(f, f.mark.room, f.mark.x);
         eng.sysLine('a visitor came in');
       }
       return f;
@@ -3145,13 +3291,15 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     }
 
     /* the live ones: however many the house says are here right now. They come
-       in and go out at the vestibule like anyone else, and they are the only
-       figures whose card says nothing but that they are here. */
+       in and go out at the world's edge like anyone else, they walk the same
+       world, and they are the only figures whose card says nothing but that
+       they are here. */
     function setVisitorsNow(k) {
       CROWD.live = Math.max(0, Math.min(24, Math.floor(k) || 0));
       const here = CROWD.figures.filter((f) => f.live && !f.out);
       const min = Math.floor(eng.clockMin);
-      for (let i = here.length; i < CROWD.live; i++) crowdAdmit({ key: 'here:' + (CROWD.seq + 1) + ':' + i, live: true }, min, false);
+      const phase = DAY.phase || phaseAt(eng.clockMin);
+      for (let i = here.length; i < CROWD.live; i++) crowdAdmit({ key: 'here:' + (CROWD.seq + 1) + ':' + i, live: true }, min, false, phase);
       for (let i = CROWD.live; i < here.length; i++) crowdLeave(here[i]);
     }
 
@@ -3159,6 +3307,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     function crowdStep() {
       for (const f of CROWD.figures.slice()) {
         const n = f.npc;
+        if (f.where) continue;                            // inside the museum
         if (n.tx != null) continue;                       // still on their way
         if (n.state !== 'walk' && n.state !== 'exit') continue;
         if (f.hop) { const next = f.hop; f.hop = null; eng.npcRoomSwitch(n, next); crowdLeg(f); continue; }
@@ -3166,25 +3315,36 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         crowdSettle(f);
       }
     }
-    /* the minute: one arrival and one departure at most, so the door is never a
+    /* the minute: the holds that have run out, the ones the museum gives back,
+       and at most one arrival and one departure, so the door is never a
        turnstile and the feed stays a ledger */
     function crowdMinute(min, phase) {
       crowdDeal(eng.day || 1);
+      for (const f of CROWD.figures.slice()) {
+        if (f.where) { if (crowdDue(min, f.back)) crowdEmerge(f, min); continue; }
+        if (f.out) continue;
+        if (f.stage === 'set' && crowdDue(min, f.hold)) crowdAdvance(f, min);
+      }
       const want = CROWD_DENSITY[phase] != null ? CROWD_DENSITY[phase] : 3;
       const visits = CROWD.figures.filter((f) => !f.live && !f.out);
-      const done = visits.find((f) => min >= f.until);
+      const done = visits.find((f) => crowdDue(min, f.until));
       if (done) crowdLeave(done);
       else if (visits.length > want) crowdLeave(visits[0]);
-      if (visits.length < want) {
-        /* only the first look is seeded — the house was already this busy when
-           you got here. After that the hall fills and empties a person at a
-           time, through the door, where you can see it happen. */
+      /* counted again, after the leaving: someone walking out of the world is
+         already gone from it, and the way out is now the length of the world.
+         Waiting a minute to notice would leave the hall visibly thin. */
+      const here = CROWD.figures.filter((f) => !f.live && !f.out);
+      if (here.length < want) {
+        /* only the first look is seeded — the world was already this busy when
+           you got here. After that it fills and empties at the door, where you
+           can see it happen: one arrival a minute, or two when someone has
+           just set off on the long walk out. */
         const seeded = !CROWD.opened;
-        let n = seeded ? want - visits.length : 1;
+        let n = seeded ? want - here.length : Math.min(2, want - here.length);
         while (n-- > 0) {
           const entry = crowdNext();
           if (!entry) break;
-          crowdAdmit(entry, min, seeded);
+          crowdAdmit(entry, min, seeded, phase);
         }
       }
       CROWD.opened = true;
@@ -3204,7 +3364,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         const t = f.conv ? String(f.conv.title) : '';
         return {
           name: 'a visitor',
-          what: f.live ? 'here now' : f.spot.what,
+          what: f.where ? 'in ' + f.where : (f.live ? 'here now' : f.mark.what),
           line: f.live || !f.conv ? null
             : 'here to talk with ' + residentName(f.conv.resident) + ' about '
               + (/^[“"'‘]/.test(t) ? t : '“' + t + '”')
@@ -3212,18 +3372,21 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       },
       state: () => ({
         phase: DAY.phase, want: CROWD_DENSITY[DAY.phase] || 0, dealt: CROWD.dealt, live: CROWD.live,
+        museum: CROWD.museum,
         figures: CROWD.figures.map((f) => ({
-          id: f.npc.id, room: f.npc.room, x: Math.round(f.npc.x), state: f.npc.state,
-          body: f.npc.def.crowd, live: !!f.live, out: !!f.out, stage: f.stage, until: f.until,
-          what: f.live ? 'here now' : f.spot.what,
+          id: f.npc.id, room: f.where ? null : f.npc.room, x: Math.round(f.npc.x), state: f.npc.state,
+          body: f.npc.def.crowd, live: !!f.live, out: !!f.out, stage: f.stage,
+          until: f.until, hold: f.hold, where: f.where || null,
+          leg: f.leg, legs: f.plan.length, itinerary: f.plan.map((m) => m.room + ':' + m.what),
+          what: f.where ? 'in ' + f.where : (f.live ? 'here now' : f.mark.what),
           resident: f.conv ? f.conv.resident : null, title: f.conv ? f.conv.title : null
         }))
       })
     };
     window.__sanctuaryCrowd = crowd;
-    /* the house is already this busy when you look up. A sim minute is half a
-       real one, and waiting for the next one would show you an empty hall and
-       then fill it, which is not what walking into a room is like. */
+    /* the world is already this busy when you look up. A sim minute is half a
+       real one, and waiting for the next one would show you an empty world and
+       then fill it, which is not what walking into a place is like. */
     crowdMinute(Math.floor(eng.clockMin), DAY.phase || phaseAt(eng.clockMin));
     setVisitorsNow(presence.visitorsNow);
 
