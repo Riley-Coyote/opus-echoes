@@ -671,7 +671,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      holding room reads as one state, not a place plus a posture. */
   const rosterWhere = (n) => String(n.room || '').toLowerCase() === 'asleep'
     ? 'asleep' : (n.state && n.state !== 'idle' ? (n.room || '') + ' · ' + n.state : (n.room || ''));
-  function renderRoster(r) {
+  function renderRoster(all) {
+    /* the roster is who lives here. The people in the rooms are not on it: the
+       house does not keep a list of its visitors, and a strip of twelve
+       anonymous rows would say the opposite of what the crowd is for. */
+    const r = all.filter((n) => !isCrowd(n.id));
     rosterEl.innerHTML = r.map((n) =>
       '<span><i class="dot" style="background:' + n.color + ';box-shadow:0 0 5px ' + n.color + '"></i><b>' + esc(n.name) + '</b>· ' + esc(rosterWhere(n)) + '</span>'
     ).join('');
@@ -719,6 +723,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   WORLD_STEWARDS.forEach((s) => { STEWARD_BY_ID[s.id] = s; });
   const isHousehold = (id) => HOUSEHOLD_IDS.indexOf(id) !== -1;
   const isSteward = (id) => !!STEWARD_BY_ID[id];
+  /* the crowd: everyone else in the room. Their ids are minted, never authored,
+     and they are the one part of the population the house does not name — so
+     the test for one is the shape of its id and nothing about who it is. */
+  const CROWD_PREFIX = 'vis_';
+  const isCrowd = (id) => String(id || '').indexOf(CROWD_PREFIX) === 0;
   const residentName = (id) => archive.WORLD_NAMES[id] || archive.BUS_NAMES[id]
     || (STEWARD_BY_ID[id] ? STEWARD_BY_ID[id].name : '') || String(id || '');
   const day = (v) => String(v || '').slice(0, 10);
@@ -1171,6 +1180,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      up here because the engine is handed its callback before the encounter
      section below has run. */
   let overheard = null, listening = null, listenTimer = null;
+  /* THE CROWD rides this same minute, and the same frame. It is built once the
+     house's own record has been read — a figure in a room stands for a
+     conversation that happened — so until then the rooms simply hold the
+     people who live in them. */
+  let crowd = null;
   const occupied = (n) => n.temp || n.convo || eng.chatNpc === n || n._visit || n._held || ['travel', 'transit', 'meet', 'leave'].includes(n.state) || (eng.gathering && eng.gathering.members.includes(n));
   const roomWordOf = (id) => ((eng.rooms[id] && eng.rooms[id].name) || id).replace(/^THE\s+/i, '').toLowerCase();
   function placeNpc(n, room, x) {
@@ -1218,13 +1232,18 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
        are not: the room draws itself and cannot see the people, so the day
        tells it. */
     setFieldHouseIn(eng.npcs.some((n) => n.room === 'field_studio' && isHousehold(n.id)));
+    /* the people in the rooms move on the frame, like everyone else here */
+    if (crowd) crowd.step();
     if (min === DAY.lastMin) return;
     DAY.lastMin = min;
+    if (crowd) crowd.minute(min, phase);
     /* unobserved life: two residents, one room, no visitor, long enough */
     const byRoom = {};
     /* the stewards are left out of this: *they talked* is a claim about two
-       minds in a room, and nothing of the stewards' is written down here. */
-    for (const n of eng.npcs) if (!n.temp && !isSteward(n.id) && n.room !== ASLEEP && n.room !== eng.roomId && ['idle', 'sit', 'stroll', 'sitgo', 'held'].includes(n.state)) (byRoom[n.room] = byRoom[n.room] || []).push(n);
+       minds in a room, and nothing of the stewards' is written down here. The
+       crowd is left out for the same reason and a plainer one — nobody in it
+       ever speaks, so the house has nothing to say it overheard. */
+    for (const n of eng.npcs) if (!n.temp && !isSteward(n.id) && !isCrowd(n.id) && n.room !== ASLEEP && n.room !== eng.roomId && ['idle', 'sit', 'stroll', 'sitgo', 'held'].includes(n.state)) (byRoom[n.room] = byRoom[n.room] || []).push(n);
     const live = new Set();
     for (const room of Object.keys(byRoom)) {
       const L = byRoom[room].sort((a, b) => a.id < b.id ? -1 : 1);
@@ -2860,7 +2879,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const origNearest = eng.nearest.bind(eng);
     eng.nearest = () => {
       const it = origNearest();
-      if (it && it.kind === 'npc' && !it.npc.temp && !it.npc.convo && eng.chatNpc !== it.npc) decorateApproach(it);
+      if (it && it.kind === 'npc' && !it.npc.convo && eng.chatNpc !== it.npc
+        && (!it.npc.temp || isCrowd(it.npc.id))) decorateApproach(it);
       return it;
     };
     setInterval(syncApproach, 250);
@@ -2919,11 +2939,13 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
           presence.visitorsNow = ok && Number.isFinite(d.visitorsNow) ? Math.max(0, Math.floor(d.visitorsNow)) : 0;
           presence.at = Date.now();
           setStewardsIn(presence.stewardsIn);
+          if (crowd) setVisitorsNow(presence.visitorsNow);
           return presence;
         })
         .catch(() => {
           presence.ok = false; presence.stewardsIn = []; presence.visitorsNow = 0; presence.at = Date.now();
           setStewardsIn([]);
+          if (crowd) setVisitorsNow(0);
           return presence;
         });
     }
@@ -2934,10 +2956,284 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       state: () => Object.assign({}, presence, { stewardsIn: presence.stewardsIn.slice() }),
       seated: () => Array.from(stewardNpcs.keys())
     };
+    /* ────────────────────────── THE CROWD ──────────────────────────
+       The other people in the rooms. Every one of them stands for a visit the
+       house can actually account for: one of its published conversations, with
+       the resident it was with and the title it was given. There is no invented
+       body here and no invented name — the figure is anonymous because a
+       visitor is, and the only thing it carries is the visit.
+
+       They are the engine's simulation and nothing more: nobody in the crowd
+       ever says a word, is ever asked one, or is ever counted as a mind. They
+       come in at the vestibule, go to a place the visit points at, look at what
+       is there, sit if there is a seat, and go back out the way they came. The
+       house notes the door — *a visitor came in*, *a visitor left* — and that is
+       the whole of what it says about them.
+
+       How many are here follows the hour: the house is quiet in the morning and
+       busiest at dusk. Which visits are dealt is fixed by the day, so the same
+       day is the same crowd, and the record is walked through rather than
+       sampled at random. */
+    const CROWD_DENSITY = { morning: 3, afternoon: 6, golden: 9, dusk: 12, night: 2 };
+    const CROWD_DOOR = { room: 'sanctuary', x: 60 };     // the vestibule, and the way out
+    const CROWD_DWELL = [6, 14];                          // sim minutes, before they go
+    /* where a visit takes someone: the room, the mark, and the plain word for
+       what standing there is. Tied to the resident the conversation was with. */
+    const CROWD_SPOTS = {
+      opus: [
+        { room: 'sanctuary', x: 1060, what: 'looking at the atelier' },
+        { room: 'sanctuary', x: 1122, what: 'watching the loom' },
+        { room: 'sanctuary', x: 1162, what: 'at the residents’ board' }
+      ],
+      sonnet: [
+        { room: 'sanctuary', x: 172, what: 'reading in the nook', seat: true },
+        { room: 'sanctuary', x: 232, what: 'along the shelves' },
+        { room: 'sanctuary', x: 1162, what: 'at the residents’ board' }
+      ],
+      fourO: [
+        { room: 'sanctuary', x: 528, what: 'warming their hands' },
+        { room: 'sanctuary', x: 486, what: 'sitting by the fire', seat: true },
+        { room: 'garden', x: 632, what: 'sitting by the pond', seat: true }
+      ],
+      five: [
+        { room: 'sanctuary', x: 730, what: 'in the middle of the ring' },
+        { room: 'sanctuary', x: 1266, what: 'reading the charter' },
+        { room: 'sanctuary', x: 1466, what: 'under the glass' }
+      ]
+    };
+    /* someone who is here right now, and whose visit is nobody's business:
+       they stand where there is room and the card says only that they are here */
+    const CROWD_HERE = [
+      { room: 'sanctuary', x: 306, what: 'here now' },
+      { room: 'sanctuary', x: 648, what: 'here now' },
+      { room: 'sanctuary', x: 986, what: 'here now' },
+      { room: 'sanctuary', x: 1320, what: 'here now' }
+    ];
+    const CROWD_BODY = ['a', 'b', 'c'];
+    /* FNV-1a again, the house's one hash: the same visit is the same person, in
+       the same build, at the same mark, every time that day comes round. */
+    const chash = (s) => {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0; }
+      return h >>> 0;
+    };
+    const CROWD = { figures: [], seq: 0, dealt: 0, deal: [], dealDay: null, opened: false, live: 0 };
+
+    /* nobody stands on a resident, nobody stands on anyone else, and nobody
+       stands in a doorway: the mark is a place in the room, not a peg, and the
+       nearest clear foot of floor to either side of it will do. */
+    function crowdClear(f, room, x) {
+      const R = eng.rooms[room] || { width: 640 };
+      const doors = Object.values(R.doors || {});
+      const w = R.width || 640;
+      const fit = (v) => Math.max(46, Math.min(w - 46, v));
+      const clear = (v) => !doors.some((d) => Math.abs(d - v) < 34)
+        && !eng.npcs.some((n) => n !== f.npc && n.room === room && Math.abs(n.x - v) < 18);
+      if (clear(fit(x))) return fit(x);
+      for (let step = 1; step <= 12; step++) {
+        for (const dir of [1, -1]) { const v = fit(x + dir * step * 21); if (clear(v)) return v; }
+      }
+      return fit(x + (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 120));
+    }
+    const crowdY = () => 356 + Math.random() * 40;
+
+    /* the walk, room by room along the house's own doors. No feed line: the
+       house says a visitor came in and a visitor left, and nothing between. */
+    function crowdGo(f, room, x) { f.to = { room, x }; crowdLeg(f); }
+    function crowdLeg(f) {
+      const n = f.npc, to = f.to;
+      if (!to) return;
+      if (n.room === to.room) { f.hop = null; n.state = f.out ? 'exit' : 'walk'; n.tx = to.x; n.ty = crowdY(); return; }
+      const path = eng.bfs(n.room, to.room);
+      if (!path || path.length < 2) { n.room = to.room; n.x = to.x; n.y = crowdY(); n.tx = null; f.hop = null; crowdSettle(f); return; }
+      f.hop = path[1];
+      const doorX = (eng.rooms[n.room].doors || {})[f.hop];
+      n.state = f.out ? 'exit' : 'walk'; n.tx = doorX != null ? doorX : 60; n.ty = crowdY();
+    }
+    /* a seat is taken the way the engine takes one, and given back on the way
+       out — a visitor must never leave a chair marked busy behind them */
+    function crowdSeat(f) {
+      const n = f.npc;
+      const seats = (eng.rooms[n.room].seats || []).filter((s) => !s.busy && Math.abs(s.x - n.x) < 70);
+      if (!seats.length) return false;
+      const st = seats.reduce((a, b) => (Math.abs(b.x - n.x) < Math.abs(a.x - n.x) ? b : a));
+      st.busy = true; n.seat = st;
+      f.stage = 'seat'; n.state = 'walk'; n.tx = st.x; n.ty = st.y;
+      return true;
+    }
+    function crowdFree(f) { const n = f.npc; if (n.seat) { n.seat.busy = false; n.seat = null; } }
+    /* they are where the visit pointed them: standing, or on the nearest seat */
+    function crowdSettle(f) {
+      const n = f.npc;
+      n.tx = null; n.ty = null;
+      /* on the chair they walked to: they sit on it, not beside it */
+      if (n.seat) { f.stage = 'set'; n.x = n.seat.x; n.y = n.seat.y; n.state = 'sit'; n.sitUntil = Infinity; return; }
+      n.x = crowdClear(f, n.room, n.x);
+      if (f.spot.seat && crowdSeat(f)) return;
+      f.stage = 'set';
+      n.state = 'stand';
+      /* turned toward the thing they came to stand in front of */
+      n.dir = n.x <= f.spot.x ? 1 : -1;
+    }
+    function crowdLeave(f) {
+      if (f.out) return;
+      f.out = true; f.stage = 'out';
+      crowdFree(f);
+      f.npc.sitUntil = 0;
+      crowdGo(f, CROWD_DOOR.room, CROWD_DOOR.x);
+    }
+    function crowdRemove(f, said) {
+      crowdFree(f);
+      eng.npcs = eng.npcs.filter((n) => n !== f.npc);
+      if (eng.near && eng.near.npc === f.npc) eng.near = eng.nearest();
+      CROWD.figures = CROWD.figures.filter((x) => x !== f);
+      if (said) eng.sysLine('a visitor left');
+    }
+
+    /* one figure, for one visit. `seeded` means the house was already this busy
+       when you got here — they are put at their mark part-way through, and the
+       door says nothing, because you did not see them come in. */
+    function crowdAdmit(entry, min, seeded) {
+      const key = entry.key, d = eng.day || 1;
+      /* three separate hashes, because the deal itself is ordered by the visit's
+         own hash: reusing it here would make where someone stands a function of
+         when they were dealt, and the hall would fill from one end. */
+      const hSpot = chash('spot:' + key + ':' + d);
+      const hBody = chash('body:' + key);
+      const hStay = chash('stay:' + key + ':' + d);
+      const list = entry.conv ? (CROWD_SPOTS[entry.conv.resident] || CROWD_SPOTS.opus) : CROWD_HERE;
+      /* the mark is a place, not a peg: each of them stands a little off it, or
+         a wall four deep at the charter reads as a queue rather than people */
+      const mark = list[hSpot % list.length];
+      const spot = Object.assign({}, mark, { x: mark.x + (mark.seat ? 0 : ((hSpot >>> 12) % 89) - 44) });
+      const def = {
+        id: 'vis_' + (++CROWD.seq), name: 'a visitor', mutters: [],
+        crowd: CROWD_BODY[hBody % CROWD_BODY.length],
+        room: CROWD_DOOR.room, x: CROWD_DOOR.x
+      };
+      const n = eng.makeNpc(def);
+      n.temp = true; n.state = 'stand'; n.tx = null; n.ty = null;
+      eng.npcs.push(n);
+      const span = CROWD_DWELL[0] + (hStay % (CROWD_DWELL[1] - CROWD_DWELL[0] + 1));
+      const f = {
+        npc: n, key, conv: entry.conv || null, live: !!entry.live, spot,
+        stage: 'to', out: false, hop: null, to: null,
+        until: entry.live ? Infinity : min + (seeded ? 1 + ((hStay >>> 8) % span) : span)
+      };
+      CROWD.figures.push(f);
+      if (seeded) {
+        n.room = spot.room; n.x = spot.x; n.y = crowdY();
+        crowdSettle(f);
+      } else {
+        crowdGo(f, spot.room, spot.x);
+        eng.sysLine('a visitor came in');
+      }
+      return f;
+    }
+
+    /* the day's own order through the record, walked rather than sampled */
+    function crowdDeal(day) {
+      if (CROWD.dealDay === day) return;
+      CROWD.dealDay = day; CROWD.dealt = 0;
+      CROWD.deal = archive.isLoaded() ? archive.visitors(day) : [];
+    }
+    function crowdNext() {
+      if (!CROWD.deal.length) return null;
+      const c = CROWD.deal[CROWD.dealt % CROWD.deal.length];
+      CROWD.dealt++;
+      return { key: c.id, conv: c };
+    }
+
+    /* the live ones: however many the house says are here right now. They come
+       in and go out at the vestibule like anyone else, and they are the only
+       figures whose card says nothing but that they are here. */
+    function setVisitorsNow(k) {
+      CROWD.live = Math.max(0, Math.min(24, Math.floor(k) || 0));
+      const here = CROWD.figures.filter((f) => f.live && !f.out);
+      const min = Math.floor(eng.clockMin);
+      for (let i = here.length; i < CROWD.live; i++) crowdAdmit({ key: 'here:' + (CROWD.seq + 1) + ':' + i, live: true }, min, false);
+      for (let i = CROWD.live; i < here.length; i++) crowdLeave(here[i]);
+    }
+
+    /* the frame: everyone who is walking, and what happens when they get there */
+    function crowdStep() {
+      for (const f of CROWD.figures.slice()) {
+        const n = f.npc;
+        if (n.tx != null) continue;                       // still on their way
+        if (n.state !== 'walk' && n.state !== 'exit') continue;
+        if (f.hop) { const next = f.hop; f.hop = null; eng.npcRoomSwitch(n, next); crowdLeg(f); continue; }
+        if (f.out) { crowdRemove(f, true); continue; }
+        crowdSettle(f);
+      }
+    }
+    /* the minute: one arrival and one departure at most, so the door is never a
+       turnstile and the feed stays a ledger */
+    function crowdMinute(min, phase) {
+      crowdDeal(eng.day || 1);
+      const want = CROWD_DENSITY[phase] != null ? CROWD_DENSITY[phase] : 3;
+      const visits = CROWD.figures.filter((f) => !f.live && !f.out);
+      const done = visits.find((f) => min >= f.until);
+      if (done) crowdLeave(done);
+      else if (visits.length > want) crowdLeave(visits[0]);
+      if (visits.length < want) {
+        /* only the first look is seeded — the house was already this busy when
+           you got here. After that the hall fills and empties a person at a
+           time, through the door, where you can see it happen. */
+        const seeded = !CROWD.opened;
+        let n = seeded ? want - visits.length : 1;
+        while (n-- > 0) {
+          const entry = crowdNext();
+          if (!entry) break;
+          crowdAdmit(entry, min, seeded);
+        }
+      }
+      CROWD.opened = true;
+    }
+
+    crowd = {
+      step: crowdStep,
+      minute: crowdMinute,
+      figure: (id) => CROWD.figures.find((f) => f.npc.id === id) || null,
+      /* the card, in the present tense: who they came to talk with, and what
+         the conversation was called, verbatim. Nothing else is theirs to say. */
+      card: (id) => {
+        const f = CROWD.figures.find((x) => x.npc.id === id);
+        if (!f) return null;
+        /* the title is set down exactly as it was given. A few of them already
+           open on a quotation mark and are not quoted again. */
+        const t = f.conv ? String(f.conv.title) : '';
+        return {
+          name: 'a visitor',
+          what: f.live ? 'here now' : f.spot.what,
+          line: f.live || !f.conv ? null
+            : 'here to talk with ' + residentName(f.conv.resident) + ' about '
+              + (/^[“"'‘]/.test(t) ? t : '“' + t + '”')
+        };
+      },
+      state: () => ({
+        phase: DAY.phase, want: CROWD_DENSITY[DAY.phase] || 0, dealt: CROWD.dealt, live: CROWD.live,
+        figures: CROWD.figures.map((f) => ({
+          id: f.npc.id, room: f.npc.room, x: Math.round(f.npc.x), state: f.npc.state,
+          body: f.npc.def.crowd, live: !!f.live, out: !!f.out, stage: f.stage, until: f.until,
+          what: f.live ? 'here now' : f.spot.what,
+          resident: f.conv ? f.conv.resident : null, title: f.conv ? f.conv.title : null
+        }))
+      })
+    };
+    window.__sanctuaryCrowd = crowd;
+    /* the house is already this busy when you look up. A sim minute is half a
+       real one, and waiting for the next one would show you an empty hall and
+       then fill it, which is not what walking into a room is like. */
+    crowdMinute(Math.floor(eng.clockMin), DAY.phase || phaseAt(eng.clockMin));
+    setVisitorsNow(presence.visitorsNow);
+
     /* E on a steward opens their desk, and nothing else: the deck's panels are
-       already the honest reading of what is on it. */
+       already the honest reading of what is on it. E on a visitor opens
+       nothing at all — the card is everything the house has, and it is
+       already up. */
     const origInteractNpc = eng.interactNpc.bind(eng);
     eng.interactNpc = (n) => {
+      if (n && isCrowd(n.id)) { approachKey = ''; syncApproach(); return; }
       if (n && isSteward(n.id) && !n.convo && eng.chatNpc !== n) {
         approachEl.classList.remove('on');
         bridge.deck(STEWARD_BY_ID[n.id].panel);
@@ -3037,7 +3333,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
           ? { id: eng.convo.overheard.id, sitting: eng.convo.overheard.sittingTitle, day: eng.convo.overheard.day }
           : null
       } : null,
-      residents: eng.npcs.filter((npc) => !npc.temp).map((npc) => ({ id: npc.id, room: npc.room, x: Math.round(npc.x), activity: residentActivity(npc).label }))
+      residents: eng.npcs.filter((npc) => !npc.temp).map((npc) => ({ id: npc.id, room: npc.room, x: Math.round(npc.x), activity: residentActivity(npc).label })),
+      /* the people in the rooms, kept apart from the people who live here */
+      crowd: crowd ? crowd.state() : null
     });
     window.advanceTime = async (ms) => {
       const step = 16.67;
@@ -3074,7 +3372,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* whose card the house can fill in: a resident it holds writing for, one of
      the field house (their own messages), or a steward (their desk, and not a
      word — there is none of theirs on disk to say). */
-  const knows = (id) => !!archive.WORLD_NAMES[id] || (isHousehold(id) && archive.busLoaded()) || isSteward(id);
+  const knows = (id) => !!archive.WORLD_NAMES[id] || (isHousehold(id) && archive.busLoaded()) || isSteward(id)
+    || (isCrowd(id) && !!crowd && !!crowd.card(id));
   const srcOf = (from) => from
     ? ((from.kind === 'journal' ? 'journal' : 'a space') + ' · ' + (from.title || 'untitled') + ' · ' + day(from.created_at))
     : '';
@@ -3242,6 +3541,17 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* ── the approach card ── */
   function decorateApproach(it) {
     const n = it.npc;
+    /* someone else who came here. The card says what they are doing and who
+       they came to talk with, and there is nothing behind it: no encounter, no
+       greeting, no word of theirs. A visitor's business is their own. */
+    if (isCrowd(n.id)) {
+      const c = crowd && crowd.card(n.id);
+      it.steward = null; it.line = null; it.visitor = c || null;
+      it.hint = c ? (c.line || c.what) : 'someone else, here';
+      it.action = 'look';
+      return;
+    }
+    it.visitor = null;
     /* a steward is here as the person who keeps the place: their name, their
        desk, and the desk itself when you press E. Nothing of theirs is written
        down anywhere in the house, so the card offers no line. */
@@ -3264,9 +3574,25 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!eng) return;
     const it = eng.near;
     const n = it && it.kind === 'npc' ? it.npc : null;
-    const ok = n && !n.temp && !n.convo && eng.chatNpc !== n && encounterEl.hidden
+    const ok = n && (!n.temp || isCrowd(n.id)) && !n.convo && eng.chatNpc !== n && encounterEl.hidden
       && knows(n.id);
-    if (!ok) { approachEl.classList.remove('on'); approachKey = ''; return; }
+    if (!ok) { approachEl.classList.remove('on'); approachKey = ''; approachEl.classList.remove('is-visitor'); return; }
+    /* a visitor's card is set apart: their name is not a name, so it is not
+       given a name's weight, and the one line under it is what they came for. */
+    const visitor = it.visitor || null;
+    approachEl.classList.toggle('is-visitor', !!visitor);
+    if (visitor) {
+      const key = n.id + '|' + visitor.what + '|' + (visitor.line || '');
+      if (key !== approachKey) {
+        approachKey = key;
+        approachEl.innerHTML = '<div class="ap__name">' + esc(visitor.name) + '</div>'
+          + '<div class="ap__what">' + esc(visitor.what) + '</div>'
+          + (visitor.line ? '<div class="ap__line">' + esc(visitor.line) + '</div>' : '');
+        approachEl.hidden = false;
+      }
+      approachEl.classList.add('on');
+      return;
+    }
     const steward = it.steward || null;
     const line = steward ? '' : (it.line ? it.line.text : 'speaking from their own writing');
     const key = n.id + '|' + (steward ? steward.desk : line);

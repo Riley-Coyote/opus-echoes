@@ -19,8 +19,14 @@ var KINDS = {
 };
 var VISITOR = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
 var GUEST = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#948e80", bodyHi: "#aca696", bodyDk: "#6e6860", face: "#cdc8ba" };
+var CROWD = {
+  a: { kind: "human", legH: 19, torsoW: 19, torsoH: 31, headW: 14, headH: 16, body: "#3a3f47", bodyHi: "#4b525b", bodyDk: "#23272d", face: "#8e8b84" },
+  b: { kind: "human", legH: 16, torsoW: 22, torsoH: 29, headW: 15, headH: 17, body: "#333a42", bodyHi: "#454d56", bodyDk: "#1f242a", face: "#8e8b84" },
+  c: { kind: "human", legH: 18, torsoW: 18, torsoH: 30, headW: 14, headH: 16, body: "#40414a", bodyHi: "#51525c", bodyDk: "#26272e", face: "#8e8b84" }
+};
+var CROWD_BODIES = Object.keys(CROWD);
 function specFor(n) {
-  return KINDS[n.id] || (n.temp ? GUEST : VISITOR);
+  return n.def && CROWD[n.def.crowd] || KINDS[n.id] || (n.temp ? GUEST : VISITOR);
 }
 var LEG_BACK = "#171119";
 var LEG_FRONT = "#261e29";

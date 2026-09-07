@@ -798,6 +798,11 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 .ap__why{font-family:var(--mono);font-size:10px;line-height:1.4;color:var(--dim);margin-top:6px}
 .ap__src{font-size:9px;letter-spacing:.08em;color:var(--faint);margin-top:6px}
 .ap__src::before{content:"> ";opacity:.6}
+/* someone else who came here. Their card carries no name, so it is not given a
+   name's weight: the head steps back to the quiet ink, and the line under it —
+   who they came to talk with, and what it was called — carries the card. */
+.approach.is-visitor .ap__name{color:var(--faint);letter-spacing:.12em}
+.approach.is-visitor .ap__line{font-size:12.5px;color:rgba(239,233,220,.78)}
 
 /* ══ THE FIELD STUDIO — the studio's glass ══
    The one overlay in the house that is not warm: Field's room is kept in cool

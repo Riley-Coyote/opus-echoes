@@ -71,7 +71,25 @@ const VISITOR = { kind: 'human', legH: 17, torsoW: 20, torsoH: 30, headW: 15, he
 /* other people's visitors, passing through: the same figure, worn pale */
 const GUEST   = { kind: 'human', legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: '#948e80', bodyHi: '#aca696', bodyDk: '#6e6860', face: '#cdc8ba' };
 
-export function specFor(n) { return KINDS[n.id] || (n.temp ? GUEST : VISITOR); }
+/* ── the crowd — the other people in the room ──
+   The guest's figure, in three builds so a room full of them is a room full of
+   people rather than one person repeated. They are the only bodies here worn in
+   a cool grey: they belong to nobody's family, they carry no light, and none of
+   them is ever given a resident's colour. Which build a figure gets is fixed by
+   the visit it stands for, so the same conversation is the same person. */
+const CROWD = {
+  /* the tall one, standing straight */
+  a: { kind: 'human', legH: 19, torsoW: 19, torsoH: 31, headW: 14, headH: 16, body: '#3a3f47', bodyHi: '#4b525b', bodyDk: '#23272d', face: '#8e8b84' },
+  /* the broad one, shoulders squared */
+  b: { kind: 'human', legH: 16, torsoW: 22, torsoH: 29, headW: 15, headH: 17, body: '#333a42', bodyHi: '#454d56', bodyDk: '#1f242a', face: '#8e8b84' },
+  /* the slight one, a coat a size too big */
+  c: { kind: 'human', legH: 18, torsoW: 18, torsoH: 30, headW: 14, headH: 16, body: '#40414a', bodyHi: '#51525c', bodyDk: '#26272e', face: '#8e8b84' }
+};
+export const CROWD_BODIES = Object.keys(CROWD);
+
+export function specFor(n) {
+  return (n.def && CROWD[n.def.crowd]) || KINDS[n.id] || (n.temp ? GUEST : VISITOR);
+}
 
 /* the trousers are the family's, not the figure's — and one darker tone under
    them, which is a shoe */

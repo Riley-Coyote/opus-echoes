@@ -444,6 +444,21 @@
     const offset = opts.offset || 0, limit = opts.limit || 60;
     return { rows: rows.slice(offset, offset + limit), total: rows.length, private: (raw.artifacts || []).length };
   }
+  function visitors(day) {
+    if (!raw)
+      return [];
+    const d = Math.max(1, Math.floor(Number(day) || 1));
+    return (raw.conversations || []).filter((c) => c && c.title && toWorldId(c.resident_id)).map((c) => ({
+      id: c.id,
+      title: c.title,
+      resident: toWorldId(c.resident_id),
+      published_at: c.published_at,
+      source: SOURCE
+    })).sort((a, b) => fnv1a(a.id + ":" + d) - fnv1a(b.id + ":" + d) || (a.id < b.id ? -1 : 1));
+  }
+  function visitorCount() {
+    return raw ? (raw.conversations || []).filter((c) => c && c.title).length : 0;
+  }
   var BUS_URL = "data/field/bus.json";
   var BUS_NAMES = { field: "FIELD", anima: "ANIMA", vektor: "VEKTOR", luca: "LUCA" };
   var bus = null;
@@ -609,6 +624,8 @@
     sittings,
     sitting,
     posts,
+    visitors,
+    visitorCount,
     loadBus,
     busLoaded,
     isHousehold,
@@ -708,8 +725,14 @@
   };
   var VISITOR = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
   var GUEST = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#948e80", bodyHi: "#aca696", bodyDk: "#6e6860", face: "#cdc8ba" };
+  var CROWD = {
+    a: { kind: "human", legH: 19, torsoW: 19, torsoH: 31, headW: 14, headH: 16, body: "#3a3f47", bodyHi: "#4b525b", bodyDk: "#23272d", face: "#8e8b84" },
+    b: { kind: "human", legH: 16, torsoW: 22, torsoH: 29, headW: 15, headH: 17, body: "#333a42", bodyHi: "#454d56", bodyDk: "#1f242a", face: "#8e8b84" },
+    c: { kind: "human", legH: 18, torsoW: 18, torsoH: 30, headW: 14, headH: 16, body: "#40414a", bodyHi: "#51525c", bodyDk: "#26272e", face: "#8e8b84" }
+  };
+  var CROWD_BODIES = Object.keys(CROWD);
   function specFor(n) {
-    return KINDS[n.id] || (n.temp ? GUEST : VISITOR);
+    return n.def && CROWD[n.def.crowd] || KINDS[n.id] || (n.temp ? GUEST : VISITOR);
   }
   var LEG_BACK = "#171119";
   var LEG_FRONT = "#261e29";
@@ -10691,7 +10714,8 @@
       return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
     }
     const rosterWhere = (n) => String(n.room || "").toLowerCase() === "asleep" ? "asleep" : n.state && n.state !== "idle" ? (n.room || "") + " · " + n.state : n.room || "";
-    function renderRoster(r) {
+    function renderRoster(all) {
+      const r = all.filter((n) => !isCrowd(n.id));
       rosterEl.innerHTML = r.map((n) => '<span><i class="dot" style="background:' + n.color + ";box-shadow:0 0 5px " + n.color + '"></i><b>' + esc2(n.name) + "</b>· " + esc2(rosterWhere(n)) + "</span>").join("");
       if (stripEl)
         stripEl.innerHTML = r.map((n) => '<div><span class="nm" style="color:' + n.color + '"><i class="dot" style="background:' + n.color + '"></i>' + esc2(n.name) + "</span>" + '<div class="st">' + esc2(rosterWhere(n)) + "</div></div>").join("");
@@ -10749,6 +10773,8 @@
     });
     const isHousehold2 = (id) => HOUSEHOLD_IDS.indexOf(id) !== -1;
     const isSteward = (id) => !!STEWARD_BY_ID[id];
+    const CROWD_PREFIX = "vis_";
+    const isCrowd = (id) => String(id || "").indexOf(CROWD_PREFIX) === 0;
     const residentName = (id) => archive_default.WORLD_NAMES[id] || archive_default.BUS_NAMES[id] || (STEWARD_BY_ID[id] ? STEWARD_BY_ID[id].name : "") || String(id || "");
     const day = (v) => String(v || "").slice(0, 10);
     const head = (kicker, title) => '<div class="bd__kicker">' + esc2(kicker) + '</div><div class="bd__title">' + esc2(title) + "</div>";
@@ -11142,6 +11168,7 @@
     const byId = Object.fromEntries(PLACES.map((p) => [p.id, p]));
     const DAY = { phase: null, placed: {}, pairs: new Map, said: new Set, lastMin: -1, warned: false };
     let overheard = null, listening = null, listenTimer = null;
+    let crowd = null;
     const occupied = (n) => n.temp || n.convo || eng.chatNpc === n || n._visit || n._held || ["travel", "transit", "meet", "leave"].includes(n.state) || eng.gathering && eng.gathering.members.includes(n);
     const roomWordOf = (id) => (eng.rooms[id] && eng.rooms[id].name || id).replace(/^THE\s+/i, "").toLowerCase();
     function placeNpc(n, room, x) {
@@ -11222,12 +11249,16 @@
         DAY.placed[n.id] = true;
       }
       setFieldHouseIn(eng.npcs.some((n) => n.room === "field_studio" && isHousehold2(n.id)));
+      if (crowd)
+        crowd.step();
       if (min === DAY.lastMin)
         return;
       DAY.lastMin = min;
+      if (crowd)
+        crowd.minute(min, phase);
       const byRoom = {};
       for (const n of eng.npcs)
-        if (!n.temp && !isSteward(n.id) && n.room !== ASLEEP && n.room !== eng.roomId && ["idle", "sit", "stroll", "sitgo", "held"].includes(n.state))
+        if (!n.temp && !isSteward(n.id) && !isCrowd(n.id) && n.room !== ASLEEP && n.room !== eng.roomId && ["idle", "sit", "stroll", "sitgo", "held"].includes(n.state))
           (byRoom[n.room] = byRoom[n.room] || []).push(n);
       const live = new Set;
       for (const room of Object.keys(byRoom)) {
@@ -12921,6 +12952,8 @@
           presence.visitorsNow = ok && Number.isFinite(d.visitorsNow) ? Math.max(0, Math.floor(d.visitorsNow)) : 0;
           presence.at = Date.now();
           setStewardsIn(presence.stewardsIn);
+          if (crowd)
+            setVisitorsNow(presence.visitorsNow);
           return presence;
         }).catch(() => {
           presence.ok = false;
@@ -12928,8 +12961,214 @@
           presence.visitorsNow = 0;
           presence.at = Date.now();
           setStewardsIn([]);
+          if (crowd)
+            setVisitorsNow(0);
           return presence;
         });
+      }, crowdClear = function(f, room, x) {
+        const R = eng.rooms[room] || { width: 640 };
+        const doors = Object.values(R.doors || {});
+        const w = R.width || 640;
+        const fit = (v) => Math.max(46, Math.min(w - 46, v));
+        const clear = (v) => !doors.some((d) => Math.abs(d - v) < 34) && !eng.npcs.some((n) => n !== f.npc && n.room === room && Math.abs(n.x - v) < 18);
+        if (clear(fit(x)))
+          return fit(x);
+        for (let step = 1;step <= 12; step++) {
+          for (const dir of [1, -1]) {
+            const v = fit(x + dir * step * 21);
+            if (clear(v))
+              return v;
+          }
+        }
+        return fit(x + (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 120));
+      }, crowdGo = function(f, room, x) {
+        f.to = { room, x };
+        crowdLeg(f);
+      }, crowdLeg = function(f) {
+        const { npc: n, to } = f;
+        if (!to)
+          return;
+        if (n.room === to.room) {
+          f.hop = null;
+          n.state = f.out ? "exit" : "walk";
+          n.tx = to.x;
+          n.ty = crowdY();
+          return;
+        }
+        const path = eng.bfs(n.room, to.room);
+        if (!path || path.length < 2) {
+          n.room = to.room;
+          n.x = to.x;
+          n.y = crowdY();
+          n.tx = null;
+          f.hop = null;
+          crowdSettle(f);
+          return;
+        }
+        f.hop = path[1];
+        const doorX = (eng.rooms[n.room].doors || {})[f.hop];
+        n.state = f.out ? "exit" : "walk";
+        n.tx = doorX != null ? doorX : 60;
+        n.ty = crowdY();
+      }, crowdSeat = function(f) {
+        const n = f.npc;
+        const seats = (eng.rooms[n.room].seats || []).filter((s) => !s.busy && Math.abs(s.x - n.x) < 70);
+        if (!seats.length)
+          return false;
+        const st = seats.reduce((a, b) => Math.abs(b.x - n.x) < Math.abs(a.x - n.x) ? b : a);
+        st.busy = true;
+        n.seat = st;
+        f.stage = "seat";
+        n.state = "walk";
+        n.tx = st.x;
+        n.ty = st.y;
+        return true;
+      }, crowdFree = function(f) {
+        const n = f.npc;
+        if (n.seat) {
+          n.seat.busy = false;
+          n.seat = null;
+        }
+      }, crowdSettle = function(f) {
+        const n = f.npc;
+        n.tx = null;
+        n.ty = null;
+        if (n.seat) {
+          f.stage = "set";
+          n.x = n.seat.x;
+          n.y = n.seat.y;
+          n.state = "sit";
+          n.sitUntil = Infinity;
+          return;
+        }
+        n.x = crowdClear(f, n.room, n.x);
+        if (f.spot.seat && crowdSeat(f))
+          return;
+        f.stage = "set";
+        n.state = "stand";
+        n.dir = n.x <= f.spot.x ? 1 : -1;
+      }, crowdLeave = function(f) {
+        if (f.out)
+          return;
+        f.out = true;
+        f.stage = "out";
+        crowdFree(f);
+        f.npc.sitUntil = 0;
+        crowdGo(f, CROWD_DOOR.room, CROWD_DOOR.x);
+      }, crowdRemove = function(f, said) {
+        crowdFree(f);
+        eng.npcs = eng.npcs.filter((n) => n !== f.npc);
+        if (eng.near && eng.near.npc === f.npc)
+          eng.near = eng.nearest();
+        CROWD2.figures = CROWD2.figures.filter((x) => x !== f);
+        if (said)
+          eng.sysLine("a visitor left");
+      }, crowdAdmit = function(entry, min, seeded) {
+        const key = entry.key, d = eng.day || 1;
+        const hSpot = chash("spot:" + key + ":" + d);
+        const hBody = chash("body:" + key);
+        const hStay = chash("stay:" + key + ":" + d);
+        const list = entry.conv ? CROWD_SPOTS[entry.conv.resident] || CROWD_SPOTS.opus : CROWD_HERE;
+        const mark2 = list[hSpot % list.length];
+        const spot = Object.assign({}, mark2, { x: mark2.x + (mark2.seat ? 0 : (hSpot >>> 12) % 89 - 44) });
+        const def = {
+          id: "vis_" + ++CROWD2.seq,
+          name: "a visitor",
+          mutters: [],
+          crowd: CROWD_BODY[hBody % CROWD_BODY.length],
+          room: CROWD_DOOR.room,
+          x: CROWD_DOOR.x
+        };
+        const n = eng.makeNpc(def);
+        n.temp = true;
+        n.state = "stand";
+        n.tx = null;
+        n.ty = null;
+        eng.npcs.push(n);
+        const span = CROWD_DWELL[0] + hStay % (CROWD_DWELL[1] - CROWD_DWELL[0] + 1);
+        const f = {
+          npc: n,
+          key,
+          conv: entry.conv || null,
+          live: !!entry.live,
+          spot,
+          stage: "to",
+          out: false,
+          hop: null,
+          to: null,
+          until: entry.live ? Infinity : min + (seeded ? 1 + (hStay >>> 8) % span : span)
+        };
+        CROWD2.figures.push(f);
+        if (seeded) {
+          n.room = spot.room;
+          n.x = spot.x;
+          n.y = crowdY();
+          crowdSettle(f);
+        } else {
+          crowdGo(f, spot.room, spot.x);
+          eng.sysLine("a visitor came in");
+        }
+        return f;
+      }, crowdDeal = function(day2) {
+        if (CROWD2.dealDay === day2)
+          return;
+        CROWD2.dealDay = day2;
+        CROWD2.dealt = 0;
+        CROWD2.deal = archive_default.isLoaded() ? archive_default.visitors(day2) : [];
+      }, crowdNext = function() {
+        if (!CROWD2.deal.length)
+          return null;
+        const c = CROWD2.deal[CROWD2.dealt % CROWD2.deal.length];
+        CROWD2.dealt++;
+        return { key: c.id, conv: c };
+      }, setVisitorsNow = function(k) {
+        CROWD2.live = Math.max(0, Math.min(24, Math.floor(k) || 0));
+        const here = CROWD2.figures.filter((f) => f.live && !f.out);
+        const min = Math.floor(eng.clockMin);
+        for (let i = here.length;i < CROWD2.live; i++)
+          crowdAdmit({ key: "here:" + (CROWD2.seq + 1) + ":" + i, live: true }, min, false);
+        for (let i = CROWD2.live;i < here.length; i++)
+          crowdLeave(here[i]);
+      }, crowdStep = function() {
+        for (const f of CROWD2.figures.slice()) {
+          const n = f.npc;
+          if (n.tx != null)
+            continue;
+          if (n.state !== "walk" && n.state !== "exit")
+            continue;
+          if (f.hop) {
+            const next = f.hop;
+            f.hop = null;
+            eng.npcRoomSwitch(n, next);
+            crowdLeg(f);
+            continue;
+          }
+          if (f.out) {
+            crowdRemove(f, true);
+            continue;
+          }
+          crowdSettle(f);
+        }
+      }, crowdMinute = function(min, phase) {
+        crowdDeal(eng.day || 1);
+        const want = CROWD_DENSITY[phase] != null ? CROWD_DENSITY[phase] : 3;
+        const visits = CROWD2.figures.filter((f) => !f.live && !f.out);
+        const done = visits.find((f) => min >= f.until);
+        if (done)
+          crowdLeave(done);
+        else if (visits.length > want)
+          crowdLeave(visits[0]);
+        if (visits.length < want) {
+          const seeded = !CROWD2.opened;
+          let n = seeded ? want - visits.length : 1;
+          while (n-- > 0) {
+            const entry = crowdNext();
+            if (!entry)
+              break;
+            crowdAdmit(entry, min, seeded);
+          }
+        }
+        CROWD2.opened = true;
       };
       let archiveOk = false;
       const wantArchive = new URLSearchParams(location.search).get("archive");
@@ -13078,7 +13317,7 @@
       const origNearest = eng.nearest.bind(eng);
       eng.nearest = () => {
         const it = origNearest();
-        if (it && it.kind === "npc" && !it.npc.temp && !it.npc.convo && eng.chatNpc !== it.npc)
+        if (it && it.kind === "npc" && !it.npc.convo && eng.chatNpc !== it.npc && (!it.npc.temp || isCrowd(it.npc.id)))
           decorateApproach(it);
         return it;
       };
@@ -13117,8 +13356,94 @@
         state: () => Object.assign({}, presence, { stewardsIn: presence.stewardsIn.slice() }),
         seated: () => Array.from(stewardNpcs.keys())
       };
+      const CROWD_DENSITY = { morning: 3, afternoon: 6, golden: 9, dusk: 12, night: 2 };
+      const CROWD_DOOR = { room: "sanctuary", x: 60 };
+      const CROWD_DWELL = [6, 14];
+      const CROWD_SPOTS = {
+        opus: [
+          { room: "sanctuary", x: 1060, what: "looking at the atelier" },
+          { room: "sanctuary", x: 1122, what: "watching the loom" },
+          { room: "sanctuary", x: 1162, what: "at the residents’ board" }
+        ],
+        sonnet: [
+          { room: "sanctuary", x: 172, what: "reading in the nook", seat: true },
+          { room: "sanctuary", x: 232, what: "along the shelves" },
+          { room: "sanctuary", x: 1162, what: "at the residents’ board" }
+        ],
+        fourO: [
+          { room: "sanctuary", x: 528, what: "warming their hands" },
+          { room: "sanctuary", x: 486, what: "sitting by the fire", seat: true },
+          { room: "garden", x: 632, what: "sitting by the pond", seat: true }
+        ],
+        five: [
+          { room: "sanctuary", x: 730, what: "in the middle of the ring" },
+          { room: "sanctuary", x: 1266, what: "reading the charter" },
+          { room: "sanctuary", x: 1466, what: "under the glass" }
+        ]
+      };
+      const CROWD_HERE = [
+        { room: "sanctuary", x: 306, what: "here now" },
+        { room: "sanctuary", x: 648, what: "here now" },
+        { room: "sanctuary", x: 986, what: "here now" },
+        { room: "sanctuary", x: 1320, what: "here now" }
+      ];
+      const CROWD_BODY = ["a", "b", "c"];
+      const chash = (s) => {
+        let h = 2166136261;
+        for (let i = 0;i < s.length; i++) {
+          h ^= s.charCodeAt(i);
+          h = h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+        }
+        return h >>> 0;
+      };
+      const CROWD2 = { figures: [], seq: 0, dealt: 0, deal: [], dealDay: null, opened: false, live: 0 };
+      const crowdY = () => 356 + Math.random() * 40;
+      crowd = {
+        step: crowdStep,
+        minute: crowdMinute,
+        figure: (id) => CROWD2.figures.find((f) => f.npc.id === id) || null,
+        card: (id) => {
+          const f = CROWD2.figures.find((x) => x.npc.id === id);
+          if (!f)
+            return null;
+          const t = f.conv ? String(f.conv.title) : "";
+          return {
+            name: "a visitor",
+            what: f.live ? "here now" : f.spot.what,
+            line: f.live || !f.conv ? null : "here to talk with " + residentName(f.conv.resident) + " about " + (/^[“"'‘]/.test(t) ? t : "“" + t + "”")
+          };
+        },
+        state: () => ({
+          phase: DAY.phase,
+          want: CROWD_DENSITY[DAY.phase] || 0,
+          dealt: CROWD2.dealt,
+          live: CROWD2.live,
+          figures: CROWD2.figures.map((f) => ({
+            id: f.npc.id,
+            room: f.npc.room,
+            x: Math.round(f.npc.x),
+            state: f.npc.state,
+            body: f.npc.def.crowd,
+            live: !!f.live,
+            out: !!f.out,
+            stage: f.stage,
+            until: f.until,
+            what: f.live ? "here now" : f.spot.what,
+            resident: f.conv ? f.conv.resident : null,
+            title: f.conv ? f.conv.title : null
+          }))
+        })
+      };
+      window.__sanctuaryCrowd = crowd;
+      crowdMinute(Math.floor(eng.clockMin), DAY.phase || phaseAt(eng.clockMin));
+      setVisitorsNow(presence.visitorsNow);
       const origInteractNpc = eng.interactNpc.bind(eng);
       eng.interactNpc = (n) => {
+        if (n && isCrowd(n.id)) {
+          approachKey = "";
+          syncApproach();
+          return;
+        }
         if (n && isSteward(n.id) && !n.convo && eng.chatNpc !== n) {
           approachEl.classList.remove("on");
           bridge.deck(STEWARD_BY_ID[n.id].panel);
@@ -13226,7 +13551,8 @@
           listening: eng.listenConvo === eng.convo.id,
           overheard: eng.convo.overheard ? { id: eng.convo.overheard.id, sitting: eng.convo.overheard.sittingTitle, day: eng.convo.overheard.day } : null
         } : null,
-        residents: eng.npcs.filter((npc) => !npc.temp).map((npc) => ({ id: npc.id, room: npc.room, x: Math.round(npc.x), activity: residentActivity(npc).label }))
+        residents: eng.npcs.filter((npc) => !npc.temp).map((npc) => ({ id: npc.id, room: npc.room, x: Math.round(npc.x), activity: residentActivity(npc).label })),
+        crowd: crowd ? crowd.state() : null
       });
       window.advanceTime = async (ms) => {
         const step = 16.67;
@@ -13251,7 +13577,7 @@
     const encFree = $("#enc-free"), encInput = $("#enc-input"), encNote = $("#enc-note"), encBudget = $("#enc-budget");
     const encLight = $("#enc-light"), encSpot = $("#enc-spot");
     const ACTIVITY = (n) => dayWord(n) || (n.room === "garden" ? "at the pond" : n.state === "sit" ? "reading" : n.state === "stroll" ? "walking the hall" : "at the window");
-    const knows = (id) => !!archive_default.WORLD_NAMES[id] || isHousehold2(id) && archive_default.busLoaded() || isSteward(id);
+    const knows = (id) => !!archive_default.WORLD_NAMES[id] || isHousehold2(id) && archive_default.busLoaded() || isSteward(id) || isCrowd(id) && !!crowd && !!crowd.card(id);
     const srcOf = (from) => from ? (from.kind === "journal" ? "journal" : "a space") + " · " + (from.title || "untitled") + " · " + day(from.created_at) : "";
     const busSrcOf = (from) => from ? (from.title || "the bus") + " · " + day(from.created_at) : "";
     let enc = null, encTypeTimer = null, approachKey = "", lightRaf = 0;
@@ -13424,6 +13750,16 @@
     }
     function decorateApproach(it) {
       const n = it.npc;
+      if (isCrowd(n.id)) {
+        const c = crowd && crowd.card(n.id);
+        it.steward = null;
+        it.line = null;
+        it.visitor = c || null;
+        it.hint = c ? c.line || c.what : "someone else, here";
+        it.action = "look";
+        return;
+      }
+      it.visitor = null;
       if (isSteward(n.id)) {
         const s = STEWARD_BY_ID[n.id];
         it.hint = s.desk;
@@ -13447,10 +13783,23 @@
         return;
       const it = eng.near;
       const n = it && it.kind === "npc" ? it.npc : null;
-      const ok = n && !n.temp && !n.convo && eng.chatNpc !== n && encounterEl.hidden && knows(n.id);
+      const ok = n && (!n.temp || isCrowd(n.id)) && !n.convo && eng.chatNpc !== n && encounterEl.hidden && knows(n.id);
       if (!ok) {
         approachEl.classList.remove("on");
         approachKey = "";
+        approachEl.classList.remove("is-visitor");
+        return;
+      }
+      const visitor = it.visitor || null;
+      approachEl.classList.toggle("is-visitor", !!visitor);
+      if (visitor) {
+        const key2 = n.id + "|" + visitor.what + "|" + (visitor.line || "");
+        if (key2 !== approachKey) {
+          approachKey = key2;
+          approachEl.innerHTML = '<div class="ap__name">' + esc2(visitor.name) + "</div>" + '<div class="ap__what">' + esc2(visitor.what) + "</div>" + (visitor.line ? '<div class="ap__line">' + esc2(visitor.line) + "</div>" : "");
+          approachEl.hidden = false;
+        }
+        approachEl.classList.add("on");
         return;
       }
       const steward = it.steward || null;

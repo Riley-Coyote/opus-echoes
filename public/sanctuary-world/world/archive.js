@@ -395,6 +395,30 @@ export function posts(opts = {}) {
   return { rows: rows.slice(offset, offset + limit), total: rows.length, private: (raw.artifacts || []).length };
 }
 
+/* ────────────────────────── the visits the house can account for ──────────────────────────
+   Every published conversation is a person who came here and talked with one
+   of them about something. That is the only crowd this house is willing to
+   have: no invented names, no filler bodies — a figure in a room stands for a
+   conversation that happened, and carries the resident it was with and the
+   title it was given, verbatim.
+
+   A day deals them in its own order, the same order every time that day comes
+   round, so the house is busy without being random and without being written. */
+export function visitors(day) {
+  if (!raw) return [];
+  const d = Math.max(1, Math.floor(Number(day) || 1));
+  return (raw.conversations || [])
+    .filter((c) => c && c.title && toWorldId(c.resident_id))
+    .map((c) => ({
+      id: c.id, title: c.title, resident: toWorldId(c.resident_id),
+      published_at: c.published_at, source: SOURCE
+    }))
+    .sort((a, b) => (fnv1a(a.id + ':' + d) - fnv1a(b.id + ':' + d)) || (a.id < b.id ? -1 : 1));
+}
+
+/** how many of them there are, for the house's own counting. */
+export function visitorCount() { return raw ? (raw.conversations || []).filter((c) => c && c.title).length : 0; }
+
 /* ────────────────────────── the field house's bus ──────────────────────────
    The other set of real sentences the world can read: the messages the four
    of the field studio actually sent each other, three threads of them, on
@@ -533,7 +557,7 @@ const api = {
   residents, journals, art, essays, artifacts, conversations,
   spaces, spaceMessages, salons, salonTurns,
   lines, lineFor, boards, journalResident,
-  sittings, sitting, posts,
+  sittings, sitting, posts, visitors, visitorCount,
   loadBus, busLoaded, isHousehold, busThreads, busThread, busThreadsFor,
   busMessages, busLines, busLineFor
 };
