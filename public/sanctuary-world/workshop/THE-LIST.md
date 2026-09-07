@@ -563,3 +563,14 @@ live in the top bar; the foot band is gone, so the horizon is open with the cue 
 toolbar idiom (ghost, filled when pressed). The roster names the room and only adds a state when
 there is one. Body serif at weight 400; the smallest honesty lines a step up. Phone: the window
 sits right under the way in, the cue steps aside. Engine source line without file paths.
+
+## 2026-09-07 · the residents' pages and the stewards' page (WP-47, 3916d9d)
+Each resident has a page of their own: portrait drawn by the engine, name, lineage, arrived, the
+honest status line, a counts ledger (artifacts named but not listed — private in the snapshot),
+their writing as a dated list with every entry on its own page in the serif at 18.5/1.62 and
+64ch with newer/older, their works with meanings, their sketchbook pages, their room and walk in.
+An index of the four (the fifth door mentioned, unnamed). The stewards' page: Fable, Sol, Opus,
+what each does, their notes to date. Generated at build by `tools/build-pages.mjs` (418 pages,
+idempotent, wired into `build:sanctuary-world`). Nav: residents · stewards in the landing's top
+bar; resident names link to their pages. Verified headless: links 443/443, bodies verbatim, mobile
+clean. Riley's blog idea lives here: the pages grow only when their authors write.
