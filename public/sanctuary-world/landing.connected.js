@@ -9937,7 +9937,7 @@
       const PERIODS = [3.1, 3.7, 4.3, 5.3, 5.9, 6.7];
       let SX = null, SY = null, SA = null, SB = null, SP = null, SPH = null, SS = null, starN = 0;
       function layoutStars() {
-        const n = Math.round(vw * vh / 3800);
+        const n = Math.round(vw * vh / 6200);
         SX = new Float32Array(n);
         SY = new Float32Array(n);
         SA = new Float32Array(n);
@@ -9948,7 +9948,7 @@
         seed2 = 49734321;
         const rows = [];
         for (let i = 0;i < n; i++) {
-          rows.push({ x: Math.round(rnd2() * vw / S2) * S2, y: Math.round(Math.pow(rnd2(), 1.5) * vh / S2) * S2, a: 0.055 + Math.pow(rnd2(), 2.6) * 0.6, p: PERIODS[i * 5 % PERIODS.length], ph: rnd2() * 6.283 });
+          rows.push({ x: Math.round(rnd2() * vw / S2) * S2, y: Math.round(Math.pow(rnd2(), 1.5) * vh / S2) * S2, a: 0.04 + Math.pow(rnd2(), 3.2) * 0.58, p: PERIODS[i * 5 % PERIODS.length], ph: rnd2() * 6.283 });
         }
         rows.sort((p, q) => q.a - p.a);
         for (let i = 0;i < n; i++) {
@@ -9958,7 +9958,7 @@
           SA[i] = r.a;
           SP[i] = r.p;
           SPH[i] = r.ph;
-          SS[i] = r.a > 0.5 ? S2 * 2 : S2;
+          SS[i] = r.a > 0.5 ? S2 * 2 : r.a > 0.26 ? S2 : Math.max(1, S2 / 2);
           SB[i] = i < Math.max(6, Math.round(n * 0.12)) ? -0.04 : 0.18 + 0.32 * Math.pow(i / n, 0.85);
         }
         starN = n;
@@ -10029,7 +10029,9 @@
         bakeMoon();
       }
       function moonClimb() {
-        return Math.round(Math.min(smooth(0.22, 0.45, t) * vh * 0.06, Math.max(0, moonY - moonR - 2)));
+        const rise = Math.round(Math.min(smooth(0.22, 0.45, t) * vh * 0.06, Math.max(0, moonY - moonR - 2)));
+        const exit = Math.round(smooth(0.5, 0.9, t) * (moonY + moonCv.height / 2 + 4 * S2));
+        return rise + exit;
       }
       function bakeMoon() {
         const r = moonR, pad = Math.round(r * 0.4) + S2 * 3, size = (r + pad) * 2;
@@ -10235,11 +10237,14 @@
         let bi = 0;
         for (bi = 0;bi < 10; bi++)
           BUCK[bi].length = 0;
+        const fieldL = Math.max(0, (vw - 1120) / 2) - 8, fieldR = vw - fieldL;
         for (let i = 0;i < starN; i++) {
           let a = SA[i] * wash * clamp01((t - SB[i]) / 0.04);
           if (a <= 0.012)
             continue;
           const y = SY[i];
+          if ((hz <= 0 || y > hz) && SX[i] > fieldL && SX[i] < fieldR)
+            a *= 0.55;
           if (hz > 0 && y > hz) {
             a *= below;
             if (a <= 0.012)
@@ -10463,7 +10468,7 @@
     function esc2(s) {
       return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
     }
-    const rosterWhere = (n) => String(n.room || "").toLowerCase() === "asleep" ? "asleep" : (n.room || "") + " · " + (n.state || "");
+    const rosterWhere = (n) => String(n.room || "").toLowerCase() === "asleep" ? "asleep" : n.state && n.state !== "idle" ? (n.room || "") + " · " + n.state : n.room || "";
     function renderRoster(r) {
       rosterEl.innerHTML = r.map((n) => '<span><i class="dot" style="background:' + n.color + ";box-shadow:0 0 5px " + n.color + '"></i><b>' + esc2(n.name) + "</b>· " + esc2(rosterWhere(n)) + "</span>").join("");
       if (stripEl)

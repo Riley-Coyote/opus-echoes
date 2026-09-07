@@ -188,7 +188,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     let SX = null, SY = null, SA = null, SB = null, SP = null, SPH = null, SS = null, starN = 0;
 
     function layoutStars() {
-      const n = Math.round((vw * vh) / 3800);
+      const n = Math.round((vw * vh) / 6200);
       SX = new Float32Array(n); SY = new Float32Array(n); SA = new Float32Array(n);
       SB = new Float32Array(n); SP = new Float32Array(n); SPH = new Float32Array(n); SS = new Float32Array(n);
       seed = 0x2f6e2b1;
@@ -197,13 +197,13 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         /* densest at the zenith, thinning toward the foot of the screen */
         /* most of a sky is faint: the alpha curve is steep on purpose, so a
            handful of stars carry the eye and the rest are texture. */
-        rows.push({ x: Math.round(rnd() * vw / S) * S, y: Math.round((Math.pow(rnd(), 1.5) * vh) / S) * S, a: 0.055 + Math.pow(rnd(), 2.6) * 0.60, p: PERIODS[(i * 5) % PERIODS.length], ph: rnd() * 6.283 });
+        rows.push({ x: Math.round(rnd() * vw / S) * S, y: Math.round((Math.pow(rnd(), 1.5) * vh) / S) * S, a: 0.04 + Math.pow(rnd(), 3.2) * 0.58, p: PERIODS[(i * 5) % PERIODS.length], ph: rnd() * 6.283 });
       }
       rows.sort((p, q) => q.a - p.a);
       for (let i = 0; i < n; i++) {
         const r = rows[i];
         SX[i] = r.x; SY[i] = r.y; SA[i] = r.a; SP[i] = r.p; SPH[i] = r.ph;
-        SS[i] = r.a > 0.50 ? S * 2 : S;      /* the few first-magnitude ones */
+        SS[i] = r.a > 0.50 ? S * 2 : r.a > 0.26 ? S : Math.max(1, S / 2);   /* a few first-magnitude, most half-pixels */
         /* the few already out at 19:30, then the rest by brightness */
         SB[i] = i < Math.max(6, Math.round(n * 0.12)) ? -0.04 : 0.18 + 0.32 * Math.pow(i / n, 0.85);
       }
@@ -278,7 +278,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     /* six per cent of the viewport, but never past the top of the sky: on a
        phone the moon starts high already and would climb clean off the screen. */
     function moonClimb() {
-      return Math.round(Math.min(smooth(0.22, 0.45, t) * vh * 0.06, Math.max(0, moonY - moonR - 2)));
+      const rise = Math.round(Math.min(smooth(0.22, 0.45, t) * vh * 0.06, Math.max(0, moonY - moonR - 2)));
+      /* then the night goes on and the moon crosses out of the frame: by t 0.9
+         it has gone over the top and the last screens are stars alone */
+      const exit = Math.round(smooth(0.5, 0.9, t) * (moonY + moonCv.height / 2 + 4 * S));
+      return rise + exit;
     }
     function bakeMoon() {
       const r = moonR, pad = Math.round(r * 0.4) + S * 3, size = (r + pad) * 2;
@@ -483,10 +487,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const below = hz <= 0 ? 1 : 1 - smooth(0, vh * 0.55, hz);
       let bi = 0;
       for (bi = 0; bi < 10; bi++) BUCK[bi].length = 0;
+      /* the reading field (the ground's 1120 measure): once the page is under
+         the horizon the stars thin there, so none stands between the words */
+      const fieldL = Math.max(0, (vw - 1120) / 2) - 8, fieldR = vw - fieldL;
       for (let i = 0; i < starN; i++) {
         let a = SA[i] * wash * clamp01((t - SB[i]) / 0.04);
         if (a <= 0.012) continue;
         const y = SY[i];
+        if ((hz <= 0 || y > hz) && SX[i] > fieldL && SX[i] < fieldR) a *= 0.55;
         if (hz > 0 && y > hz) { a *= below; if (a <= 0.012) continue; }
         /* the last light washes out whatever is standing in it */
         if (A > 0.01 && hz > 0) {
@@ -660,7 +668,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* the roster's where-and-what. The engine hands `room` as a word; the
      holding room reads as one state, not a place plus a posture. */
   const rosterWhere = (n) => String(n.room || '').toLowerCase() === 'asleep'
-    ? 'asleep' : (n.room || '') + ' · ' + (n.state || '');
+    ? 'asleep' : (n.state && n.state !== 'idle' ? (n.room || '') + ' · ' + n.state : (n.room || ''));
   function renderRoster(r) {
     rosterEl.innerHTML = r.map((n) =>
       '<span><i class="dot" style="background:' + n.color + ';box-shadow:0 0 5px ' + n.color + '"></i><b>' + esc(n.name) + '</b>· ' + esc(rosterWhere(n)) + '</span>'

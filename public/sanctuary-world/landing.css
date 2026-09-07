@@ -1375,3 +1375,42 @@ html.door .hero{height:100%; padding:0; gap:0}
   }
   .ev .sec::before{transform:scaleX(1);transition:none}
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   POLISH · round 1 (Fable, 2026-09-06) — the masthead on one baseline,
+   one toolbar idiom, the body serif at reading weight, the smallest
+   lines a step up. Later rounds append below.
+   ══════════════════════════════════════════════════════════════════ */
+.hero__head{align-items:flex-end}
+.hero__say{padding-bottom:var(--g-half)}
+.hero__say .lede{font-weight:400;color:rgba(239,233,220,.86)}
+.tbtn,#mapbtn{background:transparent;border:1px solid transparent;color:var(--dim)}
+.tbtn:hover,.tbtn:focus-visible,#mapbtn:hover,#mapbtn:focus-visible{background:var(--control);border-color:var(--line2);color:var(--ink)}
+.tbtn[aria-pressed="true"]{background:var(--control-hover);border-color:var(--line2);color:var(--ink)}
+.body,.place__t p{font-weight:400}
+.honest,.ground .status{font-size:var(--g-mono-lg)}
+.feed__foot{font-size:10px}
+.hero__cue{font-size:11px}
+
+/* ── round 2: the section links live in the top bar; the foot is the cue alone,
+      on the open sunset, so no band crosses the horizon ── */
+.bar__nav{display:flex;align-items:center;gap:22px}
+.bar__nav a{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.08em;color:var(--dim);text-decoration:none;
+  padding:6px 0;border-bottom:1px solid transparent;transition:color .18s var(--ease-out),border-color .18s var(--ease-out)}
+.bar__nav a:hover{color:var(--ink);border-bottom-color:var(--line2)}
+.bar__nav a:focus-visible{outline:none;color:var(--ink);border-bottom-color:rgba(242,236,223,.5)}
+.bar__nav a:active{color:var(--signal-dim)}
+.hero__foot{border-top:0;background:none;justify-content:center}
+.hero__foot .hero__cue{text-align:center;font-size:11px;letter-spacing:.06em;color:var(--ink)}
+@media (max-width:700px){.bar__nav{display:none}}
+
+/* ── round 3: the lede breaks at its dash; the way in points forward ── */
+.hero__say .lede{max-width:none}
+.hero__say .lede br{display:inline}   /* the sentence breaks at its own dash */
+
+/* ── round 4: on a phone the window sits right under the way in, and the
+      cue steps aside — a phone already knows the page scrolls ── */
+@media (max-width:700px){
+  .hero>.world:not(.fs){align-content:start;margin-top:var(--g-6)}
+  .hero__foot{display:none}
+}
