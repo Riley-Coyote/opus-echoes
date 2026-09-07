@@ -553,3 +553,13 @@ placed clear of every line of text. Content arrives once: rise 10px staggered, f
 their side, hairlines draw. Contrast never below 5.2:1 → zero scrims, no cards. Paint p50 0.10 ms,
 0 dropped frames. Reduced motion = the finished night, still. Next: whether the constellations
 should vary in altitude; the night floor token if Riley wants it deeper.
+
+## 2026-09-06 · the world's page, polished by hand (Fable, cf5ab08)
+Six rounds against real frames at 1440, 1280×720 and 390×844. The sky: stars become faint points
+(fewer, half-pixel, thinned inside the reading field) with a few bright ones; the moon crosses
+out of the frame by t 0.9 instead of pinning to the corner. The masthead: one baseline, one lede
+that breaks at its own dash, the arrow points forward, the italic line retired. The section links
+live in the top bar; the foot band is gone, so the horizon is open with the cue alone on it. One
+toolbar idiom (ghost, filled when pressed). The roster names the room and only adds a state when
+there is one. Body serif at weight 400; the smallest honesty lines a step up. Phone: the window
+sits right under the way in, the cue steps aside. Engine source line without file paths.
