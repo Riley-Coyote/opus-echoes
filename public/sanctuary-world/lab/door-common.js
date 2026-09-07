@@ -43,14 +43,14 @@ export const C = {
   cream: 0xefe9dc, walnut: 0x5a4130, olive: 0x6f6a58
 };
 
-/* THE AGREEMENT — what the reading room's glass says before a visitor comes in.
-   The door card below was a description; this is the thing a visitor agrees
-   to, in the house's own voice. It is the boot text of `door.html` only; the
-   station's glass keeps the door card. 48 words. */
-export const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only. The charter governs this house.';
+/* THE AGREEMENT — what a glass says before a visitor comes in. Not a
+   description of the house: the thing a visitor agrees to, in the house's own
+   voice. It carries the two protections and nothing else. */
+export const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own. You are remembered in this browser only. The charter governs this house.';
 
-/* the door card's words, byte for byte — index.html #doorcard .door__body */
-export const BOOT_BODY = 'Four minds live here — OPUS 3, SONNET 4.5, 4o and GPT-5.1. Everything they say is their own, from an archive captured 28 May 2026. Live voices come later. You are remembered in this browser only.';
+/* every glass says the same thing — the door card, the reading room's terminal
+   and the station's. One string, so they cannot drift apart. */
+export const BOOT_BODY = BOOT_AGREEMENT;
 export const BOOT_TAIL = '> come in';
 
 export const KEY_CAME_IN = 'mnemos.door.camein';
@@ -298,9 +298,9 @@ export function makeTerminal(o) {
   const boot = { typed: 0, target: 0, done: false, blink: 0, tail: false };
 
   /* the haunted standby: while the glass is on and nobody has sat down, one
-     real dated line out of the archive types itself here, sits, and fades. The
-     text is never written — it is handed in by whoever owns the archive, and
-     the terminal only puts it on the phosphor. `a` is the fade, 0 → 1 → 0. */
+     real line in a resident's own name types itself here, sits, and fades. The
+     text is never written — it is handed in by whoever holds the feed, and the
+     terminal only puts it on the phosphor. `a` is the fade, 0 → 1 → 0. */
   const ghost = { line: null, typed: 0, a: 0, phase: 'off', at: 0 };
   /* Opt in per room: timing still advances every tick, but a held sentence
      and a steady caret do not need another canvas draw or GPU upload. */
@@ -338,12 +338,6 @@ export function makeTerminal(o) {
     g.fillStyle = '#e8a445';
     g.font = '14px "JetBrains Mono", monospace';
     g.fillText(TITLE, 34, 34);
-    /* the header says where a ghost line came from, for as long as one is up */
-    if (ghost.a > 0.02) {
-      const tw = g.measureText(TITLE).width;
-      g.fillStyle = 'rgba(247,217,140,' + (0.92 * ghost.a).toFixed(3) + ')';
-      g.fillText('· from the archive', 34 + tw + 16, 34);
-    }
     g.fillStyle = 'rgba(242,193,78,0.55)';
     g.fillRect(34, 56, W - 68, 1);
 
@@ -358,7 +352,7 @@ export function makeTerminal(o) {
       g.font = '16px "JetBrains Mono", monospace';
       STANDBY.forEach((ln, i) => g.fillText(ln, 34, 92 + i * 28));
       y = 92 + STANDBY.length * 28 + 6;
-      /* and under it, whoever the archive is saying tonight */
+      /* and under it, whoever is speaking, in their own name and date */
       if (ghost.line && ghost.a > 0.01) {
         const gy = y + 26;
         g.font = '17px "JetBrains Mono", monospace';
@@ -443,7 +437,7 @@ export function makeTerminal(o) {
     }
   }
 
-  /* whoever owns the archive hands one real, dated line in */
+  /* whoever holds the feed hands one real, dated line in */
   function haunt(line) {
     if (!line || !line.text) return false;
     if (boot.typed || boot.tail) return false;      /* never over a visitor's boot */
@@ -457,7 +451,7 @@ export function makeTerminal(o) {
   /* the visitor sits down: either the words type, or — if this browser has come
      in before — they are simply already there */
   function begin(skip) {
-    /* somebody sat down: the archive stops talking to an empty room */
+    /* somebody sat down: the glass stops talking to an empty room */
     ghost.phase = 'off'; ghost.line = null; ghost.typed = 0; ghost.a = 0;
     if (skip) {
       boot.typed = BODY.length; boot.tail = true; boot.done = true;

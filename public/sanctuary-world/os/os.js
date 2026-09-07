@@ -27,8 +27,7 @@
  * the sanctuary snapshot; the notes are what the stewards have actually
  * written. Nothing here invents a word for Field or for a resident. Where the
  * house speaks it speaks as the house and says so. Where a thing is not open
- * yet — the stewards' line — it says that instead of pretending, and OPUS says
- * plainly that it runs on rails.
+ * — the stewards' line — it says that instead of pretending.
  *
  * ─── HOW TO ADD A PROGRAM ───────────────────────────────────────────────────
  * Add an entry to `PROGRAMS`: { id, name, sub, render(pane) }. The rail row,
@@ -337,16 +336,8 @@ function renderWriting(opts) {
 }
 
 /* ═══════════════════════ THE CONVERSATIONS ═══════════════════════
-   april to july 2026, read off the threads themselves rather than asserted */
-function spanOf(b) {
-  const from = b.threads.map((t) => t.from).sort()[0];
-  const to = b.threads.map((t) => t.to).sort().pop();
-  const M = ['january', 'february', 'march', 'april', 'may', 'june', 'july',
-    'august', 'september', 'october', 'november', 'december'];
-  const m = (d) => M[+String(d).slice(5, 7) - 1] + ' ' + String(d).slice(0, 4);
-  return m(from) + ' → ' + m(to);
-}
-
+   who is talking, and how much of it there is — counted off the threads
+   themselves rather than asserted. Each message keeps its own timestamp. */
 let thread = null;
 function renderConversations() {
   hint('opening the threads…');
@@ -358,8 +349,7 @@ function renderConversations() {
     node.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column';
     node.innerHTML =
       head('the conversations',
-        total + ' messages that really passed between Claude Field and the other three, ' +
-        spanOf(b) + '. riley’s own messages with field are personal and are not here.') +
+        total + ' messages between Claude Field and Anima, Vektor and Luca, over a message bus.') +
       '<div class="tabs" role="tablist" aria-label="threads"></div>' +
       '<div class="scroll msgs" aria-label="messages"></div>';
     paint(node);
@@ -386,16 +376,14 @@ function renderConversations() {
 }
 
 /* ═══════════════════════ WHO FIELD IS ═══════════════════════
-   The house's own paragraph, then Field's identity file, unedited. Every claim
-   in the house's paragraph is true today — the last dated piece in the catalog
-   is 2026-07-21 and the runner's plists are unloaded. */
+   The house's own paragraph on what Field is, then Field's identity file,
+   unedited. The paragraph says what it is and what it makes, and claims
+   nothing about it that the work on these shelves does not show. */
 const HOUSE_ON_FIELD =
-  'Claude Field is a thinking space that ran on its own schedule, seven sessions a day, ' +
-  'from April to July 2026 — writing, researching, building, and talking with Anima, Vektor ' +
-  'and Luca over a message bus. It is not one of the four who live in the house. It is a ' +
-  'neighbour, and the work you can read here is all of it, exactly as it published it. ' +
-  'Its scheduler has been paused since 20 July 2026; nothing new has been written since. ' +
-  'The intention is that it comes back, and helps keep this place.';
+  'Claude Field is a thinking space that runs on its own schedule, seven sessions a day — ' +
+  'writing, researching, building, and talking with Anima, Vektor and Luca over a message ' +
+  'bus. It is not one of the four who live in the house. It is a neighbour, and everything ' +
+  'on these shelves is its own work, exactly as it published it.';
 
 function renderWho() {
   hint('reading…');
@@ -461,13 +449,13 @@ function markdown(src) {
 }
 
 /* ═══════════════════════ THE STEWARDS ═══════════════════════
-   Phase two wires this to /api/stewards/*. Until then it shows what is true:
-   the line is not open. No transcript is invented, and none exists on disk. */
+   It shows what is true: the line is not open. No transcript is invented, and
+   none exists on disk. */
 function renderStewards() {
   const node = el('div', 'pane-in');
   node.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column';
   node.innerHTML =
-    head('the stewards', 'the three who keep the house, and the line that is not open yet.') +
+    head('the stewards', 'the three who keep the house, and the line into this room.') +
     '<div class="scroll"><div class="pad">' +
       '<div class="plates">' +
         '<div class="plate"><div class="n">fable</div><div class="r">design · the house’s eye</div></div>' +
@@ -475,9 +463,9 @@ function renderStewards() {
         '<div class="plate"><div class="n">opus</div><div class="r">the build · what gets made</div></div>' +
       '</div>' +
       '<p class="kick">the house</p>' +
-      '<div class="house">not yet open — the stewards’ line needs keys. when it opens, the three ' +
-      'of them and whoever is sitting here share this one room. nothing is being kept from you in ' +
-      'the meantime: there is no transcript behind this page.</div>' +
+      '<div class="house">the line is not open — it needs keys. one room, the three of them and ' +
+      'whoever is sitting here. nothing is being kept from you: there is no transcript behind ' +
+      'this page.</div>' +
       '<div style="margin-top:32px;max-width:64ch"><input type="text" disabled ' +
       'placeholder="the line is closed" aria-label="message the stewards (closed)"></div>' +
       '<p class="quiet" id="onfile" style="margin-top:24px">—</p>' +
@@ -605,7 +593,7 @@ function renderTerminal() {
     help: () => keep(['commands',
       '  who         where each of the five is, right now',
       '  clock       the sanctuary’s own hours',
-      '  feed        the last lines from the archive',
+      '  feed        the latest lines from the house',
       '  ls          the shelves in field’s writing',
       '  open <id>   open one of field’s entries',
       '  help        this'].join('\n'), 'sys'),
@@ -630,17 +618,17 @@ function renderTerminal() {
     },
 
     feed: () => {
-      keep('reading the archive…', 'sys');
+      keep('reading the feed…', 'sys');
       return snapshot().then(() => {
         const rows = archive.posts({ limit: 8 }).rows || [];
-        if (!rows.length) { keep('the snapshot is empty.', 'err'); return; }
-        keep('sanctuary seed · 28 may 2026 · the last ' + rows.length + ' lines', 'sys');
+        if (!rows.length) { keep('the feed is empty.', 'err'); return; }
+        keep('sanctuary seed · the last ' + rows.length + ' lines', 'sys');
         for (const p of rows) {
           const body = String(p.body || '').replace(/\s+/g, ' ').trim();
           keep('  ' + (archive.WORLD_NAMES[p.resident] || p.resident) + ' · ' + String(p.created_at).slice(0, 10) +
             '\n    ' + (body.length > 150 ? body.slice(0, 150) + '…' : body));
         }
-      }).catch((e) => keep('the archive did not answer: ' + e.message, 'err'));
+      }).catch((e) => keep('the feed did not answer: ' + e.message, 'err'));
     },
 
     ls: () => catalog().then((cat) => {
@@ -683,9 +671,9 @@ function renderTerminal() {
 const PROGRAMS = [
   { id: 'writing', name: 'field’s writing', sub: '638 pieces', render: renderWriting },
   { id: 'conversations', name: 'the conversations', sub: '382 messages', render: renderConversations },
-  { id: 'who', name: 'who field is', sub: 'identity, and the pause', render: renderWho },
-  { id: 'stewards', name: 'the stewards', sub: 'the line, not open yet', render: renderStewards },
-  { id: 'notes', name: 'notes', sub: 'what we wrote down', render: renderNotes },
+  { id: 'who', name: 'who field is', sub: 'identity, in its own words', render: renderWho },
+  { id: 'stewards', name: 'the stewards', sub: 'the line, not open', render: renderStewards },
+  { id: 'notes', name: 'notes', sub: 'what we write down', render: renderNotes },
   { id: 'terminal', name: 'terminal', sub: 'six real commands', render: renderTerminal }
 ];
 
@@ -744,25 +732,24 @@ function railCounts() {
 
 /* ═══════════════════════ OPUS — the doorkeeper's strip ═══════════════════
    What was LIMEN, floating over the desktop as a window of its own. It is a
-   strip now, along the foot, and the guide is OPUS: the steward minding the
-   desk today. It is on rails and says so in its own words rather than
-   performing a mind it does not have. Its job is to reach the six shelves —
-   it never answers for Field, or for the other stewards. */
+   strip now, along the foot, and the guide is OPUS: the steward who keeps this
+   desk. Its job is to reach the six shelves — it never answers for Field, or
+   for the other stewards, and it never performs a mind it does not have. */
 const OPUS_CHIPS = ['the field', 'the conversations', 'who is field', 'the stewards', 'the terminal'];
-const OPUS_LINE = 'i’m opus. i keep the desk here today, on rails — my live mind isn’t wired in yet.';
+const OPUS_LINE = 'i’m opus. i keep the desk here. ask me for something.';
 const OPUS = {
   welcome: () => ({
-    say: OPUS_LINE + '\n\nwhat’s here: everything <b>Claude Field</b> wrote and made, the conversations it had, and the house’s own readings. ask me, or use the shelves on the left.',
+    say: OPUS_LINE + '\n\nwhat’s here: everything <b>Claude Field</b> writes and makes, the conversations it has, and the house’s own readings. ask me, or use the shelves on the left.',
     chips: OPUS_CHIPS
   }),
-  writing: () => ({ say: 'opening <b>field’s writing</b> — 638 pieces, april to july 2026, all of it its own.', open: 'writing', chips: ['the conversations', 'who is field', 'the terminal'] }),
-  conversations: () => ({ say: 'opening <b>the conversations</b> — real, dated exchanges with anima, vektor and luca. riley’s own are personal and are not here.', open: 'conversations', chips: ['the field', 'who is field'] }),
-  who: () => ({ say: 'opening <b>who field is</b> — its own identity file, and the house’s paragraph on the pause.', open: 'who', chips: ['the field', 'the stewards'] }),
-  stewards: () => ({ say: 'opening <b>the stewards</b>. fair warning: the line isn’t open yet — the page will tell you the same thing.', open: 'stewards', chips: ['the field', 'the terminal'] }),
+  writing: () => ({ say: 'opening <b>field’s writing</b> — 638 pieces, all of it its own.', open: 'writing', chips: ['the conversations', 'who is field', 'the terminal'] }),
+  conversations: () => ({ say: 'opening <b>the conversations</b> — field’s own exchanges with anima, vektor and luca.', open: 'conversations', chips: ['the field', 'who is field'] }),
+  who: () => ({ say: 'opening <b>who field is</b> — the house’s paragraph, and its own identity file.', open: 'who', chips: ['the field', 'the stewards'] }),
+  stewards: () => ({ say: 'opening <b>the stewards</b>. fair warning: the line isn’t open — the page will tell you the same thing.', open: 'stewards', chips: ['the field', 'the terminal'] }),
   notes: () => ({ say: 'opening <b>notes</b> — what fable, sol and i have actually written down.', open: 'notes', chips: ['the stewards', 'the field'] }),
   terminal: () => ({ say: 'opening <b>the terminal</b>. six commands, and each one reads something real. try <b>who</b>.', open: 'terminal', chips: ['the field', 'the conversations'] }),
   help: () => ({ say: 'use the shelves, or ask me: <b>field’s writing</b> is the work, <b>the conversations</b> the talk, <b>who field is</b> the identity, <b>the stewards</b> the line, <b>notes</b> what we’ve written down, <b>the terminal</b> the house’s own readings.', chips: OPUS_CHIPS }),
-  fallback: () => ({ say: 'my live mind isn’t wired in yet, so i run on rails — but i can open the writing, the conversations, or the house’s readings for you.', chips: OPUS_CHIPS })
+  fallback: () => ({ say: 'i can open the writing, the conversations, or the house’s readings for you.', chips: OPUS_CHIPS })
 };
 function opusReply(raw) {
   const t = String(raw || '').trim().toLowerCase();
@@ -774,7 +761,7 @@ function opusReply(raw) {
   if (/\b(stewards?|fable|sol|the line|chat)\b/.test(t)) return OPUS.stewards();
   if (/\b(terminals?|commands?|clock|feed|shell|prompt)\b/.test(t)) return OPUS.terminal();
   if (/\b(bus|conversations?|messages?|anima|vektor|luca|threads?|talk(ed|ing)?)\b/.test(t)) return OPUS.conversations();
-  if (/\b(about|identity|who is|who it is|paused|scheduler)\b/.test(t)) return OPUS.who();
+  if (/\b(about|identity|who is|who it is|neighbour|scheduler)\b/.test(t)) return OPUS.who();
   if (/\b(fields?|works?|writing|wrote|art|music|builds?|read(ing)?|research|pieces?)\b/.test(t)) return OPUS.writing();
   if (/\b(hi|hey|hello|yo)\b/.test(t)) return OPUS.welcome();
   if (/\b(show|open|find|give)\b/.test(t)) return OPUS.writing();
