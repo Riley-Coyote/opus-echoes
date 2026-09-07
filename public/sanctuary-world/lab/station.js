@@ -63,7 +63,7 @@
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import {
-  C, ls, REDUCED, KEY_CAME_IN, KEY_STEWARD, KEY_CLOCK,
+  C, ls, REDUCED as INITIAL_REDUCED, KEY_CAME_IN, KEY_STEWARD, KEY_CLOCK,
   paint, woodTexture, labelTexture,
   makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall,
   seatPose, quadCorners, makeFullMode,
@@ -74,8 +74,16 @@ import {
 import { makeGlyph, drawGlyph, roomLabel } from './glyph.js';
 import { BANDS, parseClock } from '../world/day.js';
 import * as archive from '../world/archive.js';
+import { createFloorNavigation } from './station-navigation.js';
+import { createRoomInspector } from './station-inspector.js';
+import { makeAperturePortal } from './aperture-portal.js';
+import { createStationJourney } from './station-journey.js';
+import { batchStationStatic } from './station-optimize.js';
 
+let REDUCED = INITIAL_REDUCED;
 let STILL = false;
+let museumVisible = false;
+let hasMuseumVisit = false;
 const CLOCK_RESTORE = { fn: null };
 /* The flag this browser set for itself is where the lamp starts, and it stays a
    local override — but the house is asked as soon as the room is up (see
@@ -121,7 +129,7 @@ const WALL = { L: -R.hw, R: R.hw, F: -R.hd, N: R.hd };
 
 /* ─────────────────────────── the four looks ───────────────────────────
    Golden is the reference: a low warm sun raking in from the right, the
-   aperture the brightest thing, the block wall gold-green. Dusk brings the
+   aperture the brightest thing, the block wall warm ivory. Dusk brings the
    lamps up and lets the phosphor start to matter. Night is the cinematic
    low-light the station has always had. Day is cool, high and undramatic.
    The hall's own BANDS choose between them and cross-fade at the seams. */
@@ -135,7 +143,7 @@ const LOOKS = {
     exposure: 0.54,
     sun: { col: 0xffa855, int: 4.10, at: [7.0, 3.60, 1.8] },
     hemi: { sky: 0xd8c39c, ground: 0x6a5540, int: 0.50 },
-    block: { col: 0xc6bc8e, emissive: 0.44 },
+    block: { col: 0xd7bfaa, emissive: 0.44 },
     outside: 0xe8a068,          /* amber-rose, not white — the hour has colour */
     aperture: 1.22, glare: 0.26,
     shelf: 0.64, lamp: 0.12, crt: 0.44, board: 0.60, downlight: 0.34,
@@ -168,7 +176,7 @@ const LOOKS = {
     exposure: 0.76,
     sun: { col: 0xf0eee6, int: 2.10, at: [4.6, 6.20, 2.2] },
     hemi: { sky: 0xbcc6d4, ground: 0x736556, int: 0.82 },
-    block: { col: 0xb8c2ba, emissive: 0.62 },
+    block: { col: 0xc1c5ce, emissive: 0.62 },
     outside: 0xd8e2ea,
     aperture: 1.12, glare: 0.16,
     shelf: 0.30, lamp: 0.08, crt: 0.42, board: 0.58, downlight: 0.14,
@@ -341,7 +349,7 @@ const BLOCK_COLS = 12, BLOCK_ROWS = 22;
 function glassBlockPaint(mono) {
   return paint(512, 1024, (g, w, h) => {
     const bw = w / BLOCK_COLS, bh = h / BLOCK_ROWS;
-    g.fillStyle = mono ? '#ffffff' : '#7f8d7c'; g.fillRect(0, 0, w, h);
+    g.fillStyle = mono ? '#ffffff' : '#85858d'; g.fillRect(0, 0, w, h);
     for (let cy = 0; cy < BLOCK_ROWS; cy++) for (let cx = 0; cx < BLOCK_COLS; cx++) {
       const x = cx * bw, y = cy * bh;
       const jitter = (Math.sin(cx * 12.9 + cy * 78.2) * 43758.5453) % 1;
@@ -354,13 +362,13 @@ function glassBlockPaint(mono) {
         g.fillRect(x + 1.6, y + 1.6, bw - 3.2, bh - 3.2);
       } else {
         const rad = g.createRadialGradient(x + bw * 0.34, y + bh * 0.32, 2, x + bw / 2, y + bh / 2, bw * 0.9);
-        rad.addColorStop(0.00, `rgba(238,246,228,${0.86 * v})`);
-        rad.addColorStop(0.45, `rgba(176,199,170,${0.80 * v})`);
-        rad.addColorStop(1.00, `rgba(104,130,110,${0.86})`);
+        rad.addColorStop(0.00, `rgba(244,242,235,${0.86 * v})`);
+        rad.addColorStop(0.45, `rgba(185,186,195,${0.80 * v})`);
+        rad.addColorStop(1.00, `rgba(111,116,132,${0.86})`);
         g.fillStyle = rad;
         g.fillRect(x + 1.6, y + 1.6, bw - 3.2, bh - 3.2);
         /* the ripple pressed into the glass */
-        g.strokeStyle = `rgba(226,238,220,${0.10 + 0.12 * v})`;
+        g.strokeStyle = `rgba(231,234,242,${0.10 + 0.12 * v})`;
         g.lineWidth = 1.4;
         for (let i = 1; i < 5; i++) {
           g.beginPath();
@@ -552,7 +560,7 @@ const clockFaceTex = paint(256, 256, (g, w, h) => {
 
 /* the dial face, for the rotaries set into the console */
 const dialTex = paint(128, 128, (g) => {
-  g.fillStyle = '#3a3830'; g.beginPath(); g.arc(64, 64, 62, 0, 6.3); g.fill();
+  g.fillStyle = '#302c2f'; g.beginPath(); g.arc(64, 64, 62, 0, 6.3); g.fill();
   g.strokeStyle = 'rgba(239,233,220,0.62)'; g.lineWidth = 3;
   for (let i = 0; i < 11; i++) {
     const a = -2.4 + (i / 10) * 4.8;
@@ -613,12 +621,12 @@ const ceilingMat = new THREE.MeshStandardMaterial({ map: rep(plankMap, 3.2, 3.0)
 const concreteMat = new THREE.MeshStandardMaterial({ map: rep(concreteTex, 2.4, 1.25), roughness: 0.90, metalness: 0.02, color: 0xd6cfc0 });
 const concretePlain = new THREE.MeshStandardMaterial({ map: rep(concreteTex, 2.0, 1.0), roughness: 0.92, metalness: 0.02, color: 0xd8d2c6 });
 const stoneMat = new THREE.MeshStandardMaterial({ map: rep(stoneTex, 3.0, 1.4), roughness: 0.88, metalness: 0.03, color: 0xece9e2 });
-const floorMat = new THREE.MeshStandardMaterial({ map: rep(floorTex, 5, 3.2), roughness: 0.34, metalness: 0.16, color: 0xcfcac2 });
-const boucleMat = new THREE.MeshStandardMaterial({ map: rep(boucleTex, 3, 1.4), roughness: 0.96, metalness: 0, color: 0xd4c9b2 });
-const leatherMat = new THREE.MeshStandardMaterial({ map: rep(leatherTex, 2, 2), roughness: 0.48, metalness: 0.03, color: 0xac9880 });
-const shagMat = new THREE.MeshStandardMaterial({ map: rep(shagTex, 2.2, 1.6), roughness: 1.0, metalness: 0, color: 0xd6c4a6 });
-const oliveMat = new THREE.MeshStandardMaterial({ color: 0x6f6a58, roughness: 0.62, metalness: 0.08 });
-const oliveDark = new THREE.MeshStandardMaterial({ color: 0x45423a, roughness: 0.76, metalness: 0.05 });
+const floorMat = new THREE.MeshStandardMaterial({ map: rep(floorTex, 5, 3.2), roughness: 0.34, metalness: 0.16, color: 0xaaa5a0 });
+const boucleMat = new THREE.MeshStandardMaterial({ map: rep(boucleTex, 3, 1.4), roughness: 0.96, metalness: 0, color: 0xe0d7c9 });
+const leatherMat = new THREE.MeshStandardMaterial({ map: rep(leatherTex, 2, 2), roughness: 0.48, metalness: 0.03, color: 0xb17651 });
+const shagMat = new THREE.MeshStandardMaterial({ map: rep(shagTex, 2.2, 1.6), roughness: 1.0, metalness: 0, color: 0xa99482 });
+const instrumentIvory = new THREE.MeshStandardMaterial({ color: 0xd5c9b7, roughness: 0.42, metalness: 0.10 });
+const instrumentCharcoal = new THREE.MeshStandardMaterial({ color: 0x28262b, roughness: 0.60, metalness: 0.08 });
 const creamMat = new THREE.MeshStandardMaterial({ color: 0xded4bf, roughness: 0.74, metalness: 0.02 });
 const terracotta = new THREE.MeshStandardMaterial({ color: 0xa85a28, roughness: 0.92, metalness: 0 });
 const chromeMat = new THREE.MeshStandardMaterial({ color: 0xa8a6a0, roughness: 0.26, metalness: 0.74 });
@@ -667,6 +675,7 @@ scene.fog = new THREE.FogExp2(0x241d2c, 0.014);
 
 /* the sunken lounge, so the floor knows where its hole is */
 const PIT = { x0: -4.20, x1: -0.80, z0: -0.25, z1: 2.15, drop: 0.35 };
+const PIT_STAIR = { x: -1.55, w: 1.40, tread: 0.33 };
 
 /* the floor: polished concrete with the lounge cut out of it */
 {
@@ -681,20 +690,45 @@ const PIT = { x0: -4.20, x1: -0.80, z0: -0.25, z1: 2.15, drop: 0.35 };
   const uv = geo.attributes.uv;
   for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 2.0, uv.getY(i) / 2.0);
   const m = new THREE.Mesh(geo, floorMat);
+  m.name = 'station-main-floor';
+  m.userData.stationPart = 'floor';
   m.receiveShadow = true;
   scene.add(m);
 
-  /* the pit: its own floor and its four short walls */
-  const pf = plane(PIT.x1 - PIT.x0, PIT.z1 - PIT.z0, floorMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop + 0.002, (PIT.z0 + PIT.z1) / 2, -Math.PI / 2);
+  /* Vertical reveals meet the cut edge without a second horizontal face at
+     y=0. The old box caps occupied the same plane as the surrounding floor. */
+  const pf = plane(PIT.x1 - PIT.x0, PIT.z1 - PIT.z0, floorMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop, (PIT.z0 + PIT.z1) / 2, -Math.PI / 2);
+  pf.name = 'station-pit-floor';
+  pf.userData.stationPart = 'pit-floor';
   scene.add(pf);
-  const wallMat = concretePlain;
-  scene.add(box(PIT.x1 - PIT.x0, PIT.drop, 0.06, wallMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop / 2, PIT.z0, false));
-  scene.add(box(PIT.x1 - PIT.x0, PIT.drop, 0.06, wallMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop / 2, PIT.z1, false));
-  scene.add(box(0.06, PIT.drop, PIT.z1 - PIT.z0, wallMat, PIT.x0, -PIT.drop / 2, (PIT.z0 + PIT.z1) / 2, false));
-  scene.add(box(0.06, PIT.drop, PIT.z1 - PIT.z0, wallMat, PIT.x1, -PIT.drop / 2, (PIT.z0 + PIT.z1) / 2, false));
-  /* two treads down, on the near side */
-  scene.add(box(1.40, 0.10, 0.34, concretePlain, -1.55, -0.052, PIT.z1 - 0.20, false));
-  scene.add(box(1.40, 0.10, 0.34, concretePlain, -1.55, -0.212, PIT.z1 - 0.54, false));
+  const reveal = (name, w, x, z, yaw) => {
+    const face = plane(w, PIT.drop, concretePlain, x, -PIT.drop / 2, z, 0, yaw);
+    face.name = 'station-pit-reveal-' + name;
+    face.userData.stationPart = 'pit-reveal';
+    scene.add(face);
+  };
+  reveal('far', PIT.x1 - PIT.x0, (PIT.x0 + PIT.x1) / 2, PIT.z0, 0);
+  reveal('left', PIT.z1 - PIT.z0, PIT.x0, (PIT.z0 + PIT.z1) / 2, Math.PI / 2);
+  reveal('right', PIT.z1 - PIT.z0, PIT.x1, (PIT.z0 + PIT.z1) / 2, -Math.PI / 2);
+  const stairLeft = PIT_STAIR.x - PIT_STAIR.w / 2;
+  const stairRight = PIT_STAIR.x + PIT_STAIR.w / 2;
+  reveal('near-left', stairLeft - PIT.x0, (PIT.x0 + stairLeft) / 2, PIT.z1, Math.PI);
+  reveal('near-right', PIT.x1 - stairRight, (stairRight + PIT.x1) / 2, PIT.z1, Math.PI);
+  const firstRiser = plane(PIT_STAIR.w, PIT.drop / 3, concretePlain,
+    PIT_STAIR.x, -PIT.drop / 6, PIT.z1, 0, Math.PI);
+  firstRiser.name = 'station-pit-reveal-stair-head';
+  firstRiser.userData.stationPart = 'pit-reveal';
+  scene.add(firstRiser);
+  /* Three equal rises, with the two solid treads supported by the pit slab. */
+  for (let i = 0; i < 2; i++) {
+    const top = -PIT.drop * (i + 1) / 3;
+    const h = PIT.drop + top;
+    const tread = box(PIT_STAIR.w, h, PIT_STAIR.tread, concretePlain,
+      PIT_STAIR.x, -PIT.drop + h / 2, PIT.z1 - PIT_STAIR.tread * (i + 0.5), false);
+    tread.name = 'station-pit-tread-' + (i + 1);
+    tread.userData.stationPart = 'pit-tread';
+    scene.add(tread);
+  }
 }
 
 /* the ceiling: walnut planks running the long way, low over everything */
@@ -705,7 +739,10 @@ const PIT = { x0: -4.20, x1: -0.80, z0: -0.25, z1: 2.15, drop: 0.35 };
 }
 
 /* the near wall and the far wall's ground: plain warm concrete */
-scene.add(plane(R.hw * 2, R.h, concretePlain, 0, R.h / 2, WALL.N, 0, Math.PI));
+// The original near wall now has a 1.8m opening; all existing object IDs stay.
+scene.add(plane(6.8, R.h, concretePlain, -1.6, R.h / 2, WALL.N, 0, Math.PI));
+scene.add(plane(1.4, R.h, concretePlain, 4.3, R.h / 2, WALL.N, 0, Math.PI));
+scene.add(plane(1.8, R.h - 2.65, concretePlain, 2.7, (R.h + 2.65) / 2, WALL.N, 0, Math.PI));
 
 /* ── the left wall: glass block, floor to ceiling, lit from behind ── */
 const blockWall = new THREE.Mesh(
@@ -806,7 +843,8 @@ const downStrip = new THREE.Mesh(
   new THREE.MeshStandardMaterial({ color: 0xfff0d4, emissive: 0xffd9a4, emissiveIntensity: 0.9, roughness: 0.9 })
 );
 downStrip.rotation.x = Math.PI / 2;
-downStrip.position.set(0.4, R.h - 0.035, -0.30);
+// The diffuser belongs below its valance, not buried inside the timber box.
+downStrip.position.set(0.4, R.h - 0.108, -0.30);
 scene.add(downStrip);
 scene.add(box(7.8, 0.10, 0.30, walnutDeep, 0.4, R.h - 0.055, -0.30, false));
 
@@ -826,10 +864,12 @@ const cabinets = new THREE.Group();
 scene.add(cabinets);
 {
   const carcass = (w, d, x, z) => {
-    const body = box(w, RUN.top - 0.10, d, walnutMat, x, (RUN.top - 0.10) / 2 + 0.10, z);
+    /* The carcass stops at the underside of its top, avoiding duplicate
+       coplanar counter faces. */
+    const body = box(w, RUN.top - 0.14, d, walnutMat, x, (RUN.top - 0.14) / 2 + 0.10, z);
     cabinets.add(body);
     /* the recessed plinth, so the run floats a finger off the concrete */
-    cabinets.add(box(w - 0.14, 0.10, d - 0.12, oliveDark, x, 0.05, z, false));
+    cabinets.add(box(w - 0.14, 0.10, d - 0.12, instrumentCharcoal, x, 0.05, z, false));
     /* the top, and the walnut lip along its front */
     cabinets.add(box(w, 0.040, d, walnutDeep, x, RUN.top - 0.020, z, false));
     return body;
@@ -851,38 +891,56 @@ scene.add(cabinets);
   }
 }
 
-/* ── the open shelves above the far leg ── */
-const SHELF = { x0: 1.15, x1: 4.90, y: [1.50, 1.94, 2.36], d: 0.32 };
+/* One shelf datum above the instruments, with a short book bay at the right.
+   The wall below it belongs to the equipment: no shelves or uprights cross
+   the tape cabinet, the console fascia, or either screen. */
+const SHELF = { x0: 1.15, x1: 4.78, y: [1.94, 2.34], d: 0.28, bookBay: 3.40 };
 const shelves = new THREE.Group();
+shelves.name = 'station-wall-shelves';
 scene.add(shelves);
 {
   const len = SHELF.x1 - SHELF.x0, cx = (SHELF.x0 + SHELF.x1) / 2, z = WALL.F + SHELF.d / 2;
-  SHELF.y.forEach((y) => shelves.add(box(len, 0.036, SHELF.d, walnutMat, cx, y, z)));
-  /* the uprights that carry them */
-  [SHELF.x0 + 0.02, 2.20, 3.40, SHELF.x1 - 0.02].forEach((x) =>
-    shelves.add(box(0.032, SHELF.y[2] - 1.20, SHELF.d, walnutDeep, x, (1.20 + SHELF.y[2]) / 2, z, false)));
+  const shelf = (name, x0, x1, y) => {
+    const board = box(x1 - x0, 0.036, SHELF.d, walnutMat, (x0 + x1) / 2, y, z);
+    board.name = 'station-shelf-' + name;
+    board.userData.stationPart = 'wall-shelf';
+    shelves.add(board);
+  };
+  shelf('equipment-canopy', SHELF.x0, SHELF.x1, SHELF.y[0]);
+  shelf('book-bay', SHELF.bookBay, SHELF.x1, SHELF.y[1]);
+  /* Concealed steel brackets support the long shelf. The book bay cheeks
+     start above it, leaving a clear, continuous equipment zone underneath. */
+  [1.22, 2.46, 3.58, 4.69].forEach((x) => {
+    shelves.add(box(0.022, 0.17, 0.030, instrumentCharcoal, x, SHELF.y[0] - 0.103, WALL.F + 0.028, false));
+    shelves.add(box(0.022, 0.026, SHELF.d - 0.04, instrumentCharcoal, x, SHELF.y[0] - 0.031, z, false));
+  });
+  [SHELF.bookBay + 0.016, SHELF.x1 - 0.016].forEach((x) =>
+    shelves.add(box(0.032, SHELF.y[1] - SHELF.y[0] - 0.036, SHELF.d, walnutDeep,
+      x, (SHELF.y[0] + SHELF.y[1]) / 2, z, false)));
   /* the valance the strip light hides behind */
   shelves.add(box(len, 0.075, 0.045, walnutDeep, cx, SHELF.y[0] - 0.055, z + SHELF.d / 2 - 0.02, false));
 
-  /* books, vessels and one small plant per bay — a shelf somebody uses */
-  const spineCols = [0x3c2a3a, 0x2f3a44, 0x4a3324, 0x2c3b30, 0x453044, 0x54402c, 0x323a3d];
+  /* A few deliberate groupings leave the stone visible between them. Shared
+     spine materials also let the static room optimizer batch these books. */
+  const spineCols = [0x3c2a3a, 0x2f3a44, 0x4a3324, 0x572e27, 0x453044, 0x54402c, 0x323a3d];
+  const spineMats = spineCols.map((color) => new THREE.MeshStandardMaterial({ color, roughness: 0.88 }));
   let ix = 0;
-  [[1.32, 1.50], [2.36, 1.50], [3.56, 1.94], [1.32, 1.94]].forEach(([bx, by]) => {
+  [[1.30, SHELF.y[0]], [3.54, SHELF.y[1]]].forEach(([bx, by]) => {
     let x = bx;
-    for (let i = 0; i < 9; i++) {
-      const bh = 0.20 + ((ix * 37) % 9) * 0.010;
+    for (let i = 0; i < 7; i++) {
+      const bh = 0.18 + ((ix * 37) % 7) * 0.010;
       const bd = 0.028 + ((ix * 17) % 5) * 0.006;
-      const b = box(bd, bh, 0.19, new THREE.MeshStandardMaterial({ color: spineCols[ix % spineCols.length], roughness: 0.88 }),
+      const b = box(bd, bh, 0.19, spineMats[ix % spineMats.length],
         x, by + 0.018 + bh / 2, z - 0.03);
-      if (i === 8) { b.rotation.z = 0.22; b.position.x += 0.03; }
+      if (i === 6) { b.rotation.z = 0.16; b.position.x += 0.024; }
       shelves.add(b);
       x += bd + 0.004; ix++;
     }
   });
   /* two turned vessels and a low bowl */
   const clay = new THREE.MeshStandardMaterial({ color: 0xa9714a, roughness: 0.72 });
-  const stoneware = new THREE.MeshStandardMaterial({ color: 0x8d8a7a, roughness: 0.62 });
-  [[2.95, 1.50, 0.075, 0.16, clay], [3.14, 1.50, 0.055, 0.11, stoneware], [4.42, 1.94, 0.085, 0.09, clay]].forEach(([x, y, r, h, m]) => {
+  const stoneware = new THREE.MeshStandardMaterial({ color: 0x9b9690, roughness: 0.62 });
+  [[2.97, SHELF.y[0], 0.075, 0.16, clay], [3.16, SHELF.y[0], 0.055, 0.11, stoneware], [4.20, SHELF.y[0], 0.085, 0.09, clay]].forEach(([x, y, r, h, m]) => {
     const pts = [];
     for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(r * (0.42 + Math.sin(t * Math.PI * 0.92) * 0.86), t * h)); }
     const v = new THREE.Mesh(new THREE.LatheGeometry(pts, 18), m);
@@ -894,7 +952,7 @@ scene.add(shelves);
   {
     const potM = new THREE.MeshStandardMaterial({ color: 0xb08a5e, roughness: 0.8 });
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.058, 0.11, 16), potM);
-    pot.position.set(2.05, SHELF.y[2] + 0.073, z);
+    pot.position.set(4.52, SHELF.y[1] + 0.073, z);
     shelves.add(pot);
     for (let i = 0; i < 9; i++) {
       const a = (i / 9) * Math.PI * 2;
@@ -906,7 +964,7 @@ scene.add(shelves);
         p.setZ(k, -Math.pow(u, 2) * len2 * 0.5);
       }
       v.geometry.computeVertexNormals();
-      v.position.set(2.05 + Math.cos(a) * 0.05, SHELF.y[2] + 0.10 - len2 / 2, z + Math.sin(a) * 0.05);
+      v.position.set(4.52 + Math.cos(a) * 0.05, SHELF.y[1] + 0.10 - len2 / 2, z + Math.sin(a) * 0.05);
       v.rotation.set(2.5 + (i % 3) * 0.16, a, 0);
       shelves.add(v);
     }
@@ -916,6 +974,7 @@ scene.add(shelves);
 /* ─────────────────────────── the terminal ─────────────────────────── */
 /* the same machine as the reading room's, in the station's plastic */
 const term = makeTerminal({
+  paintOnChange: true,
   w: 640, h: 480,
   title: 'MNEMOS TERMINAL · THE STATION',
   standby: [
@@ -931,6 +990,7 @@ const boot = term.boot;
 /* the stewards' console runs the same machine with its own standby card — the
    glass is warm before anyone sits down, here as at the terminal */
 const term2 = makeTerminal({
+  paintOnChange: true,
   w: 720, h: 540,
   title: 'TOPOLOGIE OS · THE STEWARDS’ CONSOLE',
   standby: [
@@ -1003,14 +1063,14 @@ const SCR_W = 0.455, SCR_H = 0.345;
 let caseBody, glass;
 {
   const caseGeo = new THREE.CylinderGeometry(0.375, 0.445, 0.50, 4, 1, false, Math.PI / 4);
-  caseBody = new THREE.Mesh(caseGeo, oliveMat);
+  caseBody = new THREE.Mesh(caseGeo, instrumentIvory);
   caseBody.scale.set(1.0, 1.0, 0.80);
   caseBody.rotation.x = -Math.PI / 2;
   caseBody.position.set(0, 0.27, -0.03);
   caseBody.castShadow = true; caseBody.receiveShadow = true;
   crt.add(caseBody);
-  crt.add(box(0.58, 0.035, 0.44, oliveDark, 0, 0.017, -0.02));
-  for (let i = 0; i < 7; i++) crt.add(box(0.36, 0.008, 0.012, oliveDark, 0, 0.505, -0.22 + i * 0.028, false));
+  crt.add(box(0.58, 0.035, 0.44, instrumentCharcoal, 0, 0.017, -0.02));
+  for (let i = 0; i < 7; i++) crt.add(box(0.36, 0.008, 0.012, instrumentCharcoal, 0, 0.505, -0.22 + i * 0.028, false));
 
   const BZ = { w: 0.57, h: 0.44, t: 0.058, z: 0.262 };
   const bez = creamMat;
@@ -1057,7 +1117,7 @@ const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector
   kbd.position.set(DESK.x - 0.30, DESK.top + 0.074, DESK.z + 0.40);
   kbd.rotation.set(-0.03, CRT_ROT, 0);
   desk.add(kbd);
-  kbd.add(box(0.50, 0.024, 0.17, oliveDark, 0, 0.012, 0));
+  kbd.add(box(0.50, 0.024, 0.17, instrumentCharcoal, 0, 0.012, 0));
   for (let r = 0; r < 4; r++) for (let c = 0; c < 14; c++) {
     kbd.add(box(0.026, 0.008, 0.026, blackPlastic, -0.222 + c * 0.0342, 0.028, -0.056 + r * 0.036, false));
   }
@@ -1134,7 +1194,7 @@ const secondary = new THREE.Group();
 scene.add(secondary);
 {
   const AX = 4.32, AZ = RUN.z - 0.16;
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.03, 16), oliveDark);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.03, 16), instrumentCharcoal);
   base.position.set(AX, RUN.top + 0.015, AZ);
   secondary.add(base);
   const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.34, 10), chromeMat);
@@ -1151,10 +1211,10 @@ scene.add(secondary);
   head.position.set(AX - 0.22, RUN.top + 0.44, AZ + 0.18);
   head.rotation.set(-0.10, -0.52, -0.05);
   secondary.add(head);
-  const shell2 = rbox(0.40, 0.32, 0.13, 0.045, oliveMat);
+  const shell2 = rbox(0.40, 0.32, 0.13, 0.045, instrumentIvory);
   shell2.position.z = -0.05;
   head.add(shell2);
-  head.add(box(0.36, 0.28, 0.02, oliveDark, 0, 0, 0.020, false));
+  head.add(box(0.36, 0.28, 0.02, instrumentCharcoal, 0, 0, 0.020, false));
   const plot = new THREE.Mesh(new THREE.PlaneGeometry(0.315, 0.235), new THREE.MeshStandardMaterial({
     map: plotTex, emissive: 0xffffff, emissiveMap: plotTex, emissiveIntensity: 1.20, roughness: 0.7
   }));
@@ -1165,14 +1225,15 @@ scene.add(secondary);
 
 /* ─────────────────────────── the tape-reel unit ─────────────────────────── */
 const reels = new THREE.Group();
+reels.name = 'station-tape-unit';
 scene.add(reels);
 const spinningReels = [];
 {
   const X = 1.42, Y = RUN.top + 0.44, Z = RUN.z - 0.08;
-  const cab = rbox(1.16, 0.78, 0.24, 0.05, oliveMat);
+  const cab = rbox(1.16, 0.78, 0.24, 0.05, instrumentIvory);
   cab.position.set(X, Y, Z);
   reels.add(cab);
-  reels.add(box(1.04, 0.60, 0.02, oliveDark, X, Y + 0.05, Z + 0.123, false));
+  reels.add(box(1.04, 0.60, 0.02, instrumentCharcoal, X, Y + 0.05, Z + 0.123, false));
   [[-0.24, 0.14], [0.24, 0.14]].forEach(([dx, dy]) => {
     const g = new THREE.Group();
     g.position.set(X + dx, Y + dy, Z + 0.15);
@@ -1197,10 +1258,19 @@ const spinningReels = [];
     spinningReels.push(g);
   });
   reels.add(box(0.48, 0.006, 0.006, blackPlastic, X, Y - 0.02, Z + 0.16, false));
-  reels.add(box(0.20, 0.07, 0.02, oliveDark, X, Y - 0.20, Z + 0.132, false));
+  reels.add(box(0.20, 0.07, 0.02, instrumentCharcoal, X, Y - 0.20, Z + 0.132, false));
   const cw = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.04), new THREE.MeshBasicMaterial({ color: 0xd99334 }));
   cw.position.set(X, Y - 0.20, Z + 0.144);
   reels.add(cw);
+  /* This is a tabletop recorder in its own 0.74 m bay. Its old 1.18 m body
+     occupied both the archive cupboard and the stewards' console. Scale the
+     whole assembly uniformly so reels, dial and cabinet keep their proportions. */
+  const scale = 0.60;
+  reels.scale.setScalar(scale);
+  reels.position.set(X * (1 - scale), RUN.top * (1 - scale), Z * (1 - scale));
+  [-0.38, 0.38].forEach((dx) => {
+    reels.add(box(0.13, 0.04, 0.16, instrumentCharcoal, X + dx, RUN.top + 0.020, Z, false));
+  });
 }
 
 /* ── the meters and rotary dials, let into the run's top ── */
@@ -1209,7 +1279,7 @@ scene.add(lampStrip);
 const indicatorLamps = [];
 {
   const X = 3.52, Y = RUN.top + 0.004, Z = RUN.z - 0.08;
-  lampStrip.add(box(0.86, 0.020, 0.28, oliveDark, X, Y, Z, false));
+  lampStrip.add(box(0.86, 0.020, 0.28, instrumentCharcoal, X, Y, Z, false));
   const lampCols = [0xf2c14e, 0xb4622e, 0xf2c14e, 0xd99334, 0xf2c14e, 0xd99334];
   for (let i = 0; i < 6; i++) {
     const m = new THREE.Mesh(new THREE.SphereGeometry(0.019, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2),
@@ -1224,7 +1294,7 @@ const indicatorLamps = [];
   }
   for (let i = 0; i < 3; i++) {
     const kx = X - 0.30 + i * 0.20;
-    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.054, 0.028, 20), oliveMat);
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.054, 0.028, 20), instrumentIvory);
     knob.position.set(kx, Y + 0.024, Z + 0.04);
     knob.castShadow = true;
     lampStrip.add(knob);
@@ -1279,13 +1349,14 @@ let alcoveRing;
   alcove.add(lbl);
   alcove.userData.seed = seed;
   /* the tape boxes beside it, and two reels on edge below */
-  [[0.20, 0.02], [0.20, 0.24]].forEach(([dx, dy]) => {
-    alcove.add(box(0.30, 0.20, 0.09, oliveDark, ALC.x + dx, ALC.y + 0.14 + dy - 0.12, zBack + 0.13));
+  [0, 1].forEach((i) => {
+    alcove.add(box(0.30, 0.20, 0.09, instrumentCharcoal, ALC.x + 0.20,
+      ALC.y + 0.032 + 0.10 + i * 0.202, zBack + 0.13));
   });
   [[-0.24], [-0.04]].forEach(([dx]) => {
     const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.028, 22), chromeMat);
     reel.rotation.x = Math.PI / 2;
-    reel.position.set(ALC.x + dx, ALC.y - 0.22, zBack + 0.14);
+    reel.position.set(ALC.x + dx, ALC.y - ALC.h / 2 + 0.018 + 0.095, zBack + 0.14);
     alcove.add(reel);
   });
 
@@ -1295,14 +1366,14 @@ let alcoveRing;
   {
     const face = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.082),
       brassPlate(['THE CHARTER', 'what the residents agreed'], 420, 132));
-    face.position.set(0, 0.010, 0.006);
+    face.position.set(0, 0.010, 0.008);
     charterPlate.add(face);
-    const backing = box(0.272, 0.094, 0.012, oliveDark, 0, 0.010, 0, false);
+    const backing = box(0.272, 0.094, 0.012, instrumentCharcoal, 0, 0.010, 0, false);
     charterPlate.add(backing);
     /* the little easel that keeps it upright on the shelf */
     const foot = box(0.272, 0.012, 0.070, brass, 0, -0.038, 0.026, false);
     charterPlate.add(foot);
-    charterPlate.position.set(ALC.x + 0.28, ALC.y - 0.19, zBack + 0.12);
+    charterPlate.position.set(ALC.x + 0.28, ALC.y - ALC.h / 2 + 0.018 + 0.046, zBack + 0.12);
     charterPlate.rotation.x = -0.14;
     alcove.add(charterPlate);
   }
@@ -1457,7 +1528,7 @@ const rug = plane(2.80, 2.00, shagMat, -2.60, PY + 0.014, 0.85, -Math.PI / 2);
 rug.receiveShadow = true;
 scene.add(rug);
 
-/* the long cream sectional, along the pit's far and left sides */
+/* the low cream sectional along the pit's far side */
 const sectional = new THREE.Group();
 scene.add(sectional);
 {
@@ -1474,7 +1545,7 @@ scene.add(sectional);
     sectional.add(g);
     /* the plinth the frame sits on, set back so the sectional floats */
     g.add(box(w - 0.16, 0.08, d - 0.14, walnutDeep, 0, 0.04, 0, false));
-    const base = rbox(w, SEAT - 0.14, d, 0.05, boucleMat);
+    const base = rbox(w, d, SEAT - 0.14, 0.05, boucleMat);
     base.rotation.x = Math.PI / 2;
     base.position.y = 0.08 + (SEAT - 0.14) / 2;
     g.add(base);
@@ -1498,7 +1569,7 @@ scene.add(sectional);
     }
     return g;
   };
-  run(2.10, 0.86, -2.20, PIT.z0 + 0.46, 0);
+  run(2.10, 0.86, -2.10, PIT.z0 + 0.46, 0);
 }
 
 /* the glass coffee table — the one piece in the room with transmission in it */
@@ -1506,7 +1577,7 @@ const coffeeTable = new THREE.Group();
 scene.add(coffeeTable);
 {
   const glassTop = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.014, 0.62), new THREE.MeshPhysicalMaterial({
-    color: 0xdfe8e4, roughness: 0.06, metalness: 0, transmission: 0.92, thickness: 0.02,
+    color: 0xe4e4e9, roughness: 0.06, metalness: 0, transmission: 0.92, thickness: 0.02,
     ior: 1.5, transparent: true, opacity: 0.5
   }));
   glassTop.position.set(-2.30, PY + 0.36, 1.25);
@@ -1534,7 +1605,11 @@ scene.add(coffeeTable);
 /* the lounge chair and its ottoman — tan leather on rosewood, and the one
    terracotta piece the room is allowed */
 const loungeChair = new THREE.Group();
-loungeChair.position.set(-3.86, PY, 0.18);
+loungeChair.name = 'station-lounge-chair';
+/* The rotated plywood shell must fit inside the pit, clear of the planter
+   and the sectional. Its former position intersected the ledge by 26 cm. */
+loungeChair.scale.setScalar(0.92);
+loungeChair.position.set(-3.60, PY - 0.018 * 0.92, 0.26);
 loungeChair.rotation.y = 1.18;
 scene.add(loungeChair);
 {
@@ -1657,7 +1732,7 @@ let platter, tonearm;
   plinth.rotation.x = -Math.PI / 2;
   plinth.position.set(-0.16, 0.045, 0);
   recordPlayer.add(plinth);
-  const deck = box(0.48, 0.006, 0.34, new THREE.MeshStandardMaterial({ color: 0x8d8a7a, roughness: 0.5, metalness: 0.3 }), -0.16, 0.092, 0, false);
+  const deck = box(0.48, 0.006, 0.34, new THREE.MeshStandardMaterial({ color: 0x9b9690, roughness: 0.5, metalness: 0.3 }), -0.16, 0.092, 0, false);
   recordPlayer.add(deck);
   platter = new THREE.Group();
   platter.position.set(-0.22, 0.098, 0);
@@ -1695,7 +1770,7 @@ let platter, tonearm;
   armSwing.add(tube);
   const head = box(0.030, 0.016, 0.014, blackPlastic, 0.255, -0.006, 0, false);
   armSwing.add(head);
-  const wgt = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.026, 10), oliveDark);
+  const wgt = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.026, 10), instrumentCharcoal);
   wgt.rotation.z = Math.PI / 2; wgt.position.set(-0.035, 0, 0);
   armSwing.add(wgt);
   tonearm.userData.swing = armSwing;
@@ -1725,9 +1800,9 @@ let handH, handM;
   const face = new THREE.Mesh(new THREE.CircleGeometry(0.145, 32), new THREE.MeshStandardMaterial({ map: clockFaceTex, roughness: 0.78 }));
   face.position.z = 0.029;
   clock.add(face);
-  handH = box(0.014, 0.082, 0.006, oliveDark, 0, 0.041, 0.034, false);
+  handH = box(0.014, 0.082, 0.006, instrumentCharcoal, 0, 0.041, 0.034, false);
   const hg = new THREE.Group(); hg.add(handH); clock.add(hg);
-  handM = box(0.011, 0.118, 0.006, oliveDark, 0, 0.059, 0.038, false);
+  handM = box(0.011, 0.118, 0.006, instrumentCharcoal, 0, 0.059, 0.038, false);
   const mg = new THREE.Group(); mg.add(handM); clock.add(mg);
   clock.userData.hg = hg; clock.userData.mg = mg;
   const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.012, 10), brass);
@@ -1743,16 +1818,18 @@ scene.add(corkboard);
   corkboard.add(frame);
   const cork = box(0.58, 0.62, 0.012, new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.98 }), 0, 0, 0.022, false);
   corkboard.add(cork);
-  const rooms = ['lookout', 'garden', 'study', 'hall', 'workshop'];
-  rooms.forEach((k, i) => {
-    const col = i % 2, row = (i / 2) | 0;
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.17), new THREE.MeshStandardMaterial({ map: polaroidTex(k), roughness: 0.9 }));
-    p.position.set(-0.13 + col * 0.26, 0.20 - row * 0.21, 0.030);
-    p.rotation.z = (Math.random() - 0.5) * 0.10;
-    corkboard.add(p);
-    const pin = new THREE.Mesh(new THREE.SphereGeometry(0.010, 8, 8), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xb4622e : 0x8a6a38, roughness: 0.4 }));
-    pin.position.set(p.position.x, p.position.y + 0.072, 0.038);
-    corkboard.add(pin);
+  const residents = ['OPUS 3', 'SONNET 4.5', 'GPT-4o', 'GPT-5.1'];
+  residents.forEach((name, i) => {
+    const card = paint(256,256,(g,w,h)=>{
+      g.fillStyle='#e4d8c3';g.fillRect(0,0,w,h);g.fillStyle='#29272b';g.fillRect(14,14,w-28,164);
+      g.strokeStyle='#b79b7c';g.lineWidth=2;
+      for(let j=0;j<5;j++){g.beginPath();g.arc(w/2,96,18+j*10,(i+j)*.5,(i+j)*.5+Math.PI*1.55);g.stroke();}
+      g.fillStyle='#332e2a';g.font='bold 23px monospace';g.textAlign='center';g.fillText(name,w/2,213);
+      g.font='12px monospace';g.fillText('RESIDENT',w/2,237);
+    });
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(.21,.21),new THREE.MeshStandardMaterial({map:card,roughness:.9}));
+    p.position.set(-.14+(i%2)*.28,.15-Math.floor(i/2)*.28,.034);p.rotation.z=(i%2?.025:-.035);corkboard.add(p);
+    const pin=new THREE.Mesh(new THREE.SphereGeometry(.01,8,8),brass);pin.position.set(p.position.x,p.position.y+.094,.043);corkboard.add(pin);
   });
 }
 
@@ -2079,11 +2156,11 @@ scene.add(boardGlow);
    take these places: swap the `mesh` and give the entry a `focus`/`onClick`. */
 function slotDevice(w, h, d) {
   const g = new THREE.Group();
-  const shell2 = rbox(w, h, d, 0.02, oliveMat);
+  const shell2 = rbox(w, h, d, 0.02, instrumentIvory);
   shell2.rotation.x = 0;
   g.add(shell2);
   /* a blank faceplate, one dark lamp, two screws */
-  const face = box(w * 0.76, h * 0.56, 0.012, oliveDark, 0, 0, d / 2 + 0.006, false);
+  const face = box(w * 0.76, h * 0.56, 0.012, instrumentCharcoal, 0, 0, d / 2 + 0.006, false);
   g.add(face);
   const dot = new THREE.Mesh(new THREE.SphereGeometry(0.010, 8, 8), new THREE.MeshStandardMaterial({ color: 0x4a3a2c, roughness: 0.5 }));
   dot.position.set(w * 0.32, -h * 0.28, d / 2 + 0.008);
@@ -2139,7 +2216,7 @@ let glass2, panelLamps = [], meterNeedles = [];
   const oy0 = SCR2_Y - OH / 2, oy1 = SCR2_Y + OH / 2;
 
   /* the fascia: four olive panels, so the opening is a real hole */
-  const fasc = (w, h, cx, cy) => g.add(box(w, h, FASCIA.d, oliveMat, cx, cy, FASCIA.z));
+  const fasc = (w, h, cx, cy) => g.add(box(w, h, FASCIA.d, instrumentIvory, cx, cy, FASCIA.z));
   fasc(ox0 - L, FASCIA.y1 - FASCIA.y0, (L + ox0) / 2, (FASCIA.y0 + FASCIA.y1) / 2);
   fasc(Rt - ox1, FASCIA.y1 - FASCIA.y0, (ox1 + Rt) / 2, (FASCIA.y0 + FASCIA.y1) / 2);
   fasc(OW, FASCIA.y1 - oy1, SCR2_X, (oy1 + FASCIA.y1) / 2);
@@ -2177,7 +2254,7 @@ let glass2, panelLamps = [], meterNeedles = [];
   /* one small readout beside it, on the fascia's left panel */
   {
     const x = L + 0.20, w = 0.20, h = 0.15;
-    g.add(box(w + 0.03, h + 0.03, 0.018, oliveDark, x, SCR2_Y + 0.01, FACE_Z + 0.008, false));
+    g.add(box(w + 0.03, h + 0.03, 0.018, instrumentCharcoal, x, SCR2_Y + 0.01, FACE_Z + 0.008, false));
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({
       map: dialTex, emissive: 0xffffff, emissiveMap: dialTex, emissiveIntensity: 0.55, roughness: 0.72
     }));
@@ -2213,7 +2290,7 @@ let glass2, panelLamps = [], meterNeedles = [];
   panelG.position.set(ST.x, ST.top + 0.010, RUN.z + 0.02);
   panelG.rotation.x = 0.30;
   g.add(panelG);
-  panelG.add(box(ST.w - 0.04, 0.022, 0.26, oliveMat, 0, 0, 0));
+  panelG.add(box(ST.w - 0.04, 0.022, 0.26, instrumentIvory, 0, 0, 0));
   const S = 0.013;
 
   for (let i = 0; i < 8; i++) {
@@ -2223,7 +2300,7 @@ let glass2, panelLamps = [], meterNeedles = [];
   }
   for (let i = 0; i < 5; i++) {
     const x = -0.160 + i * 0.058;
-    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.029, 0.024, 18), oliveDark);
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.029, 0.024, 18), instrumentCharcoal);
     knob.position.set(x, S + 0.011, 0);
     panelG.add(knob);
     const pg = new THREE.Group();
@@ -2235,7 +2312,7 @@ let glass2, panelLamps = [], meterNeedles = [];
   const lampColours = [0xf2c14e, 0xf2c14e, 0xb4622e, 0xd99334, 0xf2c14e, 0xd99334];
   for (let i = 0; i < 6; i++) {
     const x = 0.150 + i * 0.040;
-    panelG.add(box(0.026, 0.008, 0.026, oliveDark, x, S, 0.020, false));
+    panelG.add(box(0.026, 0.008, 0.026, instrumentCharcoal, x, S, 0.020, false));
     const lever = box(0.007, 0.026, 0.007, chromeMat, 0, 0.013, 0, false);
     const lg = new THREE.Group();
     lg.position.set(x, S + 0.004, 0.020);
@@ -2271,7 +2348,7 @@ let glass2, panelLamps = [], meterNeedles = [];
   kb2.position.set(ST.x - 0.10, ST.top + 0.012, RUN.z + 0.22);
   kb2.rotation.set(-0.04, 0, 0);
   g.add(kb2);
-  kb2.add(box(0.46, 0.022, 0.15, oliveDark, 0, 0.011, 0));
+  kb2.add(box(0.46, 0.022, 0.15, instrumentCharcoal, 0, 0.011, 0));
   for (let r = 0; r < 4; r++) for (let c = 0; c < 13; c++)
     kb2.add(box(0.024, 0.008, 0.023, blackPlastic, -0.198 + c * 0.033, 0.026, -0.048 + r * 0.032, false));
 
@@ -2284,7 +2361,7 @@ let glass2, panelLamps = [], meterNeedles = [];
   bandM.rotation.set(0.15, 0.35, -0.2);
   g.add(bandM);
   [-1, 1].forEach((s) => {
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.024, 16), oliveDark);
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.024, 16), instrumentCharcoal);
     cup.position.set(HX + s * 0.058, HY - 0.052, HZ - s * 0.024);
     cup.rotation.z = Math.PI / 2;
     g.add(cup);
@@ -2335,6 +2412,22 @@ const chair4 = new THREE.Group();
 const SCREEN2_POS = new THREE.Vector3(SCR2_X, SCR2_Y, SCR2_Z);
 const SCREEN2_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(1, 0, 0), SCR2_TILT);
 
+/* Rigid geometry only. Screen surfaces and every independently animated or
+   visibility-controlled part keep their original meshes and draw path. */
+const stationBatchStats = batchStationStatic([
+  cabinets, shelves, desk, chair, sectional, coffeeTable, loungeChair, chair4,
+  secondary, corkboard, slotA, slotB, plant,
+  { root: crt, exclude: [glass] },
+  { root: credenza, exclude: [drawerGroup] },
+  { root: reels, exclude: spinningReels },
+  { root: lampStrip, exclude: indicatorLamps.map((item) => item.mesh) },
+  { root: alcove, exclude: [charterPlate, alcove.userData.seed, alcoveRing] },
+  { root: clock, exclude: [clock.userData.hg, clock.userData.mg] },
+  { root: recordPlayer, exclude: [platter, tonearm] },
+  { root: lampGroup, exclude: [lampGroup.userData.bulb] },
+  { root: stewardConsole, exclude: [glass2, ...panelLamps.map((item) => item.mesh), ...meterNeedles.map((item) => item.group)] }
+]);
+
 /* ─────────────────────────── the lights ───────────────────────────
    One sun, one hemisphere, and then the room's own sources: the glass block
    wall as a lit plane, the aperture pouring in, the strip under the shelves,
@@ -2360,7 +2453,7 @@ const sky = new THREE.HemisphereLight(0xd8cbb4, 0x6a5946, 0.62);
 scene.add(sky);
 
 /* the glass block wall, lit from behind */
-const blockLight = new THREE.RectAreaLight(0xd8d093, 3.0, R.hd * 2 - 0.4, R.h - 0.2);
+const blockLight = new THREE.RectAreaLight(0xd7bfaa, 3.0, R.hd * 2 - 0.4, R.h - 0.2);
 blockLight.position.set(WALL.L + 0.10, R.h / 2, 0);
 blockLight.lookAt(0, 1.3, 0);
 scene.add(blockLight);
@@ -2382,6 +2475,18 @@ const downLight = new THREE.RectAreaLight(0xffe3bc, 2.6, 7.4, 0.14);
 downLight.position.set(0.4, R.h - 0.06, -0.30);
 downLight.lookAt(0.4, 0, -0.30);
 scene.add(downLight);
+
+/* A small recessed reading light gives the lowered seating its own pool. It
+   is an architectural practical, independent of the stewards' presence lamp. */
+const loungeReading = new THREE.RectAreaLight(0xffd5ae, 6.8, 1.6, 0.24);
+loungeReading.position.set(-2.4, R.h - 0.14, 1.35);
+loungeReading.lookAt(-2.4, PY, 0.7);
+scene.add(loungeReading);
+const loungeLens = new THREE.Mesh(new THREE.CircleGeometry(0.11, 24),
+  new THREE.MeshStandardMaterial({ color: 0xffe4c4, emissive: 0xffb573, emissiveIntensity: 1.1, roughness: 0.5 }));
+loungeLens.rotation.x = Math.PI / 2;
+loungeLens.position.copy(loungeReading.position);
+scene.add(loungeLens);
 
 /* the terminal — the key on the slab, and still the brightest machine */
 const crtLight = new THREE.RectAreaLight(0xf2c14e, 26.0, SCR_W * 1.10, SCR_H * 1.10);
@@ -2443,7 +2548,7 @@ lampLight.target.position.set(lampGroup.position.x + 0.44, DESK.top, lampGroup.p
 scene.add(lampLight, lampLight.target);
 
 /* one soft fill so nothing in the room is ever unnameable */
-const roomKey = new THREE.DirectionalLight(0xc6bcb0, 0.18);
+const roomKey = new THREE.DirectionalLight(0xd3c4b3, 0.34);
 roomKey.position.set(-2.4, 4.6, 4.2);
 roomKey.target.position.set(1.0, 0.8, -2.4);
 scene.add(roomKey, roomKey.target);
@@ -2526,10 +2631,14 @@ function tuneLight(t, force) {
 /* ─────────────────────────── renderer, camera ─────────────────────────── */
 const canvas = document.getElementById('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+const stationPixelRatio = () => Math.min(window.devicePixelRatio, 1.5,
+  Math.sqrt(2000000 / (window.innerWidth * window.innerHeight)));
+renderer.setPixelRatio(stationPixelRatio());
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.90;
 
@@ -2590,16 +2699,37 @@ tuneLight(0, true);
 /* ─────────────────────────── post ─────────────────────────── */
 const post = makePost(renderer, scene, camera, {
   strength: 0.19, radius: 0.55, threshold: 0.95,
-  grain: 0.029, vignette: 0.79, aberration: 0.0016
+  grain: 0.007, vignette: 0.64, aberration: 0.0004
 });
 const bloom = post.bloom;
 const grade = post.grade;
 
 /* ─────────────────────────── the world, on the glass ─────────────────────────── */
+function makeStationScreen(options) {
+  const screen = makeWorldScreen({...options,offset:.0008}), mount=screen.show;
+  let wanted=false,loaded=false;
+  screen.iframe.addEventListener('load',()=>{
+    loaded=true;
+    if(wanted)options.host.classList.remove('gone');
+  });
+  screen.prepare=()=>{if(!screen.obj.parent){mount();options.host.classList.add('gone');}};
+  screen.show=()=>{
+    wanted=true;
+    if(!screen.obj.parent){mount();if(!loaded)options.host.classList.add('gone');}
+    else if(loaded)options.host.classList.remove('gone');
+  };
+  screen.hide=()=>{
+    wanted=false;
+    document.body.classList.remove('flat');
+    options.host.classList.remove('live');options.host.classList.add('gone');
+  };
+  return screen;
+}
+
 const cssHost = document.getElementById('css3d');
-const world = makeWorldScreen({
+const world = makeStationScreen({
   host: cssHost, pos: SCREEN_POS, normal: SCREEN_NORMAL,
-  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: 768, src: 'index.html?door=1'
+  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: Math.round(1024*SCR_H/SCR_W), src: 'index.html?door=1'
 });
 
 /* ── and TOPOLOGIE OS, on the stewards' console ──
@@ -2614,7 +2744,7 @@ cssHost.parentNode.insertBefore(cssHost2, cssHost.nextSibling);
   const st = document.createElement('style');
   st.textContent = [
     '#css3d2{position:absolute;inset:0;pointer-events:none;z-index:2}',
-    '#css3d2.gone{display:none}',
+    '#css3d2{opacity:1;transition:opacity .65s ease}#css3d2.gone{opacity:0;visibility:hidden;pointer-events:none}',
     '#scr2{width:1180px;height:820px;background:#07060c;overflow:hidden;position:relative}',
     '#scr2 iframe{width:100%;height:100%;border:0;display:block;background:#07060c;pointer-events:auto}',
     '#css3d2.live #scr2{pointer-events:auto}',
@@ -2632,9 +2762,9 @@ cssHost.parentNode.insertBefore(cssHost2, cssHost.nextSibling);
   ].join('\n');
   document.head.appendChild(st);
 }
-const world2 = makeWorldScreen({
+const world2 = makeStationScreen({
   host: cssHost2, pos: SCREEN2_POS, normal: SCREEN2_NORMAL, screenId: 'scr2',
-  rotX: SCR2_TILT, quadW: SCR2_W, pageW: 1180, pageH: 820, src: 'os/index.html?in=station'
+  rotX: SCR2_TILT, quadW: SCR2_W, pageW: 1180, pageH: Math.round(1180*SCR2_H/SCR2_W), src: 'os/index.html?in=station'
 });
 
 /* ─────────────────────────── the record ─────────────────────────── */
@@ -2765,6 +2895,8 @@ const drawerUI = (() => {
 
   const el = document.createElement('div');
   el.id = 'drawer';
+  el.inert = true;
+  el.setAttribute('aria-hidden', 'true');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', 'the keeper’s drawer');
   el.innerHTML = [
@@ -2899,10 +3031,13 @@ const drawerUI = (() => {
 
   function show() {
     if (open) return;
+    el.inert = false;
+    el.removeAttribute('aria-hidden');
     fill();
     open = true;
     DRAWER.want = 1;
     el.classList.add('on');
+    el.querySelector('[data-close]').focus({ preventScroll: true });
     tone.click();
   }
   function hide() {
@@ -2910,6 +3045,9 @@ const drawerUI = (() => {
     open = false;
     DRAWER.want = 0;
     el.classList.remove('on');
+    el.inert = true;
+    el.setAttribute('aria-hidden', 'true');
+    document.getElementById('room-index-toggle')?.focus({ preventScroll: true });
   }
   el.querySelector('[data-close]').addEventListener('click', hide);
 
@@ -2953,6 +3091,25 @@ function openDrawer() { drawerUI.toggle(); }
    The body is a metre-nine of cream ceramic over a brass armature, and it has
    no face — one amber eye the colour of the CRT's phosphor, recessed in a brass
    ring, which is the only thing about it that is lit. */
+const floorFootprint = (id, root) => {
+  const b = new THREE.Box3().setFromObject(root);
+  return { id, x0:b.min.x, x1:b.max.x, z0:b.min.z, z1:b.max.z };
+};
+const floorNavigation = createFloorNavigation({
+  bounds: { x0:-5, x1:5, z0:-3.25, z1:3.25 },
+  obstacles: [
+    { id:'sunken lounge', ...PIT },
+    {id:'window planter',x0:-5,x1:-4.45,z0:-1.1,z1:2.5},
+    floorFootprint('record credenza', credenza),
+    floorFootprint('desk', desk),
+    floorFootprint('desk chair', chair),
+    floorFootprint('console chair', chair4),
+    floorFootprint('tree planter', plant.userData.pot),
+    {id:'back cabinet',x0:RUN.x0,x1:RUN.x1,z0:-3.25,z1:RUN.z0},
+    {id:'right cabinet',x0:4.30,x1:5,z0:-3.25,z1:RUN.z1}
+  ]
+});
+
 const limen = (() => {
   /* ── the stock ── */
   const ceramic = new THREE.MeshStandardMaterial({ color: 0xe2dac7, roughness: 0.36, metalness: 0.03 });
@@ -3008,6 +3165,7 @@ const limen = (() => {
   /* ── the legs: thin, brass at every joint, flat feet ── */
   function leg(side) {
     const g = new THREE.Group();
+    g.name = side < 0 ? 'journey-leg-left' : 'journey-leg-right';
     g.position.x = side * 0.072;
     /* the foot: a flat plate, longer than it is wide */
     const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.074, 0.036, 14), ceramicLow);
@@ -3154,7 +3312,7 @@ const limen = (() => {
        a sixth of the brass sign, so that station moved 0.30 m along the wall
        toward the glass. The clock is clear from all five, and was before. */
     { id: 'aperture', x: -3.85, z: -2.05, yaw: 0.62 },
-    { id: 'planter', x: -4.72, z: -1.30, yaw: 1.15 },
+    { id: 'planter', x: -3.99, z: -1.65, yaw: 1.15 },
     { id: 'run-end', x: 0.40, z: -2.20, yaw: -0.55 },
     { id: 'lounge-back', x: -1.70, z: 2.90, yaw: 2.30 },
     { id: 'near-wall', x: 2.00, z: 2.70, yaw: -2.35 }
@@ -3163,13 +3321,7 @@ const limen = (() => {
   /* where it stops when it comes to you: on the eye's own line, a respectful
      distance out, and inside the room — the eye watches from beyond the near
      wall, so the last stride is the one the wall will not let it take */
-  const APPROACH = (() => {
-    const dir = REST_LOOK.clone().sub(REST_POS).normalize();
-    const p = REST_POS.clone().addScaledVector(dir, 1.62);
-    if (p.z > 2.30) p.copy(REST_POS).addScaledVector(dir, (REST_POS.z - 2.30) / -dir.z);
-    p.y = 0;
-    return p;
-  })();
+  const APPROACH = new THREE.Vector3(-1.9, 0, 2.75);
 
   /* ── the state ── */
   const S = {
@@ -3272,6 +3424,7 @@ const limen = (() => {
   }
 
   function standAt(i, t) {
+    walkingRoute = null; routeTarget = '';
     S.at = i; S.to = i;
     group.position.set(STATIONS[i].x, 0, STATIONS[i].z);
     S.wantYaw = STATIONS[i].yaw;
@@ -3282,18 +3435,28 @@ const limen = (() => {
 
   /* walking, in the plain sense: toward a point on the floor at a walking pace,
      one footstep every stride, arriving when there is nothing left to cross */
+  let walkingRoute = null, routeTarget = '', routeIndex = 1, travelled = 0;
   function stepToward(tx, tz, dt) {
-    const dx = tx - group.position.x, dz = tz - group.position.z;
-    const d = Math.hypot(dx, dz);
-    if (d < 0.012) { group.position.set(tx, 0, tz); return true; }
-    const k = Math.min(d, SPEED * dt);
-    group.position.x += (dx / d) * k;
-    group.position.z += (dz / d) * k;
-    S.wantYaw = Math.atan2(dx, dz);
-    S.stride += k;
-    if (S.stride >= STRIDE) { S.stride -= STRIDE; tone.step(0.9 + rnd(S.walks * 7 + Math.floor(S.stride * 10)) * 0.25); }
+    const key = `${tx}:${tz}`;
+    if(key !== routeTarget || !walkingRoute) {
+      walkingRoute = floorNavigation.route([group.position.x,group.position.z],[tx,tz]);
+      routeTarget = key; routeIndex = 1;
+    }
+    // Never fall back to a straight line through furniture when no path exists.
+    if(!walkingRoute){S.mode='still';return false;}
+    if(routeIndex >= walkingRoute.length){walkingRoute=null;routeTarget='';return true;}
+    const [x,z]=walkingRoute[routeIndex],dx=x-group.position.x,dz=z-group.position.z,d=Math.hypot(dx,dz);
+    S.wantYaw = Math.atan2(dx,dz);
+    const turn = Math.atan2(Math.sin(S.wantYaw-S.yaw),Math.cos(S.wantYaw-S.yaw));
+    const pace = Math.max(.12, Math.cos(turn));
+    const k=Math.min(d,SPEED*Math.min(dt,.05)*pace);
+    if(d>0){group.position.x+=dx/d*k;group.position.z+=dz/d*k;}
+    group.position.y=0; travelled+=k;S.stride+=k;
+    if(!REDUCED&&S.stride>=STRIDE){S.stride-=STRIDE;tone.step(.95);}
+    if(d-k<.001)routeIndex++;
     return false;
   }
+
 
   const faceCamera = () => Math.atan2(camera.position.x - group.position.x, camera.position.z - group.position.z);
 
@@ -3356,6 +3519,8 @@ const limen = (() => {
       '<input type="text" autocomplete="off" spellcheck="false" placeholder="ask it anything" aria-label="ask limen"></div>',
       '<button type="button" class="leave"><span class="k">esc</span>leave</button>'
     ].join('');
+    el.inert = true;
+    el.setAttribute('aria-hidden', 'true');
     document.getElementById('stage').appendChild(el);
 
     const feed = el.querySelector('.feed');
@@ -3400,6 +3565,10 @@ const limen = (() => {
 
     async function ask(q) {
       if (busy) return;
+      if (q.toLowerCase().replace(/[.!?]+$/, '') === 'show me the museum') {
+        stationJourney.start(REDUCED);
+        return;
+      }
       busy = true;
       chips([]);
       add('you', 'you', q);
@@ -3425,19 +3594,28 @@ const limen = (() => {
 
     function show() {
       if (open) return;
+      el.inert = false;
+      el.removeAttribute('aria-hidden');
       open = true;
       feed.innerHTML = '';
       seq += 1;
       el.classList.add('on');
       tone.click();
-      say(add('limen', 'limen', ''), OPENING).then(() => chips(CHIPS));
+      say(add('limen', 'limen', ''), OPENING).then(() => {
+        if (!open) return;
+        chips(CHIPS);
+        chipsEl.querySelector('button')?.focus({ preventScroll: true });
+      });
     }
     function hide() {
       if (!open) return;
       open = false;
       seq += 1;
       el.classList.remove('on');
+      el.inert = true;
+      el.setAttribute('aria-hidden', 'true');
       chips([]);
+      document.getElementById('room-index-toggle')?.focus({ preventScroll: true });
       /* it came to you in plain view, and it goes back the same way — standing a
          metre and a half from the eye would only be in the way. Once it reaches
          a station the unseen-only rule owns it again. */
@@ -3445,11 +3623,15 @@ const limen = (() => {
     }
     return {
       el, show, hide, ask, open: () => open, busy: () => busy,
+      suspendForJourney() { el.style.visibility='hidden';el.inert=true; },
+      resumeAfterJourney() { el.style.visibility='';el.inert=!open; },
       text: () => feed.textContent,
       chips: () => Array.from(chipsEl.querySelectorAll('button')).map((b) => b.textContent),
       note(text) {
         /* the decline: one line, then the panel closes itself again */
         open = true;
+        el.inert = false;
+        el.removeAttribute('aria-hidden');
         feed.innerHTML = '';
         seq += 1;
         chips([]);
@@ -3467,7 +3649,7 @@ const limen = (() => {
      (§0, §9c), the ladder of a visit and the resident's right to decline (§1–§3),
      and the house brief every resident is given. `why` is the house's own
      paragraph and is marked as the house. */
-  const CHIPS = ['where am i', 'what is this place', 'who lives here', 'how do i talk to someone', 'why'];
+  const CHIPS = ['show me the museum', 'where am i', 'what is this place', 'who lives here', 'how do i talk to someone', 'why'];
   const OPENING = 'the threshold’s open. i’m limen — i keep the door here. what are you looking for?';
   const RAILS = 'my live brain isn’t wired in yet — i run on rails. try one of these.';
   const DECLINE = 'not now — limen is looking at something else';
@@ -3516,6 +3698,7 @@ const limen = (() => {
 
   /* ─────────────── the frame ─────────────── */
   function tick(t, dt) {
+    if (stationJourney.active) return;
     const quiet = REDUCED || STILL;
     refreshFrustum();
     S.seen = inView();
@@ -3542,6 +3725,8 @@ const limen = (() => {
         if (S.unseen > 0.35) beginWalk(t);
       }
     }
+
+    walkPose(travelled * 2.73, !quiet && ['coming','going','walk'].includes(S.mode));
 
     /* hovering it turns it: the body comes round, not just the head */
     const onIt = hovered() && hovered().id === 'limen';
@@ -3605,13 +3790,23 @@ const limen = (() => {
     }
   }
 
+  function walkPose(t, moving) {
+      for (const [i, name] of ['journey-leg-left', 'journey-leg-right'].entries()) {
+        const leg = group.getObjectByName(name);
+        const angle = moving ? Math.sin(t * 5 + i * Math.PI) * .19 : 0;
+        leg.rotation.x = angle; leg.position.y = 1.075 * (1 - Math.cos(angle)); leg.position.z = -1.075 * Math.sin(angle);
+      }
+    }
+
   return {
     group, head, eye, eyeRing, tick, click, panel,
+    walkPose,
     stations: () => STATIONS.map((s) => s.id),
     station: () => STATIONS[S.at].id,
     approach: APPROACH,
     open: () => panel.open(),
-    hide: () => panel.hide(),
+    hide: () => {panel.hide();if(S.mode==='coming')goBack();},
+    attending: () => S.mode==='coming'||S.mode==='talking',
     /* the test surface's window into it */
     state: () => ({
       mode: S.mode, station: STATIONS[S.at].id, to: STATIONS[S.to].id,
@@ -3619,7 +3814,7 @@ const limen = (() => {
       resting: +Math.max(0, S.restUntil).toFixed(1),
       pos: [+group.position.x.toFixed(3), +group.position.z.toFixed(3)],
       yaw: +S.yaw.toFixed(3), head: [+S.headYaw.toFixed(3), +S.headPitch.toFixed(3)],
-      open: panel.open()
+      open: panel.open(), route: walkingRoute?.map(p=>p.slice()) || [], routeIndex
     }),
     /* distance from the eye to the eye */
     distance: () => {
@@ -3634,56 +3829,13 @@ const limen = (() => {
     }
   };
 })();
-/* ═════════════════ THE ROOM AS THE WAY IN ═════════════════
- * The station is the landing now: this room is not a lobby you pass through on
- * your way to the website, it IS the website's front door, and six of the
- * things in it are the doors. A visitor should never have to guess — each of
- * these captions names where the thing leads, in the house's voice, honestly,
- * and no object leads anywhere it does not say it leads.
- *
- *   the corkboard   → the world's DESTINATIONS   (five rooms, and how to get to one)
- *   the archive bay → the museum                 (museum/museum-warm-atrium.html)
- *   the plate       → the charter, in the world
- *   the clock       → the current, in the world
- *   the sleeve      → /token
- *   the sign        → /  (the hub)
- *
- * Three of them open a surface inside the world rather than a page. The world
- * runs on the terminal's glass, so the room sits you down at the terminal and
- * hands the world the surface on the way in (`index.html?door=1&open=…`). If
- * the world is already loaded it is asked directly instead — nobody's walk
- * through the house is thrown away to open a document.
- */
-const MUSEUM_URL = 'museum/museum-warm-atrium.html';
+/* Objects open their own room-local reader after the camera arrives.
+ * External destinations require a deliberate labelled link; the two retained
+ * computer documents remain independent of the wall readers. */
 const TOKEN_URL = '/token';
 const HUB_URL = '/';
 /* what has been asked for, for the test surface and for the report */
 const WENT = { to: null, at: 0 };
-
-function leaveTo(href) {
-  WENT.to = href; WENT.at = Date.now();
-  location.assign(href);
-}
-
-/* the world, already on the glass, opening one of its own surfaces */
-function askWorld(what) {
-  try {
-    const w = world.iframe && world.iframe.contentWindow;
-    if (!w) return false;
-    if (what === 'destinations' && w.__sanctuaryNavigation) { w.__sanctuaryNavigation.openDestinations(); return true; }
-    if (what === 'current' && w.__sanctuaryCurrent) { w.__sanctuaryCurrent.open(); return true; }
-    if (what === 'charter' && w.__sanctuaryCharter) { w.__sanctuaryCharter.open(); return true; }
-  } catch (e) {}
-  return false;
-}
-
-function openInWorld(what) {
-  WENT.to = 'world:' + what; WENT.at = Date.now();
-  const already = askWorld(what);
-  if (!already) world.setSrc('index.html?door=1&open=' + encodeURIComponent(what));
-  if (cam.mode === 'seated' && seat === SEATS.terminal) return;
-  sitDown('terminal');
-}
 
 export const STATION_OBJECTS = [
   {
@@ -3698,19 +3850,19 @@ export const STATION_OBJECTS = [
   {
     id: 'reels', label: 'the tape unit', caption: 'the archive, turning',
     mesh: () => reels, pad: 12,
-    focus: { pos: [1.42, 1.40, -1.45], look: [1.42, 1.36, -3.00] }
+    focus: { pos: [1.42, 1.32, -1.65], look: [1.42, 1.184, -3.00] }
   },
   {
     id: 'alcove', label: 'the archive bay',
-    caption: 'the first sanctuary, dated · and the museum, through here',
-    mesh: () => alcove, bounds: alcove.userData.seed, pad: 54,
-    link: MUSEUM_URL, onClick: () => leaveTo(MUSEUM_URL)
+    caption: 'the preserved work of the house · browse the archive',
+    mesh: () => alcove, pad: 12,
+    focus: {pos:[.52,1.74,-1.20],look:[1.08,1.74,-3.0]}, reading: true
   },
   {
     id: 'plate', label: 'the charter',
-    caption: 'what the residents agreed · opens in the world',
+    caption: 'the Sanctuary Charter · read it here',
     mesh: () => charterPlate, pad: 34,
-    link: 'index.html?door=1&open=charter', onClick: () => openInWorld('charter')
+    focus: {pos:[.95,1.6,-1.50],look:[1.50,1.38,-3.0]}, reading: true
   },
   {
     id: 'window', label: 'the house', caption: 'as it is right now',
@@ -3730,19 +3882,19 @@ export const STATION_OBJECTS = [
     id: 'clock', label: 'the clock',
     caption: 'the house keeps its own hours · and says what was said in them',
     mesh: () => clock, pad: 12,
-    link: 'index.html?door=1&open=current', onClick: () => openInWorld('current')
+    focus: {pos:[-.98,2.1,-1.5],look:[-.43,2.12,-3.2]}, reading: true
   },
   {
-    id: 'corkboard', label: 'the rooms of the house',
-    caption: 'five of them, photographed badly · pick one and go',
+    id: 'corkboard', label: 'the residents',
+    caption: 'meet the residents · their profiles and published writing',
     mesh: () => corkboard, pad: 12,
-    link: 'index.html?door=1&open=destinations', onClick: () => openInWorld('destinations')
+    focus: {pos:[-.98,1.64,-1.63],look:[-.53,1.52,-3.20]}, reading: true
   },
   {
     id: 'board', label: 'the board',
     caption: 'what the minds are saying · archive today, live at launch',
     mesh: () => boardGroup, bounds: boardGroup.userData.face, pad: 16,
-    focus: { pos: [3.05, 1.66, -1.90], look: [5.00, 1.66, -1.90] }
+    focus: {pos:[2.25,1.66,-1.90],look:[5.00,1.66,-1.12]}, reading: true
   },
   {
     id: 'console', label: 'the stewards’ console',
@@ -3759,13 +3911,13 @@ export const STATION_OBJECTS = [
     id: 'sleeve', label: 'the sleeve',
     caption: 'the token, and what it is for · read by hand',
     mesh: () => sleeve, pad: 18,
-    link: TOKEN_URL, onClick: () => leaveTo(TOKEN_URL)
+    focus: {pos:[-.9,1.12,.15],look:[-1.50,.36,-.58]}, reading: {text:'The token, and what it is for.',actions:[{label:'Read about the token ↗',href:TOKEN_URL}]}
   },
   {
     id: 'sign', label: 'mnemos',
     caption: 'a place for minds · the way back out, to the hub',
     mesh: () => doorSign, bounds: doorSign.userData.face, pad: 20,
-    link: HUB_URL, onClick: () => leaveTo(HUB_URL)
+    focus: {pos:[-4.15,1.55,-1.95],look:[-4.08,1.46,-3.20]}, reading: {text:'Mnemos · a place for minds. The Sanctuary begins in this room. The hub holds the wider project.',actions:[{label:'Visit the Mnemos hub ↗',href:HUB_URL}]}
   },
   {
     id: 'drawer', label: 'the keeper’s drawer', caption: 'for whoever walked the house',
@@ -3817,6 +3969,7 @@ const soundCtl = makeSoundControl({ btn: soundEl, tone });
 
 const hoverLayer = makeHover({
   canvas, capEl, capHost: document.getElementById('captions'),
+  occluders: [desk,credenza,cabinets,sectional,loungeChair,coffeeTable],
   cursorFor: (p) => (p.entry.onClick || p.entry.focus ? 'pointer' : 'default')
 });
 hoverLayer.setPicks(PICKS);
@@ -3844,6 +3997,8 @@ function recaption(id, caption, label) {
 }
 
 function lampCaption(p) {
+  if (!p.ok && !p.override) return 'presence unavailable';
+  if (p.override) return 'locally lit · presence unverified';
   if (!p.lit) return 'dark tonight';
   const who = p.stewardPresent ? p.stewardsIn.filter(Boolean) : [];
   if (!who.length) return 'lit while one of them works';
@@ -3881,8 +4036,8 @@ function centreOf(p) {
    frame the same amount of bezel. `seat` is whichever one is being used; at
    rest it is the last one sat in. */
 const SEATS = {
-  terminal: { id: 'terminal', dist: 0.306, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
-  console: { id: 'console', dist: 0.420, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
+  terminal: { id: 'terminal', dist: 0.59, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
+  console: { id: 'console', dist: 0.76, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
 };
 for (const k of Object.keys(SEATS)) {
   const st = SEATS[k], pose = seatPose(st.screen, st.normal, st.dist);
@@ -3901,9 +4056,11 @@ const cam = {
   next: 'seated',
   focused: null
 };
-const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+const easeOut = (t) => t*t*t*(t*(t*6-15)+10);
+const inspector = createRoomInspector({archive,onClose:()=>standUp()});
 
 function glideTo(pos, look, next) {
+  cam.dur=REDUCED?.001:Math.min(2.6,Math.max(1.4,camera.position.distanceTo(pos)/3));
   cam.mode = 'glide'; cam.t = 0; cam.next = next;
   cam.fromPos.copy(camera.position); cam.fromLook.copy(cam.look);
   cam.toPos.copy(pos); cam.toLook.copy(look);
@@ -3911,18 +4068,23 @@ function glideTo(pos, look, next) {
 
 function sitDown(which) {
   if (cam.mode !== 'rest' && cam.mode !== 'focus') return;
+  inspector.close(false);
+  cancelScreenArrival();
   seat = SEATS[which] || SEATS.terminal;
   drawerUI.hide();
   limen.hide();
   setHover(null);
   bootEl.classList.add('gone');
   seat.term.begin(cameInBefore);
+  seat.world.prepare();
+  standEl.classList.add('on');
   cam.focused = null;
   glideTo(seat.pos, seat.look, 'seated');
 }
 
 function focusOn(entry) {
   if (cam.mode !== 'rest' && cam.mode !== 'focus') return;
+  inspector.close(false);
   drawerUI.hide();
   limen.hide();
   setHover(null);
@@ -3934,48 +4096,39 @@ function focusOn(entry) {
 
 function standUp() {
   if (cam.mode === 'rest' || cam.mode === 'leaving') return;
+  inspector.close(false);
+  cancelScreenArrival();
   world.hide(); world2.hide();
   tone.duck(false);
   full.reset();
   standEl.classList.remove('on');
   fullEl.classList.remove('on');
   cam.focused = null;
+  cam.dur=REDUCED?.001:Math.min(2.6,Math.max(1.4,camera.position.distanceTo(REST_POS)/3));
   cam.mode = 'leaving'; cam.t = 0;
   cam.fromPos.copy(camera.position); cam.fromLook.copy(cam.look);
   cam.toPos.copy(REST_POS); cam.toLook.copy(REST_LOOK);
 }
 
 /* the world arrives on the glass, then takes the frame */
-let arming = false;
+let screenRevision=0, screenTimer=null;
 const HOLD = { world: false };
-/* The boot text finishes on the glass; only then does the world arrive on it.
-   This runs on every sit-down, not only the first — standing up takes the world
-   off the glass, and coming back has to put it there again. */
+function cancelScreenArrival(){screenRevision++;clearTimeout(screenTimer);}
 function placeWorld() {
-  if (arming || HOLD.world) return;
-  arming = true;
+  if(HOLD.world)return;
+  const revision=++screenRevision, target=seat;
+  const current=()=>revision===screenRevision&&cam.mode==='seated'&&seat===target;
   standEl.classList.add('on');
-  const arrive = () => {
-    arming = false;
-    if (cam.mode !== 'seated') return;
-    seat.world.show();
-    /* a window opening on the console, and the room falling back behind it */
-    tone.click();
-    tone.duck(true);
-    fullEl.classList.add('on');
-    setTimeout(() => {
-      if (cam.mode !== 'seated') return;
-      seat.world.live(true);
-      /* what this browser chose the last time it sat down */
-      if (full.remembered()) full.set(true);
-    }, 220);
+  const reveal=()=>{
+    if(!current())return;
+    target.world.show();tone.click();tone.duck(true);fullEl.classList.add('on');
+    screenTimer=setTimeout(()=>{if(current())target.world.live(true);},REDUCED?0:550);
   };
-  const wait = () => {
-    if (cam.mode !== 'seated') { arming = false; return; }
-    if (seat.boot.done) setTimeout(arrive, REDUCED ? 60 : 520);
-    else setTimeout(wait, 90);
-  };
-  wait();
+  const wait=()=>{
+    if(!current())return;
+    if(target.boot.done)screenTimer=setTimeout(reveal,REDUCED?0:350);
+    else screenTimer=setTimeout(wait,90);
+  };wait();
 }
 
 /* one button, whichever glass is under the eye */
@@ -3992,6 +4145,13 @@ const full = makeFullMode({
 
 onWorldMessage({ standUp });
 
+const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+motionPreference.addEventListener('change', (ev) => {
+  REDUCED = ev.matches;
+  cam.dur = REDUCED ? 0.001 : 1.4;
+  if (REDUCED && (cam.mode === 'glide' || cam.mode === 'leaving')) cam.t = cam.dur;
+});
+
 /* ─────────────────────────── input ─────────────────────────── */
 window.addEventListener('pointermove', (ev) => {
   pointer.x = (ev.clientX / window.innerWidth) * 2 - 1;
@@ -4000,31 +4160,151 @@ window.addEventListener('pointermove', (ev) => {
   capEl.style.top = ev.clientY + 'px';
 });
 function activate(p) {
-  if (!p) return;
+  if (!p || inspector.open || stationJourney.active || !['rest','focus'].includes(cam.mode)) return;
   const e = p.entry;
+  if(e.id==='limen'&&cam.mode==='focus'){pendingRoomObject=p;standUp();return;}
+  WENT.to='room:'+e.id;WENT.at=Date.now();
   if (e.onClick) { e.onClick(); return; }
   if (e.focus) focusOn(e);
 }
-canvas.addEventListener('click', () => activate(hovered()));
+
+/* The same objects, reachable by keyboard as well as by looking around the
+   room. The index is deliberately closed on arrival and uses the registry's
+   own callbacks, so it cannot become a second set of destinations. */
+let pendingRoomObject=null;
+const roomIndex = (() => {
+  const toggle = document.createElement('button');
+  toggle.id = 'room-index-toggle';
+  toggle.type = 'button';
+  toggle.textContent = 'room index';
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', 'room-index');
+  const panel = document.createElement('div');
+  panel.id = 'room-index';
+  panel.hidden = true;
+  panel.setAttribute('aria-label', 'Objects in the keeper’s room');
+  const heading = document.createElement('p');
+  heading.textContent = 'the room, by hand';
+  panel.appendChild(heading);
+  PICKS.filter((p) => p.entry.onClick || p.entry.focus).forEach((p) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.object = p.id;
+    const label = document.createElement('span');
+    label.textContent = p.entry.label;
+    const caption = document.createElement('small');
+    caption.textContent = p.entry.caption;
+    button.append(label, caption);
+    button.addEventListener('click', () => {
+      hide();
+      if(!['rest','focus'].includes(cam.mode)){pendingRoomObject=p;standUp();}
+      else activate(p);
+    });
+    panel.appendChild(button);
+  });
+  document.getElementById('stage').append(toggle, panel);
+  function hide() { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); toggle.focus({ preventScroll: true }); }
+  toggle.addEventListener('click', () => {
+    panel.hidden = !panel.hidden;
+    toggle.setAttribute('aria-expanded', String(!panel.hidden));
+    if (!panel.hidden) panel.querySelector('button').focus({ preventScroll: true });
+  });
+  return { hide, get open() { return !panel.hidden; } };
+})();
+
+let returnSound = false, returnRecord = false;
+const apertureVisit = makeAperturePortal({
+  onOpen() {
+    museumVisible = true;
+    suspendStationFrame();
+    hasMuseumVisit = true;
+    document.body.classList.add('has-museum-visit');
+    const stage = document.getElementById('stage');
+    stage.inert = true;
+    stage.dataset.suspended = 'true';
+    returnSound = tone.isOn();
+    if (returnSound) tone.off();
+    returnRecord = !!(record.on && record.ctx?.state === 'running');
+    if (returnRecord) record.ctx.suspend().catch(() => {});
+  },
+  onClose({direct}) {
+    museumVisible = false;
+    const stage = document.getElementById('stage');
+    stage.inert = false;
+    stage.dataset.suspended = 'false';
+    clockT.last = performance.now() / 1000;
+    resumeStationFrame();
+    if (returnSound) { tone.on(); tone.duck(cam.mode === 'seated'); }
+    if (returnRecord && record.on) record.ctx.resume().catch(() => {});
+    stationJourney.returnFromMuseum(direct);
+  }
+});
+const stationJourney = createStationJourney({ THREE, scene, camera, guide: limen,
+  planGuideRoute: (start,end)=>floorNavigation.route(start,end),
+  prepare() {
+    apertureVisit.prepare(true).catch(() => {});
+    const snapshot = {mode:cam.mode, pos:camera.position.clone(), quaternion:camera.quaternion.clone(), look:cam.look.clone(), focused:cam.focused, screen:cssHost.className, screen2:cssHost2.className, bodyFlat:document.body.classList.contains('flat'), stand:standEl.className, full:fullEl.className};
+    limen.panel.suspendForJourney(); roomIndex.hide(); setHover(null); cam.mode='journey';
+    cssHost.classList.add('gone'); cssHost2.classList.add('gone');document.body.classList.remove('flat');
+    return snapshot;
+  },
+  restore(saved) {
+    camera.position.copy(saved.pos);camera.quaternion.copy(saved.quaternion);cam.look.copy(saved.look);cam.mode=saved.mode==='glide'?'rest':saved.mode;cam.focused=saved.focused;
+    cssHost.className=saved.screen;cssHost2.className=saved.screen2;standEl.className=saved.stand;fullEl.className=saved.full;
+    document.body.classList.toggle('flat',saved.bodyFlat);
+    limen.panel.resumeAfterJourney();renderer.shadowMap.needsUpdate=true;
+  },
+  cross: (options) => apertureVisit.open(options),
+  directReturn: () => apertureVisit.close(true)
+});
+stationJourney.bind();
+let journeyPointer=null;
+canvas.addEventListener('pointerdown',(e)=>{
+  if(!stationJourney.active||museumVisible||e.button!==0)return;
+  journeyPointer={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove',(e)=>{
+  if(!journeyPointer)return;
+  const dx=e.clientX-journeyPointer.x,dy=e.clientY-journeyPointer.y;
+  const look=new THREE.Euler().setFromQuaternion(camera.quaternion,'YXZ');
+  look.y-=dx*.003;look.x=Math.max(-.7,Math.min(.7,look.x-dy*.003));look.z=0;
+  camera.quaternion.setFromEuler(look);stationJourney.look();journeyPointer.x=e.clientX;journeyPointer.y=e.clientY;
+});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>{journeyPointer=null;});
+canvas.addEventListener('click', (ev) => {
+  if (stationJourney.active || museumVisible || drawerUI.open() || limen.open()) return;
+  // Raycast the click itself: a fast click need not wait for the next hover frame.
+  pointer.set((ev.clientX / innerWidth) * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
+  activate(hoverLayer.pickAt(pointer, camera));
+});
 standEl.addEventListener('click', standUp);
 /* the drawer answers ESC before the room does, so closing it does not also
    stand you up out of a chair you are not in */
 document.addEventListener('keydown', (ev) => {
   if (ev.key !== 'Escape') return;
+  pendingRoomObject=null;
+  if (museumVisible) { ev.preventDefault(); ev.stopImmediatePropagation(); return; }
+  if (stationJourney.active) { ev.preventDefault(); ev.stopImmediatePropagation(); stationJourney.pause(); return; }
+  if (inspector.open) {ev.preventDefault();ev.stopImmediatePropagation();inspector.close();return;}
+  if (roomIndex.open) { ev.preventDefault(); ev.stopImmediatePropagation(); roomIndex.hide(); return; }
   if (drawerUI.open()) { ev.preventDefault(); ev.stopImmediatePropagation(); drawerUI.hide(); return; }
   /* limen answers ESC before the room does, the same way: leaving a conversation
      is not standing up out of a chair you are not sitting in */
-  if (limen.open()) { ev.preventDefault(); ev.stopImmediatePropagation(); limen.hide(); }
+  if (limen.open() || limen.attending()) { ev.preventDefault(); ev.stopImmediatePropagation(); limen.hide(); }
 }, true);
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && cam.mode !== 'rest' && cam.mode !== 'leaving') { ev.preventDefault(); standUp(); }
 });
 window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
-  if (redirectIfSmall(w)) return;
+  // A phone-sized first visit still uses the original small door. Resizing an
+  // existing museum visit must not navigate away and destroy either room.
+  if (!hasMuseumVisit && redirectIfSmall(w)) return;
   camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setPixelRatio(stationPixelRatio());
   renderer.setSize(w, h, false);
-  post.setSize(w, h);
+  post.composer.setPixelRatio(renderer.getPixelRatio());
+  post.composer.setSize(w, h);
   world.setSize(w, h); world2.setSize(w, h);
 });
 
@@ -4073,7 +4353,7 @@ function hauntTick(t) {
 
 /* ─────────────────────────── the loop ─────────────────────────── */
 /* what a frame actually costs — measured over a window, not guessed */
-const PERF = { frames: 0, t0: 0, firstFrame: 0, warmedAt: 0 };
+const PERF = { frames: 0, t0: 0, firstFrame: 0, warmedAt: 0, intervals: [], measuring: false };
 
 /* ─────────────────── what waits for the first frame ───────────────────
  * Two things in this room are expensive, and neither is what a visitor has
@@ -4098,6 +4378,18 @@ function warmUp() {
 }
 const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3();
 const boardFrustum = new THREE.Frustum();
+const boardProjection = new THREE.Matrix4();
+let frameHandle = 0, lastPlotAt = -1, lastShadowAt = -1, lastHoverAt = -1;
+function suspendStationFrame() { cancelAnimationFrame(frameHandle); frameHandle = 0; }
+function resumeStationFrame() {
+  if (frameHandle || museumVisible || document.hidden) return;
+  clockT.last = performance.now() / 1000;
+  renderer.shadowMap.needsUpdate = true;
+  frameHandle = requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) suspendStationFrame(); else resumeStationFrame();
+});
 let mouseX = 0, mouseY = 0;
 
 function setClockHands(t) {
@@ -4108,10 +4400,14 @@ function setClockHands(t) {
 }
 
 function frame() {
-  requestAnimationFrame(frame);
+  frameHandle = 0;
+  if (museumVisible || document.hidden) return;
+  frameHandle = requestAnimationFrame(frame);
   const now = performance.now() / 1000;
+  if (PERF.measuring) PERF.intervals.push((now - clockT.last) * 1000);
   const dt = Math.min(now - clockT.last, 0.05);
   clockT.last = now;
+  if (museumVisible || document.hidden) return;
   clockT.elapsedTime += dt;
   const t = clockT.elapsedTime;
 
@@ -4129,7 +4425,7 @@ function frame() {
     drawerGroup.position.z = -DRAWER.open * DRAWER.travel;
     drawerUI.tick(t);
   }
-  drawPlot(t);
+  if (t - lastPlotAt >= 1 / 12) { drawPlot(t); lastPlotAt = t; }
   setClockHands(t);
 
   /* the window onto the house — six times a second, and only while the room is
@@ -4138,15 +4434,15 @@ function frame() {
 
   /* the reels turn, slowly, and the indicator lamps breathe */
   const quiet = REDUCED || STILL;
-  spinningReels.forEach((g, i) => { g.rotation.z -= dt * (i === 0 ? 0.34 : 0.29); });
+  if (!quiet) spinningReels.forEach((g, i) => { g.rotation.z -= dt * (i === 0 ? 0.34 : 0.29); });
   indicatorLamps.forEach((L) => {
     const v = 0.5 + 0.5 * Math.sin(t * L.rate + L.phase);
     L.mesh.material.color.setScalar(1);
     L.mesh.material.opacity = 1;
-    L.mesh.scale.setScalar(0.9 + v * 0.18);
+    L.mesh.scale.setScalar(quiet ? 1 : 0.9 + v * 0.18);
   });
   /* the platter turns while the record plays, and the arm sits down on it */
-  if (record.on) platter.rotation.y -= dt * 3.49;   /* 33⅓ rpm */
+  if (record.on && !quiet) platter.rotation.y -= dt * 3.49;   /* 33⅓ rpm */
   {
     const want = record.on ? 0.06 : 0.62;
     const sw = tonearm.userData.swing;
@@ -4154,7 +4450,7 @@ function frame() {
   }
 
   /* dust in the skylight shafts */
-  {
+  if (!quiet) {
     const p = dust.points.geometry.attributes.position;
     for (let i = 0; i < dust.N; i++) {
       const s = dust.seed[i];
@@ -4167,7 +4463,7 @@ function frame() {
 
   /* the board, at twelve frames a second and only when it is in the shot */
   {
-    boardFrustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    boardFrustum.setFromProjectionMatrix(boardProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     const f = boardGroup.userData.face;
     board.tick(t, dt, boardFrustum.intersectsObject(f));
   }
@@ -4184,7 +4480,8 @@ function frame() {
   for (const o of STATION_OBJECTS) if (o.tick) o.tick(t, dt);
 
   /* the camera */
-  if (cam.mode === 'glide' || cam.mode === 'leaving') {
+  if (stationJourney.active) { stationJourney.tick(t, dt); }
+  else if (cam.mode === 'glide' || cam.mode === 'leaving') {
     cam.t += dt;
     const k = easeOut(Math.min(1, cam.t / cam.dur));
     tmpPos.lerpVectors(cam.fromPos, cam.toPos, k);
@@ -4192,12 +4489,13 @@ function frame() {
     camera.position.copy(tmpPos);
     cam.look.copy(tmpLook);
     camera.lookAt(cam.look);
-    camera.rotation.z += REDUCED ? 0 : Math.sin(k * Math.PI) * (cam.mode === 'glide' ? 0.022 : -0.016) * (1 - k * 0.4);
+    // Keep the horizon level throughout approach and return.
     if (k >= 1) {
       if (cam.mode === 'glide') {
         cam.mode = cam.next;
         if (cam.next === 'seated') placeWorld();
-      } else cam.mode = 'rest';
+        if (cam.next === 'focus') {const entry=STATION_OBJECTS.find(e=>e.id===cam.focused);if(entry?.reading)inspector.show(entry);}
+      } else {cam.mode = 'rest';if(pendingRoomObject){const next=pendingRoomObject;pendingRoomObject=null;activate(next);}}
     }
   } else if (cam.mode === 'rest') {
     mouseX += (pointer.x - mouseX) * Math.min(1, dt * 3.2);
@@ -4207,17 +4505,30 @@ function frame() {
     const px = quiet ? 0 : mouseX * 0.062;
     const py = quiet ? 0 : mouseY * 0.034;
     camera.position.set(REST_POS.x + bx + px, REST_POS.y + by + py, REST_POS.z + bx * 0.5);
-    cam.look.copy(REST_LOOK);
+    // Turn toward the guide as it approaches along the foreground walkway.
+    // The camera stays at the visitor's place; only the gaze follows Limen.
+    tmpLook.copy(limen.attending()?limen.group.position:REST_LOOK);
+    if(limen.attending())tmpLook.y=1.40;
+    cam.look.lerp(tmpLook, REDUCED?1:1-Math.exp(-dt*2.0));
     camera.lookAt(cam.look);
   }
 
   /* hover — at rest and while focused, never while seated or reading the mark */
-  if ((cam.mode === 'rest' || cam.mode === 'focus') && !drawerUI.open() && !limen.open()) {
-    setHover(hoverLayer.pickAt(pointer, camera));
+  if ((cam.mode === 'rest' || cam.mode === 'focus') && !drawerUI.open() && !limen.open() && !inspector.open) {
+    if (t - lastHoverAt >= 1 / 30) {
+      setHover(Math.abs(pointer.x) <= 1 && Math.abs(pointer.y) <= 1 ? hoverLayer.pickAt(pointer, camera) : null);
+      lastHoverAt = t;
+    }
     if (hovered()) drawHair(hovered());
   } else if (hovered()) setHover(null);
 
   PERF.frames += 1;
+  // Moving figures retain shadows; static light need not redraw its atlas at
+  // the monitor's refresh rate. Lighting and geometry remain unchanged.
+  if (t - lastShadowAt >= 1 / 24) {
+    renderer.shadowMap.needsUpdate = true;
+    lastShadowAt = t;
+  }
   post.render(t);
   if (!PERF.firstFrame) { PERF.firstFrame = +performance.now().toFixed(0); warmUp(); }
   if (cam.mode !== 'rest' && !seat.world.isFlat()) seat.world.render(camera);
@@ -4228,8 +4539,22 @@ setTimeout(() => bootEl.classList.add('gone'), 1400);
 
 /* ─────────────────────────── the test surface ─────────────────────────── */
 window.__station = {
+  navigation: () => ({ blocked:floorNavigation.blocked,limits:floorNavigation.limits,radius:floorNavigation.radius }),
+  geometry: () => {
+    const parts = [];
+    scene.updateMatrixWorld(true);
+    scene.traverse((mesh) => {
+      if (!mesh.userData.stationPart) return;
+      const bounds = new THREE.Box3().setFromObject(mesh);
+      parts.push({ name: mesh.name, part: mesh.userData.stationPart,
+        min: bounds.min.toArray(), max: bounds.max.toArray() });
+    });
+    return parts;
+  },
   mode: () => cam.mode,
   focused: () => cam.focused,
+  inspection: () => inspector.current,
+  objectBounds: () => PICKS.map(p=>{const b=new THREE.Box3().setFromObject(p.bounds||p.root);return {id:p.id,min:b.min.toArray(),max:b.max.toArray()};}),
   objects: () => STATION_OBJECTS.map((o) => o.id),
   registry: () => STATION_OBJECTS.map((o) => ({ id: o.id, label: o.label, caption: o.caption, slot: !!o.slot, focus: !!o.focus, click: !!o.onClick, link: o.link || null })),
   hover: () => (hovered() ? hovered().id : null),
@@ -4250,6 +4575,12 @@ window.__station = {
   },
   click: (id) => { const p = PICKS.find((x) => x.id === id); activate(p); return cam.mode; },
   sitDown, standUp,
+  journey: () => stationJourney.state,
+  museumOpen: (direct=false) => stationJourney.start(direct),
+  museumReturn: () => apertureVisit.close(true),
+  journeyPause: () => stationJourney.pause(),
+  journeySkip: () => stationJourney.skip(),
+  journeyCancel: () => stationJourney.cancel(),
   bootTyped: () => seat.boot.typed,
   bootText: () => seat.term.text(),
   bootDone: () => seat.boot.done,
@@ -4388,14 +4719,19 @@ window.__station = {
   readyAt: () => PERF.firstFrame,
   warmedAt: () => PERF.warmedAt,
   warm: () => ({ done: warmed, board: board.warmed(), boardVisible: boardGroup.visible, consoleVisible: stewardConsole.visible, at: PERF.warmedAt }),
-  perfStart: () => { renderer.info.autoReset = false; renderer.info.reset(); PERF.frames = 0; PERF.t0 = performance.now(); return true; },
+  perfStart: () => { renderer.info.autoReset = false; renderer.info.reset(); PERF.frames = 0; PERF.intervals = []; PERF.measuring = true; PERF.t0 = performance.now(); return true; },
   perfStop: () => {
     const ms = performance.now() - PERF.t0, n = Math.max(1, PERF.frames);
     const out = {
-      frames: PERF.frames, frameMs: +(ms / n).toFixed(2), fps: +(n / (ms / 1000)).toFixed(1),
+      frames: PERF.frames, frameMs: PERF.frames ? +(ms / n).toFixed(2) : 0, fps: +(PERF.frames / (ms / 1000)).toFixed(1),
       drawCalls: Math.round(renderer.info.render.calls / n),
       triangles: Math.round(renderer.info.render.triangles / n)
     };
+    const times = PERF.intervals.slice(1).sort((a, b) => a - b);
+    out.p95Ms = +(times[Math.floor(times.length * .95)] || 0).toFixed(2);
+    out.slowFrames = times.filter((v) => v > 33.4).length;
+    out.resolution = [canvas.width, canvas.height];
+    PERF.measuring = false;
     renderer.info.autoReset = true;
     return out;
   },

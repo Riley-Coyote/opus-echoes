@@ -252,7 +252,21 @@ export function makeHover(dom) {
   function pickAt(pointer, camera) {
     ray.setFromCamera(pointer, camera);
     const hits = ray.intersectObjects(picks.map((p) => p.root), true);
-    for (const h of hits) { const p = findPick(h.object); if (p) return p; }
+    for (const h of hits) {
+      const p = findPick(h.object);
+      if (!p) continue;
+      // Optional room furniture masks prevent selecting an object through a
+      // desk or sofa. The rigid-batch originals retain their picking geometry.
+      if (dom.occluders) {
+        const stop = ray.intersectObjects(dom.occluders, true).find(hit => {
+          const m=hit.object.material;
+          if (!m || m.transparent || findPick(hit.object) === p) return false;
+          return hit.distance < h.distance - .012;
+        });
+        if (stop) return null;
+      }
+      return p;
+    }
     return null;
   }
 
@@ -288,6 +302,17 @@ export function makeTerminal(o) {
      text is never written — it is handed in by whoever owns the archive, and
      the terminal only puts it on the phosphor. `a` is the fade, 0 → 1 → 0. */
   const ghost = { line: null, typed: 0, a: 0, phase: 'off', at: 0 };
+  /* Opt in per room: timing still advances every tick, but a held sentence
+     and a steady caret do not need another canvas draw or GPU upload. */
+  const paintOnChange = opt.paintOnChange === true;
+  let painted = null;
+
+  function paintChanged() {
+    return !painted || painted.typed !== boot.typed || painted.tail !== boot.tail
+      || painted.caret !== (boot.blink < 0.5) || painted.line !== ghost.line
+      || painted.ghostTyped !== ghost.typed || painted.alpha !== ghost.a
+      || painted.typing !== (ghost.phase === 'typing');
+  }
 
   function wrapText(g, text, maxW) {
     const words = text.split(' '); const out = []; let line = '';
@@ -381,6 +406,11 @@ export function makeTerminal(o) {
     g.fillStyle = 'rgba(0,0,0,0.28)';
     for (let sy = 0; sy < H; sy += 3) g.fillRect(0, sy, W, 1);
     texture.needsUpdate = true;
+    if (paintOnChange) painted = {
+      typed: boot.typed, tail: boot.tail, caret: boot.blink < 0.5,
+      line: ghost.line, ghostTyped: ghost.typed, alpha: ghost.a,
+      typing: ghost.phase === 'typing'
+    };
   }
 
   /* one frame of typing */
@@ -391,7 +421,7 @@ export function makeTerminal(o) {
     }
     boot.blink = (t * 0.9) % 1;
     tickGhost(dt, t);
-    draw();
+    if (!paintOnChange || paintChanged()) draw();
   }
 
   /* the ghost's own small life: in, typing, held, out. HOLD is how long the
@@ -688,9 +718,10 @@ export function makePresence(o) {
   const every = opt.every === undefined ? 30000 : opt.every;
   const url = opt.url || PRESENCE_URL;
   const subs = [];
-  let timer = null, stopped = false, polls = 0;
+  let timer = null, stopped = false, polls = 0, failures = 0;
+  let pending = null, controller = null, nextAt = 0;
   const S = {
-    ok: false, error: null, stewardPresent: false, stewardsIn: [],
+    ok: false, error: null, code: null, status: null, stewardPresent: false, stewardsIn: [],
     visitorsNow: 0, lastEventAt: null, houseClock: null, at: 0
   };
 
@@ -700,7 +731,8 @@ export function makePresence(o) {
 
   function view() {
     return {
-      ok: S.ok, error: S.error, lit: lit(), override: override(), polls,
+      ok: S.ok, error: S.error, code: S.code, status: S.status,
+      lit: lit(), override: override(), polls,
       stewardPresent: S.stewardPresent, stewardsIn: S.stewardsIn.slice(),
       visitorsNow: S.visitorsNow, lastEventAt: S.lastEventAt,
       houseClock: S.houseClock, at: S.at
@@ -709,10 +741,24 @@ export function makePresence(o) {
   function emit() { const v = view(); subs.forEach((fn) => { try { fn(v); } catch (e) {} }); }
 
   function poll() {
-    return fetch(url, { cache: 'no-store', credentials: 'same-origin' })
-      .then((res) => { if (!res.ok) throw new Error('presence ' + res.status); return res.json(); })
-      .then((d) => {
-        S.ok = true; S.error = null;
+    if (stopped || document.hidden) return Promise.resolve(view());
+    if (pending) return pending;
+    clearTimeout(timer); timer = null;
+    controller = new AbortController();
+    const timeout = setTimeout(() => controller && controller.abort(), 15000);
+    pending = fetch(url, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal })
+      .then(async (res) => {
+        const d = await res.json().catch(() => null);
+        if (!res.ok || !d || d.ok !== true) {
+          const code = d && typeof d.code === 'string' ? d.code : 'unavailable';
+          throw Object.assign(new Error('presence ' + res.status + ': ' + code), { code, status: res.status });
+        }
+        return { data: d, status: res.status };
+      })
+      .then(({ data: d, status }) => {
+        if (stopped) return;
+        failures = 0;
+        S.ok = true; S.error = null; S.code = null; S.status = status;
         S.stewardPresent = !!d.stewardPresent;
         S.stewardsIn = Array.isArray(d.stewardsIn) ? d.stewardsIn.slice(0, 8).map(String) : [];
         S.visitorsNow = Number.isFinite(d.visitorsNow) ? Math.max(0, Math.floor(d.visitorsNow)) : 0;
@@ -720,23 +766,53 @@ export function makePresence(o) {
         S.houseClock = d.houseClock === undefined ? null : d.houseClock;
       })
       .catch((e) => {
+        if (stopped) return;
         /* the route is not answering: say nothing rather than something */
+        failures = Math.min(failures + 1, 10);
         S.ok = false; S.error = String((e && e.message) || e);
+        S.code = e.code || (e.name === 'AbortError' ? 'timeout' : 'unavailable');
+        S.status = e.status || null;
         S.stewardPresent = false; S.stewardsIn = []; S.visitorsNow = 0;
+        S.lastEventAt = null; S.houseClock = null;
       })
-      .then(() => { polls += 1; S.at = Date.now(); emit(); return view(); });
+      .then(() => {
+        clearTimeout(timeout); controller = null; pending = null;
+        if (!stopped) {
+          polls += 1; S.at = Date.now();
+          /* Missing local configuration cannot heal every thirty seconds.
+             Transient failures retry gradually, capped at five minutes. */
+          const ceiling = Math.max(every, 300000);
+          const delay = S.code === 'config_missing' ? ceiling
+            : Math.min(ceiling, every * Math.pow(2, failures));
+          nextAt = S.at + delay;
+          emit(); schedule();
+        }
+        return view();
+      });
+    return pending;
   }
 
-  function loop() {
-    if (stopped || !every) return;
-    timer = setTimeout(() => { poll().then(loop); }, every);
+  function schedule() {
+    clearTimeout(timer); timer = null;
+    if (stopped || !every || document.hidden || pending) return;
+    timer = setTimeout(poll, Math.max(0, nextAt - Date.now()));
   }
-  poll().then(loop);
+  function visibilityChanged() {
+    if (document.hidden) { clearTimeout(timer); timer = null; }
+    else if (!polls) poll();
+    else schedule();
+  }
+  document.addEventListener('visibilitychange', visibilityChanged);
+  poll();
 
   return {
     state: view, lit, poll,
     onChange(fn) { subs.push(fn); fn(view()); },
-    stop() { stopped = true; if (timer) clearTimeout(timer); }
+    stop() {
+      stopped = true; clearTimeout(timer);
+      document.removeEventListener('visibilitychange', visibilityChanged);
+      if (controller) controller.abort();
+    }
   };
 }
 
