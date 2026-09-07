@@ -2720,7 +2720,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   });
 
   pushFeed({ kind: 'sys', t: '', text: 'the lookout · the sanctuary is lit' });
-  pushFeed({ kind: 'sys', t: '', text: 'four residents home. walk up to anyone and press E to greet them' });
+  pushFeed({ kind: 'sys', t: '', text: 'the house is home. walk up to anyone and press E to greet them' });
 
   try {
     /* the archive first: the residents mutter their own sentences, or nothing */
