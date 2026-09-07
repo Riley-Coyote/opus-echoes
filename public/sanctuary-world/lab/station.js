@@ -2881,7 +2881,7 @@ cssHost.parentNode.insertBefore(cssHost2, cssHost.nextSibling);
   st.textContent = [
     '#css3d2{position:absolute;inset:0;pointer-events:none;z-index:2}',
     '#css3d2{opacity:1;transition:opacity .65s ease}#css3d2.gone{opacity:0;visibility:hidden;pointer-events:none}',
-    '#scr2{width:1180px;height:820px;background:#07060c;overflow:hidden;position:relative}',
+    '#scr2{width:900px;height:523px;background:#07060c;overflow:hidden;position:relative}',
     '#scr2 iframe{width:100%;height:100%;border:0;display:block;background:#07060c;pointer-events:auto}',
     '#css3d2.live #scr2{pointer-events:auto}',
     '#scr2 .curve{position:absolute;inset:0;pointer-events:none;',
@@ -2900,7 +2900,12 @@ cssHost.parentNode.insertBefore(cssHost2, cssHost.nextSibling);
 }
 const world2 = makeStationScreen({
   host: cssHost2, pos: SCREEN2_POS, normal: SCREEN2_NORMAL, screenId: 'scr2',
-  rotX: SCR2_TILT, quadW: SCR2_W, pageW: 1180, pageH: Math.round(1180*SCR2_H/SCR2_W), src: 'os/index.html?in=station'
+  rotX: SCR2_TILT, quadW: SCR2_W, pageW: 900, pageH: Math.round(900*SCR2_H/SCR2_W), src: 'os/index.html?in=station',
+  /* the console faces away from the room's origin, so its CSS3D scene is
+     pushed twelve metres up its own normal to put the origin back in front
+     of the seat — otherwise Chrome paints the OS but never lets a click
+     reach it. See makeWorldScreen's note. The picture is unchanged. */
+  originShift: 12
 });
 
 /* ─────────────────────────── the record ─────────────────────────── */
@@ -4189,7 +4194,7 @@ function centreOf(p) {
 const SEAT_LENS = Math.tan(32.5 * Math.PI / 180) / Math.tan(framedFov(16 / 9) * Math.PI / 360);
 const SEATS = {
   terminal: { id: 'terminal', dist: 0.59 * SEAT_LENS, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
-  console: { id: 'console', dist: 0.76 * SEAT_LENS, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
+  console: { id: 'console', dist: 0.56 * SEAT_LENS, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
 };
 for (const k of Object.keys(SEATS)) {
   const st = SEATS[k], pose = seatPose(st.screen, st.normal, st.dist);

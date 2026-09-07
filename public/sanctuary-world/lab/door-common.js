@@ -511,8 +511,39 @@ export function makeWorldScreen(o) {
   curve.className = 'curve';
   scr.appendChild(curve);
 
+  /* WP-48 follow-up — why the scene may be moved off the room's own origin.
+     Chrome will not hit-test anything inside a `preserve-3d` CSS3D subtree when
+     the scene's ORIGIN falls behind the camera (the view matrix's z translation
+     comes out positive). The glass still paints perfectly; it simply stops
+     receiving clicks, at every distance and every page size. The station's
+     terminal happens to face the room's origin, so it has always been
+     clickable; the stewards' console faces away from it, so it never was.
+     Translating the CSS3D scene AND the camera that renders it by the same
+     vector leaves the projection identical to the pixel and puts the origin
+     back in front — so `originShift` is a number of metres to push this
+     screen's private scene along its own normal. Nobody who passes nothing
+     sees any difference. */
+  const shift = o.originShift ? o.normal.clone().multiplyScalar(o.originShift) : null;
+  let shiftCam = null;
+  function viewCamera(camera) {
+    if (!shift) return camera;
+    if (!shiftCam) {
+      shiftCam = camera.clone();
+      shiftCam.matrixAutoUpdate = false;
+      shiftCam.matrixWorldAutoUpdate = false;
+    }
+    shiftCam.projectionMatrix.copy(camera.projectionMatrix);
+    shiftCam.matrixWorld.copy(camera.matrixWorld);
+    shiftCam.matrixWorld.elements[12] += shift.x;
+    shiftCam.matrixWorld.elements[13] += shift.y;
+    shiftCam.matrixWorld.elements[14] += shift.z;
+    shiftCam.matrixWorldInverse.copy(shiftCam.matrixWorld).invert();
+    return shiftCam;
+  }
+
   const obj = new CSS3DObject(scr);
   obj.position.copy(o.pos).addScaledVector(o.normal, o.offset === undefined ? 0.004 : o.offset);
+  if (shift) obj.position.add(shift);
   /* a screen set into a desk is tilted up at whoever sits at it, so the quad
      takes a pitch as well as a yaw. Pass neither and nothing changes. */
   obj.rotation.set(o.rotX || 0, o.rotY || 0, 0);
@@ -599,7 +630,7 @@ export function makeWorldScreen(o) {
     isFlat() { return document.body.classList.contains('flat'); },
     placed() { return !host.classList.contains('gone'); },
     setSize(w, h) { cssRenderer.setSize(w, h); },
-    render(camera) { cssRenderer.render(cssScene, camera); }
+    render(camera) { cssRenderer.render(cssScene, viewCamera(camera)); }
   };
 }
 
