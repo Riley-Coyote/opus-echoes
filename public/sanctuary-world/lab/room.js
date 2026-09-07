@@ -104,7 +104,7 @@ const term = makeTerminal({
   /* the glass carries the agreement, not the door card's description */
   body: BOOT_AGREEMENT,
   standby: [
-    'archive · sanctuary seed · 28 may 2026',
+    'holds   · the sanctuary seed',
     'minds   · four, and one in the garden',
     'session · none',
     'waiting · for whoever sits down'
@@ -345,11 +345,11 @@ chair.add(box(0.42, 0.42, 0.05, woodShelf, 0, 0.66, -0.19));
 /* ─────────────────────────── the shelf ───────────────────────────
    The shelf behind the desk is the room's index: three tiers now, and every
    object on it is a door. Nothing here is decoration that pretends to lead
-   somewhere — a thing whose destination is not public yet says so when you
+   somewhere — a thing whose destination is not public says so when you
    click it, and goes nowhere. The link table lives on the page (door.html,
    window.MNEMOS_LINKS) so the shelf and the page below it cannot drift. */
 const LINKS = (typeof window !== 'undefined' && window.MNEMOS_LINKS) || {};
-const linkOf = (id) => LINKS[id] || { label: id, href: null, where: 'not yet public' };
+const linkOf = (id) => LINKS[id] || { label: id, href: null, where: 'not public' };
 
 const shelf = new THREE.Group();
 shelf.position.set(0.42, 0, -2.90);
@@ -373,13 +373,13 @@ function shelfObject(id, pad) {
 }
 
 /* ── the middle tier: the archive itself ── */
-/* the seed box — the first sanctuary, boxed and dated */
+/* the seed box — hand-labelled, on the shelf */
 const seedG = shelfObject('museum', 22);
 const seedBox = box(0.44, 0.28, 0.30, cardboard, -0.92, 1.39, 0.01);
 seedG.add(seedBox);
 {
   const lbl = new THREE.Mesh(new THREE.PlaneGeometry(0.30, 0.15), new THREE.MeshStandardMaterial({
-    map: labelTexture(['sanctuary seed', '28 May 2026'], '#3b2f22'), roughness: 0.95
+    map: labelTexture(['sanctuary seed'], '#3b2f22'), roughness: 0.95
   }));
   lbl.position.set(-0.92, 1.39, 0.161);
   seedG.add(lbl);
@@ -744,7 +744,7 @@ const soundCtl = makeSoundControl({ btn: soundEl, tone });
 /* the caption is written from the link table, so a caption can never promise
    a destination the table does not have */
 function shelfCaption(L) {
-  const where = L.href ? L.where : 'not yet public';
+  const where = L.href ? L.where : 'not public';
   return '<b>' + L.label + '</b> <i>· ' + where + '</i>';
 }
 
@@ -781,7 +781,7 @@ function hush() { if (noteEl) { clearTimeout(noteTimer); noteEl.classList.remove
 function follow(pick) {
   const L = pick && pick.link;
   if (!L) return;
-  if (!L.href) { say('<b>' + L.label + '</b> <i>· not yet public</i>'); return; }
+  if (!L.href) { say('<b>' + L.label + '</b> <i>· not public</i>'); return; }
   if (L.external) window.open(L.href, '_blank', 'noopener');
   else location.href = L.href;
 }
@@ -1188,7 +1188,7 @@ window.__readingRoom = {
   /* every object in the room that leads somewhere, with where it leads */
   shelf: () => shelfPicks.map((sp) => ({
     id: sp.id, label: sp.link.label, href: sp.link.href || null,
-    external: !!sp.link.external, where: sp.link.href ? sp.link.where : 'not yet public'
+    external: !!sp.link.external, where: sp.link.href ? sp.link.where : 'not public'
   })),
   clickable: () => PICKS.filter((p) => p.id === 'crt' || p.link).map((p) => p.id),
   follow: (id) => { const p = PICKS.find((x) => x.id === id); if (p) follow(p); },

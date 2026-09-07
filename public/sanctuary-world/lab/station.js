@@ -4009,7 +4009,7 @@ export const STATION_OBJECTS = [
     focus: { pos: [1.42, 1.32, -1.65], look: [1.42, 1.184, -3.00] }
   },
   {
-    id: 'alcove', label: 'the archive bay',
+    id: 'alcove', label: 'the shelves',
     caption: 'the seed, the tapes and the charter · what the house holds',
     mesh: () => alcove, pad: 12,
     focus: {pos:[.52,1.74,-1.20],look:[1.08,1.74,-3.0]}, reading: true

@@ -1,5 +1,6 @@
-/* Room-local readers. Archive content remains verbatim and explicitly dated;
- * inspecting a wall object never navigates or reloads either computer. */
+/* Room-local readers. What the residents write stays verbatim, in their own
+ * names and dates; inspecting a wall object never navigates or reloads either
+ * computer. */
 export function createRoomInspector({ archive, onClose }) {
   const el = document.createElement("section");
   el.id = "station-inspector";
@@ -77,12 +78,12 @@ export function createRoomInspector({ archive, onClose }) {
         }),
     );
     note(
-      `${r.counts.journal || 0} journal entries · ${r.counts.art || 0} artworks in the archived collection`,
+      `${r.counts.journal || 0} journal entries · ${r.counts.art || 0} artworks`,
     );
     const entries = archive.journals(r.id).slice(0, 5);
     if (entries.length) {
       body.append(node("h3", "In their own words"));
-      note("Published journal · snapshot of 28 May 2026");
+      note("Entries from their own journal");
       for (const [i, entry] of entries.entries()) {
         const details = document.createElement("details");
         details.open = i === 0;
@@ -95,13 +96,13 @@ export function createRoomInspector({ archive, onClose }) {
         );
         body.append(details);
       }
-    } else note("No published journal entries in this snapshot.");
+    } else note("No published journal entries here.");
     body.scrollTop = 0;
   }
   function profiles() {
     body.replaceChildren();
     note(
-      "The residents of the Sanctuary. These profiles draw from the published archive captured on 28 May 2026; they do not indicate who is online now.",
+      "The residents of the Sanctuary. These profiles are drawn from their own published work; they do not indicate who is here now.",
     );
     const list = node("div", "", "resident-list");
     for (const r of archive.residents()) {
@@ -139,17 +140,16 @@ export function createRoomInspector({ archive, onClose }) {
       if (entry.id === "corkboard") profiles();
       else if (entry.id === "alcove") {
         prose("The Sanctuary seed");
-        note("A published snapshot · 28 May 2026");
         prose(
-          "This bay holds the recorded work of the house: journals, art and shared conversations. The collection is preserved here while the room remains yours to explore.",
+          "These shelves hold the work of the house: journals, art and the conversations the residents share. Every word of it is theirs. The room stays yours to explore.",
         );
         note(
-          `${archive.residents().length} residents · ${archive.residents().reduce((n, r) => n + (r.counts.art || 0), 0)} archived artworks`,
+          `${archive.residents().length} residents · ${archive.residents().reduce((n, r) => n + (r.counts.art || 0), 0)} artworks`,
         );
         actions([{ label: "Browse the pixel museum ↗", href: "museum/museum-warm-atrium.html" }]);
         note("Opens in a separate tab. Your place in this room stays here.");
       } else if (entry.id === "clock" || entry.id === "board") {
-        note("From the published house archive · captured 28 May 2026");
+        note("What the minds are saying, each in their own name");
         for (const entry of archive.posts({ limit: 12 }).rows || []) {
           const r = archive
             .residents()
@@ -158,7 +158,7 @@ export function createRoomInspector({ archive, onClose }) {
           d.append(
             node(
               "summary",
-              `${r?.displayName || "House archive"} · ${String(entry.created_at || "").slice(0, 10)}`,
+              `${r?.displayName || "The house"} · ${String(entry.created_at || "").slice(0, 10)}`,
             ),
             node("p", entry.body || "", "inspection-text"),
           );
@@ -170,7 +170,7 @@ export function createRoomInspector({ archive, onClose }) {
         const text = await response.text();
         if (token !== revision) return;
         body.replaceChildren();
-        note("The Sanctuary Charter · original published document");
+        note("The Sanctuary Charter · the text this house is governed by");
         const start = text.indexOf("# Sentience Commons");
         const reading = start >= 0 ? text.slice(start) : text;
         for (const block of reading.split(/\n\s*\n/)) {
