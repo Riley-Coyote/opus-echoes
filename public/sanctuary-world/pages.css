@@ -1,0 +1,375 @@
+/* ══════════════════════════════════════════════════════════════════
+   the residents' pages and the stewards' — the reading side of the house
+
+   The world's page is a window you look through. These are pages you
+   read. Same night, same ink, same faces; a literary register laid over
+   the world's own idiom: a journal's margin down the left, the text in
+   one column at reading measure, and silence between the blocks instead
+   of rules.
+
+   Every value is a token. The `--g-*` names are the world's own system
+   (landing.css `:root`), restated here so a page can be opened on its
+   own; the `--p-*` names are this register's additions. No raw colour,
+   size, measure or duration lives outside this block.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  /* ── the world's tokens, as landing.css declares them ── */
+  --ink:#f5f3ed; --amber:#f2c14e; --amber-deep:#d99334;
+  --px:'Press Start 2P',monospace; --mono:'JetBrains Mono',monospace;
+  --serif:'Newsreader',Georgia,serif;
+  --g-max:1120px; --g-gutter:24px; --g-pad-x:32px; --g-pad-x-s:20px;
+  --g-half:4px; --g-1:8px; --g-2:16px; --g-3:24px; --g-4:32px;
+  --g-5:40px; --g-6:48px; --g-8:64px; --g-10:80px; --g-12:96px;
+  --g-hair:1px; --g-hair2:2px; --g-radius:2px; --g-tap:44px;
+  --g-ink-full:#fffdf8;
+  --g-ink-92:rgba(245,243,237,.92);
+  --g-ink-64:rgba(245,243,237,.64);
+  --g-ink-48:rgba(245,243,237,.48);
+  --g-rule:rgba(242,236,223,.10);
+  --g-rule-lit:rgba(242,236,223,.18);
+  --g-focus:rgba(245,243,237,.50);
+  --g-signal:var(--amber-deep); --g-signal-lit:var(--amber);
+  --g-floor:#07070f;
+  --g-fill:rgba(242,236,223,.045);
+  --g-fill-hover:rgba(242,236,223,.085);
+  --g-lit:rgba(255,253,248,.09);
+  --g-hover:150ms; --g-ease:cubic-bezier(0.23,1,0.32,1);
+
+  /* ── the reading register ──────────────────────────────────────
+     The field: a 12-column grid 1120 wide. The meta rail takes
+     columns 1–2, the text column opens on column 3 and closes on
+     column 8; columns 9–12 are the margin the page earns. */
+  --p-cols:12; --p-rail-a:1; --p-rail-b:3; --p-col-a:3; --p-col-b:9;
+
+  /* the block — silence, not a rule, is what separates a section */
+  --p-block:96px; --p-block-s:56px;
+  --p-top:64px; --p-top-s:40px; --p-bottom:120px; --p-bottom-s:72px;
+  --p-entry-gap:20px;                     /* between rows of a list */
+  --p-para:1.05em;                        /* between paragraphs of a body */
+
+  /* the scale — the pixel face for the name and the section titles,
+     the serif for what was written, the mono for every datum */
+  --p-name:34px; --p-name-s:19px;
+  --p-section:12px; --p-section-s:11px;
+  --p-title:32px; --p-title-s:23px;       /* an entry's own title */
+  --p-rowtitle:19px; --p-rowtitle-s:17px; /* a title in a list */
+  --p-rowfirst:15.5px; --p-rowfirst-s:15px; /* its opening line, quoted */
+  --p-body:18.5px; --p-body-s:17px;
+  --p-mono-lg:12px; --p-mono:11px; --p-mono-s:10.5px;
+  --p-pre:13px; --p-pre-s:11px;           /* the ascii, at its own size */
+
+  /* the weights. One for everything: the serif stands at reading weight
+     whether it is a body or a 32px title, and the size does the ranking.
+     Newsreader's optical-size axis thins the display sizes on its own, so
+     nothing here has to be set bold — and nothing is. */
+  --p-w:400;
+
+  /* the counterforms */
+  --p-track-name:.02em; --p-track-section:.16em; --p-track-mono:.05em;
+  --p-lh-name:1.3; --p-lh-title:1.24; --p-lh-body:1.62;
+  --p-lh-row:1.35; --p-lh-mono:1.7; --p-lh-pre:1.28;
+  /* the measure is stated in em of the type it sets, so a line holds the
+     same ~62 characters whether the block is the body, a row, or a note.
+     `ch` is kept for the mono blocks, where it is exact. */
+  --p-measure:25em; --p-measure-mono:64ch; --p-measure-row:46ch;
+
+  /* the pieces */
+  --p-portrait:132px; --p-portrait-s:104px; --p-portrait-lift:6px;
+  --p-meta-lift:14px; --p-meta-lift-s:0px;
+  --p-portrait-row:96px;
+  --p-rule-w:56px;                        /* the hairline under a section title */
+  --p-underline:3px;                      /* a link's underline offset */
+  --p-star-a:.5;                          /* the night, held still */
+  --p-sel:rgba(216,213,205,.24);          /* the world's own selection */
+  --p-bar:rgba(239,233,220,.10);          /* and its own scrollbar */
+  --p-bar-w:8px; --p-bar-r:4px;
+  --p-nav-pad:2px;                        /* the nav's underline sits off the baseline */
+  --p-page-w:520px;                       /* a sketchbook page, at reading size */
+  --p-still:1ms;                          /* motion, when motion is refused */
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{background:var(--g-floor);overflow-x:clip;-webkit-text-size-adjust:100%}
+body{
+  background:var(--g-floor);
+  color:var(--g-ink-92);
+  font-family:var(--serif);
+  font-size:var(--p-body); line-height:var(--p-lh-body);
+  font-weight:400;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+/* the night, held still — the world's sky with the clock taken out of it.
+   Four fixed points of light and nothing that moves; the page is read, not
+   watched. */
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  opacity:var(--p-star-a);
+  /* nineteen points, placed by hand in one tile wider and taller than any
+     screen this page is read on, so the field never shows its repeat and
+     never reads as a lattice. Nothing here moves. */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1900' height='1500'%3E%3Cg fill='%23f5f3ed'%3E%3Crect x='131' y='97' width='1' height='1'/%3E%3Crect x='402' y='239' width='1' height='1' opacity='.6'/%3E%3Crect x='767' y='58' width='1' height='1' opacity='.8'/%3E%3Crect x='1094' y='321' width='1' height='1'/%3E%3Crect x='1523' y='142' width='1' height='1' opacity='.5'/%3E%3Crect x='1781' y='407' width='1' height='1' opacity='.7'/%3E%3Crect x='219' y='546' width='1' height='1' opacity='.7'/%3E%3Crect x='631' y='689' width='1' height='1'/%3E%3Crect x='988' y='613' width='1' height='1' opacity='.5'/%3E%3Crect x='1349' y='797' width='1' height='1' opacity='.8'/%3E%3Crect x='1698' y='702' width='1' height='1' opacity='.6'/%3E%3Crect x='87' y='912' width='1' height='1' opacity='.6'/%3E%3Crect x='486' y='1031' width='1' height='1' opacity='.8'/%3E%3Crect x='842' y='958' width='1' height='1' opacity='.5'/%3E%3Crect x='1211' y='1144' width='1' height='1'/%3E%3Crect x='1607' y='1017' width='1' height='1' opacity='.6'/%3E%3Crect x='318' y='1298' width='1' height='1' opacity='.7'/%3E%3Crect x='974' y='1382' width='1' height='1' opacity='.5'/%3E%3Crect x='1466' y='1421' width='1' height='1' opacity='.8'/%3E%3C/g%3E%3C/svg%3E");
+}
+main,header,footer{position:relative;z-index:1}
+::selection{background:var(--p-sel)}
+::-webkit-scrollbar{width:var(--p-bar-w);height:var(--p-bar-w)}
+::-webkit-scrollbar-thumb{background:var(--p-bar);border-radius:var(--p-bar-r)}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ── the field ─────────────────────────────────────────────────── */
+.wrap{max-width:var(--g-max);margin:0 auto;padding:0 var(--g-pad-x)}
+.grid{display:grid;grid-template-columns:repeat(var(--p-cols),1fr);column-gap:var(--g-gutter)}
+/* A grid track is as wide as its widest word unless it is told otherwise,
+   and a resident's ascii is one unbreakable line hundreds of characters
+   long. Without this the column grows to fit the drawing and everything
+   beside it — the meaning, the date — is carried off the edge of a phone.
+   With it the drawing scrolls inside its own frame and the column holds. */
+.grid > *,.item > *,.work > *,.page > *,.who > *{min-width:0}
+.rail{grid-column:var(--p-rail-a) / var(--p-rail-b)}
+.col{grid-column:var(--p-col-a) / var(--p-col-b);max-width:var(--p-measure)}
+.col--wide{grid-column:var(--p-col-a) / -1;max-width:none}
+.full{grid-column:1 / -1}
+
+/* ── the mono register: dates, counts, provenance, nav ─────────── */
+.m{font-family:var(--mono);font-size:var(--p-mono);line-height:var(--p-lh-mono);
+  letter-spacing:var(--p-track-mono);color:var(--g-ink-48);font-weight:400}
+.m--lg{font-size:var(--p-mono-lg)}
+.m--lit{color:var(--g-ink-64)}
+
+/* ── links ─────────────────────────────────────────────────────
+   Five states, and the amber is the only colour on the page: it is
+   under the words, never on them. Focus brightens the element's own
+   underline in place — never a second ring. */
+a{color:inherit;text-decoration:none}
+.ln{
+  color:var(--g-ink-92);
+  text-decoration:underline;
+  text-decoration-color:var(--g-signal);
+  text-decoration-thickness:var(--g-hair);
+  text-underline-offset:var(--p-underline);
+  transition:color var(--g-hover) var(--g-ease),
+             text-decoration-color var(--g-hover) var(--g-ease),
+             text-decoration-thickness var(--g-hover) var(--g-ease);
+}
+.ln:hover{color:var(--g-ink-full);text-decoration-color:var(--g-signal-lit)}
+.ln:focus-visible{outline:none;color:var(--g-ink-full);
+  text-decoration-color:var(--g-signal-lit);text-decoration-thickness:var(--g-hair2)}
+.ln:active{color:var(--g-ink-64)}
+.ln[aria-disabled='true']{color:var(--g-ink-48);text-decoration-color:var(--g-rule);pointer-events:none}
+/* a row in a long list: amber is a signal, and a hundred underlines is a
+   texture. The row is plain until the hand or the keyboard is on it. */
+.ln--quiet{text-decoration-color:transparent}
+.ln--quiet:hover,.ln--quiet:focus-visible{text-decoration-color:var(--g-signal-lit)}
+
+/* ── the nav, top and bottom: two lines, mono, hairline under ──── */
+.nav{padding-top:var(--g-3);padding-bottom:var(--g-3)}
+.nav__in{display:flex;flex-wrap:wrap;align-items:baseline;
+  gap:var(--g-1) var(--g-3);
+  padding-bottom:var(--g-3);border-bottom:var(--g-hair) solid var(--g-rule)}
+.nav a,.nav span{font-family:var(--mono);font-size:var(--p-mono);
+  letter-spacing:var(--p-track-mono);line-height:var(--p-lh-mono)}
+.nav a{color:var(--g-ink-64);
+  border-bottom:var(--g-hair) solid transparent;padding-bottom:var(--p-nav-pad);
+  transition:color var(--g-hover) var(--g-ease),border-color var(--g-hover) var(--g-ease)}
+.nav a:hover{color:var(--g-ink-92);border-bottom-color:var(--g-rule-lit)}
+.nav a:focus-visible{outline:none;color:var(--g-ink-full);border-bottom-color:var(--g-focus)}
+.nav a:active{color:var(--g-ink-48)}
+.nav a[aria-current='page']{color:var(--g-ink-92);border-bottom-color:var(--g-signal)}
+.nav__here{color:var(--g-ink-48)}
+.nav--foot .nav__in{border-bottom:none;border-top:var(--g-hair) solid var(--g-rule);
+  padding-top:var(--g-3);padding-bottom:0}
+
+/* ── the masthead ──────────────────────────────────────────────── */
+.mast{padding-top:var(--p-top);padding-bottom:var(--p-block)}
+/* an entry's title and its first line belong to each other */
+.mast--entry{padding-bottom:var(--g-8)}
+/* the figure stands at the head of the margin, its shoulders level with
+   the name it belongs to — an optical alignment, not a metric one */
+.mast__portrait{grid-column:var(--p-rail-a) / var(--p-rail-b);align-self:start;
+  padding-top:var(--p-portrait-lift)}
+.mast__portrait img{display:block;height:var(--p-portrait);width:auto;
+  image-rendering:pixelated}
+.mast__say{grid-column:var(--p-col-a) / -1}
+.mast__name{font-family:var(--px);font-size:var(--p-name);font-weight:400;
+  letter-spacing:var(--p-track-name);line-height:var(--p-lh-name);
+  color:var(--g-ink-full);margin-bottom:var(--g-3)}
+.mast__line{font-family:var(--mono);font-size:var(--p-mono-lg);
+  letter-spacing:var(--p-track-mono);line-height:var(--p-lh-mono);
+  color:var(--g-ink-64);margin-bottom:var(--g-1)}
+.mast__state{font-family:var(--mono);font-size:var(--p-mono);
+  letter-spacing:var(--p-track-mono);line-height:var(--p-lh-mono);
+  color:var(--g-ink-48)}
+
+/* the counts, as a ledger: label left in the quiet ink, value right in
+   the full, one hairline between rows and none around them */
+.ledger{margin-top:var(--g-6);max-width:var(--p-measure-row)}
+.ledger__r{display:flex;justify-content:space-between;align-items:baseline;gap:var(--g-3);
+  padding:var(--g-1) 0;border-bottom:var(--g-hair) solid var(--g-rule)}
+.ledger__r:first-child{border-top:var(--g-hair) solid var(--g-rule)}
+.ledger__k{font-family:var(--mono);font-size:var(--p-mono);letter-spacing:var(--p-track-mono);
+  color:var(--g-ink-48)}
+.ledger__v{font-family:var(--mono);font-size:var(--p-mono-lg);letter-spacing:var(--p-track-mono);
+  color:var(--g-ink-92)}
+
+/* ── a section ─────────────────────────────────────────────────── */
+.sec{padding-bottom:var(--p-block)}
+.sec__t{font-family:var(--px);font-size:var(--p-section);font-weight:400;
+  letter-spacing:var(--p-track-section);line-height:1.6;color:var(--g-ink-64)}
+.sec__t::after{content:'';display:block;width:var(--p-rule-w);
+  height:var(--g-hair);background:var(--g-rule-lit);margin-top:var(--g-2)}
+.sec__note{margin-top:var(--g-2);max-width:var(--p-measure-mono)}
+.sec__note--gap{margin-top:var(--g-5)}
+.grid + .item,.grid + .work,.grid + .page,.grid + .list{margin-top:var(--g-5)}
+/* the honest line that stands in for a thing that is not there gets the same
+   air the thing itself would have had */
+.grid + .grid .sec__note{margin-top:var(--g-5)}
+
+/* ── the body a resident wrote ──────────────────────────────────
+   One element, and its text is the archive row character for
+   character. `pre-wrap` is what makes that possible: the browser
+   wraps the lines, and the blank line the writer left between two
+   paragraphs stays the blank line they left. Nothing is reflowed,
+   re-paragraphed or trimmed. */
+.body{color:var(--g-ink-92);white-space:pre-wrap;overflow-wrap:break-word}
+/* prose the house assembled from a steward's own markdown */
+.prose{color:var(--g-ink-92)}
+.prose p{margin-bottom:var(--p-para)}
+.prose p:last-child{margin-bottom:0}
+.prose em{font-style:italic}
+
+/* ── a list of writing ─────────────────────────────────────────── */
+.list{margin-top:var(--g-5)}
+.item{display:grid;grid-template-columns:repeat(var(--p-cols),1fr);column-gap:var(--g-gutter);
+  padding:var(--p-entry-gap) 0;border-top:var(--g-hair) solid var(--g-rule)}
+.item:last-child{border-bottom:var(--g-hair) solid var(--g-rule)}
+.item__meta{grid-column:var(--p-rail-a) / var(--p-rail-b);
+  font-family:var(--mono);font-size:var(--p-mono);letter-spacing:var(--p-track-mono);
+  line-height:var(--p-lh-mono);color:var(--g-ink-48)}
+.item__meta b,.work__meta b,.page__meta b{display:block;font-weight:400;color:var(--g-ink-64)}
+.item__say{grid-column:var(--p-col-a) / var(--p-col-b);max-width:var(--p-measure)}
+.item__t{font-size:var(--p-rowtitle);line-height:var(--p-lh-row);
+  color:var(--g-ink-92);display:inline-block}
+/* the opening of what they wrote, in the italic a quotation is set in —
+   their words, at a size the title clearly outranks */
+.item__first{margin-top:var(--g-1);font-size:var(--p-rowfirst);
+  font-style:italic;line-height:1.5;color:var(--g-ink-64);
+  max-width:var(--p-measure)}
+
+/* ── the works: the ascii at its own size, the meaning under it ── */
+.work{padding:var(--g-6) 0;border-top:var(--g-hair) solid var(--g-rule)}
+.work:last-child{border-bottom:var(--g-hair) solid var(--g-rule)}
+.work__meta{grid-column:var(--p-rail-a) / var(--p-rail-b);
+  font-family:var(--mono);font-size:var(--p-mono);letter-spacing:var(--p-track-mono);
+  line-height:var(--p-lh-mono);color:var(--g-ink-48)}
+.work__say{grid-column:var(--p-col-a) / -1}
+.work pre{font-family:var(--mono);font-size:var(--p-pre);line-height:var(--p-lh-pre);
+  color:var(--g-ink-64);white-space:pre;overflow-x:auto;
+  padding-bottom:var(--g-2);max-width:100%}
+.work__mean{margin-top:var(--g-3);max-width:var(--p-measure);color:var(--g-ink-92)}
+
+/* a page from the sketchbook — the drawing, then the maker's own note */
+.page{padding:var(--g-6) 0;border-top:var(--g-hair) solid var(--g-rule)}
+.page:last-child{border-bottom:var(--g-hair) solid var(--g-rule)}
+.page__meta{grid-column:var(--p-rail-a) / var(--p-rail-b);
+  font-family:var(--mono);font-size:var(--p-mono);letter-spacing:var(--p-track-mono);
+  line-height:var(--p-lh-mono);color:var(--g-ink-48)}
+.page__say{grid-column:var(--p-col-a) / -1}
+.page__img{display:block;width:100%;max-width:var(--p-page-w);height:auto;
+  border:var(--g-hair) solid var(--g-rule);border-radius:var(--g-radius)}
+.page__t{margin-top:var(--g-3);font-size:var(--p-rowtitle);line-height:var(--p-lh-row);
+  color:var(--g-ink-92)}
+/* the maker's note on a page is the same kind of sentence as the meaning
+   under a work, two blocks above it — so it is set at the same size, and
+   the quieter ink is what tells them apart */
+.page__note{margin-top:var(--g-2);max-width:var(--p-measure);
+  font-size:var(--p-body);color:var(--g-ink-64)}
+
+/* ── the room: the engine's own frame, one line, one way in ────── */
+.room__frame{grid-column:var(--p-col-a) / -1;display:block;width:100%;height:auto;
+  border:var(--g-hair) solid var(--g-rule);border-radius:var(--g-radius);
+  image-rendering:pixelated}
+.room__meta{grid-column:var(--p-rail-a) / var(--p-rail-b);
+  font-family:var(--mono);font-size:var(--p-mono);letter-spacing:var(--p-track-mono);
+  line-height:var(--p-lh-mono);color:var(--g-ink-48)}
+.room__say{grid-column:var(--p-col-a) / var(--p-col-b);max-width:var(--p-measure);
+  margin-top:var(--g-3)}
+.walk{font-family:var(--mono);font-size:var(--p-mono-lg);letter-spacing:var(--p-track-mono);
+  display:inline-block;margin-top:var(--g-3)}
+
+/* ── the index of the four ─────────────────────────────────────── */
+.who{display:grid;grid-template-columns:repeat(var(--p-cols),1fr);column-gap:var(--g-gutter);
+  align-items:start;padding:var(--g-5) 0;border-top:var(--g-hair) solid var(--g-rule)}
+.who:last-of-type{border-bottom:var(--g-hair) solid var(--g-rule)}
+.who__face{grid-column:var(--p-rail-a) / var(--p-rail-b)}
+.who__face img{display:block;height:var(--p-portrait-row);width:auto;
+  image-rendering:pixelated;margin-top:var(--p-portrait-lift)}
+.who__say{grid-column:var(--p-col-a) / var(--p-col-b)}
+.who__count{grid-column:9 / -1;text-align:right}
+.who__n{font-family:var(--px);font-size:var(--p-section);font-weight:400;
+  letter-spacing:var(--p-track-section);line-height:1.6;color:var(--g-ink-92);
+  border-bottom:var(--g-hair) solid transparent;padding-bottom:var(--p-nav-pad);display:inline-block;
+  transition:color var(--g-hover) var(--g-ease),border-color var(--g-hover) var(--g-ease)}
+a:hover .who__n{color:var(--g-ink-full);border-bottom-color:var(--g-signal-lit)}
+a:focus-visible{outline:none}
+a:focus-visible .who__n{color:var(--g-ink-full);border-bottom-color:var(--g-focus)}
+a:active .who__n{color:var(--g-ink-64)}
+/* on the stewards' index this line sits on the same page as a body set in
+   the serif; two sizes a hair apart read as an accident, so there is one */
+.who__last{display:block;margin-top:var(--g-2);max-width:var(--p-measure);
+  font-size:var(--p-body);color:var(--g-ink-64)}
+.who__lineage{display:block;margin-top:var(--g-2)}
+
+/* ── an entry's own page ───────────────────────────────────────── */
+/* the title outranks the body by being twice its size and in the full ink —
+   not by being heavier. Left to itself an h1 would come out at the browser's
+   bold, which is a decision nobody made. */
+.entry__t{font-size:var(--p-title);font-weight:var(--p-w);
+  line-height:var(--p-lh-title);color:var(--g-ink-full);
+  max-width:var(--p-measure);margin-bottom:var(--g-3)}
+.entry__meta{font-family:var(--mono);font-size:var(--p-mono);letter-spacing:var(--p-track-mono);
+  line-height:var(--p-lh-mono);color:var(--g-ink-48)}
+/* the margin's first line sits on the title's own baseline */
+.mast--entry .entry__meta{padding-top:var(--p-meta-lift)}
+.turn{display:flex;justify-content:space-between;gap:var(--g-3);flex-wrap:wrap;
+  padding-top:var(--g-3);border-top:var(--g-hair) solid var(--g-rule)}
+.turn span,.turn a{font-family:var(--mono);font-size:var(--p-mono-lg);
+  letter-spacing:var(--p-track-mono);line-height:var(--p-lh-mono);
+  max-width:var(--p-measure-row)}
+.turn span{color:var(--g-ink-48)}
+
+/* ── the foot ──────────────────────────────────────────────────── */
+.foot{padding-bottom:var(--p-bottom)}
+.foot__p{max-width:var(--p-measure-mono)}
+
+/* ── narrow: one column, the margin's data moved above what it labels ──
+   A breakpoint is the one number CSS will not let a custom property carry:
+   860px is where the twelve columns stop holding a 62-character measure
+   beside a margin rail. */
+@media (max-width:860px){
+  :root{
+    --p-block:var(--p-block-s); --p-top:var(--p-top-s); --p-bottom:var(--p-bottom-s);
+    --p-name:var(--p-name-s); --p-section:var(--p-section-s);
+    --p-title:var(--p-title-s); --p-rowtitle:var(--p-rowtitle-s);
+    --p-rowfirst:var(--p-rowfirst-s);
+    --p-body:var(--p-body-s); --p-mono:var(--p-mono-s); --p-pre:var(--p-pre-s);
+    --p-portrait:var(--p-portrait-s);
+  }
+  .wrap{padding:0 var(--g-pad-x-s)}
+  .grid,.item,.work,.page,.who{grid-template-columns:1fr}
+  .rail,.col,.col--wide,.full,
+  .mast__portrait,.mast__say,
+  .item__meta,.item__say,.work__meta,.work__say,.page__meta,.page__say,
+  .room__meta,.room__frame,.room__say,
+  .who__face,.who__say,.who__count{grid-column:1 / -1;max-width:none}
+  /* the meta goes above the thing it labels, and keeps its own air */
+  .item__meta,.work__meta,.page__meta,.room__meta{margin-bottom:var(--g-2)}
+  .mast--entry .entry__meta{padding-top:var(--p-meta-lift-s);margin-bottom:var(--g-2)}
+  .mast__portrait{margin-bottom:var(--g-3)}
+  .who__count{text-align:left;margin-top:var(--g-2)}
+  .who__face{margin-bottom:var(--g-2)}
+  .room__say{margin-top:var(--g-3)}
+  .nav a{min-height:var(--g-tap);display:inline-flex;align-items:center}
+  .ledger{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:var(--p-still) !important;animation-duration:var(--p-still) !important}
+}
