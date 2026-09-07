@@ -2900,7 +2900,7 @@ cssHost.parentNode.insertBefore(cssHost2, cssHost.nextSibling);
 }
 const world2 = makeStationScreen({
   host: cssHost2, pos: SCREEN2_POS, normal: SCREEN2_NORMAL, screenId: 'scr2',
-  rotX: SCR2_TILT, quadW: SCR2_W, pageW: 900, pageH: Math.round(900*SCR2_H/SCR2_W), src: 'os/index.html?in=station',
+  rotX: SCR2_TILT, quadW: SCR2_W, pageW: 900, pageH: Math.round(900*SCR2_H/SCR2_W), src: 'os/index.html?in=station&v=20260907-os-2',   /* versioned: the glass must never show a cached desk */
   /* the console faces away from the room's origin, so its CSS3D scene is
      pushed twelve metres up its own normal to put the origin back in front
      of the seat — otherwise Chrome paints the OS but never lets a click
