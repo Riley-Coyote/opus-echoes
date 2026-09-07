@@ -11003,6 +11003,21 @@
         return false;
       }
     })();
+    const IN_STATION = (() => {
+      try {
+        return new URLSearchParams(location.search).get("in") === "station";
+      } catch (e) {
+        return false;
+      }
+    })();
+    if (IN_STATION)
+      mark(FIRST.door);
+    const tellRoom = (type) => {
+      try {
+        if (window.parent && window.parent !== window)
+          window.parent.postMessage({ source: "mnemos-world", type }, "*");
+      } catch (e) {}
+    };
     const doorEl = $("#doorcard"), doorIn = $("#door-in");
     const doorBody = doorEl && doorEl.querySelector(".door__body");
     if (doorBody)
@@ -13623,11 +13638,7 @@
       }
       if (FROM_DOOR) {
         mark(FIRST.door);
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ source: "mnemos-world", type: "came-in" }, "*");
-          }
-        } catch (e) {}
+        tellRoom("came-in");
       }
       setTimeout(() => {
         setupWorldPointer();
@@ -15161,7 +15172,9 @@
       document.documentElement.classList.add("exploring");
       setFeed(false);
       setFsLabel();
-      if (!seen(FIRST.door) && !FROM_DOOR)
+      if (IN_STATION)
+        tellRoom("came-in");
+      if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION)
         openDoor();
       else
         cab.focus({ preventScroll: true });
@@ -15187,11 +15200,8 @@
     addEventListener("keydown", (e) => {
       if (e.key !== "Escape" || e.defaultPrevented || !panel.hidden)
         return;
-      if (FROM_DOOR) {
-        try {
-          if (window.parent !== window)
-            window.parent.postMessage({ source: "mnemos-world", type: "stand-up" }, "*");
-        } catch (_) {}
+      if (FROM_DOOR || IN_STATION) {
+        tellRoom("stand-up");
         return;
       }
       if (worldEl.classList.contains("fs"))

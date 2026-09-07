@@ -2865,7 +2865,7 @@ function makeStationScreen(options) {
 const cssHost = document.getElementById('css3d');
 const world = makeStationScreen({
   host: cssHost, pos: SCREEN_POS, normal: SCREEN_NORMAL,
-  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: Math.round(1024*SCR_H/SCR_W), src: 'index.html?door=1'
+  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: Math.round(1024*SCR_H/SCR_W), src: 'index.html?in=station&v=20260907-front-1'   /* versioned like the console's: the glass must never show a cached page */
 });
 
 /* ── and TOPOLOGIE OS, on the stewards' console ──
@@ -3989,7 +3989,8 @@ const limen = (() => {
  * External destinations require a deliberate labelled link; the two retained
  * computer documents remain independent of the wall readers. */
 const TOKEN_URL = '/token';
-const HUB_URL = '/';
+/* the wider project's own page. Not `/` — on mnemos.world that is this room. */
+const HUB_URL = 'https://mnemos.chat/';
 /* what has been asked for, for the test surface and for the report */
 const WENT = { to: null, at: 0 };
 

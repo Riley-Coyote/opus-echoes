@@ -1047,6 +1047,20 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* ?door=1 — the reading room said the card's words on its own screen and the
      visitor already answered them there. Skip the card; tell the room. */
   const FROM_DOOR = (() => { try { return new URLSearchParams(location.search).get('door') === '1'; } catch (e) { return false; } })();
+  /* ?in=station — the station is the front door, and this page is what is on
+     the computer at its desk. Unlike ?door=1 the WHOLE page is on the glass:
+     the bar, the hero with the window and the feed, the ground below it, all
+     of it scrolling inside the screen. The CRT's boot text said the agreement
+     before the page ever loaded, so the card is not asked a second time; and
+     walking in from here is handed up to the room the same way the reading
+     room's door hands it up. */
+  const IN_STATION = (() => { try { return new URLSearchParams(location.search).get('in') === 'station'; } catch (e) { return false; } })();
+  /* the agreement is settled before anything on this page can ask for it */
+  if (IN_STATION) mark(FIRST.door);
+  /* the room outside the glass, in the language both doors speak */
+  const tellRoom = (type) => {
+    try { if (window.parent && window.parent !== window) window.parent.postMessage({ source: 'mnemos-world', type }, '*'); } catch (e) {}
+  };
   const doorEl = $('#doorcard'), doorIn = $('#door-in');
   /* the card's words are the agreement, taken from the reading room's own
      source so the two doors can never say different things */
@@ -3417,11 +3431,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     /* the card at the door — once per browser, before anything else is heard */
     if (FROM_DOOR) {
       mark(FIRST.door);
-      try {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ source: 'mnemos-world', type: 'came-in' }, '*');
-        }
-      } catch (e) {}
+      tellRoom('came-in');
     }
     setTimeout(() => { setupWorldPointer(); $("#enter-world").disabled = false; }, 0);
     window.__sanctuaryArchive = archive;
@@ -4806,7 +4816,10 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     document.documentElement.classList.add('exploring');
     setFeed(false);
     setFsLabel();
-    if (!seen(FIRST.door) && !FROM_DOOR) openDoor();
+    /* on the station's glass, walking in is the thing the room was waiting for:
+       the world takes the whole frame here, and the room upstairs is told. */
+    if (IN_STATION) tellRoom('came-in');
+    if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION) openDoor();
     else cab.focus({ preventScroll: true });
   }
   function leaveWorld() {
@@ -4827,10 +4840,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }));
   addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || e.defaultPrevented || !panel.hidden) return;
-    if (FROM_DOOR) {
-      try { if (window.parent !== window) window.parent.postMessage({ source: 'mnemos-world', type: 'stand-up' }, '*'); } catch (_) {}
-      return;
-    }
+    /* inside a room, ESC belongs to the room: it stands the visitor up from the
+       desk. The key never reaches that document on its own, so it is handed up. */
+    if (FROM_DOOR || IN_STATION) { tellRoom('stand-up'); return; }
     if (worldEl.classList.contains('fs')) leaveWorld();
   });
 
