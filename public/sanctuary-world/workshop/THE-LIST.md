@@ -617,3 +617,13 @@ reaches that door (*a visitor went into the museum*), and arrives and leaves at 
 edge, as the visitor does. Never a private room, never Field's chair, never a word. Verified over
 five hours of the day against main: six rooms visited, no teleports, counts held, residents and
 household unchanged.
+
+## 2026-09-07 · the station is the front door; the page is on the computer (WP-51, e0c6cdd + the came-in line)
+Riley's decision: the station is the landing page; the pixel sanctuary page is what the computer
+shows when you sit down. `/sanctuary` → station.html. The root answers by host: mnemos.world →
+the station; mnemos.chat → the hub. The terminal runs `index.html?in=station`: the whole page on
+the glass, scrollable, the agreement already given by the boot text; Enter inside takes the world
+full-bleed AND the room flat (the station now listens for `came-in`); Escape stands up. The brass
+sign points to https://mnemos.chat/. Verified: routes by curl with Host headers, the glass in a
+real browser, `?door=1` and the bare page unchanged, 20/20 tests. Lovable's part: add mnemos.world
+as a custom domain on the same site.

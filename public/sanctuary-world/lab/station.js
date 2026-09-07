@@ -4307,7 +4307,8 @@ const full = makeFullMode({
   seated: () => cam.mode === 'seated'
 });
 
-onWorldMessage({ standUp });
+/* coming in through the glass takes the whole window: the world is the program now */
+onWorldMessage({ standUp, cameIn: () => { if (cam.mode === 'seated' && !full.isOn()) full.set(true); } });
 
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 motionPreference.addEventListener('change', (ev) => {
