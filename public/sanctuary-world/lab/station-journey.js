@@ -65,16 +65,23 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
   return {
     get active(){return state!=='idle';},get state(){return {phase:state,paused,progress:total?covered/total:0,direction};},
     async start(direct=false){if(state!=='idle')return;revision++;initialGuide={position:guide.group.position.clone(),quaternion:guide.group.quaternion.clone()};saved=prepare();cameraStart=camera.position.clone();lookStart=camera.quaternion.clone();state='staging';direction='out';paused=false;stageTime=0;lookHeld=0;panel.hidden=false;document.body.classList.add('station-travel');panel.querySelector('[data-action=cancel]').textContent='Stay in the station';status('Limen is meeting you at the passage.');
+      // WP-46: the room is one level now, with the desk under the porthole on
+      // the left and the credenza in the right corner. The clear lane out of
+      // either is the open strip in front of both, so a withdrawal goes to the
+      // front of the room first and only then along it.
       const p=guide.group.position;approach=[new T.Vector3(p.x,0,p.z)];
-      if(p.z<2.4){approach.push(v([p.x,-1.55]),v([-.4,-1.55]),v([-.4,2.75]));}approach.push(v([-1.7,2.75]));
+      if(p.z<2.4){
+        if(p.z<-.2)approach.push(v([p.x,-.2]));
+        approach.push(v([-.4,-.2]),v([-.4,2.75]));
+      }approach.push(v([-1.7,2.75]));
       // Seated views withdraw into the open aisle, never diagonally across the
-      // desk or sunken lounge. Their return retraces this same approach.
+      // desk or the credenza. Their return retraces this same approach.
       cameraApproach=[cameraStart.clone()];
       if(cameraStart.z<2.4){
         cameraApproach.push(new T.Vector3(cameraStart.x,1.65,cameraStart.z));
-        if(cameraStart.x>.5&&cameraStart.z>.4){cameraApproach.push(new T.Vector3(cameraStart.x,1.65,2.75));}
-        else if(cameraStart.x>0){cameraApproach.push(new T.Vector3(3.25,1.65,cameraStart.z),new T.Vector3(3.25,1.65,2.75));}
-        else {cameraApproach.push(new T.Vector3(cameraStart.x,1.65,-1.55),new T.Vector3(-.4,1.65,-1.55),new T.Vector3(-.4,1.65,2.75));}
+        // out of the console's corner: past the credenza's left end, not over it
+        if(cameraStart.x>1.2&&cameraStart.z<.4){cameraApproach.push(new T.Vector3(.6,1.65,cameraStart.z),new T.Vector3(.6,1.65,2.75));}
+        else {cameraApproach.push(new T.Vector3(cameraStart.x,1.65,2.75));}
         cameraApproach.push(new T.Vector3(2.7,1.65,2.75));
         route(travelPath.slice(1).map(v));
         approach.pop();approach.push(v([2.7,2.75]),v([2.7,4.65]));

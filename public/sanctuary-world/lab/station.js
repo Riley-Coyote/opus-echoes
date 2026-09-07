@@ -6,7 +6,7 @@
  * far wall, two shallow steps up to it, the landscape beyond — the brightest
  * thing in the room. One long run of walnut cabinets down the right with the
  * machines set into them and open shelves above. A free-edge walnut slab in the
- * middle on a carved base. A sunken lounge at the front. Polished concrete
+ * middle on a carved base, under the porthole. Polished concrete
  * underfoot. Every machine reads as furniture.
  *
  * The room runs on the sanctuary's own clock: golden hour, dusk, night and
@@ -673,17 +673,14 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0a0e);
 scene.fog = new THREE.FogExp2(0x241d2c, 0.014);
 
-/* the sunken lounge, so the floor knows where its hole is */
-const PIT = { x0: -4.20, x1: -0.80, z0: -0.25, z1: 2.15, drop: 0.35 };
-const PIT_STAIR = { x: -1.55, w: 1.40, tread: 0.33 };
+/* THE ROOM RE-PLANNED (WP-46). The sunken lounge is gone: one floor level from
+   wall to wall, and the desk moved under the aperture. Nothing drops any more,
+   so the floor has no hole, no reveals, no treads and no pit slab. */
 
-/* the floor: polished concrete with the lounge cut out of it */
+/* the floor: polished concrete, one level across the whole room */
 {
   const s = new THREE.Shape();
   s.moveTo(WALL.L, -WALL.N); s.lineTo(WALL.R, -WALL.N); s.lineTo(WALL.R, -WALL.F); s.lineTo(WALL.L, -WALL.F); s.closePath();
-  const hole = new THREE.Path();
-  hole.moveTo(PIT.x0, -PIT.z0); hole.lineTo(PIT.x1, -PIT.z0); hole.lineTo(PIT.x1, -PIT.z1); hole.lineTo(PIT.x0, -PIT.z1); hole.closePath();
-  s.holes.push(hole);
   const geo = new THREE.ShapeGeometry(s);
   geo.rotateX(-Math.PI / 2);
   /* the shape's own uv is in metres; give the map a sane repeat */
@@ -694,41 +691,6 @@ const PIT_STAIR = { x: -1.55, w: 1.40, tread: 0.33 };
   m.userData.stationPart = 'floor';
   m.receiveShadow = true;
   scene.add(m);
-
-  /* Vertical reveals meet the cut edge without a second horizontal face at
-     y=0. The old box caps occupied the same plane as the surrounding floor. */
-  const pf = plane(PIT.x1 - PIT.x0, PIT.z1 - PIT.z0, floorMat, (PIT.x0 + PIT.x1) / 2, -PIT.drop, (PIT.z0 + PIT.z1) / 2, -Math.PI / 2);
-  pf.name = 'station-pit-floor';
-  pf.userData.stationPart = 'pit-floor';
-  scene.add(pf);
-  const reveal = (name, w, x, z, yaw) => {
-    const face = plane(w, PIT.drop, concretePlain, x, -PIT.drop / 2, z, 0, yaw);
-    face.name = 'station-pit-reveal-' + name;
-    face.userData.stationPart = 'pit-reveal';
-    scene.add(face);
-  };
-  reveal('far', PIT.x1 - PIT.x0, (PIT.x0 + PIT.x1) / 2, PIT.z0, 0);
-  reveal('left', PIT.z1 - PIT.z0, PIT.x0, (PIT.z0 + PIT.z1) / 2, Math.PI / 2);
-  reveal('right', PIT.z1 - PIT.z0, PIT.x1, (PIT.z0 + PIT.z1) / 2, -Math.PI / 2);
-  const stairLeft = PIT_STAIR.x - PIT_STAIR.w / 2;
-  const stairRight = PIT_STAIR.x + PIT_STAIR.w / 2;
-  reveal('near-left', stairLeft - PIT.x0, (PIT.x0 + stairLeft) / 2, PIT.z1, Math.PI);
-  reveal('near-right', PIT.x1 - stairRight, (stairRight + PIT.x1) / 2, PIT.z1, Math.PI);
-  const firstRiser = plane(PIT_STAIR.w, PIT.drop / 3, concretePlain,
-    PIT_STAIR.x, -PIT.drop / 6, PIT.z1, 0, Math.PI);
-  firstRiser.name = 'station-pit-reveal-stair-head';
-  firstRiser.userData.stationPart = 'pit-reveal';
-  scene.add(firstRiser);
-  /* Three equal rises, with the two solid treads supported by the pit slab. */
-  for (let i = 0; i < 2; i++) {
-    const top = -PIT.drop * (i + 1) / 3;
-    const h = PIT.drop + top;
-    const tread = box(PIT_STAIR.w, h, PIT_STAIR.tread, concretePlain,
-      PIT_STAIR.x, -PIT.drop + h / 2, PIT.z1 - PIT_STAIR.tread * (i + 0.5), false);
-    tread.name = 'station-pit-tread-' + (i + 1);
-    tread.userData.stationPart = 'pit-tread';
-    scene.add(tread);
-  }
 }
 
 /* the ceiling: walnut planks running the long way, low over everything */
@@ -1006,8 +968,17 @@ const term2 = makeTerminal({
 /* ─────────────────────────── the desk ───────────────────────────
    A free-edge walnut slab on a carved base: the outline is a rectangle whose
    room-facing edge was never sawn, so it wanders. The terminal stands on it,
-   turned to whoever comes in. */
-const DESK = { x: 1.20, z: 0.20, top: 0.74, w: 2.16, d: 0.94 };
+   turned to whoever comes in.
+
+   WP-46: the slab now stands under the porthole, centred on the aperture's own
+   axis (x = APER.x) with its long edge parallel to the far wall, so the CRT
+   faces the room and the live house is the thing directly behind it. It is far
+   enough forward that the task chair clears the aperture's threshold step, and
+   0.36 m narrower than it was in the corner: at its old 2.16 m it left only a
+   16 cm gap to the planter ledge and sealed the left side of the room off — the
+   guide could not get past it. At 1.80 there is a 63 cm aisle down that side and
+   the slab is still better proportioned under a 2.4 m circle. */
+const DESK = { x: APER.x, z: -1.30, top: 0.74, w: 1.80, d: 0.94 };
 const desk = new THREE.Group();
 scene.add(desk);
 {
@@ -1054,7 +1025,9 @@ scene.add(desk);
   });
 }
 
-const TERM_X = DESK.x, CRT_ROT = -0.62;
+/* Turned a touch out of square, toward the eye that lands in the room, but
+   essentially facing the room with the aperture behind it. */
+const TERM_X = DESK.x, CRT_ROT = -0.15;
 const crt = new THREE.Group();
 crt.position.set(TERM_X, DESK.top + 0.074, DESK.z + 0.02);
 crt.rotation.y = CRT_ROT;
@@ -1135,8 +1108,11 @@ const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector
 
 /* the task chair, behind the slab, in tan leather on a five-star base */
 const chair = new THREE.Group();
-chair.position.set(DESK.x + 0.28, 0, DESK.z - 0.72);
-chair.rotation.y = 0.28;
+/* WP-46: behind the slab and pushed out toward its right-hand end — far enough
+   out that the terminal's own case does not stand in front of it, which is what
+   "pulled out, as it was left" has to mean once the desk faces the room. */
+chair.position.set(DESK.x + 0.98, 0, DESK.z - 0.72);
+chair.rotation.y = 0.52;
 scene.add(chair);
 {
   const seatPad = rbox(0.50, 0.46, 0.10, 0.06, leatherMat);
@@ -1147,6 +1123,9 @@ scene.add(chair);
   backPad.position.set(0, 0.74, -0.21);
   backPad.rotation.x = -0.16;
   chair.add(backPad);
+  /* WP-46: behind the slab, the only part of this chair a visitor can see is
+     its back over the desk's far edge — so that is what the hairline frames. */
+  chair.userData.back = backPad;
   const spine = box(0.05, 0.30, 0.05, chromeMat, 0, 0.56, -0.235, false);
   chair.add(spine);
   const post = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.038, 0.40, 12), chromeMat);
@@ -1166,7 +1145,7 @@ scene.add(chair);
 
 /* the brass desk lamp, on the slab */
 const lampGroup = new THREE.Group();
-lampGroup.position.set(DESK.x - 0.78, DESK.top + 0.074, DESK.z + 0.30);
+lampGroup.position.set(DESK.x - 0.62, DESK.top + 0.074, DESK.z + 0.30);
 scene.add(lampGroup);
 {
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.088, 0.024, 24), brass);
@@ -1521,166 +1500,37 @@ scene.add(plant);
   });
 }
 
-/* ─────────────────────────── the sunken lounge ─────────────────────────── */
-const PY = -PIT.drop;                    /* the lounge floor */
-/* the shag, laid across the pit */
-const rug = plane(2.80, 2.00, shagMat, -2.60, PY + 0.014, 0.85, -Math.PI / 2);
+/* ─────────────────── the corner the desk left behind ───────────────────
+   WP-46: with the pit filled and the slab moved under the porthole, the room's
+   old working corner is given back to the air. What stands in it now is the
+   record credenza, the rug that used to lie in the lounge, and one plant — and
+   the board's amber still reaches all three. */
+
+/* where the corner's furniture stands. Move CRED and the credenza, the record
+   player, the drawer, the sleeve, the berth and the rug all follow it. */
+const CRED = { x: 2.30, z: -0.30, rot: Math.PI - 0.10 };
+
+/* the shag, relaid on the flat floor in front of the credenza */
+const rug = plane(2.80, 2.00, shagMat, CRED.x, 0.014, CRED.z + 1.15, -Math.PI / 2);
 rug.receiveShadow = true;
 scene.add(rug);
 
-/* the low cream sectional along the pit's far side */
-const sectional = new THREE.Group();
-scene.add(sectional);
+/* a leafy plant, standing on the floor where the corner turns */
 {
-  /* Low and long, and sunk. The pit floor is 0.35 below the room, so a seat at
-     0.30 sits five centimetres BELOW the main floor and the back tops out at
-     0.29 above it — from a standing eye it reads as knee height and the room
-     goes on over it, which is the whole point of dropping a lounge. One row of
-     seat cushions, one row of back cushions, nothing loose on top. */
-  const SEAT = 0.30, BACK = 0.34;
-  const run = (w, d, cx, cz, yaw) => {
-    const g = new THREE.Group();
-    g.position.set(cx, PY, cz);
-    g.rotation.y = yaw;
-    sectional.add(g);
-    /* the plinth the frame sits on, set back so the sectional floats */
-    g.add(box(w - 0.16, 0.08, d - 0.14, walnutDeep, 0, 0.04, 0, false));
-    const base = rbox(w, d, SEAT - 0.14, 0.05, boucleMat);
-    base.rotation.x = Math.PI / 2;
-    base.position.y = 0.08 + (SEAT - 0.14) / 2;
-    g.add(base);
-    /* one row of seat cushions */
-    const n = Math.max(2, Math.round(w / 0.78));
-    for (let i = 0; i < n; i++) {
-      const cw = w / n - 0.035;
-      const cush = rbox(cw, d - 0.12, 0.095, 0.045, boucleMat);
-      cush.rotation.x = Math.PI / 2;
-      cush.position.set(-w / 2 + w / n * (i + 0.5), SEAT - 0.012, 0.02);
-      g.add(cush);
-    }
-    /* and one row of back cushions, laid against a low rail */
-    g.add(box(w, 0.05, 0.07, walnutDeep, 0, SEAT + 0.14, -d / 2 + 0.055, false));
-    for (let i = 0; i < n; i++) {
-      const cw = w / n - 0.035;
-      const bc = rbox(cw, BACK, 0.14, 0.05, boucleMat);
-      bc.position.set(-w / 2 + w / n * (i + 0.5), SEAT + BACK / 2 - 0.04, -d / 2 + 0.11);
-      bc.rotation.x = -0.13;
-      g.add(bc);
-    }
-    return g;
-  };
-  run(2.10, 0.86, -2.10, PIT.z0 + 0.46, 0);
+  const cornerPlant = leafyPlant(CRED.x + 1.25, CRED.z + 0.65, 1.05, true);
+  cornerPlant.position.y = 0;
+  scene.add(cornerPlant);
 }
 
-/* the glass coffee table — the one piece in the room with transmission in it */
-const coffeeTable = new THREE.Group();
-scene.add(coffeeTable);
-{
-  const glassTop = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.014, 0.62), new THREE.MeshPhysicalMaterial({
-    color: 0xe4e4e9, roughness: 0.06, metalness: 0, transmission: 0.92, thickness: 0.02,
-    ior: 1.5, transparent: true, opacity: 0.5
-  }));
-  glassTop.position.set(-2.30, PY + 0.36, 1.25);
-  coffeeTable.add(glassTop);
-  [[-0.44, -0.22], [0.44, -0.22], [-0.44, 0.22], [0.44, 0.22]].forEach(([dx, dz]) => {
-    const l = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.024, 0.35, 10), walnutDeep);
-    l.position.set(-2.30 + dx, PY + 0.18, 1.25 + dz);
-    l.castShadow = true;
-    coffeeTable.add(l);
-  });
-  coffeeTable.add(box(0.92, 0.03, 0.05, walnutDeep, -2.30, PY + 0.19, 1.25 - 0.20, false));
-  coffeeTable.add(box(0.92, 0.03, 0.05, walnutDeep, -2.30, PY + 0.19, 1.25 + 0.20, false));
-  /* a book and a bowl on it, so the glass has something to hold */
-  const bk = box(0.24, 0.032, 0.30, new THREE.MeshStandardMaterial({ color: 0x3a2c3a, roughness: 0.85 }), -2.50, PY + 0.383, 1.21, false);
-  bk.rotation.y = 0.26;
-  coffeeTable.add(bk);
-  const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.10, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0xa9714a, roughness: 0.6, side: THREE.DoubleSide }));
-  bowl.rotation.x = Math.PI;
-  bowl.scale.y = 0.55;
-  bowl.position.set(-2.06, PY + 0.40, 1.31);
-  coffeeTable.add(bowl);
-}
 
-/* the lounge chair and its ottoman — tan leather on rosewood, and the one
-   terracotta piece the room is allowed */
-const loungeChair = new THREE.Group();
-loungeChair.name = 'station-lounge-chair';
-/* The rotated plywood shell must fit inside the pit, clear of the planter
-   and the sectional. Its former position intersected the ledge by 26 cm. */
-loungeChair.scale.setScalar(0.92);
-loungeChair.position.set(-3.60, PY - 0.018 * 0.92, 0.26);
-loungeChair.rotation.y = 1.18;
-scene.add(loungeChair);
-{
-  const shellMat2 = walnutDeep;
-  /* the shell first, the tan pads clipped into it — the walnut has to show */
-  const seatShell = rbox(0.66, 0.62, 0.06, 0.05, shellMat2);
-  seatShell.rotation.x = Math.PI / 2;
-  seatShell.position.y = 0.315;
-  loungeChair.add(seatShell);
-  const seat = rbox(0.60, 0.56, 0.11, 0.05, leatherMat);
-  seat.rotation.x = Math.PI / 2;
-  seat.position.y = 0.375;
-  loungeChair.add(seat);
-  const backShell = rbox(0.64, 0.50, 0.06, 0.05, shellMat2);
-  backShell.position.set(0, 0.58, -0.30);
-  backShell.rotation.x = -0.38;
-  loungeChair.add(backShell);
-  const back = rbox(0.58, 0.44, 0.11, 0.05, leatherMat);
-  back.position.set(0, 0.59, -0.235);
-  back.rotation.x = -0.38;
-  loungeChair.add(back);
-  const headShell = rbox(0.58, 0.32, 0.06, 0.05, shellMat2);
-  headShell.position.set(0, 0.885, -0.415);
-  headShell.rotation.x = -0.44;
-  loungeChair.add(headShell);
-  const head = rbox(0.52, 0.26, 0.11, 0.05, leatherMat);
-  head.position.set(0, 0.895, -0.355);
-  head.rotation.x = -0.44;
-  loungeChair.add(head);
-  [-1, 1].forEach((s) => {
-    const arm = rbox(0.10, 0.20, 0.52, 0.04, shellMat2);
-    arm.position.set(s * 0.33, 0.48, -0.03);
-    loungeChair.add(arm);
-  });
-  const star = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.24, 12), chromeMat);
-  star.position.y = 0.14;
-  loungeChair.add(star);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.024, 0.30), chromeMat);
-    leg.position.set(Math.cos(a) * 0.13, 0.030, Math.sin(a) * 0.13);
-    leg.rotation.y = -a + Math.PI / 2;
-    leg.castShadow = true;
-    loungeChair.add(leg);
-  }
-}
-{
-  const ott = new THREE.Group();
-  ott.position.set(-3.52, PY, 0.96);
-  ott.rotation.y = 1.18;
-  scene.add(ott);
-  const pad = rbox(0.56, 0.46, 0.17, 0.07, terracotta);
-  pad.rotation.x = Math.PI / 2;
-  pad.position.y = 0.36;
-  ott.add(pad);
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.24, 12), chromeMat);
-  post.position.y = 0.14;
-  ott.add(post);
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + 0.4;
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.022, 0.26), chromeMat);
-    leg.position.set(Math.cos(a) * 0.11, 0.028, Math.sin(a) * 0.11);
-    leg.rotation.y = -a + Math.PI / 2;
-    ott.add(leg);
-  }
-}
-
-/* ─────────────────────── the credenza, against the lounge's back ─────────────────────── */
+/* ─────────────────── the credenza, in the corner the desk left ───────────────────
+   WP-46: it used to back onto the lounge; it now stands in the cleared corner
+   under the board, and everything that lived on and beside it — the record
+   player, the keeper's drawer, the sleeve, the first berth — moves with it.
+   Move CRED (declared with the corner above) and the whole group follows. */
 const credenza = new THREE.Group();
-credenza.position.set(-2.60, 0, -0.78);
-credenza.rotation.y = Math.PI - 0.10;
+credenza.position.set(CRED.x, 0, CRED.z);
+credenza.rotation.y = CRED.rot;
 scene.add(credenza);
 {
   const body = rbox(1.52, 0.46, 0.42, 0.035, walnutMat);
@@ -1723,8 +1573,8 @@ credenza.add(drawerGroup);
 }
 
 const recordPlayer = new THREE.Group();
-recordPlayer.position.set(-2.96, 0.76, -0.81);
-recordPlayer.rotation.y = Math.PI - 0.10;
+recordPlayer.position.set(CRED.x - 0.36, 0.76, CRED.z - 0.03);
+recordPlayer.rotation.y = CRED.rot;
 scene.add(recordPlayer);
 let platter, tonearm;
 {
@@ -1780,7 +1630,7 @@ let platter, tonearm;
    keeper's desk says the token is read by hand, and the sleeve is where the
    room hands it over. */
 const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.010), new THREE.MeshStandardMaterial({ map: sleeveTex, roughness: 0.9 }));
-sleeve.position.set(-1.72, 0.17, -0.58);
+sleeve.position.set(CRED.x + 0.88, 0.17, CRED.z + 0.20);
 sleeve.rotation.set(-0.16, 2.90, 0);
 sleeve.castShadow = true;
 scene.add(sleeve);
@@ -2174,8 +2024,8 @@ function slotDevice(w, h, d) {
   return g;
 }
 const slotA = slotDevice(0.30, 0.16, 0.22);
-slotA.position.set(-2.08, 0.845, -0.73);
-slotA.rotation.y = Math.PI - 0.10;
+slotA.position.set(CRED.x + 0.52, 0.845, CRED.z + 0.05);
+slotA.rotation.y = CRED.rot;
 scene.add(slotA);
 
 const slotB = slotDevice(0.34, 0.20, 0.24);
@@ -2415,7 +2265,7 @@ const SCREEN2_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vecto
 /* Rigid geometry only. Screen surfaces and every independently animated or
    visibility-controlled part keep their original meshes and draw path. */
 const stationBatchStats = batchStationStatic([
-  cabinets, shelves, desk, chair, sectional, coffeeTable, loungeChair, chair4,
+  cabinets, shelves, desk, chair, chair4,
   secondary, corkboard, slotA, slotB, plant,
   { root: crt, exclude: [glass] },
   { root: credenza, exclude: [drawerGroup] },
@@ -2476,17 +2326,18 @@ downLight.position.set(0.4, R.h - 0.06, -0.30);
 downLight.lookAt(0.4, 0, -0.30);
 scene.add(downLight);
 
-/* A small recessed reading light gives the lowered seating its own pool. It
-   is an architectural practical, independent of the stewards' presence lamp. */
-const loungeReading = new THREE.RectAreaLight(0xffd5ae, 6.8, 1.6, 0.24);
-loungeReading.position.set(-2.4, R.h - 0.14, 1.35);
-loungeReading.lookAt(-2.4, PY, 0.7);
-scene.add(loungeReading);
-const loungeLens = new THREE.Mesh(new THREE.CircleGeometry(0.11, 24),
+/* The same recessed practical that used to pool over the lowered seating, now
+   over the slab: an architectural fixture, independent of the stewards' lamp,
+   so the desk reads at every hour even when nobody is working. */
+const deskReading = new THREE.RectAreaLight(0xffd5ae, 5.6, 1.9, 0.24);
+deskReading.position.set(DESK.x, R.h - 0.14, DESK.z + 0.16);
+deskReading.lookAt(DESK.x, DESK.top, DESK.z + 0.10);
+scene.add(deskReading);
+const deskLens = new THREE.Mesh(new THREE.CircleGeometry(0.11, 24),
   new THREE.MeshStandardMaterial({ color: 0xffe4c4, emissive: 0xffb573, emissiveIntensity: 1.1, roughness: 0.5 }));
-loungeLens.rotation.x = Math.PI / 2;
-loungeLens.position.copy(loungeReading.position);
-scene.add(loungeLens);
+deskLens.rotation.x = Math.PI / 2;
+deskLens.position.copy(deskReading.position);
+scene.add(deskLens);
 
 /* the terminal — the key on the slab, and still the brightest machine */
 const crtLight = new THREE.RectAreaLight(0xf2c14e, 26.0, SCR_W * 1.10, SCR_H * 1.10);
@@ -2642,15 +2493,94 @@ renderer.shadowMap.needsUpdate = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.90;
 
-const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.05, 60);
-/* Standing eye height at the front left, a stride back from the lip of the
-   sunken lounge and looking OVER it into the room: the glass block rakes away
-   down the left, the aperture sits left of centre, and the machine wall runs
-   away to the right. The lounge is furniture at knee height, not a wall. */
-const REST_POS = new THREE.Vector3(-3.60, 1.72, 3.05);
-const REST_LOOK = new THREE.Vector3(-0.58, 1.26, -3.15);
+const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.05, 60);
+
+/* ─────────────────── WP-46 · the landing: a medium shot on the desk ───────────────────
+   Not an establishing shot from the corner any more. You land standing on the
+   room's near side, a stride to the left of the aperture's axis, at a sitting
+   eye height, on a lens tight enough that the terminal reads at its own scale:
+   the CRT whole at the right-hand power point with the aperture — and the live
+   house in it — directly behind it, the desk lamp the brightest near thing, the
+   glass block wall raking away down the left, Limen at middle distance on it.
+
+   The lens keeps a constant HORIZONTAL field, so the composition holds at every
+   aspect: 46° vertical at 16:9, wider vertically as the window narrows. */
+const LAND_HFOV = 74.0 * Math.PI / 180;
+/* One horizontal field, so the CRT keeps its power point at every width — with
+   a floor under the vertical, because at 21:9 a pure constant-horizontal lens
+   makes the frame so short it cuts the guide off at the ankles. */
+function framedFov(aspect) {
+  const v = 2 * Math.atan(Math.tan(LAND_HFOV / 2) / Math.max(0.6, aspect));
+  return Math.min(62, Math.max(42, v * 180 / Math.PI));
+}
+/* and one tilt, chosen per aspect so the terminal keeps its height in the frame
+   as well as its width — never more than the three degrees the room allows */
+const LAND_YAW = -7.08 * Math.PI / 180;   /* left of straight, off the pose */
+const LAND_RISE = -0.1221;                /* (the CRT's middle − the eye) / its distance */
+const LAND_S = -0.362;                    /* where that should sit, in screen halves */
+function framedPitch(aspect) {
+  const half = Math.tan(framedFov(aspect) * Math.PI / 360);
+  const p = Math.atan(LAND_RISE - LAND_S * half), lim = 3 * Math.PI / 180;
+  return Math.max(-lim, Math.min(lim, p));
+}
+/* Found in the browser, not on paper: a stride left of the aperture's axis and
+   0.6 m in from the near wall, the eye at 1.55 (a shade above the sitting height
+   the brief asked for — at 1.35 the slab reads as an edge and its trestles as a
+   dark bar across the bottom of the frame; at 1.55 it reads as a surface someone
+   works at, which is the point of the room), the head 7.1° left of straight and
+   1.8° up, which puts the CRT on the lower-right power point with the porthole
+   and the live house squarely behind it and brings the ceiling strip in. */
+const REST_POS = new THREE.Vector3(-3.08, 1.55, 2.62);
+const REST_LOOK = new THREE.Vector3();
+/* the composed direction, kept unit — free look turns off this, never off the
+   last frame, so the head always comes home to the same frame */
+const LAND_DIR = new THREE.Vector3();
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+/* re-frame: the lens and the tilt both follow the window's shape */
+function frameCamera(aspect) {
+  camera.fov = framedFov(aspect);
+  const p = framedPitch(aspect), y = LAND_YAW;
+  LAND_DIR.set(Math.sin(y) * Math.cos(p), Math.sin(p), -Math.cos(y) * Math.cos(p));
+  REST_LOOK.copy(REST_POS).addScaledVector(LAND_DIR, 5);
+  camera.updateProjectionMatrix();
+}
+frameCamera(window.innerWidth / window.innerHeight);
 camera.position.copy(REST_POS);
 camera.lookAt(REST_LOOK);
+
+/* ── free look ──
+   From the landing pose the cursor turns the head: 28° of yaw either side, 10°
+   of pitch, critically damped so it follows without whipping, and home again
+   when the cursor leaves the window or four seconds pass without it moving.
+   The arrow keys turn in 8° steps and Escape recentres; on a touch screen a
+   horizontal drag does the same thing as the cursor. The picker reads the live
+   camera, so everything in the room stays hoverable and clickable while you
+   look. Reduced motion gets the composed frame and nothing else. */
+const LOOK_YAW_MAX = 28 * Math.PI / 180;
+const LOOK_PITCH_MAX = 10 * Math.PI / 180;
+const LOOK_IDLE = 4.0;                 /* seconds of stillness before it comes home */
+const LOOK_W = 16.0;                   /* the spring — about 250 ms to settle */
+const LOOK = { yaw: 0, pitch: 0, vy: 0, vp: 0, keyYaw: 0, lastMove: -1e4, drag: null, suppressClick: false };
+/* an unconditionally stable critically damped step */
+function springStep(x, v, want, dt) {
+  const w = LOOK_W, f = 1 + 2 * dt * w, oo = w * w, hoo = dt * oo, hhoo = dt * hoo;
+  const det = 1 / (f + hhoo);
+  return [(f * x + dt * v + hhoo * want) * det, (v + hoo * (want - x)) * det];
+}
+const _look = new THREE.Vector3(), _right = new THREE.Vector3();
+/* where the eye is pointing this frame, given the head's yaw and pitch */
+function lookPoint(out, pos, yaw, pitch) {
+  _look.copy(LAND_DIR).applyAxisAngle(WORLD_UP, -yaw);
+  _right.crossVectors(_look, WORLD_UP).normalize();
+  _look.applyAxisAngle(_right, pitch);
+  return out.copy(pos).addScaledVector(_look, 5.0);
+}
+
+/* ── the arrival ──
+   The room is not there and then there: it settles in from a third of a metre
+   further back and a little higher, once, over 1.6 s. Reduced motion cuts to
+   the frame. */
+const ARRIVE = { t: 0, dur: 1.6, back: 0.35, up: 0.06 };
 
 /* ─────────────────────────── dust in the shafts ───────────────────────────
    Only golden hour has shafts worth catching; `uAmount` is the phase's own,
@@ -3097,9 +3027,11 @@ const floorFootprint = (id, root) => {
 };
 const floorNavigation = createFloorNavigation({
   bounds: { x0:-5, x1:5, z0:-3.25, z1:3.25 },
+  /* WP-46: no pit any more — the floor is one level. What blocks a walk is
+     furniture, the planter ledge, the aperture's threshold step and the run. */
   obstacles: [
-    { id:'sunken lounge', ...PIT },
     {id:'window planter',x0:-5,x1:-4.45,z0:-1.1,z1:2.5},
+    {id:'aperture step',x0:APER.x-1.65,x1:APER.x+1.65,z0:WALL.F,z1:WALL.F+0.83},
     floorFootprint('record credenza', credenza),
     floorFootprint('desk', desk),
     floorFootprint('desk chair', chair),
@@ -3302,19 +3234,19 @@ const limen = (() => {
      Where it stands when it is standing. Change these and it walks a different
      room; nothing else knows about them. */
   const STATIONS = [
-    /* All five sit inside the shot the room is composed on. A station the frame
-       never holds is not eerie, only absent: the point is to find it somewhere
-       else, not to find the room empty. Each is turned three-quarters into the
-       room rather than at you, so the eye catches without staring.
-       None of them may stand in front of something the visitor has to be able
-       to read: the clock, the corkboard, the sign by the door. Measured from
-       the rest camera at 1280 × 900, a body at the old planter station covered
-       a sixth of the brass sign, so that station moved 0.30 m along the wall
-       toward the glass. The clock is clear from all five, and was before. */
-    { id: 'aperture', x: -3.85, z: -2.05, yaw: 0.62 },
-    { id: 'planter', x: -3.99, z: -1.65, yaw: 1.15 },
+    /* WP-46: re-placed for the one-level floor and the desk under the porthole.
+       Two of them stand in the landing frame, at middle distance on its left,
+       so the room is never empty when you arrive; the other three are outside
+       it, which is what lets the body move at all — it only walks to a station
+       the frame does not hold.
+       Each is turned three-quarters into the room rather than at you, so the
+       eye catches without staring. None of them may stand in front of something
+       the visitor has to be able to read: the clock, the corkboard, the sign by
+       the door, and now the terminal's own glass. */
+    { id: 'aperture', x: -3.86, z: -1.85, yaw: 0.62 },
+    { id: 'planter', x: -3.95, z: 0.62, yaw: 1.15 },
     { id: 'run-end', x: 0.40, z: -2.20, yaw: -0.55 },
-    { id: 'lounge-back', x: -1.70, z: 2.90, yaw: 2.30 },
+    { id: 'credenza', x: 3.35, z: -1.35, yaw: -1.30 },
     { id: 'near-wall', x: 2.00, z: 2.70, yaw: -2.35 }
   ];
 
@@ -3867,7 +3799,9 @@ export const STATION_OBJECTS = [
   {
     id: 'window', label: 'the house', caption: 'as it is right now',
     mesh: () => aperture, bounds: aperture.userData.view, pad: 16,
-    focus: { pos: [-2.60, 1.55, -0.62], look: [-2.60, 1.55, -3.25] }
+    /* WP-46: the desk stands under it now, so the close look comes in over the
+       slab — the whole disc, with the terminal's top edge as foreground. */
+    focus: { pos: [-2.60, 1.66, 0.30], look: [-2.60, 1.56, -3.25] }
   },
   {
     id: 'skylight', label: 'the clerestory', caption: 'trees, and the hour going over',
@@ -3911,7 +3845,7 @@ export const STATION_OBJECTS = [
     id: 'sleeve', label: 'the sleeve',
     caption: 'the token, and what it is for · read by hand',
     mesh: () => sleeve, pad: 18,
-    focus: {pos:[-.9,1.12,.15],look:[-1.50,.36,-.58]}, reading: {text:'The token, and what it is for.',actions:[{label:'Read about the token ↗',href:TOKEN_URL}]}
+    focus: {pos:[3.85,1.12,0.85],look:[3.30,0.40,-0.05]}, reading: {text:'The token, and what it is for.',actions:[{label:'Read about the token ↗',href:TOKEN_URL}]}
   },
   {
     id: 'sign', label: 'mnemos',
@@ -3932,7 +3866,7 @@ export const STATION_OBJECTS = [
   },
   {
     id: 'chair', label: 'the chair', caption: 'pulled out, as it was left',
-    mesh: () => chair, pad: 10
+    mesh: () => chair, bounds: chair.userData.back, pad: 10
   },
   {
     id: 'plant', label: 'the tree', caption: 'someone waters it',
@@ -3969,7 +3903,7 @@ const soundCtl = makeSoundControl({ btn: soundEl, tone });
 
 const hoverLayer = makeHover({
   canvas, capEl, capHost: document.getElementById('captions'),
-  occluders: [desk,credenza,cabinets,sectional,loungeChair,coffeeTable],
+  occluders: [desk,credenza,cabinets],
   cursorFor: (p) => (p.entry.onClick || p.entry.focus ? 'pointer' : 'default')
 });
 hoverLayer.setPicks(PICKS);
@@ -4035,9 +3969,14 @@ function centreOf(p) {
    console's glass is wider than the terminal's, so its eye sits further back to
    frame the same amount of bezel. `seat` is whichever one is being used; at
    rest it is the last one sat in. */
+/* WP-46: the landing lens is tighter than the old 65°, so a seat at the old
+   distance would fill the frame with glass. Both distances are scaled by the
+   lens change, which keeps exactly the bezel, walnut and keyboard around each
+   screen that the room was tuned with. */
+const SEAT_LENS = Math.tan(32.5 * Math.PI / 180) / Math.tan(23 * Math.PI / 180);
 const SEATS = {
-  terminal: { id: 'terminal', dist: 0.59, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
-  console: { id: 'console', dist: 0.76, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
+  terminal: { id: 'terminal', dist: 0.59 * SEAT_LENS, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
+  console: { id: 'console', dist: 0.76 * SEAT_LENS, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
 };
 for (const k of Object.keys(SEATS)) {
   const st = SEATS[k], pose = seatPose(st.screen, st.normal, st.dist);
@@ -4108,6 +4047,13 @@ function standUp() {
   cam.mode = 'leaving'; cam.t = 0;
   cam.fromPos.copy(camera.position); cam.fromLook.copy(cam.look);
   cam.toPos.copy(REST_POS); cam.toLook.copy(REST_LOOK);
+  recentreLook();
+}
+
+/* the head, back to the composed frame — leaving a seat or a focus, and Escape */
+function recentreLook() {
+  LOOK.yaw = LOOK.pitch = LOOK.vy = LOOK.vp = LOOK.keyYaw = 0;
+  LOOK.drag = null; LOOK.lastMove = -1e4;
 }
 
 /* the world arrives on the glass, then takes the frame */
@@ -4156,9 +4102,13 @@ motionPreference.addEventListener('change', (ev) => {
 window.addEventListener('pointermove', (ev) => {
   pointer.x = (ev.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+  LOOK.lastMove = clockT.elapsedTime;
   capEl.style.left = ev.clientX + 'px';
   capEl.style.top = ev.clientY + 'px';
 });
+/* the cursor leaving the window sends the head home, the same as going still */
+document.addEventListener('pointerleave', () => { pointer.set(-2, -2); });
+window.addEventListener('blur', () => { pointer.set(-2, -2); });
 function activate(p) {
   if (!p || inspector.open || stationJourney.active || !['rest','focus'].includes(cam.mode)) return;
   const e = p.entry;
@@ -4272,6 +4222,7 @@ canvas.addEventListener('pointermove',(e)=>{
 });
 for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>{journeyPointer=null;});
 canvas.addEventListener('click', (ev) => {
+  if (LOOK.suppressClick) { LOOK.suppressClick = false; return; }
   if (stationJourney.active || museumVisible || drawerUI.open() || limen.open()) return;
   // Raycast the click itself: a fast click need not wait for the next hover frame.
   pointer.set((ev.clientX / innerWidth) * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
@@ -4293,14 +4244,54 @@ document.addEventListener('keydown', (ev) => {
   if (limen.open() || limen.attending()) { ev.preventDefault(); ev.stopImmediatePropagation(); limen.hide(); }
 }, true);
 document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape' && cam.mode !== 'rest' && cam.mode !== 'leaving') { ev.preventDefault(); standUp(); }
+  if (ev.key === 'Escape' && cam.mode !== 'rest' && cam.mode !== 'leaving') { ev.preventDefault(); standUp(); return; }
+  /* free look from the keyboard: eight degrees a press, Escape back to centre */
+  if (cam.mode !== 'rest' || REDUCED || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const inField = ev.target && ev.target !== document.body && ev.target !== document.documentElement
+    && (ev.target.closest ? ev.target.closest('input,textarea,button,select,[contenteditable]') : null);
+  if (inField) return;
+  const STEP = 8 * Math.PI / 180;
+  if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
+    ev.preventDefault();
+    LOOK.keyYaw = Math.max(-LOOK_YAW_MAX, Math.min(LOOK_YAW_MAX,
+      LOOK.keyYaw + (ev.key === 'ArrowRight' ? STEP : -STEP)));
+    LOOK.lastMove = clockT.elapsedTime;
+    pointer.set(0, 0);
+  } else if (ev.key === 'Escape') { ev.preventDefault(); recentreLook(); pointer.set(-2, -2); }
 });
+
+/* ── touch: a horizontal drag turns the head the same way the cursor does ── */
+canvas.addEventListener('pointerdown', (ev) => {
+  if (stationJourney.active || museumVisible || cam.mode !== 'rest' || REDUCED) return;
+  if (ev.pointerType === 'mouse' || ev.button !== 0) return;
+  LOOK.drag = { id: ev.pointerId, x: ev.clientX, yaw: LOOK.yaw, moved: 0 };
+  LOOK.lastMove = clockT.elapsedTime;
+});
+canvas.addEventListener('pointermove', (ev) => {
+  const d = LOOK.drag;
+  if (!d || ev.pointerId !== d.id) return;
+  const dx = ev.clientX - d.x;
+  d.moved = Math.max(d.moved, Math.abs(dx));
+  d.yaw = Math.max(-LOOK_YAW_MAX, Math.min(LOOK_YAW_MAX,
+    d.yaw + dx * (LOOK_YAW_MAX / (window.innerWidth * 0.42))));
+  d.x = ev.clientX;
+  LOOK.lastMove = clockT.elapsedTime;
+});
+for (const event of ['pointerup', 'pointercancel', 'lostpointercapture'])
+  canvas.addEventListener(event, (ev) => {
+    const d = LOOK.drag;
+    if (!d || (ev.pointerId !== undefined && ev.pointerId !== d.id)) return;
+    /* a real drag holds where it was let go and comes home on the idle timer;
+       a tap is a tap and must still reach the object under it */
+    if (d.moved > 6) { LOOK.keyYaw = d.yaw; pointer.set(0, 0); LOOK.suppressClick = true; }
+    LOOK.drag = null;
+  });
 window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
   // A phone-sized first visit still uses the original small door. Resizing an
   // existing museum visit must not navigate away and destroy either room.
   if (!hasMuseumVisit && redirectIfSmall(w)) return;
-  camera.aspect = w / h; camera.updateProjectionMatrix();
+  camera.aspect = w / h; frameCamera(w / h);
   renderer.setPixelRatio(stationPixelRatio());
   renderer.setSize(w, h, false);
   post.composer.setPixelRatio(renderer.getPixelRatio());
@@ -4390,7 +4381,6 @@ function resumeStationFrame() {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) suspendStationFrame(); else resumeStationFrame();
 });
-let mouseX = 0, mouseY = 0;
 
 function setClockHands(t) {
   const min = (CLOCK.min + (t / 30)) % 1440;   /* the world's own rate: 1 min per 30 s */
@@ -4498,18 +4488,34 @@ function frame() {
       } else {cam.mode = 'rest';if(pendingRoomObject){const next=pendingRoomObject;pendingRoomObject=null;activate(next);}}
     }
   } else if (cam.mode === 'rest') {
-    mouseX += (pointer.x - mouseX) * Math.min(1, dt * 3.2);
-    mouseY += (pointer.y - mouseY) * Math.min(1, dt * 3.2);
+    /* the idle breathe — what the old cursor parallax is worth, kept */
     const bx = quiet ? 0 : Math.sin(t * 0.22) * 0.020;
     const by = quiet ? 0 : Math.sin(t * 0.29 + 1.1) * 0.013;
-    const px = quiet ? 0 : mouseX * 0.062;
-    const py = quiet ? 0 : mouseY * 0.034;
-    camera.position.set(REST_POS.x + bx + px, REST_POS.y + by + py, REST_POS.z + bx * 0.5);
+    camera.position.set(REST_POS.x + bx, REST_POS.y + by, REST_POS.z + bx * 0.5);
+    /* the arrival: a stride further back and a little higher, settling once */
+    if (ARRIVE.t < ARRIVE.dur) {
+      ARRIVE.t = REDUCED ? ARRIVE.dur : Math.min(ARRIVE.dur, ARRIVE.t + dt);
+      const k = 1 - easeOut(ARRIVE.t / ARRIVE.dur);
+      camera.position.addScaledVector(LAND_DIR, -ARRIVE.back * k);
+      camera.position.y += ARRIVE.up * k;
+    }
+    /* the head: free look, unless the cursor has left or gone quiet */
+    const drag = LOOK.drag;
+    const home = REDUCED || (!drag && (Math.abs(pointer.x) > 1 || Math.abs(pointer.y) > 1 ||
+      t - LOOK.lastMove > LOOK_IDLE));
+    const wantYaw = home ? 0 : Math.max(-LOOK_YAW_MAX, Math.min(LOOK_YAW_MAX,
+      (drag ? drag.yaw : pointer.x * LOOK_YAW_MAX) + LOOK.keyYaw));
+    const wantPitch = home || drag ? (home ? 0 : LOOK.pitch) : pointer.y * LOOK_PITCH_MAX;
+    if (REDUCED) { LOOK.yaw = LOOK.pitch = LOOK.vy = LOOK.vp = 0; }
+    else {
+      [LOOK.yaw, LOOK.vy] = springStep(LOOK.yaw, LOOK.vy, wantYaw, dt);
+      [LOOK.pitch, LOOK.vp] = springStep(LOOK.pitch, LOOK.vp, wantPitch, dt);
+    }
     // Turn toward the guide as it approaches along the foreground walkway.
     // The camera stays at the visitor's place; only the gaze follows Limen.
-    tmpLook.copy(limen.attending()?limen.group.position:REST_LOOK);
-    if(limen.attending())tmpLook.y=1.40;
-    cam.look.lerp(tmpLook, REDUCED?1:1-Math.exp(-dt*2.0));
+    if (limen.attending()) { tmpLook.copy(limen.group.position); tmpLook.y = 1.40; }
+    else lookPoint(tmpLook, camera.position, LOOK.yaw, LOOK.pitch);
+    cam.look.lerp(tmpLook, REDUCED ? 1 : 1 - Math.exp(-dt * (limen.attending() ? 2.0 : 26.0)));
     camera.lookAt(cam.look);
   }
 
@@ -4757,6 +4763,8 @@ window.__station = {
   tune: (o) => {
     if (o.pos) REST_POS.set(o.pos[0], o.pos[1], o.pos[2]);
     if (o.look) REST_LOOK.set(o.look[0], o.look[1], o.look[2]);
+    if (o.pos || o.look) LAND_DIR.copy(REST_LOOK).sub(REST_POS).normalize();
+    if (o.reframe) frameCamera(camera.aspect);
     if (o.fov) { camera.fov = o.fov; camera.updateProjectionMatrix(); }
     if (o.exposure !== undefined) renderer.toneMappingExposure = o.exposure;
     if (o.crt !== undefined) crtLight.intensity = o.crt;
@@ -4787,6 +4795,85 @@ window.__station = {
       const v = centreOf(p); v.project(camera);
       out[p.id] = [Math.round((v.x * 0.5 + 0.5) * window.innerWidth), Math.round((-v.y * 0.5 + 0.5) * window.innerHeight)];
     });
+    return out;
+  },
+  /* where the eye actually is, and where each seat puts it */
+  camera: () => ({ pos: camera.position.toArray().map((n) => +n.toFixed(4)),
+    quat: camera.quaternion.toArray().map((n) => +n.toFixed(4)),
+    look: cam.look.toArray().map((n) => +n.toFixed(4)), fov: +camera.fov.toFixed(3), mode: cam.mode }),
+  seats: () => Object.fromEntries(Object.keys(SEATS).map((k) => [k,
+    { pos: SEATS[k].pos.toArray().map((n) => +n.toFixed(3)),
+      look: SEATS[k].look.toArray().map((n) => +n.toFixed(3)), dist: +SEATS[k].dist.toFixed(3) }])),
+  /* the composed pose as a quaternion, for the "Escape comes home" check */
+  landingQuat: () => { const c = camera.clone();
+    c.position.copy(REST_POS); c.lookAt(lookPoint(new THREE.Vector3(), REST_POS, 0, 0));
+    return { pos: REST_POS.toArray().map((n) => +n.toFixed(4)),
+      quat: c.quaternion.toArray().map((n) => +n.toFixed(4)) }; },
+  /* ─── WP-46: the landing frame, measured ─── */
+  landing: () => ({
+    pos: REST_POS.toArray().map((n) => +n.toFixed(3)),
+    look: REST_LOOK.toArray().map((n) => +n.toFixed(3)),
+    fov: +camera.fov.toFixed(2), aspect: +camera.aspect.toFixed(4),
+    hfov: +(2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect) * 180 / Math.PI).toFixed(2),
+    yaw: +(Math.atan2(LAND_DIR.x, -LAND_DIR.z) * 180 / Math.PI).toFixed(2),
+    pitch: +(Math.asin(LAND_DIR.y) * 180 / Math.PI).toFixed(2),
+    eye: +camera.position.y.toFixed(3),
+    roll: +(new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').z * 180 / Math.PI).toFixed(3),
+    tilt: +(new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').x * 180 / Math.PI).toFixed(3)
+  }),
+  /* free look, live: where the head is, and a way to drive it from a test */
+  freeLook: () => ({
+    yaw: +(LOOK.yaw * 180 / Math.PI).toFixed(2), pitch: +(LOOK.pitch * 180 / Math.PI).toFixed(2),
+    yawMax: +(LOOK_YAW_MAX * 180 / Math.PI).toFixed(1), pitchMax: +(LOOK_PITCH_MAX * 180 / Math.PI).toFixed(1),
+    idle: LOOK_IDLE, home: LOOK.keyYaw === 0 && Math.abs(LOOK.yaw) < 1e-3 && Math.abs(LOOK.pitch) < 1e-3
+  }),
+  setLook: (x, y, hold) => { pointer.set(x, y); LOOK.keyYaw = 0; LOOK.lastMove = hold ? Infinity : clockT.elapsedTime; return true; },
+  recentre: () => { recentreLook(); pointer.set(-2, -2); return true; },
+  arrival: () => ({ t: +ARRIVE.t.toFixed(3), dur: ARRIVE.dur, back: ARRIVE.back, up: ARRIVE.up,
+    done: ARRIVE.t >= ARRIVE.dur }),
+  replayArrival: () => { ARRIVE.t = 0; return ARRIVE.dur; },
+  /* how much of a thing the frame is holding: its screen box, and — for the
+     aperture — the fraction of its actual disc that lands inside the viewport */
+  anchors: () => {
+    scene.updateMatrixWorld(true);
+    const W = window.innerWidth, H = window.innerHeight;
+    const toScreen = (v) => { const p = v.clone().project(camera);
+      return [ (p.x * 0.5 + 0.5) * W, (-p.y * 0.5 + 0.5) * H, p.z ]; };
+    const boxOf = (obj) => {
+      const b = new THREE.Box3().setFromObject(obj);
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, behind = false;
+      for (const xi of [b.min.x, b.max.x]) for (const yi of [b.min.y, b.max.y]) for (const zi of [b.min.z, b.max.z]) {
+        const [x, y, z] = toScreen(new THREE.Vector3(xi, yi, zi));
+        if (z > 1) behind = true;
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+      const inx = Math.max(0, Math.min(x1, W) - Math.max(x0, 0));
+      const iny = Math.max(0, Math.min(y1, H) - Math.max(y0, 0));
+      const area = Math.max(1e-6, (x1 - x0) * (y1 - y0));
+      return { x0: Math.round(x0), y0: Math.round(y0), x1: Math.round(x1), y1: Math.round(y1),
+        whole: !behind && x0 >= 0 && y0 >= 0 && x1 <= W && y1 <= H,
+        inFrame: +(behind ? 0 : (inx * iny) / area).toFixed(3) };
+    };
+    /* the aperture, sampled across its own disc rather than its box */
+    let hit = 0, all = 0;
+    for (let i = 0; i <= 24; i++) for (let j = 0; j <= 24; j++) {
+      const u = (i / 12) - 1, v = (j / 12) - 1;
+      if (u * u + v * v > 1) continue;
+      all++;
+      const [x, y, z] = toScreen(new THREE.Vector3(APER.x + u * APER.r, APER.y + v * APER.r, WALL.F - 0.30));
+      if (z <= 1 && x >= 0 && x <= W && y >= 0 && y <= H) hit++;
+    }
+    const out = { crt: boxOf(glass), crtCase: boxOf(crt), aperture: boxOf(aperture.userData.view),
+      board: boxOf(boardGroup.userData.face), limen: boxOf(limen.group),
+      lamp: boxOf(lampGroup), clock: boxOf(clock), corkboard: boxOf(corkboard), desk: boxOf(desk) };
+    out.aperture.discVisible = +(hit / all).toFixed(3);
+    /* is the CRT standing inside the aperture's disc, on screen? */
+    const c = out.crt, a = out.aperture;
+    out.crtInsideAperture = c.x0 >= a.x0 && c.x1 <= a.x1 && c.y0 >= a.y0 && c.y1 <= a.y1;
+    /* the gap, in screen pixels, between the CRT's top and the disc above it */
+    out.rimClearancePx = Math.round(c.y0 - a.y0);
+    out.powerPointX = +((c.x0 + c.x1) / 2 / W).toFixed(3);
+    out.powerPointY = +((c.y0 + c.y1) / 2 / H).toFixed(3);
     return out;
   },
   probe: (px, py) => {
