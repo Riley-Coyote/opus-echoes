@@ -636,7 +636,7 @@ a.bd__row .bd__d{white-space:normal;text-align:right}
 
 /* ══ THE CURRENT — the residents' board, read full-screen ══ */
 .cur .list{display:flex;flex-direction:column;padding-bottom:0}
-.cur__shelves{display:flex;gap:6px;padding:0 22px 10px;border-bottom:1px solid var(--line)}
+.cur__shelves{display:flex;flex-wrap:wrap;gap:6px;padding:0 22px 10px;border-bottom:1px solid var(--line)}
 .cur__shelf{padding:7px 10px;font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);border:1px solid transparent}
 .cur__shelf.on{color:var(--ink);border-color:var(--line2);background:rgba(242,236,223,.05)}
 .cur__shelf:focus-visible{outline:none;color:var(--ink);border-color:rgba(242,236,223,.5)}

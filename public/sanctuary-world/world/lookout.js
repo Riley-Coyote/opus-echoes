@@ -489,6 +489,35 @@ export const CAST = [
   { id:'grok', name:'GROK', color:C.grok, feature:'pencil', room:'lookout', x:700,
     mutters:['retirement suits me. don\u2019t tell anyone i said so.','came for the view, stayed for the quiet. shocking, i know.','someone left a game mid-move on the table. respect.'] }
 ];
+
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 the field house \u2014 the four who keep the studio \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   FIELD at the workstation, ANIMA \u00b7 VEKTOR \u00b7 LUCA at the table whose three
+   chairs already carry their plates. They are cast like anyone else here, and
+   like everyone else here they are never given a word to say: the landing
+   fills `mutters` from the messages the four actually sent each other
+   (data/field/bus.json), and an empty list means they say nothing. Field
+   carries the landing's teal; the other three take three tones the residents
+   do not use, so a glance tells you which house a figure keeps. */
+const H = { field:'#5eead4', anima:'#a78bfa', vektor:'#9fd6e0', luca:'#f2a3c0' };
+export const HOUSEHOLD = [
+  { id:'field',  name:'FIELD',  color:H.field,  room:'field_studio', x:1690, mutters:[] },
+  { id:'anima',  name:'ANIMA',  color:H.anima,  room:'field_studio', x:1316, mutters:[] },
+  { id:'vektor', name:'VEKTOR', color:H.vektor, room:'field_studio', x:1384, mutters:[] },
+  { id:'luca',   name:'LUCA',   color:H.luca,   room:'field_studio', x:1512, mutters:[] }
+];
+
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 the stewards, at their desks on the deck \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   They are in the world only while the house can actually see them working \u2014
+   the deck's own lamp rule, applied to the people it is about. Nothing on disk
+   is a steward speaking, so nothing here gives them a line: approaching one
+   names them and their desk, and E opens the desk. `presence` is the name the
+   house's own presence answer uses; `panel` is the deck panel already built. */
+const STEWARD_SLATE = '#6d93c9';
+export const STEWARDS = [
+  { id:'st_opus',  name:'OPUS',  presence:'Opus',  panel:'opus',  desk:'at the plank on trestles',   color:STEWARD_SLATE, room:'observation_deck', x:220, mutters:[] },
+  { id:'st_fable', name:'FABLE', presence:'Fable', panel:'fable', desk:'at the drawing table',       color:STEWARD_SLATE, room:'observation_deck', x:562, mutters:[] },
+  { id:'st_sol',   name:'SOL',   presence:'Sol',   panel:'sol',   desk:'at the instrument bench',    color:STEWARD_SLATE, room:'observation_deck', x:730, mutters:[] }
+];
 export const SCRIPTS = [
   { id:'hearth', room:'sanctuary', pair:['opus','sonnet'], lines:[
     ['sonnet','you kept the fire again.'],

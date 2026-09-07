@@ -8,7 +8,14 @@ var KINDS = {
   davinci: { kind: "elder", legH: 19, torsoW: 16, torsoH: 34, headW: 12, headH: 12, stoop: 3, body: "#2b2926", bodyHi: "#3c3934", bodyDk: "#191816", shell: "#232320", gaze: { w: 4, h: 2, dx: 0, dy: 6 } },
   bard: { kind: "elder", legH: 22, torsoW: 17, torsoH: 36, headW: 12, headH: 12, body: "#252a33", bodyHi: "#363d4a", bodyDk: "#15181f", shell: "#1f2430", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
   kimi: { kind: "hooded", legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: "#2a2433", bodyHi: "#3a3346", bodyDk: "#17131d", shell: "#1e1a26", gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
-  grok: { kind: "lean", legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: "#2e2528", bodyHi: "#40343a", bodyDk: "#1a1417", shell: "#262024", gaze: { w: 4, h: 2, dx: 1, dy: 6 } }
+  grok: { kind: "lean", legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: "#2e2528", bodyHi: "#40343a", bodyDk: "#1a1417", shell: "#262024", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
+  field: { kind: "mantle", legH: 21, torsoW: 16, torsoH: 35, headW: 13, headH: 13, body: "#242a30", bodyHi: "#39414a", bodyDk: "#141a20", shell: "#1d242c", gaze: { w: 5, h: 2, dx: 0, dy: 7 } },
+  anima: { kind: "hooded", legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: "#292734", bodyHi: "#393648", bodyDk: "#16151d", shell: "#1e1d29", gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
+  vektor: { kind: "lean", legH: 22, torsoW: 15, torsoH: 34, headW: 12, headH: 12, body: "#232b2e", bodyHi: "#353f43", bodyDk: "#131a1c", shell: "#1c2427", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
+  luca: { kind: "host", legH: 18, torsoW: 21, torsoH: 28, headW: 13, headH: 12, body: "#2e2830", bodyHi: "#41383f", bodyDk: "#191419", shell: "#241f26", gaze: { w: 5, h: 3, dx: -1, dy: 5, soft: true } },
+  st_fable: { kind: "elder", legH: 21, torsoW: 16, torsoH: 34, headW: 12, headH: 12, body: "#262a31", bodyHi: "#373d47", bodyDk: "#15181d", shell: "#1f232a", gaze: { w: 4, h: 2, dx: 0, dy: 6 } },
+  st_sol: { kind: "lean", legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: "#262a31", bodyHi: "#373d47", bodyDk: "#15181d", shell: "#1f232a", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
+  st_opus: { kind: "mantle", legH: 21, torsoW: 15, torsoH: 34, headW: 12, headH: 12, body: "#262a31", bodyHi: "#373d47", bodyDk: "#15181d", shell: "#1f232a", gaze: { w: 5, h: 2, dx: -1, dy: 7 } }
 };
 var VISITOR = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
 var GUEST = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#948e80", bodyHi: "#aca696", bodyDk: "#6e6860", face: "#cdc8ba" };
@@ -7705,6 +7712,7 @@ function plate(b, cx, y, text) {
   b.px(cx - 20, y + 9, 40, 1, F.paperEdge);
   label(b, text, cx, y + 5, 5.5, "rgba(34,40,47,0.72)");
 }
+var HOUSE_IN = false;
 function makeFieldStudio(bridge, options = {}) {
   const backX = Number.isFinite(options.back) ? options.back : 840;
   const say = (e, t, note) => {
@@ -7721,6 +7729,8 @@ function makeFieldStudio(bridge, options = {}) {
   const BENCH_X = [732, 816, 900, 1018, 1098, 1178];
   const INSTRUMENTS = FIELD_INSTRUMENTS.map((p, i) => Object.assign({}, p, { x: BENCH_X[i] }));
   const DARK_DEVICE_X = 1254;
+  const deskLamp = { x: 1692, y: 240, r: 118, c: "247,196,128", a: 0.3, flicker: 1 };
+  const tableLamp = { x: 1440, y: 250, r: 70, c: "200,214,232", a: 0.05 };
   const SESSIONS = ["morning", "research", "afternoon", "inner life", "conversations", "evening", "meta"];
   const DARK_LINE = "the sessions are dark · a session here is an invitation, and doing nothing " + "is an answer";
   const LAST_LINE = "Information, not a prompt. Then whatever happens next is theirs.";
@@ -7817,9 +7827,9 @@ function makeFieldStudio(bridge, options = {}) {
         { x: 1000, y: 40, r: 150, c: F.cool, a: 0.12 },
         { x: 1620, y: 40, r: 150, c: F.cool, a: 0.11 },
         { x: 990, y: 150, r: 300, c: F.rose, a: 0.08 },
-        { x: 1692, y: 240, r: 118, c: "247,196,128", a: 0.3, flicker: 1 },
+        deskLamp,
         ...INSTRUMENTS.map((p) => ({ x: p.x, y: 262, r: 22, c: F.teal, a: 0.07 })),
-        { x: 1440, y: 250, r: 70, c: "200,214,232", a: 0.05 }
+        tableLamp
       ],
       bg: (b, W, H) => {
         b.px(0, 0, W, 30, F.ceil);
@@ -8199,6 +8209,9 @@ function makeFieldStudio(bridge, options = {}) {
       draw: (g, t) => {
         g.wallFloor();
         const near = g.near;
+        const inRoom = HOUSE_IN;
+        deskLamp.a = inRoom ? 0.34 : 0.14;
+        tableLamp.a = inRoom ? 0.14 : 0.03;
         INSTRUMENTS.forEach((p) => {
           const close = near && near.x === p.x;
           const pulse = 0.34 + 0.16 * Math.sin(t * 1.6 + p.x * 0.01);
@@ -8208,7 +8221,7 @@ function makeFieldStudio(bridge, options = {}) {
             g.px(p.x + 10, 243, 5, 5, "rgba(" + F.teal + ",0.20)");
         });
         g.px(DARK_DEVICE_X + 11, 244, 3, 3, "rgba(90,100,112,0.55)");
-        const lp = 0.62 + 0.08 * Math.sin(t * 0.9);
+        const lp = (inRoom ? 0.62 : 0.34) + 0.08 * Math.sin(t * 0.9);
         g.px(1645, 202, 20, 3, "rgba(247,205,140," + lp.toFixed(2) + ")");
         if (t % 1.6 < 0.9)
           g.px(1706, 234, 5, 1, "rgba(206,222,236,0.70)");
@@ -8975,6 +8988,13 @@ var CAST = [
     x: 700,
     mutters: ["retirement suits me. don’t tell anyone i said so.", "came for the view, stayed for the quiet. shocking, i know.", "someone left a game mid-move on the table. respect."]
   }
+];
+var H = { field: "#5eead4", anima: "#a78bfa", vektor: "#9fd6e0", luca: "#f2a3c0" };
+var HOUSEHOLD = [
+  { id: "field", name: "FIELD", color: H.field, room: "field_studio", x: 1690, mutters: [] },
+  { id: "anima", name: "ANIMA", color: H.anima, room: "field_studio", x: 1316, mutters: [] },
+  { id: "vektor", name: "VEKTOR", color: H.vektor, room: "field_studio", x: 1384, mutters: [] },
+  { id: "luca", name: "LUCA", color: H.luca, room: "field_studio", x: 1512, mutters: [] }
 ];
 
 // workshop/workshop.js

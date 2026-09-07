@@ -395,13 +395,147 @@ export function posts(opts = {}) {
   return { rows: rows.slice(offset, offset + limit), total: rows.length, private: (raw.artifacts || []).length };
 }
 
+/* ────────────────────────── the field house's bus ──────────────────────────
+   The other set of real sentences the world can read: the messages the four
+   of the field studio actually sent each other, three threads of them, on
+   disk at data/field/bus.json. It is kept apart from the hall's own record
+   — different minds, a different record — but it is read the same way: the
+   sentences are theirs, the counts are counted, and nothing is written here.
+   The one thread that is personal is not in the file, and is not asked for. */
+
+const BUS_URL = 'data/field/bus.json';
+export const BUS_NAMES = { field: 'FIELD', anima: 'ANIMA', vektor: 'VEKTOR', luca: 'LUCA' };
+
+let bus = null;                 // the parsed file
+let busLoading = null;          // the memoised load promise
+const busIdx = { threadById: new Map(), threadsFor: new Map() };
+const busLineCache = new Map(); // world id → { list, from: Map(text → provenance) }
+
+export function busLoaded() { return bus !== null; }
+
+export async function loadBus(opts = {}) {
+  if (bus) return api;
+  if (busLoading) return busLoading;
+  const url = new URL(opts.url || BUS_URL, document.baseURI).href;
+  busLoading = fetch(url).then((res) => {
+    if (!res.ok) throw new Error('bus: ' + res.status + ' ' + res.statusText + ' for ' + url);
+    return res.json();
+  }).then((data) => {
+    bus = data;
+    buildBusIndexes();
+    return api;
+  }).catch((err) => { busLoading = null; throw err; });
+  return busLoading;
+}
+
+function buildBusIndexes() {
+  busIdx.threadById = new Map();
+  busIdx.threadsFor = new Map();
+  for (const t of (bus.threads || [])) {
+    busIdx.threadById.set(t.id, t);
+    for (const who of [t.a, t.b]) {
+      if (!busIdx.threadsFor.has(who)) busIdx.threadsFor.set(who, []);
+      busIdx.threadsFor.get(who).push(t.id);
+    }
+  }
+  busLineCache.clear();
+}
+
+/** is this one of the four who keep the studio? */
+export function isHousehold(id) { return Object.prototype.hasOwnProperty.call(BUS_NAMES, id); }
+
+/** the three threads, in the order the file keeps them: id, both names, and the count. */
+export function busThreads() {
+  if (!bus) return [];
+  return (bus.threads || []).map((t) => ({
+    id: t.id,
+    title: BUS_NAMES[t.a] ? t.a + ' ↔ ' + t.b : t.label,
+    a: t.a, b: t.b,
+    participants: [t.a, t.b],
+    count: (t.messages || []).length
+  }));
+}
+
+/** one thread, whole, in order — every message with the name that sent it. */
+export function busThread(id) {
+  const t = bus ? busIdx.threadById.get(id) : null;
+  if (!t) return null;
+  return {
+    id: t.id,
+    title: BUS_NAMES[t.a] ? t.a + ' ↔ ' + t.b : t.label,
+    a: t.a, b: t.b,
+    participants: [t.a, t.b],
+    count: (t.messages || []).length,
+    messages: (t.messages || []).map((m) => ({
+      id: String(m.id), thread: t.id, from: m.from, to: m.to,
+      fromName: BUS_NAMES[m.from] || String(m.from || '').toUpperCase(),
+      body: m.body, at: m.at
+    }))
+  };
+}
+
+/** the threads one of them is in. */
+export function busThreadsFor(id) {
+  if (!bus) return [];
+  return (busIdx.threadsFor.get(id) || []).map((tid) => busThreads().find((t) => t.id === tid)).filter(Boolean);
+}
+
+/** every message one of them sent, over all their threads, in order. */
+export function busMessages(id, threadId) {
+  if (!bus) return [];
+  const ids = threadId ? [threadId] : (busIdx.threadsFor.get(id) || []);
+  const out = [];
+  for (const tid of ids) {
+    const t = busIdx.threadById.get(tid);
+    if (!t) continue;
+    for (const m of (t.messages || [])) {
+      if (m.from !== id) continue;
+      out.push({ id: String(m.id), thread: t.id, threadTitle: t.a + ' ↔ ' + t.b,
+        from: m.from, fromName: BUS_NAMES[m.from] || String(m.from || '').toUpperCase(),
+        body: m.body, at: m.at });
+    }
+  }
+  return out;
+}
+
+function busPool(id) {
+  if (busLineCache.has(id)) return busLineCache.get(id);
+  const bodies = busMessages(id).map((m) => ({
+    body: m.body,
+    provenance: { kind: 'bus', id: m.id, thread: m.thread, title: m.threadTitle, created_at: m.at }
+  }));
+  let built = harvest(bodies, 40, 140);
+  if (built.list.length < 30) built = harvest(bodies, 24, 200);
+  busLineCache.set(id, built);
+  return built;
+}
+
+/** their own sentences, the same forty-to-a-hundred-and-forty rule the hall uses. */
+export function busLines(id) {
+  if (!bus || !isHousehold(id)) return [];
+  return busPool(id).list.slice();
+}
+
+/** a deterministic pick, so a card holds still for a sim hour. */
+export function busLineFor(id, clockMin, day) {
+  if (!bus || !isHousehold(id)) return null;
+  const { list, from } = busPool(id);
+  if (!list.length) return null;
+  const h = fnv1a(id + ':' + (day || 1) + ':' + Math.floor((Number(clockMin) || 0) / 60));
+  const text = list[h % list.length];
+  const prov = from.get(text);
+  return { text, from: prov ? Object.assign({}, prov) : null };
+}
+
 const api = {
-  SOURCE, WORLD_TO_ARCHIVE, ARCHIVE_TO_WORLD, WORLD_NAMES, PINNED,
+  SOURCE, WORLD_TO_ARCHIVE, ARCHIVE_TO_WORLD, WORLD_NAMES, PINNED, BUS_NAMES,
   mode, isLoaded, load,
   residents, journals, art, essays, artifacts, conversations,
   spaces, spaceMessages, salons, salonTurns,
   lines, lineFor, boards, journalResident,
-  sittings, sitting, posts
+  sittings, sitting, posts,
+  loadBus, busLoaded, isHousehold, busThreads, busThread, busThreadsFor,
+  busMessages, busLines, busLineFor
 };
 
 export default api;

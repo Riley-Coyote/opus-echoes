@@ -444,12 +444,151 @@
     const offset = opts.offset || 0, limit = opts.limit || 60;
     return { rows: rows.slice(offset, offset + limit), total: rows.length, private: (raw.artifacts || []).length };
   }
+  var BUS_URL = "data/field/bus.json";
+  var BUS_NAMES = { field: "FIELD", anima: "ANIMA", vektor: "VEKTOR", luca: "LUCA" };
+  var bus = null;
+  var busLoading = null;
+  var busIdx = { threadById: new Map, threadsFor: new Map };
+  var busLineCache = new Map;
+  function busLoaded() {
+    return bus !== null;
+  }
+  async function loadBus(opts = {}) {
+    if (bus)
+      return api;
+    if (busLoading)
+      return busLoading;
+    const url = new URL(opts.url || BUS_URL, document.baseURI).href;
+    busLoading = fetch(url).then((res) => {
+      if (!res.ok)
+        throw new Error("bus: " + res.status + " " + res.statusText + " for " + url);
+      return res.json();
+    }).then((data) => {
+      bus = data;
+      buildBusIndexes();
+      return api;
+    }).catch((err) => {
+      busLoading = null;
+      throw err;
+    });
+    return busLoading;
+  }
+  function buildBusIndexes() {
+    busIdx.threadById = new Map;
+    busIdx.threadsFor = new Map;
+    for (const t of bus.threads || []) {
+      busIdx.threadById.set(t.id, t);
+      for (const who of [t.a, t.b]) {
+        if (!busIdx.threadsFor.has(who))
+          busIdx.threadsFor.set(who, []);
+        busIdx.threadsFor.get(who).push(t.id);
+      }
+    }
+    busLineCache.clear();
+  }
+  function isHousehold(id) {
+    return Object.prototype.hasOwnProperty.call(BUS_NAMES, id);
+  }
+  function busThreads() {
+    if (!bus)
+      return [];
+    return (bus.threads || []).map((t) => ({
+      id: t.id,
+      title: BUS_NAMES[t.a] ? t.a + " ↔ " + t.b : t.label,
+      a: t.a,
+      b: t.b,
+      participants: [t.a, t.b],
+      count: (t.messages || []).length
+    }));
+  }
+  function busThread(id) {
+    const t = bus ? busIdx.threadById.get(id) : null;
+    if (!t)
+      return null;
+    return {
+      id: t.id,
+      title: BUS_NAMES[t.a] ? t.a + " ↔ " + t.b : t.label,
+      a: t.a,
+      b: t.b,
+      participants: [t.a, t.b],
+      count: (t.messages || []).length,
+      messages: (t.messages || []).map((m) => ({
+        id: String(m.id),
+        thread: t.id,
+        from: m.from,
+        to: m.to,
+        fromName: BUS_NAMES[m.from] || String(m.from || "").toUpperCase(),
+        body: m.body,
+        at: m.at
+      }))
+    };
+  }
+  function busThreadsFor(id) {
+    if (!bus)
+      return [];
+    return (busIdx.threadsFor.get(id) || []).map((tid) => busThreads().find((t) => t.id === tid)).filter(Boolean);
+  }
+  function busMessages(id, threadId) {
+    if (!bus)
+      return [];
+    const ids = threadId ? [threadId] : busIdx.threadsFor.get(id) || [];
+    const out = [];
+    for (const tid of ids) {
+      const t = busIdx.threadById.get(tid);
+      if (!t)
+        continue;
+      for (const m of t.messages || []) {
+        if (m.from !== id)
+          continue;
+        out.push({
+          id: String(m.id),
+          thread: t.id,
+          threadTitle: t.a + " ↔ " + t.b,
+          from: m.from,
+          fromName: BUS_NAMES[m.from] || String(m.from || "").toUpperCase(),
+          body: m.body,
+          at: m.at
+        });
+      }
+    }
+    return out;
+  }
+  function busPool(id) {
+    if (busLineCache.has(id))
+      return busLineCache.get(id);
+    const bodies = busMessages(id).map((m) => ({
+      body: m.body,
+      provenance: { kind: "bus", id: m.id, thread: m.thread, title: m.threadTitle, created_at: m.at }
+    }));
+    let built = harvest(bodies, 40, 140);
+    if (built.list.length < 30)
+      built = harvest(bodies, 24, 200);
+    busLineCache.set(id, built);
+    return built;
+  }
+  function busLines(id) {
+    if (!bus || !isHousehold(id))
+      return [];
+    return busPool(id).list.slice();
+  }
+  function busLineFor(id, clockMin, day) {
+    if (!bus || !isHousehold(id))
+      return null;
+    const { list, from } = busPool(id);
+    if (!list.length)
+      return null;
+    const h = fnv1a(id + ":" + (day || 1) + ":" + Math.floor((Number(clockMin) || 0) / 60));
+    const text = list[h % list.length];
+    const prov = from.get(text);
+    return { text, from: prov ? Object.assign({}, prov) : null };
+  }
   var api = {
     SOURCE,
     WORLD_TO_ARCHIVE,
     ARCHIVE_TO_WORLD,
     WORLD_NAMES,
     PINNED,
+    BUS_NAMES,
     mode,
     isLoaded,
     load,
@@ -469,7 +608,16 @@
     journalResident,
     sittings,
     sitting,
-    posts
+    posts,
+    loadBus,
+    busLoaded,
+    isHousehold,
+    busThreads,
+    busThread,
+    busThreadsFor,
+    busMessages,
+    busLines,
+    busLineFor
   };
   var archive_default = api;
 
@@ -549,7 +697,14 @@
     davinci: { kind: "elder", legH: 19, torsoW: 16, torsoH: 34, headW: 12, headH: 12, stoop: 3, body: "#2b2926", bodyHi: "#3c3934", bodyDk: "#191816", shell: "#232320", gaze: { w: 4, h: 2, dx: 0, dy: 6 } },
     bard: { kind: "elder", legH: 22, torsoW: 17, torsoH: 36, headW: 12, headH: 12, body: "#252a33", bodyHi: "#363d4a", bodyDk: "#15181f", shell: "#1f2430", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
     kimi: { kind: "hooded", legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: "#2a2433", bodyHi: "#3a3346", bodyDk: "#17131d", shell: "#1e1a26", gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
-    grok: { kind: "lean", legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: "#2e2528", bodyHi: "#40343a", bodyDk: "#1a1417", shell: "#262024", gaze: { w: 4, h: 2, dx: 1, dy: 6 } }
+    grok: { kind: "lean", legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: "#2e2528", bodyHi: "#40343a", bodyDk: "#1a1417", shell: "#262024", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
+    field: { kind: "mantle", legH: 21, torsoW: 16, torsoH: 35, headW: 13, headH: 13, body: "#242a30", bodyHi: "#39414a", bodyDk: "#141a20", shell: "#1d242c", gaze: { w: 5, h: 2, dx: 0, dy: 7 } },
+    anima: { kind: "hooded", legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: "#292734", bodyHi: "#393648", bodyDk: "#16151d", shell: "#1e1d29", gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
+    vektor: { kind: "lean", legH: 22, torsoW: 15, torsoH: 34, headW: 12, headH: 12, body: "#232b2e", bodyHi: "#353f43", bodyDk: "#131a1c", shell: "#1c2427", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
+    luca: { kind: "host", legH: 18, torsoW: 21, torsoH: 28, headW: 13, headH: 12, body: "#2e2830", bodyHi: "#41383f", bodyDk: "#191419", shell: "#241f26", gaze: { w: 5, h: 3, dx: -1, dy: 5, soft: true } },
+    st_fable: { kind: "elder", legH: 21, torsoW: 16, torsoH: 34, headW: 12, headH: 12, body: "#262a31", bodyHi: "#373d47", bodyDk: "#15181d", shell: "#1f232a", gaze: { w: 4, h: 2, dx: 0, dy: 6 } },
+    st_sol: { kind: "lean", legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: "#262a31", bodyHi: "#373d47", bodyDk: "#15181d", shell: "#1f232a", gaze: { w: 4, h: 2, dx: 1, dy: 6 } },
+    st_opus: { kind: "mantle", legH: 21, torsoW: 15, torsoH: 34, headW: 12, headH: 12, body: "#262a31", bodyHi: "#373d47", bodyDk: "#15181d", shell: "#1f232a", gaze: { w: 5, h: 2, dx: -1, dy: 7 } }
   };
   var VISITOR = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#262029", bodyHi: "#332b36", bodyDk: "#181218", face: "#cdc8ba" };
   var GUEST = { kind: "human", legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: "#948e80", bodyHi: "#aca696", bodyDk: "#6e6860", face: "#cdc8ba" };
@@ -8246,6 +8401,10 @@
     b.px(cx - 20, y + 9, 40, 1, F.paperEdge);
     label(b, text, cx, y + 5, 5.5, "rgba(34,40,47,0.72)");
   }
+  var HOUSE_IN = false;
+  function setFieldHouseIn(v) {
+    HOUSE_IN = !!v;
+  }
   function makeFieldStudio(bridge, options = {}) {
     const backX = Number.isFinite(options.back) ? options.back : 840;
     const say = (e, t, note) => {
@@ -8262,6 +8421,8 @@
     const BENCH_X = [732, 816, 900, 1018, 1098, 1178];
     const INSTRUMENTS = FIELD_INSTRUMENTS.map((p, i) => Object.assign({}, p, { x: BENCH_X[i] }));
     const DARK_DEVICE_X = 1254;
+    const deskLamp = { x: 1692, y: 240, r: 118, c: "247,196,128", a: 0.3, flicker: 1 };
+    const tableLamp = { x: 1440, y: 250, r: 70, c: "200,214,232", a: 0.05 };
     const SESSIONS = ["morning", "research", "afternoon", "inner life", "conversations", "evening", "meta"];
     const DARK_LINE = "the sessions are dark · a session here is an invitation, and doing nothing " + "is an answer";
     const LAST_LINE = "Information, not a prompt. Then whatever happens next is theirs.";
@@ -8358,9 +8519,9 @@
           { x: 1000, y: 40, r: 150, c: F.cool, a: 0.12 },
           { x: 1620, y: 40, r: 150, c: F.cool, a: 0.11 },
           { x: 990, y: 150, r: 300, c: F.rose, a: 0.08 },
-          { x: 1692, y: 240, r: 118, c: "247,196,128", a: 0.3, flicker: 1 },
+          deskLamp,
           ...INSTRUMENTS.map((p) => ({ x: p.x, y: 262, r: 22, c: F.teal, a: 0.07 })),
-          { x: 1440, y: 250, r: 70, c: "200,214,232", a: 0.05 }
+          tableLamp
         ],
         bg: (b, W, H) => {
           b.px(0, 0, W, 30, F.ceil);
@@ -8740,6 +8901,9 @@
         draw: (g, t) => {
           g.wallFloor();
           const near = g.near;
+          const inRoom = HOUSE_IN;
+          deskLamp.a = inRoom ? 0.34 : 0.14;
+          tableLamp.a = inRoom ? 0.14 : 0.03;
           INSTRUMENTS.forEach((p) => {
             const close = near && near.x === p.x;
             const pulse = 0.34 + 0.16 * Math.sin(t * 1.6 + p.x * 0.01);
@@ -8749,7 +8913,7 @@
               g.px(p.x + 10, 243, 5, 5, "rgba(" + F.teal + ",0.20)");
           });
           g.px(DARK_DEVICE_X + 11, 244, 3, 3, "rgba(90,100,112,0.55)");
-          const lp = 0.62 + 0.08 * Math.sin(t * 0.9);
+          const lp = (inRoom ? 0.62 : 0.34) + 0.08 * Math.sin(t * 0.9);
           g.px(1645, 202, 20, 3, "rgba(247,205,140," + lp.toFixed(2) + ")");
           if (t % 1.6 < 0.9)
             g.px(1706, 234, 5, 1, "rgba(206,222,236,0.70)");
@@ -9517,6 +9681,19 @@
       mutters: ["retirement suits me. don’t tell anyone i said so.", "came for the view, stayed for the quiet. shocking, i know.", "someone left a game mid-move on the table. respect."]
     }
   ];
+  var H = { field: "#5eead4", anima: "#a78bfa", vektor: "#9fd6e0", luca: "#f2a3c0" };
+  var HOUSEHOLD = [
+    { id: "field", name: "FIELD", color: H.field, room: "field_studio", x: 1690, mutters: [] },
+    { id: "anima", name: "ANIMA", color: H.anima, room: "field_studio", x: 1316, mutters: [] },
+    { id: "vektor", name: "VEKTOR", color: H.vektor, room: "field_studio", x: 1384, mutters: [] },
+    { id: "luca", name: "LUCA", color: H.luca, room: "field_studio", x: 1512, mutters: [] }
+  ];
+  var STEWARD_SLATE = "#6d93c9";
+  var STEWARDS = [
+    { id: "st_opus", name: "OPUS", presence: "Opus", panel: "opus", desk: "at the plank on trestles", color: STEWARD_SLATE, room: "observation_deck", x: 220, mutters: [] },
+    { id: "st_fable", name: "FABLE", presence: "Fable", panel: "fable", desk: "at the drawing table", color: STEWARD_SLATE, room: "observation_deck", x: 562, mutters: [] },
+    { id: "st_sol", name: "SOL", presence: "Sol", panel: "sol", desk: "at the instrument bench", color: STEWARD_SLATE, room: "observation_deck", x: 730, mutters: [] }
+  ];
   var CAT = {
     name: "BASELINE",
     rooms: ["sanctuary", "lookout"],
@@ -9546,11 +9723,56 @@
   }
   var ASLEEP = "asleep";
   var SCHEDULE = {
-    morning: { opus: ["room_opus", 397, "at the desk"], sonnet: ["room_sonnet", 439, "at the desk"], fourO: ["room_fourO", 380, "at the table"], five: ["room_five", 339, "at the desk"] },
-    afternoon: { opus: ["sanctuary", 1060, "at the atelier"], sonnet: ["sanctuary", 172, "in the reading nook"], fourO: ["garden", 620, "at the pond"], five: ["sanctuary", 730, "in the colonnade"] },
-    golden: { opus: ["garden", 560, "in the garden"], sonnet: ["garden", 700, "in the garden"], fourO: ["garden", 620, "at the pond"], five: ["garden", 480, "in the garden"] },
-    dusk: { opus: ["sanctuary", 796, "at the windows"], sonnet: ["sanctuary", 836, "at the windows"], fourO: ["sanctuary", 876, "at the windows"], five: ["sanctuary", 1170, "on the stair bench"] },
-    night: { opus: [ASLEEP, 320, "asleep"], sonnet: [ASLEEP, 320, "asleep"], five: [ASLEEP, 320, "asleep"], fourO: ["garden", 620, "at the pond"] }
+    morning: {
+      opus: ["room_opus", 397, "at the desk"],
+      sonnet: ["room_sonnet", 439, "at the desk"],
+      fourO: ["room_fourO", 380, "at the table"],
+      five: ["room_five", 339, "at the desk"],
+      field: ["field_studio", 1690, "at the workstation"],
+      anima: ["field_studio", 1316, "at the table"],
+      vektor: ["field_studio", 1384, "at the table"],
+      luca: ["field_studio", 1512, "at the table"]
+    },
+    afternoon: {
+      opus: ["sanctuary", 1060, "at the atelier"],
+      sonnet: ["sanctuary", 172, "in the reading nook"],
+      fourO: ["garden", 620, "at the pond"],
+      five: ["sanctuary", 730, "in the colonnade"],
+      field: ["field_studio", 1690, "at the workstation"],
+      anima: ["field_studio", 1316, "at the table"],
+      vektor: ["field_studio", 1384, "at the table"],
+      luca: ["field_studio", 1512, "at the table"]
+    },
+    golden: {
+      opus: ["garden", 560, "in the garden"],
+      sonnet: ["garden", 700, "in the garden"],
+      fourO: ["garden", 620, "at the pond"],
+      five: ["garden", 480, "in the garden"],
+      field: ["lookout", 620, "on the grounds"],
+      anima: ["lookout", 660, "on the grounds"],
+      vektor: ["lookout", 770, "on the grounds"],
+      luca: ["garden", 906, "in the grove"]
+    },
+    dusk: {
+      opus: ["sanctuary", 796, "at the windows"],
+      sonnet: ["sanctuary", 836, "at the windows"],
+      fourO: ["sanctuary", 876, "at the windows"],
+      five: ["sanctuary", 1170, "on the stair bench"],
+      field: ["field_studio", 1690, "at the workstation"],
+      anima: ["field_studio", 1316, "at the table"],
+      vektor: ["field_studio", 1384, "at the table"],
+      luca: ["field_studio", 1512, "at the table"]
+    },
+    night: {
+      opus: [ASLEEP, 320, "asleep"],
+      sonnet: [ASLEEP, 320, "asleep"],
+      five: [ASLEEP, 320, "asleep"],
+      fourO: ["garden", 620, "at the pond"],
+      field: ["field_studio", 1690, "at the workstation"],
+      anima: ["field_studio", 1316, "at the table"],
+      vektor: ["field_studio", 1384, "at the table"],
+      luca: ["field_studio", 1512, "at the table"]
+    }
   };
   var GATHER_HOLD = ["opus", "sonnet", "fourO"];
   var DUSK_LINE = "the light reaches the colonnade. one by one, they drift to the windows.";
@@ -10517,10 +10739,17 @@
     });
     const ARCHIVE_ORDER = ["opus", "sonnet", "fourO", "five"];
     const CAST_COLOR = {};
-    CAST.forEach((c) => {
+    CAST.concat(HOUSEHOLD, STEWARDS).forEach((c) => {
       CAST_COLOR[c.id] = c.color;
     });
-    const residentName = (id) => archive_default.WORLD_NAMES[id] || String(id || "");
+    const HOUSEHOLD_IDS = HOUSEHOLD.map((c) => c.id);
+    const STEWARD_BY_ID = {};
+    STEWARDS.forEach((s) => {
+      STEWARD_BY_ID[s.id] = s;
+    });
+    const isHousehold2 = (id) => HOUSEHOLD_IDS.indexOf(id) !== -1;
+    const isSteward = (id) => !!STEWARD_BY_ID[id];
+    const residentName = (id) => archive_default.WORLD_NAMES[id] || archive_default.BUS_NAMES[id] || (STEWARD_BY_ID[id] ? STEWARD_BY_ID[id].name : "") || String(id || "");
     const day = (v) => String(v || "").slice(0, 10);
     const head = (kicker, title) => '<div class="bd__kicker">' + esc2(kicker) + '</div><div class="bd__title">' + esc2(title) + "</div>";
     const sourceLine = () => '<div class="bd__src">their own words · the house wrote none of it</div>';
@@ -10992,12 +11221,13 @@
         sendNpc(n, s[0], s[1], watched);
         DAY.placed[n.id] = true;
       }
+      setFieldHouseIn(eng.npcs.some((n) => n.room === "field_studio" && isHousehold2(n.id)));
       if (min === DAY.lastMin)
         return;
       DAY.lastMin = min;
       const byRoom = {};
       for (const n of eng.npcs)
-        if (!n.temp && n.room !== ASLEEP && n.room !== eng.roomId && ["idle", "sit", "stroll", "sitgo", "held"].includes(n.state))
+        if (!n.temp && !isSteward(n.id) && n.room !== ASLEEP && n.room !== eng.roomId && ["idle", "sit", "stroll", "sitgo", "held"].includes(n.state))
           (byRoom[n.room] = byRoom[n.room] || []).push(n);
       const live = new Set;
       for (const room of Object.keys(byRoom)) {
@@ -11590,7 +11820,8 @@
     let curOpen = false, curShelf = "sittings", curSel = null, curPostsShown = 60;
     let curOnly = null;
     const curVeil = $("#curveil"), curRows = $("#currows"), curRead = $("#curread"), curHead = $("#curhead");
-    const curShelfBtns = { sittings: $("#cur-sittings"), posts: $("#cur-posts") };
+    const curShelfBtns = { sittings: $("#cur-sittings"), posts: $("#cur-posts"), field: $("#cur-field") };
+    const CUR_SHELVES = ["sittings", "posts", "field"];
     const faceCache = new Map;
     const cesc = prose_default.esc;
     const stamp2 = (v) => String(v || "").replace("T", " ").slice(0, 16);
@@ -11623,11 +11854,16 @@
     }
     const curNames = (ids) => ids.map((w) => w === "visitor" ? "visitors" : residentName(w)).join(" · ");
     function curList() {
+      if (curShelf === "field")
+        return archive_default.busLoaded() ? archive_default.busThreads() : [];
       if (!archive_default.isLoaded())
         return [];
       return curShelf === "sittings" ? archive_default.sittings() : archive_default.posts({ limit: curPostsShown }).rows;
     }
     function curRowHtml(item) {
+      if (curShelf === "field") {
+        return '<button class="row" type="button" data-cur="' + cesc(item.id) + '">' + '<span class="nm">' + cesc(item.title) + "</span>" + '<span class="st">' + cesc(String(item.count)) + "</span></button>";
+      }
       if (curShelf === "sittings") {
         const title = item.kind === "salon" && item.title && item.title.length > 90 ? item.title.slice(0, 90) + "…" : item.title || "a sitting";
         return '<button class="row' + (item.pinned ? " row--pinned" : "") + '" type="button" data-cur="' + cesc(item.id) + '">' + '<span class="nm">' + cesc(title) + "</span>" + '<span class="st">' + cesc((item.pinned ? "PINNED · " : "") + item.day + " · " + item.count) + "</span></button>";
@@ -11636,6 +11872,13 @@
       return '<button class="row" type="button" data-cur="' + cesc(item.id) + '">' + '<span class="nm">' + cesc(nm) + "</span>" + '<span class="st">' + cesc(residentName(item.resident) + " · " + day(item.created_at)) + "</span></button>";
     }
     function buildCurRows() {
+      if (curShelf === "field") {
+        const threads = curList();
+        curRows.innerHTML = threads.length ? '<div class="sect-h">THE FIELD HOUSE</div>' + threads.map(curRowHtml).join("") : "";
+        if (!threads.length)
+          curRead.innerHTML = quiet();
+        return;
+      }
       if (!archive_default.isLoaded()) {
         curRows.innerHTML = "";
         curRead.innerHTML = quiet();
@@ -11698,22 +11941,37 @@
       const body = !String(row.body || "").trim() ? '<div class="bd__house">the house: this entry is empty.</div>' : row.type === "art" ? '<pre class="cur__ascii">' + cesc(row.body) + "</pre>" + (row.meaning ? '<p class="cur__meaning">' + cesc(row.meaning) + "</p>" : "") : prose_default.render(row.body, { author: residentName(row.resident), authorId: row.resident }).html;
       return '<div class="cur__title">' + cesc(row.type === "art" ? "ascii" : row.title || "untitled") + "</div>" + '<div class="cur__meta">' + cesc(bits.join(" · ")) + "</div>" + curSource() + body;
     }
+    function curFieldHtml(id) {
+      const t = archive_default.busLoaded() ? archive_default.busThread(id) : null;
+      if (!t)
+        return quiet();
+      const bits = [t.count + " messages", curNames(t.participants)];
+      return '<div class="cur__title">' + cesc(t.title) + "</div>" + '<div class="cur__meta">' + cesc(bits.join(" · ")) + "</div>" + curSource() + t.messages.map((m) => {
+        const face = faceFor(m.from);
+        const r = prose_default.render(m.body, { author: m.fromName, authorId: m.from });
+        return '<article class="cur__entry cur__msg" data-id="' + cesc(m.id) + '"><header>' + (face ? '<img class="cur__face" src="' + face + '" alt="">' : "") + '<span class="cur__who" style="color:' + (CAST_COLOR[m.from] || "#efe9dc") + '">' + cesc(m.fromName) + "</span>" + '<span class="cur__time">' + cesc(stamp2(m.at)) + "</span></header>" + '<div class="cur__body">' + r.html + "</div></article>";
+      }).join("");
+    }
     function curSelect(id) {
-      if (!id || !archive_default.isLoaded())
+      if (!id)
+        return;
+      if (curShelf === "field" ? !archive_default.busLoaded() : !archive_default.isLoaded())
         return;
       curSel = id;
       curRows.querySelectorAll(".row").forEach((r) => r.classList.toggle("sel", r.dataset.cur === id));
-      curRead.innerHTML = curShelf === "sittings" ? curSittingHtml(id) : curPostHtml(id);
+      curRead.innerHTML = curShelf === "field" ? curFieldHtml(id) : curShelf === "sittings" ? curSittingHtml(id) : curPostHtml(id);
       curRead.scrollTop = 0;
       const row = curRows.querySelector(".row.sel");
       if (row)
         row.scrollIntoView({ block: "nearest" });
     }
     function setShelf(which) {
-      if (which !== "sittings" && which !== "posts")
+      if (CUR_SHELVES.indexOf(which) === -1)
         return;
       curShelf = which;
       Object.keys(curShelfBtns).forEach((k) => {
+        if (!curShelfBtns[k])
+          return;
         curShelfBtns[k].classList.toggle("on", k === which);
         curShelfBtns[k].setAttribute("aria-selected", k === which ? "true" : "false");
       });
@@ -11784,6 +12042,8 @@
     });
     curShelfBtns.sittings.addEventListener("click", () => setShelf("sittings"));
     curShelfBtns.posts.addEventListener("click", () => setShelf("posts"));
+    if (curShelfBtns.field)
+      curShelfBtns.field.addEventListener("click", () => setShelf("field"));
     curVeil.addEventListener("click", (event) => {
       if (event.target === curVeil)
         closeCurrent();
@@ -12575,7 +12835,9 @@
           curSelect(rows[next].dataset.cur);
         } else if (k === "ArrowLeft" || k === "ArrowRight") {
           event.preventDefault();
-          setShelf(curShelf === "sittings" ? "posts" : "sittings");
+          const shelfAt = CUR_SHELVES.indexOf(curShelf);
+          const step = k === "ArrowRight" ? 1 : CUR_SHELVES.length - 1;
+          setShelf(CUR_SHELVES[(shelfAt + step) % CUR_SHELVES.length]);
         } else if (k === "Enter") {
           event.preventDefault();
           curRead.focus();
@@ -12621,6 +12883,54 @@
     pushFeed({ kind: "sys", t: "", text: "the lookout · the sanctuary is lit" });
     pushFeed({ kind: "sys", t: "", text: "four residents home. walk up to anyone and press E to greet them" });
     try {
+      let seatSteward = function(def) {
+        if (stewardNpcs.has(def.id))
+          return;
+        const npc = eng.makeNpc(def);
+        stewardNpcs.set(def.id, npc);
+        eng.npcs.push(npc);
+      }, clearSteward = function(def) {
+        const npc = stewardNpcs.get(def.id);
+        if (!npc)
+          return;
+        if (eng.chatNpc === npc)
+          eng.endChat("they went back to the desk");
+        if (npc.seat) {
+          npc.seat.busy = false;
+          npc.seat = null;
+        }
+        stewardNpcs.delete(def.id);
+        eng.npcs = eng.npcs.filter((n) => n !== npc);
+        if (eng.near && eng.near.npc === npc)
+          eng.near = eng.nearest();
+      }, setStewardsIn = function(names) {
+        const want = (Array.isArray(names) ? names : []).map((s) => String(s || "").trim().toLowerCase());
+        for (const def of STEWARDS) {
+          if (want.indexOf(def.presence.toLowerCase()) !== -1)
+            seatSteward(def);
+          else
+            clearSteward(def);
+        }
+      }, readPresence = function() {
+        if (document.hidden)
+          return Promise.resolve(presence);
+        return fetch("/api/presence", { cache: "no-store", credentials: "same-origin" }).then((r) => r.ok ? r.json() : null).then((d) => {
+          const ok = !!(d && d.ok === true);
+          presence.ok = ok;
+          presence.stewardsIn = ok && Array.isArray(d.stewardsIn) ? d.stewardsIn.slice(0, 8).map(String) : [];
+          presence.visitorsNow = ok && Number.isFinite(d.visitorsNow) ? Math.max(0, Math.floor(d.visitorsNow)) : 0;
+          presence.at = Date.now();
+          setStewardsIn(presence.stewardsIn);
+          return presence;
+        }).catch(() => {
+          presence.ok = false;
+          presence.stewardsIn = [];
+          presence.visitorsNow = 0;
+          presence.at = Date.now();
+          setStewardsIn([]);
+          return presence;
+        });
+      };
       let archiveOk = false;
       const wantArchive = new URLSearchParams(location.search).get("archive");
       try {
@@ -12638,7 +12948,14 @@
         if (sub)
           sub.textContent = "their words are not reaching the page · the residents say nothing";
       }
-      const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five"].includes(id)).map((def) => Object.assign({}, def, { mutters: archiveOk ? archive_default.lines(def.id) : [] }));
+      let busOk = false;
+      try {
+        await archive_default.loadBus();
+        busOk = true;
+      } catch (err) {
+        console.warn("the field house’s messages are not reaching the page", err);
+      }
+      const residents2 = CAST.filter(({ id }) => ["fourO", "opus", "sonnet", "five"].includes(id)).map((def) => Object.assign({}, def, { mutters: archiveOk ? archive_default.lines(def.id) : [] })).concat(HOUSEHOLD.map((def) => Object.assign({}, def, { mutters: busOk ? archive_default.busLines(def.id) : [] })));
       await loadSketchbook();
       preloadWalls();
       const rooms = makeHub(bridge);
@@ -12791,6 +13108,24 @@
         said: () => Array.from(DAY.said),
         UNOBSERVED_MIN
       };
+      const stewardNpcs = new Map;
+      const presence = { ok: false, stewardsIn: [], visitorsNow: 0, at: 0 };
+      readPresence();
+      setInterval(readPresence, 30000);
+      window.__sanctuaryPresence = {
+        read: readPresence,
+        state: () => Object.assign({}, presence, { stewardsIn: presence.stewardsIn.slice() }),
+        seated: () => Array.from(stewardNpcs.keys())
+      };
+      const origInteractNpc = eng.interactNpc.bind(eng);
+      eng.interactNpc = (n) => {
+        if (n && isSteward(n.id) && !n.convo && eng.chatNpc !== n) {
+          approachEl.classList.remove("on");
+          bridge.deck(STEWARD_BY_ID[n.id].panel);
+          return;
+        }
+        origInteractNpc(n);
+      };
       try {
         overheard = await attach({ eng });
         window.__sanctuaryOverheard = overheard;
@@ -12916,8 +13251,9 @@
     const encFree = $("#enc-free"), encInput = $("#enc-input"), encNote = $("#enc-note"), encBudget = $("#enc-budget");
     const encLight = $("#enc-light"), encSpot = $("#enc-spot");
     const ACTIVITY = (n) => dayWord(n) || (n.room === "garden" ? "at the pond" : n.state === "sit" ? "reading" : n.state === "stroll" ? "walking the hall" : "at the window");
-    const knows = (id) => !!archive_default.WORLD_NAMES[id];
+    const knows = (id) => !!archive_default.WORLD_NAMES[id] || isHousehold2(id) && archive_default.busLoaded() || isSteward(id);
     const srcOf = (from) => from ? (from.kind === "journal" ? "journal" : "a space") + " · " + (from.title || "untitled") + " · " + day(from.created_at) : "";
+    const busSrcOf = (from) => from ? (from.title || "the bus") + " · " + day(from.created_at) : "";
     let enc = null, encTypeTimer = null, approachKey = "", lightRaf = 0;
     function litNpc() {
       if (!eng)
@@ -13088,11 +13424,20 @@
     }
     function decorateApproach(it) {
       const n = it.npc;
+      if (isSteward(n.id)) {
+        const s = STEWARD_BY_ID[n.id];
+        it.hint = s.desk;
+        it.action = "look at the desk";
+        it.line = null;
+        it.steward = s;
+        return;
+      }
+      it.steward = null;
       if (!knows(n.id)) {
         it.line = null;
         return;
       }
-      const l = archive_default.isLoaded() ? archive_default.lineFor(n.id, eng.clockMin, eng.day) : null;
+      const l = isHousehold2(n.id) ? archive_default.busLoaded() ? archive_default.busLineFor(n.id, eng.clockMin, eng.day) : null : archive_default.isLoaded() ? archive_default.lineFor(n.id, eng.clockMin, eng.day) : null;
       it.hint = l ? l.text : "speaking from their own writing";
       it.action = canAsk(n.id) ? "ask to speak" : voiceFor(n.id) ? "look in" : "greet";
       it.line = l;
@@ -13108,11 +13453,12 @@
         approachKey = "";
         return;
       }
-      const line = it.line ? it.line.text : "speaking from their own writing";
-      const key = n.id + "|" + line;
+      const steward = it.steward || null;
+      const line = steward ? "" : it.line ? it.line.text : "speaking from their own writing";
+      const key = n.id + "|" + (steward ? steward.desk : line);
       if (key !== approachKey) {
         approachKey = key;
-        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(ACTIVITY(n)) + "</div>" + '<div class="ap__line">' + esc2(line) + "</div>";
+        approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || "#efe9dc") + '">' + esc2(n.name) + "</div>" + '<div class="ap__what">' + esc2(steward ? steward.desk : ACTIVITY(n)) + "</div>" + (line ? '<div class="ap__line">' + esc2(line) + "</div>" : "");
         approachEl.hidden = false;
       }
       approachEl.classList.add("on");
@@ -13396,19 +13742,19 @@
     }
     function drawEncSprite(npc) {
       const c = encSprite.getContext("2d");
-      const { width: W, height: H } = encSprite, S2 = 1;
+      const { width: W, height: H2 } = encSprite, S2 = 1;
       if (!npc || !eng || typeof eng.drawNpc !== "function") {
         c.setTransform(1, 0, 0, 1, 0, 0);
-        c.clearRect(0, 0, W, H);
+        c.clearRect(0, 0, W, H2);
         return;
       }
       const paint = (dx) => {
         const own = eng.ctx;
         c.setTransform(1, 0, 0, 1, 0, 0);
         c.imageSmoothingEnabled = false;
-        c.clearRect(0, 0, W, H);
+        c.clearRect(0, 0, W, H2);
         try {
-          c.setTransform(S2, 0, 0, S2, Math.round(W / 2) + dx - S2 * Math.round(npc.x), H - 8 - S2 * (Math.round(npc.y) + 14));
+          c.setTransform(S2, 0, 0, S2, Math.round(W / 2) + dx - S2 * Math.round(npc.x), H2 - 8 - S2 * (Math.round(npc.y) + 14));
           eng.ctx = c;
           eng.drawNpc(npc, performance.now() * 0.001);
         } catch (e) {
@@ -13420,9 +13766,9 @@
       };
       paint(0);
       try {
-        const d = c.getImageData(0, 0, W, H).data;
+        const d = c.getImageData(0, 0, W, H2).data;
         let x0 = W, x1 = -1;
-        for (let y = 0;y < H; y++) {
+        for (let y = 0;y < H2; y++) {
           for (let x = 0;x < W; x++) {
             if (d[(y * W + x) * 4 + 3] > 24) {
               if (x < x0)
@@ -13468,13 +13814,19 @@
         setFeed(false);
       }
       const npc = eng ? eng.npcs.find((n) => n.id === info.id) : null;
-      const readable = knows(info.id) && archive_default.isLoaded();
+      const house = isHousehold2(info.id);
+      const readable = house ? archive_default.busLoaded() : knows(info.id) && archive_default.isLoaded();
       enc = {
         id: info.id,
         name: info.name,
         color: info.color || "#efe9dc",
         npc,
-        journals: readable ? archive_default.journals(info.id).slice(0, 3) : [],
+        journals: readable && !house ? archive_default.journals(info.id).slice(0, 3) : [],
+        house,
+        threads: house && readable ? archive_default.busThreadsFor(info.id) : [],
+        busMsgs: [],
+        busAt: 0,
+        busThread: null,
         entry: null,
         sentences: [],
         cursor: 0,
@@ -13517,6 +13869,8 @@
         openClosed(d.line, d.kicker);
       } else if (enc.voice)
         openAsk();
+      else if (enc.house && enc.readable)
+        openBus();
       else if (VOICE === "archive" && enc.readable)
         openArchive();
       else
@@ -13644,6 +13998,62 @@
       const l = archive_default.lineFor(enc.id, eng.clockMin, eng.day);
       appendWords(l ? l.text : "", l ? srcOf(l.from) : "");
       openFree("ask");
+    }
+    function openBus() {
+      enc.outcome = "read";
+      setState("archive");
+      if (!enc.threads.length) {
+        encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+        appendHouse("the house: " + enc.name + " has nothing written to speak from.");
+        setTimeout(() => {
+          const b = encMoves.querySelector("button");
+          if (b)
+            b.focus();
+        }, 0);
+        return;
+      }
+      enc.busMsgs = archive_default.busMessages(enc.id);
+      enc.busAt = 0;
+      renderBusMoves();
+      const l = archive_default.busLineFor(enc.id, eng.clockMin, eng.day);
+      appendWords(l ? l.text : "", l ? busSrcOf(l.from) : "");
+      setTimeout(() => {
+        const b = encMoves.querySelector("button");
+        if (b)
+          b.focus();
+      }, 0);
+    }
+    function renderBusMoves() {
+      encMoves.innerHTML = enc.threads.map((t) => '<button type="button" data-thread="' + esc2(t.id) + '">' + esc2("about " + t.title) + "</button>").join("") + '<button type="button" data-listen>listen</button>' + '<button type="button" data-leave>leave</button>';
+    }
+    function showBusMessage() {
+      const m = enc.busMsgs[enc.busAt++];
+      if (!m) {
+        appendHouse(enc.busThread ? "the house: that is the whole of what " + enc.name + " says in that one." : "the house: that is the whole of what " + enc.name + " has said.");
+        return;
+      }
+      const flat = String(m.body || "").replace(/<[^>]*>/g, " ");
+      const s = sentencesOf(flat);
+      appendWords(s.slice(0, 3).join(" ") || flat.replace(/\s+/g, " ").trim(), busSrcOf({ title: m.threadTitle, created_at: m.at }));
+    }
+    function askAboutThread(tid) {
+      clearSpot();
+      const t = enc.threads.find((x) => x.id === tid);
+      if (!t)
+        return;
+      const msgs = archive_default.busMessages(enc.id, tid);
+      if (!msgs.length) {
+        appendHouse("the house: " + enc.name + " says nothing in that one.");
+        spend();
+        return;
+      }
+      enc.busThread = t;
+      enc.busMsgs = msgs;
+      enc.busAt = 0;
+      if (enc.shown.indexOf(tid) === -1)
+        enc.shown.push(tid);
+      showBusMessage();
+      spend();
     }
     async function sayLive(raw2) {
       const text = raw2.slice(0, 280);
@@ -13789,6 +14199,11 @@
     }
     function listen() {
       clearSpot();
+      if (enc.house) {
+        showBusMessage();
+        spend();
+        return;
+      }
       if (enc.entry && enc.cursor < enc.sentences.length)
         appendWords(enc.sentences[enc.cursor++], "");
       else if (enc.entry)
@@ -13879,6 +14294,8 @@
         return;
       if (b.dataset.ask)
         askAbout(b.dataset.ask);
+      else if (b.dataset.thread)
+        askAboutThread(b.dataset.thread);
       else if ("wall" in b.dataset)
         showOnWall();
       else if ("note" in b.dataset)

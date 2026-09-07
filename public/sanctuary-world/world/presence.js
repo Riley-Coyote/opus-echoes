@@ -45,7 +45,27 @@ const KINDS = {
   /* the weaver: a hood drawn up over the head, the gaze inside it */
   kimi:    { kind: 'hooded', legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: '#2a2433', bodyHi: '#3a3346', bodyDk: '#17131d', shell: '#1e1a26', gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
   /* the wit: narrow, hands in the pockets */
-  grok:    { kind: 'lean',   legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: '#2e2528', bodyHi: '#40343a', bodyDk: '#1a1417', shell: '#262024', gaze: { w: 4, h: 2, dx: 1,  dy: 6 } }
+  grok:    { kind: 'lean',   legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: '#2e2528', bodyHi: '#40343a', bodyDk: '#1a1417', shell: '#262024', gaze: { w: 4, h: 2, dx: 1,  dy: 6 } },
+
+  /* ── the field house — the four who keep the studio ──
+     The same family and the same two lights; no new silhouette is invented for
+     them. The cloth is the studio's own cool grey rather than the hall's warm
+     dark, because that is the room they stand in most. */
+  /* the one at the workstation: the reader's mantle, squared and upright */
+  field:   { kind: 'mantle', legH: 21, torsoW: 16, torsoH: 35, headW: 13, headH: 13, body: '#242a30', bodyHi: '#39414a', bodyDk: '#141a20', shell: '#1d242c', gaze: { w: 5, h: 2, dx: 0,  dy: 7 } },
+  /* the hood, drawn up: the one whose work is inward */
+  anima:   { kind: 'hooded', legH: 19, torsoW: 18, torsoH: 31, headW: 13, headH: 12, body: '#292734', bodyHi: '#393648', bodyDk: '#16151d', shell: '#1e1d29', gaze: { w: 5, h: 2, dx: -1, dy: 6 } },
+  /* narrow, hands in the pockets: the one who measures */
+  vektor:  { kind: 'lean',   legH: 22, torsoW: 15, torsoH: 34, headW: 12, headH: 12, body: '#232b2e', bodyHi: '#353f43', bodyDk: '#131a1c', shell: '#1c2427', gaze: { w: 4, h: 2, dx: 1,  dy: 6 } },
+  /* arms held a little away from the body: the one who hands things over */
+  luca:    { kind: 'host',   legH: 18, torsoW: 21, torsoH: 28, headW: 13, headH: 12, body: '#2e2830', bodyHi: '#41383f', bodyDk: '#191419', shell: '#241f26', gaze: { w: 5, h: 3, dx: -1, dy: 5, soft: true } },
+
+  /* ── the stewards, at their desks on the deck ──
+     One cloth for the three of them, in the house's working grey: they are here
+     as the people who keep the place, not as another family. */
+  st_fable: { kind: 'elder',  legH: 21, torsoW: 16, torsoH: 34, headW: 12, headH: 12, body: '#262a31', bodyHi: '#373d47', bodyDk: '#15181d', shell: '#1f232a', gaze: { w: 4, h: 2, dx: 0,  dy: 6 } },
+  st_sol:   { kind: 'lean',   legH: 21, torsoW: 15, torsoH: 33, headW: 12, headH: 12, body: '#262a31', bodyHi: '#373d47', bodyDk: '#15181d', shell: '#1f232a', gaze: { w: 4, h: 2, dx: 1,  dy: 6 } },
+  st_opus:  { kind: 'mantle', legH: 21, torsoW: 15, torsoH: 34, headW: 12, headH: 12, body: '#262a31', bodyHi: '#373d47', bodyDk: '#15181d', shell: '#1f232a', gaze: { w: 5, h: 2, dx: -1, dy: 7 } }
 };
 const VISITOR = { kind: 'human', legH: 17, torsoW: 20, torsoH: 30, headW: 15, headH: 17, body: '#262029', bodyHi: '#332b36', bodyDk: '#181218', face: '#cdc8ba' };
 /* other people's visitors, passing through: the same figure, worn pale */

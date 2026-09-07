@@ -317,6 +317,15 @@ function plate(b, cx, y, text) {
 }
 
 /* ═══════════ the room ═══════════ */
+/* Whether the four are in. The room's draw sees the canvas and the hour, not
+   the people, so whoever is running the world says: the landing's day director
+   sets this every frame. A surface that builds the studio with no world behind
+   it — the atlas, the map, the workshop — leaves it false, which is the honest
+   answer there: nobody has told the room that anyone is in. */
+let HOUSE_IN = false;
+export function setFieldHouseIn(v) { HOUSE_IN = !!v; }
+export function fieldHouseIn() { return HOUSE_IN; }
+
 export function makeFieldStudio(bridge, options = {}) {
   /* where the door back sets you down on the grounds — the Archives facade */
   const backX = Number.isFinite(options.back) ? options.back : 840;
@@ -334,6 +343,13 @@ export function makeFieldStudio(bridge, options = {}) {
   const INSTRUMENTS = FIELD_INSTRUMENTS.map((p, i) => Object.assign({}, p, { x: BENCH_X[i] }));
 
   const DARK_DEVICE_X = 1254;
+
+  /* the two lamps that answer to whether anybody is in: the shaded one over
+     the desk and the low one over the table. A room lit for people who are not
+     in it is a set; these come up when the four are here and rest when they
+     are not, and `draw` reads the engine for the answer rather than being told. */
+  const deskLamp = { x: 1692, y: 240, r: 118, c: '247,196,128', a: 0.30, flicker: 1 };
+  const tableLamp = { x: 1440, y: 250, r: 70, c: '200,214,232', a: 0.05 };
 
   /* the seven session names Field actually ran, from IDENTITY.md's schedule */
   const SESSIONS = ['morning', 'research', 'afternoon', 'inner life', 'conversations', 'evening', 'meta'];
@@ -425,9 +441,9 @@ export function makeFieldStudio(bridge, options = {}) {
         /* the evening through the clerestory, landing on the far wall and the
            bench tops — the hall's hour, in the room's own terms */
         { x: 990, y: 150, r: 300, c: F.rose, a: 0.08 },
-        { x: 1692, y: 240, r: 118, c: '247,196,128', a: 0.30, flicker: 1 },
+        deskLamp,
         ...INSTRUMENTS.map((p) => ({ x: p.x, y: 262, r: 22, c: F.teal, a: 0.07 })),
-        { x: 1440, y: 250, r: 70, c: '200,214,232', a: 0.05 }
+        tableLamp
       ],
 
       /* ─────────────── the bake ─────────────── */
@@ -804,6 +820,10 @@ export function makeFieldStudio(bridge, options = {}) {
       draw: (g, t) => {
         g.wallFloor();
         const near = g.near;
+        /* the lamps answer to whoever is in the room */
+        const inRoom = HOUSE_IN;
+        deskLamp.a = inRoom ? 0.34 : 0.14;
+        tableLamp.a = inRoom ? 0.14 : 0.03;
         /* the instruments' indicator dots: teal, and brighter when you are near.
            They are the only place Field's colour appears in the room. */
         INSTRUMENTS.forEach((p) => {
@@ -816,7 +836,7 @@ export function makeFieldStudio(bridge, options = {}) {
         /* the seventh device stays dark, always */
         g.px(DARK_DEVICE_X + 11, 244, 3, 3, 'rgba(90,100,112,0.55)');
         /* the desk lamp breathes, very slightly — the only warm thing here */
-        const lp = 0.62 + 0.08 * Math.sin(t * 0.9);
+        const lp = (inRoom ? 0.62 : 0.34) + 0.08 * Math.sin(t * 0.9);
         g.px(1645, 202, 20, 3, 'rgba(247,205,140,' + lp.toFixed(2) + ')');
         /* the cursor on the dark screen, still blinking on a paused machine */
         if ((t % 1.6) < 0.9) g.px(1706, 234, 5, 1, 'rgba(206,222,236,0.70)');

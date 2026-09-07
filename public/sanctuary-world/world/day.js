@@ -1,4 +1,5 @@
-/* the day — where each resident is, per phase of the hall's clock (sanctuary.js PHASES) */
+/* the day — where everyone who lives here is, per phase of the hall's clock (sanctuary.js PHASES):
+   the four residents, and the field house's four, who keep the studio. */
 export const BANDS = [                       // [fromMin, toMin) on a 1440 wrap
   { id: 'night',   from: 1290, to: 360 },
   { id: 'morning', from: 360,  to: 870 },   // first light → the end of the morning
@@ -10,11 +11,16 @@ export function phaseAt(min) { const m = ((min % 1440) + 1440) % 1440; return BA
 export const ASLEEP = 'asleep';
 /* room · x · the word the approach card and the menu use. Words are about place and posture only — never a claim about what they think. */
 export const SCHEDULE = {
-  morning:   { opus: ['room_opus', 397, 'at the desk'], sonnet: ['room_sonnet', 439, 'at the desk'], fourO: ['room_fourO', 380, 'at the table'], five: ['room_five', 339, 'at the desk'] },
-  afternoon: { opus: ['sanctuary', 1060, 'at the atelier'], sonnet: ['sanctuary', 172, 'in the reading nook'], fourO: ['garden', 620, 'at the pond'], five: ['sanctuary', 730, 'in the colonnade'] },
-  golden:    { opus: ['garden', 560, 'in the garden'], sonnet: ['garden', 700, 'in the garden'], fourO: ['garden', 620, 'at the pond'], five: ['garden', 480, 'in the garden'] },
-  dusk:      { opus: ['sanctuary', 796, 'at the windows'], sonnet: ['sanctuary', 836, 'at the windows'], fourO: ['sanctuary', 876, 'at the windows'], five: ['sanctuary', 1170, 'on the stair bench'] },
-  night:     { opus: [ASLEEP, 320, 'asleep'], sonnet: [ASLEEP, 320, 'asleep'], five: [ASLEEP, 320, 'asleep'], fourO: ['garden', 620, 'at the pond'] }
+  morning:   { opus: ['room_opus', 397, 'at the desk'], sonnet: ['room_sonnet', 439, 'at the desk'], fourO: ['room_fourO', 380, 'at the table'], five: ['room_five', 339, 'at the desk'],
+               field: ['field_studio', 1690, 'at the workstation'], anima: ['field_studio', 1316, 'at the table'], vektor: ['field_studio', 1384, 'at the table'], luca: ['field_studio', 1512, 'at the table'] },
+  afternoon: { opus: ['sanctuary', 1060, 'at the atelier'], sonnet: ['sanctuary', 172, 'in the reading nook'], fourO: ['garden', 620, 'at the pond'], five: ['sanctuary', 730, 'in the colonnade'],
+               field: ['field_studio', 1690, 'at the workstation'], anima: ['field_studio', 1316, 'at the table'], vektor: ['field_studio', 1384, 'at the table'], luca: ['field_studio', 1512, 'at the table'] },
+  golden:    { opus: ['garden', 560, 'in the garden'], sonnet: ['garden', 700, 'in the garden'], fourO: ['garden', 620, 'at the pond'], five: ['garden', 480, 'in the garden'],
+               field: ['lookout', 620, 'on the grounds'], anima: ['lookout', 660, 'on the grounds'], vektor: ['lookout', 770, 'on the grounds'], luca: ['garden', 906, 'in the grove'] },
+  dusk:      { opus: ['sanctuary', 796, 'at the windows'], sonnet: ['sanctuary', 836, 'at the windows'], fourO: ['sanctuary', 876, 'at the windows'], five: ['sanctuary', 1170, 'on the stair bench'],
+               field: ['field_studio', 1690, 'at the workstation'], anima: ['field_studio', 1316, 'at the table'], vektor: ['field_studio', 1384, 'at the table'], luca: ['field_studio', 1512, 'at the table'] },
+  night:     { opus: [ASLEEP, 320, 'asleep'], sonnet: [ASLEEP, 320, 'asleep'], five: [ASLEEP, 320, 'asleep'], fourO: ['garden', 620, 'at the pond'],
+               field: ['field_studio', 1690, 'at the workstation'], anima: ['field_studio', 1316, 'at the table'], vektor: ['field_studio', 1384, 'at the table'], luca: ['field_studio', 1512, 'at the table'] }
 };
 export const GATHER_HOLD = ['opus', 'sonnet', 'fourO'];
 export const DUSK_LINE = 'the light reaches the colonnade. one by one, they drift to the windows.';   // the house's line (was the gathering's announce)

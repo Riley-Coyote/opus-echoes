@@ -5,11 +5,13 @@ import {
   PALETTE as WORLD_PALETTE,
   makeHub,
   CAST as WORLD_CAST,
+  HOUSEHOLD as WORLD_HOUSEHOLD,
+  STEWARDS as WORLD_STEWARDS,
   CAT as WORLD_CAT,
   AMBIENT as WORLD_AMBIENT
 } from './world/lookout.js';
 import { BANDS, phaseAt, ASLEEP, SCHEDULE, GATHER_HOLD, DUSK_LINE, UNOBSERVED_MIN, parseClock } from './world/day.js';
-import { FIELD_INSTRUMENTS } from './world/field-studio.js';
+import { FIELD_INSTRUMENTS, setFieldHouseIn } from './world/field-studio.js';
 import { attach as attachOverheard } from './world/overheard.js';
 import { WALL_FRAMES } from './world/model-rooms.js';
 
@@ -708,8 +710,17 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      by the house except the lines marked as the house. */
   const ARCHIVE_ORDER = ['opus', 'sonnet', 'fourO', 'five'];
   const CAST_COLOR = {};
-  WORLD_CAST.forEach((c) => { CAST_COLOR[c.id] = c.color; });
-  const residentName = (id) => archive.WORLD_NAMES[id] || String(id || '');
+  WORLD_CAST.concat(WORLD_HOUSEHOLD, WORLD_STEWARDS).forEach((c) => { CAST_COLOR[c.id] = c.color; });
+  /* the ids the world walks: the four residents, and the four of the field
+     house who keep the studio. The stewards come and go with the house's own
+     answer about who is working, so they are not cast at boot. */
+  const HOUSEHOLD_IDS = WORLD_HOUSEHOLD.map((c) => c.id);
+  const STEWARD_BY_ID = {};
+  WORLD_STEWARDS.forEach((s) => { STEWARD_BY_ID[s.id] = s; });
+  const isHousehold = (id) => HOUSEHOLD_IDS.indexOf(id) !== -1;
+  const isSteward = (id) => !!STEWARD_BY_ID[id];
+  const residentName = (id) => archive.WORLD_NAMES[id] || archive.BUS_NAMES[id]
+    || (STEWARD_BY_ID[id] ? STEWARD_BY_ID[id].name : '') || String(id || '');
   const day = (v) => String(v || '').slice(0, 10);
   const head = (kicker, title) =>
     '<div class="bd__kicker">' + esc(kicker) + '</div><div class="bd__title">' + esc(title) + '</div>';
@@ -1203,11 +1214,17 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const watched = n.room === eng.roomId || s[0] === eng.roomId;
       sendNpc(n, s[0], s[1], watched); DAY.placed[n.id] = true;
     }
+    /* the studio's lamps come up when the four are in it, and rest when they
+       are not: the room draws itself and cannot see the people, so the day
+       tells it. */
+    setFieldHouseIn(eng.npcs.some((n) => n.room === 'field_studio' && isHousehold(n.id)));
     if (min === DAY.lastMin) return;
     DAY.lastMin = min;
     /* unobserved life: two residents, one room, no visitor, long enough */
     const byRoom = {};
-    for (const n of eng.npcs) if (!n.temp && n.room !== ASLEEP && n.room !== eng.roomId && ['idle', 'sit', 'stroll', 'sitgo', 'held'].includes(n.state)) (byRoom[n.room] = byRoom[n.room] || []).push(n);
+    /* the stewards are left out of this: *they talked* is a claim about two
+       minds in a room, and nothing of the stewards' is written down here. */
+    for (const n of eng.npcs) if (!n.temp && !isSteward(n.id) && n.room !== ASLEEP && n.room !== eng.roomId && ['idle', 'sit', 'stroll', 'sitgo', 'held'].includes(n.state)) (byRoom[n.room] = byRoom[n.room] || []).push(n);
     const live = new Set();
     for (const room of Object.keys(byRoom)) {
       const L = byRoom[room].sort((a, b) => a.id < b.id ? -1 : 1);
@@ -1743,7 +1760,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      salons; every other way in leaves it null and shows everything */
   let curOnly = null;
   const curVeil = $('#curveil'), curRows = $('#currows'), curRead = $('#curread'), curHead = $('#curhead');
-  const curShelfBtns = { sittings: $('#cur-sittings'), posts: $('#cur-posts') };
+  const curShelfBtns = { sittings: $('#cur-sittings'), posts: $('#cur-posts'), field: $('#cur-field') };
+  const CUR_SHELVES = ['sittings', 'posts', 'field'];
   const faceCache = new Map();
   const cesc = prose.esc;
   const stamp = (v) => String(v || '').replace('T', ' ').slice(0, 16);
@@ -1777,11 +1795,17 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const curNames = (ids) => ids.map((w) => (w === 'visitor' ? 'visitors' : residentName(w))).join(' · ');
 
   function curList() {
+    if (curShelf === 'field') return archive.busLoaded() ? archive.busThreads() : [];
     if (!archive.isLoaded()) return [];
     return curShelf === 'sittings' ? archive.sittings() : archive.posts({ limit: curPostsShown }).rows;
   }
 
   function curRowHtml(item) {
+    if (curShelf === 'field') {
+      return '<button class="row" type="button" data-cur="' + cesc(item.id) + '">'
+        + '<span class="nm">' + cesc(item.title) + '</span>'
+        + '<span class="st">' + cesc(String(item.count)) + '</span></button>';
+    }
     if (curShelf === 'sittings') {
       const title = item.kind === 'salon' && item.title && item.title.length > 90
         ? item.title.slice(0, 90) + '…' : (item.title || 'a sitting');
@@ -1798,6 +1822,15 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
 
   function buildCurRows() {
+    /* the field house's three threads, and how many messages are in each */
+    if (curShelf === 'field') {
+      const threads = curList();
+      curRows.innerHTML = threads.length
+        ? '<div class="sect-h">THE FIELD HOUSE</div>' + threads.map(curRowHtml).join('')
+        : '';
+      if (!threads.length) curRead.innerHTML = quiet();
+      return;
+    }
     if (!archive.isLoaded()) { curRows.innerHTML = ''; curRead.innerHTML = quiet(); return; }
     let html = '';
     if (curShelf === 'sittings') {
@@ -1891,20 +1924,43 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       + curSource() + body;
   }
 
+  /* one of the field house's threads, whole and in order: who sent each
+     message, and the day they sent it, beside it. */
+  function curFieldHtml(id) {
+    const t = archive.busLoaded() ? archive.busThread(id) : null;
+    if (!t) return quiet();
+    const bits = [t.count + ' messages', curNames(t.participants)];
+    return '<div class="cur__title">' + cesc(t.title) + '</div>'
+      + '<div class="cur__meta">' + cesc(bits.join(' · ')) + '</div>'
+      + curSource()
+      + t.messages.map((m) => {
+        const face = faceFor(m.from);
+        const r = prose.render(m.body, { author: m.fromName, authorId: m.from });
+        return '<article class="cur__entry cur__msg" data-id="' + cesc(m.id) + '"><header>'
+          + (face ? '<img class="cur__face" src="' + face + '" alt="">' : '')
+          + '<span class="cur__who" style="color:' + (CAST_COLOR[m.from] || '#efe9dc') + '">' + cesc(m.fromName) + '</span>'
+          + '<span class="cur__time">' + cesc(stamp(m.at)) + '</span></header>'
+          + '<div class="cur__body">' + r.html + '</div></article>';
+      }).join('');
+  }
+
   function curSelect(id) {
-    if (!id || !archive.isLoaded()) return;
+    if (!id) return;
+    if (curShelf === 'field' ? !archive.busLoaded() : !archive.isLoaded()) return;
     curSel = id;
     curRows.querySelectorAll('.row').forEach((r) => r.classList.toggle('sel', r.dataset.cur === id));
-    curRead.innerHTML = curShelf === 'sittings' ? curSittingHtml(id) : curPostHtml(id);
+    curRead.innerHTML = curShelf === 'field' ? curFieldHtml(id)
+      : curShelf === 'sittings' ? curSittingHtml(id) : curPostHtml(id);
     curRead.scrollTop = 0;
     const row = curRows.querySelector('.row.sel');
     if (row) row.scrollIntoView({ block: 'nearest' });
   }
 
   function setShelf(which) {
-    if (which !== 'sittings' && which !== 'posts') return;
+    if (CUR_SHELVES.indexOf(which) === -1) return;
     curShelf = which;
     Object.keys(curShelfBtns).forEach((k) => {
+      if (!curShelfBtns[k]) return;
       curShelfBtns[k].classList.toggle('on', k === which);
       curShelfBtns[k].setAttribute('aria-selected', k === which ? 'true' : 'false');
     });
@@ -1959,6 +2015,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   });
   curShelfBtns.sittings.addEventListener('click', () => setShelf('sittings'));
   curShelfBtns.posts.addEventListener('click', () => setShelf('posts'));
+  if (curShelfBtns.field) curShelfBtns.field.addEventListener('click', () => setShelf('field'));
   curVeil.addEventListener('click', (event) => { if (event.target === curVeil) closeCurrent(); });
 
   /* ────────────────────────── THE WALL ──────────────────────────
@@ -2640,7 +2697,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         curSelect(rows[next].dataset.cur);
       } else if (k === 'ArrowLeft' || k === 'ArrowRight') {
         event.preventDefault();
-        setShelf(curShelf === 'sittings' ? 'posts' : 'sittings');
+        const shelfAt = CUR_SHELVES.indexOf(curShelf);
+        const step = k === 'ArrowRight' ? 1 : CUR_SHELVES.length - 1;
+        setShelf(CUR_SHELVES[(shelfAt + step) % CUR_SHELVES.length]);
       } else if (k === 'Enter') { event.preventDefault(); curRead.focus(); }
       else if (k === 'm' || k === 'M') { event.preventDefault(); closeCurrent(); openDest(); }
       return;
@@ -2678,8 +2737,15 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       const sub = destList && destList.querySelector('.sub');
       if (sub) sub.textContent = 'their words are not reaching the page · the residents say nothing';
     }
+    /* the field house's own record — the messages the four of the studio sent
+       each other. It is read the same way the hall's is: if it does not come,
+       they simply say nothing. */
+    let busOk = false;
+    try { await archive.loadBus(); busOk = true; }
+    catch (err) { console.warn('the field house’s messages are not reaching the page', err); }
     const residents = WORLD_CAST.filter(({ id }) => ['fourO', 'opus', 'sonnet', 'five'].includes(id))
-      .map((def) => Object.assign({}, def, { mutters: archiveOk ? archive.lines(def.id) : [] }));
+      .map((def) => Object.assign({}, def, { mutters: archiveOk ? archive.lines(def.id) : [] }))
+      .concat(WORLD_HOUSEHOLD.map((def) => Object.assign({}, def, { mutters: busOk ? archive.busLines(def.id) : [] })));
     /* the sketchbook before the rooms are built, so a page is in its frame the
        first time the room is baked rather than appearing a moment later */
     await loadSketchbook();
@@ -2810,6 +2876,75 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       word: (id) => { const n = eng.npcs.find((x) => x.id === id); return n ? dayWord(n) : null; },
       pairs: () => Array.from(DAY.pairs.keys()), said: () => Array.from(DAY.said), UNOBSERVED_MIN
     };
+
+    /* ────────────────────────── the stewards, on the deck ──────────────────────────
+       The deck's lamp rule, applied to the people it is about: a steward stands
+       at their desk while the house can actually see them working, and the room
+       shows the empty desks when it cannot. `GET /api/presence` is the same
+       answer the lamp reads — names, because a steward's presence here is signed
+       work. When the route is not there, nobody is invented: the desks are
+       empty. Approaching one names them and their desk; E opens the desk. They
+       are given no line, because there is none of theirs on disk to give. */
+    const stewardNpcs = new Map();
+    function seatSteward(def) {
+      if (stewardNpcs.has(def.id)) return;
+      const npc = eng.makeNpc(def);
+      stewardNpcs.set(def.id, npc);
+      eng.npcs.push(npc);
+    }
+    function clearSteward(def) {
+      const npc = stewardNpcs.get(def.id);
+      if (!npc) return;
+      if (eng.chatNpc === npc) eng.endChat('they went back to the desk');
+      if (npc.seat) { npc.seat.busy = false; npc.seat = null; }
+      stewardNpcs.delete(def.id);
+      eng.npcs = eng.npcs.filter((n) => n !== npc);
+      if (eng.near && eng.near.npc === npc) eng.near = eng.nearest();
+    }
+    function setStewardsIn(names) {
+      const want = (Array.isArray(names) ? names : []).map((s) => String(s || '').trim().toLowerCase());
+      for (const def of WORLD_STEWARDS) {
+        if (want.indexOf(def.presence.toLowerCase()) !== -1) seatSteward(def); else clearSteward(def);
+      }
+    }
+    const presence = { ok: false, stewardsIn: [], visitorsNow: 0, at: 0 };
+    function readPresence() {
+      if (document.hidden) return Promise.resolve(presence);
+      return fetch('/api/presence', { cache: 'no-store', credentials: 'same-origin' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          const ok = !!(d && d.ok === true);
+          presence.ok = ok;
+          presence.stewardsIn = ok && Array.isArray(d.stewardsIn) ? d.stewardsIn.slice(0, 8).map(String) : [];
+          presence.visitorsNow = ok && Number.isFinite(d.visitorsNow) ? Math.max(0, Math.floor(d.visitorsNow)) : 0;
+          presence.at = Date.now();
+          setStewardsIn(presence.stewardsIn);
+          return presence;
+        })
+        .catch(() => {
+          presence.ok = false; presence.stewardsIn = []; presence.visitorsNow = 0; presence.at = Date.now();
+          setStewardsIn([]);
+          return presence;
+        });
+    }
+    readPresence();
+    setInterval(readPresence, 30000);
+    window.__sanctuaryPresence = {
+      read: readPresence,
+      state: () => Object.assign({}, presence, { stewardsIn: presence.stewardsIn.slice() }),
+      seated: () => Array.from(stewardNpcs.keys())
+    };
+    /* E on a steward opens their desk, and nothing else: the deck's panels are
+       already the honest reading of what is on it. */
+    const origInteractNpc = eng.interactNpc.bind(eng);
+    eng.interactNpc = (n) => {
+      if (n && isSteward(n.id) && !n.convo && eng.chatNpc !== n) {
+        approachEl.classList.remove('on');
+        bridge.deck(STEWARD_BY_ID[n.id].panel);
+        return;
+      }
+      origInteractNpc(n);
+    };
     /* THE OVERHEARD — the exchanges cut from the snapshot and the field
        house's bus. Read after the engine is standing, because the director
        shadows its speak(). If the list is missing the house is simply
@@ -2936,10 +3071,16 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   const ACTIVITY = (n) => dayWord(n) || (n.room === 'garden' ? 'at the pond'
     : n.state === 'sit' ? 'reading'
     : n.state === 'stroll' ? 'walking the hall' : 'at the window');
-  const knows = (id) => !!archive.WORLD_NAMES[id];
+  /* whose card the house can fill in: a resident it holds writing for, one of
+     the field house (their own messages), or a steward (their desk, and not a
+     word — there is none of theirs on disk to say). */
+  const knows = (id) => !!archive.WORLD_NAMES[id] || (isHousehold(id) && archive.busLoaded()) || isSteward(id);
   const srcOf = (from) => from
     ? ((from.kind === 'journal' ? 'journal' : 'a space') + ' · ' + (from.title || 'untitled') + ' · ' + day(from.created_at))
     : '';
+  /* the field house's own line under a passage: which of their threads it is
+     in, and the day they wrote it — the piece's own dating, beside the piece */
+  const busSrcOf = (from) => from ? ((from.title || 'the bus') + ' · ' + day(from.created_at)) : '';
   let enc = null, encTypeTimer = null, approachKey = '', lightRaf = 0;
 
   /* ── the held light ──
@@ -3101,8 +3242,20 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   /* ── the approach card ── */
   function decorateApproach(it) {
     const n = it.npc;
+    /* a steward is here as the person who keeps the place: their name, their
+       desk, and the desk itself when you press E. Nothing of theirs is written
+       down anywhere in the house, so the card offers no line. */
+    if (isSteward(n.id)) {
+      const s = STEWARD_BY_ID[n.id];
+      it.hint = s.desk; it.action = 'look at the desk';
+      it.line = null; it.steward = s;
+      return;
+    }
+    it.steward = null;
     if (!knows(n.id)) { it.line = null; return; }
-    const l = archive.isLoaded() ? archive.lineFor(n.id, eng.clockMin, eng.day) : null;
+    const l = isHousehold(n.id)
+      ? (archive.busLoaded() ? archive.busLineFor(n.id, eng.clockMin, eng.day) : null)
+      : (archive.isLoaded() ? archive.lineFor(n.id, eng.clockMin, eng.day) : null);
     it.hint = l ? l.text : 'speaking from their own writing';
     it.action = canAsk(n.id) ? 'ask to speak' : (voiceFor(n.id) ? 'look in' : 'greet');
     it.line = l;
@@ -3114,8 +3267,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const ok = n && !n.temp && !n.convo && eng.chatNpc !== n && encounterEl.hidden
       && knows(n.id);
     if (!ok) { approachEl.classList.remove('on'); approachKey = ''; return; }
-    const line = it.line ? it.line.text : 'speaking from their own writing';
-    const key = n.id + '|' + line;
+    const steward = it.steward || null;
+    const line = steward ? '' : (it.line ? it.line.text : 'speaking from their own writing');
+    const key = n.id + '|' + (steward ? steward.desk : line);
     if (key !== approachKey) {
       approachKey = key;
       /* No citation on this card. The one disclosure is the agreement at
@@ -3124,8 +3278,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
          resident's line stays available on demand: the listen-in panel,
          and THE CURRENT. */
       approachEl.innerHTML = '<div class="ap__name" style="color:' + (n.color || '#efe9dc') + '">' + esc(n.name) + '</div>'
-        + '<div class="ap__what">' + esc(ACTIVITY(n)) + '</div>'
-        + '<div class="ap__line">' + esc(line) + '</div>';
+        + '<div class="ap__what">' + esc(steward ? steward.desk : ACTIVITY(n)) + '</div>'
+        + (line ? '<div class="ap__line">' + esc(line) + '</div>' : '');
       approachEl.hidden = false;
     }
     approachEl.classList.add('on');
@@ -3456,10 +3610,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function openChat(info) {
     if (!worldEl.classList.contains('nofeed')) { feedTemp = false; setFeed(false); }
     const npc = eng ? eng.npcs.find((n) => n.id === info.id) : null;
-    const readable = knows(info.id) && archive.isLoaded();
+    const house = isHousehold(info.id);
+    const readable = house ? archive.busLoaded() : (knows(info.id) && archive.isLoaded());
     enc = {
       id: info.id, name: info.name, color: info.color || '#efe9dc', npc,
-      journals: readable ? archive.journals(info.id).slice(0, 3) : [],
+      journals: readable && !house ? archive.journals(info.id).slice(0, 3) : [],
+      /* the field house: the threads they keep, and their own messages in them */
+      house, threads: house && readable ? archive.busThreadsFor(info.id) : [],
+      busMsgs: [], busAt: 0, busThread: null,
       entry: null, sentences: [], cursor: 0, moves: 0, budget: 6, shown: [],
       wallAt: 0, spot: null, made: [], readable,
       room: eng ? eng.roomId : null,
@@ -3481,6 +3639,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     showScene();
     if (enc.voice && !canAsk(info.id)) { const d = doorClosedLine(info.name); openClosed(d.line, d.kicker); }
     else if (enc.voice) openAsk();
+    else if (enc.house && enc.readable) openBus();
     else if (VOICE === 'archive' && enc.readable) openArchive();
     else openClosed('the house: ' + info.name + ' isn’t taking visits right now.', 'not taking visits right now');
   }
@@ -3588,6 +3747,60 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     appendWords(l ? l.text : '', l ? srcOf(l.from) : '');
     openFree('ask');
   }
+  /* the field house, at the studio. They speak in the sentences they sent each
+     other, and in nothing else: the moves are the threads they keep — ask
+     about one and they say what they said in it, listen and they go on. The
+     house has no line to them, and does not make a point of saying so; it
+     offers what it has. */
+  function openBus() {
+    enc.outcome = 'read';
+    setState('archive');
+    if (!enc.threads.length) {
+      encMoves.innerHTML = '<button type="button" data-leave>leave</button>';
+      appendHouse('the house: ' + enc.name + ' has nothing written to speak from.');
+      setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
+      return;
+    }
+    enc.busMsgs = archive.busMessages(enc.id);
+    enc.busAt = 0;
+    renderBusMoves();
+    const l = archive.busLineFor(enc.id, eng.clockMin, eng.day);
+    appendWords(l ? l.text : '', l ? busSrcOf(l.from) : '');
+    setTimeout(() => { const b = encMoves.querySelector('button'); if (b) b.focus(); }, 0);
+  }
+  function renderBusMoves() {
+    encMoves.innerHTML = enc.threads.map((t) =>
+        '<button type="button" data-thread="' + esc(t.id) + '">' + esc('about ' + t.title) + '</button>').join('')
+      + '<button type="button" data-listen>listen</button>'
+      + '<button type="button" data-leave>leave</button>';
+  }
+  /* one of their messages, whole sentences of it, with the thread and the day
+     they wrote it underneath */
+  function showBusMessage() {
+    const m = enc.busMsgs[enc.busAt++];
+    if (!m) {
+      appendHouse(enc.busThread
+        ? 'the house: that is the whole of what ' + enc.name + ' says in that one.'
+        : 'the house: that is the whole of what ' + enc.name + ' has said.');
+      return;
+    }
+    const flat = String(m.body || '').replace(/<[^>]*>/g, ' ');
+    const s = sentencesOf(flat);
+    appendWords(s.slice(0, 3).join(' ') || flat.replace(/\s+/g, ' ').trim(),
+      busSrcOf({ title: m.threadTitle, created_at: m.at }));
+  }
+  function askAboutThread(tid) {
+    clearSpot();
+    const t = enc.threads.find((x) => x.id === tid);
+    if (!t) return;
+    const msgs = archive.busMessages(enc.id, tid);
+    if (!msgs.length) { appendHouse('the house: ' + enc.name + ' says nothing in that one.'); spend(); return; }
+    enc.busThread = t; enc.busMsgs = msgs; enc.busAt = 0;
+    if (enc.shown.indexOf(tid) === -1) enc.shown.push(tid);
+    showBusMessage();
+    spend();
+  }
+
   /* one message on the line. The reply comes back whole; anything they made
      on the way is shown first, then hung. A set-down from their side closes
      the visit; a failure anywhere falls back to the archive, and says why. */
@@ -3713,6 +3926,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }
   function listen() {
     clearSpot();
+    if (enc.house) { showBusMessage(); spend(); return; }
     if (enc.entry && enc.cursor < enc.sentences.length) appendWords(enc.sentences[enc.cursor++], '');
     else if (enc.entry) appendHouse('the house: that is the whole of the entry.');
     else {
@@ -3782,6 +3996,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (b && enc && enc.ended) { if ('leave' in b.dataset) finishScene(); return; }
     if (!b || !enc || enc.closing) return;
     if (b.dataset.ask) askAbout(b.dataset.ask);
+    else if (b.dataset.thread) askAboutThread(b.dataset.thread);
     else if ('wall' in b.dataset) showOnWall();
     else if ('note' in b.dataset) openNote();
     else if ('free' in b.dataset) openFree('ask');
