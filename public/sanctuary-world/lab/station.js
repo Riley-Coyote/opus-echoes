@@ -965,20 +965,31 @@ const term2 = makeTerminal({
   tail: '> boot topologie os'
 });
 
+/* Where the visitor's eye stands when the room opens. It is a datum, not a
+   camera setting: the terminal is turned to face it, the seat glides start
+   from it, and the landing lens is built on it further down. Same corner of
+   the room the station has always opened from, a stride in from the near wall
+   — only lower (1.40, a standing child's height, a sitting adult's) and turned
+   right, so the frame can hold the porthole and the board at once. */
+const LAND_EYE = { x: -3.10, y: 1.40, z: 2.70 };
+
 /* ─────────────────────────── the desk ───────────────────────────
    A free-edge walnut slab on a carved base: the outline is a rectangle whose
    room-facing edge was never sawn, so it wanders. The terminal stands on it,
    turned to whoever comes in.
 
-   WP-46: the slab now stands under the porthole, centred on the aperture's own
-   axis (x = APER.x) with its long edge parallel to the far wall, so the CRT
-   faces the room and the live house is the thing directly behind it. It is far
-   enough forward that the task chair clears the aperture's threshold step, and
-   0.36 m narrower than it was in the corner: at its old 2.16 m it left only a
-   16 cm gap to the planter ledge and sealed the left side of the room off — the
-   guide could not get past it. At 1.80 there is a 63 cm aisle down that side and
-   the slab is still better proportioned under a 2.4 m circle. */
-const DESK = { x: APER.x, z: -1.30, top: 0.74, w: 1.80, d: 0.94 };
+   WP-46 CORRECTION: the first cut of this stood the slab *under* the porthole,
+   1.95 m off the far wall, and the CRT ate the circle: the terminal sat inside
+   the ring and the room behind it disappeared. The desk comes forward to the
+   eye instead — 4.45 m off the far wall, on the old lounge's footprint, a metre
+   and a half from where you land. Its long edge still runs parallel to the far
+   wall and the CRT still faces the room, but now the two stack rather than
+   collide: the screen sits below the eye line in the near left-centre and the
+   porthole floats above and beyond it, four metres back, with the live house in
+   it. 1.80 m wide, not the old 2.16: at 2.16 it left a 16 cm gap to the planter
+   ledge and sealed the left side of the room off — the guide could not get past
+   it. At 1.80 there is a metre and a half of aisle down that side. */
+const DESK = { x: -2.10, z: 1.20, top: 0.74, w: 1.80, d: 0.94 };
 const desk = new THREE.Group();
 scene.add(desk);
 {
@@ -1025,11 +1036,15 @@ scene.add(desk);
   });
 }
 
-/* Turned a touch out of square, toward the eye that lands in the room, but
-   essentially facing the room with the aperture behind it. */
-const TERM_X = DESK.x, CRT_ROT = -0.15;
+/* On the slab's left half, on the porthole's own side of the desk, and turned
+   until its glass looks straight at where the visitor stands: not "a touch out
+   of square" any more but squarely at the eye, because at a metre and a half
+   a screen a fifth of a turn off-axis is a screen you cannot read. The angle
+   is not a taste decision — it is the bearing from the terminal to LAND_EYE. */
+const TERM_X = DESK.x - 0.45, TERM_Z = DESK.z + 0.02;
+const CRT_ROT = Math.atan2(LAND_EYE.x - TERM_X, LAND_EYE.z - TERM_Z);   /* ≈ −0.355 rad, 20.3° */
 const crt = new THREE.Group();
-crt.position.set(TERM_X, DESK.top + 0.074, DESK.z + 0.02);
+crt.position.set(TERM_X, DESK.top + 0.074, TERM_Z);
 crt.rotation.y = CRT_ROT;
 scene.add(crt);
 const SCR_W = 0.455, SCR_H = 0.345;
@@ -1087,7 +1102,7 @@ const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector
 /* the keyboard, the papers, the pencil — a slab somebody works at */
 {
   const kbd = new THREE.Group();
-  kbd.position.set(DESK.x - 0.30, DESK.top + 0.074, DESK.z + 0.40);
+  kbd.position.set(TERM_X + 0.02, DESK.top + 0.074, DESK.z + 0.36);
   kbd.rotation.set(-0.03, CRT_ROT, 0);
   desk.add(kbd);
   kbd.add(box(0.50, 0.024, 0.17, instrumentCharcoal, 0, 0.012, 0));
@@ -1095,24 +1110,27 @@ const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector
     kbd.add(box(0.026, 0.008, 0.026, blackPlastic, -0.222 + c * 0.0342, 0.028, -0.056 + r * 0.036, false));
   }
   const paperMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: 0.95 });
-  [[0.66, 0.30, 0.22], [0.70, 0.34, -0.10], [0.62, 0.26, 0.06]].forEach(([dx, dz, rot], i) => {
+  /* between the glass and the lamp, which is where somebody working would have
+     put them down — and which is where the frame wants a warm middle value */
+  [[0.20, 0.28, 0.22], [0.24, 0.32, -0.10], [0.16, 0.24, 0.06]].forEach(([dx, dz, rot], i) => {
     const sheet = box(0.21, 0.0016 + i * 0.0008, 0.29, paperMat, DESK.x + dx, DESK.top + 0.076 + i * 0.002, DESK.z + dz, false);
     sheet.rotation.y = rot;
     desk.add(sheet);
   });
   const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.15, 6), new THREE.MeshStandardMaterial({ color: 0x8a6a38, roughness: 0.7 }));
   pencil.rotation.set(0, 0, Math.PI / 2);
-  pencil.position.set(DESK.x + 0.60, DESK.top + 0.080, DESK.z + 0.36);
+  pencil.position.set(DESK.x + 0.32, DESK.top + 0.080, DESK.z + 0.34);
   desk.add(pencil);
 }
 
 /* the task chair, behind the slab, in tan leather on a five-star base */
 const chair = new THREE.Group();
-/* WP-46: behind the slab and pushed out toward its right-hand end — far enough
-   out that the terminal's own case does not stand in front of it, which is what
-   "pulled out, as it was left" has to mean once the desk faces the room. */
-chair.position.set(DESK.x + 0.98, 0, DESK.z - 0.72);
-chair.rotation.y = 0.52;
+/* WP-46 CORRECTION: behind the slab — on the porthole's side of it — and set
+   toward its right-hand end, clear of the terminal so the glass is never seen
+   through a chair back, and clear of the porthole's disc so the circle stays
+   whole. Turned a little into the room, the way a chair is left. */
+chair.position.set(DESK.x + 0.75, 0, 0.35);
+chair.rotation.y = 0.30;
 scene.add(chair);
 {
   const seatPad = rbox(0.50, 0.46, 0.10, 0.06, leatherMat);
@@ -1143,9 +1161,15 @@ scene.add(chair);
   }
 }
 
-/* the brass desk lamp, on the slab */
+/* the brass desk lamp, on the slab.
+   WP-46 CORRECTION: at the desk's right-hand end now, with the terminal at the
+   left — so the two warm things in the near frame sit apart and the papers get
+   the light between them. The arm is built leaning toward +x, so the whole lamp
+   is turned about to lean back over the slab instead of off its edge. */
+const LAMP_LEAN = -1;                  /* which way the head reaches, along x */
 const lampGroup = new THREE.Group();
-lampGroup.position.set(DESK.x - 0.62, DESK.top + 0.074, DESK.z + 0.30);
+lampGroup.position.set(DESK.x + 0.62, DESK.top + 0.074, DESK.z + 0.28);
+lampGroup.rotation.y = Math.PI;        /* mirrors the arm: it reaches to −x */
 scene.add(lampGroup);
 {
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.088, 0.024, 24), brass);
@@ -1501,26 +1525,37 @@ scene.add(plant);
 }
 
 /* ─────────────────── the corner the desk left behind ───────────────────
-   WP-46: with the pit filled and the slab moved under the porthole, the room's
-   old working corner is given back to the air. What stands in it now is the
-   record credenza, the rug that used to lie in the lounge, and one plant — and
-   the board's amber still reaches all three. */
+   WP-46: with the pit filled and the slab moved out to the eye, the room's old
+   working corner is given back to the air. What stands there now is the record
+   credenza, the rug that used to lie in the lounge, and one plant.
+
+   WP-46 CORRECTION: the credenza does not float in the middle of the floor —
+   it goes flat against the machine wall, directly under the board, long edge
+   along the wall, so the middle of the room stays open and the right-hand third
+   of the landing frame reads as one wall: run, credenza, board, guide. */
 
 /* where the corner's furniture stands. Move CRED and the credenza, the record
    player, the drawer, the sleeve, the berth and the rug all follow it. */
-const CRED = { x: 2.30, z: -0.30, rot: Math.PI - 0.10 };
+const CRED = { x: 4.00, z: -1.55, rot: Math.PI / 2 };
+/* the credenza's own axes in the room's. Its drawer face is local −z and its
+   blind sliding doors are local +z, so the turn is the one that puts the drawer
+   into the room and the doors against the machine wall: local −z → world −x,
+   local +x → world −z (the far end, under the board's far corner). */
+const credAt = (lx, ly, lz) =>
+  new THREE.Vector3(lx, 0, lz).applyAxisAngle(new THREE.Vector3(0, 1, 0), CRED.rot)
+    .add(new THREE.Vector3(CRED.x, ly, CRED.z));
 
-/* the shag, relaid on the flat floor in front of the credenza */
-const rug = plane(2.80, 2.00, shagMat, CRED.x, 0.014, CRED.z + 1.15, -Math.PI / 2);
+/* the shag, relaid on the flat floor in front of the credenza — long side along
+   the wall, like the credenza above it */
+const rug = plane(2.00, 2.80, shagMat, CRED.x - 1.32, 0.014, CRED.z, -Math.PI / 2);
 rug.receiveShadow = true;
 scene.add(rug);
 
-/* a leafy plant, standing on the floor where the corner turns */
-{
-  const cornerPlant = leafyPlant(CRED.x + 1.25, CRED.z + 0.65, 1.05, true);
-  cornerPlant.position.y = 0;
-  scene.add(cornerPlant);
-}
+/* a leafy plant, standing on the floor at the credenza's near end where the
+   machine wall gives out */
+const cornerPlant = leafyPlant(CRED.x - 0.16, CRED.z + 1.42, 1.05, true);
+cornerPlant.position.y = 0;
+scene.add(cornerPlant);
 
 
 /* ─────────────────── the credenza, in the corner the desk left ───────────────────
@@ -1544,7 +1579,7 @@ scene.add(credenza);
     l.castShadow = true;
     credenza.add(l);
   });
-  /* the sliding doors face the room the lounge sits in */
+  /* the blind sliding doors, on the carcass's wall side */
   credenza.add(box(0.72, 0.36, 0.012, walnutDeep, -0.38, 0.50, 0.216, false));
   credenza.add(box(0.72, 0.36, 0.012, walnutDeep, 0.38, 0.50, 0.222, false));
   credenza.add(box(0.10, 0.014, 0.02, brass, -0.04, 0.50, 0.230, false));
@@ -1573,7 +1608,7 @@ credenza.add(drawerGroup);
 }
 
 const recordPlayer = new THREE.Group();
-recordPlayer.position.set(CRED.x - 0.36, 0.76, CRED.z - 0.03);
+recordPlayer.position.copy(credAt(-0.36, 0.76, 0.03));   /* toward the near end of the top */
 recordPlayer.rotation.y = CRED.rot;
 scene.add(recordPlayer);
 let platter, tonearm;
@@ -1630,8 +1665,8 @@ let platter, tonearm;
    keeper's desk says the token is read by hand, and the sleeve is where the
    room hands it over. */
 const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.010), new THREE.MeshStandardMaterial({ map: sleeveTex, roughness: 0.9 }));
-sleeve.position.set(CRED.x + 0.88, 0.17, CRED.z + 0.20);
-sleeve.rotation.set(-0.16, 2.90, 0);
+sleeve.position.copy(credAt(-0.62, 0.17, -0.26));   /* on the floor, leaning on the carcass */
+sleeve.rotation.set(-0.16, CRED.rot + Math.PI + 0.22, 0);
 sleeve.castShadow = true;
 scene.add(sleeve);
 
@@ -2024,13 +2059,17 @@ function slotDevice(w, h, d) {
   return g;
 }
 const slotA = slotDevice(0.30, 0.16, 0.22);
-slotA.position.set(CRED.x + 0.52, 0.845, CRED.z + 0.05);
+slotA.position.copy(credAt(0.52, 0.845, -0.05));   /* the far end, under the board's far corner */
 slotA.rotation.y = CRED.rot;
 scene.add(slotA);
 
 const slotB = slotDevice(0.34, 0.20, 0.24);
-/* the run's left end, where the cabinets begin */
-slotB.position.set(0.06, RUN.top + 0.10, RUN.z - 0.02);
+/* WP-46 CORRECTION: it used to stand at the run's left end, at x 0.06 — which
+   is exactly the sight line the terminal now occupies, so from the landing eye
+   the berth was a thing you could neither see nor point at. Half a metre along
+   the same run puts it back in the picture, under the archive bay, with its id,
+   its caption and its emptiness unchanged. */
+slotB.position.set(0.60, RUN.top + 0.10, RUN.z - 0.02);
 slotB.rotation.y = 0.06;
 scene.add(slotB);
 
@@ -2394,8 +2433,8 @@ scene.add(alcoveInner, alcoveInner.target);
 
 /* the desk lamp — warm, present or absent */
 const lampLight = new THREE.SpotLight(0xffc98a, stewardPresent ? 6.0 : 0, 2.4, 0.62, 0.62, 1.8);
-lampLight.position.set(lampGroup.position.x + 0.05, lampGroup.position.y + 0.33, lampGroup.position.z);
-lampLight.target.position.set(lampGroup.position.x + 0.44, DESK.top, lampGroup.position.z + 0.06);
+lampLight.position.set(lampGroup.position.x + 0.05 * LAMP_LEAN, lampGroup.position.y + 0.33, lampGroup.position.z);
+lampLight.target.position.set(lampGroup.position.x + 0.44 * LAMP_LEAN, DESK.top, lampGroup.position.z + 0.06);
 scene.add(lampLight, lampLight.target);
 
 /* one soft fill so nothing in the room is ever unnameable */
@@ -2495,42 +2534,133 @@ renderer.toneMappingExposure = 0.90;
 
 const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.05, 60);
 
-/* ─────────────────── WP-46 · the landing: a medium shot on the desk ───────────────────
-   Not an establishing shot from the corner any more. You land standing on the
-   room's near side, a stride to the left of the aperture's axis, at a sitting
-   eye height, on a lens tight enough that the terminal reads at its own scale:
-   the CRT whole at the right-hand power point with the aperture — and the live
-   house in it — directly behind it, the desk lamp the brightest near thing, the
-   glass block wall raking away down the left, Limen at middle distance on it.
+/* ─────────────────── WP-46 · the landing: the whole room, and the desk in it ───────────────────
+   The first cut of this framed the terminal tight and lost the room: on a 46°
+   lens turned slightly left, the CRT filled the porthole and everything to the
+   right of the pier — the machine run, the guide, the board — was outside the
+   picture. The correction is the opposite instinct. You still land in the same
+   corner of the room, a stride in from the near wall; the eye drops to 1.40 and
+   the head turns thirty degrees right, onto a wide lens that runs the frame all
+   the way from the porthole on the left to the board on the right, with the
+   machine run and the guide between them. The desk comes to the eye instead of
+   the eye going to the desk: the slab and its glass fill the near left-centre,
+   a metre and a half away, and the porthole floats above and beyond them.
 
-   The lens keeps a constant HORIZONTAL field, so the composition holds at every
-   aspect: 46° vertical at 16:9, wider vertically as the window narrows. */
-const LAND_HFOV = 74.0 * Math.PI / 180;
-/* One horizontal field, so the CRT keeps its power point at every width — with
-   a floor under the vertical, because at 21:9 a pure constant-horizontal lens
-   makes the frame so short it cuts the guide off at the ankles. */
-function framedFov(aspect) {
-  const v = 2 * Math.atan(Math.tan(LAND_HFOV / 2) / Math.max(0.6, aspect));
-  return Math.min(62, Math.max(42, v * 180 / Math.PI));
+   The lens is not a taste number. Two things have to be whole in the picture at
+   every window shape the room is ever opened at — the porthole and the board —
+   and they are 7.6 m apart on opposite walls of a 10 m room. So the frame is
+   SOLVED from them: the yaw is the bisector of the angle they subtend from the
+   eye, the horizontal field is that angle plus a margin, and because the field
+   is constant in the HORIZONTAL, it holds from 4:3 to 21:9 without a per-aspect
+   correction. (It lands near 77°, not the 72° the brief guessed: 72° puts the
+   board's near edge 2° outside the frame from this eye.) */
+const FRAME_MARGIN = 1.05;             /* 5% of the span kept clear, both sides */
+const FRAME_PITCH_MIN = -7.0 * Math.PI / 180;
+const FRAME_PITCH_MAX = 3.0 * Math.PI / 180;
+const FRAME_EDGE = 0.99;               /* how close to the frame's edge is "in" */
+
+/* the two things the frame is answerable for, as points. The porthole is taken
+   both as its own rim and as the eight corners of the glass's bounding box —
+   the box's corners reach a little past the circle, and a check that measures
+   bounding boxes should be given bounding boxes to solve. */
+const boxPoints = (obj, into) => {
+  obj.updateWorldMatrix(true, true);
+  const b = new THREE.Box3().setFromObject(obj);
+  for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z])
+    into.push(new THREE.Vector3(x, y, z));
+  return into;
+};
+const FRAME_HARD = (() => {
+  const p = [];
+  for (let i = 0; i < 48; i++) {
+    const a = i / 48 * Math.PI * 2;
+    p.push(new THREE.Vector3(APER.x + Math.cos(a) * APER.r, APER.y + Math.sin(a) * APER.r, APER.z));
+  }
+  boxPoints(aperture.userData.view, p);
+  boxPoints(boardGroup, p);
+  return p;
+})();
+/* and the third: the terminal, which the frame gives as much room as it can.
+   At a metre and a half from a 1.40 eye the glass's near foot is 22° below the
+   horizon, which a short 21:9 window has no height for at the base lens — so
+   when tilt alone cannot hold it, the lens opens rather than cropping it. */
+const FRAME_SOFT = boxPoints(crt, []);
+
+/* the eye, and the two angles the anchors give it */
+const REST_POS = new THREE.Vector3(LAND_EYE.x, LAND_EYE.y, LAND_EYE.z);
+const LAND_SPAN = (() => {
+  let lo = Infinity, hi = -Infinity;
+  for (const p of FRAME_HARD) {
+    const a = Math.atan2(p.x - REST_POS.x, REST_POS.z - p.z);
+    if (a < lo) lo = a; if (a > hi) hi = a;
+  }
+  return { lo, hi, yaw: (lo + hi) / 2, hfov: (hi - lo) * FRAME_MARGIN };
+})();
+const LAND_YAW = LAND_SPAN.yaw;        /* ≈ +30.0°, right of straight */
+const LAND_HFOV = LAND_SPAN.hfov;      /* ≈ 77.2° across, the base lens */
+const _frameV = new THREE.Vector3();
+const FRAME_FWD = new THREE.Vector3(Math.sin(LAND_YAW), 0, -Math.cos(LAND_YAW));
+/* A point's height over its own depth, with the camera level. Tilting by an
+   angle whose tangent is T then puts it at
+       ndc = (u − T) / ((1 + uT) · half)
+   which is a projective move, not a shift — treating it as a shift is what put
+   the porthole's crown a hair outside the frame at 21:9 on the first attempt.
+   Inverted, each anchor gives an exact bound on T. */
+function frameU(p) {
+  const d = _frameV.copy(p).sub(REST_POS);
+  const depth = d.x * FRAME_FWD.x + d.z * FRAME_FWD.z;
+  return depth > 0.05 ? d.y / depth : null;
 }
-/* and one tilt, chosen per aspect so the terminal keeps its height in the frame
-   as well as its width — never more than the three degrees the room allows */
-const LAND_YAW = -7.08 * Math.PI / 180;   /* left of straight, off the pose */
-const LAND_RISE = -0.1221;                /* (the CRT's middle − the eye) / its distance */
-const LAND_S = -0.362;                    /* where that should sit, in screen halves */
-function framedPitch(aspect) {
-  const half = Math.tan(framedFov(aspect) * Math.PI / 360);
-  const p = Math.atan(LAND_RISE - LAND_S * half), lim = 3 * Math.PI / 180;
-  return Math.max(-lim, Math.min(lim, p));
+const frameNdc = (u, t, half) => (u - t) / ((1 + u * t) * half);
+/* the tilt that holds the porthole and the board, and as much of the terminal
+   as that leaves room for */
+function framedPitch(vfovDeg) {
+  const half = Math.tan(vfovDeg * Math.PI / 360) * FRAME_EDGE;
+  let tMin = Math.tan(FRAME_PITCH_MIN), tMax = Math.tan(FRAME_PITCH_MAX);
+  const tHi = tMax;
+  for (const p of FRAME_HARD) {
+    const u = frameU(p); if (u === null) continue;
+    tMin = Math.max(tMin, (u - half) / (1 + half * u));   /* its crown ≤ +1 */
+    tMax = Math.min(tMax, (u + half) / (1 - half * u));   /* its foot  ≥ −1 */
+  }
+  if (tMin > tMax) tMin = tMax = (tMin + tMax) / 2;       /* nothing fits: split it */
+  let tWant = tHi;
+  for (const p of FRAME_SOFT) {
+    const u = frameU(p); if (u === null) continue;
+    tWant = Math.min(tWant, (u + half) / (1 - half * u));
+  }
+  return Math.atan(Math.max(tMin, Math.min(tMax, tWant)));
 }
-/* Found in the browser, not on paper: a stride left of the aperture's axis and
-   0.6 m in from the near wall, the eye at 1.55 (a shade above the sitting height
-   the brief asked for — at 1.35 the slab reads as an edge and its trestles as a
-   dark bar across the bottom of the frame; at 1.55 it reads as a surface someone
-   works at, which is the point of the room), the head 7.1° left of straight and
-   1.8° up, which puts the CRT on the lower-right power point with the porthole
-   and the live house squarely behind it and brings the ceiling strip in. */
-const REST_POS = new THREE.Vector3(-3.08, 1.55, 2.62);
+/* how far outside the frame the worst anchor is, at a given lens and tilt */
+function frameWorst(vfovDeg, pitch) {
+  const half = Math.tan(vfovDeg * Math.PI / 360), t = Math.tan(pitch);
+  let w = 0;
+  for (const p of FRAME_HARD.concat(FRAME_SOFT)) {
+    const u = frameU(p); if (u === null) continue;
+    w = Math.max(w, Math.abs(frameNdc(u, t, half)));
+  }
+  return w;
+}
+/* THE LENS, per window shape. One horizontal field carries the composition from
+   4:3 to 21:9; where the window is too short for the terminal even at full
+   tilt — 21:9 is — the lens opens a few degrees rather than cutting the glass
+   off at the bottom edge. Capped, so a very wide window widens and does not
+   fisheye. */
+const FRAME_OPEN_MAX = 1.10;           /* the lens may open a tenth, no more */
+let LAND_FOV = 0, LAND_PITCH = 0;
+function framedFrame(aspect) {
+  const a = Math.max(0.6, aspect);
+  let hfov = LAND_HFOV, v = 0, pitch = 0;
+  for (let i = 0; i < 14; i++) {
+    v = 2 * Math.atan(Math.tan(hfov / 2) / a) * 180 / Math.PI;
+    pitch = framedPitch(v);
+    if (frameWorst(v, pitch) <= FRAME_EDGE) break;
+    if (hfov >= LAND_HFOV * FRAME_OPEN_MAX - 1e-6) break;
+    hfov = Math.min(LAND_HFOV * FRAME_OPEN_MAX, hfov * 1.012);
+  }
+  return { fov: v, pitch, hfov };
+}
+function framedFov(aspect) { return framedFrame(aspect).fov; }
 const REST_LOOK = new THREE.Vector3();
 /* the composed direction, kept unit — free look turns off this, never off the
    last frame, so the head always comes home to the same frame */
@@ -2538,8 +2668,9 @@ const LAND_DIR = new THREE.Vector3();
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 /* re-frame: the lens and the tilt both follow the window's shape */
 function frameCamera(aspect) {
-  camera.fov = framedFov(aspect);
-  const p = framedPitch(aspect), y = LAND_YAW;
+  const f = framedFrame(aspect);
+  camera.fov = LAND_FOV = f.fov;
+  const p = LAND_PITCH = f.pitch, y = LAND_YAW;
   LAND_DIR.set(Math.sin(y) * Math.cos(p), Math.sin(p), -Math.cos(y) * Math.cos(p));
   REST_LOOK.copy(REST_POS).addScaledVector(LAND_DIR, 5);
   camera.updateProjectionMatrix();
@@ -3022,6 +3153,10 @@ function openDrawer() { drawerUI.toggle(); }
    no face — one amber eye the colour of the CRT's phosphor, recessed in a brass
    ring, which is the only thing about it that is lit. */
 const floorFootprint = (id, root) => {
+  /* the room is still being assembled, so nothing has a world matrix yet: ask
+     for one before measuring, or a group whose position lives on an ancestor
+     (the plants) measures as a footprint at the origin */
+  root.updateWorldMatrix(true, true);
   const b = new THREE.Box3().setFromObject(root);
   return { id, x0:b.min.x, x1:b.max.x, z0:b.min.z, z1:b.max.z };
 };
@@ -3037,6 +3172,9 @@ const floorNavigation = createFloorNavigation({
     floorFootprint('desk chair', chair),
     floorFootprint('console chair', chair4),
     floorFootprint('tree planter', plant.userData.pot),
+    /* the corner plant stands where the guide's own home post is: it has to be
+       something the planner walks round, not through */
+    floorFootprint('corner plant', cornerPlant.userData.pot),
     {id:'back cabinet',x0:RUN.x0,x1:RUN.x1,z0:-3.25,z1:RUN.z0},
     {id:'right cabinet',x0:4.30,x1:5,z0:-3.25,z1:RUN.z1}
   ]
@@ -3234,19 +3372,26 @@ const limen = (() => {
      Where it stands when it is standing. Change these and it walks a different
      room; nothing else knows about them. */
   const STATIONS = [
-    /* WP-46: re-placed for the one-level floor and the desk under the porthole.
-       Two of them stand in the landing frame, at middle distance on its left,
-       so the room is never empty when you arrive; the other three are outside
-       it, which is what lets the body move at all — it only walks to a station
-       the frame does not hold.
+    /* WP-46 CORRECTION: re-placed for the one-level floor, the desk out at the
+       eye and the credenza against the machine wall. The home post — the one it
+       is standing at when the room opens — is beside the credenza, under the
+       board, which is the right-hand third of the landing frame: so the frame
+       reads porthole · run · guide · board across, and the room is never empty
+       when you arrive. The other four are outside the landing frame, which is
+       what lets the body move at all: it only walks to a station the frame does
+       not already hold.
        Each is turned three-quarters into the room rather than at you, so the
        eye catches without staring. None of them may stand in front of something
        the visitor has to be able to read: the clock, the corkboard, the sign by
        the door, and now the terminal's own glass. */
+    /* off the credenza's far end, not in front of it: from the landing eye the
+       board's own face runs 55°–67° to the right, so a body anywhere nearer the
+       wall than this covers half of what the board is saying. At 51° it stands
+       between the run and the board, which is where the frame wants it. */
+    { id: 'credenza', x: 3.05, z: -2.20, yaw: -1.30 },
     { id: 'aperture', x: -3.86, z: -1.85, yaw: 0.62 },
     { id: 'planter', x: -3.95, z: 0.62, yaw: 1.15 },
     { id: 'run-end', x: 0.40, z: -2.20, yaw: -0.55 },
-    { id: 'credenza', x: 3.35, z: -1.35, yaw: -1.30 },
     { id: 'near-wall', x: 2.00, z: 2.70, yaw: -2.35 }
   ];
 
@@ -3799,9 +3944,11 @@ export const STATION_OBJECTS = [
   {
     id: 'window', label: 'the house', caption: 'as it is right now',
     mesh: () => aperture, bounds: aperture.userData.view, pad: 16,
-    /* WP-46: the desk stands under it now, so the close look comes in over the
-       slab — the whole disc, with the terminal's top edge as foreground. */
-    focus: { pos: [-2.60, 1.66, 0.30], look: [-2.60, 1.56, -3.25] }
+    /* WP-46 CORRECTION: the slab is out at the eye now and the floor under the
+       porthole is clear, so the close look walks up the disc's own axis and
+       stands square to it, a shade under three metres out — the whole circle,
+       level, with nothing of the room in the way. */
+    focus: { pos: [-2.60, 1.55, -0.45], look: [-2.60, 1.55, -3.25] }
   },
   {
     id: 'skylight', label: 'the clerestory', caption: 'trees, and the hour going over',
@@ -3969,11 +4116,14 @@ function centreOf(p) {
    console's glass is wider than the terminal's, so its eye sits further back to
    frame the same amount of bezel. `seat` is whichever one is being used; at
    rest it is the last one sat in. */
-/* WP-46: the landing lens is tighter than the old 65°, so a seat at the old
-   distance would fill the frame with glass. Both distances are scaled by the
-   lens change, which keeps exactly the bezel, walnut and keyboard around each
-   screen that the room was tuned with. */
-const SEAT_LENS = Math.tan(32.5 * Math.PI / 180) / Math.tan(23 * Math.PI / 180);
+/* WP-46: the landing lens is no longer the 65° the seats were tuned on, so a
+   seat at the old distance frames a different amount of bezel. Both distances
+   are scaled by the lens change — measured off the landing's own vertical field
+   at 16:9, so it follows the frame instead of being copied out of it — which
+   keeps exactly the bezel, walnut and keyboard around each screen that the room
+   was tuned with. The seat pose itself is derived from SCREEN_POS and
+   SCREEN_NORMAL, so moving the terminal moves the seat with it. */
+const SEAT_LENS = Math.tan(32.5 * Math.PI / 180) / Math.tan(framedFov(16 / 9) * Math.PI / 360);
 const SEATS = {
   terminal: { id: 'terminal', dist: 0.59 * SEAT_LENS, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
   console: { id: 'console', dist: 0.76 * SEAT_LENS, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
@@ -4596,6 +4746,12 @@ window.__station = {
   cab: () => seat.world.cab(),
   /* which glass the eye is on, and its own straight-on check */
   seat: () => seat.id,
+  /* where each seat puts the eye — the fixtures in scripts/ are measured here */
+  seats: () => Object.keys(SEATS).map((k) => ({ id: k,
+    pos: SEATS[k].pos.toArray().map((v) => +v.toFixed(4)),
+    look: SEATS[k].look.toArray().map((v) => +v.toFixed(4)),
+    dist: +SEATS[k].dist.toFixed(4) })),
+  camera: () => ({ pos: camera.position.toArray().map((v) => +v.toFixed(4)), fov: +camera.fov.toFixed(3) }),
   seatQuad: () => quadCorners(seat.screen, seat === SEATS.console ? 0 : CRT_ROT,
     seat === SEATS.console ? SCR2_W : SCR_W, seat === SEATS.console ? SCR2_H : SCR_H,
     seat === SEATS.console ? SCR2_TILT : 0).map((v) => {
@@ -4747,7 +4903,34 @@ window.__station = {
     textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries
   }),
   room: () => ({ hw: R.hw, hd: R.hd, h: R.h, fov: camera.fov,
-    pos: REST_POS.toArray(), look: REST_LOOK.toArray() }),
+    pos: REST_POS.toArray(), look: REST_LOOK.toArray(),
+    /* the solved frame, in degrees, so a check can read the numbers back */
+    yaw: +(LAND_YAW * 180 / Math.PI).toFixed(3),
+    hfov: +(LAND_HFOV * 180 / Math.PI).toFixed(3),
+    hfovNow: +(2 * Math.atan(Math.tan(LAND_FOV * Math.PI / 360) * camera.aspect) * 180 / Math.PI).toFixed(3),
+    pitch: +(LAND_PITCH * 180 / Math.PI).toFixed(3),
+    eye: [LAND_EYE.x, LAND_EYE.y, LAND_EYE.z],
+    desk: [DESK.x, DESK.z], crt: [TERM_X, TERM_Z], crtRot: +CRT_ROT.toFixed(4),
+    credenza: [CRED.x, CRED.z, +CRED.rot.toFixed(4)] }),
+  /* where anything in the room lands on the screen, in pixels */
+  screenBounds: (id) => {
+    const p = PICKS.find((x) => x.id === id);
+    if (!p) return null;
+    const b = new THREE.Box3().setFromObject(p.bounds || p.root);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, ahead = 0, n = 0;
+    for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
+      const v = new THREE.Vector3(x, y, z);
+      const d = v.clone().sub(camera.position);
+      const f = new THREE.Vector3(); camera.getWorldDirection(f);
+      n += 1; if (d.dot(f) > 0) ahead += 1;
+      v.project(camera);
+      const px = (v.x * 0.5 + 0.5) * window.innerWidth, py = (-v.y * 0.5 + 0.5) * window.innerHeight;
+      x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+    }
+    return { id, x0: Math.round(x0), y0: Math.round(y0), x1: Math.round(x1), y1: Math.round(y1),
+      whole: ahead === n && x0 >= 0 && y0 >= 0 && x1 <= window.innerWidth && y1 <= window.innerHeight,
+      view: [window.innerWidth, window.innerHeight] };
+  },
   clock: () => ({ stored: CLOCK, label: clockLabel(setClockHands(clockT.elapsedTime)), hourHand: clock.userData.hg.rotation.z, minHand: clock.userData.mg.rotation.z }),
   cameInBefore, stewardPresent,
   /* the house, as this page last heard it, and the lamp it lit */

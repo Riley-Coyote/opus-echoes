@@ -78,10 +78,17 @@
 
   /* the standing chrome */
   #chrome{position:absolute;inset:0;z-index:5;pointer-events:none;transition:opacity .3s var(--ease-out)}
+  /* WP-46 CORRECTION: the wide landing lens puts the lit glass-block wall right
+     under the masthead, and grey-on-glowing-white is unreadable. A scrim, not a
+     box: a soft dark wash in the top-left corner only, so the two lines have
+     something to sit on and the room is untouched everywhere else. */
+  #chrome::before{content:"";position:absolute;left:0;top:0;width:min(46vw,440px);height:132px;
+    background:linear-gradient(155deg,rgba(4,3,8,.62) 0%,rgba(4,3,8,.34) 46%,rgba(4,3,8,0) 100%);
+    pointer-events:none}
   #mark{position:absolute;left:26px;top:22px;font-family:var(--px);font-size:10px;letter-spacing:.16em;
-    color:rgba(245,243,237,.62)}
+    color:rgba(245,243,237,.86);text-shadow:0 1px 3px rgba(4,3,8,.86),0 0 12px rgba(4,3,8,.62)}
   #sub{position:absolute;left:26px;top:44px;font-size:8px;letter-spacing:.22em;text-transform:uppercase;
-    color:var(--faint)}
+    color:rgba(230,226,218,.74);text-shadow:0 1px 3px rgba(4,3,8,.9),0 0 10px rgba(4,3,8,.7)}
   #stand,#full{position:absolute;bottom:26px;z-index:8;
     padding:9px 15px;background:rgba(6,5,10,.72);border:1px solid rgba(242,193,78,.34);
     color:var(--ink);font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:lowercase;
@@ -170,7 +177,7 @@
   } catch (e) { webgl = false; }
   if (narrow || !webgl) { location.replace('index.html'); return; }
   var s = document.createElement('script');
-  s.src = 'station.connected.js?v=20260906-room-1';
+  s.src = 'station.connected.js?v=20260906-room-2';
   document.body.appendChild(s);
 })();
 </script>
