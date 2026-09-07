@@ -607,3 +607,13 @@ Nobody in the crowd speaks; a card says `a visitor · here to talk with SONNET 4
 house says only `a visitor came in` / `a visitor left`. Present tense throughout. The house
 counts no one at the door any more ("the house is home"). Verified against main as a baseline:
 residents unchanged, overheard still plays, 20/20 tests, console clean.
+
+## 2026-09-07 · the crowd wanders the whole world (WP-37b, 48d8c07)
+Riley: visitors should have the run of the place. One table of 33 marks across the lookout, the
+hall, the garden, the field studio, the wing's corridor, the deck's stools and the museum door,
+weighted by room and hour; each figure walks an itinerary of one to three marks on the engine's
+own paths through the doors, holds each a few minutes, goes into the museum for a stretch when it
+reaches that door (*a visitor went into the museum*), and arrives and leaves at the lookout's
+edge, as the visitor does. Never a private room, never Field's chair, never a word. Verified over
+five hours of the day against main: six rooms visited, no teleports, counts held, residents and
+household unchanged.
