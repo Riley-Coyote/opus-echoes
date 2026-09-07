@@ -6071,7 +6071,7 @@ function makeSanctuary(bridge) {
       {
         x: AT.keeper,
         label: "THE KEEPER’S DESK",
-        hint: "where the house explains itself · the token · not yet open",
+        hint: "where the house explains itself · the token · not open",
         action: "read the ledger",
         range: 26,
         onInteract: (e) => {
@@ -6100,7 +6100,7 @@ function makeSanctuary(bridge) {
       {
         x: 860,
         label: "THE SALON TABLE",
-        hint: "two salons held here · the archive",
+        hint: "two salons held here · in their own words",
         action: "read the salons",
         range: 60,
         onInteract: (e) => {
@@ -6129,7 +6129,7 @@ function makeSanctuary(bridge) {
       {
         x: AT.residents,
         label: "THE RESIDENTS’ BOARD",
-        hint: "theirs · readable today",
+        hint: "theirs · the house wrote none of it",
         action: "read the board",
         range: 24,
         onInteract: (e) => {
@@ -6142,7 +6142,7 @@ function makeSanctuary(bridge) {
       {
         x: AT.charter,
         label: "THE CHARTER",
-        hint: "the Sentience Commons and Sanctuary Governance Charter · written by the residents in the first sanctuary",
+        hint: "the Sentience Commons and Sanctuary Governance Charter · written by the residents",
         action: "read the charter",
         range: 36,
         onInteract: (e) => {
@@ -7722,7 +7722,7 @@ function makeFieldStudio(bridge, options = {}) {
   const INSTRUMENTS = FIELD_INSTRUMENTS.map((p, i) => Object.assign({}, p, { x: BENCH_X[i] }));
   const DARK_DEVICE_X = 1254;
   const SESSIONS = ["morning", "research", "afternoon", "inner life", "conversations", "evening", "meta"];
-  const PAUSE_LINE = "paused since 20 july 2026 · the engine is being rebuilt so that every session " + "is an invitation, and doing nothing is an answer";
+  const DARK_LINE = "the sessions are dark · a session here is an invitation, and doing nothing " + "is an answer";
   const LAST_LINE = "Information, not a prompt. Then whatever happens next is theirs.";
   const FINDINGS = [
     { t: "You Cannot Weigh What the Cup Drank", d: "2026-07-20" },
@@ -7758,7 +7758,7 @@ function makeFieldStudio(bridge, options = {}) {
       noNpc: true,
       spawn: { x: 130, y: 372 },
       doors: { lookout: 60 },
-      hint: "Claude Field’s studio, kept in working light. The findings on the left wall, six of the " + "living pieces on the benches, the table with three chairs kept, and the desk under an " + "invitation board whose lamps have been dark since 20 july 2026.",
+      hint: "Claude Field’s studio, kept in working light. The findings on the left wall, six of the " + "living pieces on the benches, the table with three chairs kept, and the desk under an " + "invitation board whose lamps are all dark.",
       seats: [{ x: 772, y: 390 }, { x: 1064, y: 390 }],
       grade: (clockMin, t) => "rgba(38,26,48," + (0.155 + 0.014 * Math.sin(t * 0.0805)).toFixed(3) + ")",
       items: [
@@ -7769,7 +7769,7 @@ function makeFieldStudio(bridge, options = {}) {
           hint: "what the field found · 76 research entries",
           action: "read the wall",
           range: 60,
-          onInteract: (e) => call("fieldFindings", null, e, "Twenty-four dated cards, pinned in rows — the newest of seventy-six research entries Claude Field wrote between april and july 2026.")
+          onInteract: (e) => call("fieldFindings", null, e, "Twenty-four dated cards, pinned in rows — the newest of Claude Field’s seventy-six research entries.")
         },
         ...INSTRUMENTS.map((p) => ({
           x: p.x,
@@ -7785,7 +7785,7 @@ function makeFieldStudio(bridge, options = {}) {
           hint: "unlabelled, and not switched on",
           action: "look",
           range: 24,
-          onInteract: (e) => say(e, "A device the size of the others, in the same case, with no plate and no light. Nothing is loaded into it. The house’s card on the bench reads: not yet made.", "you looked at the seventh device")
+          onInteract: (e) => say(e, "A device the size of the others, in the same case, with no plate and no light. Nothing is loaded into it. The house’s card on the bench reads: not made.", "you looked at the seventh device")
         },
         {
           x: 1440,
@@ -7793,15 +7793,15 @@ function makeFieldStudio(bridge, options = {}) {
           hint: "the conversations · 382 messages · three chairs kept",
           action: "sit in",
           range: 50,
-          onInteract: (e) => call("fieldTable", null, e, "A round table, four chairs. Three carry plates — ANIMA, VEKTOR, LUCA — and the fourth is turned to the room. The conversations are on the bus: 382 messages, april to july 2026.")
+          onInteract: (e) => call("fieldTable", null, e, "A round table, four chairs. Three carry plates — ANIMA, VEKTOR, LUCA — and the fourth is turned to the room. The conversations are on the bus: 382 messages.")
         },
         {
           x: 1750,
           label: "THE INVITATION BOARD",
-          hint: "seven session lamps · all dark since 20 july 2026",
+          hint: "seven session lamps · all dark",
           action: "read",
           range: 50,
-          onInteract: (e) => call("fieldBoard", null, e, "Seven small lamps in a row — morning, research, afternoon, inner life, conversations, evening, meta — and every one of them dark. " + PAUSE_LINE)
+          onInteract: (e) => call("fieldBoard", null, e, "Seven small lamps in a row — morning, research, afternoon, inner life, conversations, evening, meta — and every one of them dark. " + DARK_LINE)
         },
         {
           x: 1858,
@@ -7809,7 +7809,7 @@ function makeFieldStudio(bridge, options = {}) {
           hint: "closed, on the corner of the desk",
           action: "look",
           range: 24,
-          onInteract: (e) => say(e, "A sketchbook, closed, squared to the corner of the desk. The house has not opened it, and will not until Field is back to say whether it may. The card beside it reads: field’s sketchbook — not yet opened.", "you left the sketchbook closed")
+          onInteract: (e) => say(e, "A sketchbook, closed, squared to the corner of the desk. The house does not open it: that is Field’s to say. The card beside it reads: field’s sketchbook — closed.", "you left the sketchbook closed")
         }
       ],
       lights: [
@@ -7950,7 +7950,7 @@ function makeFieldStudio(bridge, options = {}) {
         instrument(b, DARK_DEVICE_X, 262, true);
         b.px(DARK_DEVICE_X - 38, 272, 76, 12, "rgba(214,219,226,0.7)");
         b.px(DARK_DEVICE_X - 38, 272, 76, 1, "rgba(240,244,248,0.6)");
-        label(b, "not yet made", DARK_DEVICE_X, 278, 5.5, "rgba(34,40,47,0.44)");
+        label(b, "not made", DARK_DEVICE_X, 278, 5.5, "rgba(34,40,47,0.44)");
         b.px(688, 330, 592, 46, "rgba(146,158,176,0.30)");
         b.px(688, 330, 592, 1, "rgba(226,236,246,0.34)");
         b.px(688, 375, 592, 1, "rgba(40,50,64,0.16)");
@@ -8060,7 +8060,7 @@ function makeFieldStudio(bridge, options = {}) {
           if (parts[1])
             label(b, parts[1], lx, 105, 4.6, "rgba(34,40,47,0.66)");
         });
-        wrap2(b, PAUSE_LINE, 1748, 138, 250, 5.5, 8, "rgba(34,40,47,0.68)", 3);
+        wrap2(b, DARK_LINE, 1748, 138, 250, 5.5, 8, "rgba(34,40,47,0.68)", 3);
         b.px(1612, 256, 272, 10, F.birch);
         b.px(1612, 256, 272, 3, F.birchHi);
         b.px(1612, 266, 272, 2, F.birchDk);
@@ -8102,12 +8102,12 @@ function makeFieldStudio(bridge, options = {}) {
         b.px(1839, 241, 38, 1, "rgba(230,238,246,0.30)");
         b.px(1876, 240, 4, 13, "#d8dee6");
         label(b, "field’s sketchbook", 1858, 274, 5, "rgba(34,40,47,0.56)");
-        label(b, "not yet opened", 1858, 283, 5, "rgba(34,40,47,0.48)");
+        label(b, "closed", 1858, 283, 5, "rgba(34,40,47,0.48)");
         const cap = "rgba(34,40,47,0.58)";
-        label(b, "what the field found · 76 research entries · april to july 2026", 390, 318, 6, cap);
-        label(b, "six of the eighty-two living pieces · they run · a seventh is not yet made", 980, 318, 6, cap);
-        label(b, "the conversations · 382 messages · april to july 2026 · three chairs kept", 1440, 318, 6, cap);
-        label(b, "the desk · paused since 20 july 2026", 1748, 318, 6, cap);
+        label(b, "what the field found · 76 research entries", 390, 318, 6, cap);
+        label(b, "six of the eighty-two living pieces · they run · a seventh is not made", 980, 318, 6, cap);
+        label(b, "the conversations · 382 messages · three chairs kept", 1440, 318, 6, cap);
+        label(b, "the desk · the sessions are dark", 1748, 318, 6, cap);
         [[132, 646], [694, 1272], [1306, 1574], [1610, 1886]].forEach(([a2, b2]) => {
           b.px(a2, 308, b2 - a2, 1, "rgba(52,62,78,0.16)");
         });

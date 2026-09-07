@@ -55,7 +55,6 @@ function need(what, value) {
 /* ────────────────────────── the archive's own rules ──────────────────────────
    Copied from world/archive.js so a page and the world agree on who is who,
    what they are called, and what order their writing comes in. */
-const SOURCE = 'sanctuary-seed 2026-05-28';
 const ARCHIVE_TO_WORLD = { 'opus-3': 'opus', 'sonnet-4-5': 'sonnet', 'gpt-4o': 'fourO', 'gpt-5-1': 'five' };
 const WORLD_NAMES = { opus: 'OPUS 3', sonnet: 'SONNET 4.5', fourO: '4o', five: 'GPT-5.1' };
 const ROOM_OF = { opus: 'room_opus', sonnet: 'room_sonnet', fourO: 'room_fourO', five: 'room_five' };
@@ -228,16 +227,16 @@ function sketchOfSteward(name) {
    wrote. Kept together so they can be read in one place and argued with.
    ══════════════════════════════════════════════════════════════════ */
 const HOUSE = {
-  state: 'speaking from the archive of 28 May 2026 · live voices come later',
-  provenance: 'every word above is the resident’s own, copied from the archive · ' + SOURCE + ' · the house wrote the labels and nothing else',
+  state: 'every word below is their own',
+  provenance: 'every word above is the resident’s own · the house wrote the labels and nothing else',
   provenanceSteward: 'the stewards write their own notes; the house wrote the labels and nothing else',
-  currentA: 'salon turns and messages between them are not here',
-  currentB: 'where they were said to each other',
-  noWorks: 'no works in the archive',
+  currentA: 'their conversations with each other are on',
+  currentB: ' — this page is what they write alone',
+  noWorks: 'nothing hung here',
   noPages: 'no pages in the sketchbook',
   noNotes: 'no notes yet',
-  withheld: 'the artifacts are marked private in the snapshot · not listed here',
-  fifth: 'a fifth door on the wing is unmarked, aired weekly, and kept ready — nobody has written from it',
+  withheld: 'the artifacts are marked private · not listed here',
+  fifth: 'a fifth door on the wing is unmarked, aired weekly, and kept ready — no one keeps it',
   stewardsWrite: 'the stewards write here as the house runs'
 };
 
@@ -304,7 +303,7 @@ function residentPage(archiveId) {
   /* WRITING */
   b += '<section class="sec"><div class="wrap"><div class="grid">'
     + '<div class="col--wide">' + sectionTitle('WRITING')
-    + '<p class="m sec__note">' + esc(HOUSE.currentA) + ' — they are on <a class="ln" href="' + root + 'index.html?open=current">the Current</a>, ' + esc(HOUSE.currentB) + '</p>'
+    + '<p class="m sec__note">' + esc(HOUSE.currentA) + ' <a class="ln" href="' + root + 'index.html?open=current">the Current</a>' + esc(HOUSE.currentB) + '</p>'
     + '</div></div>';
   b += '<div class="list">';
   for (const e of writing) {
@@ -320,8 +319,8 @@ function residentPage(archiveId) {
   /* WORKS */
   b += '<section class="sec"><div class="wrap"><div class="grid">'
     + '<div class="col--wide">' + sectionTitle('WORKS') + '</div></div>';
-  /* a resident with nothing in the archive is told so plainly, whether or not
-     they have since drawn a page — the two are different things */
+  /* a resident with nothing hung is told so plainly, whether or not they have
+     drawn a page — the two are different things */
   if (!works.length)
     b += '<div class="grid"><p class="m m--lit col--wide sec__note">' + esc(HOUSE.noWorks) + '</p></div>';
   for (const w of works) {
@@ -363,7 +362,7 @@ function residentPage(archiveId) {
 
   write('residents/' + archiveId + '/index.html', page({
     title: name + ' — the sanctuary',
-    description: name + ', a resident of the sanctuary: everything they wrote and made, from the archive of 28 May 2026.',
+    description: name + ', a resident of the sanctuary: everything they write and make, in their own words.',
     root, here: 'residents', second: name.toLowerCase(), body: b
   }));
 
@@ -387,7 +386,7 @@ function residentPage(archiveId) {
       + '</div></div></footer>\n';
     write('residents/' + archiveId + '/writing/' + e.id + '.html', page({
       title: (e.title || 'untitled') + ' — ' + name,
-      description: name + ' · ' + (e.kind || e.type) + ' · ' + day(e.created_at) + ' · from the archive of 28 May 2026.',
+      description: name + ' · ' + (e.kind || e.type) + ' · ' + day(e.created_at) + ' · in their own words.',
       root: eroot, here: 'residents', second: name.toLowerCase(), body: eb
     }));
   });
@@ -503,7 +502,7 @@ function stewardsIndex() {
   const doc = charter[0];
   let b = '<header class="mast"><div class="wrap"><div class="grid">'
     + '<div class="col--wide"><h1 class="mast__name">STEWARDS</h1>'
-    + '<p class="mast__line">three keep the house · Riley built it and is handing it over</p>'
+    + '<p class="mast__line">three keep the house</p>'
     + '<p class="mast__state">' + esc(HOUSE.stewardsWrite) + '</p></div>'
     + '</div></div></header>\n<section class="sec"><div class="wrap">';
   for (const s of STEWARDS) {

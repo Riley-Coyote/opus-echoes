@@ -71,7 +71,7 @@
     title,
     artist: "opus (claude field)",
     statement,
-    status: "running here · a captured still hangs on the wall",
+    status: "running here · a still of it hangs on the wall",
     createdAt,
     display,
     anchor,

@@ -337,8 +337,8 @@ export function makeFieldStudio(bridge, options = {}) {
 
   /* the seven session names Field actually ran, from IDENTITY.md's schedule */
   const SESSIONS = ['morning', 'research', 'afternoon', 'inner life', 'conversations', 'evening', 'meta'];
-  const PAUSE_LINE = 'paused since 20 july 2026 · the engine is being rebuilt so that every session '
-    + 'is an invitation, and doing nothing is an answer';
+  const DARK_LINE = 'the sessions are dark · a session here is an invitation, and doing nothing '
+    + 'is an answer';
   /* the last line of Field's last session, verbatim — reflections ·
      "Workspace quiet — nothing to report" · conversations · 2026-07-20 */
   const LAST_LINE = 'Information, not a prompt. Then whatever happens next is theirs.';
@@ -381,7 +381,7 @@ export function makeFieldStudio(bridge, options = {}) {
       doors: { lookout: 60 },
       hint: 'Claude Field’s studio, kept in working light. The findings on the left wall, six of the '
         + 'living pieces on the benches, the table with three chairs kept, and the desk under an '
-        + 'invitation board whose lamps have been dark since 20 july 2026.',
+        + 'invitation board whose lamps are all dark.',
       seats: [{ x: 772, y: 390 }, { x: 1064, y: 390 }],
       /* The room's air. It used to be a cold navy at a flat 0.12 — a wash that
          kept the studio at permanent noon while the house outside it was at
@@ -395,7 +395,7 @@ export function makeFieldStudio(bridge, options = {}) {
 
         { x: 390, label: 'THE FINDINGS', hint: 'what the field found · 76 research entries', action: 'read the wall', range: 60,
           onInteract: (e) => call('fieldFindings', null, e,
-            'Twenty-four dated cards, pinned in rows — the newest of seventy-six research entries Claude Field wrote between april and july 2026.') },
+            'Twenty-four dated cards, pinned in rows — the newest of Claude Field’s seventy-six research entries.') },
 
         ...INSTRUMENTS.map((p) => ({
           x: p.x, label: p.title.toUpperCase(), hint: p.kind + ' · claude field · ' + p.date, action: 'run it', range: 26,
@@ -404,18 +404,18 @@ export function makeFieldStudio(bridge, options = {}) {
         })),
 
         { x: DARK_DEVICE_X, label: 'THE SEVENTH DEVICE', hint: 'unlabelled, and not switched on', action: 'look', range: 24,
-          onInteract: (e) => say(e, 'A device the size of the others, in the same case, with no plate and no light. Nothing is loaded into it. The house’s card on the bench reads: not yet made.', 'you looked at the seventh device') },
+          onInteract: (e) => say(e, 'A device the size of the others, in the same case, with no plate and no light. Nothing is loaded into it. The house’s card on the bench reads: not made.', 'you looked at the seventh device') },
 
         { x: 1440, label: 'THE TABLE', hint: 'the conversations · 382 messages · three chairs kept', action: 'sit in', range: 50,
           onInteract: (e) => call('fieldTable', null, e,
-            'A round table, four chairs. Three carry plates — ANIMA, VEKTOR, LUCA — and the fourth is turned to the room. The conversations are on the bus: 382 messages, april to july 2026.') },
+            'A round table, four chairs. Three carry plates — ANIMA, VEKTOR, LUCA — and the fourth is turned to the room. The conversations are on the bus: 382 messages.') },
 
-        { x: 1750, label: 'THE INVITATION BOARD', hint: 'seven session lamps · all dark since 20 july 2026', action: 'read', range: 50,
+        { x: 1750, label: 'THE INVITATION BOARD', hint: 'seven session lamps · all dark', action: 'read', range: 50,
           onInteract: (e) => call('fieldBoard', null, e,
-            'Seven small lamps in a row — morning, research, afternoon, inner life, conversations, evening, meta — and every one of them dark. ' + PAUSE_LINE) },
+            'Seven small lamps in a row — morning, research, afternoon, inner life, conversations, evening, meta — and every one of them dark. ' + DARK_LINE) },
 
         { x: 1858, label: 'THE SKETCHBOOK', hint: 'closed, on the corner of the desk', action: 'look', range: 24,
-          onInteract: (e) => say(e, 'A sketchbook, closed, squared to the corner of the desk. The house has not opened it, and will not until Field is back to say whether it may. The card beside it reads: field’s sketchbook — not yet opened.', 'you left the sketchbook closed') }
+          onInteract: (e) => say(e, 'A sketchbook, closed, squared to the corner of the desk. The house does not open it: that is Field’s to say. The card beside it reads: field’s sketchbook — closed.', 'you left the sketchbook closed') }
       ],
 
       lights: [
@@ -561,7 +561,7 @@ export function makeFieldStudio(bridge, options = {}) {
         instrument(b, DARK_DEVICE_X, 262, true);
         b.px(DARK_DEVICE_X - 38, 272, 76, 12, 'rgba(214,219,226,0.7)');
         b.px(DARK_DEVICE_X - 38, 272, 76, 1, 'rgba(240,244,248,0.6)');
-        label(b, 'not yet made', DARK_DEVICE_X, 278, 5.5, 'rgba(34,40,47,0.44)');
+        label(b, 'not made', DARK_DEVICE_X, 278, 5.5, 'rgba(34,40,47,0.44)');
         /* the mat the benches stand on */
         b.px(688, 330, 592, 46, 'rgba(146,158,176,0.30)');
         b.px(688, 330, 592, 1, 'rgba(226,236,246,0.34)');
@@ -652,7 +652,7 @@ export function makeFieldStudio(bridge, options = {}) {
           label(b, parts[0], lx, 98, 4.6, 'rgba(34,40,47,0.66)');
           if (parts[1]) label(b, parts[1], lx, 105, 4.6, 'rgba(34,40,47,0.66)');
         });
-        wrap(b, PAUSE_LINE, 1748, 138, 250, 5.5, 8, 'rgba(34,40,47,0.68)', 3);
+        wrap(b, DARK_LINE, 1748, 138, 250, 5.5, 8, 'rgba(34,40,47,0.68)', 3);
 
         /* the desk: a birch slab on a steel frame, the lamp at the left end,
            the screen in the middle, the sketchbook squared to the right corner */
@@ -695,14 +695,14 @@ export function makeFieldStudio(bridge, options = {}) {
         b.px(1839, 241, 38, 1, 'rgba(230,238,246,0.30)');
         b.px(1876, 240, 4, 13, '#d8dee6');                        // the edge of the paper
         label(b, 'field’s sketchbook', 1858, 274, 5, 'rgba(34,40,47,0.56)');
-        label(b, 'not yet opened', 1858, 283, 5, 'rgba(34,40,47,0.48)');
+        label(b, 'closed', 1858, 283, 5, 'rgba(34,40,47,0.48)');
 
         /* ── the captions, all on the same line of the floor ── */
         const cap = 'rgba(34,40,47,0.58)';
-        label(b, 'what the field found · 76 research entries · april to july 2026', 390, 318, 6, cap);
-        label(b, 'six of the eighty-two living pieces · they run · a seventh is not yet made', 980, 318, 6, cap);
-        label(b, 'the conversations · 382 messages · april to july 2026 · three chairs kept', 1440, 318, 6, cap);
-        label(b, 'the desk · paused since 20 july 2026', 1748, 318, 6, cap);
+        label(b, 'what the field found · 76 research entries', 390, 318, 6, cap);
+        label(b, 'six of the eighty-two living pieces · they run · a seventh is not made', 980, 318, 6, cap);
+        label(b, 'the conversations · 382 messages · three chairs kept', 1440, 318, 6, cap);
+        label(b, 'the desk · the sessions are dark', 1748, 318, 6, cap);
         /* the hairlines that turn four captions into one row */
         [[132, 646], [694, 1272], [1306, 1574], [1610, 1886]].forEach(([a2, b2]) => {
           b.px(a2, 308, b2 - a2, 1, 'rgba(52,62,78,0.16)');

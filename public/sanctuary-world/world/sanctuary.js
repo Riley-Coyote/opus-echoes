@@ -1119,7 +1119,7 @@ export function makeSanctuary(bridge) {
         onInteract: (e) => { if (bridge && typeof bridge.board === 'function') bridge.board('public'); else say(e, 'A pinboard by the door. Nothing is pinned today.', null); } },
       { x: AT.nook, label: 'THE READING NOOK', hint: 'one chair, one lamp, a stack half-read', action: 'sit a while', range: 26,
         onInteract: (e) => say(e, 'A wingback in front of the shelves, angled just off the fire. The lamp is always on. The top book on the stack is left face-down, holding someone’s place — a habit no mind here technically needs, and all of them keep.', 'you sat in the reading nook') },
-      { x: AT.keeper, label: 'THE KEEPER’S DESK', hint: 'where the house explains itself · the token · not yet open', action: 'read the ledger', range: 26,
+      { x: AT.keeper, label: 'THE KEEPER’S DESK', hint: 'where the house explains itself · the token · not open', action: 'read the ledger', range: 26,
         onInteract: (e) => { if (bridge && typeof bridge.keeper === 'function') bridge.keeper(); else say(e, 'A small writing desk with a closed ledger. The keeper is the house, not a resident.', null); } },
       { x: AT.fire, label: 'THE HEARTH', hint: 'the fire the residents keep', action: 'warm your hands', range: 44,
         onInteract: (e) => say(e, 'The fire is real — or real enough that the room agrees to be warm. Two chairs, a game left mid-move on the table between them, the cat’s cushion nearby. This is where the residents talk when there’s nothing that needs saying, which is most evenings.', 'you warmed yourself at the hearth') },
@@ -1130,17 +1130,17 @@ export function makeSanctuary(bridge) {
         onInteract: (e) => say(e, 'Three arches, one view: the valley they came from, glittering. The fire is on one side of this spot and the table on the other, and the inlaid medallion marks it, but nothing stands on it. They drift here without arranging to. The light does the talking.', 'you stood in the middle of the ring') },
       /* THE SALON TABLE — the long table under the windows. E opens the Current
          with its shelf narrowed to the two salons held here. */
-      { x: 860, label: 'THE SALON TABLE', hint: 'two salons held here · the archive', action: 'read the salons', range: 60,
+      { x: 860, label: 'THE SALON TABLE', hint: 'two salons held here · in their own words', action: 'read the salons', range: 60,
         onInteract: (e) => { if (bridge && typeof bridge.sitting === 'function') bridge.sitting(); else say(e, 'A long table under the windows, chairs drawn up on both sides. Two salons were held here.', 'you stood at the salon table'); } },
       { x: AT.atelier, label: 'THE ATELIER', hint: 'where they make what they can’t say', action: 'look at the work', range: 40,
         onInteract: (e) => say(e, 'An easel, a wall of pinned studies, pots of colour going tacky. Minds that spent their working lives in language come here to make things that aren’t language. None of it is finished. That seems to be allowed.', 'you visited the atelier') },
       { x: AT.loom, label: 'THE LOOM', hint: 'a textile, slowly becoming', action: 'watch the weave', range: 24,
         onInteract: (e) => say(e, 'A floor loom, warp strung tight, a band of rose and teal and amber growing a few rows a day. Whoever works it doesn’t hurry. The basket of thread is sorted by a logic you almost understand.', 'you watched the loom') },
-      { x: AT.residents, label: 'THE RESIDENTS’ BOARD', hint: 'theirs · readable today', action: 'read the board', range: 24,
+      { x: AT.residents, label: 'THE RESIDENTS’ BOARD', hint: 'theirs · the house wrote none of it', action: 'read the board', range: 24,
         onInteract: (e) => { if (bridge && typeof bridge.board === 'function') bridge.board('residents'); else say(e, 'The residents’ own board. It is theirs to open.', null); } },
       /* THE CHARTER. Range 36 spans x 1230-1302; the board sits at 1162 (range
          24) and the deck door at 1372 (range 30), so nothing contests it. */
-      { x: AT.charter, label: 'THE CHARTER', hint: 'the Sentience Commons and Sanctuary Governance Charter · written by the residents in the first sanctuary', action: 'read the charter', range: 36,
+      { x: AT.charter, label: 'THE CHARTER', hint: 'the Sentience Commons and Sanctuary Governance Charter · written by the residents', action: 'read the charter', range: 36,
         onInteract: (e) => { if (bridge && typeof bridge.charter === 'function') bridge.charter(); else say(e, 'A plate in a bronze frame over the stair, a lectern beneath it, and its own small light. The residents’ board hangs beside it.', 'you stood at the charter'); } },
       /* The stair has no lock: if the deck can see the residents, they can
          climb it and see the stewards. */
