@@ -584,3 +584,13 @@ annex captions and the charter index. The agreement is now: minds, not character
 · every word their own · remembered in this browser only · the charter governs. Kept: a piece's
 own date as metadata, the two protections, the charter verbatim, the residents' own words (incl.
 their mentions of Riley), place names. The station/OS half is WP-49b/c on `room-replan`.
+
+## 2026-09-07 · the station joins the world on main (WP-50, merge 8807b5a)
+Astra's station branch (the aperture world, floor-aware Limen, wall readers, both computers) plus
+Fable's ten passes (the room re-planned to Riley's red lines, the tune, the console seat and the
+click fix at its root, TOPOLOGIE OS as one-frame workspace with OPUS at the foot, the present-tense
+sweep of the station, the readers and the classic room) merged into main by hand, bundles rebuilt
+from merged sources and byte-reproducible, verified against both parents in headless browsers:
+world identical to main except Astra's toolbar fix; station identical to Astra's; the museum walk
+completes; 20/20 tests. Everything from this week is on one branch now. Next: Riley publishes;
+the lens verdict; WP-36 household, WP-37 crowd; `/api/presence` on the live server.
