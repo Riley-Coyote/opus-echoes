@@ -1234,9 +1234,13 @@ html.exploring,html.exploring body{overflow:hidden}
 .hero>.world:not(.fs) .cab__stage>canvas{width:100%;height:100%;object-fit:contain}
 .hero>.world:not(.fs) .feed{min-height:0; max-height:none}
 .feed__list{min-height:0}
-.hero>.world:not(.fs) .compass{min-height:var(--fs-compass-min);
+/* the compass and the HUD are furniture, not slack: flex must never take a row
+   off them to make the window fit, or the fit measures the squashed band and
+   hands the window the room it should have given back. `.world.fs` has held
+   this rule since the first screen was built; the first screen was missing it. */
+.hero>.world:not(.fs) .compass{flex:none; min-height:var(--fs-compass-min);
   padding:var(--fs-compass-pad); gap:var(--fs-compass-gap)}
-.hero>.world:not(.fs) .cab__hud{padding:var(--fs-hud-pad); min-height:0}
+.hero>.world:not(.fs) .cab__hud{flex:none; padding:var(--fs-hud-pad); min-height:0}
 /* the HUD holds a fixed two lines and one hint: what the visitor is standing
    near changes as they walk, and the window must not resize under them. */
 .hero>.world:not(.fs) .cab__hudbody{font-size:var(--fs-hud-body); line-height:var(--fs-hud-lh);

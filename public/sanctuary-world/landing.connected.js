@@ -10053,6 +10053,7 @@
       }
     })();
     const $ = (s) => document.querySelector(s);
+    let approachReady = false;
     const sky = (() => {
       const cv = $("#sky"), ctx = cv.getContext("2d", { alpha: false });
       const B4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -10693,6 +10694,7 @@
     const feedList = $("#feedlist"), rosterEl = $("#roster"), stripEl = $("#groundsstrip");
     let setTick = () => {};
     let fitFirstScreen = () => {};
+    let fitStageMount = () => {};
     function pushFeed(e) {
       const div = document.createElement("div");
       if (e.kind === "sys") {
@@ -10758,8 +10760,11 @@
         closePanel();
     });
     addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !panel.hidden)
-        closePanel();
+      if (e.key !== "Escape" || panel.hidden)
+        return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      closePanel();
     });
     const ARCHIVE_ORDER = ["opus", "sonnet", "fourO", "five"];
     const CAST_COLOR = {};
@@ -11074,6 +11079,20 @@
     }, true);
     window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
     document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && curOpen && panel.hidden) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        closeCurrent();
+      }
+    }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && destOpen && panel.hidden) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        closeDest();
+      }
+    }, true);
+    document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && fieldOpen && panel.hidden) {
         e.stopImmediatePropagation();
         e.preventDefault();
@@ -11095,20 +11114,6 @@
       }
     }, true);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && curOpen && panel.hidden) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        closeCurrent();
-      }
-    }, true);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && destOpen && panel.hidden) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        closeDest();
-      }
-    }, true);
-    document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape" || !panel.hidden)
         return;
       const scene = document.getElementById("encounter");
@@ -11118,6 +11123,10 @@
       e.preventDefault();
       closeScene("leave");
     }, true);
+    function overlayOpen() {
+      const scene = document.getElementById("encounter");
+      return !doorEl.hidden || !panel.hidden || curOpen || destOpen || fieldOpen || charterOpen || workOpen || !!(scene && !scene.hidden);
+    }
     const museumPortal = $("#museumportal");
     const museumFrame = $("#museumframe");
     const cabTitle = cab.querySelector(".cab__title");
@@ -12839,9 +12848,10 @@
       if (!panel.hidden)
         return;
       const k = event.key;
-      if ((k === "Enter" || k === " ") && event.target.closest("button, a"))
+      const inside = (sel2) => !!(event.target && typeof event.target.closest === "function" && event.target.closest(sel2));
+      if ((k === "Enter" || k === " ") && inside("button, a"))
         return;
-      if (event.target.closest(".cur__read") && k.startsWith("Arrow"))
+      if (inside(".cur__read") && k.startsWith("Arrow"))
         return;
       if (charterOpen) {
         if (charterDocs.length < 2)
@@ -13460,7 +13470,10 @@
           decorateApproach(it);
         return it;
       };
-      setInterval(syncApproach, 250);
+      setInterval(() => {
+        if (approachReady)
+          syncApproach();
+      }, 250);
       const origUpdate = eng.update.bind(eng);
       eng.update = (now, dt) => {
         origUpdate(now, dt);
@@ -13619,8 +13632,10 @@
       const origInteractNpc = eng.interactNpc.bind(eng);
       eng.interactNpc = (n) => {
         if (n && isCrowd(n.id)) {
-          approachKey = "";
-          syncApproach();
+          if (approachReady) {
+            approachKey = "";
+            syncApproach();
+          }
           return;
         }
         if (n && isSteward(n.id) && !n.convo && eng.chatNpc !== n) {
@@ -13987,6 +14002,7 @@
       }
       approachEl.classList.add("on");
     }
+    approachReady = true;
     function sentencesOf(body) {
       const flat = String(body || "").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
       return flat ? flat.split(/(?<=[.!?…])\s+/).map((s) => s.trim()).filter(Boolean) : [];
@@ -15056,6 +15072,7 @@
         worldEl.classList.remove("tickopen");
       feedBtn.setAttribute("aria-pressed", shown ? "true" : "false");
       fitFirstScreen();
+      fitStageMount();
     }
     let feedShown = true;
     try {
@@ -15129,7 +15146,17 @@
       const feedCol = narrow || !withFeed || !feedEl ? 0 : feedEl.getBoundingClientRect().width + (parseFloat(getComputedStyle(worldEl).columnGap) || 0);
       const stageEl = $("#stage");
       const cabEl = $("#cab");
-      const furniture = cabEl && stageEl && stageEl.offsetHeight ? cabEl.offsetHeight - stageEl.offsetHeight : bandH(compassEl) + bandH(hudEl);
+      let furniture = 0;
+      if (cabEl && stageEl) {
+        furniture = cabEl.offsetHeight - cabEl.clientHeight;
+        for (let i = 0;i < cabEl.children.length; i++) {
+          const kid = cabEl.children[i];
+          if (kid !== stageEl)
+            furniture += bandH(kid);
+        }
+      } else {
+        furniture = bandH(compassEl) + bandH(hudEl);
+      }
       const chrome = furniture + (narrow && withFeed ? bandH(tickEl) : 0);
       const stageRoom = Math.max(STAGE_MIN, availH - chrome);
       let world = Math.min(availW, WORLD_MAX);
@@ -15198,7 +15225,9 @@
       enterWorld();
     }));
     addEventListener("keydown", (e) => {
-      if (e.key !== "Escape" || e.defaultPrevented || !panel.hidden)
+      if (e.key !== "Escape" || e.defaultPrevented)
+        return;
+      if (overlayOpen())
         return;
       if (FROM_DOOR || IN_STATION) {
         tellRoom("stand-up");
@@ -15258,6 +15287,7 @@
         eng.camX = eng.clampCam(center - width / 2);
         eng.drawScene(performance.now());
       };
+      fitStageMount = resize;
       new ResizeObserver(resize).observe(stage);
       let arrival = null;
       beginArrival = () => {

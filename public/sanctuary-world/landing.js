@@ -34,6 +34,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      scene section below has run; a const read before its line is a ReferenceError */
   const DEMO = (() => { try { return new URLSearchParams(location.search).get('demo'); } catch (e) { return null; } })();
   const $ = (s) => document.querySelector(s);
+  /* syncApproach runs on a 250 ms interval started while the boot is still
+     above the encounter section, so it can be called before the card's own
+     bindings exist — a const read before its line is a ReferenceError, and one
+     thrown four times a second inside the station's glass is the console the
+     controls were read through. It stands down until its section is up. */
+  let approachReady = false;
 
   /* ────────────────────────── the sky ──────────────────────────
      ONE sky, and the scroll is the evening.
@@ -648,6 +654,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
      feed starts talking before either exists, so both start as no-ops */
   let setTick = () => {};
   let fitFirstScreen = () => {};
+  /* the stage's mount, re-cut from the box it is shown in. Set once the world
+     pointer is up; called wherever the box changes inside one frame (the feed). */
+  let fitStageMount = () => {};
   function pushFeed(e) {
     const div = document.createElement('div');
     if (e.kind === 'sys') {
@@ -706,7 +715,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   function say(html, ms) { toast.innerHTML = html; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), ms || 2600); }
   $('#panelclose').addEventListener('click', closePanel);
   panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
-  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) closePanel(); });
+  /* the panel owns this Escape outright: it closed something, so nothing further
+     down the order — full mode, the station's seat — may act on the same key. */
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || panel.hidden) return;
+    e.preventDefault(); e.stopImmediatePropagation(); closePanel();
+  });
 
   /* ────────────────────────── the archive, on the wall ──────────────────────────
      The journal overlay and the two boards read the adapter — the residents' own
@@ -1093,20 +1107,30 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   }, true);
   window.__sanctuaryDoor = { open: openDoor, isOpen: () => !doorEl.hidden };
   /* ────────────────────────── ESC / back — the one order ──────────────────────────
-     Capture phase, in source order, each stopping the rest dead:
+     ONE Escape closes exactly the topmost open thing and nothing else. Capture
+     phase, in source order, each stopping the rest dead:
        1. the door card   (registered just above)
-       2. THE FIELD STUDIO's glass
-       3. THE CHARTER
-       4. THE WALL
-       5. THE CURRENT
-       6. DESTINATIONS
+       2. THE CURRENT
+       3. DESTINATIONS
+       4. THE FIELD STUDIO's glass
+       5. THE CHARTER
+       6. THE WALL
        7. the encounter
      Each of 2–7 stands down while the house panel is open (`!panel.hidden`), so a
      panel opened from inside any of them closes first. Then the bubble phase:
-       7. the panel        (`:214`)
-       8. fullscreen       (near the foot of this file)
-       9. the engine       (`#cab` keydown — cancel travel, else blur)
+       8. the panel        (`closePanel`, above — it stops the key dead too)
+       9. the engine's own travel cancel (`#cab` keydown)
+      10. full mode (`html.exploring` / `.fs`), or `stand-up` in `?in=station`
+          and `?door=1` — and ONLY with nothing open (`overlayOpen()`), so a key
+          that closed an overlay can never also end the world
+      11. blur (`#cab`)
      `M` is ignored while the encounter is open; the door card swallows it too. */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && curOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeCurrent(); }
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && destOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeDest(); }
+  }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && fieldOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeFieldGlass(); }
   }, true);
@@ -1117,17 +1141,18 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (e.key === 'Escape' && workOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeWall(); }
   }, true);
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && curOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeCurrent(); }
-  }, true);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && destOpen && panel.hidden) { e.stopImmediatePropagation(); e.preventDefault(); closeDest(); }
-  }, true);
-  document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || !panel.hidden) return;
     const scene = document.getElementById('encounter');
     if (!scene || scene.hidden) return;
     e.stopImmediatePropagation(); e.preventDefault(); closeScene('leave');
   }, true);
+  /* the one list the order above and the full-mode handler both read: is
+     anything on the screen that an Escape belongs to before the world does */
+  function overlayOpen() {
+    const scene = document.getElementById('encounter');
+    return !doorEl.hidden || !panel.hidden || curOpen || destOpen || fieldOpen || charterOpen || workOpen
+      || !!(scene && !scene.hidden);
+  }
   const museumPortal = $('#museumportal');
   const museumFrame = $('#museumframe');
   const cabTitle = cab.querySelector('.cab__title');
@@ -2705,8 +2730,10 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     if (!panel.hidden) return;
     const k = event.key;
-    if ((k === 'Enter' || k === ' ') && event.target.closest('button, a')) return;
-    if (event.target.closest('.cur__read') && k.startsWith('Arrow')) return;
+    /* the key may be dispatched on the document itself, which has no `closest` */
+    const inside = (sel) => !!(event.target && typeof event.target.closest === 'function' && event.target.closest(sel));
+    if ((k === 'Enter' || k === ' ') && inside('button, a')) return;
+    if (inside('.cur__read') && k.startsWith('Arrow')) return;
     if (charterOpen) {
       if (charterDocs.length < 2) return;
       if (k === 'ArrowDown' || k === 'ArrowRight') { event.preventDefault(); charterSelect(charterAt + 1); }
@@ -2897,7 +2924,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
         && (!it.npc.temp || isCrowd(it.npc.id))) decorateApproach(it);
       return it;
     };
-    setInterval(syncApproach, 250);
+    setInterval(() => { if (approachReady) syncApproach(); }, 250);
     /* the day director rides the engine's own update */
     const origUpdate = eng.update.bind(eng);
     eng.update = (now, dt) => {
@@ -3410,7 +3437,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
        already up. */
     const origInteractNpc = eng.interactNpc.bind(eng);
     eng.interactNpc = (n) => {
-      if (n && isCrowd(n.id)) { approachKey = ''; syncApproach(); return; }
+      if (n && isCrowd(n.id)) { if (approachReady) { approachKey = ''; syncApproach(); } return; }
       if (n && isSteward(n.id) && !n.convo && eng.chatNpc !== n) {
         approachEl.classList.remove('on');
         bridge.deck(STEWARD_BY_ID[n.id].panel);
@@ -3783,6 +3810,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     }
     approachEl.classList.add('on');
   }
+  approachReady = true;
 
   /* ── the resident's own sentences ── */
   function sentencesOf(body) {
@@ -4669,7 +4697,11 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     worldEl.classList.toggle('nofeed', !shown);
     if (!shown) worldEl.classList.remove('tickopen');
     feedBtn.setAttribute('aria-pressed', shown ? 'true' : 'false');
+    /* the window is re-fitted and the mount re-cut in the same frame the column
+       goes: a frame with the canvas letterboxed inside a box of the wrong aspect
+       is a frame the visitor sees as the page breaking. */
     fitFirstScreen();
+    fitStageMount();
   }
   /* The house is talking when you arrive, so the feed is open when you arrive.
      The key is a record of a choice, not a default: only a value this browser
@@ -4763,14 +4795,25 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const withFeed = !worldEl.classList.contains('nofeed');
     const feedCol = (narrow || !withFeed || !feedEl) ? 0
       : feedEl.getBoundingClientRect().width + (parseFloat(getComputedStyle(worldEl).columnGap) || 0);
-    /* the cab's own furniture, taken from the cab rather than added up: the
-       compass and the HUD settle at their own pace after first paint, and a
-       guess here would leave the window a few rows short of its 420. */
+    /* the cab's own furniture: its edges plus every child that is not the stage.
+       Taken this way rather than as `cab.offsetHeight - stage.offsetHeight`,
+       which reads back whatever this function last gave the stage — and if the
+       stage was ever a row too tall, the compass and the HUD are squashed by
+       flex and the squashed height is measured as though it were the real one,
+       so the window keeps the room it should have given back. That is the loop
+       the feed button fell into. */
     const stageEl = $('#stage');
     const cabEl = $('#cab');
-    const furniture = (cabEl && stageEl && stageEl.offsetHeight)
-      ? cabEl.offsetHeight - stageEl.offsetHeight
-      : bandH(compassEl) + bandH(hudEl);
+    let furniture = 0;
+    if (cabEl && stageEl) {
+      furniture = cabEl.offsetHeight - cabEl.clientHeight;          /* the cab's borders */
+      for (let i = 0; i < cabEl.children.length; i++) {
+        const kid = cabEl.children[i];
+        if (kid !== stageEl) furniture += bandH(kid);
+      }
+    } else {
+      furniture = bandH(compassEl) + bandH(hudEl);
+    }
     const chrome = furniture + (narrow && withFeed ? bandH(tickEl) : 0);
     const stageRoom = Math.max(STAGE_MIN, availH - chrome);
 
@@ -4839,7 +4882,12 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     e.preventDefault(); enterWorld();
   }));
   addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || e.defaultPrevented || !panel.hidden) return;
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    /* the last stop in the order: full mode is left, and the room outside the
+       glass is told, ONLY by an Escape pressed with nothing open. A key that
+       closed the panel, the encounter, the Current, DESTINATIONS, the field
+       glass, the charter or the wall has already done its one thing. */
+    if (overlayOpen()) return;
     /* inside a room, ESC belongs to the room: it stands the visitor up from the
        desk. The key never reaches that document on its own, so it is handed up. */
     if (FROM_DOOR || IN_STATION) { tellRoom('stand-up'); return; }
@@ -4890,6 +4938,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       eng.camX = eng.clampCam(center - width / 2);
       eng.drawScene(performance.now());
     };
+    fitStageMount = resize;
     new ResizeObserver(resize).observe(stage);
 
     /* ── THE ARRIVAL ──
