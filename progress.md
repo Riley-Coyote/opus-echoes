@@ -308,3 +308,7 @@ untouched. Keep the result on draft PR #16 for review; publication remains pause
 ## 2026-09-08 — Closer terminal view
 - Reduced only the terminal seat distance from .59 to .42 lens units, making its screen approximately 40% larger while retaining the bezel.
 - Synced latest main first. Browser screenshot inspected; interactive landing, full-screen round trip, document retention, mobile fallback, and no page exceptions verified.
+
+## 2026-09-08 — Keyboard placement
+- Aligned the keyboard in the CRT local coordinate frame, centred and level with 4cm bezel clearance. Moved the CRT back 4cm to retain desktop support at the front edge.
+- Inspected room and seated browser screenshots; landing interaction, fullscreen retention, reduced motion, and production build passed.

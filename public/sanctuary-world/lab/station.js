@@ -1081,7 +1081,7 @@ scene.add(desk);
    of square" any more but squarely at the eye, because at a metre and a half
    a screen a fifth of a turn off-axis is a screen you cannot read. The angle
    is not a taste decision — it is the bearing from the terminal to LAND_EYE. */
-const TERM_X = DESK.x - 0.45, TERM_Z = DESK.z + 0.02;
+const TERM_X = DESK.x - 0.45, TERM_Z = DESK.z - 0.02;
 const CRT_ROT = Math.atan2(LAND_EYE.x - TERM_X, LAND_EYE.z - TERM_Z);   /* ≈ −0.355 rad, 20.3° */
 const crt = new THREE.Group();
 crt.position.set(TERM_X, DESK.top + 0.074, TERM_Z);
@@ -1144,8 +1144,10 @@ const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector
 /* the keyboard, the papers, the pencil — a slab somebody works at */
 {
   const kbd = new THREE.Group();
-  kbd.position.set(TERM_X + 0.02, DESK.top + 0.074, DESK.z + 0.36);
-  kbd.rotation.set(-0.03, CRT_ROT, 0);
+  // Place the keyboard in the monitor's local frame: centred on its glass,
+  // with 4cm of desk between the bezel and the back row, inside the slab edge.
+  kbd.position.copy(crt.localToWorld(new THREE.Vector3(0, 0, 0.425)));
+  kbd.rotation.y = CRT_ROT;
   desk.add(kbd);
   kbd.add(roundedSolid(.51,.025,.202,.006,instrumentCharcoal,0,.012,0));
   const keyMat=new THREE.MeshStandardMaterial({color:0x8d8271,roughness:.52});
