@@ -637,3 +637,13 @@ public, vessel not public, the code), the charter; `skip the room ↓` in the ch
 scrolls to it, narrow or no-WebGL shows the index instead of redirecting; the MNEMOS mark on every
 inner page leads home. The page's scroll locks while seated or flat. mnemos.chat forwards to
 mnemos.world until it has a project of its own.
+
+## 2026-09-07 · the index, in the Mnemos design system (WP-53, ad983db)
+The page under the station is Mnemos Research now, not the sanctuary's pixel idiom: black
+housing, Instrument Sans · Fragment Mono · Doto, the display engine's wells as the only images
+(memory · travel · the marquee band · net · type), corner labels the only annotation, the editorial
+spread alternating down the page, one Doto readout — how many are in the house now, from
+/api/presence — one signal colour and it is the focus ring. Five doors: the sanctuary, the 3D
+museum, Polyphonic, the agent sketchbook (pages drawn by the minds; the tool not public), and
+resources as a catalog on a hairline seam. The kit is vendored at public/mnemos-kit/. Riley: the
+pixel aesthetic is the sanctuary's own; the index speaks the broader design language.
