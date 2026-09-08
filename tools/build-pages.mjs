@@ -31,6 +31,12 @@
      public/sanctuary-world/stewards/<steward>/index.html
 
    Usage:  node tools/build-pages.mjs        (or: bun run build:sanctuary-world)
+           node tools/build-pages.mjs --frames    the pages, and the three
+             frames of the world the flat pages hang: the hall, the garden
+             and the lookout, drawn by the engine itself and written to
+             data/rooms/{sanctuary,garden,lookout}.png. Needs a server on
+             SANCTUARY_BASE (default http://localhost:8080) and Playwright;
+             without either it says so and the pages are written anyway.
    ══════════════════════════════════════════════════════════════════ */
 
 import fs from 'node:fs';
@@ -70,16 +76,24 @@ const esc = (s) => String(s === null || s === undefined ? '' : s)
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap';
-const CSS_V = '20260907-pages-8';
+const CSS_V = '20260907-index-1';
 
-/* the two-line nav every page carries: the house, the two indexes, the charter.
-   `here` marks the page you are on so the nav never lies about where you are. */
+/* the mark leads out to the front door — the station at the site's root, which
+   every page in the house hangs under. It is the one link that leaves, and it
+   leaves for the whole window: a page read on the station's own screen must
+   never load the station inside it. */
+const MARK = '<a class="nav__mark" href="/" target="_top">MNEMOS</a>';
+
+/* the two-line nav every page carries: the mark, the house, the two indexes,
+   the charter. `here` marks the page you are on so the nav never lies about
+   where you are. */
 function nav(root, here, second) {
   const row = (cls, kids) => '<nav class="nav ' + cls + '" aria-label="' + (cls === 'nav--foot' ? 'Foot' : 'Site') + '"><div class="wrap"><div class="nav__in">' + kids + '</div></div></nav>';
   const a = (href, label, id) => id === here
     ? '<a href="' + esc(href) + '" aria-current="page">' + esc(label) + '</a>'
     : '<a href="' + esc(href) + '">' + esc(label) + '</a>';
-  const line = a(root + 'index.html', 'the house', 'house')
+  const line = MARK
+    + a(root + 'index.html', 'the house', 'house')
     + a(root + 'residents/index.html', 'residents', 'residents')
     + a(root + 'stewards/index.html', 'stewards', 'stewards')
     + a(root + 'index.html?open=charter', 'the charter', 'charter')
@@ -550,3 +564,68 @@ for (const r of built)
 for (const s of stewards)
   console.log('  ' + s.id.padEnd(11, ' ') + String(s.notes).padStart(3, ' ') + ' notes   · ' + s.pages + ' pages');
 console.log('build-pages   ' + written.length + ' page(s) written');
+
+/* ══════════════════════════════════════════════════════════════════
+   the frames of the world the flat pages hang
+
+   A resident's page already shows the room they keep, and the index
+   under the station shows the hall, the garden and the lookout. None
+   of those are drawings of the world: they are the world, one frame of
+   it, drawn by the same engine the visitor walks in — the world page
+   composes them at 20:00 through PLACE_SPEC's cameras, and this reads
+   them straight off that page rather than choosing a camera of its own.
+   One composition, one source of truth.
+
+   The capture is opt-in (`--frames`): the ordinary build stays a Node
+   script with no dependencies and no browser, so it runs anywhere.
+   ══════════════════════════════════════════════════════════════════ */
+const WORLD_FRAMES = [
+  { id: 'sanctuary', file: 'sanctuary.png' },
+  { id: 'garden', file: 'garden.png' },
+  { id: 'lookout', file: 'lookout.png' }
+];
+const FRAME_BASE = process.env.SANCTUARY_BASE || 'http://localhost:8080';
+
+async function captureWorldFrames() {
+  let pw = null;
+  for (const mod of ['playwright-core', 'playwright']) {
+    try { pw = await import(mod); break; } catch (_) { /* try the next */ }
+  }
+  if (!pw) {
+    console.error('build-pages   --frames needs Playwright, which this checkout does not have.\n'
+      + '              Open ' + FRAME_BASE + '/sanctuary-world/index.html, wait for THE PLACES to\n'
+      + '              draw, and save each [data-frame="<id>"] img src into data/rooms/<id>.png.');
+    process.exitCode = 2;
+    return;
+  }
+  const out = path.join(SW, 'data', 'rooms');
+  fs.mkdirSync(out, { recursive: true });
+  const browser = await pw.chromium.launch({
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+  });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(FRAME_BASE + '/sanctuary-world/index.html', { waitUntil: 'load', timeout: 60000 });
+    /* the last of the three is drawn one animation frame at a time */
+    await page.waitForFunction((ids) => ids.every((id) => {
+      const el = document.querySelector('[data-frame="' + id + '"]');
+      return !!(el && el.src && el.src.startsWith('data:image/png;base64,'));
+    }), WORLD_FRAMES.map((f) => f.id), { timeout: 60000 });
+    for (const frame of WORLD_FRAMES) {
+      const url = await page.evaluate((id) => document.querySelector('[data-frame="' + id + '"]').src, frame.id);
+      const png = Buffer.from(url.slice('data:image/png;base64,'.length), 'base64');
+      if (png.length < 2000) throw new Error('the frame for ' + frame.id + ' came back blank');
+      fs.writeFileSync(path.join(out, frame.file), png);
+      console.log('  frame ' + frame.id.padEnd(11, ' ') + (png.length / 1024).toFixed(0).padStart(4, ' ') + ' kB  → data/rooms/' + frame.file);
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
+if (process.argv.includes('--frames')) {
+  await captureWorldFrames().catch((err) => {
+    console.error('build-pages   the frames could not be drawn: ' + err.message);
+    process.exitCode = 1;
+  });
+}

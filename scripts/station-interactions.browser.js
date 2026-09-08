@@ -58,7 +58,9 @@ async (page) => {
     }
     await qa.keyboard.press("Escape");
     await qa.waitForFunction(() => __station.mode() === "rest");
-    for (const id of ["alcove", "plate", "clock", "board", "sleeve", "sign"]) {
+    /* the sign is not a reader any more — it is the way down to the index
+       under the room, so it is checked with the page, not here */
+    for (const id of ["alcove", "plate", "clock", "board", "sleeve"]) {
       await clickObject(id);
       await qa.waitForSelector("#station-inspector:not([hidden])");
       await qa.waitForFunction(

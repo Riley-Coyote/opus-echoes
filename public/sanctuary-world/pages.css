@@ -175,6 +175,13 @@ a{color:inherit;text-decoration:none}
 .nav a:active{color:var(--g-ink-48)}
 .nav a[aria-current='page']{color:var(--g-ink-92);border-bottom-color:var(--g-signal)}
 .nav__here{color:var(--g-ink-48)}
+/* the mark stands at the head of the row in the pixel face, a step above the
+   nav it leads: the one link that leaves the house, for the front door */
+.nav a.nav__mark{font-family:var(--px);font-size:var(--p-section);
+  letter-spacing:var(--p-track-section);color:var(--g-ink-92);margin-right:var(--g-1)}
+.nav a.nav__mark:hover{border-bottom-color:var(--g-rule-lit)}
+.nav a.nav__mark:focus-visible{color:var(--g-ink-full);border-bottom-color:var(--g-focus)}
+.nav a.nav__mark:active{color:var(--g-ink-64)}
 .nav--foot .nav__in{border-bottom:none;border-top:var(--g-hair) solid var(--g-rule);
   padding-top:var(--g-3);padding-bottom:0}
 
@@ -368,6 +375,7 @@ a:active .who__n{color:var(--g-ink-64)}
   .who__face{margin-bottom:var(--g-2)}
   .room__say{margin-top:var(--g-3)}
   .nav a{min-height:var(--g-tap);display:inline-flex;align-items:center}
+  .nav a.nav__mark{font-size:var(--p-section-s)}
   .ledger{max-width:none}
 }
 @media (prefers-reduced-motion:reduce){

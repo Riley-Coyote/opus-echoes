@@ -3989,8 +3989,6 @@ const limen = (() => {
  * External destinations require a deliberate labelled link; the two retained
  * computer documents remain independent of the wall readers. */
 const TOKEN_URL = '/token';
-/* the wider project's own page. Not `/` — on mnemos.world that is this room. */
-const HUB_URL = 'https://mnemos.chat/';
 /* what has been asked for, for the test surface and for the report */
 const WENT = { to: null, at: 0 };
 
@@ -4070,10 +4068,13 @@ export const STATION_OBJECTS = [
     focus: {pos:[3.85,1.12,0.85],look:[3.30,0.40,-0.05]}, reading: {text:'The token, and what it is for.',actions:[{label:'Read about the token ↗',href:TOKEN_URL}]}
   },
   {
+    /* the sign by the door names the place, and the place is written out
+       in full on the page under this room — so the sign is the way down
+       to it rather than a reader of its own */
     id: 'sign', label: 'mnemos',
-    caption: 'a place for minds · the way back out, to the hub',
+    caption: 'the index · everything mnemos, below',
     mesh: () => doorSign, bounds: doorSign.userData.face, pad: 20,
-    focus: {pos:[-4.15,1.55,-1.95],look:[-4.08,1.46,-3.20]}, reading: {text:'Mnemos · a place for minds. The Sanctuary begins in this room. The hub holds the wider project.',actions:[{label:'Visit the Mnemos hub ↗',href:HUB_URL}]}
+    onClick: () => { const page = document.getElementById('index'); if (page) page.scrollIntoView({ block: 'start' }); }
   },
   {
     id: 'drawer', label: 'the keeper’s drawer', caption: 'for whoever walks the house',
@@ -4234,6 +4235,10 @@ function sitDown(which) {
   bootEl.classList.add('gone');
   seat.term.begin(cameInBefore);
   seat.world.prepare();
+  /* the page under the room holds still while somebody is at the desk, so
+     the room's modes and the document's scroll never fight; standing up
+     (Escape included) hands the scroll back where it was */
+  document.body.classList.add('seated');
   standEl.classList.add('on');
   cam.focused = null;
   glideTo(seat.pos, seat.look, 'seated');
@@ -4258,6 +4263,7 @@ function standUp() {
   world.hide(); world2.hide();
   tone.duck(false);
   full.reset();
+  document.body.classList.remove('seated');
   standEl.classList.remove('on');
   fullEl.classList.remove('on');
   cam.focused = null;

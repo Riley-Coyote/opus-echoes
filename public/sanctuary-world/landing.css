@@ -128,7 +128,14 @@ main,header.bar,footer{position:relative;z-index:2}
 .bar{display:flex;justify-content:space-between;align-items:center;gap:16px;
   padding:16px 28px;font-family:var(--px);font-size:10px;letter-spacing:.16em}
 .bar__l{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
-.bar__mark{color:var(--ink)}
+/* the mark is the one link that leaves: the front door at the site's root.
+   It keeps the pixel face it had as a label — only the states are new. */
+.bar__mark{color:var(--ink);text-decoration:none;
+  border-bottom:1px solid transparent;padding-bottom:2px;
+  transition:color .18s var(--ease-out),border-color .18s var(--ease-out)}
+.bar__mark:hover{border-bottom-color:var(--line2)}
+.bar__mark:focus-visible{outline:none;border-bottom-color:rgba(242,236,223,.5)}
+.bar__mark:active{color:var(--signal-dim)}
 .bar__sub{font-family:var(--mono);font-size:10px;color:var(--dim)}
 .bar__tag{font-family:var(--mono);font-size:10px;color:var(--dim)}
 

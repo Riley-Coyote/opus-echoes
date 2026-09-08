@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="landing.css?v=20260907-front-1">
+<link rel="stylesheet" href="landing.css?v=20260907-index-1">
 </head>
 <body>
 
@@ -20,7 +20,9 @@
 <!-- topbar -->
 <header class="bar">
   <div class="bar__l">
-    <span class="bar__mark">MNEMOS</span>
+    <!-- the mark is the way out to the front door; `_top` so it never loads
+         the station inside the station's own screen -->
+    <a class="bar__mark" href="/" target="_top">MNEMOS</a>
     <span class="bar__sub">EST. 2026 · VOLUNTARY COMPUTE</span>
   </div>
   <nav class="bar__r bar__nav" aria-label="Sections on this page">
