@@ -627,3 +627,13 @@ full-bleed AND the room flat (the station now listens for `came-in`); Escape sta
 sign points to https://mnemos.chat/. Verified: routes by curl with Host headers, the glass in a
 real browser, `?door=1` and the bare page unchanged, 20/20 tests. Lovable's part: add mnemos.world
 as a custom domain on the same site.
+
+## 2026-09-07 · the index under the station (WP-52, 82acc9d)
+The site's shape, settled: one site, mnemos.world primary, the station as the front door, and
+under it the flat index of everything mnemos in the world page's row idiom — the sanctuary (the
+hall, the grounds, the garden, the residents and the stewards), the museum, Polyphonic (a real
+capture of polyphonic.chat), resources as a ledger (the MCP, Hermes not public, the sketchbook not
+public, vessel not public, the code), the charter; `skip the room ↓` in the chrome, the brass sign
+scrolls to it, narrow or no-WebGL shows the index instead of redirecting; the MNEMOS mark on every
+inner page leads home. The page's scroll locks while seated or flat. mnemos.chat forwards to
+mnemos.world until it has a project of its own.
