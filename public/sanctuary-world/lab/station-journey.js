@@ -81,7 +81,7 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
   return {
     passageSnapshot(){const copy=passage.clone(true);copy.traverse(o=>{if(o.isMesh)o.geometry=new T.BufferGeometry().copy(o.geometry);});copy.updateMatrixWorld(true);return copy.toJSON();},
     get active(){return state!=='idle';},get state(){return {phase:state,paused,progress:total?covered/total:0,direction};},
-    async start(direct=false){if(state!=='idle')return;sourceFocus=document.activeElement;direct=direct||globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;revision++;initialGuide={position:guide.group.position.clone(),quaternion:guide.group.quaternion.clone()};saved=prepare();cameraStart=camera.position.clone();lookStart=camera.quaternion.clone();state='preparing';direction='out';paused=false;stageTime=0;approachCovered=0;approachSpeed=0;lookHeld=0;panel.hidden=false;document.body.classList.add('station-travel');panel.querySelector('[data-action=cancel]').textContent='Return';status('Limen is opening the passage…');panel.querySelector('[data-action=cancel]').focus?.({preventScroll:true});
+    async start(direct=false){if(state!=='idle')return;sourceFocus=document.activeElement;direct=direct||globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;revision++;initialGuide={position:guide.group.position.clone(),quaternion:guide.group.quaternion.clone()};saved=prepare();cameraStart=camera.position.clone();lookStart=camera.quaternion.clone();state='preparing';direction='out';paused=false;stageTime=0;approachCovered=0;approachSpeed=0;lookHeld=0;panel.hidden=false;document.body.classList.add('station-travel');panel.querySelector('[data-action=cancel]').textContent='Return';status('Anima is opening the passage…');panel.querySelector('[data-action=cancel]').focus?.({preventScroll:true});
       // WP-46: the room is one level now, with the desk under the porthole on
       // the left and the credenza in the right corner. The clear lane out of
       // either is the open strip in front of both, so a withdrawal goes to the
@@ -106,14 +106,14 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
       if(planGuideRoute&&!direct){
         const seated=cameraStart.z<2.4, goal=seated?[2.7,2.75]:[-.8,2.75];
         const safe=planGuideRoute([p.x,p.z],goal);
-        if(!safe){state='waiting';status('Limen cannot reach the passage from here. You can arrive directly or stay in the station.');return;}
+        if(!safe){state='waiting';status('Anima cannot reach the passage from here. You can arrive directly or stay in the station.');return;}
         approach=safe.map(v);if(seated)approach.push(v([2.7,5.55]));
       }
       stageDuration=Math.max(1.7,distances(cameraApproach)*1.5/1.2);
       if(direct)await transfer(true);
     },
-    returnFromMuseum(direct=false){if(state==='idle')return;revision++;if(direct){finish();return;}direction='back';state='traveling';paused=false;lookHeld=0;camera.position.set(6.7,1.65,11.15);camera.lookAt(6.7,1.65,7.2);route([...travelPath.slice(cameraApproach.at(-1).x===2.7?1:0)].reverse().map(v));guide.group.visible=true;guide.group.position.set(6.7,0,7.95);guide.group.rotation.y=Math.PI;panel.hidden=false;panel.querySelector('[data-action=cancel]').textContent='Return now';status('With Limen → keeper’s room');},
-    pause(){if(['idle','away','crossing'].includes(state))return;paused=!paused;status(paused?'Paused · continue when you are ready.':direction==='out'?'With Limen → Sun chamber':'With Limen → keeper’s room');},
+    returnFromMuseum(direct=false){if(state==='idle')return;revision++;if(direct){finish();return;}direction='back';state='traveling';paused=false;lookHeld=0;camera.position.set(6.7,1.65,11.15);camera.lookAt(6.7,1.65,7.2);route([...travelPath.slice(cameraApproach.at(-1).x===2.7?1:0)].reverse().map(v));guide.group.visible=true;guide.group.position.set(6.7,0,7.95);guide.group.rotation.y=Math.PI;panel.hidden=false;panel.querySelector('[data-action=cancel]').textContent='Return now';status('With Anima → keeper’s room');},
+    pause(){if(['idle','away','crossing'].includes(state))return;paused=!paused;status(paused?'Paused · continue when you are ready.':direction==='out'?'With Anima → Sun chamber':'With Anima → keeper’s room');},
     look(){lookHeld=Infinity;},
     skip(){if(direction==='back'){finish();return;}transfer(true);},
     cancel(){if(state==='idle')return;directReturn();finish();},
@@ -124,7 +124,7 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
         guide.group.rotation.y+=d*(1-Math.exp(-dt*1.6));
         guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});return;
       }
-      if(state==='preparing'){guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});if(doorwayError()){state='waiting';status('The room could not be prepared. Arrive now retries.');return;}if(!doorwayReady())return;state='staging';status('Limen is meeting you at the passage.');}
+      if(state==='preparing'){guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});if(doorwayError()){state='waiting';status('The room could not be prepared. Arrive now retries.');return;}if(!doorwayReady())return;state='staging';status('Anima is meeting you at the passage.');}
       if(state==='restoring') {stageTime+=dt;const k=Math.min(1,stageTime/stageDuration),e=k*k*k*(k*(k*6-15)+10);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*(1-e)));camera.quaternion.copy(lookStart).slerp(saved.quaternion,e);if(k===1)finish();return;}
       if(state==='staging'){
         stageTime+=dt;
@@ -138,7 +138,7 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
         if(gp.distanceTo(ahead)>.001){const yaw=Math.atan2(ahead.x-gp.x,ahead.z-gp.z);guide.group.rotation.y+=Math.atan2(Math.sin(yaw-guide.group.rotation.y),Math.cos(yaw-guide.group.rotation.y))*(1-Math.exp(-dt*4));}
         guide.walkPose(time,approachSpeed/1.4,{gaze:remaining<.05?camera.position:new T.Vector3(ahead.x,1.7,ahead.z),attention:remaining<.05?'visitor':'path'});
         const q=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().lookAt(camera.position,new T.Vector3(gp.x,1.55,gp.z),camera.up));if(!lookHeld)camera.quaternion.copy(lookStart).slerp(q,e);
-        if(k===1&&approachCovered>=distances(approach)){state='traveling';status('With Limen → Sun chamber');}return;
+        if(k===1&&approachCovered>=distances(approach)){state='traveling';status('With Anima → Sun chamber');}return;
       }
       if(direction==='out' && camera.position.z>7.4 && !doorwayReady()){guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});status('Preparing the room beyond · your place is held.');return;}
       const left=total-covered,oldSpeed=speed;speed=Math.min(speed+.7*dt,1.4,direction==='out'?1.4:Math.sqrt(Math.max(.006,2*.7*left)));covered=Math.min(total,covered+(oldSpeed+speed)*.5*dt);

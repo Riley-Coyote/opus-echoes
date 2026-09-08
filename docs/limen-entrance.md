@@ -1,4 +1,33 @@
-# Limen's continuous entrance
+# Anima's continuous entrance
+
+## Current keeper — 2026-09-08
+
+The Station keeper is now **Anima**: a ceramic mask in a sewn cowl, warm linen,
+an umber mantle and aged bronze fittings. The body remains suspended, with the
+same attention, cloth and momentum simulation. `anima-keeper-4` identifies this
+body; existing `limen-*` internal rig names remain the continuity interface.
+Visitor-facing Station and museum labels use Anima. This is the existing scripted
+keeper role; no resident identity, live conversation or authored work was changed.
+
+For a keeper-only update while museum curation is in progress, run:
+
+```sh
+bun tools/refresh-aperture-keeper.mjs
+bun build public/sanctuary-world/lab/station.js --outfile public/sanctuary-world/station.connected.js --format=iife --target=browser --minify
+```
+
+The guarded adapter makes the existing museum export use the shared body factory
+and updates keeper-name literals. It preserves the exhibition and its assets,
+rehashes the entry module, and fails if it cannot recognize the factory. The
+full `build-aperture` flow also runs it. Do not rebuild another agent's unfinished
+curation merely to change this keeper.
+
+Browser verification: the new body, pose, cloth and momentum match across the
+doorway at six widths (375–1920), with keyboard pause/resume, reduced motion,
+cancellation, repeated visits and both original computer documents retained.
+The notes below retain the earlier implementation and measurement history.
+
+## Entrance implementation
 
 The next embodiment and material work is sequenced in the
 [Limen embodiment plan](limen-embodiment-plan.md). These entrance notes describe

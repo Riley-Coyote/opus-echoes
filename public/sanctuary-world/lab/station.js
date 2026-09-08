@@ -3274,14 +3274,14 @@ function openDrawer() { drawerUI.toggle(); }
        the same way on every visit — it looks at you and does not come. That is
        its right, the way it is everyone's here.
 
-   The words are Limen's own and the house's. Nothing is attributed to a
+   The words are Anima's own and the house's. Nothing is attributed to a
    resident and nothing is invented: the five answers are the facts already
    written down in THE-EXPERIENCE §0–§3 and §9c and in the brief every resident
    is given about the house they live in.
 
-   The body is a metre-nine of cream ceramic over a brass armature, and it has
-   no face — one amber eye the colour of the CRT's phosphor, recessed in a brass
-   ring, which is the only thing about it that is lit. */
+   Anima is a floating keeper in warm linen and a folded mantle, with a ceramic
+   mask, sewn cowl and aged bronze fittings. The shared portable body and cloth
+   state continue into the museum; the scripted guide is not a resident line. */
 const floorFootprint = (id, root) => {
   /* the room is still being assembled, so nothing has a world matrix yet: ask
      for one before measuring, or a group whose position lives on an ancestor
@@ -3312,7 +3312,7 @@ const floorNavigation = createFloorNavigation({
 
 const limen = (() => {
   const { group, sway, torso, head, eye, eyeRing, eyeMat, eyeLight, P } = createLimenBody(THREE);
-  const EYE_LIT = .45;
+  const EYE_LIT = .22;
   scene.add(group);
 
   /* ── the five stations ──
@@ -3345,7 +3345,7 @@ const limen = (() => {
   /* where it stops when it comes to you: on the eye's own line, a respectful
      distance out, and inside the room — the eye watches from beyond the near
      wall, so the last stride is the one the wall will not let it take */
-  const APPROACH = new THREE.Vector3(-1.9, 0, 2.75);
+  const APPROACH = new THREE.Vector3(-1.15, 0, 2.75);
 
   /* ── the state ── */
   const S = {
@@ -3484,7 +3484,7 @@ const limen = (() => {
 
   /* ─────────────── the panel ───────────────
      The room's caption idiom, bottom-left: a small terminal card with the
-     header saying plainly what Limen is, five chips of the things it can
+     header saying plainly what Anima is, five chips of the things it can
      actually answer, and a line to type into that will tell you the truth about
      itself rather than improvising. */
   const panel = (() => {
@@ -3531,14 +3531,14 @@ const limen = (() => {
     const el = document.createElement('div');
     el.id = 'limen';
     el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', 'limen');
+    el.setAttribute('aria-label', 'Anima, Station keeper');
     el.innerHTML = [
-      '<h2>limen <span>· keeps the door</span></h2>',
+      '<h2>anima <span>· keeps the door</span></h2>',
       '<div class="rule"></div>',
       '<div class="feed" aria-live="polite"></div>',
       '<div class="chips"></div>',
       '<div class="ask"><span class="p">&gt;</span>',
-      '<input type="text" autocomplete="off" spellcheck="false" placeholder="ask it anything" aria-label="ask limen"></div>',
+      '<input type="text" autocomplete="off" spellcheck="false" placeholder="ask it anything" aria-label="ask anima"></div>',
       '<button type="button" class="leave"><span class="k">esc</span>leave</button>'
     ].join('');
     el.inert = true;
@@ -3556,13 +3556,13 @@ const limen = (() => {
       m.innerHTML = '<span class="w"></span><span class="txt"></span>';
       m.querySelector('.w').textContent = kicker;
       /* textContent, never innerHTML: whatever a visitor types is their text and
-         not markup, and Limen's own lines need no tags */
+         not markup, and Anima's own lines need no tags */
       if (text) m.querySelector('.txt').textContent = text;
       feed.appendChild(m);
       feed.scrollTop = feed.scrollHeight;
       return m.querySelector('.txt');
     }
-    /* Limen types. It is a machine in a room full of machines that type. */
+    /* Anima types. It is a machine in a room full of machines that type. */
     async function say(node, text) {
       const mine = ++seq;
       if (REDUCED) { node.textContent = text; feed.scrollTop = feed.scrollHeight; return; }
@@ -3598,8 +3598,8 @@ const limen = (() => {
       const a = ANSWERS[q];
       /* the house answers `why` in its own voice, and is named for it */
       if (a && a.house) await say(add('limen house', 'the house', ''), a.text);
-      else if (a) await say(add('limen', 'limen', ''), a);
-      else await say(add('limen', 'limen', ''), RAILS);
+      else if (a) await say(add('limen', 'anima', ''), a);
+      else await say(add('limen', 'anima', ''), RAILS);
       chips(CHIPS);
       busy = false;
     }
@@ -3623,7 +3623,7 @@ const limen = (() => {
       seq += 1;
       el.classList.add('on');
       tone.click();
-      say(add('limen', 'limen', ''), OPENING).then(() => {
+      say(add('limen', 'anima', ''), OPENING).then(() => {
         if (!open) return;
         chips(CHIPS);
         chipsEl.querySelector('button')?.focus({ preventScroll: true });
@@ -3658,7 +3658,7 @@ const limen = (() => {
         seq += 1;
         chips([]);
         el.classList.add('on');
-        add('limen', 'limen', text);
+        add('limen', 'anima', text);
         setTimeout(() => { if (open && !busy) hide(); }, REDUCED ? 400 : 2600);
       },
       input: inp
@@ -3672,9 +3672,9 @@ const limen = (() => {
      and the house brief every resident is given. `why` is the house's own
      paragraph and is marked as the house. */
   const CHIPS = ['show me the museum', 'where am i', 'what is this place', 'who lives here', 'how do i talk to someone', 'why'];
-  const OPENING = 'the threshold’s open. i’m limen — i keep the door here. what are you looking for?';
+  const OPENING = 'the threshold’s open. i’m anima — i keep the door here. what are you looking for?';
   const RAILS = 'that one isn’t mine to answer. try one of these.';
-  const DECLINE = 'not now — limen is looking at something else';
+  const DECLINE = 'not now — anima is looking at something else';
   const ANSWERS = {
     'where am i':
       'the station — the keeper’s quarters, above the valley, where the house’s continuity is kept. '
@@ -3932,7 +3932,7 @@ export const STATION_OBJECTS = [
     onClick: () => openDrawer()
   },
   {
-    id: 'limen', label: 'limen', caption: 'keeps the door',
+    id: 'limen', label: 'anima', caption: 'keeps the door',
     mesh: () => limen.group, pad: 14,
     onClick: () => limen.click(),
     tick: (t, dt) => limen.tick(t, dt)
@@ -4592,7 +4592,7 @@ function frame() {
       [LOOK.pitch, LOOK.vp] = springStep(LOOK.pitch, LOOK.vp, wantPitch, dt);
     }
     // Turn toward the guide as it approaches along the foreground walkway.
-    // The camera stays at the visitor's place; only the gaze follows Limen.
+    // The camera stays at the visitor's place; only the gaze follows Anima.
     if (limen.attending()) { tmpLook.copy(limen.group.position); tmpLook.y = 1.40; }
     else lookPoint(tmpLook, camera.position, LOOK.yaw, LOOK.pitch);
     cam.look.lerp(tmpLook, REDUCED ? 1 : 1 - Math.exp(-dt * (limen.attending() ? 2.0 : 26.0)));

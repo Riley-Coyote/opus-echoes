@@ -1,6 +1,6 @@
 import { test, expect } from 'bun:test';
 import * as THREE from 'three';
-import { createLimenBody, poseLimen, serializeLimenBody } from '../public/sanctuary-world/lab/limen-body.js';
+import { createLimenBody, poseLimen, serializeLimenBody, KEEPER_BODY_VERSION } from '../public/sanctuary-world/lab/limen-body.js';
 
 test('the body survives the museum handoff without replacing geometry or moving parts', () => {
   const {group}=createLimenBody(THREE);
@@ -8,7 +8,8 @@ test('the body survives the museum handoff without replacing geometry or moving 
   const json=serializeLimenBody(group);
   expect(json.geometries.every(g=>g.type==='BufferGeometry')).toBe(true);
   const received=new THREE.ObjectLoader().parse(json);
-  expect(received.userData.bodyVersion).toBe('living-keeper-3');
+  expect(received.userData.bodyVersion).toBe(KEEPER_BODY_VERSION);
+  expect(received.userData.keeperName).toBe('Anima');
   const a=new THREE.Box3().setFromObject(group), b=new THREE.Box3().setFromObject(received);
   expect(a.min.distanceTo(b.min)).toBeLessThan(1e-6);
   expect(a.max.distanceTo(b.max)).toBeLessThan(1e-6);
@@ -20,7 +21,7 @@ test('the body survives the museum handoff without replacing geometry or moving 
   }
 });
 
-test('Limen remains suspended with no legs or feet throughout the floating cycle',()=>{
+test('Anima remains suspended with no legs or feet throughout the floating cycle',()=>{
   const {group}=createLimenBody(THREE);
   expect(group.getObjectByName('journey-leg-left')).toBeUndefined();
   expect(group.getObjectByName('journey-leg-right')).toBeUndefined();

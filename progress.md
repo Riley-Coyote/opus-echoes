@@ -240,3 +240,32 @@ and feed-column layout) while this pass ran, then the temporary :8137 server and
 checkout were no longer present. The baseline is retained in the review captures.
 The review branch incorporates origin/main 3f11c02; those separate landing/world
 changes are preserved. The established :8080 server continues serving this review.
+
+## 2026-09-08 — Anima, the Station keeper
+
+Current prompt: others are making changes concurrently; reshape Limen to fit the
+Station environment and rename the keeper Anima. Preserve the floating body,
+connected journey and all ongoing work.
+
+Scope: portable keeper body, its visitor-facing names, conversation standing
+distance, phone arrival still and the paired museum export. Existing resident
+identities, messages and voices are unchanged. Internal limen rig identifiers stay
+stable for serialized motion and existing receivers.
+
+Four visual passes: ceramic mask and cowl; shoulder construction and cloak
+clearance; folded, tapered layers and more space in an encounter; restrained
+fittings and concealed sleeves. The final pass checks the shared body at the
+doorway, responsive views and the phone poster. Same cloth simulation point count;
+no new animation loop. Body version: anima-keeper-4.
+
+The museum checkout has ongoing curation. It was not edited or rebuilt. A guarded
+AST adapter connects the already-curated export to the shared body factory and
+updates only keeper name tokens. Normal build-aperture also runs the adapter.
+No exhibition assets or resident statements are changed. Export preservation,
+idempotence and unknown-export failure have focused tests.
+
+Verification so far: 30 tests pass. Body serializes and continues its pose, cloth,
+floor clearance and momentum. Actual Station encounter and model turnarounds
+reviewed; the supplied game client reports only the existing presence 503.
+Browser journey, phone, build and final source refresh are in progress. Evidence:
+Codex visualizations / 01a07f83-6aae-7820-bbe0-e18c5c3163d3 / anima-keeper.
