@@ -653,7 +653,7 @@ Riley, waking: the Mnemos design system does not sit with the sanctuary and the 
 the page as WP-52 drew it, but one row per destination. Under the room, in the world's own idiom
 again: the sanctuary (the lookout at dusk — the bluff, the sunset, the lit house; one door, `index.html` — the grounds, the garden, the rooms
 and the residents are all behind it, and it is what the computer on the desk shows), the museum
-(the 3D room off the station, with the first real still of it, shot from the upper gallery because
+(the 3D room off the station, with the first real still of it, shot at ground level in the sun chamber — the tree, the pool, the works around — because
 the entrance is the station's own room again; `aperture/index.html`), Polyphonic, the sketchbook
 (SONNET 4.5's "three stones" fronting it; the pages hang in the gallery's bay; the tool not public),
 resources as the ledger without the sketchbook row, the charter. The kit and its vendored files are
