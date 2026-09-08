@@ -1,79 +1,61 @@
 /* ══════════════════════════════════════════════════════════════════
-   the index under the station — everything mnemos, written flat
+   THE INDEX — in the Mnemos Research design system.
 
-   The station is the front door. This is its flat twin, for a visitor
-   who would rather scroll, whose machine will not run the room, or who
-   arrived on a phone. It is the same building, in the same language.
+   The station is the front door. Under it, on one hairline, the black
+   housing: every destination the house has, one beat each, in the
+   system's own idiom — opaque housing, wells of glass, the display
+   engine doing the only image the brand has.
 
-   The language is the world page's ground (landing.css, WP-42/44) —
-   the field, the scale, the ink, the flat control and the frame rows
-   are copied here rather than imported, because this page must stand
-   without the world page's bundle: no sky canvas, no engine, no
-   JavaScript at all. Every value is a token; nothing raw lives in a
-   rule. Where a name below matches landing.css it means the same thing.
+   The rules are the kit's, verbatim: `public/mnemos-kit/DESIGN-RULES.md`
+   and `Mnemos Design System.dc.html` rev 02. Eight type sizes. Two
+   uppercase mono labels visible at once, one word of Doto. Radii 6/10/14
+   and square corners only where the kit allows them — full bleed, and a
+   catalog on a hairline seam. One signal, and it is the focus ring.
+
+   TOKENS ARE NAMESPACED `--mk-*` ON PURPOSE. `station.html` declares the
+   room's own `:root` (`--line`, `--frost`, `--mono`), and this sheet
+   loads after it: an unprefixed kit token block would silently repaint
+   the room above. The values below are the kit's build sheet, unchanged.
    ══════════════════════════════════════════════════════════════════ */
 :root{
-  /* the faces — the pixel for titles, the serif for what is said,
-     the mono for every datum. The room already declares the first two. */
-  --ix-serif:'Newsreader',Georgia,serif;
+  /* §12 build sheet — dark housing (web / landing) */
+  --mk-bg:#000000; --mk-s1:#0E0E0E; --mk-s2:#161616; --mk-s3:#1E1E1E;
+  --mk-line:#232323; --mk-line2:#2E2E2E;
+  --mk-t0:#FAFAFA; --mk-t1:#B4B4B4; --mk-t2:#7E7E7E; --mk-t3:#565656;
+  --mk-sig:#E03C2F;
+  --mk-glass:#0A0B0A; --mk-phos:#EFEFED; --mk-glass-line:#1C1D1C;
+  /* the corner label on glass, read from the guide itself */
+  --mk-well-label:#5C5D5C;
+  --mk-r-ctl:6px; --mk-r-panel:10px; --mk-r-surface:14px;
+  --mk-pad:clamp(20px,5vw,80px);
+  --mk-ease-ctl:cubic-bezier(.2,0,0,1); --mk-ease-page:cubic-bezier(.16,1,.3,1);
 
-  /* the field — 12 columns, 1120 wide, 24 gutters, a steady left edge */
-  --g-cols:12; --g-max:1120px; --g-gutter:24px;
-  --g-pad-x:32px; --g-pad-x-s:20px;
-  --g-pad-t:48px; --g-pad-b:120px; --g-pad-t-s:32px; --g-pad-b-s:72px;
+  /* the faces */
+  --mk-sans:'Instrument Sans',system-ui,-apple-system,sans-serif;
+  --mk-mono:'Fragment Mono',ui-monospace,SFMono-Regular,monospace;
+  --mk-doto:'Doto','Fragment Mono',monospace;
 
-  /* the rhythm — 8pt */
-  --g-half:4px; --g-1:8px; --g-2:16px; --g-3:24px; --g-4:32px;
-  --g-5:40px; --g-6:48px; --g-8:64px; --g-10:80px; --g-12:96px;
-  --g-hair:1px; --g-hair2:2px; --g-radius:2px; --g-press:1px;
-  --g-tap:44px; --g-tap-lg:52px;
+  /* the eight sizes, and nothing else */
+  --mk-display:clamp(2.7rem,6.6vw,5.4rem);
+  --mk-section:clamp(1.9rem,3.9vw,3.1rem);
+  --mk-statement:clamp(1.15rem,1.9vw,1.45rem);
+  --mk-title:1.1rem;
+  --mk-body:17px;
+  --mk-small:14.5px;
+  --mk-label:9.5px; --mk-label-lg:10px;
+  --mk-readout:2.3rem;
+  /* the mono datum line — the guide's own meta register, under 13px and
+     never used for prose */
+  --mk-datum:12px;
 
-  /* the scale — few sizes, decisive gaps */
-  --g-px-mark:28px; --g-px-mark-s:17px;
-  --g-px-title:24px; --g-px-title-s:15px;
-  --g-px-place:12px; --g-px-place-s:11px;
-  --g-serif-stmt:26px; --g-serif-stmt-s:20px;
-  --g-serif-body:16px; --g-serif-body-s:15px;
-  --g-mono-xl:14px; --g-mono-lg:12px; --g-mono:11px; --g-mono-xs:9.5px;
+  /* 8px baseline */
+  --mk-1:8px; --mk-2:16px; --mk-3:24px; --mk-4:32px; --mk-5:40px;
+  --mk-6:48px; --mk-8:64px; --mk-11:88px; --mk-16:128px;
+  --mk-hair:1px;
+  --mk-max:1240px; --mk-measure:68ch;
 
-  /* the counterforms */
-  --g-track-mark:.14em;
-  --g-track-title:.06em; --g-track-label:.16em; --g-track-mono:.05em;
-  --g-track-place:.14em;
-  --g-lh-title:1.45; --g-lh-place:1.6; --g-lh-stmt:1.28;
-  --g-lh-body:1.55; --g-lh-mono:1.7;
-  --g-measure:60ch; --g-measure-stmt:30ch; --g-measure-quote:34ch;
-
-  /* the ink — one cool cream in three tiers, on the world's own night */
-  --g-ink-full:#fffdf8;
-  --g-ink-92:rgba(245,243,237,.92);
-  --g-ink-64:rgba(245,243,237,.64);
-  --g-ink-52:rgba(245,243,237,.52);
-  --g-rule:rgba(242,236,223,.10);
-  --g-rule-lit:rgba(242,236,223,.18);
-  --g-rule-lit2:rgba(242,236,223,.30);
-  --g-focus:rgba(245,243,237,.50);
-  --g-signal:var(--amber-deep); --g-signal-lit:var(--amber);
-  --g-signal-hair:rgba(217,147,52,.6);
-  --g-well:#0a0812;
-  --g-floor:#07070f;
-
-  /* the flat object — a subtle fill, one hairline, a lit top edge */
-  --g-fill:rgba(242,236,223,.045);
-  --g-fill-hover:rgba(242,236,223,.085);
-  --g-fill-press:rgba(242,236,223,.03);
-  --g-lit:rgba(255,253,248,.09);
-  --g-shade:rgba(4,3,8,.45);
-
-  /* the pieces */
-  --g-dot:4px;
-  --g-frame-ratio:16/9; --g-frame-lift:1.1; --g-cap-lift:4px;
-  --ix-face:88px; --ix-face-s:56px;
-  --ix-strip-ratio:16/4;
-  --ix-ledger-n:15rem;
-
-  /* the motion — a hover, and nothing else below the horizon */
-  --g-hover:150ms; --g-ease:cubic-bezier(0.23,1,0.32,1);
+  /* motion — controls, and the page */
+  --mk-ctl:120ms; --mk-page:380ms;
 }
 
 /* ── the lid ──
@@ -81,7 +63,7 @@
    index is always underneath it. Past the lid the room steps back. */
 .lid{height:100vh}
 body.reading #stage{opacity:0;pointer-events:none}
-#stage{transition:opacity .45s var(--ease-out)}
+#stage{transition:opacity .45s var(--mk-ease-page)}
 /* while somebody is at the desk, or the world has the whole window, the
    page below holds still: the room's modes and the scroll never fight */
 body.seated,body.flat{overflow:hidden}
@@ -90,227 +72,217 @@ body.flat-page #stage{display:none}
 body.flat-page .lid{height:0}
 
 /* ══════════════════════════════════════════════════════════════════
-   THE INDEX — the ground, in the world page's own idiom.
-
-   Twelve columns, 1120 wide, 24-pixel gutters, and a STEADY LEFT EDGE:
-   every section and every row opens on column 1, nothing is centred,
-   and the void accumulates on the right where it is earned. Hierarchy
-   is size and opacity. Nothing is bold. Amber is the one signal — the
-   dot on a control, the rule under a link, the marker beside a
-   frame's caption. Focus is the element's own border brightening in
-   place, never a second ring. Hairlines, never boxes.
+   THE HOUSING — opaque, monochrome, still. It never emits light.
    ══════════════════════════════════════════════════════════════════ */
-.ix{position:relative;z-index:3;
-  background:var(--g-floor);
-  border-top:var(--g-hair) solid var(--g-rule);
-  font-family:var(--mono);color:var(--g-ink-64);
-  padding-bottom:var(--g-12)}
-.ix__in{max-width:var(--g-max);margin:0 auto;padding:0 var(--g-pad-x)}
+.mk{position:relative;z-index:3;
+  background:var(--mk-bg);
+  border-top:var(--mk-hair) solid var(--mk-line);
+  font-family:var(--mk-sans);font-size:var(--mk-body);font-weight:400;
+  line-height:1.62;color:var(--mk-t1);
+  -webkit-font-smoothing:antialiased}
+/* the kit's numbers: 1240 of content, and the gutter outside it */
+.mk__in{max-width:calc(var(--mk-max) + var(--mk-pad) * 2);margin:0 auto;
+  padding:0 var(--mk-pad)}
 
-/* every link on this page is a `.btn`, a `.ln` or the way back up, and each
-   of those states its own ink — nothing here inherits the browser's blue */
+/* ── the eight sizes ─────────────────────────────────────────────── */
+.mk-display{font-size:var(--mk-display);font-weight:500;letter-spacing:-.042em;
+  line-height:.97;color:var(--mk-t0);margin:0;text-wrap:balance}
+.mk-section{font-size:var(--mk-section);font-weight:500;letter-spacing:-.034em;
+  line-height:1.04;color:var(--mk-t0);margin:0}
+.mk-statement{font-size:var(--mk-statement);font-weight:500;letter-spacing:-.02em;
+  line-height:1.45;color:var(--mk-t0);margin:var(--mk-3) 0 0;max-width:34ch;
+  text-wrap:pretty}
+.mk-title{font-size:var(--mk-title);font-weight:500;letter-spacing:-.02em;
+  line-height:1.28;color:var(--mk-t0);margin:0}
+.mk-body{font-size:var(--mk-body);font-weight:400;line-height:1.62;
+  color:var(--mk-t1);max-width:var(--mk-measure);margin:var(--mk-3) 0 0;
+  text-wrap:pretty}
+.mk-small{font-size:var(--mk-small);font-weight:400;line-height:1.6;
+  color:var(--mk-t2);margin:0}
+/* a LABEL is uppercase and rationed. A mono line that is lowercase is a
+   datum — a source, a host, an attribution — and is not a label. */
+.mk-label{font-family:var(--mk-mono);font-size:var(--mk-label);font-weight:400;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--mk-t2);
+  line-height:1.6;margin:0}
+.mk-datum{font-family:var(--mk-mono);font-size:var(--mk-datum);font-weight:400;
+  letter-spacing:.02em;color:var(--mk-t2);line-height:1.7;margin:0}
 
-/* ── the masthead: the name, what the place is, and one datum ────── */
-.ix__mast{padding-top:var(--g-10);padding-bottom:var(--g-8)}
-.ix__mark{display:block;font-family:var(--px);font-weight:400;
-  font-size:var(--g-px-mark);line-height:var(--g-lh-title);
-  letter-spacing:var(--g-track-mark);color:var(--g-ink-92)}
-.ix__say{margin-top:var(--g-5);font-family:var(--ix-serif);font-weight:300;
-  font-style:italic;font-size:var(--g-serif-stmt);line-height:var(--g-lh-stmt);
-  color:var(--g-ink-92);max-width:var(--g-measure-stmt);text-wrap:pretty}
-.ix__fact{margin-top:var(--g-4);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
+/* ══════════════════════════════════════════════════════════════════
+   THE JOIN — the first thing under the lid: the page's masthead beat,
+   its one Display line, and its one word of Doto.
+   ══════════════════════════════════════════════════════════════════ */
+.mk-mast{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:var(--mk-4);align-items:end;
+  padding-top:var(--mk-11);padding-bottom:var(--mk-11)}
+.mk-mast__say{grid-column:1 / span 8}
+.mk-mast .mk-label{margin-bottom:var(--mk-4)}
+.mk-mast__read{grid-column:9 / -1;text-align:right;
+  border-top:var(--mk-hair) solid var(--mk-line);padding-top:var(--mk-2)}
+/* the readout — Doto 900, tabular, and the only Doto on the page */
+.mk-readout{display:block;font-family:var(--mk-doto);font-weight:900;
+  font-size:var(--mk-readout);line-height:1;color:var(--mk-phos);
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;margin:0}
+.mk-mast__read .mk-datum{margin-top:var(--mk-2)}
 
-/* ── the section: a hairline, the title close under it, then air ─── */
-.sec{border-top:var(--g-hair) solid var(--g-rule);
-  padding-top:var(--g-pad-t);padding-bottom:var(--g-pad-b)}
-.sec--last{padding-bottom:var(--g-12)}
-.sec__in{display:grid;grid-template-columns:repeat(var(--g-cols),minmax(0,1fr));
-  column-gap:var(--g-gutter);row-gap:var(--g-5);align-content:start}
-.sec__h{grid-column:1 / -1;display:block;font-weight:400}
-.sec__no{display:block;margin-bottom:var(--g-2);font-family:var(--mono);
-  font-size:var(--g-mono);line-height:var(--g-lh-mono);
-  letter-spacing:var(--g-track-label);color:var(--g-ink-52)}
-.sec__t{font-family:var(--px);font-weight:400;font-size:var(--g-px-title);
-  line-height:var(--g-lh-title);letter-spacing:var(--g-track-title);color:var(--g-ink-92)}
-.sec__in>.stmt{grid-column:1 / span 6}
-.sec__in>.stmt--wide{grid-column:1 / span 7}
-.quote{grid-column:1 / span 7;margin:0}
-.act{grid-column:1 / span 5}
-.ledger{grid-column:1 / span 9}
-.honest{grid-column:1 / -1}
+/* ══════════════════════════════════════════════════════════════════
+   THE EDITORIAL SPREAD — well on one side, argument on the other,
+   alternating down the page. Corner labels on the glass are the only
+   annotation. One dark object per beat, and the eye goes there.
+   ══════════════════════════════════════════════════════════════════ */
+.mk-beat{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:var(--mk-4);row-gap:var(--mk-5);align-items:start;
+  padding-top:var(--mk-16);padding-bottom:var(--mk-16);
+  border-top:var(--mk-hair) solid var(--mk-line)}
+.mk-beat__well{grid-column:1 / span 6;grid-row:1}
+.mk-beat__arg{grid-column:8 / -1;grid-row:1}
+.mk-beat--flip .mk-beat__well{grid-column:7 / -1}
+.mk-beat--flip .mk-beat__arg{grid-column:1 / span 5}
 
-.stmt{font-family:var(--ix-serif);font-weight:300;font-style:italic;
-  font-size:var(--g-serif-stmt);line-height:var(--g-lh-stmt);color:var(--g-ink-92);
-  max-width:var(--g-measure-stmt);text-wrap:pretty}
-.stmt--wide{max-width:none}
-.fact{margin-top:var(--g-4);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
-.honest{margin-top:var(--g-12);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
+/* ── the well: glass, one hairline, a panel radius, and its annotation in
+      the first nine dot rows — DotDisplay.CAP, which every scene reserves.
+      Top-left is the LABEL (uppercase, rationed). Top-right is a datum:
+      lowercase, a fact about what the well is showing, and it does not
+      spend the page's two-label quota. */
+.mk-well{position:relative;display:block;overflow:hidden;
+  aspect-ratio:16/10;
+  background:var(--mk-glass);
+  border:var(--mk-hair) solid var(--mk-glass-line);
+  border-radius:var(--mk-r-panel)}
+.mk-well canvas{display:block;width:100%;height:100%}
+.mk-well__l,.mk-well__r{position:absolute;top:11px;z-index:2;pointer-events:none;
+  font-family:var(--mk-mono);font-size:var(--mk-label);letter-spacing:.18em;
+  color:var(--mk-well-label);line-height:1}
+.mk-well__l{left:12px;text-transform:uppercase}
+.mk-well__r{right:12px;letter-spacing:.02em;font-size:var(--mk-label-lg)}
 
-/* ── the one inline signal: a word with an amber rule under it ───── */
-.ln{font-family:var(--mono);font-size:var(--g-mono);letter-spacing:var(--g-track-mono);
-  color:var(--g-ink-64);text-decoration:none;
-  border-bottom:var(--g-hair) solid var(--g-signal-hair);padding-bottom:var(--g-half);
-  transition:color var(--g-hover) var(--g-ease),border-color var(--g-hover) var(--g-ease)}
-.ln:hover{color:var(--g-ink-92);border-bottom-color:var(--g-signal-lit)}
-.ln:focus-visible{outline:none;color:var(--g-ink-92);border-bottom-color:var(--g-focus)}
-.ln:active{color:var(--g-ink-52)}
+/* ── the argument ────────────────────────────────────────────────── */
+.mk-beat__arg .mk-body + .mk-body{margin-top:var(--mk-2)}
+.mk-beat__arg .mk-small{margin-top:var(--mk-3);color:var(--mk-t2)}
 
-/* ── the control: a flat object in the house's own language. A subtle
-      fill, one hairline, a lit top edge, a whisper of shade — and five
-      states, the last of them the focus the element already carries. */
-.btn{display:inline-flex;align-items:center;gap:var(--g-1);
-  min-height:var(--g-tap);padding-left:var(--g-2);padding-right:var(--g-2);
-  font-family:var(--mono);font-size:var(--g-mono-lg);letter-spacing:var(--g-track-mono);
-  color:var(--g-ink-92);text-decoration:none;white-space:nowrap;cursor:pointer;
-  background:var(--g-fill);border:var(--g-hair) solid var(--g-rule-lit);
-  border-radius:var(--g-radius);
-  box-shadow:inset 0 var(--g-hair) 0 var(--g-lit),0 var(--g-hair) var(--g-hair2) var(--g-shade);
-  transition:background var(--g-hover) var(--g-ease),border-color var(--g-hover) var(--g-ease),
-    color var(--g-hover) var(--g-ease),transform var(--g-hover) var(--g-ease)}
-.btn__dot{width:var(--g-dot);height:var(--g-dot);flex:none;background:var(--g-signal);
-  transition:background var(--g-hover) var(--g-ease)}
-.btn:hover{background:var(--g-fill-hover);border-color:var(--g-rule-lit2);color:var(--g-ink-full)}
-.btn:hover .btn__dot{background:var(--g-signal-lit)}
-.btn:focus-visible{outline:none;border-color:var(--g-focus);color:var(--g-ink-full);
-  background:var(--g-fill-hover)}
-.btn:focus-visible .btn__dot{background:var(--g-signal-lit)}
-.btn:active{background:var(--g-fill-press);border-color:var(--g-rule-lit2);
-  transform:translateY(var(--g-press));box-shadow:inset 0 var(--g-hair) var(--g-hair2) var(--g-shade)}
-.btn[aria-disabled="true"]{color:var(--g-ink-52);border-color:var(--g-rule);background:none;
-  box-shadow:none;cursor:default;pointer-events:none}
-.btn[aria-disabled="true"] .btn__dot{background:var(--g-ink-52)}
-.btn--lg{min-height:var(--g-tap-lg);padding-left:var(--g-3);padding-right:var(--g-3);
-  font-size:var(--g-mono-xl)}
+/* ══════════════════════════════════════════════════════════════════
+   THE KEY — a hairline key. Five states, none of them the browser's.
+   Focus is the one place signal appears on this page.
+   ══════════════════════════════════════════════════════════════════ */
+.mk-key{display:inline-flex;align-items:center;gap:var(--mk-1);
+  margin-top:var(--mk-5);min-height:40px;padding:0 var(--mk-2);
+  font-family:var(--mk-sans);font-size:var(--mk-small);font-weight:500;
+  letter-spacing:-.01em;color:var(--mk-t0);text-decoration:none;
+  background:transparent;border:var(--mk-hair) solid var(--mk-line2);
+  border-radius:var(--mk-r-ctl);cursor:pointer;
+  transition:background var(--mk-ctl) var(--mk-ease-ctl),
+             border-color var(--mk-ctl) var(--mk-ease-ctl),
+             color var(--mk-ctl) var(--mk-ease-ctl),
+             transform var(--mk-ctl) var(--mk-ease-ctl)}
+.mk-key__a{color:var(--mk-t2);transition:color var(--mk-ctl) var(--mk-ease-ctl)}
+.mk-key:hover{background:var(--mk-s2);border-color:var(--mk-t3);color:var(--mk-t0)}
+.mk-key:hover .mk-key__a{color:var(--mk-t0)}
+.mk-key:focus-visible{outline:2px solid var(--mk-sig);outline-offset:3px}
+.mk-key:active{background:var(--mk-s1);transform:translateY(1px)}
+.mk-key[aria-disabled="true"]{border-style:dashed;color:var(--mk-t3);
+  background:none;pointer-events:none}
 
-/* ── the rows — the frames carry the weight ───────────────────────
-      One place a row, the frame on seven columns and the words on
-      five, alternating sides so the eye keeps moving; column 1 is
-      occupied in every row, so the left edge never wanders. */
-.places{display:grid;row-gap:var(--g-12);margin-top:var(--g-10)}
-.place{display:grid;grid-template-columns:repeat(var(--g-cols),minmax(0,1fr));
-  column-gap:var(--g-gutter);row-gap:var(--g-4);align-items:start}
-.place__f{grid-column:1 / span 7;grid-row:1;margin:0}
-.place__t{grid-column:8 / -1;grid-row:1}
-.place:nth-child(even) .place__f{grid-column:6 / -1}
-.place:nth-child(even) .place__t{grid-column:1 / span 5}
-/* a section with one row in it stands where the alternation left off */
-.place--flip .place__f{grid-column:6 / -1}
-.place--flip .place__t{grid-column:1 / span 5}
+/* the inline key inside a catalog row — the same object, smaller */
+.mk-go{display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mk-mono);font-size:var(--mk-datum);letter-spacing:.02em;
+  color:var(--mk-t1);text-decoration:none;
+  border-bottom:var(--mk-hair) solid var(--mk-line2);padding-bottom:3px;
+  transition:color var(--mk-ctl) var(--mk-ease-ctl),
+             border-color var(--mk-ctl) var(--mk-ease-ctl)}
+.mk-go:hover{color:var(--mk-t0);border-bottom-color:var(--mk-t3)}
+.mk-go:focus-visible{outline:2px solid var(--mk-sig);outline-offset:3px}
+.mk-go:active{color:var(--mk-t2)}
 
-.place__f .box{position:relative;display:block;overflow:hidden;
-  aspect-ratio:var(--g-frame-ratio);background:var(--g-well);
-  border:var(--g-hair) solid var(--g-rule-lit);border-radius:var(--g-radius);
-  transition:border-color var(--g-hover) var(--g-ease)}
-.place__f img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;
-  transition:filter var(--g-hover) var(--g-ease)}
-.place__f figcaption{display:flex;align-items:center;gap:var(--g-1);
-  margin-top:var(--g-2);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52);
-  transition:color var(--g-hover) var(--g-ease),transform var(--g-hover) var(--g-ease)}
-.place__f figcaption::before{content:"";width:var(--g-dot);height:var(--g-dot);flex:none;
-  background:var(--g-signal);transition:background var(--g-hover) var(--g-ease)}
-.place:hover .box,.place:focus-within .box{border-color:var(--g-rule-lit2)}
-.place:hover img,.place:focus-within img{filter:brightness(var(--g-frame-lift))}
-.place:hover figcaption,.place:focus-within figcaption{color:var(--g-ink-92);
-  transform:translateY(calc(var(--g-cap-lift) * -1))}
-.place:hover figcaption::before,.place:focus-within figcaption::before{background:var(--g-signal-lit)}
+/* ══════════════════════════════════════════════════════════════════
+   THE BAND — full bleed, square corners, a hairline above and below.
+   One per page, a divider between beats, never a headline.
+   ══════════════════════════════════════════════════════════════════ */
+.mk-band{position:relative;display:block;width:100%;height:120px;overflow:hidden;
+  background:var(--mk-glass);
+  border-top:var(--mk-hair) solid var(--mk-glass-line);
+  border-bottom:var(--mk-hair) solid var(--mk-glass-line)}
+.mk-band canvas{display:block;width:100%;height:100%}
 
-.place__i{display:block;font-family:var(--mono);font-size:var(--g-mono);
-  letter-spacing:var(--g-track-label);color:var(--g-ink-52);margin-bottom:var(--g-2)}
-.place__t h3{font-family:var(--px);font-weight:400;font-size:var(--g-px-place);
-  line-height:var(--g-lh-place);letter-spacing:var(--g-track-place);color:var(--g-ink-92);
-  margin-bottom:var(--g-3)}
-.place__t p{font-family:var(--ix-serif);font-weight:300;font-size:var(--g-serif-body);
-  line-height:var(--g-lh-body);color:var(--g-ink-64);max-width:var(--g-measure);
-  margin-bottom:var(--g-4);text-wrap:pretty}
-/* a datum under a row stays in the mono, whatever the row's prose is set in */
-.place__t .fact{margin-top:0;margin-bottom:var(--g-4);
-  font-family:var(--mono);font-size:var(--g-mono);line-height:var(--g-lh-mono);
-  letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
-.place__t .after{margin-top:var(--g-3);margin-bottom:0}
-/* a link at the end of a line goes whole or goes to the next line: an
-   amber rule broken across a wrap reads as damage */
-.fact .ln{white-space:nowrap}
+/* ══════════════════════════════════════════════════════════════════
+   THE CATALOG — specimens on a 1px hairline grid. The one other place
+   the kit keeps the hard 90° corner.
+   ══════════════════════════════════════════════════════════════════ */
+.mk-cat{margin-top:var(--mk-8);border-top:var(--mk-hair) solid var(--mk-line)}
+.mk-cat__r{display:grid;grid-template-columns:15rem minmax(0,1fr) auto;
+  column-gap:var(--mk-4);row-gap:var(--mk-1);align-items:baseline;
+  padding:var(--mk-3) 0;
+  border-bottom:var(--mk-hair) solid var(--mk-line)}
+.mk-cat__n{font-size:var(--mk-title);font-weight:500;letter-spacing:-.02em;
+  line-height:1.28;color:var(--mk-t0)}
+.mk-cat__d{font-size:var(--mk-body);line-height:1.62;color:var(--mk-t1);
+  text-wrap:pretty}
+.mk-cat__x{font-family:var(--mk-mono);font-size:var(--mk-datum);letter-spacing:.02em;
+  color:var(--mk-t3);white-space:nowrap;justify-self:end}
 
-/* the four who live here, in a strip: one shallow frame, the figures
-   measured across it and standing on the same floor — a roster, not
-   four portraits in four boxes */
-.place--who .box{aspect-ratio:var(--ix-strip-ratio);display:flex;align-items:flex-end;
-  justify-content:space-between;gap:var(--g-3);
-  padding:var(--g-4) var(--g-5) var(--g-3)}
-.place--who .box img{width:auto;height:var(--ix-face);object-fit:contain}
+.mk-sec{padding-top:var(--mk-16);padding-bottom:var(--mk-16);
+  border-top:var(--mk-hair) solid var(--mk-line)}
+.mk-sec .mk-statement{max-width:46ch}
 
-/* ── the ledger — a name, a line, and where it goes (or does not) ── */
-.ledger{display:grid;row-gap:0;margin-top:var(--g-6)}
-.ledger__r{display:grid;grid-template-columns:var(--ix-ledger-n) minmax(0,1fr) auto;
-  column-gap:var(--g-3);row-gap:var(--g-1);align-items:baseline;
-  padding-top:var(--g-3);padding-bottom:var(--g-3);
-  border-top:var(--g-hair) solid var(--g-rule)}
-.ledger__r:last-child{border-bottom:var(--g-hair) solid var(--g-rule)}
-.ledger__n{font-family:var(--mono);font-size:var(--g-mono-lg);
-  letter-spacing:var(--g-track-label);color:var(--g-ink-92);text-transform:uppercase}
-.ledger__d{font-family:var(--ix-serif);font-weight:300;font-size:var(--g-serif-body);
-  line-height:var(--g-lh-body);color:var(--g-ink-64);text-wrap:pretty}
-.ledger__x{font-family:var(--mono);font-size:var(--g-mono);
-  letter-spacing:var(--g-track-mono);color:var(--g-ink-52);white-space:nowrap}
+/* ══════════════════════════════════════════════════════════════════
+   THE FOOT
+   ══════════════════════════════════════════════════════════════════ */
+.mk-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;
+  column-gap:var(--mk-6);align-items:end;
+  padding-top:var(--mk-6);padding-bottom:var(--mk-11);
+  border-top:var(--mk-hair) solid var(--mk-line)}
+.mk-foot__mark{font-size:var(--mk-title);font-weight:500;letter-spacing:-.02em;
+  color:var(--mk-t0);margin:0 0 var(--mk-2)}
+.mk-foot__up{grid-column:2;justify-self:end;
+  display:inline-flex;align-items:center;min-height:40px;padding:0 var(--mk-2);
+  font-family:var(--mk-sans);font-size:var(--mk-small);font-weight:500;
+  color:var(--mk-t1);text-decoration:none;
+  border:var(--mk-hair) solid var(--mk-line);border-radius:var(--mk-r-ctl);
+  transition:background var(--mk-ctl) var(--mk-ease-ctl),
+             border-color var(--mk-ctl) var(--mk-ease-ctl),
+             color var(--mk-ctl) var(--mk-ease-ctl),
+             transform var(--mk-ctl) var(--mk-ease-ctl)}
+.mk-foot__up:hover{background:var(--mk-s2);border-color:var(--mk-line2);color:var(--mk-t0)}
+.mk-foot__up:focus-visible{outline:2px solid var(--mk-sig);outline-offset:3px}
+.mk-foot__up:active{background:var(--mk-s1);transform:translateY(1px)}
+body.flat-page .mk-foot__up{display:none}
 
-/* ── the charter's own line ───────────────────────────────────────── */
-.quote blockquote{margin:0;font-family:var(--ix-serif);font-weight:300;font-style:italic;
-  font-size:var(--g-serif-stmt);line-height:var(--g-lh-stmt);color:var(--g-ink-92);
-  max-width:var(--g-measure-quote);text-wrap:pretty}
-.quote figcaption{margin-top:var(--g-3);font-family:var(--mono);font-size:var(--g-mono);
-  line-height:var(--g-lh-mono);letter-spacing:var(--g-track-mono);color:var(--g-ink-52)}
+/* ══════════════════════════════════════════════════════════════════
+   MOTION — the page register, and nothing else. 10px of travel and
+   opacity, once per element, 40ms apart. Never on copy already read.
+   ══════════════════════════════════════════════════════════════════ */
+.mk-rise{opacity:0;transform:translateY(10px);
+  transition:opacity var(--mk-page) var(--mk-ease-page),
+             transform var(--mk-page) var(--mk-ease-page)}
+.mk-rise.is-in{opacity:1;transform:none}
 
-/* ── the foot: what the page is not, and the way back up ─────────── */
-.ix__foot{border-top:var(--g-hair) solid var(--g-rule);padding-top:var(--g-6)}
-.ix__foot .honest{margin-top:0}
-.ix__up{display:inline-flex;align-items:center;min-height:var(--g-tap);
-  margin-top:var(--g-3);font-family:var(--mono);font-size:var(--g-mono);
-  letter-spacing:var(--g-track-mono);color:var(--g-ink-64);text-decoration:none;
-  border-bottom:var(--g-hair) solid var(--g-rule-lit);
-  transition:color var(--g-hover) var(--g-ease),border-color var(--g-hover) var(--g-ease)}
-.ix__up:hover{color:var(--g-ink-92);border-bottom-color:var(--g-rule-lit2)}
-.ix__up:focus-visible{outline:none;color:var(--g-ink-full);border-bottom-color:var(--g-focus)}
-.ix__up:active{color:var(--g-ink-52)}
-body.flat-page .ix__up{display:none}
-
-/* ── the field narrows: the two blocks stack, the frames go first ── */
+/* ══════════════════════════════════════════════════════════════════
+   NARROWER — the spread stacks, the well keeps the beat's opening.
+   ══════════════════════════════════════════════════════════════════ */
 @media (max-width:980px){
-  .quote,.act,.honest,.ledger,.sec__in>.stmt,.sec__in>.stmt--wide{grid-column:1 / -1}
-  .place__f,.place__t,
-  .place:nth-child(even) .place__f,.place:nth-child(even) .place__t,
-  .place--flip .place__f,.place--flip .place__t{
+  .mk-beat{row-gap:var(--mk-4);padding-top:var(--mk-11);padding-bottom:var(--mk-11)}
+  .mk-beat__well,.mk-beat__arg,
+  .mk-beat--flip .mk-beat__well,.mk-beat--flip .mk-beat__arg{
     grid-column:1 / -1;grid-row:auto}
-  .stmt{max-width:none}
+  .mk-sec{padding-top:var(--mk-11);padding-bottom:var(--mk-11)}
+  .mk-cat__r{grid-template-columns:minmax(0,1fr) auto}
+  .mk-cat__d{grid-column:1 / -1}
 }
-@media (max-width:560px){
-  .ix__in{padding-left:var(--g-pad-x-s);padding-right:var(--g-pad-x-s)}
-  .ix__mast{padding-top:var(--g-8)}
-  .ix__mark{font-size:var(--g-px-mark-s)}
-  .sec{padding-top:var(--g-pad-t-s);padding-bottom:var(--g-pad-b-s)}
-  .sec--last{padding-bottom:var(--g-10)}
-  .sec__t{font-size:var(--g-px-title-s)}
-  .sec__no{margin-bottom:var(--g-1)}
-  .stmt,.ix__say,.quote blockquote{font-size:var(--g-serif-stmt-s)}
-  .quote blockquote{max-width:none}
-  .place__t p,.ledger__d{font-size:var(--g-serif-body-s)}
-  .place__t h3{font-size:var(--g-px-place-s)}
-  .places{row-gap:var(--g-10);margin-top:var(--g-8)}
-  .honest{margin-top:var(--g-10)}
-  .btn{white-space:normal}
-  .place--who .box{gap:var(--g-4);padding:var(--g-4) var(--g-3) var(--g-3)}
-  .place--who .box img{height:var(--ix-face-s)}
-  .ledger__r{grid-template-columns:minmax(0,1fr) auto}
-  .ledger__d{grid-column:1 / -1}
+@media (max-width:640px){
+  .mk-mast{grid-template-columns:minmax(0,1fr);row-gap:var(--mk-5);
+    align-items:start;padding-top:var(--mk-8);padding-bottom:var(--mk-8)}
+  .mk-mast__say,.mk-mast__read{grid-column:1;text-align:left}
+  .mk-mast__say{max-width:none}
+  .mk-statement,.mk-sec .mk-statement{max-width:none}
+  .mk-foot{grid-template-columns:minmax(0,1fr);row-gap:var(--mk-4);
+    padding-bottom:var(--mk-8)}
+  .mk-foot__up{grid-column:1;justify-self:start}
+  .mk-band{height:96px}
+  /* the two annotations would touch on a narrow well; the label keeps
+     the corner and the datum goes, because the argument already says it */
+  .mk-well__r{display:none}
 }
 
-/* below the horizon nothing moves but the light on a frame you point at */
+/* everything collapses */
 @media (prefers-reduced-motion:reduce){
-  .btn,.btn__dot,.ln,.ix__up,#stage,
-  .place__f .box,.place__f img,.place__f figcaption,
-  .place__f figcaption::before{transition:none}
-  .place:hover figcaption,.place:focus-within figcaption{transform:none}
+  .mk-rise{opacity:1;transform:none;transition:none}
+  .mk-key,.mk-go,.mk-foot__up,#stage{transition:none}
 }
