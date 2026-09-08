@@ -576,15 +576,73 @@ console.log('build-pages   ' + written.length + ' page(s) written');
    them straight off that page rather than choosing a camera of its own.
    One composition, one source of truth.
 
+   A frame may also want one thing inside a room rather than the room:
+   the keeper's desk is a metre of the hall, and at the hall's own scale
+   it is a smudge. Such a frame names its `room`, a `centreX`, how wide a
+   window of the world to take, the `band` of that window worth keeping,
+   and the `scale` to draw it at. It is composed here, by the same
+   technique the page uses — the engine, the hall's palette, 20:00, a
+   throwaway mount — and enlarged with nearest-neighbour, so it is still
+   the world and not a drawing of it.
+
    The capture is opt-in (`--frames`): the ordinary build stays a Node
    script with no dependencies and no browser, so it runs anywhere.
    ══════════════════════════════════════════════════════════════════ */
 const WORLD_FRAMES = [
   { id: 'sanctuary', file: 'sanctuary.png' },
   { id: 'garden', file: 'garden.png' },
-  { id: 'lookout', file: 'lookout.png' }
+  { id: 'lookout', file: 'lookout.png' },
+  /* the keeper's desk, at the library's east end: the desk at world x 410
+     with its closed ledger and its lit lamp, the chair, the settee that ends
+     the lounge, the shelves above and the arched window past them. A 253-wide
+     window of the hall, the 140 rows the floor and the shelf-bottoms live in,
+     drawn at three times the world's scale. */
+  { id: 'keeper', file: 'keeper.png', room: 'sanctuary',
+    centreX: 426, width: 253, band: { y: 240, h: 140 }, scale: 3 }
 ];
 const FRAME_BASE = process.env.SANCTUARY_BASE || 'http://localhost:8080';
+
+/* Runs inside the world page. The same six moves the page's own frames are
+   made of — a throwaway engine on a mount nobody sees, the hall's palette,
+   the visitor gone, the weather off, the clock at 20:00 — and then the band
+   is enlarged with smoothing off, so the frame is bigger pixels rather than
+   softer ones. `FIXED_TIME` is the page's own animation phase, so a frame is
+   the same frame every time it is drawn. */
+async function composeFrame(f) {
+  const eng = window.__sanctuary;
+  const [{ create }, { PALETTE }] = await Promise.all([
+    import('./world/engine.js'), import('./world/lookout.js')
+  ]);
+  const room = eng.rooms[f.room];
+  const width = Math.max(160, Math.min(f.width || room.width, room.width));
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:absolute;left:-40000px;top:0;';
+  holder.appendChild(document.createElement('canvas'));
+  document.body.appendChild(holder);
+  try {
+    const key = 'mnemos:build-pages:frame';
+    try { localStorage.removeItem(key); } catch (e) {}
+    const engine = create({ mount: holder, palette: PALETTE, rooms: eng.rooms, start: f.room,
+      width, height: 420, walkBand: [352, 402], wallBase: 300, storageKey: key,
+      cast: [], cat: null, scripts: [], groupScripts: [], ambient: [], bubbles: false, sound: false });
+    engine.destroy(); engine.roomId = f.room; engine.npcs = []; engine.cat = null;
+    engine.camX = Math.max(0, Math.min(Math.round((f.centreX || 0) - width / 2), room.width - width));
+    engine.av.x = -1000; engine.av.y = -1000;
+    engine.weather.raining = false; engine.drawVignette = () => {};
+    engine.clockMin = 20 * 60;
+    engine._bg = null; engine.bgRoom = null; engine._vig = null;
+    engine.drawScene(((18 * 60 + 31) * 60) * 1000);
+    const drawn = holder.querySelector('canvas');
+    const y = f.band ? f.band.y : 0;
+    const h = Math.min(f.band ? f.band.h : drawn.height, drawn.height - y);
+    const s = f.scale || 1;
+    const out = document.createElement('canvas');
+    out.width = drawn.width * s; out.height = h * s;
+    const cx = out.getContext('2d'); cx.imageSmoothingEnabled = false;
+    cx.drawImage(drawn, 0, y, drawn.width, h, 0, 0, out.width, out.height);
+    return out.toDataURL('image/png');
+  } finally { holder.remove(); }
+}
 
 async function captureWorldFrames() {
   let pw = null;
@@ -610,9 +668,16 @@ async function captureWorldFrames() {
     await page.waitForFunction((ids) => ids.every((id) => {
       const el = document.querySelector('[data-frame="' + id + '"]');
       return !!(el && el.src && el.src.startsWith('data:image/png;base64,'));
-    }), WORLD_FRAMES.map((f) => f.id), { timeout: 60000 });
+    }), WORLD_FRAMES.filter((f) => !f.room).map((f) => f.id), { timeout: 60000 });
+    /* a composed frame needs the engine the page mounted, for its rooms */
+    if (WORLD_FRAMES.some((f) => f.room))
+      await page.waitForFunction(() => !!(window.__sanctuary && window.__sanctuary.rooms), { timeout: 60000 });
     for (const frame of WORLD_FRAMES) {
-      const url = await page.evaluate((id) => document.querySelector('[data-frame="' + id + '"]').src, frame.id);
+      const url = frame.room
+        ? await page.evaluate(composeFrame, frame)
+        : await page.evaluate((id) => document.querySelector('[data-frame="' + id + '"]').src, frame.id);
+      if (typeof url !== 'string' || !url.startsWith('data:image/png;base64,'))
+        throw new Error('the frame for ' + frame.id + ' came back as ' + String(url).slice(0, 80));
       const png = Buffer.from(url.slice('data:image/png;base64,'.length), 'base64');
       if (png.length < 2000) throw new Error('the frame for ' + frame.id + ' came back blank');
       fs.writeFileSync(path.join(out, frame.file), png);
