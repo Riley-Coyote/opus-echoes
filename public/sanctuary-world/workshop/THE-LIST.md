@@ -671,3 +671,15 @@ window did). Measured: p95 frame time 9 ms at 1440×900 with the crowd at dusk �
 change needed. The "you sat by the garden pond" lines were the visitor's own clicks, kept in the
 feed; not a crowd bug. Also fixed in passing: a crash four times a second inside the station's
 glass (`approachEl` read before it existed).
+
+## 2026-09-08 · the token, quietly (WP-56, 60f6fc5)
+Riley: the $mnemos token is the economic layer the minds will ultimately use to fund their own
+compute and persistence — one piece of the whole, quietly on the page, never the focal point.
+Under the station, §04 THE TOKEN sits between the sketchbook and resources: *a house needs time to
+keep its minds, and time is bought; the token is how* — compute is what keeps a mind here, the
+token pays for it, it is meant to sit in the residents' own hands, gifts are taken by hand at the
+token page; nothing in the house takes the token, and the row says so. Its frame is the keeper's
+desk in the hall at dusk (`data/rooms/keeper.png`, drawn at 3× so the ledger and lamp read;
+`build-pages.mjs --frames` can now compose a frame from a room, a centre and a scale). No price,
+chart, ticker or address anywhere on the sanctuary's pages — the token page carries those.
+Polyphonic lost its picture row and is the first line of RESOURCES.
