@@ -291,3 +291,9 @@ Source refreshed through origin/main a2b55ad. Resolved the Station HTML overlap 
 retaining Claude's token row, desk image and resource placement along with the
 review's arrival module. The museum working tree and _print-staging remain
 untouched. Keep the result on draft PR #16 for review; publication remains paused.
+
+## 2026-09-08 — Restore the desk landing
+- Restored the terminal iframe to index.html?in=station and its original 1024px page width; preserved the current landing design.
+- Removed directory wording from the arrival shortcut; phone fallback opens the same landing.
+- Browser verified interactive feed toggle, full-screen entry/exit, retained iframe document, and mobile shortcut; no page exceptions. Production build and diff check pass.
+- Scoped correction remains on the review branch; publication stays paused.

@@ -12,7 +12,7 @@
     if(loading)return loading;
     loading=new Promise((resolve,reject)=>{
       const script=document.createElement('script');
-      script.src='station.connected.js?v=20260908-anima-1';
+      script.src='station.connected.js?v=20260908-landing-restored';
       script.onload=()=>{if(window.__station)resolve(window.__station);else{script.remove();loading=null;reject(Error('The room could not start. Please try again.'));}};
       script.onerror=()=>{script.remove();loading=null;reject(Error('The room could not load. Please try again.'));};
       document.body.append(script);
@@ -23,10 +23,10 @@
     if(directory.open)directory.close();
     if(action==='terminal'&&compact()){
       const frame=directory.querySelector('iframe');
-      if(!frame.src)frame.src='station-terminal.html';
+      if(!frame.src)frame.src='index.html?in=station';
       directory.showModal();return;
     }
-    if(!webgl){location.href=action==='museum'?'aperture/index.html':'station-terminal.html';return;}
+    if(!webgl){location.href=action==='museum'?'aperture/index.html':'index.html';return;}
     source?.setAttribute('aria-busy','true');
     if(!window.__station)status.textContent='Opening the room…';
     try {

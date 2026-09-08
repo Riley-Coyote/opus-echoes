@@ -2915,7 +2915,7 @@ function makeStationScreen(options) {
 const cssHost = document.getElementById('css3d');
 const world = makeStationScreen({
   host: cssHost, pos: SCREEN_POS, normal: SCREEN_NORMAL,
-  rotY: CRT_ROT, quadW: SCR_W, pageW: 680, pageH: Math.round(680*SCR_H/SCR_W), src: 'station-terminal.html?v=20260908-production-1'   /* versioned like the console's: the glass must never show a cached page */
+  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: Math.round(1024*SCR_H/SCR_W), src: 'index.html?in=station&v=20260908-landing-restored'   /* versioned like the console's: the glass must never show a cached page */
 });
 
 /* ── and TOPOLOGIE OS, on the stewards' console ──
