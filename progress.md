@@ -304,3 +304,7 @@ untouched. Keep the result on draft PR #16 for review; publication remains pause
 - Added a 680ms CRT glass expansion and single scanline fade, omitted for reduced motion. Replaced Station arrival serif typography with existing pixel/mono fonts; anchored actions within short desktop viewports.
 - Real Chrome checks: desk click and entry button, 340px visible feed, inline movement and destinations, full-screen return/reopen, phone overflow, and reduced motion. No page exceptions; production build passes. Browser game smoke retains baseline presence endpoint 503 only.
 - Remains on draft review branch; no publication.
+
+## 2026-09-08 — Closer terminal view
+- Reduced only the terminal seat distance from .59 to .42 lens units, making its screen approximately 40% larger while retaining the bezel.
+- Synced latest main first. Browser screenshot inspected; interactive landing, full-screen round trip, document retention, mobile fallback, and no page exceptions verified.

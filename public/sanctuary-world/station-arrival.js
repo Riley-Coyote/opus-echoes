@@ -12,7 +12,7 @@
     if(loading)return loading;
     loading=new Promise((resolve,reject)=>{
       const script=document.createElement('script');
-      script.src='station.connected.js?v=20260908-landing-window-2';
+      script.src='station.connected.js?v=20260908-desk-close';
       script.onload=()=>{if(window.__station)resolve(window.__station);else{script.remove();loading=null;reject(Error('The room could not start. Please try again.'));}};
       script.onerror=()=>{script.remove();loading=null;reject(Error('The room could not load. Please try again.'));};
       document.body.append(script);

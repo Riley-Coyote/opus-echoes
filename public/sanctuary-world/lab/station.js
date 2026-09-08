@@ -4044,7 +4044,7 @@ function centreOf(p) {
    SCREEN_NORMAL, so moving the terminal moves the seat with it. */
 const SEAT_LENS = Math.tan(32.5 * Math.PI / 180) / Math.tan(framedFov(16 / 9) * Math.PI / 360);
 const SEATS = {
-  terminal: { id: 'terminal', dist: 0.59 * SEAT_LENS, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
+  terminal: { id: 'terminal', dist: 0.42 * SEAT_LENS, screen: SCREEN_POS, normal: SCREEN_NORMAL, world, term, boot: term.boot },
   console: { id: 'console', dist: 0.56 * SEAT_LENS, screen: SCREEN2_POS, normal: SCREEN2_NORMAL, world: world2, term: term2, boot: term2.boot }
 };
 for (const k of Object.keys(SEATS)) {
