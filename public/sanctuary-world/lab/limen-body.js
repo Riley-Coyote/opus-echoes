@@ -1,13 +1,18 @@
 import { LIMEN_MOTION_VERSION, LIMEN_STEP, makeCloth, createMotion, cloneMotion, copyMotion, advanceMotion, deformCloth } from './limen-motion.js';
 
-/* Limen's single authored body. All geometry is portable BufferGeometry, so the
+export const KEEPER_NAME = 'Anima';
+export const KEEPER_BODY_VERSION = 'anima-keeper-4';
+
+/* Anima's single authored body. All geometry is portable BufferGeometry, so the
  * station and museum retain the same silhouette across Three.js versions. */
 export function createLimenBody(T) {
-  const group = new T.Group(); group.name = 'Limen · veiled keeper';
-  group.userData.bodyVersion = 'living-keeper-3';
+  // Rig names remain stable: existing museum receivers use this motion contract.
+  const group = new T.Group(); group.name = `${KEEPER_NAME} · Station keeper`;
+  group.userData.bodyVersion = KEEPER_BODY_VERSION;
+  group.userData.keeperName = KEEPER_NAME;
   const sway = new T.Group(); sway.name = 'limen-sway'; group.add(sway);
   const torso = new T.Group(); torso.name = 'limen-torso'; sway.add(torso);
-  const porcelain = new T.MeshStandardMaterial({color:0xe5ded1,roughness:.64,metalness:.02});
+  const porcelain = new T.MeshPhysicalMaterial({color:0xd8c8af,roughness:.48,metalness:.02,clearcoat:.18,clearcoatRoughness:.55});
   function fabricMaps(rx,ry) {
     const size=128,normals=new Uint8Array(size*size*4),roughness=new Uint8Array(size*size*4);
     for(let y=0;y<size;y++)for(let x=0;x<size;x++) {
@@ -22,19 +27,24 @@ export function createLimenBody(T) {
     for(const texture of [normalMap,roughnessMap]){texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(rx,ry);texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.generateMipmaps=true;texture.anisotropy=4;texture.needsUpdate=true;}
     return {normalMap,normalScale:new T.Vector2(.15,.15),roughnessMap};
   }
-  const linen = new T.MeshPhysicalMaterial({color:0xb9b2a7,roughness:.96,sheen:.42,sheenColor:0xc7bfb3,sheenRoughness:.8,...fabricMaps(24,36)});
-  const mantle = new T.MeshPhysicalMaterial({color:0x55535a,roughness:.91,side:T.DoubleSide,sheen:.55,sheenColor:0x817a80,sheenRoughness:.85,...fabricMaps(7,36)});
-  const seam = new T.MeshStandardMaterial({color:0x9d8870,roughness:.6,metalness:.25});
-  const eyeMat = new T.MeshStandardMaterial({color:0x29232a,emissive:0xe9bc84,emissiveIntensity:.45,roughness:.8});
+  const linen = new T.MeshPhysicalMaterial({color:0xb6a38a,roughness:.93,sheen:.5,sheenColor:0xd2bfa2,sheenRoughness:.8,...fabricMaps(24,36)});
+  const mantle = new T.MeshPhysicalMaterial({color:0x6a5545,roughness:.91,side:T.DoubleSide,sheen:.48,sheenColor:0xb49a7e,sheenRoughness:.82,...fabricMaps(9,32)});
+  const edgedMantle=mantle.clone();edgedMantle.vertexColors=true;
+  const seam = new T.MeshStandardMaterial({color:0x92704a,roughness:.47,metalness:.68});
+  const lining = new T.MeshStandardMaterial({color:0x302621,roughness:1,side:T.DoubleSide});
+  const eyeMat = new T.MeshStandardMaterial({color:0x241b15,emissive:0xa66b36,emissiveIntensity:.22,roughness:.62});
   function mesh(geo,mat,parent,x=0,y=0,z=0) {
     // Strip constructor-specific serialization, including custom lathe forms.
     const portable = new T.BufferGeometry().copy(geo); geo.dispose();
     const m = new T.Mesh(portable,mat); m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
   }
   function oval(parent,mat,x,y,z,sx,sy,sz) {const m=mesh(new T.SphereGeometry(1,24,20),mat,parent,x,y,z);m.scale.set(sx,sy,sz);return m;}
+  function thread(parent,points,material,radius=.003) {
+    return mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),64,radius,6,false),material,parent);
+  }
   // A continuous fluted robe closes in a suspended, swept hem. There is no
   // anatomy under the cloth: the open air beneath it is part of the silhouette.
-  const profile=[[.018,.39],[.09,.44],[.155,.56],[.19,.75],[.16,.98],[.115,1.16],[.155,1.40],[.205,1.53],[.17,1.60],[.055,1.64]];
+  const profile=[[.018,.39],[.09,.44],[.175,.56],[.205,.75],[.185,.98],[.17,1.16],[.19,1.40],[.225,1.53],[.17,1.60],[.055,1.64]];
   const curve=[];
   for(let i=0;i<profile.length-1;i++)for(let j=0;j<4;j++) {
     const a=profile[i],b=profile[i+1],previous=profile[Math.max(0,i-1)],next=profile[Math.min(profile.length-1,i+2)];
@@ -48,44 +58,89 @@ export function createLimenBody(T) {
   for(let i=0;i<rp.count;i++) {
     const x=rp.getX(i),y=rp.getY(i),z=rp.getZ(i),a=Math.atan2(x,z);
     const lower=Math.max(0,Math.min(1,(1.2-y)/.81));
-    const fold=1+.045*Math.sin(a*11)*Math.sin(Math.min(1,lower)*Math.PI*.7);
-    rp.setXYZ(i,x*fold,y+.026*Math.sin(a*3)*lower,z*.72*fold-.085*lower*lower);
+    const fold=1+(.022+.075*lower)*Math.sin(a*9+.28*y)+.012*Math.sin(a*17);
+    rp.setXYZ(i,x*fold+.028*lower*lower,y+.035*Math.sin(a*3)*lower,z*.78*fold-.095*lower*lower);
   }
   robeGeo.computeVertexNormals();
   robeGeo.userData.limenCloth={cols:48,rows:curve.length-1,layout:'columns',kind:'robe'};
   robeGeo.userData.limenRest=Array.from(robeGeo.attributes.position.array);
   const robe=mesh(robeGeo,linen,torso);robe.name='limen-floating-robe';
-  // A split shoulder veil falls behind the hands. The face remains uncovered.
+  // Two cloth panels wrap from the back seam around the shoulders to the
+  // lapels. The edging belongs to the simulated mesh, so it cannot float away.
   for(const side of [-1,1]) {
-    const vertices=[],indices=[],uvs=[],rows=24,cols=16;
+    const vertices=[],indices=[],uvs=[],colors=[],rows=24,cols=16;
     for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){
-      const v=y/rows,u=x/cols;
+      const v=y/rows,u=x/cols,angle=u*(Math.PI*.94-.30*v*v);
+      const width=.30*(1-.22*v)+.016*Math.sin(v*Math.PI);
+      const fold=.032*Math.sin(u*8*Math.PI+.22*v)*Math.sin(v*Math.PI*.7);
       uvs.push(u,v);
-      vertices.push(side*(.05+u*.20*(1-.44*v*v)+.018*Math.sin(v*Math.PI)),1.61-v*(1.27-.30*u)+.018*Math.sin(u*3*Math.PI)*v*v,-.145-.075*Math.sin(u*Math.PI)-.10*v*v+.018*Math.sin(u*5*Math.PI));
+      vertices.push(side*(.018*Math.sin(angle*.5)+Math.sin(angle)*(width+fold)),1.61-.10*Math.sin(angle)-v*(1.13-.38*u*u)+.025*Math.sin(u*3*Math.PI)*v*v,-Math.cos(angle)*(.21+.055*v+fold)-.045*v*v);
+      const edge=x===cols||y===rows;
+      colors.push(...(edge?[1.65,1.52,1.3]:[1,1,1]));
     }
     for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=y*(cols+1)+x,b=a+cols+1;indices.push(a,b,a+1,a+1,b,b+1);}
-    const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(indices);geo.computeVertexNormals();geo.translate(0,-1.61,0);
+    const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));geo.setIndex(indices);geo.computeVertexNormals();geo.translate(0,-1.61,0);
     geo.userData.limenCloth={cols,rows,layout:'rows',offsetY:1.61,kind:'veil'};
     geo.userData.limenRest=Array.from(geo.attributes.position.array);
-    const veil=mesh(geo,mantle,torso,0,1.61,0);veil.name=side<0?'limen-veil-left':'limen-veil-right';
-    const arm=new T.Group();arm.name=side<0?'limen-arm-left':'limen-arm-right';arm.position.set(side*.20,1.5,0);torso.add(arm);
-    oval(arm,linen,side*.025,-.24,0,.057,.30,.054);
-    oval(arm,porcelain,side*.035,-.53,.02,.026,.102,.025);
-
+    const veil=mesh(geo,edgedMantle,torso,0,1.61,0);veil.name=side<0?'limen-veil-left':'limen-veil-right';
+    const arm=new T.Group();arm.name=side<0?'limen-arm-left':'limen-arm-right';arm.position.set(side*.166,1.48,.01);torso.add(arm);
+    const sleevePoints=[[.046,-.44],[.053,-.435],[.048,-.32],[.063,-.17],[.071,-.075],[.04,.015]].map(p=>new T.Vector2(...p));
+    const sleeve=mesh(new T.LatheGeometry(sleevePoints,24),linen,arm,side*.022,0,0);sleeve.scale.z=.88;
+    const cuff=mesh(new T.TorusGeometry(.048,.004,6,24),seam,arm,side*.022,-.434,0);cuff.rotation.x=Math.PI/2;cuff.scale.y=.88;
+    oval(arm,lining,side*.022,-.44,0,.045,.006,.039);
+    oval(arm,porcelain,side*.025,-.487,.012,.023,.073,.023);
+  }
+  // A shaped shoulder yoke turns the fabric over the body, closing the gap
+  // between the cowl and the two independently simulated mantle panels.
+  for(const side of [-1,1]) {
+    const positions=[],uvs=[],indices=[],rows=8,cols=24;
+    for(let j=0;j<=rows;j++)for(let i=0;i<=cols;i++) {
+      const u=i/cols,a=u*Math.PI*.94,t=j/rows;
+      positions.push(side*(.018*Math.sin(a*.5)*t+Math.sin(a)*(.054+.246*t)),1.66-t*(.05+.10*Math.sin(a))+.016*Math.sin(t*Math.PI),-Math.cos(a)*(.047+.163*t));uvs.push(u,t*.25);
+    }
+    for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const a=j*(cols+1)+i,b=a+cols+1;indices.push(a,b,a+1,a+1,b,b+1);}
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));g.setIndex(indices);g.computeVertexNormals();mesh(g,mantle,torso);
   }
   const head=new T.Group();head.name='limen-head';head.position.y=1.66;torso.add(head);
-  oval(head,linen,0,-.027,0,.039,.07,.035);
-  // An elongated, unmarked porcelain mask and swept temples.
-  oval(head,porcelain,0,.111,0,.093,.158,.079);
-  for(const side of [-1,1]) {
-    const temple=oval(head,porcelain,side*.09,.16,-.012,.021,.125,.034);temple.rotation.z=-side*.25;
+  oval(head,lining,0,-.02,0,.05,.075,.043);
+  // A sewn cowl shelters a hand-shaped ceramic mask. Its circular opening
+  // quietly repeats the Station window; no horns, antennae or exposed chassis.
+  function cowl(rx,ry,rz,material) {
+    const vertices=[],uvs=[],indices=[],rings=18,sides=48;
+    for(let j=0;j<=rings;j++)for(let i=0;i<=sides;i++) {
+      const u=i/sides,a=u*Math.PI*2,b=.92+j/rings*(Math.PI-.92);
+      const crease=1+.035*Math.cos(a*7)*Math.sin(b),jaw=1-.12*Math.max(0,-Math.sin(a));
+      vertices.push(rx*Math.cos(a)*Math.sin(b)*crease*jaw,.115+ry*Math.sin(a)*Math.sin(b),rz*Math.cos(b)-.014-.018*Math.sin(a)*Math.sin(b));
+      uvs.push(u,j/rings);
+    }
+    for(let j=0;j<rings;j++)for(let i=0;i<sides;i++){const a=j*(sides+1)+i,b=a+sides+1;indices.push(a,a+1,b,b,a+1,b+1);}
+    const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(indices);geo.computeVertexNormals();
+    const normals=geo.attributes.normal;
+    for(let j=0;j<=rings;j++){const a=j*(sides+1),b=a+sides,n=new T.Vector3().fromBufferAttribute(normals,a).add(new T.Vector3().fromBufferAttribute(normals,b)).normalize();normals.setXYZ(a,n.x,n.y,n.z);normals.setXYZ(b,n.x,n.y,n.z);}
+    return mesh(geo,material,head);
   }
+  cowl(.151,.184,.185,mantle).name='anima-cowl';
+  cowl(.142,.175,.176,lining);
+  const hoodEdge=[];
+  for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;hoodEdge.push(new T.Vector3(.151*Math.cos(a)*Math.sin(.92)*(1+.035*Math.cos(a*7)*Math.sin(.92))*(1-.12*Math.max(0,-Math.sin(a))),.115+.184*Math.sin(a)*Math.sin(.92),.185*Math.cos(.92)-.014-.018*Math.sin(a)*Math.sin(.92)));}
+  thread(head,hoodEdge,seam,.0022);
+  const maskGeo=new T.SphereGeometry(1,32,24),mp=maskGeo.attributes.position;
+  for(let i=0;i<mp.count;i++) {
+    const x=mp.getX(i),y=mp.getY(i),z=mp.getZ(i),jaw=1-.27*Math.max(0,-y);
+    mp.setXYZ(i,x*.096*jaw,.12+y*.131,z*.068+.037);
+  }
+  maskGeo.computeVertexNormals();mesh(maskGeo,porcelain,head).name='anima-ceramic-mask';
   const eyes=[];
-  for(const side of [-1,1]) eyes.push(oval(head,eyeMat,side*.035,.127,.072,.019,.005,.006));
+  for(const side of [-1,1]) eyes.push(oval(head,eyeMat,side*.032,.139,.099,.015,.0035,.004));
   const eye=eyes[0],eyeRing=eyes[1];
-  // A small folded clasp, with no insignia or invented writing.
-  const clasp=mesh(new T.OctahedronGeometry(.034),seam,torso,0,1.52,.157);clasp.scale.set(.5,1,.25);
-  const eyeLight=new T.PointLight(0xe9bc84,.025,.35,2);eyeLight.position.set(0,.13,.15);head.add(eyeLight);
+  // A shallow bridge gives the ceramic a gently carved, readable plane.
+  const nose=mesh(new T.OctahedronGeometry(1),porcelain,head,0,.121,.102);nose.scale.set(.007,.022,.007);
+  const collar=mesh(new T.TorusGeometry(.074,.012,8,40),mantle,torso,0,1.636,0);collar.rotation.x=Math.PI/2;collar.scale.y=.84;
+  // The clasp reads like a small instrument bezel, with enamel under brass.
+  const clasp=mesh(new T.TorusGeometry(.028,.004,8,32),seam,torso,0,1.515,.204);clasp.name='anima-instrument-clasp';
+  oval(torso,lining,0,1.515,.203,.026,.026,.004);
+  const needle=mesh(new T.BoxGeometry(.002,.032,.002),seam,torso,0,1.515,.21);needle.rotation.z=-.55;
+  const eyeLight=new T.PointLight(0xd0a56f,.012,.25,2);eyeLight.position.set(0,.13,.15);head.add(eyeLight);
   // A quiet, soft ground shadow makes the air gap legible without a glowing
   // ring, particles or a second animation system.
   const shadow=mesh(new T.PlaneGeometry(.9,.68),new T.ShaderMaterial({
@@ -96,7 +151,7 @@ export function createLimenBody(T) {
   }),group,0,.008,0);
   shadow.name='limen-ground-shadow';shadow.rotation.x=-Math.PI/2;shadow.castShadow=shadow.receiveShadow=false;
   const pick=mesh(new T.CylinderGeometry(.29,.29,1.96,8),new T.MeshBasicMaterial(),group,0,.98,0);pick.visible=false;pick.name='limen-pick';
-  return {group,sway,torso,head,eye,eyeRing,eyeMat,eyeLight,P:{eye:.127,skull:.111}};
+  return {group,sway,torso,head,eye,eyeRing,eyeMat,eyeLight,P:{eye:.139,skull:.12}};
 }
 const rigs=new WeakMap();
 function rigFor(group) {

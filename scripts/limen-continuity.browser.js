@@ -57,7 +57,7 @@ async (page) => {
   const crossing=await page.evaluate(()=>__crossing);
   assert(Math.abs(crossing.camera[2]-21.7)<.15,'Crossing must retain the physical doorway position');
   assert(Math.abs(crossing.speed-1.4)<.01,'Walking velocity must carry into the museum');
-  assert(crossing.bodyVersion==='living-keeper-3','The museum must use the same Limen body');
+  assert(crossing.bodyVersion==='anima-keeper-4','The museum must use the same Anima body');
   const museum=page.frames().find(f=>f.url().includes('/aperture/'));
   assert(await museum.locator('#places-toggle').isVisible(),'Museum controls must become available');
   assert(!(await museum.locator('body').getAttribute('class'))?.includes('arrival-preview'),'Preview presentation must release');
@@ -65,7 +65,7 @@ async (page) => {
   const heldCamera=await museum.evaluate(()=>__apertureContinuity.state().camera);
   await page.waitForTimeout(1100);
   assert(JSON.stringify(heldCamera)===JSON.stringify(await museum.evaluate(()=>__apertureContinuity.state().camera)),'Museum pause must hold the camera');
-  assert(await museum.evaluate(()=>__apertureContinuity.state().embodiment.attention==='visitor'),'Limen should acknowledge the waiting visitor');
+  assert(await museum.evaluate(()=>__apertureContinuity.state().embodiment.attention==='visitor'),'Anima should acknowledge the waiting visitor');
   await page.keyboard.press('Enter');await page.waitForTimeout(350);
   assert(JSON.stringify(heldCamera)!==JSON.stringify(await museum.evaluate(()=>__apertureContinuity.state().camera)),'Keyboard resume must continue the route');
   await museum.locator('#trip-skip').click();

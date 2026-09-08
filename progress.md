@@ -187,3 +187,128 @@ then detailed shoulder/mantle construction and the representative museum bay.
 The full plan is not complete. Current cloth uses safe navigation clearance,
 body colliders and a floor bound; self-collision and arbitrary wall collision
 are not implemented. Existing curation changes remain separate and preserved.
+
+
+## 2026-09-08 — Station first minute production review
+
+Current prompt: develop the chosen :8137 Station arrival, terminal directory,
+nearby objects and one continuous museum journey. Preserve the circular window,
+dusk, warm architecture, old instruments and floating keeper. Blender and broader
+redesigns remain paused. Capture matching desktop, tall-window and phone baselines,
+then verify the running result and deliver a short journey recording for review.
+
+Source verified: Claude scratchpad wt-doors/index-doors, origin main and Lovable
+project 65ff8c12-6467-4975-8dff-38b31d600c8b all match f9c07e3. Existing website
+checkout switched to codex/station-first-minute from that revision. Claude's
+:8137 source, existing _print-staging and dirty museum curation remain untouched.
+Baseline artifacts: Codex visualizations / station-production / before. Chrome
+Metal on Apple M4 Max at 1440x900: journey p95 16.7–16.8ms, preparation long tasks
+546ms and 244ms. These are desktop measurements, not phone hardware results.
+
+Pass 1: lower preferred camera pitch while retaining landmark bounds; one arrival
+invitation and responsive still; compact terminal directory; readable controls
+and index type; retain Station document across resize and suspend hidden room
+while reading. Validation and further material/transition passes in progress.
+
+
+Production pass result (2026-09-08):
+- Arrival: lower preferred pitch with the original landmark constraints, one
+  invitation, readable focus/hover controls, phone scene poster and lazy room.
+- Terminal: small same-origin directory, shorter boot, real museum action,
+  direct destinations, mobile dialog, retained desktop document on return.
+- Craft: rounded case and continuous beveled CRT bezel, recessed glass, vents,
+  screws, shaped/instanced keys and legends, service-sheet marks, material grain,
+  reduced emissive spill. Preserved the floating keeper and resident text.
+- Journey: broader route corners and 3m look-ahead resolve late camera turns;
+  bronze skirtings, light lines and floor joints carry the material language.
+  Hidden index/phone scenes suspend. A representative clipped museum view warms
+  before travel, using the visitor's lens, without another animation loop.
+- Validation: production build, 28 tests, browser controls and continuity at
+  320–1920px, reduced motion, pause/resume, cancellation, document retention,
+  resize and synthetic visibility lifecycle. Native tab switching and physical
+  phone/Safari GPU performance remain unverified.
+- Final measured 50s native Chrome/Metal run: station, hall and threshold p95
+  16.7–16.8ms; no frame above 33.5ms after preparation. Cold preparation remains
+  517ms and 243ms main-thread tasks before motion. This is not a universal device
+  performance claim. The wider museum's assets were not rebuilt from dirty source.
+- Review evidence and uncut journey recording live outside the repo under Codex
+  visualizations: 01a07f83-6aae-7820-bbe0-e18c5c3163d3/station-production/review.html.
+  Keep codex/station-first-minute isolated for Riley's review before publication.
+
+Final source refresh: Claude pushed f0c95e2 and 3f11c02 (Sanctuary world controls
+and feed-column layout) while this pass ran, then the temporary :8137 server and
+checkout were no longer present. The baseline is retained in the review captures.
+The review branch incorporates origin/main 3f11c02; those separate landing/world
+changes are preserved. The established :8080 server continues serving this review.
+
+## 2026-09-08 — Anima, the Station keeper
+
+Current prompt: others are making changes concurrently; reshape Limen to fit the
+Station environment and rename the keeper Anima. Preserve the floating body,
+connected journey and all ongoing work.
+
+Scope: portable keeper body, its visitor-facing names, conversation standing
+distance, phone arrival still and the paired museum export. Existing resident
+identities, messages and voices are unchanged. Internal limen rig identifiers stay
+stable for serialized motion and existing receivers.
+
+Four visual passes: ceramic mask and cowl; shoulder construction and cloak
+clearance; folded, tapered layers and more space in an encounter; restrained
+fittings and concealed sleeves. The final pass checks the shared body at the
+doorway, responsive views and the phone poster. Same cloth simulation point count;
+no new animation loop. Body version: anima-keeper-4.
+
+The museum checkout has ongoing curation. It was not edited or rebuilt. A guarded
+AST adapter connects the already-curated export to the shared body factory and
+updates only keeper name tokens. Normal build-aperture also runs the adapter.
+No exhibition assets or resident statements are changed. Export preservation,
+idempotence and unknown-export failure have focused tests.
+
+Verification so far: 30 tests pass. Body serializes and continues its pose, cloth,
+floor clearance and momentum. Actual Station encounter and model turnarounds
+reviewed; the supplied game client reports only the existing presence 503.
+Browser journey, phone, build and final source refresh are in progress. Evidence:
+Codex visualizations / 01a07f83-6aae-7820-bbe0-e18c5c3163d3 / anima-keeper.
+
+Final verification: production build and 30 focused tests pass. Six-width doorway
+checks retain body, cloth, pose, camera lens and 1.4 m/s crossing speed. Phone
+arrival, directory, reduced-motion entry and return pass; standalone museum also
+uses Anima. Uppercase journey captions are covered by the keeper export adapter.
+No page exceptions. The existing presence endpoint still returns 503.
+
+Five visual passes were reviewed, including the actual Station greeting, model
+turnarounds, museum threshold and phone layouts. Fixed a 7px arrival backdrop
+overflow found during the final layout check. The phone poster is a fresh render
+of this body, and cache versions are updated. A 35-second real-time browser
+recording and before/after review are in anima-keeper/review.html outside the repo.
+
+Measured 50s on native Chrome/Metal, Apple M4 Max, 1440x900: travel p95
+16.7–16.8ms, no frame over 33.5ms after preparation. Cold preparation still has
+518ms and 277ms main-thread tasks. Physical phone/Safari GPU performance and
+cloth self-collision remain outside this keeper pass.
+
+Source refreshed through origin/main a2b55ad. Resolved the Station HTML overlap by
+retaining Claude's token row, desk image and resource placement along with the
+review's arrival module. The museum working tree and _print-staging remain
+untouched. Keep the result on draft PR #16 for review; publication remains paused.
+
+## 2026-09-08 — Restore the desk landing
+- Restored the terminal iframe to index.html?in=station and its original 1024px page width; preserved the current landing design.
+- Removed directory wording from the arrival shortcut; phone fallback opens the same landing.
+- Browser verified interactive feed toggle, full-screen entry/exit, retained iframe document, and mobile shortcut; no page exceptions. Production build and diff check pass.
+- Scoped correction remains on the review branch; publication stays paused.
+
+## 2026-09-08 — Landing expansion and inline exploration
+- Clicking the embedded grounds or entry action opens the complete landing with the house feed, rather than immersive exploration. Parent/frame messages validate origin and source.
+- Grounds pointer/keyboard movement, inspections, and destination controls work within the landing. Explicit immersive controls remain available; first-visit agreement preserved.
+- Added a 680ms CRT glass expansion and single scanline fade, omitted for reduced motion. Replaced Station arrival serif typography with existing pixel/mono fonts; anchored actions within short desktop viewports.
+- Real Chrome checks: desk click and entry button, 340px visible feed, inline movement and destinations, full-screen return/reopen, phone overflow, and reduced motion. No page exceptions; production build passes. Browser game smoke retains baseline presence endpoint 503 only.
+- Remains on draft review branch; no publication.
+
+## 2026-09-08 — Closer terminal view
+- Reduced only the terminal seat distance from .59 to .42 lens units, making its screen approximately 40% larger while retaining the bezel.
+- Synced latest main first. Browser screenshot inspected; interactive landing, full-screen round trip, document retention, mobile fallback, and no page exceptions verified.
+
+## 2026-09-08 — Keyboard placement
+- Aligned the keyboard in the CRT local coordinate frame, centred and level with 4cm bezel clearance. Moved the CRT back 4cm to retain desktop support at the front edge.
+- Inspected room and seated browser screenshots; landing interaction, fullscreen retention, reduced motion, and production build passed.

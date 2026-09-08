@@ -25,7 +25,7 @@ const stops = [
   [0.4, -2.2],
   [3.05, -2.2],
   [2, 2.7],
-  [-1.9, 2.75],
+  [-1.15, 2.75],
   [2.7, 2.75],
 ];
 test("every guide station, conversation stop and passage rendezvous is connected with body clearance", () => {

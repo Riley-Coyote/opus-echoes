@@ -667,6 +667,7 @@ export function makeFullMode(o) {
     if (on) world.flat(); else document.body.classList.remove('flat');
     ls.set(KEY_FULL, on ? '1' : '0');
     paint();
+    o.onChange?.(on);
   }
   function toggle() { if (o.seated && !o.seated()) return; set(!on); }
   if (btn) {

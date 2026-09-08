@@ -2718,7 +2718,8 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
   mapBtn.addEventListener('click', () => {
     if (destOpen) { closeDest(); return; }
-    if (!worldEl.classList.contains('fs')) enterWorld();
+    eng?.activate();
+    if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION) openDoor();
     if (!doorEl.hidden) afterDoor = openDest; else openDest();
   });
   goWalk.addEventListener('click', () => { setGoFocus('walk', true); go('walk'); });
@@ -4710,7 +4711,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   let feedShown = true;
   try {
     const kept = localStorage.getItem(FEED_KEY);
-    if (kept === 'shown' || kept === 'hidden') feedShown = kept === 'shown';
+    if (!IN_STATION && (kept === 'shown' || kept === 'hidden')) feedShown = kept === 'shown';
   } catch (e) {}
   setFeed(feedShown);
   feedBtn.addEventListener('click', () => {
@@ -4877,6 +4878,22 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     fitFirstScreen();
     $('#enter-world').focus({ preventScroll: true });
   }
+  // The desk opens the page first; exploring its window is a separate action.
+  let stationPageOpen = !IN_STATION || window.parent === window || new URLSearchParams(location.search).get('view') === 'landing';
+  addEventListener('message', (event) => {
+    if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'station:landing-view') return;
+    stationPageOpen = event.data.expanded;
+    if (stationPageOpen) {
+      worldEl.classList.remove('fs');
+      document.documentElement.classList.remove('exploring');
+      setFeed(true); setFsLabel(); fitFirstScreen();
+    }
+  });
+  document.addEventListener('click', (event) => {
+    if (stationPageOpen || !event.target.closest('#cab, #enter-world, [data-enter-world], .wordmark')) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    tellRoom('open-landing');
+  }, true);
   fsBtn.addEventListener('click', () => worldEl.classList.contains('fs') ? leaveWorld() : enterWorld());
   $('#enter-world').addEventListener('click', enterWorld);
   document.querySelectorAll('[data-enter-world]').forEach((link) => link.addEventListener('click', (e) => {
@@ -4907,7 +4924,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const originalSay = eng.say.bind(eng);
     eng.say = (text) => {
       originalSay(text);
-      if (!worldEl.classList.contains('fs') || !doorEl.hidden || !encounterEl.hidden || !panel.hidden) return;
+      if (!doorEl.hidden || !encounterEl.hidden || !panel.hidden) return;
       inspection.querySelector('.inspection__label').textContent = eng.near?.label || eng.room().name;
       inspection.querySelector('.inspection__text').textContent = text;
       inspection.hidden = false;
@@ -4986,7 +5003,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     window.__sanctuaryArrival = { begin: () => beginArrival(), active: () => !!arrival };
 
     eng.cv.addEventListener('click', (e) => {
-      if (!worldEl.classList.contains('fs')) { enterWorld(); return; }
+      if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION) { openDoor(); return; }
       if (!doorEl.hidden || enc || document.querySelector('.veil:not([hidden]), .panel:not([hidden])') || eng.trans) return;
       inspection.hidden = true;
       const rect = eng.cv.getBoundingClientRect();
@@ -5012,7 +5029,9 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
   cab.addEventListener('keydown', (e) => {
     if (e.target !== cab || worldEl.classList.contains('fs')) return;
     if (/^(Arrow|[wasdeWASDE ]$|Enter$)/.test(e.key)) {
-      e.preventDefault(); e.stopImmediatePropagation(); enterWorld();
+      if (!stationPageOpen) { e.preventDefault(); e.stopImmediatePropagation(); tellRoom('open-landing'); return; }
+      eng?.activate();
+      if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION) { e.preventDefault(); e.stopImmediatePropagation(); openDoor(); }
     }
   }, true);
 
