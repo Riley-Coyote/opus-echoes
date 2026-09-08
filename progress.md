@@ -92,3 +92,32 @@ Verification: 13 focused station tests and 35 museum tests pass; browser checks
 pass at five widths, including pause/resume, crossing geometry, cancellation,
 repeated visits, reduced motion and unchanged retained computer documents.
 The production build passes. Local presence remains unconfigured (existing 503).
+
+## 2026-09-08 · Floating Limen and frame pacing
+
+Request: preserve the character, remove legs and feet, sculpt a floating lower
+robe and make travel from the station through the museum consistently smooth.
+
+Plan: measure a real-time walk, prepare resources before camera movement, reduce
+rendering overhead, preserve motion phase and velocity at every handoff, then
+verify floating silhouette, pause/return/reduced motion and repeat the benchmark.
+
+Baseline (Chrome / Apple M4 Max, 1440 x 900): doorway mean 39.26 ms, p95 58.4 ms;
+museum mean 34.26 ms, p95 50 ms; loading long tasks 1082 ms and 481 ms occurred
+after the journey had begun. Deterministic navigation checks alone did not catch
+this frame-pacing problem. Keep baseline and after samples in /tmp/limen-performance.
+
+Completed: floating robe and veil, no legs/feet; shared motion phase; preparation
+before motion; doorway pixel scissor and covered-frame rendering suppression;
+static frame batching; fixed nearby-light slots; stable render-target sizing;
+smaller bloom buffers; continuous guide arrival; more compact journey controls.
+
+Matched real-time benchmark: doorway mean/p95 23.29/33.7 → 11.65/17.2 ms; museum
+22.61/33.0 → 10.72/17.0 ms on M4 Max at 1440 × 900. All new observed loading long
+tasks occur before movement. 16 station tests + 37 museum tests pass. Five-width
+browser continuity/return/cancel/reduced-motion/document retention checks pass.
+Game-client snapshot reviewed; its only console error is the existing local
+presence 503. Full samples and screenshots are under /tmp/limen-performance.
+
+Full production build and staged museum-source typecheck pass. The source commit
+0f72f07 preserves the checkout's independent curation changes.

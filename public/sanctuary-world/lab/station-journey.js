@@ -1,6 +1,6 @@
 /* The station side of the first museum journey. The retained computer documents
  * are never reparented, navigated or recreated by this controller. */
-export function createStationJourney({ THREE: T, scene, camera, guide, prepare, restore, cross, directReturn, planGuideRoute, doorwayReady = () => true }) {
+export function createStationJourney({ THREE: T, scene, camera, guide, prepare, restore, cross, directReturn, planGuideRoute, doorwayReady = () => true, doorwayError = () => null }) {
   const steel = new T.MeshStandardMaterial({ color: 0x29272a, metalness: .65, roughness: .48 });
   const concrete = new T.MeshStandardMaterial({ color: 0x575158, roughness: .88 });
   const light = new T.MeshBasicMaterial({ color: 0xffc994 });
@@ -43,12 +43,12 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
   panel.innerHTML='<div><span class="journey-label">WITH LIMEN · SCRIPTED WALK</span><p role="status" aria-live="polite"></p></div><div class="journey-buttons"><button data-action="pause">Pause</button><button data-action="skip">Arrive now</button><button data-action="cancel">Stay in the station</button></div>';
   document.body.append(panel);
   const style=document.createElement('style');style.textContent=`
-  #station-journey{position:fixed;z-index:80;bottom:28px;left:50%;transform:translateX(-50%);width:min(590px,calc(100% - 32px));padding:16px 20px;background:#121215ed;border:1px solid #63564d;color:#eae6df;display:flex;align-items:center;justify-content:space-between;gap:20px;backdrop-filter:blur(12px)}
-  #station-journey[hidden]{display:none}#station-journey .journey-label{font:9px var(--mono);letter-spacing:.12em;color:#c4a489}#station-journey p{font:12px var(--mono);margin:8px 0 0;line-height:1.6}#station-journey .journey-buttons{display:flex;flex-wrap:wrap;gap:6px}#station-journey button{min-height:44px;padding:8px 12px;color:#eae6df;border:1px solid #73685e;background:#202025;font:10px var(--mono);cursor:pointer}#station-journey button:focus-visible{outline:2px solid #e0bc99;outline-offset:3px}body.station-travel #chrome,body.station-travel #hud,body.station-travel #room-index-toggle,body.station-travel #stand,body.station-travel #full{visibility:hidden}@media(max-width:650px){#station-journey{bottom:14px;align-items:start;flex-direction:column;gap:12px}}
+  #station-journey{position:fixed;z-index:80;bottom:28px;left:50%;transform:translateX(-50%);width:min(720px,calc(100% - 32px));padding:12px 16px;background:#121215ed;border:1px solid #63564d;color:#eae6df;display:flex;align-items:center;justify-content:space-between;gap:20px;backdrop-filter:blur(12px)}
+  #station-journey[hidden]{display:none}#station-journey .journey-label{font:9px var(--mono);letter-spacing:.12em;color:#c4a489}#station-journey p{font:11px var(--mono);margin:6px 0 0;line-height:1.6}#station-journey .journey-buttons{display:flex;flex-wrap:nowrap;gap:6px}#station-journey button{min-height:44px;white-space:nowrap;padding:8px 12px;color:#eae6df;border:1px solid #73685e;background:#202025;font:10px var(--mono);cursor:pointer}#station-journey button:focus-visible{outline:2px solid #e0bc99;outline-offset:3px}body.station-travel #chrome,body.station-travel #hud,body.station-travel #room-index-toggle,body.station-travel #stand,body.station-travel #full{visibility:hidden}@media(max-width:650px){#station-journey{bottom:14px;align-items:start;flex-direction:column;gap:8px}#station-journey button{font-size:9px;padding:8px 9px}}
   `;document.head.append(style);
   const text=panel.querySelector('p'),pauseButton=panel.querySelector('[data-action=pause]');
   let state='idle',paused=false,saved=null,path=[],covered=0,total=0,speed=0,direction='out',stageTime=0,revision=0;
-  let initialGuide=null,approach=[],cameraApproach=[],cameraStart=null,lookStart=null,lookHeld=0,stageDuration=1.7;
+  let initialGuide=null,approach=[],cameraApproach=[],cameraStart=null,lookStart=null,lookHeld=0,stageDuration=1.7,approachCovered=0,approachSpeed=0;
   const travelPath=[[-3.6,2.75],[2.7,2.75],[2.7,7.2],[6.7,7.2],[6.7,11.15]];
   const v = (p) => new T.Vector3(p[0],0,p[1]);
   function distances(points){let n=0;for(let i=1;i<points.length;i++)n+=points[i-1].distanceTo(points[i]);return n;}
@@ -67,7 +67,7 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
   return {
     passageSnapshot(){const copy=passage.clone(true);copy.traverse(o=>{if(o.isMesh)o.geometry=new T.BufferGeometry().copy(o.geometry);});copy.updateMatrixWorld(true);return copy.toJSON();},
     get active(){return state!=='idle';},get state(){return {phase:state,paused,progress:total?covered/total:0,direction};},
-    async start(direct=false){if(state!=='idle')return;direct=direct||globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;revision++;initialGuide={position:guide.group.position.clone(),quaternion:guide.group.quaternion.clone()};saved=prepare();cameraStart=camera.position.clone();lookStart=camera.quaternion.clone();state='staging';direction='out';paused=false;stageTime=0;lookHeld=0;panel.hidden=false;document.body.classList.add('station-travel');panel.querySelector('[data-action=cancel]').textContent='Stay in the station';status('Limen is meeting you at the passage.');
+    async start(direct=false){if(state!=='idle')return;direct=direct||globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;revision++;initialGuide={position:guide.group.position.clone(),quaternion:guide.group.quaternion.clone()};saved=prepare();cameraStart=camera.position.clone();lookStart=camera.quaternion.clone();state='preparing';direction='out';paused=false;stageTime=0;approachCovered=0;approachSpeed=0;lookHeld=0;panel.hidden=false;document.body.classList.add('station-travel');panel.querySelector('[data-action=cancel]').textContent='Stay in the station';status('Limen is opening the passage…');
       // WP-46: the room is one level now, with the desk under the porthole on
       // the left and the credenza in the right corner. The clear lane out of
       // either is the open strip in front of both, so a withdrawal goes to the
@@ -103,22 +103,29 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
     look(){lookHeld=Infinity;},
     skip(){if(direction==='back'){finish();return;}transfer(true);},
     cancel(){if(state==='idle')return;directReturn();finish();},
-    tick(time,dt){if(['idle','away','crossing'].includes(state)||paused||document.hidden)return;dt=Math.min(dt,.04);lookHeld=Math.max(0,lookHeld-dt);
-      if(state==='restoring') {stageTime+=dt;const k=Math.min(1,stageTime/stageDuration),e=k*k*(3-2*k);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*(1-e)));camera.quaternion.copy(lookStart).slerp(saved.quaternion,e);if(k===1)finish();return;}
+    tick(time,dt){if(['idle','away','crossing'].includes(state)||paused||document.hidden)return;dt=Math.min(dt,.05);lookHeld=Math.max(0,lookHeld-dt);
+      if(state==='preparing'){if(doorwayError()){state='waiting';status('The room could not be prepared. Arrive now retries.');return;}if(!doorwayReady())return;state='staging';status('Limen is meeting you at the passage.');}
+      if(state==='restoring') {stageTime+=dt;const k=Math.min(1,stageTime/stageDuration),e=k*k*k*(k*(k*6-15)+10);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*(1-e)));camera.quaternion.copy(lookStart).slerp(saved.quaternion,e);if(k===1)finish();return;}
       if(state==='staging'){
-        stageTime+=dt;const k=Math.min(1,stageTime/stageDuration),e=k*k*(3-2*k);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*e));
-        const gp=sample(approach,stageTime*1.15),ahead=sample(approach,stageTime*1.15+.2);guide.group.position.copy(gp);if(gp.distanceTo(ahead)>.001)guide.group.rotation.y=Math.atan2(ahead.x-gp.x,ahead.z-gp.z);guide.walkPose(time,stageTime*1.15<distances(approach));
+        stageTime+=dt;const k=Math.min(1,stageTime/stageDuration),e=k*k*k*(k*(k*6-15)+10);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*e));
+        const remaining=Math.max(0,distances(approach)-approachCovered),oldSpeed=approachSpeed;
+        approachSpeed=Math.min(1.15,approachSpeed+.8*dt,Math.sqrt(1.6*remaining));
+        approachCovered=Math.min(distances(approach),approachCovered+(oldSpeed+approachSpeed)*.5*dt);
+        if(remaining<.002)approachCovered=distances(approach);
+        const gp=sample(approach,approachCovered),ahead=sample(approach,approachCovered+.35);guide.group.position.copy(gp);
+        if(gp.distanceTo(ahead)>.001){const yaw=Math.atan2(ahead.x-gp.x,ahead.z-gp.z);guide.group.rotation.y+=Math.atan2(Math.sin(yaw-guide.group.rotation.y),Math.cos(yaw-guide.group.rotation.y))*(1-Math.exp(-dt*4));}
+        guide.walkPose(time,approachSpeed/1.4);
         const q=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().lookAt(camera.position,new T.Vector3(gp.x,1.55,gp.z),camera.up));if(!lookHeld)camera.quaternion.copy(lookStart).slerp(q,e);
-        if(k===1&&stageTime*1.15>=distances(approach)){state='traveling';status('With Limen → Sun chamber');}return;
+        if(k===1&&approachCovered>=distances(approach)){state='traveling';status('With Limen → Sun chamber');}return;
       }
       if(state==='waiting')return;
       if(direction==='out' && camera.position.z>7.4 && !doorwayReady()){status('Preparing the room beyond · your place is held.');return;}
-      const left=total-covered;speed=Math.min(speed+.7*dt,1.4,direction==='out'?1.4:Math.sqrt(Math.max(.006,2*.7*left)));covered=Math.min(total,covered+speed*dt);
+      const left=total-covered,oldSpeed=speed;speed=Math.min(speed+.7*dt,1.4,direction==='out'?1.4:Math.sqrt(Math.max(.006,2*.7*left)));covered=Math.min(total,covered+(oldSpeed+speed)*.5*dt);
       const p=sample(path,covered),ahead=sample(path,covered+1.6),gp=sample(path,covered+2.8),ga=sample(path,covered+2.95);
       if(direction==='out'){ahead.z+=Math.max(0,covered+1.6-total);gp.z+=Math.max(0,covered+2.8-total);ga.z+=Math.max(0,covered+2.95-total);}
       camera.position.copy(p);camera.position.y=1.65;
       if(!lookHeld){const q=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().lookAt(camera.position,new T.Vector3(ahead.x,1.50,ahead.z),camera.up));camera.quaternion.rotateTowards(q,dt*.65);}
-      if(direction==='back'&&total-covered<1.9)gp.x+=.7*(1-(total-covered)/1.9);guide.group.position.copy(gp);if(gp.distanceTo(ga)>.001){const yaw=Math.atan2(ga.x-gp.x,ga.z-gp.z);guide.group.rotation.y+=Math.atan2(Math.sin(yaw-guide.group.rotation.y),Math.cos(yaw-guide.group.rotation.y))*Math.min(1,dt*5);}guide.walkPose(time,covered<total);
+      if(direction==='back'&&total-covered<1.9)gp.x+=.7*(1-(total-covered)/1.9);guide.group.position.copy(gp);if(gp.distanceTo(ga)>.001){const yaw=Math.atan2(ga.x-gp.x,ga.z-gp.z);guide.group.rotation.y+=Math.atan2(Math.sin(yaw-guide.group.rotation.y),Math.cos(yaw-guide.group.rotation.y))*(1-Math.exp(-dt*5));}guide.walkPose(time,covered<total?speed/1.4:0);
       if(left<.025||covered===total){if(direction==='out')transfer();else {state='restoring';stageTime=0;cameraStart=camera.position.clone();lookStart=camera.quaternion.clone();status('Back in the keeper’s room.');}}
     },
     bind(){panel.querySelector('[data-action=pause]').onclick=()=>this.pause();panel.querySelector('[data-action=skip]').onclick=()=>this.skip();panel.querySelector('[data-action=cancel]').onclick=()=>this.cancel();document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.active&&state!=='away'){paused=true;status('Paused · the journey will wait for you.');}});}

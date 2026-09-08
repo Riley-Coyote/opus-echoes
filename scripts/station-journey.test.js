@@ -32,12 +32,12 @@ class Element {
   setAttribute(){} append(){} querySelector(s){if(!this.children.has(s))this.children.set(s,new Element());return this.children.get(s);}
 }
 /* the corrected WP-46 landing pose, and the guide at its home post */
-function fixture(cross=async()=>{},position=[-3.10,1.40,2.70]){
+function fixture(cross=async()=>{},position=[-3.10,1.40,2.70],options={}){
   globalThis.document={createElement:()=>new Element(),body:new Element(),head:new Element(),hidden:false,addEventListener(){}};
   const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera();camera.position.set(...position);
   const group=new THREE.Group();group.position.set(3.05,0,-2.20);
   const origin=camera.position.clone();let restorations=0;
-  const controller=createStationJourney({THREE,scene,camera,guide:{group,walkPose(){}},planGuideRoute:(a,b)=>floor.route(a,b),prepare:()=>({pos:origin.clone(),quaternion:camera.quaternion.clone()}),restore(saved){restorations++;camera.position.copy(saved.pos);camera.quaternion.copy(saved.quaternion);},cross,directReturn(){}});
+  const controller=createStationJourney({THREE,scene,camera,guide:{group,walkPose(){}},planGuideRoute:(a,b)=>floor.route(a,b),prepare:()=>({pos:origin.clone(),quaternion:camera.quaternion.clone()}),restore(saved){restorations++;camera.position.copy(saved.pos);camera.quaternion.copy(saved.quaternion);},cross,directReturn(){},...options});
   return {controller,camera,group,origin,get restorations(){return restorations;}};
 }
 async function advance(f,condition,seconds=60){for(let i=0;i<seconds*60;i++){f.controller.tick(i/60,1/60);await Promise.resolve();if(condition())return;}throw Error('Journey did not reach expected state');}
@@ -84,4 +84,15 @@ test('camera and guide avoid the desk and the record credenza throughout departu
     }
   }
   expect(f.controller.state.phase).toBe('away');
+});
+
+test('the cold museum prepares before either the camera or Limen begins to move',async()=>{
+  let ready=false;
+  const f=fixture(async()=>{},[-3.10,1.40,2.70],{doorwayReady:()=>ready});
+  const guideStart=f.group.position.clone();await f.controller.start();
+  for(let i=0;i<180;i++)f.controller.tick(i/60,1/60);
+  expect(f.controller.state.phase).toBe('preparing');
+  expect(f.camera.position.distanceTo(f.origin)).toBe(0);
+  expect(f.group.position.distanceTo(guideStart)).toBe(0);
+  ready=true;await advance(f,()=>f.controller.state.phase==='traveling');
 });

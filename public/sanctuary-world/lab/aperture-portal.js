@@ -8,7 +8,7 @@ export function makeAperturePortal({ onOpen, onClose }) {
   #aperture-visit.preview{visibility:visible;opacity:1;background:transparent;pointer-events:none;z-index:70}#aperture-visit.preview .aperture-return,#aperture-visit.preview .aperture-loading{display:none}#aperture-visit.preview iframe{top:0;height:100%}#aperture-visit.active{visibility:visible;pointer-events:auto;opacity:1}#aperture-visit iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0b0a0e}#aperture-visit .aperture-return{position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:3;min-height:44px;padding:10px 18px;font:10px var(--mono);color:#e8ded1;background:#131318e8;border:1px solid #655c54;cursor:pointer}#aperture-visit .aperture-return:focus-visible{outline:2px solid #d6b693;outline-offset:3px}#aperture-visit .aperture-loading{position:absolute;inset:0;display:grid;place-content:center;font:12px var(--mono)}#aperture-visit.ready .aperture-loading{display:none}@media(prefers-reduced-motion:reduce){#aperture-visit{transition:none}}
   @media(max-width:650px){#aperture-visit iframe{top:0;height:100%}#aperture-visit .aperture-return{top:10px;left:16px;transform:none}#aperture-visit .aperture-loading{top:64px}}
   `;document.head.append(style);document.body.append(dialog);
-  let frame=null,ready=false,active=false,revision=0,restoreFocus=null,pending=new Map(), previewPrepared=false, previewBoot=null, committing=false, epoch=0;
+  let frame=null,ready=false,active=false,revision=0,restoreFocus=null,pending=new Map(), previewPrepared=false, previewBoot=null, committing=false, epoch=0, previewError=null;
   const send=(type,extra={})=>frame?.contentWindow?.postMessage({type,...extra},location.origin);
   const request=(type,extra={})=>new Promise((resolve,reject)=>{
     const id=++revision;const timeout=setTimeout(()=>{pending.delete(id);reject(new Error('Museum preparation timed out'));},20000);
@@ -26,37 +26,43 @@ export function makeAperturePortal({ onOpen, onClose }) {
   }
   async function preparePreview(guide,passage) {
     if(previewBoot)return previewBoot;
-    previewPrepared=false;
+    if(previewPrepared)return;
+    previewPrepared=false;previewError=null;
     const attempt=epoch;
-    previewBoot=(async()=>{await prepare(true);await request('aperture:prepare',{guide,passage});if(attempt===epoch)previewPrepared=true;})().finally(()=>{previewBoot=null;});
+    previewBoot=(async()=>{await prepare(true);await request('aperture:prepare',{guide,passage});if(attempt===epoch)previewPrepared=true;})().catch(error=>{if(attempt===epoch)previewError=error;throw error;}).finally(()=>{previewBoot=null;});
     return previewBoot;
   }
+  let turn=null,cameraRotation=null,guideRotation=null;
   function preview(T,camera,guide,time,moving) {
-    if(committing)return;
-    if(active||!previewPrepared||camera.position.z<7.15){dialog.classList.remove('preview');return;}
+    if(committing)return dialog.style.clipPath==='none';
+    if(active||!previewPrepared||camera.position.z<7.15){dialog.classList.remove('preview');return false;}
     const api=frame.contentWindow.__apertureContinuity;
-    if(!api)return;
+    if(!api)return false;
     camera.updateMatrixWorld(true);
-    const rotation=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),Math.PI);
-    api.view({position:[6.7-camera.position.x,camera.position.y,32.85-camera.position.z],quaternion:rotation.clone().multiply(camera.quaternion).toArray(),fov:camera.fov,aspect:camera.aspect,guidePosition:[6.7-guide.position.x,guide.position.y,32.85-guide.position.z],guideQuaternion:rotation.clone().multiply(guide.quaternion).toArray(),time,moving});
-    if(camera.position.z>=10.84)dialog.style.clipPath='none';
-    else {
-      const corners=[[5.36,0,10.84],[5.36,2.68,10.84],[8.04,2.68,10.84],[8.04,0,10.84]];
-      // Clip in homogeneous space, including when the visitor turns away.
-      const points=corners.map(p=>new T.Vector3(...p).applyMatrix4(camera.matrixWorldInverse));
-      let polygon=points;
-      for(let plane=0;plane<1;plane++){
-        const input=polygon;polygon=[];
-        for(let i=0;i<input.length;i++){
-          const a=input[i],b=input[(i+1)%input.length],insideA=a.z<-.05,insideB=b.z<-.05;
-          if(insideA)polygon.push(a);
-          if(insideA!==insideB)polygon.push(a.clone().lerp(b,(-.05-a.z)/(b.z-a.z)));
-        }
+    let rect=null,full=camera.position.z>=10.84;
+    if(!full) {
+      const points=[[5.36,0,10.84],[5.36,2.68,10.84],[8.04,2.68,10.84],[8.04,0,10.84]].map(p=>new T.Vector3(...p).applyMatrix4(camera.matrixWorldInverse));
+      const polygon=[];
+      for(let i=0;i<points.length;i++) {
+        const a=points[i],b=points[(i+1)%points.length],insideA=a.z<-.05,insideB=b.z<-.05;
+        if(insideA)polygon.push(a);
+        if(insideA!==insideB)polygon.push(a.clone().lerp(b,(-.05-a.z)/(b.z-a.z)));
       }
-      if(polygon.length<3){dialog.classList.remove('preview');return;}
-      dialog.style.clipPath='polygon('+polygon.map(p=>{p.applyMatrix4(camera.projectionMatrix);return `${(p.x*.5+.5)*100}% ${(-p.y*.5+.5)*100}%`;}).join(',')+')';
-    }
+      if(polygon.length<3){dialog.classList.remove('preview');return false;}
+      const uv=polygon.map(p=>{p.applyMatrix4(camera.projectionMatrix);return [p.x*.5+.5,-p.y*.5+.5];});
+      const left=Math.max(0,Math.min(...uv.map(p=>p[0]))),right=Math.min(1,Math.max(...uv.map(p=>p[0]))),top=Math.max(0,Math.min(...uv.map(p=>p[1]))),bottom=Math.min(1,Math.max(...uv.map(p=>p[1])));
+      if(right<=left||bottom<=top){dialog.classList.remove('preview');return false;}
+      const inside=([x,y])=>{let sign=0;for(let i=0;i<uv.length;i++){const a=uv[i],b=uv[(i+1)%uv.length],cross=(b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0]);if(Math.abs(cross)<1e-8)continue;const next=Math.sign(cross);if(sign&&sign!==next)return false;sign=next;}return true;};
+      full=[[0,0],[1,0],[1,1],[0,1]].every(inside);
+      // Render only pixels visible through the real doorway. The lens stays
+      // full-size, so approaching the threshold never changes perspective.
+      rect=full?null:[left,1-bottom,right-left,bottom-top];
+      dialog.style.clipPath=full?'none':'polygon('+uv.map(p=>`${p[0]*100}% ${p[1]*100}%`).join(',')+')';
+    } else dialog.style.clipPath='none';
+    if(!turn){turn=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),Math.PI);cameraRotation=new T.Quaternion();guideRotation=new T.Quaternion();}
+    api.view({position:[6.7-camera.position.x,camera.position.y,32.85-camera.position.z],quaternion:cameraRotation.copy(turn).multiply(camera.quaternion).toArray(),fov:camera.fov,aspect:camera.aspect,guidePosition:[6.7-guide.position.x,guide.position.y,32.85-guide.position.z],guideQuaternion:guideRotation.copy(turn).multiply(guide.quaternion).toArray(),time,moving,motion:guide.userData.limenMotion,portalRect:rect});
     dialog.classList.add('preview');
+    return full;
   }
   async function open({direct=false,guide,speed=0}={}){
     const attempt=epoch;
@@ -89,5 +95,5 @@ export function makeAperturePortal({ onOpen, onClose }) {
     if(ev.data?.type==='aperture:return'&&active)close(ev.data.direct===true);
   });
   dialog.querySelector('button').onclick=()=>close(true);
-  return {prepare,preparePreview,preview,previewReady:()=>previewPrepared,open,close,active:()=>active,ready:()=>ready};
+  return {prepare,preparePreview,preview,previewReady:()=>previewPrepared,previewError:()=>previewError,open,close,active:()=>active,ready:()=>ready};
 }

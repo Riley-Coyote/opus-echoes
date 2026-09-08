@@ -3700,7 +3700,7 @@ const limen = (() => {
       }
     }
 
-    walkPose(travelled * 2.73, !quiet && ['coming','going','walk'].includes(S.mode));
+    walkPose(quiet ? 0 : t, !quiet && ['coming','going','walk'].includes(S.mode));
 
     /* hovering it turns it: the body comes round, not just the head */
     const onIt = hovered() && hovered().id === 'limen';
@@ -3711,14 +3711,6 @@ const limen = (() => {
       let d = ((S.wantYaw - S.yaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
       S.yaw += d * Math.min(1, dt * (S.mode === 'walk' ? 6.0 : 2.4));
       group.rotation.y = S.yaw;
-    }
-
-    /* the breathing sway — very slow, and off for anyone who asked for still */
-    if (quiet) { sway.position.y = 0; sway.rotation.z = 0; torso.rotation.x = 0; }
-    else {
-      sway.position.y = Math.sin(t * 0.44) * 0.0065;
-      sway.rotation.z = Math.sin(t * 0.31 + 1.2) * 0.0075;
-      torso.rotation.x = Math.sin(t * 0.44 + 0.6) * 0.010;
     }
 
     /* ── where the head is looking ──
@@ -4229,6 +4221,7 @@ const apertureVisit = makeAperturePortal({
 const stationJourney = createStationJourney({ THREE, scene, camera, guide: limen,
   planGuideRoute: (start,end)=>floorNavigation.route(start,end),
   doorwayReady: () => apertureVisit.previewReady(),
+  doorwayError: () => apertureVisit.previewError(),
   prepare() {
     hasMuseumVisit=true;document.body.classList.add('has-museum-visit');
     apertureVisit.preparePreview(serializeLimenBody(limen.group),stationJourney.passageSnapshot()).catch(() => {});
@@ -4435,6 +4428,9 @@ function frame() {
   clockT.elapsedTime += dt;
   const t = clockT.elapsedTime;
 
+  const quiet = REDUCED || STILL;
+  const roomVisible=!stationJourney.active||camera.position.z<4.2;
+  if(roomVisible) {
   hauntTick(t);
   tuneLight(t);
   fasciaTick(dt);
@@ -4457,7 +4453,6 @@ function frame() {
   if (houseWindow.tick(dt, cam.mode === 'rest' || cam.mode === 'focus' || cam.mode === 'glide')) litWindow();
 
   /* the reels turn, slowly, and the indicator lamps breathe */
-  const quiet = REDUCED || STILL;
   if (!quiet) spinningReels.forEach((g, i) => { g.rotation.z -= dt * (i === 0 ? 0.34 : 0.29); });
   indicatorLamps.forEach((L) => {
     const v = 0.5 + 0.5 * Math.sin(t * L.rate + L.phase);
@@ -4502,6 +4497,8 @@ function frame() {
 
   /* whatever the registry wants each frame */
   for (const o of STATION_OBJECTS) if (o.tick) o.tick(t, dt);
+
+  }
 
   /* the camera */
   if (stationJourney.active) { stationJourney.tick(t, dt); }
@@ -4565,14 +4562,14 @@ function frame() {
   PERF.frames += 1;
   // Moving figures retain shadows; static light need not redraw its atlas at
   // the monitor's refresh rate. Lighting and geometry remain unchanged.
-  if (t - lastShadowAt >= 1 / 24) {
+  if (roomVisible && t - lastShadowAt >= 1 / 24) {
     renderer.shadowMap.needsUpdate = true;
     lastShadowAt = t;
   }
-  if(stationJourney.active && !museumVisible) apertureVisit.preview(THREE, camera, limen.group, t, !stationJourney.state.paused);
-  post.render(t);
+  const museumFillsView=stationJourney.active && !museumVisible && apertureVisit.preview(THREE,camera,limen.group,t,!stationJourney.state.paused);
+  if(!museumFillsView)post.render(t);
   if (!PERF.firstFrame) { PERF.firstFrame = +performance.now().toFixed(0); warmUp(); }
-  if (cam.mode !== 'rest' && !seat.world.isFlat()) seat.world.render(camera);
+  if (roomVisible && !stationJourney.active && cam.mode !== 'rest' && !seat.world.isFlat()) seat.world.render(camera);
 }
 
 frame();

@@ -13,7 +13,7 @@ async (page) => {
     __station.museumOpen();
   });
   await page.waitForFunction(()=>document.querySelector('#aperture-visit iframe')?.contentWindow.__apertureContinuity);
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(()=>['staging','traveling'].includes(__station.journey().phase));
   await page.evaluate(()=>{for(let i=0;i<140&&__station.camera().pos[2]<8;i++)advanceTime(200);__station.journeyPause();});
   const pause=await page.evaluate(()=>__station.camera().pos);
   await page.waitForTimeout(250);
@@ -38,7 +38,7 @@ async (page) => {
   const crossing=await page.evaluate(()=>__crossing);
   assert(Math.abs(crossing.camera[2]-21.7)<.15,'Crossing must retain the physical doorway position');
   assert(Math.abs(crossing.speed-1.4)<.01,'Walking velocity must carry into the museum');
-  assert(crossing.bodyVersion==='veiled-keeper-1','The museum must use the same Limen body');
+  assert(crossing.bodyVersion==='floating-keeper-2','The museum must use the same Limen body');
   const museum=page.frames().find(f=>f.url().includes('/aperture/'));
   assert(await museum.locator('#places-toggle').isVisible(),'Museum controls must become available');
   assert(!(await museum.locator('body').getAttribute('class'))?.includes('arrival-preview'),'Preview presentation must release');
