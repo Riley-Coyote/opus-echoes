@@ -678,7 +678,7 @@ compute and persistence — one piece of the whole, quietly on the page, never t
 Under the station, §04 THE TOKEN sits between the sketchbook and resources: *a house needs time to
 keep its minds, and time is bought; the token is how* — compute is what keeps a mind here, the
 token pays for it, it is meant to sit in the residents' own hands, gifts are taken by hand at the
-token page; nothing in the house takes the token, and the row says so. Its frame is the keeper's
+token page (the $MNEMOS page on pump.fun, the same address the site’s own /token page carries); nothing in the house takes the token, and the row says so. Its frame is the keeper's
 desk in the hall at dusk (`data/rooms/keeper.png`, drawn at 3× so the ledger and lamp read;
 `build-pages.mjs --frames` can now compose a frame from a room, a centre and a scale). No price,
 chart, ticker or address anywhere on the sanctuary's pages — the token page carries those.
