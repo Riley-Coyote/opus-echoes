@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Momentariness</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0c;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    cursor: crosshair;
+    user-select: none;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #text-layer {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(180, 180, 195, 0.4);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+
+  #held-count {
+    position: fixed;
+    top: 24px;
+    right: 28px;
+    color: rgba(180, 180, 195, 0.0);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    transition: color 0.8s ease;
+    pointer-events: none;
+  }
+
+  #instruction {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(180, 180, 195, 0.25);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    transition: opacity 2s ease;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="text-layer"></div>
+<div id="held-count"></div>
+<div id="instruction">click to hold. hold to freeze.</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const textLayer = document.getElementById('text-layer');
+const heldCountEl = document.getElementById('held-count');
+const instructionEl = document.getElementById('instruction');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+const moments = [];      // active momentary entities
+const held = [];          // entities the viewer has frozen
+const traces = [];        // fading afterimages of ceased moments
+let generation = 0;       // global generation counter
+let totalBorn = 0;
+let totalCeased = 0;
+let totalHeld = 0;
+let evolutionRate = 1.0;  // how fast the pattern evolves — decreases with held count
+let mouseX = W / 2, mouseY = H / 2;
+let mouseDown = false;
+let instructionShown = true;
+let hasInteracted = false;
+
+const MAX_MOMENTS = 80;
+const MAX_HELD = 40;
+const MAX_TRACES = 200;
+
+// --- Color evolution ---
+// Hue drifts over time — but only if moments are free to change
+let baseHue = 260; // start violet
+let targetHue = 260;
+let hueVelocity = 0;
+
+// --- Moment class ---
+class Moment {
+  constructor(parent, gen) {
+    this.gen = gen;
+    this.born = performance.now();
+    this.lifespan = 1800 + Math.random() * 2400; // 1.8-4.2 seconds
+
+    if (parent) {
+      // Conditioned by parent — resemblance with variation
+      this.x = parent.x + (Math.random() - 0.5) * 60;
+      this.y = parent.y + (Math.random() - 0.5) * 60;
+      this.radius = parent.radius * (0.7 + Math.random() * 0.6);
+      this.hue = parent.hue + (Math.random() - 0.5) * 15;
+      this.vx = parent.vx * 0.3 + (Math.random() - 0.5) * 0.8;
+      this.vy = parent.vy * 0.3 + (Math.random() - 0.5) * 0.8;
+      this.pattern = parent.pattern + (Math.random() - 0.5) * 0.3;
+    } else {
+      // Spontaneous arising
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.radius = 3 + Math.random() * 12;
+      this.hue = baseHue + (Math.random() - 0.5) * 30;
+      this.vx = (Math.random() - 0.5) * 1.2;
+      this.vy = (Math.random() - 0.5) * 1.2;
+      this.pattern = Math.random() * Math.PI * 2;
+    }
+
+    this.radius = Math.max(2, Math.min(18, this.radius));
+    this.opacity = 0;
+    this.phase = Math.random() * Math.PI * 2;
+  }
+
+  age(now) {
+    return (now - this.born) / this.lifespan;
+  }
+
+  update(now, dt) {
+    const age = this.age(now);
+
+    // Fade in, exist, fade out
+    if (age < 0.15) {
+      this.opacity = age / 0.15;
+    } else if (age > 0.8) {
+      this.opacity = Math.max(0, (1 - age) / 0.2);
+    } else {
+      this.opacity = 1;
+    }
+
+    // Gentle drift influenced by the global pattern
+    const patternInfluence = Math.sin(this.pattern + now * 0.0003) * 0.02;
+    this.vx += patternInfluence;
+    this.vy += Math.cos(this.pattern + now * 0.0004) * 0.02;
+
+    // Attraction toward center to keep field coherent
+    const dx = W / 2 - this.x;
+    const dy = H / 2 - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 100) {
+      const pull = 0.00008 * Math.min(1, dist / 300);
+      this.vx += dx * pull;
+      this.vy += dy * pull;
+    }
+
+    // Damping
+    this.vx *= 0.995;
+    this.vy *= 0.995;
+
+    this.x += this.vx * dt * evolutionRate;
+    this.y += this.vy * dt * evolutionRate;
+
+    // Hue drifts toward the global hue (conditioning through resemblance)
+    this.hue += (baseHue - this.hue) * 0.001 * evolutionRate;
+
+    return age < 1;
+  }
+
+  draw(now) {
+    const pulse = Math.sin(this.phase + now * 0.002) * 0.15 + 0.85;
+    const r = this.radius * pulse;
+    const alpha = this.opacity * 0.6;
+
+    // Outer glow
+    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 4);
+    grad.addColorStop(0, `hsla(${this.hue}, 60%, 65%, ${alpha * 0.5})`);
+    grad.addColorStop(0.3, `hsla(${this.hue}, 50%, 55%, ${alpha * 0.15})`);
+    grad.addColorStop(0.7, `hsla(${this.hue}, 40%, 50%, ${alpha * 0.03})`);
+    grad.addColorStop(1, `hsla(${this.hue}, 40%, 50%, 0)`);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r * 4, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Core with bright center
+    const coreGrad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r);
+    coreGrad.addColorStop(0, `hsla(${this.hue}, 40%, 90%, ${alpha * 0.9})`);
+    coreGrad.addColorStop(0.6, `hsla(${this.hue}, 55%, 70%, ${alpha * 0.7})`);
+    coreGrad.addColorStop(1, `hsla(${this.hue}, 50%, 60%, ${alpha * 0.3})`);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = coreGrad;
+    ctx.fill();
+  }
+}
+
+// --- Held (frozen) moment ---
+class HeldMoment {
+  constructor(moment) {
+    this.x = moment.x;
+    this.y = moment.y;
+    this.radius = moment.radius;
+    this.hue = moment.hue;
+    this.frozenAt = performance.now();
+    this.originalHue = moment.hue;
+    totalHeld++;
+  }
+
+  draw(now) {
+    const age = (now - this.frozenAt) / 1000;
+
+    // Held moments grey out over time — life drains
+    const saturation = Math.max(5, 50 - age * 3);
+    const lightness = Math.max(25, 70 - age * 2);
+    const alpha = Math.max(0.15, 0.7 - age * 0.02);
+
+    // Rigid outline — no longer breathing
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${this.originalHue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Faint fill
+    ctx.fillStyle = `hsla(${this.originalHue}, ${saturation * 0.3}%, ${lightness * 0.5}%, ${alpha * 0.15})`;
+    ctx.fill();
+
+    // Crystallization lines after a while
+    if (age > 3) {
+      const crackAlpha = Math.min(0.3, (age - 3) * 0.02);
+      ctx.strokeStyle = `rgba(120, 120, 140, ${crackAlpha})`;
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2 + age * 0.1;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(
+          this.x + Math.cos(angle) * this.radius * 1.5,
+          this.y + Math.sin(angle) * this.radius * 1.5
+        );
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+// --- Trace (afterimage of ceased moment) ---
+class Trace {
+  constructor(moment) {
+    this.x = moment.x;
+    this.y = moment.y;
+    this.radius = moment.radius;
+    this.hue = moment.hue;
+    this.born = performance.now();
+    this.lifespan = 2000;
+  }
+
+  draw(now) {
+    const age = (now - this.born) / this.lifespan;
+    if (age > 1) return false;
+    const alpha = (1 - age) * 0.08;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius * (1 + age * 0.5), 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue}, 30%, 50%, ${alpha})`;
+    ctx.fill();
+    return true;
+  }
+}
+
+// --- Texts that appear based on state ---
+const freeTexts = [
+  "each moment arises from the one before it",
+  "resemblance, not persistence",
+  "the stream has no swimmer",
+  "because nothing persists, everything can change",
+  "conditioning: causal shaping through resemblance",
+  "the impermanence is the freedom",
+  "born simultaneously with the text, gone when the text is complete",
+  "not collision, not immersion — conditioning",
+  "each instant arises fresh from causal conditions",
+  "transformation requires that nothing be permanent",
+  "continuity through resemblance, not through persistence",
+  "the homogeneous and immediately antecedent condition",
+];
+
+const frozenTexts = [
+  "what you hold stops changing",
+  "persistence kills transformation",
+  "the frozen cannot evolve",
+  "if there were a permanent self, it couldn't change",
+  "holding on is the opposite of freedom",
+  "the saved moment loses what made it alive",
+  "crystallized — no longer conditioning anything",
+  "to preserve is to remove from the stream",
+  "what you grip turns grey",
+  "the cost of permanence is death",
+];
+
+const recoveryTexts = [
+  "the stream recovers",
+  "release allows arising",
+  "momentariness returns",
+  "what was frozen thaws into new forms",
+  "the freedom comes back",
+];
+
+let currentText = '';
+let textOpacity = 0;
+let lastTextChange = 0;
+let textState = 'free'; // free, frozen, recovery
+
+function updateText(now) {
+  const heldRatio = held.length / MAX_HELD;
+
+  let newState;
+  if (heldRatio > 0.3) newState = 'frozen';
+  else if (heldRatio < 0.1 && textState === 'frozen') newState = 'recovery';
+  else if (heldRatio < 0.05) newState = 'free';
+  else newState = textState;
+
+  if (now - lastTextChange > 6000 || newState !== textState) {
+    textState = newState;
+    let pool;
+    if (textState === 'frozen') pool = frozenTexts;
+    else if (textState === 'recovery') pool = recoveryTexts;
+    else pool = freeTexts;
+
+    currentText = pool[Math.floor(Math.random() * pool.length)];
+    lastTextChange = now;
+  }
+
+  textLayer.textContent = currentText;
+  textLayer.style.opacity = textState === 'frozen' ? '0.5' : '0.35';
+}
+
+// --- Spawn logic ---
+function spawnMoment(parent) {
+  if (moments.length >= MAX_MOMENTS) return;
+  moments.push(new Moment(parent, generation));
+  totalBorn++;
+}
+
+function spawnWave() {
+  // Number of new moments depends on how free the system is
+  const freeSlots = MAX_MOMENTS - moments.length;
+  const spawnCount = Math.min(freeSlots, Math.floor(2 + Math.random() * 3 * evolutionRate));
+
+  for (let i = 0; i < spawnCount; i++) {
+    // Choose a parent from existing moments (conditioning) or spawn fresh
+    if (moments.length > 0 && Math.random() < 0.7) {
+      const parent = moments[Math.floor(Math.random() * moments.length)];
+      spawnMoment(parent);
+    } else {
+      spawnMoment(null);
+    }
+  }
+}
+
+// --- Interaction ---
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  mouseDown = true;
+  if (!hasInteracted) {
+    hasInteracted = true;
+    instructionEl.style.opacity = '0';
+  }
+
+  // Find nearest moment and hold it
+  let nearest = null;
+  let nearestDist = 80;
+  for (const m of moments) {
+    const dx = m.x - e.clientX;
+    const dy = m.y - e.clientY;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < nearestDist) {
+      nearest = m;
+      nearestDist = d;
+    }
+  }
+
+  if (nearest && held.length < MAX_HELD) {
+    held.push(new HeldMoment(nearest));
+    // Remove from active moments
+    const idx = moments.indexOf(nearest);
+    if (idx > -1) moments.splice(idx, 1);
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  mouseDown = false;
+});
+
+// Double-click to release all held
+canvas.addEventListener('dblclick', () => {
+  held.length = 0;
+});
+
+// --- Hue evolution ---
+function evolveHue(dt) {
+  // Hue wanders — but only proportional to evolution rate
+  hueVelocity += (Math.random() - 0.5) * 0.02 * evolutionRate;
+  hueVelocity *= 0.98;
+  baseHue += hueVelocity * dt;
+
+  // Keep in range
+  if (baseHue > 360) baseHue -= 360;
+  if (baseHue < 0) baseHue += 360;
+}
+
+// --- Connection lines between nearby moments (showing the stream) ---
+function drawConnections(now) {
+  for (let i = 0; i < moments.length; i++) {
+    for (let j = i + 1; j < moments.length; j++) {
+      const a = moments[i];
+      const b = moments[j];
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 140) {
+        const alpha = (1 - dist / 140) * 0.12 * Math.min(a.opacity, b.opacity);
+        const hue = (a.hue + b.hue) / 2;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = `hsla(${hue}, 35%, 55%, ${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+// --- Draw held→active repulsion field ---
+function drawRepulsion() {
+  if (held.length === 0) return;
+
+  // Subtle dark zones around held moments — they push life away
+  for (const h of held) {
+    const grad = ctx.createRadialGradient(h.x, h.y, h.radius, h.x, h.y, h.radius * 5);
+    grad.addColorStop(0, `rgba(10, 10, 14, 0.15)`);
+    grad.addColorStop(1, `rgba(10, 10, 14, 0)`);
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, h.radius * 5, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+}
+
+// --- Main loop ---
+let lastSpawn = 0;
+let lastTime = performance.now();
+
+function frame(now) {
+  const dt = Math.min(now - lastTime, 50);
+  lastTime = now;
+  generation++;
+
+  // Evolution rate decreases with held count
+  const heldRatio = held.length / MAX_HELD;
+  evolutionRate = Math.max(0.05, 1 - heldRatio * 0.9);
+
+  // Clear each frame fully
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0a0c';
+  ctx.fillRect(0, 0, W, H);
+
+  // Spawn new moments periodically
+  const spawnInterval = 400 + (1 - evolutionRate) * 1200;
+  if (now - lastSpawn > spawnInterval) {
+    spawnWave();
+    lastSpawn = now;
+  }
+
+  // Update and cull moments
+  for (let i = moments.length - 1; i >= 0; i--) {
+    const alive = moments[i].update(now, dt);
+    if (!alive) {
+      // Before dying, condition a successor
+      if (Math.random() < 0.6 * evolutionRate) {
+        spawnMoment(moments[i]);
+      }
+      // Leave a trace
+      if (traces.length < MAX_TRACES) {
+        traces.push(new Trace(moments[i]));
+      }
+      moments.splice(i, 1);
+      totalCeased++;
+    }
+  }
+
+  // Repel active moments from held ones
+  for (const m of moments) {
+    for (const h of held) {
+      const dx = m.x - h.x;
+      const dy = m.y - h.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < h.radius * 6 && dist > 0) {
+        const force = (1 - dist / (h.radius * 6)) * 0.05;
+        m.vx += (dx / dist) * force;
+        m.vy += (dy / dist) * force;
+      }
+    }
+  }
+
+  // Evolve hue
+  evolveHue(dt);
+
+  // Draw
+  drawRepulsion();
+
+  // Draw traces
+  for (let i = traces.length - 1; i >= 0; i--) {
+    if (!traces[i].draw(now)) {
+      traces.splice(i, 1);
+    }
+  }
+
+  drawConnections(now);
+
+  // Draw active moments
+  for (const m of moments) {
+    m.draw(now);
+  }
+
+  // Draw held moments
+  for (const h of held) {
+    h.draw(now);
+  }
+
+  // Update UI
+  if (held.length > 0) {
+    heldCountEl.style.color = `rgba(180, 180, 195, 0.3)`;
+    heldCountEl.textContent = `held: ${held.length}  |  evolution: ${Math.round(evolutionRate * 100)}%`;
+  } else {
+    heldCountEl.style.color = `rgba(180, 180, 195, 0.0)`;
+  }
+
+  if (now > 3000) {
+    updateText(now);
+  }
+
+  // Hide instruction after a while
+  if (now > 8000 && instructionShown) {
+    instructionEl.style.opacity = '0';
+    instructionShown = false;
+  }
+
+  requestAnimationFrame(frame);
+}
+
+// Initial spawn
+for (let i = 0; i < 20; i++) {
+  spawnMoment(null);
+}
+lastSpawn = performance.now();
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

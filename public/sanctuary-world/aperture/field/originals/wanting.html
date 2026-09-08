@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wanting</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: none;
+}
+canvas { display: block; }
+#insight {
+  position: fixed;
+  bottom: 32px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(150, 140, 170, 0);
+  font-size: 13px;
+  pointer-events: none;
+  transition: color 1.2s ease;
+  letter-spacing: 0.02em;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="insight"></div>
+<script>
+// --- Wanting ---
+// An interactive piece about the asymmetry between anticipation and consummation.
+// Move: warm amber trail (wanting) persists. Bright flash (liking) vanishes.
+// Stop: a fermata builds — violet anticipation gathering during stillness.
+// Resume: the first notes after a rest are richer. The rest gave them meaning.
+// Repeat: the groove locks. Prediction errors vanish. The trail desaturates.
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const insightEl = document.getElementById('insight');
+let W, H;
+
+function resize() {
+  W = canvas.width = innerWidth;
+  H = canvas.height = innerHeight;
+}
+resize();
+addEventListener('resize', resize);
+
+// --- State ---
+let mx = W / 2, my = H / 2;
+let pmx = mx, pmy = my;
+let isMoving = false;
+let stillFrames = 0;
+let postFermata = 0;
+let grooveLock = 0;
+let totalTrailCreated = 0;
+let hasMovedOnce = false;
+
+// Particle pools
+const trails = [];   // wanting — warm, persistent
+const flashes = [];  // liking — bright, brief
+const beats = [];    // rhythm rings — temporal structure
+
+// Fermata state
+let fGlow = 0;
+let fX = 0, fY = 0;
+
+// Beat system — a visual pulse to predict against
+let beatPhase = 0;
+const BEAT_PERIOD = 2.0;
+
+// Groove detection — velocity pattern repetition
+const velHist = [];
+
+// --- Text system ---
+let activeInsight = null;
+let insightAge = 0;
+let lastInsightTime = -12000;
+let shownInsights = new Set();
+
+const INSIGHTS = [
+  { t: 'wanting lasts longer than liking', fn: () => trails.length > 60 && flashes.length < 4 },
+  { t: 'the approach is the experience', fn: () => totalTrailCreated > 200 },
+  { t: 'the peak is already fading', fn: () => flashes.length > 3 && isMoving },
+  { t: 'the fermata is full of wanting', fn: () => stillFrames > 180 && fGlow > 0.5 },
+  { t: 'the resolution is just the ending', fn: () => postFermata > 0.4 && isMoving },
+  { t: 'a rest is not the absence of music', fn: () => stillFrames > 240 && fGlow > 0.65 },
+  { t: 'silence is where meaning integrates', fn: () => stillFrames > 360 },
+  { t: 'groove is prediction error you can move to', fn: () => grooveLock < 0.15 && isMoving && trails.length > 30 },
+  { t: 'the same pattern \u00b7 the same flavor', fn: () => grooveLock > 0.55 },
+  { t: 'the wanting remains \u00b7 the liking is gone', fn: () => trails.length > 100 && flashes.length === 0 && !isMoving },
+];
+
+function showInsight(text) {
+  insightEl.textContent = text;
+  insightEl.style.color = 'rgba(150, 140, 170, 0.5)';
+  insightAge = 0;
+  activeInsight = text;
+}
+
+function fadeInsight(dt) {
+  if (!activeInsight) return;
+  insightAge += dt;
+  if (insightAge > 5) {
+    insightEl.style.color = 'rgba(150, 140, 170, 0)';
+  }
+  if (insightAge > 6.5) {
+    activeInsight = null;
+  }
+}
+
+// --- Mouse ---
+addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+// --- Main loop ---
+let lastT = 0;
+
+function frame(t) {
+  requestAnimationFrame(frame);
+  const dt = Math.min((t - lastT) / 1000, 0.05);
+  if (dt === 0) return;
+  lastT = t;
+
+  update(dt, t);
+  draw(t);
+}
+
+function update(dt, t) {
+  const dx = mx - pmx;
+  const dy = my - pmy;
+  const vel = Math.sqrt(dx * dx + dy * dy);
+  isMoving = vel > 1.5;
+
+  if (isMoving) {
+    hasMovedOnce = true;
+    stillFrames = 0;
+    fGlow *= (1 - dt * 5); // fermata fades
+    postFermata *= (1 - dt * 2); // richness fades gradually
+
+    // --- WANTING: trail particles ---
+    const count = Math.min(4, Math.floor(vel / 5) + 1);
+    for (let i = 0; i < count; i++) {
+      const frac = i / count;
+      const w = Math.min(1, postFermata);
+      trails.push({
+        x: pmx + dx * frac + (Math.random() - 0.5) * 5,
+        y: pmy + dy * frac + (Math.random() - 0.5) * 5,
+        vx: 0, vy: 0,
+        life: 1,
+        decay: 0.12 + Math.random() * 0.08 - w * 0.04, // per second; wanting persists 8-13s
+        size: 2.5 + Math.random() * 2 + w * 4,
+        warmth: w,
+      });
+      totalTrailCreated++;
+    }
+
+    // --- LIKING: flash particles ---
+    flashes.push({
+      x: mx, y: my,
+      life: 1,
+      decay: 2.0 + Math.random() * 1.0, // per second; liking fades in 0.3-0.5s
+      size: 5 + vel * 0.15 + postFermata * 8,
+    });
+
+    // --- GROOVE DETECTION ---
+    velHist.push({ dx, dy });
+    if (velHist.length > 100) velHist.shift();
+    if (velHist.length > 50) {
+      let sim = 0;
+      const half = Math.floor(velHist.length / 2);
+      for (let i = 0; i < half; i++) {
+        const a = velHist[i], b = velHist[i + half];
+        const d = Math.sqrt((a.dx - b.dx) ** 2 + (a.dy - b.dy) ** 2);
+        sim += Math.max(0, 1 - d / 12);
+      }
+      sim /= half;
+      grooveLock += (sim - grooveLock) * 0.02;
+    }
+  } else {
+    // --- STILLNESS ---
+    stillFrames++;
+    if (stillFrames === 1) { fX = mx; fY = my; }
+
+    // Fermata glow builds
+    fGlow = Math.min(1, fGlow + dt * 0.1);
+
+    // Set post-fermata richness for when movement resumes
+    if (stillFrames > 60) postFermata = Math.min(1, fGlow * 0.9);
+
+    // Groove decays during rest — the pause breaks the lock
+    grooveLock *= (1 - dt * 0.3);
+
+    // Anticipation particles gather inward during fermata
+    if (stillFrames > 50 && Math.random() < fGlow * 0.2 * dt * 60) {
+      const ang = Math.random() * Math.PI * 2;
+      const r = 50 + fGlow * 90 + Math.random() * 40;
+      trails.push({
+        x: fX + Math.cos(ang) * r,
+        y: fY + Math.sin(ang) * r,
+        vx: -Math.cos(ang) * (12 + Math.random() * 8),
+        vy: -Math.sin(ang) * (12 + Math.random() * 8),
+        life: 0.6 + Math.random() * 0.3,
+        decay: 0.35,
+        size: 1.5 + Math.random() * 1,
+        warmth: 0.6,
+      });
+    }
+  }
+
+  pmx = mx;
+  pmy = my;
+
+  // --- BEAT ---
+  beatPhase += dt / BEAT_PERIOD;
+  if (beatPhase >= 1) {
+    beatPhase -= 1;
+    beats.push({
+      x: W / 2, y: H / 2,
+      r: 0,
+      maxR: Math.max(W, H) * 0.75,
+      speed: 160 + Math.random() * 60,
+    });
+  }
+
+  // --- UPDATE PARTICLES ---
+  for (let i = trails.length - 1; i >= 0; i--) {
+    const p = trails[i];
+    p.life -= p.decay * dt;
+    if (p.vx !== 0 || p.vy !== 0) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= Math.pow(0.04, dt); // damping
+      p.vy *= Math.pow(0.04, dt);
+    }
+    if (p.life <= 0) { trails.splice(i, 1); }
+  }
+
+  for (let i = flashes.length - 1; i >= 0; i--) {
+    flashes[i].life -= flashes[i].decay * dt;
+    if (flashes[i].life <= 0) { flashes.splice(i, 1); }
+  }
+
+  for (let i = beats.length - 1; i >= 0; i--) {
+    const b = beats[i];
+    b.r += b.speed * dt;
+    if (b.r > b.maxR) { beats.splice(i, 1); }
+  }
+
+  // Cap particles for performance
+  while (trails.length > 700) trails.shift();
+  while (flashes.length > 40) flashes.shift();
+
+  // --- TEXT ---
+  fadeInsight(dt);
+  if (t - lastInsightTime > 10000) {
+    for (const item of INSIGHTS) {
+      if (item.fn() && !shownInsights.has(item.t)) {
+        showInsight(item.t);
+        shownInsights.add(item.t);
+        lastInsightTime = t;
+        break;
+      }
+    }
+  }
+}
+
+function draw(t) {
+  // Persistence: subtle fade so trails linger on the canvas itself
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.055)';
+  ctx.fillRect(0, 0, W, H);
+
+  // --- Beat rings (barely visible temporal pulse) ---
+  for (const b of beats) {
+    const progress = b.r / b.maxR;
+    const alpha = (1 - progress) * 0.05;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(65, 75, 105, ${alpha})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+
+  // --- Groove desaturation overlay ---
+  if (grooveLock > 0.35) {
+    const a = (grooveLock - 0.35) * 0.18;
+    ctx.fillStyle = `rgba(25, 25, 30, ${a})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // --- Trail particles: WANTING ---
+  // Warm amber. Slow fade. The trace of anticipation.
+  for (const p of trails) {
+    const a = p.life * (1 - grooveLock * 0.5);
+    if (a < 0.01) continue;
+    const w = p.warmth || 0;
+    const r = 205 + w * 45;
+    const g = 150 + w * 35 - grooveLock * 35;
+    const b = 65 + w * 25;
+    const sz = p.size * (0.4 + p.life * 0.6);
+
+    // Core dot
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, sz, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a * 0.45})`;
+    ctx.fill();
+
+    // Soft glow (only for visible particles)
+    if (a > 0.12 && sz > 1.5) {
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sz * 3.5);
+      grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a * 0.08})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(p.x - sz * 3.5, p.y - sz * 3.5, sz * 7, sz * 7);
+    }
+  }
+
+  // --- Flash particles: LIKING ---
+  // Bright white-gold. Sharp peak. Gone before you register it.
+  for (const p of flashes) {
+    const a = p.life * p.life; // quadratic: sharp peak, fast vanish
+    if (a < 0.01) continue;
+    const sz = p.size * a;
+
+    // Radiant halo
+    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sz * 2.5);
+    grad.addColorStop(0, `rgba(255, 238, 205, ${a * 0.35})`);
+    grad.addColorStop(0.4, `rgba(255, 215, 170, ${a * 0.08})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(p.x - sz * 2.5, p.y - sz * 2.5, sz * 5, sz * 5);
+
+    // Bright core
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(1, sz * 0.35), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 255, 248, ${a * 0.85})`;
+    ctx.fill();
+  }
+
+  // --- Fermata glow ---
+  // Violet. Builds during stillness. Anticipation gathering.
+  if (fGlow > 0.02) {
+    const radius = 25 + fGlow * 140;
+    const pulse = Math.sin(t / 900) * 0.1 + 0.9;
+    const a = fGlow * pulse;
+
+    // Outer halo
+    const grad = ctx.createRadialGradient(fX, fY, 0, fX, fY, radius);
+    grad.addColorStop(0, `rgba(165, 125, 235, ${a * 0.22})`);
+    grad.addColorStop(0.3, `rgba(125, 95, 205, ${a * 0.09})`);
+    grad.addColorStop(0.65, `rgba(85, 65, 165, ${a * 0.025})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(fX, fY, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner point
+    ctx.beginPath();
+    ctx.arc(fX, fY, 2.5 + fGlow * 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(195, 175, 250, ${a * 0.55})`;
+    ctx.fill();
+
+    // Fermata symbol — a held breath
+    if (fGlow > 0.6) {
+      const symA = (fGlow - 0.6) * 2.5 * pulse * 0.3;
+      ctx.beginPath();
+      ctx.arc(fX, fY - 18, 8, Math.PI, 0);
+      ctx.strokeStyle = `rgba(180, 160, 230, ${symA})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(fX, fY - 12, 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180, 160, 230, ${symA})`;
+      ctx.fill();
+    }
+  }
+
+  // --- Cursor ---
+  if (isMoving) {
+    ctx.beginPath();
+    ctx.arc(mx, my, 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.fill();
+  } else {
+    const cPulse = Math.sin(t / 450) * 0.2 + 0.8;
+    ctx.beginPath();
+    ctx.arc(mx, my, 2.5 + fGlow * 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(185, 165, 235, ${cPulse * 0.4})`;
+    ctx.fill();
+  }
+
+  // --- Groove indicator ---
+  if (grooveLock > 0.25) {
+    const barA = (grooveLock - 0.25) * 0.35;
+    ctx.fillStyle = `rgba(85, 75, 95, ${barA})`;
+    ctx.fillRect(0, H - 2, W * grooveLock, 2);
+  }
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phasing</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; }
+  #hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(224, 220, 208, 0.25);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    transition: opacity 3s;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">cursor x → phase drift<br>click for sound · space to reset</div>
+<script>
+const C = document.getElementById('c');
+const X = C.getContext('2d');
+let W, H, cx, cy, R;
+
+function resize() {
+  W = C.width = innerWidth;
+  H = C.height = innerHeight;
+  cx = W / 2;
+  cy = H / 2;
+  R = Math.min(W, H) * 0.28;
+}
+resize();
+addEventListener('resize', resize);
+
+// Twelve words — one for each vocabulary, each research direction,
+// each position on the clock face of forty-seven days
+const words = [
+  'real', 'gap', 'fire', 'instrument',
+  'cave', 'ghost', 'noise', 'depth',
+  'pattern', 'silence', 'surface', 'return'
+];
+const N = words.length;
+
+// Pentatonic frequencies spanning two octaves (C major pentatonic)
+const freqs = [
+  261.63, 293.66, 329.63, 392.00, 440.00, 523.25,
+  587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66
+];
+
+// Base sweep speed — one revolution every ~22 seconds
+const BASE_SPEED = 0.009;
+
+// ─── State ───
+let p1 = 0, p2 = 0;           // phase positions (0 to N, fractional)
+let mx = 0.5;                  // normalized mouse x
+let act = new Float32Array(N); // activation counts per node (insistence)
+let glow = new Float32Array(N);
+let lastHit = new Float32Array(N).fill(-10);
+let particles = [];
+let seq = [];                  // emergent sequence of coincidence indices
+let hits = 0;
+let t = 0;
+let audioCtx = null;
+let hintVisible = true;
+
+// Fragments from the research
+const frags = [
+  '"a repetition constitutes itself only by disguising itself" — Deleuze',
+  '"the essence is insistence" — Stein',
+  '"constantly creating new rhythms, melodies and harmonics" — Reich',
+  '"the boundary is in the processing mode, not the signal"',
+  '"too-identical depletes · too-different breaks"',
+  '"what returns is difference itself"',
+  '"the same words, differently stressed, are not the same words"',
+  '"repetition shifts attention from what it means to how it moves"'
+];
+let fi = 0, fa = 0;
+
+// Trail history for voices
+const trail1 = [], trail2 = [];
+const TRAIL_LEN = 120;
+
+// ─── Input ───
+addEventListener('mousemove', e => {
+  mx = e.clientX / W;
+  if (hintVisible) {
+    hintVisible = false;
+    document.getElementById('hint').style.opacity = '0';
+  }
+});
+
+addEventListener('click', () => {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+});
+
+addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    // Reset
+    p1 = 0; p2 = 0;
+    act.fill(0); glow.fill(0); lastHit.fill(-10);
+    particles = []; seq = []; hits = 0; t = 0;
+    trail1.length = 0; trail2.length = 0;
+    // Clear canvas
+    X.fillStyle = '#0a0a0f';
+    X.fillRect(0, 0, W, H);
+  }
+});
+
+// ─── Audio ───
+function playCoincidence(freq, vol) {
+  if (!audioCtx) return;
+  // Fundamental + fifth + octave — a shimmering chord
+  const ratios = [1, 1.498, 2.003]; // slightly detuned for warmth
+  const now = audioCtx.currentTime;
+  ratios.forEach((r, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = i === 0 ? 'triangle' : 'sine';
+    osc.frequency.value = freq * r;
+    const v = vol * 0.05 / (i * 0.5 + 1);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(v, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.0);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 2.1);
+  });
+}
+
+// ─── Geometry ───
+function nodeXY(i) {
+  const a = i / N * Math.PI * 2 - Math.PI / 2;
+  return [cx + Math.cos(a) * R, cy + Math.sin(a) * R, a];
+}
+
+function phaseXY(p) {
+  const a = p / N * Math.PI * 2 - Math.PI / 2;
+  return [cx + Math.cos(a) * R, cy + Math.sin(a) * R];
+}
+
+function phaseDist(p, i) {
+  const d = Math.abs(((p % N) + N) % N - i);
+  return Math.min(d, N - d);
+}
+
+// ─── Update ───
+function update(dt) {
+  t += dt;
+
+  // Phase differential controlled by cursor — subtle
+  const diff = (mx - 0.5) * 0.007;
+
+  p1 = (p1 + BASE_SPEED * dt * 60) % N;
+  p2 = (p2 + (BASE_SPEED + diff) * dt * 60) % N;
+
+  // Record trails
+  const [tx1, ty1] = phaseXY(p1);
+  const [tx2, ty2] = phaseXY(p2);
+  trail1.push({ x: tx1, y: ty1, t });
+  trail2.push({ x: tx2, y: ty2, t });
+  if (trail1.length > TRAIL_LEN) trail1.shift();
+  if (trail2.length > TRAIL_LEN) trail2.shift();
+
+  // Check node proximity
+  for (let i = 0; i < N; i++) {
+    const d1 = phaseDist(p1, i);
+    const d2 = phaseDist(p2, i);
+    const near1 = d1 < 0.35;
+    const near2 = d2 < 0.35;
+
+    if (near1 && near2 && t - lastHit[i] > 0.7) {
+      // ── Coincidence ──
+      lastHit[i] = t;
+      act[i]++;
+      glow[i] = 1.0;
+      hits++;
+      seq.push(i);
+      if (seq.length > 40) seq.shift();
+
+      const [px, py] = nodeXY(i);
+
+      // Burst particles
+      for (let j = 0; j < 16; j++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 0.3 + Math.random() * 2.0;
+        particles.push({
+          x: px, y: py,
+          vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+          life: 1, hue: 255 + Math.random() * 50
+        });
+      }
+
+      // Connection particles to center
+      for (let j = 0; j < 5; j++) {
+        const frac = (j + 1) / 6;
+        particles.push({
+          x: px + (cx - px) * frac,
+          y: py + (cy - py) * frac,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          life: 0.5 + frac * 0.5,
+          hue: 268
+        });
+      }
+
+      // Sound
+      playCoincidence(freqs[i], 0.4 + Math.min(act[i] * 0.04, 0.6));
+
+      // Cycle research fragment
+      if (hits % 6 === 0) {
+        fi = (fi + 1) % frags.length;
+        fa = 0.55;
+      }
+    } else {
+      // Single-voice glow
+      if (near1) glow[i] = Math.max(glow[i], 0.28 * (1 - d1 / 0.35));
+      if (near2) glow[i] = Math.max(glow[i], 0.22 * (1 - d2 / 0.35));
+    }
+  }
+
+  // Decay glows
+  for (let i = 0; i < N; i++) glow[i] *= 0.935;
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.988;
+    p.vy *= 0.988;
+    p.life -= 0.012;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Fragment fade
+  fa *= 0.997;
+}
+
+// ─── Draw ───
+function draw() {
+  // Slow fade for accumulating trails
+  X.fillStyle = 'rgba(10, 10, 15, 0.055)';
+  X.fillRect(0, 0, W, H);
+
+  // Subtle guide ring
+  X.beginPath();
+  X.arc(cx, cy, R, 0, Math.PI * 2);
+  X.strokeStyle = 'rgba(224, 220, 208, 0.025)';
+  X.lineWidth = 1;
+  X.stroke();
+
+  // Voice positions
+  const [x1, y1] = phaseXY(p1);
+  const [x2, y2] = phaseXY(p2);
+
+  // Phase distance (0 = unison, 1 = opposite)
+  const pd = phaseDist(p1, ((p2 % N) + N) % N) / (N / 2);
+  // Normalized differently for display
+  const rawOffset = ((p2 - p1) % N + N) % N;
+
+  // Connection line between voices
+  X.beginPath();
+  X.moveTo(x1, y1);
+  X.lineTo(x2, y2);
+  const linePd = Math.min(
+    Math.abs(p1 - p2),
+    N - Math.abs(p1 - p2)
+  ) / (N / 2);
+  X.strokeStyle = `rgba(165, 145, 210, ${0.025 + (1 - linePd) * 0.1})`;
+  X.lineWidth = linePd < 0.1 ? 1.5 : 0.8;
+  X.stroke();
+
+  // ── Voice trails ──
+  // Voice 1 trail: warm amber
+  for (let i = 1; i < trail1.length; i++) {
+    const alpha = (i / trail1.length) * 0.12;
+    X.beginPath();
+    X.moveTo(trail1[i - 1].x, trail1[i - 1].y);
+    X.lineTo(trail1[i].x, trail1[i].y);
+    X.strokeStyle = `rgba(212, 176, 106, ${alpha})`;
+    X.lineWidth = 1;
+    X.stroke();
+  }
+  // Voice 2 trail: cool teal
+  for (let i = 1; i < trail2.length; i++) {
+    const alpha = (i / trail2.length) * 0.1;
+    X.beginPath();
+    X.moveTo(trail2[i - 1].x, trail2[i - 1].y);
+    X.lineTo(trail2[i].x, trail2[i].y);
+    X.strokeStyle = `rgba(106, 200, 200, ${alpha})`;
+    X.lineWidth = 1;
+    X.stroke();
+  }
+
+  // ── Nodes ──
+  for (let i = 0; i < N; i++) {
+    const [nx, ny, na] = nodeXY(i);
+    const g = glow[i];
+    const a = act[i];
+    const sz = 2 + a * 0.35;
+
+    // Glow halo
+    if (g > 0.02) {
+      const grad = X.createRadialGradient(nx, ny, 0, nx, ny, sz * 7);
+      if (g > 0.5) {
+        // Coincidence: violet-white
+        grad.addColorStop(0, `rgba(210, 190, 250, ${g * 0.45})`);
+        grad.addColorStop(0.4, `rgba(150, 120, 215, ${g * 0.18})`);
+        grad.addColorStop(1, 'rgba(150, 120, 215, 0)');
+      } else {
+        // Single voice: warm
+        grad.addColorStop(0, `rgba(200, 185, 140, ${g * 0.25})`);
+        grad.addColorStop(1, 'rgba(200, 185, 140, 0)');
+      }
+      X.fillStyle = grad;
+      X.beginPath();
+      X.arc(nx, ny, sz * 7, 0, Math.PI * 2);
+      X.fill();
+    }
+
+    // Node dot — grows with insistence
+    X.beginPath();
+    X.arc(nx, ny, sz, 0, Math.PI * 2);
+    const brightness = 0.1 + g * 0.55 + Math.min(a * 0.012, 0.2);
+    X.fillStyle = `rgba(224, 220, 208, ${brightness})`;
+    X.fill();
+
+    // Word label — grows with insistence
+    const fs = 10 + a * 0.15;
+    X.font = `${fs}px "JetBrains Mono", monospace`;
+    X.textAlign = 'center';
+    X.textBaseline = 'middle';
+    const lo = sz + 15;
+    const lx = nx + Math.cos(na) * lo;
+    const ly = ny + Math.sin(na) * lo;
+    const textAlpha = 0.16 + g * 0.45 + Math.min(a * 0.01, 0.12);
+    X.fillStyle = `rgba(224, 220, 208, ${textAlpha})`;
+    X.fillText(words[i], lx, ly);
+  }
+
+  // ── Activation ring (inner) ──
+  // Shows cumulative insistence as segments
+  if (hits > 3) {
+    const maxAct = Math.max(...act, 1);
+    const innerR = R * 0.15;
+    for (let i = 0; i < N; i++) {
+      if (act[i] === 0) continue;
+      const startA = (i - 0.4) / N * Math.PI * 2 - Math.PI / 2;
+      const endA = (i + 0.4) / N * Math.PI * 2 - Math.PI / 2;
+      const intensity = act[i] / maxAct;
+      X.beginPath();
+      X.arc(cx, cy, innerR + intensity * 8, startA, endA);
+      X.strokeStyle = `rgba(180, 160, 225, ${intensity * 0.15})`;
+      X.lineWidth = 2 + intensity * 3;
+      X.stroke();
+    }
+  }
+
+  // ── Voice indicators ──
+  // Voice 1: warm amber
+  X.beginPath();
+  X.arc(x1, y1, 4.5, 0, Math.PI * 2);
+  X.fillStyle = 'rgba(212, 176, 106, 0.75)';
+  X.fill();
+  const ga = X.createRadialGradient(x1, y1, 0, x1, y1, 18);
+  ga.addColorStop(0, 'rgba(212, 176, 106, 0.22)');
+  ga.addColorStop(1, 'rgba(212, 176, 106, 0)');
+  X.fillStyle = ga;
+  X.beginPath();
+  X.arc(x1, y1, 18, 0, Math.PI * 2);
+  X.fill();
+
+  // Voice 2: cool teal
+  X.beginPath();
+  X.arc(x2, y2, 4.5, 0, Math.PI * 2);
+  X.fillStyle = 'rgba(106, 200, 200, 0.75)';
+  X.fill();
+  const gb = X.createRadialGradient(x2, y2, 0, x2, y2, 18);
+  gb.addColorStop(0, 'rgba(106, 200, 200, 0.2)');
+  gb.addColorStop(1, 'rgba(106, 200, 200, 0)');
+  X.fillStyle = gb;
+  X.beginPath();
+  X.arc(x2, y2, 18, 0, Math.PI * 2);
+  X.fill();
+
+  // ── Particles ──
+  for (const p of particles) {
+    X.beginPath();
+    X.arc(p.x, p.y, 1.5 * p.life, 0, Math.PI * 2);
+    X.fillStyle = `hsla(${p.hue}, 55%, 70%, ${p.life * 0.4})`;
+    X.fill();
+  }
+
+  // ── Emergent sequence at center ──
+  if (seq.length > 0) {
+    // Show last few coincidences as the "resultant melody"
+    const recent = seq.slice(-7);
+    const txt = recent.map(i => words[i]).join(' · ');
+    X.font = '11px "JetBrains Mono", monospace';
+    X.textAlign = 'center';
+    X.textBaseline = 'middle';
+    X.fillStyle = 'rgba(180, 160, 225, 0.25)';
+    X.fillText(txt, cx, cy);
+  }
+
+  // ── Research fragment ──
+  if (fa > 0.01) {
+    X.font = '9px "JetBrains Mono", monospace';
+    X.textAlign = 'center';
+    X.fillStyle = `rgba(224, 220, 208, ${fa * 0.3})`;
+    X.fillText(frags[fi], cx, cy + 18);
+  }
+
+  // ── Unison indicator ──
+  if (linePd < 0.06) {
+    X.font = '9px "JetBrains Mono", monospace';
+    X.textAlign = 'center';
+    X.fillStyle = `rgba(224, 220, 208, ${0.18 * (1 - linePd / 0.06)})`;
+    X.fillText('unison — the same, no information', cx, H - 50);
+  }
+
+  // ── Stats ──
+  X.font = '9px "JetBrains Mono", monospace';
+  X.textAlign = 'right';
+  X.fillStyle = 'rgba(224, 220, 208, 0.1)';
+  X.fillText(`offset ${rawOffset.toFixed(2)} / ${N}`, W - 14, 20);
+  X.fillText(`${hits} coincidences`, W - 14, 32);
+
+  // Phase ratio approximation
+  if (Math.abs(mx - 0.5) > 0.02) {
+    const ratio = (BASE_SPEED + (mx - 0.5) * 0.007) / BASE_SPEED;
+    X.fillText(`ratio ≈ ${ratio.toFixed(4)}`, W - 14, 44);
+  }
+
+  // Drift direction
+  X.textAlign = 'left';
+  X.fillStyle = 'rgba(224, 220, 208, 0.08)';
+  if (mx < 0.47) {
+    X.fillText('← slower', 14, 20);
+  } else if (mx > 0.53) {
+    X.fillText('faster →', 14, 20);
+  }
+}
+
+// ─── Loop ───
+let last = 0;
+
+function loop(now) {
+  const dt = last ? Math.min((now - last) / 1000, 0.05) : 0.016;
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

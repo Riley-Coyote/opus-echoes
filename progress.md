@@ -75,3 +75,20 @@ Riley approved the open floor plan and freer movement but rejected the olive pal
 - Verified in Chrome at desktop size and in phone-sized browser renders. All inhabitants/doorways reachable, encounters and follow-ups work, artwork persists, Tess completes the drawing routine, lighting modes and pause work, reduced motion works, and the isolated browser reports no application errors.
 - A 90-frame walking sample kept one canvas size; median drawing time was 4 ms and the 95th percentile was 11.4 ms in the current Chrome session. Reviewed the final game-client movement screenshot and state dump.
 - Production client/server build, JavaScript syntax checks, and git whitespace checks pass.
+
+## 2026-09-08 · Limen and the museum entrance
+
+Request: follow Limen from the station through the hall into the big museum without a solid wall, camera skip, or changed character. Replace the robot with an elegant humanoid.
+
+Plan: one sculptural, robed body; a live, perspective-matched opening onto the actual museum; preserve walking velocity, gaze, lens and body pose at crossing. Preserve retained station documents and the museum source checkout's existing curation work.
+
+Implemented the open, perspective-matched doorway, a shared veiled Limen body,
+continuous camera/lens/velocity transfer, early receiver preparation, portable
+body serialization, cancellation guards and resize retention. Museum source
+changes preserve pre-existing curation work; its current build and required
+public assets are integrated. Added a paired build helper and entrance notes.
+
+Verification: 13 focused station tests and 35 museum tests pass; browser checks
+pass at five widths, including pause/resume, crossing geometry, cancellation,
+repeated visits, reduced motion and unchanged retained computer documents.
+The production build passes. Local presence remains unconfigured (existing 503).

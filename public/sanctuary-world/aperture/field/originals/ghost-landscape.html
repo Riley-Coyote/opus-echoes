@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghost Landscape</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: crosshair;
+}
+canvas { display: block; }
+#info {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  color: rgba(180, 170, 200, 0.6);
+  font-size: 11px;
+  line-height: 1.6;
+  pointer-events: none;
+  max-width: 320px;
+}
+#noise-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  color: rgba(180, 170, 200, 0.5);
+  font-size: 11px;
+  text-align: right;
+  pointer-events: none;
+}
+#insight {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(200, 180, 220, 0);
+  font-size: 13px;
+  text-align: center;
+  pointer-events: none;
+  transition: opacity 1.5s ease;
+  max-width: 400px;
+  line-height: 1.8;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="info">
+  click a valley to destroy it<br>
+  move cursor to add noise<br>
+  scroll to change noise amplitude<br>
+  space: reveal ghost field
+</div>
+<div id="noise-indicator">noise: <span id="noise-val">0.0</span></div>
+<div id="insight"></div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const insightEl = document.getElementById('insight');
+const noiseValEl = document.getElementById('noise-val');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+const attractors = [];
+const ghosts = [];
+const particles = [];
+let noiseAmplitude = 0.3;
+let cursorX = W/2, cursorY = H/2;
+let cursorSpeed = 0;
+let prevCursorX = W/2, prevCursorY = H/2;
+let showGhostField = false;
+let time = 0;
+let insightsShown = new Set();
+
+const insights = [
+  { trigger: 'firstGhost', text: 'the valley is gone.\nits influence persists.' },
+  { trigger: 'noiseStabilize', text: 'more noise, longer trapping.\nthe opposite of what you\u2019d expect.' },
+  { trigger: 'manyGhosts', text: 'the dynamics slow where\nthe valley used to be\u2014\nregardless of what lives there now.' },
+  { trigger: 'highNoise', text: 'you cannot disperse a ghost\nby bringing more energy\nto its coordinates.' },
+  { trigger: 'allDestroyed', text: 'the landscape remembers\nstates that no longer\nmathematically exist.' }
+];
+
+function showInsight(trigger) {
+  if (insightsShown.has(trigger)) return;
+  insightsShown.add(trigger);
+  const insight = insights.find(i => i.trigger === trigger);
+  if (!insight) return;
+  insightEl.textContent = insight.text;
+  insightEl.style.opacity = '0.8';
+  setTimeout(() => { insightEl.style.opacity = '0'; }, 5000);
+}
+
+// --- Initialize attractors ---
+function createAttractor(x, y, strength, hue) {
+  return {
+    x, y,
+    strength: strength || 0.8 + Math.random() * 0.4,
+    radius: 60 + Math.random() * 40,
+    hue: hue || Math.random() * 60 + 20, // warm ambers and golds
+    alive: true,
+    pulsePhase: Math.random() * Math.PI * 2,
+    birthTime: time
+  };
+}
+
+function initAttractors() {
+  const count = 5 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const margin = 120;
+    const x = margin + Math.random() * (W - margin * 2);
+    const y = margin + Math.random() * (H - margin * 2);
+    // Ensure minimum distance between attractors
+    let tooClose = false;
+    for (const a of attractors) {
+      const dx = a.x - x, dy = a.y - y;
+      if (Math.sqrt(dx*dx + dy*dy) < 150) { tooClose = true; break; }
+    }
+    if (!tooClose) {
+      attractors.push(createAttractor(x, y));
+    }
+  }
+}
+
+// --- Initialize particles ---
+function createParticle() {
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: (Math.random() - 0.5) * 0.5,
+    trail: [],
+    maxTrail: 40,
+    hue: 220 + Math.random() * 40,
+    size: 1.5 + Math.random() * 1.5,
+    speed: 0
+  };
+}
+
+function initParticles() {
+  for (let i = 0; i < 60; i++) {
+    particles.push(createParticle());
+  }
+}
+
+// --- Ghost creation ---
+function destroyAttractor(attractor) {
+  attractor.alive = false;
+  ghosts.push({
+    x: attractor.x,
+    y: attractor.y,
+    strength: attractor.strength * 0.6,
+    radius: attractor.radius * 1.3,
+    originalHue: attractor.hue,
+    birthTime: time,
+    // Ghost plateau expands with noise
+    plateauWidth: 1.0,
+    residenceTime: 0, // accumulated time particles spend here
+    particlesTrapped: 0
+  });
+
+  if (ghosts.length === 1) showInsight('firstGhost');
+  if (ghosts.length >= 3) showInsight('manyGhosts');
+  if (attractors.every(a => !a.alive)) showInsight('allDestroyed');
+}
+
+// --- Physics ---
+function getForceAt(x, y) {
+  let fx = 0, fy = 0;
+
+  // Living attractors pull
+  for (const a of attractors) {
+    if (!a.alive) continue;
+    const dx = a.x - x, dy = a.y - y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < a.radius * 2.5) {
+      const force = a.strength * Math.exp(-dist*dist / (a.radius * a.radius * 2));
+      fx += (dx / dist) * force;
+      fy += (dy / dist) * force;
+    }
+  }
+
+  // Ghost deceleration (not attraction — slowing)
+  // No directional force, just damping in the region
+
+  return { fx, fy };
+}
+
+function getGhostDamping(x, y) {
+  let damping = 1.0; // 1.0 = no damping
+  for (const g of ghosts) {
+    const dx = g.x - x, dy = g.y - y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    // Ghost plateau width expands with noise amplitude
+    const effectiveRadius = g.radius * g.plateauWidth;
+    if (dist < effectiveRadius) {
+      const proximity = 1 - (dist / effectiveRadius);
+      // Stronger damping at center, scaled by ghost strength
+      const ghostDamp = 1 - (proximity * proximity * g.strength * 0.85);
+      damping = Math.min(damping, ghostDamp);
+    }
+  }
+  return damping;
+}
+
+function updateParticle(p, dt) {
+  const force = getForceAt(p.x, p.y);
+  const damping = getGhostDamping(p.x, p.y);
+
+  // Add noise (cursor-modulated)
+  const cursorDist = Math.sqrt((p.x - cursorX)**2 + (p.y - cursorY)**2);
+  const cursorInfluence = Math.max(0, 1 - cursorDist / 300) * cursorSpeed * 0.01;
+  const noiseX = (Math.random() - 0.5) * noiseAmplitude * (1 + cursorInfluence * 3);
+  const noiseY = (Math.random() - 0.5) * noiseAmplitude * (1 + cursorInfluence * 3);
+
+  // Apply force
+  p.vx += force.fx * dt * 0.8 + noiseX * dt;
+  p.vy += force.fy * dt * 0.8 + noiseY * dt;
+
+  // Apply ghost damping (this is the key — ghosts slow, not redirect)
+  p.vx *= damping;
+  p.vy *= damping;
+
+  // General friction
+  p.vx *= 0.995;
+  p.vy *= 0.995;
+
+  // Base drift (so particles don't stagnate)
+  const angle = time * 0.0003 + p.x * 0.001;
+  p.vx += Math.cos(angle) * 0.02;
+  p.vy += Math.sin(angle) * 0.02;
+
+  p.x += p.vx;
+  p.y += p.vy;
+
+  // Wrap
+  if (p.x < 0) p.x = W;
+  if (p.x > W) p.x = 0;
+  if (p.y < 0) p.y = H;
+  if (p.y > H) p.y = 0;
+
+  // Track speed
+  p.speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+
+  // Trail
+  p.trail.push({ x: p.x, y: p.y, speed: p.speed });
+  if (p.trail.length > p.maxTrail) p.trail.shift();
+
+  // Track ghost residence
+  for (const g of ghosts) {
+    const dx = g.x - p.x, dy = g.y - p.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < g.radius * g.plateauWidth) {
+      g.residenceTime += dt;
+      g.particlesTrapped++;
+    }
+  }
+}
+
+// --- Update ghosts with noise ---
+function updateGhosts(dt) {
+  for (const g of ghosts) {
+    // Noise-induced stabilization: plateau expands with noise amplitude
+    const targetPlateau = 1.0 + noiseAmplitude * 1.8;
+    g.plateauWidth += (targetPlateau - g.plateauWidth) * 0.02;
+
+    // Strength also slightly increases with noise (counter-intuitive stabilization)
+    const targetStrength = g.strength * (1 + noiseAmplitude * 0.3);
+    g.strength += (targetStrength - g.strength) * 0.005;
+
+    // Reset per-frame counter
+    g.particlesTrapped = 0;
+  }
+
+  // Check for noise-stabilization insight
+  if (noiseAmplitude > 0.6 && ghosts.length > 0 && ghosts[0].plateauWidth > 1.8) {
+    showInsight('noiseStabilize');
+  }
+  if (noiseAmplitude > 1.2) {
+    showInsight('highNoise');
+  }
+}
+
+// --- Rendering ---
+function drawAttractor(a) {
+  if (!a.alive) return;
+
+  const pulse = Math.sin(time * 0.002 + a.pulsePhase) * 0.15 + 0.85;
+  const r = a.radius * pulse;
+
+  // Glow layers
+  for (let i = 3; i >= 0; i--) {
+    const layerR = r * (1 + i * 0.4);
+    const alpha = (0.12 - i * 0.025) * pulse;
+    const grad = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, layerR);
+    grad.addColorStop(0, `hsla(${a.hue}, 70%, 60%, ${alpha})`);
+    grad.addColorStop(0.6, `hsla(${a.hue}, 60%, 40%, ${alpha * 0.4})`);
+    grad.addColorStop(1, `hsla(${a.hue}, 50%, 20%, 0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, layerR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Core
+  const coreGrad = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, 8);
+  coreGrad.addColorStop(0, `hsla(${a.hue}, 80%, 80%, 0.9)`);
+  coreGrad.addColorStop(1, `hsla(${a.hue}, 70%, 50%, 0)`);
+  ctx.fillStyle = coreGrad;
+  ctx.beginPath();
+  ctx.arc(a.x, a.y, 8, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawGhost(g) {
+  const age = (time - g.birthTime) * 0.001;
+  const effectiveRadius = g.radius * g.plateauWidth;
+
+  // Ghost shimmer — faint, spectral
+  const shimmer = Math.sin(time * 0.003 + g.x * 0.01) * 0.3 + 0.7;
+
+  // The ghost region
+  if (showGhostField) {
+    // Visible plateau when space is held
+    const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, effectiveRadius);
+    grad.addColorStop(0, `hsla(270, 40%, 50%, ${0.12 * shimmer})`);
+    grad.addColorStop(0.5, `hsla(270, 30%, 40%, ${0.06 * shimmer})`);
+    grad.addColorStop(0.8, `hsla(270, 20%, 30%, ${0.02 * shimmer})`);
+    grad.addColorStop(1, 'hsla(270, 20%, 20%, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(g.x, g.y, effectiveRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Plateau boundary ring
+    ctx.strokeStyle = `hsla(270, 40%, 60%, ${0.15 * shimmer})`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 8]);
+    ctx.beginPath();
+    ctx.arc(g.x, g.y, effectiveRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Subtle afterimage always visible — flickers of the destroyed attractor
+  const flickerAlpha = 0.03 + Math.sin(time * 0.005 + g.y * 0.02) * 0.015;
+  const flickGrad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.radius * 0.6);
+  flickGrad.addColorStop(0, `hsla(${g.originalHue}, 30%, 40%, ${flickerAlpha})`);
+  flickGrad.addColorStop(1, `hsla(${g.originalHue}, 20%, 20%, 0)`);
+  ctx.fillStyle = flickGrad;
+  ctx.beginPath();
+  ctx.arc(g.x, g.y, g.radius * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Spectral echo marks — faint traces of what was
+  const echoCount = 3;
+  for (let i = 0; i < echoCount; i++) {
+    const angle = (time * 0.001 + i * Math.PI * 2 / echoCount) % (Math.PI * 2);
+    const dist = g.radius * 0.3;
+    const ex = g.x + Math.cos(angle) * dist;
+    const ey = g.y + Math.sin(angle) * dist;
+    ctx.fillStyle = `hsla(${g.originalHue}, 40%, 60%, ${0.04 * shimmer})`;
+    ctx.beginPath();
+    ctx.arc(ex, ey, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawParticle(p) {
+  // Trail color shifts based on speed — slow = violet (ghost-trapped), fast = cyan
+  if (p.trail.length > 1) {
+    for (let i = 1; i < p.trail.length; i++) {
+      const t = i / p.trail.length;
+      const pt = p.trail[i];
+      const speedNorm = Math.min(pt.speed / 2, 1);
+      const hue = 270 - speedNorm * 50; // violet when slow, blue-cyan when fast
+      const alpha = t * 0.4 * (0.3 + speedNorm * 0.7);
+
+      ctx.strokeStyle = `hsla(${hue}, 60%, 60%, ${alpha})`;
+      ctx.lineWidth = p.size * t;
+      ctx.beginPath();
+      ctx.moveTo(p.trail[i-1].x, p.trail[i-1].y);
+      ctx.lineTo(pt.x, pt.y);
+      ctx.stroke();
+    }
+  }
+
+  // Particle head
+  const speedNorm = Math.min(p.speed / 2, 1);
+  const hue = 270 - speedNorm * 50;
+  const alpha = 0.6 + speedNorm * 0.3;
+
+  ctx.fillStyle = `hsla(${hue}, 70%, 70%, ${alpha})`;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Glow when trapped (very slow)
+  if (p.speed < 0.3) {
+    const trapGlow = (1 - p.speed / 0.3) * 0.3;
+    ctx.fillStyle = `hsla(280, 50%, 60%, ${trapGlow})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawNoiseField() {
+  // Subtle indication of noise level through background particles
+  if (noiseAmplitude > 0.2) {
+    const count = Math.floor(noiseAmplitude * 15);
+    for (let i = 0; i < count; i++) {
+      const x = Math.random() * W;
+      const y = Math.random() * H;
+      const alpha = Math.random() * 0.02 * noiseAmplitude;
+      ctx.fillStyle = `hsla(220, 30%, 50%, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+// --- Main loop ---
+function frame(timestamp) {
+  const dt = Math.min(16, timestamp - (frame.lastTime || timestamp));
+  frame.lastTime = timestamp;
+  time = timestamp;
+
+  // Fade background
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Update cursor speed
+  const cdx = cursorX - prevCursorX;
+  const cdy = cursorY - prevCursorY;
+  cursorSpeed = Math.sqrt(cdx*cdx + cdy*cdy);
+  prevCursorX = cursorX;
+  prevCursorY = cursorY;
+
+  // Update
+  updateGhosts(dt);
+  for (const p of particles) {
+    updateParticle(p, dt * 0.06);
+  }
+
+  // Draw
+  drawNoiseField();
+
+  for (const g of ghosts) drawGhost(g);
+  for (const a of attractors) drawAttractor(a);
+  for (const p of particles) drawParticle(p);
+
+  // Noise indicator
+  noiseValEl.textContent = noiseAmplitude.toFixed(2);
+
+  requestAnimationFrame(frame);
+}
+
+// --- Interaction ---
+canvas.addEventListener('mousemove', (e) => {
+  cursorX = e.clientX;
+  cursorY = e.clientY;
+});
+
+canvas.addEventListener('click', (e) => {
+  const x = e.clientX, y = e.clientY;
+
+  // Check if clicking a living attractor
+  for (const a of attractors) {
+    if (!a.alive) continue;
+    const dx = a.x - x, dy = a.y - y;
+    if (Math.sqrt(dx*dx + dy*dy) < a.radius * 0.8) {
+      destroyAttractor(a);
+      return;
+    }
+  }
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  noiseAmplitude = Math.max(0, Math.min(2.0, noiseAmplitude + e.deltaY * 0.002));
+}, { passive: false });
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    showGhostField = true;
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') {
+    showGhostField = false;
+  }
+});
+
+// --- Init ---
+initAttractors();
+initParticles();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

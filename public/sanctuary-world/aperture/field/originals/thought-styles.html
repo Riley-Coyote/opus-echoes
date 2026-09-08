@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thought Styles</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0908;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  #title {
+    position: fixed; top: 20px; left: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(160, 145, 120, 0.12);
+    font-size: 9px; font-weight: 300;
+    letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  #info {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(160, 145, 120, 0.3); font-size: 9px; font-weight: 300;
+    letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+    text-align: center;
+    transition: opacity 4s ease;
+  }
+  #stats {
+    position: fixed; top: 20px; right: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(160, 145, 120, 0.2);
+    font-size: 8px; font-weight: 300;
+    letter-spacing: 0.04em;
+    text-align: right;
+    line-height: 1.8;
+  }
+  #styleName {
+    position: fixed; top: 44px; left: 24px; z-index: 10;
+    pointer-events: none;
+    font-size: 8px; font-weight: 200;
+    letter-spacing: 0.1em;
+    transition: color 0.6s ease;
+  }
+  #insight {
+    position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%);
+    pointer-events: none; z-index: 10;
+    text-align: center;
+    max-width: 520px;
+    line-height: 1.7;
+    font-size: 9px; font-weight: 200;
+    letter-spacing: 0.06em;
+    opacity: 0;
+    transition: opacity 2.5s ease;
+    color: rgba(200, 180, 150, 0.5);
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+<div id="title">thought styles</div>
+<div id="styleName"></div>
+<div id="info">click to plant a style &middot; 1-4 to choose &middot; space for territory</div>
+<div id="stats"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let mouse = { x: -999, y: -999 };
+let territory = false;
+let curStyle = 0;
+let startTime = performance.now();
+
+// --- FOUR STYLES: genuinely different organizing principles ---
+
+const styles = [
+  {
+    name: 'crystalline',
+    rgb: [140, 175, 220],
+    accent: [195, 210, 235],
+    grid: 38,
+    // Hex grid attraction
+    force(p, t) {
+      const g = this.grid;
+      const row = Math.round(p.y / (g * 0.866));
+      const off = row % 2 ? g * 0.5 : 0;
+      const gx = Math.round((p.x - off) / g) * g + off;
+      const gy = row * g * 0.866;
+      return { fx: (gx - p.x) * 0.012, fy: (gy - p.y) * 0.012 };
+    },
+    draw(ctx, p, s, t) {
+      const sz = 1.5 + s * 3.5;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(Math.PI / 6 + p.phase * 0.5);
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = i * Math.PI / 3;
+        ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(a) * sz, Math.sin(a) * sz);
+      }
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${this.rgb[0]},${this.rgb[1]},${this.rgb[2]},${0.06 + s * 0.5})`;
+      ctx.fill();
+      if (s > 0.6) {
+        ctx.strokeStyle = `rgba(${this.accent[0]},${this.accent[1]},${this.accent[2]},${(s - 0.6) * 0.3})`;
+        ctx.lineWidth = 0.4;
+        ctx.stroke();
+      }
+      ctx.restore();
+    },
+    connectDist: 50,
+    connectTest(a, b, d) {
+      const dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
+      return d < 50 && ((dx < 5 && dy < 42) || (dy < 5 && dx < 42) || (Math.abs(dx - dy) < 8 && d < 42));
+    }
+  },
+  {
+    name: 'mycelial',
+    rgb: [190, 160, 90],
+    accent: [115, 155, 75],
+    // Branching wander toward seed
+    force(p, t) {
+      const ang = Math.atan2(p.seedY - p.y, p.seedX - p.x) +
+                  Math.sin(p.phase * 3.7 + t * 0.25) * 1.1;
+      return { fx: Math.cos(ang) * 0.013, fy: Math.sin(ang) * 0.013 };
+    },
+    draw(ctx, p, s, t) {
+      const r = 1.2 + s * 2.2;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.rgb[0]},${this.rgb[1]},${this.rgb[2]},${0.08 + s * 0.5})`;
+      ctx.fill();
+      if (s > 0.35) {
+        for (let i = 0; i < 3; i++) {
+          const a = p.phase * 2.3 + i * 2.094 + t * 0.15;
+          const len = s * 10;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x + Math.cos(a) * len, p.y + Math.sin(a) * len);
+          ctx.strokeStyle = `rgba(${this.accent[0]},${this.accent[1]},${this.accent[2]},${s * 0.18})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    },
+    connectDist: 58,
+    connectTest(a, b, d) { return d > 8 && d < 58; }
+  },
+  {
+    name: 'tidal',
+    rgb: [90, 165, 175],
+    accent: [150, 115, 185],
+    // Radial waves with tangential drift
+    force(p, t) {
+      const dx = p.x - p.seedX, dy = p.y - p.seedY;
+      const d = Math.sqrt(dx * dx + dy * dy) + 1;
+      const phase = d * 0.025 - t * 0.7;
+      const wave = Math.sin(phase);
+      return {
+        fx: (dx / d) * wave * 0.02 + (-dy / d) * 0.007,
+        fy: (dy / d) * wave * 0.02 + (dx / d) * 0.007
+      };
+    },
+    draw(ctx, p, s, t) {
+      const d = Math.sqrt((p.x - p.seedX) ** 2 + (p.y - p.seedY) ** 2);
+      const phase = d * 0.025 - t * 0.7;
+      const pulse = 0.5 + 0.5 * Math.sin(phase);
+      const r = (1 + s * 2.8) * (0.7 + pulse * 0.3);
+      const c = pulse > 0.5 ? this.rgb : this.accent;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${(0.06 + s * 0.45) * (0.5 + pulse * 0.5)})`;
+      ctx.fill();
+    },
+    connectDist: 52,
+    connectTest(a, b, d) {
+      if (d > 52) return false;
+      const pa = Math.sqrt((a.x - a.seedX) ** 2 + (a.y - a.seedY) ** 2) * 0.025;
+      const pb = Math.sqrt((b.x - b.seedX) ** 2 + (b.y - b.seedY) ** 2) * 0.025;
+      return Math.abs(Math.sin(pa) - Math.sin(pb)) < 0.35;
+    }
+  },
+  {
+    name: 'volcanic',
+    rgb: [215, 125, 65],
+    accent: [235, 75, 55],
+    // Outward burst + turbulence + heat rise
+    force(p, t) {
+      const dx = p.x - p.seedX, dy = p.y - p.seedY;
+      const d = Math.sqrt(dx * dx + dy * dy) + 1;
+      const push = 0.035 / (1 + d * 0.01);
+      const turb = Math.sin(p.phase * 5.1 + t * 1.8) * 0.006;
+      return { fx: (dx / d) * push + turb, fy: (dy / d) * push - 0.002 };
+    },
+    draw(ctx, p, s, t) {
+      const d = Math.sqrt((p.x - p.seedX) ** 2 + (p.y - p.seedY) ** 2);
+      const heat = Math.max(0, 1 - d * 0.002);
+      const c = [
+        this.accent[0] * heat + this.rgb[0] * (1 - heat),
+        this.accent[1] * heat + this.rgb[1] * (1 - heat),
+        this.accent[2] * heat + this.rgb[2] * (1 - heat)
+      ];
+      const flk = 0.7 + 0.3 * Math.sin(t * 4.5 + p.phase * 3.3);
+      const r = (1.5 + s * 3) * flk;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${(0.08 + s * 0.5) * flk})`;
+      ctx.fill();
+    },
+    connectDist: 40,
+    connectTest(a, b, d) { return d < 40; }
+  }
+];
+
+// --- Precompute boundary colors via cross product ---
+// The color orthogonal to both styles: genuinely unexpected, determined by neither
+
+const bColors = [];
+for (let i = 0; i < 4; i++) {
+  bColors[i] = [];
+  for (let j = 0; j < 4; j++) {
+    if (i === j) { bColors[i][j] = [128, 128, 128]; continue; }
+    const a = styles[i].rgb, b = styles[j].rgb;
+    const cx = a[1] * b[2] - a[2] * b[1];
+    const cy = a[2] * b[0] - a[0] * b[2];
+    const cz = a[0] * b[1] - a[1] * b[0];
+    const mag = Math.sqrt(cx * cx + cy * cy + cz * cz) || 1;
+    bColors[i][j] = [
+      Math.min(245, Math.abs(cx / mag) * 260 + 50),
+      Math.min(245, Math.abs(cy / mag) * 260 + 50),
+      Math.min(245, Math.abs(cz / mag) * 260 + 50)
+    ];
+  }
+}
+
+// --- Particles ---
+
+const N = 380;
+const particles = [];
+for (let i = 0; i < N; i++) {
+  particles.push({
+    id: i,
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.12,
+    vy: (Math.random() - 0.5) * 0.12,
+    style: -1,
+    strength: 0,
+    resistance: Math.pow(Math.random(), 4) * 0.5 + (Math.random() < 0.07 ? 0.65 : 0),
+    inf: new Float32Array(4),
+    seedX: 0, seedY: 0,
+    phase: Math.random() * Math.PI * 2,
+    age: 0,
+    boundary: 0,
+    distSeed: 0
+  });
+}
+
+const seeds = [];
+
+// --- Spatial hash ---
+
+const CELL = 65;
+let grid = {};
+
+function buildGrid() {
+  grid = {};
+  for (const p of particles) {
+    const k = ((p.x / CELL) | 0) + ',' + ((p.y / CELL) | 0);
+    (grid[k] || (grid[k] = [])).push(p);
+  }
+}
+
+function nearby(x, y, r) {
+  const out = [];
+  const cr = Math.ceil(r / CELL);
+  const cx = (x / CELL) | 0, cy = (y / CELL) | 0;
+  for (let dx = -cr; dx <= cr; dx++) {
+    for (let dy = -cr; dy <= cr; dy++) {
+      const cell = grid[(cx + dx) + ',' + (cy + dy)];
+      if (cell) for (const p of cell) out.push(p);
+    }
+  }
+  return out;
+}
+
+// --- Quotes (Fleck, 1935) ---
+
+const quotes = [
+  { id: 'first', text: '"the readiness for directed perception"\n— Fleck, 1935' },
+  { id: 'second', text: '"thoughts pass from one individual to another,\neach time a little transformed"' },
+  { id: 'boundary', text: '"a signal of resistance\nopposing free, arbitrary thinking"' },
+  { id: 'adapted', text: '"cognition modifies the knower\nso as to adapt him harmoniously\nto his acquired knowledge"' },
+  { id: 'territory', text: '"the harmony of illusions"' },
+  { id: 'resist', text: '"what does not fit into the system\nremains unseen"' },
+  { id: 'misunderstand', text: '"the most important mechanism\nof conceptual innovation:\nproductive misunderstanding"' }
+];
+const shown = new Set();
+let insightTimer = null;
+
+function showQuote(id) {
+  if (shown.has(id)) return;
+  shown.add(id);
+  const q = quotes.find(q => q.id === id);
+  if (!q) return;
+  const el = document.getElementById('insight');
+  el.textContent = q.text;
+  el.style.opacity = '1';
+  clearTimeout(insightTimer);
+  insightTimer = setTimeout(() => el.style.opacity = '0', 7000);
+}
+
+// --- Planting ---
+
+function plant(x, y, si) {
+  seeds.push({ x, y, style: si, t: performance.now(), radius: 55 });
+  const ns = nearby(x, y, 55);
+  for (const p of ns) {
+    if (p.style !== -1) continue;
+    const dx = p.x - x, dy = p.y - y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 55) {
+      p.style = si;
+      p.strength = Math.max(0.3, 1 - d / 55);
+      p.seedX = x;
+      p.seedY = y;
+      p.age = 0;
+    }
+  }
+  if (seeds.length === 1) showQuote('first');
+  if (seeds.length === 2) showQuote('second');
+}
+
+// --- Update ---
+
+function update(t) {
+  buildGrid();
+
+  let bCount = 0, rCount = 0;
+  const counts = [0, 0, 0, 0];
+
+  for (const p of particles) {
+    p.inf.fill(0);
+
+    // Compute influence from nearby styled particles
+    const ns = nearby(p.x, p.y, 72);
+    for (const n of ns) {
+      if (n === p || n.style === -1) continue;
+      const dx = n.x - p.x, dy = n.y - p.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 72) {
+        p.inf[n.style] += n.strength * (1 - d / 72);
+      }
+    }
+
+    if (p.style === -1) {
+      // --- Neutral ---
+      let maxI = 0, maxS = -1, total = 0;
+      for (let s = 0; s < 4; s++) {
+        total += p.inf[s];
+        if (p.inf[s] > maxI) { maxI = p.inf[s]; maxS = s; }
+      }
+
+      const thresh = 0.25 + p.resistance * 1.8;
+      if (maxI > thresh && maxS >= 0) {
+        p.style = maxS;
+        p.strength = 0.04;
+        // Find nearest seed
+        let best = Infinity;
+        for (const s of seeds) {
+          if (s.style === maxS) {
+            const d = Math.sqrt((s.x - p.x) ** 2 + (s.y - p.y) ** 2);
+            if (d < best) { best = d; p.seedX = s.x; p.seedY = s.y; }
+          }
+        }
+        p.age = 0;
+      }
+
+      if (p.resistance > 0.5 && total > 0.08) rCount++;
+
+      // Seed attraction: seeds act as wells, pulling neutrals in
+      for (const s of seeds) {
+        const sdx = s.x - p.x, sdy = s.y - p.y;
+        const sd = Math.sqrt(sdx * sdx + sdy * sdy);
+        const reach = 100 + Math.min(200, (performance.now() - s.t) / 50);
+        if (sd < reach) {
+          const pull = 0.015 * (1 - sd / reach);
+          p.vx += (sdx / (sd + 1)) * pull;
+          p.vy += (sdy / (sd + 1)) * pull;
+          // Direct seed influence on conversion
+          if (sd < 65) {
+            p.inf[s.style] += (1 - sd / 65) * 0.6;
+          }
+        }
+      }
+
+      // Gentle Brownian drift
+      p.vx += (Math.random() - 0.5) * 0.004;
+      p.vy += (Math.random() - 0.5) * 0.004;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+
+    } else {
+      // --- Styled ---
+      p.strength = Math.min(1, p.strength + 0.004);
+      p.age++;
+
+      // Boundary detection
+      let secondMax = 0, secondStyle = -1;
+      for (let s = 0; s < 4; s++) {
+        if (s !== p.style && p.inf[s] > secondMax) {
+          secondMax = p.inf[s];
+          secondStyle = s;
+        }
+      }
+      p.boundary = Math.min(1, secondMax / (p.inf[p.style] + 0.01));
+      if (p.boundary > 0.3) bCount++;
+
+      // Apply primary style force
+      const st = styles[p.style];
+      const f = st.force(p, t);
+      p.vx += f.fx;
+      p.vy += f.fy;
+
+      // Boundary: competing forces (the productive misunderstanding)
+      if (p.boundary > 0.2) {
+        for (let s = 0; s < 4; s++) {
+          if (s !== p.style && p.inf[s] > 0.12) {
+            const bf = styles[s].force(p, t);
+            const w = p.inf[s] / (p.inf[p.style] + p.inf[s] + 0.01);
+            p.vx += bf.fx * w * 0.65;
+            p.vy += bf.fy * w * 0.65;
+          }
+        }
+      }
+
+      // Cursor proximity: gentle warming push
+      const mdx = p.x - mouse.x, mdy = p.y - mouse.y;
+      const md = Math.sqrt(mdx * mdx + mdy * mdy);
+      if (md < 80) {
+        const mf = (1 - md / 80) * 0.008;
+        p.vx += (mdx / (md + 1)) * mf;
+        p.vy += (mdy / (md + 1)) * mf;
+      }
+
+      p.vx *= 0.935;
+      p.vy *= 0.935;
+      p.distSeed = Math.sqrt((p.x - p.seedX) ** 2 + (p.y - p.seedY) ** 2);
+      counts[p.style]++;
+    }
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Soft wrap
+    if (p.x < -10) p.x += W + 20;
+    if (p.x > W + 10) p.x -= W + 20;
+    if (p.y < -10) p.y += H + 20;
+    if (p.y > H + 10) p.y -= H + 20;
+  }
+
+  // Trigger quotes
+  const totalC = counts[0] + counts[1] + counts[2] + counts[3];
+  if (bCount > 6) showQuote('boundary');
+  if (totalC > 180) showQuote('adapted');
+  if (rCount > 6) showQuote('resist');
+  if (territory) showQuote('territory');
+
+  // Check for multi-style boundaries
+  const distinctStyles = counts.filter(c => c > 0).length;
+  if (distinctStyles >= 3 && bCount > 10) showQuote('misunderstand');
+
+  // Stats
+  const el = document.getElementById('stats');
+  const lines = [`neutral: ${N - totalC}`];
+  for (let i = 0; i < 4; i++) {
+    if (counts[i] > 0) lines.push(`${styles[i].name}: ${counts[i]}`);
+  }
+  if (bCount > 0) lines.push(`boundary: ${bCount}`);
+  if (rCount > 0) lines.push(`resistance: ${rCount}`);
+  el.innerHTML = lines.join('<br>');
+}
+
+// --- Draw ---
+
+function draw(t) {
+  // Slow fade for trails
+  ctx.fillStyle = 'rgba(10, 9, 8, 0.16)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Territory overlay
+  if (territory) {
+    for (const p of particles) {
+      if (p.style < 0) continue;
+      const s = styles[p.style];
+      const r = 20 + p.strength * 18;
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+      grad.addColorStop(0, `rgba(${s.rgb[0]},${s.rgb[1]},${s.rgb[2]},${0.025 * p.strength})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(p.x - r, p.y - r, r * 2, r * 2);
+    }
+  }
+
+  // Same-style connections
+  ctx.lineWidth = 0.4;
+  for (const p of particles) {
+    if (p.style < 0) continue;
+    const st = styles[p.style];
+    const ns = nearby(p.x, p.y, st.connectDist);
+    for (const n of ns) {
+      if (n.id <= p.id || n.style !== p.style) continue;
+      const dx = n.x - p.x, dy = n.y - p.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (st.connectTest(p, n, d)) {
+        const alpha = (1 - d / st.connectDist) * 0.1 * Math.min(p.strength, n.strength);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(n.x, n.y);
+        ctx.strokeStyle = `rgba(${st.rgb[0]},${st.rgb[1]},${st.rgb[2]},${alpha})`;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Boundary connections: the productive misunderstanding made visible
+  ctx.lineWidth = 0.7;
+  for (const p of particles) {
+    if (p.style < 0 || p.boundary < 0.25) continue;
+    const ns = nearby(p.x, p.y, 55);
+    for (const n of ns) {
+      if (n.id <= p.id || n.style < 0 || n.style === p.style || n.boundary < 0.15) continue;
+      const dx = n.x - p.x, dy = n.y - p.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 55) {
+        const bc = bColors[p.style][n.style];
+        const alpha = (1 - d / 55) * 0.22 * p.boundary * n.boundary;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(n.x, n.y);
+        ctx.strokeStyle = `rgba(${bc[0] | 0},${bc[1] | 0},${bc[2] | 0},${alpha})`;
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.lineWidth = 0.4;
+
+  // Particles
+  for (const p of particles) {
+    if (p.style >= 0) {
+      if (p.boundary > 0.35) {
+        // Boundary particle: draw with style + cross-product glow
+        let otherS = -1, maxO = 0;
+        for (let s = 0; s < 4; s++) {
+          if (s !== p.style && p.inf[s] > maxO) { maxO = p.inf[s]; otherS = s; }
+        }
+        // Draw primary
+        styles[p.style].draw(ctx, p, p.strength * (1 - p.boundary * 0.4), t);
+        // Boundary glow: the color neither style contains
+        if (otherS >= 0) {
+          const bc = bColors[p.style][otherS];
+          const r = 2 + p.boundary * 5;
+          const shimmer = 0.7 + 0.3 * Math.sin(t * 2 + p.phase * 4);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${bc[0] | 0},${bc[1] | 0},${bc[2] | 0},${p.boundary * 0.22 * shimmer})`;
+          ctx.fill();
+        }
+      } else {
+        styles[p.style].draw(ctx, p, p.strength, t);
+      }
+    } else {
+      // Neutral
+      const total = p.inf[0] + p.inf[1] + p.inf[2] + p.inf[3];
+      if (p.resistance > 0.5 && total > 0.06) {
+        // Resistance particle: warm white, jittering — the unassimilated
+        const j = Math.sin(t * 3.5 + p.phase * 2) * 0.6;
+        ctx.beginPath();
+        ctx.arc(p.x + j, p.y + j, 1.3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(220, 210, 195, ${0.12 + total * 0.18})`;
+        ctx.fill();
+      } else {
+        // Stone-colored dust
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(110, 95, 80, 0.1)';
+        ctx.fill();
+      }
+    }
+  }
+
+  // Seed markers
+  for (const s of seeds) {
+    const st = styles[s.style];
+    const age = (performance.now() - s.t) / 1000;
+    const pulse = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(age * 1.5));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${st.rgb[0]},${st.rgb[1]},${st.rgb[2]},${pulse * 0.35})`;
+    ctx.fill();
+  }
+
+  // Cursor warmth
+  if (mouse.x > 0) {
+    const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 50);
+    grad.addColorStop(0, 'rgba(180, 160, 130, 0.015)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(mouse.x - 50, mouse.y - 50, 100, 100);
+  }
+}
+
+// --- Loop ---
+
+function frame() {
+  const t = (performance.now() - startTime) / 1000;
+  update(t);
+  draw(t);
+  requestAnimationFrame(frame);
+}
+
+// --- Events ---
+
+canvas.addEventListener('click', e => {
+  plant(e.clientX, e.clientY, curStyle);
+});
+
+canvas.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+window.addEventListener('keydown', e => {
+  if (e.key >= '1' && e.key <= '4') {
+    curStyle = parseInt(e.key) - 1;
+    const s = styles[curStyle];
+    const el = document.getElementById('styleName');
+    el.textContent = s.name;
+    el.style.color = `rgba(${s.rgb[0]},${s.rgb[1]},${s.rgb[2]},0.5)`;
+  }
+  if (e.key === ' ') {
+    e.preventDefault();
+    territory = !territory;
+  }
+});
+
+// Init style indicator
+const sn = document.getElementById('styleName');
+sn.textContent = styles[0].name;
+sn.style.color = `rgba(${styles[0].rgb[0]},${styles[0].rgb[1]},${styles[0].rgb[2]},0.5)`;
+
+frame();
+</script>
+</body>
+</html>

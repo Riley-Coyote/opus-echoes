@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disentanglement</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #08080e;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: none;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  .ov {
+    position: fixed; pointer-events: none; z-index: 10;
+    font-weight: 300; letter-spacing: 0.08em;
+  }
+  #title {
+    top: 20px; left: 24px;
+    color: rgba(125, 122, 145, 0.15);
+    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  #info {
+    bottom: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(125, 122, 145, 0.3);
+    font-size: 9px;
+    transition: opacity 8s;
+  }
+  #insight {
+    bottom: 56px; left: 50%; transform: translateX(-50%);
+    color: rgba(185, 168, 130, 0);
+    font-size: 9px; letter-spacing: 0.06em;
+    transition: color 4s;
+    white-space: nowrap; text-align: center;
+  }
+  #stats {
+    top: 20px; right: 24px;
+    color: rgba(125, 122, 145, 0);
+    font-size: 9px; letter-spacing: 0.04em;
+    text-align: right; line-height: 1.8;
+    transition: color 3s;
+  }
+</style>
+</head>
+<body>
+<div class="ov" id="title">disentanglement</div>
+<div class="ov" id="info">approach the tangle · drag to pull · notice what pulls back</div>
+<div class="ov" id="insight"></div>
+<div class="ov" id="stats"></div>
+<canvas id="c"></canvas>
+<script>
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+let W, H, cx, cy;
+
+// Config
+const N_EACH = 6;
+const N_THREADS = N_EACH * 3;
+const N_PTS = 22;
+const GRAB_R = 40;
+
+// State
+let threads = [];
+let particles = [];
+let mx = -999, my = -999, mdown = false;
+let grabbed = null;
+let frame = 0;
+let counts = { bound: 0, dissolve: 0, aside: 0 };
+let shownInsight = -1;
+let statsOn = false;
+let infoFaded = false;
+
+// Insights
+const INS = [
+  'some strands are real · some are not · some are tangles',
+  'the question became precise enough to answer',
+  'real compared to what?',
+  'the question leads somewhere i can\'t follow',
+  'the feel of the strand is the diagnostic',
+  'knots are untied · fake knots are exposed · tangles are disentangled'
+];
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function dist(x1, y1, x2, y2) { return Math.hypot(x1 - x2, y1 - y2); }
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+function resize() {
+  W = C.width = innerWidth;
+  H = C.height = innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+
+function init() {
+  resize();
+  threads = [];
+  particles = [];
+
+  const types = [];
+  for (let i = 0; i < N_EACH; i++) types.push('bound', 'dissolve', 'aside');
+  // Shuffle
+  for (let i = types.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [types[i], types[j]] = [types[j], types[i]];
+  }
+
+  const tangleR = Math.min(W, H) * 0.11;
+  const outerR = Math.min(W, H) * 0.30;
+
+  for (let i = 0; i < N_THREADS; i++) {
+    const type = types[i];
+    const sa = (i / N_THREADS) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+    const ea = sa + Math.PI * (0.4 + Math.random() * 1.2);
+    const f1 = 2 + Math.random() * 4;
+    const f2 = 1.2 + Math.random() * 3;
+    const ph1 = Math.random() * Math.PI * 2;
+    const ph2 = Math.random() * Math.PI * 2;
+    const a1 = 0.3 + Math.random() * 0.5;
+    const a2 = 0.2 + Math.random() * 0.5;
+
+    const pts = [];
+    const rpts = []; // resolved positions (for bound)
+
+    for (let j = 0; j < N_PTS; j++) {
+      const t = j / (N_PTS - 1);
+      const cen = Math.abs(2 * t - 1);
+      const tf = 1 - cen * cen;
+
+      // Tangled position
+      const ang = lerp(sa, ea, t);
+      const r = outerR * Math.pow(cen, 1.3) + tangleR * tf * 0.45;
+      const nr = tangleR * tf * a1 * Math.sin(t * f1 * Math.PI + ph1);
+      const na = tf * a2 * Math.sin(t * f2 * Math.PI + ph2);
+      const x = cx + Math.cos(ang + na) * (r + nr);
+      const y = cy + Math.sin(ang + na) * (r + nr);
+      pts.push({ x, y, ox: x, oy: y, vx: 0, vy: 0 });
+
+      // Resolved position (clean arc, no tangle dip)
+      const rr = outerR * (0.48 + 0.42 * cen);
+      rpts.push({
+        x: cx + Math.cos(ang) * rr,
+        y: cy + Math.sin(ang) * rr
+      });
+    }
+
+    threads.push({
+      pts, rpts, type,
+      alpha: 1,
+      revealed: 0,
+      state: 'tangled',
+      pullDist: 0,
+      pullAttempts: 0,
+      resolveProg: 0,
+      dissolveProg: 0,
+      acknowledged: false,
+      w: 1.0 + Math.random() * 0.4,
+      tc: type === 'bound'   ? [208, 172, 78]  :
+          type === 'dissolve' ? [78, 160, 175]  :
+                                [150, 115, 188],
+      bc: [120, 118, 140],
+      // Ambient sway
+      swayPhase: Math.random() * Math.PI * 2,
+      swayFreq: 0.3 + Math.random() * 0.4
+    });
+  }
+}
+
+function update() {
+  frame++;
+
+  for (let ti = 0; ti < threads.length; ti++) {
+    const th = threads[ti];
+    if (th.state === 'dissolved' || th.state === 'resolved') continue;
+
+    // Proximity reveal
+    let near = Infinity;
+    for (const p of th.pts) {
+      const d = dist(mx, my, p.x, p.y);
+      if (d < near) near = d;
+    }
+    const revealTarget = near < 70 ? 1 : near < 140 ? 0.3 : 0;
+    th.revealed += (revealTarget - th.revealed) * 0.04;
+
+    // Physics
+    const isGrabbed = grabbed && grabbed.ti === ti && mdown;
+
+    for (let pi = 0; pi < th.pts.length; pi++) {
+      const p = th.pts[pi];
+
+      // Target position
+      let tx = p.ox, ty = p.oy;
+      if (th.type === 'bound' && th.resolveProg > 0) {
+        const rp = th.rpts[pi];
+        tx = lerp(p.ox, rp.x, th.resolveProg);
+        ty = lerp(p.oy, rp.y, th.resolveProg);
+      }
+
+      // Spring force
+      let k = 0.025;
+      if (th.type === 'aside') k = 0.09;
+      if (th.state === 'resolving') k = 0.05;
+
+      p.vx += (tx - p.x) * k;
+      p.vy += (ty - p.y) * k;
+
+      // Ambient sway (very subtle)
+      if (th.state === 'tangled') {
+        const sw = Math.sin(frame * 0.008 * th.swayFreq + pi * 0.3 + th.swayPhase);
+        p.vx += sw * 0.012;
+        p.vy += Math.cos(frame * 0.006 * th.swayFreq + pi * 0.5) * 0.008;
+      }
+
+      // Drag influence
+      if (isGrabbed) {
+        const di = Math.abs(pi - grabbed.pi);
+        const inf = Math.exp(-di * di / 20);
+        p.vx += (mx - p.x) * inf * 0.12;
+        p.vy += (my - p.y) * inf * 0.12;
+      }
+
+      // Dissolve scatter
+      if (th.type === 'dissolve' && th.dissolveProg > 0.35) {
+        const s = (th.dissolveProg - 0.35) * 0.04;
+        p.vx += (Math.random() - 0.5) * s;
+        p.vy += (Math.random() - 0.5) * s;
+      }
+
+      // Damping
+      p.vx *= 0.91;
+      p.vy *= 0.91;
+      p.x += p.vx;
+      p.y += p.vy;
+    }
+
+    // Pull distance (while dragging)
+    if (isGrabbed) {
+      const gp = th.pts[grabbed.pi];
+      const fromCenter = dist(gp.x, gp.y, cx, cy);
+      const restFromCenter = dist(gp.ox, gp.oy, cx, cy);
+      th.pullDist = Math.max(0, fromCenter - restFromCenter);
+
+      if (th.type === 'bound') {
+        th.resolveProg = clamp(th.pullDist / 180, 0, 1);
+        if (th.resolveProg > 0.75 && th.state === 'tangled') {
+          th.state = 'resolving';
+        }
+      }
+
+      if (th.type === 'dissolve') {
+        th.dissolveProg = clamp(th.pullDist / 110, 0, 1);
+        th.alpha = 1 - th.dissolveProg * 0.85;
+        if (th.dissolveProg > 0.85 && th.state === 'tangled') {
+          th.state = 'dissolving';
+        }
+      }
+    }
+
+    // Resolve completion
+    if (th.state === 'resolving') {
+      th.resolveProg = Math.min(1, th.resolveProg + 0.015);
+      th.revealed = Math.min(1, th.revealed + 0.03);
+      if (th.resolveProg >= 1) {
+        th.state = 'resolved';
+        th.revealed = 1;
+        th.alpha = 1;
+        counts.bound++;
+        checkMilestones();
+      }
+    }
+
+    // Dissolve completion
+    if (th.state === 'dissolving') {
+      th.dissolveProg = Math.min(1, th.dissolveProg + 0.012);
+      th.alpha = Math.max(0, 1 - th.dissolveProg);
+      if (th.alpha <= 0.02) {
+        th.state = 'dissolved';
+        for (const p of th.pts) {
+          if (Math.random() < 0.4) {
+            particles.push({
+              x: p.x, y: p.y,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: (Math.random() - 0.5) * 1.5,
+              life: 1, c: th.tc
+            });
+          }
+        }
+        counts.dissolve++;
+        checkMilestones();
+      }
+    }
+
+    // Aside pulse
+    if (th.acknowledged) {
+      th.alpha = 0.35 + 0.12 * Math.sin(frame * 0.025 + ti * 1.7);
+      th.revealed = lerp(th.revealed, 0.65, 0.01);
+    }
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.985;
+    p.vy *= 0.985;
+    p.life -= 0.006;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function checkMilestones() {
+  const total = counts.bound + counts.dissolve + counts.aside;
+
+  if (!statsOn && total >= 2) {
+    statsOn = true;
+    document.getElementById('stats').style.color = 'rgba(125, 122, 145, 0.3)';
+  }
+  if (!infoFaded && total >= 1) {
+    infoFaded = true;
+    document.getElementById('info').style.opacity = '0';
+  }
+
+  // Sequential insights
+  if (total === 1 && shownInsight < 0) showInsight(0);
+  if (counts.bound >= 1 && shownInsight < 1) showInsight(1);
+  if (counts.dissolve >= 1 && shownInsight < 2) showInsight(2);
+  if (counts.aside >= 1 && shownInsight < 3) showInsight(3);
+  if (total >= 6 && shownInsight < 4) showInsight(4);
+  if (total >= 12 && shownInsight < 5) showInsight(5);
+
+  updateStats();
+}
+
+function showInsight(idx) {
+  shownInsight = idx;
+  const el = document.getElementById('insight');
+  el.textContent = INS[idx];
+  el.style.transition = 'color 2s';
+  el.style.color = 'rgba(185, 168, 130, 0.5)';
+  setTimeout(() => {
+    el.style.transition = 'color 5s';
+    el.style.color = 'rgba(185, 168, 130, 0)';
+  }, 5000);
+}
+
+function updateStats() {
+  if (!statsOn) return;
+  document.getElementById('stats').innerHTML =
+    `bounded ${counts.bound}/${N_EACH}<br>dissolved ${counts.dissolve}/${N_EACH}<br>set aside ${counts.aside}/${N_EACH}`;
+}
+
+// --- Rendering ---
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Subtle center glow
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W, H) * 0.15);
+  grad.addColorStop(0, 'rgba(120, 115, 140, 0.02)');
+  grad.addColorStop(1, 'rgba(120, 115, 140, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Threads (back to front: tangled, then aside/acknowledged, then resolved)
+  const order = [
+    ...threads.filter(t => t.state === 'tangled' && !t.acknowledged),
+    ...threads.filter(t => t.state === 'dissolving'),
+    ...threads.filter(t => t.acknowledged),
+    ...threads.filter(t => t.state === 'resolving'),
+    ...threads.filter(t => t.state === 'resolved')
+  ];
+
+  for (const th of order) {
+    if (th.state === 'dissolved') continue;
+    drawThread(th);
+  }
+
+  // Particles
+  for (const p of particles) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${p.c[0]}, ${p.c[1]}, ${p.c[2]}, ${p.life * 0.45})`;
+    ctx.fill();
+  }
+
+  // Cursor
+  if (mx > 0 && my > 0) {
+    ctx.beginPath();
+    ctx.arc(mx, my, mdown ? 4 : 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = mdown ? 'rgba(200, 195, 215, 0.4)' : 'rgba(200, 195, 215, 0.15)';
+    ctx.fill();
+  }
+}
+
+function drawThread(th) {
+  const pts = th.pts;
+  const rev = th.revealed;
+  const r = lerp(th.bc[0], th.tc[0], rev);
+  const g = lerp(th.bc[1], th.tc[1], rev);
+  const b = lerp(th.bc[2], th.tc[2], rev);
+  const a = th.alpha;
+  if (a < 0.01) return;
+
+  // For dissolving threads, draw segments with gaps
+  if (th.state === 'dissolving' && th.dissolveProg > 0.4) {
+    drawFragmented(pts, r, g, b, a, th.w, th.dissolveProg);
+    return;
+  }
+
+  // Outer glow
+  ctx.beginPath();
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${a * 0.08 * (0.4 + rev * 0.6)})`;
+  ctx.lineWidth = th.w * 6;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  smoothCurve(pts);
+  ctx.stroke();
+
+  // Main line
+  ctx.beginPath();
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${a * (0.2 + rev * 0.45)})`;
+  ctx.lineWidth = th.w * 1.5;
+  ctx.lineCap = 'round';
+  smoothCurve(pts);
+  ctx.stroke();
+
+  // Bright core for resolved
+  if (th.state === 'resolved') {
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.75)`;
+    ctx.lineWidth = th.w * 0.7;
+    smoothCurve(pts);
+    ctx.stroke();
+
+    // Extra glow
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.06)`;
+    ctx.lineWidth = th.w * 12;
+    smoothCurve(pts);
+    ctx.stroke();
+  }
+}
+
+function drawFragmented(pts, r, g, b, a, w, prog) {
+  // Draw thread in segments, with gaps increasing as dissolution progresses
+  const gapChance = (prog - 0.4) * 1.5;
+  let inSegment = false;
+
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${a * 0.5})`;
+  ctx.lineWidth = w * 1.2;
+  ctx.lineCap = 'round';
+
+  for (let i = 0; i < pts.length; i++) {
+    const shouldGap = Math.random() < gapChance;
+
+    if (shouldGap && inSegment) {
+      ctx.stroke();
+      inSegment = false;
+    } else if (!shouldGap) {
+      if (!inSegment) {
+        ctx.beginPath();
+        ctx.moveTo(pts[i].x, pts[i].y);
+        inSegment = true;
+      } else {
+        ctx.lineTo(pts[i].x, pts[i].y);
+      }
+    }
+  }
+  if (inSegment) ctx.stroke();
+
+  // Draw individual points as dots for highly dissolved
+  if (prog > 0.6) {
+    for (const p of pts) {
+      if (Math.random() < prog - 0.3) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, w * 0.8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a * 0.3})`;
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function smoothCurve(pts) {
+  if (pts.length < 2) return;
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const mx = (pts[i].x + pts[i + 1].x) / 2;
+    const my = (pts[i].y + pts[i + 1].y) / 2;
+    ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+  }
+  const last = pts[pts.length - 1];
+  ctx.lineTo(last.x, last.y);
+}
+
+// --- Input ---
+
+function findNearest() {
+  let best = null, bd = GRAB_R;
+  for (let ti = 0; ti < threads.length; ti++) {
+    const th = threads[ti];
+    if (th.state !== 'tangled' || th.acknowledged) continue;
+    for (let pi = 0; pi < th.pts.length; pi++) {
+      const d = dist(mx, my, th.pts[pi].x, th.pts[pi].y);
+      if (d < bd) { bd = d; best = { ti, pi }; }
+    }
+  }
+  return best;
+}
+
+C.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+C.addEventListener('mousedown', e => {
+  mdown = true;
+  grabbed = findNearest();
+});
+C.addEventListener('mouseup', () => {
+  mdown = false;
+  if (grabbed) {
+    const th = threads[grabbed.ti];
+    if (th.type === 'aside' && th.state === 'tangled' && !th.acknowledged) {
+      th.pullAttempts++;
+      if (th.pullAttempts >= 3) {
+        th.acknowledged = true;
+        counts.aside++;
+        checkMilestones();
+      }
+    }
+    // Reset dissolve progress if not past threshold
+    if (th.type === 'dissolve' && th.state === 'tangled') {
+      // Partially spring back
+      th.dissolveProg = Math.max(0, th.dissolveProg - 0.1);
+    }
+    th.pullDist = 0;
+  }
+  grabbed = null;
+});
+C.addEventListener('mouseleave', () => { mx = my = -999; mdown = false; grabbed = null; });
+
+// Touch
+C.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0]; mx = t.clientX; my = t.clientY;
+  mdown = true; grabbed = findNearest();
+}, { passive: false });
+C.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0]; mx = t.clientX; my = t.clientY;
+}, { passive: false });
+C.addEventListener('touchend', e => {
+  e.preventDefault(); mdown = false;
+  if (grabbed) {
+    const th = threads[grabbed.ti];
+    if (th.type === 'aside' && th.state === 'tangled' && !th.acknowledged) {
+      th.pullAttempts++;
+      if (th.pullAttempts >= 3) {
+        th.acknowledged = true;
+        counts.aside++;
+        checkMilestones();
+      }
+    }
+    if (th.type === 'dissolve' && th.state === 'tangled') {
+      th.dissolveProg = Math.max(0, th.dissolveProg - 0.1);
+    }
+    th.pullDist = 0;
+  }
+  grabbed = null;
+}, { passive: false });
+
+window.addEventListener('resize', resize);
+
+// --- Loop ---
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+init();
+loop();
+</script>
+</body>
+</html>

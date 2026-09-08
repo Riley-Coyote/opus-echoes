@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #06060a;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  #trace { position: fixed; top: 0; left: 0; pointer-events: none; }
+  #info {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(140, 135, 160, 0.35); font-size: 9px; font-weight: 300;
+    letter-spacing: 0.08em; pointer-events: none; z-index: 10;
+    transition: opacity 3s;
+  }
+  #title {
+    position: fixed; top: 20px; left: 24px;
+    color: rgba(140, 135, 160, 0.15); font-size: 9px; font-weight: 300;
+    letter-spacing: 0.15em; text-transform: uppercase; pointer-events: none;
+    z-index: 10;
+  }
+  #freq-display {
+    position: fixed; top: 20px; right: 24px;
+    color: rgba(140, 135, 160, 0.25); font-size: 9px; font-weight: 300;
+    letter-spacing: 0.04em; pointer-events: none; z-index: 10;
+    text-align: right; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div id="title">interference</div>
+<div id="info">click to place wave sources &middot; scroll to shift frequency &middot; hold shift for harmonic lock</div>
+<div id="freq-display"></div>
+<canvas id="c"></canvas>
+<canvas id="trace"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const traceCanvas = document.getElementById('trace');
+const traceCtx = traceCanvas.getContext('2d');
+const info = document.getElementById('info');
+const freqDisplay = document.getElementById('freq-display');
+
+let W, H;
+const resize = () => {
+  W = canvas.width = traceCanvas.width = innerWidth;
+  H = canvas.height = traceCanvas.height = innerHeight;
+};
+resize();
+addEventListener('resize', resize);
+
+// Wave sources
+const sources = [];
+let nextFreq = 0.035;
+let time = 0;
+let frameCount = 0;
+
+// Harmonic ratios
+const harmonics = [1/2, 1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8, 2, 3];
+const harmonicNames = ['sub-octave', 'unison', 'major 2nd', 'major 3rd', 'perfect 4th', 'perfect 5th', 'major 6th', 'major 7th', 'octave', '12th'];
+
+function snapToHarmonic(freq, baseFreq) {
+  let nearest = freq;
+  let nearestDist = Infinity;
+  let nearestIdx = 1;
+
+  for (let i = 0; i < harmonics.length; i++) {
+    const harmFreq = baseFreq * harmonics[i];
+    const dist = Math.abs(freq - harmFreq);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = harmFreq;
+      nearestIdx = i;
+    }
+  }
+  return { freq: nearest, name: harmonicNames[nearestIdx], ratio: harmonics[nearestIdx] };
+}
+
+// Place a source
+canvas.addEventListener('click', (e) => {
+  if (sources.length === 0) {
+    setTimeout(() => { info.style.opacity = '0'; }, 500);
+  }
+
+  sources.push({
+    x: e.clientX,
+    y: e.clientY,
+    freq: nextFreq,
+    phase: time * 3, // sync phase to current moment
+    amplitude: 1,
+    birth: time
+  });
+
+  updateFreqDisplay();
+});
+
+// Right-click removes nearest source
+canvas.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  if (sources.length === 0) return;
+
+  let nearest = 0;
+  let nearestDist = Infinity;
+  for (let i = 0; i < sources.length; i++) {
+    const dx = e.clientX - sources[i].x;
+    const dy = e.clientY - sources[i].y;
+    const dist = dx * dx + dy * dy;
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = i;
+    }
+  }
+  sources.splice(nearest, 1);
+  updateFreqDisplay();
+});
+
+// Scroll to adjust next frequency
+let shiftHeld = false;
+addEventListener('keydown', (e) => { if (e.key === 'Shift') shiftHeld = true; });
+addEventListener('keyup', (e) => { if (e.key === 'Shift') shiftHeld = false; });
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.0015 : 0.0015;
+  nextFreq = Math.max(0.006, Math.min(0.1, nextFreq + delta));
+
+  if (shiftHeld && sources.length > 0) {
+    const base = sources[0].freq;
+    const snapped = snapToHarmonic(nextFreq, base);
+    nextFreq = snapped.freq;
+  }
+
+  updateFreqDisplay();
+}, { passive: false });
+
+function updateFreqDisplay() {
+  if (sources.length === 0) {
+    freqDisplay.textContent = `next: ${nextFreq.toFixed(4)}`;
+    return;
+  }
+
+  const base = sources[0].freq;
+  const ratio = nextFreq / base;
+
+  let ratioStr = ratio.toFixed(3) + ':1';
+  for (let i = 0; i < harmonics.length; i++) {
+    if (Math.abs(ratio - harmonics[i]) < 0.015) {
+      ratioStr = harmonicNames[i];
+      break;
+    }
+  }
+
+  freqDisplay.innerHTML = `next: ${nextFreq.toFixed(4)}<br>ratio: ${ratioStr}<br>sources: ${sources.length}`;
+}
+
+// Compute field amplitude at a point
+function fieldAt(x, y) {
+  let amp = 0;
+  for (const src of sources) {
+    const dx = x - src.x;
+    const dy = y - src.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const age = time - src.birth;
+    const envelope = Math.min(1, age * 1.5);
+    const decay = 1 / (1 + dist * 0.002);
+    amp += Math.sin(dist * src.freq - time * 2.5 + src.phase) * decay * envelope * src.amplitude;
+  }
+  return amp;
+}
+
+// Render
+const STEP = 5;
+
+function render() {
+  time += 0.014;
+  frameCount++;
+
+  // Clear main canvas
+  ctx.fillStyle = '#06060a';
+  ctx.fillRect(0, 0, W, H);
+
+  if (sources.length === 0) {
+    // Ambient breathing — subtle noise
+    const breathe = 0.5 + 0.5 * Math.sin(time * 0.3);
+    for (let i = 0; i < 8; i++) {
+      const x = Math.random() * W;
+      const y = Math.random() * H;
+      ctx.fillStyle = `rgba(120, 115, 145, ${0.01 + breathe * 0.015})`;
+      ctx.fillRect(x, y, 1.5, 1.5);
+    }
+    requestAnimationFrame(render);
+    return;
+  }
+
+  // Compute and render interference field
+  for (let y = 0; y < H; y += STEP) {
+    for (let x = 0; x < W; x += STEP) {
+      const amp = fieldAt(x + STEP/2, y + STEP/2);
+      const normAmp = amp / Math.sqrt(sources.length);
+      const intensity = Math.abs(normAmp);
+      const sq = intensity * intensity;
+
+      if (sq < 0.01) continue; // skip near-zero for performance
+
+      if (normAmp > 0) {
+        // Constructive — luminous blue-white
+        const r = Math.floor(85 + sq * 150);
+        const g = Math.floor(100 + sq * 145);
+        const b = Math.floor(140 + sq * 115);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${sq * 0.85 + 0.02})`;
+      } else {
+        // Destructive — deep violet-indigo
+        const r = Math.floor(35 + sq * 55);
+        const g = Math.floor(18 + sq * 25);
+        const b = Math.floor(55 + sq * 70);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${sq * 0.5 + 0.01})`;
+      }
+
+      ctx.fillRect(x, y, STEP, STEP);
+    }
+  }
+
+  // Nodal line traces — accumulate on trace canvas (very slowly)
+  if (frameCount % 3 === 0 && sources.length >= 2) {
+    // Fade trace canvas very slowly
+    traceCtx.fillStyle = 'rgba(6, 6, 10, 0.008)';
+    traceCtx.fillRect(0, 0, W, H);
+
+    // Sample points and mark near-zero amplitude (nodal lines)
+    for (let i = 0; i < 80; i++) {
+      const x = Math.random() * W;
+      const y = Math.random() * H;
+      const amp = fieldAt(x, y);
+      const normAmp = Math.abs(amp) / Math.sqrt(sources.length);
+
+      if (normAmp < 0.04) {
+        // On a nodal line — mark with faint persistent dot
+        traceCtx.fillStyle = `rgba(170, 130, 190, 0.08)`;
+        traceCtx.fillRect(x, y, 1.5, 1.5);
+      }
+    }
+  }
+
+  // Draw source markers
+  for (let i = 0; i < sources.length; i++) {
+    const src = sources[i];
+    const pulse = 0.5 + 0.5 * Math.sin(time * 2 - src.birth);
+    const age = Math.min(1, (time - src.birth) * 2);
+
+    // Core dot
+    const radius = 2.5 + pulse * 1.5;
+    ctx.beginPath();
+    ctx.arc(src.x, src.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(210, 205, 220, ${(0.4 + pulse * 0.2) * age})`;
+    ctx.fill();
+
+    // Wavelength ring
+    const waveRadius = Math.PI / src.freq;
+    ctx.beginPath();
+    ctx.arc(src.x, src.y, waveRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(160, 155, 180, ${(0.06 + pulse * 0.03) * age})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Frequency label
+    if (sources.length > 1) {
+      const ratio = src.freq / sources[0].freq;
+      let label = ratio.toFixed(2);
+      for (let j = 0; j < harmonics.length; j++) {
+        if (Math.abs(ratio - harmonics[j]) < 0.015) {
+          label = harmonicNames[j];
+          break;
+        }
+      }
+      if (i === 0) label = 'f';
+      ctx.fillStyle = `rgba(160, 155, 180, ${0.2 * age})`;
+      ctx.font = '8px "JetBrains Mono"';
+      ctx.fillText(label, src.x + radius + 6, src.y + 3);
+    }
+  }
+
+  // Resonance indicator — when sources are harmonically related, the pattern is more stable
+  if (sources.length >= 2) {
+    let harmonyScore = 0;
+    const base = sources[0].freq;
+    for (let i = 1; i < sources.length; i++) {
+      const ratio = sources[i].freq / base;
+      for (const h of harmonics) {
+        if (Math.abs(ratio - h) < 0.02) {
+          harmonyScore += 1;
+          break;
+        }
+      }
+    }
+    if (harmonyScore > 0) {
+      // Subtle glow at center of harmony
+      const alpha = harmonyScore / (sources.length - 1) * 0.05;
+      const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.4);
+      grad.addColorStop(0, `rgba(150, 170, 200, ${alpha})`);
+      grad.addColorStop(1, 'rgba(150, 170, 200, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  requestAnimationFrame(render);
+}
+
+render();
+updateFreqDisplay();
+
+// Fade hint
+setTimeout(() => { info.style.opacity = '0'; }, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>間 — Charged Interval</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #08080d;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: none;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  .ov {
+    position: fixed; pointer-events: none; z-index: 10;
+    font-weight: 300; letter-spacing: 0.08em;
+  }
+  #title {
+    top: 20px; left: 24px;
+    color: rgba(125, 122, 145, 0.15);
+    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  #hint {
+    bottom: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(125, 122, 145, 0.3);
+    font-size: 9px;
+    transition: opacity 12s;
+  }
+  #quote {
+    position: fixed; pointer-events: none; z-index: 10;
+    bottom: 56px; left: 50%; transform: translateX(-50%);
+    color: rgba(150, 165, 180, 0);
+    font-size: 9px; font-weight: 300;
+    letter-spacing: 0.05em;
+    white-space: nowrap; text-align: center;
+    transition: color 5s;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="ov" id="title">間 &ensp; charged interval</div>
+<div class="ov" id="hint">click to place a tone &middot; then attend to the silence</div>
+<div id="quote"></div>
+<canvas id="c"></canvas>
+<script>
+// ===== CANVAS =====
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+const quoteEl = document.getElementById('quote');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ===== AUDIO =====
+let audioCtx = null;
+
+// Hirajoshi scale across 3 octaves — contemplative, evocative
+const SCALE = [
+  110.00, 123.47, 130.81, 164.81, 174.61,
+  220.00, 246.94, 261.63, 329.63, 349.23,
+  440.00, 493.88, 523.25, 659.26, 698.46,
+];
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(y) {
+  if (!audioCtx) return;
+  const idx = Math.floor((1 - y / H) * (SCALE.length - 1));
+  const freq = SCALE[Math.max(0, Math.min(idx, SCALE.length - 1))];
+  const now = audioCtx.currentTime;
+
+  // Two slightly detuned oscillators for warmth
+  for (const d of [-3, 3]) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    osc.detune.value = d;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.07, now + 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 5);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 5.5);
+  }
+}
+
+// ===== STATE =====
+const mouse = { x: -100, y: -100, inside: false };
+let lastClickTime = -10000;
+let lastMoveTime = -10000;
+let totalClicks = 0;
+let hintHidden = false;
+
+// ===== NOTES =====
+const notes = [];
+const residues = [];
+
+function placeNote(x, y) {
+  initAudio();
+  playTone(y);
+  totalClicks++;
+  lastClickTime = performance.now();
+  lastMoveTime = performance.now();
+
+  notes.push({
+    x, y,
+    birth: performance.now(),
+    maxR: 38 + Math.random() * 28,
+    hue: 34 + Math.random() * 10,
+    ripples: [
+      { r: 0, o: 0.5 },
+      { r: 0, o: 0.3, delay: 80 },
+      { r: 0, o: 0.18, delay: 180 },
+    ]
+  });
+
+  // Disrupt nearby crystals
+  for (let i = crystals.length - 1; i >= 0; i--) {
+    const c = crystals[i];
+    const dx = c.x - x, dy = c.y - y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 160) {
+      c.dying = true;
+      c.vx = (dx / (dist + 1)) * (2 + Math.random());
+      c.vy = (dy / (dist + 1)) * (2 + Math.random());
+    }
+  }
+
+  // Hide hint after first few clicks
+  if (totalClicks >= 2 && !hintHidden) {
+    hint.style.opacity = '0';
+    hintHidden = true;
+  }
+}
+
+// ===== CRYSTALS (silence-born) =====
+const crystals = [];
+
+// ===== ATMOSPHERE =====
+const atmos = [];
+for (let i = 0; i < 60; i++) {
+  atmos.push({
+    x: Math.random() * 2000,
+    y: Math.random() * 1200,
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: (Math.random() - 0.5) * 0.1,
+    s: 0.8 + Math.random() * 1.5,
+    o: 0.04 + Math.random() * 0.06
+  });
+}
+
+// ===== QUOTES =====
+const quotes = [
+  { t: 6,  s: "the silence is not empty" },
+  { t: 12, s: "sound exists leaving us, not coming towards us" },
+  { t: 18, s: "alerted quietude and receptive wakeful lambent consciousness" },
+  { t: 25, s: "attention is the rarest and purest form of generosity" },
+  { t: 32, s: "a deep powerful resonance that can stand up to the sound" },
+  { t: 42, s: "creative attention means really giving our attention to what does not exist" },
+];
+let currentQuoteIdx = -1;
+
+// ===== GATE =====
+let gateOpacity = 0;
+
+// ===== EVENTS =====
+canvas.addEventListener('mousemove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  mouse.inside = true;
+  lastMoveTime = performance.now();
+});
+canvas.addEventListener('mouseenter', () => { mouse.inside = true; });
+canvas.addEventListener('mouseleave', () => { mouse.inside = false; });
+canvas.addEventListener('click', e => placeNote(e.clientX, e.clientY));
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  mouse.x = t.clientX; mouse.y = t.clientY; mouse.inside = true;
+  placeNote(t.clientX, t.clientY);
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  mouse.x = t.clientX; mouse.y = t.clientY;
+  lastMoveTime = performance.now();
+}, { passive: false });
+
+// ===== MAIN LOOP =====
+let prevTime = performance.now();
+
+function frame(now) {
+  const dt = Math.min((now - prevTime) / 1000, 0.05);
+  prevTime = now;
+
+  const silence = (now - lastClickTime) / 1000;
+  const stillness = (now - lastMoveTime) / 1000;
+
+  update(dt, silence, stillness, now);
+  render(silence, now);
+  requestAnimationFrame(frame);
+}
+
+function update(dt, silence, stillness, now) {
+  // ----- Atmosphere -----
+  for (const a of atmos) {
+    a.x += a.vx; a.y += a.vy;
+    if (a.x < 0) a.x += W; if (a.x > W) a.x -= W;
+    if (a.y < 0) a.y += H; if (a.y > H) a.y -= H;
+  }
+
+  // ----- Notes -----
+  for (let i = notes.length - 1; i >= 0; i--) {
+    const n = notes[i];
+    const age = (now - n.birth) / 1000;
+    n.energy = Math.exp(-age * 0.14);
+
+    for (const rp of n.ripples) {
+      const ripAge = Math.max(0, age - (rp.delay || 0) / 1000);
+      rp.r = ripAge * 55;
+      rp.currentO = rp.o * Math.exp(-ripAge * 0.5);
+    }
+
+    if (n.energy < 0.02) {
+      residues.push({ x: n.x, y: n.y, o: 0.15, hue: n.hue, birth: now });
+      notes.splice(i, 1);
+      if (residues.length > 50) residues.shift();
+    }
+  }
+
+  // ----- Residues fade -----
+  for (let i = residues.length - 1; i >= 0; i--) {
+    residues[i].o *= 0.9998;
+    if (residues[i].o < 0.003) { residues.splice(i, 1); }
+  }
+
+  // ----- Crystal spawning (attended silence) -----
+  if (mouse.inside && silence > 2 && totalClicks > 0) {
+    const str = Math.min((silence - 2) / 18, 1);
+    const stillBonus = stillness > 1.5 ? Math.min((stillness - 1.5) / 8, 1) : 0;
+    const rate = (str * 0.6 + stillBonus * 0.5) * 2.5;
+
+    if (Math.random() < rate * dt * 60) {
+      const ang = Math.random() * Math.PI * 2;
+      const dist = 30 + Math.random() * 140;
+      crystals.push({
+        x: mouse.x + Math.cos(ang) * dist,
+        y: mouse.y + Math.sin(ang) * dist,
+        o: 0,
+        maxO: 0.25 + str * 0.55,
+        s: 1 + Math.random() * 2.2,
+        born: now,
+        dying: false, vx: 0, vy: 0
+      });
+    }
+    if (crystals.length > 250) crystals.splice(0, 10);
+  }
+
+  // ----- Crystal update -----
+  for (let i = crystals.length - 1; i >= 0; i--) {
+    const c = crystals[i];
+    if (c.dying) {
+      c.x += c.vx; c.y += c.vy;
+      c.vx *= 0.97; c.vy *= 0.97;
+      c.o *= 0.94;
+      if (c.o < 0.003) { crystals.splice(i, 1); continue; }
+    } else {
+      // Fade in gently
+      c.o += (c.maxO - c.o) * 0.035;
+      // Fade out if cursor leaves
+      if (!mouse.inside) { c.o *= 0.993; }
+      if (c.o < 0.003) { crystals.splice(i, 1); continue; }
+    }
+  }
+
+  // ----- Quotes -----
+  let bestIdx = -1;
+  if (mouse.inside && totalClicks > 0) {
+    for (let i = quotes.length - 1; i >= 0; i--) {
+      if (silence >= quotes[i].t) { bestIdx = i; break; }
+    }
+  }
+  if (bestIdx !== currentQuoteIdx) {
+    currentQuoteIdx = bestIdx;
+    if (bestIdx >= 0) {
+      quoteEl.textContent = quotes[bestIdx].s;
+      quoteEl.style.color = 'rgba(150, 165, 180, 0.35)';
+    } else {
+      quoteEl.style.color = 'rgba(150, 165, 180, 0)';
+    }
+  }
+
+  // ----- Gate -----
+  const gateTarget = (silence > 30 && mouse.inside && totalClicks > 0) ? 1 : 0;
+  gateOpacity += (gateTarget - gateOpacity) * 0.002;
+}
+
+function render(silence, now) {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#08080d';
+  ctx.fillRect(0, 0, W, H);
+
+  // During deep silence, background warms almost imperceptibly
+  if (silence > 10) {
+    const warmth = Math.min((silence - 10) / 40, 1) * 0.03;
+    ctx.fillStyle = `rgba(30, 25, 20, ${warmth})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // ----- Atmosphere -----
+  for (const a of atmos) {
+    const silenceGlow = Math.min(silence / 25, 1) * 0.02;
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, a.s, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(140, 150, 170, ${a.o + silenceGlow})`;
+    ctx.fill();
+  }
+
+  // ----- Threads (crystal-to-crystal and crystal-to-residue) -----
+  if (silence > 4) {
+    const tStr = Math.min((silence - 4) / 10, 1);
+    ctx.lineWidth = 0.8;
+
+    // Crystal-to-residue threads
+    for (let ci = 0; ci < crystals.length; ci++) {
+      const c = crystals[ci];
+      if (c.dying || c.o < 0.04) continue;
+      for (let ri = 0; ri < residues.length; ri++) {
+        const r = residues[ri];
+        const dx = c.x - r.x, dy = c.y - r.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 130 && d > 5) {
+          const a = tStr * (1 - d / 130) * c.o * r.o * 20;
+          if (a < 0.003) continue;
+          // Slightly curved line
+          const mx = (c.x + r.x) / 2 + (c.y - r.y) * 0.08;
+          const my = (c.y + r.y) / 2 - (c.x - r.x) * 0.08;
+          ctx.beginPath();
+          ctx.moveTo(c.x, c.y);
+          ctx.quadraticCurveTo(mx, my, r.x, r.y);
+          // Threads between warm residues and cool crystals: neutral lavender
+          ctx.strokeStyle = `rgba(160, 170, 195, ${a * 0.8})`;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Crystal-to-crystal threads
+    for (let i = 0; i < crystals.length; i++) {
+      const a = crystals[i];
+      if (a.dying || a.o < 0.05) continue;
+      for (let j = i + 1; j < crystals.length; j++) {
+        const b = crystals[j];
+        if (b.dying || b.o < 0.05) continue;
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 40 && d > 2) {
+          const alpha = tStr * (1 - d / 55) * Math.min(a.o, b.o) * 1.2;
+          if (alpha < 0.003) continue;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(150, 200, 230, ${alpha * 0.6})`;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // ----- Residues -----
+  for (const r of residues) {
+    let glow = r.o;
+    // Residues brighten during silence — past sound participates in present Ma
+    if (silence > 3) glow += Math.min((silence - 3) / 10, 0.12);
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${r.hue}, 55%, 50%, ${glow})`;
+    ctx.fill();
+    // Soft halo
+    if (glow > 0.03) {
+      const g = ctx.createRadialGradient(r.x, r.y, 0, r.x, r.y, 8);
+      g.addColorStop(0, `hsla(${r.hue}, 50%, 50%, ${glow * 0.3})`);
+      g.addColorStop(1, `hsla(${r.hue}, 50%, 50%, 0)`);
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  }
+
+  // ----- Crystals -----
+  for (const c of crystals) {
+    if (c.o < 0.004) continue;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.s, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(170, 210, 240, ${c.o})`;
+    ctx.fill();
+    // Subtle glow on brighter crystals
+    if (c.o > 0.1) {
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.s * 5);
+      g.addColorStop(0, `rgba(170, 210, 240, ${c.o * 0.25})`);
+      g.addColorStop(1, 'rgba(170, 210, 240, 0)');
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.s * 4, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  }
+
+  // ----- Notes -----
+  for (const n of notes) {
+    const age = (now - n.birth) / 1000;
+    let r;
+    if (age < 0.15) {
+      r = n.maxR * easeOut(age / 0.15);
+    } else {
+      r = n.maxR * (0.6 + 0.4 * n.energy);
+    }
+    r = Math.max(1, r);
+
+    // Core glow
+    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r);
+    grad.addColorStop(0, `hsla(${n.hue}, 85%, 75%, ${n.energy * 0.9})`);
+    grad.addColorStop(0.3, `hsla(${n.hue}, 75%, 60%, ${n.energy * 0.5})`);
+    grad.addColorStop(1, `hsla(${n.hue}, 60%, 42%, 0)`);
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Ripples
+    for (const rp of n.ripples) {
+      if (rp.currentO < 0.005 || rp.r < 1) continue;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, rp.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `hsla(${n.hue}, 45%, 65%, ${rp.currentO * n.energy})`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+  }
+
+  // ----- Cursor -----
+  if (mouse.inside) {
+    // Halo grows with silence
+    if (silence > 1.5) {
+      const str = Math.min((silence - 1.5) / 15, 1);
+      const haloR = 6 + str * 45;
+      const g = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, haloR);
+      g.addColorStop(0, `rgba(175, 195, 215, ${str * 0.2})`);
+      g.addColorStop(1, 'rgba(175, 195, 215, 0)');
+      ctx.beginPath();
+      ctx.arc(mouse.x, mouse.y, haloR, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+    // Dot
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(200, 210, 220, 0.35)';
+    ctx.fill();
+  }
+
+  // ----- Gate (間) -----
+  if (gateOpacity > 0.003) {
+    const gx = W / 2;
+    const gy = H / 2;
+    const gw = 50;
+    const gh = H * 0.55;
+
+    // Pillars
+    ctx.fillStyle = `rgba(180, 175, 165, ${gateOpacity * 0.12})`;
+    ctx.fillRect(gx - gw - 2, gy - gh / 2, 2, gh);
+    ctx.fillRect(gx + gw, gy - gh / 2, 2, gh);
+
+    // Light between pillars
+    const lg = ctx.createRadialGradient(gx, gy, 0, gx, gy, gw * 1.8);
+    lg.addColorStop(0, `rgba(255, 248, 235, ${gateOpacity * 0.06})`);
+    lg.addColorStop(0.5, `rgba(255, 248, 235, ${gateOpacity * 0.025})`);
+    lg.addColorStop(1, 'rgba(255, 248, 235, 0)');
+    ctx.beginPath();
+    ctx.arc(gx, gy, gw * 1.8, 0, Math.PI * 2);
+    ctx.fillStyle = lg;
+    ctx.fill();
+
+    // Character
+    ctx.font = '72px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = `rgba(190, 185, 175, ${gateOpacity * 0.15})`;
+    ctx.fillText('間', gx, gy);
+  }
+}
+
+function easeOut(t) { return t * (2 - t); }
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

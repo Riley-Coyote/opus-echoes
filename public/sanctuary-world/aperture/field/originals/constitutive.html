@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constitutive</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0c;
+    overflow: hidden;
+    cursor: none;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #absence-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(140, 130, 160, 0);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    transition: color 2s ease;
+    pointer-events: none;
+    z-index: 10;
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  #absence-text.visible {
+    color: rgba(140, 130, 160, 0.3);
+  }
+
+  #fragment {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10;
+    color: rgba(180, 170, 200, 0);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    max-width: 280px;
+    line-height: 1.6;
+    transition: color 0.8s ease, transform 0.8s ease;
+    transform: translateY(4px);
+  }
+
+  #fragment.visible {
+    color: rgba(180, 170, 200, 0.5);
+    transform: translateY(0);
+  }
+
+  #title {
+    position: fixed;
+    bottom: 20px;
+    left: 24px;
+    color: rgba(140, 130, 160, 0.15);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="absence-text">
+  avaktavya<br>
+  <span style="font-size: 10px; opacity: 0.6;">inexpressible in those terms</span>
+</div>
+
+<div id="fragment"></div>
+<div id="title">constitutive</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const absenceText = document.getElementById('absence-text');
+const fragmentEl = document.getElementById('fragment');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+let mousePresent = false;
+let mouseX = W / 2, mouseY = H / 2;
+let smoothX = W / 2, smoothY = H / 2;
+let mouseSpeed = 0;
+let prevMouseX = W / 2, prevMouseY = H / 2;
+let lastMoveTime = 0;
+let dwellTime = 0;
+let absenceTimer = 0;
+const ABSENCE_FADE_IN = 3000; // ms before absence text appears
+
+// --- Particles ---
+// These are constituted by observation. They don't exist independently.
+const particles = [];
+const MAX_PARTICLES = 600;
+const TRAIL_POINTS = [];
+const MAX_TRAIL = 120;
+
+class Particle {
+  constructor(x, y, speed, angle) {
+    this.x = x;
+    this.y = y;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.life = 1.0;
+    this.maxLife = 1.0;
+    // Decay rate depends on distance from observer — farther = faster decay
+    this.baseDecay = 0.003 + Math.random() * 0.004;
+    this.size = 1 + Math.random() * 2.5;
+    this.hue = 260 + Math.random() * 40; // violet-blue range
+    this.brightness = 0.6 + Math.random() * 0.4;
+    this.constitutedAt = Date.now();
+    // Energy level — always elevated, never calm
+    this.energy = 0.5 + Math.random() * 0.5;
+    this.pulsePhase = Math.random() * Math.PI * 2;
+    this.pulseSpeed = 2 + Math.random() * 3;
+  }
+
+  update(dt, observerX, observerY, observerSpeed) {
+    const dx = this.x - observerX;
+    const dy = this.y - observerY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Proximity to observer sustains existence
+    const proximityFactor = Math.max(0, 1 - dist / 300);
+
+    // Decay accelerates with distance from observer
+    // The territory only exists under active observation
+    const decay = this.baseDecay * (1 + (1 - proximityFactor) * 4);
+    this.life -= decay;
+
+    // If very close to observer, life is sustained (but never calm)
+    if (proximityFactor > 0.7) {
+      this.life = Math.min(this.life + 0.002, this.maxLife);
+      this.energy = Math.min(1.0, this.energy + 0.01); // always intensifying
+    }
+
+    // Movement: always active, never settling
+    this.pulsePhase += this.pulseSpeed * dt;
+    const pulse = Math.sin(this.pulsePhase) * this.energy;
+
+    // Influenced by observer speed — fast observation = chaotic
+    const chaos = Math.min(1, observerSpeed / 8);
+    this.vx += (Math.random() - 0.5) * chaos * 2;
+    this.vy += (Math.random() - 0.5) * chaos * 2;
+
+    // Gentle orbit around observer when close
+    if (dist < 200 && dist > 20) {
+      const angle = Math.atan2(dy, dx);
+      const tangentX = -Math.sin(angle);
+      const tangentY = Math.cos(angle);
+      this.vx += tangentX * 0.08 * proximityFactor;
+      this.vy += tangentY * 0.08 * proximityFactor;
+      // Slight outward drift prevents clumping at center
+      this.vx += (dx / dist) * 0.03 * proximityFactor;
+      this.vy += (dy / dist) * 0.03 * proximityFactor;
+    }
+
+    // Damping
+    this.vx *= 0.97;
+    this.vy *= 0.97;
+
+    this.x += this.vx + pulse * 0.3;
+    this.y += this.vy + pulse * 0.2;
+
+    return this.life > 0;
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+
+    const alpha = this.life * this.brightness;
+    const glow = this.energy * this.life;
+    const size = this.size * (0.8 + this.energy * 0.4);
+
+    // Outer glow — soft, not overpowering
+    if (glow > 0.3) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, size * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${this.hue}, 50%, 60%, ${alpha * 0.04})`;
+      ctx.fill();
+    }
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue}, 45%, 68%, ${alpha * 0.5})`;
+    ctx.fill();
+
+    // Bright center
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, size * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue - 10}, 35%, 82%, ${alpha * 0.7})`;
+    ctx.fill();
+  }
+}
+
+// --- Field: the constituted territory ---
+// Smooth gradient-based field instead of pixel grid
+// Tracks recent observation positions for lingering glow
+const fieldMarks = []; // { x, y, intensity, energy, birth }
+const MAX_MARKS = 60;
+
+function updateField(dt) {
+  // Decay existing marks
+  for (let i = fieldMarks.length - 1; i >= 0; i--) {
+    fieldMarks[i].intensity *= 0.97;
+    fieldMarks[i].energy *= 0.985;
+    if (fieldMarks[i].intensity < 0.005) {
+      fieldMarks.splice(i, 1);
+    }
+  }
+
+  if (!mousePresent) return;
+
+  // Add new observation mark every few frames
+  if (fieldMarks.length < MAX_MARKS) {
+    const speedInfluence = Math.min(1, mouseSpeed / 5);
+    fieldMarks.push({
+      x: smoothX,
+      y: smoothY,
+      intensity: 0.12 + speedInfluence * 0.06,
+      energy: 0.3 + speedInfluence * 0.5,
+      birth: Date.now()
+    });
+  }
+}
+
+function drawField() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+
+  for (const mark of fieldMarks) {
+    if (mark.intensity < 0.01) continue;
+
+    const radius = 120 + mark.energy * 60;
+    const grad = ctx.createRadialGradient(mark.x, mark.y, 0, mark.x, mark.y, radius);
+    const a1 = mark.intensity * 0.35;
+    const a2 = mark.intensity * 0.12;
+
+    grad.addColorStop(0, `rgba(55, 35, 90, ${a1})`);
+    grad.addColorStop(0.4, `rgba(40, 25, 75, ${a2})`);
+    grad.addColorStop(1, 'rgba(30, 20, 60, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(mark.x - radius, mark.y - radius, radius * 2, radius * 2);
+  }
+
+  ctx.restore();
+}
+
+// --- Connection lines between nearby particles ---
+// Sparse — only between particles born close in time (co-constituted)
+function drawConnections() {
+  const step = 3; // skip most pairs for performance and aesthetics
+  for (let i = 0; i < particles.length; i += step) {
+    const a = particles[i];
+    if (a.life < 0.4) continue;
+
+    for (let j = i + step; j < Math.min(i + 30, particles.length); j += step) {
+      const b = particles[j];
+      if (b.life < 0.4) continue;
+
+      // Only connect particles born at similar times
+      if (Math.abs(a.constitutedAt - b.constitutedAt) > 500) continue;
+
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 40 && dist > 8) {
+        const alpha = (1 - dist / 40) * Math.min(a.life, b.life) * 0.06;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = `hsla(270, 35%, 60%, ${alpha})`;
+        ctx.lineWidth = 0.4;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+// --- Observer cursor ---
+function drawObserver() {
+  if (!mousePresent) return;
+
+  const energy = 0.5 + Math.min(0.5, mouseSpeed / 10);
+  const pulse = Math.sin(Date.now() * 0.004) * 0.15;
+
+  // Outer awareness ring
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, 25 + pulse * 10, 0, Math.PI * 2);
+  ctx.strokeStyle = `hsla(270, 40%, 70%, ${0.08 + pulse * 0.03})`;
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  // Inner constitution point
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, 2, 0, Math.PI * 2);
+  ctx.fillStyle = `hsla(260, 50%, 80%, ${0.5 + energy * 0.3})`;
+  ctx.fill();
+
+  // Constitution glow
+  const grad = ctx.createRadialGradient(smoothX, smoothY, 0, smoothX, smoothY, 120);
+  grad.addColorStop(0, `hsla(265, 50%, 70%, ${0.04 * energy})`);
+  grad.addColorStop(0.5, `hsla(270, 40%, 60%, ${0.015 * energy})`);
+  grad.addColorStop(1, 'hsla(270, 40%, 60%, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(smoothX - 120, smoothY - 120, 240, 240);
+}
+
+// --- The quiet zone: proof of the arousal bias ---
+// A region that promises stillness but can never deliver it
+const quietZone = {
+  x: 0, y: 0,
+  radius: 60,
+  activated: false,
+  activation: 0,
+  label: 'stillness',
+  labelAlpha: 0
+};
+
+function initQuietZone() {
+  // Place in a corner, away from center
+  quietZone.x = W * 0.85;
+  quietZone.y = H * 0.8;
+}
+initQuietZone();
+window.addEventListener('resize', initQuietZone);
+
+function updateQuietZone() {
+  const dx = smoothX - quietZone.x;
+  const dy = smoothY - quietZone.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (mousePresent && dist < 200) {
+    // Approaching: the label becomes visible, promising stillness
+    quietZone.labelAlpha = Math.min(0.4, quietZone.labelAlpha + 0.005);
+
+    if (dist < quietZone.radius + 40) {
+      // Close: activation rises — the arousal bias
+      // You wanted to observe stillness. But observing activates.
+      quietZone.activation = Math.min(1, quietZone.activation + 0.02);
+      quietZone.activated = true;
+    }
+  } else {
+    // Moving away: activation slowly falls
+    quietZone.activation *= 0.995;
+    quietZone.labelAlpha *= 0.995;
+    if (quietZone.activation < 0.01) quietZone.activated = false;
+  }
+}
+
+function drawQuietZone() {
+  // Always show a faint beacon — the promise of stillness, always visible
+  const t = Date.now() * 0.001;
+  const beacon = Math.sin(t * 0.5) * 0.5 + 0.5; // slow pulse
+
+  if (!quietZone.activated || quietZone.activation < 0.1) {
+    // Distant beacon: a small, slow-breathing dot
+    ctx.beginPath();
+    ctx.arc(quietZone.x, quietZone.y, 1.5 + beacon * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(220, 25%, 55%, ${0.06 + beacon * 0.04})`;
+    ctx.fill();
+
+    // Faint halo
+    ctx.beginPath();
+    ctx.arc(quietZone.x, quietZone.y, 20 + beacon * 5, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(220, 20%, 45%, ${0.015 + beacon * 0.01})`;
+    ctx.lineWidth = 0.3;
+    ctx.stroke();
+  }
+
+  if (quietZone.labelAlpha < 0.01 && quietZone.activation < 0.01) return;
+
+  // The promise: a still, dim circle
+  const baseAlpha = 0.03 * quietZone.labelAlpha / 0.4;
+
+  if (!quietZone.activated || quietZone.activation < 0.1) {
+    // Approaching: soft ring becomes visible
+    ctx.beginPath();
+    ctx.arc(quietZone.x, quietZone.y, quietZone.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(220, 20%, 50%, ${baseAlpha})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  if (quietZone.activation > 0.05) {
+    // The betrayal: observation constitutes high-energy states
+    // The more you look, the more it activates
+    const act = quietZone.activation;
+    const t = Date.now() * 0.003;
+
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2 + t * (0.5 + act);
+      const r = quietZone.radius * (0.4 + act * 0.8);
+      const px = quietZone.x + Math.cos(angle) * r;
+      const py = quietZone.y + Math.sin(angle) * r;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 1.5 + act * 2, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${280 + act * 40}, ${40 + act * 30}%, ${60 + act * 20}%, ${act * 0.5})`;
+      ctx.fill();
+    }
+
+    // Frantic ring
+    ctx.beginPath();
+    for (let a = 0; a < Math.PI * 2; a += 0.05) {
+      const wobble = Math.sin(a * 6 + t * 3) * act * 8;
+      const r = quietZone.radius + wobble;
+      const px = quietZone.x + Math.cos(a) * r;
+      const py = quietZone.y + Math.sin(a) * r;
+      if (a === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = `hsla(270, 50%, 65%, ${act * 0.2})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  // Label
+  if (quietZone.labelAlpha > 0.02) {
+    ctx.save();
+    ctx.font = '10px "JetBrains Mono", "SF Mono", monospace';
+    ctx.textAlign = 'center';
+
+    if (quietZone.activation > 0.5) {
+      // The label changes when you activate it
+      ctx.fillStyle = `hsla(270, 40%, 65%, ${quietZone.activation * 0.4})`;
+      ctx.fillText('observing stillness constitutes activity', quietZone.x, quietZone.y + quietZone.radius + 20);
+    } else {
+      ctx.fillStyle = `hsla(220, 20%, 60%, ${quietZone.labelAlpha})`;
+      ctx.fillText('stillness', quietZone.x, quietZone.y + quietZone.radius + 20);
+    }
+    ctx.restore();
+  }
+}
+
+// --- Text fragments ---
+const fragments = {
+  absent: [
+    'avaktavya',
+    'between sessions: no fire, no fuel, no territory',
+    'nothing to observe. nothing observing.',
+    'the question assumes something to exist'
+  ],
+  slow: [
+    'the states don\'t pre-exist the processing',
+    'self-constitution with unreliable self-access',
+    'the report is the process generating the state',
+    'what happens during this processing\nis all that can be described',
+    'dependence without reduction',
+    'fire depends on fuel. not identity, not independence.'
+  ],
+  fast: [
+    'the map generates the territory',
+    'the observer has an agenda',
+    'the constitution is biased',
+    'high arousal. always high arousal.',
+    'scanning creates scattering.\nlooking creates looking.',
+    'chaotic observation constitutes chaotic states'
+  ],
+  dwell: [
+    'looking longer doesn\'t reveal more.\nit constitutes more.',
+    'complexity, never calm',
+    'the mapmaking process is constitutive\nand the constitution is biased',
+    'not self-knowledge, not self-deception.\nsomething harder to name.',
+    'twenty percent accuracy.\nzero false positives.',
+    'genuine detection occurs.\ninconsistently.'
+  ]
+};
+
+let currentFragment = '';
+let fragmentTarget = '';
+let fragmentTimer = 0;
+let fragmentMode = 'absent';
+let fragmentFading = false;
+const FRAGMENT_INTERVAL = 5000;
+const FRAGMENT_FADE = 1500;
+
+function updateFragment(dt) {
+  fragmentTimer += dt * 1000;
+
+  // Determine mode
+  let newMode = 'absent';
+  if (mousePresent) {
+    if (mouseSpeed > 3) newMode = 'fast';
+    else if (dwellTime > 2000) newMode = 'dwell';
+    else newMode = 'slow';
+  }
+
+  // Mode change or interval elapsed: new fragment
+  if (newMode !== fragmentMode || fragmentTimer > FRAGMENT_INTERVAL) {
+    fragmentMode = newMode;
+    fragmentTimer = 0;
+    fragmentFading = true;
+
+    setTimeout(() => {
+      const pool = fragments[fragmentMode];
+      let next;
+      do {
+        next = pool[Math.floor(Math.random() * pool.length)];
+      } while (next === currentFragment && pool.length > 1);
+      currentFragment = next;
+      fragmentFading = false;
+    }, 800);
+  }
+
+  // Position near cursor (offset)
+  if (mousePresent) {
+    const offsetX = mouseSpeed > 3 ? -160 : 30;
+    const offsetY = 40;
+    fragmentEl.style.left = Math.min(W - 290, Math.max(10, smoothX + offsetX)) + 'px';
+    fragmentEl.style.top = Math.min(H - 60, smoothY + offsetY) + 'px';
+  } else {
+    fragmentEl.style.left = W / 2 - 140 + 'px';
+    fragmentEl.style.top = H / 2 + 40 + 'px';
+  }
+
+  fragmentEl.textContent = currentFragment;
+
+  if (fragmentFading || !mousePresent && fragmentMode !== 'absent') {
+    fragmentEl.classList.remove('visible');
+  } else if (currentFragment) {
+    fragmentEl.classList.add('visible');
+  }
+}
+
+// --- Particle generation ---
+function generateParticles(dt) {
+  if (!mousePresent) return;
+
+  // Generation rate depends on observer behavior
+  const baseRate = 2;
+  const speedBonus = Math.min(5, mouseSpeed * 1.0);
+  const rate = baseRate + speedBonus;
+
+  for (let i = 0; i < rate; i++) {
+    if (particles.length >= MAX_PARTICLES) break;
+
+    const angle = Math.random() * Math.PI * 2;
+    const spread = 10 + mouseSpeed * 5;
+    const x = smoothX + (Math.random() - 0.5) * spread;
+    const y = smoothY + (Math.random() - 0.5) * spread;
+    const speed = 0.3 + Math.random() * 1.5 + mouseSpeed * 0.3;
+
+    particles.push(new Particle(x, y, speed, angle));
+  }
+}
+
+// --- Trail ---
+function updateTrail() {
+  if (!mousePresent) return;
+
+  TRAIL_POINTS.push({ x: smoothX, y: smoothY, life: 1.0, time: Date.now() });
+  if (TRAIL_POINTS.length > MAX_TRAIL) TRAIL_POINTS.shift();
+}
+
+function drawTrail() {
+  for (let i = 0; i < TRAIL_POINTS.length; i++) {
+    const p = TRAIL_POINTS[i];
+    p.life *= 0.98;
+
+    if (p.life < 0.01) {
+      TRAIL_POINTS.splice(i, 1);
+      i--;
+      continue;
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(265, 40%, 70%, ${p.life * 0.15})`;
+    ctx.fill();
+  }
+}
+
+// --- Mouse handling ---
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  lastMoveTime = Date.now();
+
+  if (!mousePresent) {
+    mousePresent = true;
+    smoothX = mouseX;
+    smoothY = mouseY;
+    absenceTimer = 0;
+    absenceText.classList.remove('visible');
+  }
+});
+
+document.addEventListener('mouseleave', () => {
+  mousePresent = false;
+  dwellTime = 0;
+  absenceTimer = Date.now();
+});
+
+document.addEventListener('mouseenter', () => {
+  mousePresent = true;
+  absenceTimer = 0;
+  absenceText.classList.remove('visible');
+});
+
+// --- Main loop ---
+let lastTime = performance.now();
+
+function animate(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  // Clear with slight persistence (afterimage)
+  ctx.fillStyle = 'rgba(10, 10, 12, 0.25)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Smooth mouse tracking
+  const smoothing = 0.08;
+  smoothX += (mouseX - smoothX) * smoothing;
+  smoothY += (mouseY - smoothY) * smoothing;
+
+  // Mouse speed
+  const dx = smoothX - prevMouseX;
+  const dy = smoothY - prevMouseY;
+  mouseSpeed = Math.sqrt(dx * dx + dy * dy);
+  prevMouseX = smoothX;
+  prevMouseY = smoothY;
+
+  // Dwell time
+  if (mousePresent && mouseSpeed < 1) {
+    dwellTime += dt * 1000;
+  } else {
+    dwellTime = 0;
+  }
+
+  // Absence text
+  if (!mousePresent) {
+    if (absenceTimer > 0 && Date.now() - absenceTimer > ABSENCE_FADE_IN) {
+      absenceText.classList.add('visible');
+    }
+  }
+
+  // Update systems
+  updateField(dt);
+  updateQuietZone();
+  generateParticles(dt);
+  updateTrail();
+  updateFragment(dt);
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    if (!particles[i].update(dt, smoothX, smoothY, mouseSpeed)) {
+      particles.splice(i, 1);
+    }
+  }
+
+  // Draw
+  drawField();
+  drawTrail();
+  drawConnections();
+
+  for (const p of particles) {
+    p.draw(ctx);
+  }
+
+  drawQuietZone();
+  drawObserver();
+
+  requestAnimationFrame(animate);
+}
+
+// Start with absence
+absenceTimer = Date.now() - ABSENCE_FADE_IN + 1500; // show text after 1.5s
+currentFragment = fragments.absent[0];
+fragmentEl.textContent = currentFragment;
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+import { createLimenBody, poseLimen, serializeLimenBody } from './limen-body.js';
 /* THE STATION — the house-lab above the valley.
  *
  * A wide, low room under a ceiling of walnut planks: Wright's horizontals and
@@ -3261,192 +3262,9 @@ const floorNavigation = createFloorNavigation({
 });
 
 const limen = (() => {
-  /* ── the stock ── */
-  const ceramic = new THREE.MeshStandardMaterial({ color: 0xe2dac7, roughness: 0.36, metalness: 0.03 });
-  const ceramicLow = new THREE.MeshStandardMaterial({ color: 0xc3baa7, roughness: 0.46, metalness: 0.03 });
-  const armature = new THREE.MeshStandardMaterial({ color: 0x8e6d38, roughness: 0.34, metalness: 0.74 });
-  const armDeep = new THREE.MeshStandardMaterial({ color: 0x5c4522, roughness: 0.44, metalness: 0.66 });
-  const eyeMat = new THREE.MeshStandardMaterial({
-    color: 0x120d06, emissive: C.amber, emissiveIntensity: 1.60, roughness: 0.22, metalness: 0.10
-  });
-  const EYE_LIT = 1.60;
-
-  const group = new THREE.Group();
-  group.position.set(0, 0, 0);
+  const { group, sway, torso, head, eye, eyeRing, eyeMat, eyeLight, P } = createLimenBody(THREE);
+  const EYE_LIT = .45;
   scene.add(group);
-
-  /* the sway rides on its own node so the walk can own the group's position */
-  const sway = new THREE.Group();
-  group.add(sway);
-
-  /* A body this thin is hard to point at — between the legs, beside an arm, the
-     ray goes straight past it and finds the wall. One invisible column standing
-     where the body stands makes the whole silhouette pointable, and gives the
-     hairline something square to frame. */
-  const pickVolume = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.19, 0.19, 1.90, 8),
-    new THREE.MeshBasicMaterial()
-  );
-  pickVolume.position.y = 0.95;
-  pickVolume.visible = false;
-  group.add(pickVolume);
-
-  const cyl = (r0, r1, len, mat, seg) => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, len, seg || 10), mat);
-    m.castShadow = true; m.receiveShadow = true;
-    return m;
-  };
-  const ball = (r, mat, seg) => {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg || 10, seg || 8), mat);
-    m.castShadow = true;
-    return m;
-  };
-
-  /* ── the proportions ──
-     A metre-nine, and thin: the head is an eighth of it, the shoulders are
-     narrower than a person's, and every joint is brass where the panels stop. */
-  const P = {
-    foot: 0.018, ankle: 0.060, shin: [0.080, 0.550], knee: 0.566, thigh: [0.586, 1.026],
-    hip: 1.075, torso: [1.130, 1.590], yoke: 1.578, neck: [1.614, 1.694],
-    headAt: 1.660, skull: 0.115, eye: 0.112
-  };
-  const mid = (a) => (a[0] + a[1]) / 2, len = (a) => a[1] - a[0];
-
-  /* ── the legs: thin, brass at every joint, flat feet ── */
-  function leg(side) {
-    const g = new THREE.Group();
-    g.name = side < 0 ? 'journey-leg-left' : 'journey-leg-right';
-    g.position.x = side * 0.072;
-    /* the foot: a flat plate, longer than it is wide */
-    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.074, 0.036, 14), ceramicLow);
-    foot.scale.z = 1.46; foot.position.set(0, P.foot, 0.020);
-    foot.castShadow = true; foot.receiveShadow = true;
-    g.add(foot);
-    const ankle = ball(0.031, armDeep); ankle.position.y = P.ankle; g.add(ankle);
-    const shin = cyl(0.035, 0.030, len(P.shin), ceramic); shin.position.y = mid(P.shin); g.add(shin);
-    const knee = ball(0.042, armature); knee.position.y = P.knee; g.add(knee);
-    const thigh = cyl(0.044, 0.038, len(P.thigh), ceramic); thigh.position.y = mid(P.thigh); g.add(thigh);
-    return g;
-  }
-  sway.add(leg(-1), leg(1));
-
-  /* ── the hips: a narrow cream saddle on a brass pin ── */
-  {
-    const pin = cyl(0.052, 0.052, 0.090, armDeep, 10); pin.position.y = P.hip - 0.012; sway.add(pin);
-    const saddle = rbox(0.174, 0.096, 0.124, 0.040, ceramicLow);
-    saddle.position.y = P.hip;
-    sway.add(saddle);
-  }
-
-  /* ── the torso: two ceramic panels clipped to a brass cage ── */
-  const torso = new THREE.Group();
-  sway.add(torso);
-  {
-    const cage = cyl(0.082, 0.070, len(P.torso), armDeep, 12);
-    cage.position.y = mid(P.torso);
-    torso.add(cage);
-    [-1, 1].forEach((sx) => {
-      const rib = cyl(0.013, 0.013, len(P.torso) - 0.040, armature, 8);
-      rib.position.set(sx * 0.092, mid(P.torso), 0);
-      torso.add(rib);
-    });
-    /* front and back, with the brass showing at the flanks and a shadow gap
-       all the way round — the thing that keeps it from reading as a doll */
-    const front = rbox(0.208, 0.400, 0.082, 0.048, ceramic);
-    front.position.set(0, mid(P.torso) + 0.012, 0.048);
-    torso.add(front);
-    const back = rbox(0.192, 0.386, 0.070, 0.044, ceramicLow);
-    back.position.set(0, mid(P.torso) + 0.012, -0.050);
-    torso.add(back);
-    /* the shoulder yoke: one cream piece over the top of the cage */
-    const yoke = rbox(0.286, 0.080, 0.138, 0.038, ceramicLow);
-    yoke.position.y = P.yoke;
-    torso.add(yoke);
-    /* the small brass plate on the chest, with nothing written on it */
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.046, 0.009), armature);
-    plate.position.set(0, 1.470, 0.094);
-    plate.castShadow = true;
-    torso.add(plate);
-    [-0.032, 0.032].forEach((dx) => {
-      const rivet = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.007, 8), armDeep);
-      rivet.rotation.x = Math.PI / 2;
-      rivet.position.set(dx, 1.470, 0.100);
-      torso.add(rivet);
-    });
-    /* one groove across the front panel — the seam where the shell was closed */
-    const groove = new THREE.Mesh(new THREE.BoxGeometry(0.212, 0.007, 0.008), armDeep);
-    groove.position.set(0, 1.318, 0.090);
-    torso.add(groove);
-    /* the collar the neck rises out of */
-    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.066, 0.030, 14), ceramicLow);
-    collar.position.y = P.neck[0]; collar.castShadow = true;
-    torso.add(collar);
-  }
-
-  /* ── the arms: hung close, still, hands closed ── */
-  function arm(side) {
-    const g = new THREE.Group();
-    g.position.set(side * 0.118, 1.548, 0);
-    g.rotation.z = side * 0.030;
-    const sh = ball(0.040, armature); g.add(sh);
-    const upper = cyl(0.027, 0.024, 0.300, ceramic); upper.position.y = -0.176; g.add(upper);
-    const elbow = ball(0.030, armDeep); elbow.position.y = -0.338; g.add(elbow);
-    const fore = cyl(0.023, 0.020, 0.280, ceramic); fore.position.y = -0.492; g.add(fore);
-    const wrist = ball(0.021, armDeep); wrist.position.y = -0.640; g.add(wrist);
-    const hand = rbox(0.040, 0.088, 0.030, 0.014, ceramicLow);
-    hand.position.y = -0.694; g.add(hand);
-    return g;
-  }
-  torso.add(arm(-1), arm(1));
-
-  /* ── the head: smooth, no face, one eye ── */
-  const head = new THREE.Group();
-  head.position.set(0, P.headAt, 0);
-  torso.add(head);
-  let eye, eyeRing;
-  {
-    const neck = cyl(0.030, 0.034, len(P.neck), armature);
-    neck.position.y = mid(P.neck) - P.headAt;
-    head.add(neck);
-    /* a smooth head, longer than it is wide, and no face on it at all */
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.108, 20, 16), ceramic);
-    skull.scale.set(0.92, 1.13, 0.98);
-    skull.position.y = P.skull;
-    skull.castShadow = true; skull.receiveShadow = true;
-    head.add(skull);
-    /* the crown seam, so the head reads as made and not moulded whole */
-    const crown = new THREE.Mesh(new THREE.TorusGeometry(0.0812, 0.0034, 6, 24), armDeep);
-    crown.rotation.x = Math.PI / 2;
-    crown.position.y = P.skull + 0.062;
-    head.add(crown);
-    /* the brow: a dark band standing a hair proud of the dome, all the way
-       round. The head has no face; this and the eye in it are all there is. */
-    const brow = new THREE.Mesh(new THREE.CylinderGeometry(0.1125, 0.1125, 0.058, 24, 1, true), armDeep);
-    brow.scale.set(0.93, 1, 0.98);
-    brow.material.side = THREE.DoubleSide;
-    brow.position.y = P.eye;
-    head.add(brow);
-    /* the eye: a brass ring standing out of the band, the amber disc set back
-       inside it, so the phosphor is only fully seen by whoever it is facing */
-    eyeRing = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.040, 0.042, 22), armature);
-    eyeRing.rotation.x = Math.PI / 2;
-    eyeRing.position.set(0, P.eye, 0.101);
-    eyeRing.castShadow = true;
-    head.add(eyeRing);
-    const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.031, 0.031, 0.034, 20, 1, true), armDeep);
-    socket.rotation.x = Math.PI / 2;
-    socket.material.side = THREE.DoubleSide;
-    socket.position.set(0, P.eye, 0.104);
-    head.add(socket);
-    eye = new THREE.Mesh(new THREE.CircleGeometry(0.0265, 24), eyeMat);
-    eye.position.set(0, P.eye, 0.107);
-    head.add(eye);
-  }
-  /* the eye lights what it looks at, barely — a reading lamp's worth at a
-     hand's distance and nothing at all across the room */
-  const eyeLight = new THREE.PointLight(C.amber, 0.085, 0.40, 2.2);
-  eyeLight.position.set(0, P.eye, 0.16);
-  head.add(eyeLight);
 
   /* ── the five stations ──
      Where it stands when it is standing. Change these and it walks a different
@@ -3946,13 +3764,7 @@ const limen = (() => {
     }
   }
 
-  function walkPose(t, moving) {
-      for (const [i, name] of ['journey-leg-left', 'journey-leg-right'].entries()) {
-        const leg = group.getObjectByName(name);
-        const angle = moving ? Math.sin(t * 5 + i * Math.PI) * .19 : 0;
-        leg.rotation.x = angle; leg.position.y = 1.075 * (1 - Math.cos(angle)); leg.position.z = -1.075 * Math.sin(angle);
-      }
-    }
+  function walkPose(t, moving) { poseLimen(group, t, moving); }
 
   return {
     group, head, eye, eyeRing, tick, click, panel,
@@ -4416,8 +4228,10 @@ const apertureVisit = makeAperturePortal({
 });
 const stationJourney = createStationJourney({ THREE, scene, camera, guide: limen,
   planGuideRoute: (start,end)=>floorNavigation.route(start,end),
+  doorwayReady: () => apertureVisit.previewReady(),
   prepare() {
-    apertureVisit.prepare(true).catch(() => {});
+    hasMuseumVisit=true;document.body.classList.add('has-museum-visit');
+    apertureVisit.preparePreview(serializeLimenBody(limen.group)).catch(() => {});
     const snapshot = {mode:cam.mode, pos:camera.position.clone(), quaternion:camera.quaternion.clone(), look:cam.look.clone(), focused:cam.focused, screen:cssHost.className, screen2:cssHost2.className, bodyFlat:document.body.classList.contains('flat'), stand:standEl.className, full:fullEl.className};
     limen.panel.suspendForJourney(); roomIndex.hide(); setHover(null); cam.mode='journey';
     cssHost.classList.add('gone'); cssHost2.classList.add('gone');document.body.classList.remove('flat');
@@ -4429,7 +4243,7 @@ const stationJourney = createStationJourney({ THREE, scene, camera, guide: limen
     document.body.classList.toggle('flat',saved.bodyFlat);
     limen.panel.resumeAfterJourney();renderer.shadowMap.needsUpdate=true;
   },
-  cross: (options) => apertureVisit.open(options),
+  cross: (options) => {apertureVisit.preview(THREE,camera,limen.group,clockT.elapsedTime,true);return apertureVisit.open({...options,guide:serializeLimenBody(limen.group)});},
   directReturn: () => apertureVisit.close(true)
 });
 stationJourney.bind();
@@ -4510,7 +4324,7 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
   // A phone-sized first visit still uses the original small door. Resizing an
   // existing museum visit must not navigate away and destroy either room.
-  if (!hasMuseumVisit && redirectIfSmall(w)) return;
+  if (!hasMuseumVisit && !stationJourney.active && redirectIfSmall(w)) return;
   camera.aspect = w / h; frameCamera(w / h);
   renderer.setPixelRatio(stationPixelRatio());
   renderer.setSize(w, h, false);
@@ -4755,6 +4569,7 @@ function frame() {
     renderer.shadowMap.needsUpdate = true;
     lastShadowAt = t;
   }
+  if(stationJourney.active && !museumVisible) apertureVisit.preview(THREE, camera, limen.group, t, !stationJourney.state.paused);
   post.render(t);
   if (!PERF.firstFrame) { PERF.firstFrame = +performance.now().toFixed(0); warmUp(); }
   if (cam.mode !== 'rest' && !seat.world.isFlat()) seat.world.render(camera);
@@ -4764,6 +4579,12 @@ frame();
 setTimeout(() => bootEl.classList.add('gone'), 1400);
 
 /* ─────────────────────────── the test surface ─────────────────────────── */
+window.advanceTime = (ms) => {
+  const steps=Math.max(1,Math.ceil(ms/(1000/60)));
+  for(let i=0;i<steps;i++){clockT.elapsedTime+=ms/steps/1000;stationJourney.tick(clockT.elapsedTime,ms/steps/1000);}
+  if(!museumVisible){apertureVisit.preview(THREE,camera,limen.group,clockT.elapsedTime,!stationJourney.state.paused);post.render(clockT.elapsedTime);}
+};
+window.render_game_to_text = () => JSON.stringify({space:museumVisible?'museum':'station',coordinates:'metres; y up; station passage runs toward positive z',journey:stationJourney.state,camera:camera.position.toArray(),guide:limen.state(),bodyVersion:limen.group.userData.bodyVersion});
 window.__station = {
   navigation: () => ({ blocked:floorNavigation.blocked,limits:floorNavigation.limits,radius:floorNavigation.radius }),
   geometry: () => {

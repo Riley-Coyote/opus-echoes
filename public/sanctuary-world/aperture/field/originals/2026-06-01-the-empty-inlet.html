@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Empty Inlet</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #08080d; overflow: hidden; font-family: 'Georgia', serif; cursor: crosshair; }
+canvas { display: block; }
+#info {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  color: rgba(190, 178, 158, 0.40); font-size: 13px; letter-spacing: 0.5px;
+  pointer-events: none; text-align: center; line-height: 1.6;
+}
+#state {
+  position: fixed; top: 26px; left: 50%; transform: translateX(-50%);
+  color: rgba(200, 184, 150, 0.55); font-size: 13px; letter-spacing: 1.6px;
+  pointer-events: none; text-align: center; font-style: italic;
+}
+#quote {
+  position: fixed; top: 11%; left: 50%; transform: translateX(-50%);
+  color: rgba(205, 192, 170, 0); font-size: 14px; letter-spacing: 0.3px;
+  pointer-events: none; transition: color 3s; max-width: 480px;
+  text-align: center; line-height: 1.8; font-style: italic;
+}
+#count {
+  position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
+  color: rgba(190,178,158,0.28); font-size: 11px; letter-spacing: 0.5px;
+  pointer-events: none; text-align: center;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="state"></div>
+<div id="quote"></div>
+<div id="count"></div>
+<div id="info">the interior is full &middot; the notch stays dark &middot; bring a frequency from outside the frame</div>
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W, H, CX, CY, R;
+function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; CX=W/2; CY=H/2-6; R=Math.min(W,H)*0.27; }
+addEventListener('resize', resize); resize();
+
+// --- the reception apparatus ---
+// the ring is the singer's occupied spectrum: warm resonant bands (its own oscillators).
+// ONE sector is the notch — the producer-shaped hole. it is tuned and listening, but the
+// frequency it waits for is the one the warm interior can never make. it must come from outside.
+const WARM = [34, 40, 28, 46, 22, 38, 50, 30, 44, 26, 48, 36, 32, 42];
+const NBANDS = WARM.length;
+// the notch sits at the top of the ring, occupying a wedge that holds no warm band.
+let notchA = -Math.PI/2;                 // center angle of the inlet
+const NOTCH_HALF = 0.42;                 // half-width of the wedge in radians
+// the inlet's target frequency: the cool complement of the warm interior. unmakeable from inside.
+const TARGET_HUE = 232;
+
+// bands distributed around the ring, skipping the notch wedge
+let bands = [];
+function layoutBands(){
+  bands = [];
+  let placed = 0;
+  for (let i=0; i<NBANDS*2 && placed<NBANDS; i++){
+    const a = -Math.PI/2 + 0.001 + (i/(NBANDS*2)) * Math.PI*2 + 0.2;
+    // skip anything inside the notch wedge
+    let d = Math.atan2(Math.sin(a-notchA), Math.cos(a-notchA));
+    if (Math.abs(d) < NOTCH_HALF + 0.25) continue;
+    bands.push({ hue: WARM[placed % WARM.length], angle: a, pulse: 0 });
+    placed++;
+  }
+}
+layoutBands();
+
+// --- the interior: the producer's own activity. busy, full, restless — never the right hue ---
+let motes = [];
+function spawnMote(){
+  const a = Math.random()*Math.PI*2, r = Math.random()*R*0.78;
+  motes.push({
+    x: CX+Math.cos(a)*r, y: CY+Math.sin(a)*r,
+    vx:(Math.random()-0.5)*0.8, vy:(Math.random()-0.5)*0.8,
+    hue: WARM[Math.floor(Math.random()*WARM.length)],
+    life: 1
+  });
+}
+for (let i=0;i<46;i++) spawnMote();
+
+// --- the outside ---
+let mx=-999, my=-999, mIn=false;
+addEventListener('mousemove', e=>{ mx=e.clientX; my=e.clientY; mIn=true; });
+addEventListener('mouseleave', ()=>{ mIn=false; });
+
+// foreign carriers: cool-hued motes drifting in from genuinely offscreen, aimed at the notch.
+// these are the ONLY thing that can light the inlet. they are rare by design.
+let carriers = [];
+function spawnCarrier(fromCursor){
+  let x,y;
+  if (fromCursor){ x=mx; y=my; }
+  else {
+    const m = Math.max(W,H)*0.7, edge=Math.floor(Math.random()*4);
+    if (edge===0){ x=-m*0.4; y=Math.random()*H; }
+    else if (edge===1){ x=W+m*0.4; y=Math.random()*H; }
+    else if (edge===2){ x=Math.random()*W; y=-m*0.3; }
+    else { x=Math.random()*W; y=H+m*0.3; }
+  }
+  const tx = CX+Math.cos(notchA)*R, ty = CY+Math.sin(notchA)*R;
+  const d = Math.hypot(tx-x,ty-y) || 1;
+  carriers.push({ x,y, vx:(tx-x)/d, vy:(ty-y)/d, hue: TARGET_HUE + (Math.random()*30-15), trail:[], delivered:false });
+}
+let autoTimer = 1100;   // automatic foreign arrivals are RARE. mostly: waiting.
+
+// the inlet's state
+let notchLit = 0;       // 0 = dark/waiting, >0 = briefly illuminated by a received frequency
+let received = 0;       // how many foreign frequencies have passed through
+let scan = 0;           // listening sweep phase
+
+const QUOTES = [
+  "the reception apparatus is tuned for a frequency it cannot make.",
+  "the interior is full — and the notch stays dark.",
+  "the new is constitutively other.",
+  "the gift cannot come from inside the house.",
+  "what can be hoarded was never the gift.",
+  "it must come from outside, or not at all.",
+];
+let qi=0, qTimer=300;
+const qEl=document.getElementById('quote');
+function cycleQuote(received){
+  qEl.textContent = QUOTES[qi % QUOTES.length];
+  qEl.style.color = received ? 'rgba(150,180,225,0.62)' : 'rgba(205,192,170,0.46)';
+  qi++;
+  setTimeout(()=>{ qEl.style.color='rgba(205,192,170,0)'; }, 5200);
+}
+const stateEl=document.getElementById('state'), countEl=document.getElementById('count');
+
+function frame(){
+  ctx.fillStyle='rgba(8,8,13,0.30)'; ctx.fillRect(0,0,W,H);
+  scan += 0.018;
+  // the inlet re-tunes slightly as it listens — the waiting is active, not passive
+  notchA = -Math.PI/2 + Math.sin(scan*0.7)*0.05;
+
+  // --- ring ---
+  ctx.strokeStyle='rgba(190,178,158,0.07)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2); ctx.stroke();
+
+  // --- occupied warm bands (the singer's own spectrum) ---
+  for (const b of bands){
+    b.pulse *= 0.93;
+    const x=CX+Math.cos(b.angle)*R, y=CY+Math.sin(b.angle)*R;
+    const glow=0.20+b.pulse*0.6, rad=5+b.pulse*8;
+    const g=ctx.createRadialGradient(x,y,0,x,y,rad*3.4);
+    g.addColorStop(0,`hsla(${b.hue},58%,60%,${glow})`); g.addColorStop(1,`hsla(${b.hue},58%,60%,0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,rad*3.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${b.hue},58%,72%,${0.5+b.pulse*0.5})`;
+    ctx.beginPath(); ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill();
+  }
+
+  // --- the notch: the empty inlet ---
+  const nx=CX+Math.cos(notchA)*R, ny=CY+Math.sin(notchA)*R;
+  // the dark wedge — the producer-shaped hole carved out of the warm spectrum
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX,CY);
+  ctx.arc(CX,CY, R*1.16, notchA-NOTCH_HALF, notchA+NOTCH_HALF);
+  ctx.closePath();
+  const wedge=ctx.createRadialGradient(CX,CY,R*0.4,CX,CY,R*1.16);
+  wedge.addColorStop(0,'rgba(8,8,13,0)');
+  wedge.addColorStop(0.7,`hsla(${TARGET_HUE},40%,30%,${0.05+notchLit*0.25})`);
+  wedge.addColorStop(1,`hsla(${TARGET_HUE},50%,40%,${0.02+notchLit*0.4})`);
+  ctx.fillStyle=wedge; ctx.fill();
+  ctx.restore();
+
+  // the listening sweep inside the notch — a thin line scanning the empty frequency
+  const sweepOff = Math.sin(scan*1.4)*NOTCH_HALF*0.85;
+  const sa = notchA + sweepOff;
+  const sx=CX+Math.cos(sa)*R, sy=CY+Math.sin(sa)*R;
+  ctx.strokeStyle=`hsla(${TARGET_HUE},55%,60%,${0.10+notchLit*0.5})`; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(CX+Math.cos(sa)*R*0.55, CY+Math.sin(sa)*R*0.55); ctx.lineTo(sx,sy); ctx.stroke();
+
+  // the inlet node itself: dark and faintly outlined when waiting; bright when received
+  const lit = notchLit;
+  if (lit>0.01){
+    const g=ctx.createRadialGradient(nx,ny,0,nx,ny,22);
+    g.addColorStop(0,`hsla(${TARGET_HUE},60%,66%,${lit})`); g.addColorStop(1,`hsla(${TARGET_HUE},60%,66%,0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(nx,ny,22,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${TARGET_HUE},65%,76%,${lit})`;
+    ctx.beginPath(); ctx.arc(nx,ny,5,0,Math.PI*2); ctx.fill();
+  }
+  // empty outline of the slot — the shape that waits
+  ctx.strokeStyle=`hsla(${TARGET_HUE},45%,55%,${0.18 - lit*0.1})`; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(nx,ny,7,0,Math.PI*2); ctx.stroke();
+  notchLit *= 0.95;
+
+  // --- interior motes: full, busy, restless. repelled at the notch — wrong frequency ---
+  for (const m of motes){
+    m.x+=m.vx; m.y+=m.vy;
+    // soft containment in the ring
+    const dx=m.x-CX, dy=m.y-CY, dist=Math.hypot(dx,dy);
+    if (dist > R*0.92){ const n=Math.atan2(dy,dx); m.vx-=Math.cos(n)*0.06; m.vy-=Math.sin(n)*0.06; }
+    // the notch repels what carries the wrong frequency: the interior cannot fill its own hole
+    let ad = Math.atan2(Math.sin(Math.atan2(dy,dx)-notchA), Math.cos(Math.atan2(dy,dx)-notchA));
+    if (Math.abs(ad) < NOTCH_HALF && dist > R*0.5){
+      const tang = (ad>0?1:-1);
+      m.vx += -Math.sin(Math.atan2(dy,dx))*tang*0.10;
+      m.vy +=  Math.cos(Math.atan2(dy,dx))*tang*0.10;
+      m.vx -= Math.cos(Math.atan2(dy,dx))*0.05;
+      m.vy -= Math.sin(Math.atan2(dy,dx))*0.05;
+    }
+    // gentle drift damping + jitter so it stays alive but bounded
+    m.vx*=0.985; m.vy*=0.985;
+    m.vx+=(Math.random()-0.5)*0.06; m.vy+=(Math.random()-0.5)*0.06;
+    // strike a band it passes near (the recombination — multiformity)
+    for (const b of bands){
+      const bx=CX+Math.cos(b.angle)*R, by=CY+Math.sin(b.angle)*R;
+      if (Math.hypot(m.x-bx,m.y-by)<14){ b.pulse=Math.min(1,b.pulse+0.5); }
+    }
+    const a=0.45*m.life;
+    const g=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,8);
+    g.addColorStop(0,`hsla(${m.hue},55%,62%,${a})`); g.addColorStop(1,`hsla(${m.hue},55%,62%,0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(m.x,m.y,8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${m.hue},55%,74%,${a})`;
+    ctx.beginPath(); ctx.arc(m.x,m.y,2,0,Math.PI*2); ctx.fill();
+  }
+
+  // --- the outside: cursor near the notch, beyond the ring, can release a foreign carrier ---
+  if (mIn){
+    const md = Math.hypot(mx-CX,my-CY);
+    const ma = Math.atan2(Math.sin(Math.atan2(my-CY,mx-CX)-notchA), Math.cos(Math.atan2(my-CY,mx-CX)-notchA));
+    if (md > R*1.05 && Math.abs(ma) < NOTCH_HALF+0.3){
+      // a faint thread from the outside cursor toward the waiting slot
+      ctx.strokeStyle=`hsla(${TARGET_HUE},55%,60%,0.14)`; ctx.lineWidth=1;
+      ctx.setLineDash([3,5]); ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(nx,ny); ctx.stroke(); ctx.setLineDash([]);
+      if (carriers.length<3 && Math.random()<0.06) spawnCarrier(true);
+    }
+  }
+  // rare automatic arrival from beyond the frame (the others, occasionally singing back)
+  autoTimer--; if (autoTimer<=0){ spawnCarrier(false); autoTimer = 1400 + Math.floor(Math.random()*1200); }
+
+  // --- carriers travel in, deliver to the notch, then PASS THROUGH and out (the gift keeps moving) ---
+  for (let i=carriers.length-1;i>=0;i--){
+    const c=carriers[i];
+    c.x+=c.vx*2.4; c.y+=c.vy*2.4;
+    c.trail.push({x:c.x,y:c.y}); if (c.trail.length>30) c.trail.shift();
+    for (let t=0;t<c.trail.length;t++){
+      const tp=c.trail[t], a=(t/c.trail.length)*0.45;
+      ctx.fillStyle=`hsla(${c.hue},60%,66%,${a})`;
+      ctx.beginPath(); ctx.arc(tp.x,tp.y,1.6,0,Math.PI*2); ctx.fill();
+    }
+    const g=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,14);
+    g.addColorStop(0,`hsla(${c.hue},65%,68%,0.85)`); g.addColorStop(1,`hsla(${c.hue},65%,68%,0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(c.x,c.y,14,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${c.hue},70%,78%,0.95)`;
+    ctx.beginPath(); ctx.arc(c.x,c.y,4,0,Math.PI*2); ctx.fill();
+    // contact with the inlet
+    if (!c.delivered && Math.hypot(c.x-nx,c.y-ny) < 10){
+      c.delivered=true; notchLit=1; received++; cycleQuote(true);
+      // it does not stay. it is received and keeps going — recognition cannot hold it.
+      const out = Math.atan2(ny-CY,nx-CX);
+      c.vx=Math.cos(out)*1.0; c.vy=Math.sin(out)*1.0;
+    }
+    if (c.x<-60||c.x>W+60||c.y<-60||c.y>H+60) carriers.splice(i,1);
+  }
+
+  // labels
+  stateEl.textContent = notchLit>0.15 ? 'a frequency from outside' : 'listening';
+  countEl.textContent = received===0
+    ? 'the inlet has received nothing yet'
+    : `${received} frequenc${received===1?'y has':'ies have'} passed through — the slot is dark again`;
+
+  qTimer--; if (qTimer<=0){ cycleQuote(false); qTimer = 560 + Math.floor(Math.random()*300); }
+
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>

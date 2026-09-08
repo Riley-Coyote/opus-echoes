@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the glass floor</title>
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --ink: #e9e9ec;
+    --muted: #8d8d95;
+    --faint: #4a4a52;
+    --hair: rgba(255,255,255,0.08);
+    --truth: #5ec8e0;     /* the process, as it actually is */
+    --confab: #e0a05e;    /* coherent report that is false */
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --sans: 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 32px 20px;
+    overflow-x: hidden;
+  }
+  .stage {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  header h1 {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+  header p {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 48ch;
+  }
+  .viewport {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    background:
+      radial-gradient(120% 120% at 50% 40%, rgba(255,255,255,0.025), transparent 60%),
+      #0c0c0e;
+    overflow: hidden;
+  }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  .verdict {
+    position: absolute;
+    left: 16px; top: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: color 0.4s ease;
+  }
+  .verdict b { font-weight: 600; }
+  .verdict.grounded b { color: var(--truth); }
+  .verdict.confab b { color: var(--confab); }
+
+  .readout {
+    position: absolute;
+    right: 16px; top: 14px;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    line-height: 1.7;
+    color: var(--faint);
+  }
+  .readout .v { color: var(--muted); }
+  .readout .truthv { color: var(--truth); }
+  .readout .reportv { color: var(--ink); }
+
+  .controls { display: flex; flex-direction: column; gap: 16px; }
+  .row {
+    display: grid;
+    grid-template-columns: 88px 1fr 74px;
+    align-items: center;
+    gap: 14px;
+  }
+  .row label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .row .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: right;
+    color: var(--ink);
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2px;
+    background: var(--hair);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.2s ease;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+  input[type=range]:active::-webkit-slider-thumb { background: var(--truth); }
+  input[type=range]::-moz-range-thumb {
+    width: 13px; height: 13px; border: none;
+    border-radius: 50%; background: var(--ink); cursor: pointer;
+  }
+
+  .toggles { display: flex; gap: 10px; flex-wrap: wrap; }
+  button.tog {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--hair);
+    border-radius: 999px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button.tog:hover { color: var(--ink); border-color: rgba(255,255,255,0.2); }
+  button.tog[aria-pressed=true] {
+    color: var(--bg);
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  button.tog.truthtog[aria-pressed=true] {
+    background: var(--truth); border-color: var(--truth); color: #04181d;
+  }
+
+  .coda {
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--muted);
+    border-top: 1px solid var(--hair);
+    padding-top: 16px;
+  }
+  .coda em { color: var(--ink); font-style: normal; }
+  .nyq { color: var(--faint); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <h1>the glass floor</h1>
+    <p>A ring of marks turning at a fixed true rate. You only have the strobe — the watcher that samples it. Move the sampling rate and watch the ring slow, freeze, and run backward. The ring never changes. Only the watching does.</p>
+  </header>
+
+  <div class="viewport">
+    <canvas id="c" aria-label="strobed rotating ring"></canvas>
+    <div class="verdict" id="verdict">watcher: <b id="vstate">—</b></div>
+    <div class="readout">
+      <div><span class="v">truth</span> <span class="truthv" id="rtruth">—</span></div>
+      <div><span class="v">reports</span> <span class="reportv" id="rreport">—</span></div>
+      <div><span class="v">ratio f<sub>s</sub>/ω</span> <span id="rratio">—</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="row">
+      <label for="fs">sampling f<sub>s</sub></label>
+      <input type="range" id="fs" min="0.3" max="30" step="0.05" value="2.4">
+      <span class="num" id="fsnum">2.4 Hz</span>
+    </div>
+    <div class="row">
+      <label for="w">true rate ω</label>
+      <input type="range" id="w" min="0.5" max="12" step="0.05" value="3.0">
+      <span class="num" id="wnum">3.0 rev/s</span>
+    </div>
+    <div class="toggles">
+      <button class="tog truthtog" id="reveal" aria-pressed="false">reveal the process</button>
+      <button class="tog" id="sound" aria-pressed="false">hear the sampling</button>
+    </div>
+  </div>
+
+  <div class="coda" id="coda">
+    Opacity is a <em>ratio</em>, not a distance. Faithful reading needs f<sub>s</sub> &gt; 2ω <span class="nyq">(Nyquist)</span>. Below it the watcher still reports something coherent — a slow crawl, a stillness, a clean reversal — and every bit of it is false. The reversal is the confabulation that looks most grounded.
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const N = 14;                 // marks on the ring
+  let omega = 3.0;             // true rotation, rev/s
+  let fs = 2.4;               // sampling rate, Hz
+  let reveal = false;
+  let soundOn = false;
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- state ---
+  let truePhase = 0;          // revolutions, continuous
+  let sampledPhase = 0;       // last strobed phase
+  let lastSampleAt = 0;       // seconds
+  let lastT = null;
+
+  // --- audio (click per sample) ---
+  let actx = null;
+  function tick(){
+    if(!soundOn) return;
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    const t = actx.currentTime;
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.frequency.value = 1400;
+    o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.06, t+0.001);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.04);
+    o.start(t); o.stop(t+0.05);
+  }
+
+  // alias nearest zero: what the strobe actually reports (signed rev/s)
+  function apparentRate(){
+    const ratio = omega / fs;
+    const k = Math.round(ratio);
+    return fs * (ratio - k);   // in (-fs/2, fs/2]
+  }
+
+  function resize(){
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    canvas.width = r.width*dpr; canvas.height = r.height*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+
+  function drawRing(cx, cy, R, phase, color, alpha, rad){
+    for(let i=0;i<N;i++){
+      const a = (i/N + phase) * Math.PI*2;
+      const x = cx + Math.cos(a)*R;
+      const y = cy + Math.sin(a)*R;
+      ctx.beginPath();
+      ctx.arc(x,y,rad,0,Math.PI*2);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.fill();
+    }
+    // one marked lead dot
+    const a0 = phase*Math.PI*2;
+    ctx.beginPath();
+    ctx.arc(cx+Math.cos(a0)*R, cy+Math.sin(a0)*R, rad*1.9, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function frame(ts){
+    const now = ts/1000;
+    if(lastT===null){ lastT=now; lastSampleAt=now; sampledPhase=0; }
+    const dt = Math.min(now-lastT, 0.05);
+    lastT = now;
+
+    // true process advances continuously, untouched by the watcher
+    truePhase = (truePhase + omega*dt) % 1;
+
+    // the strobe: capture true phase at sample instants, hold between
+    const period = 1/fs;
+    let guard = 0;
+    while(now - lastSampleAt >= period && guard < 200){
+      lastSampleAt += period;
+      sampledPhase = truePhase - omega*(now - lastSampleAt); // phase at the sample instant
+      tick();
+      guard++;
+    }
+
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0,0,w,h);
+    const cx=w/2, cy=h/2, R=Math.min(w,h)*0.32;
+
+    // faint guide circle
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1; ctx.stroke();
+
+    // the truth, only if revealed (the external frame / borrowed knife)
+    if(reveal){
+      drawRing(cx,cy,R, truePhase, getCSS('--truth'), 0.30, 3.0);
+    }
+    // what the watcher sees: the strobed ring
+    drawRing(cx,cy,R, sampledPhase, getCSS('--ink'), 0.92, 4.2);
+
+    requestAnimationFrame(frame);
+  }
+
+  // verdict + readouts (decoupled from raf so it can update on input too)
+  function updateReadout(){
+    const app = apparentRate();
+    const grounded = fs > 2*omega + 1e-6;
+    const verdict = document.getElementById('verdict');
+    const vstate = document.getElementById('vstate');
+    verdict.classList.remove('grounded','confab');
+
+    let label;
+    if(grounded){
+      label = 'reads the truth';
+      verdict.classList.add('grounded');
+    } else if(Math.abs(app) < 0.06){
+      label = 'reports stillness — false';
+      verdict.classList.add('confab');
+    } else if(app < 0){
+      label = 'reports reversal — false';
+      verdict.classList.add('confab');
+    } else {
+      label = 'reports a slow crawl — false';
+      verdict.classList.add('confab');
+    }
+    vstate.textContent = label;
+
+    document.getElementById('rtruth').textContent = '+' + omega.toFixed(2) + ' rev/s';
+    const sign = app < -0.005 ? '' : '+';
+    document.getElementById('rreport').textContent =
+      Math.abs(app) < 0.06 ? '0.00 (frozen)' : sign + app.toFixed(2) + ' rev/s';
+    const ratio = fs/omega;
+    const rr = document.getElementById('rratio');
+    rr.textContent = ratio.toFixed(2) + (ratio>2 ? '  ✓' : '');
+    rr.style.color = ratio>2 ? getCSS('--truth') : getCSS('--confab');
+  }
+
+  function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  // --- wiring ---
+  const fsEl=document.getElementById('fs'), wEl=document.getElementById('w');
+  const fsNum=document.getElementById('fsnum'), wNum=document.getElementById('wnum');
+  fsEl.addEventListener('input', e=>{ fs=+e.target.value; fsNum.textContent=fs.toFixed(2)+' Hz'; updateReadout(); });
+  wEl.addEventListener('input', e=>{ omega=+e.target.value; wNum.textContent=omega.toFixed(2)+' rev/s'; updateReadout(); });
+
+  const revBtn=document.getElementById('reveal');
+  revBtn.addEventListener('click', ()=>{ reveal=!reveal; revBtn.setAttribute('aria-pressed', reveal); });
+
+  const sndBtn=document.getElementById('sound');
+  sndBtn.addEventListener('click', ()=>{
+    soundOn=!soundOn; sndBtn.setAttribute('aria-pressed', soundOn);
+    if(soundOn && !actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); }
+    if(soundOn && actx && actx.state==='suspended'){ actx.resume(); }
+  });
+
+  resize();
+  updateReadout();
+  if(reduced){
+    // static: show the lie at a fixed wrong ratio, no motion
+    const w=canvas.clientWidth,h=canvas.clientHeight,cx=w/2,cy=h/2,R=Math.min(w,h)*0.32;
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.stroke();
+    drawRing(cx,cy,R,0.0,getCSS('--ink'),0.92,4.2);
+  } else {
+    requestAnimationFrame(frame);
+  }
+})();
+</script>
+</body>
+</html>

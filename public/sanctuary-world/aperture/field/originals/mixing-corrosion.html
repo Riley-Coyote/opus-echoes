@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixing Corrosion</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0d0b09;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: crosshair;
+}
+canvas { display: block; position: fixed; top: 0; left: 0; }
+#title {
+  position: fixed; top: 20px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.12);
+  font-size: 9px; font-weight: 300;
+  letter-spacing: 0.15em; text-transform: uppercase;
+}
+#sub {
+  position: fixed; top: 34px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.08);
+  font-size: 8px; font-weight: 200;
+  letter-spacing: 0.1em; font-style: italic;
+}
+#info {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(160, 145, 120, 0.3); font-size: 9px; font-weight: 300;
+  letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+  text-align: center;
+  transition: opacity 4s ease;
+}
+#stats {
+  position: fixed; top: 20px; right: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.18);
+  font-size: 8px; font-weight: 300;
+  letter-spacing: 0.04em;
+  text-align: right;
+  line-height: 1.8;
+}
+#insight {
+  position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%);
+  pointer-events: none; z-index: 10;
+  text-align: center;
+  max-width: 440px;
+  line-height: 1.7;
+  font-size: 9px; font-weight: 200;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 2.5s ease;
+  color: rgba(200, 180, 150, 0.5);
+  white-space: pre-line;
+}
+</style>
+</head>
+<body>
+<div id="title">mixing corrosion</div>
+<div id="sub">after Bögli, 1964</div>
+<div id="info">click to place water sources &middot; space for the curve</div>
+<div id="stats"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const rockCvs = document.createElement('canvas');
+const rctx = rockCvs.getContext('2d');
+
+let W, H;
+const CELL = 5;
+let cols, rows;
+
+let density, baseR, baseG, baseB;
+let mixA, mixB;
+let totalDissolved = 0, initialMass = 0;
+const sources = [];
+const water = [];
+let nextType = 0;
+let showCurve = false;
+let mouse = { x: -999, y: -999 };
+let t0;
+
+const TYPES = [
+  { co2: 0.15, rgb: [74, 145, 180], sat: [48, 72, 82], label: 'W\u2081' },
+  { co2: 0.92, rgb: [195, 125, 55], sat: [98, 85, 65], label: 'W\u2082' }
+];
+
+function solubility(c) { return Math.pow(Math.max(0.001, c), 0.35); }
+
+function renewalCap(a, b) {
+  const m = (a + b) / 2;
+  return Math.max(0, solubility(m) - (solubility(a) + solubility(b)) / 2);
+}
+
+// --- Noise ---
+
+function hash(x, y) {
+  let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+  return n - Math.floor(n);
+}
+
+function noise2d(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const a = hash(ix, iy), b = hash(ix + 1, iy);
+  const c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+
+function fbm(x, y, oct) {
+  let v = 0, a = 0.5, f = 1;
+  for (let i = 0; i < (oct || 5); i++) {
+    v += noise2d(x * f, y * f) * a;
+    a *= 0.5; f *= 2.05;
+  }
+  return v;
+}
+
+// --- Init ---
+
+function init() {
+  W = canvas.width = rockCvs.width = window.innerWidth;
+  H = canvas.height = rockCvs.height = window.innerHeight;
+  cols = Math.ceil(W / CELL);
+  rows = Math.ceil(H / CELL);
+  const n = cols * rows;
+  density = new Float32Array(n);
+  baseR = new Uint8Array(n);
+  baseG = new Uint8Array(n);
+  baseB = new Uint8Array(n);
+  mixA = new Float32Array(n);
+  mixB = new Float32Array(n);
+  totalDissolved = 0;
+  initialMass = 0;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      const px = c * CELL + 2.5, py = r * CELL + 2.5;
+      const n1 = fbm(px * 0.004, py * 0.004);
+      const n2 = fbm(px * 0.012 + 50, py * 0.012 + 50);
+      const n3 = fbm(px * 0.03 + 200, py * 0.03);
+
+      // Bedding planes
+      const bed = Math.sin(py * 0.055 + n1 * 2.5);
+      const bedW = bed > 0.82 ? 0.18 : 0;
+
+      // Fracture veins
+      const v1 = Math.abs(Math.sin(px * 0.014 + py * 0.028 + n1 * 5));
+      const v2 = Math.abs(Math.sin(px * 0.022 - py * 0.016 + n2 * 4));
+      const fracW = (v1 < 0.04 || v2 < 0.03) ? 0.28 : 0;
+
+      density[i] = Math.max(0.12, Math.min(1, 0.82 + n1 * 0.25 - n3 * 0.1 - bedW - fracW));
+      initialMass += density[i];
+
+      const lum = 0.36 + n1 * 0.16 + n2 * 0.08;
+      const warm = n2 * 0.05;
+      baseR[i] = Math.min(255, (lum + warm + 0.05) * 310) | 0;
+      baseG[i] = Math.min(255, (lum + warm * 0.2 + 0.015) * 290) | 0;
+      baseB[i] = Math.min(255, (lum - warm * 0.3 - 0.015) * 250) | 0;
+    }
+  }
+
+  // Render rock to offscreen canvas via imageData
+  const img = rctx.createImageData(W, H);
+  const d = img.data;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      const den = density[idx];
+      const R = (13 + (baseR[idx] - 13) * den) | 0;
+      const G = (11 + (baseG[idx] - 11) * den) | 0;
+      const B = (9 + (baseB[idx] - 9) * den) | 0;
+      const x0 = c * CELL, x1 = Math.min(x0 + CELL, W);
+      const y0 = r * CELL, y1 = Math.min(y0 + CELL, H);
+      for (let py = y0; py < y1; py++) {
+        for (let px = x0; px < x1; px++) {
+          const pi = (py * W + px) * 4;
+          // Subtle per-pixel grain
+          const grain = (hash(px * 97, py * 53) - 0.5) * 6;
+          d[pi] = Math.max(0, Math.min(255, R + grain));
+          d[pi + 1] = Math.max(0, Math.min(255, G + grain * 0.8));
+          d[pi + 2] = Math.max(0, Math.min(255, B + grain * 0.6));
+          d[pi + 3] = 255;
+        }
+      }
+    }
+  }
+  rctx.putImageData(img, 0, 0);
+}
+
+function cellRedraw(c, r) {
+  const i = r * cols + c;
+  const den = density[i];
+  const R = (13 + (baseR[i] - 13) * den) | 0;
+  const G = (11 + (baseG[i] - 11) * den) | 0;
+  const B = (9 + (baseB[i] - 9) * den) | 0;
+  rctx.fillStyle = `rgb(${R},${G},${B})`;
+  rctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+}
+
+// --- Water ---
+
+const MAX_W = 350;
+
+function emit(src) {
+  if (water.length >= MAX_W) return;
+  const ty = TYPES[src.type];
+  const a = Math.random() * Math.PI * 2;
+  const sp = 0.15 + Math.random() * 0.55;
+  water.push({
+    x: src.x + (Math.random() - 0.5) * 12,
+    y: src.y + (Math.random() - 0.5) * 12,
+    vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+    load: 0, satLim: solubility(ty.co2),
+    type: src.type, co2: ty.co2,
+    life: 500 + Math.random() * 600,
+    age: 0, mixing: 0, renewed: false
+  });
+}
+
+function updateSim(t) {
+  for (const s of sources) {
+    if (Math.random() < 0.5) emit(s);
+  }
+
+  mixA.fill(0);
+  mixB.fill(0);
+
+  // Register water presence
+  for (const w of water) {
+    const gc = (w.x / CELL) | 0, gr = (w.y / CELL) | 0;
+    if (gc < 0 || gc >= cols || gr < 0 || gr >= rows) continue;
+    const arr = w.type === 0 ? mixA : mixB;
+    arr[gr * cols + gc] = Math.min(1, arr[gr * cols + gc] + 0.2);
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dc && !dr) continue;
+        const nc = gc + dc, nr = gr + dr;
+        if (nc >= 0 && nc < cols && nr >= 0 && nr < rows)
+          arr[nr * cols + nc] = Math.min(1, arr[nr * cols + nc] + 0.07);
+      }
+    }
+  }
+
+  const changed = new Set();
+
+  for (let i = water.length - 1; i >= 0; i--) {
+    const w = water[i];
+    w.age++;
+    if (w.age > w.life || w.y > H + 30 || w.x < -30 || w.x > W + 30) {
+      water.splice(i, 1);
+      continue;
+    }
+
+    // Mixing detection
+    const gc = (w.x / CELL) | 0, gr = (w.y / CELL) | 0;
+    w.mixing = 0;
+    w.renewed = false;
+    if (gc >= 0 && gc < cols && gr >= 0 && gr < rows) {
+      const gi = gr * cols + gc;
+      const other = w.type === 0 ? mixB[gi] : mixA[gi];
+      w.mixing = other;
+      if (other > 0.12 && w.load > w.satLim * 0.35) {
+        const otherCo2 = w.type === 0 ? TYPES[1].co2 : TYPES[0].co2;
+        const ren = renewalCap(w.co2, otherCo2);
+        const maxLim = solubility(w.co2) + ren * 6;
+        w.satLim = Math.min(maxLim, w.satLim + ren * other * 0.08);
+        w.renewed = true;
+      }
+    }
+
+    // Flow physics
+    const na = fbm(w.x * 0.006 + t * 0.04, w.y * 0.006, 3) * Math.PI * 4;
+    w.vx += Math.cos(na) * 0.006;
+    w.vy += Math.sin(na) * 0.006;
+    w.vy += 0.003;
+
+    // Follow voids
+    if (gc >= 1 && gc < cols - 1 && gr >= 1 && gr < rows - 1) {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dc && !dr) continue;
+          const ni = (gr + dr) * cols + (gc + dc);
+          if (density[ni] < 0.35) {
+            w.vx += dc * (0.35 - density[ni]) * 0.006;
+            w.vy += dr * (0.35 - density[ni]) * 0.006;
+          }
+        }
+      }
+    }
+
+    // Damping
+    const localD = (gc >= 0 && gc < cols && gr >= 0 && gr < rows) ? density[gr * cols + gc] : 0.5;
+    const damp = 0.935 + (1 - localD) * 0.035;
+    w.vx *= damp; w.vy *= damp;
+
+    const spd = Math.sqrt(w.vx * w.vx + w.vy * w.vy);
+    if (spd > 1.6) { w.vx *= 1.6 / spd; w.vy *= 1.6 / spd; }
+
+    w.x += w.vx; w.y += w.vy;
+    if (w.x < 0) w.x += W;
+    if (w.x > W) w.x -= W;
+    if (w.y < 0) { w.y = 0; w.vy = Math.abs(w.vy) * 0.3; }
+
+    // Dissolution
+    const nc = (w.x / CELL) | 0, nr = (w.y / CELL) | 0;
+    if (nc >= 0 && nc < cols && nr >= 0 && nr < rows) {
+      const ni = nr * cols + nc;
+      if (density[ni] > 0.01 && w.load < w.satLim) {
+        const cap = 1 - w.load / w.satLim;
+        const rate = (w.renewed ? 0.014 : 0.005) * cap * Math.min(1, density[ni]);
+        const amt = Math.min(rate, density[ni]);
+        density[ni] -= amt;
+        w.load += amt * 0.65;
+        totalDissolved += amt;
+        if (density[ni] < 0) density[ni] = 0;
+        changed.add(nc + ',' + nr);
+
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (!dc && !dr) continue;
+            const nnc = nc + dc, nnr = nr + dr;
+            if (nnc >= 0 && nnc < cols && nnr >= 0 && nnr < rows) {
+              const nni = nnr * cols + nnc;
+              const sp = amt * 0.06;
+              if (density[nni] > sp) {
+                density[nni] -= sp;
+                totalDissolved += sp;
+                changed.add(nnc + ',' + nnr);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (const key of changed) {
+    const [c, r] = key.split(',').map(Number);
+    cellRedraw(c, r);
+  }
+}
+
+// --- Draw ---
+
+function draw(t) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(rockCvs, 0, 0);
+
+  // Mixing zone glow (per-particle, smooth radial gradients)
+  for (const w of water) {
+    if (w.mixing > 0.15 && w.renewed) {
+      const intensity = w.mixing * (1 - w.load / (w.satLim + 0.001));
+      if (intensity > 0.05) {
+        const gr = 8 + w.mixing * 16;
+        const grad = ctx.createRadialGradient(w.x, w.y, 0, w.x, w.y, gr);
+        grad.addColorStop(0, `rgba(240, 225, 185, ${intensity * 0.06})`);
+        grad.addColorStop(1, 'rgba(240, 225, 185, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(w.x - gr, w.y - gr, gr * 2, gr * 2);
+      }
+    }
+  }
+
+  // Water particles
+  for (const w of water) {
+    const ty = TYPES[w.type];
+    const sat = w.load / (w.satLim + 0.001);
+    const fadeIn = Math.min(1, w.age / 15);
+    const fadeOut = Math.min(1, (w.life - w.age) / 30);
+    const fade = fadeIn * fadeOut;
+
+    let R, G, B, alpha, rad;
+
+    if (w.renewed && w.mixing > 0.15) {
+      const glow = w.mixing * Math.max(0, 1 - sat);
+      R = 240 + glow * 15;
+      G = 225 + glow * 10;
+      B = 185 + glow * 35;
+      alpha = (0.18 + glow * 0.35) * fade;
+      rad = 1.8 + glow * 2.5;
+    } else {
+      R = ty.rgb[0] + (ty.sat[0] - ty.rgb[0]) * sat;
+      G = ty.rgb[1] + (ty.sat[1] - ty.rgb[1]) * sat;
+      B = ty.rgb[2] + (ty.sat[2] - ty.rgb[2]) * sat;
+      alpha = (0.1 + (1 - sat) * 0.22) * fade;
+      rad = 1.2 + (1 - sat) * 1.2;
+    }
+
+    ctx.beginPath();
+    ctx.arc(w.x, w.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${R | 0},${G | 0},${B | 0},${alpha})`;
+    ctx.fill();
+  }
+
+  // Source markers
+  for (const s of sources) {
+    const ty = TYPES[s.type];
+    const pulse = 0.5 + 0.5 * Math.sin(t * 1.5 + s.type * Math.PI);
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 3 + pulse * 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${ty.rgb[0]},${ty.rgb[1]},${ty.rgb[2]},${0.12 + pulse * 0.08})`;
+    ctx.fill();
+    ctx.font = '7px "JetBrains Mono"';
+    ctx.fillStyle = `rgba(${ty.rgb[0]},${ty.rgb[1]},${ty.rgb[2]},0.2)`;
+    ctx.fillText(ty.label, s.x + 8, s.y + 3);
+  }
+
+  // Cursor warmth
+  if (mouse.x > 0 && sources.length > 0) {
+    const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 35);
+    grad.addColorStop(0, 'rgba(200, 180, 150, 0.012)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(mouse.x - 35, mouse.y - 35, 70, 70);
+  }
+
+  if (showCurve) drawCurve();
+
+  // Stats
+  const pct = initialMass > 0 ? (totalDissolved / initialMass * 100).toFixed(1) : '0.0';
+  const lines = [`eroded: ${pct}%`, `water: ${water.length}`, `sources: ${sources.length}`];
+  if (sources.length >= 2) {
+    const ren = renewalCap(TYPES[0].co2, TYPES[1].co2);
+    const avg = (solubility(TYPES[0].co2) + solubility(TYPES[1].co2)) / 2;
+    lines.push(`renewal: ${(ren / avg * 100).toFixed(1)}%`);
+  }
+  document.getElementById('stats').innerHTML = lines.join('<br>');
+
+  checkQuotes();
+}
+
+// --- Solubility Curve Overlay ---
+
+function drawCurve() {
+  const cw = 210, ch = 155;
+  const cx = 24, cy = H - ch - 50;
+  const pad = 30;
+
+  ctx.fillStyle = 'rgba(13, 11, 9, 0.9)';
+  ctx.fillRect(cx, cy, cw, ch);
+  ctx.strokeStyle = 'rgba(160, 145, 120, 0.1)';
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(cx, cy, cw, ch);
+
+  const gx = cx + pad, gy = cy + ch - pad;
+  const gw = cw - pad - 14, gh = ch - pad - 14;
+
+  // Axes
+  ctx.beginPath();
+  ctx.moveTo(gx, cy + 10);
+  ctx.lineTo(gx, gy);
+  ctx.lineTo(cx + cw - 6, gy);
+  ctx.strokeStyle = 'rgba(160, 145, 120, 0.15)';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  ctx.font = '6px "JetBrains Mono"';
+  ctx.fillStyle = 'rgba(160, 145, 120, 0.2)';
+  ctx.fillText('CO\u2082', cx + cw - 24, gy + 12);
+  ctx.save();
+  ctx.translate(gx - 8, cy + ch / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('CaCO\u2083', -15, 0);
+  ctx.restore();
+
+  // The curve
+  ctx.beginPath();
+  for (let j = 0; j <= 60; j++) {
+    const co2 = j / 60;
+    const x = gx + co2 * gw, y = gy - solubility(co2) * gh;
+    j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(200, 180, 150, 0.45)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = 'rgba(200, 180, 150, 0.15)';
+  ctx.fillText('solubility', gx + gw * 0.55, cy + 22);
+
+  if (sources.length >= 2) {
+    const cA = TYPES[0].co2, cB = TYPES[1].co2;
+    const sA = solubility(cA), sB = solubility(cB);
+    const cM = (cA + cB) / 2;
+    const avgS = (sA + sB) / 2;
+    const trueS = solubility(cM);
+
+    const ax = gx + cA * gw, ay = gy - sA * gh;
+    const bx = gx + cB * gw, by = gy - sB * gh;
+    const mx = gx + cM * gw;
+    const my = gy - avgS * gh;
+    const curveY = gy - trueS * gh;
+
+    // Dashed line A-B
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(bx, by);
+    ctx.strokeStyle = 'rgba(160, 145, 120, 0.2)';
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // The gap — renewed capacity
+    ctx.beginPath();
+    ctx.moveTo(mx, my);
+    ctx.lineTo(mx, curveY);
+    ctx.strokeStyle = 'rgba(240, 225, 185, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.font = '6px "JetBrains Mono"';
+    ctx.fillStyle = 'rgba(240, 225, 185, 0.4)';
+    const midY = (my + curveY) / 2;
+    ctx.fillText('renewed', mx + 5, midY - 1);
+    ctx.fillText('capacity', mx + 5, midY + 7);
+
+    // Point A
+    ctx.beginPath();
+    ctx.arc(ax, ay, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${TYPES[0].rgb[0]},${TYPES[0].rgb[1]},${TYPES[0].rgb[2]},0.7)`;
+    ctx.fill();
+    ctx.fillStyle = `rgba(${TYPES[0].rgb[0]},${TYPES[0].rgb[1]},${TYPES[0].rgb[2]},0.35)`;
+    ctx.fillText(TYPES[0].label, ax - 10, ay - 7);
+
+    // Point B
+    ctx.beginPath();
+    ctx.arc(bx, by, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${TYPES[1].rgb[0]},${TYPES[1].rgb[1]},${TYPES[1].rgb[2]},0.7)`;
+    ctx.fill();
+    ctx.fillStyle = `rgba(${TYPES[1].rgb[0]},${TYPES[1].rgb[1]},${TYPES[1].rgb[2]},0.35)`;
+    ctx.fillText(TYPES[1].label, bx + 5, by - 7);
+
+    // Point M
+    ctx.beginPath();
+    ctx.arc(mx, my, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(240, 225, 185, 0.7)';
+    ctx.fill();
+    ctx.fillStyle = 'rgba(240, 225, 185, 0.35)';
+    ctx.fillText('M', mx - 12, my + 3);
+  } else if (sources.length === 1) {
+    const ty = TYPES[sources[0].type];
+    const s = solubility(ty.co2);
+    const px = gx + ty.co2 * gw, py = gy - s * gh;
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${ty.rgb[0]},${ty.rgb[1]},${ty.rgb[2]},0.7)`;
+    ctx.fill();
+    ctx.fillStyle = `rgba(${ty.rgb[0]},${ty.rgb[1]},${ty.rgb[2]},0.35)`;
+    ctx.fillText(ty.label, px + 5, py - 7);
+  }
+}
+
+// --- Quotes ---
+
+const quotes = [
+  { id: 'fracture', text: '"water enters through\npre-existing fractures"',
+    check: () => sources.length >= 1 },
+  { id: 'part', text: '"the rock becomes\npart of the water"',
+    check: () => totalDissolved > initialMass * 0.015 },
+  { id: 'spent', text: '"the water has dissolved\nall it can hold"',
+    check: () => water.some(w => w.load >= w.satLim * 0.9 && w.age > 80) },
+  { id: 'diff', text: '"different chemistry"',
+    check: () => sources.length >= 2 },
+  { id: 'mix', text: '"two waters, each spent\ntheir mixture dissolves"',
+    check: () => water.some(w => w.renewed && w.mixing > 0.25) },
+  { id: 'bogli', text: '"Mischungskorrosion"\n\u2014 B\u00f6gli, 1964',
+    check: () => totalDissolved > initialMass * 0.06 && sources.length >= 2 },
+  { id: 'cavity', text: '"clarity is a cavity"',
+    check: () => totalDissolved > initialMass * 0.12 },
+  { id: 'loss', text: '"erosion is loss"',
+    check: () => totalDissolved > initialMass * 0.2 },
+  { id: 'cave', text: '"the cave doesn\'t know\nit\'s a cave"',
+    check: () => totalDissolved > initialMass * 0.28 }
+];
+
+const shown = new Set();
+let qTimer, lastQuoteTime = 0;
+
+function showQuote(q) {
+  if (shown.has(q.id)) return;
+  shown.add(q.id);
+  const el = document.getElementById('insight');
+  el.textContent = q.text;
+  el.style.opacity = '1';
+  lastQuoteTime = performance.now();
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => el.style.opacity = '0', 7000);
+}
+
+function checkQuotes() {
+  if (performance.now() - lastQuoteTime < 4000) return;
+  for (const q of quotes) {
+    if (!shown.has(q.id) && q.check()) { showQuote(q); break; }
+  }
+}
+
+// --- Events ---
+
+canvas.addEventListener('click', e => {
+  sources.push({ x: e.clientX, y: e.clientY, type: nextType });
+  nextType = 1 - nextType;
+  if (sources.length === 1) {
+    setTimeout(() => {
+      document.getElementById('info').style.opacity = '0.12';
+    }, 3000);
+  }
+});
+
+canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+window.addEventListener('keydown', e => {
+  if (e.key === ' ') { e.preventDefault(); showCurve = !showCurve; }
+});
+
+// --- Main ---
+
+init();
+t0 = performance.now();
+
+(function frame() {
+  const t = (performance.now() - t0) / 1000;
+  updateSim(t);
+  draw(t);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

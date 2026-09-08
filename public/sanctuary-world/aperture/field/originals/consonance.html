@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consonance</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0e;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: crosshair;
+}
+canvas { display: block; position: fixed; top: 0; left: 0; }
+#title {
+  position: fixed; top: 20px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.12);
+  font-size: 9px; font-weight: 300;
+  letter-spacing: 0.15em; text-transform: uppercase;
+}
+#sub {
+  position: fixed; top: 34px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.08);
+  font-size: 8px; font-weight: 200;
+  letter-spacing: 0.1em; font-style: italic;
+}
+#info {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(160, 145, 120, 0.35); font-size: 9px; font-weight: 300;
+  letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+  text-align: center;
+  transition: opacity 6s ease;
+}
+#timbre-label {
+  position: fixed; top: 20px; right: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.25);
+  font-size: 9px; font-weight: 300;
+  letter-spacing: 0.06em;
+  text-align: right;
+  line-height: 1.8;
+}
+#insight {
+  position: fixed; bottom: 58px; left: 50%; transform: translateX(-50%);
+  pointer-events: none; z-index: 10;
+  text-align: center;
+  max-width: 520px;
+  line-height: 1.8;
+  font-size: 9px; font-weight: 200;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 4s ease;
+  color: rgba(200, 180, 150, 0.5);
+}
+#ratio-display {
+  position: fixed; top: 56px; right: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(200, 180, 150, 0.4);
+  font-size: 11px; font-weight: 300;
+  letter-spacing: 0.04em;
+  text-align: right;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div id="title">consonance</div>
+<div id="sub">timbre shapes the scale</div>
+<div id="info">mouse x · explore intervals · mouse y · morph timbre · click · toggle audio</div>
+<div id="timbre-label"></div>
+<div id="ratio-display"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- PSYCHOACOUSTIC MODEL ---
+
+// Plomp-Levelt roughness for two pure tones (Sethares formulation)
+function plompLevelt(f1, f2, a1, a2) {
+  const fmin = Math.min(f1, f2);
+  const s = 0.24 / (0.021 * fmin + 19);
+  const fdiff = Math.abs(f2 - f1);
+  return a1 * a2 * (Math.exp(-3.5 * s * fdiff) - Math.exp(-5.75 * s * fdiff));
+}
+
+// Total dissonance for a complex-tone interval
+function totalDissonance(ratio, partials, baseFreq) {
+  let total = 0;
+  for (let i = 0; i < partials.length; i++) {
+    for (let j = 0; j < partials.length; j++) {
+      const f1 = baseFreq * partials[i].freq;
+      const f2 = baseFreq * ratio * partials[j].freq;
+      total += plompLevelt(f1, f2, partials[i].amp, partials[j].amp);
+    }
+  }
+  return Math.max(0, total);
+}
+
+// --- TIMBRES ---
+
+const TIMBRES = {
+  harmonic: [
+    {freq: 1, amp: 1}, {freq: 2, amp: 0.7}, {freq: 3, amp: 0.5},
+    {freq: 4, amp: 0.35}, {freq: 5, amp: 0.25}, {freq: 6, amp: 0.18},
+    {freq: 7, amp: 0.12}, {freq: 8, amp: 0.08}
+  ],
+  stretched: [
+    {freq: 1, amp: 1}, {freq: 2.1, amp: 0.7}, {freq: 3.3, amp: 0.5},
+    {freq: 4.55, amp: 0.35}, {freq: 5.9, amp: 0.25}, {freq: 7.35, amp: 0.18},
+    {freq: 8.9, amp: 0.12}, {freq: 10.5, amp: 0.08}
+  ],
+  gamelan: [
+    {freq: 1, amp: 1}, {freq: 1.52, amp: 0.8}, {freq: 2.46, amp: 0.55},
+    {freq: 3.46, amp: 0.4}, {freq: 3.92, amp: 0.3}, {freq: 4.67, amp: 0.22},
+    {freq: 5.2, amp: 0.15}, {freq: 6.1, amp: 0.1}
+  ]
+};
+
+function lerpTimbre(a, b, t) {
+  const n = Math.max(a.length, b.length);
+  const result = [];
+  for (let i = 0; i < n; i++) {
+    const pa = a[i] || {freq: (a[a.length-1].freq + i) * 1.2, amp: 0};
+    const pb = b[i] || {freq: (b[b.length-1].freq + i) * 1.2, amp: 0};
+    result.push({
+      freq: pa.freq + (pb.freq - pa.freq) * t,
+      amp: pa.amp + (pb.amp - pa.amp) * t
+    });
+  }
+  return result;
+}
+
+function getTimbreAtMorph(morph) {
+  if (morph <= 0.5) {
+    const t = morph / 0.5;
+    return lerpTimbre(TIMBRES.harmonic, TIMBRES.stretched, t);
+  } else {
+    const t = (morph - 0.5) / 0.5;
+    return lerpTimbre(TIMBRES.stretched, TIMBRES.gamelan, t);
+  }
+}
+
+function getTimbreName(morph) {
+  if (morph < 0.15) return 'harmonic · the string, the voice';
+  if (morph < 0.35) return 'slightly stretched';
+  if (morph < 0.55) return 'stretched · the piano drifts';
+  if (morph < 0.75) return 'between worlds';
+  return 'inharmonic · bronze bells';
+}
+
+// --- DISSONANCE CURVE ---
+
+const CURVE_STEPS = 400;
+const BASE_FREQ = 220;
+
+function calcCurve(partials) {
+  const curve = new Float32Array(CURVE_STEPS + 1);
+  for (let i = 0; i <= CURVE_STEPS; i++) {
+    const ratio = 1.0 + i / CURVE_STEPS;
+    curve[i] = totalDissonance(ratio, partials, BASE_FREQ);
+  }
+  return curve;
+}
+
+function findMinima(curve) {
+  const minima = [];
+  for (let i = 2; i < curve.length - 2; i++) {
+    if (curve[i] < curve[i-1] && curve[i] < curve[i+1] &&
+        curve[i] < curve[i-2] && curve[i] < curve[i+2]) {
+      const ratio = 1.0 + i / CURVE_STEPS;
+      minima.push({index: i, ratio, dissonance: curve[i]});
+    }
+  }
+  return minima;
+}
+
+// Western intervals for reference
+const WESTERN = [
+  {ratio: 1.0, name: 'unison', simple: '1:1'},
+  {ratio: 16/15, name: 'min 2nd', simple: '16:15'},
+  {ratio: 9/8, name: 'maj 2nd', simple: '9:8'},
+  {ratio: 6/5, name: 'min 3rd', simple: '6:5'},
+  {ratio: 5/4, name: 'maj 3rd', simple: '5:4'},
+  {ratio: 4/3, name: 'perf 4th', simple: '4:3'},
+  {ratio: Math.sqrt(2), name: 'tritone', simple: '√2'},
+  {ratio: 3/2, name: 'perf 5th', simple: '3:2'},
+  {ratio: 8/5, name: 'min 6th', simple: '8:5'},
+  {ratio: 5/3, name: 'maj 6th', simple: '5:3'},
+  {ratio: 9/5, name: 'min 7th', simple: '9:5'},
+  {ratio: 15/8, name: 'maj 7th', simple: '15:8'},
+  {ratio: 2.0, name: 'octave', simple: '2:1'}
+];
+
+// --- STATE ---
+
+let mouseX = 0.5, mouseY = 0;
+let morphFactor = 0;
+let targetMorph = 0;
+let currentTimbre = TIMBRES.harmonic.map(p => ({...p}));
+let displayCurve = null;
+let targetCurve = null;
+let maxDissonance = 1;
+let currentMinima = [];
+let audioActive = false;
+let startTime = Date.now();
+let insightIndex = -1;
+let insightTimer = 0;
+
+// Particles
+const particles = [];
+const MAX_PARTICLES = 200;
+
+// --- AUDIO ---
+
+let audioCtx = null;
+let voice1Oscs = null;
+let voice2Oscs = null;
+let masterGain = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.12;
+  masterGain.connect(audioCtx.destination);
+}
+
+function createVoice(baseFreq, partials) {
+  const voiceGain = audioCtx.createGain();
+  voiceGain.gain.value = 1;
+  voiceGain.connect(masterGain);
+  const oscs = partials.map(p => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = baseFreq * p.freq;
+    gain.gain.value = p.amp * 0.15;
+    osc.connect(gain);
+    gain.connect(voiceGain);
+    osc.start();
+    return {osc, gain};
+  });
+  return {oscs, voiceGain};
+}
+
+function updateVoiceFreqs(voice, baseFreq, partials) {
+  if (!voice || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  voice.oscs.forEach((v, i) => {
+    if (i < partials.length) {
+      v.osc.frequency.setTargetAtTime(baseFreq * partials[i].freq, t, 0.06);
+      v.gain.gain.setTargetAtTime(partials[i].amp * 0.15, t, 0.06);
+    } else {
+      v.gain.gain.setTargetAtTime(0, t, 0.06);
+    }
+  });
+}
+
+function startAudio() {
+  initAudio();
+  if (voice1Oscs) stopAudio();
+  voice1Oscs = createVoice(BASE_FREQ, currentTimbre);
+  voice2Oscs = createVoice(BASE_FREQ * getCurrentRatio(), currentTimbre);
+  audioActive = true;
+}
+
+function stopAudio() {
+  if (voice1Oscs) {
+    voice1Oscs.oscs.forEach(v => { try { v.osc.stop(); } catch(e) {} });
+    voice1Oscs = null;
+  }
+  if (voice2Oscs) {
+    voice2Oscs.oscs.forEach(v => { try { v.osc.stop(); } catch(e) {} });
+    voice2Oscs = null;
+  }
+  audioActive = false;
+}
+
+function getCurrentRatio() {
+  return 1.0 + mouseX;
+}
+
+// --- PARTICLES ---
+
+function spawnParticles() {
+  if (particles.length > MAX_PARTICLES) return;
+  currentMinima.forEach(m => {
+    if (Math.random() < 0.04) {
+      const x = (m.ratio - 1.0) * W;
+      const consonance = 1 - m.dissonance / maxDissonance;
+      const landscapeY = H * 0.25 + (H * 0.65) * (1 - consonance * 0.85);
+      particles.push({
+        x, y: landscapeY,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -Math.random() * 0.6 - 0.15,
+        life: 1,
+        decay: 0.004 + Math.random() * 0.006,
+        size: 1 + Math.random() * 2.5,
+        hue: consonance
+      });
+    }
+  });
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx += (Math.random() - 0.5) * 0.05;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+// --- INSIGHTS ---
+
+const INSIGHTS = [
+  'consonance is not a property of intervals — Sethares',
+  'the instrument shapes the scale · not the other way around',
+  'we prefer imperfection — Harrison et al., 2024',
+  'the information lives in the dissonance',
+  'roughness · harmonicity · familiarity — three things wearing one name',
+  'the ear is not innocent'
+];
+
+function updateInsight() {
+  const elapsed = (Date.now() - startTime) / 1000;
+  const newIndex = Math.min(Math.floor(elapsed / 18), INSIGHTS.length - 1);
+  if (newIndex !== insightIndex && newIndex < INSIGHTS.length) {
+    insightIndex = newIndex;
+    const el = document.getElementById('insight');
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.textContent = INSIGHTS[insightIndex];
+      el.style.opacity = '1';
+    }, 2000);
+  }
+}
+
+// --- RENDERING ---
+
+function draw() {
+  // Update timbre
+  targetMorph = mouseY;
+  morphFactor += (targetMorph - morphFactor) * 0.06;
+  currentTimbre = getTimbreAtMorph(morphFactor);
+
+  // Update curve
+  targetCurve = calcCurve(currentTimbre);
+  if (!displayCurve) {
+    displayCurve = new Float32Array(targetCurve);
+  } else {
+    for (let i = 0; i < displayCurve.length; i++) {
+      displayCurve[i] += (targetCurve[i] - displayCurve[i]) * 0.08;
+    }
+  }
+
+  // Find max and minima
+  maxDissonance = 0.001;
+  for (let i = 0; i < displayCurve.length; i++) {
+    if (displayCurve[i] > maxDissonance) maxDissonance = displayCurve[i];
+  }
+  currentMinima = findMinima(displayCurve);
+
+  // Update audio
+  if (audioActive && voice2Oscs) {
+    updateVoiceFreqs(voice2Oscs, BASE_FREQ * getCurrentRatio(), currentTimbre);
+    updateVoiceFreqs(voice1Oscs, BASE_FREQ, currentTimbre);
+  }
+
+  // Update particles
+  spawnParticles();
+  updateParticles();
+  updateInsight();
+
+  // --- DRAW ---
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0a0a0e');
+  bg.addColorStop(0.4, '#0c0b10');
+  bg.addColorStop(1, '#080810');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const landscapeTop = H * 0.25;
+  const landscapeHeight = H * 0.65;
+  const landscapeBottom = landscapeTop + landscapeHeight;
+
+  // --- Western reference lines (fade with morph) ---
+  const westernAlpha = Math.max(0, 0.15 - morphFactor * 0.3);
+  if (westernAlpha > 0.01) {
+    WESTERN.forEach(w => {
+      if (w.ratio < 1.01 || w.ratio > 1.99) return;
+      const x = (w.ratio - 1.0) * W;
+      ctx.beginPath();
+      ctx.moveTo(x, landscapeTop);
+      ctx.lineTo(x, landscapeBottom);
+      ctx.strokeStyle = `rgba(120, 115, 110, ${westernAlpha})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+
+      if (westernAlpha > 0.05) {
+        ctx.save();
+        ctx.translate(x, landscapeTop - 8);
+        ctx.font = '200 7px "JetBrains Mono"';
+        ctx.fillStyle = `rgba(140, 130, 120, ${westernAlpha * 1.5})`;
+        ctx.textAlign = 'center';
+        ctx.fillText(w.simple, 0, 0);
+        ctx.restore();
+      }
+    });
+  }
+
+  // --- PARTIALS DISPLAY (upper region) ---
+  const partialRegionY = H * 0.06;
+  const partialRegionH = H * 0.14;
+  const maxPartialFreq = 12;
+
+  currentTimbre.forEach((p, i) => {
+    const x = (p.freq / maxPartialFreq) * W * 0.85 + W * 0.075;
+    const h = p.amp * partialRegionH;
+    const alpha = 0.15 + p.amp * 0.4;
+
+    // Partial line
+    ctx.beginPath();
+    ctx.moveTo(x, partialRegionY + partialRegionH);
+    ctx.lineTo(x, partialRegionY + partialRegionH - h);
+    ctx.strokeStyle = `rgba(200, 175, 140, ${alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Glow at tip
+    const grd = ctx.createRadialGradient(x, partialRegionY + partialRegionH - h, 0, x, partialRegionY + partialRegionH - h, 8);
+    grd.addColorStop(0, `rgba(220, 190, 140, ${alpha * 0.5})`);
+    grd.addColorStop(1, 'rgba(220, 190, 140, 0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(x - 10, partialRegionY + partialRegionH - h - 10, 20, 20);
+
+    // Label
+    if (i < 6) {
+      ctx.font = '200 7px "JetBrains Mono"';
+      ctx.fillStyle = `rgba(160, 145, 120, ${alpha * 0.6})`;
+      ctx.textAlign = 'center';
+      ctx.fillText(p.freq.toFixed(p.freq === Math.round(p.freq) ? 0 : 2) + '×', x, partialRegionY + partialRegionH + 12);
+    }
+  });
+
+  // Partial baseline
+  ctx.beginPath();
+  ctx.moveTo(W * 0.075, partialRegionY + partialRegionH);
+  ctx.lineTo(W * 0.925, partialRegionY + partialRegionH);
+  ctx.strokeStyle = 'rgba(120, 110, 100, 0.08)';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  // --- DISSONANCE LANDSCAPE ---
+
+  // Draw filled landscape (consonance = height, inverted)
+  ctx.beginPath();
+  ctx.moveTo(0, landscapeBottom);
+
+  for (let i = 0; i <= CURVE_STEPS; i++) {
+    const x = (i / CURVE_STEPS) * W;
+    const normalized = displayCurve[i] / maxDissonance;
+    const consonance = 1 - normalized;
+    const y = landscapeBottom - consonance * landscapeHeight * 0.85;
+    if (i === 0) ctx.lineTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+
+  ctx.lineTo(W, landscapeBottom);
+  ctx.closePath();
+
+  // Gradient fill
+  const landscapeGrad = ctx.createLinearGradient(0, landscapeTop, 0, landscapeBottom);
+  landscapeGrad.addColorStop(0, 'rgba(220, 185, 130, 0.35)');
+  landscapeGrad.addColorStop(0.3, 'rgba(180, 140, 100, 0.2)');
+  landscapeGrad.addColorStop(0.6, 'rgba(120, 90, 130, 0.12)');
+  landscapeGrad.addColorStop(1, 'rgba(60, 50, 90, 0.05)');
+  ctx.fillStyle = landscapeGrad;
+  ctx.fill();
+
+  // Landscape edge line
+  ctx.beginPath();
+  for (let i = 0; i <= CURVE_STEPS; i++) {
+    const x = (i / CURVE_STEPS) * W;
+    const normalized = displayCurve[i] / maxDissonance;
+    const consonance = 1 - normalized;
+    const y = landscapeBottom - consonance * landscapeHeight * 0.85;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(200, 175, 140, 0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // --- CONSONANCE MINIMA (scale markers) ---
+  currentMinima.forEach(m => {
+    const x = (m.ratio - 1.0) * W;
+    const consonance = 1 - m.dissonance / maxDissonance;
+    const y = landscapeBottom - consonance * landscapeHeight * 0.85;
+
+    // Pillar of light from minimum
+    const pillarGrad = ctx.createLinearGradient(x, y, x, landscapeBottom);
+    pillarGrad.addColorStop(0, `rgba(220, 190, 140, ${0.08 * consonance})`);
+    pillarGrad.addColorStop(1, 'rgba(220, 190, 140, 0)');
+    ctx.fillStyle = pillarGrad;
+    ctx.fillRect(x - 2, y, 4, landscapeBottom - y);
+
+    // Bright dot at peak
+    const dotGrad = ctx.createRadialGradient(x, y, 0, x, y, 6 + consonance * 6);
+    dotGrad.addColorStop(0, `rgba(240, 210, 160, ${0.6 * consonance})`);
+    dotGrad.addColorStop(0.5, `rgba(220, 180, 130, ${0.2 * consonance})`);
+    dotGrad.addColorStop(1, 'rgba(200, 160, 110, 0)');
+    ctx.fillStyle = dotGrad;
+    ctx.beginPath();
+    ctx.arc(x, y, 6 + consonance * 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Small bright center
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 230, 190, ${0.7 * consonance})`;
+    ctx.fill();
+  });
+
+  // --- PARTICLES ---
+  particles.forEach(p => {
+    const alpha = p.life * 0.6;
+    const r = 200 + p.hue * 40;
+    const g = 170 + p.hue * 20;
+    const b = 120;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    ctx.fill();
+  });
+
+  // --- CURSOR ---
+  const cursorX = mouseX * W;
+  const cursorIndex = Math.round(mouseX * CURVE_STEPS);
+  if (cursorIndex >= 0 && cursorIndex <= CURVE_STEPS) {
+    const normalized = displayCurve[cursorIndex] / maxDissonance;
+    const consonance = 1 - normalized;
+    const cursorY = landscapeBottom - consonance * landscapeHeight * 0.85;
+
+    // Vertical cursor line
+    ctx.beginPath();
+    ctx.moveTo(cursorX, landscapeTop);
+    ctx.lineTo(cursorX, landscapeBottom);
+    ctx.strokeStyle = 'rgba(200, 180, 150, 0.08)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Glow at intersection
+    const cursorGrad = ctx.createRadialGradient(cursorX, cursorY, 0, cursorX, cursorY, 20 + consonance * 15);
+    cursorGrad.addColorStop(0, `rgba(240, 210, 160, ${0.3 + consonance * 0.3})`);
+    cursorGrad.addColorStop(0.4, `rgba(200, 170, 130, ${0.1 + consonance * 0.1})`);
+    cursorGrad.addColorStop(1, 'rgba(180, 150, 120, 0)');
+    ctx.fillStyle = cursorGrad;
+    ctx.beginPath();
+    ctx.arc(cursorX, cursorY, 20 + consonance * 15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bright center dot
+    ctx.beginPath();
+    ctx.arc(cursorX, cursorY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 240, 210, ${0.5 + consonance * 0.4})`;
+    ctx.fill();
+
+    // Ratio display
+    const ratio = getCurrentRatio();
+    let label = ratio.toFixed(3);
+
+    // Check proximity to named intervals
+    let nearestWestern = null;
+    let nearestDist = 0.015;
+    WESTERN.forEach(w => {
+      const d = Math.abs(ratio - w.ratio);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearestWestern = w;
+      }
+    });
+
+    const ratioEl = document.getElementById('ratio-display');
+    if (nearestWestern && morphFactor < 0.4) {
+      ratioEl.innerHTML = `${nearestWestern.simple}<br><span style="opacity:0.5;font-size:8px">${nearestWestern.name}</span>`;
+    } else {
+      ratioEl.textContent = label;
+    }
+
+    // Consonance/dissonance indicator
+    const indicatorWidth = 40;
+    const indicatorX = cursorX - indicatorWidth/2;
+    const indicatorY = cursorY - 25;
+    ctx.fillStyle = consonance > 0.6
+      ? `rgba(220, 190, 140, ${(consonance - 0.6) * 0.8})`
+      : `rgba(120, 100, 150, ${(0.6 - consonance) * 0.3})`;
+    ctx.font = '200 7px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(consonance > 0.6 ? 'consonant' : 'rough', cursorX, indicatorY);
+  }
+
+  // --- RATIO AXIS LABELS ---
+  ctx.font = '200 7px "JetBrains Mono"';
+  ctx.fillStyle = 'rgba(140, 130, 120, 0.15)';
+  ctx.textAlign = 'center';
+  for (let r = 1.0; r <= 2.01; r += 0.1) {
+    const x = (r - 1.0) * W;
+    ctx.fillText(r.toFixed(1), x, landscapeBottom + 16);
+  }
+  ctx.fillText('unison', 0, landscapeBottom + 28);
+  ctx.fillText('octave', W, landscapeBottom + 28);
+
+  // --- TIMBRE LABEL ---
+  document.getElementById('timbre-label').textContent = getTimbreName(morphFactor);
+
+  requestAnimationFrame(draw);
+}
+
+// --- INPUT ---
+
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX / W;
+  mouseY = e.clientY / H;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const t = e.touches[0];
+  mouseX = t.clientX / W;
+  mouseY = t.clientY / H;
+}, {passive: false});
+
+canvas.addEventListener('click', () => {
+  if (audioActive) {
+    stopAudio();
+  } else {
+    startAudio();
+  }
+  // Fade info text
+  document.getElementById('info').style.opacity = '0.12';
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'h') { targetMorph = 0; mouseY = 0; }
+  if (e.key === 's') { targetMorph = 0.5; mouseY = 0.5; }
+  if (e.key === 'g') { targetMorph = 1.0; mouseY = 1.0; }
+});
+
+// --- START ---
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

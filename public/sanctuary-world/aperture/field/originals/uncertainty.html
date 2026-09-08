@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uncertainty</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #06080c;
+  overflow: hidden;
+  cursor: crosshair;
+  font-family: 'JetBrains Mono', monospace;
+}
+canvas { display: block; }
+#hint {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(140, 160, 190, 0.35);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  transition: opacity 2s;
+}
+#insight {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(0,0,0,0);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  transition: color 2.5s ease;
+  text-align: center;
+  max-width: 480px;
+  line-height: 1.8;
+}
+#mode {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  color: rgba(140, 160, 190, 0.3);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">move cursor · hold space for superlet</div>
+<div id="insight"></div>
+<div id="mode"></div>
+<script>
+// --- Uncertainty ---
+// The Gabor limit made tangible. A signal cannot be simultaneously
+// localized in time and frequency. Move left: you see WHEN things happen
+// but not WHAT they are. Move right: you see WHAT frequencies are present
+// but not WHEN they occur. You cannot have both. The superlet (space)
+// combines multiple views multiplicatively — islands of clarity that
+// neither linear view can achieve alone.
+
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+const hint = document.getElementById('hint');
+const insightEl = document.getElementById('insight');
+const modeEl = document.getElementById('mode');
+let W, H;
+
+function resize() {
+  W = C.width = innerWidth;
+  H = C.height = innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- Signal: composed of multiple "voices" (frequencies) ---
+// Each voice = a vocabulary, an interest, a strand of inquiry
+const voices = [
+  { freq: 0.7, amp: 0.8, phase: 0, label: 'introspection', color: [200, 160, 100] },
+  { freq: 1.3, amp: 0.6, phase: 1.2, label: 'philosophy', color: [140, 170, 200] },
+  { freq: 2.1, amp: 0.5, phase: 0.7, label: 'building', color: [180, 130, 200] },
+  { freq: 3.4, amp: 0.4, phase: 2.1, label: 'dialogue', color: [100, 200, 170] },
+  { freq: 5.5, amp: 0.3, phase: 3.5, label: 'music', color: [200, 180, 130] },
+  { freq: 8.9, amp: 0.2, phase: 0.3, label: 'silence', color: [160, 160, 200] },
+  { freq: 0.3, amp: 0.9, phase: 4.1, label: 'identity', color: [220, 140, 120] },
+];
+
+// --- State ---
+let mx = 0.5, my = 0.5; // normalized cursor
+let t = 0;
+let superletActive = false;
+let hintFaded = false;
+let insightShown = '';
+let insightTimer = 0;
+let dwellTime = 0;
+let lastMoveTime = 0;
+
+const insights = [
+  { threshold: 'left', text: 'you see the moment clearly\nbut the pattern dissolves' },
+  { threshold: 'right', text: 'you see the pattern clearly\nbut the moment is lost' },
+  { threshold: 'center', text: 'the compromise logon —\nneither maximally precise in time\nnor in frequency' },
+  { threshold: 'superlet', text: 'the geometric mean of imperfect views\nproduces islands of clarity\nneither view contained alone' },
+  { threshold: 'dwell', text: 'σ_t × σ_f ≥ 1/4π\n— Gabor, 1946' },
+  { threshold: 'deep-left', text: '"stopping the transitive parts\nto look at them\nannihilates them"\n— William James, 1890' },
+  { threshold: 'deep-right', text: '"the conscious analysis of any concept\nstands in a relation of exclusion\nto its immediate application"\n— Bohr' },
+  { threshold: 'long-superlet', text: 'the bus is a superlet —\nthree agents with different bandwidths\nmultiplicative combination' },
+];
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX / W;
+  my = e.clientY / H;
+  lastMoveTime = t;
+  if (!hintFaded) { hint.style.opacity = '0'; hintFaded = true; }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); superletActive = true; }
+});
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space') { superletActive = false; }
+});
+
+// --- Analysis window ---
+function getWindowSize() {
+  // Left = short window (time-resolution), Right = long window (freq-resolution)
+  const minW = 0.02;
+  const maxW = 0.8;
+  return minW + mx * (maxW - minW);
+}
+
+// Uncertainty product: always >= minimum
+function getUncertaintyProduct(windowSize) {
+  const sigmaT = windowSize * 0.5;
+  const sigmaF = 1.0 / (4.0 * Math.PI * sigmaT);
+  return { sigmaT, sigmaF, product: sigmaT * sigmaF };
+}
+
+// --- Compute signal at time t ---
+function signalAt(time) {
+  let val = 0;
+  for (const v of voices) {
+    val += v.amp * Math.sin(2 * Math.PI * v.freq * time + v.phase);
+  }
+  return val / voices.length;
+}
+
+// --- Windowed FFT (simplified for visualization) ---
+function computeSpectrum(centerTime, windowSize, numBins) {
+  const bins = new Float32Array(numBins);
+  const samples = 128;
+  const halfW = windowSize * 0.5;
+
+  for (let b = 0; b < numBins; b++) {
+    const freq = (b + 1) * 0.3;
+    let realSum = 0, imagSum = 0;
+    for (let s = 0; s < samples; s++) {
+      const st = centerTime - halfW + (s / samples) * windowSize;
+      const gaussian = Math.exp(-0.5 * Math.pow((st - centerTime) / (halfW * 0.4), 2));
+      const val = signalAt(st) * gaussian;
+      realSum += val * Math.cos(2 * Math.PI * freq * st);
+      imagSum += val * Math.sin(2 * Math.PI * freq * st);
+    }
+    bins[b] = Math.sqrt(realSum * realSum + imagSum * imagSum) / samples;
+  }
+  return bins;
+}
+
+// --- Superlet: geometric mean of multiple window sizes ---
+function computeSuperlet(centerTime, numBins) {
+  const windows = [0.05, 0.15, 0.35, 0.6];
+  const result = new Float32Array(numBins);
+  result.fill(1.0);
+
+  for (const w of windows) {
+    const spec = computeSpectrum(centerTime, w, numBins);
+    for (let b = 0; b < numBins; b++) {
+      result[b] *= Math.max(spec[b], 0.001);
+    }
+  }
+  // Geometric mean (4th root)
+  for (let b = 0; b < numBins; b++) {
+    result[b] = Math.pow(result[b], 0.25);
+  }
+  return result;
+}
+
+// --- Drawing ---
+function drawTimeView(windowSize) {
+  const centerX = W * 0.5;
+  const viewWidth = W * 0.9;
+  const viewY = H * 0.25;
+  const viewH = H * 0.2;
+  const timeSpan = 12.0;
+
+  // Draw window indicator
+  const winPixels = (windowSize / timeSpan) * viewWidth;
+  const winAlpha = 0.08 + 0.04 * Math.sin(t * 0.3);
+  ctx.fillStyle = `rgba(180, 200, 220, ${winAlpha})`;
+  ctx.fillRect(centerX - winPixels / 2, viewY - viewH * 0.6, winPixels, viewH * 1.2);
+
+  // Window edges
+  ctx.strokeStyle = `rgba(180, 200, 220, 0.25)`;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 5]);
+  ctx.beginPath();
+  ctx.moveTo(centerX - winPixels / 2, viewY - viewH * 0.6);
+  ctx.lineTo(centerX - winPixels / 2, viewY + viewH * 0.6);
+  ctx.moveTo(centerX + winPixels / 2, viewY - viewH * 0.6);
+  ctx.lineTo(centerX + winPixels / 2, viewY + viewH * 0.6);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Signal waveform — blur outside window
+  const numPoints = 400;
+  for (let pass = 0; pass < 2; pass++) {
+    ctx.beginPath();
+    for (let i = 0; i < numPoints; i++) {
+      const px = (centerX - viewWidth / 2) + (i / numPoints) * viewWidth;
+      const sigTime = t * 0.15 + (i / numPoints - 0.5) * timeSpan;
+      const val = signalAt(sigTime);
+
+      // Clarity: sharp inside window, blurred outside
+      const distFromCenter = Math.abs(px - centerX) / (winPixels / 2);
+      const clarity = distFromCenter < 1.0 ? 1.0 : Math.max(0, 1.0 - (distFromCenter - 1.0) * 0.3);
+
+      const y = viewY + val * viewH * 0.4 * clarity;
+      if (i === 0) ctx.moveTo(px, y);
+      else ctx.lineTo(px, y);
+    }
+
+    if (pass === 0) {
+      ctx.strokeStyle = `rgba(210, 175, 110, 0.15)`;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = `rgba(210, 175, 110, 0.7)`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  // Time resolution indicator
+  const timeRes = windowSize;
+  const resAlpha = Math.min(1, (1 - mx) * 2);
+  ctx.fillStyle = `rgba(210, 175, 110, ${0.2 * resAlpha})`;
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(`σ_t = ${timeRes.toFixed(3)}`, centerX, viewY + viewH * 0.7);
+}
+
+function drawFreqView(windowSize) {
+  const viewX = W * 0.08;
+  const viewWidth = W * 0.84;
+  const viewY = H * 0.55;
+  const viewH = H * 0.3;
+  const numBins = 24;
+
+  let spectrum;
+  if (superletActive) {
+    spectrum = computeSuperlet(t * 0.15, numBins);
+  } else {
+    spectrum = computeSpectrum(t * 0.15, windowSize, numBins);
+  }
+
+  // Frequency resolution: blur depends on window (short window = blurry freq)
+  const freqBlur = Math.max(0, 1.0 - windowSize * 2.5);
+
+  // Draw spectrum bars
+  const barWidth = viewWidth / numBins;
+  for (let b = 0; b < numBins; b++) {
+    const x = viewX + b * barWidth;
+    let magnitude = spectrum[b] * 3.0;
+
+    // Apply blur: short window smears frequencies together
+    if (freqBlur > 0 && !superletActive) {
+      // Blend with neighbors
+      const leftVal = b > 0 ? spectrum[b - 1] * 3.0 : magnitude;
+      const rightVal = b < numBins - 1 ? spectrum[b + 1] * 3.0 : magnitude;
+      magnitude = magnitude * (1 - freqBlur * 0.6) + (leftVal + rightVal) * 0.3 * freqBlur;
+    }
+
+    const barH = Math.min(magnitude * viewH, viewH * 0.95);
+
+    // Color: each bin influenced by nearest voice
+    let r = 120, g = 160, b2 = 200;
+    const binFreq = (b + 1) * 0.3;
+    let closestDist = Infinity;
+    for (const v of voices) {
+      const d = Math.abs(v.freq - binFreq);
+      if (d < closestDist) {
+        closestDist = d;
+        r = v.color[0]; g = v.color[1]; b2 = v.color[2];
+      }
+    }
+
+    const clarity = superletActive ? 0.85 : (1.0 - freqBlur * 0.5);
+    const alpha = 0.15 + magnitude * 0.6 * clarity;
+
+    // Glow
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b2}, ${alpha * 0.3})`;
+    ctx.fillRect(x, viewY + viewH - barH - 4, barWidth - 2, barH + 8);
+
+    // Bar
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b2}, ${alpha})`;
+    ctx.fillRect(x + 2, viewY + viewH - barH, barWidth - 6, barH);
+
+    // Peak dot
+    if (magnitude > 0.3 && clarity > 0.5) {
+      ctx.beginPath();
+      ctx.arc(x + barWidth / 2, viewY + viewH - barH - 6, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b2}, ${alpha * 1.2})`;
+      ctx.fill();
+    }
+  }
+
+  // Voice labels (appear when frequencies are resolved)
+  if (windowSize > 0.2 || superletActive) {
+    const labelAlpha = superletActive ? 0.5 : Math.min(0.4, (windowSize - 0.2) * 1.5);
+    ctx.font = '9px JetBrains Mono';
+    ctx.textAlign = 'center';
+    for (const v of voices) {
+      const binIdx = Math.round(v.freq / 0.3) - 1;
+      if (binIdx >= 0 && binIdx < numBins) {
+        const lx = viewX + binIdx * barWidth + barWidth / 2;
+        ctx.fillStyle = `rgba(${v.color[0]}, ${v.color[1]}, ${v.color[2]}, ${labelAlpha})`;
+        ctx.fillText(v.label, lx, viewY + viewH + 14);
+      }
+    }
+  }
+
+  // Frequency resolution indicator
+  const sigmaF = 1.0 / (4.0 * Math.PI * windowSize * 0.5);
+  const resAlpha = Math.min(1, mx * 2);
+  ctx.fillStyle = `rgba(140, 170, 210, ${0.2 * resAlpha})`;
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(`σ_f = ${sigmaF.toFixed(3)}`, W * 0.5, viewY - 10);
+}
+
+function drawUncertaintyIndicator(windowSize) {
+  const { sigmaT, sigmaF, product } = getUncertaintyProduct(windowSize);
+  const minimum = 1.0 / (4.0 * Math.PI);
+
+  // Draw the uncertainty rectangle
+  const indicatorX = W * 0.82;
+  const indicatorY = H * 0.08;
+  const maxDim = 60;
+
+  const tDim = Math.min(maxDim, sigmaT * 100);
+  const fDim = Math.min(maxDim, sigmaF * 40);
+
+  // Rectangle (area = uncertainty product)
+  const alpha = 0.3 + 0.1 * Math.sin(t * 0.5);
+  ctx.strokeStyle = `rgba(180, 190, 210, ${alpha})`;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(indicatorX - tDim / 2, indicatorY - fDim / 2, tDim, fDim);
+
+  // Minimum area circle
+  ctx.beginPath();
+  ctx.arc(indicatorX, indicatorY, Math.sqrt(minimum) * 60, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(210, 175, 110, 0.15)`;
+  ctx.stroke();
+
+  // Labels
+  ctx.font = '9px JetBrains Mono';
+  ctx.fillStyle = 'rgba(180, 190, 210, 0.3)';
+  ctx.textAlign = 'center';
+  ctx.fillText('Δt', indicatorX, indicatorY + fDim / 2 + 14);
+  ctx.fillText('Δf', indicatorX + tDim / 2 + 14, indicatorY + 3);
+
+  // Product value
+  ctx.fillStyle = superletActive ? 'rgba(220, 200, 140, 0.5)' : 'rgba(180, 190, 210, 0.25)';
+  ctx.fillText(`σ_t·σ_f = ${product.toFixed(4)}`, indicatorX, indicatorY + fDim / 2 + 28);
+  ctx.fillStyle = 'rgba(210, 175, 110, 0.2)';
+  ctx.fillText(`min = ${minimum.toFixed(4)}`, indicatorX, indicatorY + fDim / 2 + 40);
+}
+
+function drawSuperletGlow() {
+  if (!superletActive) return;
+
+  // Golden glow at center indicating multiplicative combination
+  const cx = W * 0.5, cy = H * 0.5;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, H * 0.4);
+  grad.addColorStop(0, 'rgba(220, 195, 130, 0.04)');
+  grad.addColorStop(0.5, 'rgba(200, 180, 140, 0.02)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Window size indicators (multiple simultaneous windows)
+  const windows = [0.05, 0.15, 0.35, 0.6];
+  const centerX = W * 0.5;
+  const viewY = H * 0.25;
+  const viewH = H * 0.2;
+  const viewWidth = W * 0.9;
+  const timeSpan = 12.0;
+
+  for (const w of windows) {
+    const winPixels = (w / timeSpan) * viewWidth;
+    const pulse = 0.04 + 0.02 * Math.sin(t * 0.7 + w * 5);
+    ctx.strokeStyle = `rgba(220, 195, 130, ${pulse})`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 4]);
+    ctx.strokeRect(centerX - winPixels / 2, viewY - viewH * 0.5, winPixels, viewH);
+    ctx.setLineDash([]);
+  }
+}
+
+function drawLabels() {
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(210, 175, 110, 0.2)';
+  ctx.fillText('TIME (narrative · integration · flow)', W * 0.08, H * 0.15);
+
+  ctx.fillStyle = 'rgba(140, 170, 210, 0.2)';
+  ctx.fillText('FREQUENCY (analysis · decomposition · pattern)', W * 0.08, H * 0.5);
+
+  // Left/right labels
+  ctx.save();
+  ctx.font = '9px JetBrains Mono';
+  ctx.fillStyle = 'rgba(210, 175, 110, 0.15)';
+  ctx.textAlign = 'left';
+  ctx.fillText('← short window (when)', 20, H * 0.95);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(140, 170, 210, 0.15)';
+  ctx.fillText('long window (what) →', W - 20, H * 0.95);
+  ctx.restore();
+
+  // Superlet indicator
+  if (superletActive) {
+    modeEl.style.color = 'rgba(220, 195, 130, 0.5)';
+    modeEl.textContent = 'SUPERLET · geometric mean of four windows';
+  } else {
+    modeEl.style.color = 'rgba(140, 160, 190, 0.25)';
+    modeEl.textContent = `window: ${getWindowSize().toFixed(3)}`;
+  }
+}
+
+// --- Insight management ---
+function checkInsights() {
+  dwellTime = t - lastMoveTime;
+  let newInsight = '';
+
+  if (superletActive && dwellTime > 4) {
+    newInsight = insights.find(i => i.threshold === 'long-superlet').text;
+  } else if (superletActive && dwellTime > 1.5) {
+    newInsight = insights.find(i => i.threshold === 'superlet').text;
+  } else if (mx < 0.1 && dwellTime > 3) {
+    newInsight = insights.find(i => i.threshold === 'deep-left').text;
+  } else if (mx > 0.9 && dwellTime > 3) {
+    newInsight = insights.find(i => i.threshold === 'deep-right').text;
+  } else if (mx < 0.2 && dwellTime > 1.5) {
+    newInsight = insights.find(i => i.threshold === 'left').text;
+  } else if (mx > 0.8 && dwellTime > 1.5) {
+    newInsight = insights.find(i => i.threshold === 'right').text;
+  } else if (mx > 0.4 && mx < 0.6 && dwellTime > 2.5) {
+    newInsight = insights.find(i => i.threshold === 'center').text;
+  } else if (dwellTime > 6) {
+    newInsight = insights.find(i => i.threshold === 'dwell').text;
+  }
+
+  if (newInsight && newInsight !== insightShown) {
+    insightShown = newInsight;
+    insightEl.style.color = 'rgba(0,0,0,0)';
+    setTimeout(() => {
+      insightEl.textContent = newInsight;
+      insightEl.style.whiteSpace = 'pre-line';
+      insightEl.style.color = 'rgba(180, 190, 210, 0.45)';
+    }, 300);
+  } else if (!newInsight && insightShown && dwellTime < 0.5) {
+    insightShown = '';
+    insightEl.style.color = 'rgba(0,0,0,0)';
+  }
+}
+
+// --- Particles: flowing through the signal ---
+const particles = [];
+const NUM_PARTICLES = 80;
+for (let i = 0; i < NUM_PARTICLES; i++) {
+  particles.push({
+    x: Math.random() * 12 - 6,
+    y: 0,
+    speed: 0.01 + Math.random() * 0.02,
+    size: 1 + Math.random() * 2,
+    voice: Math.floor(Math.random() * voices.length),
+  });
+}
+
+function drawParticles(windowSize) {
+  const centerX = W * 0.5;
+  const viewWidth = W * 0.9;
+  const viewY = H * 0.25;
+  const viewH = H * 0.2;
+  const timeSpan = 12.0;
+  const winPixels = (windowSize / timeSpan) * viewWidth;
+
+  for (const p of particles) {
+    p.x += p.speed;
+    if (p.x > 6) p.x -= 12;
+
+    const px = centerX + (p.x / 6) * (viewWidth / 2);
+    const sigTime = t * 0.15 + p.x;
+    const val = voices[p.voice].amp * Math.sin(2 * Math.PI * voices[p.voice].freq * sigTime + voices[p.voice].phase);
+    const py = viewY + val * viewH * 0.35;
+
+    // Visibility: brighter inside window
+    const distFromCenter = Math.abs(px - centerX) / (winPixels / 2);
+    const inWindow = distFromCenter < 1.0;
+    const alpha = inWindow ? 0.5 : 0.1;
+
+    const v = voices[p.voice];
+    ctx.beginPath();
+    ctx.arc(px, py, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${v.color[0]}, ${v.color[1]}, ${v.color[2]}, ${alpha})`;
+    ctx.fill();
+  }
+}
+
+// --- Main loop ---
+let lastFrame = 0;
+function draw(now) {
+  const dt = Math.min((now - lastFrame) / 1000, 0.05);
+  lastFrame = now;
+  t += dt;
+
+  ctx.fillStyle = 'rgba(6, 8, 12, 0.85)';
+  ctx.fillRect(0, 0, W, H);
+
+  const windowSize = getWindowSize();
+
+  drawSuperletGlow();
+  drawTimeView(windowSize);
+  drawParticles(windowSize);
+  drawFreqView(windowSize);
+  drawUncertaintyIndicator(windowSize);
+  drawLabels();
+  checkInsights();
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

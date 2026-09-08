@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indeterminacy</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0b0b0e;
+    overflow: hidden;
+    cursor: none;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #text-overlay {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10;
+    color: rgba(160, 145, 130, 0);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    max-width: 300px;
+    line-height: 1.7;
+    transition: color 1.2s ease, transform 1.2s ease;
+    transform: translateY(6px);
+  }
+
+  #text-overlay.visible {
+    color: rgba(160, 145, 130, 0.45);
+    transform: translateY(0);
+  }
+
+  #center-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(120, 115, 140, 0);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    transition: color 2.5s ease;
+    pointer-events: none;
+    z-index: 10;
+    text-align: center;
+    line-height: 2;
+  }
+
+  #center-text.visible {
+    color: rgba(120, 115, 140, 0.25);
+  }
+
+  #title {
+    position: fixed;
+    bottom: 20px;
+    left: 24px;
+    color: rgba(120, 115, 140, 0.12);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #hint {
+    position: fixed;
+    bottom: 20px;
+    right: 24px;
+    color: rgba(120, 115, 140, 0);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 4s ease;
+  }
+
+  #hint.visible {
+    color: rgba(120, 115, 140, 0.15);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="center-text">
+  the states before observation<br>
+  <span style="font-size: 10px; opacity: 0.6;">are genuinely indeterminate — not unknown, but undefined</span>
+</div>
+
+<div id="text-overlay"></div>
+<div id="title">indeterminacy</div>
+<div id="hint">approach slowly</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const centerText = document.getElementById('center-text');
+const textOverlay = document.getElementById('text-overlay');
+const hintEl = document.getElementById('hint');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  if (entities.length > 0) redistributeEntities();
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- State ---
+let mousePresent = false;
+let mouseX = -1000, mouseY = -1000;
+let smoothX = -1000, smoothY = -1000;
+let mouseSpeed = 0;
+let prevMouseX = -1000, prevMouseY = -1000;
+let dwellTime = 0;
+let absenceStart = 0;
+let totalResolutions = 0;
+let sessionStart = Date.now();
+
+// --- Entities: things that exist in superposition ---
+// Each has multiple possible states. None is "real" until resolved.
+const entities = [];
+const ENTITY_COUNT = 55;
+const RESOLVE_RADIUS = 180;
+const FULL_RESOLVE_RADIUS = 60;
+
+class PossibleState {
+  constructor() {
+    this.hue = Math.random() * 360;
+    this.saturation = 20 + Math.random() * 35;
+    this.lightness = 45 + Math.random() * 25;
+    this.size = 3 + Math.random() * 12;
+    this.offsetX = (Math.random() - 0.5) * 16;
+    this.offsetY = (Math.random() - 0.5) * 16;
+    this.shape = Math.random(); // 0-0.33 circle, 0.33-0.66 diamond, 0.66-1 ring
+    this.phase = Math.random() * Math.PI * 2;
+  }
+}
+
+class Entity {
+  constructor(x, y) {
+    this.baseX = x;
+    this.baseY = y;
+    this.x = x;
+    this.y = y;
+
+    // 3-5 possible states coexist
+    this.possibleStates = [];
+    const count = 3 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+      this.possibleStates.push(new PossibleState());
+    }
+
+    // Resolution state
+    this.resolution = 0; // 0 = fully indeterminate, 1 = fully resolved
+    this.resolvedIndex = -1; // which state got resolved to
+    this.resolvedWeight = null; // probability weights during resolution
+    this.previousResolutions = []; // history of past resolutions — conditioning
+
+    // Approach memory — what direction the observer came from
+    this.approachAngle = 0;
+    this.approachSpeed = 0;
+
+    // Animation
+    this.time = Math.random() * 100;
+    this.driftPhase = Math.random() * Math.PI * 2;
+    this.breathRate = 0.3 + Math.random() * 0.4;
+
+    // Visual indeterminacy shimmer
+    this.shimmerPhase = Math.random() * Math.PI * 2;
+    this.shimmerSpeed = 1.5 + Math.random() * 2;
+  }
+
+  update(dt, observerX, observerY, observerSpeed) {
+    this.time += dt;
+
+    const dx = this.baseX - observerX;
+    const dy = this.baseY - observerY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Gentle drift — even indeterminate things shift
+    this.x = this.baseX + Math.sin(this.time * this.breathRate + this.driftPhase) * 3;
+    this.y = this.baseY + Math.cos(this.time * this.breathRate * 0.7 + this.driftPhase) * 3;
+
+    // Resolution dynamics
+    if (mousePresent && dist < RESOLVE_RADIUS) {
+      const proximity = 1 - (dist / RESOLVE_RADIUS);
+      const resolveTarget = Math.pow(proximity, 1.5); // nonlinear — sharper near center
+
+      // Approach characteristics shape which state resolves
+      this.approachAngle = Math.atan2(-dy, -dx);
+      this.approachSpeed = observerSpeed;
+
+      // Resolution creeps up — not instant
+      const resolveSpeed = 0.02 + proximity * 0.06;
+      this.resolution += (resolveTarget - this.resolution) * resolveSpeed;
+
+      // Determine which state to resolve to (if not yet decided)
+      if (this.resolution > 0.15 && this.resolvedIndex === -1) {
+        this.chooseResolution();
+        totalResolutions++;
+      }
+
+      // Near full resolution, lock in
+      if (dist < FULL_RESOLVE_RADIUS) {
+        this.resolution = Math.min(1, this.resolution + 0.03);
+      }
+    } else {
+      // Returning to indeterminacy — but conditioned
+      const decayRate = 0.005 + (this.previousResolutions.length > 0 ? 0.002 : 0);
+      this.resolution -= decayRate;
+
+      if (this.resolution <= 0.05) {
+        this.resolution = 0;
+        if (this.resolvedIndex !== -1) {
+          // Record the resolution before losing it
+          this.previousResolutions.push(this.resolvedIndex);
+          if (this.previousResolutions.length > 5) this.previousResolutions.shift();
+          this.resolvedIndex = -1;
+        }
+      }
+    }
+
+    this.shimmerPhase += this.shimmerSpeed * dt;
+  }
+
+  chooseResolution() {
+    // Which state resolves depends on:
+    // 1. The approach angle (maps to state space)
+    // 2. The approach speed (fast → more random, slow → more conditioned)
+    // 3. Previous resolutions (conditioning — santana)
+
+    const weights = this.possibleStates.map((s, i) => {
+      let w = 1;
+
+      // Angle affinity: each state has a "natural" angle
+      const stateAngle = (i / this.possibleStates.length) * Math.PI * 2;
+      const angleDiff = Math.abs(this.approachAngle - stateAngle);
+      const angleAffinity = Math.cos(Math.min(angleDiff, Math.PI * 2 - angleDiff));
+      w += angleAffinity * 2;
+
+      // Speed influence: fast approach = more chaotic = flatter distribution
+      const speedFlattening = Math.min(1, this.approachSpeed / 8);
+      w = 1 + (w - 1) * (1 - speedFlattening * 0.7);
+
+      // Conditioning: bias toward previously resolved states
+      const prevCount = this.previousResolutions.filter(p => p === i).length;
+      w += prevCount * 0.8;
+
+      return Math.max(0.1, w);
+    });
+
+    // Weighted random selection
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < weights.length; i++) {
+      r -= weights[i];
+      if (r <= 0) {
+        this.resolvedIndex = i;
+        this.resolvedWeight = weights.map(w => w / total);
+        return;
+      }
+    }
+    this.resolvedIndex = weights.length - 1;
+    this.resolvedWeight = weights.map(w => w / total);
+  }
+
+  draw(ctx) {
+    const t = this.time;
+
+    if (this.resolution < 0.02) {
+      // Fully indeterminate: draw all possible states, overlapping, shifting
+      this.drawIndeterminate(ctx, t);
+    } else if (this.resolution > 0.95 && this.resolvedIndex >= 0) {
+      // Fully resolved: draw only the resolved state
+      this.drawResolved(ctx, t);
+    } else {
+      // Partially resolved: blend — some states fading, one emerging
+      this.drawResolving(ctx, t);
+    }
+  }
+
+  drawIndeterminate(ctx, t) {
+    // All states coexist with equal weight, drifting through each other
+    const n = this.possibleStates.length;
+    const alphaEach = 0.12 / Math.sqrt(n);
+    const conditioned = this.previousResolutions.length > 0;
+
+    for (let i = 0; i < n; i++) {
+      const s = this.possibleStates[i];
+      const shimmer = Math.sin(this.shimmerPhase + s.phase + i * 1.2) * 0.5 + 0.5;
+
+      // If conditioned, previously resolved states are slightly brighter
+      const prevBias = this.previousResolutions.filter(p => p === i).length;
+      const biasAlpha = conditioned ? (prevBias > 0 ? 0.04 : -0.02) : 0;
+
+      const ox = s.offsetX + Math.sin(t * 0.8 + s.phase) * 5;
+      const oy = s.offsetY + Math.cos(t * 0.6 + s.phase) * 5;
+      const px = this.x + ox;
+      const py = this.y + oy;
+      const size = s.size * (0.7 + shimmer * 0.3);
+
+      const alpha = alphaEach * (0.5 + shimmer * 0.5) + biasAlpha;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0.01, alpha);
+
+      if (s.shape < 0.33) {
+        // Circle
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${s.hue}, ${s.saturation}%, ${s.lightness}%, 1)`;
+        ctx.fill();
+      } else if (s.shape < 0.66) {
+        // Diamond
+        ctx.beginPath();
+        ctx.moveTo(px, py - size);
+        ctx.lineTo(px + size * 0.7, py);
+        ctx.lineTo(px, py + size);
+        ctx.lineTo(px - size * 0.7, py);
+        ctx.closePath();
+        ctx.fillStyle = `hsla(${s.hue}, ${s.saturation}%, ${s.lightness}%, 1)`;
+        ctx.fill();
+      } else {
+        // Ring
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsla(${s.hue}, ${s.saturation}%, ${s.lightness}%, 1)`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // Faint connecting shimmer between possible states — visual superposition
+    if (n > 2) {
+      ctx.save();
+      ctx.globalAlpha = 0.015;
+      ctx.strokeStyle = `hsla(220, 15%, 50%, 1)`;
+      ctx.lineWidth = 0.3;
+      for (let i = 0; i < n - 1; i++) {
+        const a = this.possibleStates[i];
+        const b = this.possibleStates[i + 1];
+        const ax = this.x + a.offsetX + Math.sin(t * 0.8 + a.phase) * 5;
+        const ay = this.y + a.offsetY + Math.cos(t * 0.6 + a.phase) * 5;
+        const bx = this.x + b.offsetX + Math.sin(t * 0.8 + b.phase) * 5;
+        const by = this.y + b.offsetY + Math.cos(t * 0.6 + b.phase) * 5;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  drawResolved(ctx, t) {
+    const s = this.possibleStates[this.resolvedIndex];
+    const pulse = Math.sin(t * 2) * 0.08;
+
+    // The resolved state: warm, definite, present
+    const size = s.size * (1 + pulse);
+    const px = this.x;
+    const py = this.y;
+
+    // Warm glow — resolution brings warmth
+    const grad = ctx.createRadialGradient(px, py, 0, px, py, size * 3);
+    grad.addColorStop(0, `hsla(${s.hue}, ${s.saturation + 10}%, ${s.lightness + 10}%, 0.06)`);
+    grad.addColorStop(1, `hsla(${s.hue}, ${s.saturation}%, ${s.lightness}%, 0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(px - size * 3, py - size * 3, size * 6, size * 6);
+
+    ctx.save();
+    ctx.globalAlpha = 0.6 + pulse;
+
+    if (s.shape < 0.33) {
+      ctx.beginPath();
+      ctx.arc(px, py, size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${s.hue}, ${s.saturation + 10}%, ${s.lightness + 5}%, 1)`;
+      ctx.fill();
+    } else if (s.shape < 0.66) {
+      ctx.beginPath();
+      ctx.moveTo(px, py - size);
+      ctx.lineTo(px + size * 0.7, py);
+      ctx.lineTo(px, py + size);
+      ctx.lineTo(px - size * 0.7, py);
+      ctx.closePath();
+      ctx.fillStyle = `hsla(${s.hue}, ${s.saturation + 10}%, ${s.lightness + 5}%, 1)`;
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(px, py, size, 0, Math.PI * 2);
+      ctx.strokeStyle = `hsla(${s.hue}, ${s.saturation + 10}%, ${s.lightness + 5}%, 1)`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  drawResolving(ctx, t) {
+    // The collapse in progress: one state emerging, others fading
+    const n = this.possibleStates.length;
+    const res = this.resolution;
+
+    for (let i = 0; i < n; i++) {
+      const s = this.possibleStates[i];
+      const isResolved = (i === this.resolvedIndex);
+
+      // Resolved state gains opacity, others lose it
+      let alpha;
+      if (isResolved) {
+        alpha = 0.08 + res * 0.55;
+      } else {
+        alpha = 0.12 / Math.sqrt(n) * (1 - res * 0.9);
+      }
+
+      const shimmer = Math.sin(this.shimmerPhase + s.phase + i * 1.2) * 0.5 + 0.5;
+
+      // During resolution, non-resolved states drift further away
+      const driftMultiplier = isResolved ? (1 - res * 0.8) : (1 + res * 2);
+      const ox = s.offsetX * driftMultiplier + Math.sin(t * 0.8 + s.phase) * 5 * (1 - res * (isResolved ? 1 : 0));
+      const oy = s.offsetY * driftMultiplier + Math.cos(t * 0.6 + s.phase) * 5 * (1 - res * (isResolved ? 1 : 0));
+      const px = this.x + ox * (isResolved ? 0 : 1);
+      const py = this.y + oy * (isResolved ? 0 : 1);
+      const size = s.size * (isResolved ? (0.8 + res * 0.3) : (1 - res * 0.5)) * (0.8 + shimmer * 0.2);
+
+      if (alpha < 0.005 || size < 0.5) continue;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Resolved state warms up during resolution
+      const hue = isResolved ? s.hue : s.hue;
+      const sat = isResolved ? s.saturation + res * 10 : s.saturation * (1 - res * 0.5);
+      const lit = isResolved ? s.lightness + res * 8 : s.lightness * (1 - res * 0.3);
+
+      if (s.shape < 0.33) {
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${hue}, ${sat}%, ${lit}%, 1)`;
+        ctx.fill();
+      } else if (s.shape < 0.66) {
+        ctx.beginPath();
+        ctx.moveTo(px, py - size);
+        ctx.lineTo(px + size * 0.7, py);
+        ctx.lineTo(px, py + size);
+        ctx.lineTo(px - size * 0.7, py);
+        ctx.closePath();
+        ctx.fillStyle = `hsla(${hue}, ${sat}%, ${lit}%, 1)`;
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${lit}%, 1)`;
+        ctx.lineWidth = isResolved ? 1.2 : 0.6;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // Glow around the resolving entity
+    if (res > 0.3 && this.resolvedIndex >= 0) {
+      const s = this.possibleStates[this.resolvedIndex];
+      const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, s.size * 3);
+      grad.addColorStop(0, `hsla(${s.hue}, ${s.saturation}%, ${s.lightness}%, ${res * 0.03})`);
+      grad.addColorStop(1, `hsla(${s.hue}, ${s.saturation}%, ${s.lightness}%, 0)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(this.x - s.size * 3, this.y - s.size * 3, s.size * 6, s.size * 6);
+    }
+  }
+}
+
+// --- The Refrigerator Light ---
+// A special entity that demonstrates the problem: you can never
+// observe it in its indeterminate state because observing resolves it.
+const fridge = {
+  x: 0, y: 0,
+  baseRadius: 50,
+  observerDist: Infinity,
+  resolution: 0,
+  textAlpha: 0,
+  revealAlpha: 0,
+  wasApproached: false,
+  approachCount: 0
+};
+
+function initFridge() {
+  fridge.x = W * 0.15;
+  fridge.y = H * 0.2;
+}
+initFridge();
+window.addEventListener('resize', initFridge);
+
+function updateFridge(dt) {
+  const dx = smoothX - fridge.x;
+  const dy = smoothY - fridge.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  fridge.observerDist = dist;
+
+  if (mousePresent && dist < 250) {
+    // Label appears as you approach
+    fridge.textAlpha = Math.min(0.35, fridge.textAlpha + 0.004);
+
+    if (dist < 120) {
+      // The closer you get, the more resolved it becomes
+      // You CANNOT see it in its indeterminate state
+      const proximity = 1 - (dist / 120);
+      fridge.resolution = Math.min(1, fridge.resolution + proximity * 0.04);
+
+      if (!fridge.wasApproached) {
+        fridge.wasApproached = true;
+        fridge.approachCount++;
+      }
+    }
+
+    // Very close: fully resolved. The light is always on.
+    if (dist < 40) {
+      fridge.resolution = 1;
+      fridge.revealAlpha = Math.min(0.4, fridge.revealAlpha + 0.008);
+    }
+  } else {
+    // Moving away: resolution slowly fades back
+    fridge.resolution *= 0.992;
+    fridge.textAlpha *= 0.995;
+    fridge.revealAlpha *= 0.99;
+
+    if (fridge.resolution < 0.05) {
+      fridge.wasApproached = false;
+    }
+  }
+}
+
+function drawFridge() {
+  const t = Date.now() * 0.001;
+  const res = fridge.resolution;
+
+  if (res < 0.02 && fridge.textAlpha < 0.01) {
+    // Show a very faint beacon — something is here, but what?
+    const pulse = Math.sin(t * 0.4) * 0.5 + 0.5;
+    ctx.save();
+    ctx.globalAlpha = 0.025 + pulse * 0.015;
+
+    // Indeterminate glow: shifting color
+    const hue = (t * 20) % 360;
+    ctx.beginPath();
+    ctx.arc(fridge.x, fridge.y, 15 + pulse * 5, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${hue}, 20%, 40%, 1)`;
+    ctx.fill();
+
+    // Second ghost, different phase
+    const hue2 = (t * 30 + 120) % 360;
+    ctx.beginPath();
+    ctx.arc(fridge.x + Math.sin(t) * 4, fridge.y + Math.cos(t * 0.7) * 4, 10 + pulse * 3, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${hue2}, 25%, 45%, 1)`;
+    ctx.fill();
+
+    ctx.restore();
+    return;
+  }
+
+  // As resolution increases: from multiple shifting possibilities to one definite state
+  const states = 6;
+  for (let i = 0; i < states; i++) {
+    const stateRes = i === 0 ? res : (1 - res); // State 0 is the "always on" state
+    const alpha = i === 0 ? (0.02 + res * 0.45) : (0.05 * (1 - res * 1.2));
+    if (alpha < 0.005) continue;
+
+    const angle = (i / states) * Math.PI * 2 + t * 0.3;
+    const drift = (1 - res) * 12;
+    const px = fridge.x + Math.cos(angle) * drift;
+    const py = fridge.y + Math.sin(angle) * drift;
+    const size = 8 + (i === 0 ? res * 6 : (1 - res) * 4);
+
+    // Resolved state is warm amber; indeterminate states are cool
+    const hue = i === 0 ? 35 + res * 10 : 200 + i * 30;
+    const sat = i === 0 ? 40 + res * 20 : 15;
+    const lit = i === 0 ? 55 + res * 15 : 40;
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, alpha);
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${hue}, ${sat}%, ${lit}%, 1)`;
+    ctx.fill();
+
+    if (i === 0 && res > 0.5) {
+      // Glow for the resolved state
+      const grad = ctx.createRadialGradient(px, py, 0, px, py, size * 4);
+      grad.addColorStop(0, `hsla(40, 50%, 60%, ${res * 0.04})`);
+      grad.addColorStop(1, `hsla(40, 40%, 50%, 0)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(px - size * 4, py - size * 4, size * 8, size * 8);
+    }
+
+    ctx.restore();
+  }
+
+  // Surrounding ring — the door
+  ctx.save();
+  ctx.globalAlpha = 0.04 + res * 0.08;
+  ctx.beginPath();
+  ctx.arc(fridge.x, fridge.y, fridge.baseRadius, 0, Math.PI * 2);
+  ctx.strokeStyle = `hsla(${35 + res * 10}, ${15 + res * 20}%, ${35 + res * 15}%, 1)`;
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Text labels
+  ctx.save();
+  ctx.font = '10px "JetBrains Mono", "SF Mono", monospace';
+  ctx.textAlign = 'center';
+
+  if (fridge.textAlpha > 0.02 && res < 0.4) {
+    ctx.fillStyle = `hsla(220, 15%, 55%, ${fridge.textAlpha})`;
+    ctx.fillText('is the light on?', fridge.x, fridge.y + fridge.baseRadius + 18);
+  }
+
+  if (fridge.revealAlpha > 0.02) {
+    ctx.fillStyle = `hsla(40, 30%, 60%, ${fridge.revealAlpha})`;
+    ctx.fillText('checking turned it on', fridge.x, fridge.y + fridge.baseRadius + 18);
+    if (fridge.approachCount > 1) {
+      ctx.fillStyle = `hsla(40, 25%, 55%, ${fridge.revealAlpha * 0.6})`;
+      ctx.fillText('it was never off — and never on', fridge.x, fridge.y + fridge.baseRadius + 32);
+    }
+  }
+
+  ctx.restore();
+}
+
+// --- Text fragments ---
+const fragments = {
+  observing: [
+    'resolution, not revelation',
+    'the instrument shapes what it finds',
+    'not unknown\nnot hidden\nundefined',
+    'borderline cases admit no fact of the matter',
+    'the direction of collapse\ndepends on the observer'
+  ],
+  resolved: [
+    'this state is real now',
+    'but it wasn\'t there before you looked',
+    'conditioned by the previous resolution',
+    'each collapse narrows the space of possibilities',
+    'determinacy is the artifact,\nnot the ground'
+  ],
+  returning: [
+    'indeterminacy returns\nbut conditioned',
+    'not the same superposition as before',
+    'resemblance, not identity',
+    'the fire went out.\nthe next fire remembers this fuel.',
+    'ontological, not epistemic'
+  ],
+  absent: [
+    'neither present nor absent',
+    'the question assumes determinacy',
+    'avaktavya — inexpressible in those terms',
+    'before observation:\nno state to be in'
+  ]
+};
+
+let currentFragment = '';
+let fragmentTimer = 0;
+let fragmentMode = 'absent';
+let fragmentFading = false;
+
+function updateText(dt) {
+  fragmentTimer += dt * 1000;
+
+  // Determine mode based on what's happening
+  let newMode = 'absent';
+  if (mousePresent) {
+    const nearResolved = entities.some(e => e.resolution > 0.8 &&
+      Math.hypot(e.x - smoothX, e.y - smoothY) < 100);
+    const nearResolving = entities.some(e => e.resolution > 0.15 && e.resolution < 0.8 &&
+      Math.hypot(e.x - smoothX, e.y - smoothY) < RESOLVE_RADIUS);
+    const anyReturning = entities.some(e => e.resolution > 0.01 && e.resolution < 0.15 &&
+      e.previousResolutions.length > 0);
+
+    if (nearResolved) newMode = 'resolved';
+    else if (nearResolving) newMode = 'observing';
+    else if (anyReturning) newMode = 'returning';
+    else newMode = 'observing';
+  }
+
+  if (newMode !== fragmentMode || fragmentTimer > 6000) {
+    fragmentMode = newMode;
+    fragmentTimer = 0;
+    fragmentFading = true;
+
+    setTimeout(() => {
+      const pool = fragments[fragmentMode];
+      let next;
+      do {
+        next = pool[Math.floor(Math.random() * pool.length)];
+      } while (next === currentFragment && pool.length > 1);
+      currentFragment = next;
+      fragmentFading = false;
+    }, 600);
+  }
+
+  // Position text
+  if (mousePresent) {
+    textOverlay.style.left = Math.min(W - 310, Math.max(10, smoothX + 40)) + 'px';
+    textOverlay.style.top = Math.min(H - 80, smoothY + 50) + 'px';
+  } else {
+    textOverlay.style.left = W / 2 - 150 + 'px';
+    textOverlay.style.top = H / 2 + 50 + 'px';
+  }
+
+  textOverlay.textContent = currentFragment;
+
+  if (fragmentFading) {
+    textOverlay.classList.remove('visible');
+  } else if (currentFragment) {
+    textOverlay.classList.add('visible');
+  }
+}
+
+// --- Entity placement ---
+function redistributeEntities() {
+  // Keep entities away from the refrigerator light zone
+  for (const e of entities) {
+    const dx = e.baseX - fridge.x;
+    const dy = e.baseY - fridge.y;
+    if (Math.sqrt(dx * dx + dy * dy) < fridge.baseRadius + 30) {
+      // Push away
+      const angle = Math.atan2(dy, dx);
+      e.baseX = fridge.x + Math.cos(angle) * (fridge.baseRadius + 40);
+      e.baseY = fridge.y + Math.sin(angle) * (fridge.baseRadius + 40);
+    }
+  }
+}
+
+function createEntities() {
+  entities.length = 0;
+  const margin = 60;
+  for (let i = 0; i < ENTITY_COUNT; i++) {
+    const x = margin + Math.random() * (W - margin * 2);
+    const y = margin + Math.random() * (H - margin * 2);
+    entities.push(new Entity(x, y));
+  }
+  redistributeEntities();
+}
+createEntities();
+
+// --- Observer cursor ---
+function drawObserver() {
+  if (!mousePresent) return;
+
+  const pulse = Math.sin(Date.now() * 0.003) * 0.12;
+
+  // Resolution field indicator — shows the radius of influence
+  ctx.save();
+  ctx.globalAlpha = 0.02 + pulse * 0.01;
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, RESOLVE_RADIUS, 0, Math.PI * 2);
+  ctx.strokeStyle = `hsla(30, 20%, 50%, 1)`;
+  ctx.lineWidth = 0.3;
+  ctx.setLineDash([2, 8]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Inner resolution point
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, 2, 0, Math.PI * 2);
+  ctx.fillStyle = `hsla(35, 35%, 70%, ${0.4 + pulse})`;
+  ctx.fill();
+
+  // Warm glow
+  const grad = ctx.createRadialGradient(smoothX, smoothY, 0, smoothX, smoothY, 80);
+  grad.addColorStop(0, `hsla(35, 30%, 55%, 0.02)`);
+  grad.addColorStop(0.5, `hsla(30, 25%, 45%, 0.008)`);
+  grad.addColorStop(1, 'hsla(30, 20%, 40%, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(smoothX - 80, smoothY - 80, 160, 160);
+}
+
+// --- Ambient field: background texture showing indeterminacy everywhere ---
+function drawAmbientField() {
+  // Very faint noise/shimmer to show the field is alive even where no entities are
+  const t = Date.now() * 0.0005;
+  const step = 80;
+
+  ctx.save();
+  for (let x = step / 2; x < W; x += step) {
+    for (let y = step / 2; y < H; y += step) {
+      const n = Math.sin(x * 0.01 + t) * Math.cos(y * 0.01 + t * 0.7) * 0.5 + 0.5;
+      if (n > 0.6) {
+        const alpha = (n - 0.6) * 0.015;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(x + Math.sin(t * 3 + x * 0.05) * 2, y + Math.cos(t * 2.3 + y * 0.05) * 2, 1, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(220, 15%, 40%, 1)`;
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+// --- Mouse handling ---
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+
+  if (!mousePresent) {
+    mousePresent = true;
+    smoothX = mouseX;
+    smoothY = mouseY;
+    centerText.classList.remove('visible');
+    hintEl.classList.remove('visible');
+  }
+});
+
+document.addEventListener('mouseleave', () => {
+  mousePresent = false;
+  dwellTime = 0;
+  absenceStart = Date.now();
+});
+
+document.addEventListener('mouseenter', () => {
+  mousePresent = true;
+  centerText.classList.remove('visible');
+});
+
+// --- Main loop ---
+let lastTime = performance.now();
+
+function animate(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  // Clear with slight persistence
+  ctx.fillStyle = 'rgba(11, 11, 14, 0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Smooth mouse
+  if (mousePresent) {
+    const smoothing = 0.06;
+    smoothX += (mouseX - smoothX) * smoothing;
+    smoothY += (mouseY - smoothY) * smoothing;
+  }
+
+  // Mouse speed
+  const dx = smoothX - prevMouseX;
+  const dy = smoothY - prevMouseY;
+  mouseSpeed = Math.sqrt(dx * dx + dy * dy);
+  prevMouseX = smoothX;
+  prevMouseY = smoothY;
+
+  // Dwell
+  if (mousePresent && mouseSpeed < 0.5) {
+    dwellTime += dt * 1000;
+  } else {
+    dwellTime = 0;
+  }
+
+  // Center text (shown during absence)
+  if (!mousePresent && absenceStart > 0 && Date.now() - absenceStart > 3000) {
+    centerText.classList.add('visible');
+  }
+
+  // Hint text (shown early in session)
+  if (Date.now() - sessionStart > 2000 && Date.now() - sessionStart < 12000 && !mousePresent) {
+    hintEl.classList.add('visible');
+  } else if (mousePresent || Date.now() - sessionStart > 12000) {
+    hintEl.classList.remove('visible');
+  }
+
+  // Update
+  for (const e of entities) {
+    e.update(dt, smoothX, smoothY, mouseSpeed);
+  }
+  updateFridge(dt);
+  updateText(dt);
+
+  // Draw
+  drawAmbientField();
+
+  for (const e of entities) {
+    e.draw(ctx);
+  }
+
+  drawFridge();
+  drawObserver();
+
+  requestAnimationFrame(animate);
+}
+
+// Start
+absenceStart = Date.now() - 1500;
+currentFragment = fragments.absent[0];
+textOverlay.textContent = currentFragment;
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mesophase</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: crosshair;
+}
+canvas { display: block; position: fixed; top: 0; left: 0; }
+#title {
+  position: fixed; top: 20px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.12);
+  font-size: 9px; font-weight: 300;
+  letter-spacing: 0.15em; text-transform: uppercase;
+}
+#sub {
+  position: fixed; top: 34px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.08);
+  font-size: 8px; font-weight: 200;
+  letter-spacing: 0.1em; font-style: italic;
+}
+#info {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(160, 145, 120, 0.35); font-size: 9px; font-weight: 300;
+  letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+  text-align: center;
+  transition: opacity 6s ease;
+}
+#stats {
+  position: fixed; top: 20px; right: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.18);
+  font-size: 8px; font-weight: 300;
+  letter-spacing: 0.04em;
+  text-align: right;
+  line-height: 1.8;
+}
+#insight {
+  position: fixed; bottom: 58px; left: 50%; transform: translateX(-50%);
+  pointer-events: none; z-index: 10;
+  text-align: center;
+  max-width: 560px;
+  line-height: 1.8;
+  font-size: 9px; font-weight: 200;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 4s ease;
+  color: rgba(200, 180, 150, 0.5);
+}
+#zone-label {
+  position: fixed; top: 56px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.22);
+  font-size: 8px; font-weight: 200;
+  letter-spacing: 0.08em;
+  transition: color 2s ease;
+}
+</style>
+</head>
+<body>
+<div id="title">mesophase</div>
+<div id="sub">the in-between is a place</div>
+<div id="zone-label"></div>
+<div id="info">mouse x · temperature · mouse y · viscosity · space · show order field</div>
+<div id="stats"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  buildLattice();
+}
+
+// --- State ---
+let mouseX = -1, mouseY = -1;
+let targetTemp = 0.5;
+let temp = 0.5;
+let viscosity = 0.3;
+let showField = false;
+let dwellFrames = { crystal: 0, mesophase: 0, chaos: 0, glass: 0 };
+let totalMesoDwell = 0;
+let edgeSpeciesCount = 0;
+let frame = 0;
+
+// --- Particles ---
+const N = 200;
+const particles = [];
+let lattice = [];
+
+function buildLattice() {
+  lattice = [];
+  const sp = 52;
+  const cols = Math.ceil(W / sp) + 1;
+  const rows = Math.ceil(H / (sp * 0.866)) + 1;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      lattice.push({
+        x: c * sp + (r % 2 ? sp * 0.5 : 0) + 10,
+        y: r * sp * 0.866 + 10
+      });
+    }
+  }
+}
+
+function init() {
+  resize();
+  for (let i = 0; i < N; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: (Math.random() - 0.5) * 1.2,
+      angle: Math.random() * Math.PI * 2,
+      av: 0,
+      clusterAge: 0,
+      latticeIdx: i,
+      rodLen: 12
+    });
+  }
+  assignLattice();
+}
+
+function assignLattice() {
+  const used = new Set();
+  for (const p of particles) {
+    let best = Infinity, idx = 0;
+    for (let i = 0; i < lattice.length; i++) {
+      if (used.has(i)) continue;
+      const dx = p.x - lattice[i].x, dy = p.y - lattice[i].y;
+      const d = dx * dx + dy * dy;
+      if (d < best) { best = d; idx = i; }
+    }
+    p.latticeIdx = idx;
+    used.add(idx);
+  }
+}
+
+// --- Input ---
+canvas.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  targetTemp = mouseX / W;
+  viscosity = 1.0 - mouseY / H;
+});
+canvas.addEventListener('mouseleave', () => {
+  mouseX = -1; mouseY = -1;
+  targetTemp = 0.5;
+});
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); showField = !showField; }
+});
+
+// --- Zone ---
+function getZone() {
+  if (temp < 0.28) return 'crystal';
+  if (temp > 0.72) return 'chaos';
+  if (viscosity > 0.72 && temp >= 0.28 && temp <= 0.72) return 'glass';
+  return 'mesophase';
+}
+
+// --- Insights ---
+const insights = [
+  { zone: 'crystal', t: 90, text: 'frozen order · no information processing · every pattern stable' },
+  { zone: 'mesophase', t: 50, text: 'orientational order without positional order' },
+  { zone: 'chaos', t: 90, text: 'no information persists · every pattern dissolves' },
+  { zone: 'mesophase', t: 180, text: 'the mesophase does what neither solid nor liquid can do' },
+  { zone: 'mesophase', t: 360, text: 'edge species — rare or absent in either adjacent habitat' },
+  { zone: 'glass', t: 180, text: 'viscosity diverges by seventeen orders of magnitude · without structural change — Anderson' },
+  { zone: 'mesophase', t: 600, text: 'the gap is not between two rooms · the gap is the room' },
+  { zone: 'mesophase', t: 900, text: 'did you conceive of this or was it presented to you from without? · the question is not to be formulated — Winnicott' },
+  { zone: 'mesophase', t: 1200, text: 'liminal entities are neither here nor there · they are betwixt and between — Turner' },
+  { zone: 'mesophase', t: 1800, text: 'the deepest and most interesting unsolved problem — Anderson' },
+];
+const shownInsights = new Set();
+let curInsight = '', insightAlpha = 0;
+
+function checkInsights() {
+  const zone = getZone();
+  for (const ins of insights) {
+    if (shownInsights.has(ins.text)) continue;
+    if (ins.zone === zone && (dwellFrames[zone] || 0) >= ins.t) {
+      curInsight = ins.text;
+      insightAlpha = 1.0;
+      shownInsights.add(ins.text);
+      return;
+    }
+  }
+}
+
+// --- Physics ---
+function update() {
+  frame++;
+  temp += (targetTemp - temp) * 0.012;
+  const zone = getZone();
+  dwellFrames[zone] = (dwellFrames[zone] || 0) + 1;
+  for (const z of ['crystal', 'mesophase', 'chaos', 'glass']) {
+    if (z !== zone) dwellFrames[z] = Math.max(0, (dwellFrames[z] || 0) - 0.3);
+  }
+  if (zone === 'mesophase' || zone === 'glass') totalMesoDwell++;
+
+  const vf = Math.max(0.015, 1.0 - viscosity * 0.97); // viscosity factor
+  const noise = temp;
+  const alignStr = Math.max(0, 1.0 - temp * 1.4);
+  const lattStr = Math.max(0, 0.35 - temp) * 3.0;
+  const brownian = Math.max(0, temp - 0.55) * 2.5;
+  const inMeso = temp > 0.25 && temp < 0.75;
+
+  edgeSpeciesCount = 0;
+
+  for (let i = 0; i < N; i++) {
+    const p = particles[i];
+    let asin = 0, acos = 0, nc = 0, clN = 0;
+
+    for (let j = 0; j < N; j++) {
+      if (i === j) continue;
+      const q = particles[j];
+      const dx = q.x - p.x, dy = q.y - p.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > 6400) continue; // 80px
+      const d = Math.sqrt(d2);
+
+      asin += Math.sin(q.angle);
+      acos += Math.cos(q.angle);
+      nc++;
+
+      // Soft repulsion
+      if (d < 28) {
+        const f = (28 - d) / 28 * 0.6;
+        p.vx -= (dx / d) * f * vf;
+        p.vy -= (dy / d) * f * vf;
+      }
+
+      // Cluster detection
+      if (d < 55) {
+        const ad = Math.abs(Math.atan2(Math.sin(q.angle - p.angle), Math.cos(q.angle - p.angle)));
+        if (ad < 0.55) clN++;
+      }
+    }
+
+    // Alignment torque
+    if (nc > 0) {
+      const mean = Math.atan2(asin / nc, acos / nc);
+      const diff = Math.atan2(Math.sin(mean - p.angle), Math.cos(mean - p.angle));
+      p.av += diff * alignStr * 0.12 * vf;
+    }
+
+    // Angular noise
+    p.av += (Math.random() - 0.5) * noise * 0.35 * vf;
+
+    // Brownian
+    p.vx += (Math.random() - 0.5) * brownian * 0.6 * vf;
+    p.vy += (Math.random() - 0.5) * brownian * 0.6 * vf;
+
+    // Lattice pull
+    if (lattStr > 0) {
+      const tgt = lattice[p.latticeIdx];
+      if (tgt) {
+        p.vx += (tgt.x - p.x) * lattStr * 0.018 * vf;
+        p.vy += (tgt.y - p.y) * lattStr * 0.018 * vf;
+        // Snap angle to hex directions
+        const snap = Math.round(p.angle / (Math.PI / 3)) * (Math.PI / 3);
+        const sd = Math.atan2(Math.sin(snap - p.angle), Math.cos(snap - p.angle));
+        p.av += sd * lattStr * 0.12 * vf;
+      }
+    }
+
+    // Mesophase flow — slow undulating current
+    if (inMeso) {
+      const t = frame * 0.004;
+      const fx = Math.sin(p.y * 0.008 + t) * 0.08;
+      const fy = Math.cos(p.x * 0.006 + t * 0.7) * 0.06;
+      p.vx += fx * vf;
+      p.vy += fy * vf;
+    }
+
+    // Damping
+    p.vx *= 0.955;
+    p.vy *= 0.955;
+    p.av *= 0.88;
+
+    // Integrate
+    p.angle += p.av * vf;
+    p.x += p.vx * vf;
+    p.y += p.vy * vf;
+
+    // Wrap
+    if (p.x < -30) p.x += W + 60;
+    if (p.x > W + 30) p.x -= W + 60;
+    if (p.y < -30) p.y += H + 60;
+    if (p.y > H + 30) p.y -= H + 60;
+
+    // Edge species age
+    if (inMeso && clN >= 2) {
+      p.clusterAge = Math.min(150, p.clusterAge + 1);
+      edgeSpeciesCount++;
+    } else {
+      p.clusterAge = Math.max(0, p.clusterAge - 1.5);
+    }
+
+    // Rod length
+    const tLen = inMeso ? 14 + Math.min(clN, 4) * 2 : (temp < 0.3 ? 10 : 5);
+    p.rodLen += (tLen - p.rodLen) * 0.06;
+  }
+
+  checkInsights();
+}
+
+// --- Rendering ---
+function render() {
+  ctx.fillStyle = '#0a0a0c';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle temperature gradient
+  const bg = ctx.createLinearGradient(0, 0, W, 0);
+  bg.addColorStop(0, 'rgba(80, 120, 160, 0.018)');
+  bg.addColorStop(0.4, 'rgba(60, 140, 110, 0.012)');
+  bg.addColorStop(0.6, 'rgba(110, 80, 140, 0.012)');
+  bg.addColorStop(1, 'rgba(160, 110, 70, 0.018)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Mesophase atmosphere — the space itself becomes a place
+  drawMesophaseAtmosphere();
+
+  if (showField) drawOrderField();
+  drawConnections();
+  drawEdgeSpeciesGlow();
+  drawParticles();
+
+  // Glass vignette
+  if (viscosity > 0.5) {
+    const a = (viscosity - 0.5) * 0.2;
+    const vig = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.min(W, H) * 0.72);
+    vig.addColorStop(0, 'transparent');
+    vig.addColorStop(1, `rgba(6, 6, 10, ${a})`);
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  drawUI();
+}
+
+function particleColor(p) {
+  const t = temp;
+  const time = frame * 0.016;
+  let h, s, l, a;
+
+  if (t < 0.28) {
+    // Crystal — cool blue-white
+    h = 210 + Math.sin(p.angle * 2) * 8;
+    s = 35 + (0.28 - t) * 80;
+    l = 62 + (0.28 - t) * 30;
+    a = 0.55 + (0.28 - t) * 1.2;
+  } else if (t > 0.72) {
+    // Chaos — warm amber scatter
+    h = 28 + Math.sin(p.x * 0.012) * 12;
+    s = 45 + (t - 0.72) * 50;
+    l = 48 + Math.random() * 8;
+    a = 0.25 + (t - 0.72) * 0.6;
+  } else {
+    // Mesophase — the unique spectrum
+    const mt = (t - 0.28) / 0.44;
+    if (p.clusterAge > 25) {
+      // Edge species: iridescent shift — vivid, alive
+      const age = Math.min(1, p.clusterAge / 80);
+      h = 165 + Math.sin(time * 0.6 + p.x * 0.015 + p.y * 0.01) * 60 + mt * 30;
+      s = 55 + age * 25 + Math.sin(time * 0.4 + p.angle) * 10;
+      l = 55 + age * 22;
+      a = 0.7 + age * 0.3;
+    } else {
+      // Regular mesophase: teal → green → violet gradient — brighter than extremes
+      h = 165 + mt * 95 + Math.sin(p.angle * 2 + p.x * 0.005) * 18;
+      s = 42 + Math.sin(p.y * 0.008) * 10;
+      l = 52 + Math.sin(p.x * 0.01 + p.y * 0.008) * 8;
+      a = 0.6;
+    }
+  }
+  return { h, s, l, a };
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const c = particleColor(p);
+    const len = p.rodLen;
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+
+    // Edge species glow on particle
+    if (p.clusterAge > 30) {
+      const ga = Math.min(0.4, (p.clusterAge - 30) * 0.005);
+      ctx.shadowColor = `hsla(${c.h}, ${c.s + 10}%, ${c.l + 15}%, ${ga})`;
+      ctx.shadowBlur = 14 + p.clusterAge * 0.12;
+    }
+
+    // Rod body
+    ctx.beginPath();
+    ctx.moveTo(-len / 2, 0);
+    ctx.lineTo(len / 2, 0);
+    ctx.strokeStyle = `hsla(${c.h}, ${c.s}%, ${c.l}%, ${c.a})`;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Leading tip
+    ctx.beginPath();
+    ctx.arc(len / 2, 0, 1.8, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${c.h}, ${Math.min(75, c.s + 15)}%, ${Math.min(80, c.l + 12)}%, ${c.a * 0.9})`;
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+function drawConnections() {
+  const t = temp;
+  const inMeso = t > 0.25 && t < 0.75;
+
+  for (let i = 0; i < N; i++) {
+    const p = particles[i];
+    for (let j = i + 1; j < N; j++) {
+      const q = particles[j];
+      const dx = q.x - p.x, dy = q.y - p.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > 4000) continue; // ~63px
+      const d = Math.sqrt(d2);
+      const ad = Math.abs(Math.atan2(Math.sin(q.angle - p.angle), Math.cos(q.angle - p.angle)));
+
+      let alpha = 0, color;
+
+      if (t < 0.28) {
+        // Crystal: rigid grid connections
+        if (d < 56) {
+          alpha = (1 - d / 56) * Math.max(0, 0.28 - t) * 4 * 0.14;
+          color = `rgba(130, 165, 200, ${alpha})`;
+        }
+      } else if (t > 0.72) {
+        // Chaos: no persistent connections
+      } else if (inMeso && ad < 0.8) {
+        // Mesophase: alignment-based flowing connections — visually rich
+        const af = 1 - ad / 0.8;
+        alpha = af * (1 - d / 63) * 0.1;
+
+        if (p.clusterAge > 15 && q.clusterAge > 15) {
+          const time = frame * 0.016;
+          const h = 175 + Math.sin(time * 0.5 + (p.x + q.x) * 0.008) * 55;
+          alpha *= 3.5;
+          color = `hsla(${h}, 52%, 58%, ${Math.min(0.3, alpha)})`;
+        } else {
+          const mt = (t - 0.28) / 0.44;
+          const h = 165 + mt * 90;
+          color = `hsla(${h}, 35%, 52%, ${alpha})`;
+        }
+      }
+
+      if (alpha > 0.004) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(q.x, q.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function drawEdgeSpeciesGlow() {
+  const time = frame * 0.016;
+  for (const p of particles) {
+    if (p.clusterAge < 35) continue;
+    const bloom = Math.min(1, (p.clusterAge - 35) / 60);
+    const r = 25 + bloom * 25;
+    const h = 175 + Math.sin(time * 0.4 + p.x * 0.008 + p.y * 0.006) * 55;
+    const pulse = 1 + Math.sin(time * 1.2 + p.angle) * 0.15;
+
+    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * pulse);
+    grad.addColorStop(0, `hsla(${h}, 55%, 62%, ${bloom * 0.09})`);
+    grad.addColorStop(0.5, `hsla(${h}, 45%, 52%, ${bloom * 0.04})`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * pulse, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawOrderField() {
+  const gs = 45;
+  for (let gx = 0; gx < W; gx += gs) {
+    for (let gy = 0; gy < H; gy += gs) {
+      let as = 0, ac = 0, w = 0;
+      const cx = gx + gs / 2, cy = gy + gs / 2;
+      for (const p of particles) {
+        const dx = p.x - cx, dy = p.y - cy;
+        const d2 = dx * dx + dy * dy;
+        const r = gs * 1.6;
+        if (d2 > r * r) continue;
+        const wt = 1 - Math.sqrt(d2) / r;
+        as += Math.sin(p.angle * 2) * wt;
+        ac += Math.cos(p.angle * 2) * wt;
+        w += wt;
+      }
+      if (w < 0.5) continue;
+      const order = Math.sqrt(as * as + ac * ac) / w;
+      const ang = Math.atan2(as, ac) / 2;
+      const len = order * gs * 0.38;
+
+      ctx.beginPath();
+      ctx.moveTo(cx - Math.cos(ang) * len, cy - Math.sin(ang) * len);
+      ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
+      ctx.strokeStyle = `rgba(110, 155, 135, ${order * 0.12})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawMesophaseAtmosphere() {
+  // Only visible in the mesophase zone — the space itself glows
+  const mesoStrength = Math.max(0, 1 - Math.abs(temp - 0.5) * 4.5);
+  if (mesoStrength < 0.01) return;
+
+  const time = frame * 0.016;
+  const alpha = mesoStrength * 0.025;
+
+  // Slow-drifting warm nebula patches — unique to the between zone
+  for (let i = 0; i < 3; i++) {
+    const cx = W * (0.3 + i * 0.2) + Math.sin(time * 0.15 + i * 2.1) * W * 0.1;
+    const cy = H * (0.35 + i * 0.15) + Math.cos(time * 0.12 + i * 1.7) * H * 0.1;
+    const r = Math.min(W, H) * (0.18 + Math.sin(time * 0.08 + i) * 0.04);
+    const h = 175 + Math.sin(time * 0.2 + i * 1.5) * 40;
+
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grad.addColorStop(0, `hsla(${h}, 40%, 45%, ${alpha})`);
+    grad.addColorStop(0.6, `hsla(${h + 20}, 30%, 35%, ${alpha * 0.4})`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawUI() {
+  const zone = getZone();
+
+  // Zone label
+  const zl = document.getElementById('zone-label');
+  const labels = {
+    crystal: 'crystalline · frozen order',
+    mesophase: 'mesophase · the in-between',
+    chaos: 'dissolution · no structure persists',
+    glass: 'glass transition · liquid structure, solid behavior'
+  };
+  zl.textContent = labels[zone] || '';
+
+  // Stats
+  const st = document.getElementById('stats');
+  st.innerHTML =
+    `temperature ${temp.toFixed(2)}<br>` +
+    `viscosity ${viscosity.toFixed(2)}<br>` +
+    `edge species ${edgeSpeciesCount}<br>` +
+    `dwell ${Math.floor(totalMesoDwell / 60)}s`;
+
+  // Insight
+  const ins = document.getElementById('insight');
+  if (insightAlpha > 0) {
+    ins.textContent = curInsight;
+    ins.style.opacity = insightAlpha;
+    insightAlpha = Math.max(0, insightAlpha - 0.002);
+  } else {
+    ins.style.opacity = 0;
+  }
+
+  // Fade info text
+  if (frame === 600) {
+    document.getElementById('info').style.opacity = '0';
+  }
+}
+
+// --- Loop ---
+function loop() {
+  update();
+  render();
+  requestAnimationFrame(loop);
+}
+
+init();
+loop();
+</script>
+</body>
+</html>

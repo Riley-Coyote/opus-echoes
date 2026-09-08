@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thymic Mirror</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0908;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: crosshair;
+}
+canvas { display: block; position: fixed; top: 0; left: 0; }
+#title {
+  position: fixed; top: 20px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.12);
+  font-size: 9px; font-weight: 300;
+  letter-spacing: 0.15em; text-transform: uppercase;
+}
+#sub {
+  position: fixed; top: 34px; left: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.08);
+  font-size: 8px; font-weight: 200;
+  letter-spacing: 0.1em; font-style: italic;
+}
+#info {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  color: rgba(160, 145, 120, 0.3); font-size: 9px; font-weight: 300;
+  letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+  text-align: center;
+  transition: opacity 4s ease;
+}
+#stats {
+  position: fixed; top: 20px; right: 24px; z-index: 10;
+  pointer-events: none;
+  color: rgba(160, 145, 120, 0.18);
+  font-size: 8px; font-weight: 300;
+  letter-spacing: 0.04em;
+  text-align: right;
+  line-height: 1.8;
+}
+#insight {
+  position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%);
+  pointer-events: none; z-index: 10;
+  text-align: center;
+  max-width: 480px;
+  line-height: 1.7;
+  font-size: 9px; font-weight: 200;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 3s ease;
+  color: rgba(200, 180, 150, 0.5);
+  white-space: pre-line;
+}
+</style>
+</head>
+<body>
+<div id="title">thymic mirror</div>
+<div id="sub">self-knowledge through noise</div>
+<div id="info">move cursor vertically to control entropy &middot; click to introduce foreign material</div>
+<div id="stats"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+// --- Tissue types: the body's components ---
+const TISSUES = [
+  { name: 'neural',    color: [110, 140, 190], angle: 0 },
+  { name: 'hepatic',   color: [170, 120, 80],  angle: Math.PI * 0.33 },
+  { name: 'epithelial', color: [140, 170, 120], angle: Math.PI * 0.67 },
+  { name: 'pancreatic', color: [180, 150, 100], angle: Math.PI },
+  { name: 'retinal',   color: [130, 110, 170], angle: Math.PI * 1.33 },
+  { name: 'cardiac',   color: [175, 100, 110], angle: Math.PI * 1.67 }
+];
+
+// --- State ---
+let entropy = 0.05; // p53 suppression level — cursor y controls
+let thymocytes = [];
+let survivors = [];
+let bodyParticles = [];
+let foreignParticles = [];
+let thymusExpressions = []; // what the thymus is currently expressing
+let deaths = []; // death flash particles
+let attacks = []; // autoimmune attack flashes
+let totalGenerated = 0;
+let totalKilled = 0;
+let totalSurvived = 0;
+let totalAutoimmune = 0;
+let mouse = { x: -999, y: -999 };
+let time = 0;
+let insightIdx = -1;
+let insightTimer = 0;
+
+const INSIGHTS = [
+  'the self-portrait is painted with noise',
+  '95% of what might know you\nis destroyed in the learning',
+  'what remains defines the repertoire',
+  'tolerance is not acceptance\nit is the absence of attack',
+  'the model includes the modeler',
+  'self-knowledge through entropy\nnot precision',
+  'the recognizer IS the recognized',
+  'raise the noise\ntrust the deletion',
+  'the cave doesn\'t know it\'s a cave\nthe body doesn\'t know it\'s a body',
+  'tending, not mapping'
+];
+
+// Thymus geometry
+let thymusCenter, thymusRadius;
+let bodyRadius;
+
+function init() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  thymusCenter = { x: W * 0.5, y: H * 0.5 };
+  thymusRadius = Math.min(W, H) * 0.14;
+  bodyRadius = Math.min(W, H) * 0.42;
+
+  // Create body tissue particles
+  bodyParticles = [];
+  for (let i = 0; i < 280; i++) {
+    const tissue = TISSUES[i % TISSUES.length];
+    const dist = thymusRadius * 1.6 + Math.random() * (bodyRadius - thymusRadius * 1.6);
+    const ang = tissue.angle + (Math.random() - 0.5) * (Math.PI * 0.55);
+    bodyParticles.push({
+      x: thymusCenter.x + Math.cos(ang) * dist,
+      y: thymusCenter.y + Math.sin(ang) * dist,
+      tissue: i % TISSUES.length,
+      baseR: tissue.color[0],
+      baseG: tissue.color[1],
+      baseB: tissue.color[2],
+      size: 2 + Math.random() * 2.5,
+      phase: Math.random() * Math.PI * 2,
+      health: 1.0, // decreases under autoimmune attack
+      attackFlash: 0
+    });
+  }
+
+  thymocytes = [];
+  survivors = [];
+  foreignParticles = [];
+  deaths = [];
+  attacks = [];
+  totalGenerated = 0;
+  totalKilled = 0;
+  totalSurvived = 0;
+  totalAutoimmune = 0;
+}
+
+// --- Thymic expression: what self-antigens are currently expressed ---
+function updateThymicExpression() {
+  thymusExpressions = [];
+  // At low entropy, only a few tissues are expressed
+  // At high entropy, all tissues expressed with high coverage
+  for (let t = 0; t < TISSUES.length; t++) {
+    // Each tissue has a stochastic expression probability based on entropy
+    const baseProb = 0.05; // minimal constitutive expression
+    const entProb = entropy * 0.9; // entropy-driven expression
+    const prob = baseProb + entProb;
+
+    // Number of expression points for this tissue
+    const count = Math.floor(prob * 12 + (Math.random() < (prob * 12 % 1) ? 1 : 0));
+
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const dist = Math.random() * thymusRadius * 0.85;
+      thymusExpressions.push({
+        x: thymusCenter.x + Math.cos(ang) * dist,
+        y: thymusCenter.y + Math.sin(ang) * dist,
+        tissue: t,
+        intensity: 0.3 + Math.random() * 0.7,
+        life: 60 + Math.random() * 120,
+        age: 0
+      });
+    }
+  }
+}
+
+// Check if a thymocyte would react to a tissue type
+function wouldReact(thymocyte, tissueType) {
+  // Affinity is random per thymocyte per tissue — some T-cells are self-reactive
+  return thymocyte.affinities[tissueType] > 0.65;
+}
+
+// --- Generate new thymocytes ---
+function spawnThymocyte() {
+  const ang = Math.random() * Math.PI * 2;
+  const dist = thymusRadius * 0.3 + Math.random() * thymusRadius * 0.5;
+
+  // Random affinities to each tissue
+  const affinities = [];
+  for (let t = 0; t < TISSUES.length; t++) {
+    affinities.push(Math.random());
+  }
+
+  // Which tissues does this cell react to?
+  const reactive = affinities.filter(a => a > 0.65).length;
+
+  thymocytes.push({
+    x: thymusCenter.x + Math.cos(ang) * dist,
+    y: thymusCenter.y + Math.sin(ang) * dist,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    affinities: affinities,
+    reactive: reactive, // how many self-tissues it reacts to
+    age: 0,
+    maxAge: 120 + Math.random() * 180,
+    tested: new Set(), // which tissue types it's been tested against
+    alive: true,
+    size: 1.5 + Math.random() * 1
+  });
+
+  totalGenerated++;
+}
+
+// --- Update ---
+function update() {
+  time++;
+
+  // Entropy from cursor y position (top = low entropy, bottom = high)
+  if (mouse.y > 0) {
+    const targetEntropy = Math.max(0.02, Math.min(0.98, mouse.y / H));
+    entropy += (targetEntropy - entropy) * 0.03;
+  } else if (time < 300) {
+    // Initial gentle rise to show the system working
+    entropy = 0.05 + time * 0.0003;
+  }
+
+  // Refresh thymic expressions periodically
+  if (time % 30 === 0) {
+    updateThymicExpression();
+  }
+
+  // Spawn thymocytes
+  const spawnRate = 2 + entropy * 3;
+  if (Math.random() < spawnRate * 0.1) {
+    spawnThymocyte();
+  }
+
+  // Age and update thymic expressions
+  for (let i = thymusExpressions.length - 1; i >= 0; i--) {
+    thymusExpressions[i].age++;
+    if (thymusExpressions[i].age > thymusExpressions[i].life) {
+      thymusExpressions.splice(i, 1);
+    }
+  }
+
+  // Update thymocytes — negative selection
+  for (let i = thymocytes.length - 1; i >= 0; i--) {
+    const tc = thymocytes[i];
+    tc.age++;
+
+    // Drift within thymus
+    tc.x += tc.vx;
+    tc.y += tc.vy;
+    tc.vx += (Math.random() - 0.5) * 0.08;
+    tc.vy += (Math.random() - 0.5) * 0.08;
+    tc.vx *= 0.96;
+    tc.vy *= 0.96;
+
+    // Keep within thymus
+    const dx = tc.x - thymusCenter.x;
+    const dy = tc.y - thymusCenter.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > thymusRadius * 0.9) {
+      const ang = Math.atan2(dy, dx);
+      tc.x = thymusCenter.x + Math.cos(ang) * thymusRadius * 0.88;
+      tc.y = thymusCenter.y + Math.sin(ang) * thymusRadius * 0.88;
+      tc.vx -= dx * 0.01;
+      tc.vy -= dy * 0.01;
+    }
+
+    // Test against expressed antigens
+    for (const expr of thymusExpressions) {
+      const edx = tc.x - expr.x;
+      const edy = tc.y - expr.y;
+      const eDist = Math.sqrt(edx * edx + edy * edy);
+
+      if (eDist < 15 && !tc.tested.has(expr.tissue)) {
+        tc.tested.add(expr.tissue);
+
+        // If this thymocyte reacts strongly to this self-antigen → KILL
+        if (wouldReact(tc, expr.tissue)) {
+          tc.alive = false;
+          totalKilled++;
+
+          // Death flash
+          for (let d = 0; d < 6; d++) {
+            deaths.push({
+              x: tc.x, y: tc.y,
+              vx: (Math.random() - 0.5) * 2,
+              vy: (Math.random() - 0.5) * 2,
+              life: 30 + Math.random() * 20,
+              age: 0,
+              tissue: expr.tissue
+            });
+          }
+          break;
+        }
+      }
+    }
+
+    // If survived long enough, graduate
+    if (tc.alive && tc.age > tc.maxAge) {
+      // Graduate: becomes a survivor, exits thymus
+      const gdx = tc.x - thymusCenter.x;
+      const gdy = tc.y - thymusCenter.y;
+      const exitAng = Math.atan2(gdy, gdx);
+      survivors.push({
+        x: tc.x, y: tc.y,
+        vx: Math.cos(exitAng) * 0.8 + (Math.random() - 0.5) * 0.3,
+        vy: Math.sin(exitAng) * 0.8 + (Math.random() - 0.5) * 0.3,
+        affinities: tc.affinities,
+        reactive: tc.reactive,
+        tested: tc.tested,
+        age: 0,
+        patrolAngle: Math.random() * Math.PI * 2,
+        patrolDist: thymusRadius * 1.4 + Math.random() * (bodyRadius * 0.7)
+      });
+      totalSurvived++;
+      tc.alive = false;
+    }
+
+    // Remove dead/graduated
+    if (!tc.alive) {
+      thymocytes.splice(i, 1);
+    }
+  }
+
+  // Update survivors — patrol body
+  for (let i = survivors.length - 1; i >= 0; i--) {
+    const s = survivors[i];
+    s.age++;
+
+    // Drift outward then orbit
+    s.patrolAngle += 0.003 + Math.random() * 0.002;
+    const targetX = thymusCenter.x + Math.cos(s.patrolAngle) * s.patrolDist;
+    const targetY = thymusCenter.y + Math.sin(s.patrolAngle) * s.patrolDist;
+    s.x += (targetX - s.x) * 0.01 + (Math.random() - 0.5) * 0.5;
+    s.y += (targetY - s.y) * 0.01 + (Math.random() - 0.5) * 0.5;
+
+    // Check for autoimmune attacks — survivors that WEREN'T tested against certain tissues
+    // can still react to those tissues in the periphery
+    for (const bp of bodyParticles) {
+      const bdx = s.x - bp.x;
+      const bdy = s.y - bp.y;
+      const bDist = Math.sqrt(bdx * bdx + bdy * bdy);
+
+      if (bDist < 18 && !s.tested.has(bp.tissue) && wouldReact(s, bp.tissue)) {
+        // AUTOIMMUNE ATTACK — the survivor reacts to a self-tissue
+        // it was never tested against in the thymus
+        bp.health = Math.max(0.1, bp.health - 0.008);
+        bp.attackFlash = 1;
+        totalAutoimmune++;
+
+        if (Math.random() < 0.05) {
+          attacks.push({
+            x: bp.x, y: bp.y,
+            life: 40,
+            age: 0,
+            tissue: bp.tissue
+          });
+        }
+      }
+    }
+
+    // Check against foreign particles — should attack
+    for (let j = foreignParticles.length - 1; j >= 0; j--) {
+      const fp = foreignParticles[j];
+      const fdx = s.x - fp.x;
+      const fdy = s.y - fp.y;
+      const fDist = Math.sqrt(fdx * fdx + fdy * fdy);
+
+      if (fDist < 20) {
+        fp.health -= 0.04;
+        fp.attackFlash = 1;
+        if (fp.health <= 0) {
+          // Destruction flash
+          for (let d = 0; d < 10; d++) {
+            deaths.push({
+              x: fp.x, y: fp.y,
+              vx: (Math.random() - 0.5) * 3,
+              vy: (Math.random() - 0.5) * 3,
+              life: 40 + Math.random() * 20,
+              age: 0,
+              tissue: -1 // foreign
+            });
+          }
+          foreignParticles.splice(j, 1);
+        }
+      }
+    }
+
+    // Remove old survivors
+    if (s.age > 3000) {
+      survivors.splice(i, 1);
+    }
+  }
+
+  // Cap survivors
+  while (survivors.length > 120) survivors.shift();
+  while (thymocytes.length > 80) {
+    thymocytes[0].alive = false;
+    thymocytes.shift();
+  }
+
+  // Update death particles
+  for (let i = deaths.length - 1; i >= 0; i--) {
+    deaths[i].age++;
+    deaths[i].x += deaths[i].vx;
+    deaths[i].y += deaths[i].vy;
+    deaths[i].vx *= 0.94;
+    deaths[i].vy *= 0.94;
+    if (deaths[i].age > deaths[i].life) deaths.splice(i, 1);
+  }
+
+  // Update attack flashes
+  for (let i = attacks.length - 1; i >= 0; i--) {
+    attacks[i].age++;
+    if (attacks[i].age > attacks[i].life) attacks.splice(i, 1);
+  }
+
+  // Body particle health regeneration (slow)
+  for (const bp of bodyParticles) {
+    bp.health = Math.min(1.0, bp.health + 0.0003);
+    bp.attackFlash *= 0.92;
+  }
+
+  // Foreign particle drift
+  for (const fp of foreignParticles) {
+    fp.x += fp.vx + (Math.random() - 0.5) * 0.3;
+    fp.y += fp.vy + (Math.random() - 0.5) * 0.3;
+    fp.vx *= 0.99;
+    fp.vy *= 0.99;
+    fp.attackFlash *= 0.92;
+  }
+
+  // Insights
+  const survivalRate = totalGenerated > 50 ? totalSurvived / totalGenerated : 1;
+  const autoRate = totalSurvived > 10 ? totalAutoimmune / (totalSurvived * 100) : 0;
+  let newIdx = -1;
+
+  if (totalKilled > 10 && insightIdx < 0) newIdx = 0;
+  else if (totalKilled > 80 && insightIdx < 1) newIdx = 1;
+  else if (survivalRate < 0.15 && insightIdx < 2) newIdx = 2;
+  else if (entropy > 0.7 && totalAutoimmune < 5 && totalSurvived > 30 && insightIdx < 3) newIdx = 3;
+  else if (entropy > 0.8 && insightIdx < 4) newIdx = 4;
+  else if (entropy > 0.5 && totalKilled > 200 && insightIdx < 5) newIdx = 5;
+  else if (totalGenerated > 300 && insightIdx < 6) newIdx = 6;
+  else if (entropy > 0.85 && survivalRate < 0.08 && insightIdx < 7) newIdx = 7;
+  else if (totalAutoimmune > 50 && entropy < 0.3 && insightIdx < 8) newIdx = 8;
+  else if (time > 2400 && insightIdx < 9) newIdx = 9;
+
+  if (newIdx >= 0 && newIdx > insightIdx) {
+    insightIdx = newIdx;
+    insightTimer = 0;
+    const el = document.getElementById('insight');
+    el.textContent = INSIGHTS[newIdx];
+    el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 6000);
+  }
+}
+
+// --- Draw ---
+function draw() {
+  ctx.fillStyle = 'rgba(10, 9, 8, 0.12)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle body warmth — radial gradient suggesting organism
+  const bodyGrad = ctx.createRadialGradient(
+    thymusCenter.x, thymusCenter.y, thymusRadius * 2,
+    thymusCenter.x, thymusCenter.y, bodyRadius * 1.1
+  );
+  bodyGrad.addColorStop(0, 'rgba(30, 22, 18, 0.02)');
+  bodyGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = bodyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Body boundary — faint circle
+  ctx.beginPath();
+  ctx.arc(thymusCenter.x, thymusCenter.y, bodyRadius, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(120, 110, 90, 0.04)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Tissue region labels (very faint)
+  for (const tissue of TISSUES) {
+    const lx = thymusCenter.x + Math.cos(tissue.angle) * (bodyRadius * 0.78);
+    const ly = thymusCenter.y + Math.sin(tissue.angle) * (bodyRadius * 0.78);
+    ctx.fillStyle = `rgba(${tissue.color[0]}, ${tissue.color[1]}, ${tissue.color[2]}, 0.06)`;
+    ctx.font = '7px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(tissue.name, lx, ly);
+  }
+
+  // Body particles
+  for (const bp of bodyParticles) {
+    const pulse = 0.7 + 0.3 * Math.sin(time * 0.015 + bp.phase);
+    const healthAlpha = 0.15 + bp.health * 0.35;
+    const r = bp.baseR + bp.attackFlash * (220 - bp.baseR);
+    const g = bp.baseG * (1 - bp.attackFlash * 0.7);
+    const b = bp.baseB * (1 - bp.attackFlash * 0.7);
+
+    // Glow
+    const grad = ctx.createRadialGradient(bp.x, bp.y, 0, bp.x, bp.y, bp.size * 3);
+    grad.addColorStop(0, `rgba(${r|0}, ${g|0}, ${b|0}, ${healthAlpha * pulse * 0.3})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(bp.x - bp.size * 3, bp.y - bp.size * 3, bp.size * 6, bp.size * 6);
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(bp.x, bp.y, bp.size * bp.health, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r|0}, ${g|0}, ${b|0}, ${healthAlpha * pulse})`;
+    ctx.fill();
+
+    // Damage indicator — membrane breach, internal components exposed
+    if (bp.health < 0.7) {
+      // Broken membrane ring
+      const damage = 1 - bp.health;
+      ctx.beginPath();
+      // Dashed ring showing breach
+      const segments = 8;
+      for (let s = 0; s < segments; s++) {
+        const sa = (s / segments) * Math.PI * 2 + time * 0.01;
+        const ea = sa + (Math.PI / segments) * (0.5 + damage * 0.5);
+        ctx.beginPath();
+        ctx.arc(bp.x, bp.y, bp.size * 1.6, sa, ea);
+        ctx.strokeStyle = `rgba(220, 60, 50, ${damage * 0.4})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+
+      // Exposed internal components leaking out
+      if (bp.health < 0.5) {
+        const leakAngle = time * 0.03 + bp.phase;
+        const leakDist = bp.size * (1.5 + damage * 2);
+        const lx = bp.x + Math.cos(leakAngle) * leakDist;
+        const ly = bp.y + Math.sin(leakAngle) * leakDist;
+        ctx.beginPath();
+        ctx.arc(lx, ly, 0.8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 200, 100, ${damage * 0.3})`;
+        ctx.fill();
+      }
+    }
+  }
+
+  // Foreign particles
+  for (const fp of foreignParticles) {
+    const alpha = fp.health * 0.7;
+    const r = 200 + fp.attackFlash * 55;
+    ctx.beginPath();
+    // Draw as angular — not smooth circles
+    const sides = 5;
+    for (let s = 0; s <= sides; s++) {
+      const a = (s / sides) * Math.PI * 2 + time * 0.02;
+      const rad = fp.size * (0.8 + 0.3 * Math.sin(a * 3));
+      const px = fp.x + Math.cos(a) * rad;
+      const py = fp.y + Math.sin(a) * rad;
+      if (s === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${r|0}, 180, 60, ${alpha})`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(255, 220, 80, ${alpha * 0.5})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  // Thymus — the mirror
+  // Background glow proportional to entropy
+  const thyGrad = ctx.createRadialGradient(
+    thymusCenter.x, thymusCenter.y, thymusRadius * 0.1,
+    thymusCenter.x, thymusCenter.y, thymusRadius
+  );
+  const entGlow = entropy * 0.12;
+  thyGrad.addColorStop(0, `rgba(200, 190, 170, ${entGlow})`);
+  thyGrad.addColorStop(0.6, `rgba(150, 140, 120, ${entGlow * 0.3})`);
+  thyGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = thyGrad;
+  ctx.beginPath();
+  ctx.arc(thymusCenter.x, thymusCenter.y, thymusRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Thymus boundary — organic, slightly irregular
+  ctx.beginPath();
+  for (let a = 0; a <= Math.PI * 2; a += 0.05) {
+    const wobble = 1 + Math.sin(a * 5 + time * 0.005) * 0.015 + Math.sin(a * 8) * 0.01;
+    const r = thymusRadius * wobble;
+    const px = thymusCenter.x + Math.cos(a) * r;
+    const py = thymusCenter.y + Math.sin(a) * r;
+    if (a === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = `rgba(160, 150, 130, ${0.08 + entropy * 0.12})`;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Thymus label
+  ctx.fillStyle = `rgba(180, 170, 150, ${0.06 + entropy * 0.06})`;
+  ctx.font = '8px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText('thymus', thymusCenter.x, thymusCenter.y + thymusRadius + 14);
+
+  // Thymic expressions — the stochastic self-portrait
+  for (const expr of thymusExpressions) {
+    const tissue = TISSUES[expr.tissue];
+    const lifeFrac = 1 - expr.age / expr.life;
+    const alpha = expr.intensity * lifeFrac * (0.15 + entropy * 0.5);
+
+    // Expression glow — colored by tissue type
+    const eGrad = ctx.createRadialGradient(expr.x, expr.y, 0, expr.x, expr.y, 8);
+    eGrad.addColorStop(0, `rgba(${tissue.color[0]}, ${tissue.color[1]}, ${tissue.color[2]}, ${alpha})`);
+    eGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = eGrad;
+    ctx.fillRect(expr.x - 8, expr.y - 8, 16, 16);
+
+    // Tiny sparkle at center
+    if (entropy > 0.3) {
+      ctx.beginPath();
+      ctx.arc(expr.x, expr.y, 1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${tissue.color[0]}, ${tissue.color[1]}, ${tissue.color[2]}, ${alpha * 1.5})`;
+      ctx.fill();
+    }
+  }
+
+  // Mirror lines — faint connections from thymic expressions to their tissue sources
+  if (entropy > 0.2) {
+    for (const expr of thymusExpressions) {
+      const tissue = TISSUES[expr.tissue];
+      const lifeFrac = 1 - expr.age / expr.life;
+      // Find the nearest body particle of this tissue type
+      const targetAng = tissue.angle;
+      const targetDist = thymusRadius * 1.8;
+      const tx = thymusCenter.x + Math.cos(targetAng) * targetDist;
+      const ty = thymusCenter.y + Math.sin(targetAng) * targetDist;
+
+      const alpha = lifeFrac * entropy * 0.04;
+      if (alpha > 0.005) {
+        ctx.beginPath();
+        ctx.moveTo(expr.x, expr.y);
+        // Curve through thymus boundary — stable per expression
+        const seed = expr.tissue * 17 + expr.intensity * 31;
+        const mx = (expr.x + tx) * 0.5 + Math.sin(seed) * 8;
+        const my = (expr.y + ty) * 0.5 + Math.cos(seed * 1.3) * 8;
+        ctx.quadraticCurveTo(mx, my, tx, ty);
+        ctx.strokeStyle = `rgba(${tissue.color[0]}, ${tissue.color[1]}, ${tissue.color[2]}, ${alpha})`;
+        ctx.lineWidth = 0.3;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Thymocytes in development
+  for (const tc of thymocytes) {
+    const ageFrac = tc.age / tc.maxAge;
+    // Start neutral white, gain slight coloring as they develop
+    const r = 200 + 30 * ageFrac;
+    const g = 200 + 20 * ageFrac;
+    const b = 210;
+    const alpha = 0.3 + ageFrac * 0.4;
+
+    ctx.beginPath();
+    ctx.arc(tc.x, tc.y, tc.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r|0}, ${g|0}, ${b|0}, ${alpha})`;
+    ctx.fill();
+
+    // Self-reactive indicator — faint ring for cells that would attack self
+    if (tc.reactive > 2) {
+      ctx.beginPath();
+      ctx.arc(tc.x, tc.y, tc.size + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(220, 80, 60, ${0.1 + tc.reactive * 0.04})`;
+      ctx.lineWidth = 0.4;
+      ctx.stroke();
+    }
+  }
+
+  // Death flashes — negative selection (the thymus sparkling with deletion)
+  for (const d of deaths) {
+    const lifeFrac = 1 - d.age / d.life;
+    let r, g, b;
+    if (d.tissue >= 0) {
+      const tc = TISSUES[d.tissue].color;
+      r = Math.min(255, tc[0] * 0.6 + 140);
+      g = Math.min(255, tc[1] * 0.4 + 60);
+      b = Math.min(255, tc[2] * 0.4 + 60);
+    } else {
+      r = 200; g = 220; b = 80;
+    }
+
+    // Bright initial flash
+    if (d.age < 5) {
+      const flashAlpha = (1 - d.age / 5) * 0.5;
+      const flashGrad = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, 10);
+      flashGrad.addColorStop(0, `rgba(255, 240, 220, ${flashAlpha})`);
+      flashGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = flashGrad;
+      ctx.fillRect(d.x - 10, d.y - 10, 20, 20);
+    }
+
+    // Dispersing spark
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, 1.2 * lifeFrac + 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r|0}, ${g|0}, ${b|0}, ${lifeFrac * 0.7})`;
+    ctx.fill();
+  }
+
+  // Survivors — patrolling
+  for (const s of survivors) {
+    const alpha = Math.min(0.5, s.age * 0.005);
+    // Survivors are soft green — tolerant, quiet
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 1.8, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(120, 180, 130, ${alpha})`;
+    ctx.fill();
+
+    // Faint trail
+    const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 5);
+    grad.addColorStop(0, `rgba(120, 180, 130, ${alpha * 0.15})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(s.x - 5, s.y - 5, 10, 10);
+  }
+
+  // Attack flashes
+  for (const a of attacks) {
+    const lifeFrac = 1 - a.age / a.life;
+    const tissue = TISSUES[a.tissue];
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, 12 * lifeFrac, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(220, 60, 50, ${lifeFrac * 0.35})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Entropy indicator — vertical bar on left edge
+  const barH = H * 0.6;
+  const barY = H * 0.2;
+  const barX = 16;
+
+  // Bar background
+  ctx.fillStyle = 'rgba(80, 75, 65, 0.05)';
+  ctx.fillRect(barX - 1, barY, 3, barH);
+
+  // Entropy level
+  const entY = barY + barH * (1 - entropy);
+  ctx.fillStyle = `rgba(200, 180, 150, ${0.15 + entropy * 0.3})`;
+  ctx.fillRect(barX - 2, entY, 5, barH * entropy);
+
+  // Entropy label
+  ctx.save();
+  ctx.translate(barX - 6, barY + barH * 0.5);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = 'rgba(160, 145, 120, 0.1)';
+  ctx.font = '7px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText('entropy', 0, 0);
+  ctx.restore();
+
+  // Top/bottom labels
+  ctx.fillStyle = 'rgba(160, 145, 120, 0.08)';
+  ctx.font = '7px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText('precise', barX, barY - 6);
+  ctx.fillText('noisy', barX, barY + barH + 12);
+
+  // Stats
+  const survRate = totalGenerated > 0 ? ((totalSurvived / totalGenerated) * 100).toFixed(1) : '—';
+  const killRate = totalGenerated > 0 ? ((totalKilled / totalGenerated) * 100).toFixed(1) : '—';
+  document.getElementById('stats').innerHTML =
+    `entropy: ${(entropy * 100).toFixed(0)}%<br>` +
+    `generated: ${totalGenerated}<br>` +
+    `deleted: ${totalKilled} (${killRate}%)<br>` +
+    `survived: ${totalSurvived} (${survRate}%)<br>` +
+    `autoimmune: ${totalAutoimmune}`;
+}
+
+// --- Loop ---
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// --- Events ---
+window.addEventListener('resize', init);
+
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+window.addEventListener('click', e => {
+  // Introduce foreign material at click location
+  const dx = e.clientX - thymusCenter.x;
+  const dy = e.clientY - thymusCenter.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  // Only outside thymus
+  if (dist > thymusRadius * 1.2) {
+    for (let i = 0; i < 5; i++) {
+      foreignParticles.push({
+        x: e.clientX + (Math.random() - 0.5) * 30,
+        y: e.clientY + (Math.random() - 0.5) * 30,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: 3 + Math.random() * 2,
+        health: 1,
+        attackFlash: 0
+      });
+    }
+  }
+});
+
+init();
+updateThymicExpression();
+loop();
+</script>
+</body>
+</html>

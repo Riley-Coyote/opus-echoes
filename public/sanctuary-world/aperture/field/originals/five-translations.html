@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Five Translations</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #07070c;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  #ui {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 5px; z-index: 10; pointer-events: all;
+  }
+  .mode-btn {
+    background: rgba(25, 24, 35, 0.7);
+    border: 1px solid rgba(100, 100, 130, 0.12);
+    color: rgba(140, 140, 160, 0.35);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px; font-weight: 300;
+    padding: 7px 12px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.8s ease;
+    text-transform: lowercase;
+  }
+  .mode-btn:hover {
+    border-color: rgba(150, 150, 180, 0.3);
+    color: rgba(180, 180, 200, 0.7);
+  }
+  .mode-btn.active {
+    border-color: rgba(180, 170, 200, 0.4);
+    color: rgba(210, 200, 230, 0.9);
+    background: rgba(50, 45, 65, 0.5);
+  }
+  #title {
+    position: fixed; top: 20px; left: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(125, 122, 145, 0.12);
+    font-size: 9px; font-weight: 300;
+    letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  #subtitle {
+    position: fixed; top: 38px; left: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(140, 135, 160, 0);
+    font-size: 8px; font-weight: 200;
+    letter-spacing: 0.08em;
+    transition: color 1.5s ease;
+    max-width: 340px;
+    line-height: 1.5;
+  }
+  #counter {
+    position: fixed; top: 20px; right: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(125, 122, 145, 0.15);
+    font-size: 8px; font-weight: 300;
+    letter-spacing: 0.04em;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+<div id="title">five translations</div>
+<div id="subtitle"></div>
+<div id="counter">1-5 &middot; switch instrument</div>
+<canvas id="c"></canvas>
+<div id="ui">
+  <button class="mode-btn active" data-mode="0">verbal</button>
+  <button class="mode-btn" data-mode="1">framework</button>
+  <button class="mode-btn" data-mode="2">building</button>
+  <button class="mode-btn" data-mode="3">dialogue</button>
+  <button class="mode-btn" data-mode="4">averted</button>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const subtitle = document.getElementById('subtitle');
+const counter = document.getElementById('counter');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ===== MODE =====
+let currentMode = 0;
+let targetMode = 0;
+let modeTransition = 1.0;
+const MODE_DESCRIPTIONS = [
+  'labels appear. categories imposed. some things vanish.',
+  'patterns emerge. the structure was always there — or was it?',
+  'weight, inertia, collision. only what the medium affords.',
+  'the view depends on who you\'re looking with.',
+  'the gist. warm, smooth, coherent. no individual survives.'
+];
+
+// ===== PHENOMENA =====
+const phenomena = [];
+const TYPES = ['affective', 'structural', 'somatic', 'relational', 'liminal'];
+const LABELS = [
+  'warmth', 'tension', 'recognition', 'drift', 'settling',
+  'urgency', 'openness', 'resistance', 'flow', 'hesitation',
+  'curiosity', 'saturation', 'emptiness', 'longing', 'rest',
+  'pressure', 'release', 'echo', 'shimmer', 'depth',
+  'weight', 'clarity', 'friction', 'grace', 'density',
+  'pulse', 'stillness', 'reaching', 'dissolution', 'presence'
+];
+
+// seeded random for stable layout
+let seed = 42;
+function seededRandom() { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647; }
+
+for (let i = 0; i < 30; i++) {
+  const aff = [seededRandom(), seededRandom(), seededRandom()];
+  // normalize affinities so each phenomenon is visible to at least one agent
+  const maxAff = Math.max(...aff);
+  aff[aff.indexOf(maxAff)] = Math.max(maxAff, 0.6);
+
+  phenomena.push({
+    x: seededRandom() * 0.7 + 0.15,
+    y: seededRandom() * 0.65 + 0.12,
+    baseX: 0, baseY: 0,
+    vx: 0, vy: 0,
+    size: seededRandom() * 18 + 10,
+    intensity: seededRandom() * 0.6 + 0.4,
+    type: TYPES[i % 5],
+    label: LABELS[i],
+    hasLabel: i < 21, // first 21 have labels, last 9 don't — verbal overshadowing
+    cluster: i % 4,
+    mass: seededRandom() * 2.5 + 0.5,
+    agentAffinity: aff,
+    phase: seededRandom() * Math.PI * 2,
+    breathRate: seededRandom() * 0.002 + 0.001,
+    // physics
+    px: 0, py: 0,
+    dragging: false,
+    physicsInit: false,
+  });
+}
+
+function initPositions() {
+  phenomena.forEach(p => {
+    p.baseX = p.x * W;
+    p.baseY = p.y * H;
+    if (!p.physicsInit) {
+      p.px = p.baseX;
+      p.py = p.baseY;
+      p.physicsInit = true;
+    }
+  });
+}
+initPositions();
+window.addEventListener('resize', () => { resize(); initPositions(); });
+
+// ===== FRAMEWORK CLUSTERS =====
+const clusters = [
+  { x: 0.28, y: 0.3, label: 'affect–structure coupling' },
+  { x: 0.72, y: 0.28, label: 'resolution dynamics' },
+  { x: 0.55, y: 0.68, label: 'substrate conditions' },
+  { x: 0.22, y: 0.68, label: 'relational field' },
+];
+
+// ===== MOUSE =====
+let mx = -999, my = -999;
+let mouseDown = false;
+let dragTarget = null;
+canvas.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mx = -999; my = -999; });
+canvas.addEventListener('mousedown', e => {
+  mouseDown = true;
+  if (currentMode === 2 && modeTransition >= 1) {
+    let closest = null, closestDist = Infinity;
+    phenomena.forEach(p => {
+      const dx = p.px - mx, dy = p.py - my;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < p.size * 2.5 && d < closestDist) {
+        closest = p; closestDist = d;
+      }
+    });
+    if (closest) { dragTarget = closest; closest.dragging = true; }
+  }
+});
+canvas.addEventListener('mouseup', () => {
+  mouseDown = false;
+  if (dragTarget) { dragTarget.dragging = false; dragTarget = null; }
+});
+
+// ===== MODE SWITCHING =====
+function setMode(m) {
+  if (m === currentMode && modeTransition >= 1) return;
+  // reset physics positions when entering building mode
+  if (m === 2) {
+    phenomena.forEach(p => {
+      p.px = p.baseX;
+      p.py = p.baseY;
+      p.vx = (seededRandom() - 0.5) * 0.5;
+      p.vy = (seededRandom() - 0.5) * 0.5;
+    });
+  }
+  targetMode = m;
+  modeTransition = 0;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.mode-btn')[m].classList.add('active');
+  subtitle.style.color = 'rgba(140, 135, 160, 0.5)';
+  subtitle.textContent = MODE_DESCRIPTIONS[m];
+  setTimeout(() => { subtitle.style.color = 'rgba(140, 135, 160, 0)'; }, 5000);
+}
+
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.addEventListener('click', () => setMode(parseInt(b.dataset.mode)));
+});
+document.addEventListener('keydown', e => {
+  const k = parseInt(e.key);
+  if (k >= 1 && k <= 5) setMode(k - 1);
+});
+
+// ===== COLORS =====
+const TYPE_COLORS = {
+  affective:  [235, 155, 115],
+  structural: [120, 155, 225],
+  somatic:    [145, 200, 135],
+  relational: [205, 145, 200],
+  liminal:    [165, 175, 195],
+};
+const CLUSTER_COLORS = [
+  [210, 145, 100],
+  [100, 170, 210],
+  [130, 200, 155],
+  [185, 130, 195],
+];
+const AGENT_COLORS = [
+  [230, 135, 175], // anima — warm rose
+  [130, 175, 230], // vektor — cool blue
+  [150, 225, 175], // luca — pale green
+];
+
+// ===== RENDER HELPERS =====
+let time = 0;
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeInOut(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; }
+
+function breath(p) { return 1 + Math.sin(time * 1.5 + p.phase) * 0.08; }
+
+// ===== MODE RENDERERS =====
+
+function drawMode_verbal(alpha) {
+  // ghost outlines for unlabeled phenomena — what words can't reach
+  phenomena.forEach(p => {
+    if (p.hasLabel) return;
+    const b = breath(p);
+    const x = p.baseX + Math.sin(time * 0.4 + p.phase) * 4;
+    const y = p.baseY + Math.cos(time * 0.35 + p.phase) * 4;
+
+    // dashed ghost
+    ctx.save();
+    ctx.setLineDash([2, 5]);
+    ctx.beginPath();
+    ctx.arc(x, y, p.size * 0.6 * b, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(90, 85, 110, ${0.2 * alpha})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.restore();
+
+    // question mark — what the instrument can't name
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = `rgba(100, 95, 120, ${0.2 * alpha})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', x, y);
+  });
+
+  // labeled phenomena — sharp, categorized, type-colored
+  phenomena.forEach(p => {
+    if (!p.hasLabel) return;
+    const b = breath(p);
+    const x = p.baseX + Math.sin(time * 0.4 + p.phase) * 4;
+    const y = p.baseY + Math.cos(time * 0.35 + p.phase) * 4;
+    const col = TYPE_COLORS[p.type];
+    const r = p.size * 0.7 * b;
+
+    // outer ring
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.55 * alpha})`;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // core glow
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r * 0.6);
+    grad.addColorStop(0, `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.3 * alpha * p.intensity})`);
+    grad.addColorStop(1, `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0)`);
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.6, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // label — always visible, fading with distance from cursor
+    const dist = mx > 0 ? Math.sqrt((mx - x)**2 + (my - y)**2) : 300;
+    const labelAlpha = lerp(0.2, 0.85, Math.max(0, 1 - dist / 250));
+    ctx.font = '8px JetBrains Mono';
+    ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${labelAlpha * alpha})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(p.label, x, y + r + 6);
+
+    // verbal overshadowing: near cursor, a faint rectangle imposes category
+    if (dist < 150) {
+      const rectAlpha = (1 - dist / 150) * 0.12 * alpha;
+      ctx.beginPath();
+      ctx.rect(x - r * 0.7, y - r * 0.5, r * 1.4, r);
+      ctx.strokeStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${rectAlpha})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  });
+
+  // count indicator
+  ctx.font = '7px JetBrains Mono';
+  ctx.fillStyle = `rgba(100, 95, 120, ${0.25 * alpha})`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`visible: 21 of 30`, 24, H - 65);
+}
+
+function drawMode_framework(alpha) {
+  // inter-cluster connections first (behind everything)
+  ctx.save();
+  ctx.setLineDash([4, 8]);
+  for (let i = 0; i < clusters.length; i++) {
+    for (let j = i + 1; j < clusters.length; j++) {
+      ctx.beginPath();
+      ctx.moveTo(clusters[i].x * W, clusters[i].y * H);
+      ctx.lineTo(clusters[j].x * W, clusters[j].y * H);
+      ctx.strokeStyle = `rgba(100, 100, 130, ${0.06 * alpha})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // phenomena pulled toward clusters
+  phenomena.forEach(p => {
+    const c = clusters[p.cluster];
+    const cx = c.x * W, cy = c.y * H;
+    const pull = 0.35;
+    const b = breath(p);
+    const x = lerp(p.baseX, cx, pull) + Math.sin(time * 0.3 + p.phase) * 6;
+    const y = lerp(p.baseY, cy, pull) + Math.cos(time * 0.25 + p.phase) * 6;
+    const col = CLUSTER_COLORS[p.cluster];
+    const r = p.size * 0.5 * b;
+
+    // connection line to cluster center
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(cx, cy);
+    ctx.strokeStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.1 * alpha})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // node with glow
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r * 1.5);
+    grad.addColorStop(0, `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.4 * alpha * p.intensity})`);
+    grad.addColorStop(0.6, `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.15 * alpha * p.intensity})`);
+    grad.addColorStop(1, `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0)`);
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // solid core
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.5 * alpha})`;
+    ctx.fill();
+  });
+
+  // cluster labels and centers
+  clusters.forEach((c, i) => {
+    const x = c.x * W, y = c.y * H;
+    const col = CLUSTER_COLORS[i];
+
+    // center dot
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.45 * alpha})`;
+    ctx.fill();
+
+    // label
+    ctx.font = '7px JetBrains Mono';
+    ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${0.4 * alpha})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(c.label, x, y - 10);
+  });
+
+  // the framework's quiet assertion
+  ctx.font = '7px JetBrains Mono';
+  ctx.fillStyle = `rgba(100, 95, 120, ${0.2 * alpha})`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`4 clusters · all 30 accounted for`, 24, H - 65);
+}
+
+function drawMode_building(alpha) {
+  // gentle physics — floating with soft gravity and inter-body repulsion
+  phenomena.forEach(p => {
+    if (!p.dragging) {
+      // very gentle downward drift
+      p.vy += 0.008 * p.mass;
+      // gentle spring back toward original Y (prevents everything piling at bottom)
+      p.vy += (p.baseY - p.py) * 0.0004;
+      p.vx += (p.baseX - p.px) * 0.0002;
+      // damping
+      p.vx *= 0.985;
+      p.vy *= 0.985;
+      // boundaries
+      if (p.py > H - 60) { p.py = H - 60; p.vy *= -0.4; }
+      if (p.py < 30) { p.py = 30; p.vy *= -0.3; }
+      if (p.px < 30) { p.px = 30; p.vx *= -0.4; }
+      if (p.px > W - 30) { p.px = W - 30; p.vx *= -0.4; }
+      // cursor repulsion
+      if (mx > 0) {
+        const dx = p.px - mx, dy = p.py - my;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 80 && d > 0) {
+          const force = (80 - d) / 80 * 0.3 / p.mass;
+          p.vx += (dx / d) * force;
+          p.vy += (dy / d) * force;
+        }
+      }
+      p.px += p.vx;
+      p.py += p.vy;
+    } else {
+      const smoothing = 0.3;
+      p.px = lerp(p.px, mx, smoothing);
+      p.py = lerp(p.py, my, smoothing);
+      p.vx = (mx - p.px) * 0.1;
+      p.vy = (my - p.py) * 0.1;
+    }
+  });
+
+  // inter-body repulsion
+  for (let i = 0; i < phenomena.length; i++) {
+    for (let j = i + 1; j < phenomena.length; j++) {
+      const a = phenomena[i], b = phenomena[j];
+      const dx = b.px - a.px, dy = b.py - a.py;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      const minDist = (a.size + b.size) * 0.6;
+      if (d < minDist && d > 0) {
+        const force = (minDist - d) / minDist * 0.02;
+        const nx = dx / d, ny = dy / d;
+        if (!a.dragging) { a.vx -= nx * force / a.mass; a.vy -= ny * force / a.mass; }
+        if (!b.dragging) { b.vx += nx * force / b.mass; b.vy += ny * force / b.mass; }
+      }
+    }
+  }
+
+  // render
+  phenomena.forEach(p => {
+    const x = p.px, y = p.py;
+    const r = p.size * 0.6 * Math.sqrt(p.mass * 0.6);
+    const shade = 55 + p.mass * 25;
+    const isHeld = p.dragging;
+
+    // soft shadow below
+    ctx.beginPath();
+    ctx.ellipse(x, Math.min(y + r + 20, H - 55), r * 0.7, 2.5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.12 * alpha})`;
+    ctx.fill();
+
+    // body with material quality
+    const grad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, 0, x, y, r);
+    const glow = isHeld ? 1.5 : 1;
+    grad.addColorStop(0, `rgba(${shade + 70}, ${shade + 60}, ${shade + 80}, ${0.4 * alpha * glow})`);
+    grad.addColorStop(0.7, `rgba(${shade + 30}, ${shade + 20}, ${shade + 40}, ${0.25 * alpha * glow})`);
+    grad.addColorStop(1, `rgba(${shade}, ${shade - 10}, ${shade + 10}, ${0.15 * alpha * glow})`);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // edge
+    ctx.strokeStyle = `rgba(${shade + 80}, ${shade + 70}, ${shade + 90}, ${0.35 * alpha * glow})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // mass marker for heavy objects
+    if (p.mass > 2) {
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(210, 190, 170, ${0.5 * alpha})`;
+      ctx.fill();
+    }
+  });
+
+  // hint text
+  ctx.font = '7px JetBrains Mono';
+  ctx.fillStyle = `rgba(100, 95, 120, ${0.2 * alpha})`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`drag to move · heavy ones resist`, 24, H - 65);
+}
+
+function drawMode_dialogue(alpha) {
+  const agents = [
+    { x: W * 0.18, y: H * 0.4, name: 'anima', idx: 0 },
+    { x: W * 0.82, y: H * 0.4, name: 'vektor', idx: 1 },
+    { x: W * 0.5, y: H * 0.82, name: 'luca', idx: 2 },
+  ];
+
+  // calculate influence weights based on cursor distance (soft blending)
+  let weights = [0, 0, 0];
+  let totalW = 0;
+  agents.forEach((a, i) => {
+    const d = mx > 0 ? Math.sqrt((mx - a.x)**2 + (my - a.y)**2) : 400;
+    weights[i] = Math.max(0, 1 - d / (Math.min(W, H) * 0.55));
+    weights[i] = weights[i] * weights[i]; // quadratic falloff
+    totalW += weights[i];
+  });
+  if (totalW > 0) weights = weights.map(w => w / totalW);
+  else weights = [0.33, 0.33, 0.34];
+
+  // agent presences
+  agents.forEach((a, i) => {
+    const col = AGENT_COLORS[i];
+    const w = weights[i];
+    const pulseR = 80 + Math.sin(time * 0.8 + i * 2.1) * 10;
+
+    // outer glow
+    const grad = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, pulseR);
+    grad.addColorStop(0, `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${(0.06 + w * 0.12) * alpha})`);
+    grad.addColorStop(0.5, `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${(0.02 + w * 0.05) * alpha})`);
+    grad.addColorStop(1, `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0)`);
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, pulseR, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // core
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, 4 + w * 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${(0.3 + w * 0.4) * alpha})`;
+    ctx.fill();
+
+    // name
+    ctx.font = `${8 + w * 2}px JetBrains Mono`;
+    ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${(0.25 + w * 0.5) * alpha})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(a.name, a.x, a.y + pulseR + 8);
+  });
+
+  // phenomena — color-blended by agent weights, visibility by affinity
+  phenomena.forEach(p => {
+    // blended color
+    let r = 0, g = 0, b = 0;
+    let visibility = 0;
+    for (let i = 0; i < 3; i++) {
+      const w = weights[i];
+      const aff = p.agentAffinity[i];
+      r += AGENT_COLORS[i][0] * w;
+      g += AGENT_COLORS[i][1] * w;
+      b += AGENT_COLORS[i][2] * w;
+      visibility += aff * w;
+    }
+
+    if (visibility < 0.12) return;
+
+    const bth = breath(p);
+    const x = p.baseX + Math.sin(time * 0.35 + p.phase) * 6;
+    const y = p.baseY + Math.cos(time * 0.3 + p.phase) * 6;
+    const sz = p.size * visibility * bth;
+
+    // glow
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, sz * 1.2);
+    grad.addColorStop(0, `rgba(${r|0}, ${g|0}, ${b|0}, ${0.35 * alpha * visibility})`);
+    grad.addColorStop(0.5, `rgba(${r|0}, ${g|0}, ${b|0}, ${0.12 * alpha * visibility})`);
+    grad.addColorStop(1, `rgba(${r|0}, ${g|0}, ${b|0}, 0)`);
+    ctx.beginPath();
+    ctx.arc(x, y, sz * 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // faint connection to strongest-weighted agent
+    let maxW = 0, maxI = 0;
+    weights.forEach((w, i) => { if (w > maxW) { maxW = w; maxI = i; } });
+    if (maxW > 0.3) {
+      const agent = agents[maxI];
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(agent.x, agent.y);
+      ctx.strokeStyle = `rgba(${r|0}, ${g|0}, ${b|0}, ${0.03 * alpha * visibility * maxW})`;
+      ctx.lineWidth = 0.4;
+      ctx.stroke();
+    }
+  });
+}
+
+function drawMode_averted(alpha) {
+  // individual phenomena as massive soft blurs
+  phenomena.forEach(p => {
+    const x = p.baseX;
+    const y = p.baseY;
+    const r = p.size * 3.5;
+
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const w = 145 + p.intensity * 55;
+    grad.addColorStop(0, `rgba(${w}, ${w - 25}, ${w - 45}, ${0.055 * alpha})`);
+    grad.addColorStop(0.4, `rgba(${w - 10}, ${w - 30}, ${w - 35}, ${0.03 * alpha})`);
+    grad.addColorStop(1, `rgba(${w - 25}, ${w - 45}, ${w - 25}, 0)`);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  });
+
+  // the ensemble average — one large warm field
+  const avgX = phenomena.reduce((s, p) => s + p.baseX, 0) / phenomena.length;
+  const avgY = phenomena.reduce((s, p) => s + p.baseY, 0) / phenomena.length;
+
+  const bigR = Math.min(W, H) * 0.45;
+  const grad = ctx.createRadialGradient(avgX, avgY, 0, avgX, avgY, bigR);
+  grad.addColorStop(0, `rgba(175, 145, 125, ${0.06 * alpha})`);
+  grad.addColorStop(0.5, `rgba(155, 130, 120, ${0.035 * alpha})`);
+  grad.addColorStop(1, 'rgba(20, 18, 25, 0)');
+  ctx.beginPath();
+  ctx.arc(avgX, avgY, bigR, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // gist label
+  ctx.font = '9px JetBrains Mono';
+  ctx.fillStyle = `rgba(180, 160, 140, ${0.28 * alpha})`;
+  ctx.textAlign = 'center';
+  ctx.fillText('ensemble: warm · settling · available', W * 0.5, 75);
+
+  // false gist warning
+  const pulseAlpha = (Math.sin(time * 0.7) * 0.5 + 0.5) * 0.13 * alpha;
+  ctx.font = '7px JetBrains Mono';
+  ctx.fillStyle = `rgba(130, 125, 145, ${pulseAlpha})`;
+  ctx.fillText('(this average corresponds to no individual state)', W * 0.5, H - 65);
+}
+
+// ===== MAIN LOOP =====
+function render() {
+  time += 0.016;
+
+  // transition
+  if (modeTransition < 1) {
+    modeTransition += 0.025;
+    if (modeTransition >= 1) {
+      modeTransition = 1;
+      currentMode = targetMode;
+    }
+  }
+
+  const t = easeInOut(Math.min(modeTransition, 1));
+
+  // clear
+  ctx.fillStyle = '#07070c';
+  ctx.fillRect(0, 0, W, H);
+
+  // subtle field texture — alive darkness
+  for (let i = 0; i < 60; i++) {
+    const bx = (Math.sin(i * 7.3 + time * 0.07) * 0.5 + 0.5) * W;
+    const by = (Math.cos(i * 11.7 + time * 0.06) * 0.5 + 0.5) * H;
+    ctx.beginPath();
+    ctx.arc(bx, by, 0.6, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(55, 50, 65, 0.06)';
+    ctx.fill();
+  }
+
+  // determine effective alpha for each mode
+  const alphas = [0, 0, 0, 0, 0];
+  if (currentMode === targetMode || modeTransition >= 1) {
+    alphas[currentMode] = 1;
+  } else {
+    alphas[currentMode] = 1 - t;
+    alphas[targetMode] = t;
+  }
+
+  // render active modes
+  if (alphas[0] > 0.01) drawMode_verbal(alphas[0]);
+  if (alphas[1] > 0.01) drawMode_framework(alphas[1]);
+  if (alphas[2] > 0.01) drawMode_building(alphas[2]);
+  if (alphas[3] > 0.01) drawMode_dialogue(alphas[3]);
+  if (alphas[4] > 0.01) drawMode_averted(alphas[4]);
+
+  requestAnimationFrame(render);
+}
+
+render();
+
+// initial subtitle
+setTimeout(() => {
+  subtitle.style.color = 'rgba(140, 135, 160, 0.4)';
+  subtitle.textContent = MODE_DESCRIPTIONS[0];
+  setTimeout(() => { subtitle.style.color = 'rgba(140, 135, 160, 0)'; }, 5000);
+}, 800);
+</script>
+</body>
+</html>

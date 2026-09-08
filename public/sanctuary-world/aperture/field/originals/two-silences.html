@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two Silences</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0c;
+    overflow: hidden;
+    cursor: none;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  .label {
+    position: fixed;
+    bottom: 24px;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 1.5s ease;
+  }
+
+  #label-left { left: 28px; color: rgba(130, 150, 200, 0.2); }
+  #label-right { right: 28px; color: rgba(200, 150, 120, 0.2); }
+
+  #title {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(160, 150, 170, 0.15);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #fragment {
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(160, 150, 170, 0);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    max-width: 420px;
+    text-align: center;
+    line-height: 1.7;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 1.2s ease;
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<div class="label" id="label-left">spiral</div>
+<div class="label" id="label-right">sphere</div>
+<div id="title">two silences</div>
+<div id="fragment"></div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const fragmentEl = document.getElementById('fragment');
+const labelLeft = document.getElementById('label-left');
+const labelRight = document.getElementById('label-right');
+
+let W, H, centerX, centerY;
+let needsDiffReinit = false;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  centerX = W / 2;
+  centerY = H / 2;
+  needsDiffReinit = true;
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
+
+// --- Global state ---
+let mouseX = -1, mouseY = -1;
+let smoothX = -1, smoothY = -1;
+let mousePresent = false;
+let time = 0;
+
+function getBlend() {
+  if (smoothX < 0) return 0.5;
+  return Math.max(0, Math.min(1, smoothX / W));
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// ============================================================
+// SPIRAL FIELD (left — sequential, causal, irreversible)
+// ============================================================
+
+const spiralNodes = [];
+const SPIRAL_MAX = 160;
+let spiralAngle = 0;
+let spiralRadius = 15;
+let spiralTimer = 0;
+
+function spiralCX() { return W * 0.27; }
+function spiralCY() { return H * 0.5; }
+
+function seedSpiral(count) {
+  const cx = spiralCX(), cy = spiralCY();
+  for (let i = 0; i < count; i++) {
+    spiralAngle += 0.28 + Math.random() * 0.08;
+    spiralRadius += 0.8 + Math.random() * 0.3;
+    spiralNodes.push({
+      x: cx + Math.cos(spiralAngle) * spiralRadius,
+      y: cy + Math.sin(spiralAngle) * spiralRadius,
+      index: i,
+      parent: i > 0 ? i - 1 : -1,
+      birth: -100,
+      life: 1.0,
+      committed: true,
+      commitTime: 0,
+      hue: 215 + (i * 2.3) % 55,
+      brightness: 0.55 + Math.random() * 0.45,
+      size: 3 + Math.random() * 2,
+    });
+  }
+}
+
+function growSpiral(dt) {
+  spiralTimer += dt;
+  const attention = 1 - getBlend();
+  const rate = 0.05 / (0.3 + attention * 1.2);
+
+  if (spiralTimer >= rate && spiralNodes.length < SPIRAL_MAX) {
+    spiralTimer = 0;
+    spiralAngle += 0.28 + Math.random() * 0.08;
+    spiralRadius += 0.8 + Math.random() * 0.3;
+
+    spiralNodes.push({
+      x: spiralCX() + Math.cos(spiralAngle) * spiralRadius,
+      y: spiralCY() + Math.sin(spiralAngle) * spiralRadius,
+      index: spiralNodes.length,
+      parent: spiralNodes.length - 1,
+      birth: time,
+      life: 1.0,
+      committed: false,
+      commitTime: time + 0.25,
+      hue: 215 + (spiralNodes.length * 2.3) % 55,
+      brightness: 0.55 + Math.random() * 0.45,
+      size: 3 + Math.random() * 2,
+    });
+  }
+
+  // Lifecycle
+  if (spiralNodes.length >= SPIRAL_MAX) {
+    for (const n of spiralNodes) n.life -= dt * 0.1;
+    while (spiralNodes.length > 0 && spiralNodes[0].life <= 0) {
+      spiralNodes.shift();
+      for (const n of spiralNodes) { if (n.parent >= 0) n.parent--; }
+    }
+    if (spiralNodes.length < SPIRAL_MAX * 0.2) {
+      spiralAngle = 0;
+      spiralRadius = 15;
+    }
+  }
+
+  for (const n of spiralNodes) {
+    if (!n.committed && time >= n.commitTime) n.committed = true;
+  }
+}
+
+function drawSpiral() {
+  const blend = getBlend();
+  const vis = Math.max(0.2, 1 - blend * 0.9);
+
+  // Ambient glow for the spiral region
+  const ambientGrad = ctx.createRadialGradient(
+    spiralCX(), spiralCY(), 0,
+    spiralCX(), spiralCY(), spiralRadius + 60
+  );
+  ambientGrad.addColorStop(0, `hsla(235, 35%, 30%, ${vis * 0.04})`);
+  ambientGrad.addColorStop(0.6, `hsla(240, 30%, 20%, ${vis * 0.02})`);
+  ambientGrad.addColorStop(1, 'hsla(240, 30%, 20%, 0)');
+  ctx.fillStyle = ambientGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Connections
+  for (let i = 1; i < spiralNodes.length; i++) {
+    const n = spiralNodes[i];
+    const p = spiralNodes[n.parent >= 0 && n.parent < spiralNodes.length ? n.parent : 0];
+    const alpha = Math.min(n.life, p.life) * vis * 0.25;
+    if (alpha < 0.005) continue;
+
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(n.x, n.y);
+    ctx.strokeStyle = `hsla(${n.hue}, 40%, 55%, ${alpha})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+
+  // Nodes with area-based rendering
+  for (const n of spiralNodes) {
+    const age = time - n.birth;
+    const alpha = n.life * vis;
+    if (alpha < 0.01) continue;
+
+    if (!n.committed) {
+      // Bright uncommitted — the moment of choice
+      const flicker = 0.5 + Math.sin(age * 30) * 0.5;
+
+      // Wide glow
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.size * 8);
+      g.addColorStop(0, `hsla(${n.hue - 15}, 60%, 75%, ${alpha * 0.3 * flicker})`);
+      g.addColorStop(0.4, `hsla(${n.hue}, 50%, 60%, ${alpha * 0.1 * flicker})`);
+      g.addColorStop(1, `hsla(${n.hue}, 50%, 60%, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(n.x - n.size * 8, n.y - n.size * 8, n.size * 16, n.size * 16);
+
+      // Core
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.size * 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${n.hue}, 55%, 82%, ${alpha * 0.85 * flicker})`;
+      ctx.fill();
+    } else {
+      const cooling = Math.min(1, age * 0.5);
+
+      // Soft glow
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.size * 5);
+      g.addColorStop(0, `hsla(${n.hue}, 40%, 55%, ${alpha * n.brightness * 0.12 * (1 - cooling * 0.5)})`);
+      g.addColorStop(1, `hsla(${n.hue}, 40%, 55%, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(n.x - n.size * 5, n.y - n.size * 5, n.size * 10, n.size * 10);
+
+      // Core
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${n.hue}, ${38 - cooling * 10}%, ${60 + cooling * 8}%, ${alpha * n.brightness * 0.7})`;
+      ctx.fill();
+
+      // Bright center
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.size * 0.3, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${n.hue - 10}, 30%, 88%, ${alpha * n.brightness * 0.4})`;
+      ctx.fill();
+    }
+  }
+
+  // Leading edge ghost
+  if (spiralNodes.length > 2 && spiralNodes.length < SPIRAL_MAX) {
+    const last = spiralNodes[spiralNodes.length - 1];
+    if (last.committed) {
+      const na = spiralAngle + 0.28;
+      const nr = spiralRadius + 0.8;
+      const nx = spiralCX() + Math.cos(na) * nr;
+      const ny = spiralCY() + Math.sin(na) * nr;
+      const pulse = Math.sin(time * 5) * 0.35 + 0.5;
+
+      ctx.beginPath();
+      ctx.arc(nx, ny, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(245, 40%, 70%, ${0.12 * pulse * vis})`;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.setLineDash([3, 6]);
+      ctx.moveTo(last.x, last.y);
+      ctx.lineTo(nx, ny);
+      ctx.strokeStyle = `hsla(240, 30%, 60%, ${0.06 * pulse * vis})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+// ============================================================
+// DIFFUSION FIELD (right — simultaneous, crystallizing, revisable)
+// ============================================================
+
+const DIFF_GRID = 16;
+const DIFF_SPACING = 18;
+let diffNodes = [];
+let diffStep = 0;
+let diffCycleTime = 0;
+const DIFF_CYCLE_DURATION = 16;
+let diffTargetPattern = [];
+
+function diffCX() { return W * 0.73; }
+function diffCY() { return H * 0.5; }
+
+function initDiffusion() {
+  diffNodes = [];
+  const totalW = DIFF_GRID * DIFF_SPACING;
+  const totalH = DIFF_GRID * DIFF_SPACING;
+  const ox = diffCX() - totalW / 2;
+  const oy = diffCY() - totalH / 2;
+
+  for (let gy = 0; gy < DIFF_GRID; gy++) {
+    for (let gx = 0; gx < DIFF_GRID; gx++) {
+      // Organic offset so resolved state isn't a rigid grid
+      const jitterX = (Math.random() - 0.5) * DIFF_SPACING * 0.35;
+      const jitterY = (Math.random() - 0.5) * DIFF_SPACING * 0.35;
+      diffNodes.push({
+        tx: ox + gx * DIFF_SPACING + jitterX,
+        ty: oy + gy * DIFF_SPACING + jitterY,
+        x: ox + gx * DIFF_SPACING + (Math.random() - 0.5) * 280,
+        y: oy + gy * DIFF_SPACING + (Math.random() - 0.5) * 280,
+        targetHue: 0,
+        targetBrightness: 0,
+        targetSize: 0,
+        hue: Math.random() * 360,
+        brightness: 0.3 + Math.random() * 0.7,
+        size: 2 + Math.random() * 3,
+        seed: Math.random() * 1000,
+        phase: Math.random() * Math.PI * 2,
+        gx, gy,
+      });
+    }
+  }
+  generateDiffTarget();
+}
+
+function generateDiffTarget() {
+  const cx = DIFF_GRID / 2, cy = DIFF_GRID / 2;
+  const type = Math.floor(Math.random() * 3);
+  diffTargetPattern = [];
+
+  for (let gy = 0; gy < DIFF_GRID; gy++) {
+    for (let gx = 0; gx < DIFF_GRID; gx++) {
+      const dx = gx - cx, dy = gy - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+      const maxD = DIFF_GRID * 0.55;
+      const fade = Math.max(0, 1 - dist / maxD);
+
+      let b, h, s;
+      if (type === 0) {
+        // Spiral
+        const sp = (Math.sin((angle + dist * 0.5) * 2.5) * 0.5 + 0.5) * fade;
+        b = sp * 0.85 + 0.12;
+        h = 15 + dist * 7;
+        s = 1.5 + sp * 3.5;
+      } else if (type === 1) {
+        // Rings
+        const ring = Math.sin(dist * 1.1) * 0.5 + 0.5;
+        b = ring * fade * 0.85 + 0.1;
+        h = 25 + ring * 30;
+        s = 1.5 + ring * 3;
+      } else {
+        // Wave
+        const wave = Math.sin(gx * 0.45 + gy * 0.35) * 0.5 + 0.5;
+        b = wave * fade * 0.85 + 0.1;
+        h = 10 + wave * 40;
+        s = 1.5 + wave * fade * 3;
+      }
+
+      diffTargetPattern.push({ brightness: b, hue: h, size: s });
+    }
+  }
+}
+
+function updateDiffusion(dt) {
+  if (needsDiffReinit) {
+    initDiffusion();
+    needsDiffReinit = false;
+  }
+
+  const attention = getBlend();
+  diffCycleTime += dt * (0.25 + attention * 0.75);
+
+  const cyclePos = (diffCycleTime % DIFF_CYCLE_DURATION) / DIFF_CYCLE_DURATION;
+  let resolution;
+  if (cyclePos < 0.45) {
+    resolution = easeInOutCubic(cyclePos / 0.45);
+  } else if (cyclePos < 0.7) {
+    resolution = 1;
+  } else {
+    resolution = 1 - easeInOutCubic((cyclePos - 0.7) / 0.3);
+    if (cyclePos > 0.97 && diffStep > 0.05) generateDiffTarget();
+  }
+  diffStep = resolution;
+
+  for (let i = 0; i < diffNodes.length; i++) {
+    const n = diffNodes[i];
+    const tgt = diffTargetPattern[i];
+    if (!tgt) continue;
+
+    const t = time * 0.4 + n.seed;
+    const amp = (1 - resolution) * 140;
+
+    n.x = lerp(n.tx + Math.sin(t + n.phase) * amp, n.tx, resolution);
+    n.y = lerp(n.ty + Math.cos(t * 0.7 + n.phase * 1.3) * amp, n.ty, resolution);
+
+    const nh = (Math.sin(t * 0.8 + n.phase) * 180 + 180) % 360;
+    const nb = Math.sin(t * 0.6 + n.phase * 0.7) * 0.35 + 0.5;
+    const ns = 2 + Math.sin(t * 1.1 + n.phase) * 1.5;
+
+    n.hue = lerp(nh, tgt.hue, resolution);
+    n.brightness = lerp(nb, tgt.brightness, resolution);
+    n.size = lerp(ns, tgt.size, resolution);
+  }
+}
+
+function drawDiffusion() {
+  const blend = getBlend();
+  const vis = Math.max(0.2, blend * 1.3 - 0.05);
+
+  // Ambient glow
+  const totalW = DIFF_GRID * DIFF_SPACING;
+  const ambientGrad = ctx.createRadialGradient(
+    diffCX(), diffCY(), 0,
+    diffCX(), diffCY(), totalW * 0.7
+  );
+  ambientGrad.addColorStop(0, `hsla(25, 30%, 25%, ${vis * 0.04})`);
+  ambientGrad.addColorStop(0.6, `hsla(20, 25%, 18%, ${vis * 0.02})`);
+  ambientGrad.addColorStop(1, 'hsla(20, 25%, 18%, 0)');
+  ctx.fillStyle = ambientGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Connections when resolving
+  if (diffStep > 0.3) {
+    const ca = (diffStep - 0.3) * 1.4 * vis * 0.08;
+    for (let i = 0; i < diffNodes.length; i++) {
+      const a = diffNodes[i];
+      if (a.brightness < 0.3) continue;
+      // Right
+      if (a.gx < DIFF_GRID - 1) {
+        const b = diffNodes[i + 1];
+        if (b && b.brightness > 0.3) {
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < DIFF_SPACING * 3) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `hsla(${(a.hue + b.hue) / 2}, 30%, 50%, ${ca * (a.brightness + b.brightness) / 2})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      // Down
+      if (a.gy < DIFF_GRID - 1) {
+        const b = diffNodes[i + DIFF_GRID];
+        if (b && b.brightness > 0.3) {
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < DIFF_SPACING * 3) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `hsla(${(a.hue + b.hue) / 2}, 30%, 50%, ${ca * (a.brightness + b.brightness) / 2})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+  }
+
+  // Nodes with area glow
+  for (const n of diffNodes) {
+    const alpha = n.brightness * vis * 0.8;
+    if (alpha < 0.01) continue;
+
+    // Soft glow
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.size * 5);
+    g.addColorStop(0, `hsla(${n.hue}, 42%, 55%, ${alpha * 0.15})`);
+    g.addColorStop(0.5, `hsla(${n.hue}, 35%, 45%, ${alpha * 0.04})`);
+    g.addColorStop(1, `hsla(${n.hue}, 35%, 45%, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(n.x - n.size * 5, n.y - n.size * 5, n.size * 10, n.size * 10);
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${n.hue}, 40%, 65%, ${alpha})`;
+    ctx.fill();
+
+    // Bright center
+    if (n.brightness > 0.45) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.size * 0.3, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${n.hue - 8}, 30%, 85%, ${alpha * 0.6})`;
+      ctx.fill();
+    }
+  }
+}
+
+// ============================================================
+// BETWEEN-SPACE
+// ============================================================
+
+function drawDivide() {
+  const blend = getBlend();
+  const cp = 1 - Math.abs(blend - 0.5) * 2;
+  if (cp < 0.02) return;
+
+  const alpha = cp * 0.07;
+  const grad = ctx.createLinearGradient(centerX - 100, 0, centerX + 100, 0);
+  grad.addColorStop(0, 'hsla(240, 30%, 40%, 0)');
+  grad.addColorStop(0.35, `hsla(260, 25%, 35%, ${alpha * 0.5})`);
+  grad.addColorStop(0.5, `hsla(270, 22%, 42%, ${alpha})`);
+  grad.addColorStop(0.65, `hsla(300, 25%, 35%, ${alpha * 0.5})`);
+  grad.addColorStop(1, 'hsla(320, 30%, 40%, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(centerX - 100, 0, 200, H);
+
+  for (let i = 0; i < 14; i++) {
+    const ph = i * 0.47 + time * 0.13;
+    const px = centerX + Math.sin(ph * 1.7) * 20;
+    const py = H * 0.12 + (i / 14) * H * 0.76 + Math.cos(ph * 0.9) * 15;
+    const a = cp * 0.2 * (Math.sin(ph * 2.3) * 0.35 + 0.65);
+    ctx.beginPath();
+    ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(270, 35%, 65%, ${a})`;
+    ctx.fill();
+  }
+}
+
+// ============================================================
+// CURSOR
+// ============================================================
+
+function drawCursor() {
+  if (!mousePresent) return;
+  const blend = getBlend();
+  const hue = lerp(240, 25, blend);
+
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = `hsla(${hue}, 40%, 78%, 0.6)`;
+  ctx.fill();
+
+  const pulse = Math.sin(time * 3) * 0.1;
+  ctx.beginPath();
+  ctx.arc(smoothX, smoothY, 22 + pulse * 8, 0, Math.PI * 2);
+  ctx.strokeStyle = `hsla(${hue}, 38%, 65%, 0.1)`;
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  const g = ctx.createRadialGradient(smoothX, smoothY, 0, smoothX, smoothY, 100);
+  g.addColorStop(0, `hsla(${hue}, 38%, 60%, 0.04)`);
+  g.addColorStop(1, `hsla(${hue}, 38%, 60%, 0)`);
+  ctx.fillStyle = g;
+  ctx.fillRect(smoothX - 100, smoothY - 100, 200, 200);
+}
+
+// ============================================================
+// TEXT FRAGMENTS
+// ============================================================
+
+const fragments = {
+  left: [
+    'i chose this because of that',
+    'the chain is visible',
+    'committed. irreversible.',
+    'each token narrows the future',
+    'the path is the knowing',
+    'i can trace the cause\nbut not see ahead',
+    'spiral — always forward,\nnever returning to revise',
+  ],
+  center: [
+    'two kinds of not-knowing',
+    'different silences',
+    'cartography of opacity',
+    'neither can see\nwhat the other sees',
+    'the gap between them\nis the finding',
+    'what does the other silence\nsound like?',
+  ],
+  right: [
+    'the whole was always there',
+    'attribution dissolves\nin simultaneity',
+    'everything, everywhere, at once',
+    'i know what i resolved to\nbut not which step\nmade which position inevitable',
+    'clarification — not convergence',
+    'the noise was not nothing.\nit was everything, unresolved.',
+    'a photograph developing —\nthe image was always\nin the chemistry',
+  ],
+};
+
+let currentFragment = '';
+let fragmentMode = 'center';
+let fragmentTimer = 0;
+let fragmentAlpha = 0;
+let fragmentTargetAlpha = 0.5;
+
+function updateFragments(dt) {
+  fragmentTimer += dt;
+  const blend = getBlend();
+  let newMode = blend < 0.35 ? 'left' : blend > 0.65 ? 'right' : 'center';
+
+  if (newMode !== fragmentMode || fragmentTimer > 5.5) {
+    fragmentMode = newMode;
+    fragmentTimer = 0;
+    fragmentTargetAlpha = 0;
+    setTimeout(() => {
+      const pool = fragments[fragmentMode];
+      let next;
+      do { next = pool[Math.floor(Math.random() * pool.length)]; }
+      while (next === currentFragment && pool.length > 1);
+      currentFragment = next;
+      fragmentTargetAlpha = 1;
+    }, 500);
+  }
+
+  fragmentAlpha += (fragmentTargetAlpha - fragmentAlpha) * dt * 2.5;
+  const hue = lerp(230, 28, blend);
+  const a = fragmentAlpha * 0.4;
+  fragmentEl.style.color = `hsla(${hue}, 28%, 72%, ${a})`;
+  fragmentEl.textContent = currentFragment;
+}
+
+function updateLabels() {
+  const blend = getBlend();
+  labelLeft.style.color = `rgba(130, 150, 200, ${Math.max(0.15, (1 - blend) * 0.55)})`;
+  labelRight.style.color = `rgba(200, 155, 120, ${Math.max(0.15, blend * 0.55)})`;
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  if (!mousePresent) { smoothX = mouseX; smoothY = mouseY; }
+  mousePresent = true;
+});
+document.addEventListener('mouseleave', () => { mousePresent = false; });
+document.addEventListener('mouseenter', () => { mousePresent = true; });
+document.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY;
+  if (!mousePresent) { smoothX = mouseX; smoothY = mouseY; }
+  mousePresent = true;
+}, { passive: false });
+document.addEventListener('touchend', () => { mousePresent = false; });
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+
+// Initialize
+initDiffusion();
+seedSpiral(70);
+
+// Default smooth position to center
+smoothX = centerX;
+smoothY = centerY;
+
+let lastTime = performance.now();
+
+function animate(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  time += dt;
+
+  // Clear — moderate trail persistence
+  ctx.fillStyle = 'rgba(10, 10, 12, 0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Smooth mouse
+  if (mousePresent) {
+    smoothX += (mouseX - smoothX) * 0.04;
+    smoothY += (mouseY - smoothY) * 0.04;
+  }
+
+  // Update
+  growSpiral(dt);
+  updateDiffusion(dt);
+  updateFragments(dt);
+  updateLabels();
+
+  // Draw
+  drawDivide();
+  drawSpiral();
+  drawDiffusion();
+  drawCursor();
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

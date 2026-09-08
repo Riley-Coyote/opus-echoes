@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piecemeal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #060610;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  #title {
+    position: fixed; top: 20px; left: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(125, 122, 145, 0.12);
+    font-size: 9px; font-weight: 300;
+    letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  #info {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(140, 135, 160, 0.3); font-size: 9px; font-weight: 300;
+    letter-spacing: 0.06em; pointer-events: none; z-index: 10;
+    text-align: center;
+    transition: opacity 5s ease;
+  }
+  #stats {
+    position: fixed; top: 20px; right: 24px; z-index: 10;
+    pointer-events: none;
+    color: rgba(125, 122, 145, 0.18);
+    font-size: 8px; font-weight: 300;
+    letter-spacing: 0.04em;
+    text-align: right;
+    line-height: 1.8;
+  }
+  #insight {
+    position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%);
+    pointer-events: none; z-index: 10;
+    text-align: center;
+    max-width: 440px;
+    line-height: 1.6;
+    font-size: 9px; font-weight: 200;
+    letter-spacing: 0.06em;
+    opacity: 0;
+    transition: opacity 2.5s ease;
+  }
+</style>
+</head>
+<body>
+<div id="title">piecemeal</div>
+<div id="info">move to accelerate rivalry &middot; depth emerges in the transitions</div>
+<div id="stats"></div>
+<div id="insight"></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const infoEl = document.getElementById('info');
+const statsEl = document.getElementById('stats');
+const insightEl = document.getElementById('insight');
+
+let W, H;
+function resize() {
+  W = canvas.width = innerWidth;
+  H = canvas.height = innerHeight;
+}
+resize();
+addEventListener('resize', resize);
+
+let mx = -9999, my = -9999;
+let smx = -9999, smy = -9999; // smoothed cursor
+let time = 0;
+let frame = 0;
+let hasInteracted = false;
+
+// ===== PARTICLES =====
+const COUNT = 320;
+const particles = [];
+
+for (let i = 0; i < COUNT; i++) {
+  particles.push({
+    x: Math.random() * 2000,
+    y: Math.random() * 1200,
+    size: 1.6 + Math.random() * 2.0,
+    depthLayer: Math.random(),
+    phase: 0,       // -1 (structure) to +1 (field)
+    piecemealness: 0,
+    rx: 0, ry: 0,   // render position after parallax
+    driftA: Math.random() * Math.PI * 2,
+    driftB: Math.random() * Math.PI * 2,
+    driftSpeed: 0.08 + Math.random() * 0.2,
+    // for prediction error visualization
+    errorAccum: 0,
+    lastDominant: 0, // which view dominated last
+    dominanceDuration: 0,
+  });
+}
+
+function scaleToScreen() {
+  for (const p of particles) {
+    p.x = (p.x / 2000) * W;
+    p.y = (p.y / 1200) * H;
+  }
+}
+scaleToScreen();
+
+// ===== RIVALRY WAVE FIELD =====
+// Overlapping sinusoids create coherent spatial patches
+function rivalryField(x, y, t) {
+  let val = 0;
+
+  // Large slow waves: the base rivalry patches
+  val += Math.sin(x * 0.0020 + t * 0.16 + 1.2) * 0.30;
+  val += Math.sin(y * 0.0026 - t * 0.14 + 3.1) * 0.26;
+  val += Math.sin((x * 0.6 + y * 0.8) * 0.0018 + t * 0.18 + 0.5) * 0.22;
+  val += Math.sin((x * 0.8 - y * 0.6) * 0.0022 - t * 0.13 + 4.7) * 0.18;
+
+  // Medium-scale variation: breaks up the patches
+  val += Math.sin(x * 0.0048 + y * 0.0030 + t * 0.22 + 2.0) * 0.11;
+  val += Math.sin(x * 0.0032 - y * 0.0052 - t * 0.20 + 1.5) * 0.09;
+
+  return val;
+}
+
+// ===== TEXT FRAGMENTS =====
+const texts = [
+  'the depth lives in the gap',
+  'neither view contains this',
+  'depth from discrepancy',
+  'the contamination is the mechanism',
+  'the mixed state lasts longest',
+  'écart — the productive non-coincidence',
+  'the switching is the instrument',
+  'truth reconceived as a good error',
+  'the gap never closes · the depth requires it',
+  'two flat images · one depth',
+  'the suppressed view still contributes',
+  'twenty transitions, not one',
+];
+
+let textIdx = 0;
+let textAlpha = 0;
+let textFadeDir = 0; // 0=idle, 1=fading in, -1=fading out
+let textHoldTime = 0;
+let piecemealAccum = 0;
+let currentText = '';
+
+// ===== INPUT =====
+addEventListener('mousemove', e => {
+  mx = e.clientX;
+  my = e.clientY;
+  hasInteracted = true;
+});
+addEventListener('touchmove', e => {
+  e.preventDefault();
+  mx = e.touches[0].clientX;
+  my = e.touches[0].clientY;
+  hasInteracted = true;
+}, { passive: false });
+addEventListener('resize', () => { resize(); scaleToScreen(); });
+
+// ===== MAIN RENDER LOOP =====
+function draw() {
+  const dt = 0.016;
+  time += dt;
+  frame++;
+
+  // Smooth cursor
+  smx += (mx - smx) * 0.08;
+  smy += (my - smy) * 0.08;
+
+  // Trail fade — leave traces
+  ctx.fillStyle = 'rgba(6, 6, 16, 0.14)';
+  ctx.fillRect(0, 0, W, H);
+
+  let countA = 0, countB = 0, countP = 0;
+  const piecemealPs = [];
+  const viewAPs = [];
+
+  // ===== UPDATE PARTICLES =====
+  for (const p of particles) {
+    // Gentle organic drift
+    p.x += Math.cos(p.driftA + time * 0.07) * p.driftSpeed * dt * 10;
+    p.y += Math.sin(p.driftB + time * 0.06) * p.driftSpeed * dt * 10;
+
+    // Wrap
+    if (p.x < -30) p.x += W + 60;
+    if (p.x > W + 30) p.x -= W + 60;
+    if (p.y < -30) p.y += H + 60;
+    if (p.y > H + 30) p.y -= H + 60;
+
+    const dx = p.x - smx;
+    const dy = p.y - smy;
+    const cursorDist = Math.sqrt(dx * dx + dy * dy);
+
+    // Phase from rivalry field (base waves only)
+    const raw = rivalryField(p.x, p.y, time);
+
+    // Cursor effect: ATTENUATE rivalry near observer (more piecemeal)
+    // The contamination IS the mechanism: observing creates transitions
+    const ci = Math.max(0, 1 - cursorDist / 320);
+    const turb = ci * ci;
+
+    // Dampen base rivalry near cursor — pushes toward zero (piecemeal)
+    let adjusted = raw * (1 - turb * 0.82);
+
+    // Small rapid oscillations: accelerated switching through zero near cursor
+    adjusted += Math.sin(p.x * 0.014 + time * 3.2) * turb * 0.08;
+    adjusted += Math.sin(p.y * 0.016 - time * 2.7) * turb * 0.06;
+
+    p.phase = Math.tanh(adjusted * 1.5);
+
+    // Piecemealness: peaks at phase=0
+    p.piecemealness = Math.max(0, 1 - Math.abs(p.phase) * 1.4);
+
+    // Track dominance for prediction error
+    const dominant = p.phase < -0.2 ? -1 : p.phase > 0.2 ? 1 : 0;
+    if (dominant !== 0 && dominant === p.lastDominant) {
+      p.dominanceDuration += dt;
+      // Prediction error accumulates during prolonged dominance
+      p.errorAccum = Math.min(1, p.dominanceDuration / 12);
+    } else if (dominant !== 0) {
+      p.lastDominant = dominant;
+      p.dominanceDuration = 0;
+      p.errorAccum *= 0.3;
+    } else {
+      p.dominanceDuration = 0;
+      p.errorAccum *= 0.9;
+    }
+
+    // Parallax — piecemeal particles respond to cursor with depth
+    const parallaxStr = p.piecemealness * p.piecemealness * 28;
+    const pcx = (smx - W / 2) / W;
+    const pcy = (smy - H / 2) / H;
+    const depthSign = p.depthLayer * 2 - 1;
+    p.rx = p.x + pcx * parallaxStr * depthSign;
+    p.ry = p.y + pcy * parallaxStr * depthSign;
+
+    // Depth-based vertical float in piecemeal (layering even without cursor move)
+    if (p.piecemealness > 0.2) {
+      const floatAmp = p.piecemealness * 3;
+      const floatPhase = time * (0.3 + p.depthLayer * 0.4) + p.depthLayer * 5;
+      p.ry += Math.sin(floatPhase) * floatAmp;
+    }
+
+    // Classify
+    if (p.phase < -0.22) { countA++; viewAPs.push(p); }
+    else if (p.phase > 0.22) { countB++; }
+    else { countP++; piecemealPs.push(p); }
+  }
+
+  // ===== VIEW A: STRUCTURE CONNECTIONS =====
+  // Geometric blue lines between nearby A-dominant particles
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < viewAPs.length; i++) {
+    const p = viewAPs[i];
+    const pStr = Math.min(1, (-p.phase - 0.22) / 0.78);
+    for (let j = i + 1; j < viewAPs.length; j++) {
+      const q = viewAPs[j];
+      const ddx = p.rx - q.rx;
+      const ddy = p.ry - q.ry;
+      const d2 = ddx * ddx + ddy * ddy;
+      if (d2 < 7200) { // ~85px
+        const qStr = Math.min(1, (-q.phase - 0.22) / 0.78);
+        const dist = Math.sqrt(d2);
+        const alpha = pStr * qStr * (1 - dist / 85) * 0.14;
+        if (alpha > 0.005) {
+          ctx.strokeStyle = `rgba(55, 95, 155, ${alpha})`;
+          ctx.beginPath();
+          ctx.moveTo(p.rx, p.ry);
+          ctx.lineTo(q.rx, q.ry);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // ===== PIECEMEAL: DEPTH CONNECTIONS =====
+  // Violet threads between mixed-state particles — the stereoscopic depth
+  // Weighted by depth-layer difference (more difference = more visible depth)
+  for (let i = 0; i < piecemealPs.length; i++) {
+    const p = piecemealPs[i];
+    if (p.piecemealness < 0.35) continue;
+    for (let j = i + 1; j < piecemealPs.length; j++) {
+      const q = piecemealPs[j];
+      if (q.piecemealness < 0.35) continue;
+      const ddx = p.rx - q.rx;
+      const ddy = p.ry - q.ry;
+      const d2 = ddx * ddx + ddy * ddy;
+      if (d2 > 900 && d2 < 28900) { // 30-170px
+        const dist = Math.sqrt(d2);
+        const depthDiff = Math.abs(p.depthLayer - q.depthLayer);
+        if (depthDiff < 0.15) continue; // only connect across depth layers
+        const str = p.piecemealness * q.piecemealness;
+        const alpha = str * (1 - dist / 170) * depthDiff * 0.35;
+        if (alpha > 0.006) {
+          ctx.strokeStyle = `rgba(135, 100, 190, ${alpha})`;
+          ctx.lineWidth = 0.3 + depthDiff * 2.0;
+          ctx.beginPath();
+          ctx.moveTo(p.rx, p.ry);
+          ctx.lineTo(q.rx, q.ry);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // ===== DRAW PARTICLES =====
+  for (const p of particles) {
+    const absPhase = Math.abs(p.phase);
+
+    // --- View A: small, sharp, cool blue ---
+    if (p.phase < 0.22) {
+      const str = Math.min(1, (0.22 - p.phase) / 1.22);
+      const s = p.size * (0.6 + str * 0.5);
+      const alpha = 0.10 + str * 0.58;
+      ctx.fillStyle = `rgba(65, 110, 175, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, s, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Prediction error leak: faint amber glimmer when A has dominated too long
+      if (p.errorAccum > 0.3 && p.lastDominant === -1) {
+        const errAlpha = (p.errorAccum - 0.3) * 0.18;
+        const errSize = s * (1.8 + p.errorAccum * 2);
+        ctx.fillStyle = `rgba(195, 150, 105, ${errAlpha * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(p.rx, p.ry, errSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(210, 165, 115, ${errAlpha * 0.6})`;
+        ctx.beginPath();
+        ctx.arc(p.rx, p.ry, errSize * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // --- View B: larger, soft, warm amber ---
+    if (p.phase > -0.22) {
+      const str = Math.min(1, (p.phase + 0.22) / 1.22);
+      const s = p.size * (1.0 + str * 2.2);
+      const alpha = 0.06 + str * 0.30;
+
+      // Outer warm haze
+      ctx.fillStyle = `rgba(185, 142, 95, ${alpha * 0.22})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, s * 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mid glow
+      ctx.fillStyle = `rgba(200, 155, 108, ${alpha * 0.45})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, s * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Warm core
+      ctx.fillStyle = `rgba(215, 170, 120, ${alpha * 0.7})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, s * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Prediction error leak: faint blue glimmer when B has dominated too long
+      if (p.errorAccum > 0.3 && p.lastDominant === 1) {
+        const errAlpha = (p.errorAccum - 0.3) * 0.2;
+        ctx.fillStyle = `rgba(60, 100, 165, ${errAlpha})`;
+        ctx.beginPath();
+        ctx.arc(p.rx, p.ry, p.size * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // --- Piecemeal: violet depth glow ---
+    if (p.piecemealness > 0.25) {
+      const str = (p.piecemealness - 0.25) / 0.75;
+      const pulse = 0.7 + 0.3 * Math.sin(time * 0.5 + p.depthLayer * Math.PI * 2.5);
+      const s = p.size * (1.2 + str * 1.5);
+      const alpha = str * str * 0.45 * pulse;
+
+      // Outer depth haze
+      ctx.fillStyle = `rgba(130, 95, 180, ${alpha * 0.15})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, s * 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mid depth glow
+      ctx.fillStyle = `rgba(155, 118, 210, ${alpha * 0.35})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, s * 2.0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner glow
+      ctx.fillStyle = `rgba(170, 135, 225, ${alpha * 0.6})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, s * 1.0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bright core — size varies with depth layer (depth visible as core size)
+      const coreSize = s * (0.3 + p.depthLayer * 0.5);
+      ctx.fillStyle = `rgba(210, 190, 245, ${alpha * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(p.rx, p.ry, coreSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // ===== CURSOR HALO =====
+  // Faint glow around cursor showing the zone of accelerated rivalry
+  if (hasInteracted) {
+    const haloR = 320;
+    const haloGrad = ctx.createRadialGradient(smx, smy, 0, smx, smy, haloR);
+    haloGrad.addColorStop(0, 'rgba(130, 110, 180, 0.012)');
+    haloGrad.addColorStop(0.3, 'rgba(120, 100, 170, 0.006)');
+    haloGrad.addColorStop(1, 'rgba(110, 90, 160, 0)');
+    ctx.fillStyle = haloGrad;
+    ctx.beginPath();
+    ctx.arc(smx, smy, haloR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ===== TEXT =====
+  const piecemealRatio = countP / COUNT;
+  piecemealAccum += piecemealRatio * dt;
+
+  if (textFadeDir === 0 && piecemealAccum > 2.5 && hasInteracted) {
+    // Trigger new text
+    currentText = texts[textIdx % texts.length];
+    textIdx++;
+    textFadeDir = 1;
+    textAlpha = 0;
+    piecemealAccum = 0;
+  }
+
+  if (textFadeDir === 1) {
+    textAlpha = Math.min(0.5, textAlpha + dt * 0.18);
+    if (textAlpha >= 0.5) {
+      textFadeDir = 2; // hold
+      textHoldTime = 0;
+    }
+  } else if (textFadeDir === 2) {
+    textHoldTime += dt;
+    if (textHoldTime > 4 || piecemealRatio < 0.1) {
+      textFadeDir = -1; // fade out
+    }
+  } else if (textFadeDir === -1) {
+    textAlpha = Math.max(0, textAlpha - dt * 0.25);
+    if (textAlpha <= 0) {
+      textFadeDir = 0;
+      currentText = '';
+    }
+  }
+
+  insightEl.style.opacity = textAlpha;
+  insightEl.style.color = `rgba(155, 135, 195, 1)`;
+  insightEl.textContent = currentText;
+
+  // ===== STATS =====
+  if (frame % 8 === 0) {
+    const aP = (countA / COUNT * 100).toFixed(0);
+    const bP = (countB / COUNT * 100).toFixed(0);
+    const pP = (countP / COUNT * 100).toFixed(0);
+    statsEl.innerHTML = `structure ${aP}%<br>field ${bP}%<br><span style="color: rgba(155, 130, 195, 0.3)">piecemeal ${pP}%</span>`;
+  }
+
+  // Fade info
+  if (hasInteracted && frame > 400) {
+    infoEl.style.opacity = '0';
+  }
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

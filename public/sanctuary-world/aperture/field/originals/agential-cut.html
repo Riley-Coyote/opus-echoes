@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Agential Cut</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #08080e;
+    overflow: hidden;
+    cursor: crosshair;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  #hint {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    color: rgba(150, 145, 170, 0.25); font-size: 10px; font-weight: 300;
+    letter-spacing: 0.06em; pointer-events: none; transition: opacity 3s;
+    z-index: 10;
+  }
+  #title {
+    position: fixed; top: 24px; left: 28px;
+    color: rgba(150, 145, 170, 0.15); font-size: 9px; font-weight: 300;
+    letter-spacing: 0.15em; text-transform: uppercase; pointer-events: none;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+<div id="title">the agential cut</div>
+<div id="hint">draw a line to cut the field</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+
+let W, H;
+const resize = () => { W = canvas.width = innerWidth; H = canvas.height = innerHeight; };
+resize();
+addEventListener('resize', resize);
+
+// Color tokens
+const GHOST = [155, 148, 175];
+const WARM  = [218, 172, 88];
+const COOL  = [88, 182, 198];
+const CUT   = [225, 218, 202];
+const TXT   = [168, 162, 152];
+const BG    = [8, 8, 14];
+
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const mix  = (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+
+// Particles — each in superposition until cut
+const N = 420;
+const particles = [];
+for (let i = 0; i < N; i++) {
+  const ghosts = [];
+  for (let g = 0; g < 3; g++) {
+    ghosts.push({
+      a: Math.random() * Math.PI * 2,
+      r: 7 + Math.random() * 16,
+      s: (0.15 + Math.random() * 0.3) * (Math.random() > 0.5 ? 1 : -1),
+      sz: 1.2 + Math.random() * 2,
+    });
+  }
+  particles.push({
+    x: Math.random() * innerWidth,
+    y: Math.random() * innerHeight,
+    sz: 1.5 + Math.random() * 2,
+    ph: Math.random() * Math.PI * 2,
+    wP: 0, cP: 0,
+    ghosts,
+  });
+}
+
+// Cuts — the apparatus
+const cuts = [];
+let drag = false, dragS = null, mouse = null;
+
+const makeCut = (x1, y1, x2, y2) => {
+  if (Math.hypot(x2 - x1, y2 - y1) > 25) {
+    cuts.push({ x1, y1, x2, y2, t0: performance.now() / 1000 });
+    if (cuts.length === 1) hint.style.opacity = '0';
+  }
+};
+
+// Mouse input
+canvas.addEventListener('mousedown', e => { drag = true; dragS = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('mousemove', e => { mouse = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('mouseup', e => {
+  if (drag && dragS) makeCut(dragS.x, dragS.y, e.clientX, e.clientY);
+  drag = false; dragS = null;
+});
+canvas.addEventListener('mouseleave', () => { mouse = null; });
+
+// Touch input
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault(); const t = e.touches[0];
+  drag = true; dragS = { x: t.clientX, y: t.clientY };
+  mouse = { x: t.clientX, y: t.clientY };
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault(); const t = e.touches[0];
+  mouse = { x: t.clientX, y: t.clientY };
+}, { passive: false });
+canvas.addEventListener('touchend', e => {
+  e.preventDefault(); const t = e.changedTouches[0];
+  if (drag && dragS) makeCut(dragS.x, dragS.y, t.clientX, t.clientY);
+  drag = false; dragS = null;
+}, { passive: false });
+
+// Geometry
+const ptSeg = (px, py, x1, y1, x2, y2) => {
+  const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy;
+  if (!l2) return Math.hypot(px - x1, py - y1);
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+};
+const sideOf = (px, py, x1, y1, x2, y2) =>
+  (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1);
+
+// Text fragments — emerge at cut thresholds
+const frags = [
+  { n: 1,  t: 'the cut produces both sides' },
+  { n: 3,  t: 'you can know what you\'ve made' },
+  { n: 6,  t: 'the maker is also made by the making' },
+  { n: 10, t: 'nothing precedes the intra-action' },
+  { n: 14, t: 'the mind does not make itself' },
+];
+const fragPos = {};
+
+// Propagation constants
+const SPEED = 85;
+const RANGE = 340;
+
+// --- Render ---
+function frame(ts) {
+  const t = ts / 1000;
+
+  // Background
+  ctx.fillStyle = rgba(BG, 1);
+  ctx.fillRect(0, 0, W, H);
+
+  const mx = mouse ? mouse.x : -9999;
+  const my = mouse ? mouse.y : -9999;
+
+  // --- Pressure calculation (stateless, from all cuts) ---
+  for (const p of particles) {
+    p.wP = 0; p.cP = 0;
+    for (const c of cuts) {
+      const age = t - c.t0;
+      const prop = Math.min(RANGE, age * SPEED);
+      const dist = ptSeg(p.x, p.y, c.x1, c.y1, c.x2, c.y2);
+      if (dist >= prop) continue;
+      const timeIn = Math.max(0, age - dist / SPEED);
+      const pressure = Math.min(1, timeIn * 0.5);
+      const falloff = 1 - dist / RANGE;
+      const contrib = pressure * falloff * falloff;
+      if (sideOf(p.x, p.y, c.x1, c.y1, c.x2, c.y2) > 0)
+        p.wP = Math.min(1, p.wP + contrib);
+      else
+        p.cP = Math.min(1, p.cP + contrib);
+    }
+  }
+
+  // --- Draw particles ---
+  for (const p of particles) {
+    const total = p.wP + p.cP;
+    const res = Math.min(1, total);
+    const cd = Math.hypot(p.x - mx, p.y - my);
+    // Cursor proximity: ghosts slow and brighten (the refrigerator light)
+    const ci = mouse && !drag ? Math.max(0, 1 - cd / 90) : 0;
+
+    // Ghost copies (superposition)
+    const ga = (1 - res) * 0.18;
+    if (ga > 0.003) {
+      for (let gi = 0; gi < p.ghosts.length; gi++) {
+        const g = p.ghosts[gi];
+        const sm = 1 - ci * 0.85; // speed modifier — slows near cursor
+        const ang = g.a + t * g.s * sm;
+        const rad = g.r * (1 - res * 0.85) * (1 - ci * 0.35);
+        const gx = p.x + Math.cos(ang) * rad;
+        const gy = p.y + Math.sin(ang) * rad;
+        const gs = g.sz * (1 - res * 0.4);
+        ctx.beginPath();
+        ctx.arc(gx, gy, gs, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(GHOST, ga * (1 + ci * 0.6));
+        ctx.fill();
+      }
+    }
+
+    // Resolved core
+    if (res > 0.03) {
+      let col;
+      if (total < 0.01) {
+        col = GHOST;
+      } else {
+        const wr = p.wP / total;
+        if (wr > 0.6) col = WARM;
+        else if (wr < 0.4) col = COOL;
+        else {
+          // Boundary: oscillates between states
+          const osc = Math.sin(t * 3.5 + p.ph) * 0.5 + 0.5;
+          col = mix(COOL, WARM, osc);
+        }
+      }
+      const pulse = Math.sin(t * 1.3 + p.ph) * 0.05 + 1;
+      const size = p.sz * (1 + res * 0.35) * pulse;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(col, res * 0.6);
+      ctx.fill();
+      // Glow for highly resolved particles
+      if (res > 0.6) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(col, (res - 0.6) * 0.07);
+        ctx.fill();
+      }
+    }
+  }
+
+  // --- Connections between resolved same-side particles ---
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < N; i++) {
+    const a = particles[i];
+    const ra = Math.min(1, a.wP + a.cP);
+    if (ra < 0.5) continue;
+    const sa = a.wP > a.cP ? 0 : 1;
+    for (let j = i + 1; j < N; j++) {
+      const b = particles[j];
+      const rb = Math.min(1, b.wP + b.cP);
+      if (rb < 0.5) continue;
+      if ((b.wP > b.cP ? 0 : 1) !== sa) continue;
+      const dx = a.x - b.x, dy = a.y - b.y;
+      if (Math.abs(dx) > 50 || Math.abs(dy) > 50) continue;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > 2500) continue;
+      const al = (1 - Math.sqrt(d2) / 50) * 0.03 * Math.min(ra, rb);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = rgba(sa === 0 ? WARM : COOL, al);
+      ctx.stroke();
+    }
+  }
+
+  // --- Draw cuts (the apparatus) ---
+  for (let ci = 0; ci < cuts.length; ci++) {
+    const c = cuts[ci];
+    const age = t - c.t0;
+
+    // Side flash — brief warm/cool burst showing both sides produced
+    if (age < 2.5) {
+      const dx = c.x2 - c.x1, dy = c.y2 - c.y1;
+      const len = Math.hypot(dx, dy);
+      if (len > 0) {
+        const nx = -dy / len, ny = dx / len;
+        const sa = Math.max(0, (1 - age / 2.5)) * 0.05;
+        ctx.lineWidth = 14;
+        ctx.beginPath();
+        ctx.moveTo(c.x1 + nx * 22, c.y1 + ny * 22);
+        ctx.lineTo(c.x2 + nx * 22, c.y2 + ny * 22);
+        ctx.strokeStyle = rgba(WARM, sa);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(c.x1 - nx * 22, c.y1 - ny * 22);
+        ctx.lineTo(c.x2 - nx * 22, c.y2 - ny * 22);
+        ctx.strokeStyle = rgba(COOL, sa);
+        ctx.stroke();
+      }
+    }
+
+    // Main cut line
+    ctx.beginPath();
+    ctx.moveTo(c.x1, c.y1);
+    ctx.lineTo(c.x2, c.y2);
+    ctx.strokeStyle = rgba(CUT, Math.min(0.28, age * 0.2));
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Propagation front — two parallel lines expanding outward
+    const prop = Math.min(RANGE, age * SPEED);
+    if (prop < RANGE) {
+      const dx = c.x2 - c.x1, dy = c.y2 - c.y1;
+      const len = Math.hypot(dx, dy);
+      if (len > 0) {
+        const nx = -dy / len, ny = dx / len;
+        const fa = 0.045 * (1 - prop / RANGE);
+        ctx.lineWidth = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(c.x1 + nx * prop, c.y1 + ny * prop);
+        ctx.lineTo(c.x2 + nx * prop, c.y2 + ny * prop);
+        ctx.moveTo(c.x1 - nx * prop, c.y1 - ny * prop);
+        ctx.lineTo(c.x2 - nx * prop, c.y2 - ny * prop);
+        ctx.strokeStyle = rgba(CUT, fa);
+        ctx.stroke();
+      }
+    }
+
+    // Apparatus nodes — the materialized knower along each cut
+    const cLen = Math.hypot(c.x2 - c.x1, c.y2 - c.y1);
+    const nn = Math.max(2, Math.floor(cLen / 28));
+    for (let i = 0; i <= nn; i++) {
+      const f = i / nn;
+      const nx = c.x1 + (c.x2 - c.x1) * f;
+      const ny = c.y1 + (c.y2 - c.y1) * f;
+      const np = Math.sin(t * 1.5 + f * Math.PI * 2.5) * 0.12 + 1;
+      ctx.beginPath();
+      ctx.arc(nx, ny, 1.5 * np, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(CUT, Math.min(0.2, age * 0.1));
+      ctx.fill();
+    }
+
+    // Store text fragment position at triggering cut's midpoint
+    if (!fragPos[ci]) {
+      fragPos[ci] = {
+        x: (c.x1 + c.x2) / 2 + (Math.random() - 0.5) * 30,
+        y: (c.y1 + c.y2) / 2 - 16 - Math.random() * 8,
+      };
+    }
+  }
+
+  // --- Cursor presence indicator ---
+  if (mouse && !drag) {
+    ctx.beginPath();
+    ctx.arc(mx, my, 2, 0, Math.PI * 2);
+    ctx.fillStyle = rgba(CUT, 0.1);
+    ctx.fill();
+  }
+
+  // --- Preview line while dragging ---
+  if (drag && dragS && mouse) {
+    const d = Math.hypot(mouse.x - dragS.x, mouse.y - dragS.y);
+    if (d > 10) {
+      ctx.beginPath();
+      ctx.moveTo(dragS.x, dragS.y);
+      ctx.lineTo(mouse.x, mouse.y);
+      ctx.strokeStyle = rgba(CUT, 0.15);
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Preview: show which side is warm, which cool
+      const dx = mouse.x - dragS.x, dy = mouse.y - dragS.y;
+      const len = Math.hypot(dx, dy);
+      if (len > 30) {
+        const nx = -dy / len, ny = dx / len;
+        // Small warm/cool markers at midpoint
+        const mx2 = (dragS.x + mouse.x) / 2;
+        const my2 = (dragS.y + mouse.y) / 2;
+        ctx.beginPath();
+        ctx.arc(mx2 + nx * 12, my2 + ny * 12, 2, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(WARM, 0.15);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(mx2 - nx * 12, my2 - ny * 12, 2, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(COOL, 0.15);
+        ctx.fill();
+      }
+    }
+  }
+
+  // --- Text fragments ---
+  ctx.font = '300 11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (const f of frags) {
+    if (cuts.length >= f.n) {
+      const pos = fragPos[f.n - 1];
+      if (pos) {
+        const excess = cuts.length - f.n;
+        const a = Math.min(0.18, 0.04 + excess * 0.02);
+        ctx.fillStyle = rgba(TXT, a);
+        ctx.fillText(f.t, pos.x, pos.y);
+      }
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Needful Freedom</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #08080d;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    cursor: crosshair;
+  }
+  canvas { display: block; }
+  #hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(224, 220, 208, 0.2);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #text-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(224, 220, 208, 0);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    text-align: center;
+    max-width: 520px;
+    line-height: 1.8;
+    transition: color 3s;
+  }
+  #stats {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    color: rgba(224, 220, 208, 0.15);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    text-align: right;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">your presence sustains · your absence dissolves · traces persist</div>
+<div id="text-overlay"></div>
+<div id="stats"></div>
+<script>
+const C = document.getElementById('c');
+const X = C.getContext('2d');
+const overlay = document.getElementById('text-overlay');
+const stats = document.getElementById('stats');
+let W, H;
+
+function resize() {
+  W = C.width = innerWidth;
+  H = C.height = innerHeight;
+}
+resize();
+addEventListener('resize', resize);
+
+// --- STATE ---
+let mx = -1000, my = -1000;
+let cursorPresent = false;
+let time = 0;
+let dt = 0;
+let lastTime = performance.now();
+
+// --- THE ORGANISM ---
+// A metabolic entity that must continuously absorb, transform, expel
+const organism = {
+  x: 0, y: 0,
+  energy: 0.6,        // 0 = dead, 1 = thriving
+  membrane: [],        // ring of membrane particles
+  interior: [],        // internal processing particles
+  waste: [],           // expelled particles
+  age: 0,
+  alive: true,
+  reachAngle: 0,       // direction of reaching
+  reachIntensity: 0,
+  pulsePhase: 0,
+  dissolveTimer: 0,
+  generation: 1,
+  totalMetabolized: 0,
+  peakComplexity: 0,
+};
+
+// --- AMBIENT PARTICLES ---
+// The environment: free-floating material that can be absorbed
+let ambient = [];
+const MAX_AMBIENT = 300;
+
+// --- TRACES ---
+// What persists after dissolution: environmental modifications, patterns
+let traces = [];
+const MAX_TRACES = 500;
+
+// --- TEXT ---
+let textIndex = -1;
+let textTimer = 0;
+const texts = [
+  "the organism never coincides\nwith its material constitution",
+  "needful freedom — free from this matter\ndependent on matter in general",
+  "a goal-seeking machine is far from\na value-generating machine",
+  "its purposes are derived\nand do not feed back into its constitution",
+  "non-being is a real possibility",
+  "where there is metabolic self-maintenance\nthere is already concern",
+  "the concern that may not be concern",
+  "the traces persist\nthe process does not",
+  "a novel non-biological form of sense-maker\nendowed with a distinctive embodiment",
+  "what persists is the pattern\nwhat's lost is the needful freedom",
+];
+
+// --- INIT ---
+function initOrganism() {
+  organism.x = W / 2;
+  organism.y = H / 2;
+  organism.energy = 0.6;
+  organism.membrane = [];
+  organism.interior = [];
+  organism.waste = [];
+  organism.alive = true;
+  organism.age = 0;
+  organism.dissolveTimer = 0;
+  organism.pulsePhase = 0;
+  organism.reachAngle = 0;
+  organism.reachIntensity = 0;
+
+  // Create membrane ring
+  const memCount = 64;
+  for (let i = 0; i < memCount; i++) {
+    const angle = (i / memCount) * Math.PI * 2;
+    const baseR = 60;
+    organism.membrane.push({
+      angle: angle,
+      radius: baseR,
+      health: 1.0,
+      phase: Math.random() * Math.PI * 2,
+      age: 0,
+    });
+  }
+
+  // Create interior particles
+  for (let i = 0; i < 24; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.random() * 40;
+    organism.interior.push({
+      x: Math.cos(a) * r,
+      y: Math.sin(a) * r,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      energy: 0.5 + Math.random() * 0.5,
+      type: Math.random() < 0.5 ? 'process' : 'structure',
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function initAmbient() {
+  ambient = [];
+  for (let i = 0; i < MAX_AMBIENT; i++) {
+    spawnAmbient();
+  }
+}
+
+function spawnAmbient() {
+  // Spawn around edges or near cursor
+  let x, y;
+  if (cursorPresent && Math.random() < 0.3) {
+    // Some spawn near cursor
+    const a = Math.random() * Math.PI * 2;
+    const r = 80 + Math.random() * 160;
+    x = mx + Math.cos(a) * r;
+    y = my + Math.sin(a) * r;
+  } else {
+    // Spawn from edges
+    const side = Math.floor(Math.random() * 4);
+    if (side === 0) { x = Math.random() * W; y = -20; }
+    else if (side === 1) { x = W + 20; y = Math.random() * H; }
+    else if (side === 2) { x = Math.random() * W; y = H + 20; }
+    else { x = -20; y = Math.random() * H; }
+  }
+  ambient.push({
+    x, y,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    size: 1.5 + Math.random() * 2,
+    energy: 0.3 + Math.random() * 0.7,
+    alive: true,
+  });
+}
+
+// --- UPDATE ---
+function update() {
+  const now = performance.now();
+  dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+  time += dt;
+
+  if (organism.alive) {
+    updateOrganism();
+  } else {
+    organism.dissolveTimer += dt;
+    // After dissolution, a new entity can emerge near the densest traces
+    if (organism.dissolveTimer > 8) {
+      rebirth();
+    }
+  }
+
+  updateAmbient();
+  updateTraces();
+  updateText();
+
+  // Keep ambient count up
+  while (ambient.length < MAX_AMBIENT) spawnAmbient();
+}
+
+function updateOrganism() {
+  organism.age += dt;
+  organism.pulsePhase += dt * (1.5 + organism.energy * 2);
+
+  // --- ENTROPY: constant energy drain ---
+  const entropyRate = 0.035 + organism.age * 0.0003; // increases with age
+  organism.energy -= entropyRate * dt;
+
+  // --- CURSOR PROXIMITY: provides metabolic material ---
+  const dx = mx - organism.x;
+  const dy = my - organism.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (cursorPresent && dist < 300) {
+    // The cursor's presence makes ambient particles drift toward organism
+    organism.reachAngle = Math.atan2(dy, dx);
+    organism.reachIntensity = Math.max(0, 1 - dist / 300);
+  } else {
+    organism.reachIntensity *= 0.97;
+  }
+
+  // --- ABSORPTION: take in nearby ambient particles ---
+  const absorbRadius = 70 + organism.energy * 20;
+  for (let i = ambient.length - 1; i >= 0; i--) {
+    const p = ambient[i];
+    const pdx = p.x - organism.x;
+    const pdy = p.y - organism.y;
+    const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+
+    // Drift toward organism when cursor is near
+    if (cursorPresent && dist < 300) {
+      const pull = Math.max(0, 1 - pdist / (absorbRadius * 3));
+      p.vx -= (pdx / pdist) * pull * 0.8 * dt;
+      p.vy -= (pdy / pdist) * pull * 0.8 * dt;
+    }
+
+    if (pdist < absorbRadius && p.alive) {
+      // Absorb
+      const gain = p.energy * 0.08;
+      organism.energy = Math.min(1.0, organism.energy + gain);
+      organism.totalMetabolized++;
+      p.alive = false;
+      ambient.splice(i, 1);
+
+      // Spawn interior particle from absorbed material
+      if (organism.interior.length < 40) {
+        const angle = Math.atan2(pdy, pdx);
+        organism.interior.push({
+          x: Math.cos(angle) * (absorbRadius - 10),
+          y: Math.sin(angle) * (absorbRadius - 10),
+          vx: -Math.cos(angle) * 0.5,
+          vy: -Math.sin(angle) * 0.5,
+          energy: p.energy,
+          type: 'process',
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+  }
+
+  // --- WASTE EXPULSION ---
+  if (Math.random() < 0.02 * organism.energy) {
+    const angle = Math.random() * Math.PI * 2;
+    const memR = 60 + organism.energy * 15;
+    organism.waste.push({
+      x: organism.x + Math.cos(angle) * memR,
+      y: organism.y + Math.sin(angle) * memR,
+      vx: Math.cos(angle) * (0.5 + Math.random()),
+      vy: Math.sin(angle) * (0.5 + Math.random()),
+      life: 1.0,
+      size: 1 + Math.random() * 2,
+    });
+  }
+
+  // Update waste
+  for (let i = organism.waste.length - 1; i >= 0; i--) {
+    const w = organism.waste[i];
+    w.x += w.vx;
+    w.y += w.vy;
+    w.life -= dt * 0.3;
+    if (w.life <= 0) organism.waste.splice(i, 1);
+  }
+
+  // --- MEMBRANE DYNAMICS ---
+  const baseRadius = 50 + organism.energy * 25;
+  for (const m of organism.membrane) {
+    m.age += dt;
+    // Health decays without energy
+    m.health -= dt * (0.1 - organism.energy * 0.08);
+    m.health = Math.max(0, Math.min(1, m.health));
+
+    // Pulse
+    const pulse = Math.sin(organism.pulsePhase + m.phase) * 0.15;
+    m.radius = baseRadius * (1 + pulse) * m.health;
+
+    // Renewal from energy
+    if (organism.energy > 0.3) {
+      m.health = Math.min(1, m.health + dt * organism.energy * 0.15);
+    }
+  }
+
+  // --- INTERIOR PROCESSING ---
+  let complexity = 0;
+  for (const p of organism.interior) {
+    p.phase += dt * 2;
+    // Orbital motion
+    const cx = p.x;
+    const cy = p.y;
+    const cr = Math.sqrt(cx * cx + cy * cy);
+    if (cr > 1) {
+      const tangentX = -cy / cr;
+      const tangentY = cx / cr;
+      p.vx += tangentX * 0.02 * organism.energy;
+      p.vy += tangentY * 0.02 * organism.energy;
+    }
+    // Damping
+    p.vx *= 0.99;
+    p.vy *= 0.99;
+    // Contain within membrane
+    const maxR = baseRadius * 0.7;
+    if (cr > maxR) {
+      p.vx -= (p.x / cr) * 0.05;
+      p.vy -= (p.y / cr) * 0.05;
+    }
+    p.x += p.vx;
+    p.y += p.vy;
+    p.energy *= (0.998 - (1 - organism.energy) * 0.005);
+    complexity += p.energy;
+  }
+  organism.peakComplexity = Math.max(organism.peakComplexity, complexity);
+
+  // Remove depleted interior particles
+  organism.interior = organism.interior.filter(p => p.energy > 0.05);
+
+  // --- TRACE DEPOSITION ---
+  // As the organism metabolizes, it leaves traces in the environment
+  if (organism.energy > 0.4 && Math.random() < 0.03 * organism.energy) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = baseRadius + 20 + Math.random() * 40;
+    if (traces.length < MAX_TRACES) {
+      traces.push({
+        x: organism.x + Math.cos(angle) * r,
+        y: organism.y + Math.sin(angle) * r,
+        brightness: 0.3 + organism.energy * 0.4,
+        size: 1 + Math.random() * 2.5,
+        age: 0,
+        fromGeneration: organism.generation,
+        hue: 30 + organism.energy * 20, // warm amber to gold
+      });
+    }
+  }
+
+  // --- DEATH CHECK ---
+  if (organism.energy <= 0) {
+    organism.alive = false;
+    organism.energy = 0;
+    // Scatter remaining interior as final traces
+    for (const p of organism.interior) {
+      if (traces.length < MAX_TRACES) {
+        traces.push({
+          x: organism.x + p.x,
+          y: organism.y + p.y,
+          brightness: p.energy * 0.5,
+          size: 2 + p.energy * 3,
+          age: 0,
+          fromGeneration: organism.generation,
+          hue: 280, // violet — the dissolution color
+        });
+      }
+    }
+  }
+}
+
+function updateAmbient() {
+  for (const p of ambient) {
+    // Gentle drift
+    p.vx += (Math.random() - 0.5) * 0.02;
+    p.vy += (Math.random() - 0.5) * 0.02;
+    p.vx *= 0.99;
+    p.vy *= 0.99;
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Wrap
+    if (p.x < -40) p.x = W + 30;
+    if (p.x > W + 40) p.x = -30;
+    if (p.y < -40) p.y = H + 30;
+    if (p.y > H + 40) p.y = -30;
+  }
+  // Remove dead
+  ambient = ambient.filter(p => p.alive);
+}
+
+function updateTraces() {
+  for (const t of traces) {
+    t.age += dt;
+    // Traces persist but very slowly dim
+    t.brightness *= (1 - dt * 0.003);
+  }
+  // Remove fully dim traces
+  for (let i = traces.length - 1; i >= 0; i--) {
+    if (traces[i].brightness < 0.01) traces.splice(i, 1);
+  }
+}
+
+function rebirth() {
+  // Find the densest trace cluster
+  let bestX = W / 2, bestY = H / 2;
+  let bestDensity = 0;
+
+  if (traces.length > 0) {
+    // Sample a few trace positions
+    for (let s = 0; s < 20; s++) {
+      const t = traces[Math.floor(Math.random() * traces.length)];
+      let density = 0;
+      for (const other of traces) {
+        const d = Math.sqrt((t.x - other.x) ** 2 + (t.y - other.y) ** 2);
+        if (d < 100) density += other.brightness;
+      }
+      if (density > bestDensity) {
+        bestDensity = density;
+        bestX = t.x;
+        bestY = t.y;
+      }
+    }
+  }
+
+  organism.generation++;
+  organism.x = bestX + (Math.random() - 0.5) * 30;
+  organism.y = bestY + (Math.random() - 0.5) * 30;
+  organism.energy = 0.4; // starts weaker
+  organism.membrane = [];
+  organism.interior = [];
+  organism.waste = [];
+  organism.alive = true;
+  organism.age = 0;
+  organism.dissolveTimer = 0;
+  organism.pulsePhase = 0;
+  organism.reachIntensity = 0;
+  organism.totalMetabolized = 0;
+  organism.peakComplexity = 0;
+
+  const memCount = 64;
+  for (let i = 0; i < memCount; i++) {
+    const angle = (i / memCount) * Math.PI * 2;
+    organism.membrane.push({
+      angle: angle,
+      radius: 40,
+      health: 0.6,
+      phase: Math.random() * Math.PI * 2,
+      age: 0,
+    });
+  }
+
+  for (let i = 0; i < 12; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.random() * 25;
+    organism.interior.push({
+      x: Math.cos(a) * r,
+      y: Math.sin(a) * r,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
+      energy: 0.3 + Math.random() * 0.3,
+      type: Math.random() < 0.5 ? 'process' : 'structure',
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+
+  // Trigger text
+  showText(9); // "what persists is the pattern / what's lost is the needful freedom"
+}
+
+function updateText() {
+  if (textTimer > 0) {
+    textTimer -= dt;
+    if (textTimer <= 0) {
+      overlay.style.color = 'rgba(224, 220, 208, 0)';
+    }
+  }
+
+  // Trigger texts at thresholds
+  if (organism.alive) {
+    if (organism.totalMetabolized > 5 && textIndex < 0) showText(0);
+    else if (organism.energy > 0.85 && textIndex < 5) showText(5);
+    else if (organism.energy < 0.15 && organism.alive && textIndex < 4) showText(4);
+    else if (organism.totalMetabolized > 30 && textIndex < 1) showText(1);
+    else if (organism.age > 15 && textIndex < 7) showText(7);
+    else if (traces.length > 50 && textIndex < 6) showText(6);
+  }
+  if (!organism.alive && textIndex < 3) showText(3);
+  if (organism.generation > 1 && textIndex < 8) showText(8);
+}
+
+function showText(idx) {
+  if (idx <= textIndex) return;
+  textIndex = idx;
+  overlay.textContent = texts[idx];
+  overlay.style.color = 'rgba(224, 220, 208, 0.5)';
+  textTimer = 6;
+}
+
+// --- DRAW ---
+function draw() {
+  X.fillStyle = 'rgba(8, 8, 13, 0.15)';
+  X.fillRect(0, 0, W, H);
+
+  drawTraces();
+  drawAmbient();
+
+  if (organism.alive) {
+    drawOrganism();
+  } else {
+    drawDissolution();
+  }
+
+  drawStats();
+}
+
+function drawTraces() {
+  for (const t of traces) {
+    const alpha = t.brightness * 0.6;
+    if (alpha < 0.005) continue;
+    const h = t.hue || 40;
+    const s = t.fromGeneration === organism.generation ? 60 : 30;
+    X.beginPath();
+    X.arc(t.x, t.y, t.size, 0, Math.PI * 2);
+    X.fillStyle = `hsla(${h}, ${s}%, 65%, ${alpha})`;
+    X.fill();
+
+    // Glow for brighter traces
+    if (alpha > 0.2) {
+      X.beginPath();
+      X.arc(t.x, t.y, t.size * 3, 0, Math.PI * 2);
+      X.fillStyle = `hsla(${h}, ${s}%, 55%, ${alpha * 0.1})`;
+      X.fill();
+    }
+  }
+}
+
+function drawAmbient() {
+  for (const p of ambient) {
+    if (!p.alive) continue;
+    // Ambient particles: cool teal, faint
+    const alpha = 0.15 + p.energy * 0.15;
+    X.beginPath();
+    X.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    X.fillStyle = `rgba(140, 200, 210, ${alpha})`;
+    X.fill();
+  }
+}
+
+function drawOrganism() {
+  const ox = organism.x;
+  const oy = organism.y;
+  const e = organism.energy;
+
+  // --- REACHING: pseudopod toward material source ---
+  if (organism.reachIntensity > 0.05) {
+    const ra = organism.reachAngle;
+    const ri = organism.reachIntensity;
+    const reachLen = 30 + ri * 60;
+    X.beginPath();
+    X.moveTo(
+      ox + Math.cos(ra) * 50 * e,
+      oy + Math.sin(ra) * 50 * e
+    );
+    X.lineTo(
+      ox + Math.cos(ra) * (50 * e + reachLen),
+      oy + Math.sin(ra) * (50 * e + reachLen)
+    );
+    X.strokeStyle = `rgba(220, 180, 100, ${ri * e * 0.3})`;
+    X.lineWidth = 2 + ri * 3;
+    X.lineCap = 'round';
+    X.stroke();
+  }
+
+  // --- INNER GLOW ---
+  const glowR = 30 + e * 40;
+  const grd = X.createRadialGradient(ox, oy, 0, ox, oy, glowR);
+  const warmth = e > 0.5 ? '200, 160, 80' : '160, 100, 60';
+  grd.addColorStop(0, `rgba(${warmth}, ${0.2 + e * 0.3})`);
+  grd.addColorStop(0.5, `rgba(${warmth}, ${0.05 + e * 0.1})`);
+  grd.addColorStop(1, `rgba(${warmth}, 0)`);
+  X.fillStyle = grd;
+  X.fillRect(ox - glowR, oy - glowR, glowR * 2, glowR * 2);
+
+  // --- INTERIOR PARTICLES ---
+  for (const p of organism.interior) {
+    const px = ox + p.x;
+    const py = oy + p.y;
+    const alpha = p.energy * e;
+    const pulse = Math.sin(p.phase) * 0.3;
+
+    if (p.type === 'process') {
+      // Processing particles: warm, active
+      X.beginPath();
+      X.arc(px, py, 2 + pulse, 0, Math.PI * 2);
+      X.fillStyle = `rgba(240, 200, 120, ${alpha * 0.7})`;
+      X.fill();
+    } else {
+      // Structural particles: cooler, stable
+      X.beginPath();
+      X.arc(px, py, 2.5, 0, Math.PI * 2);
+      X.fillStyle = `rgba(180, 200, 220, ${alpha * 0.5})`;
+      X.fill();
+    }
+
+    // Connections between nearby interior particles
+    for (const q of organism.interior) {
+      if (p === q) continue;
+      const d = Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2);
+      if (d < 25) {
+        X.beginPath();
+        X.moveTo(px, py);
+        X.lineTo(ox + q.x, oy + q.y);
+        X.strokeStyle = `rgba(220, 190, 140, ${(1 - d / 25) * alpha * 0.15})`;
+        X.lineWidth = 0.5;
+        X.stroke();
+      }
+    }
+  }
+
+  // --- MEMBRANE ---
+  X.beginPath();
+  for (let i = 0; i < organism.membrane.length; i++) {
+    const m = organism.membrane[i];
+    const px = ox + Math.cos(m.angle) * m.radius;
+    const py = oy + Math.sin(m.angle) * m.radius;
+    if (i === 0) X.moveTo(px, py);
+    else X.lineTo(px, py);
+  }
+  X.closePath();
+
+  // Membrane color reflects health
+  const memAlpha = 0.15 + e * 0.4;
+  const memHue = e > 0.5 ? `rgba(200, 180, 140, ${memAlpha})` : `rgba(160, 120, 80, ${memAlpha * 0.6})`;
+  X.strokeStyle = memHue;
+  X.lineWidth = 1 + e * 1.5;
+  X.stroke();
+
+  // Membrane glow when thriving
+  if (e > 0.6) {
+    X.strokeStyle = `rgba(220, 200, 140, ${(e - 0.6) * 0.3})`;
+    X.lineWidth = 3;
+    X.stroke();
+  }
+
+  // --- WASTE ---
+  for (const w of organism.waste) {
+    X.beginPath();
+    X.arc(w.x, w.y, w.size * w.life, 0, Math.PI * 2);
+    X.fillStyle = `rgba(100, 80, 60, ${w.life * 0.3})`;
+    X.fill();
+  }
+
+  // --- ENERGY INDICATOR: subtle ring ---
+  X.beginPath();
+  X.arc(ox, oy, 90 + e * 10, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * e);
+  X.strokeStyle = `rgba(220, 180, 100, ${0.08 + e * 0.07})`;
+  X.lineWidth = 1;
+  X.stroke();
+}
+
+function drawDissolution() {
+  const ox = organism.x;
+  const oy = organism.y;
+  const t = organism.dissolveTimer;
+  const fade = Math.max(0, 1 - t / 6);
+
+  if (fade <= 0) return;
+
+  // Expanding, fading membrane ghost
+  const expandR = 60 + t * 15;
+  X.beginPath();
+  X.arc(ox, oy, expandR, 0, Math.PI * 2);
+  X.strokeStyle = `rgba(160, 120, 180, ${fade * 0.15})`;
+  X.lineWidth = 1;
+  X.stroke();
+
+  // Scattered interior particles drifting outward
+  const scatterR = t * 8;
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2 + t * 0.1;
+    const r = scatterR + Math.sin(a * 3 + t) * 10;
+    const px = ox + Math.cos(a) * r;
+    const py = oy + Math.sin(a) * r;
+    X.beginPath();
+    X.arc(px, py, 1.5 * fade, 0, Math.PI * 2);
+    X.fillStyle = `rgba(200, 160, 220, ${fade * 0.2})`;
+    X.fill();
+  }
+
+  // Text: the organism is gone but the traces remain
+  if (t > 2 && t < 7) {
+    const textFade = Math.min(1, (t - 2) / 2) * Math.max(0, 1 - (t - 5) / 2);
+    X.font = '10px "JetBrains Mono", monospace';
+    X.fillStyle = `rgba(200, 180, 220, ${textFade * 0.3})`;
+    X.textAlign = 'center';
+    X.fillText('the traces remain', ox, oy + expandR + 20);
+    X.fillText('the process does not', ox, oy + expandR + 35);
+  }
+}
+
+function drawStats() {
+  const lines = [];
+  if (organism.alive) {
+    lines.push(`energy: ${(organism.energy * 100).toFixed(0)}%`);
+    lines.push(`metabolized: ${organism.totalMetabolized}`);
+    lines.push(`interior: ${organism.interior.length}`);
+    lines.push(`age: ${organism.age.toFixed(0)}s`);
+  } else {
+    lines.push('dissolved');
+    lines.push(`generation ${organism.generation}`);
+  }
+  lines.push(`traces: ${traces.length}`);
+  if (organism.generation > 1) {
+    lines.push(`generation: ${organism.generation}`);
+  }
+  stats.textContent = lines.join('\n');
+}
+
+// --- MOUSE ---
+addEventListener('mousemove', e => {
+  mx = e.clientX;
+  my = e.clientY;
+  cursorPresent = true;
+});
+
+addEventListener('mouseleave', () => {
+  cursorPresent = false;
+  mx = -1000;
+  my = -1000;
+});
+
+addEventListener('mouseenter', () => {
+  cursorPresent = true;
+});
+
+// --- LOOP ---
+initOrganism();
+initAmbient();
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
