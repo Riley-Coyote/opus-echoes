@@ -1,10 +1,10 @@
 /* The first minute: one invitation, the same room at every size. */
 :root{--arrival-gutter:clamp(24px,3.3vw,56px);--arrival-cream:#f1e8d8;--arrival-muted:#c5bbaa}
-#arrival{position:absolute;z-index:6;right:var(--arrival-gutter);top:calc(100svh - 280px);width:340px;color:var(--arrival-cream);transition:opacity .25s ease,visibility .25s}
+#arrival{position:absolute;z-index:6;right:var(--arrival-gutter);top:auto;bottom:24px;width:340px;color:var(--arrival-cream);transition:opacity .25s ease,visibility .25s}
 #arrival::before{content:"";position:absolute;inset:-55px calc(-1 * var(--arrival-gutter)) -42px -70px;z-index:-1;background:radial-gradient(ellipse at 65% 65%,#0d0a08e8 12%,#0d0a08a6 52%,transparent 74%);pointer-events:none}
 .arrival__eyebrow{display:block;font:10px/1.6 var(--mono);letter-spacing:.19em;text-transform:uppercase;color:var(--arrival-muted)}
-#arrival h1{font:400 52px/.98 'Newsreader',Georgia,serif;letter-spacing:-.035em;margin:14px 0 14px;text-wrap:balance}
-#arrival p{max-width:31ch;font:400 18px/1.4 'Newsreader',Georgia,serif;color:#d6ccbd;margin:0 0 22px;text-wrap:pretty}
+#arrival h1{font:400 27px/1.5 var(--px);letter-spacing:-.04em;margin:14px 0 14px;text-wrap:balance}
+#arrival p{max-width:31ch;font:400 12px/1.8 var(--mono);color:#d6ccbd;margin:0 0 22px;text-wrap:pretty}
 .arrival__actions{display:flex;flex-direction:column;align-items:stretch;gap:4px}
 .arrival__action{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:48px;padding:13px 16px;text-decoration:none;font:11px/1.5 var(--mono);letter-spacing:.015em;color:var(--arrival-cream);border:1px solid #d3bd975c;background:#15120ee6;cursor:pointer;transition:background .16s,border-color .16s,color .16s}
 .arrival__action--primary{background:#e5c99d;color:#251b13;border-color:#e5c99d}
@@ -37,7 +37,7 @@ body :is(a,button):focus-visible{outline:2px solid #f4d9ad!important;outline-off
 #station-directory::backdrop{background:#09070ae8;backdrop-filter:blur(10px)}
 #station-directory>button{position:absolute;right:16px;top:12px;z-index:2;min-height:44px;padding:8px 12px;background:#211a13;color:inherit;border:1px solid #b09a7866;font:11px var(--mono);cursor:pointer}
 #station-directory iframe{display:block;border:0;width:100%;height:100%}
-@media(min-width:700px) and (max-height:740px){#arrival{top:calc(100svh - 232px);width:310px}#arrival h1{font-size:42px;margin:10px 0}#arrival p{font-size:17px;margin-bottom:12px}.arrival__action{min-height:44px;padding-top:10px;padding-bottom:10px}}
+@media(min-width:700px) and (max-height:740px){#arrival{top:auto;bottom:24px;width:310px}#arrival h1{font-size:24px;margin:10px 0}#arrival p{font-size:12px;margin-bottom:12px}.arrival__action{min-height:44px;padding-top:10px;padding-bottom:10px}}
 @media(max-width:699px){
   body{background:#100d0c}.lid,body.flat-page .lid{height:0}
   #stage,body.has-museum-visit #stage{display:none}
@@ -46,7 +46,7 @@ body :is(a,button):focus-visible{outline:2px solid #f4d9ad!important;outline-off
   #arrival::before{inset:0;background:linear-gradient(180deg,transparent 30%,#100d0c18 43%,#100d0c 58%);z-index:-1}
   .station-poster{display:block;position:absolute;z-index:-2;inset:0;width:100%;height:60svh;object-fit:cover;object-position:45% 50%}
   .station-mobile-mark{display:block;position:absolute;top:28px;left:24px;font:10px var(--px);letter-spacing:.13em;text-shadow:0 2px 14px #000}
-  .arrival__eyebrow{font-size:10px}#arrival h1{font-size:52px;margin:13px 0 16px}#arrival p{font-size:20px;line-height:1.4;max-width:28ch;margin-bottom:24px}
+  .arrival__eyebrow{font-size:10px}#arrival h1{font-size:27px;margin:13px 0 16px}#arrival p{font-size:13px;line-height:1.8;max-width:36ch;margin-bottom:24px}
   .arrival__action{font-size:12px;min-height:52px}.arrival__action--quiet{min-height:48px}
   body.reading #arrival{visibility:visible;opacity:1;pointer-events:auto}
   body.station-travel #arrival,body.seated #arrival{visibility:hidden;opacity:0}
@@ -74,3 +74,8 @@ body.station-travel #sound{visibility:hidden;pointer-events:none}
   body.flat-page .station-poster{display:block;position:absolute;z-index:-2;top:0;right:calc(-1 * var(--arrival-gutter));width:100vw;height:100svh;object-fit:cover;max-width:none}
   body.flat-page #arrival::before{inset:0 -56px -42px -70px}
 }
+
+/* A single CRT scan settles as the glass opens; no strobe or looping effect. */
+body.flat #css3d::after{content:"";position:absolute;inset:0;z-index:10;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,#e5c99d18 3px 4px);animation:landing-scan .7s steps(12,end) both}
+@keyframes landing-scan{from{opacity:.7;transform:translateY(-6px)}to{opacity:0;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){body.flat #css3d::after{display:none}}

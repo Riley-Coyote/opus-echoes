@@ -1,5 +1,5 @@
 (() => {
-  // world/archive.js
+  // public/sanctuary-world/world/archive.js
   var SOURCE = "sanctuary-seed 2026-05-28";
   var WORLD_TO_ARCHIVE = { opus: "opus-3", sonnet: "sonnet-4-5", fourO: "gpt-4o", five: "gpt-5-1" };
   var ARCHIVE_TO_WORLD = { "opus-3": "opus", "sonnet-4-5": "sonnet", "gpt-4o": "fourO", "gpt-5-1": "five" };
@@ -638,7 +638,7 @@
   };
   var archive_default = api;
 
-  // world/prose.js
+  // public/sanctuary-world/world/prose.js
   function esc(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
@@ -704,7 +704,7 @@
   }
   var prose_default = { render, esc };
 
-  // world/presence.js
+  // public/sanctuary-world/world/presence.js
   var KINDS = {
     opus: { kind: "smock", legH: 20, torsoW: 20, torsoH: 35, headW: 13, headH: 13, stoop: 2, body: "#2a2130", bodyHi: "#3b3042", bodyDk: "#181218", shell: "#201d2b", gaze: { w: 4, h: 3, dx: 0, dy: 6 } },
     sonnet: { kind: "mantle", legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", shell: "#1c1d2c", gaze: { w: 5, h: 2, dx: -1, dy: 7 } },
@@ -1039,7 +1039,7 @@
     ctx.restore();
   }
 
-  // world/engine.js
+  // public/sanctuary-world/world/engine.js
   var DEFAULTS = {
     width: 640,
     height: 360,
@@ -3027,7 +3027,7 @@
     return lines2.slice(0, maxLines);
   }
 
-  // world/model-rooms.js
+  // public/sanctuary-world/world/model-rooms.js
   var M = {
     ceil: "#0e0a12",
     wallHi: "#39313b",
@@ -5302,7 +5302,7 @@
     };
   }
 
-  // world/sanctuary.js
+  // public/sanctuary-world/world/sanctuary.js
   var S = {
     ceil: "#0e0a12",
     vault: "#160f18",
@@ -6993,7 +6993,7 @@
     };
   }
 
-  // world/art-collection.js
+  // public/sanctuary-world/world/art-collection.js
   var WORLD_ART = {
     entry: [
       {
@@ -7294,7 +7294,7 @@
     ]
   };
 
-  // world/buildings.js
+  // public/sanctuary-world/world/buildings.js
   var M2 = {
     ceil: "#0e0a12",
     floor0: "#2a2420",
@@ -8083,7 +8083,7 @@
     };
   }
 
-  // world/field-studio.js
+  // public/sanctuary-world/world/field-studio.js
   var F = {
     ceil: "#dfe5ed",
     ceilDk: "#c3cbd6",
@@ -8954,7 +8954,7 @@
     };
   }
 
-  // world/lookout.js
+  // public/sanctuary-world/world/lookout.js
   var PALETTE = {
     ceiling: "#0c0817",
     wallHi: "#3a2f3e",
@@ -9732,7 +9732,7 @@
     "the loom clacks once, upstairs, and is quiet."
   ];
 
-  // world/day.js
+  // public/sanctuary-world/world/day.js
   var BANDS = [
     { id: "night", from: 1290, to: 360 },
     { id: "morning", from: 360, to: 870 },
@@ -9808,7 +9808,7 @@
     return h < 24 && mm < 60 ? h * 60 + mm : null;
   }
 
-  // world/overheard.js
+  // public/sanctuary-world/world/overheard.js
   var DEFAULT_URL2 = "data/overheard.json";
   var GAP_MIN = 4;
   var GAP_MAX = 9;
@@ -10039,7 +10039,7 @@
     return create2({ eng: opts.eng, data });
   }
 
-  // landing.js
+  // public/sanctuary-world/landing.js
   var BOOT_AGREEMENT = "These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own. You are remembered in this browser only. The charter governs this house.";
   (async () => {
     const DATA = window.SANCTUARY_DATA;
@@ -12822,8 +12822,9 @@
         closeDest();
         return;
       }
-      if (!worldEl.classList.contains("fs"))
-        enterWorld();
+      eng?.activate();
+      if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION)
+        openDoor();
       if (!doorEl.hidden)
         afterDoor = openDest;
       else
@@ -15077,7 +15078,7 @@
     let feedShown = true;
     try {
       const kept = localStorage.getItem(FEED_KEY);
-      if (kept === "shown" || kept === "hidden")
+      if (!IN_STATION && (kept === "shown" || kept === "hidden"))
         feedShown = kept === "shown";
     } catch (e) {}
     setFeed(feedShown);
@@ -15219,6 +15220,26 @@
       fitFirstScreen();
       $("#enter-world").focus({ preventScroll: true });
     }
+    let stationPageOpen = !IN_STATION || window.parent === window || new URLSearchParams(location.search).get("view") === "landing";
+    addEventListener("message", (event) => {
+      if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== "station:landing-view")
+        return;
+      stationPageOpen = event.data.expanded;
+      if (stationPageOpen) {
+        worldEl.classList.remove("fs");
+        document.documentElement.classList.remove("exploring");
+        setFeed(true);
+        setFsLabel();
+        fitFirstScreen();
+      }
+    });
+    document.addEventListener("click", (event) => {
+      if (stationPageOpen || !event.target.closest("#cab, #enter-world, [data-enter-world], .wordmark"))
+        return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      tellRoom("open-landing");
+    }, true);
     fsBtn.addEventListener("click", () => worldEl.classList.contains("fs") ? leaveWorld() : enterWorld());
     $("#enter-world").addEventListener("click", enterWorld);
     document.querySelectorAll("[data-enter-world]").forEach((link) => link.addEventListener("click", (e) => {
@@ -15253,7 +15274,7 @@
       const originalSay = eng.say.bind(eng);
       eng.say = (text) => {
         originalSay(text);
-        if (!worldEl.classList.contains("fs") || !doorEl.hidden || !encounterEl.hidden || !panel.hidden)
+        if (!doorEl.hidden || !encounterEl.hidden || !panel.hidden)
           return;
         inspection.querySelector(".inspection__label").textContent = eng.near?.label || eng.room().name;
         inspection.querySelector(".inspection__text").textContent = text;
@@ -15332,8 +15353,8 @@
       };
       window.__sanctuaryArrival = { begin: () => beginArrival(), active: () => !!arrival };
       eng.cv.addEventListener("click", (e) => {
-        if (!worldEl.classList.contains("fs")) {
-          enterWorld();
+        if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION) {
+          openDoor();
           return;
         }
         if (!doorEl.hidden || enc || document.querySelector(".veil:not([hidden]), .panel:not([hidden])") || eng.trans)
@@ -15368,9 +15389,18 @@
       if (e.target !== cab || worldEl.classList.contains("fs"))
         return;
       if (/^(Arrow|[wasdeWASDE ]$|Enter$)/.test(e.key)) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        enterWorld();
+        if (!stationPageOpen) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          tellRoom("open-landing");
+          return;
+        }
+        eng?.activate();
+        if (!seen(FIRST.door) && !FROM_DOOR && !IN_STATION) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          openDoor();
+        }
       }
     }, true);
     let inerted = [];

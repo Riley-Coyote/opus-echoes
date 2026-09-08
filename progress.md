@@ -297,3 +297,10 @@ untouched. Keep the result on draft PR #16 for review; publication remains pause
 - Removed directory wording from the arrival shortcut; phone fallback opens the same landing.
 - Browser verified interactive feed toggle, full-screen entry/exit, retained iframe document, and mobile shortcut; no page exceptions. Production build and diff check pass.
 - Scoped correction remains on the review branch; publication stays paused.
+
+## 2026-09-08 — Landing expansion and inline exploration
+- Clicking the embedded grounds or entry action opens the complete landing with the house feed, rather than immersive exploration. Parent/frame messages validate origin and source.
+- Grounds pointer/keyboard movement, inspections, and destination controls work within the landing. Explicit immersive controls remain available; first-visit agreement preserved.
+- Added a 680ms CRT glass expansion and single scanline fade, omitted for reduced motion. Replaced Station arrival serif typography with existing pixel/mono fonts; anchored actions within short desktop viewports.
+- Real Chrome checks: desk click and entry button, 340px visible feed, inline movement and destinations, full-screen return/reopen, phone overflow, and reduced motion. No page exceptions; production build passes. Browser game smoke retains baseline presence endpoint 503 only.
+- Remains on draft review branch; no publication.

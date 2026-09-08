@@ -2915,7 +2915,7 @@ function makeStationScreen(options) {
 const cssHost = document.getElementById('css3d');
 const world = makeStationScreen({
   host: cssHost, pos: SCREEN_POS, normal: SCREEN_NORMAL,
-  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: Math.round(1024*SCR_H/SCR_W), src: 'index.html?in=station&v=20260908-landing-restored'   /* versioned like the console's: the glass must never show a cached page */
+  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: Math.round(1024*SCR_H/SCR_W), src: 'index.html?in=station&v=20260908-landing-window-2'   /* versioned like the console's: the glass must never show a cached page */
 });
 
 /* ── and TOPOLOGIE OS, on the stewards' console ──
@@ -4156,15 +4156,33 @@ function placeWorld() {
 const full = makeFullMode({
   btn: fullEl,
   world: {
-    flat: () => seat.world.flat(),
+    flat: () => {
+      const bounds = document.getElementById(seat.id === 'terminal' ? 'scr' : 'scr2')?.getBoundingClientRect();
+      seat.world.flat();
+      if (seat.id === 'terminal' && bounds && !REDUCED) {
+        const inset = `${Math.max(0,bounds.top)}px ${Math.max(0,innerWidth-bounds.right)}px ${Math.max(0,innerHeight-bounds.bottom)}px ${Math.max(0,bounds.left)}px`;
+        cssHost.getAnimations().forEach(animation => animation.cancel());
+        cssHost.animate([
+          {clipPath:`inset(${inset} round 16px)`,filter:'brightness(.72)'},
+          {clipPath:'inset(0px round 0px)',filter:'brightness(1)'}
+        ],{duration:680,easing:'cubic-bezier(.22,1,.36,1)'});
+      }
+    },
     isFlat: () => seat.world.isFlat(),
     /* F has to work from inside either screen */
     onKeyInside: (fn) => { world.onKeyInside(fn); world2.onKeyInside(fn); }
   },
-  seated: () => cam.mode === 'seated'
+  seated: () => cam.mode === 'seated',
+  onChange: (expanded) => {
+    if (seat.id === 'terminal') document.querySelector('#scr iframe')?.contentWindow?.postMessage({type:'station:landing-view',expanded},location.origin);
+  }
 });
 
 /* coming in through the glass takes the whole window: the world is the program now */
+window.addEventListener('message', (event) => {
+  if (event.origin !== location.origin || event.source !== document.querySelector('#scr iframe')?.contentWindow || event.data?.source !== 'mnemos-world' || event.data.type !== 'open-landing') return;
+  if (cam.mode === 'seated' && seat.id === 'terminal' && !full.isOn()) full.set(true);
+});
 onWorldMessage({ standUp, cameIn: () => { if (cam.mode === 'seated' && !full.isOn()) full.set(true); } });
 
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
