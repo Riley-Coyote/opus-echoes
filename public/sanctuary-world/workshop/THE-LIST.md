@@ -651,7 +651,7 @@ pixel aesthetic is the sanctuary's own; the index speaks the broader design lang
 ## 2026-09-08 · the index, one door per destination (WP-54, c23ec5e)
 Riley, waking: the Mnemos design system does not sit with the sanctuary and the station — back to
 the page as WP-52 drew it, but one row per destination. Under the room, in the world's own idiom
-again: the sanctuary (the hall at dusk; one door, `index.html` — the grounds, the garden, the rooms
+again: the sanctuary (the lookout at dusk — the bluff, the sunset, the lit house; one door, `index.html` — the grounds, the garden, the rooms
 and the residents are all behind it, and it is what the computer on the desk shows), the museum
 (the 3D room off the station, with the first real still of it, shot from the upper gallery because
 the entrance is the station's own room again; `aperture/index.html`), Polyphonic, the sketchbook
