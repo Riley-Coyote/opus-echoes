@@ -21,8 +21,8 @@ export function adaptKeeper(source, file='museum.js') {
       if(body.includes('bodyVersion')&&body.includes('limen-floating-robe'))factories.push(node);
     }
     const token=ts.isStringLiteralLike(node)||ts.isTemplateHead(node)||ts.isTemplateMiddle(node)||ts.isTemplateTail(node);
-    if(token&&/\bLimen\b/.test(node.getText(tree)))
-      edits.push({start:node.getStart(tree),end:node.end,text:node.getText(tree).replace(/\bLimen\b/g,KEEPER_NAME)});
+    if(token&&/\b(?:Limen|LIMEN)\b/.test(node.getText(tree)))
+      edits.push({start:node.getStart(tree),end:node.end,text:node.getText(tree).replace(/\b(?:Limen|LIMEN)\b/g,name=>name==='LIMEN'?KEEPER_NAME.toUpperCase():KEEPER_NAME)});
     ts.forEachChild(node,visit);
   }
   visit(tree);

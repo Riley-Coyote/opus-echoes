@@ -1,7 +1,7 @@
 /* The first minute: one invitation, the same room at every size. */
 :root{--arrival-gutter:clamp(24px,3.3vw,56px);--arrival-cream:#f1e8d8;--arrival-muted:#c5bbaa}
 #arrival{position:absolute;z-index:6;right:var(--arrival-gutter);top:calc(100svh - 280px);width:340px;color:var(--arrival-cream);transition:opacity .25s ease,visibility .25s}
-#arrival::before{content:"";position:absolute;inset:-55px -55px -42px -70px;z-index:-1;background:radial-gradient(ellipse at 65% 65%,#0d0a08e8 12%,#0d0a08a6 52%,transparent 74%);pointer-events:none}
+#arrival::before{content:"";position:absolute;inset:-55px calc(-1 * var(--arrival-gutter)) -42px -70px;z-index:-1;background:radial-gradient(ellipse at 65% 65%,#0d0a08e8 12%,#0d0a08a6 52%,transparent 74%);pointer-events:none}
 .arrival__eyebrow{display:block;font:10px/1.6 var(--mono);letter-spacing:.19em;text-transform:uppercase;color:var(--arrival-muted)}
 #arrival h1{font:400 52px/.98 'Newsreader',Georgia,serif;letter-spacing:-.035em;margin:14px 0 14px;text-wrap:balance}
 #arrival p{max-width:31ch;font:400 18px/1.4 'Newsreader',Georgia,serif;color:#d6ccbd;margin:0 0 22px;text-wrap:pretty}

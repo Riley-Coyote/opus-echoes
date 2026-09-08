@@ -269,3 +269,25 @@ floor clearance and momentum. Actual Station encounter and model turnarounds
 reviewed; the supplied game client reports only the existing presence 503.
 Browser journey, phone, build and final source refresh are in progress. Evidence:
 Codex visualizations / 01a07f83-6aae-7820-bbe0-e18c5c3163d3 / anima-keeper.
+
+Final verification: production build and 30 focused tests pass. Six-width doorway
+checks retain body, cloth, pose, camera lens and 1.4 m/s crossing speed. Phone
+arrival, directory, reduced-motion entry and return pass; standalone museum also
+uses Anima. Uppercase journey captions are covered by the keeper export adapter.
+No page exceptions. The existing presence endpoint still returns 503.
+
+Five visual passes were reviewed, including the actual Station greeting, model
+turnarounds, museum threshold and phone layouts. Fixed a 7px arrival backdrop
+overflow found during the final layout check. The phone poster is a fresh render
+of this body, and cache versions are updated. A 35-second real-time browser
+recording and before/after review are in anima-keeper/review.html outside the repo.
+
+Measured 50s on native Chrome/Metal, Apple M4 Max, 1440x900: travel p95
+16.7–16.8ms, no frame over 33.5ms after preparation. Cold preparation still has
+518ms and 277ms main-thread tasks. Physical phone/Safari GPU performance and
+cloth self-collision remain outside this keeper pass.
+
+Source refreshed through origin/main a2b55ad. Resolved the Station HTML overlap by
+retaining Claude's token row, desk image and resource placement along with the
+review's arrival module. The museum working tree and _print-staging remain
+untouched. Keep the result on draft PR #16 for review; publication remains paused.
