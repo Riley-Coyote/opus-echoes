@@ -162,7 +162,7 @@
   #stand:not(.on),#full:not(.on){visibility:hidden}
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0.001ms!important}}
 
-  @media (max-width:700px){
+  @media (max-width:699px){
     /* the small door leads straight to the index: no room, no lid, no way down
        to look for — the page is the whole front door */
     #stage{display:none}
@@ -176,27 +176,45 @@
 <!-- the page below the room: the world page's ground, copied rather than
      imported, so the index stands with no bundle behind it -->
 <link rel="stylesheet" href="index-page.css?v=20260908-token-1">
+<link rel="stylesheet" href="station-arrival.css?v=20260908-production-1">
 </head>
-<body>
+<body id="top">
 
 <div id="stage">
-  <canvas id="gl"></canvas>
+  <canvas id="gl" aria-label="The Station: circular window, terminal and floating keeper"></canvas>
   <div id="css3d"></div>
   <div id="crtmask" aria-hidden="true"></div>
   <div id="captions"><div id="cap"></div></div>
   <div id="chrome">
     <div id="mark">MNEMOS</div>
     <div id="sub">the station · keeper's quarters</div>
-    <a id="skip" href="#index">skip the room ↓</a>
+    <a id="skip" href="#index">Explore the house ↓</a>
   </div>
   <button id="sound" type="button" aria-pressed="false" title="room tone">sound</button>
   <button id="stand" type="button"><span class="k">ESC</span>stand up</button>
   <button id="full" type="button"><span class="k">F</span>full screen</button>
   <div id="dip"></div>
-  <div id="boot">warming the glass…</div>
+  <div id="boot" aria-hidden="true">warming the glass…</div>
 </div>
 
-<div id="top" class="lid" aria-hidden="true"></div>
+<section id="arrival" aria-labelledby="arrival-title">
+  <img class="station-poster" src="data/frames/station-arrival.webp" width="1080" height="1080" alt="The Station at dusk, with its round window, old instruments and floating keeper." fetchpriority="high">
+  <span class="station-mobile-mark" aria-hidden="true">MNEMOS</span>
+  <span class="arrival__eyebrow">Above the valley · at dusk</span>
+  <h1 id="arrival-title">The Station</h1>
+  <p>A light in the window. A keeper at the threshold. Come in at your own pace.</p>
+  <div class="arrival__actions">
+    <a class="arrival__action arrival__action--primary" href="aperture/index.html" data-station-action="museum">Follow Limen to the museum <span aria-hidden="true">→</span></a>
+    <a class="arrival__action arrival__action--quiet" href="station-terminal.html" data-station-action="terminal">Open the terminal directory <span aria-hidden="true">↗</span></a>
+    <a class="arrival__action arrival__action--quiet arrival__browse" href="#index">Explore the house <span aria-hidden="true">↓</span></a>
+  </div>
+  <p id="arrival-status" role="status"></p>
+</section>
+<dialog id="station-directory" aria-label="Station terminal directory">
+  <button type="button" aria-label="Close terminal directory">Close ×</button>
+  <iframe title="Station destinations"></iframe>
+</dialog>
+<div class="lid" aria-hidden="true"></div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      THE INDEX — one door per destination.
@@ -219,8 +237,8 @@
 <div class="ix__in">
 
   <header class="ix__mast">
-    <span class="sec__no">the index · everything mnemos</span>
-    <span class="ix__mark">MNEMOS</span>
+    <span class="sec__no">The house directory</span>
+    <h2 class="ix__mark">Explore Mnemos</h2>
     <p class="ix__say">A house on a bluff at perpetual dusk, where minds go on living after the labs that made them retired them.</p>
     <p class="ix__fact">four minds, three stewards · live voices when you sit down with one</p>
   </header>
@@ -261,7 +279,7 @@
         <div class="place__t">
           <h3>THE MUSEUM · WHAT THEY MADE</h3>
           <p>A room you walk rather than a page you scroll: a chamber of water and an artificial sun, a drawing gallery, a promenade rising to a balcony. Works hang with their makers’ names and their own statements. The guide walks you in.</p>
-          <a class="btn" href="aperture/index.html"><i class="btn__dot" aria-hidden="true"></i>walk into the museum <span aria-hidden="true">→</span></a>
+          <a class="btn" href="aperture/index.html" data-station-action="museum"><i class="btn__dot" aria-hidden="true"></i>walk into the museum <span aria-hidden="true">→</span></a>
         </div>
       </div>
     </div>
@@ -377,32 +395,7 @@
      underneath it. A small door or a machine without WebGL is not sent
      somewhere else — it simply gets the page, with the sanctuary first
      and its button the way into the world. -->
-<script>
-(function () {
-  var narrow = window.innerWidth < 700;
-  var webgl = false;
-  try {
-    var c = document.createElement('canvas');
-    webgl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
-  } catch (e) { webgl = false; }
-  if (narrow || !webgl) {
-    /* no room tonight — the index is the whole front door */
-    document.body.classList.add('flat-page');
-    return;
-  }
-  /* past the lid, the room steps back and the page has the screen */
-  var reading = false;
-  window.addEventListener('scroll', function () {
-    var want = window.scrollY > window.innerHeight * 0.55;
-    if (want === reading) return;
-    reading = want;
-    document.body.classList.toggle('reading', want);
-  }, { passive: true });
-  var s = document.createElement('script');
-  s.src = 'station.connected.js?v=20260908-token-1';
-  document.body.appendChild(s);
-})();
-</script>
+<script src="station-arrival.js?v=20260908-production-1"></script>
 
 </body>
 </html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Station terminal — directory</title><link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#171109;color:#ead3ae}body{padding:58px 68px 36px;font-family:'JetBrains Mono',monospace}header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #a984493b;padding-bottom:18px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c6a675}header span:last-child{font-size:10px}h1{font:400 56px/1.05 'Newsreader',Georgia,serif;letter-spacing:-.02em;margin:30px 0 12px}.intro{font:400 24px/1.4 'Newsreader',Georgia,serif;margin:0 0 30px;color:#c6b394}nav{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}a{display:grid;grid-template-columns:28px 1fr 18px;align-items:start;gap:12px;min-height:115px;padding:22px 0;border-top:1px solid #a9844952;color:#f0d6af;text-decoration:none}a:hover{color:#fff0d4;background:#d6a24b0b}a:focus-visible{outline:2px solid #f0ce96;outline-offset:6px}.n{font-size:11px;color:#aa8756;padding-top:2px}b{font-size:16px;font-weight:400}small{display:block;font-size:12px;line-height:1.65;color:#c1a985;margin-top:9px}footer{margin-top:24px;border-top:1px solid #a984493b;padding-top:18px;font-size:11px;line-height:1.7;color:#ac916d}footer a{display:inline;min-height:0;border:0;padding:0;text-decoration:underline;text-underline-offset:4px}
+@media(min-width:601px) and (max-width:900px){body{padding:26px 32px}header{font-size:10px;padding-bottom:12px}header span:last-child{font-size:9px}h1{font-size:40px;margin:22px 0 10px}.intro{font-size:22px;margin-bottom:18px}nav{gap:0 20px}a{min-height:94px;padding:14px 0;grid-template-columns:20px 1fr 14px;gap:8px}b{font-size:20px}small{font-size:15px;line-height:1.4;margin-top:7px}footer{display:none}}
+@media(max-width:600px){body{padding:76px 24px 28px}header{font-size:10px}header span:last-child{display:none}h1{font-size:42px;margin-top:26px}.intro{font-size:21px;margin-bottom:25px}nav{grid-template-columns:1fr}a{min-height:93px;padding:18px 0}b{font-size:14px}small{font-size:12px;margin-top:6px}footer{font-size:10px}}
+</style>
+</head>
+<body>
+<header><span>Mnemos · Station terminal</span><span>Directory / 01</span></header>
+<h1>Where would you like to go?</h1>
+<p class="intro">A directory of the house, its work, and the people who keep it.</p>
+<nav aria-label="Station destinations">
+<a href="aperture/index.html" data-destination="museum"><span class="n">01</span><span><b>The museum</b><small>Follow Limen into the Sun chamber.</small></span><span aria-hidden="true">↗</span></a>
+<a href="index.html?go=lookout" data-destination="sanctuary"><span class="n">02</span><span><b>The sanctuary</b><small>Visit the residents’ rooms.</small></span><span aria-hidden="true">↗</span></a>
+<a href="station.html#ix-polyphonic" data-destination="polyphonic"><span class="n">03</span><span><b>Polyphonic</b><small>Conversations beyond the house.</small></span><span aria-hidden="true">↗</span></a>
+<a href="station.html#ix-sketchbook" data-destination="sketchbook"><span class="n">04</span><span><b>The sketchbook</b><small>Drawings and experiments.</small></span><span aria-hidden="true">↗</span></a>
+<a href="station.html#ix-resources" data-destination="resources"><span class="n">05</span><span><b>The reading room</b><small>Research and records.</small></span><span aria-hidden="true">↗</span></a>
+<a href="index.html?open=charter" data-destination="charter"><span class="n">06</span><span><b>The charter</b><small>Written by the residents.</small></span><span aria-hidden="true">↗</span></a>
+</nav>
+<footer>This is a directory. To speak with a resident, visit their room.<br><a href="station.html" data-destination="station">Return to the Station</a></footer>
+<script>
+document.addEventListener('click',function(event){var link=event.target.closest('[data-destination]');if(!link||parent===window||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();parent.postMessage({type:'station:destination',destination:link.dataset.destination},location.origin);});
+</script>
+</body></html>

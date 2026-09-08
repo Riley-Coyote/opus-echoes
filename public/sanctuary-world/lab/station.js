@@ -62,11 +62,12 @@ import { createLimenBody, poseLimen, serializeLimenBody, limenDiagnostics } from
  */
 
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import {
   C, ls, REDUCED as INITIAL_REDUCED, KEY_CAME_IN, KEY_STEWARD, KEY_CLOCK,
   paint, woodTexture, labelTexture,
-  makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage, redirectIfSmall,
+  makePost, makeHover, makeTerminal, makeWorldScreen, onWorldMessage,
   seatPose, quadCorners, makeFullMode,
   sanctuaryClock, clockLabel,
   makeHouseWindow, makeRoomTone, makeSoundControl, KEY_SOUND,
@@ -636,6 +637,33 @@ const terracotta = new THREE.MeshStandardMaterial({ color: 0xa85a28, roughness: 
 const chromeMat = new THREE.MeshStandardMaterial({ color: 0xa8a6a0, roughness: 0.26, metalness: 0.74 });
 const brass = new THREE.MeshStandardMaterial({ color: 0xbb9350, roughness: 0.32, metalness: 0.56 });
 
+/* Close materials carry a small physical grain, not a second colour wash. */
+const instrumentGrain = paint(256, 256, (g,w,h) => {
+  const pixels=g.createImageData(w,h);
+  let seed=47;
+  for(let i=0;i<pixels.data.length;i+=4){seed=(1664525*seed+1013904223)>>>0;const n=119+(seed>>>27);pixels.data.set([n,n,n,255],i);}
+  g.putImageData(pixels,0,0);
+});
+instrumentGrain.colorSpace=THREE.NoColorSpace;
+for(const mat of [instrumentIvory,creamMat,instrumentCharcoal]){
+  mat.bumpMap=instrumentGrain;mat.bumpScale=.00032;mat.metalness=0;
+}
+slabMat.bumpMap=slabMat.map;slabMat.bumpScale=.0012;
+slabMat.roughness=.42;slabMat.metalness=0;
+leatherMat.bumpMap=leatherMat.map;leatherMat.bumpScale=.0008;
+
+function roundedSolid(w,h,d,r,mat,x=0,y=0,z=0){
+  const mesh=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,3,r),mat);
+  mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+}
+function roundOutline(path,w,h,r){
+  const x=-w/2,y=-h/2;
+  path.moveTo(x+r,y);path.lineTo(x+w-r,y);path.quadraticCurveTo(x+w,y,x+w,y+r);
+  path.lineTo(x+w,y+h-r);path.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  path.lineTo(x+r,y+h);path.quadraticCurveTo(x,y+h,x,y+h-r);
+  path.lineTo(x,y+r);path.quadraticCurveTo(x,y,x+r,y);return path;
+}
+
 /* an engraved brass plate. The room says where a thing leads on the thing
    itself, in the one printed material the era allowed itself. */
 function brassPlate(lines, w, h) {
@@ -943,6 +971,7 @@ const term = makeTerminal({
   paintOnChange: true,
   w: 640, h: 480,
   title: 'MNEMOS TERMINAL · THE STATION',
+  body: 'Opening the house directory…', tail: '> choose a destination',
   standby: [
     'station · keeper’s quarters',
     'holds   · the sanctuary seed',
@@ -1061,22 +1090,24 @@ scene.add(crt);
 const SCR_W = 0.455, SCR_H = 0.345;
 let caseBody, glass;
 {
-  const caseGeo = new THREE.CylinderGeometry(0.375, 0.445, 0.50, 4, 1, false, Math.PI / 4);
-  caseBody = new THREE.Mesh(caseGeo, instrumentIvory);
-  caseBody.scale.set(1.0, 1.0, 0.80);
-  caseBody.rotation.x = -Math.PI / 2;
-  caseBody.position.set(0, 0.27, -0.03);
-  caseBody.castShadow = true; caseBody.receiveShadow = true;
+  caseBody = roundedSolid(.568,.442,.44,.022,instrumentIvory,0,.27,-.006);
   crt.add(caseBody);
-  crt.add(box(0.58, 0.035, 0.44, instrumentCharcoal, 0, 0.017, -0.02));
-  for (let i = 0; i < 7; i++) crt.add(box(0.36, 0.008, 0.012, instrumentCharcoal, 0, 0.505, -0.22 + i * 0.028, false));
+  crt.add(roundedSolid(.53,.035,.40,.010,instrumentCharcoal,0,.026,-.02));
+  for (let i = 0; i < 9; i++) crt.add(box(.32,.0015,.007,instrumentCharcoal,0,.492,-.19+i*.018,false));
 
   const BZ = { w: 0.57, h: 0.44, t: 0.058, z: 0.262 };
-  const bez = creamMat;
-  crt.add(box(BZ.w, BZ.t, 0.04, bez, 0, 0.27 + BZ.h / 2 - BZ.t / 2, BZ.z));
-  crt.add(box(BZ.w, BZ.t + 0.02, 0.04, bez, 0, 0.27 - BZ.h / 2 + BZ.t / 2, BZ.z));
-  crt.add(box(BZ.t, BZ.h, 0.04, bez, -BZ.w / 2 + BZ.t / 2, 0.27, BZ.z));
-  crt.add(box(BZ.t, BZ.h, 0.04, bez, BZ.w / 2 - BZ.t / 2, 0.27, BZ.z));
+  const bezelShape=roundOutline(new THREE.Shape(),BZ.w,BZ.h,.019);
+  bezelShape.holes.push(roundOutline(new THREE.Path(),SCR_W+.010,SCR_H+.010,.013));
+  const bezelGeo=new THREE.ExtrudeGeometry(bezelShape,{depth:.029,steps:1,curveSegments:8,bevelEnabled:true,bevelSize:.004,bevelThickness:.005,bevelSegments:3});
+  const bezel=new THREE.Mesh(bezelGeo,creamMat);bezel.position.set(0,.27,.249);bezel.castShadow=true;bezel.receiveShadow=true;crt.add(bezel);
+  // The recessed dark reveal and separate face casting make the glass read as a lens.
+  const revealShape=roundOutline(new THREE.Shape(),SCR_W+.023,SCR_H+.023,.016);
+  revealShape.holes.push(roundOutline(new THREE.Path(),SCR_W-.002,SCR_H-.002,.009));
+  const reveal=new THREE.Mesh(new THREE.ShapeGeometry(revealShape),instrumentCharcoal);reveal.position.set(0,.27,.255);crt.add(reveal);
+  for(const x of [-.255,.255]){
+    const screw=new THREE.Mesh(new THREE.CylinderGeometry(.0038,.0038,.0014,12),chromeMat);screw.rotation.x=Math.PI/2;screw.position.set(x,.459,.28);crt.add(screw);
+    crt.add(box(.0045,.0007,.0007,instrumentCharcoal,x,.459,.281,false));
+  }
 
   const plateTex = paint(256, 64, (g, w, h) => {
     g.clearRect(0, 0, w, h);
@@ -1116,11 +1147,28 @@ const SCREEN_NORMAL = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector
   kbd.position.set(TERM_X + 0.02, DESK.top + 0.074, DESK.z + 0.36);
   kbd.rotation.set(-0.03, CRT_ROT, 0);
   desk.add(kbd);
-  kbd.add(box(0.50, 0.024, 0.17, instrumentCharcoal, 0, 0.012, 0));
-  for (let r = 0; r < 4; r++) for (let c = 0; c < 14; c++) {
-    kbd.add(box(0.026, 0.008, 0.026, blackPlastic, -0.222 + c * 0.0342, 0.028, -0.056 + r * 0.036, false));
-  }
-  const paperMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: 0.95 });
+  kbd.add(roundedSolid(.51,.025,.202,.006,instrumentCharcoal,0,.012,0));
+  const keyMat=new THREE.MeshStandardMaterial({color:0x8d8271,roughness:.52});
+  const keyGeo=new RoundedBoxGeometry(.026,.010,.026,2,.002);
+  const keys=new THREE.InstancedMesh(keyGeo,keyMat,56);const matrix=new THREE.Matrix4();
+  for(let r=0;r<4;r++)for(let c=0;c<14;c++)keys.setMatrixAt(r*14+c,matrix.makeTranslation(-.222+c*.0342,.030,-.073+r*.033));
+  keys.receiveShadow=true;kbd.add(keys);
+  const space=roundedSolid(.20,.010,.026,.002,keyMat,0,.030,.069);space.castShadow=false;kbd.add(space);
+  for(const x of [-.205,-.154,.154,.205]){const key=roundedSolid(.038,.010,.026,.002,keyMat,x,.030,.069);key.castShadow=false;kbd.add(key);}
+  const legend=paint(1024,416,(g,w,h)=>{
+    g.clearRect(0,0,w,h);g.fillStyle='#302a24';g.font='500 19px "JetBrains Mono",monospace';g.textAlign='center';g.textBaseline='middle';
+    const rows=['1234567890−=⌫ ', 'QWERTYUIOP[]  ', 'ASDFGHJKL;\'↵  ', 'ZXCVBNM,./ ↑  '];
+    for(let r=0;r<4;r++)for(let c=0;c<14;c++)g.fillText(rows[r][c]||'',(-.222+c*.0342+.255)/.51*w,(-.073+r*.033+.101)/.202*h);
+    g.font='14px "JetBrains Mono",monospace';g.fillText('CTRL',100,353);g.fillText('ALT',205,353);g.fillText('←',822,353);g.fillText('→',925,353);
+  });
+  const labels=plane(.51,.202,new THREE.MeshStandardMaterial({map:legend,transparent:true,roughness:.6,depthWrite:false}),0,.0352,0,-Math.PI/2);kbd.add(labels);
+  const paperTex=paint(512,704,(g,w,h)=>{
+    g.fillStyle='#e8e2d2';g.fillRect(0,0,w,h);g.fillStyle='#554c40';g.font='18px "JetBrains Mono",monospace';g.fillText('STATION / 01',44,64);g.font='11px "JetBrains Mono",monospace';g.fillText('SIGNAL ROUTING · SERVICE COPY',44,92);
+    g.strokeStyle='#766a56';g.lineWidth=1;g.strokeRect(44,130,424,260);
+    for(let i=0;i<4;i++){g.strokeRect(78+i*95,182,62,38);g.beginPath();g.moveTo(110+i*95,220);g.lineTo(110+i*95,320);g.lineTo(395,320);g.stroke();}
+    for(let i=0;i<10;i++){g.globalAlpha=.45;g.fillRect(44,436+i*18,250+(i%3)*40,1);}g.globalAlpha=1;
+  });
+  const paperMat = new THREE.MeshStandardMaterial({map:paperTex,color:0xe8e2d2,roughness:.95});
   /* WP-46 TUNE: they used to lie between the glass and the lamp. The lamp is
      gone, so they move a hand's width along the slab toward where it stood —
      far enough that the desk's right end is not bare, close enough that they
@@ -2476,9 +2524,9 @@ function applyLook(L, id) {
   alcoveInner.intensity = 0.7 + L.shelf * 1.6;
   alcoveRing.material.emissiveIntensity = 0.20 + L.shelf * 0.55;
   downLight.intensity = L.downlight * 3.0;
-  downStrip.material.emissiveIntensity = 0.10 + L.downlight * 1.1;
+  downStrip.material.emissiveIntensity = 0.08 + L.downlight * 0.52;
   crtLight.intensity = L.crt * 19.0;
-  crtSpill.intensity = L.crt * 1.9;
+  crtSpill.intensity = L.crt * 0.82;
   glass.material.emissiveIntensity = 2.1 + L.crt * 2.0;
   fasciaScale = 0.55 + L.crt * 0.75;
   if (fascia === 0) {
@@ -2486,7 +2534,7 @@ function applyLook(L, id) {
     crt2Spill.intensity = FASCIA_REST.spill * fasciaScale;
     glass2.material.emissiveIntensity = FASCIA_REST.emissive * fasciaScale;
   }
-  boardGroup.userData.face.material.emissiveIntensity = L.board * 4.60;
+  boardGroup.userData.face.material.emissiveIntensity = L.board * 2.85;
   boardGlow.intensity = L.board * 0.95;
   scene.fog.color.setHex(L.fog.col);
   scene.fog.density = L.fog.den;
@@ -2638,7 +2686,8 @@ function frameU(p) {
 function framedPitch(vfovDeg) {
   const half = Math.tan(vfovDeg * Math.PI / 360) * FRAME_EDGE;
   let tMin = Math.tan(FRAME_PITCH_MIN), tMax = Math.tan(FRAME_PITCH_MAX);
-  const tHi = tMax;
+  // Compose around the inhabited lower room; the hard bounds still protect the window.
+  const tHi = Math.tan(-5.5 * Math.PI / 180);
   let hMin = -Infinity, hMax = Infinity;
   for (const p of FRAME_HARD) {
     const u = frameU(p); if (u === null) continue;
@@ -2866,7 +2915,7 @@ function makeStationScreen(options) {
 const cssHost = document.getElementById('css3d');
 const world = makeStationScreen({
   host: cssHost, pos: SCREEN_POS, normal: SCREEN_NORMAL,
-  rotY: CRT_ROT, quadW: SCR_W, pageW: 1024, pageH: Math.round(1024*SCR_H/SCR_W), src: 'index.html?in=station&v=20260907-front-1'   /* versioned like the console's: the glass must never show a cached page */
+  rotY: CRT_ROT, quadW: SCR_W, pageW: 680, pageH: Math.round(680*SCR_H/SCR_W), src: 'station-terminal.html?v=20260908-production-1'   /* versioned like the console's: the glass must never show a cached page */
 });
 
 /* ── and TOPOLOGIE OS, on the stewards' console ──
@@ -4019,6 +4068,7 @@ const easeOut = (t) => t*t*t*(t*(t*6-15)+10);
 const inspector = createRoomInspector({archive,onClose:()=>standUp()});
 
 function glideTo(pos, look, next) {
+  document.body.classList.add('station-engaged');
   cam.dur=REDUCED?.001:Math.min(2.6,Math.max(1.4,camera.position.distanceTo(pos)/3));
   cam.mode = 'glide'; cam.t = 0; cam.next = next;
   cam.fromPos.copy(camera.position); cam.fromLook.copy(cam.look);
@@ -4064,7 +4114,7 @@ function standUp() {
   world.hide(); world2.hide();
   tone.duck(false);
   full.reset();
-  document.body.classList.remove('seated');
+  document.body.classList.remove('seated', 'station-engaged');
   standEl.classList.remove('on');
   fullEl.classList.remove('on');
   cam.focused = null;
@@ -4221,7 +4271,7 @@ const stationJourney = createStationJourney({ THREE, scene, camera, guide: limen
   doorwayError: () => apertureVisit.previewError(),
   prepare() {
     hasMuseumVisit=true;document.body.classList.add('has-museum-visit');
-    apertureVisit.preparePreview(serializeLimenBody(limen.group),stationJourney.passageSnapshot()).catch(() => {});
+    apertureVisit.preparePreview(serializeLimenBody(limen.group),stationJourney.passageSnapshot(),{fov:camera.fov,aspect:camera.aspect}).catch(() => {});
     const snapshot = {mode:cam.mode, pos:camera.position.clone(), quaternion:camera.quaternion.clone(), look:cam.look.clone(), focused:cam.focused, screen:cssHost.className, screen2:cssHost2.className, bodyFlat:document.body.classList.contains('flat'), stand:standEl.className, full:fullEl.className};
     limen.panel.suspendForJourney(); roomIndex.hide(); setHover(null); cam.mode='journey';
     cssHost.classList.add('gone'); cssHost2.classList.add('gone');document.body.classList.remove('flat');
@@ -4314,7 +4364,7 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
   // A phone-sized first visit still uses the original small door. Resizing an
   // existing museum visit must not navigate away and destroy either room.
-  if (!hasMuseumVisit && !stationJourney.active && redirectIfSmall(w)) return;
+  document.body.classList.toggle('flat-page', w < 700);
   camera.aspect = w / h; frameCamera(w / h);
   renderer.setPixelRatio(stationPixelRatio());
   renderer.setSize(w, h, false);
@@ -4397,7 +4447,7 @@ const boardProjection = new THREE.Matrix4();
 let frameHandle = 0, lastPlotAt = -1, lastShadowAt = -1, lastHoverAt = -1;
 function suspendStationFrame() { cancelAnimationFrame(frameHandle); frameHandle = 0; }
 function resumeStationFrame() {
-  if (frameHandle || museumVisible || document.hidden) return;
+  if (frameHandle || museumVisible || document.hidden || document.body.classList.contains('reading')) return;
   clockT.last = performance.now() / 1000;
   renderer.shadowMap.needsUpdate = true;
   frameHandle = requestAnimationFrame(frame);
@@ -4405,6 +4455,8 @@ function resumeStationFrame() {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) suspendStationFrame(); else resumeStationFrame();
 });
+window.addEventListener('station:suspend',()=>{if(!stationJourney.active)suspendStationFrame();});
+window.addEventListener('station:resume',resumeStationFrame);
 
 function setClockHands(t) {
   const min = (CLOCK.min + (t / 30)) % 1440;   /* the world's own rate: 1 min per 30 s */
@@ -4415,7 +4467,7 @@ function setClockHands(t) {
 
 function frame() {
   frameHandle = 0;
-  if (museumVisible || document.hidden) return;
+  if (museumVisible || document.hidden || (window.innerWidth < 700 && !stationJourney.active && cam.mode === 'rest')) return;
   frameHandle = requestAnimationFrame(frame);
   const now = performance.now() / 1000;
   if (PERF.measuring) PERF.intervals.push((now - clockT.last) * 1000);

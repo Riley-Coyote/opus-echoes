@@ -187,3 +187,56 @@ then detailed shoulder/mantle construction and the representative museum bay.
 The full plan is not complete. Current cloth uses safe navigation clearance,
 body colliders and a floor bound; self-collision and arbitrary wall collision
 are not implemented. Existing curation changes remain separate and preserved.
+
+
+## 2026-09-08 — Station first minute production review
+
+Current prompt: develop the chosen :8137 Station arrival, terminal directory,
+nearby objects and one continuous museum journey. Preserve the circular window,
+dusk, warm architecture, old instruments and floating keeper. Blender and broader
+redesigns remain paused. Capture matching desktop, tall-window and phone baselines,
+then verify the running result and deliver a short journey recording for review.
+
+Source verified: Claude scratchpad wt-doors/index-doors, origin main and Lovable
+project 65ff8c12-6467-4975-8dff-38b31d600c8b all match f9c07e3. Existing website
+checkout switched to codex/station-first-minute from that revision. Claude's
+:8137 source, existing _print-staging and dirty museum curation remain untouched.
+Baseline artifacts: Codex visualizations / station-production / before. Chrome
+Metal on Apple M4 Max at 1440x900: journey p95 16.7–16.8ms, preparation long tasks
+546ms and 244ms. These are desktop measurements, not phone hardware results.
+
+Pass 1: lower preferred camera pitch while retaining landmark bounds; one arrival
+invitation and responsive still; compact terminal directory; readable controls
+and index type; retain Station document across resize and suspend hidden room
+while reading. Validation and further material/transition passes in progress.
+
+
+Production pass result (2026-09-08):
+- Arrival: lower preferred pitch with the original landmark constraints, one
+  invitation, readable focus/hover controls, phone scene poster and lazy room.
+- Terminal: small same-origin directory, shorter boot, real museum action,
+  direct destinations, mobile dialog, retained desktop document on return.
+- Craft: rounded case and continuous beveled CRT bezel, recessed glass, vents,
+  screws, shaped/instanced keys and legends, service-sheet marks, material grain,
+  reduced emissive spill. Preserved the floating keeper and resident text.
+- Journey: broader route corners and 3m look-ahead resolve late camera turns;
+  bronze skirtings, light lines and floor joints carry the material language.
+  Hidden index/phone scenes suspend. A representative clipped museum view warms
+  before travel, using the visitor's lens, without another animation loop.
+- Validation: production build, 28 tests, browser controls and continuity at
+  320–1920px, reduced motion, pause/resume, cancellation, document retention,
+  resize and synthetic visibility lifecycle. Native tab switching and physical
+  phone/Safari GPU performance remain unverified.
+- Final measured 50s native Chrome/Metal run: station, hall and threshold p95
+  16.7–16.8ms; no frame above 33.5ms after preparation. Cold preparation remains
+  517ms and 243ms main-thread tasks before motion. This is not a universal device
+  performance claim. The wider museum's assets were not rebuilt from dirty source.
+- Review evidence and uncut journey recording live outside the repo under Codex
+  visualizations: 01a07f83-6aae-7820-bbe0-e18c5c3163d3/station-production/review.html.
+  Keep codex/station-first-minute isolated for Riley's review before publication.
+
+Final source refresh: Claude pushed f0c95e2 and 3f11c02 (Sanctuary world controls
+and feed-column layout) while this pass ran, then the temporary :8137 server and
+checkout were no longer present. The baseline is retained in the review captures.
+The review branch incorporates origin/main 3f11c02; those separate landing/world
+changes are preserved. The established :8080 server continues serving this review.

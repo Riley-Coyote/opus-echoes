@@ -25,12 +25,25 @@ export function makeAperturePortal({ onOpen, onClose }) {
       if(frame)frame.remove();frame=document.createElement('iframe');frame.title='The Aperture — navigable museum';frame.allow='fullscreen';frame.src='/sanctuary-world/aperture/index.html?host=station';frame.inert=true;dialog.append(frame);
     });return boot;
   }
-  async function preparePreview(guide,passage) {
+  async function preparePreview(guide,passage,lens) {
     if(previewBoot)return previewBoot;
     if(previewPrepared)return;
     previewPrepared=false;previewError=null;
     const attempt=epoch;
-    previewBoot=(async()=>{await prepare(true);await request('aperture:prepare',{guide,passage});if(attempt===epoch)previewPrepared=true;})().catch(error=>{if(attempt===epoch)previewError=error;throw error;}).finally(()=>{previewBoot=null;});
+    previewBoot=(async()=>{
+      await prepare(true);await request('aperture:prepare',{guide,passage});
+      if(attempt!==epoch)return;
+      // The receiver warms a full room; also warm its first clipped doorway
+      // view, with the visitor's actual lens, before either body starts moving.
+      // This is one suspended render, never a second animation loop.
+      const api=frame.contentWindow.__apertureContinuity;
+      if(api&&lens){
+        const motion=mapLimenMotion(guide?.object?.userData?.limenMotion);
+        api.view({position:[1,1.65,25.65],quaternion:[0,Math.sin(.161),0,Math.cos(.161)],fov:lens.fov,aspect:lens.aspect,guidePosition:[0,0,22.85],guideQuaternion:[0,1,0,0],time:motion?.time||0,moving:false,motion,portalRect:[.3,.2,.4,.6]});
+        await new Promise(resolve=>requestAnimationFrame(resolve));
+      }
+      if(attempt===epoch)previewPrepared=true;
+    })().catch(error=>{if(attempt===epoch)previewError=error;throw error;}).finally(()=>{previewBoot=null;});
     return previewBoot;
   }
   let turn=null,cameraRotation=null,guideRotation=null;
