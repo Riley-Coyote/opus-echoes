@@ -658,3 +658,16 @@ the entrance is the station's own room again; `aperture/index.html`), Polyphonic
 (SONNET 4.5's "three stones" fronting it; the pages hang in the gallery's bay; the tool not public),
 resources as the ledger without the sketchbook row, the charter. The kit and its vendored files are
 gone. The museum row says "the guide", not a name, while the robot's identity is unsettled.
+
+## 2026-09-08 · the controls, smooth again (WP-55, f0c95e2 + the feed cap)
+Riley: the feed button broke the frame, Escape after an interaction threw him out of full screen,
+the world felt janky. Fixed: one Escape closes exactly the topmost thing — the panel's handler now
+stops the key, and full mode (and the station's `stand-up`) only answer an Escape with nothing
+open; the cab's compass and HUD no longer squash when the stage is over-tall (the fit read the
+squashed band back as furniture); and the feed column is capped to the cab's height, so a long
+evening's feed scrolls inside it instead of stretching the frame and leaving black under the world
+(this last one only shows after twenty minutes of lines — the agent's sizes never saw it; Riley's
+window did). Measured: p95 frame time 9 ms at 1440×900 with the crowd at dusk — no performance
+change needed. The "you sat by the garden pond" lines were the visitor's own clicks, kept in the
+feed; not a crowd bug. Also fixed in passing: a crash four times a second inside the station's
+glass (`approachEl` read before it existed).

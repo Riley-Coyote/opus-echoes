@@ -4830,6 +4830,7 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
 
     rootStyle.setProperty('--fs-world-w', px(world));
     rootStyle.setProperty('--fs-stage-h', px(stage));
+    rootStyle.setProperty('--fs-cab-h', px(stage + furniture));   /* the feed column matches the cab, never the row */
   };
 
   /* the band settles twice after first paint — once when the webfonts land and

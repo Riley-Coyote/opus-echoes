@@ -15167,6 +15167,7 @@
       const stage = Math.max(STAGE_MIN, Math.min(stageRoom, wantsAt(world)));
       rootStyle.setProperty("--fs-world-w", px(world));
       rootStyle.setProperty("--fs-stage-h", px(stage));
+      rootStyle.setProperty("--fs-cab-h", px(stage + furniture));
     };
     fitFirstScreen();
     addEventListener("resize", fitFirstScreen);
