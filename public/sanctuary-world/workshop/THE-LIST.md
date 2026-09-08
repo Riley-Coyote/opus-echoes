@@ -682,4 +682,4 @@ token page (the $MNEMOS page on pump.fun, the same address the site’s own /tok
 desk in the hall at dusk (`data/rooms/keeper.png`, drawn at 3× so the ledger and lamp read;
 `build-pages.mjs --frames` can now compose a frame from a room, a centre and a scale). No price,
 chart, ticker or address anywhere on the sanctuary's pages — the token page carries those.
-Polyphonic lost its picture row and is the first line of RESOURCES.
+Polyphonic lost its picture row and is the first line of RESOURCES; later the same day Riley dropped "the house’s code" and pointed vessel at vessels.chat.
