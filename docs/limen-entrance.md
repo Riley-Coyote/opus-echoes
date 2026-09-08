@@ -10,7 +10,8 @@ station z; height is unchanged. The opening is at station z = 10.84; control
 passes at z = 11.15 (museum z = 21.70). Camera quaternion, vertical field of
 view, walking speed and the guide pose are preserved. The receiver clips its
 standalone keeper fixture out of the connected opening. That standalone room
-still exists on direct museum visits.
+still exists on direct museum visits. A portable snapshot of the real station
+passage remains behind the threshold, so looking back does not reveal a void.
 
 Limen is a veiled humanoid with a porcelain mask, soft robe and folded mantle.
 `lab/limen-body.js` is the shared body factory and gait. It serializes portable
@@ -21,7 +22,7 @@ content and resident behavior are unchanged.
 ## Editable source and builds
 
 The museum's editable source remains in the separate `sanctuary-spatial-study`
-checkout (continuity source commit `fd31eba`). The receiver changes are in `src/main.ts`, `src/scene/world.ts`, and
+checkout (continuity source commits `fd31eba` and `135ca5e`). The receiver changes are in `src/main.ts`, `src/scene/world.ts`, and
 `src/scene/guide.ts`; the shared body is copied by the integration build below.
 Existing local curation work is preserved. The embedded build includes that
 source checkout's current approved exhibition and its required public assets.

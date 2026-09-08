@@ -4231,7 +4231,7 @@ const stationJourney = createStationJourney({ THREE, scene, camera, guide: limen
   doorwayReady: () => apertureVisit.previewReady(),
   prepare() {
     hasMuseumVisit=true;document.body.classList.add('has-museum-visit');
-    apertureVisit.preparePreview(serializeLimenBody(limen.group)).catch(() => {});
+    apertureVisit.preparePreview(serializeLimenBody(limen.group),stationJourney.passageSnapshot()).catch(() => {});
     const snapshot = {mode:cam.mode, pos:camera.position.clone(), quaternion:camera.quaternion.clone(), look:cam.look.clone(), focused:cam.focused, screen:cssHost.className, screen2:cssHost2.className, bodyFlat:document.body.classList.contains('flat'), stand:standEl.className, full:fullEl.className};
     limen.panel.suspendForJourney(); roomIndex.hide(); setHover(null); cam.mode='journey';
     cssHost.classList.add('gone'); cssHost2.classList.add('gone');document.body.classList.remove('flat');

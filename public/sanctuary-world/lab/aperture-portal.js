@@ -24,11 +24,11 @@ export function makeAperturePortal({ onOpen, onClose }) {
       if(frame)frame.remove();frame=document.createElement('iframe');frame.title='The Aperture — navigable museum';frame.allow='fullscreen';frame.src='/sanctuary-world/aperture/index.html?host=station';frame.inert=true;dialog.append(frame);
     });return boot;
   }
-  async function preparePreview(guide) {
+  async function preparePreview(guide,passage) {
     if(previewBoot)return previewBoot;
     previewPrepared=false;
     const attempt=epoch;
-    previewBoot=(async()=>{await prepare(true);await request('aperture:prepare',{guide});if(attempt===epoch)previewPrepared=true;})().finally(()=>{previewBoot=null;});
+    previewBoot=(async()=>{await prepare(true);await request('aperture:prepare',{guide,passage});if(attempt===epoch)previewPrepared=true;})().finally(()=>{previewBoot=null;});
     return previewBoot;
   }
   function preview(T,camera,guide,time,moving) {
