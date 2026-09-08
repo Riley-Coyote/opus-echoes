@@ -121,3 +121,16 @@ presence 503. Full samples and screenshots are under /tmp/limen-performance.
 
 Full production build and staged museum-source typecheck pass. The source commit
 0f72f07 preserves the checkout's independent curation changes.
+
+## 2026-09-08 · Limen embodiment production plan
+
+Riley requested a concrete plan and communication limited to inputs or decisions
+that need their involvement. Added docs/limen-embodiment-plan.md, covering the
+creative premise, six dependent phases, the first playable encounter, one museum
+bay, simulation continuity, source ownership, performance evidence, and two
+focused creative review moments. Existing character and floating form remain
+the direction. No further user input is needed to begin implementation.
+
+This pass changes documentation only. The next implementation step is a refreshed
+real-time route baseline and motion-state contract, followed by a body-motion
+study. No new embodiment, simulation, or museum visuals are claimed complete.

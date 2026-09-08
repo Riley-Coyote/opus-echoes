@@ -1,5 +1,9 @@
 # Limen's continuous entrance
 
+The next embodiment and material work is sequenced in the
+[Limen embodiment plan](limen-embodiment-plan.md). These entrance notes describe
+the current implementation and its recorded verification.
+
 The station enters the museum through a live perspective window, not a dark
 end wall. Both renderers retain their documents. While approaching the opening,
 the museum renders synchronously from the station camera through a projected
