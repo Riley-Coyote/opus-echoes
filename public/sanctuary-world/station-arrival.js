@@ -52,12 +52,13 @@
     if(destination==='museum'){act('museum');return;}
     if(directory.open)directory.close();
     if(destination==='station'){window.__station?.standUp();return;}
-    if(['polyphonic','sketchbook','resources'].includes(destination)){
+    if(destination==='resources'){
       window.__station?.standUp();
       // Finish withdrawing from the desk before restoring the page's scroll.
       setTimeout(()=>document.getElementById('ix-'+destination)?.scrollIntoView({behavior:'smooth'}),matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500);return;
     }
     if(destination==='sanctuary')location.href='index.html?go=lookout';
+    if(destination==='sketchbook')location.href='museum/museum-permanent-gallery.html';
     if(destination==='charter')location.href='index.html?open=charter';
   });
   let reading=false;
