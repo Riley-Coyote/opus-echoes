@@ -9,6 +9,7 @@ if(!process.argv[2])throw Error('Provide the sanctuary-spatial-study source dire
 const museum=resolve(process.argv[2]);
 await access(resolve(museum,'src/scene/guide.ts'));
 await cp(resolve(root,'public/sanctuary-world/lab/limen-body.js'),resolve(museum,'src/scene/limen-body.js'));
+await cp(resolve(root,'public/sanctuary-world/lab/limen-motion.js'),resolve(museum,'src/scene/limen-motion.js'));
 const build=spawnSync('bun',['run','build'],{cwd:museum,stdio:'inherit'});
 if(build.status!==0)process.exit(build.status||1);
 await cp(resolve(museum,'dist'),resolve(root,'public/sanctuary-world/aperture'),{recursive:true});

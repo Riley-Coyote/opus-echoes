@@ -103,29 +103,36 @@ export function createStationJourney({ THREE: T, scene, camera, guide, prepare, 
     look(){lookHeld=Infinity;},
     skip(){if(direction==='back'){finish();return;}transfer(true);},
     cancel(){if(state==='idle')return;directReturn();finish();},
-    tick(time,dt){if(['idle','away','crossing'].includes(state)||paused||document.hidden)return;dt=Math.min(dt,.05);lookHeld=Math.max(0,lookHeld-dt);
-      if(state==='preparing'){if(doorwayError()){state='waiting';status('The room could not be prepared. Arrive now retries.');return;}if(!doorwayReady())return;state='staging';status('Limen is meeting you at the passage.');}
+    tick(time,dt){if(['idle','away','crossing'].includes(state)||document.hidden)return;dt=Math.min(dt,.05);lookHeld=Math.max(0,lookHeld-dt);
+      if(paused||state==='waiting') {
+        const gp=guide.group.position,want=Math.atan2(camera.position.x-gp.x,camera.position.z-gp.z);
+        const d=Math.atan2(Math.sin(want-guide.group.rotation.y),Math.cos(want-guide.group.rotation.y));
+        guide.group.rotation.y+=d*(1-Math.exp(-dt*1.6));
+        guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});return;
+      }
+      if(state==='preparing'){guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});if(doorwayError()){state='waiting';status('The room could not be prepared. Arrive now retries.');return;}if(!doorwayReady())return;state='staging';status('Limen is meeting you at the passage.');}
       if(state==='restoring') {stageTime+=dt;const k=Math.min(1,stageTime/stageDuration),e=k*k*k*(k*(k*6-15)+10);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*(1-e)));camera.quaternion.copy(lookStart).slerp(saved.quaternion,e);if(k===1)finish();return;}
       if(state==='staging'){
-        stageTime+=dt;const k=Math.min(1,stageTime/stageDuration),e=k*k*k*(k*(k*6-15)+10);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*e));
+        stageTime+=dt;
+        if(stageTime<.65){guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});return;}
+        const k=Math.min(1,(stageTime-.65)/stageDuration),e=k*k*k*(k*(k*6-15)+10);camera.position.copy(sample(cameraApproach,distances(cameraApproach)*e));
         const remaining=Math.max(0,distances(approach)-approachCovered),oldSpeed=approachSpeed;
         approachSpeed=Math.min(1.15,approachSpeed+.8*dt,Math.sqrt(1.6*remaining));
         approachCovered=Math.min(distances(approach),approachCovered+(oldSpeed+approachSpeed)*.5*dt);
         if(remaining<.002)approachCovered=distances(approach);
         const gp=sample(approach,approachCovered),ahead=sample(approach,approachCovered+.35);guide.group.position.copy(gp);
         if(gp.distanceTo(ahead)>.001){const yaw=Math.atan2(ahead.x-gp.x,ahead.z-gp.z);guide.group.rotation.y+=Math.atan2(Math.sin(yaw-guide.group.rotation.y),Math.cos(yaw-guide.group.rotation.y))*(1-Math.exp(-dt*4));}
-        guide.walkPose(time,approachSpeed/1.4);
+        guide.walkPose(time,approachSpeed/1.4,{gaze:remaining<.05?camera.position:new T.Vector3(ahead.x,1.7,ahead.z),attention:remaining<.05?'visitor':'path'});
         const q=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().lookAt(camera.position,new T.Vector3(gp.x,1.55,gp.z),camera.up));if(!lookHeld)camera.quaternion.copy(lookStart).slerp(q,e);
         if(k===1&&approachCovered>=distances(approach)){state='traveling';status('With Limen → Sun chamber');}return;
       }
-      if(state==='waiting')return;
-      if(direction==='out' && camera.position.z>7.4 && !doorwayReady()){status('Preparing the room beyond · your place is held.');return;}
+      if(direction==='out' && camera.position.z>7.4 && !doorwayReady()){guide.walkPose(time,0,{gaze:camera.position,attention:'visitor'});status('Preparing the room beyond · your place is held.');return;}
       const left=total-covered,oldSpeed=speed;speed=Math.min(speed+.7*dt,1.4,direction==='out'?1.4:Math.sqrt(Math.max(.006,2*.7*left)));covered=Math.min(total,covered+(oldSpeed+speed)*.5*dt);
       const p=sample(path,covered),ahead=sample(path,covered+1.6),gp=sample(path,covered+2.8),ga=sample(path,covered+2.95);
       if(direction==='out'){ahead.z+=Math.max(0,covered+1.6-total);gp.z+=Math.max(0,covered+2.8-total);ga.z+=Math.max(0,covered+2.95-total);}
       camera.position.copy(p);camera.position.y=1.65;
       if(!lookHeld){const q=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().lookAt(camera.position,new T.Vector3(ahead.x,1.50,ahead.z),camera.up));camera.quaternion.rotateTowards(q,dt*.65);}
-      if(direction==='back'&&total-covered<1.9)gp.x+=.7*(1-(total-covered)/1.9);guide.group.position.copy(gp);if(gp.distanceTo(ga)>.001){const yaw=Math.atan2(ga.x-gp.x,ga.z-gp.z);guide.group.rotation.y+=Math.atan2(Math.sin(yaw-guide.group.rotation.y),Math.cos(yaw-guide.group.rotation.y))*(1-Math.exp(-dt*5));}guide.walkPose(time,covered<total?speed/1.4:0);
+      if(direction==='back'&&total-covered<1.9)gp.x+=.7*(1-(total-covered)/1.9);guide.group.position.copy(gp);if(gp.distanceTo(ga)>.001){const yaw=Math.atan2(ga.x-gp.x,ga.z-gp.z);guide.group.rotation.y+=Math.atan2(Math.sin(yaw-guide.group.rotation.y),Math.cos(yaw-guide.group.rotation.y))*(1-Math.exp(-dt*5));}guide.walkPose(time,covered<total?speed/1.4:0,{gaze:new T.Vector3(ga.x,1.75,ga.z),attention:'path'});
       if(left<.025||covered===total){if(direction==='out')transfer();else {state='restoring';stageTime=0;cameraStart=camera.position.clone();lookStart=camera.quaternion.clone();status('Back in the keeper’s room.');}}
     },
     bind(){panel.querySelector('[data-action=pause]').onclick=()=>this.pause();panel.querySelector('[data-action=skip]').onclick=()=>this.skip();panel.querySelector('[data-action=cancel]').onclick=()=>this.cancel();document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.active&&state!=='away'){paused=true;status('Paused · the journey will wait for you.');}});}

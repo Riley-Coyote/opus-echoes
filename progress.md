@@ -134,3 +134,56 @@ the direction. No further user input is needed to begin implementation.
 This pass changes documentation only. The next implementation step is a refreshed
 real-time route baseline and motion-state contract, followed by a body-motion
 study. No new embodiment, simulation, or museum visuals are claimed complete.
+
+## 2026-09-08 · Living Limen implementation
+
+Riley authorized continuing the embodiment plan. Initial scope: the real
+station-to-museum encounter, responsive floating and attention, a shared physical
+motion state, and deforming fabric. Use the develop-web-game validation workflow
+and the existing real-time benchmark. Source snapshots are under
+/tmp/limen-presence-before; measurements and visual evidence under
+/tmp/limen-presence.
+
+Fresh baseline: Chrome / Apple M4 Max / 1440 x 900, 50 seconds. Doorway and
+museum mean 8.33 ms, p95 9.3 ms, no frames over 33.5 ms after preparation, no
+application exceptions, museum scale 1.00. Loading tasks remain in preparation.
+
+Current ownership: station drives the guide during the corridor; the museum
+reads its pose during preview, then becomes owner. Existing pauses freeze the
+guide entirely, and the cloth uses whole-mesh rotations. Preserve existing
+curation edits in the museum source checkout.
+
+Completed the first playable body-and-cloth milestone: separate spring responses
+for head/chest/body/arms; acknowledgement before departure; an attentive waiting
+state; 351-point fixed-step XPBD cloth, welded robe seam, pinned shoulders and
+body/floor constraints; portable version-3 state and single simulation ownership.
+The portal transforms world velocity/root while preserving local cloth and its
+Verlet history. Receiver buffers are private, avoiding a snapshot-alias bug.
+Refined robe profiles, cloak clearance, weave scale, sheen and clasp visibility.
+Removed obsolete guide footstep sounds. Museum source commit: 64eb5b0.
+
+Performance: a first comparison exposed apparent regression; a back-to-back
+rerun of the old/new bundles showed the older build also slowed under the changed
+desktop workload. The matched 50-second samples preserve pacing: doorway
+12.79/17.6 → 12.54/17.4 ms mean/p95; museum 10.55/16.8 → 10.48/16.9 ms.
+No movement frames above 33.5 ms; long tasks only in preparation. Raw samples:
+/tmp/limen-presence/matched-before.json and matched-after.json. Solver hot-loop
+norms were simplified after profiling. Full pose/cloth CPU p95 is about 0.6 ms
+in station and 1.0–1.2 ms in museum, sometimes above the sub-1-ms stretch target.
+
+Verification: 20 station tests, 37 museum tests, paired build, production build
+and selectively staged museum-source typecheck pass. Six-width browser tests
+verify matching pose/cloth/momentum, camera/lens/speed, pause/keyboard resume,
+returns, cancellation, repeated visits, reduced motion, document retention and
+an explicit visibility lifecycle fixture. Actual native tab switching remains
+unverified because headless tabs did not report hidden. Supplied game client
+run and screenshots reviewed through final pass; only known presence 503 errors.
+Visual iterations resolved cloth seam, cloak clearance, gaze orientation and
+coarse fabric scale. Final station/museum pause captures are in
+/tmp/limen-presence; six-width doorway captures in /tmp/limen-continuity.
+
+Next: Riley's focused review of the playable waiting/acknowledgement encounter;
+then detailed shoulder/mantle construction and the representative museum bay.
+The full plan is not complete. Current cloth uses safe navigation clearance,
+body colliders and a floor bound; self-collision and arbitrary wall collision
+are not implemented. Existing curation changes remain separate and preserved.

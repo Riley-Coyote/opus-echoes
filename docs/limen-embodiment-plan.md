@@ -2,8 +2,10 @@
 
 Date: 2026-09-08
 
-Status: planning complete; implementation has not started. The next implementation
-step is phase 1. This plan continues the working entrance documented in
+Status: the first playable body-and-cloth milestone is implemented and ready for
+creative review. Phases 1–3 have an engineering proof; phase 4 has an initial
+material study. The museum bay and final integrated finish remain ahead.
+This plan continues the working entrance documented in
 [Limen's continuous entrance](limen-entrance.md).
 
 ## Direction and first milestone
@@ -190,13 +192,58 @@ unresolved questions labeled as such. Record artistic reactions in Riley's words
 when practical. This is the project decision record, not a change to resident or
 personal memory systems.
 
+## First playable milestone — 2026-09-08
+
+Implemented the encounter on the actual entrance route. Limen acknowledges the
+visitor before departing, uses separate damped responses for body, head and arms,
+and turns toward a waiting visitor while the camera stays still. The robe and
+split mantle deform from a 351-point, fixed-60-Hz XPBD proxy. Their attachment,
+stretch, bend, damping and tailored rest shape preserve the floating silhouette.
+The body has smoother robe profiles, restrained fabric normal/roughness detail,
+cloth sheen and a visible clasp. There are no guide footstep sounds.
+
+Movement/reference annotations used for this study:
+
+- Attention: the existing hall pause is the repeatable encounter. The head
+  responds before the chest; a slower body turn completes the acknowledgement.
+  The held camera and stable visitor target make the timing easy to compare.
+- Cloth: the XPBD reference informs compliant distance constraints and fixed
+  integration. Disney's simulation process informs the use of authored shape
+  and attachment controls. The shoulder stays composed while the lower fabric
+  trails acceleration and settles; physical accuracy alone is not the criterion.
+- Material scale: the first generated weave read too coarsely at normal viewing
+  distance. Smaller repeated detail, mipmaps and lower normal strength made the
+  fabric quieter. No external character asset or motion capture was adopted.
+
+The version-3 state contract and matched performance evidence are recorded in
+[the entrance notes](limen-entrance.md). Six-width continuity checks compare body
+pose, cloth positions and Verlet history between renderers. Starts, turns,
+waiting, keyboard resume, crossing, repeat visits, cancellation, returns and
+reduced motion pass. The visibility lifecycle is tested explicitly because
+the headless browser does not hide a page when another tab is selected; actual
+native tab switching remains a separate device check.
+
+The matched 50-second comparison preserves frame pacing on the current M4 Max:
+doorway mean/p95 12.79/17.6 → 12.54/17.4 ms; museum 10.55/16.8 → 10.48/16.9 ms.
+Both runs have zero movement frames over 33.5 ms. Complete body/cloth CPU samples
+are about 0.6 ms p95 in the station and 1.0–1.2 ms in the museum under this
+desktop workload. The latter sometimes exceeds the provisional sub-1-ms target;
+retain that optimization target while protecting the measured journey budget.
+
+Current limits: collision uses analytic body shapes, floor clearance and the
+existing safe navigation routes. Arbitrary architecture cloth collision and
+cloth self-collision are not implemented. The current geometry is an improved
+procedural study; bespoke sculpting, garment construction and the representative
+museum bay are still future work. Visual resizing does not certify phone GPUs.
+
 ## Immediate next work
 
-1. Refresh the real-time route baseline and capture the doorway/wait sequence.
-2. Trace simulation ownership through `station-journey.js`, `aperture-portal.js`,
-   and the museum guide/world receiver. Define the versioned state contract.
-3. Annotate a small set of movement references and implement the first motion
-   study on the existing body, preserving the baseline for comparison.
+1. Review the playable pause/acknowledgement/threshold encounter with Riley.
+   The useful input is whether Limen's bearing feels calm and attentive in motion.
+2. Refine the shoulder, mantle construction and small-scale character details
+   around that response. Keep the shared rig and performance evidence intact.
+3. Develop the planned entrance-side museum bay and bring that finished area to
+   the second creative review. Then complete the combined integration phase.
 
 ## Technical references
 

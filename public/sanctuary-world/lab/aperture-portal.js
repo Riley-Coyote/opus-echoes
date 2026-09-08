@@ -1,3 +1,4 @@
+import { mapLimenMotion } from './limen-motion.js';
 /* Retained same-origin receiver. Preparation and entry are acknowledged before
  * ownership changes; only an explicit retry can replace the museum document. */
 export function makeAperturePortal({ onOpen, onClose }) {
@@ -60,7 +61,7 @@ export function makeAperturePortal({ onOpen, onClose }) {
       dialog.style.clipPath=full?'none':'polygon('+uv.map(p=>`${p[0]*100}% ${p[1]*100}%`).join(',')+')';
     } else dialog.style.clipPath='none';
     if(!turn){turn=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),Math.PI);cameraRotation=new T.Quaternion();guideRotation=new T.Quaternion();}
-    api.view({position:[6.7-camera.position.x,camera.position.y,32.85-camera.position.z],quaternion:cameraRotation.copy(turn).multiply(camera.quaternion).toArray(),fov:camera.fov,aspect:camera.aspect,guidePosition:[6.7-guide.position.x,guide.position.y,32.85-guide.position.z],guideQuaternion:guideRotation.copy(turn).multiply(guide.quaternion).toArray(),time,moving,motion:guide.userData.limenMotion,portalRect:rect});
+    api.view({position:[6.7-camera.position.x,camera.position.y,32.85-camera.position.z],quaternion:cameraRotation.copy(turn).multiply(camera.quaternion).toArray(),fov:camera.fov,aspect:camera.aspect,guidePosition:[6.7-guide.position.x,guide.position.y,32.85-guide.position.z],guideQuaternion:guideRotation.copy(turn).multiply(guide.quaternion).toArray(),time,moving,motion:mapLimenMotion(guide.userData.limenMotion),portalRect:rect});
     dialog.classList.add('preview');
     return full;
   }

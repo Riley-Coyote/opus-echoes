@@ -9,7 +9,7 @@ async (page) => {
   await page.evaluate(()=>{
     window.__kept=[...document.querySelectorAll('iframe')].map(frame=>({frame,document:frame.contentDocument,time:frame.contentWindow.performance.timeOrigin}));
     window.__crossing=null;
-    window.addEventListener('message',e=>{if(e.data?.type==='aperture:committed')window.__crossing=document.querySelector('#aperture-visit iframe').contentWindow.__apertureContinuity.state();});
+    window.addEventListener('message',e=>{if(e.data?.type==='aperture:committed')window.__crossing=structuredClone(document.querySelector('#aperture-visit iframe').contentWindow.__apertureContinuity.state());});
     __station.museumOpen();
   });
   await page.waitForFunction(()=>document.querySelector('#aperture-visit iframe')?.contentWindow.__apertureContinuity);
@@ -18,12 +18,31 @@ async (page) => {
   const pause=await page.evaluate(()=>__station.camera().pos);
   await page.waitForTimeout(250);
   assert(JSON.stringify(pause)===JSON.stringify(await page.evaluate(()=>__station.camera().pos)),'Pause must hold the camera');
-  for(const width of [1440,1024,768,540,375]) {
+  // Headless tabs stay visible when another tab is selected. Exercise the
+  // visibility lifecycle explicitly; this does not certify native tab switching.
+  const hiddenSteps=await page.evaluate(()=>{
+    Object.defineProperty(document,'hidden',{configurable:true,value:true});
+    document.dispatchEvent(new Event('visibilitychange'));
+    return __station.limenEmbodiment().steps;
+  });
+  await page.waitForTimeout(400);
+  assert(await page.evaluate(()=>__station.limenEmbodiment().steps)===hiddenSteps,'Suspension must hold the simulation');
+  await page.evaluate(()=>{delete document.hidden;document.dispatchEvent(new Event('visibilitychange'));});
+  await page.waitForTimeout(120);
+  assert(await page.evaluate(()=>__station.journey().paused),'Restoration must wait for the visitor to resume');
+  assert(JSON.stringify(pause)===JSON.stringify(await page.evaluate(()=>__station.camera().pos)),'Restoration must retain the camera');
+  for(const width of [1920,1440,1024,768,540,375]) {
     await page.setViewportSize({width,height:900});await page.waitForTimeout(180);
     const state=await page.evaluate(()=>{
       const panel=document.querySelector('#station-journey').getBoundingClientRect();
       const frame=document.querySelector('#aperture-visit iframe');
-      return {parent:__station.camera(),child:frame.contentWindow.__apertureContinuity.state(),panel:{left:panel.left,right:panel.right,bottom:panel.bottom},preview:document.querySelector('#aperture-visit').classList.contains('preview')};
+      const source=__station.limenMotion(),child=frame.contentWindow.__apertureContinuity.state();
+      if(source.version!==3||source.steps!==child.motion.steps)throw Error('Only the station may integrate preview physics');
+      const delta=(a,b)=>Math.max(...a.map((v,i)=>Math.abs(v-b[i])));
+      if(delta(source.pose,child.motion.pose)>1e-7)throw Error('Preview body pose must match');
+      for(let i=0;i<source.cloth.length;i++)for(const key of ['position','previous'])
+        if(delta(source.cloth[i][key],child.motion.cloth[i][key])>1e-7)throw Error('Preview cloth and momentum must match');
+      return {parent:__station.camera(),child,panel:{left:panel.left,right:panel.right,bottom:panel.bottom},preview:document.querySelector('#aperture-visit').classList.contains('preview')};
     });
     assert(state.preview,'The actual museum must remain visible through the doorway');
     assert(Math.abs(state.parent.fov-state.child.fov)<.002,'The two lenses must match after resizing');
@@ -38,10 +57,17 @@ async (page) => {
   const crossing=await page.evaluate(()=>__crossing);
   assert(Math.abs(crossing.camera[2]-21.7)<.15,'Crossing must retain the physical doorway position');
   assert(Math.abs(crossing.speed-1.4)<.01,'Walking velocity must carry into the museum');
-  assert(crossing.bodyVersion==='floating-keeper-2','The museum must use the same Limen body');
+  assert(crossing.bodyVersion==='living-keeper-3','The museum must use the same Limen body');
   const museum=page.frames().find(f=>f.url().includes('/aperture/'));
   assert(await museum.locator('#places-toggle').isVisible(),'Museum controls must become available');
   assert(!(await museum.locator('body').getAttribute('class'))?.includes('arrival-preview'),'Preview presentation must release');
+  await museum.locator('#trip-pause').focus();await page.keyboard.press('Enter');
+  const heldCamera=await museum.evaluate(()=>__apertureContinuity.state().camera);
+  await page.waitForTimeout(1100);
+  assert(JSON.stringify(heldCamera)===JSON.stringify(await museum.evaluate(()=>__apertureContinuity.state().camera)),'Museum pause must hold the camera');
+  assert(await museum.evaluate(()=>__apertureContinuity.state().embodiment.attention==='visitor'),'Limen should acknowledge the waiting visitor');
+  await page.keyboard.press('Enter');await page.waitForTimeout(350);
+  assert(JSON.stringify(heldCamera)!==JSON.stringify(await museum.evaluate(()=>__apertureContinuity.state().camera)),'Keyboard resume must continue the route');
   await museum.locator('#trip-skip').click();
   await page.screenshot({path:'/tmp/limen-continuity/inside-museum.png'});
   await page.locator('#aperture-visit .aperture-return').click();
@@ -58,5 +84,5 @@ async (page) => {
   await page.locator('#aperture-visit .aperture-return').click();
   await page.emulateMedia({reducedMotion:'no-preference'});
   assert(errors.length===0,errors.join('\n'));
-  return {passed:true,crossing,viewports:results,retainedComputers:true,cancellation:true,reducedMotion:true,pageErrors:errors};
+  return {passed:true,crossing,viewports:results,retainedComputers:true,cancellation:true,reducedMotion:true,visibilityLifecycle:true,keyboardPauseResume:true,pageErrors:errors};
 }

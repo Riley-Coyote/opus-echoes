@@ -1,4 +1,4 @@
-import { createLimenBody, poseLimen, serializeLimenBody } from './limen-body.js';
+import { createLimenBody, poseLimen, serializeLimenBody, limenDiagnostics } from './limen-body.js';
 /* THE STATION — the house-lab above the valley.
  *
  * A wide, low room under a ceiling of walnut planks: Wright's horizontals and
@@ -3314,7 +3314,6 @@ const limen = (() => {
   group.rotation.y = S.yaw;
 
   const SPEED = 0.62;         /* m/s — it is in no hurry */
-  const STRIDE = 0.46;        /* one footstep per stride */
 
   const _frustum = new THREE.Frustum();
   const _m4 = new THREE.Matrix4();
@@ -3427,7 +3426,6 @@ const limen = (() => {
     const k=Math.min(d,SPEED*Math.min(dt,.05)*pace);
     if(d>0){group.position.x+=dx/d*k;group.position.z+=dz/d*k;}
     group.position.y=0; travelled+=k;S.stride+=k;
-    if(!REDUCED&&S.stride>=STRIDE){S.stride-=STRIDE;tone.step(.95);}
     if(d-k<.001)routeIndex++;
     return false;
   }
@@ -3700,8 +3698,6 @@ const limen = (() => {
       }
     }
 
-    walkPose(quiet ? 0 : t, !quiet && ['coming','going','walk'].includes(S.mode));
-
     /* hovering it turns it: the body comes round, not just the head */
     const onIt = hovered() && hovered().id === 'limen';
     if (onIt && (S.mode === 'still' || S.mode === 'talking')) S.wantYaw = faceCamera();
@@ -3736,11 +3732,7 @@ const limen = (() => {
       const LIM = 0.6109;                     /* 35° — as far as a neck goes */
       yaw = Math.max(-LIM, Math.min(LIM, yaw));
       let pitch = Math.max(-LIM, Math.min(LIM, Math.atan2(dy, flat)));
-      const k = Math.min(1, dt * (quiet ? 1 : 2.6));
-      S.headYaw += (yaw - S.headYaw) * k;
-      S.headPitch += (pitch - S.headPitch) * k;
-      head.rotation.y = S.headYaw;
-      head.rotation.x = -S.headPitch;
+      walkPose(t,!quiet&&['coming','going','walk'].includes(S.mode),{gazeYaw:yaw,gazePitch:-pitch,attention:'room'});
     }
 
     /* the eye blinks: rarely, and by dimming rather than closing — it has no lid */
@@ -3756,11 +3748,16 @@ const limen = (() => {
     }
   }
 
-  function walkPose(t, moving) { poseLimen(group, t, moving); }
+  function walkPose(t, moving, context={}) {
+    poseLimen(group,t,moving,undefined,{root:group,reduced:REDUCED||STILL,...context});
+    S.headYaw=head.rotation.y;S.headPitch=-head.rotation.x;
+  }
 
   return {
     group, head, eye, eyeRing, tick, click, panel,
     walkPose,
+    motion: () => group.userData.limenMotion,
+    diagnostics: () => limenDiagnostics(group),
     stations: () => STATIONS.map((s) => s.id),
     station: () => STATIONS[S.at].id,
     approach: APPROACH,
@@ -4581,7 +4578,7 @@ window.advanceTime = (ms) => {
   for(let i=0;i<steps;i++){clockT.elapsedTime+=ms/steps/1000;stationJourney.tick(clockT.elapsedTime,ms/steps/1000);}
   if(!museumVisible){apertureVisit.preview(THREE,camera,limen.group,clockT.elapsedTime,!stationJourney.state.paused);post.render(clockT.elapsedTime);}
 };
-window.render_game_to_text = () => JSON.stringify({space:museumVisible?'museum':'station',coordinates:'metres; y up; station passage runs toward positive z',journey:stationJourney.state,camera:camera.position.toArray(),guide:limen.state(),bodyVersion:limen.group.userData.bodyVersion});
+window.render_game_to_text = () => JSON.stringify({space:museumVisible?'museum':'station',coordinates:'metres; y up; station passage runs toward positive z',journey:stationJourney.state,camera:camera.position.toArray(),guide:limen.state(),bodyVersion:limen.group.userData.bodyVersion,embodiment:museumVisible?document.querySelector('#aperture-visit iframe')?.contentWindow.__apertureContinuity?.state().embodiment:limen.diagnostics()});
 window.__station = {
   navigation: () => ({ blocked:floorNavigation.blocked,limits:floorNavigation.limits,radius:floorNavigation.radius }),
   geometry: () => {
@@ -4722,6 +4719,8 @@ window.__station = {
   }),
   /* limen — where it is, what it is doing, and what it will say */
   limen: () => limen.state(),
+  limenMotion: () => limen.motion(),
+  limenEmbodiment: () => limen.diagnostics(),
   limenDistance: () => limen.distance(),
   limenHeight: () => limen.height(),
   limenStations: () => limen.stations(),

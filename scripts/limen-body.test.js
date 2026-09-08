@@ -8,7 +8,7 @@ test('the body survives the museum handoff without replacing geometry or moving 
   const json=serializeLimenBody(group);
   expect(json.geometries.every(g=>g.type==='BufferGeometry')).toBe(true);
   const received=new THREE.ObjectLoader().parse(json);
-  expect(received.userData.bodyVersion).toBe('floating-keeper-2');
+  expect(received.userData.bodyVersion).toBe('living-keeper-3');
   const a=new THREE.Box3().setFromObject(group), b=new THREE.Box3().setFromObject(received);
   expect(a.min.distanceTo(b.min)).toBeLessThan(1e-6);
   expect(a.max.distanceTo(b.max)).toBeLessThan(1e-6);
