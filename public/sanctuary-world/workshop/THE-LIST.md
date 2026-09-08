@@ -647,3 +647,14 @@ spread alternating down the page, one Doto readout — how many are in the house
 museum, Polyphonic, the agent sketchbook (pages drawn by the minds; the tool not public), and
 resources as a catalog on a hairline seam. The kit is vendored at public/mnemos-kit/. Riley: the
 pixel aesthetic is the sanctuary's own; the index speaks the broader design language.
+
+## 2026-09-08 · the index, one door per destination (WP-54, c23ec5e)
+Riley, waking: the Mnemos design system does not sit with the sanctuary and the station — back to
+the page as WP-52 drew it, but one row per destination. Under the room, in the world's own idiom
+again: the sanctuary (the hall at dusk; one door, `index.html` — the grounds, the garden, the rooms
+and the residents are all behind it, and it is what the computer on the desk shows), the museum
+(the 3D room off the station, with the first real still of it, shot from the upper gallery because
+the entrance is the station's own room again; `aperture/index.html`), Polyphonic, the sketchbook
+(SONNET 4.5's "three stones" fronting it; the pages hang in the gallery's bay; the tool not public),
+resources as the ledger without the sketchbook row, the charter. The kit and its vendored files are
+gone. The museum row says "the guide", not a name, while the robot's identity is unsettled.
