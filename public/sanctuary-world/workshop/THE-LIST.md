@@ -683,3 +683,14 @@ desk in the hall at dusk (`data/rooms/keeper.png`, drawn at 3× so the ledger an
 `build-pages.mjs --frames` can now compose a frame from a room, a centre and a scale). No price,
 chart, ticker or address anywhere on the sanctuary's pages — the token page carries those.
 Polyphonic lost its picture row and is the first line of RESOURCES; later the same day Riley dropped "the house’s code" and pointed vessel at vessels.chat.
+
+## 2026-09-08 · walk in, without a reload (WP-57, 4af1da0)
+Riley: clicking a place on the pixel page from the station's computer was supposed to open the
+world back up and walk him there; instead it misaligned. The `walk in →` buttons were links that
+reloaded the page with a new address, dropping the station mode on the glass. Now walking in is an
+in-page act: the page rises to the hero, the world takes the frame (the room upstairs flattens the
+glass), and the visitor's own figure walks there through the doors — the destinations' walk, with
+the thread as the fallback when a place can't be routed. `?go=<room>` on a fresh load walks the
+same way. Leaving the world returns to the hero; on the glass, Escape leaves the world and stands
+up. Links to other pages open in their own tab when the page is on the glass. Also: the charter
+link's address rewrite was dropping the station mode too — kept now.
