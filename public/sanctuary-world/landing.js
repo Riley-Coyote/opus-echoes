@@ -2623,33 +2623,37 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (message.type === 'stand-up') closeFieldGlass();
   });
 
-  /* WALK — the world's own routes, one door at a time */
+  /* WALK — the world's own routes, one door at a time.
+     It answers whether it actually set out: the page's own `walk in →` asks,
+     and falls back to the thread for a place the world cannot route to now. */
   function walk(p) {
-    if (!p || busy || !eng) return;
-    if (p.kind === 'surface') { closeDest(); p.open(); return; }
+    if (!p || busy || !eng) return false;
+    if (p.kind === 'surface') { closeDest(); p.open(); return true; }
     const info = placeInfo(p);
     if (p.kind === 'museum' && navigation.surface === 'museum') {
       const allowed = { atrium: ['gallery'], gallery: ['atrium', 'field-annex'], 'field-annex': ['gallery'] }[navigation.museumScene] || [];
-      if (!allowed.includes(p.scene)) { closeDest(); say('the annex is reached through the gallery'); return; }
+      if (!allowed.includes(p.scene)) { closeDest(); say('the annex is reached through the gallery'); return false; }
     }
     closeDest();
+    let routed = false;
     if (p.kind === 'room') {
-      if (p.room === 'lookout') goToDestination('grounds');
-      else if (p.room === 'sanctuary') goToDestination('sanctuary');
-      else if (p.room === 'resident_wing' || p.room === 'garden' || p.room === 'observation_deck' || p.room === 'field_studio') startWorldTravel({ id: p.room, room: p.room, x: eng.rooms[p.room].spawn.x, y: 378 });
+      if (p.room === 'lookout') routed = goToDestination('grounds');
+      else if (p.room === 'sanctuary') routed = goToDestination('sanctuary');
+      else if (p.room === 'resident_wing' || p.room === 'garden' || p.room === 'observation_deck' || p.room === 'field_studio') routed = startWorldTravel({ id: p.room, room: p.room, x: eng.rooms[p.room].spawn.x, y: 378 });
       else {
         const resident = residentOf(p.room);
-        if (resident) visitResidentRoom(resident, { openChat: false });
+        if (resident) routed = visitResidentRoom(resident, { openChat: false });
       }
     } else if (p.kind === 'person') {
-      visitResidentRoom(p.resident, { openChat: false });
+      routed = visitResidentRoom(p.resident, { openChat: false });
     } else if (navigation.surface === 'museum') {
-      startMuseumTravel(p.scene);
+      routed = startMuseumTravel(p.scene);
     } else {
       navigation.museumTarget = p.scene === 'atrium' ? null : 'gallery';
-      goToDestination('museum');
+      routed = goToDestination('museum');
     }
     say('walking · <b>' + esc(info.name) + '</b>');
+    return !!routed;
   }
 
   /* THE THREAD — the carry cinematic, then the house sets you down */
@@ -2669,6 +2673,48 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
       if (navigation.surface === 'museum') leaveMuseumFor(jump); else jump();
     }, 525);
   }
+
+  /* ───────────────────────── WALKING IN — the page's own doors ─────────────────────────
+     A `walk in →` under the horizon is not a link out of this page; it is the
+     act of walking in. The document never navigates — on the station's glass a
+     navigation would drop `?in=station` and the room would be left waiting —
+     so the page rises to the hero, the world takes the frame, and the visitor's
+     own figure walks there from wherever it stands. The href stays on the
+     anchor: it is still a deep link, a middle-click, and the way in with no
+     JavaScript. */
+  const OPENERS = { destinations: openDest, charter: openCharter, current: openCurrent };
+  function toTheHero() {
+    try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+    document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }
+  /* the walk; and the thread for a place the walk cannot route to right now,
+     so that a visitor who asked to be somewhere always arrives there */
+  function walkIn(place) {
+    if (!place) return;
+    if (!walk(place)) thread(place);
+  }
+  /* the whole act: to the hero, into the world, then the walk — after the
+     agreement, if the card is still to be answered */
+  function walkInTo(place) {
+    if (!place) return;
+    toTheHero();
+    enterWorld();
+    const run = () => walkIn(place);
+    if (!doorEl.hidden) afterDoor = run; else run();
+  }
+  function pageParam(a, key) {
+    try { return new URL(a.getAttribute('href'), location.href).searchParams.get(key); } catch (e) { return null; }
+  }
+  document.addEventListener('click', (ev) => {
+    if (ev.defaultPrevented || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    const a = ev.target && ev.target.closest && ev.target.closest('a[href^="?go="], a[href^="index.html?go="], a[href^="?open="], a[href^="index.html?open="]');
+    if (!a) return;
+    const wantGo = pageParam(a, 'go');
+    if (wantGo && byId[wantGo]) { ev.preventDefault(); walkInTo(byId[wantGo]); return; }
+    const wantOpen = pageParam(a, 'open');
+    if (wantOpen && OPENERS[wantOpen]) { ev.preventDefault(); OPENERS[wantOpen](); }
+  });
 
   function go(mode) {
     if (busy || !sel) return;
@@ -3490,20 +3536,16 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
        are accepted; anything else is ignored rather than guessed at. */
     try {
       const want = new URLSearchParams(location.search).get('open');
-      const OPENERS = {
-        destinations: openDest,
-        charter: openCharter,
-        current: openCurrent
-      };
       if (want && OPENERS[want]) setTimeout(() => { try { OPENERS[want](); } catch (e) {} }, 0);
     } catch (e) {}
-    /* ?go=<room> — the page's own links into the world. The thread carries you
-       there, but only once the agreement at the door has been answered. */
+    /* ?go=<room> — a link into the world from somewhere outside this page. It
+       does what the page's own `walk in →` does: you walk there yourself, once
+       the agreement at the door has been answered. */
     try {
       const wantGo = new URLSearchParams(location.search).get('go');
       const place = wantGo && byId[wantGo];
       if (place) {
-        const run = () => { try { thread(place); } catch (e) { console.warn('?go failed', wantGo, e); } };
+        const run = () => { try { walkIn(place); } catch (e) { console.warn('?go failed', wantGo, e); } };
         setTimeout(() => { enterWorld(); if (!doorEl.hidden) afterDoor = run; else run(); }, 240);
       }
     } catch (e) {}
@@ -4877,13 +4919,20 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     /* the screen may have changed size while the world had the whole bezel */
     fitFirstScreen();
     $('#enter-world').focus({ preventScroll: true });
+    /* out of the world is back to the window: the hero, not wherever down the
+       page the visitor happened to be standing when they walked in */
+    toTheHero();
   }
   // The desk opens the page first; exploring its window is a separate action.
   let stationPageOpen = !IN_STATION || window.parent === window || new URLSearchParams(location.search).get('view') === 'landing';
   addEventListener('message', (event) => {
     if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'station:landing-view') return;
     stationPageOpen = event.data.expanded;
-    if (stationPageOpen) {
+    /* the room saying the page has the window is not a reason to put the world
+       away: a visitor who walked in from THE PLACES is already inside it, and
+       the room went full BECAUSE they did. Only a page that is not in the world
+       is set back to the window. */
+    if (stationPageOpen && !worldEl.classList.contains('fs')) {
       worldEl.classList.remove('fs');
       document.documentElement.classList.remove('exploring');
       setFeed(true); setFsLabel(); fitFirstScreen();
@@ -4907,8 +4956,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
        glass, the charter or the wall has already done its one thing. */
     if (overlayOpen()) return;
     /* inside a room, ESC belongs to the room: it stands the visitor up from the
-       desk. The key never reaches that document on its own, so it is handed up. */
-    if (FROM_DOOR || IN_STATION) { tellRoom('stand-up'); return; }
+       desk. The key never reaches that document on its own, so it is handed up.
+       On the glass the page is left as the room found it — back at the hero,
+       out of the world — so that sitting down again shows the window again. */
+    if (FROM_DOOR || IN_STATION) {
+      tellRoom('stand-up');
+      if (IN_STATION && worldEl.classList.contains('fs')) leaveWorld();
+      return;
+    }
     if (worldEl.classList.contains('fs')) leaveWorld();
   });
 
@@ -5173,8 +5228,34 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     if (!ground || !eng) return;
     buildPlaces();
     buildCharter();
+    linksOutOpenAway();
     if (sky && sky.repaint) sky.repaint();
     theEvening();
+  }
+
+  /* ── the links out, on the glass ─────────────────────────────────
+     On the station's computer this page is one program on one screen.
+     A link to another document would take that screen with it — and
+     the seat, the room and the agreement with it — so on the glass
+     every link to another document opens in a tab of its own. The
+     page's own `#…`, `?go=` and `?open=` are handled in place and are
+     left alone. Standalone, every link is exactly what the markup
+     says it is. */
+  function linksOutOpenAway(root) {
+    if (!IN_STATION) return;
+    (root || document).querySelectorAll('a[href]').forEach((a) => {
+      const href = a.getAttribute('href') || '';
+      if (!href || href.startsWith('#') || href.startsWith('?') || /^(javascript|mailto|tel):/i.test(href)) return;
+      let url;
+      try { url = new URL(href, location.href); } catch (e) { return; }
+      /* a link back to this same page carrying its own parameters is this
+         page's business, not another document's */
+      if (url.origin === location.origin && url.pathname === location.pathname
+        && (url.searchParams.has('go') || url.searchParams.has('open'))) return;
+      a.setAttribute('target', '_blank');
+      const rel = a.getAttribute('rel') || '';
+      if (!/\bnoopener\b/.test(rel)) a.setAttribute('rel', rel ? rel + ' noopener' : 'noopener');
+    });
   }
 
   /* ── the page arrives ────────────────────────────────────────────
@@ -5296,7 +5377,14 @@ const BOOT_AGREEMENT = 'These are minds, not characters. Any of them may decline
     const link = document.getElementById('charter-link');
     if (link) link.addEventListener('click', (ev) => {
       ev.preventDefault();
-      try { history.replaceState(null, '', '?open=charter' + location.hash); } catch (e) {}
+      /* the URL says the charter is open, and keeps everything it already
+         said — on the station's glass `?in=station` is how the page knows
+         which door it came through */
+      try {
+        const here = new URL(location.href);
+        here.searchParams.set('open', 'charter');
+        history.replaceState(null, '', here.search + location.hash);
+      } catch (e) {}
       openCharter();
     });
     const src = document.getElementById('charter-src');

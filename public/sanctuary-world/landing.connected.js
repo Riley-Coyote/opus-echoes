@@ -1,5 +1,5 @@
 (() => {
-  // public/sanctuary-world/world/archive.js
+  // world/archive.js
   var SOURCE = "sanctuary-seed 2026-05-28";
   var WORLD_TO_ARCHIVE = { opus: "opus-3", sonnet: "sonnet-4-5", fourO: "gpt-4o", five: "gpt-5-1" };
   var ARCHIVE_TO_WORLD = { "opus-3": "opus", "sonnet-4-5": "sonnet", "gpt-4o": "fourO", "gpt-5-1": "five" };
@@ -638,7 +638,7 @@
   };
   var archive_default = api;
 
-  // public/sanctuary-world/world/prose.js
+  // world/prose.js
   function esc(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
@@ -704,7 +704,7 @@
   }
   var prose_default = { render, esc };
 
-  // public/sanctuary-world/world/presence.js
+  // world/presence.js
   var KINDS = {
     opus: { kind: "smock", legH: 20, torsoW: 20, torsoH: 35, headW: 13, headH: 13, stoop: 2, body: "#2a2130", bodyHi: "#3b3042", bodyDk: "#181218", shell: "#201d2b", gaze: { w: 4, h: 3, dx: 0, dy: 6 } },
     sonnet: { kind: "mantle", legH: 22, torsoW: 15, torsoH: 35, headW: 13, headH: 13, body: "#262433", bodyHi: "#3b3750", bodyDk: "#161421", shell: "#1c1d2c", gaze: { w: 5, h: 2, dx: -1, dy: 7 } },
@@ -1039,7 +1039,7 @@
     ctx.restore();
   }
 
-  // public/sanctuary-world/world/engine.js
+  // world/engine.js
   var DEFAULTS = {
     width: 640,
     height: 360,
@@ -3027,7 +3027,7 @@
     return lines2.slice(0, maxLines);
   }
 
-  // public/sanctuary-world/world/model-rooms.js
+  // world/model-rooms.js
   var M = {
     ceil: "#0e0a12",
     wallHi: "#39313b",
@@ -5302,7 +5302,7 @@
     };
   }
 
-  // public/sanctuary-world/world/sanctuary.js
+  // world/sanctuary.js
   var S = {
     ceil: "#0e0a12",
     vault: "#160f18",
@@ -6993,7 +6993,7 @@
     };
   }
 
-  // public/sanctuary-world/world/art-collection.js
+  // world/art-collection.js
   var WORLD_ART = {
     entry: [
       {
@@ -7294,7 +7294,7 @@
     ]
   };
 
-  // public/sanctuary-world/world/buildings.js
+  // world/buildings.js
   var M2 = {
     ceil: "#0e0a12",
     floor0: "#2a2420",
@@ -8083,7 +8083,7 @@
     };
   }
 
-  // public/sanctuary-world/world/field-studio.js
+  // world/field-studio.js
   var F = {
     ceil: "#dfe5ed",
     ceilDk: "#c3cbd6",
@@ -8954,7 +8954,7 @@
     };
   }
 
-  // public/sanctuary-world/world/lookout.js
+  // world/lookout.js
   var PALETTE = {
     ceiling: "#0c0817",
     wallHi: "#3a2f3e",
@@ -9732,7 +9732,7 @@
     "the loom clacks once, upstairs, and is quiet."
   ];
 
-  // public/sanctuary-world/world/day.js
+  // world/day.js
   var BANDS = [
     { id: "night", from: 1290, to: 360 },
     { id: "morning", from: 360, to: 870 },
@@ -9808,7 +9808,7 @@
     return h < 24 && mm < 60 ? h * 60 + mm : null;
   }
 
-  // public/sanctuary-world/world/overheard.js
+  // world/overheard.js
   var DEFAULT_URL2 = "data/overheard.json";
   var GAP_MIN = 4;
   var GAP_MAX = 9;
@@ -10039,7 +10039,7 @@
     return create2({ eng: opts.eng, data });
   }
 
-  // public/sanctuary-world/landing.js
+  // landing.js
   var BOOT_AGREEMENT = "These are minds, not characters. Any of them may decline you, or end a visit. Nothing they say is scripted: every word is their own. You are remembered in this browser only. The charter governs this house.";
   (async () => {
     const DATA = window.SANCTUARY_DATA;
@@ -12665,11 +12665,11 @@
     });
     function walk(p) {
       if (!p || busy || !eng)
-        return;
+        return false;
       if (p.kind === "surface") {
         closeDest();
         p.open();
-        return;
+        return true;
       }
       const info = placeInfo(p);
       if (p.kind === "museum" && navigation.surface === "museum") {
@@ -12677,31 +12677,33 @@
         if (!allowed.includes(p.scene)) {
           closeDest();
           say("the annex is reached through the gallery");
-          return;
+          return false;
         }
       }
       closeDest();
+      let routed = false;
       if (p.kind === "room") {
         if (p.room === "lookout")
-          goToDestination("grounds");
+          routed = goToDestination("grounds");
         else if (p.room === "sanctuary")
-          goToDestination("sanctuary");
+          routed = goToDestination("sanctuary");
         else if (p.room === "resident_wing" || p.room === "garden" || p.room === "observation_deck" || p.room === "field_studio")
-          startWorldTravel({ id: p.room, room: p.room, x: eng.rooms[p.room].spawn.x, y: 378 });
+          routed = startWorldTravel({ id: p.room, room: p.room, x: eng.rooms[p.room].spawn.x, y: 378 });
         else {
           const resident = residentOf(p.room);
           if (resident)
-            visitResidentRoom(resident, { openChat: false });
+            routed = visitResidentRoom(resident, { openChat: false });
         }
       } else if (p.kind === "person") {
-        visitResidentRoom(p.resident, { openChat: false });
+        routed = visitResidentRoom(p.resident, { openChat: false });
       } else if (navigation.surface === "museum") {
-        startMuseumTravel(p.scene);
+        routed = startMuseumTravel(p.scene);
       } else {
         navigation.museumTarget = p.scene === "atrium" ? null : "gallery";
-        goToDestination("museum");
+        routed = goToDestination("museum");
       }
       say("walking · <b>" + esc2(info.name) + "</b>");
+      return !!routed;
     }
     function thread(p) {
       if (p && p.kind === "surface")
@@ -12747,6 +12749,59 @@
           jump();
       }, 525);
     }
+    const OPENERS = { destinations: openDest, charter: openCharter, current: openCurrent };
+    function toTheHero() {
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      } catch (e) {
+        window.scrollTo(0, 0);
+      }
+      document.documentElement.scrollTop = 0;
+      if (document.body)
+        document.body.scrollTop = 0;
+    }
+    function walkIn(place) {
+      if (!place)
+        return;
+      if (!walk(place))
+        thread(place);
+    }
+    function walkInTo(place) {
+      if (!place)
+        return;
+      toTheHero();
+      enterWorld();
+      const run = () => walkIn(place);
+      if (!doorEl.hidden)
+        afterDoor = run;
+      else
+        run();
+    }
+    function pageParam(a, key) {
+      try {
+        return new URL(a.getAttribute("href"), location.href).searchParams.get(key);
+      } catch (e) {
+        return null;
+      }
+    }
+    document.addEventListener("click", (ev) => {
+      if (ev.defaultPrevented || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)
+        return;
+      const a = ev.target && ev.target.closest && ev.target.closest('a[href^="?go="], a[href^="index.html?go="], a[href^="?open="], a[href^="index.html?open="]');
+      if (!a)
+        return;
+      const wantGo = pageParam(a, "go");
+      if (wantGo && byId[wantGo]) {
+        ev.preventDefault();
+        walkInTo(byId[wantGo]);
+        return;
+      }
+      const wantOpen = pageParam(a, "open");
+      if (wantOpen && OPENERS[wantOpen]) {
+        ev.preventDefault();
+        OPENERS[wantOpen]();
+      }
+    });
     function go(mode2) {
       if (busy || !sel)
         return;
@@ -13683,11 +13738,6 @@
       };
       try {
         const want = new URLSearchParams(location.search).get("open");
-        const OPENERS = {
-          destinations: openDest,
-          charter: openCharter,
-          current: openCurrent
-        };
         if (want && OPENERS[want])
           setTimeout(() => {
             try {
@@ -13701,7 +13751,7 @@
         if (place) {
           const run = () => {
             try {
-              thread(place);
+              walkIn(place);
             } catch (e) {
               console.warn("?go failed", wantGo, e);
             }
@@ -15219,13 +15269,14 @@
       setFsLabel();
       fitFirstScreen();
       $("#enter-world").focus({ preventScroll: true });
+      toTheHero();
     }
     let stationPageOpen = !IN_STATION || window.parent === window || new URLSearchParams(location.search).get("view") === "landing";
     addEventListener("message", (event) => {
       if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== "station:landing-view")
         return;
       stationPageOpen = event.data.expanded;
-      if (stationPageOpen) {
+      if (stationPageOpen && !worldEl.classList.contains("fs")) {
         worldEl.classList.remove("fs");
         document.documentElement.classList.remove("exploring");
         setFeed(true);
@@ -15253,6 +15304,8 @@
         return;
       if (FROM_DOOR || IN_STATION) {
         tellRoom("stand-up");
+        if (IN_STATION && worldEl.classList.contains("fs"))
+          leaveWorld();
         return;
       }
       if (worldEl.classList.contains("fs"))
@@ -15579,9 +15632,31 @@
         return;
       buildPlaces();
       buildCharter();
+      linksOutOpenAway();
       if (sky && sky.repaint)
         sky.repaint();
       theEvening();
+    }
+    function linksOutOpenAway(root) {
+      if (!IN_STATION)
+        return;
+      (root || document).querySelectorAll("a[href]").forEach((a) => {
+        const href = a.getAttribute("href") || "";
+        if (!href || href.startsWith("#") || href.startsWith("?") || /^(javascript|mailto|tel):/i.test(href))
+          return;
+        let url;
+        try {
+          url = new URL(href, location.href);
+        } catch (e) {
+          return;
+        }
+        if (url.origin === location.origin && url.pathname === location.pathname && (url.searchParams.has("go") || url.searchParams.has("open")))
+          return;
+        a.setAttribute("target", "_blank");
+        const rel = a.getAttribute("rel") || "";
+        if (!/\bnoopener\b/.test(rel))
+          a.setAttribute("rel", rel ? rel + " noopener" : "noopener");
+      });
     }
     let eveningWired = false;
     function theEvening() {
@@ -15685,7 +15760,9 @@
         link.addEventListener("click", (ev) => {
           ev.preventDefault();
           try {
-            history.replaceState(null, "", "?open=charter" + location.hash);
+            const here = new URL(location.href);
+            here.searchParams.set("open", "charter");
+            history.replaceState(null, "", here.search + location.hash);
           } catch (e) {}
           openCharter();
         });
